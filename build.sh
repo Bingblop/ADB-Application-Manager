@@ -67,6 +67,8 @@ step "Compiling resources (aapt2 compile)..."
 "$AAPT2" compile --dir "$WORK_DIR/res" -o "$WORK_DIR/obj/res.zip" || fail "aapt2 compile failed"
 
 # ---- Step 2: Link resources, manifest and assets ----------------------------------------------
+# The in-app "What's new" screen shows the changelog, so ship it inside the APK (generated, git-ignored)
+[ -f "$WORK_DIR/CHANGELOG.md" ] && cp "$WORK_DIR/CHANGELOG.md" "$WORK_DIR/assets/changelog.md"
 step "Linking resources and assets (aapt2 link)..."
 "$AAPT2" link --manifest "$WORK_DIR/AndroidManifest.xml" \
     -I "$ANDROID_JAR" \

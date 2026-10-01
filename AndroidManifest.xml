@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.bloatware.bingblop"
-    android:versionCode="360"
-    android:versionName="4.6-Pro">
+    android:versionCode="370"
+    android:versionName="4.7-Pro">
 
     <uses-sdk
         android:minSdkVersion="26"
@@ -24,6 +24,8 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!-- Package Visibility for Android 11+ (API 30+) -->
     <queries>
@@ -70,6 +72,58 @@
             android:enabled="true"
             android:exported="true"
             android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
+
+        <!-- Runs tile and widget taps (switch mode, stop the quick list) without showing the app -->
+        <activity
+            android:name=".QuickActionActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
+        <!-- Quick Settings tiles -->
+        <service
+            android:name=".ModeTileService"
+            android:exported="true"
+            android:label="Working mode"
+            android:icon="@drawable/ic_stat"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+        <service
+            android:name=".StopListTileService"
+            android:exported="true"
+            android:label="Stop apps"
+            android:icon="@drawable/ic_stat"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
+        <!-- Home-screen widget -->
+        <receiver
+            android:name=".QuickWidgetProvider"
+            android:exported="true"
+            android:label="ADB App Manager">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/quick_widget_info" />
+        </receiver>
+
+        <!-- Notices a system update after reboot so a watched profile can be re-checked -->
+        <receiver
+            android:name=".BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
 
         <!-- Lets the share sheet read exported lists/APKs from this app's cache (one-off URI grants only) -->
         <provider

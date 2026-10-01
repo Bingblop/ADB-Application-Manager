@@ -6,3 +6,4 @@ bin/
 javac.*.args
 assets/adbkey
 assets/adbkey.pub
+assets/changelog.md

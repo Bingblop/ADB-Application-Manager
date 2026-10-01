@@ -1,5 +1,30 @@
 # Changelog
 
+## v4.7-Pro (versionCode 370)
+
+Installs over v3.1 – v4.6 without uninstalling (same signing key).
+
+- **✨ What's new**: the changelog is bundled in the app. After an update it opens once with the changes
+  since the version you last ran; **Color & Themes → About** has the button, version and links.
+- **👁️ Watch a profile**: in **🗂️ Profiles**, tap **👁️ Watch** on one profile. When apps from it come back
+  (typically after a system update) a banner on the Applications tab says how many and opens the same
+  reviewed Apply step. After a reboot with a new system build, a notification reminds you (Android 13+
+  asks for notification permission the first time you watch a profile). Nothing is changed without your
+  confirmation.
+- **Quick Settings tiles and a home-screen widget** (they run without opening the app):
+  - **Working mode** tile / **🔄 Mode** widget button: switches to the next mode that is ready
+    (ADB TCP → Wireless Debugging → Shizuku → Root), or back to Automatic.
+  - **Stop apps** tile / **🛑 Stop apps** widget button: force-stops every app in your **quick list**.
+    Choose it with **🛑 Quick list** on a card in **Saved Lists**.
+- **🗄️ Backup and restore**: **💾 Backup** in the app menu (and **🗄️ Backups** on the Applications tab).
+  A backup is one `.adbbackup` file in `Download/ADB App Manager/Backups/` holding the APK (with splits),
+  granted permissions and changed app ops. With **Root** it can also hold the app's data. Restore
+  installs the APK through ADB, Shizuku or Root, re-applies permissions and app ops, and with Root puts the
+  data back. You can **Share** a backup or **Choose a backup file** from another phone. Data restore
+  refuses archives that would write outside the app's own folders.
+  Without Root, private app data cannot be read on current Android, so backups are APK + settings only.
+- README: debloat-flow animation, light-theme screenshots and the new features.
+
 ## v4.6-Pro (versionCode 360)
 
 Installs over v3.1 – v4.5 without uninstalling (same signing key).
