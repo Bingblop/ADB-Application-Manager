@@ -5,7 +5,7 @@ package, freeze/enable, force-stop, clear data, uninstall for user 0, reinstall 
 manage permissions, save package lists, and run shell commands — through ADB TCP, Wireless
 Debugging, Shizuku or Root.
 
-**Latest release:** [`release/ADB_Application_Manager_Pro-v3.7.apk`](release/ADB_Application_Manager_Pro-v3.7.apk) — see [CHANGELOG.md](CHANGELOG.md).
+**Latest release:** [`release/ADB_Application_Manager_Pro-v3.8.apk`](release/ADB_Application_Manager_Pro-v3.8.apk) — see [CHANGELOG.md](CHANGELOG.md).
 
 ## Working modes
 
@@ -23,6 +23,15 @@ while ADB TCP 5555 is enabled. Status checks never change the selected mode.
 
 **ADB key:** each install generates its own private ADB key on the phone (nothing is bundled in the
 APK). Working Modes shows its fingerprint, which matches the phone's "Allow debugging?" prompt.
+
+## Debloater
+
+The **🧹 Debloater** tab uses the community package list from
+[Universal Android Debloater Next Generation](https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation/wiki)
+(UAD-NG). It shows the packages on your phone with UAD-NG's description and removal level
+(Recommended, Advanced, Expert, Unsafe), and lets you uninstall (for your user), disable or restore
+them after a review step. The list is GPL-3.0 licensed, so it is downloaded from UAD-NG's GitHub at
+runtime and cached on the phone rather than included in this repository.
 
 ## App menu
 

@@ -742,6 +742,134 @@ public class MainActivity extends Activity {
         return o;
     }
 
+    // ---------------------------------------------------------------------------------------------
+    // Debloater: Universal Android Debloater Next Generation (UAD-NG) community package list.
+    // Downloaded at runtime (GPL-3.0 data, not bundled) and cached in app storage.
+    // ---------------------------------------------------------------------------------------------
+
+    private static final String UAD_LIST_URL =
+            "https://raw.githubusercontent.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation/main/resources/assets/uad_lists.json";
+    private static final long UAD_MAX_AGE_MS = 7L * 24 * 60 * 60 * 1000;
+    private volatile boolean uadDownloading = false;
+
+    private File uadCacheFile() {
+        return new File(getFilesDir(), "uad_lists.json");
+    }
+
+    private JSONObject uadStatus() {
+        JSONObject o = new JSONObject();
+        try {
+            File f = uadCacheFile();
+            long updatedAt = prefs.getLong("uad_updated_at", 0);
+            o.put("cached", f.exists() && f.length() > 0);
+            o.put("updatedAt", updatedAt);
+            o.put("count", prefs.getInt("uad_count", 0));
+            o.put("stale", updatedAt == 0 || System.currentTimeMillis() - updatedAt > UAD_MAX_AGE_MS);
+            o.put("downloading", uadDownloading);
+            o.put("source", UAD_LIST_URL);
+        } catch (Exception ignored) {}
+        return o;
+    }
+
+    private void downloadUadList() {
+        if (uadDownloading) return;
+        uadDownloading = true;
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                String error = null;
+                java.net.HttpURLConnection conn = null;
+                try {
+                    conn = (java.net.HttpURLConnection) new java.net.URL(UAD_LIST_URL).openConnection();
+                    conn.setConnectTimeout(15000);
+                    conn.setReadTimeout(30000);
+                    conn.setRequestProperty("User-Agent", "ADB-Application-Manager");
+                    int code = conn.getResponseCode();
+                    if (code != 200) throw new IllegalStateException("HTTP " + code);
+                    InputStream in = conn.getInputStream();
+                    java.io.ByteArrayOutputStream buf = new java.io.ByteArrayOutputStream();
+                    byte[] chunk = new byte[16384];
+                    int n;
+                    while ((n = in.read(chunk)) > 0) {
+                        buf.write(chunk, 0, n);
+                        if (buf.size() > 32 * 1024 * 1024) throw new IllegalStateException("List too large");
+                    }
+                    in.close();
+                    String text = buf.toString("UTF-8");
+                    JSONObject parsed = new JSONObject(text); // validate before replacing the cache
+                    if (parsed.length() < 100) throw new IllegalStateException("List looks incomplete");
+
+                    File tmp = new File(getFilesDir(), "uad_lists.json.tmp");
+                    OutputStream out = new FileOutputStream(tmp);
+                    out.write(buf.toByteArray());
+                    out.close();
+                    if (!tmp.renameTo(uadCacheFile())) {
+                        uadCacheFile().delete();
+                        if (!tmp.renameTo(uadCacheFile())) throw new IllegalStateException("Could not save list");
+                    }
+                    prefs.edit().putLong("uad_updated_at", System.currentTimeMillis()).putInt("uad_count", parsed.length()).apply();
+                } catch (Exception e) {
+                    error = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+                    Log.w(TAG, "UAD list download failed: " + error);
+                } finally {
+                    if (conn != null) conn.disconnect();
+                    uadDownloading = false;
+                }
+                try {
+                    JSONObject status = uadStatus();
+                    status.put("error", error == null ? "" : error);
+                    notifyJs("window.onUadListUpdated && window.onUadListUpdated(" + JSONObject.quote(status.toString()) + ")");
+                } catch (Exception ignored) {}
+            }
+        });
+    }
+
+    /** UAD-NG entries for packages on this device, including ones uninstalled for the current user. */
+    private String uadMatches() {
+        JSONObject res = new JSONObject();
+        try {
+            File f = uadCacheFile();
+            if (!f.exists()) {
+                res.put("packages", new JSONArray());
+                return res.toString();
+            }
+            JSONObject list = new JSONObject(new String(AdbKeyManager.readFile(f), "UTF-8"));
+            PackageManager pm = getPackageManager();
+            List<ApplicationInfo> apps = pm.getInstalledApplications(PackageManager.MATCH_UNINSTALLED_PACKAGES);
+            JSONArray out = new JSONArray();
+            for (ApplicationInfo ai : apps) {
+                JSONObject e = list.optJSONObject(ai.packageName);
+                if (e == null) continue;
+                JSONObject o = new JSONObject();
+                o.put("pkg", ai.packageName);
+                String label = ai.packageName;
+                try {
+                    CharSequence l = pm.getApplicationLabel(ai);
+                    if (l != null && l.length() > 0) label = l.toString();
+                } catch (Exception ignored) {}
+                o.put("name", label);
+                boolean installed = (ai.flags & ApplicationInfo.FLAG_INSTALLED) != 0;
+                String state = !installed ? "uninstalled" : (!ai.enabled ? "disabled" : "enabled");
+                o.put("state", state);
+                o.put("isSystem", (ai.flags & ApplicationInfo.FLAG_SYSTEM) != 0);
+                o.put("isSuspended", installed && (ai.flags & ApplicationInfo.FLAG_SUSPENDED) != 0);
+                o.put("list", e.optString("list", "Misc"));
+                o.put("removal", e.optString("removal", "Expert"));
+                o.put("description", e.optString("description", ""));
+                o.put("dependencies", e.optJSONArray("dependencies") != null ? e.optJSONArray("dependencies") : new JSONArray());
+                o.put("neededBy", e.optJSONArray("neededBy") != null ? e.optJSONArray("neededBy") : new JSONArray());
+                out.put(o);
+            }
+            res.put("packages", out);
+        } catch (Exception e) {
+            try {
+                res.put("packages", new JSONArray());
+                res.put("error", e.getMessage());
+            } catch (Exception ignored) {}
+        }
+        return res.toString();
+    }
+
     private int systemColor(String name) {
         int id = getResources().getIdentifier(name, "color", "android");
         if (id == 0) throw new IllegalStateException("Missing system color " + name);
@@ -1402,6 +1530,37 @@ public class MainActivity extends Activity {
                 } catch (Exception ignored) {}
             }
             return res.toString();
+        }
+
+        @JavascriptInterface
+        public String getUadStatus() {
+            return uadStatus().toString();
+        }
+
+        /** Downloads the latest UAD-NG list in the background; result arrives via window.onUadListUpdated(json). */
+        @JavascriptInterface
+        public void updateUadList() {
+            downloadUadList();
+        }
+
+        @JavascriptInterface
+        public String getUadMatches() {
+            return uadMatches();
+        }
+
+        @JavascriptInterface
+        public void openUrl(final String url) {
+            if (url == null || !url.startsWith("https://")) return;
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(intent);
+                    } catch (Exception ignored) {}
+                }
+            });
         }
 
         @JavascriptInterface

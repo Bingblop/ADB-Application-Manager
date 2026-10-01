@@ -1666,6 +1666,153 @@
             transform: translateX(20px);
             background: var(--on-accent);
         }
+        .uad-status {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+
+        .uad-levels {
+            margin-top: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .uad-level {
+            font-size: 11px;
+            color: var(--text-muted);
+            line-height: 1.45;
+        }
+
+        .uad-credit {
+            font-size: 10px;
+            color: var(--text-muted);
+            opacity: 0.8;
+            border-top: 1px solid var(--border-glass);
+            padding-top: 8px;
+        }
+
+        .uad-badge {
+            display: inline-block;
+            font-size: 8.5px;
+            font-weight: 800;
+            letter-spacing: 0.4px;
+            padding: 1px 6px;
+            border-radius: 999px;
+            margin-right: 4px;
+            text-transform: uppercase;
+            border: 1px solid currentColor;
+        }
+
+        .uad-r-recommended { color: var(--status-running); }
+        .uad-r-advanced { color: var(--accent); }
+        .uad-r-expert { color: var(--status-user); }
+        .uad-r-unsafe { color: var(--status-bloat); background: rgba(255, 82, 82, 0.1); }
+        .uad-tag { color: var(--text-muted); }
+        .uad-s-uninstalled { color: var(--status-bloat); }
+        .uad-s-disabled { color: var(--status-frozen); }
+
+        .uad-actions {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            padding: 10px 12px;
+            margin: 6px 0 12px;
+            position: sticky;
+            top: 118px;
+            z-index: 20;
+        }
+
+        .uad-count {
+            font-size: 11px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .uad-action-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .uad-action-grid .batch-grid-btn {
+            font-size: 10px;
+            padding: 8px 2px;
+        }
+
+        .uad-row {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            padding: 10px;
+            margin-bottom: 8px;
+        }
+
+        .uad-row.selected {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 1px var(--accent-glow);
+        }
+
+        .uad-row .app-checkbox {
+            margin-top: 2px;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+
+        .uad-main {
+            flex: 1;
+            min-width: 0;
+            cursor: pointer;
+        }
+
+        .uad-name {
+            font-size: 13px;
+            font-weight: 800;
+            word-break: break-word;
+        }
+
+        .uad-pkg {
+            font-size: 10px;
+            color: var(--text-muted);
+            word-break: break-all;
+            margin: 2px 0 5px;
+        }
+
+        .uad-desc {
+            font-size: 11px;
+            color: var(--text-muted);
+            line-height: 1.45;
+            margin-top: 6px;
+            white-space: pre-wrap;
+            word-break: break-word;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .uad-row.expanded .uad-desc {
+            display: block;
+            -webkit-line-clamp: unset;
+        }
+
+        .uad-warn {
+            font-size: 10.5px;
+            color: var(--status-user);
+            margin-top: 6px;
+            word-break: break-word;
+        }
+
+        .uad-confirm-warn {
+            color: var(--status-bloat);
+            font-weight: 800;
+        }
     </style>
 </head>
 <body>
@@ -1688,6 +1835,7 @@
     <!-- Top Navigation Tabs -->
     <nav class="tab-bar">
         <button class="tab-btn active" onclick="switchView('apps')">📱 Applications</button>
+        <button class="tab-btn" onclick="switchView('debloater')">🧹 Debloater</button>
         <button class="tab-btn" onclick="switchView('saved-lists')">📋 Saved Lists</button>
         <button class="tab-btn" onclick="switchView('colors')">🎨 Color & Themes</button>
         <button class="tab-btn" onclick="switchView('terminal')">💻 ADB Console</button>
@@ -1764,6 +1912,70 @@
         </section>
 
         <!-- VIEW 2: SAVED LISTS -->
+        <!-- VIEW: DEBLOATER (UAD-NG community list) -->
+        <section id="view-debloater" class="view-content">
+            <div class="color-card">
+                <div class="color-card-title">🧹 Debloater</div>
+                <div class="color-card-subtitle">Powered by the <b>Universal Android Debloater Next Generation</b> (UAD-NG) community package list</div>
+                <div class="uad-status" id="uadStatus">Checking list...</div>
+                <div class="mode-btn-row">
+                    <button class="mode-action-btn primary" id="uadUpdateBtn" onclick="updateUadListUI()">🔄 Update List</button>
+                    <button class="mode-action-btn" onclick="toggleUadLevels()">ℹ️ Removal Levels</button>
+                    <button class="mode-action-btn" onclick="openUadWiki()">📖 UAD-NG Wiki</button>
+                </div>
+                <div class="uad-levels" id="uadLevels" style="display:none;">
+                    <div class="uad-level"><span class="uad-badge uad-r-recommended">RECOMMENDED</span> Safe to remove for most people, including apps you can reinstall from an app store. Still worth a quick review, since everyone uses their phone differently.</div>
+                    <div class="uad-level"><span class="uad-badge uad-r-advanced">ADVANCED</span> Breaks minor or obscure features, overlays, or default apps (keyboard, gallery, launcher) that a better alternative can replace.</div>
+                    <div class="uad-level"><span class="uad-badge uad-r-expert">EXPERT</span> Breaks widespread or important features, but not basic operation. Shouldn't boot-loop the phone unless the description says so, with no guarantee.</div>
+                    <div class="uad-level"><span class="uad-badge uad-r-unsafe">UNSAFE</span> Can break vital parts of Android, or may be illegal to remove where you live (e.g. emergency alerts). High risk of a boot-loop.</div>
+                    <div class="uad-credit">Levels and package data come from the UAD-NG project (GPL-3.0). The list is downloaded from their GitHub and cached on this phone.</div>
+                </div>
+            </div>
+
+            <div class="list-toolbar">
+                <input type="text" class="list-search" id="uadSearch" placeholder="Search package, name or description..." oninput="renderUadList()" autocomplete="off" autocapitalize="off" spellcheck="false">
+            </div>
+            <div class="chip-row" id="uadRemovalRow">
+                <span class="filter-chip active" data-removal="Recommended" onclick="toggleUadRemoval('Recommended')">Recommended</span>
+                <span class="filter-chip" data-removal="Advanced" onclick="toggleUadRemoval('Advanced')">Advanced</span>
+                <span class="filter-chip" data-removal="Expert" onclick="toggleUadRemoval('Expert')">Expert</span>
+                <span class="filter-chip" data-removal="Unsafe" onclick="toggleUadRemoval('Unsafe')">Unsafe</span>
+            </div>
+            <div class="chip-row" id="uadListRow">
+                <span class="filter-chip active" data-list="all" onclick="setUadList('all')">All vendors</span>
+                <span class="filter-chip" data-list="Oem" onclick="setUadList('Oem')">OEM</span>
+                <span class="filter-chip" data-list="Google" onclick="setUadList('Google')">Google</span>
+                <span class="filter-chip" data-list="Aosp" onclick="setUadList('Aosp')">AOSP</span>
+                <span class="filter-chip" data-list="Carrier" onclick="setUadList('Carrier')">Carrier</span>
+                <span class="filter-chip" data-list="Misc" onclick="setUadList('Misc')">Misc</span>
+            </div>
+            <div class="chip-row" id="uadStateRow">
+                <span class="filter-chip active" data-state="present" onclick="setUadState('present')">On device</span>
+                <span class="filter-chip" data-state="enabled" onclick="setUadState('enabled')">Enabled</span>
+                <span class="filter-chip" data-state="disabled" onclick="setUadState('disabled')">Disabled</span>
+                <span class="filter-chip" data-state="uninstalled" onclick="setUadState('uninstalled')">Uninstalled</span>
+                <span class="filter-chip" data-state="all" onclick="setUadState('all')">All</span>
+            </div>
+
+            <div class="uad-actions">
+                <div class="uad-count" id="uadCount">0 packages</div>
+                <div class="mode-btn-row">
+                    <button class="mode-action-btn" onclick="selectAllUadVisible()">☑ Select shown</button>
+                    <button class="mode-action-btn" onclick="clearUadSelection()">✕ Clear</button>
+                </div>
+                <div class="uad-action-grid">
+                    <button class="batch-grid-btn danger" onclick="uadAction('uninstall')">🗑️ Uninstall</button>
+                    <button class="batch-grid-btn" onclick="uadAction('freeze')">❄️ Disable</button>
+                    <button class="batch-grid-btn accent" onclick="uadAction('restore')">♻️ Restore</button>
+                    <button class="batch-grid-btn" onclick="saveUadSelectionToList()">💾 Save to List</button>
+                </div>
+            </div>
+
+            <div id="uadContainer">
+                <div class="list-empty">Open this tab to load the debloat list.</div>
+            </div>
+        </section>
+
         <section id="view-saved-lists" class="view-content">
             <div style="margin-bottom:14px;">
                 <h3 style="font-size:15px; font-weight:800; margin-bottom:4px;">Saved App Lists</h3>
@@ -2730,7 +2942,7 @@ Type any command below (e.g. pm list packages -d)
             return Object.assign(resolvePresetScheme(themeState.preset, mode), definedColors(themeState.overrides[mode]));
         }
 
-        const tabKeys = ['apps', 'saved-lists', 'colors', 'terminal'];
+        const tabKeys = ['apps', 'debloater', 'saved-lists', 'colors', 'terminal'];
 
         function switchView(viewName) {
             const targetIdx = tabKeys.indexOf(viewName);
@@ -2753,6 +2965,7 @@ Type any command below (e.g. pm list packages -d)
             if (activeView) {
                 activeView.classList.add('active');
             }
+            if (viewName === 'debloater') onDebloaterShown();
             haptic();
         }
 
@@ -2994,6 +3207,7 @@ Type any command below (e.g. pm list packages -d)
             const next = pendingBatchAction;
             document.getElementById('batchConfirmModal').classList.remove('show');
             pendingBatchAction = null;
+            if (next.custom) { next.custom(); return; }
             runBatchAction(next.action, next.pkgs);
         }
 
@@ -3249,6 +3463,269 @@ Type any command below (e.g. pm list packages -d)
             } catch (e) {
                 console.error('Failed to parse modes:', e);
             }
+        }
+
+        // ---------- Debloater (UAD-NG list) ----------
+        const UAD_WIKI_URL = 'https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation/wiki';
+        const UAD_LEVEL_ORDER = { Recommended: 0, Advanced: 1, Expert: 2, Unsafe: 3 };
+        let uadPackages = [];
+        let uadLoaded = false;
+        const uadSelected = new Set();
+        const uadExpanded = new Set();
+        const uadFilters = { removal: new Set(['Recommended']), list: 'all', state: 'present' };
+
+        function uadBridge() {
+            return window.AndroidBridge && window.AndroidBridge.getUadMatches ? window.AndroidBridge : null;
+        }
+
+        function formatAge(ms) {
+            if (!ms) return 'never';
+            const mins = Math.round((Date.now() - ms) / 60000);
+            if (mins < 1) return 'just now';
+            if (mins < 60) return mins + ' min ago';
+            const hrs = Math.round(mins / 60);
+            if (hrs < 48) return hrs + ' h ago';
+            return Math.round(hrs / 24) + ' days ago';
+        }
+
+        function renderUadStatus(st) {
+            const el = document.getElementById('uadStatus');
+            const btn = document.getElementById('uadUpdateBtn');
+            if (!el) return;
+            if (st.downloading) {
+                el.innerText = 'Downloading the latest UAD-NG list (about 1.6 MB)...';
+            } else if (!st.cached) {
+                el.innerText = 'The UAD-NG list has not been downloaded yet.';
+            } else {
+                el.innerText = `${(st.count || 0).toLocaleString()} known packages • updated ${formatAge(st.updatedAt)} • ${uadPackages.length} found on this phone`;
+            }
+            if (btn) btn.disabled = !!st.downloading;
+        }
+
+        function onDebloaterShown() {
+            const bridge = uadBridge();
+            if (!bridge) return;
+            const st = JSON.parse(bridge.getUadStatus() || '{}');
+            if (!uadLoaded && st.cached) loadUadMatches();
+            renderUadStatus(st);
+            // Like UAD-NG itself: refresh the cached list when it is missing or older than a week
+            if ((!st.cached || st.stale) && !st.downloading) {
+                bridge.updateUadList();
+                renderUadStatus(Object.assign(st, { downloading: true }));
+            }
+        }
+
+        function loadUadMatches() {
+            const bridge = uadBridge();
+            if (!bridge) return;
+            try {
+                const r = JSON.parse(bridge.getUadMatches() || '{}');
+                uadPackages = r.packages || [];
+                uadLoaded = true;
+                const present = new Set(uadPackages.map(p => p.pkg));
+                Array.from(uadSelected).forEach(p => { if (!present.has(p)) uadSelected.delete(p); });
+            } catch (e) {
+                uadPackages = [];
+            }
+            renderUadList();
+            renderUadStatus(JSON.parse(bridge.getUadStatus() || '{}'));
+        }
+
+        // Called by MainActivity when a download finishes
+        function onUadListUpdated(json) {
+            let st = {};
+            try { st = JSON.parse(json); } catch (e) {}
+            if (st.error) {
+                showToast('UAD-NG list update failed: ' + st.error + (st.cached ? ' (using cached list)' : ''), '⚠️');
+            } else {
+                showToast('UAD-NG list updated: ' + (st.count || 0).toLocaleString() + ' packages', '🧹');
+            }
+            if (st.cached) loadUadMatches(); else renderUadList();
+            renderUadStatus(st);
+        }
+
+        function updateUadListUI() {
+            haptic();
+            const bridge = uadBridge();
+            if (!bridge) return;
+            bridge.updateUadList();
+            renderUadStatus(Object.assign(JSON.parse(bridge.getUadStatus() || '{}'), { downloading: true }));
+        }
+
+        function toggleUadLevels() {
+            haptic();
+            const el = document.getElementById('uadLevels');
+            el.style.display = el.style.display === 'none' ? 'flex' : 'none';
+        }
+
+        function openUadWiki() {
+            if (window.AndroidBridge && window.AndroidBridge.openUrl) window.AndroidBridge.openUrl(UAD_WIKI_URL);
+        }
+
+        function toggleUadRemoval(level) {
+            if (uadFilters.removal.has(level)) uadFilters.removal.delete(level); else uadFilters.removal.add(level);
+            document.querySelectorAll('#uadRemovalRow .filter-chip').forEach(c => c.classList.toggle('active', uadFilters.removal.has(c.getAttribute('data-removal'))));
+            haptic();
+            renderUadList();
+        }
+
+        function setUadList(list) {
+            uadFilters.list = list;
+            document.querySelectorAll('#uadListRow .filter-chip').forEach(c => c.classList.toggle('active', c.getAttribute('data-list') === list));
+            haptic();
+            renderUadList();
+        }
+
+        function setUadState(state) {
+            uadFilters.state = state;
+            document.querySelectorAll('#uadStateRow .filter-chip').forEach(c => c.classList.toggle('active', c.getAttribute('data-state') === state));
+            haptic();
+            renderUadList();
+        }
+
+        function uadVisiblePackages() {
+            const q = (document.getElementById('uadSearch').value || '').toLowerCase().trim();
+            return uadPackages.filter(p => {
+                if (uadFilters.removal.size && !uadFilters.removal.has(p.removal)) return false;
+                if (uadFilters.list !== 'all' && p.list !== uadFilters.list) return false;
+                if (uadFilters.state === 'present' && p.state === 'uninstalled') return false;
+                if (['enabled', 'disabled', 'uninstalled'].includes(uadFilters.state) && p.state !== uadFilters.state) return false;
+                if (q && !(p.pkg.toLowerCase().includes(q) || p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q))) return false;
+                return true;
+            }).sort((a, b) => (UAD_LEVEL_ORDER[a.removal] - UAD_LEVEL_ORDER[b.removal]) || a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+        }
+
+        function uadRemovalBadge(r) {
+            return `<span class="uad-badge uad-r-${String(r).toLowerCase()}">${escapeHtml(r)}</span>`;
+        }
+
+        function renderUadList() {
+            const container = document.getElementById('uadContainer');
+            if (!container) return;
+            const bridge = uadBridge();
+            if (!bridge) {
+                container.innerHTML = '<div class="list-empty">The debloater is only available in the app.</div>';
+                return;
+            }
+            if (!uadLoaded) {
+                container.innerHTML = '<div class="list-empty">Waiting for the UAD-NG list...</div>';
+                return;
+            }
+            const rows = uadVisiblePackages();
+            document.getElementById('uadCount').innerText = `${rows.length} shown • ${uadSelected.size} selected`;
+            if (!rows.length) {
+                container.innerHTML = uadPackages.length
+                    ? '<div class="list-empty">No packages match these filters.</div>'
+                    : '<div class="list-empty">None of the packages on this phone are in the UAD-NG list.</div>';
+                return;
+            }
+            const installedPkgs = new Set(uadPackages.filter(p => p.state !== 'uninstalled').map(p => p.pkg));
+            container.innerHTML = rows.map(p => {
+                const sel = uadSelected.has(p.pkg);
+                const exp = uadExpanded.has(p.pkg);
+                const neededBy = (p.neededBy || []).filter(x => installedPkgs.has(x));
+                const deps = p.dependencies || [];
+                const warn = [
+                    neededBy.length ? `⚠ Needed by: ${neededBy.join(', ')}` : '',
+                    exp && deps.length ? `🔗 Depends on: ${deps.join(', ')}` : ''
+                ].filter(Boolean).map(w => `<div class="uad-warn">${escapeHtml(w)}</div>`).join('');
+                const state = p.state === 'enabled' ? '' : `<span class="uad-badge uad-s-${p.state}">${p.state}</span>`;
+                return `
+                    <div class="uad-row ${sel ? 'selected' : ''} ${exp ? 'expanded' : ''}" data-pkg="${escapeHtml(p.pkg)}">
+                        <div class="app-checkbox" onclick="toggleUadSelect(this.parentElement.getAttribute('data-pkg'))">${sel ? '✓' : ''}</div>
+                        <div class="uad-main" onclick="toggleUadExpand(this.parentElement.getAttribute('data-pkg'))">
+                            <div class="uad-name">${escapeHtml(p.name)}</div>
+                            <div class="uad-pkg">${escapeHtml(p.pkg)}</div>
+                            <div>${uadRemovalBadge(p.removal)}<span class="uad-badge uad-tag">${escapeHtml(p.list)}</span>${state}${p.isSuspended ? '<span class="uad-badge" style="color:var(--status-suspended)">suspended</span>' : ''}</div>
+                            ${p.description ? `<div class="uad-desc">${escapeHtml(p.description.trim())}</div>` : ''}
+                            ${warn}
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+
+        function toggleUadSelect(pkg) {
+            if (uadSelected.has(pkg)) uadSelected.delete(pkg); else uadSelected.add(pkg);
+            haptic();
+            renderUadList();
+        }
+
+        function toggleUadExpand(pkg) {
+            if (uadExpanded.has(pkg)) uadExpanded.delete(pkg); else uadExpanded.add(pkg);
+            renderUadList();
+        }
+
+        function selectAllUadVisible() {
+            haptic();
+            uadVisiblePackages().forEach(p => uadSelected.add(p.pkg));
+            renderUadList();
+        }
+
+        function clearUadSelection() {
+            haptic();
+            uadSelected.clear();
+            renderUadList();
+        }
+
+        function saveUadSelectionToList() {
+            if (!uadSelected.size) { showToast('Select packages first', 'ℹ️'); return; }
+            const name = prompt('Name for this list:', 'Debloat ' + new Date().toLocaleDateString());
+            if (!name || !name.trim()) return;
+            customLists.unshift({ id: 'list_' + Date.now(), name: name.trim(), description: 'From the UAD-NG debloater', packages: Array.from(uadSelected), updatedAt: Date.now() });
+            persistSavedLists();
+            renderSavedLists();
+            showToast('Saved ' + uadSelected.size + ' packages to ' + name.trim(), '💾');
+        }
+
+        // Uninstall (for user 0), Disable or Restore the selected packages, after a review step
+        function uadAction(kind) {
+            if (!uadSelected.size) { showToast('Select packages first', 'ℹ️'); return; }
+            if (!guardPrivilege(kind === 'restore' ? 'Restore packages' : (kind === 'uninstall' ? 'Uninstall packages' : 'Disable packages'))) return;
+            const byPkg = new Map(uadPackages.map(p => [p.pkg, p]));
+            const plan = [];
+            Array.from(uadSelected).forEach(pkg => {
+                const p = byPkg.get(pkg);
+                if (!p) return;
+                let action = null;
+                if (kind === 'restore') action = p.state === 'uninstalled' ? 'reinstall' : (p.state === 'disabled' ? 'unfreeze' : null);
+                else if (kind === 'uninstall') action = p.state === 'uninstalled' ? null : 'uninstall';
+                else if (kind === 'freeze') action = p.state === 'enabled' ? 'freeze' : null;
+                if (action) plan.push({ p, action });
+            });
+            if (!plan.length) {
+                showToast(kind === 'restore' ? 'Nothing to restore: the selected packages are already enabled' : 'Nothing to do for the selected packages', 'ℹ️');
+                return;
+            }
+            const risky = plan.filter(x => kind !== 'restore' && (x.p.removal === 'Expert' || x.p.removal === 'Unsafe'));
+            const titles = { uninstall: ['Review: Uninstall Packages', 'Uninstall'], freeze: ['Review: Disable Packages', 'Disable'], restore: ['Review: Restore Packages', 'Restore'] };
+            document.getElementById('batchConfirmTitle').innerText = titles[kind][0];
+            const sub = document.getElementById('batchConfirmSubtitle');
+            sub.innerHTML = escapeHtml(plan.length + ' packages') +
+                (kind === 'uninstall' ? escapeHtml(' • removed for your user only; Restore brings them back') : '') +
+                (risky.length ? `<br><span class="uad-confirm-warn">⚠ ${risky.length} Expert/Unsafe package${risky.length === 1 ? '' : 's'}: these can break important features${risky.some(x => x.p.removal === 'Unsafe') ? ' or boot-loop the phone' : ''}.</span>` : '');
+            document.getElementById('batchConfirmExecuteBtn').innerText = titles[kind][1] + ' ' + plan.length;
+            document.getElementById('batchConfirmList').innerHTML = plan.map(x =>
+                `<div class="confirm-list-row">${uadRemovalBadge(x.p.removal)}<strong>${escapeHtml(x.p.name)}</strong><br><span style="font-size:10px; color:var(--text-muted);">${escapeHtml(x.p.pkg)}</span></div>`).join('');
+            pendingBatchAction = { custom: () => runUadPlan(kind, plan) };
+            document.getElementById('batchConfirmModal').classList.add('show');
+        }
+
+        function runUadPlan(kind, plan) {
+            haptic();
+            showToast(`Running on ${plan.length} packages...`, '⚙️');
+            setTimeout(() => {
+                const rows = [];
+                let ok = 0;
+                plan.forEach(x => {
+                    const res = performDetailedBatchAction(x.action, [x.p.pkg]);
+                    res.rows.forEach(r => { r.name = x.p.name; rows.push(r); if (r.success) ok++; });
+                });
+                showToast(`Done: ${ok} succeeded, ${rows.length - ok} failed`, ok === rows.length ? '✔' : '⚠️');
+                showCommandResults('Debloater Results', kind.toUpperCase() + ' • ' + plan.length + ' packages', rows);
+                uadSelected.clear();
+                loadUadMatches();
+                loadPackageData();
+            }, 60);
         }
 
         // ---------- ADB key ----------

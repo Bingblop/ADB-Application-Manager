@@ -1,5 +1,25 @@
 # Changelog
 
+## v3.8-Pro (versionCode 280)
+
+Installs over v3.1 – v3.7 without uninstalling (same signing key).
+
+### Debloater tab
+- New **🧹 Debloater** tab powered by the
+  [Universal Android Debloater Next Generation](https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation/wiki)
+  (UAD-NG) community list: descriptions, removal levels and dependency notes for 5,000+ packages.
+- The list (`uad_lists.json`, GPL-3.0) is **downloaded from UAD-NG's GitHub at runtime** and cached
+  on the phone, not bundled. It refreshes automatically when older than a week, or with **Update List**.
+- Shows only packages found on your phone, including ones already uninstalled for your user.
+- Filters: removal level (Recommended by default; Advanced, Expert, Unsafe), vendor list (OEM, Google,
+  AOSP, Carrier, Misc) and state (on device, enabled, disabled, uninstalled), plus search across
+  package, name and description.
+- Tap a package to read its full description and dependencies; packages that other installed
+  packages need are flagged.
+- **Uninstall** (for your user, reversible), **Disable**, **Restore** and **Save to List**. Every action
+  is reviewed first, with a prominent warning when Expert or Unsafe packages are included.
+- **Removal Levels** explains the four levels (from the UAD-NG wiki); **UAD-NG Wiki** opens the wiki.
+
 ## v3.7-Pro (versionCode 270)
 
 Installs over v3.1 – v3.6 without uninstalling (same signing key).
