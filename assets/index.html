@@ -6386,6 +6386,7 @@ Type any command below (e.g. pm list packages -d)
 
         function startBackup() {
             if (backupRunning || !backupTargetPkg) return;
+            if (!guardPrivilege('Backup app')) return;
             haptic();
             const include = !!(document.getElementById('backupIncludeData') && document.getElementById('backupIncludeData').checked);
             backupRunning = true;
@@ -6545,8 +6546,14 @@ Type any command below (e.g. pm list packages -d)
             if (about) about.innerText = 'ADB Application Manager Pro ' + (cur.versionName || '') + ' (' + cur.versionCode + ')';
             const seen = loadStoreJson('seen_version', null);
             let since = null;
-            if (seen && seen.code) since = seen.code < cur.versionCode ? seen.code : null;
-            else if (!seen && loadStoreJson('ui_state', null)) since = 0;   // an existing install from before this feature
+            if (seen && seen.code) {
+                since = seen.code < cur.versionCode ? seen.code : null;
+            } else if (!seen) {
+                // No record yet: tell an upgrade (this feature is new to the install) from a true fresh install
+                // using the install timestamps themselves, not a UI setting that may never have been touched
+                const isUpgrade = cur.lastUpdateTime && cur.firstInstallTime && (cur.lastUpdateTime - cur.firstInstallTime) > 60000;
+                if (isUpgrade) since = 0;
+            }
             saveStoreJson('seen_version', { code: cur.versionCode });
             if (since !== null) openWhatsNew({ since, max: since === 0 ? 2 : 4 });
         }

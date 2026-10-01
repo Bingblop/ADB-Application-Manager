@@ -392,7 +392,10 @@ public class MainActivity extends Activity {
         String[] order = {"adb_tcp", "adb_wireless", "shizuku", "root"};
         int start = -1;
         for (int i = 0; i < order.length; i++) if (order[i].equals(activeWorkingMode)) start = i;
-        for (int step = 1; step <= order.length; step++) {
+        // Starting from an explicit mode, only look at the OTHER backends (exclude step == order.length,
+        // which would wrap back to the current one and "switch" to the mode already selected).
+        int steps = start == -1 ? order.length : order.length - 1;
+        for (int step = 1; step <= steps; step++) {
             String candidate = order[(start + step) % order.length];
             if (modeReadyQuiet(candidate)) {
                 setConfiguredMode(candidate);
@@ -1319,6 +1322,9 @@ public class MainActivity extends Activity {
 
     private static final int REQ_PICK_BACKUP = 4202;
     private final java.util.concurrent.atomic.AtomicBoolean backupBusy = new java.util.concurrent.atomic.AtomicBoolean(false);
+    // A real app + its data is rarely anywhere near this; bounds how much a crafted or damaged backup can
+    // make the restore step write before it gives up, instead of grinding on a zip bomb until storage fills.
+    private static final long MAX_RESTORE_EXTRACT_BYTES = 8L * 1024 * 1024 * 1024;
 
     private void backupEvent(String op, String stage, int pct, String message) {
         try {
@@ -1454,6 +1460,9 @@ public class MainActivity extends Activity {
                     res.put("op", "backup");
                     res.put("pkg", pkg);
                     BackupScripts.checkedPackage(pkg);
+                    if ("standard".equals(resolveExecMode())) {
+                        throw new IllegalStateException("backing up needs ADB, Shizuku or Root (app ops can't be read otherwise). Set up a working mode first.");
+                    }
                     PackageManager pm = getPackageManager();
                     ApplicationInfo ai = pm.getApplicationInfo(pkg, PackageManager.MATCH_UNINSTALLED_PACKAGES);
                     int sigFlags = Build.VERSION.SDK_INT >= 28 ? PackageManager.GET_SIGNING_CERTIFICATES : PackageManager.GET_SIGNATURES;
@@ -1586,9 +1595,12 @@ public class MainActivity extends Activity {
                 try {
                     res.put("op", "restore");
                     JSONObject meta = readBackupMeta(ref);
-                    final String pkg = meta.getString("pkg");
-                    res.put("pkg", pkg);
-                    res.put("label", meta.optString("label", pkg));
+                    // backup.json can come from "Choose backup file..." - an arbitrary file the user picked -
+                    // so nothing in it is trusted yet. It only supplies a label for the UI until the APK inside
+                    // proves what it actually is, below.
+                    String claimedPkg = meta.optString("pkg", "");
+                    res.put("pkg", claimedPkg);
+                    res.put("label", meta.optString("label", claimedPkg));
                     if ("standard".equals(resolveExecMode())) {
                         throw new IllegalStateException("restoring needs ADB, Shizuku or Root. Set up a working mode first.");
                     }
@@ -1597,32 +1609,11 @@ public class MainActivity extends Activity {
                         res.put("data", "this backup has no data");
                     }
 
-                    // Same package already installed? Compare keys and versions first.
-                    PackageManager pm = getPackageManager();
-                    boolean installed = false;
-                    boolean sameVersion = false;
-                    int sigFlags = Build.VERSION.SDK_INT >= 28 ? PackageManager.GET_SIGNING_CERTIFICATES : PackageManager.GET_SIGNATURES;
-                    try {
-                        PackageInfo cur = pm.getPackageInfo(pkg, sigFlags);
-                        installed = (cur.applicationInfo.flags & ApplicationInfo.FLAG_INSTALLED) != 0;
-                        java.util.Set<String> backupSigners = new HashSet<String>();
-                        JSONArray sj = meta.optJSONArray("signers");
-                        for (int i = 0; sj != null && i < sj.length(); i++) backupSigners.add(sj.optString(i));
-                        java.util.Set<String> curSigners = signerDigests(cur, true);
-                        if (installed && !backupSigners.isEmpty() && !curSigners.isEmpty()) {
-                            java.util.Set<String> common = new HashSet<String>(curSigners);
-                            common.retainAll(backupSigners);
-                            if (common.isEmpty()) {
-                                throw new IllegalStateException("the installed app is signed with a different key than the backup. Uninstall it first, then restore.");
-                            }
-                        }
-                        sameVersion = installed && versionCodeOf(cur) == meta.optLong("versionCode", -1);
-                    } catch (PackageManager.NameNotFoundException ignored) {}
-
                     backupEvent("restore", "read", 10, "Reading the backup...");
                     File apkDir = new File(work, "apk");
                     apkDir.mkdirs();
                     File dataTar = wantData ? new File(work, "data.tar") : null;
+                    long extracted = 0;
                     java.util.zip.ZipInputStream zin = new java.util.zip.ZipInputStream(new java.io.BufferedInputStream(openRef(ref)));
                     try {
                         java.util.zip.ZipEntry e;
@@ -1636,7 +1627,16 @@ public class MainActivity extends Activity {
                             try {
                                 byte[] buf = new byte[65536];
                                 int r;
-                                while ((r = zin.read(buf)) > 0) out.write(buf, 0, r);
+                                while ((r = zin.read(buf)) > 0) {
+                                    extracted += r;
+                                    // A real app plus its data is rarely anywhere near this; past it, this is either
+                                    // a damaged file or one crafted to fill the phone's storage, so stop reading it.
+                                    if (extracted > MAX_RESTORE_EXTRACT_BYTES) {
+                                        throw new IllegalStateException("this backup is far larger than any real app (stopped past "
+                                                + (MAX_RESTORE_EXTRACT_BYTES / (1024 * 1024)) + " MB) - it looks damaged or unsafe to extract");
+                                    }
+                                    out.write(buf, 0, r);
+                                }
                             } finally {
                                 out.close();
                             }
@@ -1649,8 +1649,44 @@ public class MainActivity extends Activity {
                     java.util.Arrays.sort(apks);
                     // The base APK must come first
                     List<File> ordered = new ArrayList<File>();
-                    for (File f : apks) if (f.getName().equals("base.apk")) ordered.add(f);
+                    File baseApk = null;
+                    for (File f : apks) if (f.getName().equals("base.apk")) { ordered.add(f); baseApk = f; }
                     for (File f : apks) if (!f.getName().equals("base.apk")) ordered.add(f);
+                    if (baseApk == null) throw new IllegalStateException("the backup has no base.apk");
+
+                    // The truth from here on is the APK itself, never backup.json: a picked file can claim to be
+                    // anything, but its APK cannot lie about the package name it installs as or who signed it.
+                    PackageManager pm = getPackageManager();
+                    int sigFlags = Build.VERSION.SDK_INT >= 28 ? PackageManager.GET_SIGNING_CERTIFICATES : PackageManager.GET_SIGNATURES;
+                    PackageInfo archiveInfo = pm.getPackageArchiveInfo(baseApk.getAbsolutePath(), sigFlags);
+                    if (archiveInfo == null || archiveInfo.packageName == null) {
+                        throw new IllegalStateException("base.apk in this backup could not be read as an APK");
+                    }
+                    final String pkg = archiveInfo.packageName;
+                    res.put("pkg", pkg);
+                    if (!claimedPkg.isEmpty() && !claimedPkg.equals(pkg)) {
+                        throw new IllegalStateException("backup.json says " + claimedPkg + " but base.apk installs as " + pkg + " - this backup looks damaged or tampered with");
+                    }
+                    long archiveVersionCode = versionCodeOf(archiveInfo);
+                    java.util.Set<String> archiveSigners = signerDigests(archiveInfo, false);
+
+                    // Same package already installed? Compare keys and versions - both read from the APK above,
+                    // not from backup.json - before deciding whether install can be skipped.
+                    boolean installed = false;
+                    boolean sameVersion = false;
+                    try {
+                        PackageInfo cur = pm.getPackageInfo(pkg, sigFlags);
+                        installed = (cur.applicationInfo.flags & ApplicationInfo.FLAG_INSTALLED) != 0;
+                        java.util.Set<String> curSigners = signerDigests(cur, true);
+                        if (installed && !archiveSigners.isEmpty() && !curSigners.isEmpty()) {
+                            java.util.Set<String> common = new HashSet<String>(curSigners);
+                            common.retainAll(archiveSigners);
+                            if (common.isEmpty()) {
+                                throw new IllegalStateException("the installed app is signed with a different key than this backup's APK. Uninstall it first, then restore.");
+                            }
+                        }
+                        sameVersion = installed && versionCodeOf(cur) == archiveVersionCode;
+                    } catch (PackageManager.NameNotFoundException ignored) {}
 
                     // A system app removed for this user is still on the system image: bring it back instead of installing
                     String installNote = null;
@@ -2586,6 +2622,8 @@ public class MainActivity extends Activity {
                 JSONObject o = new JSONObject();
                 o.put("versionName", pi.versionName);
                 o.put("versionCode", versionCodeOf(pi));
+                o.put("firstInstallTime", pi.firstInstallTime);
+                o.put("lastUpdateTime", pi.lastUpdateTime);
                 return o.toString();
             } catch (Exception e) {
                 return "{}";
