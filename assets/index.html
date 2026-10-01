@@ -1833,6 +1833,93 @@
             border-color: var(--accent);
             color: var(--accent);
         }
+        .hist-entry {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            padding: 10px 12px;
+            margin-bottom: 8px;
+        }
+
+        .hist-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .hist-title {
+            font-size: 12.5px;
+            font-weight: 800;
+        }
+
+        .hist-meta {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .hist-pkgs {
+            font-size: 10.5px;
+            color: var(--text-muted);
+            margin-top: 6px;
+            line-height: 1.5;
+            word-break: break-all;
+        }
+
+        .hist-pkgs .ok { color: var(--status-running); }
+        .hist-pkgs .bad { color: var(--status-bloat); }
+
+        .upd-row {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            padding: 10px 12px;
+            margin-bottom: 8px;
+        }
+
+        .upd-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .upd-ver {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 3px;
+            word-break: break-word;
+        }
+
+        .upd-ver b {
+            color: var(--status-running);
+        }
+
+        .upd-bar {
+            height: 4px;
+            border-radius: 999px;
+            background: rgba(var(--ov), 0.1);
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .upd-bar > div {
+            height: 100%;
+            background: var(--accent);
+            width: 0;
+            transition: width 0.3s ease;
+        }
+
+        .upd-msg {
+            font-size: 10.5px;
+            margin-top: 6px;
+            color: var(--text-muted);
+            word-break: break-word;
+        }
+
+        .upd-msg.error { color: var(--status-bloat); }
+        .upd-msg.done { color: var(--status-running); }
     </style>
 </head>
 <body>
@@ -1856,6 +1943,7 @@
     <nav class="tab-bar">
         <button class="tab-btn active" onclick="switchView('apps')">📱 Applications</button>
         <button class="tab-btn" onclick="switchView('debloater')">🧹 Debloater</button>
+        <button class="tab-btn" onclick="switchView('updates')" id="updatesTabBtn">⬆️ Updates</button>
         <button class="tab-btn" onclick="switchView('saved-lists')">📋 Saved Lists</button>
         <button class="tab-btn" onclick="switchView('colors')">🎨 Color & Themes</button>
         <button class="tab-btn" onclick="switchView('terminal')">💻 ADB Console</button>
@@ -1912,13 +2000,13 @@
 
             <!-- Quick Filter Pills -->
             <div class="filter-scroll">
-                <div class="filter-pill active" onclick="setFilter('all', this)">All Apps (<span id="countAll">0</span>)</div>
-                <div class="filter-pill" onclick="setFilter('running', this)">⚡ Running (<span id="countRunning">0</span>)</div>
-                <div class="filter-pill" onclick="setFilter('user', this)">👤 3rd Party (<span id="countUser">0</span>)</div>
-                <div class="filter-pill" onclick="setFilter('system', this)">⚙️ System (<span id="countSystem">0</span>)</div>
-                <div class="filter-pill" onclick="setFilter('frozen', this)">❄️ Frozen (<span id="countFrozen">0</span>)</div>
-                <div class="filter-pill" onclick="setFilter('suspended', this)">⏸️ Suspended (<span id="countSuspended">0</span>)</div>
-                <div class="filter-pill" onclick="setFilter('uninstalled', this)">🗑️ Uninstalled (<span id="countUninstalled">0</span>)</div>
+                <div class="filter-pill active" data-filter="all" onclick="setFilter('all', this)">All Apps (<span id="countAll">0</span>)</div>
+                <div class="filter-pill" data-filter="running" onclick="setFilter('running', this)">⚡ Running (<span id="countRunning">0</span>)</div>
+                <div class="filter-pill" data-filter="user" onclick="setFilter('user', this)">👤 3rd Party (<span id="countUser">0</span>)</div>
+                <div class="filter-pill" data-filter="system" onclick="setFilter('system', this)">⚙️ System (<span id="countSystem">0</span>)</div>
+                <div class="filter-pill" data-filter="frozen" onclick="setFilter('frozen', this)">❄️ Frozen (<span id="countFrozen">0</span>)</div>
+                <div class="filter-pill" data-filter="suspended" onclick="setFilter('suspended', this)">⏸️ Suspended (<span id="countSuspended">0</span>)</div>
+                <div class="filter-pill" data-filter="uninstalled" onclick="setFilter('uninstalled', this)">🗑️ Uninstalled (<span id="countUninstalled">0</span>)</div>
             </div>
 
             <!-- Dynamic Apps List -->
@@ -1942,6 +2030,7 @@
                     <button class="mode-action-btn primary" id="uadUpdateBtn" onclick="updateUadListUI()">🔄 Update List</button>
                     <button class="mode-action-btn" onclick="toggleUadLevels()">ℹ️ Removal Levels</button>
                     <button class="mode-action-btn" onclick="openUadWiki()">📖 UAD-NG Wiki</button>
+                    <button class="mode-action-btn" onclick="openHistoryModal()">📜 History</button>
                 </div>
                 <div class="uad-levels" id="uadLevels" style="display:none;">
                     <div class="uad-level"><span class="uad-badge uad-r-recommended">RECOMMENDED</span> Safe to remove for most people, including apps you can reinstall from an app store. Still worth a quick review, since everyone uses their phone differently.</div>
@@ -1994,6 +2083,23 @@
 
             <div id="uadContainer">
                 <div class="list-empty">Open this tab to load the debloat list.</div>
+            </div>
+        </section>
+
+        <!-- VIEW: UPDATES -->
+        <section id="view-updates" class="view-content">
+            <div class="color-card">
+                <div class="color-card-title">⬆️ Updates Available</div>
+                <div class="color-card-subtitle">Galaxy Store updates for Samsung system apps and apps installed from the Galaxy Store, plus updates for this app</div>
+                <div class="uad-status" id="updStatus">Not checked yet.</div>
+                <div class="mode-btn-row">
+                    <button class="mode-action-btn primary" id="updCheckBtn" onclick="checkUpdatesUI()">🔍 Check for Updates</button>
+                    <button class="mode-action-btn" id="updAllBtn" onclick="updateAllUI()" style="display:none;">⬆️ Update All</button>
+                </div>
+                <div class="uad-credit" style="margin-top:10px;">Updates are official APKs from the Galaxy Store, checked to be the same app and a newer version before installing through ADB, Shizuku or Root. Play Store apps keep updating through the Play Store, which offers no way for other apps to check them.</div>
+            </div>
+            <div id="updContainer">
+                <div class="list-empty">Tap Check for Updates.</div>
             </div>
         </section>
 
@@ -2277,6 +2383,27 @@ Type any command below (e.g. pm list packages -d)
             <button class="batch-grid-btn" onclick="batchAction('clear_data')">🧹 Clear Data</button>
             <button class="batch-grid-btn danger" onclick="batchAction('uninstall')">🗑️ Uninstall</button>
             <button class="batch-grid-btn accent" onclick="batchAction('reinstall')">📥 Reinstall</button>
+        </div>
+    </div>
+
+    <!-- Debloat / batch action history -->
+    <div class="modal-overlay" id="historyModal" onclick="if(event.target===this) closeHistoryModal()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-avatar" style="background:linear-gradient(135deg, var(--accent), var(--secondary));">📜</div>
+                    <div class="sheet-title">
+                        <h3>Debloat History</h3>
+                        <p id="historySubtitle">Every uninstall, disable and restore, with one-tap undo</p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="closeHistoryModal()">✕</div>
+            </div>
+            <div id="historyList" style="max-height:60vh; overflow-y:auto;"></div>
+            <div class="mode-btn-row" style="margin-top:12px;">
+                <button class="mode-action-btn" onclick="copyHistory()">📋 Copy Log</button>
+                <button class="mode-action-btn" onclick="clearHistory()">🗑️ Clear History</button>
+            </div>
         </div>
     </div>
 
@@ -2963,7 +3090,7 @@ Type any command below (e.g. pm list packages -d)
             return Object.assign(resolvePresetScheme(themeState.preset, mode), definedColors(themeState.overrides[mode]));
         }
 
-        const tabKeys = ['apps', 'debloater', 'saved-lists', 'colors', 'terminal'];
+        const tabKeys = ['apps', 'debloater', 'updates', 'saved-lists', 'colors', 'terminal'];
 
         function switchView(viewName) {
             const targetIdx = tabKeys.indexOf(viewName);
@@ -2987,6 +3114,7 @@ Type any command below (e.g. pm list packages -d)
                 activeView.classList.add('active');
             }
             if (viewName === 'debloater') onDebloaterShown();
+            if (viewName === 'updates') onUpdatesShown();
             haptic();
         }
 
@@ -3574,6 +3702,7 @@ Type any command below (e.g. pm list packages -d)
             uadFilters.brand = brand;
             haptic();
             renderUadList();
+            saveUiState();
         }
 
         // Brand chips: this phone's brand first, then the others by package count (counts follow the other filters)
@@ -3686,6 +3815,7 @@ Type any command below (e.g. pm list packages -d)
             document.querySelectorAll('#uadRemovalRow .filter-chip').forEach(c => c.classList.toggle('active', uadFilters.removal.has(c.getAttribute('data-removal'))));
             haptic();
             renderUadList();
+            saveUiState();
         }
 
         function setUadList(list) {
@@ -3693,6 +3823,7 @@ Type any command below (e.g. pm list packages -d)
             document.querySelectorAll('#uadListRow .filter-chip').forEach(c => c.classList.toggle('active', c.getAttribute('data-list') === list));
             haptic();
             renderUadList();
+            saveUiState();
         }
 
         function setUadState(state) {
@@ -3700,6 +3831,7 @@ Type any command below (e.g. pm list packages -d)
             document.querySelectorAll('#uadStateRow .filter-chip').forEach(c => c.classList.toggle('active', c.getAttribute('data-state') === state));
             haptic();
             renderUadList();
+            saveUiState();
         }
 
         function uadVisiblePackages(ignoreBrand) {
@@ -3843,10 +3975,331 @@ Type any command below (e.g. pm list packages -d)
                 });
                 showToast(`Done: ${ok} succeeded, ${rows.length - ok} failed`, ok === rows.length ? '✔' : '⚠️');
                 showCommandResults('Debloater Results', kind.toUpperCase() + ' • ' + plan.length + ' packages', rows);
+                const verb = { uninstall: 'Uninstalled', freeze: 'Disabled', restore: 'Restored' }[kind] || kind;
+                recordHistory('debloater', `${verb} ${plan.length} package${plan.length === 1 ? '' : 's'}`,
+                    plan.map((x, i) => ({ pkg: x.p.pkg, name: x.p.name, action: x.action, success: rows[i] ? rows[i].success : false, removal: x.p.removal })));
                 uadSelected.clear();
                 loadUadMatches();
                 loadPackageData();
             }, 60);
+        }
+
+        // ---------- Remembered filters (kept between launches) ----------
+        let uiStateLoaded = false;
+
+        function loadStoreJson(key, fallback) {
+            try {
+                if (!window.AndroidBridge || !window.AndroidBridge.loadStore) return fallback;
+                const raw = window.AndroidBridge.loadStore(key);
+                return raw ? JSON.parse(raw) : fallback;
+            } catch (e) {
+                return fallback;
+            }
+        }
+
+        function saveStoreJson(key, value) {
+            try {
+                if (window.AndroidBridge && window.AndroidBridge.saveStore) window.AndroidBridge.saveStore(key, JSON.stringify(value));
+            } catch (e) {}
+        }
+
+        function saveUiState() {
+            if (!uiStateLoaded) return; // don't overwrite saved filters with defaults during start-up
+            saveStoreJson('ui_state', {
+                appsFilter: currentFilter,
+                uad: { removal: Array.from(uadFilters.removal), list: uadFilters.list, state: uadFilters.state, brand: uadFilters.brand }
+            });
+        }
+
+        function restoreUiState() {
+            const st = loadStoreJson('ui_state', null);
+            if (st) {
+                if (st.appsFilter) {
+                    currentFilter = st.appsFilter;
+                    document.querySelectorAll('.filter-pill').forEach(p => p.classList.toggle('active', p.getAttribute('data-filter') === currentFilter));
+                }
+                if (st.uad) {
+                    if (Array.isArray(st.uad.removal)) uadFilters.removal = new Set(st.uad.removal.filter(r => UAD_LEVEL_ORDER[r] !== undefined));
+                    if (st.uad.list) uadFilters.list = st.uad.list;
+                    if (st.uad.state) uadFilters.state = st.uad.state;
+                    if (st.uad.brand) uadFilters.brand = st.uad.brand;
+                }
+            }
+            document.querySelectorAll('#uadRemovalRow .filter-chip').forEach(c => c.classList.toggle('active', uadFilters.removal.has(c.getAttribute('data-removal'))));
+            document.querySelectorAll('#uadListRow .filter-chip').forEach(c => c.classList.toggle('active', c.getAttribute('data-list') === uadFilters.list));
+            document.querySelectorAll('#uadStateRow .filter-chip').forEach(c => c.classList.toggle('active', c.getAttribute('data-state') === uadFilters.state));
+            uiStateLoaded = true;
+        }
+
+        // ---------- Debloat history ----------
+        const HISTORY_LIMIT = 150;
+        const UNDO_ACTION = { uninstall: 'reinstall', reinstall: 'uninstall', freeze: 'unfreeze', unfreeze: 'freeze', suspend: 'unsuspend', unsuspend: 'suspend' };
+        const ACTION_LABELS = { uninstall: 'Uninstalled', reinstall: 'Restored', freeze: 'Disabled', unfreeze: 'Enabled', suspend: 'Suspended', unsuspend: 'Unsuspended', force_stop: 'Force-stopped', clear_data: 'Cleared data', uninstall_updates: 'Removed updates' };
+        let debloatHistory = null;
+
+        function getHistory() {
+            if (debloatHistory === null) debloatHistory = loadStoreJson('debloat_history', []);
+            if (!Array.isArray(debloatHistory)) debloatHistory = [];
+            return debloatHistory;
+        }
+
+        // rows: [{pkg, name, action, success, removal?}]
+        function recordHistory(source, title, rows) {
+            if (!rows || !rows.length) return;
+            const h = getHistory();
+            h.unshift({
+                id: 'h_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+                at: Date.now(),
+                source: source,
+                title: title,
+                items: rows.map(r => ({ pkg: r.pkg, name: r.name || r.pkg, action: r.action, success: !!r.success, removal: r.removal || '' }))
+            });
+            if (h.length > HISTORY_LIMIT) h.length = HISTORY_LIMIT;
+            saveStoreJson('debloat_history', h);
+        }
+
+        function openHistoryModal() {
+            haptic();
+            renderHistory();
+            document.getElementById('historyModal').classList.add('show');
+        }
+
+        function closeHistoryModal() {
+            haptic();
+            document.getElementById('historyModal').classList.remove('show');
+        }
+
+        function renderHistory() {
+            const list = document.getElementById('historyList');
+            const h = getHistory();
+            document.getElementById('historySubtitle').innerText = h.length ? `${h.length} entr${h.length === 1 ? 'y' : 'ies'} • newest first` : 'Every uninstall, disable and restore, with one-tap undo';
+            if (!h.length) {
+                list.innerHTML = '<div class="list-empty">No actions recorded yet. Debloater and batch actions appear here.</div>';
+                return;
+            }
+            list.innerHTML = h.map(e => {
+                const ok = e.items.filter(i => i.success).length;
+                const undoable = e.items.some(i => i.success && UNDO_ACTION[i.action]);
+                const when = new Date(e.at).toLocaleString();
+                const pkgs = e.items.map(i => `<span class="${i.success ? 'ok' : 'bad'}">${i.success ? '✓' : '✕'}</span> ${escapeHtml(ACTION_LABELS[i.action] || i.action)} ${escapeHtml(i.name)}${i.name !== i.pkg ? ' <span style="opacity:.7">(' + escapeHtml(i.pkg) + ')</span>' : ''}`).join('<br>');
+                return `
+                    <div class="hist-entry">
+                        <div class="hist-head">
+                            <div>
+                                <div class="hist-title">${escapeHtml(e.title)}</div>
+                                <div class="hist-meta">${escapeHtml(when)} • ${escapeHtml(e.source === 'debloater' ? 'Debloater' : e.source === 'undo' ? 'Undo' : 'Applications')} • ${ok}/${e.items.length} succeeded</div>
+                            </div>
+                            ${undoable ? `<button class="mode-action-btn" data-id="${e.id}" onclick="undoHistory(this.getAttribute('data-id'))">↺ Undo</button>` : ''}
+                        </div>
+                        <div class="hist-pkgs">${pkgs}</div>
+                    </div>`;
+            }).join('');
+        }
+
+        function undoHistory(id) {
+            const e = getHistory().find(x => x.id === id);
+            if (!e) return;
+            if (!guardPrivilege('Undo')) return;
+            const items = e.items.filter(i => i.success && UNDO_ACTION[i.action]);
+            if (!items.length) return;
+            if (!confirm(`Undo "${e.title}"?\n\n${items.length} package${items.length === 1 ? '' : 's'} will be reverted.`)) return;
+            haptic();
+            showToast('Undoing ' + items.length + ' actions...', '↺');
+            setTimeout(() => {
+                const rows = [];
+                items.forEach(i => {
+                    const undo = UNDO_ACTION[i.action];
+                    performDetailedBatchAction(undo, [i.pkg]).rows.forEach(r => rows.push({ pkg: i.pkg, name: i.name, action: undo, success: r.success, output: r.output, removal: i.removal }));
+                });
+                recordHistory('undo', 'Undo: ' + e.title, rows);
+                renderHistory();
+                showCommandResults('Undo Results', e.title, rows);
+                if (uadLoaded) loadUadMatches();
+                loadPackageData();
+            }, 60);
+        }
+
+        function copyHistory() {
+            const lines = [];
+            getHistory().forEach(e => {
+                lines.push(`[${new Date(e.at).toISOString()}] ${e.title}`);
+                e.items.forEach(i => lines.push(`  ${i.success ? 'OK  ' : 'FAIL'} ${i.action} ${i.pkg}${i.removal ? ' (' + i.removal + ')' : ''}`));
+            });
+            if (window.AndroidBridge && window.AndroidBridge.copyToClipboard) window.AndroidBridge.copyToClipboard(lines.join('\n') || 'No history');
+        }
+
+        function clearHistory() {
+            if (!getHistory().length) return;
+            if (!confirm('Clear the whole history? Undo will no longer be possible for these actions.')) return;
+            debloatHistory = [];
+            saveStoreJson('debloat_history', []);
+            renderHistory();
+            showToast('History cleared', '🗑️');
+        }
+
+        // ---------- Updates ----------
+        let updList = [];
+        let updChecked = false;
+        const updProgress = {};
+        let updQueue = [];
+
+        function updBridge() {
+            return window.AndroidBridge && window.AndroidBridge.checkForUpdates ? window.AndroidBridge : null;
+        }
+
+        function onUpdatesShown() {
+            const b = updBridge();
+            if (!b) {
+                document.getElementById('updContainer').innerHTML = '<div class="list-empty">Updates are only available in the app.</div>';
+                return;
+            }
+            const st = JSON.parse(b.getUpdateState() || '{}');
+            updList = st.updates || [];
+            if (st.running) {
+                document.getElementById('updStatus').innerText = 'Checking for updates...';
+            } else if (!st.checkedAt && !updChecked) {
+                checkUpdatesUI(true);
+                return;
+            }
+            renderUpdates(st);
+        }
+
+        function checkUpdatesUI(silent) {
+            const b = updBridge();
+            if (!b) return;
+            if (!silent) haptic();
+            updChecked = true;
+            document.getElementById('updStatus').innerText = 'Checking for updates...';
+            document.getElementById('updCheckBtn').disabled = true;
+            b.checkForUpdates();
+        }
+
+        function onUpdateCheckProgress(json) {
+            const p = JSON.parse(json || '{}');
+            document.getElementById('updStatus').innerText = `Checking the Galaxy Store... ${p.done}/${p.total} apps`;
+        }
+
+        function onUpdatesChecked(json) {
+            const r = JSON.parse(json || '{}');
+            updList = r.updates || [];
+            Object.keys(updProgress).forEach(k => { if (!['downloading', 'installing', 'queued'].includes(updProgress[k].stage)) delete updProgress[k]; });
+            document.getElementById('updCheckBtn').disabled = false;
+            const parts = [`${updList.length} update${updList.length === 1 ? '' : 's'} available`, `checked ${r.checked || 0} Galaxy Store apps`];
+            if (r.errors) parts.push(`${r.errors} couldn't be checked${r.lastError ? ' (' + r.lastError + ')' : ''}`);
+            if (r.selfStatus === 'no_releases') parts.push('this app has no GitHub releases yet');
+            document.getElementById('updStatus').innerText = parts.join(' • ') + ' • ' + new Date(r.checkedAt || Date.now()).toLocaleTimeString();
+            renderUpdates();
+            updateUpdatesTabBadge();
+        }
+
+        function updateUpdatesTabBadge() {
+            const btn = document.getElementById('updatesTabBtn');
+            const pending = updList.filter(u => !(updProgress[u.pkg] && updProgress[u.pkg].stage === 'done')).length;
+            if (btn) btn.innerText = pending ? `⬆️ Updates (${pending})` : '⬆️ Updates';
+        }
+
+        function renderUpdates(st) {
+            const container = document.getElementById('updContainer');
+            const galaxy = updList.filter(u => u.source === 'galaxy');
+            const allBtn = document.getElementById('updAllBtn');
+            const pending = galaxy.filter(u => !(updProgress[u.pkg] && updProgress[u.pkg].stage === 'done'));
+            allBtn.style.display = pending.length > 1 ? 'inline-flex' : 'none';
+            allBtn.innerText = `⬆️ Update All (${pending.length})`;
+            if (st && st.checkedAt) {
+                document.getElementById('updStatus').innerText = `${updList.length} update${updList.length === 1 ? '' : 's'} available • last checked ${new Date(st.checkedAt).toLocaleTimeString()}`;
+            }
+            if (!updList.length) {
+                container.innerHTML = updChecked || (st && st.checkedAt) ? '<div class="list-empty">Everything is up to date. 🎉</div>' : '<div class="list-empty">Tap Check for Updates.</div>';
+                return;
+            }
+            const sorted = updList.slice().sort((a, b) => (a.source === 'github' ? -1 : 0) - (b.source === 'github' ? -1 : 0) || a.name.localeCompare(b.name));
+            container.innerHTML = sorted.map(u => {
+                const pr = updProgress[u.pkg];
+                let btn;
+                if (u.source === 'github') {
+                    btn = `<button class="mode-action-btn primary" data-pkg="${escapeHtml(u.pkg)}" onclick="openSelfUpdate()">⬇️ Download</button>`;
+                } else if (pr && (pr.stage === 'downloading' || pr.stage === 'installing' || pr.stage === 'queued')) {
+                    btn = `<button class="mode-action-btn" disabled>${pr.stage === 'queued' ? '⏳ Queued' : pr.stage === 'installing' ? '⚙️ Installing' : '⬇️ ' + (pr.percent >= 0 ? pr.percent + '%' : '...')}</button>`;
+                } else if (pr && pr.stage === 'done') {
+                    btn = '<button class="mode-action-btn" disabled>✓ Updated</button>';
+                } else {
+                    btn = `<button class="mode-action-btn primary" data-pkg="${escapeHtml(u.pkg)}" onclick="updateOneUI(this.getAttribute('data-pkg'))">⬆️ ${pr && pr.stage === 'error' ? 'Retry' : 'Update'}</button>`;
+                }
+                const bar = pr && (pr.stage === 'downloading' || pr.stage === 'installing') ? `<div class="upd-bar"><div style="width:${pr.stage === 'installing' ? 100 : Math.max(2, pr.percent || 0)}%"></div></div>` : '';
+                const msg = pr && pr.message && pr.stage !== 'queued' ? `<div class="upd-msg ${pr.stage === 'error' ? 'error' : pr.stage === 'done' ? 'done' : ''}">${escapeHtml(pr.message)}</div>` : '';
+                const notes = u.source === 'github' && u.notes ? `<div class="upd-msg">${escapeHtml(u.notes)}</div>` : '';
+                return `
+                    <div class="upd-row">
+                        <div class="upd-head">
+                            <div style="min-width:0;">
+                                <div class="uad-name">${escapeHtml(u.name)}</div>
+                                <div class="uad-pkg" style="margin-bottom:2px;">${escapeHtml(u.pkg)}</div>
+                                <span class="uad-badge uad-tag">${u.source === 'github' ? 'GitHub' : 'Galaxy Store'}</span>${u.isSystem ? '<span class="uad-badge uad-tag">system</span>' : ''}
+                                <div class="upd-ver">${escapeHtml(u.installedVersion || '?')} → <b>${escapeHtml(u.availableVersion || '?')}</b></div>
+                            </div>
+                            ${btn}
+                        </div>
+                        ${bar}${msg}${notes}
+                    </div>`;
+            }).join('');
+        }
+
+        function openSelfUpdate() {
+            const u = updList.find(x => x.source === 'github');
+            if (!u || !window.AndroidBridge || !window.AndroidBridge.openUrl) return;
+            window.AndroidBridge.openUrl(u.downloadUrl || u.page);
+            showToast('Downloading in your browser. Open the APK when it finishes to update.', '⬇️');
+        }
+
+        function updateOneUI(pkg) {
+            if (!guardPrivilege('Install update')) return;
+            haptic();
+            updQueue = updQueue.filter(p => p !== pkg);
+            updProgress[pkg] = { stage: 'downloading', percent: 0, message: 'Starting...' };
+            renderUpdates();
+            updBridge().installUpdate(pkg);
+        }
+
+        // One at a time, so downloads don't compete and installs don't overlap
+        function updateAllUI() {
+            if (!guardPrivilege('Install updates')) return;
+            const pending = updList.filter(u => u.source === 'galaxy' && !(updProgress[u.pkg] && ['done', 'downloading', 'installing'].includes(updProgress[u.pkg].stage)));
+            if (!pending.length) return;
+            if (!confirm(`Update ${pending.length} apps from the Galaxy Store?`)) return;
+            haptic();
+            updQueue = pending.map(u => u.pkg);
+            updQueue.forEach(p => { updProgress[p] = { stage: 'queued', percent: 0, message: '' }; });
+            renderUpdates();
+            startNextQueuedUpdate();
+        }
+
+        function startNextQueuedUpdate() {
+            const busy = Object.values(updProgress).some(p => p.stage === 'downloading' || p.stage === 'installing');
+            if (busy || !updQueue.length) return;
+            const next = updQueue.shift();
+            updProgress[next] = { stage: 'downloading', percent: 0, message: 'Starting...' };
+            renderUpdates();
+            updBridge().installUpdate(next);
+        }
+
+        // Called by MainActivity while an update downloads and installs
+        function onUpdateProgress(json) {
+            const p = JSON.parse(json || '{}');
+            updProgress[p.pkg] = p;
+            if (p.stage === 'done' || p.stage === 'error') {
+                const u = updList.find(x => x.pkg === p.pkg);
+                recordHistory('updates', (p.stage === 'done' ? 'Updated ' : 'Update failed: ') + (u ? u.name : p.pkg),
+                    [{ pkg: p.pkg, name: u ? u.name : p.pkg, action: 'update', success: p.stage === 'done' }]);
+                if (p.stage === 'done') {
+                    showToast((u ? u.name : p.pkg) + ' updated', '✔');
+                } else {
+                    showToast('Update failed: ' + (u ? u.name : p.pkg), '⚠️');
+                }
+                updateUpdatesTabBadge();
+                setTimeout(startNextQueuedUpdate, 300);
+            }
+            // Finished rows stay visible (marked Updated) until the next check
+            renderUpdates();
         }
 
         // ---------- ADB key ----------
@@ -4304,6 +4757,8 @@ Type any command below (e.g. pm list packages -d)
             showToast(`Executing ${action} on ${arr.length} apps...`, '⚙️');
             if (window.AndroidBridge) {
                 const res = performDetailedBatchAction(action, arr);
+                recordHistory('apps', `${ACTION_LABELS[action] || action} ${arr.length} app${arr.length === 1 ? '' : 's'}`,
+                    res.rows.map(r => ({ pkg: r.pkg, name: r.name, action: action, success: r.success })));
                 showToast(`Batch Done: ${res.success} succeeded, ${res.failed} failed`, res.failed ? '⚠️' : '✔');
                 showCommandResults('Batch Results', action.toUpperCase() + ' • ' + arr.length + ' apps', res.rows);
                 clearBatchSelection();
@@ -4329,12 +4784,17 @@ Type any command below (e.g. pm list packages -d)
                 const ok = !(lowered.includes('error') || lowered.includes('failed') || lowered.includes('exception'));
                 showToast(ok ? 'Action executed' : 'Action reported a problem', ok ? '✔' : '⚠️');
                 showCommandResults('Command Result', action.toUpperCase(), [{ name: app.name, pkg: pkg, output: output, success: ok }]);
+                if (UNDO_ACTION[action]) recordHistory('apps', `${ACTION_LABELS[action] || action} ${app.name}`, [{ pkg: pkg, name: app.name, action: action, success: ok }]);
                 setTimeout(loadPackageData, 400);
             }
         }
 
         function setFilter(filter, el) {
             currentFilter = filter;
+            saveUiState();
+            if (!el) {
+                document.querySelectorAll('.filter-pill').forEach(p => p.classList.toggle('active', p.getAttribute('data-filter') === filter));
+            }
             if (el) {
                 document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
                 el.classList.add('active');
@@ -5008,6 +5468,7 @@ Type any command below (e.g. pm list packages -d)
         window.addEventListener('DOMContentLoaded', () => {
             restoreSavedTheme();
             applyTheme();
+            restoreUiState();
             initApp();
             loadSavedLists();
         });

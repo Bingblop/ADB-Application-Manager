@@ -5,7 +5,7 @@ package, freeze/enable, force-stop, clear data, uninstall for user 0, reinstall 
 manage permissions, save package lists, and run shell commands — through ADB TCP, Wireless
 Debugging, Shizuku or Root.
 
-**Latest release:** [`release/ADB_Application_Manager_Pro-v3.9.apk`](release/ADB_Application_Manager_Pro-v3.9.apk) — see [CHANGELOG.md](CHANGELOG.md).
+**Latest release:** [`release/ADB_Application_Manager_Pro-v4.0.apk`](release/ADB_Application_Manager_Pro-v4.0.apk) — see [CHANGELOG.md](CHANGELOG.md).
 
 ## Working modes
 
@@ -34,6 +34,16 @@ phone's brand first), and uninstall (for your user), disable or restore
 them after a review step. The list is GPL-3.0 licensed, so it is downloaded from UAD-NG's GitHub at
 runtime and cached on the phone rather than included in this repository.
 
+Every action is recorded in **📜 History** with one-tap **Undo**, and your filters are remembered
+between launches.
+
+## Updates
+
+The **⬆️ Updates** tab checks the Galaxy Store for newer versions of Samsung system apps and
+Galaxy Store apps, and GitHub Releases for this app. Update apps one by one or all at once; each
+official APK is verified (same package, newer version) and installed through ADB, Shizuku or Root.
+Play Store apps keep updating through the Play Store.
+
 ## App menu
 
 Tap **⋯** on any app for actions (Launch, Force Stop, Freeze/Enable, Suspend/Unsuspend, Clear Data, Uninstall,
@@ -60,7 +70,7 @@ launches.
 
 ```
 AndroidManifest.xml          App manifest (includes the Shizuku provider)
-src/                         Java sources (MainActivity + JavaScript bridge, ManifestDecoder, AdbKeyManager)
+src/                         Java sources (MainActivity + JavaScript bridge, ManifestDecoder, AdbKeyManager, UpdateManager)
 assets/index.html            The whole UI (HTML/CSS/JS, rendered in a WebView)
 assets/libadb.so             arm64 adb client used for ADB TCP / Wireless Debugging
 assets/rish, rish_shizuku.dex  Shizuku shell fallback

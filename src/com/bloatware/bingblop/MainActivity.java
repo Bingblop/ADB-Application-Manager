@@ -870,6 +870,276 @@ public class MainActivity extends Activity {
         return res.toString();
     }
 
+    // ---------------------------------------------------------------------------------------------
+    // Updates tab: Galaxy Store (Samsung system / store apps) and this app's GitHub releases
+    // ---------------------------------------------------------------------------------------------
+
+    private final java.util.concurrent.ConcurrentHashMap<String, JSONObject> updateResults = new java.util.concurrent.ConcurrentHashMap<String, JSONObject>();
+    private volatile boolean updateCheckRunning = false;
+    private volatile long updateCheckedAt = 0;
+    private final java.util.Set<String> installingUpdates = java.util.Collections.synchronizedSet(new HashSet<String>());
+
+    private String currentVersionName() {
+        try {
+            return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+        } catch (Exception e) {
+            return "0";
+        }
+    }
+
+    private static long versionCodeOf(PackageInfo info) {
+        return Build.VERSION.SDK_INT >= 28 ? info.getLongVersionCode() : info.versionCode;
+    }
+
+    private UpdateManager.Device updateDevice() {
+        String mcc = "", mnc = "";
+        try {
+            android.telephony.TelephonyManager tm = (android.telephony.TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+            String op = tm != null ? tm.getSimOperator() : "";
+            if (op != null && op.length() >= 5) {
+                mcc = op.substring(0, 3);
+                mnc = op.substring(3);
+            }
+        } catch (Exception ignored) {}
+        String csc = runProcessWithTimeout(new ProcessBuilder("getprop", "ro.csc.sales_code"), 2000).trim();
+        if (csc.isEmpty() || csc.contains(" ")) csc = runProcessWithTimeout(new ProcessBuilder("getprop", "persist.omc.sales_code"), 2000).trim();
+        if (csc.contains(" ")) csc = "";
+        return new UpdateManager.Device(Build.MODEL, mcc, mnc, csc, Build.VERSION.SDK_INT);
+    }
+
+    /** Samsung system apps and apps installed from the Galaxy Store are checked against the Galaxy Store. */
+    private boolean isGalaxyStoreCandidate(ApplicationInfo ai, String installer) {
+        if (UpdateManager.GALAXY_STORE_PKG.equals(installer)) return true;
+        boolean system = (ai.flags & ApplicationInfo.FLAG_SYSTEM) != 0;
+        String p = ai.packageName;
+        return system && (p.startsWith("com.samsung.") || p.startsWith("com.sec.") || p.startsWith("com.osp."));
+    }
+
+    private String installerOf(String pkg) {
+        try {
+            if (Build.VERSION.SDK_INT >= 30) {
+                android.content.pm.InstallSourceInfo src = getPackageManager().getInstallSourceInfo(pkg);
+                return src.getInstallingPackageName();
+            }
+            return getPackageManager().getInstallerPackageName(pkg);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private void notifyUpdates(String fn, JSONObject payload) {
+        notifyJs("window." + fn + " && window." + fn + "(" + JSONObject.quote(payload.toString()) + ")");
+    }
+
+    private void runUpdateCheck() {
+        if (updateCheckRunning) return;
+        updateCheckRunning = true;
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                JSONObject summary = new JSONObject();
+                try {
+                    updateResults.clear();
+                    PackageManager pm = getPackageManager();
+
+                    // 1. This app, from GitHub Releases
+                    try {
+                        JSONObject rel = UpdateManager.githubLatest(UpdateManager.SELF_REPO);
+                        String installed = currentVersionName();
+                        if (UpdateManager.compareVersions(rel.optString("version"), installed) > 0) {
+                            JSONObject o = new JSONObject();
+                            o.put("pkg", getPackageName());
+                            o.put("name", "ADB Application Manager Pro");
+                            o.put("installedVersion", installed);
+                            o.put("availableVersion", rel.optString("version"));
+                            o.put("source", "github");
+                            o.put("downloadUrl", rel.optString("url"));
+                            o.put("page", rel.optString("page"));
+                            o.put("notes", rel.optString("notes"));
+                            updateResults.put(getPackageName(), o);
+                        }
+                        summary.put("selfStatus", "ok");
+                    } catch (Exception e) {
+                        summary.put("selfStatus", e.getMessage() != null && e.getMessage().contains("404") ? "no_releases" : "error: " + e.getMessage());
+                    }
+
+                    // 2. Galaxy Store candidates
+                    final UpdateManager.Device device = updateDevice();
+                    List<ApplicationInfo> apps = pm.getInstalledApplications(0);
+                    final List<ApplicationInfo> candidates = new ArrayList<ApplicationInfo>();
+                    for (ApplicationInfo ai : apps) {
+                        if (isGalaxyStoreCandidate(ai, installerOf(ai.packageName))) candidates.add(ai);
+                    }
+                    final int total = candidates.size();
+                    final java.util.concurrent.atomic.AtomicInteger done = new java.util.concurrent.atomic.AtomicInteger();
+                    final java.util.concurrent.atomic.AtomicInteger errors = new java.util.concurrent.atomic.AtomicInteger();
+                    final java.util.concurrent.atomic.AtomicReference<String> lastError = new java.util.concurrent.atomic.AtomicReference<String>("");
+                    ExecutorService pool = Executors.newFixedThreadPool(6);
+                    for (final ApplicationInfo ai : candidates) {
+                        pool.submit(new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    PackageInfo info = getPackageManager().getPackageInfo(ai.packageName, 0);
+                                    long vc = versionCodeOf(info);
+                                    JSONObject r = UpdateManager.galaxyCheck(ai.packageName, vc, device);
+                                    if (r.optBoolean("available")) {
+                                        JSONObject o = new JSONObject();
+                                        o.put("pkg", ai.packageName);
+                                        o.put("name", getPackageManager().getApplicationLabel(ai).toString());
+                                        o.put("installedVersion", info.versionName != null ? info.versionName : String.valueOf(vc));
+                                        o.put("installedCode", vc);
+                                        o.put("availableVersion", r.optString("versionName"));
+                                        o.put("availableCode", r.optLong("versionCode"));
+                                        o.put("isSystem", (ai.flags & ApplicationInfo.FLAG_SYSTEM) != 0);
+                                        o.put("source", "galaxy");
+                                        updateResults.put(ai.packageName, o);
+                                    }
+                                } catch (Exception e) {
+                                    errors.incrementAndGet();
+                                    lastError.set(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
+                                }
+                                int d = done.incrementAndGet();
+                                if (d % 8 == 0 || d == total) {
+                                    try {
+                                        JSONObject prog = new JSONObject();
+                                        prog.put("done", d);
+                                        prog.put("total", total);
+                                        notifyUpdates("onUpdateCheckProgress", prog);
+                                    } catch (Exception ignored) {}
+                                }
+                            }
+                        });
+                    }
+                    pool.shutdown();
+                    pool.awaitTermination(5, TimeUnit.MINUTES);
+                    summary.put("checked", total);
+                    summary.put("errors", errors.get());
+                    summary.put("lastError", lastError.get());
+                    summary.put("device", device.model + " / " + (device.csc.isEmpty() ? "?" : device.csc));
+                } catch (Exception e) {
+                    try { summary.put("error", e.getMessage()); } catch (Exception ignored) {}
+                } finally {
+                    updateCheckRunning = false;
+                    updateCheckedAt = System.currentTimeMillis();
+                }
+                try {
+                    summary.put("updates", updatesArray());
+                    summary.put("checkedAt", updateCheckedAt);
+                    notifyUpdates("onUpdatesChecked", summary);
+                } catch (Exception ignored) {}
+            }
+        });
+    }
+
+    private JSONArray updatesArray() {
+        JSONArray arr = new JSONArray();
+        for (JSONObject o : updateResults.values()) arr.put(o);
+        return arr;
+    }
+
+    private void progress(String pkg, String stage, int percent, String message) {
+        try {
+            JSONObject o = new JSONObject();
+            o.put("pkg", pkg);
+            o.put("stage", stage);
+            o.put("percent", percent);
+            o.put("message", message == null ? "" : message);
+            notifyUpdates("onUpdateProgress", o);
+        } catch (Exception ignored) {}
+    }
+
+    /** Downloads the official APK, verifies it, and installs it through the active privileged mode. */
+    private void runInstallUpdate(final String pkg) {
+        final JSONObject u = updateResults.get(pkg);
+        if (u == null || !installingUpdates.add(pkg)) return;
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                File apk = new File(new File(getCacheDir(), "updates"), pkg + ".apk");
+                try {
+                    if (!"galaxy".equals(u.optString("source"))) throw new IllegalStateException("unsupported source");
+                    if ("standard".equals(resolveExecMode())) {
+                        throw new IllegalStateException("installing updates needs ADB, Shizuku or Root. Set up a working mode first.");
+                    }
+                    apk.getParentFile().mkdirs();
+                    progress(pkg, "downloading", 0, "Getting download link...");
+                    String url = UpdateManager.galaxyDownloadUrl(pkg, updateDevice());
+                    UpdateManager.download(url, apk, new UpdateManager.Progress() {
+                        @Override
+                        public void onProgress(long done, long total) {
+                            progress(pkg, "downloading", total > 0 ? (int) (done * 100 / total) : -1, (done / (1024 * 1024)) + " MB");
+                        }
+                    });
+
+                    // Only install what we asked for: same package, newer version
+                    PackageInfo archive = getPackageManager().getPackageArchiveInfo(apk.getAbsolutePath(), 0);
+                    if (archive == null || !pkg.equals(archive.packageName)) {
+                        throw new IllegalStateException("downloaded file is not " + pkg);
+                    }
+                    long installedVc = versionCodeOf(getPackageManager().getPackageInfo(pkg, 0));
+                    if (versionCodeOf(archive) <= installedVc) {
+                        throw new IllegalStateException("downloaded version is not newer than the installed one");
+                    }
+
+                    progress(pkg, "installing", 100, "Installing " + archive.versionName + "...");
+                    String out = installApk(apk);
+                    if (out.contains("Success")) {
+                        updateResults.remove(pkg);
+                        progress(pkg, "done", 100, "Updated to " + archive.versionName);
+                    } else {
+                        throw new IllegalStateException(out.trim().isEmpty() ? "install failed" : out.trim());
+                    }
+                } catch (Exception e) {
+                    progress(pkg, "error", 0, e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
+                } finally {
+                    apk.delete();
+                    installingUpdates.remove(pkg);
+                }
+            }
+        });
+    }
+
+    private String installApk(File apk) throws Exception {
+        String mode = resolveExecMode();
+        if ("adb_tcp".equals(mode) || "adb_wireless".equals(mode)) {
+            String target = "adb_tcp".equals(mode) ? tcpTarget() : wirelessTarget();
+            if (!isAdbTargetConnected(target)) performConnect("adb_tcp".equals(mode) ? adbTcpHost : adbWirelessHost,
+                    "adb_tcp".equals(mode) ? adbTcpPort : adbWirelessPort, null);
+            // The adb client runs as this app, so it can read the file and stream it to the device
+            return runProcessWithTimeout(buildAdbProcess("-s", target, "install", "-r", apk.getAbsolutePath()), 300000);
+        }
+        if ("shizuku".equals(mode)) {
+            if (shizukuNewProcessMethod == null) {
+                Method m = Shizuku.class.getDeclaredMethod("newProcess", String[].class, String[].class, String.class);
+                m.setAccessible(true);
+                shizukuNewProcessMethod = m;
+            }
+            // The shell user can't read app-private files, so stream the APK into `pm install -S`
+            Process p = (Process) shizukuNewProcessMethod.invoke(null,
+                    new String[]{"sh", "-c", "exec 2>&1; pm install -r -S " + apk.length()}, null, null);
+            OutputStream os = p.getOutputStream();
+            java.io.FileInputStream in = new java.io.FileInputStream(apk);
+            byte[] buf = new byte[65536];
+            int n;
+            while ((n = in.read(buf)) > 0) os.write(buf, 0, n);
+            in.close();
+            os.flush();
+            os.close();
+            return readProcessWithTimeout(p, 300000);
+        }
+        if ("root".equals(mode)) {
+            apk.setReadable(true, false);
+            ProcessBuilder pb = new ProcessBuilder("su", "-c", "pm install -r '" + apk.getAbsolutePath() + "'");
+            pb.redirectErrorStream(true);
+            return runProcessWithTimeout(pb, 300000);
+        }
+        return "Error: installing updates needs ADB, Shizuku or Root";
+    }
+
+    // Small JSON documents the UI keeps between launches (remembered filters, debloat history)
+    private static final java.util.Set<String> UI_STORE_KEYS = new HashSet<String>(java.util.Arrays.asList("ui_state", "debloat_history"));
+
     private int systemColor(String name) {
         int id = getResources().getIdentifier(name, "color", "android");
         if (id == 0) throw new IllegalStateException("Missing system color " + name);
@@ -1530,6 +1800,43 @@ public class MainActivity extends Activity {
                 } catch (Exception ignored) {}
             }
             return res.toString();
+        }
+
+        @JavascriptInterface
+        public void checkForUpdates() {
+            runUpdateCheck();
+        }
+
+        @JavascriptInterface
+        public String getUpdateState() {
+            try {
+                JSONObject o = new JSONObject();
+                o.put("running", updateCheckRunning);
+                o.put("checkedAt", updateCheckedAt);
+                o.put("updates", updatesArray());
+                o.put("installing", new JSONArray(new ArrayList<String>(installingUpdates)));
+                o.put("currentVersion", currentVersionName());
+                return o.toString();
+            } catch (Exception e) {
+                return "{}";
+            }
+        }
+
+        @JavascriptInterface
+        public void installUpdate(String pkg) {
+            runInstallUpdate(pkg);
+        }
+
+        @JavascriptInterface
+        public void saveStore(String key, String json) {
+            if (UI_STORE_KEYS.contains(key) && json != null && json.length() < 512 * 1024) {
+                prefs.edit().putString("store_" + key, json).apply();
+            }
+        }
+
+        @JavascriptInterface
+        public String loadStore(String key) {
+            return UI_STORE_KEYS.contains(key) ? prefs.getString("store_" + key, "") : "";
         }
 
         @JavascriptInterface

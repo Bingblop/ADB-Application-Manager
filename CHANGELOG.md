@@ -1,5 +1,29 @@
 # Changelog
 
+## v4.0-Pro (versionCode 300)
+
+Installs over v3.1 – v3.9 without uninstalling (same signing key).
+
+### ⬆️ Updates tab
+- Checks the **Galaxy Store** for updates to Samsung system apps and apps installed from the Galaxy
+  Store, using Samsung's public update service, and checks this app's **GitHub Releases**.
+- **Update** per app, or **Update All** (one at a time). Each update is the official APK from the
+  Galaxy Store, verified to be the same package and a newer version, then installed through ADB,
+  Shizuku or Root. Failures show Android's reason with a Retry button.
+- Updates for this app open in the browser so Android's installer handles them.
+- The tab shows how many updates are pending. Play Store apps aren't covered: Google provides no way
+  for other apps to check them, and the Play Store keeps updating them itself.
+
+### 📜 Debloat history
+- Every Debloater run, batch action and single-app freeze/uninstall/suspend (and update) is logged
+  with time, packages and result. **Undo** reverses a run (reinstall what was uninstalled, enable
+  what was disabled, and so on). **Copy Log** and **Clear History** included. Kept between launches
+  (last 150 entries).
+
+### Remembered filters
+- The Applications filter and all Debloater filters (levels, vendor, state, brand) are restored
+  when the app starts.
+
 ## v3.9-Pro (versionCode 290)
 
 Installs over v3.1 – v3.8 without uninstalling (same signing key).
