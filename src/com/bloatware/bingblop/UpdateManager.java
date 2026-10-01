@@ -171,6 +171,275 @@ public final class UpdateManager {
     }
 
     // ------------------------------------------------------------------------------------------
+    // Open-source sources: GitHub, Codeberg, F-Droid, IzzyOnDroid, Obtainium catalog
+    // ------------------------------------------------------------------------------------------
+
+    public static final String FDROID_API = "https://f-droid.org/api/v1/packages/";
+    public static final String FDROID_REPO = "https://f-droid.org/repo/";
+    public static final String IZZY_API = "https://apt.izzysoft.de/fdroid/api/v1/packages/";
+    public static final String IZZY_REPO = "https://apt.izzysoft.de/fdroid/repo/";
+    private static final String OBTAINIUM_CATALOG = "https://raw.githubusercontent.com/ImranR98/apps.obtainium.imranr.dev/main/public/data/apps/";
+
+    /** A release: tag, display version, page, notes and its APK assets ([name, url] pairs). */
+    public static final class Release {
+        public String tag = "", version = "", page = "", notes = "";
+        public final java.util.List<String[]> assets = new java.util.ArrayList<String[]>();
+    }
+
+    /** {"host":"github.com","owner":..,"repo":..} for github.com / codeberg.org URLs, else null */
+    public static JSONObject parseRepoUrl(String url) {
+        if (url == null) return null;
+        Matcher m = Pattern.compile("^https?://(?:www\\.)?(github\\.com|codeberg\\.org)/([^/\\s]+)/([^/\\s#?]+)").matcher(url.trim());
+        if (!m.find()) return null;
+        try {
+            JSONObject o = new JSONObject();
+            o.put("host", m.group(1));
+            o.put("owner", m.group(2));
+            o.put("repo", m.group(3).replaceAll("\\.git$", ""));
+            return o;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** Package id from an F-Droid / IzzyOnDroid package page URL, else null */
+    public static String parseFdroidUrl(String url) {
+        if (url == null) return null;
+        Matcher m = Pattern.compile("^https?://(?:www\\.)?(?:f-droid\\.org(?:/[a-z_A-Z-]+)?|apt\\.izzysoft\\.de/fdroid/index/apk)/(?:packages/)?([A-Za-z0-9_.]+)/?$").matcher(url.trim());
+        return m.find() ? m.group(1) : null;
+    }
+
+    private static Release releaseFromApiJson(JSONObject rel, String fallbackPage) {
+        Release r = new Release();
+        r.tag = rel.optString("tag_name", "");
+        r.version = r.tag;
+        r.page = rel.optString("html_url", fallbackPage);
+        String notes = rel.optString("body", "");
+        r.notes = notes.length() > 600 ? notes.substring(0, 600) + "…" : notes;
+        JSONArray assets = rel.optJSONArray("assets");
+        if (assets != null) {
+            for (int i = 0; i < assets.length(); i++) {
+                JSONObject a = assets.optJSONObject(i);
+                if (a == null) continue;
+                String name = a.optString("name", "");
+                String url = a.optString("browser_download_url", "");
+                if (name.toLowerCase().endsWith(".apk") && url.startsWith("https://")) r.assets.add(new String[]{name, url});
+            }
+        }
+        return r;
+    }
+
+    /**
+     * Latest GitHub release. Uses the API (60 requests/hour without a token); when rate-limited it
+     * falls back to the public release pages, which have no API limit.
+     */
+    public static Release githubRelease(String owner, String repo, String token, boolean includePrereleases) throws Exception {
+        String base = "https://api.github.com/repos/" + owner + "/" + repo;
+        String page = "https://github.com/" + owner + "/" + repo + "/releases";
+        try {
+            if (includePrereleases) {
+                JSONArray list = new JSONArray(new String(httpGetAuth(base + "/releases?per_page=10", token), "UTF-8"));
+                for (int i = 0; i < list.length(); i++) {
+                    JSONObject rel = list.getJSONObject(i);
+                    if (!rel.optBoolean("draft")) return releaseFromApiJson(rel, page);
+                }
+                throw new IllegalStateException("no releases");
+            }
+            return releaseFromApiJson(new JSONObject(new String(httpGetAuth(base + "/releases/latest", token), "UTF-8")), page);
+        } catch (IllegalStateException e) {
+            String msg = String.valueOf(e.getMessage());
+            if (msg.contains("HTTP 403") || msg.contains("HTTP 429")) return githubReleaseFromPages(owner, repo);
+            throw e;
+        }
+    }
+
+    private static byte[] httpGetAuth(String url, String token) throws Exception {
+        HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+        try {
+            conn.setConnectTimeout(15000);
+            conn.setReadTimeout(30000);
+            conn.setRequestProperty("User-Agent", "ADB-Application-Manager");
+            conn.setRequestProperty("Accept", "application/vnd.github+json");
+            if (token != null && !token.isEmpty()) conn.setRequestProperty("Authorization", "Bearer " + token);
+            int code = conn.getResponseCode();
+            if (code == 404) throw new IllegalStateException("no releases (HTTP 404)");
+            if (code != 200) throw new IllegalStateException("HTTP " + code);
+            InputStream in = conn.getInputStream();
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            byte[] buf = new byte[16384];
+            int n;
+            while ((n = in.read(buf)) > 0) {
+                out.write(buf, 0, n);
+                if (out.size() > 4 * 1024 * 1024) throw new IllegalStateException("response too large");
+            }
+            in.close();
+            return out.toByteArray();
+        } finally {
+            conn.disconnect();
+        }
+    }
+
+    /** Rate-limit-free fallback: /releases/latest redirects to the tag, expanded_assets lists the files. */
+    static Release githubReleaseFromPages(String owner, String repo) throws Exception {
+        String page = "https://github.com/" + owner + "/" + repo + "/releases/latest";
+        HttpURLConnection conn = (HttpURLConnection) new URL(page).openConnection();
+        String location;
+        try {
+            conn.setInstanceFollowRedirects(false);
+            conn.setConnectTimeout(15000);
+            conn.setReadTimeout(30000);
+            conn.setRequestProperty("User-Agent", "ADB-Application-Manager");
+            int code = conn.getResponseCode();
+            location = conn.getHeaderField("Location");
+            if (code / 100 != 3 || location == null || !location.contains("/releases/tag/")) {
+                throw new IllegalStateException("no releases");
+            }
+        } finally {
+            conn.disconnect();
+        }
+        Release r = new Release();
+        r.tag = java.net.URLDecoder.decode(location.substring(location.indexOf("/releases/tag/") + 14), "UTF-8");
+        r.version = r.tag;
+        r.page = location;
+        String html = new String(httpGet("https://github.com/" + owner + "/" + repo + "/releases/expanded_assets/" + enc(r.tag).replace("+", "%20"),
+                "text/html", 4 * 1024 * 1024), "UTF-8");
+        r.assets.addAll(parseExpandedAssets(html, owner, repo));
+        return r;
+    }
+
+    static java.util.List<String[]> parseExpandedAssets(String html, String owner, String repo) throws Exception {
+        java.util.List<String[]> out = new java.util.ArrayList<String[]>();
+        Matcher m = Pattern.compile("href=\"(/" + Pattern.quote(owner) + "/" + Pattern.quote(repo) + "/releases/download/[^\"]+?\\.apk)\"", Pattern.CASE_INSENSITIVE).matcher(html);
+        java.util.Set<String> seen = new java.util.HashSet<String>();
+        while (m.find()) {
+            String path = m.group(1).replace("&amp;", "&");
+            if (!seen.add(path)) continue;
+            String name = java.net.URLDecoder.decode(path.substring(path.lastIndexOf('/') + 1), "UTF-8");
+            out.add(new String[]{name, "https://github.com" + path});
+        }
+        return out;
+    }
+
+    /** Latest Codeberg (Forgejo) release */
+    public static Release codebergRelease(String owner, String repo) throws Exception {
+        String url = "https://codeberg.org/api/v1/repos/" + owner + "/" + repo + "/releases/latest";
+        JSONObject rel = new JSONObject(new String(httpGet(url, "application/json", 4 * 1024 * 1024), "UTF-8"));
+        return releaseFromApiJson(rel, "https://codeberg.org/" + owner + "/" + repo + "/releases");
+    }
+
+    /** {"versionCode":..,"versionName":..} of the suggested version in an F-Droid style repo, or null if unknown there */
+    public static JSONObject fdroidLatest(String apiBase, String pkg) throws Exception {
+        String json;
+        try {
+            json = new String(httpGet(apiBase + enc(pkg), "application/json", 1024 * 1024), "UTF-8");
+        } catch (IllegalStateException e) {
+            if (String.valueOf(e.getMessage()).contains("404")) return null;
+            throw e;
+        }
+        JSONObject o = new JSONObject(json);
+        long suggested = o.optLong("suggestedVersionCode", 0);
+        JSONArray pkgs = o.optJSONArray("packages");
+        JSONObject best = null;
+        if (pkgs != null) {
+            for (int i = 0; i < pkgs.length(); i++) {
+                JSONObject p = pkgs.getJSONObject(i);
+                if (suggested > 0 && p.optLong("versionCode") == suggested) {
+                    best = p;
+                    break;
+                }
+                if (best == null || p.optLong("versionCode") > best.optLong("versionCode")) best = p;
+            }
+        }
+        if (best == null) return null;
+        JSONObject r = new JSONObject();
+        r.put("versionCode", best.optLong("versionCode"));
+        r.put("versionName", best.optString("versionName"));
+        return r;
+    }
+
+    /** The Obtainium community catalog entry for a package (first config), or null when it isn't listed */
+    public static JSONObject obtainiumCatalog(String pkg) throws Exception {
+        for (String kind : new String[]{"simple", "complex"}) {
+            try {
+                JSONObject doc = new JSONObject(new String(httpGet(OBTAINIUM_CATALOG + kind + "/" + enc(pkg) + ".json", "application/json", 512 * 1024), "UTF-8"));
+                JSONObject cfg = doc.optJSONObject("config");
+                if (cfg == null && doc.optJSONArray("configs") != null && doc.optJSONArray("configs").length() > 0) {
+                    cfg = doc.optJSONArray("configs").optJSONObject(0);
+                }
+                if (cfg != null) return cfg;
+            } catch (IllegalStateException e) {
+                if (!String.valueOf(e.getMessage()).contains("404")) throw e;
+            }
+        }
+        return null;
+    }
+
+    /** Obtainium's additionalSettings is a JSON string inside the config */
+    public static JSONObject obtainiumSettings(JSONObject cfg) {
+        if (cfg == null) return new JSONObject();
+        Object a = cfg.opt("additionalSettings");
+        try {
+            if (a instanceof JSONObject) return (JSONObject) a;
+            if (a instanceof String && !((String) a).isEmpty()) return new JSONObject((String) a);
+        } catch (Exception ignored) {}
+        return new JSONObject();
+    }
+
+    /** Applies Obtainium's versionExtractionRegEx to a tag ("app-v1.2.3" -> "1.2.3") */
+    public static String extractVersion(String tag, String regex, String group) {
+        if (regex == null || regex.isEmpty()) return tag;
+        try {
+            Matcher m = Pattern.compile(regex).matcher(tag);
+            if (!m.find()) return tag;
+            int g = 0;
+            try {
+                g = Integer.parseInt(group == null || group.isEmpty() ? "0" : group.replaceAll("[^0-9]", ""));
+            } catch (Exception ignored) {}
+            return g <= m.groupCount() && m.group(g) != null ? m.group(g) : m.group(0);
+        } catch (Exception e) {
+            return tag;
+        }
+    }
+
+    /**
+     * Chooses the APK for this phone: honours Obtainium's apkFilterRegEx, prefers the device ABI,
+     * then universal builds, and avoids builds for other architectures.
+     */
+    public static String[] pickApk(java.util.List<String[]> assets, String filterRegex, boolean invertFilter, String[] abis) {
+        String[] best = null;
+        int bestScore = Integer.MIN_VALUE;
+        Pattern filter = null;
+        try {
+            if (filterRegex != null && !filterRegex.isEmpty()) filter = Pattern.compile(filterRegex);
+        } catch (Exception ignored) {}
+        String primary = abis != null && abis.length > 0 ? abis[0].toLowerCase() : "arm64-v8a";
+        for (String[] a : assets) {
+            String name = a[0].toLowerCase();
+            if (!name.endsWith(".apk")) continue;
+            if (filter != null && filter.matcher(a[0]).find() == invertFilter) continue;
+            int score = 0;
+            boolean mentionsArch = false;
+            String[][] archNames = {{"arm64-v8a", "arm64", "aarch64", "armv8"}, {"armeabi-v7a", "armeabi", "armv7", "arm32"}, {"x86_64", "x64", "amd64"}, {"x86", "i686"}};
+            for (String[] group : archNames) {
+                boolean matches = false;
+                for (String n : group) if (name.contains(n)) matches = true;
+                if (!matches) continue;
+                mentionsArch = true;
+                score += group[0].equals(primary) ? 30 : -50; // group[0] is the Android ABI name
+                break;
+            }
+            if (name.contains("universal") || name.contains("all")) score += 20;
+            if (!mentionsArch) score += 10;
+            if (name.contains("debug") || name.contains("unsigned")) score -= 25;
+            if (score > bestScore) {
+                bestScore = score;
+                best = a;
+            }
+        }
+        return best != null && bestScore > -40 ? best : null;
+    }
+
+    // ------------------------------------------------------------------------------------------
     // GitHub Releases (this app)
     // ------------------------------------------------------------------------------------------
 
@@ -213,7 +482,8 @@ public final class UpdateManager {
     }
 
     private static String[] numericParts(String v) {
-        Matcher m = Pattern.compile("^[vV]?([0-9]+(?:\\.[0-9]+)*)").matcher(v == null ? "" : v.trim());
+        // First dotted number anywhere: "v1.2.3", "release-1.2.3", "app_1.2.3-beta"
+        Matcher m = Pattern.compile("([0-9]+(?:\\.[0-9]+)*)").matcher(v == null ? "" : v.trim());
         return m.find() ? m.group(1).split("\\.") : new String[]{"0"};
     }
 

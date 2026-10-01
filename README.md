@@ -5,7 +5,7 @@ package, freeze/enable, force-stop, clear data, uninstall for user 0, reinstall 
 manage permissions, save package lists, and run shell commands — through ADB TCP, Wireless
 Debugging, Shizuku or Root.
 
-**Latest release:** [`release/ADB_Application_Manager_Pro-v4.0.apk`](release/ADB_Application_Manager_Pro-v4.0.apk) — see [CHANGELOG.md](CHANGELOG.md).
+**Latest release:** [`release/ADB_Application_Manager_Pro-v4.1.apk`](release/ADB_Application_Manager_Pro-v4.1.apk) — see [CHANGELOG.md](CHANGELOG.md).
 
 ## Working modes
 
@@ -39,10 +39,16 @@ between launches.
 
 ## Updates
 
-The **⬆️ Updates** tab checks the Galaxy Store for newer versions of Samsung system apps and
-Galaxy Store apps, and GitHub Releases for this app. Update apps one by one or all at once; each
-official APK is verified (same package, newer version) and installed through ADB, Shizuku or Root.
-Play Store apps keep updating through the Play Store.
+The **⬆️ Updates** tab checks:
+
+- **Samsung system apps and Galaxy Store apps** against the Galaxy Store
+- **Sideloaded open-source apps** against your sources, your imported Obtainium list, the Obtainium
+  community catalog, IzzyOnDroid and F-Droid, with releases read from GitHub and Codeberg
+- **This app** against its GitHub Releases
+
+Update apps one by one or all at once. Each download is verified (same package, newer version, same
+signing key) and installed through ADB, Shizuku or Root. Apps only Obtainium can track open in
+Obtainium. Play Store apps keep updating through the Play Store.
 
 ## App menu
 

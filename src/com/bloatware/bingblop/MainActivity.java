@@ -952,7 +952,7 @@ public class MainActivity extends Activity {
                             o.put("name", "ADB Application Manager Pro");
                             o.put("installedVersion", installed);
                             o.put("availableVersion", rel.optString("version"));
-                            o.put("source", "github");
+                            o.put("source", "self");
                             o.put("downloadUrl", rel.optString("url"));
                             o.put("page", rel.optString("page"));
                             o.put("notes", rel.optString("notes"));
@@ -963,7 +963,10 @@ public class MainActivity extends Activity {
                         summary.put("selfStatus", e.getMessage() != null && e.getMessage().contains("404") ? "no_releases" : "error: " + e.getMessage());
                     }
 
-                    // 2. Galaxy Store candidates
+                    // 2. Sideloaded / open-source apps: your sources, Obtainium catalog, IzzyOnDroid, F-Droid
+                    checkOpenSourceApps(summary);
+
+                    // 3. Galaxy Store candidates
                     final UpdateManager.Device device = updateDevice();
                     List<ApplicationInfo> apps = pm.getInstalledApplications(0);
                     final List<ApplicationInfo> candidates = new ArrayList<ApplicationInfo>();
@@ -1005,6 +1008,7 @@ public class MainActivity extends Activity {
                                         JSONObject prog = new JSONObject();
                                         prog.put("done", d);
                                         prog.put("total", total);
+                                        prog.put("phase", "galaxy");
                                         notifyUpdates("onUpdateCheckProgress", prog);
                                     } catch (Exception ignored) {}
                                 }
@@ -1058,13 +1062,15 @@ public class MainActivity extends Activity {
             public void run() {
                 File apk = new File(new File(getCacheDir(), "updates"), pkg + ".apk");
                 try {
-                    if (!"galaxy".equals(u.optString("source"))) throw new IllegalStateException("unsupported source");
+                    String source = u.optString("source");
+                    if ("self".equals(source) || "external".equals(source)) throw new IllegalStateException("this update opens in the browser or Obtainium");
                     if ("standard".equals(resolveExecMode())) {
                         throw new IllegalStateException("installing updates needs ADB, Shizuku or Root. Set up a working mode first.");
                     }
                     apk.getParentFile().mkdirs();
                     progress(pkg, "downloading", 0, "Getting download link...");
-                    String url = UpdateManager.galaxyDownloadUrl(pkg, updateDevice());
+                    String url = "galaxy".equals(source) ? UpdateManager.galaxyDownloadUrl(pkg, updateDevice()) : u.optString("downloadUrl");
+                    if (url.isEmpty()) throw new IllegalStateException("no APK for this phone in the latest release");
                     UpdateManager.download(url, apk, new UpdateManager.Progress() {
                         @Override
                         public void onProgress(long done, long total) {
@@ -1079,7 +1085,21 @@ public class MainActivity extends Activity {
                     }
                     long installedVc = versionCodeOf(getPackageManager().getPackageInfo(pkg, 0));
                     if (versionCodeOf(archive) <= installedVc) {
-                        throw new IllegalStateException("downloaded version is not newer than the installed one");
+                        throw new IllegalStateException("downloaded version (" + archive.versionName + ") is not newer than the installed one");
+                    }
+                    // Android only accepts an update signed by the same key. Catch a mismatch (e.g. an F-Droid
+                    // build over a developer build) before trying, and say why.
+                    int sigFlags = Build.VERSION.SDK_INT >= 28 ? PackageManager.GET_SIGNING_CERTIFICATES : PackageManager.GET_SIGNATURES;
+                    java.util.Set<String> installedSigners = signerDigests(getPackageManager().getPackageInfo(pkg, sigFlags), true);
+                    PackageInfo archiveSigned = getPackageManager().getPackageArchiveInfo(apk.getAbsolutePath(), sigFlags);
+                    java.util.Set<String> newSigners = archiveSigned != null ? signerDigests(archiveSigned, false) : new HashSet<String>();
+                    if (!installedSigners.isEmpty() && !newSigners.isEmpty()) {
+                        java.util.Set<String> common = new HashSet<String>(installedSigners);
+                        common.retainAll(newSigners);
+                        if (common.isEmpty()) {
+                            throw new IllegalStateException("signed with a different key than the installed app, so Android won't accept it as an update. "
+                                    + "Update from the source you originally installed from" + ("fdroid".equals(source) ? " (F-Droid signs its own builds)." : "."));
+                        }
                     }
 
                     progress(pkg, "installing", 100, "Installing " + archive.versionName + "...");
@@ -1135,6 +1155,295 @@ public class MainActivity extends Activity {
             return runProcessWithTimeout(pb, 300000);
         }
         return "Error: installing updates needs ADB, Shizuku or Root";
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Open-source / sideloaded app updates
+    // ---------------------------------------------------------------------------------------------
+
+    private static final java.util.Set<String> STORE_INSTALLERS = new HashSet<String>(java.util.Arrays.asList(
+            "com.android.vending", UpdateManager.GALAXY_STORE_PKG, "com.aurora.store", "com.amazon.venezia",
+            "com.huawei.appmarket", "com.xiaomi.market", "com.xiaomi.mipicks", "com.heytap.market", "com.oppo.market",
+            "com.bbk.appstore", "com.google.android.feedback"));
+    private static final java.util.Set<String> FDROID_CLIENTS = new HashSet<String>(java.util.Arrays.asList(
+            "org.fdroid.fdroid", "org.fdroid.basic", "com.looker.droidify", "com.machiav3lli.fdroid",
+            "eu.bubu1.fdroidclassic", "in.sunilpaulmathew.izzyondroid"));
+
+    private JSONObject updateSources() {
+        try {
+            return new JSONObject(prefs.getString("update_sources", "{}"));
+        } catch (Exception e) {
+            return new JSONObject();
+        }
+    }
+
+    private void saveUpdateSources(JSONObject o) {
+        prefs.edit().putString("update_sources", o.toString()).apply();
+    }
+
+    /** Apps that may have an open-source update: user-mapped apps, or user apps not from an app store. */
+    private boolean isOpenSourceCandidate(ApplicationInfo ai, String installer, JSONObject sources) {
+        if (sources.has(ai.packageName)) return true;
+        if ((ai.flags & ApplicationInfo.FLAG_SYSTEM) != 0) return false;
+        if (ai.packageName.equals(getPackageName())) return false;
+        return installer == null || !STORE_INSTALLERS.contains(installer);
+    }
+
+    private JSONObject obtainiumLinkConfig(String pkg, String name, String url, String author) {
+        JSONObject c = new JSONObject();
+        try {
+            c.put("id", pkg);
+            c.put("url", url);
+            c.put("author", author == null ? "" : author);
+            c.put("name", name == null ? pkg : name);
+        } catch (Exception ignored) {}
+        return c;
+    }
+
+    /**
+     * Resolves one app against its sources in order. The first source that knows the app decides
+     * (so an up-to-date answer from the developer's repo isn't overridden by another repo's build).
+     * Returns an update JSON, or {"none":true,...} when up to date, or null when no source knows it.
+     */
+    private JSONObject checkOpenSourceApp(ApplicationInfo ai, PackageInfo info, String installer, JSONObject sources, String token) throws Exception {
+        String pkg = ai.packageName;
+        String name = getPackageManager().getApplicationLabel(ai).toString();
+        long vc = versionCodeOf(info);
+        String vn = info.versionName != null ? info.versionName : String.valueOf(vc);
+
+        java.util.List<JSONObject> candidates = new ArrayList<JSONObject>();
+        JSONObject mine = sources.optJSONObject(pkg);
+        if (mine != null && mine.optString("url").length() > 0) candidates.add(new JSONObject().put("url", mine.optString("url"))
+                .put("origin", mine.optString("origin", "yours")).put("settings", mine.optJSONObject("settings") != null ? mine.optJSONObject("settings") : new JSONObject()));
+        boolean fromFdroidClient = installer != null && FDROID_CLIENTS.contains(installer);
+        if (!fromFdroidClient) {
+            JSONObject cfg = UpdateManager.obtainiumCatalog(pkg);
+            if (cfg != null && cfg.optString("url").length() > 0) candidates.add(new JSONObject().put("url", cfg.optString("url"))
+                    .put("origin", "obtainium-catalog").put("settings", UpdateManager.obtainiumSettings(cfg)).put("author", cfg.optString("author")));
+        }
+        // F-Droid builds are signed by F-Droid, IzzyOnDroid mostly ships the developer's APKs
+        if (fromFdroidClient) {
+            candidates.add(new JSONObject().put("fdroid", "fdroid"));
+            candidates.add(new JSONObject().put("fdroid", "izzy"));
+        } else {
+            candidates.add(new JSONObject().put("fdroid", "izzy"));
+            candidates.add(new JSONObject().put("fdroid", "fdroid"));
+        }
+
+        for (JSONObject c : candidates) {
+            JSONObject o = new JSONObject();
+            o.put("pkg", pkg);
+            o.put("name", name);
+            o.put("installedVersion", vn);
+            o.put("installedCode", vc);
+            o.put("installer", installer == null ? "" : installer);
+
+            String fd = c.optString("fdroid");
+            if (!fd.isEmpty()) {
+                boolean izzy = "izzy".equals(fd);
+                JSONObject latest = UpdateManager.fdroidLatest(izzy ? UpdateManager.IZZY_API : UpdateManager.FDROID_API, pkg);
+                if (latest == null) continue;
+                long remote = latest.optLong("versionCode");
+                o.put("source", izzy ? "izzy" : "fdroid");
+                o.put("origin", izzy ? "izzy" : "fdroid");
+                o.put("availableVersion", latest.optString("versionName"));
+                o.put("availableCode", remote);
+                o.put("downloadUrl", (izzy ? UpdateManager.IZZY_REPO : UpdateManager.FDROID_REPO) + pkg + "_" + remote + ".apk");
+                o.put("page", izzy ? "https://apt.izzysoft.de/fdroid/index/apk/" + pkg : "https://f-droid.org/packages/" + pkg + "/");
+                if (remote <= vc) o.put("none", true);
+                return o;
+            }
+
+            String url = c.optString("url");
+            JSONObject settings = c.optJSONObject("settings") != null ? c.optJSONObject("settings") : new JSONObject();
+            o.put("origin", c.optString("origin"));
+            o.put("sourceUrl", url);
+            o.put("obtainium", "obtainium://app/" + java.net.URLEncoder.encode(obtainiumLinkConfig(pkg, name, url, c.optString("author")).toString(), "UTF-8").replace("+", "%20"));
+
+            String fdroidPkg = UpdateManager.parseFdroidUrl(url);
+            if (fdroidPkg != null) {
+                JSONObject latest = UpdateManager.fdroidLatest(url.contains("izzysoft") ? UpdateManager.IZZY_API : UpdateManager.FDROID_API, pkg);
+                if (latest == null) continue;
+                long remote = latest.optLong("versionCode");
+                boolean izzy = url.contains("izzysoft");
+                o.put("source", izzy ? "izzy" : "fdroid");
+                o.put("availableVersion", latest.optString("versionName"));
+                o.put("availableCode", remote);
+                o.put("downloadUrl", (izzy ? UpdateManager.IZZY_REPO : UpdateManager.FDROID_REPO) + pkg + "_" + remote + ".apk");
+                o.put("page", url);
+                if (remote <= vc) o.put("none", true);
+                return o;
+            }
+
+            JSONObject repo = UpdateManager.parseRepoUrl(url);
+            if (repo == null) {
+                // e.g. a vendor website: Obtainium can track it, this app can't check it directly
+                o.put("source", "external");
+                o.put("page", url);
+                o.put("unsupported", true);
+                return o;
+            }
+            UpdateManager.Release rel = "codeberg.org".equals(repo.optString("host"))
+                    ? UpdateManager.codebergRelease(repo.optString("owner"), repo.optString("repo"))
+                    : UpdateManager.githubRelease(repo.optString("owner"), repo.optString("repo"), token, settings.optBoolean("includePrereleases", false));
+            String version = UpdateManager.extractVersion(rel.tag, settings.optString("versionExtractionRegEx", ""), settings.optString("matchGroupToUse", ""));
+            String[] apk = UpdateManager.pickApk(rel.assets, settings.optString("apkFilterRegEx", ""), settings.optBoolean("invertAPKFilter", false), Build.SUPPORTED_ABIS);
+            o.put("source", "codeberg.org".equals(repo.optString("host")) ? "codeberg" : "github");
+            o.put("availableVersion", version.replaceFirst("^[vV](?=[0-9])", ""));
+            o.put("page", rel.page);
+            o.put("notes", rel.notes);
+            if (apk != null) {
+                o.put("downloadUrl", apk[1]);
+                o.put("assetName", apk[0]);
+            }
+            if (UpdateManager.compareVersions(version, vn) <= 0) o.put("none", true);
+            else if (apk == null) o.put("noApk", true);
+            return o;
+        }
+        return null;
+    }
+
+    private void checkOpenSourceApps(JSONObject summary) throws Exception {
+        final JSONObject sources = updateSources();
+        final String token = prefs.getString("github_token", "");
+        final PackageManager pm = getPackageManager();
+        final List<ApplicationInfo> candidates = new ArrayList<ApplicationInfo>();
+        final java.util.Map<String, String> installers = new java.util.HashMap<String, String>();
+        for (ApplicationInfo ai : pm.getInstalledApplications(0)) {
+            String inst = installerOf(ai.packageName);
+            if (isOpenSourceCandidate(ai, inst, sources)) {
+                candidates.add(ai);
+                installers.put(ai.packageName, inst);
+            }
+        }
+        final JSONArray untracked = new JSONArray();
+        final JSONArray upToDate = new JSONArray();
+        final JSONArray external = new JSONArray();
+        final java.util.concurrent.atomic.AtomicInteger done = new java.util.concurrent.atomic.AtomicInteger();
+        final java.util.concurrent.atomic.AtomicInteger errors = new java.util.concurrent.atomic.AtomicInteger();
+        final int total = candidates.size();
+        ExecutorService pool = Executors.newFixedThreadPool(4);
+        for (final ApplicationInfo ai : candidates) {
+            pool.submit(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        PackageInfo info = pm.getPackageInfo(ai.packageName, 0);
+                        JSONObject r = checkOpenSourceApp(ai, info, installers.get(ai.packageName), sources, token);
+                        if (r == null) {
+                            JSONObject u = new JSONObject();
+                            u.put("pkg", ai.packageName);
+                            u.put("name", pm.getApplicationLabel(ai).toString());
+                            u.put("installedVersion", info.versionName);
+                            u.put("installer", installers.get(ai.packageName) == null ? "" : installers.get(ai.packageName));
+                            synchronized (untracked) { untracked.put(u); }
+                        } else if (r.optBoolean("none")) {
+                            synchronized (upToDate) { upToDate.put(r); }
+                        } else if (r.optBoolean("unsupported")) {
+                            synchronized (external) { external.put(r); }
+                        } else {
+                            updateResults.put(ai.packageName, r);
+                        }
+                    } catch (Exception e) {
+                        errors.incrementAndGet();
+                        Log.w(TAG, "Open-source update check failed for " + ai.packageName + ": " + e.getMessage());
+                    }
+                    int d = done.incrementAndGet();
+                    try {
+                        JSONObject prog = new JSONObject();
+                        prog.put("done", d);
+                        prog.put("total", total);
+                        prog.put("phase", "open-source");
+                        notifyUpdates("onUpdateCheckProgress", prog);
+                    } catch (Exception ignored) {}
+                }
+            });
+        }
+        pool.shutdown();
+        pool.awaitTermination(5, TimeUnit.MINUTES);
+        summary.put("openSourceChecked", total);
+        summary.put("openSourceErrors", errors.get());
+        summary.put("untracked", untracked);
+        summary.put("external", external);
+        summary.put("upToDateOpenSource", upToDate.length());
+    }
+
+    /** SHA-256 digests of the signing certificates (including past keys for installed apps). */
+    private static java.util.Set<String> signerDigests(PackageInfo pi, boolean includeHistory) {
+        java.util.Set<String> out = new HashSet<String>();
+        try {
+            android.content.pm.Signature[] sigs = null;
+            if (Build.VERSION.SDK_INT >= 28 && pi.signingInfo != null) {
+                sigs = includeHistory && !pi.signingInfo.hasMultipleSigners()
+                        ? pi.signingInfo.getSigningCertificateHistory()
+                        : pi.signingInfo.getApkContentsSigners();
+            } else {
+                sigs = pi.signatures;
+            }
+            if (sigs == null) return out;
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+            for (android.content.pm.Signature s : sigs) {
+                byte[] d = md.digest(s.toByteArray());
+                StringBuilder sb = new StringBuilder();
+                for (byte b : d) sb.append(String.format("%02x", b & 0xFF));
+                out.add(sb.toString());
+            }
+        } catch (Exception ignored) {}
+        return out;
+    }
+
+    private static final int REQ_IMPORT_OBTAINIUM = 4201;
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != REQ_IMPORT_OBTAINIUM) return;
+        final Uri uri = (resultCode == RESULT_OK && data != null) ? data.getData() : null;
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                JSONObject res = new JSONObject();
+                try {
+                    if (uri == null) throw new IllegalStateException("cancelled");
+                    InputStream in = getContentResolver().openInputStream(uri);
+                    java.io.ByteArrayOutputStream buf = new java.io.ByteArrayOutputStream();
+                    byte[] b = new byte[16384];
+                    int n;
+                    while ((n = in.read(b)) > 0) {
+                        buf.write(b, 0, n);
+                        if (buf.size() > 20 * 1024 * 1024) throw new IllegalStateException("file too large");
+                    }
+                    in.close();
+                    res.put("imported", importObtainiumJson(buf.toString("UTF-8")));
+                } catch (Exception e) {
+                    try { res.put("error", e.getMessage()); } catch (Exception ignored) {}
+                }
+                notifyUpdates("onObtainiumImported", res);
+            }
+        });
+    }
+
+    /** Merges an Obtainium export ({"apps":[{"id","url","additionalSettings",...}]}) into the update sources. */
+    private int importObtainiumJson(String text) throws Exception {
+        text = text.trim();
+        JSONArray apps = text.startsWith("[") ? new JSONArray(text) : new JSONObject(text).optJSONArray("apps");
+        if (apps == null) throw new IllegalStateException("not an Obtainium export (no \"apps\" list)");
+        JSONObject sources = updateSources();
+        int count = 0;
+        for (int i = 0; i < apps.length(); i++) {
+            JSONObject a = apps.optJSONObject(i);
+            if (a == null) continue;
+            String id = a.optString("id"), url = a.optString("url");
+            if (id.isEmpty() || url.isEmpty()) continue;
+            JSONObject entry = new JSONObject();
+            entry.put("url", url);
+            entry.put("origin", "obtainium-import");
+            entry.put("settings", UpdateManager.obtainiumSettings(a));
+            sources.put(id, entry);
+            count++;
+        }
+        saveUpdateSources(sources);
+        return count;
     }
 
     // Small JSON documents the UI keeps between launches (remembered filters, debloat history)
@@ -1825,6 +2134,87 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void installUpdate(String pkg) {
             runInstallUpdate(pkg);
+        }
+
+        /** Tracks an app's releases at a GitHub / Codeberg / F-Droid URL. Empty url removes it. */
+        @JavascriptInterface
+        public String setUpdateSource(String pkg, String url) {
+            try {
+                JSONObject sources = updateSources();
+                if (url == null || url.trim().isEmpty()) {
+                    sources.remove(pkg);
+                } else {
+                    String u = url.trim();
+                    if (!u.startsWith("https://")) throw new IllegalStateException("use an https:// link");
+                    if (UpdateManager.parseRepoUrl(u) == null && UpdateManager.parseFdroidUrl(u) == null) {
+                        throw new IllegalStateException("supported: github.com/owner/repo, codeberg.org/owner/repo or an F-Droid package link");
+                    }
+                    JSONObject entry = new JSONObject();
+                    entry.put("url", u);
+                    entry.put("origin", "yours");
+                    sources.put(pkg, entry);
+                }
+                saveUpdateSources(sources);
+                return "ok";
+            } catch (Exception e) {
+                return "Error: " + e.getMessage();
+            }
+        }
+
+        @JavascriptInterface
+        public String getUpdateSources() {
+            return updateSources().toString();
+        }
+
+        /** Opens the system file picker for an Obtainium export; result via window.onObtainiumImported(json) */
+        @JavascriptInterface
+        public void importObtainiumExport() {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                    i.addCategory(Intent.CATEGORY_OPENABLE);
+                    i.setType("*/*");
+                    i.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"application/json", "text/plain", "application/octet-stream"});
+                    try {
+                        startActivityForResult(i, REQ_IMPORT_OBTAINIUM);
+                    } catch (Exception e) {
+                        Toast.makeText(MainActivity.this, "No file picker available", Toast.LENGTH_LONG).show();
+                    }
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void setGithubToken(String token) {
+            prefs.edit().putString("github_token", token == null ? "" : token.trim()).apply();
+        }
+
+        @JavascriptInterface
+        public boolean hasGithubToken() {
+            return prefs.getString("github_token", "").length() > 0;
+        }
+
+        /** Opens obtainium:// links (falls back to the Obtainium web catalog when Obtainium isn't installed) */
+        @JavascriptInterface
+        public void openObtainiumLink(final String link) {
+            if (link == null || !link.startsWith("obtainium://")) return;
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(link));
+                        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(i);
+                    } catch (Exception e) {
+                        try {
+                            Intent web = new Intent(Intent.ACTION_VIEW, Uri.parse("https://apps.obtainium.imranr.dev/redirect?r=" + Uri.encode(link)));
+                            web.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(web);
+                        } catch (Exception ignored) {}
+                    }
+                }
+            });
         }
 
         @JavascriptInterface

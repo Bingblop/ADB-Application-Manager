@@ -2090,17 +2090,22 @@
         <section id="view-updates" class="view-content">
             <div class="color-card">
                 <div class="color-card-title">⬆️ Updates Available</div>
-                <div class="color-card-subtitle">Galaxy Store updates for Samsung system apps and apps installed from the Galaxy Store, plus updates for this app</div>
+                <div class="color-card-subtitle">Galaxy Store updates for Samsung apps, and open-source updates for sideloaded apps from GitHub, Codeberg, F-Droid, IzzyOnDroid and Obtainium</div>
                 <div class="uad-status" id="updStatus">Not checked yet.</div>
                 <div class="mode-btn-row">
                     <button class="mode-action-btn primary" id="updCheckBtn" onclick="checkUpdatesUI()">🔍 Check for Updates</button>
                     <button class="mode-action-btn" id="updAllBtn" onclick="updateAllUI()" style="display:none;">⬆️ Update All</button>
                 </div>
-                <div class="uad-credit" style="margin-top:10px;">Updates are official APKs from the Galaxy Store, checked to be the same app and a newer version before installing through ADB, Shizuku or Root. Play Store apps keep updating through the Play Store, which offers no way for other apps to check them.</div>
+                <div class="mode-btn-row" style="margin-top:8px;">
+                    <button class="mode-action-btn" onclick="importObtainiumUI()">📥 Import Obtainium List</button>
+                    <button class="mode-action-btn" id="ghTokenBtn" onclick="setGithubTokenUI()">🔑 GitHub Token</button>
+                </div>
+                <div class="uad-credit" style="margin-top:10px;">Sideloaded apps are matched to their source through your sources, your imported Obtainium list, the Obtainium community catalog, IzzyOnDroid and F-Droid. Every download is checked to be the same app, a newer version and signed with the same key before installing through ADB, Shizuku or Root. Play Store apps keep updating through the Play Store.</div>
             </div>
             <div id="updContainer">
                 <div class="list-empty">Tap Check for Updates.</div>
             </div>
+            <div id="updExtraContainer"></div>
         </section>
 
         <section id="view-saved-lists" class="view-content">
@@ -4139,7 +4144,11 @@ Type any command below (e.g. pm list packages -d)
 
         // ---------- Updates ----------
         let updList = [];
+        let updUntracked = [];
+        let updExternal = [];
         let updChecked = false;
+        const UPD_SOURCE_LABELS = { galaxy: 'Galaxy Store', github: 'GitHub', codeberg: 'Codeberg', fdroid: 'F-Droid', izzy: 'IzzyOnDroid', self: 'GitHub', external: 'Obtainium' };
+        const UPD_ORIGIN_LABELS = { 'obtainium-catalog': 'via Obtainium catalog', 'obtainium-import': 'via your Obtainium list', yours: 'your source' };
         const updProgress = {};
         let updQueue = [];
 
@@ -4148,6 +4157,7 @@ Type any command below (e.g. pm list packages -d)
         }
 
         function onUpdatesShown() {
+            renderGithubTokenBtn();
             const b = updBridge();
             if (!b) {
                 document.getElementById('updContainer').innerHTML = '<div class="list-empty">Updates are only available in the app.</div>';
@@ -4176,16 +4186,22 @@ Type any command below (e.g. pm list packages -d)
 
         function onUpdateCheckProgress(json) {
             const p = JSON.parse(json || '{}');
-            document.getElementById('updStatus').innerText = `Checking the Galaxy Store... ${p.done}/${p.total} apps`;
+            document.getElementById('updStatus').innerText = p.phase === 'open-source'
+                ? `Checking sideloaded apps (GitHub, F-Droid, Obtainium)... ${p.done}/${p.total}`
+                : `Checking the Galaxy Store... ${p.done}/${p.total} apps`;
         }
 
         function onUpdatesChecked(json) {
             const r = JSON.parse(json || '{}');
             updList = r.updates || [];
+            updUntracked = (r.untracked || []).sort((a, b) => a.name.localeCompare(b.name));
+            updExternal = (r.external || []).sort((a, b) => a.name.localeCompare(b.name));
             Object.keys(updProgress).forEach(k => { if (!['downloading', 'installing', 'queued'].includes(updProgress[k].stage)) delete updProgress[k]; });
             document.getElementById('updCheckBtn').disabled = false;
-            const parts = [`${updList.length} update${updList.length === 1 ? '' : 's'} available`, `checked ${r.checked || 0} Galaxy Store apps`];
-            if (r.errors) parts.push(`${r.errors} couldn't be checked${r.lastError ? ' (' + r.lastError + ')' : ''}`);
+            const parts = [`${updList.length} update${updList.length === 1 ? '' : 's'} available`,
+                `checked ${r.checked || 0} Galaxy Store and ${r.openSourceChecked || 0} sideloaded apps`];
+            const errs = (r.errors || 0) + (r.openSourceErrors || 0);
+            if (errs) parts.push(`${errs} couldn't be checked${r.lastError ? ' (' + r.lastError + ')' : ''}`);
             if (r.selfStatus === 'no_releases') parts.push('this app has no GitHub releases yet');
             document.getElementById('updStatus').innerText = parts.join(' • ') + ' • ' + new Date(r.checkedAt || Date.now()).toLocaleTimeString();
             renderUpdates();
@@ -4200,7 +4216,8 @@ Type any command below (e.g. pm list packages -d)
 
         function renderUpdates(st) {
             const container = document.getElementById('updContainer');
-            const galaxy = updList.filter(u => u.source === 'galaxy');
+            renderUpdateExtras();
+            const galaxy = updList.filter(u => updIsInstallable(u));
             const allBtn = document.getElementById('updAllBtn');
             const pending = galaxy.filter(u => !(updProgress[u.pkg] && updProgress[u.pkg].stage === 'done'));
             allBtn.style.display = pending.length > 1 ? 'inline-flex' : 'none';
@@ -4212,12 +4229,14 @@ Type any command below (e.g. pm list packages -d)
                 container.innerHTML = updChecked || (st && st.checkedAt) ? '<div class="list-empty">Everything is up to date. 🎉</div>' : '<div class="list-empty">Tap Check for Updates.</div>';
                 return;
             }
-            const sorted = updList.slice().sort((a, b) => (a.source === 'github' ? -1 : 0) - (b.source === 'github' ? -1 : 0) || a.name.localeCompare(b.name));
+            const sorted = updList.slice().sort((a, b) => (a.source === 'self' ? -1 : 0) - (b.source === 'self' ? -1 : 0) || a.name.localeCompare(b.name));
             container.innerHTML = sorted.map(u => {
                 const pr = updProgress[u.pkg];
                 let btn;
-                if (u.source === 'github') {
+                if (u.source === 'self') {
                     btn = `<button class="mode-action-btn primary" data-pkg="${escapeHtml(u.pkg)}" onclick="openSelfUpdate()">⬇️ Download</button>`;
+                } else if (u.noApk) {
+                    btn = `<button class="mode-action-btn" data-url="${escapeHtml(u.page || '')}" onclick="openUpdatePage(this.getAttribute('data-url'))">↗ Release</button>`;
                 } else if (pr && (pr.stage === 'downloading' || pr.stage === 'installing' || pr.stage === 'queued')) {
                     btn = `<button class="mode-action-btn" disabled>${pr.stage === 'queued' ? '⏳ Queued' : pr.stage === 'installing' ? '⚙️ Installing' : '⬇️ ' + (pr.percent >= 0 ? pr.percent + '%' : '...')}</button>`;
                 } else if (pr && pr.stage === 'done') {
@@ -4227,25 +4246,125 @@ Type any command below (e.g. pm list packages -d)
                 }
                 const bar = pr && (pr.stage === 'downloading' || pr.stage === 'installing') ? `<div class="upd-bar"><div style="width:${pr.stage === 'installing' ? 100 : Math.max(2, pr.percent || 0)}%"></div></div>` : '';
                 const msg = pr && pr.message && pr.stage !== 'queued' ? `<div class="upd-msg ${pr.stage === 'error' ? 'error' : pr.stage === 'done' ? 'done' : ''}">${escapeHtml(pr.message)}</div>` : '';
-                const notes = u.source === 'github' && u.notes ? `<div class="upd-msg">${escapeHtml(u.notes)}</div>` : '';
+                const notes = u.notes ? `<div class="upd-msg">${escapeHtml(u.notes.length > 220 ? u.notes.slice(0, 220) + '…' : u.notes)}</div>` : '';
+                const noApk = u.noApk ? '<div class="upd-msg">No APK for this phone in the latest release. Open the release page to pick one.</div>' : '';
+                const links = (u.obtainium || u.page) && u.source !== 'galaxy' && u.source !== 'self'
+                    ? `<div class="mode-btn-row" style="margin-top:8px;">${u.page ? `<button class="mode-action-btn" data-url="${escapeHtml(u.page)}" onclick="openUpdatePage(this.getAttribute('data-url'))">↗ Page</button>` : ''}${u.obtainium ? `<button class="mode-action-btn" data-link="${escapeHtml(u.obtainium)}" onclick="openObtainiumUI(this.getAttribute('data-link'))">Ⓞ Open in Obtainium</button>` : ''}</div>` : '';
                 return `
                     <div class="upd-row">
                         <div class="upd-head">
                             <div style="min-width:0;">
                                 <div class="uad-name">${escapeHtml(u.name)}</div>
                                 <div class="uad-pkg" style="margin-bottom:2px;">${escapeHtml(u.pkg)}</div>
-                                <span class="uad-badge uad-tag">${u.source === 'github' ? 'GitHub' : 'Galaxy Store'}</span>${u.isSystem ? '<span class="uad-badge uad-tag">system</span>' : ''}
+                                <span class="uad-badge uad-tag">${escapeHtml(UPD_SOURCE_LABELS[u.source] || u.source)}</span>${u.isSystem ? '<span class="uad-badge uad-tag">system</span>' : ''}${UPD_ORIGIN_LABELS[u.origin] ? `<span class="uad-badge uad-tag">${UPD_ORIGIN_LABELS[u.origin]}</span>` : ''}
                                 <div class="upd-ver">${escapeHtml(u.installedVersion || '?')} → <b>${escapeHtml(u.availableVersion || '?')}</b></div>
                             </div>
                             ${btn}
                         </div>
-                        ${bar}${msg}${notes}
+                        ${bar}${msg}${noApk}${notes}${links}
                     </div>`;
             }).join('');
         }
 
+        // Installable here: Galaxy Store and open-source sources with an APK for this phone
+        function updIsInstallable(u) {
+            return ['galaxy', 'github', 'codeberg', 'fdroid', 'izzy'].includes(u.source) && !u.noApk;
+        }
+
+        function openUpdatePage(url) {
+            if (url && window.AndroidBridge && window.AndroidBridge.openUrl) window.AndroidBridge.openUrl(url);
+        }
+
+        function openObtainiumUI(link) {
+            haptic();
+            if (window.AndroidBridge && window.AndroidBridge.openObtainiumLink) window.AndroidBridge.openObtainiumLink(link);
+        }
+
+        // Sections under the updates: sources only Obtainium can track, and sideloaded apps with no known source
+        function renderUpdateExtras() {
+            const box = document.getElementById('updExtraContainer');
+            if (!box) return;
+            let html = '';
+            if (updExternal.length) {
+                html += `<div class="color-card-title" style="margin:14px 0 8px;">Ⓞ Track in Obtainium (${updExternal.length})</div>
+                    <div class="uad-credit" style="border:none; padding:0 0 8px;">These apps' releases live on sites this app can't check directly. Obtainium can track them.</div>`;
+                html += updExternal.map(u => `
+                    <div class="upd-row">
+                        <div class="uad-name">${escapeHtml(u.name)}</div>
+                        <div class="uad-pkg">${escapeHtml(u.pkg)} • ${escapeHtml(u.installedVersion || '')}</div>
+                        <div class="upd-msg">${escapeHtml(u.sourceUrl || '')}</div>
+                        <div class="mode-btn-row" style="margin-top:8px;">
+                            <button class="mode-action-btn primary" data-link="${escapeHtml(u.obtainium || '')}" onclick="openObtainiumUI(this.getAttribute('data-link'))">Ⓞ Open in Obtainium</button>
+                            <button class="mode-action-btn" data-url="${escapeHtml(u.page || '')}" onclick="openUpdatePage(this.getAttribute('data-url'))">↗ Page</button>
+                        </div>
+                    </div>`).join('');
+            }
+            if (updUntracked.length) {
+                html += `<div class="color-card-title" style="margin:14px 0 8px;">❔ Not tracked (${updUntracked.length})</div>
+                    <div class="uad-credit" style="border:none; padding:0 0 8px;">Sideloaded apps with no known source. Set a GitHub, Codeberg or F-Droid link to check them.</div>`;
+                html += updUntracked.map(u => `
+                    <div class="upd-row">
+                        <div class="upd-head">
+                            <div style="min-width:0;">
+                                <div class="uad-name">${escapeHtml(u.name)}</div>
+                                <div class="uad-pkg">${escapeHtml(u.pkg)} • ${escapeHtml(u.installedVersion || '')}</div>
+                            </div>
+                            <button class="mode-action-btn" data-pkg="${escapeHtml(u.pkg)}" data-name="${escapeHtml(u.name)}" onclick="setUpdateSourceUI(this.getAttribute('data-pkg'), this.getAttribute('data-name'))">＋ Set source</button>
+                        </div>
+                    </div>`).join('');
+            }
+            box.innerHTML = html;
+        }
+
+        function setUpdateSourceUI(pkg, name) {
+            const b = updBridge();
+            if (!b || !b.setUpdateSource) return;
+            const url = prompt(`Where are ${name}'s releases?\n\ngithub.com/owner/repo, codeberg.org/owner/repo or an F-Droid package link`, 'https://github.com/');
+            if (url === null) return;
+            const res = b.setUpdateSource(pkg, url.trim() === 'https://github.com/' ? '' : url.trim());
+            if (res !== 'ok') { showToast(res.replace(/^Error: /, ''), '⚠️'); return; }
+            showToast('Source saved. Checking again...', '🔗');
+            checkUpdatesUI();
+        }
+
+        function importObtainiumUI() {
+            haptic();
+            const b = updBridge();
+            if (!b || !b.importObtainiumExport) return;
+            showToast('Pick your Obtainium export (Obtainium → Settings → Export)', '📥');
+            b.importObtainiumExport();
+        }
+
+        // Called by MainActivity after the file picker
+        function onObtainiumImported(json) {
+            const r = JSON.parse(json || '{}');
+            if (r.error) {
+                if (r.error !== 'cancelled') showToast('Import failed: ' + r.error, '⚠️');
+                return;
+            }
+            showToast(`Imported ${r.imported} app source${r.imported === 1 ? '' : 's'} from Obtainium. Checking...`, '📥');
+            checkUpdatesUI();
+        }
+
+        function setGithubTokenUI() {
+            const b = updBridge();
+            if (!b || !b.setGithubToken) return;
+            const has = b.hasGithubToken && b.hasGithubToken();
+            const t = prompt((has ? 'A GitHub token is saved. ' : '') + 'Optional GitHub token (no permissions needed) raises the limit from 60 to 5,000 checks an hour. Leave empty to remove it.', '');
+            if (t === null) return;
+            b.setGithubToken(t.trim());
+            renderGithubTokenBtn();
+            showToast(t.trim() ? 'GitHub token saved' : 'GitHub token removed', '🔑');
+        }
+
+        function renderGithubTokenBtn() {
+            const btn = document.getElementById('ghTokenBtn');
+            const b = updBridge();
+            if (btn && b && b.hasGithubToken) btn.innerText = b.hasGithubToken() ? '🔑 GitHub Token ✓' : '🔑 GitHub Token';
+        }
+
         function openSelfUpdate() {
-            const u = updList.find(x => x.source === 'github');
+            const u = updList.find(x => x.source === 'self');
             if (!u || !window.AndroidBridge || !window.AndroidBridge.openUrl) return;
             window.AndroidBridge.openUrl(u.downloadUrl || u.page);
             showToast('Downloading in your browser. Open the APK when it finishes to update.', '⬇️');
@@ -4263,9 +4382,9 @@ Type any command below (e.g. pm list packages -d)
         // One at a time, so downloads don't compete and installs don't overlap
         function updateAllUI() {
             if (!guardPrivilege('Install updates')) return;
-            const pending = updList.filter(u => u.source === 'galaxy' && !(updProgress[u.pkg] && ['done', 'downloading', 'installing'].includes(updProgress[u.pkg].stage)));
+            const pending = updList.filter(u => updIsInstallable(u) && !(updProgress[u.pkg] && ['done', 'downloading', 'installing'].includes(updProgress[u.pkg].stage)));
             if (!pending.length) return;
-            if (!confirm(`Update ${pending.length} apps from the Galaxy Store?`)) return;
+            if (!confirm(`Update ${pending.length} apps?`)) return;
             haptic();
             updQueue = pending.map(u => u.pkg);
             updQueue.forEach(p => { updProgress[p] = { stage: 'queued', percent: 0, message: '' }; });

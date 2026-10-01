@@ -1,5 +1,27 @@
 # Changelog
 
+## v4.1-Pro (versionCode 310)
+
+Installs over v3.1 – v4.0 without uninstalling (same signing key).
+
+### Open-source updates for sideloaded apps
+- The Updates tab now checks sideloaded apps (not from the Play Store or Galaxy Store) against, in
+  order: **your sources**, your **imported Obtainium list**, the **Obtainium community catalog**
+  (looked up online, honouring its APK filter / version rules), **IzzyOnDroid** and **F-Droid**.
+  Apps installed through an F-Droid client are checked against F-Droid first.
+- Releases are read from **GitHub** (API, falling back to the public release pages when the
+  60-checks-an-hour limit is reached; an optional **GitHub token** raises it to 5,000) and
+  **Codeberg**. The APK matching the phone's architecture is picked automatically.
+- **📥 Import Obtainium List** reads an Obtainium export (Settings → Export) so every app you track
+  in Obtainium is checked here too.
+- Apps whose releases live somewhere only Obtainium can track get **Ⓞ Open in Obtainium**; sideloaded
+  apps with no known source are listed under **Not tracked** with **＋ Set source**.
+- Before installing, the download's **signing key is compared** with the installed app. A mismatch
+  (for example an F-Droid build over a developer build) is stopped with a clear explanation instead
+  of a failed install.
+- Update All covers every installable source; releases without an APK for this phone link to their
+  release page.
+
 ## v4.0-Pro (versionCode 300)
 
 Installs over v3.1 – v3.9 without uninstalling (same signing key).
