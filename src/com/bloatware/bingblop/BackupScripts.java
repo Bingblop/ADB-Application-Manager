@@ -85,7 +85,9 @@ final class BackupScripts {
             + "for d in user/0/" + pkg + " user_de/0/" + pkg + "; do [ -d \"$d\" ] && find \"$d\" -mindepth 1 -maxdepth 1 -exec rm -rf {} \\; ; done\n"
             + "tar -xf " + t + " -C " + quote(dataRoot) + " >/dev/null 2>&1; rc=$?\n"
             + "[ $rc -eq 0 ] || { echo \"ERROR: extracting failed ($rc)\"; exit 4; }\n"
-            + "for d in user/0/" + pkg + " user_de/0/" + pkg + "; do if [ -d \"$d\" ]; then chown -R $uid:$uid \"$d\"; restorecon -RF \"$d\" >/dev/null 2>&1; fi; done\n"
+            + "fail=0\n"
+            + "for d in user/0/" + pkg + " user_de/0/" + pkg + "; do if [ -d \"$d\" ]; then chown -R $uid:$uid \"$d\" || fail=1; restorecon -RF \"$d\" >/dev/null 2>&1 || fail=1; fi; done\n"
+            + "[ \"$fail\" -eq 0 ] || { echo 'ERROR: could not restore ownership or SELinux labels on the restored data'; exit 7; }\n"
             + "echo OK\n";
     }
 

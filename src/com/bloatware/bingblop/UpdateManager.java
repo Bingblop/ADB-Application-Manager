@@ -11,12 +11,6 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -40,32 +34,41 @@ public final class UpdateManager {
     // Every regex matched here (Obtainium catalog's versionExtractionRegEx, apkFilterRegEx) comes from a
     // network response - a community catalog entry or a self-hosted source - so a syntactically valid but
     // catastrophically-backtracking pattern must not be able to hang the caller. Java's Matcher has no
-    // interruptible find(), so this runs it on a small, bounded pool instead: a timed-out match still leaks
-    // that one stuck thread, but the pool's fixed size caps how many can ever accumulate, and a cancelled
-    // *queued* task (once the pool is full) never runs at all.
-    private static final ExecutorService REGEX_EXECUTOR = Executors.newFixedThreadPool(2, new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread t = new Thread(r, "update-regex");
-            t.setDaemon(true);
-            return t;
-        }
-    });
+    // interruptible find(), so a timed-out match is simply abandoned rather than stopped - that thread
+    // keeps backtracking in the background forever. A shared, fixed-size pool was tried first, but a
+    // thread that never comes back permanently occupies one of its workers; after as few hostile patterns
+    // as the pool has slots, every later, unrelated, perfectly ordinary match would queue behind them and
+    // never run at all, turning one or two bad catalog entries into a permanent outage for every update
+    // check from then on. A fresh daemon thread per attempt instead means a stuck match leaks one thread
+    // (bounded by how many hostile patterns are ever actually matched, not fatal) without ever blocking
+    // another call's own thread from running and returning its own correct result on time.
     private static final long REGEX_TIMEOUT_MS = 2000;
 
-    private static boolean findWithTimeout(final Matcher m) {
-        Future<Boolean> f = REGEX_EXECUTOR.submit(new Callable<Boolean>() {
+    private enum MatchResult { MATCHED, NOT_MATCHED, TIMED_OUT }
+
+    private static MatchResult findWithTimeout(final Matcher m) {
+        final MatchResult[] result = {MatchResult.NOT_MATCHED};
+        Thread t = new Thread(new Runnable() {
             @Override
-            public Boolean call() {
-                return m.find();
+            public void run() {
+                try {
+                    result[0] = m.find() ? MatchResult.MATCHED : MatchResult.NOT_MATCHED;
+                } catch (Throwable ignored) {
+                    result[0] = MatchResult.NOT_MATCHED;
+                }
             }
-        });
+        }, "update-regex");
+        t.setDaemon(true);
+        t.start();
         try {
-            return f.get(REGEX_TIMEOUT_MS, TimeUnit.MILLISECONDS);
-        } catch (Exception e) {
-            f.cancel(true);
-            return false;
+            t.join(REGEX_TIMEOUT_MS);
+        } catch (InterruptedException ignored) {
+            Thread.currentThread().interrupt();
         }
+        // join() returning because the thread finished happens-before this read of result[0]; returning
+        // because the timeout elapsed instead means it's still running, so the result it will eventually
+        // write can't be trusted (and isn't waited for).
+        return t.isAlive() ? MatchResult.TIMED_OUT : result[0];
     }
 
     /** Device identity Samsung's service uses to pick the right build for this phone and region. */
@@ -435,7 +438,7 @@ public final class UpdateManager {
         if (regex == null || regex.isEmpty()) return tag;
         try {
             Matcher m = Pattern.compile(regex).matcher(tag);
-            if (!findWithTimeout(m)) return tag;
+            if (findWithTimeout(m) != MatchResult.MATCHED) return tag;
             int g = 0;
             try {
                 g = Integer.parseInt(group == null || group.isEmpty() ? "0" : group.replaceAll("[^0-9]", ""));
@@ -461,7 +464,13 @@ public final class UpdateManager {
         for (String[] a : assets) {
             String name = a[0].toLowerCase();
             if (!name.endsWith(".apk")) continue;
-            if (filter != null && findWithTimeout(filter.matcher(a[0])) == invertFilter) continue;
+            if (filter != null) {
+                // A timed-out match is neither "matched" nor "not matched" - it's unknown, and treating it
+                // as "not matched" would, under an inverted filter, keep exactly the candidate the filter
+                // was written to exclude. Reject the candidate on timeout regardless of inversion instead.
+                MatchResult r = findWithTimeout(filter.matcher(a[0]));
+                if (r == MatchResult.TIMED_OUT || (r == MatchResult.MATCHED) == invertFilter) continue;
+            }
             int score = 0;
             boolean mentionsArch = false;
             String[][] archNames = {{"arm64-v8a", "arm64", "aarch64", "armv8"}, {"armeabi-v7a", "armeabi", "armv7", "arm32"}, {"x86_64", "x64", "amd64"}, {"x86", "i686"}};

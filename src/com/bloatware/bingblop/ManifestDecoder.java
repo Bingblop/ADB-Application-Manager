@@ -219,8 +219,13 @@ public final class ManifestDecoder {
         boolean utf8 = (flags & UTF8_FLAG) != 0;
         // A crafted count (e.g. 0xFFFFFFFF) would throw NegativeArraySizeException and, since this chunk
         // is usually the very first one, abort decoding the entire manifest instead of just this string
-        // pool; clamp it to the buffer's own capacity, which no real pool could exceed anyway.
-        strings = new String[count >= 0 && count <= bb.capacity() ? count : 0];
+        // pool. Comparing count against the buffer's byte capacity only rules out the overflow case: at
+        // the 32 MB manifest cap, a count of ~33.5 million still passes that check and allocates a
+        // reference array in the hundred-plus MB range. The offset table (4 bytes per entry, starting
+        // right after this header) physically cannot hold more entries than fit in what's left of the
+        // buffer, so bound count by that instead - a real pool is nowhere near this bound either way.
+        int maxEntries = Math.max(0, (bb.capacity() - pos - headerSize) / 4);
+        strings = new String[count >= 0 && count <= maxEntries ? count : 0];
         Charset charset = Charset.forName(utf8 ? "UTF-8" : "UTF-16LE");
         for (int i = 0; i < strings.length; i++) {
             try {

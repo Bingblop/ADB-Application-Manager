@@ -380,7 +380,7 @@ public class MainActivity extends Activity {
 
     /** Is this backend usable right now, without showing any prompt? */
     private boolean modeReadyQuiet(String mode) {
-        if ("adb_tcp".equals(mode)) return isAdbTargetConnected(tcpTarget()) || isPortOpen(adbTcpHost, adbTcpPort, 300);
+        if ("adb_tcp".equals(mode)) return isAdbTargetConnected(tcpTarget());
         if ("adb_wireless".equals(mode)) return adbWirelessPort > 0 && isAdbTargetConnected(wirelessTarget());
         if ("shizuku".equals(mode)) return isShizukuAuthorized();
         if ("root".equals(mode)) return isRootAvailable();
@@ -1419,13 +1419,20 @@ public class MainActivity extends Activity {
         }
     }
 
-    /** backup.json is the first entry, so this reads a few KB even from a multi-GB backup. */
+    /** backup.json must be the first entry, so this reads a few KB even from a multi-GB backup. */
     private JSONObject readBackupMeta(String ref) throws Exception {
         java.util.zip.ZipInputStream zin = new java.util.zip.ZipInputStream(new java.io.BufferedInputStream(openRef(ref)));
         try {
-            java.util.zip.ZipEntry e;
-            while ((e = zin.getNextEntry()) != null) {
-                if (!"backup.json".equals(e.getName())) continue;
+            // A picked backup file is untrusted, so scanning forward for backup.json by name cannot be
+            // allowed: skipping a non-matching entry via another getNextEntry() call first fully inflates
+            // it to find its end, with no byte cap - a tiny zip bomb placed before backup.json would be
+            // decompressed in full before this method ever gets to check anything. Require it to be the
+            // very first entry instead and refuse immediately otherwise.
+            java.util.zip.ZipEntry e = zin.getNextEntry();
+            if (e == null || !"backup.json".equals(e.getName())) {
+                throw new IllegalStateException("not a valid backup file (backup.json must be the first entry)");
+            }
+            {
                 java.io.ByteArrayOutputStream buf = new java.io.ByteArrayOutputStream();
                 byte[] b = new byte[8192];
                 int n;
@@ -1443,7 +1450,6 @@ public class MainActivity extends Activity {
         } finally {
             zin.close();
         }
-        throw new IllegalStateException("not an ADB App Manager backup");
     }
 
     private static boolean isDangerousPermission(PackageManager pm, String name) {
@@ -1467,6 +1473,7 @@ public class MainActivity extends Activity {
             public void run() {
                 JSONObject res = new JSONObject();
                 File tmpTar = null;
+                Object[] target = null;
                 try {
                     res.put("op", "backup");
                     res.put("pkg", pkg);
@@ -1542,7 +1549,7 @@ public class MainActivity extends Activity {
                     backupEvent("backup", "write", 55, "Saving the backup...");
                     String stamp = new java.text.SimpleDateFormat("yyyyMMdd-HHmm", java.util.Locale.US).format(new java.util.Date());
                     String fileName = (label.isEmpty() ? pkg : label) + "_" + version + "_" + stamp + ".adbbackup";
-                    Object[] target = openDownloadOutput(fileName, "application/octet-stream", "Backups");
+                    target = openDownloadOutput(fileName, "application/octet-stream", "Backups");
                     java.util.zip.ZipOutputStream zip = new java.util.zip.ZipOutputStream(new java.io.BufferedOutputStream((OutputStream) target[0]));
                     long total = 0;
                     try {
@@ -1592,6 +1599,11 @@ public class MainActivity extends Activity {
                     res.put("hasData", withData);
                     res.put("warnings", warnings);
                 } catch (Exception e) {
+                    // A target already created (a MediaStore row on Android 10+, indexed the moment it's
+                    // inserted, before any bytes are written) must not survive a failure partway through
+                    // writing it - otherwise a failed backup still shows up in Downloads looking like a
+                    // complete, restorable .adbbackup file.
+                    deleteDownloadTarget(target);
                     try {
                         res.put("ok", false);
                         res.put("error", e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
@@ -1652,8 +1664,14 @@ public class MainActivity extends Activity {
                             File dest = null;
                             if (n.matches("apk/[A-Za-z0-9_.+-]+\\.apk")) dest = new File(apkDir, n.substring(4));
                             else if ("data.tar".equals(n)) dest = dataTar;
-                            if (dest == null) continue; // anything else in the file is ignored
-                            FileOutputStream out = new FileOutputStream(dest);
+                            // Anything else in the file is ignored, but still has to be read through the same
+                            // counted loop below: a bare "continue" here would make the next getNextEntry()
+                            // call silently inflate the whole entry first to find its end, bypassing the byte
+                            // cap entirely for a huge entry under a name this code doesn't recognize.
+                            OutputStream out = dest != null ? new FileOutputStream(dest) : new OutputStream() {
+                                public void write(int b) {}
+                                public void write(byte[] b, int off, int len) {}
+                            };
                             try {
                                 byte[] buf = new byte[65536];
                                 int r;
@@ -2196,12 +2214,27 @@ public class MainActivity extends Activity {
         return new Object[]{new FileOutputStream(file), file.getAbsolutePath(), file.getAbsolutePath()};
     }
 
+    /** Deletes a target from openDownloadOutput after a failure, so a file that never finished writing
+     *  doesn't stay indexed (or on disk) looking like a complete, usable one. */
+    private void deleteDownloadTarget(Object[] target) {
+        if (target == null) return;
+        try {
+            String ref = (String) target[2];
+            if (ref.startsWith("content://")) {
+                getContentResolver().delete(Uri.parse(ref), null, null);
+            } else {
+                new File(ref).delete();
+            }
+        } catch (Exception ignored) {}
+    }
+
     /** Copies an app's APK (or base + splits as a .apks bundle) to Downloads. Result via window.onApkExtracted(json). */
     private void runExtractApk(final String pkg) {
         executor.submit(new Runnable() {
             @Override
             public void run() {
                 JSONObject res = new JSONObject();
+                Object[] target = null;
                 try {
                     res.put("pkg", pkg);
                     PackageManager pm = getPackageManager();
@@ -2212,7 +2245,6 @@ public class MainActivity extends Activity {
                     String label = pm.getApplicationLabel(ai).toString();
                     String base = (label.isEmpty() ? pkg : label) + "_" + (pi.versionName != null ? pi.versionName : String.valueOf(versionCodeOf(pi)));
                     long total = 0;
-                    Object[] target;
                     if (files.length == 1) {
                         target = openDownloadOutput(base + ".apk", "application/vnd.android.package-archive", "APKs");
                         OutputStream out = (OutputStream) target[0];
@@ -2243,6 +2275,7 @@ public class MainActivity extends Activity {
                     res.put("bytes", total);
                     res.put("splits", files.length);
                 } catch (Exception e) {
+                    deleteDownloadTarget(target);
                     try {
                         res.put("ok", false);
                         res.put("error", e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
