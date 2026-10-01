@@ -1,0 +1,44 @@
+name: Publish release
+
+# Publishes the signed APK committed under release/ as a GitHub Release.
+# Run it from the Actions tab (Run workflow) or push a tag such as v3.1.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (matches release/ADB_Application_Manager_Pro-v<version>.apk)'
+        required: true
+        default: '3.1'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resolve version
+        id: v
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Check APK exists
+        run: test -f "release/ADB_Application_Manager_Pro-v${{ steps.v.outputs.version }}.apk"
+      - name: Extract release notes
+        run: |
+          awk '/^## v${{ steps.v.outputs.version }}/{f=1;next} /^## /{f=0} f' CHANGELOG.md > notes.md
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.v.outputs.version }}
+          name: ADB Application Manager Pro v${{ steps.v.outputs.version }}
+          body_path: notes.md
+          target_commitish: ${{ github.sha }}
+          files: |
+            release/ADB_Application_Manager_Pro-v${{ steps.v.outputs.version }}.apk
+            release/SHA256SUMS.txt

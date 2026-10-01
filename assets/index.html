@@ -1,0 +1,3362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>ADB Application Manager Pro</title>
+    <style>
+        :root {
+            --bg-base: #080A0F;
+            --bg-surface: #10141E;
+            --bg-card: #141A28;
+            --bg-card-hover: #1E2638;
+            --border-glass: rgba(255, 255, 255, 0.09);
+            --accent: #00E5FF;
+            --accent-glow: rgba(0, 229, 255, 0.35);
+            --secondary: #7C4DFF;
+            --text-main: #FFFFFF;
+            --text-muted: #8E9BAE;
+            --text-dim: #546075;
+            
+            /* Status Badge Colors */
+            --status-running: #00E676;
+            --status-frozen: #00E5FF;
+            --status-system: #7C4DFF;
+            --status-user: #FF9100;
+            --status-bloat: #FF5252;
+
+            --radius-xl: 24px;
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        html {
+            background-color: var(--bg-base);
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            padding: 0 0 160px 0;
+            min-height: 100vh;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        /* Top Sticky Header */
+        .app-header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: #080A0F;
+            border-bottom: 1px solid var(--border-glass);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .brand-box {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .app-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--accent), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 0 14px var(--accent-glow);
+        }
+
+        .brand-text h1 {
+            font-size: 17px;
+            font-weight: 800;
+            letter-spacing: -0.4px;
+            background: linear-gradient(90deg, #FFFFFF, var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-text p {
+            font-size: 10px;
+            color: var(--text-muted);
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0, 230, 118, 0.12);
+            border: 1px solid rgba(0, 230, 118, 0.3);
+            color: var(--status-running);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--status-running);
+            box-shadow: 0 0 10px var(--status-running);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+
+        /* Top Navigation Tabs */
+        .tab-bar {
+            display: flex;
+            background: #0E121B;
+            border-bottom: 1px solid var(--border-glass);
+            overflow-x: auto;
+            scrollbar-width: none;
+            padding: 6px 10px;
+            position: sticky;
+            top: 65px;
+            z-index: 90;
+            -webkit-overflow-scrolling: touch;
+            touch-action: pan-x;
+        }
+
+        .tab-bar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .tab-btn {
+            flex: 0 0 auto;
+            padding: 8px 16px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
+            border-radius: 20px;
+            margin: 0 4px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .tab-btn.active {
+            color: #000000;
+            background: var(--accent);
+            box-shadow: 0 2px 12px var(--accent-glow);
+        }
+
+        /* Main Container */
+        .container {
+            padding: 14px 16px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .view-content {
+            display: none;
+        }
+
+        .view-content.active {
+            display: block;
+        }
+
+        /* Stats Dashboard Strip */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            padding: 10px 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.15s;
+        }
+
+        .stat-card:active {
+            transform: scale(0.96);
+            background: var(--bg-card-hover);
+        }
+
+        .stat-num {
+            font-size: 17px;
+            font-weight: 900;
+            color: var(--accent);
+            margin-bottom: 2px;
+        }
+
+        .stat-label {
+            font-size: 9px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Search Bar */
+        .search-box {
+            position: relative;
+            margin-bottom: 10px;
+        }
+
+        .search-input {
+            width: 100%;
+            height: 46px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            padding: 0 42px 0 16px;
+            color: #FFFFFF;
+            font-size: 14px;
+            font-weight: 600;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-input:focus {
+            border-color: var(--accent);
+        }
+
+        .search-clear {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 16px;
+            cursor: pointer;
+            padding: 4px;
+            display: none;
+        }
+
+        /* Filter Pills */
+        .filter-scroll {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            padding-bottom: 6px;
+            margin-bottom: 14px;
+            -webkit-overflow-scrolling: touch;
+            touch-action: pan-x;
+        }
+
+        .filter-scroll::-webkit-scrollbar {
+            display: none;
+        }
+
+        .filter-pill {
+            flex: 0 0 auto;
+            padding: 6px 13px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-glass);
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+        }
+
+        .filter-pill.active {
+            background: rgba(0, 229, 255, 0.14);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* App Cards */
+        .app-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            padding: 12px 14px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: background 0.15s;
+        }
+
+        .app-card.selected {
+            border-color: var(--accent);
+            background: rgba(0, 229, 255, 0.1);
+        }
+
+        .app-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .app-checkbox {
+            width: 22px;
+            height: 22px;
+            border-radius: 6px;
+            border: 2px solid var(--border-glass);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 900;
+            color: #000000;
+            flex-shrink: 0;
+        }
+
+        .app-card.selected .app-checkbox {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .app-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: #1C2030;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            font-weight: 800;
+            color: var(--accent);
+            border: 1px solid var(--border-glass);
+            flex-shrink: 0;
+        }
+
+        .app-meta {
+            overflow: hidden;
+            min-width: 0;
+            flex: 1;
+        }
+
+        .app-name {
+            font-size: 13px;
+            font-weight: 800;
+            white-space: normal;
+            overflow: visible;
+            text-overflow: unset;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            line-height: 1.25;
+            margin-bottom: 2px;
+        }
+
+        .app-pkg {
+            font-size: 10px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 3px;
+        }
+
+        .badge-row {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .tag-badge {
+            font-size: 9px;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .tag-running {
+            background: rgba(0, 230, 118, 0.12);
+            color: var(--status-running);
+            border: 1px solid rgba(0, 230, 118, 0.3);
+        }
+
+        .tag-frozen {
+            background: rgba(0, 229, 255, 0.12);
+            color: var(--status-frozen);
+            border: 1px solid rgba(0, 229, 255, 0.3);
+        }
+
+        .tag-system {
+            background: rgba(124, 77, 255, 0.12);
+            color: var(--status-system);
+            border: 1px solid rgba(124, 77, 255, 0.3);
+        }
+
+        .tag-user {
+            background: rgba(255, 145, 0, 0.12);
+            color: var(--status-user);
+            border: 1px solid rgba(255, 145, 0, 0.3);
+        }
+
+        .tag-bloat {
+            background: rgba(255, 82, 82, 0.12);
+            color: var(--status-bloat);
+            border: 1px solid rgba(255, 82, 82, 0.3);
+        }
+
+        .app-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+            margin-left: 8px;
+        }
+
+        .btn-mini {
+            width: 34px;
+            height: 34px;
+            border-radius: 9px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border-glass);
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .btn-mini:active {
+            background: var(--accent);
+            color: #000000;
+        }
+
+        /* DOCKED BATCH COMMANDS SHEET (One UI 2-Row Grid: Never Cut Off, No Side Scroll Needed!) */
+        .batch-bottom-sheet {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #0E121B;
+            border-top: 2px solid var(--accent);
+            border-radius: 20px 20px 0 0;
+            box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.9), 0 0 24px var(--accent-glow);
+            padding: 12px 16px 24px 16px;
+            z-index: 200;
+            transform: translateY(120%);
+            transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .batch-bottom-sheet.show {
+            transform: translateY(0);
+        }
+
+        .batch-sheet-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 0 4px;
+        }
+
+        .batch-sheet-title {
+            font-size: 13px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #FFFFFF;
+        }
+
+        .batch-sheet-tools {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .batch-tool-link {
+            background: none;
+            border: none;
+            color: var(--accent);
+            font-size: 11px;
+            font-weight: 800;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        /* 3-Column Responsive Grid: 100% On Screen, No Cut Off! */
+        .batch-actions-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .batch-grid-btn {
+            height: 44px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--border-glass);
+            border-radius: 12px;
+            color: #FFFFFF;
+            font-size: 11px;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.15s ease;
+        }
+
+        .batch-grid-btn:active {
+            background: var(--accent);
+            color: #000000;
+            transform: scale(0.96);
+        }
+
+        /* Color Settings View */
+        .color-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .color-card-title {
+            font-size: 14px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .color-card-subtitle {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+        }
+
+        .palette-presets-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .palette-preset-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .palette-preset-card.active {
+            border-color: var(--accent);
+            box-shadow: 0 0 16px var(--accent-glow);
+        }
+
+        .preset-strip {
+            display: flex;
+            height: 14px;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .preset-swatch {
+            flex: 1;
+            height: 100%;
+        }
+
+        .preset-name {
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .color-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-glass);
+        }
+
+        .color-row:last-child {
+            border-bottom: none;
+        }
+
+        .color-meta h4 {
+            font-size: 13px;
+            font-weight: 800;
+            margin-bottom: 2px;
+        }
+
+        .color-meta p {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .picker-bubble-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-glass);
+            padding: 4px 10px 4px 6px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        .bubble-circle {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid #FFFFFF;
+        }
+
+        .bubble-hex {
+            font-size: 12px;
+            font-family: monospace;
+            font-weight: 800;
+            color: #FFFFFF;
+        }
+
+        input[type="color"] {
+            opacity: 0;
+            position: absolute;
+            pointer-events: none;
+        }
+
+        /* Inspector Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 300;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-sheet {
+            background: #0E121B;
+            border: 1px solid var(--border-glass);
+            border-top: 2px solid var(--accent);
+            border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+            width: 100%;
+            max-width: 600px;
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 18px;
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.15);
+        }
+
+        .modal-overlay.show .modal-sheet {
+            transform: translateY(0);
+        }
+
+        .sheet-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+
+        .sheet-app-hero {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sheet-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--accent), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 900;
+            color: #000000;
+        }
+
+        .sheet-title h3 {
+            font-size: 15px;
+            font-weight: 800;
+        }
+
+        .sheet-title p {
+            font-size: 10px;
+            color: var(--text-muted);
+            word-break: break-all;
+        }
+
+        .sheet-action-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .sheet-btn {
+            height: 44px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            color: #FFFFFF;
+            font-size: 10px;
+            font-weight: 800;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            cursor: pointer;
+        }
+
+        .sheet-btn:active {
+            background: var(--accent);
+            color: #000000;
+        }
+
+        .sheet-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-glass);
+            margin-bottom: 12px;
+            gap: 8px;
+        }
+
+        .sheet-tab-pill {
+            padding: 8px 12px;
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+
+        .sheet-tab-pill.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+
+        .sheet-tab-content {
+            display: none;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .sheet-tab-content.active {
+            display: block;
+        }
+
+        .perm-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 11px;
+        }
+
+        .perm-toggle-btn {
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 9px;
+            font-weight: 800;
+            cursor: pointer;
+            border: none;
+        }
+
+        .perm-toggle-btn.granted {
+            background: rgba(0, 230, 118, 0.2);
+            color: var(--status-running);
+        }
+
+        .perm-toggle-btn.revoked {
+            background: rgba(255, 82, 82, 0.2);
+            color: var(--status-bloat);
+        }
+
+        /* Bloatware & Terminal View Styles */
+        .bloat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+
+        .bloat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .bloat-title {
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        .bloat-btn {
+            padding: 5px 12px;
+            background: var(--accent);
+            border: none;
+            border-radius: 14px;
+            color: #000000;
+            font-size: 11px;
+            font-weight: 900;
+            cursor: pointer;
+        }
+
+        .apps-tool-btn {
+            flex: 1;
+            padding: 7px 10px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            color: var(--text-main);
+            font-size: 11px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .saved-lists-toolbar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .saved-list-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            padding: 14px;
+            margin-bottom: 12px;
+        }
+
+        .saved-list-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .saved-list-title {
+            font-size: 14px;
+            font-weight: 800;
+            margin-bottom: 4px;
+            word-break: break-word;
+        }
+
+        .saved-list-meta,
+        .modal-helper {
+            font-size: 11px;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        .saved-list-desc {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            line-height: 1.45;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .saved-list-pkgs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+
+        .saved-pkg-chip {
+            padding: 4px 8px;
+            border-radius: 999px;
+            border: 1px solid var(--border-glass);
+            background: rgba(255,255,255,0.05);
+            font-size: 10px;
+            color: var(--text-main);
+            font-family: monospace;
+            max-width: 100%;
+            word-break: break-all;
+        }
+
+        .saved-list-actions {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .modal-text-input,
+        .modal-textarea {
+            width: 100%;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            color: #FFFFFF;
+            padding: 12px;
+            font-size: 12px;
+            margin-bottom: 10px;
+            outline: none;
+        }
+
+        .modal-textarea {
+            min-height: 130px;
+            resize: vertical;
+            font-family: monospace;
+            line-height: 1.45;
+        }
+
+        .result-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 55vh;
+            overflow-y: auto;
+        }
+
+        .result-item {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            padding: 10px;
+        }
+
+        .result-item.success {
+            border-color: rgba(0, 230, 118, 0.35);
+        }
+
+        .result-item.failed {
+            border-color: rgba(255, 82, 82, 0.35);
+        }
+
+        .result-item-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .result-item-name {
+            font-size: 12px;
+            font-weight: 800;
+            word-break: break-word;
+        }
+
+        .result-item-pkg {
+            font-size: 10px;
+            color: var(--text-muted);
+            word-break: break-all;
+            margin-bottom: 6px;
+        }
+
+        .result-item-output {
+            font-family: monospace;
+            font-size: 11px;
+            color: var(--text-main);
+            white-space: pre-wrap;
+            word-break: break-word;
+            line-height: 1.45;
+        }
+
+        .confirm-list-box {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            padding: 10px;
+            max-height: 220px;
+            overflow-y: auto;
+            margin: 10px 0 14px;
+        }
+
+        .confirm-list-row {
+            font-size: 12px;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            word-break: break-word;
+        }
+
+        .confirm-list-row:last-child {
+            border-bottom: none;
+        }
+
+        .batch-save-row {
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+
+        .batch-save-row .batch-grid-btn {
+            width: 100%;
+        }
+
+        .terminal-box {
+            background: #06080D;
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            padding: 12px;
+            height: 350px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            color: var(--accent);
+            line-height: 1.5;
+            margin-bottom: 10px;
+        }
+
+        .term-input-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .term-input {
+            flex: 1;
+            height: 44px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            padding: 0 12px;
+            color: #FFFFFF;
+            font-family: monospace;
+            font-size: 13px;
+            outline: none;
+        }
+
+        .term-run-btn {
+            width: 70px;
+            height: 44px;
+            background: var(--accent);
+            border: none;
+            border-radius: var(--radius-md);
+            color: #000000;
+            font-weight: 900;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #141A28;
+            border: 1px solid var(--accent);
+            color: #FFFFFF;
+            padding: 9px 18px;
+            border-radius: 24px;
+            font-size: 11px;
+            font-weight: 800;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.8);
+            transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 999;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Mode Alert Card */
+        .mode-alert-card {
+            background: rgba(255, 145, 0, 0.08);
+            border: 1px solid rgba(255, 145, 0, 0.3);
+            border-radius: var(--radius-lg);
+            padding: 12px 14px;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .mode-alert-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .mode-alert-body {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .mode-alert-title {
+            font-size: 13px;
+            font-weight: 800;
+            color: #FFA726;
+            margin-bottom: 2px;
+        }
+
+        .mode-alert-desc {
+            font-size: 11px;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        .mode-alert-btn {
+            background: linear-gradient(135deg, #FF9100, #FF6D00);
+            color: #000;
+            border: none;
+            border-radius: var(--radius-pill);
+            padding: 6px 14px;
+            font-size: 11px;
+            font-weight: 800;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: transform 0.15s ease, opacity 0.15s ease;
+        }
+
+        .mode-alert-btn:active {
+            transform: scale(0.95);
+            opacity: 0.85;
+        }
+
+        /* Working Modes Modal Styles */
+        .mode-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius-lg);
+            padding: 14px;
+            margin-bottom: 12px;
+            transition: border-color 0.2s ease, background 0.2s ease;
+        }
+
+        .mode-card.active-mode {
+            border-color: var(--status-running);
+            background: rgba(0, 230, 118, 0.06);
+        }
+
+        .mode-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .mode-card-title {
+            font-size: 13.5px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .mode-card-desc {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+
+        .mode-input-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .mode-input {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: var(--radius-md);
+            padding: 8px 12px;
+            font-size: 12px;
+            color: #FFF;
+            outline: none;
+        }
+
+        .mode-input:focus {
+            border-color: var(--accent);
+        }
+
+        .mode-btn-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .mode-action-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            color: var(--text-main);
+            border-radius: var(--radius-pill);
+            padding: 7px 14px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s ease;
+        }
+
+        .mode-action-btn.primary {
+            background: linear-gradient(135deg, var(--accent), var(--secondary));
+            color: #000;
+            border: none;
+        }
+
+        .mode-action-btn:active {
+            transform: scale(0.96);
+            opacity: 0.85;
+        }
+
+        .mode-tip-box {
+            background: rgba(0, 229, 255, 0.06);
+            border: 1px dashed rgba(0, 229, 255, 0.3);
+            border-radius: var(--radius-md);
+            padding: 8px 10px;
+            font-size: 10.5px;
+            color: var(--text-muted);
+            line-height: 1.4;
+            margin-bottom: 10px;
+        }
+
+        .mode-status-tag {
+            font-size: 10px;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: var(--radius-pill);
+            letter-spacing: 0.5px;
+        }
+
+        .mode-status-tag.active {
+            background: rgba(0, 230, 118, 0.15);
+            color: var(--status-running);
+            border: 1px solid rgba(0, 230, 118, 0.4);
+        }
+
+        .mode-status-tag.inactive {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-muted);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .mode-status-tag.warning {
+            background: rgba(255, 145, 0, 0.15);
+            color: #FFA726;
+            border: 1px solid rgba(255, 145, 0, 0.4);
+        }
+
+        .mode-card.pending-mode {
+            border-color: #FFA726;
+            background: rgba(255, 145, 0, 0.05);
+        }
+
+        .mode-input {
+            min-width: 0;
+        }
+
+        .mode-input.port {
+            flex: 0 0 96px;
+        }
+
+        .mode-input-label {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin: 0 0 4px 2px;
+        }
+
+        .mode-use-btn.in-use {
+            border-color: var(--status-running);
+            color: var(--status-running);
+        }
+
+        .mode-section-label {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--accent);
+            margin-bottom: 6px;
+        }
+
+        .palette-preset-card .preset-badge {
+            display: inline-block;
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: 0.4px;
+            padding: 1px 6px;
+            margin-top: 4px;
+            border-radius: 999px;
+            border: 1px solid var(--border-glass);
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="app-header">
+        <div class="brand-box">
+            <div class="app-icon">⚡</div>
+            <div class="brand-text">
+                <h1>ADB App Manager</h1>
+                <p id="deviceInfoSubtitle">Samsung One UI 9.0</p>
+            </div>
+        </div>
+        <div class="status-badge" id="execModeBadge" onclick="openWorkingModesModal()" title="Working Modes & ADB Setup">
+            <div class="status-dot" id="execModeDot"></div>
+            <span id="execModeText">Checking Mode...</span>
+        </div>
+    </header>
+
+    <!-- Top Navigation Tabs -->
+    <nav class="tab-bar">
+        <button class="tab-btn active" onclick="switchView('apps')">📱 Applications</button>
+        <button class="tab-btn" onclick="switchView('saved-lists')">📋 Saved Lists</button>
+        <button class="tab-btn" onclick="switchView('colors')">🎨 Color & Themes</button>
+        <button class="tab-btn" onclick="switchView('terminal')">💻 ADB Console</button>
+    </nav>
+
+    <div class="container">
+
+        <!-- VIEW 1: APPLICATIONS LIST -->
+        <section id="view-apps" class="view-content active">
+
+            <!-- Read-Only / Working Mode Alert Banner -->
+            <div class="mode-alert-card" id="modeAlertCard" style="display:none;">
+                <div class="mode-alert-icon" id="modeAlertIcon">⚠️</div>
+                <div class="mode-alert-body">
+                    <div class="mode-alert-title" id="modeAlertTitle">Active Mode: Read-Only (Unprivileged)</div>
+                    <div class="mode-alert-desc" id="modeAlertDesc">All installed apps are shown. To enable Freeze, Uninstall, or ADB commands, connect via ADB TCP 5555, Wireless Debugging, Shizuku, or Root.</div>
+                </div>
+                <button class="mode-alert-btn" onclick="openWorkingModesModal()">Set Up ⚡</button>
+            </div>
+            
+            <!-- Live Statistics Grid -->
+            <div class="stats-grid">
+                <div class="stat-card" onclick="setFilter('all')">
+                    <div class="stat-num" id="statTotal">--</div>
+                    <div class="stat-label">Total Installed</div>
+                </div>
+                <div class="stat-card" onclick="setFilter('running')">
+                    <div class="stat-num" style="color:var(--status-running);" id="statRunning">--</div>
+                    <div class="stat-label">Running</div>
+                </div>
+                <div class="stat-card" onclick="setFilter('frozen')">
+                    <div class="stat-num" style="color:var(--status-frozen);" id="statFrozen">--</div>
+                    <div class="stat-label">Frozen / Disabled</div>
+                </div>
+                <div class="stat-card" onclick="setFilter('user')">
+                    <div class="stat-num" style="color:var(--status-user);" id="statUser">--</div>
+                    <div class="stat-label">User Apps</div>
+                </div>
+                <div class="stat-card" onclick="setFilter('system')">
+                    <div class="stat-num" style="color:var(--status-system);" id="statSystem">--</div>
+                    <div class="stat-label">System Apps</div>
+                </div>
+                <div class="stat-card" onclick="setFilter('uninstalled')">
+                    <div class="stat-num" style="color:var(--status-bloat);" id="statUninstalled">--</div>
+                    <div class="stat-label">Bloatware (Uninstalled)</div>
+                </div>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="search-box">
+                <input type="text" class="search-input" id="searchInput" placeholder="Search by app name or package..." oninput="handleSearch()">
+                <span class="search-clear" id="searchClear" onclick="clearSearch()">✕</span>
+            </div>
+
+            <!-- Quick Filter Pills -->
+            <div class="filter-scroll">
+                <div class="filter-pill active" onclick="setFilter('all', this)">All Apps (<span id="countAll">0</span>)</div>
+                <div class="filter-pill" onclick="setFilter('running', this)">⚡ Running (<span id="countRunning">0</span>)</div>
+                <div class="filter-pill" onclick="setFilter('user', this)">👤 3rd Party (<span id="countUser">0</span>)</div>
+                <div class="filter-pill" onclick="setFilter('system', this)">⚙️ System (<span id="countSystem">0</span>)</div>
+                <div class="filter-pill" onclick="setFilter('frozen', this)">❄️ Frozen (<span id="countFrozen">0</span>)</div>
+                <div class="filter-pill" onclick="setFilter('uninstalled', this)">🗑️ Uninstalled (<span id="countUninstalled">0</span>)</div>
+            </div>
+
+            <!-- Dynamic Apps List -->
+            <div id="appsListContainer">
+                <div style="text-align:center; padding: 40px; color: var(--text-muted);">
+                    <div style="font-size:24px; margin-bottom:8px;">⏳</div>
+                    <div>Querying system packages...</div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- VIEW 2: SAVED LISTS -->
+        <section id="view-saved-lists" class="view-content">
+            <div style="margin-bottom:14px;">
+                <h3 style="font-size:15px; font-weight:800; margin-bottom:4px;">Saved App Lists</h3>
+                <p style="font-size:11px; color:var(--text-muted);">Create reusable named app selections, recall them instantly, edit packages, or delete old lists.</p>
+            </div>
+
+            <div class="saved-lists-toolbar">
+                <button class="apps-tool-btn" onclick="openListEditorModal()">➕ New List</button>
+            </div>
+
+            <div id="savedListsContainer">
+                <div style="text-align:center; padding: 28px 20px; color: var(--text-muted);">
+                    <div style="font-size:24px; margin-bottom:8px;">📋</div>
+                    <div style="font-size:13px; font-weight:700; color:var(--text-main); margin-bottom:4px;">No Saved Lists Yet</div>
+                    <div style="font-size:11px; margin-bottom:14px;">Select multiple apps in the Applications tab, then tap Save to List.</div>
+                    <button class="mode-action-btn primary" onclick="switchView('apps')">Go to Applications</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 3: COLOR & THEMES CUSTOMIZER -->
+        <section id="view-colors" class="view-content">
+            <div class="color-card">
+                <div class="color-card-title">🎨 Curated Theme Palettes</div>
+                <div class="color-card-subtitle">Choose from luxury dark and high-contrast color schemes</div>
+
+                <div class="palette-presets-grid">
+                    <div class="palette-preset-card active" data-preset="amoled" onclick="applyPalettePreset('amoled', this)">
+                        <div class="preset-strip">
+                            <div class="preset-swatch" style="background:#00E5FF"></div>
+                            <div class="preset-swatch" style="background:#000000"></div>
+                            <div class="preset-swatch" style="background:#141A28"></div>
+                        </div>
+                        <div class="preset-name">AMOLED Cyan</div>
+                    </div>
+
+                    <div class="palette-preset-card" data-preset="cyberpunk" onclick="applyPalettePreset('cyberpunk', this)">
+                        <div class="preset-strip">
+                            <div class="preset-swatch" style="background:#FF0055"></div>
+                            <div class="preset-swatch" style="background:#0F051D"></div>
+                            <div class="preset-swatch" style="background:#00FFFF"></div>
+                        </div>
+                        <div class="preset-name">Cyberpunk Violet</div>
+                    </div>
+
+                    <div class="palette-preset-card" data-preset="emerald" onclick="applyPalettePreset('emerald', this)">
+                        <div class="preset-strip">
+                            <div class="preset-swatch" style="background:#00E676"></div>
+                            <div class="preset-swatch" style="background:#04140D"></div>
+                            <div class="preset-swatch" style="background:#0D2619"></div>
+                        </div>
+                        <div class="preset-name">Nordic Emerald</div>
+                    </div>
+
+                    <div class="palette-preset-card" data-preset="amber" onclick="applyPalettePreset('amber', this)">
+                        <div class="preset-strip">
+                            <div class="preset-swatch" style="background:#FF9100"></div>
+                            <div class="preset-swatch" style="background:#140F08"></div>
+                            <div class="preset-swatch" style="background:#2A1E11"></div>
+                        </div>
+                        <div class="preset-name">Sunset Amber</div>
+                    </div>
+
+                    <div class="palette-preset-card" data-preset="slate" onclick="applyPalettePreset('slate', this)">
+                        <div class="preset-strip">
+                            <div class="preset-swatch" style="background:#448AFF"></div>
+                            <div class="preset-swatch" style="background:#0D1117"></div>
+                            <div class="preset-swatch" style="background:#161B22"></div>
+                        </div>
+                        <div class="preset-name">Midnight Slate</div>
+                    </div>
+
+                    <div class="palette-preset-card" data-preset="crimson" onclick="applyPalettePreset('crimson', this)">
+                        <div class="preset-strip">
+                            <div class="preset-swatch" style="background:#FF1744"></div>
+                            <div class="preset-swatch" style="background:#000000"></div>
+                            <div class="preset-swatch" style="background:#1C080B"></div>
+                        </div>
+                        <div class="preset-name">Blood Moon</div>
+                    </div>
+
+                    <div class="palette-preset-card" data-preset="material3" onclick="applyPalettePreset('material3', this)">
+                        <div class="preset-strip">
+                            <div class="preset-swatch" style="background:#D0BCFF"></div>
+                            <div class="preset-swatch" style="background:#141218"></div>
+                            <div class="preset-swatch" style="background:#211F26"></div>
+                            <div class="preset-swatch" style="background:#CCC2DC"></div>
+                        </div>
+                        <div class="preset-name">Material 3</div>
+                        <span class="preset-badge">M3 BASELINE</span>
+                    </div>
+
+                    <div class="palette-preset-card" data-preset="materialyou" onclick="applyPalettePreset('materialyou', this)">
+                        <div class="preset-strip" id="materialYouStrip">
+                            <div class="preset-swatch" style="background:#A8C7FA"></div>
+                            <div class="preset-swatch" style="background:#111318"></div>
+                            <div class="preset-swatch" style="background:#1D2024"></div>
+                            <div class="preset-swatch" style="background:#BFC6DC"></div>
+                        </div>
+                        <div class="preset-name">Material You</div>
+                        <span class="preset-badge" id="materialYouBadge">M3 DYNAMIC • WALLPAPER</span>
+                    </div>
+                </div>
+
+                <div class="color-card-title">✨ Granular Color Pickers</div>
+                <div class="color-card-subtitle">Fine-tune every visual surface and status badge</div>
+
+                <div class="color-row">
+                    <div class="color-meta">
+                        <h4>Primary System Accent</h4>
+                        <p>Buttons, active indicators, borders</p>
+                    </div>
+                    <label class="picker-bubble-btn">
+                        <div class="bubble-circle" id="circAccent" style="background: #00E5FF;"></div>
+                        <span class="bubble-hex" id="hexAccent">#00E5FF</span>
+                        <input type="color" value="#00E5FF" onchange="updateCustomColor('accent', this.value)">
+                    </label>
+                </div>
+
+                <div class="color-row">
+                    <div class="color-meta">
+                        <h4>App Background</h4>
+                        <p>True AMOLED Pitch Black (#000000) or Slate</p>
+                    </div>
+                    <label class="picker-bubble-btn">
+                        <div class="bubble-circle" id="circBg" style="background: #080A0F;"></div>
+                        <span class="bubble-hex" id="hexBg">#080A0F</span>
+                        <input type="color" value="#080A0F" onchange="updateCustomColor('bg', this.value)">
+                    </label>
+                </div>
+
+                <div class="color-row">
+                    <div class="color-meta">
+                        <h4>Card Surface Color</h4>
+                        <p>App cards and dialog containers</p>
+                    </div>
+                    <label class="picker-bubble-btn">
+                        <div class="bubble-circle" id="circCard" style="background: #141A28;"></div>
+                        <span class="bubble-hex" id="hexCard">#141A28</span>
+                        <input type="color" value="#141A28" onchange="updateCustomColor('card', this.value)">
+                    </label>
+                </div>
+
+                <div class="color-row">
+                    <div class="color-meta">
+                        <h4>Running App Badge</h4>
+                        <p>Active background process status indicator</p>
+                    </div>
+                    <label class="picker-bubble-btn">
+                        <div class="bubble-circle" id="circRunning" style="background: #00E676;"></div>
+                        <span class="bubble-hex" id="hexRunning">#00E676</span>
+                        <input type="color" value="#00E676" onchange="updateCustomColor('running', this.value)">
+                    </label>
+                </div>
+
+                <div class="color-row">
+                    <div class="color-meta">
+                        <h4>Frozen App Badge</h4>
+                        <p>Disabled or suspended packages</p>
+                    </div>
+                    <label class="picker-bubble-btn">
+                        <div class="bubble-circle" id="circFrozen" style="background: #00E5FF;"></div>
+                        <span class="bubble-hex" id="hexFrozen">#00E5FF</span>
+                        <input type="color" value="#00E5FF" onchange="updateCustomColor('frozen', this.value)">
+                    </label>
+                </div>
+
+                <div class="color-row">
+                    <div class="color-meta">
+                        <h4>System App Badge</h4>
+                        <p>Core framework & OEM system packages</p>
+                    </div>
+                    <label class="picker-bubble-btn">
+                        <div class="bubble-circle" id="circSystem" style="background: #7C4DFF;"></div>
+                        <span class="bubble-hex" id="hexSystem">#7C4DFF</span>
+                        <input type="color" value="#7C4DFF" onchange="updateCustomColor('system', this.value)">
+                    </label>
+                </div>
+
+                <div class="color-row">
+                    <div class="color-meta">
+                        <h4>Bloatware Badge</h4>
+                        <p>Partitioned uninstalled system apps</p>
+                    </div>
+                    <label class="picker-bubble-btn">
+                        <div class="bubble-circle" id="circBloat" style="background: #FF5252;"></div>
+                        <span class="bubble-hex" id="hexBloat">#FF5252</span>
+                        <input type="color" value="#FF5252" onchange="updateCustomColor('bloat', this.value)">
+                    </label>
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 4: ADB CONSOLE -->
+        <section id="view-terminal" class="view-content">
+            <div class="bloat-card" style="margin-bottom:14px; border-color:var(--accent);">
+                <div class="bloat-header">
+                    <div>
+                        <h4 style="font-size:14px; font-weight:800; color:var(--accent);" id="termActiveModeTitle">⚡ Active Mode: ADB / Shell</h4>
+                        <p style="font-size:11px; color:var(--text-muted); margin-top:2px;" id="termActiveModeDesc">Execute shell and package commands across multiple backends.</p>
+                    </div>
+                    <button class="bloat-btn" onclick="openWorkingModesModal()">Configure</button>
+                </div>
+                <div class="mode-btn-row" style="margin-top:10px;">
+                    <button class="apps-tool-btn" onclick="openWorkingModesModal()">⚙️ Working Modes</button>
+                    <button class="apps-tool-btn" onclick="document.getElementById('termCmd').value = 'adb devices'; runTerminalCmd();">📱 adb devices</button>
+                    <button class="apps-tool-btn" onclick="document.getElementById('termCmd').value = 'id'; runTerminalCmd();">🆔 UID (id)</button>
+                    <button class="apps-tool-btn" onclick="connectAdbTcpUI()">⚡ Connect 5555</button>
+                    <button class="apps-tool-btn" onclick="restartAdbTcpipUI()">🔄 tcpip 5555</button>
+                    <button class="apps-tool-btn" onclick="openDevOptionsUI()">⚙️ Dev Options</button>
+                </div>
+            </div>
+
+            <div class="terminal-box" id="termOutput">
+ADB Application Manager Shell Terminal Ready.
+Type any command below (e.g. pm list packages -d)
+            </div>
+
+            <div class="term-input-row" style="margin-top:12px;">
+                <input type="text" class="term-input" id="termCmd" placeholder="Enter shell command..." onkeydown="if(event.key==='Enter') runTerminalCmd()">
+                <button class="term-run-btn" onclick="runTerminalCmd()">RUN</button>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- DOCKED BATCH COMMANDS SHEET (One UI 2-Row Grid: Never Cut Off, No Side Scroll Needed!) -->
+    <div class="batch-bottom-sheet" id="floatingBatchBar">
+        <div class="batch-sheet-header">
+            <div class="batch-sheet-title">
+                <span>📦</span>
+                <span id="batchCountText">0 Selected</span>
+            </div>
+            <div class="batch-sheet-tools">
+                <button class="batch-tool-link" onclick="selectAllFiltered()">Select All</button>
+                <button class="batch-tool-link" onclick="clearBatchSelection()" style="color:var(--text-muted);">✕ Clear</button>
+            </div>
+        </div>
+        <div class="batch-save-row">
+            <button class="batch-grid-btn accent" onclick="openSaveSelectedModal()">💾 Save to List</button>
+        </div>
+        <div class="batch-actions-grid">
+            <button class="batch-grid-btn" onclick="batchAction('freeze')">❄️ Freeze</button>
+            <button class="batch-grid-btn" onclick="batchAction('unfreeze')">🔥 Enable</button>
+            <button class="batch-grid-btn" onclick="batchAction('force_stop')">🛑 Force Stop</button>
+            <button class="batch-grid-btn" onclick="batchAction('clear_data')">🧹 Clear Data</button>
+            <button class="batch-grid-btn danger" onclick="batchAction('uninstall')">🗑️ Uninstall</button>
+            <button class="batch-grid-btn accent" onclick="batchAction('reinstall')">📥 Reinstall</button>
+        </div>
+    </div>
+
+    <!-- Inspector Modal -->
+    <div class="modal-overlay" id="inspectorModal" onclick="if(event.target===this) closeInspector()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-avatar" id="sheetAvatar">⚡</div>
+                    <div class="sheet-title">
+                        <h3 id="sheetTitle">App Title</h3>
+                        <p id="sheetPkg">com.example.package</p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="closeInspector()">✕</div>
+            </div>
+
+            <!-- Action Grid -->
+            <div class="sheet-action-grid">
+                <button class="sheet-btn" onclick="singleAction('launch')">
+                    <span>🚀</span><span>Launch</span>
+                </button>
+                <button class="sheet-btn" onclick="singleAction('force_stop')">
+                    <span>🛑</span><span>Force Stop</span>
+                </button>
+                <button class="sheet-btn" onclick="singleAction('freeze')" id="sheetBtnFreeze">
+                    <span>❄️</span><span>Freeze</span>
+                </button>
+                <button class="sheet-btn" onclick="singleAction('unfreeze')" id="sheetBtnUnfreeze">
+                    <span>🔥</span><span>Enable</span>
+                </button>
+                <button class="sheet-btn" onclick="singleAction('clear_data')">
+                    <span>🧹</span><span>Clear Data</span>
+                </button>
+                <button class="sheet-btn" onclick="singleAction('uninstall')" id="sheetBtnUninstall">
+                    <span>🗑️</span><span>Uninstall</span>
+                </button>
+                <button class="sheet-btn" onclick="singleAction('reinstall')" id="sheetBtnReinstall" style="display:none;">
+                    <span>📥</span><span>Reinstall</span>
+                </button>
+                <button class="sheet-btn" onclick="singleAction('uninstall_updates')">
+                    <span>🔄</span><span>Rem Updates</span>
+                </button>
+                <button class="sheet-btn" onclick="singleAction('app_settings')">
+                    <span>⚙️</span><span>App Info</span>
+                </button>
+            </div>
+
+            <!-- Sub Tabs -->
+            <div class="sheet-tabs">
+                <div class="sheet-tab-pill active" onclick="switchSheetTab('perms')">🛡️ Permissions & AppOps</div>
+                <div class="sheet-tab-pill" onclick="switchSheetTab('comps')">🧩 Components</div>
+                <div class="sheet-tab-pill" onclick="switchSheetTab('raw')">📋 Raw Dumpsys</div>
+            </div>
+
+            <!-- Tab 1: Permissions -->
+            <div id="sheetTabPerms" class="sheet-tab-content active">
+                <div id="permsContainer">
+                    <div style="color:var(--text-muted); font-size:12px;">Loading permissions...</div>
+                </div>
+            </div>
+
+            <!-- Tab 2: Components -->
+            <div id="sheetTabComps" class="sheet-tab-content">
+                <div id="compsContainer">
+                    <div style="color:var(--text-muted); font-size:12px;">Loading activities & services...</div>
+                </div>
+            </div>
+
+            <!-- Tab 3: Raw -->
+            <div id="sheetTabRaw" class="sheet-tab-content">
+                <pre id="rawContainer" style="font-family:monospace; font-size:11px; color:var(--accent); white-space:pre-wrap;"></pre>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="listEditorModal" onclick="if(event.target===this) closeListEditorModal()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-avatar" style="background:linear-gradient(135deg, #00E5FF, #7C4DFF);">📋</div>
+                    <div class="sheet-title">
+                        <h3 id="listEditorTitle">Create Saved List</h3>
+                        <p>Name the list and edit package names one per line.</p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="closeListEditorModal()">✕</div>
+            </div>
+            <input type="hidden" id="listEditorId">
+            <input class="modal-text-input" id="listEditorName" placeholder="List name">
+            <input class="modal-text-input" id="listEditorDesc" placeholder="Optional description">
+            <textarea class="modal-textarea" id="listEditorPackages" placeholder="com.example.one&#10;com.example.two"></textarea>
+            <div class="modal-helper">One package per line. Duplicate entries are removed automatically.</div>
+            <div style="display:flex; gap:10px; margin-top:8px;">
+                <button class="mode-action-btn primary" style="flex:1; justify-content:center;" onclick="saveListFromEditor()">Save List</button>
+                <button class="mode-action-btn" style="padding:10px 16px;" onclick="closeListEditorModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="saveListModal" onclick="if(event.target===this) closeSaveSelectedModal()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-avatar" style="background:rgba(0,229,255,0.18); color:var(--accent);">💾</div>
+                    <div class="sheet-title">
+                        <h3>Save Selected Apps</h3>
+                        <p id="saveListSelectedCount">0 apps selected</p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="closeSaveSelectedModal()">✕</div>
+            </div>
+            <input class="modal-text-input" id="saveListName" placeholder="List name">
+            <input class="modal-text-input" id="saveListDesc" placeholder="Optional description">
+            <div class="modal-helper">This saves every currently selected app to a reusable named list.</div>
+            <div style="display:flex; gap:10px; margin-top:8px;">
+                <button class="mode-action-btn primary" style="flex:1; justify-content:center;" onclick="confirmSaveSelectedApps()">Save Selected Apps</button>
+                <button class="mode-action-btn" style="padding:10px 16px;" onclick="closeSaveSelectedModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="commandResultsModal" onclick="if(event.target===this) closeCommandResultsModal()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-avatar" style="background:rgba(0, 230, 118, 0.18); color:var(--status-running);">📄</div>
+                    <div class="sheet-title">
+                        <h3 id="commandResultsTitle">Execution Results</h3>
+                        <p id="commandResultsSubtitle">Per-app command output</p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="closeCommandResultsModal()">✕</div>
+            </div>
+            <div class="result-list" id="commandResultsList"></div>
+            <div style="display:flex; gap:10px; margin-top:12px;">
+                <button class="mode-action-btn primary" style="flex:1; justify-content:center;" onclick="closeCommandResultsModal()">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="batchConfirmModal" onclick="if(event.target===this) closeBatchConfirmModal()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-avatar" style="background:rgba(255,145,0,0.2); color:#FFA726;">⚠️</div>
+                    <div class="sheet-title">
+                        <h3 id="batchConfirmTitle">Confirm Batch Action</h3>
+                        <p id="batchConfirmSubtitle">Review selected apps before continuing</p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="closeBatchConfirmModal()">✕</div>
+            </div>
+            <div class="modal-helper">These apps are currently selected for this action:</div>
+            <div class="confirm-list-box" id="batchConfirmList"></div>
+            <div style="display:flex; gap:10px; margin-top:8px;">
+                <button class="mode-action-btn primary" style="flex:1; justify-content:center;" id="batchConfirmExecuteBtn" onclick="confirmPendingBatchAction()">Confirm</button>
+                <button class="mode-action-btn" style="padding:10px 16px;" onclick="closeBatchConfirmModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="deleteListModal" onclick="if(event.target===this) closeDeleteListModal()">
+        <div class="modal-sheet" style="max-width:440px;">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-avatar" style="background:rgba(255,82,82,0.18); color:var(--status-bloat);">🗑️</div>
+                    <div class="sheet-title">
+                        <h3>Delete Saved List</h3>
+                        <p id="deleteListSubtitle">This action cannot be undone.</p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="closeDeleteListModal()">✕</div>
+            </div>
+            <div class="modal-helper">Are you sure you want to delete this saved list?</div>
+            <div style="display:flex; gap:10px; margin-top:8px;">
+                <button class="mode-action-btn primary" style="flex:1; justify-content:center; background:var(--status-bloat); color:#fff;" onclick="confirmDeleteList()">Delete List</button>
+                <button class="mode-action-btn" style="padding:10px 16px;" onclick="closeDeleteListModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <span id="toastIcon">✨</span>
+        <span id="toastMsg">Ready</span>
+    </div>
+
+    <!-- Working Modes & ADB Setup Modal -->
+    <div class="modal-overlay" id="modesModal" onclick="if(event.target===this) closeWorkingModesModal()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-avatar" style="background:linear-gradient(135deg, #00E5FF, #7C4DFF);">⚡</div>
+                    <div class="sheet-title">
+                        <h3>Working Modes & ADB Setup</h3>
+                        <p id="modalActiveModeDesc">Active: Read-Only (Unprivileged)</p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="closeWorkingModesModal()">✕</div>
+            </div>
+
+            <!-- Mode 0: Automatic -->
+            <div class="mode-card" id="modeCardAuto">
+                <div class="mode-card-header">
+                    <div class="mode-card-title">
+                        <span>✨</span>
+                        <span>Automatic (Recommended)</span>
+                    </div>
+                    <span class="mode-status-tag inactive" id="statusTagAuto">AUTO</span>
+                </div>
+                <div class="mode-card-desc">
+                    Uses the best backend that is ready: ADB TCP → Wireless Debugging → Shizuku. Pick a specific mode below to pin it instead.
+                </div>
+                <div class="mode-btn-row">
+                    <button class="mode-action-btn mode-use-btn" data-mode="auto" onclick="selectModeUI('auto')">
+                        <span>✓</span> <span class="mode-use-label">Use Automatic</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mode 1: ADB over TCP (Port 5555) -->
+            <div class="mode-card" id="modeCardAdbTcp">
+                <div class="mode-card-header">
+                    <div class="mode-card-title">
+                        <span>⚡</span>
+                        <span>ADB over TCP (Port 5555)</span>
+                    </div>
+                    <span class="mode-status-tag" id="statusTagAdbTcp">Checking...</span>
+                </div>
+                <div class="mode-card-desc">
+                    Connect directly to the device internal ADB daemon on localhost or remote IP. Fastest and most reliable non-root mode.
+                </div>
+                <div class="mode-input-label">Host / IP (you can also type IP:port)</div>
+                <div class="mode-input-row">
+                    <input type="text" class="mode-input" id="adbTcpHostInput" value="127.0.0.1" placeholder="127.0.0.1 or 192.168.1.20:5555" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+                    <input type="text" inputmode="numeric" class="mode-input port" id="adbTcpPortInput" value="5555" placeholder="Port" autocomplete="off">
+                </div>
+                <div class="mode-btn-row">
+                    <button class="mode-action-btn primary" onclick="connectAdbTcpUI()">
+                        <span>⚡</span> Connect
+                    </button>
+                    <button class="mode-action-btn mode-use-btn" data-mode="adb_tcp" onclick="selectModeUI('adb_tcp')">
+                        <span>✓</span> <span class="mode-use-label">Use This Mode</span>
+                    </button>
+                    <button class="mode-action-btn" onclick="restartAdbTcpipUI()">
+                        <span>🔄</span> Switch to 5555 (tcpip)
+                    </button>
+                    <button class="mode-action-btn" onclick="disconnectAdbUI()">
+                        <span>✕</span> Disconnect
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mode 2: Wireless Debugging (Android 11+) -->
+            <div class="mode-card" id="modeCardAdbWireless">
+                <div class="mode-card-header">
+                    <div class="mode-card-title">
+                        <span>📶</span>
+                        <span>Wireless Debugging (Android 11+)</span>
+                    </div>
+                    <span class="mode-status-tag" id="statusTagAdbWireless">Android 11+</span>
+                </div>
+                <div class="mode-card-desc">
+                    Pair device using Android native Wireless Debugging dialog in Developer Options.
+                </div>
+                <div class="mode-tip-box">
+                    💡 <b>Tip:</b> Open Developer Options in <b>Split Screen</b> or <b>Pop-up Window</b> so Android does not rotate the 6-digit pairing code before you submit it. Every address field accepts a full <b>IP:port</b> (e.g. 192.168.1.20:37099) or just the port.
+                </div>
+                <div class="mode-btn-row" style="margin-bottom:12px;">
+                    <button class="mode-action-btn" onclick="openDevOptionsUI()">
+                        <span>⚙️</span> Open Developer Options
+                    </button>
+                    <button class="mode-action-btn" onclick="autoDetectWirelessUI()">
+                        <span>🔎</span> Auto-Detect Ports
+                    </button>
+                </div>
+
+                <!-- Step 1: Pair -->
+                <div class="mode-section-label">STEP 1: PAIR WITH CODE</div>
+                <div class="mode-input-label">Pairing address (IP:port or port)</div>
+                <div class="mode-input-row">
+                    <input type="text" class="mode-input" id="adbPairPortInput" placeholder="38475 or 192.168.1.20:38475" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+                    <input type="text" inputmode="numeric" class="mode-input port" id="adbPairCodeInput" placeholder="Code" maxlength="10" autocomplete="one-time-code">
+                </div>
+                <div class="mode-btn-row" style="margin-bottom:14px;">
+                    <button class="mode-action-btn primary" onclick="pairAdbWirelessUI()">
+                        <span>📶</span> Pair Device
+                    </button>
+                </div>
+
+                <!-- Step 2: Connect -->
+                <div class="mode-section-label">STEP 2: CONNECT WIRELESS ADB</div>
+                <div class="mode-input-label">Connect address from Wireless Debugging (IP:port or port)</div>
+                <div class="mode-input-row">
+                    <input type="text" class="mode-input" id="adbWirelessHostInput" placeholder="IP (blank = 127.0.0.1)" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+                    <input type="text" class="mode-input port" id="adbWirelessPortInput" placeholder="Port" autocomplete="off" autocapitalize="off" spellcheck="false">
+                </div>
+                <div class="mode-btn-row">
+                    <button class="mode-action-btn primary" onclick="connectAdbWirelessUI()">
+                        <span>⚡</span> Connect Wireless ADB
+                    </button>
+                    <button class="mode-action-btn" onclick="fillDeviceIpUI()">
+                        <span>📍</span> Use My Wi‑Fi IP
+                    </button>
+                    <button class="mode-action-btn mode-use-btn" data-mode="adb_wireless" onclick="selectModeUI('adb_wireless')">
+                        <span>✓</span> <span class="mode-use-label">Use This Mode</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mode 3: Shizuku ADB (UID 2000) -->
+            <div class="mode-card" id="modeCardShizuku">
+                <div class="mode-card-header">
+                    <div class="mode-card-title">
+                        <span>🛡️</span>
+                        <span>Shizuku ADB Service</span>
+                    </div>
+                    <span class="mode-status-tag" id="statusTagShizuku">Checking...</span>
+                </div>
+                <div class="mode-card-desc">
+                    Uses the system Shizuku service to execute commands under shell UID 2000 without root. Works alongside ADB TCP 5555 — authorizing Shizuku switches to it.
+                </div>
+                <div class="mode-btn-row">
+                    <button class="mode-action-btn primary" onclick="handleShizukuTap()">
+                        <span>🛡️</span> Authorize &amp; Use Shizuku
+                    </button>
+                    <button class="mode-action-btn" onclick="openShizukuAppUI()">
+                        <span>↗</span> Open Shizuku
+                    </button>
+                    <button class="mode-action-btn" onclick="checkAllWorkingModes(true)">
+                        <span>🔍</span> Check Status
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mode 4: Root (Superuser) -->
+            <div class="mode-card" id="modeCardRoot">
+                <div class="mode-card-header">
+                    <div class="mode-card-title">
+                        <span>👑</span>
+                        <span>Root (Superuser - su)</span>
+                    </div>
+                    <span class="mode-status-tag" id="statusTagRoot">Checking...</span>
+                </div>
+                <div class="mode-card-desc">
+                    Full unrestricted root access on rooted Samsung / Magisk / KernelSU / APatch devices.
+                </div>
+                <div class="mode-btn-row">
+                    <button class="mode-action-btn mode-use-btn" data-mode="root" onclick="requestRootUI()">
+                        <span>👑</span> <span class="mode-use-label">Request Root Access</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mode 5: Read-Only Mode -->
+            <div class="mode-card" id="modeCardUnprivileged">
+                <div class="mode-card-header">
+                    <div class="mode-card-title">
+                        <span>👁️</span>
+                        <span>Read-Only Mode (Unprivileged)</span>
+                    </div>
+                    <span class="mode-status-tag active" id="statusTagUnprivileged">Safe</span>
+                </div>
+                <div class="mode-card-desc">
+                    Allows inspecting all installed applications, package names, activities, and permissions safely without modifying packages.
+                </div>
+                <div class="mode-btn-row">
+                    <button class="mode-action-btn mode-use-btn" data-mode="unprivileged" onclick="selectUnprivilegedMode()">
+                        <span>👁️</span> <span class="mode-use-label">Continue in Read-Only</span>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Privilege Required Modal -->
+    <div class="modal-overlay" id="privilegeModal" onclick="if(event.target===this) closePrivilegeModal()">
+        <div class="modal-sheet" style="max-width:440px;">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-avatar" style="background:rgba(255,145,0,0.2); color:#FFA726;">⚠️</div>
+                    <div class="sheet-title">
+                        <h3>Working Mode Required</h3>
+                        <p id="privilegeModalActionText">Privileged command requires elevated access</p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="closePrivilegeModal()">✕</div>
+            </div>
+            <div style="font-size:12px; color:var(--text-muted); line-height:1.5; margin-bottom:18px;">
+                You are currently running in <b>Read-Only Mode</b>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <b>ADB TCP (5555)</b>, <b>Wireless Debugging</b>, <b>Shizuku</b>, or <b>Root</b>.
+            </div>
+            <div class="mode-btn-row">
+                <button class="mode-action-btn primary" style="flex:1; justify-content:center; padding:10px;" onclick="closePrivilegeModal(); openWorkingModesModal();">
+                    <span>⚡</span> Set Up Working Mode
+                </button>
+                <button class="mode-action-btn" style="padding:10px 16px;" onclick="closePrivilegeModal()">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global State
+        let allApps = [];
+        let filteredApps = [];
+        let selectedPkgs = new Set();
+        let currentFilter = 'all';
+        let inspectedPkg = null;
+        let currentWorkingMode = 'unprivileged';
+        let isPrivilegedActive = false;
+        let lastModesData = null;
+        let customLists = [];
+        let pendingBatchAction = null;
+        let pendingDeleteListId = null;
+
+        // Surface/text roles shared by the classic dark palettes. Material 3 palettes override them.
+        const baseThemeExtras = {
+            surface: '#10141E',
+            text: '#FFFFFF',
+            muted: '#8E9BAE',
+            secondary: '#7C4DFF'
+        };
+
+        const themeState = Object.assign({
+            preset: 'amoled',
+            accent: '#00E5FF',
+            bg: '#080A0F',
+            card: '#141A28',
+            running: '#00E676',
+            frozen: '#00E5FF',
+            system: '#7C4DFF',
+            bloat: '#FF5252'
+        }, baseThemeExtras);
+
+        const palettes = {
+            amoled: { accent: '#00E5FF', bg: '#000000', card: '#141A28', running: '#00E676', frozen: '#00E5FF', system: '#7C4DFF', bloat: '#FF5252' },
+            cyberpunk: { accent: '#FF0055', bg: '#0F051D', card: '#1D0C38', running: '#00FFFF', frozen: '#FF0055', system: '#9D4EDD', bloat: '#FF5252' },
+            emerald: { accent: '#00E676', bg: '#04140D', card: '#0D2619', running: '#69F0AE', frozen: '#00E676', system: '#4CAF50', bloat: '#FF5252' },
+            amber: { accent: '#FF9100', bg: '#140F08', card: '#2A1E11', running: '#FFD740', frozen: '#FF9100', system: '#FF6D00', bloat: '#FF5252' },
+            slate: { accent: '#448AFF', bg: '#0D1117', card: '#161B22', running: '#00E676', frozen: '#448AFF', system: '#7C4DFF', bloat: '#FF5252' },
+            crimson: { accent: '#FF1744', bg: '#000000', card: '#1C080B', running: '#00E676', frozen: '#FF1744', system: '#D50000', bloat: '#FF5252' },
+            // Material Design 3 baseline dark scheme (primary, surface, surface container, secondary, error roles)
+            material3: { accent: '#D0BCFF', bg: '#141218', surface: '#1D1B20', card: '#211F26', running: '#A6D4A9', frozen: '#D0BCFF', system: '#CCC2DC', bloat: '#F2B8B5', text: '#E6E0E9', muted: '#CAC4D0', secondary: '#CCC2DC' }
+        };
+
+        // Material You (M3 dynamic color) is generated from the wallpaper on Android 12+; falls back to M3 baseline
+        function getMaterialYouPalette() {
+            try {
+                if (window.AndroidBridge && window.AndroidBridge.getMaterialYouColors) {
+                    const c = JSON.parse(window.AndroidBridge.getMaterialYouColors() || '{}');
+                    if (c.supported) {
+                        return { accent: c.accent, bg: c.bg, surface: c.surface, card: c.card, running: c.running, frozen: c.frozen, system: c.system, bloat: c.bloat, text: c.text, muted: c.muted, secondary: c.system };
+                    }
+                }
+            } catch (e) {}
+            return null;
+        }
+
+        function refreshMaterialYouCard() {
+            const p = getMaterialYouPalette();
+            const badge = document.getElementById('materialYouBadge');
+            const strip = document.getElementById('materialYouStrip');
+            if (p && strip) {
+                const sw = strip.querySelectorAll('.preset-swatch');
+                [p.accent, p.bg, p.card, p.system].forEach((c, i) => { if (sw[i]) sw[i].style.background = c; });
+            } else if (badge) {
+                badge.innerText = 'NEEDS ANDROID 12+ • USES M3 BASELINE';
+            }
+        }
+
+        const tabKeys = ['apps', 'saved-lists', 'colors', 'terminal'];
+
+        function switchView(viewName) {
+            const targetIdx = tabKeys.indexOf(viewName);
+            if (targetIdx === -1) return;
+
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            tabBtns.forEach((b, idx) => {
+                const isActive = (idx === targetIdx);
+                b.classList.toggle('active', isActive);
+                if (isActive) {
+                    b.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                }
+            });
+
+            document.querySelectorAll('.view-content').forEach(v => {
+                v.classList.remove('active');
+            });
+
+            const activeView = document.getElementById('view-' + viewName);
+            if (activeView) {
+                activeView.classList.add('active');
+            }
+            haptic();
+        }
+
+        function haptic() {
+            if (window.AndroidBridge && window.AndroidBridge.vibrate) {
+                window.AndroidBridge.vibrate();
+            }
+        }
+
+        function showToast(msg, icon = '✨') {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = msg;
+            document.getElementById('toastIcon').innerText = icon;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2400);
+        }
+
+        function escapeHtml(value) {
+            return String(value == null ? '' : value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function parsePackageLines(raw) {
+            const seen = new Set();
+            return String(raw || '').split(/\r?\n|,/).map(v => v.trim()).filter(Boolean).filter(v => {
+                if (seen.has(v)) return false;
+                seen.add(v);
+                return true;
+            });
+        }
+
+                function loadSavedLists() {
+            try {
+                const raw = window.AndroidBridge && window.AndroidBridge.loadCustomLists ? window.AndroidBridge.loadCustomLists() : '[]';
+                const parsed = JSON.parse(raw || '[]');
+                customLists = Array.isArray(parsed) ? parsed : [];
+            } catch (e) {
+                customLists = [];
+            }
+            renderSavedLists();
+        }
+
+        function persistSavedLists() {
+            try {
+                if (window.AndroidBridge && window.AndroidBridge.saveCustomLists) {
+                    window.AndroidBridge.saveCustomLists(JSON.stringify(customLists));
+                }
+            } catch (e) {}
+        }
+
+        function renderSavedLists() {
+            const container = document.getElementById('savedListsContainer');
+            if (!container) return;
+            if (!customLists.length) {
+                container.innerHTML = `
+                    <div style="text-align:center; padding: 28px 20px; color: var(--text-muted);">
+                        <div style="font-size:24px; margin-bottom:8px;">📋</div>
+                        <div style="font-size:13px; font-weight:700; color:var(--text-main); margin-bottom:4px;">No Saved Lists Yet</div>
+                        <div style="font-size:11px; margin-bottom:14px;">Select multiple apps in the Applications tab, then tap Save to List.</div>
+                        <button class="mode-action-btn primary" onclick="switchView('apps')">Go to Applications</button>
+                    </div>`;
+                return;
+            }
+            container.innerHTML = customLists.map(list => {
+                const pkgs = Array.isArray(list.packages) ? list.packages : [];
+                const desc = list.description ? `<div class="saved-list-desc">${escapeHtml(list.description)}</div>` : '';
+                const chips = pkgs.slice(0, 6).map(pkg => `<span class="saved-pkg-chip">${escapeHtml(pkg)}</span>`).join('');
+                const more = pkgs.length > 6 ? `<span class="saved-pkg-chip">+${pkgs.length - 6} more</span>` : '';
+                const listId = escapeHtml(list.id || '');
+                return `
+                    <div class="saved-list-card">
+                        <div class="saved-list-head">
+                            <div style="min-width:0; flex:1;">
+                                <div class="saved-list-title">${escapeHtml(list.name || 'Untitled List')}</div>
+                                <div class="saved-list-meta">${pkgs.length} apps</div>
+                            </div>
+                            <div class="tag-badge tag-system">Saved</div>
+                        </div>
+                        ${desc}
+                        <div class="saved-list-pkgs">${chips || '<span class="saved-pkg-chip">No packages</span>'}${more}</div>
+                        <div class="saved-list-actions">
+                            <button class="apps-tool-btn" data-list-id="${listId}" onclick="recallSavedList(this.getAttribute('data-list-id'))">⚡ Recall</button>
+                            <button class="apps-tool-btn" data-list-id="${listId}" onclick="openListEditorModal(this.getAttribute('data-list-id'))">✏️ Edit</button>
+                            <button class="apps-tool-btn" data-list-id="${listId}" onclick="copySavedList(this.getAttribute('data-list-id'))">📋 Copy</button>
+                            <button class="apps-tool-btn" data-list-id="${listId}" onclick="deleteSavedList(this.getAttribute('data-list-id'))">🗑️ Delete</button>
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+
+        function openListEditorModal(listId) {
+            haptic();
+            const list = listId ? customLists.find(l => l.id === listId) : null;
+            document.getElementById('listEditorTitle').innerText = list ? 'Edit Saved List' : 'Create Saved List';
+            document.getElementById('listEditorId').value = list ? (list.id || '') : '';
+            document.getElementById('listEditorName').value = list ? (list.name || '') : '';
+            document.getElementById('listEditorDesc').value = list ? (list.description || '') : '';
+            document.getElementById('listEditorPackages').value = list ? ((list.packages || []).join(String.fromCharCode(10))) : '';
+            document.getElementById('listEditorModal').classList.add('show');
+        }
+
+        function closeListEditorModal() {
+            haptic();
+            document.getElementById('listEditorModal').classList.remove('show');
+        }
+
+        function saveListFromEditor() {
+            const id = document.getElementById('listEditorId').value.trim();
+            const name = document.getElementById('listEditorName').value.trim();
+            const description = document.getElementById('listEditorDesc').value.trim();
+            const packages = parsePackageLines(document.getElementById('listEditorPackages').value);
+            if (!name) {
+                showToast('Please enter a list name', '⚠️');
+                return;
+            }
+            const payload = { id: id || ('list_' + Date.now()), name, description, packages, updatedAt: Date.now() };
+            const idx = customLists.findIndex(l => l.id === payload.id);
+            if (idx >= 0) customLists[idx] = payload; else customLists.unshift(payload);
+            persistSavedLists();
+            renderSavedLists();
+            closeListEditorModal();
+            showToast('Saved list: ' + name, '✔');
+        }
+
+        function openSaveSelectedModal() {
+            if (selectedPkgs.size === 0) {
+                showToast('Select apps first', 'ℹ️');
+                return;
+            }
+            haptic();
+            document.getElementById('saveListSelectedCount').innerText = selectedPkgs.size + ' apps selected';
+            document.getElementById('saveListName').value = '';
+            document.getElementById('saveListDesc').value = '';
+            document.getElementById('saveListModal').classList.add('show');
+        }
+
+        function closeSaveSelectedModal() {
+            haptic();
+            document.getElementById('saveListModal').classList.remove('show');
+        }
+
+        function confirmSaveSelectedApps() {
+            const name = document.getElementById('saveListName').value.trim();
+            if (!name) {
+                showToast('Please enter a list name', '⚠️');
+                return;
+            }
+            customLists.unshift({ id: 'list_' + Date.now(), name, description: document.getElementById('saveListDesc').value.trim(), packages: Array.from(selectedPkgs), updatedAt: Date.now() });
+            persistSavedLists();
+            renderSavedLists();
+            closeSaveSelectedModal();
+            showToast('Saved selected apps to ' + name, '💾');
+        }
+
+        function recallSavedList(listId) {
+            const list = customLists.find(l => l.id === listId);
+            if (!list) return;
+            selectedPkgs.clear();
+            (list.packages || []).forEach(pkg => selectedPkgs.add(pkg));
+            updateBatchBar();
+            renderApps();
+            switchView('apps');
+            showToast('Recalled ' + selectedPkgs.size + ' apps from ' + list.name, '⚡');
+        }
+
+        function copySavedList(listId) {
+            const list = customLists.find(l => l.id === listId);
+            if (!list || !window.AndroidBridge || !window.AndroidBridge.copyToClipboard) return;
+            window.AndroidBridge.copyToClipboard((list.packages || []).join(String.fromCharCode(10)));
+            showToast('Copied ' + list.name, '📋');
+        }
+
+        function deleteSavedList(listId) {
+            const list = customLists.find(l => l.id === listId);
+            if (!list) return;
+            pendingDeleteListId = listId;
+            document.getElementById('deleteListSubtitle').innerText = 'Delete "' + list.name + '"? This action cannot be undone.';
+            document.getElementById('deleteListModal').classList.add('show');
+        }
+
+        function closeDeleteListModal() {
+            haptic();
+            pendingDeleteListId = null;
+            document.getElementById('deleteListModal').classList.remove('show');
+        }
+
+        function confirmDeleteList() {
+            if (!pendingDeleteListId) return;
+            customLists = customLists.filter(l => l.id !== pendingDeleteListId);
+            pendingDeleteListId = null;
+            persistSavedLists();
+            renderSavedLists();
+            document.getElementById('deleteListModal').classList.remove('show');
+            showToast('Deleted saved list', '🗑️');
+        }
+
+        function closeCommandResultsModal() {
+            haptic();
+            document.getElementById('commandResultsModal').classList.remove('show');
+        }
+
+        function showCommandResults(title, subtitle, rows) {
+            document.getElementById('commandResultsTitle').innerText = title;
+            document.getElementById('commandResultsSubtitle').innerText = subtitle;
+            document.getElementById('commandResultsList').innerHTML = rows.map(row => '<div class="result-item ' + (row.success ? 'success' : 'failed') + '"><div class="result-item-header"><div class="result-item-name">' + escapeHtml(row.name || row.pkg) + '</div><div class="tag-badge ' + (row.success ? 'tag-running' : 'tag-bloat') + '">' + (row.success ? 'Success' : 'Failed') + '</div></div><div class="result-item-pkg">' + escapeHtml(row.pkg || '') + '</div><div class="result-item-output">' + escapeHtml((row.output || '').trim() || 'No output returned') + '</div></div>').join('');
+            document.getElementById('commandResultsModal').classList.add('show');
+        }
+
+        function closeBatchConfirmModal() {
+            haptic();
+            pendingBatchAction = null;
+            document.getElementById('batchConfirmModal').classList.remove('show');
+        }
+
+        function requestBatchConfirmation(action, pkgs) {
+            pendingBatchAction = { action: action, pkgs: pkgs.slice() };
+            document.getElementById('batchConfirmTitle').innerText = action === 'freeze' ? 'Confirm Disable Selected Apps' : 'Confirm Uninstall Selected Apps';
+            document.getElementById('batchConfirmSubtitle').innerText = pkgs.length + ' apps selected';
+            document.getElementById('batchConfirmExecuteBtn').innerText = action === 'freeze' ? 'Confirm Disable' : 'Confirm Uninstall';
+            document.getElementById('batchConfirmList').innerHTML = pkgs.map(pkg => {
+                const app = allApps.find(a => a.pkg === pkg) || { name: pkg, pkg: pkg };
+                return '<div class="confirm-list-row"><strong>' + escapeHtml(app.name) + '</strong><br><span style="font-size:10px; color:var(--text-muted);">' + escapeHtml(pkg) + '</span></div>';
+            }).join('');
+            document.getElementById('batchConfirmModal').classList.add('show');
+        }
+
+        function confirmPendingBatchAction() {
+            if (!pendingBatchAction) return;
+            const next = pendingBatchAction;
+            document.getElementById('batchConfirmModal').classList.remove('show');
+            pendingBatchAction = null;
+            runBatchAction(next.action, next.pkgs);
+        }
+
+        function performDetailedBatchAction(action, pkgs) {
+            const rows = [];
+            let success = 0;
+            let failed = 0;
+            pkgs.forEach(pkg => {
+                const app = allApps.find(a => a.pkg === pkg) || { name: pkg, pkg: pkg };
+                const output = window.AndroidBridge ? window.AndroidBridge.executeAppAction(action, pkg) : '';
+                const lowered = String(output || '').toLowerCase();
+                const ok = !(lowered.includes('error') || lowered.includes('failed') || lowered.includes('exception'));
+                if (ok) success++; else failed++;
+                rows.push({ name: app.name, pkg: pkg, output: output, success: ok });
+            });
+            return { success, failed, rows };
+        }
+
+        // Privilege Guard
+        function guardPrivilege(actionName) {
+            if (!isPrivilegedActive) {
+                openPrivilegeRequiredModal(actionName);
+                return false;
+            }
+            return true;
+        }
+
+        function openPrivilegeRequiredModal(actionName) {
+            haptic();
+            document.getElementById('privilegeModalActionText').innerText = actionName ? `Action "${actionName}" requires working mode` : 'Privileged access required';
+            document.getElementById('privilegeModal').classList.add('show');
+        }
+
+        function closePrivilegeModal() {
+            haptic();
+            document.getElementById('privilegeModal').classList.remove('show');
+        }
+
+        // Working Modes Sheet
+        const MODE_LABELS = {
+            auto: 'Automatic',
+            adb_tcp: 'ADB TCP',
+            adb_wireless: 'Wireless ADB',
+            shizuku: 'Shizuku ADB (UID 2000)',
+            root: 'Root (Superuser)',
+            unprivileged: 'Read-Only'
+        };
+        let modeInputsPrefilled = false;
+
+        function openWorkingModesModal() {
+            haptic();
+            document.getElementById('modesModal').classList.add('show');
+            checkAllWorkingModes(false);
+        }
+
+        function closeWorkingModesModal() {
+            haptic();
+            document.getElementById('modesModal').classList.remove('show');
+        }
+
+        // Accepts "192.168.1.20:37099", "[fe80::1]:37099", "37099" or "192.168.1.20" and returns { host, port }
+        function parseHostPort(value, fallbackHost, fallbackPort) {
+            let v = String(value || '').trim().replace(/\s+/g, '');
+            let host = '';
+            let port = 0;
+            if (!v) return { host: fallbackHost || '', port: fallbackPort || 0 };
+            const bracket = v.match(/^\[([^\]]+)\](?::(\d+))?$/);
+            if (bracket) {
+                host = bracket[1];
+                port = parseInt(bracket[2], 10) || 0;
+            } else if (/^\d+$/.test(v)) {
+                port = parseInt(v, 10);
+            } else {
+                const idx = v.lastIndexOf(':');
+                if (idx > 0 && v.indexOf(':') === idx && /^\d+$/.test(v.slice(idx + 1))) {
+                    host = v.slice(0, idx);
+                    port = parseInt(v.slice(idx + 1), 10);
+                } else {
+                    host = v;
+                }
+            }
+            return { host: host || fallbackHost || '', port: port || fallbackPort || 0 };
+        }
+
+        function setTag(id, cls, text) {
+            const tag = document.getElementById(id);
+            if (!tag) return;
+            tag.className = 'mode-status-tag ' + cls;
+            tag.innerText = text;
+        }
+
+        function checkAllWorkingModes(verbose = false) {
+            if (!window.AndroidBridge || !window.AndroidBridge.getWorkingMode) {
+                return;
+            }
+            try {
+                const dataStr = window.AndroidBridge.getWorkingMode();
+                const d = JSON.parse(dataStr);
+                lastModesData = d;
+                const configured = d.configuredMode || 'auto';
+                currentWorkingMode = d.activeMode || 'unprivileged';
+                isPrivilegedActive = !!d.isPrivileged;
+                const pinnedButNotReady = configured !== 'auto' && configured !== 'unprivileged' && !d.modeAvailable;
+
+                // Update Header Badge
+                const badge = document.getElementById('execModeBadge');
+                const dot = document.getElementById('execModeDot');
+                const text = document.getElementById('execModeText');
+
+                let label;
+                if (currentWorkingMode === 'adb_tcp') {
+                    label = `ADB TCP (${d.adbTcp ? d.adbTcp.port : 5555})`;
+                } else if (currentWorkingMode === 'adb_wireless') {
+                    label = `Wireless ADB (${d.adbWireless ? d.adbWireless.port : ''})`;
+                } else if (currentWorkingMode === 'shizuku') {
+                    label = 'Shizuku ADB (UID 2000)';
+                } else if (currentWorkingMode === 'root') {
+                    label = 'Root (Superuser)';
+                } else {
+                    label = 'Read-Only';
+                }
+                if (configured === 'auto' && isPrivilegedActive) label = 'Auto • ' + label;
+
+                if (pinnedButNotReady) {
+                    badge.style.background = 'rgba(255, 145, 0, 0.15)';
+                    badge.style.borderColor = 'rgba(255, 145, 0, 0.4)';
+                    badge.style.color = '#FFA726';
+                    dot.style.background = '#FFA726';
+                    text.innerText = `⚠️ ${label} (not ready)`;
+                } else if (currentWorkingMode === 'root' && isPrivilegedActive) {
+                    badge.style.background = 'rgba(124, 77, 255, 0.15)';
+                    badge.style.borderColor = 'rgba(124, 77, 255, 0.4)';
+                    badge.style.color = 'var(--status-system)';
+                    dot.style.background = 'var(--status-system)';
+                    text.innerText = label;
+                } else if (isPrivilegedActive) {
+                    badge.style.background = 'rgba(0, 230, 118, 0.15)';
+                    badge.style.borderColor = 'rgba(0, 230, 118, 0.4)';
+                    badge.style.color = 'var(--status-running)';
+                    dot.style.background = 'var(--status-running)';
+                    text.innerText = label;
+                } else {
+                    badge.style.background = 'rgba(255, 145, 0, 0.15)';
+                    badge.style.borderColor = 'rgba(255, 145, 0, 0.4)';
+                    badge.style.color = '#FFA726';
+                    dot.style.background = '#FFA726';
+                    text.innerText = configured === 'unprivileged' ? '👁️ Read-Only Mode' : '⚠️ Setup Mode (Read-Only)';
+                }
+
+                // Update Alert Banner in view-apps
+                const alertCard = document.getElementById('modeAlertCard');
+                if (alertCard) {
+                    alertCard.style.display = isPrivilegedActive ? 'none' : 'flex';
+                }
+
+                // Update Terminal Card Header
+                const termTitle = document.getElementById('termActiveModeTitle');
+                const termDesc = document.getElementById('termActiveModeDesc');
+                if (termTitle) {
+                    if (isPrivilegedActive) {
+                        termTitle.innerText = `⚡ Active Mode: ${text.innerText}`;
+                        termDesc.innerText = 'Privileged execution active and ready.';
+                    } else {
+                        termTitle.innerText = '⚠️ Active Mode: ' + (pinnedButNotReady ? text.innerText : 'Read-Only');
+                        termDesc.innerText = 'Connect via ADB TCP 5555, Wireless Debugging, Shizuku, or Root.';
+                    }
+                }
+
+                // Update Modal Content
+                document.getElementById('modalActiveModeDesc').innerText = `Selected: ${MODE_LABELS[configured] || configured} • Active: ${text.innerText}`;
+
+                // Card highlighting: green = in use, orange = selected but backend not ready
+                const cards = {
+                    auto: 'modeCardAuto', adb_tcp: 'modeCardAdbTcp', adb_wireless: 'modeCardAdbWireless',
+                    shizuku: 'modeCardShizuku', root: 'modeCardRoot', unprivileged: 'modeCardUnprivileged'
+                };
+                Object.keys(cards).forEach(mode => {
+                    const card = document.getElementById(cards[mode]);
+                    if (!card) return;
+                    const isSelected = configured === mode;
+                    const inUse = (configured === 'auto' && mode === 'auto') || (isSelected && !pinnedButNotReady) ||
+                        (configured === 'auto' && mode === currentWorkingMode && isPrivilegedActive);
+                    card.classList.toggle('active-mode', inUse);
+                    card.classList.toggle('pending-mode', isSelected && pinnedButNotReady);
+                });
+                document.querySelectorAll('.mode-use-btn').forEach(btn => {
+                    const mode = btn.getAttribute('data-mode');
+                    const selected = configured === mode;
+                    btn.classList.toggle('in-use', selected);
+                    const lbl = btn.querySelector('.mode-use-label');
+                    if (!lbl) return;
+                    if (!lbl.dataset.defaultLabel) lbl.dataset.defaultLabel = lbl.innerText;
+                    lbl.innerText = selected ? 'Selected' : lbl.dataset.defaultLabel;
+                });
+
+                setTag('statusTagAuto', configured === 'auto' ? 'active' : 'inactive', configured === 'auto' ? 'SELECTED' : 'AUTO');
+
+                // ADB TCP Tag
+                if (d.adbTcp && d.adbTcp.connected) {
+                    setTag('statusTagAdbTcp', 'active', 'CONNECTED');
+                } else if (d.adbTcp && d.adbTcp.portOpen) {
+                    setTag('statusTagAdbTcp', 'warning', `PORT ${d.adbTcp.port} OPEN`);
+                } else {
+                    setTag('statusTagAdbTcp', 'inactive', 'DISCONNECTED');
+                }
+
+                // ADB Wireless Tag
+                if (d.adbWireless && d.adbWireless.connected) {
+                    setTag('statusTagAdbWireless', 'active', 'CONNECTED');
+                } else {
+                    setTag('statusTagAdbWireless', 'inactive', 'ANDROID 11+');
+                }
+
+                // Shizuku Tag
+                const sz = d.shizuku || {};
+                if (sz.authorized) {
+                    setTag('statusTagShizuku', 'active', 'AUTHORIZED');
+                } else if (sz.running && sz.preV11) {
+                    setTag('statusTagShizuku', 'warning', 'UPDATE SHIZUKU');
+                } else if (sz.running) {
+                    setTag('statusTagShizuku', 'warning', 'RUNNING (UNAUTHORIZED)');
+                } else if (sz.installed) {
+                    setTag('statusTagShizuku', 'inactive', 'NOT RUNNING');
+                } else {
+                    setTag('statusTagShizuku', 'inactive', 'NOT INSTALLED');
+                }
+
+                // Root Tag
+                if (d.rootAvailable) {
+                    const rootActive = configured === 'root';
+                    setTag('statusTagRoot', rootActive ? 'active' : 'warning', rootActive ? 'ACTIVE' : 'AVAILABLE');
+                } else {
+                    setTag('statusTagRoot', 'inactive', 'NOT FOUND');
+                }
+
+                // Pre-fill the connection fields once with the saved targets
+                if (!modeInputsPrefilled) {
+                    modeInputsPrefilled = true;
+                    if (d.adbTcp) {
+                        document.getElementById('adbTcpHostInput').value = d.adbTcp.host || '127.0.0.1';
+                        document.getElementById('adbTcpPortInput').value = d.adbTcp.port || 5555;
+                    }
+                    if (d.adbWireless && d.adbWireless.port > 0) {
+                        document.getElementById('adbWirelessHostInput').value = d.adbWireless.host || '';
+                        document.getElementById('adbWirelessPortInput').value = d.adbWireless.port;
+                    }
+                }
+
+                if (verbose) {
+                    showToast(`Mode: ${text.innerText}`, isPrivilegedActive ? '⚡' : '⚠️');
+                }
+            } catch (e) {
+                console.error('Failed to parse modes:', e);
+            }
+        }
+
+        // Explicit mode switching. Always allowed, whatever is connected (e.g. switch away from ADB TCP 5555).
+        function selectModeUI(mode, afterSelect) {
+            haptic();
+            if (!window.AndroidBridge) return;
+            showToast(`Switching to ${MODE_LABELS[mode] || mode}...`, '⚙️');
+            setTimeout(() => {
+                let res = { ok: true, message: '' };
+                try {
+                    if (window.AndroidBridge.selectWorkingMode) {
+                        res = JSON.parse(window.AndroidBridge.selectWorkingMode(mode));
+                    } else {
+                        window.AndroidBridge.setWorkingMode(mode);
+                    }
+                } catch (e) {
+                    res = { ok: false, message: 'Error: ' + e.message };
+                }
+                showToast(res.message || ('Mode: ' + (MODE_LABELS[mode] || mode)), res.ok ? '✔' : '⚠️');
+                checkAllWorkingModes(false);
+                loadPackageData();
+                if (afterSelect) afterSelect(res);
+            }, 80);
+        }
+
+        // ADB TCP UI Actions
+        function connectAdbTcpUI() {
+            haptic();
+            const portField = document.getElementById('adbTcpPortInput');
+            const fallbackPort = parseInt(String(portField.value || '').replace(/\D/g, ''), 10) || 5555;
+            const target = parseHostPort(document.getElementById('adbTcpHostInput').value, '127.0.0.1', fallbackPort);
+            document.getElementById('adbTcpHostInput').value = target.host;
+            portField.value = target.port;
+            showToast(`Connecting to ${target.host}:${target.port}...`, '⚡');
+
+            if (window.AndroidBridge && window.AndroidBridge.connectAdbTcp) {
+                setTimeout(() => {
+                    const res = window.AndroidBridge.connectAdbTcp(target.host, target.port);
+                    showToast(res || 'Connection attempted', '⚡');
+                    checkAllWorkingModes(true);
+                    loadPackageData();
+                }, 100);
+            }
+        }
+
+        function restartAdbTcpipUI() {
+            haptic();
+            showToast('Restarting ADB in TCP mode (port 5555)...', '🔄');
+            if (window.AndroidBridge && window.AndroidBridge.setAdbTcpip) {
+                setTimeout(() => {
+                    const res = window.AndroidBridge.setAdbTcpip(5555);
+                    showToast(res || 'Port 5555 requested', '🔄');
+                    setTimeout(() => connectAdbTcpUI(), 1500);
+                }, 100);
+            }
+        }
+
+        function disconnectAdbUI() {
+            haptic();
+            if (window.AndroidBridge && window.AndroidBridge.disconnectAdb) {
+                const res = window.AndroidBridge.disconnectAdb('');
+                showToast(res || 'Disconnected', '✕');
+                checkAllWorkingModes(true);
+            }
+        }
+
+        // Wireless Debugging UI Actions
+        function openDevOptionsUI() {
+            haptic();
+            showToast('Opening Developer Options...', '⚙️');
+            if (window.AndroidBridge && window.AndroidBridge.openDeveloperOptions) {
+                window.AndroidBridge.openDeveloperOptions();
+            }
+        }
+
+        function fillDeviceIpUI() {
+            haptic();
+            const ip = window.AndroidBridge && window.AndroidBridge.getDeviceIp ? window.AndroidBridge.getDeviceIp() : '';
+            if (!ip) {
+                showToast('No Wi‑Fi IP found. Is Wi‑Fi connected?', '⚠️');
+                return;
+            }
+            document.getElementById('adbWirelessHostInput').value = ip;
+            showToast('Wi‑Fi IP: ' + ip, '📍');
+        }
+
+        function autoDetectWirelessUI() {
+            haptic();
+            if (!window.AndroidBridge || !window.AndroidBridge.discoverWirelessDebugging) return;
+            showToast('Scanning for Wireless Debugging...', '🔎');
+            setTimeout(() => {
+                try {
+                    const r = JSON.parse(window.AndroidBridge.discoverWirelessDebugging() || '{}');
+                    const pairing = (r.pairing || [])[0];
+                    const connect = (r.connect || [])[0];
+                    if (pairing) document.getElementById('adbPairPortInput').value = pairing;
+                    if (connect) {
+                        const t = parseHostPort(connect, '', 0);
+                        document.getElementById('adbWirelessHostInput').value = t.host;
+                        document.getElementById('adbWirelessPortInput').value = t.port;
+                    }
+                    if (pairing || connect) {
+                        showToast('Found ' + [pairing && 'pairing', connect && 'connect'].filter(Boolean).join(' + ') + ' port', '✔');
+                    } else {
+                        showToast('Nothing found. Keep the Wireless Debugging screen open and enter the ports manually.', 'ℹ️');
+                    }
+                } catch (e) {
+                    showToast('Auto-detect failed', '⚠️');
+                }
+            }, 80);
+        }
+
+        function pairAdbWirelessUI() {
+            haptic();
+            const target = parseHostPort(document.getElementById('adbPairPortInput').value, '127.0.0.1', 0);
+            const code = (document.getElementById('adbPairCodeInput').value || '').replace(/\s+/g, '');
+
+            if (!target.port || !code) {
+                showToast('Please enter pairing port and 6-digit code', '⚠️');
+                return;
+            }
+
+            showToast(`Pairing with ${target.host}:${target.port}...`, '📶');
+            if (window.AndroidBridge && window.AndroidBridge.pairAdbWireless) {
+                setTimeout(() => {
+                    const res = window.AndroidBridge.pairAdbWireless(target.host, target.port, code);
+                    showToast(res || 'Pairing completed', '📶');
+                    checkAllWorkingModes(true);
+                }, 100);
+            }
+        }
+
+        function connectAdbWirelessUI() {
+            haptic();
+            const hostField = document.getElementById('adbWirelessHostInput');
+            const portField = document.getElementById('adbWirelessPortInput');
+            // Either field may hold "IP:port"; the port field may also hold just the port
+            const fromPort = parseHostPort(portField.value, '', 0);
+            const fromHost = parseHostPort(hostField.value, '', 0);
+            const host = fromPort.host || fromHost.host || '127.0.0.1';
+            const port = fromPort.port || fromHost.port;
+            if (!port) {
+                showToast('Please enter the wireless debugging port (or IP:port)', '⚠️');
+                return;
+            }
+            hostField.value = host;
+            portField.value = port;
+
+            showToast(`Connecting to ${host}:${port}...`, '⚡');
+            if (window.AndroidBridge && window.AndroidBridge.connectAdbWireless) {
+                setTimeout(() => {
+                    const res = window.AndroidBridge.connectAdbWireless(host, port);
+                    showToast(res || 'Connected', '⚡');
+                    checkAllWorkingModes(true);
+                    loadPackageData();
+                }, 100);
+            }
+        }
+
+        // Shizuku UI Action
+        function handleShizukuTap() {
+            haptic();
+            if (!window.AndroidBridge || !window.AndroidBridge.requestShizukuPermission) return;
+            const status = String(window.AndroidBridge.requestShizukuPermission() || '');
+            if (status === 'granted') {
+                showToast('Shizuku authorized. Using Shizuku mode.', '🛡️');
+                checkAllWorkingModes(false);
+                loadPackageData();
+            } else if (status === 'requested') {
+                showToast('Approve the Shizuku prompt...', '🛡️');
+            } else if (status === 'not_running') {
+                showToast('Shizuku is not running. Start it in the Shizuku app, then tap again.', '⚠️');
+                openShizukuAppUI();
+            } else if (status === 'not_installed') {
+                showToast('Shizuku is not installed', '⚠️');
+            } else if (status === 'pre_v11') {
+                showToast('This Shizuku version is too old. Please update Shizuku.', '⚠️');
+            } else {
+                showToast('Shizuku: ' + status, '⚠️');
+            }
+        }
+
+        // Called from MainActivity when the Shizuku permission dialog returns
+        function onShizukuPermissionResult(granted) {
+            showToast(granted ? 'Shizuku authorized. Using Shizuku mode.' : 'Shizuku authorization denied', granted ? '🛡️' : '⚠️');
+            checkAllWorkingModes(false);
+            if (granted) loadPackageData();
+        }
+
+        function openShizukuAppUI() {
+            if (window.AndroidBridge && window.AndroidBridge.openShizukuApp) {
+                window.AndroidBridge.openShizukuApp();
+            }
+        }
+
+        // Root UI Action
+        function requestRootUI() {
+            showToast('Requesting Root Superuser...', '👑');
+            selectModeUI('root');
+        }
+
+        // Unprivileged Mode
+        function selectUnprivilegedMode() {
+            selectModeUI('unprivileged', () => closeWorkingModesModal());
+        }
+
+        // Initialize App
+        function initApp() {
+            checkAllWorkingModes(false);
+
+            if (window.AndroidBridge) {
+                try {
+                    const sysInfoStr = window.AndroidBridge.getSystemInfo();
+                    const info = JSON.parse(sysInfoStr);
+                    if (info.device) {
+                        document.getElementById('deviceInfoSubtitle').innerText = `${info.manufacturer} ${info.device} • Android ${info.release}`;
+                    }
+                } catch(e) {}
+
+                // Load packages immediately
+                loadPackageData();
+            } else {
+                // Mock packages for preview
+                for (let i = 1; i <= 60; i++) {
+                    const ch = String.fromCharCode(65 + (i % 26));
+                    allApps.push({
+                        name: `${ch}pplication ${i}`,
+                        pkg: `com.example.${ch.toLowerCase()}${i}`,
+                        isSystem: i % 2 === 0,
+                        isRunning: i % 3 === 0,
+                        isFrozen: i % 5 === 0,
+                        isUninstalled: i % 15 === 0
+                    });
+                }
+                renderApps();
+            }
+        }
+
+        function loadPackageData() {
+            if (!window.AndroidBridge) return;
+            const container = document.getElementById('appsListContainer');
+            try {
+                const jsonStr = window.AndroidBridge.loadPackages();
+                allApps = JSON.parse(jsonStr);
+                allApps.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+                renderApps();
+            } catch (e) {
+                container.innerHTML = `
+                    <div style="text-align:center; padding:35px 20px; color:var(--text-muted);">
+                        <div style="font-size:28px; margin-bottom:8px;">📦</div>
+                        <div style="font-size:13px; font-weight:700; color:var(--text-main); margin-bottom:4px;">No Applications Loaded</div>
+                        <div style="font-size:11px; margin-bottom:14px;">${e.message || "Failed to query system applications."}</div>
+                        <button class="mode-action-btn primary" onclick="loadPackageData()">🔄 Reload Packages</button>
+                    </div>`;
+            }
+        }
+
+        // Render Apps
+        function renderApps() {
+            const query = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+
+            filteredApps = allApps.filter(app => {
+                if (currentFilter === 'running' && !app.isRunning) return false;
+                if (currentFilter === 'frozen' && !app.isFrozen) return false;
+                if (currentFilter === 'user' && (app.isSystem || app.isUninstalled)) return false;
+                if (currentFilter === 'system' && (!app.isSystem || app.isUninstalled)) return false;
+                if (currentFilter === 'uninstalled' && !app.isUninstalled) return false;
+
+                if (query) {
+                    return app.name.toLowerCase().includes(query) || app.pkg.toLowerCase().includes(query);
+                }
+                return true;
+            });
+
+            // Update stats counts
+            document.getElementById('statTotal').innerText = allApps.length;
+            document.getElementById('statRunning').innerText = allApps.filter(a => a.isRunning).length;
+            document.getElementById('statFrozen').innerText = allApps.filter(a => a.isFrozen).length;
+            document.getElementById('statUser').innerText = allApps.filter(a => !a.isSystem && !a.isUninstalled).length;
+            document.getElementById('statSystem').innerText = allApps.filter(a => a.isSystem && !a.isUninstalled).length;
+            document.getElementById('statUninstalled').innerText = allApps.filter(a => a.isUninstalled).length;
+
+            document.getElementById('countAll').innerText = allApps.length;
+            document.getElementById('countRunning').innerText = allApps.filter(a => a.isRunning).length;
+            document.getElementById('countUser').innerText = allApps.filter(a => !a.isSystem && !a.isUninstalled).length;
+            document.getElementById('countSystem').innerText = allApps.filter(a => a.isSystem && !a.isUninstalled).length;
+            document.getElementById('countFrozen').innerText = allApps.filter(a => a.isFrozen).length;
+            document.getElementById('countUninstalled').innerText = allApps.filter(a => a.isUninstalled).length;
+
+            const container = document.getElementById('appsListContainer');
+            if (filteredApps.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align:center; padding: 40px 20px; color: var(--text-muted);">
+                        <div style="font-size:24px; margin-bottom:8px;">🔍</div>
+                        <div style="font-size:13px; font-weight:700; color:var(--text-main); margin-bottom:4px;">No Applications Found</div>
+                        <div style="font-size:11px;">Try clearing your search query or changing active filter pills.</div>
+                    </div>`;
+                return;
+            }
+
+            let html = '';
+            filteredApps.forEach(app => {
+                const isSelected = selectedPkgs.has(app.pkg);
+                const initial = (app.name && app.name.length > 0) ? app.name.charAt(0).toUpperCase() : '⚡';
+
+                let badges = '';
+                if (app.isRunning) badges += '<span class="tag-badge tag-running">RUNNING</span>';
+                if (app.isFrozen && !app.isUninstalled) badges += '<span class="tag-badge tag-frozen">FROZEN</span>';
+                if (app.isUninstalled) badges += '<span class="tag-badge tag-bloat">UNINSTALLED</span>';
+                if (app.isSystem) badges += '<span class="tag-badge tag-system">SYSTEM</span>';
+                else badges += '<span class="tag-badge tag-user">USER</span>';
+
+                html += `
+                    <div class="app-card ${isSelected ? 'selected' : ''}" id="card_${app.pkg}">
+                        <div class="app-left" onclick="toggleSelectPkg('${app.pkg}')">
+                            <div class="app-checkbox">${isSelected ? '✓' : ''}</div>
+                            <div class="app-avatar">${initial}</div>
+                            <div class="app-meta">
+                                <div class="app-name">${app.name}</div>
+                                <div class="app-pkg">${app.pkg}</div>
+                                <div class="badge-row">${badges}</div>
+                            </div>
+                        </div>
+                        <div class="app-actions">
+                            ${app.isFrozen ? 
+                                `<button class="btn-mini" title="Enable" onclick="quickAction('unfreeze', '${app.pkg}')">🔥</button>` : 
+                                `<button class="btn-mini" title="Freeze" onclick="quickAction('freeze', '${app.pkg}')">❄️</button>`}
+                            <button class="btn-mini" title="Force Stop" onclick="quickAction('force_stop', '${app.pkg}')">🛑</button>
+                            <button class="btn-mini" title="Inspect" onclick="openInspector('${app.pkg}')">⋯</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // Selection & Batch Operations
+        function toggleSelectPkg(pkg) {
+            if (selectedPkgs.has(pkg)) {
+                selectedPkgs.delete(pkg);
+            } else {
+                selectedPkgs.add(pkg);
+            }
+            haptic();
+            updateBatchBar();
+            const card = document.getElementById('card_' + pkg);
+            if (card) {
+                card.classList.toggle('selected', selectedPkgs.has(pkg));
+                card.querySelector('.app-checkbox').innerText = selectedPkgs.has(pkg) ? '✓' : '';
+            }
+        }
+
+        function selectAllVisible(select) {
+            filteredApps.forEach(app => {
+                if (select) {
+                    selectedPkgs.add(app.pkg);
+                } else {
+                    selectedPkgs.delete(app.pkg);
+                }
+            });
+            updateBatchBar();
+            renderApps();
+            haptic();
+        }
+
+        function selectAllFiltered() {
+            selectAllVisible(true);
+        }
+
+        function updateBatchBar() {
+            const bar = document.getElementById('floatingBatchBar');
+            const count = selectedPkgs.size;
+            if (count > 0) {
+                bar.classList.add('show');
+                document.getElementById('batchCountText').innerText = `${count} Selected`;
+            } else {
+                bar.classList.remove('show');
+            }
+        }
+
+        function clearBatchSelection() {
+            selectedPkgs.clear();
+            updateBatchBar();
+            document.querySelectorAll('.app-card').forEach(c => {
+                c.classList.remove('selected');
+                const cb = c.querySelector('.app-checkbox');
+                if (cb) cb.innerText = '';
+            });
+            haptic();
+        }
+
+        function batchAction(action) {
+            if (selectedPkgs.size === 0) return;
+            if (!guardPrivilege(`Batch ${action}`)) return;
+            const arr = Array.from(selectedPkgs);
+            if (action === 'freeze' || action === 'uninstall') {
+                requestBatchConfirmation(action, arr);
+                return;
+            }
+            runBatchAction(action, arr);
+        }
+
+        function runBatchAction(action, arr) {
+            haptic();
+            showToast(`Executing ${action} on ${arr.length} apps...`, '⚙️');
+            if (window.AndroidBridge) {
+                const res = performDetailedBatchAction(action, arr);
+                showToast(`Batch Done: ${res.success} succeeded, ${res.failed} failed`, res.failed ? '⚠️' : '✔');
+                showCommandResults('Batch Results', action.toUpperCase() + ' • ' + arr.length + ' apps', res.rows);
+                clearBatchSelection();
+                setTimeout(loadPackageData, 400);
+            }
+        }
+
+        function quickAction(action, pkg) {
+            if (!guardPrivilege(action)) return;
+            haptic();
+            if (window.AndroidBridge) {
+                const app = allApps.find(a => a.pkg === pkg) || { name: pkg, pkg: pkg };
+                const output = window.AndroidBridge.executeAppAction(action, pkg);
+                const lowered = String(output || '').toLowerCase();
+                const ok = !(lowered.includes('error') || lowered.includes('failed') || lowered.includes('exception'));
+                showToast(ok ? 'Action executed' : 'Action reported a problem', ok ? '✔' : '⚠️');
+                showCommandResults('Command Result', action.toUpperCase(), [{ name: app.name, pkg: pkg, output: output, success: ok }]);
+                setTimeout(loadPackageData, 400);
+            }
+        }
+
+        function setFilter(filter, el) {
+            currentFilter = filter;
+            if (el) {
+                document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+                el.classList.add('active');
+                el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            }
+            haptic();
+            renderApps();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function handleSearch() {
+            const q = document.getElementById('searchInput').value;
+            document.getElementById('searchClear').style.display = q ? 'block' : 'none';
+            renderApps();
+        }
+
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('searchClear').style.display = 'none';
+            renderApps();
+        }
+
+        // Inspector Modal
+        function openInspector(pkg) {
+            inspectedPkg = pkg;
+            haptic();
+            const modal = document.getElementById('inspectorModal');
+            modal.classList.add('show');
+
+            const app = allApps.find(a => a.pkg === pkg) || { name: pkg, pkg: pkg, isFrozen: false, isUninstalled: false };
+            document.getElementById('sheetTitle').innerText = app.name;
+            document.getElementById('sheetPkg').innerText = app.pkg;
+            document.getElementById('sheetAvatar').innerText = app.name.charAt(0).toUpperCase();
+
+            document.getElementById('sheetBtnReinstall').style.display = app.isUninstalled ? 'flex' : 'none';
+            document.getElementById('sheetBtnUninstall').style.display = app.isUninstalled ? 'none' : 'flex';
+
+            if (window.AndroidBridge) {
+                const detailsStr = window.AndroidBridge.getAppDetails(pkg);
+                try {
+                    const d = JSON.parse(detailsStr);
+                    renderInspectorDetails(d);
+                } catch(e) {}
+            }
+        }
+
+        function renderInspectorDetails(d) {
+            const permsContainer = document.getElementById('permsContainer');
+            if (d.permissions && d.permissions.length > 0) {
+                let html = '';
+                d.permissions.forEach(p => {
+                    const shortName = p.name.replace('android.permission.', '');
+                    html += `
+                        <div class="perm-item">
+                            <span>${shortName}</span>
+                            <button class="perm-toggle-btn ${p.granted ? 'granted' : 'revoked'}" 
+                                onclick="togglePermission('${p.name}', ${p.granted})">
+                                ${p.granted ? 'GRANTED' : 'REVOKED'}
+                            </button>
+                        </div>
+                    `;
+                });
+                permsContainer.innerHTML = html;
+            } else {
+                permsContainer.innerHTML = '<div style="color:var(--text-muted); font-size:11px;">No permissions declared.</div>';
+            }
+
+            const compsContainer = document.getElementById('compsContainer');
+            let compHtml = '';
+            if (d.activities && d.activities.length > 0) {
+                compHtml += '<div style="font-weight:800; font-size:11px; margin-bottom:6px; color:var(--accent);">ACTIVITIES</div>';
+                d.activities.forEach(a => {
+                    const shortAct = a.split('.').pop();
+                    compHtml += `
+                        <div class="perm-item">
+                            <span>${shortAct}</span>
+                            <button class="perm-toggle-btn granted" onclick="launchComponent('${a}')">START</button>
+                        </div>
+                    `;
+                });
+            }
+            if (d.services && d.services.length > 0) {
+                compHtml += '<div style="font-weight:800; font-size:11px; margin:12px 0 6px 0; color:var(--secondary);">SERVICES</div>';
+                d.services.forEach(s => {
+                    const shortSrv = s.split('.').pop();
+                    compHtml += `
+                        <div class="perm-item">
+                            <span>${shortSrv}</span>
+                            <button class="perm-toggle-btn revoked" onclick="stopComponentService('${s}')">STOP</button>
+                        </div>
+                    `;
+                });
+            }
+            compsContainer.innerHTML = compHtml || '<div style="color:var(--text-muted); font-size:11px;">No exported activities or services found.</div>';
+            document.getElementById('rawContainer').innerText = JSON.stringify(d, null, 2);
+        }
+
+        function closeInspector() {
+            document.getElementById('inspectorModal').classList.remove('show');
+            haptic();
+        }
+
+        function switchSheetTab(tab) {
+            document.querySelectorAll('.sheet-tab-pill').forEach(p => p.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            document.querySelectorAll('.sheet-tab-content').forEach(c => c.classList.remove('active'));
+            if (tab === 'perms') document.getElementById('sheetTabPerms').classList.add('active');
+            if (tab === 'comps') document.getElementById('sheetTabComps').classList.add('active');
+            if (tab === 'raw') document.getElementById('sheetTabRaw').classList.add('active');
+            haptic();
+        }
+
+        function singleAction(action) {
+            if (!inspectedPkg) return;
+            if (!guardPrivilege(action)) return;
+            quickAction(action, inspectedPkg);
+            closeInspector();
+        }
+
+        function togglePermission(perm, wasGranted) {
+            if (!guardPrivilege('Modify Permission')) return;
+            haptic();
+            if (window.AndroidBridge && inspectedPkg) {
+                window.AndroidBridge.setPermission(inspectedPkg, perm, !wasGranted);
+                showToast(`Permission updated`, '🛡️');
+                openInspector(inspectedPkg);
+            }
+        }
+
+        function launchComponent(comp) {
+            haptic();
+            if (window.AndroidBridge && inspectedPkg) {
+                window.AndroidBridge.executeShell(`am start -n "${inspectedPkg}/${comp}"`);
+                showToast('Activity launched', '🚀');
+            }
+        }
+
+        function stopComponentService(srv) {
+            if (!guardPrivilege('Stop Service')) return;
+            haptic();
+            if (window.AndroidBridge && inspectedPkg) {
+                window.AndroidBridge.executeShell(`am stopservice "${inspectedPkg}/${srv}"`);
+                showToast('Service stopped', '🛑');
+            }
+        }
+
+        // Color Settings Engine
+        function applyPalettePreset(name, el) {
+            let p = palettes[name];
+            if (name === 'materialyou') {
+                p = getMaterialYouPalette();
+                if (!p) {
+                    p = palettes.material3;
+                    showToast('Material You needs Android 12+. Using Material 3 baseline.', 'ℹ️');
+                }
+            }
+            if (!p) return;
+            Object.assign(themeState, baseThemeExtras, p, { preset: name });
+            markActivePreset(name, el);
+            updateColorsLive();
+            haptic();
+            const card = el || document.querySelector('.palette-preset-card[data-preset="' + name + '"]');
+            const label = card ? card.querySelector('.preset-name').innerText : name;
+            showToast('Applied Theme: ' + label, '🎨');
+        }
+
+        function markActivePreset(name, el) {
+            document.querySelectorAll('.palette-preset-card').forEach(c => c.classList.remove('active'));
+            const card = el || (name ? document.querySelector('.palette-preset-card[data-preset="' + name + '"]') : null);
+            if (card) card.classList.add('active');
+        }
+
+        function updateCustomColor(key, val) {
+            themeState[key] = val;
+            themeState.preset = 'custom';
+            markActivePreset(null);
+            updateColorsLive();
+            haptic();
+        }
+
+        function hexToRgba(hex, alpha) {
+            const h = String(hex || '').replace('#', '');
+            if (h.length !== 6) return 'rgba(0,0,0,' + alpha + ')';
+            return 'rgba(' + parseInt(h.substr(0, 2), 16) + ',' + parseInt(h.substr(2, 2), 16) + ',' + parseInt(h.substr(4, 2), 16) + ',' + alpha + ')';
+        }
+
+        function updateColorsLive() {
+            const root = document.documentElement.style;
+            root.setProperty('--accent', themeState.accent);
+            root.setProperty('--accent-glow', hexToRgba(themeState.accent, 0.27));
+            root.setProperty('--bg-base', themeState.bg);
+            root.setProperty('--bg-surface', themeState.surface || baseThemeExtras.surface);
+            root.setProperty('--bg-card', themeState.card);
+            root.setProperty('--secondary', themeState.secondary || baseThemeExtras.secondary);
+            root.setProperty('--text-main', themeState.text || baseThemeExtras.text);
+            root.setProperty('--text-muted', themeState.muted || baseThemeExtras.muted);
+            root.setProperty('--status-running', themeState.running);
+            root.setProperty('--status-frozen', themeState.frozen);
+            root.setProperty('--status-system', themeState.system);
+            root.setProperty('--status-bloat', themeState.bloat);
+
+            [['Accent', 'accent'], ['Bg', 'bg'], ['Card', 'card'], ['Running', 'running'],
+             ['Frozen', 'frozen'], ['System', 'system'], ['Bloat', 'bloat']].forEach(([id, key]) => {
+                const circ = document.getElementById('circ' + id);
+                const hex = document.getElementById('hex' + id);
+                if (circ) circ.style.background = themeState[key];
+                if (hex) hex.innerText = String(themeState[key]).toUpperCase();
+                const input = circ ? circ.parentElement.querySelector('input[type="color"]') : null;
+                if (input) input.value = themeState[key];
+            });
+
+            if (window.AndroidBridge) {
+                if (window.AndroidBridge.savePreferences) {
+                    window.AndroidBridge.savePreferences(JSON.stringify(themeState));
+                }
+                if (window.AndroidBridge.setSystemBarColor) {
+                    window.AndroidBridge.setSystemBarColor(themeState.bg);
+                }
+            }
+        }
+
+        function restoreSavedTheme() {
+            try {
+                if (!window.AndroidBridge || !window.AndroidBridge.loadPreferences) return;
+                const saved = JSON.parse(window.AndroidBridge.loadPreferences() || '{}');
+                if (!saved || !saved.accent) return;
+                Object.assign(themeState, baseThemeExtras, saved);
+                // Material You follows the current wallpaper, so re-read it on every launch
+                if (saved.preset === 'materialyou') {
+                    const dyn = getMaterialYouPalette();
+                    if (dyn) Object.assign(themeState, dyn);
+                }
+                markActivePreset(saved.preset && saved.preset !== 'custom' ? saved.preset : null);
+            } catch (e) {}
+        }
+
+        // Terminal Console
+        function runTerminalCmd() {
+            const input = document.getElementById('termCmd');
+            const cmd = input.value.trim();
+            if (!cmd) return;
+            haptic();
+            input.value = '';
+
+            const term = document.getElementById('termOutput');
+            term.innerHTML += `
+<span style="color:#FFFFFF;">$ ${escapeHtml(cmd)}</span>
+`;
+
+            if (window.AndroidBridge) {
+                const res = window.AndroidBridge.executeShell(cmd) || '';
+                term.innerHTML += escapeHtml(res);
+                showCommandResults('Shell Command Result', cmd, [{ name: cmd, pkg: 'shell', output: res, success: true }]);
+            }
+            term.scrollTop = term.scrollHeight;
+        }
+
+        // Init App on load
+        window.addEventListener('DOMContentLoaded', () => {
+            restoreSavedTheme();
+            refreshMaterialYouCard();
+            updateColorsLive();
+            initApp();
+            loadSavedLists();
+        });
+    </script>
+</body>
+</html>
