@@ -1,5 +1,17 @@
 # Changelog
 
+## v4.3-Pro (versionCode 330)
+
+Installs over v3.1 – v4.2 without uninstalling (same signing key).
+
+- **Install and update dates** in the app menu, under the version
+  ("Installed Jan 15, 2024 • Updated Sep 20, 2026").
+- **Versions in the app list**: each app shows its version on the badge row. The **🔢 Versions**
+  pill hides or shows them, and the choice is remembered.
+- **Update hints**: when the Updates tab has found a newer version, the app list shows
+  "v26.0 → 27.1" and the app menu shows "→ 27.1 available on Galaxy Store" with an **Update**
+  button (or Download / Release for updates that install elsewhere).
+
 ## v4.2-Pro (versionCode 320)
 
 Installs over v3.1 – v4.1 without uninstalling (same signing key).

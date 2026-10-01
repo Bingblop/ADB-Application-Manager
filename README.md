@@ -5,7 +5,7 @@ package, freeze/enable, force-stop, clear data, uninstall for user 0, reinstall 
 manage permissions, save package lists, and run shell commands — through ADB TCP, Wireless
 Debugging, Shizuku or Root.
 
-**Latest release:** [`release/ADB_Application_Manager_Pro-v4.2.apk`](release/ADB_Application_Manager_Pro-v4.2.apk) — see [CHANGELOG.md](CHANGELOG.md).
+**Latest release:** [`release/ADB_Application_Manager_Pro-v4.3.apk`](release/ADB_Application_Manager_Pro-v4.3.apk) — see [CHANGELOG.md](CHANGELOG.md).
 
 ## Working modes
 
@@ -52,7 +52,9 @@ Obtainium. Play Store apps keep updating through the Play Store.
 
 ## App menu
 
-Tap **⋯** on any app for actions (Launch, Force Stop, Freeze/Enable, Suspend/Unsuspend, Clear Data, Uninstall,
+Each app shows its version in the list (toggle with **🔢 Versions**), with "→ new version" when
+an update is available. Tap **⋯** on any app to see its version, install and update dates, any
+available update, and actions (Launch, Force Stop, Freeze/Enable, Suspend/Unsuspend, Clear Data, Uninstall,
 Reinstall, Remove Updates, App Info) and five tabs:
 
 - **Permissions**: searchable, filterable list; toggle runtime and development permissions

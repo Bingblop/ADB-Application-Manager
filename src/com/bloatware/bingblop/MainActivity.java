@@ -1815,6 +1815,13 @@ public class MainActivity extends Activity {
             try {
                 PackageManager pm = getPackageManager();
                 List<ApplicationInfo> apps = pm.getInstalledApplications(PackageManager.GET_META_DATA);
+                // Version names for the optional label in the app list (one call for all packages)
+                java.util.Map<String, String> versions = new java.util.HashMap<String, String>();
+                try {
+                    for (PackageInfo pi : pm.getInstalledPackages(0)) {
+                        versions.put(pi.packageName, pi.versionName != null ? pi.versionName : String.valueOf(versionCodeOf(pi)));
+                    }
+                } catch (Exception ignored) {}
 
                 Set<String> runningPkgs = new HashSet<String>();
                 Set<String> disabledPkgs = new HashSet<String>();
@@ -1866,6 +1873,7 @@ public class MainActivity extends Activity {
                     o.put("isSuspended", (info.flags & ApplicationInfo.FLAG_SUSPENDED) != 0);
                     o.put("isUninstalled", false);
                     o.put("targetSdk", info.targetSdkVersion);
+                    o.put("version", versions.containsKey(info.packageName) ? versions.get(info.packageName) : "");
                     arr.put(o);
                 }
                 for (String pkg : uninstalledPkgs) {

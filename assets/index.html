@@ -283,7 +283,8 @@
             display: none;
         }
 
-        .filter-pill {
+        .filter-pill,
+        .toggle-pill {
             flex: 0 0 auto;
             padding: 6px 13px;
             background: rgba(var(--ov), 0.05);
@@ -297,7 +298,8 @@
             white-space: nowrap;
         }
 
-        .filter-pill.active {
+        .filter-pill.active,
+        .toggle-pill.active {
             background: rgba(0, 229, 255, 0.14);
             border-color: var(--accent);
             color: var(--accent);
@@ -1928,6 +1930,49 @@
 
         .upd-msg.error { color: var(--status-bloat); }
         .upd-msg.done { color: var(--status-running); }
+        .toggle-pill {
+            border-style: dashed;
+        }
+
+        .app-version {
+            display: inline-block;
+            font-size: 9.5px;
+            font-weight: 700;
+            color: var(--accent);
+            margin-left: 2px;
+            align-self: center;
+            vertical-align: middle;
+            max-width: 160px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .app-version .upd-arrow {
+            color: var(--status-running);
+        }
+
+        .sheet-title p.sheet-dates {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 1px;
+        }
+
+        .sheet-update-hint {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 4px;
+            font-size: 10.5px;
+            font-weight: 800;
+            color: var(--status-running);
+        }
+
+        .sheet-update-hint button {
+            padding: 3px 10px;
+            font-size: 10px;
+        }
     </style>
 </head>
 <body>
@@ -2015,6 +2060,7 @@
                 <div class="filter-pill" data-filter="frozen" onclick="setFilter('frozen', this)">❄️ Frozen (<span id="countFrozen">0</span>)</div>
                 <div class="filter-pill" data-filter="suspended" onclick="setFilter('suspended', this)">⏸️ Suspended (<span id="countSuspended">0</span>)</div>
                 <div class="filter-pill" data-filter="uninstalled" onclick="setFilter('uninstalled', this)">🗑️ Uninstalled (<span id="countUninstalled">0</span>)</div>
+                <div class="toggle-pill active" id="versionTogglePill" onclick="toggleListVersions()" title="Show app versions in the list">🔢 Versions</div>
             </div>
 
             <!-- Dynamic Apps List -->
@@ -2430,6 +2476,8 @@ Type any command below (e.g. pm list packages -d)
                         <h3 id="sheetTitle">App Title</h3>
                         <p id="sheetPkg">com.example.package</p>
                         <p id="sheetVersion" class="sheet-version"></p>
+                        <p id="sheetDates" class="sheet-dates"></p>
+                        <div id="sheetUpdateHint" class="sheet-update-hint" style="display:none;"></div>
                     </div>
                 </div>
                 <div style="font-size:20px; cursor:pointer;" onclick="closeInspector()">✕</div>
@@ -4021,6 +4069,7 @@ Type any command below (e.g. pm list packages -d)
             if (!uiStateLoaded) return; // don't overwrite saved filters with defaults during start-up
             saveStoreJson('ui_state', {
                 appsFilter: currentFilter,
+                showVersions: showListVersions,
                 uad: { removal: Array.from(uadFilters.removal), list: uadFilters.list, state: uadFilters.state, brand: uadFilters.brand }
             });
         }
@@ -4028,6 +4077,11 @@ Type any command below (e.g. pm list packages -d)
         function restoreUiState() {
             const st = loadStoreJson('ui_state', null);
             if (st) {
+                if (typeof st.showVersions === 'boolean') {
+                    showListVersions = st.showVersions;
+                    const pill = document.getElementById('versionTogglePill');
+                    if (pill) pill.classList.toggle('active', showListVersions);
+                }
                 if (st.appsFilter) {
                     currentFilter = st.appsFilter;
                     document.querySelectorAll('.filter-pill').forEach(p => p.classList.toggle('active', p.getAttribute('data-filter') === currentFilter));
@@ -4215,6 +4269,7 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('updStatus').innerText = parts.join(' • ') + ' • ' + new Date(r.checkedAt || Date.now()).toLocaleTimeString();
             renderUpdates();
             updateUpdatesTabBadge();
+            if (allApps.length) renderApps();
         }
 
         function updateUpdatesTabBadge() {
@@ -4380,6 +4435,7 @@ Type any command below (e.g. pm list packages -d)
         }
 
         function updateOneUI(pkg) {
+            if (!updBridge()) return;
             if (!guardPrivilege('Install update')) return;
             haptic();
             updQueue = updQueue.filter(p => p !== pkg);
@@ -4428,6 +4484,89 @@ Type any command below (e.g. pm list packages -d)
             }
             // Finished rows stay visible (marked Updated) until the next check
             renderUpdates();
+        }
+
+        // ---------- Versions in the app list / app menu ----------
+        let showListVersions = true;
+
+        let bridgeUpdatesCache = { at: 0, list: [] };
+
+        // The Updates tab may not have been opened yet; MainActivity keeps the last check's results.
+        // Cached briefly so rendering a long app list makes one bridge call, not one per row.
+        function bridgeUpdates() {
+            if (Date.now() - bridgeUpdatesCache.at < 5000) return bridgeUpdatesCache.list;
+            let list = [];
+            if (window.AndroidBridge && window.AndroidBridge.getUpdateState) {
+                try { list = JSON.parse(window.AndroidBridge.getUpdateState() || '{}').updates || []; } catch (e) { list = []; }
+            }
+            bridgeUpdatesCache = { at: Date.now(), list: list };
+            return list;
+        }
+
+        function knownUpdateFor(pkg) {
+            if (typeof updList === 'undefined') return null;
+            const list = updList.length ? updList : bridgeUpdates();
+            const u = list.find(x => x.pkg === pkg && x.source !== 'external');
+            if (!u) return null;
+            const pr = typeof updProgress !== 'undefined' ? updProgress[pkg] : null;
+            return pr && pr.stage === 'done' ? null : u;
+        }
+
+        function listVersionLabel(app) {
+            if (!showListVersions || !app.version) return '';
+            const u = knownUpdateFor(app.pkg);
+            return `<span class="app-version">v${escapeHtml(app.version)}${u ? ` <span class="upd-arrow">→ ${escapeHtml(u.availableVersion || '')}</span>` : ''}</span>`;
+        }
+
+        function toggleListVersions() {
+            showListVersions = !showListVersions;
+            document.getElementById('versionTogglePill').classList.toggle('active', showListVersions);
+            haptic();
+            saveUiState();
+            renderApps();
+        }
+
+        function formatDate(ms) {
+            if (!ms) return '';
+            try {
+                return new Date(ms).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+            } catch (e) {
+                return new Date(ms).toDateString();
+            }
+        }
+
+        function renderInspectorDates(d) {
+            const el = document.getElementById('sheetDates');
+            if (!el) return;
+            const parts = [];
+            if (d.firstInstallTime) parts.push('Installed ' + formatDate(d.firstInstallTime));
+            if (d.lastUpdateTime && d.lastUpdateTime !== d.firstInstallTime) parts.push('Updated ' + formatDate(d.lastUpdateTime));
+            el.innerText = parts.join(' • ');
+            el.style.display = parts.length ? 'block' : 'none';
+        }
+
+        function renderInspectorUpdateHint(pkg) {
+            const el = document.getElementById('sheetUpdateHint');
+            if (!el) return;
+            const u = knownUpdateFor(pkg);
+            if (!u) { el.style.display = 'none'; el.innerHTML = ''; return; }
+            let action;
+            if (u.source === 'self') action = `<button class="mode-action-btn primary" onclick="openSelfUpdate()">⬇️ Download</button>`;
+            else if (u.noApk) action = `<button class="mode-action-btn" data-url="${escapeHtml(u.page || '')}" onclick="openUpdatePage(this.getAttribute('data-url'))">↗ Release</button>`;
+            else action = `<button class="mode-action-btn primary" data-pkg="${escapeHtml(pkg)}" onclick="updateFromInspector(this.getAttribute('data-pkg'))">⬆️ Update</button>`;
+            el.innerHTML = `<span>→ ${escapeHtml(u.availableVersion || 'newer version')} available on ${escapeHtml(UPD_SOURCE_LABELS[u.source] || u.source)}</span>${action}`;
+            el.style.display = 'flex';
+        }
+
+        function updateFromInspector(pkg) {
+            if (!guardPrivilege('Install update')) return;
+            // Make sure the Updates tab knows this item (results may come from MainActivity's last check)
+            if (!updList.find(x => x.pkg === pkg)) {
+                try { updList = JSON.parse(window.AndroidBridge.getUpdateState() || '{}').updates || []; } catch (e) {}
+            }
+            closeInspector();
+            switchView('updates');
+            updateOneUI(pkg);
         }
 
         // ---------- ADB key ----------
@@ -4799,7 +4938,7 @@ Type any command below (e.g. pm list packages -d)
                             <div class="app-meta">
                                 <div class="app-name">${app.name}</div>
                                 <div class="app-pkg">${app.pkg}</div>
-                                <div class="badge-row">${badges}</div>
+                                <div class="badge-row">${badges}${listVersionLabel(app)}</div>
                             </div>
                         </div>
                         <div class="app-actions">
@@ -4963,6 +5102,8 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('sheetTitle').innerText = app.name;
             document.getElementById('sheetPkg').innerText = app.pkg;
             document.getElementById('sheetVersion').innerText = window.AndroidBridge ? 'Loading version...' : '';
+            document.getElementById('sheetDates').innerText = '';
+            renderInspectorUpdateHint(pkg);
             document.getElementById('sheetAvatar').innerText = app.name.charAt(0).toUpperCase();
 
             document.getElementById('sheetBtnReinstall').style.display = app.isUninstalled ? 'flex' : 'none';
@@ -5006,6 +5147,7 @@ Type any command below (e.g. pm list packages -d)
                 const code = d.versionCode !== undefined && d.versionCode !== null ? String(d.versionCode) : '';
                 ver.innerText = name || code ? `Version ${name || code}${name && code ? ' (' + code + ')' : ''}` : 'Version unavailable';
             }
+            renderInspectorDates(d);
             appOpsList = parseAppOps(d.appopsRaw || '');
             renderPermissionsList();
             renderAppOpsList();
