@@ -1,5 +1,40 @@
 # Changelog
 
+## Unreleased (source-complete, not yet in a signed build)
+
+A second GitHub Copilot review pass on v4.7-Pro's diff found a few more genuine issues, all fixed in
+source and confirmed by a clean CI compile plus standalone tests, but **not included in the
+`release/ADB_Application_Manager_Pro-v4.7.apk` below** - that APK was already built, signed and verified
+before this pass ran, and the environment this round's fixes were made in has no way to re-sign with the
+same release key. They'll be in the APK for the next version bump; until then, building `./build.sh`
+yourself from this source (with the project's usual `release.keystore`) picks them up immediately.
+
+- **Restore no longer scans forward for `backup.json` by name.** A picked file is untrusted, and skipping
+  past an unexpected entry first still fully decompresses it to find its end - a tiny zip bomb placed
+  before `backup.json` would have been inflated in full before this app ever got to check anything.
+  `backup.json` must now be the very first entry, or the file is refused immediately. The same
+  unbounded-decompression gap applied to any other unrecognized entry during restore (not just `data.tar`,
+  already fixed in v4.7-Pro below); every entry is now read through the same byte-capped loop regardless of
+  whether its contents end up kept.
+- The manifest viewer's string-pool size check compared a crafted count against the whole manifest's byte
+  size, which at the 32 MB cap still let a count of ~33.5 million through and allocated a reference array
+  in the hundreds of MB. It's now bounded by what could physically fit in that pool's own offset table.
+- Restoring app data no longer reports success when fixing the restored files' ownership or SELinux labels
+  (`chown`/`restorecon`) actually failed.
+- The working-mode tile considered ADB-over-TCP "ready" from an open port alone, which could select a mode
+  where the device is actually offline or unauthorized; it now requires the same confirmed connection the
+  other backends do.
+- A backup or APK export that fails partway through writing no longer leaves the partial file behind
+  looking like a finished one; it's deleted instead.
+- **The update-check regex timeout could poison itself.** A timed-out match's thread is abandoned, not
+  stopped, since `Matcher` can't be interrupted; running those on a small *shared* pool meant that after as
+  few hostile catalog patterns as the pool had threads, every later, completely ordinary update check would
+  queue behind them and never run - turning one or two bad entries into a standing outage. Matching now
+  runs on its own fresh thread each time, so a stuck match only leaks that one thread instead of blocking
+  everything after it. Separately, a timed-out match was indistinguishable from "didn't match", which an
+  inverted asset filter could read as "nothing to exclude"; a timeout now always rejects the candidate
+  instead.
+
 ## v4.7-Pro (versionCode 370)
 
 Installs over v3.1 – v4.6 without uninstalling (same signing key).
@@ -67,32 +102,9 @@ Installs over v3.1 – v4.6 without uninstalling (same signing key).
   - An install through Shizuku that fails partway through writing or committing its session no longer leaves
     it open. Backing up an app whose app-ops can't be read now says so in the backup instead of silently
     recording an empty, misleadingly-successful-looking override list.
-  - A backup or APK export that fails partway through writing no longer leaves the partial file behind
-    looking like a finished one; it's deleted instead.
-  - **Restore no longer scans forward for `backup.json` by name.** A picked file is untrusted, and skipping
-    past an unexpected entry first still fully decompresses it to find its end - a tiny zip bomb placed
-    before `backup.json` would have been inflated in full before this app ever got to check anything.
-    `backup.json` must now be the very first entry, or the file is refused immediately. The same
-    unbounded-decompression gap applied to any other unrecognized entry during extraction (not just
-    `data.tar`, already fixed above); every entry is now read through the same byte-capped loop regardless
-    of whether its contents end up kept.
-  - The manifest viewer's string-pool size check compared a crafted count against the whole manifest's byte
-    size, which at the 32 MB cap still let a count of ~33.5 million through and allocated a reference array
-    in the hundreds of MB. It's now bounded by what could physically fit in that pool's own offset table.
-  - Restoring app data no longer reports success when fixing the restored files' ownership or SELinux
-    labels (`chown`/`restorecon`) actually failed.
-  - The working-mode tile considered ADB-over-TCP "ready" from an open port alone, which could select a mode
-    where the device is actually offline or unauthorized; it now requires the same confirmed connection the
-    other backends do.
-  - **The update-check regex timeout could poison itself.** A timed-out match's thread is abandoned, not
-    stopped, since `Matcher` can't be interrupted; running those on a small *shared* pool meant that after as
-    few hostile catalog patterns as the pool had threads, every later, completely ordinary update check would
-    queue behind them and never run - turning one or two bad entries into a standing outage. Matching now
-    runs on its own fresh thread each time, so a stuck match only leaks that one thread instead of blocking
-    everything after it. Separately, a timed-out match was indistinguishable from "didn't match", which an
-    inverted asset filter could read as "nothing to exclude"; a timeout now always rejects the candidate
-    instead.
 - README: debloat-flow animation, light-theme screenshots and the new features.
+- A further Copilot pass after this APK was already built and signed found a few more issues; they're fixed
+  in source (see "Unreleased" above) but not in this version's APK.
 
 ## v4.6-Pro (versionCode 360)
 
