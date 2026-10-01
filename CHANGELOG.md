@@ -1,5 +1,12 @@
 # Changelog
 
+## v4.2-Pro (versionCode 320)
+
+Installs over v3.1 – v4.1 without uninstalling (same signing key).
+
+- The app menu shows the app's **version** right under its package name, as
+  "Version <name> (<version code>)". Apps uninstalled for your user show their version too.
+
 ## v4.1-Pro (versionCode 310)
 
 Installs over v3.1 – v4.0 without uninstalling (same signing key).

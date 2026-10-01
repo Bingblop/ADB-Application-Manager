@@ -1984,7 +1984,7 @@ public class MainActivity extends Activity {
                 try {
                     int flags = PackageManager.GET_ACTIVITIES | PackageManager.GET_RECEIVERS | PackageManager.GET_SERVICES
                             | PackageManager.GET_PROVIDERS | PackageManager.GET_PERMISSIONS
-                            | PackageManager.MATCH_DISABLED_COMPONENTS;
+                            | PackageManager.MATCH_DISABLED_COMPONENTS | PackageManager.MATCH_UNINSTALLED_PACKAGES;
                     PackageInfo info = getPackageManager().getPackageInfo(pkg, flags);
                     obj.put("versionName", info.versionName != null ? info.versionName : "N/A");
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {

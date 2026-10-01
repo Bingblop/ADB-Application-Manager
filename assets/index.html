@@ -755,6 +755,14 @@
             word-break: break-all;
         }
 
+        .sheet-title p.sheet-version {
+            font-size: 10.5px;
+            font-weight: 700;
+            color: var(--accent);
+            margin-top: 2px;
+            word-break: break-word;
+        }
+
         .sheet-action-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -2421,6 +2429,7 @@ Type any command below (e.g. pm list packages -d)
                     <div class="sheet-title">
                         <h3 id="sheetTitle">App Title</h3>
                         <p id="sheetPkg">com.example.package</p>
+                        <p id="sheetVersion" class="sheet-version"></p>
                     </div>
                 </div>
                 <div style="font-size:20px; cursor:pointer;" onclick="closeInspector()">✕</div>
@@ -4953,6 +4962,7 @@ Type any command below (e.g. pm list packages -d)
             const app = allApps.find(a => a.pkg === pkg) || { name: pkg, pkg: pkg, isFrozen: false, isUninstalled: false };
             document.getElementById('sheetTitle').innerText = app.name;
             document.getElementById('sheetPkg').innerText = app.pkg;
+            document.getElementById('sheetVersion').innerText = window.AndroidBridge ? 'Loading version...' : '';
             document.getElementById('sheetAvatar').innerText = app.name.charAt(0).toUpperCase();
 
             document.getElementById('sheetBtnReinstall').style.display = app.isUninstalled ? 'flex' : 'none';
@@ -4982,12 +4992,20 @@ Type any command below (e.g. pm list packages -d)
                 const detailsStr = window.AndroidBridge.getAppDetails(pkg);
                 try {
                     renderInspectorDetails(JSON.parse(detailsStr));
-                } catch (e) {}
+                } catch (e) {
+                    document.getElementById('sheetVersion').innerText = 'Version unavailable';
+                }
             }
         }
 
         function renderInspectorDetails(d) {
             inspectorData = d;
+            const ver = document.getElementById('sheetVersion');
+            if (ver) {
+                const name = d.versionName && d.versionName !== 'N/A' ? d.versionName : '';
+                const code = d.versionCode !== undefined && d.versionCode !== null ? String(d.versionCode) : '';
+                ver.innerText = name || code ? `Version ${name || code}${name && code ? ' (' + code + ')' : ''}` : 'Version unavailable';
+            }
             appOpsList = parseAppOps(d.appopsRaw || '');
             renderPermissionsList();
             renderAppOpsList();

@@ -5,7 +5,7 @@ package, freeze/enable, force-stop, clear data, uninstall for user 0, reinstall 
 manage permissions, save package lists, and run shell commands — through ADB TCP, Wireless
 Debugging, Shizuku or Root.
 
-**Latest release:** [`release/ADB_Application_Manager_Pro-v4.1.apk`](release/ADB_Application_Manager_Pro-v4.1.apk) — see [CHANGELOG.md](CHANGELOG.md).
+**Latest release:** [`release/ADB_Application_Manager_Pro-v4.2.apk`](release/ADB_Application_Manager_Pro-v4.2.apk) — see [CHANGELOG.md](CHANGELOG.md).
 
 ## Working modes
 
