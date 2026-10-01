@@ -159,6 +159,7 @@ public class MainActivity extends Activity {
 
         webView.addJavascriptInterface(new AndroidBridge(), "AndroidBridge");
         webView.loadUrl("file:///android_asset/index.html");
+        registerWallpaperListener();
     }
 
     private void setupBinariesAndKeys() {
@@ -643,6 +644,44 @@ public class MainActivity extends Activity {
         out.put("changeable", changeable);
         out.put("appOp", appOp);
         out.put("label", label);
+    }
+
+    /** Maps Android 12+ system tonal palettes to the app's color roles (Material 3 dark / light). */
+    private JSONObject materialYouScheme(boolean dark) throws Exception {
+        JSONObject o = new JSONObject();
+        if (dark) {
+            int n900 = systemColor("system_neutral1_900");
+            int n800 = systemColor("system_neutral1_800");
+            o.put("accent", colorHex(systemColor("system_accent1_200")));
+            o.put("bg", colorHex(mixColor(n900, 0xFF000000, 0.35f)));
+            o.put("surface", colorHex(n800));
+            o.put("card", colorHex(mixColor(n900, n800, 0.45f)));
+            o.put("sheet", colorHex(n900));
+            o.put("running", colorHex(systemColor("system_accent3_200")));
+            o.put("frozen", colorHex(systemColor("system_accent1_200")));
+            o.put("system", colorHex(systemColor("system_accent2_200")));
+            o.put("secondary", colorHex(systemColor("system_accent2_200")));
+            o.put("bloat", "#F2B8B5");
+            o.put("text", colorHex(systemColor("system_neutral1_100")));
+            o.put("muted", colorHex(systemColor("system_neutral2_200")));
+        } else {
+            int n10 = systemColor("system_neutral1_10");
+            int n50 = systemColor("system_neutral1_50");
+            int n100 = systemColor("system_neutral1_100");
+            o.put("accent", colorHex(systemColor("system_accent1_600")));
+            o.put("bg", colorHex(n10));
+            o.put("surface", colorHex(n100));
+            o.put("card", colorHex(n50));
+            o.put("sheet", colorHex(mixColor(n10, n50, 0.5f)));
+            o.put("running", colorHex(systemColor("system_accent3_600")));
+            o.put("frozen", colorHex(systemColor("system_accent1_600")));
+            o.put("system", colorHex(systemColor("system_accent2_600")));
+            o.put("secondary", colorHex(systemColor("system_accent2_600")));
+            o.put("bloat", "#B3261E");
+            o.put("text", colorHex(systemColor("system_neutral1_900")));
+            o.put("muted", colorHex(systemColor("system_neutral2_700")));
+        }
+        return o;
     }
 
     private int systemColor(String name) {
@@ -1417,6 +1456,13 @@ public class MainActivity extends Activity {
                         getWindow().setStatusBarColor(color);
                         getWindow().setNavigationBarColor(color);
                         if (webView != null) webView.setBackgroundColor(color);
+                        // Dark icons on light backgrounds, light icons on dark ones
+                        double lum = (0.2126 * Color.red(color) + 0.7152 * Color.green(color) + 0.0722 * Color.blue(color)) / 255.0;
+                        boolean lightBars = lum > 0.6;
+                        android.view.View decor = getWindow().getDecorView();
+                        int flags = decor.getSystemUiVisibility();
+                        int lightFlags = android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+                        decor.setSystemUiVisibility(lightBars ? (flags | lightFlags) : (flags & ~lightFlags));
                     } catch (Exception ignored) {}
                 }
             });
@@ -1434,19 +1480,9 @@ public class MainActivity extends Activity {
                     obj.put("supported", false);
                     return obj.toString();
                 }
-                int neutral900 = systemColor("system_neutral1_900");
-                int neutral800 = systemColor("system_neutral1_800");
                 obj.put("supported", true);
-                obj.put("accent", colorHex(systemColor("system_accent1_200")));
-                obj.put("bg", colorHex(mixColor(neutral900, 0xFF000000, 0.35f)));
-                obj.put("surface", colorHex(neutral900));
-                obj.put("card", colorHex(mixColor(neutral900, neutral800, 0.45f)));
-                obj.put("running", colorHex(systemColor("system_accent3_200")));
-                obj.put("frozen", colorHex(systemColor("system_accent1_200")));
-                obj.put("system", colorHex(systemColor("system_accent2_200")));
-                obj.put("bloat", "#F2B8B5");
-                obj.put("text", colorHex(systemColor("system_neutral1_100")));
-                obj.put("muted", colorHex(systemColor("system_neutral2_200")));
+                obj.put("dark", materialYouScheme(true));
+                obj.put("light", materialYouScheme(false));
             } catch (Exception e) {
                 try {
                     obj.put("supported", false);
@@ -1454,6 +1490,53 @@ public class MainActivity extends Activity {
                 } catch (Exception ignored) {}
             }
             return obj.toString();
+        }
+
+        /** True when the phone is in dark mode (Settings > Display > Dark mode). */
+        @JavascriptInterface
+        public boolean isSystemDarkMode() {
+            int night = getResources().getConfiguration().uiMode & android.content.res.Configuration.UI_MODE_NIGHT_MASK;
+            return night == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+        }
+    }
+
+    @Override
+    public void onConfigurationChanged(android.content.res.Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        // uiMode is handled here (see configChanges) so a dark mode switch re-themes without restarting
+        notifyJs("window.onSystemAppearanceChanged && window.onSystemAppearanceChanged()");
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        notifyJs("window.onAppResume && window.onAppResume()");
+    }
+
+    private Object wallpaperColorsListener;
+
+    private void registerWallpaperListener() {
+        if (Build.VERSION.SDK_INT < 27) return;
+        try {
+            android.app.WallpaperManager wm = android.app.WallpaperManager.getInstance(this);
+            android.app.WallpaperManager.OnColorsChangedListener l = new android.app.WallpaperManager.OnColorsChangedListener() {
+                @Override
+                public void onColorsChanged(android.app.WallpaperColors colors, int which) {
+                    // The system palette updates shortly after the wallpaper; give it a moment
+                    if (webView != null) {
+                        webView.postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                notifyJs("window.onAppResume && window.onAppResume()");
+                            }
+                        }, 2000);
+                    }
+                }
+            };
+            wm.addOnColorsChangedListener(l, new android.os.Handler(android.os.Looper.getMainLooper()));
+            wallpaperColorsListener = l;
+        } catch (Throwable t) {
+            Log.w(TAG, "Wallpaper listener unavailable: " + t.getMessage());
         }
     }
 
@@ -1469,6 +1552,12 @@ public class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (Build.VERSION.SDK_INT >= 27 && wallpaperColorsListener != null) {
+            try {
+                android.app.WallpaperManager.getInstance(this).removeOnColorsChangedListener(
+                        (android.app.WallpaperManager.OnColorsChangedListener) wallpaperColorsListener);
+            } catch (Throwable ignored) {}
+        }
         try {
             Shizuku.removeRequestPermissionResultListener(shizukuPermissionListener);
             Shizuku.removeBinderReceivedListener(shizukuBinderListener);

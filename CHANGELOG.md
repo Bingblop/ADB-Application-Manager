@@ -1,5 +1,31 @@
 # Changelog
 
+## v3.5-Pro (versionCode 250)
+
+Installs over v3.1 – v3.4 without uninstalling (same signing key).
+
+### Light and dark mode
+- New **Appearance** switch at the top of Color & Themes: **Light**, **Dark** or **System**
+  (follows the phone's dark mode, and re-themes instantly when it changes).
+- Every palette has a light version: **Material 3** uses the official M3 light scheme,
+  **Material You** reads both light and dark schemes from the wallpaper, and the six classic
+  palettes get a generated light scheme with accents darkened to readable contrast on white.
+- Status and navigation bar icons switch to dark on light themes.
+- The whole UI is now theme-aware (sheets, inputs, buttons, toasts, avatars, terminal); text on
+  accent-colored buttons picks black or white automatically.
+- Color picker tweaks are saved separately for light and dark, with a **Reset tweaks** button.
+
+### Defaults
+- New installs start on **Material 3** with Appearance set to **System**. Existing users keep
+  their current palette in Dark mode.
+
+### Material You
+- Follows wallpaper changes: the dynamic colors are re-read when the wallpaper changes and whenever
+  you return to the app.
+
+### Fixes
+- ADB Console output keeps its line breaks.
+
 ## v3.4-Pro (versionCode 240)
 
 Installs over v3.1 – v3.3 without uninstalling (same signing key).

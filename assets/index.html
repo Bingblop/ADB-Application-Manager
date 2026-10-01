@@ -15,6 +15,10 @@
             --accent-glow: rgba(0, 229, 255, 0.35);
             --secondary: #7C4DFF;
             --text-main: #FFFFFF;
+            --on-accent: #000000;
+            --bg-sheet: #0E121B;
+            --input-bg: rgba(0, 0, 0, 0.35);
+            --ov: 255, 255, 255;
             --text-muted: #8E9BAE;
             --text-dim: #546075;
             
@@ -57,7 +61,7 @@
             position: sticky;
             top: 0;
             z-index: 100;
-            background: #080A0F;
+            background: var(--bg-base);
             border-bottom: 1px solid var(--border-glass);
             padding: 12px 16px;
             display: flex;
@@ -87,7 +91,7 @@
             font-size: 17px;
             font-weight: 800;
             letter-spacing: -0.4px;
-            background: linear-gradient(90deg, #FFFFFF, var(--accent));
+            background: linear-gradient(90deg, var(--text-main), var(--accent));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -133,7 +137,7 @@
         /* Top Navigation Tabs */
         .tab-bar {
             display: flex;
-            background: #0E121B;
+            background: var(--bg-sheet);
             border-bottom: 1px solid var(--border-glass);
             overflow-x: auto;
             scrollbar-width: none;
@@ -168,7 +172,7 @@
         }
 
         .tab-btn.active {
-            color: #000000;
+            color: var(--on-accent);
             background: var(--accent);
             box-shadow: 0 2px 12px var(--accent-glow);
         }
@@ -239,7 +243,7 @@
             border: 1px solid var(--border-glass);
             border-radius: var(--radius-lg);
             padding: 0 42px 0 16px;
-            color: #FFFFFF;
+            color: var(--text-main);
             font-size: 14px;
             font-weight: 600;
             outline: none;
@@ -281,7 +285,7 @@
         .filter-pill {
             flex: 0 0 auto;
             padding: 6px 13px;
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(var(--ov), 0.05);
             border: 1px solid var(--border-glass);
             border-radius: 20px;
             font-size: 11px;
@@ -335,7 +339,7 @@
             justify-content: center;
             font-size: 11px;
             font-weight: 900;
-            color: #000000;
+            color: var(--on-accent);
             flex-shrink: 0;
         }
 
@@ -348,7 +352,7 @@
             width: 36px;
             height: 36px;
             border-radius: 10px;
-            background: #1C2030;
+            background: var(--bg-surface);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -443,7 +447,7 @@
             width: 34px;
             height: 34px;
             border-radius: 9px;
-            background: rgba(255, 255, 255, 0.06);
+            background: rgba(var(--ov), 0.06);
             border: 1px solid var(--border-glass);
             color: var(--text-main);
             display: flex;
@@ -456,7 +460,7 @@
 
         .btn-mini:active {
             background: var(--accent);
-            color: #000000;
+            color: var(--on-accent);
         }
 
         /* DOCKED BATCH COMMANDS SHEET (One UI 2-Row Grid: Never Cut Off, No Side Scroll Needed!) */
@@ -465,7 +469,7 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background: #0E121B;
+            background: var(--bg-sheet);
             border-top: 2px solid var(--accent);
             border-radius: 20px 20px 0 0;
             box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.9), 0 0 24px var(--accent-glow);
@@ -495,7 +499,7 @@
             display: flex;
             align-items: center;
             gap: 6px;
-            color: #FFFFFF;
+            color: var(--text-main);
         }
 
         .batch-sheet-tools {
@@ -523,10 +527,10 @@
 
         .batch-grid-btn {
             height: 44px;
-            background: rgba(255, 255, 255, 0.08);
+            background: rgba(var(--ov), 0.08);
             border: 1px solid var(--border-glass);
             border-radius: 12px;
-            color: #FFFFFF;
+            color: var(--text-main);
             font-size: 11px;
             font-weight: 800;
             cursor: pointer;
@@ -539,7 +543,7 @@
 
         .batch-grid-btn:active {
             background: var(--accent);
-            color: #000000;
+            color: var(--on-accent);
             transform: scale(0.96);
         }
 
@@ -630,7 +634,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            background: rgba(0, 0, 0, 0.4);
+            background: var(--input-bg);
             border: 1px solid var(--border-glass);
             padding: 4px 10px 4px 6px;
             border-radius: 20px;
@@ -641,14 +645,14 @@
             width: 24px;
             height: 24px;
             border-radius: 50%;
-            border: 2px solid #FFFFFF;
+            border: 2px solid var(--text-main);
         }
 
         .bubble-hex {
             font-size: 12px;
             font-family: monospace;
             font-weight: 800;
-            color: #FFFFFF;
+            color: var(--text-main);
         }
 
         input[type="color"] {
@@ -680,7 +684,7 @@
         }
 
         .modal-sheet {
-            background: #0E121B;
+            background: var(--bg-sheet);
             border: 1px solid var(--border-glass);
             border-top: 2px solid var(--accent);
             border-radius: var(--radius-xl) var(--radius-xl) 0 0;
@@ -720,7 +724,7 @@
             justify-content: center;
             font-size: 20px;
             font-weight: 900;
-            color: #000000;
+            color: var(--on-accent);
         }
 
         .sheet-title h3 {
@@ -743,10 +747,10 @@
 
         .sheet-btn {
             height: 44px;
-            background: rgba(255, 255, 255, 0.06);
+            background: rgba(var(--ov), 0.06);
             border: 1px solid var(--border-glass);
             border-radius: var(--radius-md);
-            color: #FFFFFF;
+            color: var(--text-main);
             font-size: 10px;
             font-weight: 800;
             display: flex;
@@ -759,7 +763,7 @@
 
         .sheet-btn:active {
             background: var(--accent);
-            color: #000000;
+            color: var(--on-accent);
         }
 
         .sheet-tabs {
@@ -813,7 +817,7 @@
         .list-search {
             flex: 1;
             min-width: 0;
-            background: rgba(0, 0, 0, 0.35);
+            background: var(--input-bg);
             border: 1px solid var(--border-glass);
             border-radius: var(--radius-md);
             padding: 8px 12px;
@@ -862,7 +866,7 @@
             justify-content: space-between;
             gap: 10px;
             padding: 8px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(var(--ov), 0.05);
         }
 
         .perm-info {
@@ -896,7 +900,7 @@
         }
 
         .perm-toggle-btn.locked {
-            background: rgba(255, 255, 255, 0.06);
+            background: rgba(var(--ov), 0.06);
             color: var(--text-muted);
             cursor: default;
         }
@@ -931,7 +935,7 @@
         }
 
         .op-select {
-            background: rgba(0, 0, 0, 0.35);
+            background: var(--input-bg);
             border: 1px solid var(--border-glass);
             border-radius: var(--radius-md);
             color: var(--text-main);
@@ -945,7 +949,7 @@
             line-height: 1.45;
             white-space: pre;
             overflow-x: auto;
-            background: rgba(0, 0, 0, 0.35);
+            background: var(--input-bg);
             border: 1px solid var(--border-glass);
             border-radius: var(--radius-md);
             padding: 10px;
@@ -971,7 +975,7 @@
             align-items: center;
             justify-content: space-between;
             padding: 8px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(var(--ov), 0.05);
             font-size: 11px;
         }
 
@@ -1020,7 +1024,7 @@
             background: var(--accent);
             border: none;
             border-radius: 14px;
-            color: #000000;
+            color: var(--on-accent);
             font-size: 11px;
             font-weight: 900;
             cursor: pointer;
@@ -1029,7 +1033,7 @@
         .apps-tool-btn {
             flex: 1;
             padding: 7px 10px;
-            background: rgba(255, 255, 255, 0.06);
+            background: rgba(var(--ov), 0.06);
             border: 1px solid var(--border-glass);
             border-radius: var(--radius-md);
             color: var(--text-main);
@@ -1094,7 +1098,7 @@
             padding: 4px 8px;
             border-radius: 999px;
             border: 1px solid var(--border-glass);
-            background: rgba(255,255,255,0.05);
+            background: rgba(var(--ov), 0.05);
             font-size: 10px;
             color: var(--text-main);
             font-family: monospace;
@@ -1114,7 +1118,7 @@
             background: var(--bg-surface);
             border: 1px solid var(--border-glass);
             border-radius: var(--radius-md);
-            color: #FFFFFF;
+            color: var(--text-main);
             padding: 12px;
             font-size: 12px;
             margin-bottom: 10px;
@@ -1137,7 +1141,7 @@
         }
 
         .result-item {
-            background: rgba(255,255,255,0.04);
+            background: rgba(var(--ov), 0.04);
             border: 1px solid var(--border-glass);
             border-radius: var(--radius-md);
             padding: 10px;
@@ -1181,7 +1185,7 @@
         }
 
         .confirm-list-box {
-            background: rgba(255,255,255,0.04);
+            background: rgba(var(--ov), 0.04);
             border: 1px solid var(--border-glass);
             border-radius: var(--radius-md);
             padding: 10px;
@@ -1193,7 +1197,7 @@
         .confirm-list-row {
             font-size: 12px;
             padding: 6px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
+            border-bottom: 1px solid rgba(var(--ov), 0.05);
             word-break: break-word;
         }
 
@@ -1211,7 +1215,7 @@
         }
 
         .terminal-box {
-            background: #06080D;
+            background: var(--bg-surface);
             border: 1px solid var(--border-glass);
             border-radius: var(--radius-lg);
             padding: 12px;
@@ -1222,6 +1226,8 @@
             color: var(--accent);
             line-height: 1.5;
             margin-bottom: 10px;
+            white-space: pre-wrap;
+            word-break: break-word;
         }
 
         .term-input-row {
@@ -1236,7 +1242,7 @@
             border: 1px solid var(--border-glass);
             border-radius: var(--radius-md);
             padding: 0 12px;
-            color: #FFFFFF;
+            color: var(--text-main);
             font-family: monospace;
             font-size: 13px;
             outline: none;
@@ -1248,7 +1254,7 @@
             background: var(--accent);
             border: none;
             border-radius: var(--radius-md);
-            color: #000000;
+            color: var(--on-accent);
             font-weight: 900;
             font-size: 12px;
             cursor: pointer;
@@ -1260,9 +1266,9 @@
             bottom: 24px;
             left: 50%;
             transform: translateX(-50%) translateY(100px);
-            background: #141A28;
+            background: var(--bg-card);
             border: 1px solid var(--accent);
-            color: #FFFFFF;
+            color: var(--text-main);
             padding: 9px 18px;
             border-radius: 24px;
             font-size: 11px;
@@ -1336,8 +1342,8 @@
 
         /* Working Modes Modal Styles */
         .mode-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(var(--ov), 0.03);
+            border: 1px solid rgba(var(--ov), 0.08);
             border-radius: var(--radius-lg);
             padding: 14px;
             margin-bottom: 12px;
@@ -1379,12 +1385,12 @@
 
         .mode-input {
             flex: 1;
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: var(--input-bg);
+            border: 1px solid rgba(var(--ov), 0.12);
             border-radius: var(--radius-md);
             padding: 8px 12px;
             font-size: 12px;
-            color: #FFF;
+            color: var(--text-main);
             outline: none;
         }
 
@@ -1415,7 +1421,7 @@
 
         .mode-action-btn.primary {
             background: linear-gradient(135deg, var(--accent), var(--secondary));
-            color: #000;
+            color: var(--on-accent);
             border: none;
         }
 
@@ -1450,9 +1456,9 @@
         }
 
         .mode-status-tag.inactive {
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(var(--ov), 0.05);
             color: var(--text-muted);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(var(--ov), 0.1);
         }
 
         .mode-status-tag.warning {
@@ -1503,6 +1509,39 @@
             border-radius: 999px;
             border: 1px solid var(--border-glass);
             color: var(--text-muted);
+        }
+        .appearance-toggle {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            background: var(--input-bg);
+            border: 1px solid var(--border-glass);
+            border-radius: 999px;
+            padding: 4px;
+        }
+
+        .appearance-btn {
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 800;
+            padding: 9px 6px;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+
+        .appearance-btn.active {
+            background: var(--accent);
+            color: var(--on-accent);
+        }
+
+        .appearance-note {
+            font-size: 10.5px;
+            color: var(--text-muted);
+            margin-top: 8px;
+            text-align: center;
         }
     </style>
 </head>
@@ -1624,8 +1663,19 @@
         <!-- VIEW 3: COLOR & THEMES CUSTOMIZER -->
         <section id="view-colors" class="view-content">
             <div class="color-card">
+                <div class="color-card-title">🌗 Appearance</div>
+                <div class="color-card-subtitle">Light, dark, or follow your phone's dark mode setting</div>
+                <div class="appearance-toggle">
+                    <button class="appearance-btn" data-appearance="light" onclick="setAppearance('light')">☀️ Light</button>
+                    <button class="appearance-btn" data-appearance="dark" onclick="setAppearance('dark')">🌙 Dark</button>
+                    <button class="appearance-btn" data-appearance="system" onclick="setAppearance('system')">📱 System</button>
+                </div>
+                <div class="appearance-note" id="appearanceNote"></div>
+            </div>
+
+            <div class="color-card">
                 <div class="color-card-title">🎨 Curated Theme Palettes</div>
-                <div class="color-card-subtitle">Choose from luxury dark and high-contrast color schemes</div>
+                <div class="color-card-subtitle">Every palette has a light and a dark version</div>
 
                 <div class="palette-presets-grid">
                     <div class="palette-preset-card" data-preset="material3" onclick="applyPalettePreset('material3', this)">
@@ -1705,8 +1755,11 @@
                     </div>
                 </div>
 
-                <div class="color-card-title">✨ Granular Color Pickers</div>
-                <div class="color-card-subtitle">Fine-tune every visual surface and status badge</div>
+                <div class="color-card-title" style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                    <span>✨ Granular Color Pickers</span>
+                    <button class="mode-action-btn" id="resetTweaksBtn" style="display:none;" onclick="resetColorTweaks()">↺ Reset tweaks</button>
+                </div>
+                <div class="color-card-subtitle">Fine-tune the current palette. Tweaks apply to the current mode (light or dark).</div>
 
                 <div class="color-row">
                     <div class="color-meta">
@@ -1814,10 +1867,9 @@
                 </div>
             </div>
 
-            <div class="terminal-box" id="termOutput">
-ADB Application Manager Shell Terminal Ready.
+            <div class="terminal-box" id="termOutput">ADB Application Manager Shell Terminal Ready.
 Type any command below (e.g. pm list packages -d)
-            </div>
+</div>
 
             <div class="term-input-row" style="margin-top:12px;">
                 <input type="text" class="term-input" id="termCmd" placeholder="Enter shell command..." onkeydown="if(event.key==='Enter') runTerminalCmd()">
@@ -2328,59 +2380,148 @@ Type any command below (e.g. pm list packages -d)
         let pendingBatchAction = null;
         let pendingDeleteListId = null;
 
-        // Surface/text roles shared by the classic dark palettes. Material 3 palettes override them.
-        const baseThemeExtras = {
-            surface: '#10141E',
-            text: '#FFFFFF',
-            muted: '#8E9BAE',
-            secondary: '#7C4DFF'
-        };
-
-        const themeState = Object.assign({
-            preset: 'amoled',
-            accent: '#00E5FF',
-            bg: '#080A0F',
-            card: '#141A28',
-            running: '#00E676',
-            frozen: '#00E5FF',
-            system: '#7C4DFF',
-            bloat: '#FF5252'
-        }, baseThemeExtras);
+        // ---------- Theme data ----------
+        // Every palette has a dark scheme; Material 3 also has its official light scheme. Other palettes get
+        // a generated light scheme (see deriveLightScheme). Material You comes from the wallpaper (Android 12+).
+        const DARK_DEFAULTS = { surface: '#10141E', text: '#FFFFFF', muted: '#8E9BAE', secondary: '#7C4DFF' };
 
         const palettes = {
-            amoled: { accent: '#00E5FF', bg: '#000000', card: '#141A28', running: '#00E676', frozen: '#00E5FF', system: '#7C4DFF', bloat: '#FF5252' },
-            cyberpunk: { accent: '#FF0055', bg: '#0F051D', card: '#1D0C38', running: '#00FFFF', frozen: '#FF0055', system: '#9D4EDD', bloat: '#FF5252' },
-            emerald: { accent: '#00E676', bg: '#04140D', card: '#0D2619', running: '#69F0AE', frozen: '#00E676', system: '#4CAF50', bloat: '#FF5252' },
-            amber: { accent: '#FF9100', bg: '#140F08', card: '#2A1E11', running: '#FFD740', frozen: '#FF9100', system: '#FF6D00', bloat: '#FF5252' },
-            slate: { accent: '#448AFF', bg: '#0D1117', card: '#161B22', running: '#00E676', frozen: '#448AFF', system: '#7C4DFF', bloat: '#FF5252' },
-            crimson: { accent: '#FF1744', bg: '#000000', card: '#1C080B', running: '#00E676', frozen: '#FF1744', system: '#D50000', bloat: '#FF5252' },
-            // Material Design 3 baseline dark scheme (primary, surface, surface container, secondary, error roles)
-            material3: { accent: '#D0BCFF', bg: '#141218', surface: '#1D1B20', card: '#211F26', running: '#A6D4A9', frozen: '#D0BCFF', system: '#CCC2DC', bloat: '#F2B8B5', text: '#E6E0E9', muted: '#CAC4D0', secondary: '#CCC2DC' }
+            amoled: { dark: { accent: '#00E5FF', bg: '#000000', card: '#141A28', running: '#00E676', frozen: '#00E5FF', system: '#7C4DFF', bloat: '#FF5252' } },
+            cyberpunk: { dark: { accent: '#FF0055', bg: '#0F051D', card: '#1D0C38', running: '#00FFFF', frozen: '#FF0055', system: '#9D4EDD', bloat: '#FF5252' } },
+            emerald: { dark: { accent: '#00E676', bg: '#04140D', card: '#0D2619', running: '#69F0AE', frozen: '#00E676', system: '#4CAF50', bloat: '#FF5252' } },
+            amber: { dark: { accent: '#FF9100', bg: '#140F08', card: '#2A1E11', running: '#FFD740', frozen: '#FF9100', system: '#FF6D00', bloat: '#FF5252' } },
+            slate: { dark: { accent: '#448AFF', bg: '#0D1117', card: '#161B22', running: '#00E676', frozen: '#448AFF', system: '#7C4DFF', bloat: '#FF5252' } },
+            crimson: { dark: { accent: '#FF1744', bg: '#000000', card: '#1C080B', running: '#00E676', frozen: '#FF1744', system: '#D50000', bloat: '#FF5252' } },
+            // Material Design 3 baseline schemes (primary, surface, surface containers, secondary, error, on-surface roles)
+            material3: {
+                dark: { accent: '#D0BCFF', bg: '#141218', surface: '#2B2930', card: '#211F26', sheet: '#1D1B20', running: '#A6D4A9', frozen: '#D0BCFF', system: '#CCC2DC', bloat: '#F2B8B5', text: '#E6E0E9', muted: '#CAC4D0', secondary: '#CCC2DC' },
+                light: { accent: '#6750A4', bg: '#FEF7FF', surface: '#ECE6F0', card: '#F3EDF7', sheet: '#F7F2FA', running: '#386A20', frozen: '#6750A4', system: '#625B71', bloat: '#B3261E', text: '#1D1B20', muted: '#49454F', secondary: '#625B71' }
+            }
         };
 
-        // Material You (M3 dynamic color) is generated from the wallpaper on Android 12+; falls back to M3 baseline
-        function getMaterialYouPalette() {
+        const themeState = {
+            preset: 'material3',        // default for new installs
+            appearance: 'system',       // 'light' | 'dark' | 'system'
+            overrides: { dark: {}, light: {} }
+        };
+
+        // ---------- Color math ----------
+        function hexToRgb(hex) {
+            let h = String(hex || '#000000').replace('#', '');
+            if (h.length === 3) h = h.split('').map(c => c + c).join('');
+            const n = parseInt(h.slice(0, 6), 16) || 0;
+            return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+        }
+
+        function rgbToHex(rgb) {
+            return '#' + rgb.map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('').toUpperCase();
+        }
+
+        function mixColors(a, b, t) {
+            const x = hexToRgb(a), y = hexToRgb(b);
+            return rgbToHex(x.map((v, i) => v + (y[i] - v) * t));
+        }
+
+        function luminance(hex) {
+            const c = hexToRgb(hex).map(v => {
+                v /= 255;
+                return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+            });
+            return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+        }
+
+        function contrastRatio(a, b) {
+            const la = luminance(a), lb = luminance(b);
+            return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+        }
+
+        // Darkens (or lightens) a color step by step until it reaches the contrast target against bg
+        function ensureContrast(color, bg, target) {
+            const towards = luminance(bg) > 0.5 ? '#000000' : '#FFFFFF';
+            let c = color;
+            for (let i = 0; i < 14 && contrastRatio(c, bg) < target; i++) c = mixColors(c, towards, 0.08);
+            return c;
+        }
+
+        function hexToRgba(hex, alpha) {
+            return 'rgba(' + hexToRgb(hex).join(',') + ',' + alpha + ')';
+        }
+
+        // ---------- Scheme resolution ----------
+        // Drops empty values so a partial palette never overwrites defaults with undefined
+        function definedColors(obj) {
+            const out = {};
+            Object.keys(obj || {}).forEach(k => { if (typeof obj[k] === 'string' && obj[k]) out[k] = obj[k]; });
+            return out;
+        }
+
+        function completeDarkScheme(d) {
+            const s = Object.assign({}, DARK_DEFAULTS, definedColors(d));
+            if (!s.sheet) s.sheet = mixColors(s.bg, s.card, 0.45);
+            return s;
+        }
+
+        function deriveLightScheme(d) {
+            const dark = completeDarkScheme(d);
+            const accent = ensureContrast(dark.accent, '#FFFFFF', 4.5);
+            return {
+                accent: accent,
+                bg: mixColors('#F5F6F8', dark.accent, 0.04),
+                surface: mixColors('#E9ECF0', dark.accent, 0.06),
+                card: '#FFFFFF',
+                sheet: mixColors('#FAFBFC', dark.accent, 0.03),
+                text: '#14171C',
+                muted: '#5A6270',
+                secondary: ensureContrast(dark.secondary || dark.system, '#FFFFFF', 4.5),
+                running: ensureContrast(dark.running, '#FFFFFF', 3.5),
+                frozen: ensureContrast(dark.frozen, '#FFFFFF', 3.5),
+                system: ensureContrast(dark.system, '#FFFFFF', 3.5),
+                bloat: ensureContrast(dark.bloat, '#FFFFFF', 3.5)
+            };
+        }
+
+        let materialYouCache = null;
+
+        // Material You (M3 dynamic color) from the wallpaper on Android 12+, or null when unavailable
+        function getMaterialYouSchemes(refresh) {
+            if (materialYouCache && !refresh) return materialYouCache.supported ? materialYouCache : null;
+            materialYouCache = { supported: false };
             try {
                 if (window.AndroidBridge && window.AndroidBridge.getMaterialYouColors) {
                     const c = JSON.parse(window.AndroidBridge.getMaterialYouColors() || '{}');
-                    if (c.supported) {
-                        return { accent: c.accent, bg: c.bg, surface: c.surface, card: c.card, running: c.running, frozen: c.frozen, system: c.system, bloat: c.bloat, text: c.text, muted: c.muted, secondary: c.system };
-                    }
+                    if (c.supported && c.dark && c.light) materialYouCache = c;
                 }
             } catch (e) {}
-            return null;
+            return materialYouCache.supported ? materialYouCache : null;
         }
 
-        function refreshMaterialYouCard() {
-            const p = getMaterialYouPalette();
-            const badge = document.getElementById('materialYouBadge');
-            const strip = document.getElementById('materialYouStrip');
-            if (p && strip) {
-                const sw = strip.querySelectorAll('.preset-swatch');
-                [p.accent, p.bg, p.card, p.system].forEach((c, i) => { if (sw[i]) sw[i].style.background = c; });
-            } else if (badge) {
-                badge.innerText = 'NEEDS ANDROID 12+ • USES M3 BASELINE';
+        function systemPrefersDark() {
+            try {
+                if (window.AndroidBridge && window.AndroidBridge.isSystemDarkMode) return !!window.AndroidBridge.isSystemDarkMode();
+            } catch (e) {}
+            return !(window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches);
+        }
+
+        function effectiveMode() {
+            if (themeState.appearance === 'light' || themeState.appearance === 'dark') return themeState.appearance;
+            return systemPrefersDark() ? 'dark' : 'light';
+        }
+
+        // Full color scheme for a preset in 'dark' or 'light' mode (without the user's color tweaks)
+        function resolvePresetScheme(preset, mode) {
+            if (preset === 'materialyou') {
+                const dyn = getMaterialYouSchemes();
+                if (dyn) return Object.assign({}, dyn[mode]);
+                preset = 'material3';
             }
+            const p = palettes[preset] || palettes.material3;
+            if (mode === 'light') return p.light ? Object.assign({}, p.light) : deriveLightScheme(p.dark);
+            return completeDarkScheme(p.dark);
+        }
+
+        function currentScheme() {
+            const mode = effectiveMode();
+            return Object.assign(resolvePresetScheme(themeState.preset, mode), definedColors(themeState.overrides[mode]));
         }
 
         const tabKeys = ['apps', 'saved-lists', 'colors', 'terminal'];
@@ -3761,19 +3902,102 @@ Type any command below (e.g. pm list packages -d)
         }
 
         // Color Settings Engine
-        function applyPalettePreset(name, el) {
-            let p = palettes[name];
-            if (name === 'materialyou') {
-                p = getMaterialYouPalette();
-                if (!p) {
-                    p = palettes.material3;
-                    showToast('Material You needs Android 12+. Using Material 3 baseline.', 'ℹ️');
+        const PICKER_KEYS = [['Accent', 'accent'], ['Bg', 'bg'], ['Card', 'card'], ['Running', 'running'],
+            ['Frozen', 'frozen'], ['System', 'system'], ['Bloat', 'bloat']];
+
+        function applyTheme(save = true) {
+            const mode = effectiveMode();
+            const light = mode === 'light';
+            const t = currentScheme();
+            const root = document.documentElement;
+            const css = root.style;
+            root.setAttribute('data-appearance', mode);
+            css.setProperty('color-scheme', mode);
+
+            css.setProperty('--accent', t.accent);
+            css.setProperty('--accent-glow', hexToRgba(t.accent, light ? 0.2 : 0.27));
+            css.setProperty('--on-accent', contrastRatio(t.accent, '#000000') >= contrastRatio(t.accent, '#FFFFFF') ? '#000000' : '#FFFFFF');
+            css.setProperty('--bg-base', t.bg);
+            css.setProperty('--bg-surface', t.surface);
+            css.setProperty('--bg-card', t.card);
+            css.setProperty('--bg-card-hover', mixColors(t.card, t.text, 0.06));
+            css.setProperty('--bg-sheet', t.sheet);
+            css.setProperty('--secondary', t.secondary);
+            css.setProperty('--text-main', t.text);
+            css.setProperty('--text-muted', t.muted);
+            css.setProperty('--text-dim', mixColors(t.muted, t.bg, 0.35));
+            css.setProperty('--status-running', t.running);
+            css.setProperty('--status-frozen', t.frozen);
+            css.setProperty('--status-system', t.system);
+            css.setProperty('--status-bloat', t.bloat);
+            css.setProperty('--status-user', light ? ensureContrast('#FF9100', '#FFFFFF', 3.5) : '#FF9100');
+            css.setProperty('--ov', light ? '0, 0, 0' : '255, 255, 255');
+            css.setProperty('--border-glass', light ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.09)');
+            css.setProperty('--input-bg', light ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.35)');
+
+            PICKER_KEYS.forEach(([id, key]) => {
+                const circ = document.getElementById('circ' + id);
+                const hex = document.getElementById('hex' + id);
+                if (circ) circ.style.background = t[key];
+                if (hex) hex.innerText = String(t[key]).toUpperCase();
+                const input = circ ? circ.parentElement.querySelector('input[type="color"]') : null;
+                if (input) input.value = String(t[key]).toLowerCase();
+            });
+
+            markActivePreset(themeState.preset);
+            renderPresetStrips(mode);
+            renderAppearanceControls(mode);
+
+            if (window.AndroidBridge) {
+                if (save && window.AndroidBridge.savePreferences) {
+                    window.AndroidBridge.savePreferences(JSON.stringify(Object.assign({ version: 2 }, themeState)));
+                }
+                if (window.AndroidBridge.setSystemBarColor) {
+                    window.AndroidBridge.setSystemBarColor(t.bg);
                 }
             }
-            if (!p) return;
-            Object.assign(themeState, baseThemeExtras, p, { preset: name });
-            markActivePreset(name, el);
-            updateColorsLive();
+        }
+
+        // Preset swatches show each palette as it looks in the current mode
+        function renderPresetStrips(mode) {
+            document.querySelectorAll('.palette-preset-card').forEach(card => {
+                const s = resolvePresetScheme(card.getAttribute('data-preset'), mode);
+                const strip = card.querySelector('.preset-strip');
+                if (strip) strip.innerHTML = [s.accent, s.bg, s.card, s.system].map(c => `<div class="preset-swatch" style="background:${c}"></div>`).join('');
+            });
+            const badge = document.getElementById('materialYouBadge');
+            if (badge) badge.innerText = getMaterialYouSchemes() ? 'M3 DYNAMIC • WALLPAPER' : 'NEEDS ANDROID 12+ • USES M3 BASELINE';
+        }
+
+        function renderAppearanceControls(mode) {
+            document.querySelectorAll('.appearance-btn').forEach(b => b.classList.toggle('active', b.getAttribute('data-appearance') === themeState.appearance));
+            const note = document.getElementById('appearanceNote');
+            if (note) {
+                note.innerText = themeState.appearance === 'system'
+                    ? `Following your phone's setting (currently ${mode === 'dark' ? 'Dark' : 'Light'})`
+                    : (mode === 'dark' ? 'Dark mode' : 'Light mode') + ' • color tweaks are saved separately for light and dark';
+            }
+            const reset = document.getElementById('resetTweaksBtn');
+            if (reset) {
+                const has = Object.keys(themeState.overrides[mode] || {}).length > 0;
+                reset.style.display = has ? 'inline-flex' : 'none';
+            }
+        }
+
+        function setAppearance(value) {
+            themeState.appearance = value;
+            haptic();
+            applyTheme();
+            showToast(value === 'system' ? 'Appearance: follow system' : 'Appearance: ' + value, value === 'light' ? '☀️' : value === 'dark' ? '🌙' : '📱');
+        }
+
+        function applyPalettePreset(name, el) {
+            if (name === 'materialyou' && !getMaterialYouSchemes(true)) {
+                showToast('Material You needs Android 12+. Using Material 3 baseline.', 'ℹ️');
+            }
+            themeState.preset = name;
+            themeState.overrides = { dark: {}, light: {} };
+            applyTheme();
             haptic();
             const card = el || document.querySelector('.palette-preset-card[data-preset="' + name + '"]');
             const label = card ? card.querySelector('.preset-name').innerText : name;
@@ -3786,67 +4010,69 @@ Type any command below (e.g. pm list packages -d)
             if (card) card.classList.add('active');
         }
 
+        // Color pickers tweak the active preset for the current mode only
         function updateCustomColor(key, val) {
-            themeState[key] = val;
-            themeState.preset = 'custom';
-            markActivePreset(null);
-            updateColorsLive();
+            const mode = effectiveMode();
+            themeState.overrides[mode] = Object.assign({}, themeState.overrides[mode], { [key]: val });
+            applyTheme();
             haptic();
         }
 
-        function hexToRgba(hex, alpha) {
-            const h = String(hex || '').replace('#', '');
-            if (h.length !== 6) return 'rgba(0,0,0,' + alpha + ')';
-            return 'rgba(' + parseInt(h.substr(0, 2), 16) + ',' + parseInt(h.substr(2, 2), 16) + ',' + parseInt(h.substr(4, 2), 16) + ',' + alpha + ')';
-        }
-
-        function updateColorsLive() {
-            const root = document.documentElement.style;
-            root.setProperty('--accent', themeState.accent);
-            root.setProperty('--accent-glow', hexToRgba(themeState.accent, 0.27));
-            root.setProperty('--bg-base', themeState.bg);
-            root.setProperty('--bg-surface', themeState.surface || baseThemeExtras.surface);
-            root.setProperty('--bg-card', themeState.card);
-            root.setProperty('--secondary', themeState.secondary || baseThemeExtras.secondary);
-            root.setProperty('--text-main', themeState.text || baseThemeExtras.text);
-            root.setProperty('--text-muted', themeState.muted || baseThemeExtras.muted);
-            root.setProperty('--status-running', themeState.running);
-            root.setProperty('--status-frozen', themeState.frozen);
-            root.setProperty('--status-system', themeState.system);
-            root.setProperty('--status-bloat', themeState.bloat);
-
-            [['Accent', 'accent'], ['Bg', 'bg'], ['Card', 'card'], ['Running', 'running'],
-             ['Frozen', 'frozen'], ['System', 'system'], ['Bloat', 'bloat']].forEach(([id, key]) => {
-                const circ = document.getElementById('circ' + id);
-                const hex = document.getElementById('hex' + id);
-                if (circ) circ.style.background = themeState[key];
-                if (hex) hex.innerText = String(themeState[key]).toUpperCase();
-                const input = circ ? circ.parentElement.querySelector('input[type="color"]') : null;
-                if (input) input.value = themeState[key];
-            });
-
-            if (window.AndroidBridge) {
-                if (window.AndroidBridge.savePreferences) {
-                    window.AndroidBridge.savePreferences(JSON.stringify(themeState));
-                }
-                if (window.AndroidBridge.setSystemBarColor) {
-                    window.AndroidBridge.setSystemBarColor(themeState.bg);
-                }
-            }
+        function resetColorTweaks() {
+            themeState.overrides[effectiveMode()] = {};
+            applyTheme();
+            haptic();
+            showToast('Color tweaks reset', '↺');
         }
 
         function restoreSavedTheme() {
             try {
                 if (!window.AndroidBridge || !window.AndroidBridge.loadPreferences) return;
                 const saved = JSON.parse(window.AndroidBridge.loadPreferences() || '{}');
-                if (!saved || !saved.accent) return;
-                Object.assign(themeState, baseThemeExtras, saved);
-                // Material You follows the current wallpaper, so re-read it on every launch
-                if (saved.preset === 'materialyou') {
-                    const dyn = getMaterialYouPalette();
-                    if (dyn) Object.assign(themeState, dyn);
+                if (!saved || typeof saved !== 'object') return;
+                if (saved.version === 2) {
+                    if (saved.preset) themeState.preset = saved.preset;
+                    if (['light', 'dark', 'system'].includes(saved.appearance)) themeState.appearance = saved.appearance;
+                    themeState.overrides = {
+                        dark: (saved.overrides && saved.overrides.dark) || {},
+                        light: (saved.overrides && saved.overrides.light) || {}
+                    };
+                    if (!palettes[themeState.preset] && themeState.preset !== 'materialyou') {
+                        themeState.preset = 'material3';
+                    }
+                } else if (saved.accent) {
+                    // v3.1–v3.4 format: flat dark colors. Keep the user's existing look in dark mode.
+                    themeState.appearance = 'dark';
+                    if (saved.preset === 'materialyou' || (palettes[saved.preset] && saved.preset !== 'custom')) {
+                        themeState.preset = saved.preset;
+                    } else {
+                        palettes.custom = { dark: { accent: saved.accent, bg: saved.bg, card: saved.card, running: saved.running, frozen: saved.frozen, system: saved.system, bloat: saved.bloat, surface: saved.surface, text: saved.text, muted: saved.muted, secondary: saved.secondary } };
+                        themeState.preset = 'custom';
+                    }
                 }
-                markActivePreset(saved.preset && saved.preset !== 'custom' ? saved.preset : null);
+            } catch (e) {}
+        }
+
+        // Called by MainActivity when the phone's dark mode changes or the app returns to the foreground
+        function onSystemAppearanceChanged() {
+            getMaterialYouSchemes(true);
+            applyTheme(false);
+        }
+
+        function onAppResume() {
+            // Material You follows the wallpaper: re-read the dynamic colors whenever the app comes back
+            const before = JSON.stringify(materialYouCache);
+            getMaterialYouSchemes(true);
+            if (themeState.preset === 'materialyou' || themeState.appearance === 'system' || before !== JSON.stringify(materialYouCache)) {
+                applyTheme(false);
+            }
+        }
+
+        if (window.matchMedia) {
+            try {
+                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+                    if (themeState.appearance === 'system') applyTheme(false);
+                });
             } catch (e) {}
         }
 
@@ -3860,7 +4086,7 @@ Type any command below (e.g. pm list packages -d)
 
             const term = document.getElementById('termOutput');
             term.innerHTML += `
-<span style="color:#FFFFFF;">$ ${escapeHtml(cmd)}</span>
+<span style="color:var(--text-main);">$ ${escapeHtml(cmd)}</span>
 `;
 
             if (window.AndroidBridge) {
@@ -3874,8 +4100,7 @@ Type any command below (e.g. pm list packages -d)
         // Init App on load
         window.addEventListener('DOMContentLoaded', () => {
             restoreSavedTheme();
-            refreshMaterialYouCard();
-            updateColorsLive();
+            applyTheme();
             initApp();
             loadSavedLists();
         });
