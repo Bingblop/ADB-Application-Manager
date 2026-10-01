@@ -1512,7 +1512,7 @@
         }
         .appearance-toggle {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 6px;
             background: var(--input-bg);
             border: 1px solid var(--border-glass);
@@ -1542,6 +1542,112 @@
             color: var(--text-muted);
             margin-top: 8px;
             text-align: center;
+        }
+        .key-fingerprint {
+            font-family: monospace;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            word-break: break-all;
+            color: var(--accent);
+            background: var(--input-bg);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            padding: 8px 10px;
+            margin-bottom: 10px;
+        }
+        .appearance-btn {
+            font-size: 11px;
+            padding: 9px 2px;
+            white-space: nowrap;
+        }
+
+        .schedule-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .schedule-field {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 10.5px;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+
+        .schedule-field input {
+            background: var(--input-bg);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            color: var(--text-main);
+            font-size: 14px;
+            font-weight: 700;
+            padding: 8px 10px;
+            min-width: 0;
+        }
+
+        .switch-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-glass);
+            cursor: pointer;
+            position: relative;
+        }
+
+        .switch-title {
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        .switch-sub {
+            font-size: 10.5px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .switch-input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .switch-track {
+            flex-shrink: 0;
+            width: 46px;
+            height: 26px;
+            border-radius: 999px;
+            background: rgba(var(--ov), 0.15);
+            border: 1px solid var(--border-glass);
+            position: relative;
+            transition: background 0.2s ease;
+        }
+
+        .switch-track::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--text-muted);
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+
+        .switch-input:checked + .switch-track {
+            background: var(--accent);
+        }
+
+        .switch-input:checked + .switch-track::after {
+            transform: translateX(20px);
+            background: var(--on-accent);
         }
     </style>
 </head>
@@ -1669,8 +1775,25 @@
                     <button class="appearance-btn" data-appearance="light" onclick="setAppearance('light')">☀️ Light</button>
                     <button class="appearance-btn" data-appearance="dark" onclick="setAppearance('dark')">🌙 Dark</button>
                     <button class="appearance-btn" data-appearance="system" onclick="setAppearance('system')">📱 System</button>
+                    <button class="appearance-btn" data-appearance="schedule" onclick="setAppearance('schedule')">⏰ Schedule</button>
+                </div>
+                <div class="schedule-row" id="scheduleRow" style="display:none;">
+                    <label class="schedule-field">☀️ Light from
+                        <input type="time" id="scheduleLightAt" value="07:00" onchange="setScheduleTime('lightAt', this.value)">
+                    </label>
+                    <label class="schedule-field">🌙 Dark from
+                        <input type="time" id="scheduleDarkAt" value="19:00" onchange="setScheduleTime('darkAt', this.value)">
+                    </label>
                 </div>
                 <div class="appearance-note" id="appearanceNote"></div>
+                <label class="switch-row">
+                    <div>
+                        <div class="switch-title">⚫ Pure black in dark mode</div>
+                        <div class="switch-sub">True #000000 backgrounds for AMOLED screens (saves battery)</div>
+                    </div>
+                    <input type="checkbox" class="switch-input" id="pureBlackToggle" onchange="setPureBlack(this.checked)">
+                    <span class="switch-track"></span>
+                </label>
             </div>
 
             <div class="color-card">
@@ -2164,6 +2287,33 @@ Type any command below (e.g. pm list packages -d)
                 <div style="font-size:20px; cursor:pointer;" onclick="closeWorkingModesModal()">✕</div>
             </div>
 
+            <!-- ADB key (per install) -->
+            <div class="mode-card" id="adbKeyCard">
+                <div class="mode-card-header">
+                    <div class="mode-card-title">
+                        <span>🔑</span>
+                        <span>This App's ADB Key</span>
+                    </div>
+                    <span class="mode-status-tag active">PRIVATE</span>
+                </div>
+                <div class="mode-tip-box" id="adbKeyNotice" style="display:none; border-color:rgba(255,145,0,0.5); background:rgba(255,145,0,0.08);">
+                    🔐 <b>New private key created.</b> Earlier versions shared one ADB key with everyone who had the APK. This install now has its own key, so your phone will ask <b>"Allow debugging?"</b> once on the next ADB connection. Wireless Debugging needs to be paired again.
+                    For full safety, also tap <b>Revoke USB debugging authorizations</b> in Developer Options to remove the old shared key.
+                    <div class="mode-btn-row" style="margin-top:8px;">
+                        <button class="mode-action-btn" onclick="openDevOptionsUI()">⚙️ Developer Options</button>
+                        <button class="mode-action-btn" onclick="dismissAdbKeyNoticeUI()">✓ Got it</button>
+                    </div>
+                </div>
+                <div class="mode-card-desc">
+                    Generated on this phone and never leaves it. When Android asks "Allow debugging?", the fingerprint it shows should match:
+                </div>
+                <div class="key-fingerprint" id="adbKeyFingerprint">—</div>
+                <div class="mode-btn-row">
+                    <button class="mode-action-btn" onclick="copyAdbKeyFingerprint()">📋 Copy Fingerprint</button>
+                    <button class="mode-action-btn" onclick="regenerateAdbKeyUI()">♻️ Regenerate Key</button>
+                </div>
+            </div>
+
             <!-- Mode 0: Automatic -->
             <div class="mode-card" id="modeCardAuto">
                 <div class="mode-card-header">
@@ -2401,7 +2551,9 @@ Type any command below (e.g. pm list packages -d)
 
         const themeState = {
             preset: 'material3',        // default for new installs
-            appearance: 'system',       // 'light' | 'dark' | 'system'
+            appearance: 'system',       // 'light' | 'dark' | 'system' | 'schedule'
+            schedule: { lightAt: '07:00', darkAt: '19:00' },
+            pureBlack: false,           // true black backgrounds in dark mode (AMOLED)
             overrides: { dark: {}, light: {} }
         };
 
@@ -2502,9 +2654,37 @@ Type any command below (e.g. pm list packages -d)
             return !(window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches);
         }
 
+        function timeToMinutes(hhmm, fallback) {
+            const m = String(hhmm || '').match(/^(\d{1,2}):(\d{2})$/);
+            if (!m) return fallback;
+            return Math.min(23, parseInt(m[1], 10)) * 60 + Math.min(59, parseInt(m[2], 10));
+        }
+
+        // Light between lightAt and darkAt (handles ranges that cross midnight)
+        function scheduledMode(date) {
+            const now = (date || new Date());
+            const mins = now.getHours() * 60 + now.getMinutes();
+            const lightAt = timeToMinutes(themeState.schedule.lightAt, 420);
+            const darkAt = timeToMinutes(themeState.schedule.darkAt, 1140);
+            if (lightAt === darkAt) return 'light';
+            const isLight = lightAt < darkAt ? (mins >= lightAt && mins < darkAt) : (mins >= lightAt || mins < darkAt);
+            return isLight ? 'light' : 'dark';
+        }
+
         function effectiveMode() {
             if (themeState.appearance === 'light' || themeState.appearance === 'dark') return themeState.appearance;
+            if (themeState.appearance === 'schedule') return scheduledMode();
             return systemPrefersDark() ? 'dark' : 'light';
+        }
+
+        // Pure black: true #000 backgrounds in dark mode, cards lifted just enough to stay visible
+        function applyPureBlack(t) {
+            return Object.assign({}, t, {
+                bg: '#000000',
+                sheet: '#000000',
+                card: mixColors(t.card, '#000000', 0.35),
+                surface: mixColors(t.surface, '#000000', 0.35)
+            });
         }
 
         // Full color scheme for a preset in 'dark' or 'light' mode (without the user's color tweaks)
@@ -2834,6 +3014,7 @@ Type any command below (e.g. pm list packages -d)
         function openWorkingModesModal() {
             haptic();
             document.getElementById('modesModal').classList.add('show');
+            renderAdbKeyInfo();
             checkAllWorkingModes(false);
         }
 
@@ -3036,6 +3217,49 @@ Type any command below (e.g. pm list packages -d)
             } catch (e) {
                 console.error('Failed to parse modes:', e);
             }
+        }
+
+        // ---------- ADB key ----------
+        function renderAdbKeyInfo() {
+            if (!window.AndroidBridge || !window.AndroidBridge.getAdbKeyInfo) {
+                const card = document.getElementById('adbKeyCard');
+                if (card) card.style.display = 'none';
+                return;
+            }
+            try {
+                const k = JSON.parse(window.AndroidBridge.getAdbKeyInfo() || '{}');
+                document.getElementById('adbKeyFingerprint').innerText = k.fingerprint || 'Key not generated yet';
+                document.getElementById('adbKeyNotice').style.display = k.noticePending ? 'block' : 'none';
+            } catch (e) {}
+        }
+
+        function copyAdbKeyFingerprint() {
+            haptic();
+            const fp = document.getElementById('adbKeyFingerprint').innerText;
+            if (window.AndroidBridge && window.AndroidBridge.copyToClipboard) window.AndroidBridge.copyToClipboard(fp);
+        }
+
+        function dismissAdbKeyNoticeUI() {
+            haptic();
+            if (window.AndroidBridge && window.AndroidBridge.dismissAdbKeyNotice) window.AndroidBridge.dismissAdbKeyNotice();
+            renderAdbKeyInfo();
+        }
+
+        function regenerateAdbKeyUI() {
+            haptic();
+            if (!window.AndroidBridge || !window.AndroidBridge.regenerateAdbKey) return;
+            if (!confirm('Create a new ADB key?\n\nAll ADB connections are dropped. Your phone will ask "Allow debugging?" again, and Wireless Debugging must be paired again.')) return;
+            showToast('Generating a new key...', '🔑');
+            setTimeout(() => {
+                const r = JSON.parse(window.AndroidBridge.regenerateAdbKey() || '{}');
+                if (r.error) {
+                    showToast('Key generation failed: ' + r.error, '⚠️');
+                } else {
+                    showToast('New ADB key created. Approve the prompt on your next connection.', '🔑');
+                }
+                renderAdbKeyInfo();
+                checkAllWorkingModes(false);
+            }, 60);
         }
 
         // Explicit mode switching. Always allowed, whatever is connected (e.g. switch away from ADB TCP 5555).
@@ -3245,6 +3469,11 @@ Type any command below (e.g. pm list packages -d)
         // Initialize App
         function initApp() {
             checkAllWorkingModes(false);
+            try {
+                if (window.AndroidBridge && window.AndroidBridge.getAdbKeyInfo && JSON.parse(window.AndroidBridge.getAdbKeyInfo() || '{}').noticePending) {
+                    setTimeout(() => showToast('This app now has its own private ADB key. Tap the mode badge for details.', '🔐'), 900);
+                }
+            } catch (e) {}
 
             if (window.AndroidBridge) {
                 try {
@@ -3908,7 +4137,8 @@ Type any command below (e.g. pm list packages -d)
         function applyTheme(save = true) {
             const mode = effectiveMode();
             const light = mode === 'light';
-            const t = currentScheme();
+            let t = currentScheme();
+            if (!light && themeState.pureBlack) t = applyPureBlack(t);
             const root = document.documentElement;
             const css = root.style;
             root.setAttribute('data-appearance', mode);
@@ -3972,11 +4202,24 @@ Type any command below (e.g. pm list packages -d)
         function renderAppearanceControls(mode) {
             document.querySelectorAll('.appearance-btn').forEach(b => b.classList.toggle('active', b.getAttribute('data-appearance') === themeState.appearance));
             const note = document.getElementById('appearanceNote');
+            const current = mode === 'dark' ? 'Dark' : 'Light';
             if (note) {
-                note.innerText = themeState.appearance === 'system'
-                    ? `Following your phone's setting (currently ${mode === 'dark' ? 'Dark' : 'Light'})`
-                    : (mode === 'dark' ? 'Dark mode' : 'Light mode') + ' • color tweaks are saved separately for light and dark';
+                if (themeState.appearance === 'system') {
+                    note.innerText = `Following your phone's setting (currently ${current})`;
+                } else if (themeState.appearance === 'schedule') {
+                    note.innerText = `Light from ${themeState.schedule.lightAt}, dark from ${themeState.schedule.darkAt} (currently ${current})`;
+                } else {
+                    note.innerText = current + ' mode • color tweaks are saved separately for light and dark';
+                }
             }
+            const scheduleRow = document.getElementById('scheduleRow');
+            if (scheduleRow) scheduleRow.style.display = themeState.appearance === 'schedule' ? 'flex' : 'none';
+            const lightAt = document.getElementById('scheduleLightAt');
+            const darkAt = document.getElementById('scheduleDarkAt');
+            if (lightAt && document.activeElement !== lightAt) lightAt.value = themeState.schedule.lightAt;
+            if (darkAt && document.activeElement !== darkAt) darkAt.value = themeState.schedule.darkAt;
+            const pb = document.getElementById('pureBlackToggle');
+            if (pb) pb.checked = !!themeState.pureBlack;
             const reset = document.getElementById('resetTweaksBtn');
             if (reset) {
                 const has = Object.keys(themeState.overrides[mode] || {}).length > 0;
@@ -3988,8 +4231,33 @@ Type any command below (e.g. pm list packages -d)
             themeState.appearance = value;
             haptic();
             applyTheme();
-            showToast(value === 'system' ? 'Appearance: follow system' : 'Appearance: ' + value, value === 'light' ? '☀️' : value === 'dark' ? '🌙' : '📱');
+            const labels = { light: ['Appearance: light', '☀️'], dark: ['Appearance: dark', '🌙'], system: ['Appearance: follow system', '📱'], schedule: ['Appearance: on a schedule', '⏰'] };
+            showToast(labels[value][0], labels[value][1]);
         }
+
+        function setScheduleTime(which, value) {
+            if (!/^\d{1,2}:\d{2}$/.test(value || '')) return;
+            themeState.schedule = Object.assign({}, themeState.schedule, { [which]: value });
+            applyTheme();
+        }
+
+        function setPureBlack(on) {
+            themeState.pureBlack = !!on;
+            haptic();
+            applyTheme();
+            if (on && effectiveMode() === 'light') showToast('Pure black applies whenever dark mode is active', 'ℹ️');
+        }
+
+        // Keep the scheduled appearance current while the app stays open
+        let lastScheduledMode = null;
+        setInterval(() => {
+            if (themeState.appearance !== 'schedule') return;
+            const m = scheduledMode();
+            if (m !== lastScheduledMode) {
+                lastScheduledMode = m;
+                applyTheme(false);
+            }
+        }, 30000);
 
         function applyPalettePreset(name, el) {
             if (name === 'materialyou' && !getMaterialYouSchemes(true)) {
@@ -4032,7 +4300,9 @@ Type any command below (e.g. pm list packages -d)
                 if (!saved || typeof saved !== 'object') return;
                 if (saved.version === 2) {
                     if (saved.preset) themeState.preset = saved.preset;
-                    if (['light', 'dark', 'system'].includes(saved.appearance)) themeState.appearance = saved.appearance;
+                    if (['light', 'dark', 'system', 'schedule'].includes(saved.appearance)) themeState.appearance = saved.appearance;
+                    if (saved.schedule && saved.schedule.lightAt && saved.schedule.darkAt) themeState.schedule = { lightAt: saved.schedule.lightAt, darkAt: saved.schedule.darkAt };
+                    themeState.pureBlack = !!saved.pureBlack;
                     themeState.overrides = {
                         dark: (saved.overrides && saved.overrides.dark) || {},
                         light: (saved.overrides && saved.overrides.light) || {}
@@ -4063,7 +4333,7 @@ Type any command below (e.g. pm list packages -d)
             // Material You follows the wallpaper: re-read the dynamic colors whenever the app comes back
             const before = JSON.stringify(materialYouCache);
             getMaterialYouSchemes(true);
-            if (themeState.preset === 'materialyou' || themeState.appearance === 'system' || before !== JSON.stringify(materialYouCache)) {
+            if (themeState.preset === 'materialyou' || themeState.appearance === 'system' || themeState.appearance === 'schedule' || before !== JSON.stringify(materialYouCache)) {
                 applyTheme(false);
             }
         }

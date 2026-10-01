@@ -4,3 +4,5 @@ bin/
 *.keystore
 *.jks
 javac.*.args
+assets/adbkey
+assets/adbkey.pub

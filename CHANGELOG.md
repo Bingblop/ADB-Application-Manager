@@ -1,5 +1,30 @@
 # Changelog
 
+## v3.6-Pro (versionCode 260)
+
+Installs over v3.1 – v3.5 without uninstalling (same signing key).
+
+### Security: private ADB key per install
+- Versions up to 3.5 shipped the same ADB key inside every APK (and in this public repo), so anyone
+  with that key could connect to a phone that had approved it with ADB TCP open. **The bundled key is
+  removed.** Each install now generates its own 2048-bit RSA key on the phone.
+- On first launch after updating, the old shared key is replaced automatically. Your phone asks
+  **"Allow debugging?"** once on the next ADB connection, and Wireless Debugging must be paired again.
+  To fully remove the old key, tap **Revoke USB debugging authorizations** in Developer Options.
+- Working Modes shows the key's fingerprint (it matches what the "Allow debugging?" prompt shows),
+  with **Copy Fingerprint** and **Regenerate Key**.
+
+### Appearance
+- **Schedule**: a fourth Appearance option. Light and dark start times (default 07:00 / 19:00,
+  ranges may cross midnight). The theme switches on time while the app is open.
+- **Pure black in dark mode**: true #000000 backgrounds for AMOLED screens, with cards lifted just
+  enough to stay visible.
+
+### Builds on GitHub
+- New **Build APK** workflow builds and signs the APK on every push and pull request and uploads it as
+  a downloadable artifact. Add the `KEYSTORE_BASE64` and `KEYSTORE_PASSWORD` secrets to sign with
+  your release key (see README).
+
 ## v3.5-Pro (versionCode 250)
 
 Installs over v3.1 – v3.4 without uninstalling (same signing key).

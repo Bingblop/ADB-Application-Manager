@@ -5,7 +5,7 @@ package, freeze/enable, force-stop, clear data, uninstall for user 0, reinstall 
 manage permissions, save package lists, and run shell commands — through ADB TCP, Wireless
 Debugging, Shizuku or Root.
 
-**Latest release:** [`release/ADB_Application_Manager_Pro-v3.5.apk`](release/ADB_Application_Manager_Pro-v3.5.apk) — see [CHANGELOG.md](CHANGELOG.md).
+**Latest release:** [`release/ADB_Application_Manager_Pro-v3.6.apk`](release/ADB_Application_Manager_Pro-v3.6.apk) — see [CHANGELOG.md](CHANGELOG.md).
 
 ## Working modes
 
@@ -21,6 +21,9 @@ Debugging, Shizuku or Root.
 Every mode card has a **Use This Mode** button, so you can switch modes at any time — including
 while ADB TCP 5555 is enabled. Status checks never change the selected mode.
 
+**ADB key:** each install generates its own private ADB key on the phone (nothing is bundled in the
+APK). Working Modes shows its fingerprint, which matches the phone's "Allow debugging?" prompt.
+
 ## App menu
 
 Tap **⋯** on any app for actions (Launch, Force Stop, Freeze/Enable, Clear Data, Uninstall,
@@ -35,7 +38,8 @@ Reinstall, Remove Updates, App Info) and five tabs:
 
 ## Themes
 
-**Appearance:** Light, Dark or System (follows the phone's dark mode).
+**Appearance:** Light, Dark, System (follows the phone's dark mode) or Schedule (light/dark start
+times). Optional **pure black** backgrounds in dark mode for AMOLED screens.
 
 **Material 3** (the default) and **Material You** (dynamic color from your wallpaper, Android 12+,
 updates when the wallpaper changes) come first, followed by six classic palettes. Every palette has a
@@ -46,11 +50,10 @@ launches.
 
 ```
 AndroidManifest.xml          App manifest (includes the Shizuku provider)
-src/                         Java sources (MainActivity + JavaScript bridge, ManifestDecoder)
+src/                         Java sources (MainActivity + JavaScript bridge, ManifestDecoder, AdbKeyManager)
 assets/index.html            The whole UI (HTML/CSS/JS, rendered in a WebView)
 assets/libadb.so             arm64 adb client used for ADB TCP / Wireless Debugging
 assets/rish, rish_shizuku.dex  Shizuku shell fallback
-assets/adbkey(.pub)          ADB client key pair
 res/                         Launcher icons and strings
 libs/                        Shizuku API 13.1.5 (api, provider, shared, aidl)
 build.sh                     Build script (Termux or Linux)
@@ -77,6 +80,20 @@ Android only installs an update over an existing install when both APKs are sign
 key. `build.sh` signs with `./release.keystore` (alias `adbmanager`, password `password`, same as the
 original `compile.sh`). Copy the keystore you used before into the repo folder to update without
 uninstalling. Keystores are git-ignored — never commit them to this public repository.
+
+### On GitHub (automatic)
+
+The **Build APK** workflow builds every push and pull request. Download the APK from the run's
+**Artifacts** section in the Actions tab. To sign it with your release key (so it installs over the
+app on your phone), add two repository secrets under Settings → Secrets and variables → Actions:
+
+| Secret | Value |
+|---|---|
+| `KEYSTORE_BASE64` | output of `base64 -w0 release.keystore` (run in Termux) |
+| `KEYSTORE_PASSWORD` | your keystore password (`password` if you used build.sh's default) |
+| `KEY_ALIAS` | optional, defaults to `adbmanager` |
+
+Without the secrets, builds are signed with a throwaway test key and named `-test-signed`.
 
 ### On Linux without an Android SDK
 

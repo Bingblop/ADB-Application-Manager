@@ -195,16 +195,7 @@ public class MainActivity extends Activity {
             File dotAndroid = new File(adbHomeDir, ".android");
             if (!dotAndroid.exists()) dotAndroid.mkdirs();
 
-            File keyFile = new File(dotAndroid, "adbkey");
-            File pubFile = new File(dotAndroid, "adbkey.pub");
-
-            extractAsset("adbkey", keyFile);
-            keyFile.setReadable(true, false);
-            keyFile.setWritable(true, false);
-
-            extractAsset("adbkey.pub", pubFile);
-            pubFile.setReadable(true, false);
-            pubFile.setWritable(true, false);
+            ensurePrivateAdbKey();
 
             // Reconnect the saved ADB TCP target on launch, but only when ADB TCP is (or may be) the
             // chosen mode. This never changes the configured mode, so other modes stay selectable.
@@ -227,6 +218,73 @@ public class MainActivity extends Activity {
         } catch (Exception e) {
             Log.e(TAG, "setupBinariesAndKeys error", e);
         }
+    }
+
+    // Fingerprint of the key pair that versions up to 3.5 shipped inside every APK (public in the repo history)
+    private static final String LEGACY_SHARED_KEY_FINGERPRINT = "36:62:EE:8B:CA:29:5D:B6:B1:5C:DA:4E:ED:59:1D:01";
+
+    private File adbKeyFile() {
+        return new File(new File(adbHomeDir, ".android"), "adbkey");
+    }
+
+    private File adbPubKeyFile() {
+        return new File(new File(adbHomeDir, ".android"), "adbkey.pub");
+    }
+
+    private String adbKeyName() {
+        String model = Build.MODEL == null ? "android" : Build.MODEL.replaceAll("[^A-Za-z0-9._-]", "_");
+        return "adbmanager@" + model;
+    }
+
+    /**
+     * Every install gets its own ADB key. Missing keys are generated; the old shared key from v3.0–v3.5
+     * is replaced (the phone will ask "Allow debugging?" once for the new key).
+     */
+    private void ensurePrivateAdbKey() {
+        File key = adbKeyFile();
+        File pub = adbPubKeyFile();
+        try {
+            if (key.exists() && key.length() > 0) {
+                if (!pub.exists() || pub.length() == 0) {
+                    AdbKeyManager.generate(key, pub, adbKeyName()); // unreadable pub: start fresh
+                    onAdbKeyReplaced(false);
+                    return;
+                }
+                if (!LEGACY_SHARED_KEY_FINGERPRINT.equals(AdbKeyManager.fingerprint(pub))) {
+                    key.setReadable(false, false);
+                    key.setReadable(true, true);
+                    return; // already a private per-install key
+                }
+                AdbKeyManager.generate(key, pub, adbKeyName());
+                onAdbKeyReplaced(true);
+            } else {
+                AdbKeyManager.generate(key, pub, adbKeyName());
+                prefs.edit().putLong("adb_key_created_at", System.currentTimeMillis()).apply();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "ADB key generation failed", e);
+        }
+    }
+
+    private void onAdbKeyReplaced(boolean fromSharedKey) {
+        prefs.edit()
+                .putLong("adb_key_created_at", System.currentTimeMillis())
+                .putBoolean("adb_key_notice_pending", fromSharedKey)
+                .apply();
+        // A running adb server still holds the old key in memory
+        runProcessWithTimeout(buildAdbProcess("kill-server"), 3000);
+        cachedAutoMode = null;
+    }
+
+    private JSONObject adbKeyInfo() {
+        JSONObject o = new JSONObject();
+        try {
+            o.put("fingerprint", AdbKeyManager.fingerprint(adbPubKeyFile()));
+            o.put("name", adbKeyName());
+            o.put("createdAt", prefs.getLong("adb_key_created_at", 0));
+            o.put("noticePending", prefs.getBoolean("adb_key_notice_pending", false));
+        } catch (Exception ignored) {}
+        return o;
     }
 
     private void extractAsset(String assetName, File destFile) {
@@ -1341,6 +1399,29 @@ public class MainActivity extends Activity {
                 } catch (Exception ignored) {}
             }
             return res.toString();
+        }
+
+        @JavascriptInterface
+        public String getAdbKeyInfo() {
+            return adbKeyInfo().toString();
+        }
+
+        @JavascriptInterface
+        public void dismissAdbKeyNotice() {
+            prefs.edit().putBoolean("adb_key_notice_pending", false).apply();
+        }
+
+        /** Creates a brand-new ADB key. Existing ADB connections must be re-approved on the phone. */
+        @JavascriptInterface
+        public String regenerateAdbKey() {
+            try {
+                runProcessWithTimeout(buildAdbProcess("disconnect"), 3000);
+                AdbKeyManager.generate(adbKeyFile(), adbPubKeyFile(), adbKeyName());
+                onAdbKeyReplaced(false);
+                return adbKeyInfo().toString();
+            } catch (Exception e) {
+                return "{\"error\":\"" + String.valueOf(e.getMessage()).replace("\"", "'") + "\"}";
+            }
         }
 
         /** Decoded AndroidManifest.xml of an installed package, or "Error: ..." */
