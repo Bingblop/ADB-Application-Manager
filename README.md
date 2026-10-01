@@ -5,7 +5,7 @@ package, freeze/enable, force-stop, clear data, uninstall for user 0, reinstall 
 manage permissions, save package lists, and run shell commands — through ADB TCP, Wireless
 Debugging, Shizuku or Root.
 
-**Latest release:** [`release/ADB_Application_Manager_Pro-v3.1.apk`](release/ADB_Application_Manager_Pro-v3.1.apk) — see [CHANGELOG.md](CHANGELOG.md).
+**Latest release:** [`release/ADB_Application_Manager_Pro-v3.2.apk`](release/ADB_Application_Manager_Pro-v3.2.apk) — see [CHANGELOG.md](CHANGELOG.md).
 
 ## Working modes
 
@@ -21,6 +21,17 @@ Debugging, Shizuku or Root.
 Every mode card has a **Use This Mode** button, so you can switch modes at any time — including
 while ADB TCP 5555 is enabled. Status checks never change the selected mode.
 
+## App menu
+
+Tap **⋯** on any app for actions (Launch, Force Stop, Freeze/Enable, Clear Data, Uninstall,
+Reinstall, Remove Updates, App Info) and five tabs:
+
+- **Permissions**: searchable, filterable list; toggle runtime and development permissions
+- **App Ops**: per-op Allow / Foreground / Ignore / Deny / Reset, plus setting any op by name
+- **Components**: activities and services
+- **Manifest**: decoded `AndroidManifest.xml` with find, copy and save to Downloads
+- **Raw**: the full details JSON
+
 ## Themes
 
 Six dark palettes plus **Material 3** (M3 baseline dark scheme) and **Material You** (M3 dynamic
@@ -31,7 +42,7 @@ between launches.
 
 ```
 AndroidManifest.xml          App manifest (includes the Shizuku provider)
-src/                         Java sources (MainActivity + JavaScript bridge)
+src/                         Java sources (MainActivity + JavaScript bridge, ManifestDecoder)
 assets/index.html            The whole UI (HTML/CSS/JS, rendered in a WebView)
 assets/libadb.so             arm64 adb client used for ADB TCP / Wireless Debugging
 assets/rish, rish_shizuku.dex  Shizuku shell fallback

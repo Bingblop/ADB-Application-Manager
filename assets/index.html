@@ -783,10 +783,183 @@
             border-bottom-color: var(--accent);
         }
 
+        .sheet-tabs {
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        .sheet-tab-pill {
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .tab-count {
+            font-size: 9px;
+            opacity: 0.75;
+        }
+
         .sheet-tab-content {
             display: none;
-            max-height: 250px;
+            max-height: 52vh;
             overflow-y: auto;
+        }
+
+        .list-toolbar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .list-search {
+            flex: 1;
+            min-width: 0;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            padding: 8px 12px;
+            font-size: 12px;
+            color: var(--text-main);
+            outline: none;
+        }
+
+        .list-search:focus {
+            border-color: var(--accent);
+        }
+
+        .chip-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 8px;
+            align-items: center;
+        }
+
+        .filter-chip {
+            font-size: 10px;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1px solid var(--border-glass);
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+
+        .filter-chip.active {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-glow);
+        }
+
+        .list-empty {
+            color: var(--text-muted);
+            font-size: 11px;
+            padding: 12px 0;
+        }
+
+        .perm-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .perm-info {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .perm-name {
+            font-size: 11.5px;
+            font-weight: 700;
+            word-break: break-word;
+        }
+
+        .perm-sub {
+            font-size: 9.5px;
+            color: var(--text-muted);
+            margin-top: 2px;
+            word-break: break-all;
+        }
+
+        .perm-kind {
+            display: inline-block;
+            font-size: 8.5px;
+            font-weight: 800;
+            letter-spacing: 0.4px;
+            padding: 1px 6px;
+            border-radius: 999px;
+            border: 1px solid var(--border-glass);
+            margin-right: 4px;
+            text-transform: uppercase;
+        }
+
+        .perm-toggle-btn.locked {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-muted);
+            cursor: default;
+        }
+
+        .op-modes {
+            display: flex;
+            gap: 3px;
+            flex-shrink: 0;
+        }
+
+        .op-mode-btn {
+            font-size: 9px;
+            font-weight: 800;
+            padding: 4px 7px;
+            border-radius: 8px;
+            border: 1px solid var(--border-glass);
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+
+        .op-mode-btn.on.allow { background: rgba(0, 230, 118, 0.2); color: var(--status-running); border-color: transparent; }
+        .op-mode-btn.on.ignore, .op-mode-btn.on.deny { background: rgba(255, 82, 82, 0.2); color: var(--status-bloat); border-color: transparent; }
+        .op-mode-btn.on.foreground { background: rgba(255, 145, 0, 0.18); color: #FFA726; border-color: transparent; }
+        .op-mode-btn.on.default { background: var(--accent-glow); color: var(--accent); border-color: transparent; }
+
+        .op-custom-row {
+            display: flex;
+            gap: 6px;
+            margin-top: 10px;
+            align-items: center;
+        }
+
+        .op-select {
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            color: var(--text-main);
+            font-size: 11px;
+            padding: 7px 6px;
+        }
+
+        .manifest-view {
+            font-family: monospace;
+            font-size: 10.5px;
+            line-height: 1.45;
+            white-space: pre;
+            overflow-x: auto;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            padding: 10px;
+            color: var(--text-main);
+        }
+
+        .manifest-view .x-tag { color: var(--accent); }
+        .manifest-view .x-attr { color: var(--status-system); }
+        .manifest-view .x-val { color: var(--status-running); }
+        .manifest-view mark { background: #FFA726; color: #000; border-radius: 2px; }
+
+        .manifest-meta {
+            font-size: 10px;
+            color: var(--text-muted);
         }
 
         .sheet-tab-content.active {
@@ -1726,26 +1899,79 @@ Type any command below (e.g. pm list packages -d)
 
             <!-- Sub Tabs -->
             <div class="sheet-tabs">
-                <div class="sheet-tab-pill active" onclick="switchSheetTab('perms')">🛡️ Permissions & AppOps</div>
-                <div class="sheet-tab-pill" onclick="switchSheetTab('comps')">🧩 Components</div>
-                <div class="sheet-tab-pill" onclick="switchSheetTab('raw')">📋 Raw Dumpsys</div>
+                <div class="sheet-tab-pill active" data-tab="perms" onclick="switchSheetTab('perms')">🛡️ Permissions <span class="tab-count" id="permsCount"></span></div>
+                <div class="sheet-tab-pill" data-tab="ops" onclick="switchSheetTab('ops')">🎛️ App Ops <span class="tab-count" id="opsCount"></span></div>
+                <div class="sheet-tab-pill" data-tab="comps" onclick="switchSheetTab('comps')">🧩 Components</div>
+                <div class="sheet-tab-pill" data-tab="manifest" onclick="switchSheetTab('manifest')">📄 Manifest</div>
+                <div class="sheet-tab-pill" data-tab="raw" onclick="switchSheetTab('raw')">📋 Raw</div>
             </div>
 
             <!-- Tab 1: Permissions -->
             <div id="sheetTabPerms" class="sheet-tab-content active">
+                <div class="list-toolbar">
+                    <input type="text" class="list-search" id="permsSearch" placeholder="Search permissions..." oninput="renderPermissionsList()" autocomplete="off" autocapitalize="off" spellcheck="false">
+                </div>
+                <div class="chip-row" id="permsFilterRow">
+                    <span class="filter-chip active" data-filter="all" onclick="setPermsFilter('all')">All</span>
+                    <span class="filter-chip" data-filter="granted" onclick="setPermsFilter('granted')">Granted</span>
+                    <span class="filter-chip" data-filter="denied" onclick="setPermsFilter('denied')">Denied</span>
+                    <span class="filter-chip" data-filter="changeable" onclick="setPermsFilter('changeable')">Changeable</span>
+                    <span class="filter-chip" data-filter="installtime" onclick="setPermsFilter('installtime')">Install-time</span>
+                </div>
                 <div id="permsContainer">
-                    <div style="color:var(--text-muted); font-size:12px;">Loading permissions...</div>
+                    <div class="list-empty">Loading permissions...</div>
                 </div>
             </div>
 
-            <!-- Tab 2: Components -->
+            <!-- Tab 2: App Ops -->
+            <div id="sheetTabOps" class="sheet-tab-content">
+                <div class="list-toolbar">
+                    <input type="text" class="list-search" id="opsSearch" placeholder="Search app ops..." oninput="renderAppOpsList()" autocomplete="off" autocapitalize="off" spellcheck="false">
+                    <button class="mode-action-btn" onclick="refreshAppOps()">🔄</button>
+                </div>
+                <div class="chip-row" id="opsFilterRow">
+                    <span class="filter-chip active" data-filter="all" onclick="setOpsFilter('all')">All</span>
+                    <span class="filter-chip" data-filter="allow" onclick="setOpsFilter('allow')">Allowed</span>
+                    <span class="filter-chip" data-filter="restricted" onclick="setOpsFilter('restricted')">Ignored / Denied</span>
+                    <span class="filter-chip" data-filter="foreground" onclick="setOpsFilter('foreground')">Foreground</span>
+                </div>
+                <div id="opsContainer">
+                    <div class="list-empty">Loading app ops...</div>
+                </div>
+                <div class="op-custom-row">
+                    <input type="text" class="list-search" id="opCustomName" placeholder="Other op, e.g. RUN_ANY_IN_BACKGROUND" autocomplete="off" autocapitalize="characters" spellcheck="false">
+                    <select class="op-select" id="opCustomMode">
+                        <option value="allow">allow</option>
+                        <option value="ignore">ignore</option>
+                        <option value="deny">deny</option>
+                        <option value="foreground">foreground</option>
+                        <option value="default">default</option>
+                    </select>
+                    <button class="mode-action-btn primary" onclick="setCustomAppOp()">Set</button>
+                </div>
+            </div>
+
+            <!-- Tab 3: Components -->
             <div id="sheetTabComps" class="sheet-tab-content">
                 <div id="compsContainer">
-                    <div style="color:var(--text-muted); font-size:12px;">Loading activities & services...</div>
+                    <div class="list-empty">Loading activities & services...</div>
                 </div>
             </div>
 
-            <!-- Tab 3: Raw -->
+            <!-- Tab 4: Manifest -->
+            <div id="sheetTabManifest" class="sheet-tab-content">
+                <div class="list-toolbar">
+                    <input type="text" class="list-search" id="manifestSearch" placeholder="Find in manifest..." oninput="renderManifest()" autocomplete="off" autocapitalize="off" spellcheck="false">
+                </div>
+                <div class="chip-row">
+                    <span class="filter-chip" onclick="copyManifest()">📋 Copy</span>
+                    <span class="filter-chip" onclick="saveManifest()">💾 Save to Downloads</span>
+                    <span class="manifest-meta" id="manifestMeta"></span>
+                </div>
+                <pre id="manifestContainer" class="manifest-view">Open this tab to load the manifest.</pre>
+            </div>
+
+            <!-- Tab 5: Raw -->
             <div id="sheetTabRaw" class="sheet-tab-content">
                 <pre id="rawContainer" style="font-family:monospace; font-size:11px; color:var(--accent); white-space:pre-wrap;"></pre>
             </div>
@@ -2985,11 +3211,9 @@ Type any command below (e.g. pm list packages -d)
                             </div>
                         </div>
                         <div class="app-actions">
-                            ${app.isFrozen ? 
-                                `<button class="btn-mini" title="Enable" onclick="quickAction('unfreeze', '${app.pkg}')">🔥</button>` : 
-                                `<button class="btn-mini" title="Freeze" onclick="quickAction('freeze', '${app.pkg}')">❄️</button>`}
+                            <button class="btn-mini" title="App Settings" onclick="openAppSettings('${app.pkg}')">⚙️</button>
                             <button class="btn-mini" title="Force Stop" onclick="quickAction('force_stop', '${app.pkg}')">🛑</button>
-                            <button class="btn-mini" title="Inspect" onclick="openInspector('${app.pkg}')">⋯</button>
+                            <button class="btn-mini" title="Menu" onclick="openInspector('${app.pkg}')">⋯</button>
                         </div>
                     </div>
                 `;
@@ -3076,6 +3300,14 @@ Type any command below (e.g. pm list packages -d)
             }
         }
 
+        // Opens Android's App Info screen. Works in every mode, including Read-Only.
+        function openAppSettings(pkg) {
+            haptic();
+            if (window.AndroidBridge && window.AndroidBridge.executeAppAction) {
+                window.AndroidBridge.executeAppAction('app_settings', pkg);
+            }
+        }
+
         function quickAction(action, pkg) {
             if (!guardPrivilege(action)) return;
             haptic();
@@ -3115,6 +3347,13 @@ Type any command below (e.g. pm list packages -d)
         }
 
         // Inspector Modal
+        let inspectorData = null;
+        let permsFilter = 'all';
+        let opsFilter = 'all';
+        let appOpsList = [];
+        let manifestText = '';
+        let manifestPkg = null;
+
         function openInspector(pkg) {
             inspectedPkg = pkg;
             haptic();
@@ -3128,36 +3367,35 @@ Type any command below (e.g. pm list packages -d)
 
             document.getElementById('sheetBtnReinstall').style.display = app.isUninstalled ? 'flex' : 'none';
             document.getElementById('sheetBtnUninstall').style.display = app.isUninstalled ? 'none' : 'flex';
+            // The menu shows Freeze for enabled apps and Enable for frozen ones
+            document.getElementById('sheetBtnFreeze').style.display = app.isFrozen ? 'none' : 'flex';
+            document.getElementById('sheetBtnUnfreeze').style.display = app.isFrozen ? 'flex' : 'none';
+
+            // Reset per-app state
+            inspectorData = null;
+            appOpsList = [];
+            manifestText = '';
+            manifestPkg = null;
+            ['permsSearch', 'opsSearch', 'manifestSearch'].forEach(id => { document.getElementById(id).value = ''; });
+            document.getElementById('manifestContainer').innerText = 'Open this tab to load the manifest.';
+            document.getElementById('manifestMeta').innerText = '';
+            document.getElementById('permsContainer').innerHTML = '<div class="list-empty">Loading permissions...</div>';
+            document.getElementById('opsContainer').innerHTML = '<div class="list-empty">Loading app ops...</div>';
+            switchSheetTab('perms', true);
 
             if (window.AndroidBridge) {
                 const detailsStr = window.AndroidBridge.getAppDetails(pkg);
                 try {
-                    const d = JSON.parse(detailsStr);
-                    renderInspectorDetails(d);
-                } catch(e) {}
+                    renderInspectorDetails(JSON.parse(detailsStr));
+                } catch (e) {}
             }
         }
 
         function renderInspectorDetails(d) {
-            const permsContainer = document.getElementById('permsContainer');
-            if (d.permissions && d.permissions.length > 0) {
-                let html = '';
-                d.permissions.forEach(p => {
-                    const shortName = p.name.replace('android.permission.', '');
-                    html += `
-                        <div class="perm-item">
-                            <span>${shortName}</span>
-                            <button class="perm-toggle-btn ${p.granted ? 'granted' : 'revoked'}" 
-                                onclick="togglePermission('${p.name}', ${p.granted})">
-                                ${p.granted ? 'GRANTED' : 'REVOKED'}
-                            </button>
-                        </div>
-                    `;
-                });
-                permsContainer.innerHTML = html;
-            } else {
-                permsContainer.innerHTML = '<div style="color:var(--text-muted); font-size:11px;">No permissions declared.</div>';
-            }
+            inspectorData = d;
+            appOpsList = parseAppOps(d.appopsRaw || '');
+            renderPermissionsList();
+            renderAppOpsList();
 
             const compsContainer = document.getElementById('compsContainer');
             let compHtml = '';
@@ -3167,8 +3405,8 @@ Type any command below (e.g. pm list packages -d)
                     const shortAct = a.split('.').pop();
                     compHtml += `
                         <div class="perm-item">
-                            <span>${shortAct}</span>
-                            <button class="perm-toggle-btn granted" onclick="launchComponent('${a}')">START</button>
+                            <span>${escapeHtml(shortAct)}</span>
+                            <button class="perm-toggle-btn granted" data-comp="${escapeHtml(a)}" onclick="launchComponent(this.getAttribute('data-comp'))">START</button>
                         </div>
                     `;
                 });
@@ -3179,14 +3417,239 @@ Type any command below (e.g. pm list packages -d)
                     const shortSrv = s.split('.').pop();
                     compHtml += `
                         <div class="perm-item">
-                            <span>${shortSrv}</span>
-                            <button class="perm-toggle-btn revoked" onclick="stopComponentService('${s}')">STOP</button>
+                            <span>${escapeHtml(shortSrv)}</span>
+                            <button class="perm-toggle-btn revoked" data-comp="${escapeHtml(s)}" onclick="stopComponentService(this.getAttribute('data-comp'))">STOP</button>
                         </div>
                     `;
                 });
             }
-            compsContainer.innerHTML = compHtml || '<div style="color:var(--text-muted); font-size:11px;">No exported activities or services found.</div>';
+            compsContainer.innerHTML = compHtml || '<div class="list-empty">No exported activities or services found.</div>';
             document.getElementById('rawContainer').innerText = JSON.stringify(d, null, 2);
+        }
+
+        // ---------- Permissions list ----------
+        function setPermsFilter(f) {
+            permsFilter = f;
+            document.querySelectorAll('#permsFilterRow .filter-chip').forEach(c => c.classList.toggle('active', c.getAttribute('data-filter') === f));
+            haptic();
+            renderPermissionsList();
+        }
+
+        function renderPermissionsList() {
+            const container = document.getElementById('permsContainer');
+            const perms = (inspectorData && inspectorData.permissions) || [];
+            document.getElementById('permsCount').innerText = perms.length ? '(' + perms.length + ')' : '';
+            if (!perms.length) {
+                container.innerHTML = '<div class="list-empty">No permissions declared.</div>';
+                return;
+            }
+            const q = (document.getElementById('permsSearch').value || '').toLowerCase().trim();
+            const rows = perms.filter(p => {
+                if (permsFilter === 'granted' && !p.granted) return false;
+                if (permsFilter === 'denied' && p.granted) return false;
+                if (permsFilter === 'changeable' && !p.changeable) return false;
+                if (permsFilter === 'installtime' && p.changeable) return false;
+                if (q && !(p.name.toLowerCase().includes(q) || String(p.label || '').toLowerCase().includes(q))) return false;
+                return true;
+            }).sort((a, b) => (b.changeable - a.changeable) || a.name.localeCompare(b.name));
+
+            if (!rows.length) {
+                container.innerHTML = '<div class="list-empty">No permissions match.</div>';
+                return;
+            }
+            container.innerHTML = rows.map(p => {
+                const shortName = p.name.replace(/^android\.permission\./, '');
+                const kind = p.protection || 'unknown';
+                const sub = [p.label, p.name !== shortName ? p.name : ''].filter(Boolean).join(' • ');
+                const btn = p.changeable
+                    ? `<button class="perm-toggle-btn ${p.granted ? 'granted' : 'revoked'}" data-perm="${escapeHtml(p.name)}" data-granted="${p.granted}" onclick="togglePermission(this.getAttribute('data-perm'), this.getAttribute('data-granted') === 'true')">${p.granted ? 'GRANTED' : 'DENIED'}</button>`
+                    : `<button class="perm-toggle-btn locked" title="Install-time permission: cannot be changed with pm grant/revoke">🔒 ${p.granted ? 'GRANTED' : 'NOT GRANTED'}</button>`;
+                return `
+                    <div class="perm-row">
+                        <div class="perm-info">
+                            <div class="perm-name">${escapeHtml(shortName)}</div>
+                            <div class="perm-sub"><span class="perm-kind">${escapeHtml(kind)}</span>${p.appOp ? '<span class="perm-kind">app op</span>' : ''}${escapeHtml(sub)}</div>
+                        </div>
+                        ${btn}
+                    </div>`;
+            }).join('');
+        }
+
+        function togglePermission(perm, wasGranted) {
+            if (!guardPrivilege('Modify Permission')) return;
+            haptic();
+            if (!window.AndroidBridge || !inspectedPkg) return;
+            const out = window.AndroidBridge.setPermission(inspectedPkg, perm, !wasGranted) || '';
+            const failed = /error|exception|not a changeable|securityexception/i.test(out);
+            showToast(failed ? out.split('\n')[0] : (wasGranted ? 'Revoked ' : 'Granted ') + perm.replace(/^android\.permission\./, ''), failed ? '⚠️' : '🛡️');
+            reloadInspectorDetails();
+        }
+
+        function reloadInspectorDetails() {
+            if (!window.AndroidBridge || !inspectedPkg) return;
+            try {
+                renderInspectorDetails(JSON.parse(window.AndroidBridge.getAppDetails(inspectedPkg)));
+            } catch (e) {}
+        }
+
+        // ---------- App Ops list ----------
+        // Parses `cmd appops get <pkg>` lines such as "CAMERA: allow; time=+2h ago" and "Uid mode: COARSE_LOCATION: foreground"
+        function parseAppOps(raw) {
+            const ops = new Map();
+            String(raw || '').split('\n').forEach(line => {
+                const m = line.trim().match(/^(Uid mode:\s*)?([A-Z][A-Z0-9_]+):\s*([a-z_]+)(.*)$/);
+                if (!m) return;
+                const name = m[2];
+                const isUid = !!m[1];
+                const prev = ops.get(name);
+                // Package-level mode wins over uid-level for display; keep a note of the uid mode
+                if (prev && !isUid && prev.uidOnly) {
+                    ops.set(name, { name, mode: m[3], detail: m[4].replace(/^;\s*/, ''), uidMode: prev.mode, uidOnly: false });
+                } else if (!prev) {
+                    ops.set(name, { name, mode: m[3], detail: isUid ? '' : m[4].replace(/^;\s*/, ''), uidMode: isUid ? m[3] : '', uidOnly: isUid });
+                }
+            });
+            return Array.from(ops.values()).sort((a, b) => a.name.localeCompare(b.name));
+        }
+
+        function setOpsFilter(f) {
+            opsFilter = f;
+            document.querySelectorAll('#opsFilterRow .filter-chip').forEach(c => c.classList.toggle('active', c.getAttribute('data-filter') === f));
+            haptic();
+            renderAppOpsList();
+        }
+
+        const OP_MODES = [['allow', 'Allow'], ['foreground', 'FG'], ['ignore', 'Ignore'], ['deny', 'Deny'], ['default', 'Reset']];
+
+        function renderAppOpsList() {
+            const container = document.getElementById('opsContainer');
+            document.getElementById('opsCount').innerText = appOpsList.length ? '(' + appOpsList.length + ')' : '';
+            if (!appOpsList.length) {
+                const raw = (inspectorData && inspectorData.appopsRaw) || '';
+                const hint = isPrivilegedActive ? 'No app ops recorded for this app yet. Use the field below to set one.' : 'App ops need ADB, Shizuku or Root. Set up a working mode first.';
+                container.innerHTML = `<div class="list-empty">${hint}${raw && !/no operations/i.test(raw) ? '<br><br>' + escapeHtml(raw.split('\n')[0]) : ''}</div>`;
+                return;
+            }
+            const q = (document.getElementById('opsSearch').value || '').toLowerCase().trim();
+            const rows = appOpsList.filter(op => {
+                if (opsFilter === 'allow' && op.mode !== 'allow') return false;
+                if (opsFilter === 'restricted' && op.mode !== 'ignore' && op.mode !== 'deny') return false;
+                if (opsFilter === 'foreground' && op.mode !== 'foreground') return false;
+                if (q && !op.name.toLowerCase().includes(q)) return false;
+                return true;
+            });
+            if (!rows.length) {
+                container.innerHTML = '<div class="list-empty">No app ops match.</div>';
+                return;
+            }
+            container.innerHTML = rows.map(op => {
+                const sub = [op.uidOnly ? 'uid-level mode' : '', op.uidMode && !op.uidOnly ? 'uid: ' + op.uidMode : '', op.detail].filter(Boolean).join(' • ');
+                const buttons = OP_MODES.map(([mode, label]) =>
+                    `<button class="op-mode-btn ${mode} ${op.mode === mode ? 'on' : ''}" data-op="${escapeHtml(op.name)}" onclick="setAppOpMode(this.getAttribute('data-op'), '${mode}')">${label}</button>`).join('');
+                return `
+                    <div class="perm-row" style="flex-direction:column; align-items:stretch; gap:6px;">
+                        <div class="perm-info">
+                            <div class="perm-name">${escapeHtml(op.name)}</div>
+                            ${sub ? `<div class="perm-sub">${escapeHtml(sub)}</div>` : ''}
+                        </div>
+                        <div class="op-modes">${buttons}</div>
+                    </div>`;
+            }).join('');
+        }
+
+        function setAppOpMode(op, mode) {
+            if (!guardPrivilege('Change App Op')) return;
+            haptic();
+            if (!window.AndroidBridge || !inspectedPkg) return;
+            const out = (window.AndroidBridge.setAppOp(inspectedPkg, op, mode) || '').trim();
+            const failed = /error|exception|unknown|usage/i.test(out);
+            showToast(failed ? out.split('\n')[0] : op + ' → ' + mode, failed ? '⚠️' : '🎛️');
+            refreshAppOps();
+        }
+
+        function setCustomAppOp() {
+            const op = (document.getElementById('opCustomName').value || '').trim().toUpperCase().replace(/\s+/g, '_');
+            if (!/^[A-Z][A-Z0-9_]+$/.test(op)) {
+                showToast('Enter an app op name, e.g. RUN_ANY_IN_BACKGROUND', '⚠️');
+                return;
+            }
+            setAppOpMode(op, document.getElementById('opCustomMode').value);
+            document.getElementById('opCustomName').value = '';
+        }
+
+        function refreshAppOps() {
+            if (!window.AndroidBridge || !inspectedPkg || !window.AndroidBridge.getAppOpsRaw) return;
+            const raw = window.AndroidBridge.getAppOpsRaw(inspectedPkg) || '';
+            if (inspectorData) inspectorData.appopsRaw = raw;
+            appOpsList = parseAppOps(raw);
+            renderAppOpsList();
+        }
+
+        // ---------- Manifest viewer ----------
+        function loadManifest() {
+            if (!inspectedPkg || manifestPkg === inspectedPkg) return;
+            const container = document.getElementById('manifestContainer');
+            if (!window.AndroidBridge || !window.AndroidBridge.getAppManifest) {
+                container.innerText = 'Manifest viewer is only available in the app.';
+                return;
+            }
+            container.innerText = 'Decoding AndroidManifest.xml...';
+            setTimeout(() => {
+                manifestText = window.AndroidBridge.getAppManifest(inspectedPkg) || '';
+                manifestPkg = inspectedPkg;
+                renderManifest();
+            }, 30);
+        }
+
+        function highlightXmlLine(line) {
+            return escapeHtml(line)
+                .replace(/(&lt;\/?)([\w.:-]+)/g, '$1<span class="x-tag">$2</span>')
+                .replace(/([\w.:-]+)=(&quot;)(.*?)(&quot;)/g, '<span class="x-attr">$1</span>=$2<span class="x-val">$3</span>$4');
+        }
+
+        function renderManifest() {
+            const container = document.getElementById('manifestContainer');
+            const meta = document.getElementById('manifestMeta');
+            if (!manifestText) return;
+            if (manifestText.startsWith('Error:')) {
+                container.innerText = manifestText;
+                meta.innerText = '';
+                return;
+            }
+            const lines = manifestText.split('\n');
+            const q = (document.getElementById('manifestSearch').value || '').trim();
+            if (!q) {
+                container.innerHTML = lines.map(highlightXmlLine).join('\n');
+                meta.innerText = lines.length + ' lines';
+                return;
+            }
+            // Find mode: show only matching lines with their line numbers
+            const needle = q.toLowerCase();
+            const re = new RegExp(escapeHtml(q).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+            const hits = [];
+            lines.forEach((line, i) => {
+                if (line.toLowerCase().includes(needle)) {
+                    hits.push(String(i + 1).padStart(4, ' ') + '  ' + escapeHtml(line.trim()).replace(re, m => '<mark>' + m + '</mark>'));
+                }
+            });
+            container.innerHTML = hits.length ? hits.join('\n') : 'No matches.';
+            meta.innerText = hits.length + ' matching line' + (hits.length === 1 ? '' : 's');
+        }
+
+        function copyManifest() {
+            haptic();
+            if (!manifestText || manifestText.startsWith('Error:')) { showToast('Manifest not loaded', '⚠️'); return; }
+            if (window.AndroidBridge && window.AndroidBridge.copyToClipboard) {
+                window.AndroidBridge.copyToClipboard(manifestText);
+            }
+        }
+
+        function saveManifest() {
+            haptic();
+            if (!manifestText || manifestText.startsWith('Error:')) { showToast('Manifest not loaded', '⚠️'); return; }
+            if (!window.AndroidBridge || !window.AndroidBridge.saveTextToDownloads) return;
+            const res = window.AndroidBridge.saveTextToDownloads(inspectedPkg + '_AndroidManifest.xml', manifestText) || '';
+            showToast(res.startsWith('Error:') ? res : 'Saved to ' + res, res.startsWith('Error:') ? '⚠️' : '💾');
         }
 
         function closeInspector() {
@@ -3194,31 +3657,22 @@ Type any command below (e.g. pm list packages -d)
             haptic();
         }
 
-        function switchSheetTab(tab) {
-            document.querySelectorAll('.sheet-tab-pill').forEach(p => p.classList.remove('active'));
-            event.currentTarget.classList.add('active');
+        function switchSheetTab(tab, silent) {
+            const ids = { perms: 'sheetTabPerms', ops: 'sheetTabOps', comps: 'sheetTabComps', manifest: 'sheetTabManifest', raw: 'sheetTabRaw' };
+            document.querySelectorAll('.sheet-tab-pill').forEach(p => p.classList.toggle('active', p.getAttribute('data-tab') === tab));
             document.querySelectorAll('.sheet-tab-content').forEach(c => c.classList.remove('active'));
-            if (tab === 'perms') document.getElementById('sheetTabPerms').classList.add('active');
-            if (tab === 'comps') document.getElementById('sheetTabComps').classList.add('active');
-            if (tab === 'raw') document.getElementById('sheetTabRaw').classList.add('active');
-            haptic();
+            const el = document.getElementById(ids[tab]);
+            if (el) el.classList.add('active');
+            if (tab === 'manifest') loadManifest();
+            if (!silent) haptic();
         }
 
         function singleAction(action) {
             if (!inspectedPkg) return;
+            if (action === 'app_settings') { openAppSettings(inspectedPkg); return; }
             if (!guardPrivilege(action)) return;
             quickAction(action, inspectedPkg);
             closeInspector();
-        }
-
-        function togglePermission(perm, wasGranted) {
-            if (!guardPrivilege('Modify Permission')) return;
-            haptic();
-            if (window.AndroidBridge && inspectedPkg) {
-                window.AndroidBridge.setPermission(inspectedPkg, perm, !wasGranted);
-                showToast(`Permission updated`, '🛡️');
-                openInspector(inspectedPkg);
-            }
         }
 
         function launchComponent(comp) {

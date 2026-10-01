@@ -1,5 +1,27 @@
 # Changelog
 
+## v3.2-Pro (versionCode 220)
+
+Installs over v3.1 without uninstalling (same signing key).
+
+### App menu (single app)
+- **Permissions** now has its own list: search, filters (All / Granted / Denied / Changeable /
+  Install-time), protection badges (runtime, development, normal, signature, app op) and permission
+  labels. Runtime and development permissions toggle between Granted/Denied; install-time
+  permissions are shown locked because `pm grant/revoke` cannot change them.
+- **App Ops** is a separate list: search, filters (All / Allowed / Ignored-Denied / Foreground) and
+  one-tap modes per op (Allow, Foreground, Ignore, Deny, Reset). Uid-level modes are labeled. Any
+  other op can be set by name (e.g. `RUN_ANY_IN_BACKGROUND`).
+- New **Manifest** viewer: decodes the app's binary `AndroidManifest.xml` into readable,
+  syntax-highlighted XML, with resource references resolved to names. **Find** shows matching lines
+  with line numbers. **Copy** puts the XML on the clipboard; **Save to Downloads** writes
+  `Download/ADB App Manager/<package>_AndroidManifest.xml`.
+- The menu shows **Freeze** for enabled apps and **Enable** for frozen ones.
+
+### App list
+- Each app row now has only **App Settings**, **Force Stop** and the **Menu** button.
+  Freeze/Enable moved to the menu. App Settings works in every mode, including Read-Only.
+
 ## v3.1-Pro (versionCode 210)
 
 ### Material Design 3

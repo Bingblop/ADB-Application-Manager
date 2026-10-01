@@ -11,6 +11,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ServiceInfo;
+import android.content.res.Resources;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
@@ -610,6 +611,40 @@ public class MainActivity extends Activity {
         return Color.rgb(r, g, bl);
     }
 
+    /**
+     * Adds protection details so the UI knows which permissions `pm grant/revoke` can change:
+     * runtime (dangerous) and development permissions are changeable, the rest are install-time.
+     */
+    private static void describePermission(PackageManager pm, String permName, JSONObject out) throws Exception {
+        String protection = "unknown";
+        boolean changeable = false;
+        boolean appOp = false;
+        String label = "";
+        try {
+            android.content.pm.PermissionInfo pi = pm.getPermissionInfo(permName, 0);
+            int level = pi.protectionLevel;
+            int base = level & android.content.pm.PermissionInfo.PROTECTION_MASK_BASE;
+            boolean development = (level & android.content.pm.PermissionInfo.PROTECTION_FLAG_DEVELOPMENT) != 0;
+            appOp = (level & android.content.pm.PermissionInfo.PROTECTION_FLAG_APPOP) != 0;
+            switch (base) {
+                case android.content.pm.PermissionInfo.PROTECTION_NORMAL: protection = "normal"; break;
+                case android.content.pm.PermissionInfo.PROTECTION_DANGEROUS: protection = "runtime"; break;
+                case android.content.pm.PermissionInfo.PROTECTION_SIGNATURE: protection = "signature"; break;
+                default: protection = "privileged"; break;
+            }
+            changeable = base == android.content.pm.PermissionInfo.PROTECTION_DANGEROUS || development;
+            if (development && !"runtime".equals(protection)) protection = "development";
+            CharSequence l = pi.loadLabel(pm);
+            if (l != null && !permName.equals(l.toString())) label = l.toString();
+        } catch (PackageManager.NameNotFoundException e) {
+            protection = "undefined";
+        }
+        out.put("protection", protection);
+        out.put("changeable", changeable);
+        out.put("appOp", appOp);
+        out.put("label", label);
+    }
+
     private int systemColor(String name) {
         int id = getResources().getIdentifier(name, "color", "android");
         if (id == 0) throw new IllegalStateException("Missing system color " + name);
@@ -1160,12 +1195,15 @@ public class MainActivity extends Activity {
 
                     JSONArray perms = new JSONArray();
                     if (info.requestedPermissions != null) {
+                        PackageManager pm = getPackageManager();
                         for (int i = 0; i < info.requestedPermissions.length; i++) {
+                            String permName = info.requestedPermissions[i];
                             JSONObject p = new JSONObject();
-                            p.put("name", info.requestedPermissions[i]);
+                            p.put("name", permName);
                             boolean granted = info.requestedPermissionsFlags != null
                                     && (info.requestedPermissionsFlags[i] & PackageInfo.REQUESTED_PERMISSION_GRANTED) != 0;
                             p.put("granted", granted);
+                            describePermission(pm, permName, p);
                             perms.put(p);
                         }
                     }
@@ -1195,6 +1233,60 @@ public class MainActivity extends Activity {
             } catch (Exception e) {
                 return "{}";
             }
+        }
+
+        /** Decoded AndroidManifest.xml of an installed package, or "Error: ..." */
+        @JavascriptInterface
+        public String getAppManifest(String pkg) {
+            try {
+                PackageManager pm = getPackageManager();
+                ApplicationInfo ai = pm.getApplicationInfo(pkg, 0);
+                Resources res = null;
+                try {
+                    res = pm.getResourcesForApplication(ai);
+                } catch (Exception ignored) {}
+                return ManifestDecoder.decodeApk(ai.sourceDir, res);
+            } catch (Throwable t) {
+                return "Error: " + t.getMessage();
+            }
+        }
+
+        /**
+         * Saves text to Downloads/ADB App Manager/ (MediaStore on Android 10+, app storage before that).
+         * Returns the saved location or "Error: ...".
+         */
+        @JavascriptInterface
+        public String saveTextToDownloads(String fileName, String text) {
+            String safeName = (fileName == null ? "export.txt" : fileName).replaceAll("[^A-Za-z0-9._-]", "_");
+            byte[] bytes = (text == null ? "" : text).getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            try {
+                if (Build.VERSION.SDK_INT >= 29) {
+                    android.content.ContentValues values = new android.content.ContentValues();
+                    values.put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, safeName);
+                    values.put(android.provider.MediaStore.MediaColumns.MIME_TYPE, safeName.endsWith(".xml") ? "text/xml" : "text/plain");
+                    values.put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, "Download/ADB App Manager");
+                    Uri uri = getContentResolver().insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+                    if (uri == null) return "Error: could not create file";
+                    OutputStream out = getContentResolver().openOutputStream(uri);
+                    out.write(bytes);
+                    out.close();
+                    return "Download/ADB App Manager/" + safeName;
+                }
+                File dir = new File(getExternalFilesDir(null), "exports");
+                if (!dir.exists()) dir.mkdirs();
+                File file = new File(dir, safeName);
+                OutputStream out = new FileOutputStream(file);
+                out.write(bytes);
+                out.close();
+                return file.getAbsolutePath();
+            } catch (Exception e) {
+                return "Error: " + e.getMessage();
+            }
+        }
+
+        @JavascriptInterface
+        public String getAppOpsRaw(String pkg) {
+            return executeShell("cmd appops get " + pkg);
         }
 
         @JavascriptInterface
