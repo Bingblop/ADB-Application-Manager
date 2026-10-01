@@ -1446,6 +1446,141 @@ public class MainActivity extends Activity {
         return count;
     }
 
+    // ---------------------------------------------------------------------------------------------
+    // App sizes, storage stats and APK extraction
+    // ---------------------------------------------------------------------------------------------
+
+    private static File[] apkFiles(ApplicationInfo ai) {
+        List<File> files = new ArrayList<File>();
+        if (ai.sourceDir != null) files.add(new File(ai.sourceDir));
+        if (ai.splitSourceDirs != null) {
+            for (String split : ai.splitSourceDirs) files.add(new File(split));
+        }
+        return files.toArray(new File[0]);
+    }
+
+    private static long apkBytes(ApplicationInfo ai) {
+        long total = 0;
+        for (File f : apkFiles(ai)) total += f.length();
+        return total;
+    }
+
+    private boolean hasUsageAccess() {
+        try {
+            android.app.AppOpsManager ops = (android.app.AppOpsManager) getSystemService(Context.APP_OPS_SERVICE);
+            int mode = ops.checkOpNoThrow(android.app.AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), getPackageName());
+            return mode == android.app.AppOpsManager.MODE_ALLOWED;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /** {"app":..,"data":..,"cache":..} bytes from StorageStatsManager (needs usage access), or null */
+    private JSONObject storageStats(String pkg) {
+        if (!hasUsageAccess()) return null;
+        try {
+            android.app.usage.StorageStatsManager ssm = (android.app.usage.StorageStatsManager) getSystemService(Context.STORAGE_STATS_SERVICE);
+            android.app.usage.StorageStats st = ssm.queryStatsForPackage(android.os.storage.StorageManager.UUID_DEFAULT, pkg, android.os.Process.myUserHandle());
+            JSONObject o = new JSONObject();
+            o.put("app", st.getAppBytes());
+            o.put("data", Math.max(0, st.getDataBytes() - st.getCacheBytes()));
+            o.put("cache", st.getCacheBytes());
+            return o;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** Opens a file in Download/ADB App Manager/<sub> (MediaStore on Android 10+, app storage before). */
+    private Object[] openDownloadOutput(String fileName, String mime, String sub) throws Exception {
+        String safeName = fileName.replaceAll("[^A-Za-z0-9._ -]", "_").trim();
+        String folder = "ADB App Manager" + (sub == null || sub.isEmpty() ? "" : "/" + sub);
+        if (Build.VERSION.SDK_INT >= 29) {
+            android.content.ContentValues values = new android.content.ContentValues();
+            values.put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, safeName);
+            values.put(android.provider.MediaStore.MediaColumns.MIME_TYPE, mime);
+            values.put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, "Download/" + folder);
+            Uri uri = getContentResolver().insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+            if (uri == null) throw new IllegalStateException("could not create " + safeName);
+            return new Object[]{getContentResolver().openOutputStream(uri), "Download/" + folder + "/" + safeName};
+        }
+        File dir = new File(getExternalFilesDir(null), folder);
+        if (!dir.exists()) dir.mkdirs();
+        File file = new File(dir, safeName);
+        return new Object[]{new FileOutputStream(file), file.getAbsolutePath()};
+    }
+
+    /** Copies an app's APK (or base + splits as a .apks bundle) to Downloads. Result via window.onApkExtracted(json). */
+    private void runExtractApk(final String pkg) {
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                JSONObject res = new JSONObject();
+                try {
+                    res.put("pkg", pkg);
+                    PackageManager pm = getPackageManager();
+                    ApplicationInfo ai = pm.getApplicationInfo(pkg, PackageManager.MATCH_UNINSTALLED_PACKAGES);
+                    PackageInfo pi = pm.getPackageInfo(pkg, PackageManager.MATCH_UNINSTALLED_PACKAGES);
+                    File[] files = apkFiles(ai);
+                    if (files.length == 0 || !files[0].canRead()) throw new IllegalStateException("APK not readable");
+                    String label = pm.getApplicationLabel(ai).toString();
+                    String base = (label.isEmpty() ? pkg : label) + "_" + (pi.versionName != null ? pi.versionName : String.valueOf(versionCodeOf(pi)));
+                    long total = 0;
+                    Object[] target;
+                    if (files.length == 1) {
+                        target = openDownloadOutput(base + ".apk", "application/vnd.android.package-archive", "APKs");
+                        OutputStream out = (OutputStream) target[0];
+                        try {
+                            total = copyFile(files[0], out);
+                        } finally {
+                            out.close();
+                        }
+                    } else {
+                        // Split app: one .apks bundle (a zip of base.apk + splits) that split-APK installers accept
+                        // octet-stream so MediaStore keeps the .apks name instead of appending .zip
+                        target = openDownloadOutput(base + ".apks", "application/octet-stream", "APKs");
+                        java.util.zip.ZipOutputStream zip = new java.util.zip.ZipOutputStream((OutputStream) target[0]);
+                        try {
+                            for (File f : files) {
+                                zip.putNextEntry(new java.util.zip.ZipEntry(f.getName()));
+                                total += copyFile(f, zip);
+                                zip.closeEntry();
+                            }
+                        } finally {
+                            zip.close();
+                        }
+                    }
+                    res.put("ok", true);
+                    res.put("path", target[1]);
+                    res.put("bytes", total);
+                    res.put("splits", files.length);
+                } catch (Exception e) {
+                    try {
+                        res.put("ok", false);
+                        res.put("error", e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
+                    } catch (Exception ignored) {}
+                }
+                notifyJs("window.onApkExtracted && window.onApkExtracted(" + JSONObject.quote(res.toString()) + ")");
+            }
+        });
+    }
+
+    private static long copyFile(File f, OutputStream out) throws Exception {
+        java.io.FileInputStream in = new java.io.FileInputStream(f);
+        long total = 0;
+        try {
+            byte[] buf = new byte[65536];
+            int n;
+            while ((n = in.read(buf)) > 0) {
+                out.write(buf, 0, n);
+                total += n;
+            }
+        } finally {
+            in.close();
+        }
+        return total;
+    }
+
     // Small JSON documents the UI keeps between launches (remembered filters, debloat history)
     private static final java.util.Set<String> UI_STORE_KEYS = new HashSet<String>(java.util.Arrays.asList("ui_state", "debloat_history"));
 
@@ -1817,9 +1952,11 @@ public class MainActivity extends Activity {
                 List<ApplicationInfo> apps = pm.getInstalledApplications(PackageManager.GET_META_DATA);
                 // Version names for the optional label in the app list (one call for all packages)
                 java.util.Map<String, String> versions = new java.util.HashMap<String, String>();
+                java.util.Map<String, PackageInfo> infos = new java.util.HashMap<String, PackageInfo>();
                 try {
                     for (PackageInfo pi : pm.getInstalledPackages(0)) {
                         versions.put(pi.packageName, pi.versionName != null ? pi.versionName : String.valueOf(versionCodeOf(pi)));
+                        infos.put(pi.packageName, pi);
                     }
                 } catch (Exception ignored) {}
 
@@ -1874,6 +2011,12 @@ public class MainActivity extends Activity {
                     o.put("isUninstalled", false);
                     o.put("targetSdk", info.targetSdkVersion);
                     o.put("version", versions.containsKey(info.packageName) ? versions.get(info.packageName) : "");
+                    PackageInfo pi = infos.get(info.packageName);
+                    if (pi != null) {
+                        o.put("installedAt", pi.firstInstallTime);
+                        o.put("updatedAt", pi.lastUpdateTime);
+                    }
+                    o.put("apkSize", apkBytes(info));
                     arr.put(o);
                 }
                 for (String pkg : uninstalledPkgs) {
@@ -2291,6 +2434,68 @@ public class MainActivity extends Activity {
             }
         }
 
+        /** Sizes for the app menu: APK files always, app/data/cache when usage access is granted. */
+        @JavascriptInterface
+        public String getAppSizes(String pkg) {
+            JSONObject o = new JSONObject();
+            try {
+                ApplicationInfo ai = getPackageManager().getApplicationInfo(pkg, PackageManager.MATCH_UNINSTALLED_PACKAGES);
+                o.put("apk", apkBytes(ai));
+                o.put("splits", apkFiles(ai).length);
+                o.put("usageAccess", hasUsageAccess());
+                JSONObject st = storageStats(pkg);
+                if (st != null) o.put("stats", st);
+            } catch (Exception e) {
+                try { o.put("error", e.getMessage()); } catch (Exception ignored) {}
+            }
+            return o.toString();
+        }
+
+        /** Total storage per package ({"pkg": bytes}) for sorting by size; APK size when usage access is off. */
+        @JavascriptInterface
+        public String getAllAppSizes() {
+            JSONObject o = new JSONObject();
+            boolean access = hasUsageAccess();
+            try {
+                for (ApplicationInfo ai : getPackageManager().getInstalledApplications(0)) {
+                    long total = apkBytes(ai);
+                    if (access) {
+                        JSONObject st = storageStats(ai.packageName);
+                        if (st != null) total = st.optLong("app") + st.optLong("data") + st.optLong("cache");
+                    }
+                    o.put(ai.packageName, total);
+                }
+                o.put("__usageAccess", access);
+            } catch (Exception ignored) {}
+            return o.toString();
+        }
+
+        /** Grants this app usage access via the privileged shell, or opens the settings page. */
+        @JavascriptInterface
+        public String requestUsageAccess() {
+            if (hasUsageAccess()) return "granted";
+            if (!"standard".equals(resolveExecMode())) {
+                executeShell("appops set " + getPackageName() + " GET_USAGE_STATS allow");
+                if (hasUsageAccess()) return "granted";
+            }
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Intent i = new Intent(android.provider.Settings.ACTION_USAGE_ACCESS_SETTINGS);
+                        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(i);
+                    } catch (Exception ignored) {}
+                }
+            });
+            return "settings";
+        }
+
+        @JavascriptInterface
+        public void extractApk(String pkg) {
+            runExtractApk(pkg);
+        }
+
         /** Decoded AndroidManifest.xml of an installed package, or "Error: ..." */
         @JavascriptInterface
         public String getAppManifest(String pkg) {
@@ -2319,7 +2524,7 @@ public class MainActivity extends Activity {
                 if (Build.VERSION.SDK_INT >= 29) {
                     android.content.ContentValues values = new android.content.ContentValues();
                     values.put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, safeName);
-                    values.put(android.provider.MediaStore.MediaColumns.MIME_TYPE, safeName.endsWith(".xml") ? "text/xml" : "text/plain");
+                    values.put(android.provider.MediaStore.MediaColumns.MIME_TYPE, safeName.endsWith(".xml") ? "text/xml" : safeName.endsWith(".csv") ? "text/csv" : "text/plain");
                     values.put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, "Download/ADB App Manager");
                     Uri uri = getContentResolver().insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
                     if (uri == null) return "Error: could not create file";

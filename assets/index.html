@@ -1973,6 +1973,36 @@
             padding: 3px 10px;
             font-size: 10px;
         }
+        .apps-sort-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: -4px 0 10px;
+        }
+
+        .apps-sort-label {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--text-muted);
+        }
+
+        .apps-sort-select {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .app-meta-line {
+            font-size: 9.5px;
+            color: var(--text-muted);
+            margin-left: 2px;
+            align-self: center;
+        }
+
+        .sheet-dates .link {
+            color: var(--accent);
+            font-weight: 800;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -2052,8 +2082,21 @@
             </div>
 
             <!-- Quick Filter Pills -->
+            <div class="apps-sort-row">
+                <label class="apps-sort-label" for="appSort">Sort</label>
+                <select id="appSort" class="op-select apps-sort-select" onchange="setAppSort(this.value)">
+                    <option value="name">Name (A–Z)</option>
+                    <option value="updated">Last updated</option>
+                    <option value="installed">Install date</option>
+                    <option value="size">Size</option>
+                    <option value="updates">Updates first</option>
+                </select>
+                <button class="mode-action-btn" onclick="exportAppList()">📤 Export</button>
+            </div>
+
             <div class="filter-scroll">
                 <div class="filter-pill active" data-filter="all" onclick="setFilter('all', this)">All Apps (<span id="countAll">0</span>)</div>
+                <div class="filter-pill" data-filter="recent" onclick="setFilter('recent', this)">🆕 Updated 7d (<span id="countRecent">0</span>)</div>
                 <div class="filter-pill" data-filter="running" onclick="setFilter('running', this)">⚡ Running (<span id="countRunning">0</span>)</div>
                 <div class="filter-pill" data-filter="user" onclick="setFilter('user', this)">👤 3rd Party (<span id="countUser">0</span>)</div>
                 <div class="filter-pill" data-filter="system" onclick="setFilter('system', this)">⚙️ System (<span id="countSystem">0</span>)</div>
@@ -2477,6 +2520,7 @@ Type any command below (e.g. pm list packages -d)
                         <p id="sheetPkg">com.example.package</p>
                         <p id="sheetVersion" class="sheet-version"></p>
                         <p id="sheetDates" class="sheet-dates"></p>
+                        <p id="sheetSizes" class="sheet-dates"></p>
                         <div id="sheetUpdateHint" class="sheet-update-hint" style="display:none;"></div>
                     </div>
                 </div>
@@ -2517,6 +2561,9 @@ Type any command below (e.g. pm list packages -d)
                 </button>
                 <button class="sheet-btn" onclick="singleAction('app_settings')">
                     <span>⚙️</span><span>App Info</span>
+                </button>
+                <button class="sheet-btn" onclick="extractApkUI()" id="sheetBtnExtract">
+                    <span>📦</span><span>Extract APK</span>
                 </button>
             </div>
 
@@ -4070,6 +4117,7 @@ Type any command below (e.g. pm list packages -d)
             saveStoreJson('ui_state', {
                 appsFilter: currentFilter,
                 showVersions: showListVersions,
+                appSort: appSort,
                 uad: { removal: Array.from(uadFilters.removal), list: uadFilters.list, state: uadFilters.state, brand: uadFilters.brand }
             });
         }
@@ -4077,6 +4125,11 @@ Type any command below (e.g. pm list packages -d)
         function restoreUiState() {
             const st = loadStoreJson('ui_state', null);
             if (st) {
+                if (st.appSort) {
+                    appSort = st.appSort;
+                    const sel = document.getElementById('appSort');
+                    if (sel) sel.value = appSort;
+                }
                 if (typeof st.showVersions === 'boolean') {
                     showListVersions = st.showVersions;
                     const pill = document.getElementById('versionTogglePill');
@@ -4569,6 +4622,137 @@ Type any command below (e.g. pm list packages -d)
             updateOneUI(pkg);
         }
 
+        // ---------- Sorting, recent filter, sizes, export, extract ----------
+        const RECENT_DAYS = 7;
+        let appSort = 'name';
+        let allSizes = null; // {pkg: bytes} when sorting by size
+
+        function isRecentlyUpdated(app) {
+            return !!app.updatedAt && !app.isUninstalled && Date.now() - app.updatedAt < RECENT_DAYS * 86400000;
+        }
+
+        function formatBytes(n) {
+            if (!n && n !== 0) return '';
+            const units = ['B', 'KB', 'MB', 'GB'];
+            let i = 0;
+            let v = n;
+            while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
+            return (v >= 100 || i === 0 ? Math.round(v) : v.toFixed(1)) + ' ' + units[i];
+        }
+
+        function appSizeOf(app) {
+            return allSizes && allSizes[app.pkg] !== undefined ? allSizes[app.pkg] : (app.apkSize || 0);
+        }
+
+        function sortApps(list) {
+            const byName = (a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+            const cmp = {
+                name: byName,
+                updated: (a, b) => (b.updatedAt || 0) - (a.updatedAt || 0) || byName(a, b),
+                installed: (a, b) => (b.installedAt || 0) - (a.installedAt || 0) || byName(a, b),
+                size: (a, b) => appSizeOf(b) - appSizeOf(a) || byName(a, b),
+                updates: (a, b) => (knownUpdateFor(b.pkg) ? 1 : 0) - (knownUpdateFor(a.pkg) ? 1 : 0) || byName(a, b)
+            }[appSort] || byName;
+            list.sort(cmp);
+        }
+
+        // Shows the value the list is sorted by (date or size) on each row
+        function listSortMeta(app) {
+            if (appSort === 'updated' && app.updatedAt) return `<span class="app-meta-line">• updated ${escapeHtml(formatDate(app.updatedAt))}</span>`;
+            if (appSort === 'installed' && app.installedAt) return `<span class="app-meta-line">• installed ${escapeHtml(formatDate(app.installedAt))}</span>`;
+            if (appSort === 'size' && appSizeOf(app)) return `<span class="app-meta-line">• ${escapeHtml(formatBytes(appSizeOf(app)))}</span>`;
+            return '';
+        }
+
+        function setAppSort(value) {
+            appSort = value;
+            haptic();
+            if (value === 'size' && !allSizes && window.AndroidBridge && window.AndroidBridge.getAllAppSizes) {
+                showToast('Measuring app sizes...', '📏');
+                setTimeout(() => {
+                    try {
+                        allSizes = JSON.parse(window.AndroidBridge.getAllAppSizes() || '{}');
+                        if (!allSizes.__usageAccess) showToast('Sorted by APK size. Allow usage access in the app menu to include data.', 'ℹ️');
+                    } catch (e) { allSizes = {}; }
+                    renderApps();
+                }, 50);
+            } else {
+                renderApps();
+            }
+            saveUiState();
+        }
+
+        function csvCell(v) {
+            const t = String(v === undefined || v === null ? '' : v);
+            return /[",\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+        }
+
+        // Every app (not just the filtered view) with version, dates, state and size
+        function exportAppList() {
+            haptic();
+            if (!allApps.length) { showToast('No apps loaded yet', 'ℹ️'); return; }
+            const iso = ms => ms ? new Date(ms).toISOString().slice(0, 10) : '';
+            const rows = [['Name', 'Package', 'Version', 'Installed', 'Last updated', 'Type', 'State', 'APK size (bytes)', 'Update available']];
+            allApps.slice().sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })).forEach(a => {
+                const state = a.isUninstalled ? 'uninstalled' : a.isSuspended ? 'suspended' : a.isFrozen ? 'disabled' : 'enabled';
+                const u = knownUpdateFor(a.pkg);
+                rows.push([a.name, a.pkg, a.version || '', iso(a.installedAt), iso(a.updatedAt), a.isSystem ? 'system' : 'user', state, a.apkSize || '', u ? (u.availableVersion || 'yes') : '']);
+            });
+            const csv = rows.map(r => r.map(csvCell).join(',')).join('\n') + '\n';
+            const name = 'app_list_' + new Date().toISOString().slice(0, 10) + '.csv';
+            if (window.AndroidBridge && window.AndroidBridge.saveTextToDownloads) {
+                const res = window.AndroidBridge.saveTextToDownloads(name, csv) || '';
+                showToast(res.startsWith('Error:') ? res : `Exported ${allApps.length} apps to ${res}`, res.startsWith('Error:') ? '⚠️' : '📤');
+            }
+        }
+
+        function renderInspectorSizes(pkg) {
+            const el = document.getElementById('sheetSizes');
+            if (!el) return;
+            el.innerHTML = '';
+            if (!window.AndroidBridge || !window.AndroidBridge.getAppSizes) return;
+            let s = {};
+            try { s = JSON.parse(window.AndroidBridge.getAppSizes(pkg) || '{}'); } catch (e) {}
+            if (s.error) return;
+            const parts = [`APK ${formatBytes(s.apk)}${s.splits > 1 ? ' (' + s.splits + ' parts)' : ''}`];
+            if (s.stats) {
+                parts.push('Data ' + formatBytes(s.stats.data));
+                parts.push('Cache ' + formatBytes(s.stats.cache));
+                el.innerText = parts.join(' • ');
+            } else {
+                el.innerHTML = escapeHtml(parts.join(' • ')) + ` • <span class="link" onclick="requestUsageAccessUI()">Show data usage</span>`;
+            }
+        }
+
+        function requestUsageAccessUI() {
+            haptic();
+            const r = window.AndroidBridge.requestUsageAccess();
+            if (r === 'granted') {
+                showToast('Usage access granted', '✔');
+                allSizes = null;
+                if (inspectedPkg) renderInspectorSizes(inspectedPkg);
+            } else {
+                showToast('Turn on usage access for ADB Application Manager Pro, then come back', 'ℹ️');
+            }
+        }
+
+        function extractApkUI() {
+            if (!inspectedPkg || !window.AndroidBridge || !window.AndroidBridge.extractApk) return;
+            haptic();
+            showToast('Extracting APK...', '📦');
+            window.AndroidBridge.extractApk(inspectedPkg);
+        }
+
+        // Called by MainActivity when the APK copy finishes
+        function onApkExtracted(json) {
+            const r = JSON.parse(json || '{}');
+            if (r.ok) {
+                showToast(`Saved ${formatBytes(r.bytes)} to ${r.path}${r.splits > 1 ? ' (split app: install the .apks with a split-APK installer such as SAI)' : ''}`, '📦');
+            } else {
+                showToast('Extract failed: ' + (r.error || 'unknown error'), '⚠️');
+            }
+        }
+
         // ---------- ADB key ----------
         function renderAdbKeyInfo() {
             if (!window.AndroidBridge || !window.AndroidBridge.getAdbKeyInfo) {
@@ -4861,6 +5045,13 @@ Type any command below (e.g. pm list packages -d)
                 allApps = JSON.parse(jsonStr);
                 allApps.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
                 renderApps();
+                // A remembered "Size" sort needs full sizes, which are measured on demand
+                if (appSort === 'size' && !allSizes && window.AndroidBridge.getAllAppSizes) {
+                    setTimeout(() => {
+                        try { allSizes = JSON.parse(window.AndroidBridge.getAllAppSizes() || '{}'); } catch (e) { allSizes = {}; }
+                        renderApps();
+                    }, 100);
+                }
             } catch (e) {
                 container.innerHTML = `
                     <div style="text-align:center; padding:35px 20px; color:var(--text-muted);">
@@ -4883,12 +5074,14 @@ Type any command below (e.g. pm list packages -d)
                 if (currentFilter === 'user' && (app.isSystem || app.isUninstalled)) return false;
                 if (currentFilter === 'system' && (!app.isSystem || app.isUninstalled)) return false;
                 if (currentFilter === 'uninstalled' && !app.isUninstalled) return false;
+                if (currentFilter === 'recent' && !isRecentlyUpdated(app)) return false;
 
                 if (query) {
                     return app.name.toLowerCase().includes(query) || app.pkg.toLowerCase().includes(query);
                 }
                 return true;
             });
+            sortApps(filteredApps);
 
             // Update stats counts
             document.getElementById('statTotal').innerText = allApps.length;
@@ -4903,6 +5096,7 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('countUser').innerText = allApps.filter(a => !a.isSystem && !a.isUninstalled).length;
             document.getElementById('countSystem').innerText = allApps.filter(a => a.isSystem && !a.isUninstalled).length;
             document.getElementById('countFrozen').innerText = allApps.filter(a => a.isFrozen).length;
+            document.getElementById('countRecent').innerText = allApps.filter(isRecentlyUpdated).length;
             document.getElementById('countSuspended').innerText = allApps.filter(a => a.isSuspended).length;
             document.getElementById('countUninstalled').innerText = allApps.filter(a => a.isUninstalled).length;
 
@@ -4938,7 +5132,7 @@ Type any command below (e.g. pm list packages -d)
                             <div class="app-meta">
                                 <div class="app-name">${app.name}</div>
                                 <div class="app-pkg">${app.pkg}</div>
-                                <div class="badge-row">${badges}${listVersionLabel(app)}</div>
+                                <div class="badge-row">${badges}${listVersionLabel(app)}${listSortMeta(app)}</div>
                             </div>
                         </div>
                         <div class="app-actions">
@@ -5104,6 +5298,7 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('sheetVersion').innerText = window.AndroidBridge ? 'Loading version...' : '';
             document.getElementById('sheetDates').innerText = '';
             renderInspectorUpdateHint(pkg);
+            renderInspectorSizes(pkg);
             document.getElementById('sheetAvatar').innerText = app.name.charAt(0).toUpperCase();
 
             document.getElementById('sheetBtnReinstall').style.display = app.isUninstalled ? 'flex' : 'none';

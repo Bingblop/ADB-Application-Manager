@@ -1,5 +1,23 @@
 # Changelog
 
+## v4.4-Pro (versionCode 340)
+
+Installs over v3.1 – v4.3 without uninstalling (same signing key).
+
+### App list
+- **Sort** by name, last updated, install date, size, or updates first. When sorting by date or
+  size, each row shows that value. The choice is remembered.
+- **🆕 Updated 7d** filter for apps updated in the last week (handy for spotting a bad update).
+- **📤 Export** saves every app with its version, install and update dates, type, state, APK size and
+  any known update as CSV to `Download/ADB App Manager/`.
+
+### App menu
+- **Sizes**: APK size (and how many parts a split app has); data and cache too once **usage access**
+  is allowed. "Show data usage" grants it through ADB/Shizuku/Root, or opens the settings page.
+  Sorting by size then uses total storage instead of APK size.
+- **📦 Extract APK** saves the app to `Download/ADB App Manager/APKs/`: a single `.apk`, or for split
+  apps a `.apks` bundle (base + splits) that split-APK installers such as SAI can install.
+
 ## v4.3-Pro (versionCode 330)
 
 Installs over v3.1 – v4.2 without uninstalling (same signing key).
