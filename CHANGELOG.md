@@ -1,5 +1,15 @@
 # Changelog
 
+## v4.5-Pro (versionCode 350)
+
+Installs over v3.1 – v4.4 without uninstalling (same signing key).
+
+- **Select and copy text**: long-press any text (app names, package names, versions, permission and
+  activity names, the manifest viewer, terminal output, debloat descriptions and history) to
+  highlight it and use the system Copy menu. Buttons, pills and toggles stay unselectable, so taps
+  still work as before.
+- Dragging to select text on an app row no longer selects or expands the row by accident.
+
 ## v4.4-Pro (versionCode 340)
 
 Installs over v3.1 – v4.3 without uninstalling (same signing key).

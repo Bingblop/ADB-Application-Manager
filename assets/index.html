@@ -53,8 +53,23 @@
             color: var(--text-main);
             padding: 0 0 160px 0;
             min-height: 100vh;
+            /* Text can be long-pressed, highlighted and copied */
+            -webkit-user-select: text;
+            user-select: text;
+        }
+
+        /* Controls stay unselectable so a long-press doesn't highlight button labels */
+        button, select, .tab-btn, .filter-pill, .toggle-pill, .filter-chip, .sheet-btn, .sheet-tab-pill,
+        .mode-action-btn, .batch-grid-btn, .batch-tool-link, .btn-mini, .app-checkbox, .appearance-btn,
+        .palette-preset-card, .stat-card, .status-badge, .perm-toggle-btn, .op-mode-btn, .switch-row,
+        .search-clear, .app-avatar, .sheet-avatar, .picker-bubble-btn {
             -webkit-user-select: none;
             user-select: none;
+        }
+
+        ::selection {
+            background: var(--accent-glow);
+            color: var(--text-main);
         }
 
         /* Top Sticky Header */
@@ -4013,6 +4028,7 @@ Type any command below (e.g. pm list packages -d)
         }
 
         function toggleUadExpand(pkg) {
+            if (isSelectingText()) return;
             if (uadExpanded.has(pkg)) uadExpanded.delete(pkg); else uadExpanded.add(pkg);
             renderUadList();
         }
@@ -5148,7 +5164,14 @@ Type any command below (e.g. pm list packages -d)
         }
 
         // Selection & Batch Operations
+        // A tap that ends a text selection (highlighting to copy) shouldn't also select/expand the row
+        function isSelectingText() {
+            const sel = window.getSelection ? window.getSelection() : null;
+            return !!(sel && !sel.isCollapsed && sel.toString().trim());
+        }
+
         function toggleSelectPkg(pkg) {
+            if (isSelectingText()) return;
             if (selectedPkgs.has(pkg)) {
                 selectedPkgs.delete(pkg);
             } else {
