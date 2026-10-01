@@ -333,6 +333,10 @@ commands and runs them through whichever backend is active. There is no Gradle: 
 ```java
 @JavascriptInterface
 public String executeAppAction(String action, String pkg) {
+    // Every real caller passes a PackageManager-sourced name, but a saved list is free text the user
+    // typed and a Quick Settings tile runs it with no review - so this is checked before anything below
+    // builds a shell command out of it.
+    if (!BackupScripts.isPackageName(pkg)) return "Error: \"" + pkg + "\" is not a valid package name";
     if ("freeze".equals(action))      return executeShell("pm disable-user " + pkg);
     if ("suspend".equals(action))     return executeShell("pm suspend " + pkg);
     if ("force_stop".equals(action))  return executeShell("am force-stop " + pkg);

@@ -1288,16 +1288,27 @@ public class MainActivity extends Activity {
             String created = shizukuStream("pm install-create -r", null);
             String id = BackupScripts.parseSessionId(created);
             if (id == null) return created;
-            int index = 0;
-            for (File f : apks) {
-                String name = (index++) + "_" + f.getName().replaceAll("[^A-Za-z0-9._-]", "_");
-                String written = shizukuStream("pm install-write -S " + f.length() + " " + id + " " + name + " -", f);
-                if (!written.contains("Success")) {
-                    shizukuStream("pm install-abandon " + id, null);
-                    return written;
+            // A thrown exception mid-write (not just a "Success"-less return) must still abandon the
+            // session - otherwise a staged PackageInstaller session and its backing files are left behind
+            // with no owner. Only a successful commit excuses the cleanup below.
+            boolean committed = false;
+            try {
+                int index = 0;
+                for (File f : apks) {
+                    String name = (index++) + "_" + f.getName().replaceAll("[^A-Za-z0-9._-]", "_");
+                    String written = shizukuStream("pm install-write -S " + f.length() + " " + id + " " + name + " -", f);
+                    if (!written.contains("Success")) return written;
+                }
+                String result = shizukuStream("pm install-commit " + id, null);
+                committed = true;
+                return result;
+            } finally {
+                if (!committed) {
+                    try {
+                        shizukuStream("pm install-abandon " + id, null);
+                    } catch (Exception ignored) {}
                 }
             }
-            return shizukuStream("pm install-commit " + id, null);
         }
         if ("root".equals(mode)) {
             StringBuilder cmd = new StringBuilder(apks.size() == 1 ? "pm install -r" : "pm install-multiple -r");
@@ -1497,15 +1508,25 @@ public class MainActivity extends Activity {
                         }
                     }
                     meta.put("permissions", perms);
+                    JSONArray warnings = new JSONArray();
                     JSONObject ops = new JSONObject();
                     try {
-                        for (Map.Entry<String, String> e : BackupScripts.changedAppOps(new AndroidBridge().executeShell("cmd appops get " + pkg)).entrySet()) {
+                        String opsRaw = new AndroidBridge().executeShell("cmd appops get " + pkg);
+                        for (Map.Entry<String, String> e : BackupScripts.changedAppOps(opsRaw).entrySet()) {
                             ops.put(e.getKey(), e.getValue());
                         }
-                    } catch (Exception ignored) {}
+                        // An empty result is the common, legitimate case (no overrides) - but if the backend
+                        // reported a failure instead of actual appops output, that looks identical unless
+                        // checked for, and the backup would otherwise silently claim a complete settings
+                        // snapshot it doesn't have.
+                        String lowered = opsRaw == null ? "" : opsRaw.toLowerCase();
+                        if (ops.length() == 0 && (opsRaw == null || lowered.contains("error") || lowered.contains("exception") || lowered.contains("denied") || lowered.contains("unknown command"))) {
+                            warnings.put("Could not read this app's app ops" + (opsRaw == null || opsRaw.trim().isEmpty() ? "" : " (" + opsRaw.trim() + ")") + "; any app op overrides will be missing from this backup");
+                        }
+                    } catch (Exception e) {
+                        warnings.put("Could not read this app's app ops (" + e.getMessage() + "); any app op overrides will be missing from this backup");
+                    }
                     meta.put("appops", ops);
-
-                    JSONArray warnings = new JSONArray();
                     boolean withData = false;
                     if (includeData) {
                         backupEvent("backup", "data", 20, "Backing up data (Root)...");
@@ -2024,7 +2045,10 @@ public class MainActivity extends Activity {
      * change to this check can't land in one copy and leave the other unprotected.
      */
     private static void requireCompatibleSigner(java.util.Set<String> installedSigners, java.util.Set<String> archiveSigners, String message) {
-        if (installedSigners.isEmpty() || archiveSigners.isEmpty()) return; // nothing to compare; callers already distrust an empty archive set elsewhere
+        // Fail closed: every real, installable APK has at least one signer, so an empty set here means the
+        // archive is unsigned/unreadable, not "nothing to compare". Treating that as a pass would let a
+        // backup whose signature can't be read skip verification entirely.
+        if (installedSigners.isEmpty() || archiveSigners.isEmpty()) throw new IllegalStateException(message);
         java.util.Set<String> common = new HashSet<String>(installedSigners);
         common.retainAll(archiveSigners);
         if (common.isEmpty()) throw new IllegalStateException(message);

@@ -15,7 +15,9 @@ import java.util.regex.Pattern;
  */
 final class BackupScripts {
 
-    private static final Pattern PACKAGE = Pattern.compile("[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z0-9_]+)+");
+    // At least one dotted-and-letter-led segment; "android" itself (returned by PackageManager for
+    // several framework-owned permissions and components) is a real, valid single-segment package name.
+    private static final Pattern PACKAGE = Pattern.compile("[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z0-9_]+)*");
     private static final Pattern PERMISSION = Pattern.compile("[A-Za-z][A-Za-z0-9_.]*");
     private static final Pattern APP_OP = Pattern.compile("^([A-Z][A-Z0-9_]+):\\s*(allow|ignore|deny|foreground)\\b", Pattern.MULTILINE);
     private static final Pattern SESSION = Pattern.compile("\\[(\\d+)\\]");

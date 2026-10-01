@@ -60,6 +60,13 @@ Installs over v3.1 – v4.6 without uninstalling (same signing key).
     unbounded response as a successful update.
   - A handful of smaller robustness fixes: a failure partway through generating the per-install ADB key can
     no longer leave a mismatched key pair on disk; reading a very large file no longer crashes outright.
+  - A second look at that same signer check found it would skip verification entirely if either side's
+    signing certificate couldn't be read at all, instead of refusing the restore; it now fails closed.
+  - Package-name validation no longer rejects `"android"` itself - one of several framework-owned permissions
+    and components `PackageManager` genuinely reports under that single-segment name.
+  - An install through Shizuku that fails partway through writing or committing its session no longer leaves
+    it open. Backing up an app whose app-ops can't be read now says so in the backup instead of silently
+    recording an empty, misleadingly-successful-looking override list.
 - README: debloat-flow animation, light-theme screenshots and the new features.
 
 ## v4.6-Pro (versionCode 360)
