@@ -1,5 +1,18 @@
 # Changelog
 
+## v3.7-Pro (versionCode 270)
+
+Installs over v3.1 – v3.6 without uninstalling (same signing key).
+
+### Suspend / Unsuspend
+- The app menu has **Suspend** (for active apps) and **Unsuspend** (for suspended ones).
+  A suspended app stays installed with its data, but can't be opened until it is unsuspended.
+- Suspended apps are marked in the app list with a **⏸ SUSPENDED** badge and a greyed-out icon,
+  and a new **⏸️ Suspended** filter shows only them. Suspension is detected in every mode,
+  including Read-Only.
+- The batch sheet has **Suspend** (asks for confirmation, like Freeze and Uninstall) and
+  **Unsuspend**.
+
 ## v3.6-Pro (versionCode 260)
 
 Installs over v3.1 – v3.5 without uninstalling (same signing key).

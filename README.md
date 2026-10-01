@@ -5,7 +5,7 @@ package, freeze/enable, force-stop, clear data, uninstall for user 0, reinstall 
 manage permissions, save package lists, and run shell commands — through ADB TCP, Wireless
 Debugging, Shizuku or Root.
 
-**Latest release:** [`release/ADB_Application_Manager_Pro-v3.6.apk`](release/ADB_Application_Manager_Pro-v3.6.apk) — see [CHANGELOG.md](CHANGELOG.md).
+**Latest release:** [`release/ADB_Application_Manager_Pro-v3.7.apk`](release/ADB_Application_Manager_Pro-v3.7.apk) — see [CHANGELOG.md](CHANGELOG.md).
 
 ## Working modes
 
@@ -26,7 +26,7 @@ APK). Working Modes shows its fingerprint, which matches the phone's "Allow debu
 
 ## App menu
 
-Tap **⋯** on any app for actions (Launch, Force Stop, Freeze/Enable, Clear Data, Uninstall,
+Tap **⋯** on any app for actions (Launch, Force Stop, Freeze/Enable, Suspend/Unsuspend, Clear Data, Uninstall,
 Reinstall, Remove Updates, App Info) and five tabs:
 
 - **Permissions**: searchable, filterable list; toggle runtime and development permissions

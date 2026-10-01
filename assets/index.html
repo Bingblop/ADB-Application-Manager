@@ -28,6 +28,7 @@
             --status-system: #7C4DFF;
             --status-user: #FF9100;
             --status-bloat: #FF5252;
+            --status-suspended: #FFC400;
 
             --radius-xl: 24px;
             --radius-lg: 16px;
@@ -433,6 +434,22 @@
             background: rgba(255, 82, 82, 0.12);
             color: var(--status-bloat);
             border: 1px solid rgba(255, 82, 82, 0.3);
+        }
+
+        .tag-suspended {
+            background: rgba(255, 196, 0, 0.14);
+            color: var(--status-suspended);
+            border: 1px solid rgba(255, 196, 0, 0.4);
+        }
+
+        /* Suspended apps look paused in the list */
+        .app-card.suspended .app-avatar {
+            opacity: 0.55;
+            filter: grayscale(1);
+        }
+
+        .app-card.suspended .app-name {
+            opacity: 0.75;
         }
 
         .app-actions {
@@ -1732,6 +1749,7 @@
                 <div class="filter-pill" onclick="setFilter('user', this)">👤 3rd Party (<span id="countUser">0</span>)</div>
                 <div class="filter-pill" onclick="setFilter('system', this)">⚙️ System (<span id="countSystem">0</span>)</div>
                 <div class="filter-pill" onclick="setFilter('frozen', this)">❄️ Frozen (<span id="countFrozen">0</span>)</div>
+                <div class="filter-pill" onclick="setFilter('suspended', this)">⏸️ Suspended (<span id="countSuspended">0</span>)</div>
                 <div class="filter-pill" onclick="setFilter('uninstalled', this)">🗑️ Uninstalled (<span id="countUninstalled">0</span>)</div>
             </div>
 
@@ -2021,6 +2039,8 @@ Type any command below (e.g. pm list packages -d)
             <button class="batch-grid-btn" onclick="batchAction('freeze')">❄️ Freeze</button>
             <button class="batch-grid-btn" onclick="batchAction('unfreeze')">🔥 Enable</button>
             <button class="batch-grid-btn" onclick="batchAction('force_stop')">🛑 Force Stop</button>
+            <button class="batch-grid-btn" onclick="batchAction('suspend')">⏸️ Suspend</button>
+            <button class="batch-grid-btn" onclick="batchAction('unsuspend')">▶️ Unsuspend</button>
             <button class="batch-grid-btn" onclick="batchAction('clear_data')">🧹 Clear Data</button>
             <button class="batch-grid-btn danger" onclick="batchAction('uninstall')">🗑️ Uninstall</button>
             <button class="batch-grid-btn accent" onclick="batchAction('reinstall')">📥 Reinstall</button>
@@ -2054,6 +2074,12 @@ Type any command below (e.g. pm list packages -d)
                 </button>
                 <button class="sheet-btn" onclick="singleAction('unfreeze')" id="sheetBtnUnfreeze">
                     <span>🔥</span><span>Enable</span>
+                </button>
+                <button class="sheet-btn" onclick="singleAction('suspend')" id="sheetBtnSuspend">
+                    <span>⏸️</span><span>Suspend</span>
+                </button>
+                <button class="sheet-btn" onclick="singleAction('unsuspend')" id="sheetBtnUnsuspend" style="display:none;">
+                    <span>▶️</span><span>Unsuspend</span>
                 </button>
                 <button class="sheet-btn" onclick="singleAction('clear_data')">
                     <span>🧹</span><span>Clear Data</span>
@@ -2947,9 +2973,15 @@ Type any command below (e.g. pm list packages -d)
 
         function requestBatchConfirmation(action, pkgs) {
             pendingBatchAction = { action: action, pkgs: pkgs.slice() };
-            document.getElementById('batchConfirmTitle').innerText = action === 'freeze' ? 'Confirm Disable Selected Apps' : 'Confirm Uninstall Selected Apps';
-            document.getElementById('batchConfirmSubtitle').innerText = pkgs.length + ' apps selected';
-            document.getElementById('batchConfirmExecuteBtn').innerText = action === 'freeze' ? 'Confirm Disable' : 'Confirm Uninstall';
+            const labels = {
+                freeze: ['Confirm Disable Selected Apps', 'Confirm Disable'],
+                uninstall: ['Confirm Uninstall Selected Apps', 'Confirm Uninstall'],
+                suspend: ['Confirm Suspend Selected Apps', 'Confirm Suspend']
+            }[action] || ['Confirm Action', 'Confirm'];
+            document.getElementById('batchConfirmTitle').innerText = labels[0];
+            document.getElementById('batchConfirmSubtitle').innerText = pkgs.length + ' apps selected' +
+                (action === 'suspend' ? ' • suspended apps stay installed but can\'t be opened until unsuspended' : '');
+            document.getElementById('batchConfirmExecuteBtn').innerText = labels[1];
             document.getElementById('batchConfirmList').innerHTML = pkgs.map(pkg => {
                 const app = allApps.find(a => a.pkg === pkg) || { name: pkg, pkg: pkg };
                 return '<div class="confirm-list-row"><strong>' + escapeHtml(app.name) + '</strong><br><span style="font-size:10px; color:var(--text-muted);">' + escapeHtml(pkg) + '</span></div>';
@@ -3529,6 +3561,7 @@ Type any command below (e.g. pm list packages -d)
             filteredApps = allApps.filter(app => {
                 if (currentFilter === 'running' && !app.isRunning) return false;
                 if (currentFilter === 'frozen' && !app.isFrozen) return false;
+                if (currentFilter === 'suspended' && !app.isSuspended) return false;
                 if (currentFilter === 'user' && (app.isSystem || app.isUninstalled)) return false;
                 if (currentFilter === 'system' && (!app.isSystem || app.isUninstalled)) return false;
                 if (currentFilter === 'uninstalled' && !app.isUninstalled) return false;
@@ -3552,6 +3585,7 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('countUser').innerText = allApps.filter(a => !a.isSystem && !a.isUninstalled).length;
             document.getElementById('countSystem').innerText = allApps.filter(a => a.isSystem && !a.isUninstalled).length;
             document.getElementById('countFrozen').innerText = allApps.filter(a => a.isFrozen).length;
+            document.getElementById('countSuspended').innerText = allApps.filter(a => a.isSuspended).length;
             document.getElementById('countUninstalled').innerText = allApps.filter(a => a.isUninstalled).length;
 
             const container = document.getElementById('appsListContainer');
@@ -3573,12 +3607,13 @@ Type any command below (e.g. pm list packages -d)
                 let badges = '';
                 if (app.isRunning) badges += '<span class="tag-badge tag-running">RUNNING</span>';
                 if (app.isFrozen && !app.isUninstalled) badges += '<span class="tag-badge tag-frozen">FROZEN</span>';
+                if (app.isSuspended) badges += '<span class="tag-badge tag-suspended">⏸ SUSPENDED</span>';
                 if (app.isUninstalled) badges += '<span class="tag-badge tag-bloat">UNINSTALLED</span>';
                 if (app.isSystem) badges += '<span class="tag-badge tag-system">SYSTEM</span>';
                 else badges += '<span class="tag-badge tag-user">USER</span>';
 
                 html += `
-                    <div class="app-card ${isSelected ? 'selected' : ''}" id="card_${app.pkg}">
+                    <div class="app-card ${isSelected ? 'selected' : ''} ${app.isSuspended ? 'suspended' : ''}" id="card_${app.pkg}">
                         <div class="app-left" onclick="toggleSelectPkg('${app.pkg}')">
                             <div class="app-checkbox">${isSelected ? '✓' : ''}</div>
                             <div class="app-avatar">${initial}</div>
@@ -3659,7 +3694,7 @@ Type any command below (e.g. pm list packages -d)
             if (selectedPkgs.size === 0) return;
             if (!guardPrivilege(`Batch ${action}`)) return;
             const arr = Array.from(selectedPkgs);
-            if (action === 'freeze' || action === 'uninstall') {
+            if (action === 'freeze' || action === 'uninstall' || action === 'suspend') {
                 requestBatchConfirmation(action, arr);
                 return;
             }
@@ -3748,6 +3783,9 @@ Type any command below (e.g. pm list packages -d)
             // The menu shows Freeze for enabled apps and Enable for frozen ones
             document.getElementById('sheetBtnFreeze').style.display = app.isFrozen ? 'none' : 'flex';
             document.getElementById('sheetBtnUnfreeze').style.display = app.isFrozen ? 'flex' : 'none';
+            // Suspend for active apps, Unsuspend for suspended ones (uninstalled apps can't be suspended)
+            document.getElementById('sheetBtnSuspend').style.display = (app.isSuspended || app.isUninstalled) ? 'none' : 'flex';
+            document.getElementById('sheetBtnUnsuspend').style.display = app.isSuspended ? 'flex' : 'none';
 
             // Reset per-app state
             inspectorData = null;
@@ -4161,6 +4199,7 @@ Type any command below (e.g. pm list packages -d)
             css.setProperty('--status-system', t.system);
             css.setProperty('--status-bloat', t.bloat);
             css.setProperty('--status-user', light ? ensureContrast('#FF9100', '#FFFFFF', 3.5) : '#FF9100');
+            css.setProperty('--status-suspended', light ? ensureContrast('#FFAB00', '#FFFFFF', 3.5) : '#FFC400');
             css.setProperty('--ov', light ? '0, 0, 0' : '255, 255, 255');
             css.setProperty('--border-glass', light ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.09)');
             css.setProperty('--input-bg', light ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.35)');

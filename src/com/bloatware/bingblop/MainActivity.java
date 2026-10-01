@@ -1155,6 +1155,8 @@ public class MainActivity extends Activity {
                     o.put("isSystem", (info.flags & ApplicationInfo.FLAG_SYSTEM) != 0);
                     o.put("isRunning", runningPkgs.contains(info.packageName));
                     o.put("isFrozen", disabledPkgs.contains(info.packageName) || !info.enabled);
+                    // Readable in every mode, including Read-Only
+                    o.put("isSuspended", (info.flags & ApplicationInfo.FLAG_SUSPENDED) != 0);
                     o.put("isUninstalled", false);
                     o.put("targetSdk", info.targetSdkVersion);
                     arr.put(o);
@@ -1166,6 +1168,7 @@ public class MainActivity extends Activity {
                     o.put("isSystem", true);
                     o.put("isRunning", false);
                     o.put("isFrozen", true);
+                    o.put("isSuspended", false);
                     o.put("isUninstalled", true);
                     o.put("targetSdk", 0);
                     arr.put(o);
