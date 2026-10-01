@@ -56,6 +56,11 @@ public final class ManifestDecoder {
         this.appResources = appResources;
     }
 
+    // A real AndroidManifest.xml is KBs, occasionally low MBs; this is only ever called on an installed
+    // app's own APK (including a sideloaded one), so bound the read instead of trusting the zip entry's
+    // own (spoofable) declared size.
+    private static final int MAX_MANIFEST_BYTES = 32 * 1024 * 1024;
+
     /** Reads AndroidManifest.xml from the APK at apkPath and returns it as indented XML text. */
     public static String decodeApk(String apkPath, Resources appResources) throws Exception {
         ZipFile zip = new ZipFile(apkPath);
@@ -66,7 +71,12 @@ public final class ManifestDecoder {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             byte[] buf = new byte[16384];
             int len;
-            while ((len = in.read(buf)) > 0) out.write(buf, 0, len);
+            int total = 0;
+            while ((len = in.read(buf)) > 0) {
+                total += len;
+                if (total > MAX_MANIFEST_BYTES) throw new IllegalStateException("AndroidManifest.xml is implausibly large; refusing to decode it");
+                out.write(buf, 0, len);
+            }
             in.close();
             return new ManifestDecoder(appResources).decode(out.toByteArray());
         } finally {
@@ -75,6 +85,7 @@ public final class ManifestDecoder {
     }
 
     private String decode(byte[] data) {
+        if (data.length < 8) throw new IllegalStateException("Not a binary XML file (too short)");
         ByteBuffer bb = ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN);
         int fileType = bb.getShort(0) & 0xFFFF;
         if (fileType != RES_XML_TYPE) throw new IllegalStateException("Not a binary XML file");
@@ -84,22 +95,32 @@ public final class ManifestDecoder {
         int depth = 0;
         boolean openTagPending = false;
         boolean childOnSameElement = false;
+        // Tracks which element is actually open at each depth, so a crafted END chunk referencing the
+        // wrong pool string can't make the output claim to close a tag that was never opened.
+        java.util.ArrayDeque<String> openTags = new java.util.ArrayDeque<String>();
 
         int pos = headerSize;
         while (pos + 8 <= data.length) {
+          try {
             int type = bb.getShort(pos) & 0xFFFF;
             int chunkHeaderSize = bb.getShort(pos + 2) & 0xFFFF;
             int chunkSize = bb.getInt(pos + 4);
-            if (chunkSize <= 0 || pos + chunkSize > data.length) break;
+            // pos/chunkSize come straight from the file; add as longs first so a huge chunkSize can't
+            // overflow the int sum back into something that looks in-range.
+            if (chunkSize <= 0 || chunkHeaderSize < 8 || (long) pos + chunkSize > data.length) break;
 
             switch (type) {
                 case RES_STRING_POOL_TYPE:
                     readStringPool(bb, pos);
                     break;
                 case RES_XML_RESOURCE_MAP_TYPE: {
-                    int count = (chunkSize - chunkHeaderSize) / 4;
+                    int count = Math.max(0, (chunkSize - chunkHeaderSize) / 4);
                     resourceMap = new int[count];
-                    for (int i = 0; i < count; i++) resourceMap[i] = bb.getInt(pos + chunkHeaderSize + i * 4);
+                    for (int i = 0; i < count; i++) {
+                        int off = pos + chunkHeaderSize + i * 4;
+                        if (off < 0 || off + 4 > data.length) break; // a crafted/short chunk: keep what we read so far
+                        resourceMap[i] = bb.getInt(off);
+                    }
                     break;
                 }
                 case RES_XML_START_NAMESPACE_TYPE: {
@@ -130,6 +151,7 @@ public final class ManifestDecoder {
 
                     for (int i = 0; i < attrCount; i++) {
                         int a = ext + attrStart + i * attrSize;
+                        if (attrSize < 20 || a < 0 || (long) a + 20 > data.length) break; // crafted/short chunk: keep the attributes already read
                         String nsUri = str(bb.getInt(a));
                         int nameIdx = bb.getInt(a + 4);
                         int rawIdx = bb.getInt(a + 8);
@@ -147,12 +169,16 @@ public final class ManifestDecoder {
                     }
                     openTagPending = true;
                     childOnSameElement = false;
+                    openTags.push(name);
                     depth++;
                     break;
                 }
                 case RES_XML_END_ELEMENT_TYPE: {
                     depth--;
-                    String name = str(bb.getInt(pos + chunkHeaderSize + 4));
+                    // The element actually on top of the open-tags stack, not the END chunk's own name
+                    // reference: a crafted file can point that reference at any pool string, which would
+                    // otherwise let a manifest claim to close a different tag than the one it opened.
+                    String name = !openTags.isEmpty() ? openTags.pop() : str(bb.getInt(pos + chunkHeaderSize + 4));
                     if (openTagPending) {
                         xml.append(" />\n");
                     } else {
@@ -176,6 +202,11 @@ public final class ManifestDecoder {
                     break;
             }
             pos += chunkSize;
+          } catch (RuntimeException crafted) {
+              // A chunk pointed somewhere nonsensical (crafted or just corrupted file): stop decoding and
+              // return everything read so far rather than let one bad chunk surface a raw exception message.
+              break;
+          }
         }
         return xml.toString();
     }
@@ -186,11 +217,17 @@ public final class ManifestDecoder {
         int flags = bb.getInt(pos + 16);
         int stringsStart = bb.getInt(pos + 20);
         boolean utf8 = (flags & UTF8_FLAG) != 0;
-        strings = new String[count];
+        // A crafted count (e.g. 0xFFFFFFFF) would throw NegativeArraySizeException and, since this chunk
+        // is usually the very first one, abort decoding the entire manifest instead of just this string
+        // pool; clamp it to the buffer's own capacity, which no real pool could exceed anyway.
+        strings = new String[count >= 0 && count <= bb.capacity() ? count : 0];
         Charset charset = Charset.forName(utf8 ? "UTF-8" : "UTF-16LE");
-        for (int i = 0; i < count; i++) {
-            int offset = pos + stringsStart + bb.getInt(pos + headerSize + i * 4);
+        for (int i = 0; i < strings.length; i++) {
             try {
+                // The offset table entry itself, not just the bytes it points to, can be crafted out of
+                // bounds; read it inside the same try as the rest so one bad entry only blanks that string,
+                // the way every other malformed-string case here already degrades.
+                int offset = pos + stringsStart + bb.getInt(pos + headerSize + i * 4);
                 if (utf8) {
                     // UTF-16 length then UTF-8 byte length, each 1 or 2 bytes
                     int p = offset;

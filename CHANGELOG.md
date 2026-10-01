@@ -29,6 +29,37 @@ Installs over v3.1 – v4.6 without uninstalling (same signing key).
   profile run unwinds the steps newest first. Saving profiles that the app cannot keep (too large) now says so.
 - Extracting or sharing an APK handles one request at a time, so a second tap cannot mix up the results; the
   share sheet gets each file from its own private folder.
+- A full pass through every source file (not just this release's changes), backed by Copilot review plus an
+  independent full-file audit:
+  - **Restore no longer trusts a picked backup file's own claims.** `backup.json` can come from "Choose
+    backup file…" and is untrusted by design; restoring used to take its stated package, version and signing
+    key at face value, including on the path that brings a removed system app back. Everything now comes
+    from the extracted APK itself, both for an app currently installed and for a system app only present on
+    the system image.
+  - A backup now correctly names the base APK `base.apk` regardless of its real on-disk name, so backing up
+    a system app (whose source file is rarely actually called that) can be restored at all.
+  - Restoring data now refuses archives containing FIFO or device-node entries, not just hard links and
+    outward-pointing symlinks; an app-op explicitly set to Allow is backed up and restored instead of being
+    treated as "nothing to restore"; skipping a backup's data when you didn't ask for it no longer
+    decompresses that data anyway.
+  - **Quick list entries are validated before they can reach a shell command.** The list editor accepts any
+    text, and the new Stop-apps tile runs each entry with no per-entry review; a crafted entry could have run
+    an arbitrary privileged command on a single tap. Every package name is now checked before anything is
+    built from it.
+  - Deleting a watched profile clears the setting the reboot notification reads; that notification also has a
+    working baseline on the very first reboot after you turn watching on.
+  - **The manifest viewer no longer risks a confusing crash on a crafted or corrupted APK** (it already
+    couldn't crash the app itself): a hand-rolled binary-XML parser had several unchecked-arithmetic and
+    unchecked-allocation spots reachable by viewing any installed app's manifest, including a sideloaded one.
+    It also now caps how much of a manifest it will read, and closing tags are tracked properly instead of
+    trusting a value a crafted file could point anywhere.
+  - **Update checks no longer trust a catalog's regex unconditionally.** The Obtainium catalog is
+    community-maintained; a pattern with pathological backtracking could previously hang the update check.
+    Matching now has a hard timeout. The Galaxy Store download link is now required to be HTTPS, matching the
+    rest of the update sources, and a download is capped in size and can no longer report an empty or
+    unbounded response as a successful update.
+  - A handful of smaller robustness fixes: a failure partway through generating the per-install ADB key can
+    no longer leave a mismatched key pair on disk; reading a very large file no longer crashes outright.
 - README: debloat-flow animation, light-theme screenshots and the new features.
 
 ## v4.6-Pro (versionCode 360)

@@ -476,10 +476,21 @@ release/                       Signed release APKs and SHA256SUMS.txt
 
 ## Testing
 
-- **UI**: 21 headless-browser suites drive the real `index.html` against a mock Android bridge (every tab,
+A full pass through every source file, not just this round's diff, backed by GitHub Copilot's automated
+review (four rounds on this PR) plus a standalone, independent full-file audit, with a runnable check for
+every finding that survived verification:
+
+- **UI**: 23 headless-browser suites drive the real `index.html` against a mock Android bridge (every tab,
   theme, filter, share/copy/find action, profiles, drift banner, What's new, quick list, backup and restore flows).
 - **Backup scripts**: run against a fake `/data` tree with real `tar`, including hostile archives (other apps'
-  paths, `..`, hard links, outward links, damaged files): 24 checks.
+  paths, `..`, hard links, outward links, device/FIFO entries, damaged files): 29 checks.
+- **Manifest decoder**: hand-built adversarial binary AXML (negative strings-pool count, an overflowing chunk
+  size, a mismatched closing-tag reference, an oversized manifest) alongside a well-formed one, run against
+  the real decoder with Android's own framework classes on the classpath: 5 checks.
+- **Update checks**: a package-name validator rejecting shell metacharacters (19 cases); a regex timeout
+  guard verified against both an ordinary fast pattern and an artificially slow one, so a hostile catalog
+  entry can't hang the caller (7 checks); the working-mode tile/widget's fallback order (8 cases); a direct
+  timing proof that skipping an unwanted multi-gigabyte backup entry no longer decompresses it (6.9s → 0ms).
 - **Build**: every APK is compiled, signed and verified (zipalign, v2/v3 signatures) by `build.sh`.
 - The parts that only exist on a phone (the ADB, Shizuku and Root backends, the Quick Settings tiles, the
   widget, the share sheet and the boot notification) are checked by compilation and review rather than on

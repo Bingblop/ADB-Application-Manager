@@ -77,6 +77,7 @@ final class BackupScripts {
             + "if tar -tf " + t + " | grep -v -E '" + re + "' | grep -q .; then echo 'ERROR: the archive has files outside this app'; exit 6; fi\n"
             + "if tar -tf " + t + " | grep -q -E '(^|/)\\.\\.(/|$)'; then echo 'ERROR: the archive has unsafe paths'; exit 6; fi\n"
             + "if tar -tvf " + t + " | grep -q -E '^h'; then echo 'ERROR: the archive has hard links'; exit 6; fi\n"
+            + "if tar -tvf " + t + " | grep -q -E '^[bcp]'; then echo 'ERROR: the archive has device or FIFO entries'; exit 6; fi\n"
             + "if tar -tvf " + t + " | grep -E '^l' | grep -q -E -- ' -> (/|.*\\.\\.)'; then echo 'ERROR: the archive has links that point outside the app'; exit 6; fi\n"
             + "am force-stop " + pkg + " >/dev/null 2>&1\n"
             + "for d in user/0/" + pkg + " user_de/0/" + pkg + "; do [ -d \"$d\" ] && find \"$d\" -mindepth 1 -maxdepth 1 -exec rm -rf {} \\; ; done\n"
@@ -93,13 +94,18 @@ final class BackupScripts {
         return m.find() ? m.group(1) : null;
     }
 
-    /** From `cmd appops get <pkg>`: the ops the user changed away from allow (deny / ignore / foreground). */
+    /**
+     * From `cmd appops get <pkg>`: every op it reports. Android only persists and prints an op here once
+     * something has explicitly set it away from its own baseline, so every line - including "allow" on an
+     * op that doesn't default to it (for example a dangerous permission grant also flips its app op to
+     * allow) - is a real override the user made, not just "the normal state", and is worth restoring.
+     */
     static Map<String, String> changedAppOps(String output) {
         Map<String, String> ops = new LinkedHashMap<String, String>();
         if (output == null) return ops;
         Matcher m = APP_OP.matcher(output);
         while (m.find()) {
-            if (!"allow".equals(m.group(2))) ops.put(m.group(1), m.group(2));
+            ops.put(m.group(1), m.group(2));
         }
         return ops;
     }

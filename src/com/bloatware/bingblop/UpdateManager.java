@@ -11,6 +11,12 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -29,6 +35,37 @@ public final class UpdateManager {
 
     public interface Progress {
         void onProgress(long done, long total);
+    }
+
+    // Every regex matched here (Obtainium catalog's versionExtractionRegEx, apkFilterRegEx) comes from a
+    // network response - a community catalog entry or a self-hosted source - so a syntactically valid but
+    // catastrophically-backtracking pattern must not be able to hang the caller. Java's Matcher has no
+    // interruptible find(), so this runs it on a small, bounded pool instead: a timed-out match still leaks
+    // that one stuck thread, but the pool's fixed size caps how many can ever accumulate, and a cancelled
+    // *queued* task (once the pool is full) never runs at all.
+    private static final ExecutorService REGEX_EXECUTOR = Executors.newFixedThreadPool(2, new ThreadFactory() {
+        @Override
+        public Thread newThread(Runnable r) {
+            Thread t = new Thread(r, "update-regex");
+            t.setDaemon(true);
+            return t;
+        }
+    });
+    private static final long REGEX_TIMEOUT_MS = 2000;
+
+    private static boolean findWithTimeout(final Matcher m) {
+        Future<Boolean> f = REGEX_EXECUTOR.submit(new Callable<Boolean>() {
+            @Override
+            public Boolean call() {
+                return m.find();
+            }
+        });
+        try {
+            return f.get(REGEX_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+        } catch (Exception e) {
+            f.cancel(true);
+            return false;
+        }
     }
 
     /** Device identity Samsung's service uses to pick the right build for this phone and region. */
@@ -86,6 +123,10 @@ public final class UpdateManager {
         }
     }
 
+    // No real update APK comes anywhere near this; it exists so an open-ended or misbehaving response
+    // (no Content-Length to check completeness against) can't fill the phone's storage.
+    private static final long MAX_DOWNLOAD_BYTES = 2L * 1024 * 1024 * 1024;
+
     public static void download(String url, File dest, Progress progress) throws Exception {
         HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
         File tmp = new File(dest.getParentFile(), dest.getName() + ".part");
@@ -105,8 +146,9 @@ public final class UpdateManager {
             int n;
             try {
                 while ((n = in.read(buf)) > 0) {
-                    out.write(buf, 0, n);
                     done += n;
+                    if (done > MAX_DOWNLOAD_BYTES) throw new IllegalStateException("download is far larger than any real update; stopped");
+                    out.write(buf, 0, n);
                     if (progress != null && done - lastReport > 256 * 1024) {
                         lastReport = done;
                         progress.onProgress(done, total);
@@ -116,7 +158,10 @@ public final class UpdateManager {
                 in.close();
                 out.close();
             }
-            if (total > 0 && done != total) throw new IllegalStateException("download incomplete");
+            // A known total must match exactly; an unknown one (no Content-Length, e.g. chunked) at least
+            // must not be empty - the caller verifies the actual package/version/signature before installing
+            // anything, so this only guards against treating a trivially-empty or truncated stream as success.
+            if (total > 0 ? done != total : done == 0) throw new IllegalStateException("download incomplete");
             if (dest.exists()) dest.delete();
             if (!tmp.renameTo(dest)) throw new IllegalStateException("could not save download");
             if (progress != null) progress.onProgress(done, total);
@@ -163,7 +208,7 @@ public final class UpdateManager {
         String url = STUB_BASE + "stubDownload.as?appId=" + enc(pkg) + d.query();
         String xml = new String(httpGet(url, null, 256 * 1024), "UTF-8");
         String uri = xmlTag(xml, "downloadURI");
-        if (uri.isEmpty() || !uri.startsWith("http")) {
+        if (uri.isEmpty() || !uri.startsWith("https://")) {
             String msg = xmlTag(xml, "resultMsg");
             throw new IllegalStateException("Galaxy Store gave no download link" + (msg.isEmpty() ? "" : ": " + msg));
         }
@@ -390,7 +435,7 @@ public final class UpdateManager {
         if (regex == null || regex.isEmpty()) return tag;
         try {
             Matcher m = Pattern.compile(regex).matcher(tag);
-            if (!m.find()) return tag;
+            if (!findWithTimeout(m)) return tag;
             int g = 0;
             try {
                 g = Integer.parseInt(group == null || group.isEmpty() ? "0" : group.replaceAll("[^0-9]", ""));
@@ -416,7 +461,7 @@ public final class UpdateManager {
         for (String[] a : assets) {
             String name = a[0].toLowerCase();
             if (!name.endsWith(".apk")) continue;
-            if (filter != null && filter.matcher(a[0]).find() == invertFilter) continue;
+            if (filter != null && findWithTimeout(filter.matcher(a[0])) == invertFilter) continue;
             int score = 0;
             boolean mentionsArch = false;
             String[][] archNames = {{"arm64-v8a", "arm64", "aarch64", "armv8"}, {"armeabi-v7a", "armeabi", "armv7", "arm32"}, {"x86_64", "x64", "amd64"}, {"x86", "i686"}};

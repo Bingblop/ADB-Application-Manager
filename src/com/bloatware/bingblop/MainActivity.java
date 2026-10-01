@@ -1529,9 +1529,13 @@ public class MainActivity extends Activity {
                         zip.putNextEntry(new java.util.zip.ZipEntry("backup.json"));
                         zip.write(meta.toString(2).getBytes("UTF-8"));
                         zip.closeEntry();
-                        for (File f : files) {
-                            zip.putNextEntry(new java.util.zip.ZipEntry("apk/" + f.getName()));
-                            total += copyFile(f, zip);
+                        for (int i = 0; i < files.length; i++) {
+                            // apkFiles() always returns the base APK (ai.sourceDir) first; name it "base.apk"
+                            // regardless of its real on-disk name, since restore looks for that name and a
+                            // system app's source file is rarely actually called that (e.g. .../Settings.apk)
+                            String entryName = i == 0 ? "base.apk" : files[i].getName();
+                            zip.putNextEntry(new java.util.zip.ZipEntry("apk/" + entryName));
+                            total += copyFile(files[i], zip);
                             zip.closeEntry();
                         }
                         if (withData) {
@@ -1619,9 +1623,14 @@ public class MainActivity extends Activity {
                         java.util.zip.ZipEntry e;
                         while ((e = zin.getNextEntry()) != null) {
                             String n = e.getName();
+                            // runBackup always writes data.tar last. Skipping an unwanted entry by calling
+                            // getNextEntry() again would still make ZipInputStream fully inflate it first just to
+                            // find the end - for a multi-gigabyte data.tar that defeats the byte cap below before
+                            // it ever runs. Since nothing of ours follows data.tar, stop scanning instead.
+                            if ("data.tar".equals(n) && dataTar == null) break;
                             File dest = null;
                             if (n.matches("apk/[A-Za-z0-9_.+-]+\\.apk")) dest = new File(apkDir, n.substring(4));
-                            else if ("data.tar".equals(n) && dataTar != null) dest = dataTar;
+                            else if ("data.tar".equals(n)) dest = dataTar;
                             if (dest == null) continue; // anything else in the file is ignored
                             FileOutputStream out = new FileOutputStream(dest);
                             try {
@@ -1677,26 +1686,26 @@ public class MainActivity extends Activity {
                     try {
                         PackageInfo cur = pm.getPackageInfo(pkg, sigFlags);
                         installed = (cur.applicationInfo.flags & ApplicationInfo.FLAG_INSTALLED) != 0;
-                        java.util.Set<String> curSigners = signerDigests(cur, true);
-                        if (installed && !archiveSigners.isEmpty() && !curSigners.isEmpty()) {
-                            java.util.Set<String> common = new HashSet<String>(curSigners);
-                            common.retainAll(archiveSigners);
-                            if (common.isEmpty()) {
-                                throw new IllegalStateException("the installed app is signed with a different key than this backup's APK. Uninstall it first, then restore.");
-                            }
+                        if (installed) {
+                            requireCompatibleSigner(signerDigests(cur, true), archiveSigners,
+                                    "the installed app is signed with a different key than this backup's APK. Uninstall it first, then restore.");
                         }
                         sameVersion = installed && versionCodeOf(cur) == archiveVersionCode;
                     } catch (PackageManager.NameNotFoundException ignored) {}
 
-                    // A system app removed for this user is still on the system image: bring it back instead of installing
+                    // A system app removed for this user is still on the system image: bring it back instead of
+                    // installing. getPackageInfo(pkg, sigFlags) above throws for an app uninstalled-for-user, so
+                    // this is the only identity check this path gets - it must verify the signer itself, the
+                    // same as the installed-app branch above, rather than trusting the archive on its say-so.
                     String installNote = null;
                     if (!installed) {
-                        boolean onSystemImage = false;
+                        PackageInfo sysInfo = null;
                         try {
-                            pm.getPackageInfo(pkg, PackageManager.MATCH_UNINSTALLED_PACKAGES);
-                            onSystemImage = true;
+                            sysInfo = pm.getPackageInfo(pkg, PackageManager.MATCH_UNINSTALLED_PACKAGES | sigFlags);
                         } catch (PackageManager.NameNotFoundException ignored) {}
-                        if (onSystemImage) {
+                        if (sysInfo != null) {
+                            requireCompatibleSigner(signerDigests(sysInfo, true), archiveSigners,
+                                    "the system app on this phone is signed with a different key than this backup's APK - it does not match this device");
                             String o = new AndroidBridge().executeShell("pm install-existing " + pkg);
                             if (o.contains("installed for user")) {
                                 installed = true;
@@ -1734,7 +1743,7 @@ public class MainActivity extends Activity {
                     while (it != null && it.hasNext()) {
                         String op = it.next();
                         String mode = ops.optString(op);
-                        if (!op.matches("[A-Z][A-Z0-9_]+") || !mode.matches("ignore|deny|foreground")) continue;
+                        if (!op.matches("[A-Z][A-Z0-9_]+") || !mode.matches("allow|ignore|deny|foreground")) continue;
                         String o = bridge.setAppOp(pkg, op, mode).toLowerCase();
                         if (!o.contains("exception") && !o.contains("error")) opsSet++;
                     }
@@ -2007,6 +2016,18 @@ public class MainActivity extends Activity {
             }
         } catch (Exception ignored) {}
         return out;
+    }
+
+    /**
+     * Throws when two non-empty signer sets share no certificate. Used by both restore paths (an app
+     * currently installed for the user, and a system app only present on the system image) so a future
+     * change to this check can't land in one copy and leave the other unprotected.
+     */
+    private static void requireCompatibleSigner(java.util.Set<String> installedSigners, java.util.Set<String> archiveSigners, String message) {
+        if (installedSigners.isEmpty() || archiveSigners.isEmpty()) return; // nothing to compare; callers already distrust an empty archive set elsewhere
+        java.util.Set<String> common = new HashSet<String>(installedSigners);
+        common.retainAll(archiveSigners);
+        if (common.isEmpty()) throw new IllegalStateException(message);
     }
 
     private static final int REQ_IMPORT_OBTAINIUM = 4201;
@@ -2575,6 +2596,9 @@ public class MainActivity extends Activity {
         /** The profile whose apps the user wants to be told about when they come back ("" = none). */
         @JavascriptInterface
         public void setWatchedProfile(final String name) {
+            // No separate baseline write needed here: this bridge method only exists once the WebView is up,
+            // which means onCreate's non-headless branch has already run this launch and recorded "app_fp" -
+            // the exact value BootReceiver falls back to when it has no baseline of its own yet.
             prefs.edit().putString("watched_profile", name == null ? "" : name).apply();
             if (name != null && !name.isEmpty() && Build.VERSION.SDK_INT >= 33
                     && checkSelfPermission("android.permission.POST_NOTIFICATIONS") != PackageManager.PERMISSION_GRANTED) {

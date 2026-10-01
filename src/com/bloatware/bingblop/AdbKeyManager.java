@@ -46,9 +46,17 @@ public final class AdbKeyManager {
         writeFile(privateFile, pem.getBytes(StandardCharsets.US_ASCII));
 
         RSAPrivateCrtKey priv = (RSAPrivateCrtKey) kp.getPrivate();
-        String pubLine = Base64.encodeToString(encodePublicKey(priv.getModulus(), priv.getPublicExponent()), Base64.NO_WRAP)
-                + " " + name + "\n";
-        writeFile(publicFile, pubLine.getBytes(StandardCharsets.US_ASCII));
+        String pubLine;
+        try {
+            pubLine = Base64.encodeToString(encodePublicKey(priv.getModulus(), priv.getPublicExponent()), Base64.NO_WRAP)
+                    + " " + name + "\n";
+            writeFile(publicFile, pubLine.getBytes(StandardCharsets.US_ASCII));
+        } catch (Exception e) {
+            // A new private key must never be left on disk paired with a stale public key: that combination
+            // reads as "already has a private per-install key" to the caller and would never be regenerated.
+            privateFile.delete();
+            throw e;
+        }
 
         // Owner-only access; the adb client runs as this app's uid
         privateFile.setReadable(false, false);
@@ -60,6 +68,10 @@ public final class AdbKeyManager {
 
     /** adb's binary RSAPublicKey encoding. */
     static byte[] encodePublicKey(BigInteger n, BigInteger e) {
+        // toLittleEndian below silently keeps only the low MODULUS_BYTES bytes of whatever it's given; for a
+        // modulus bigger than that this struct's own fixed-size fields can't hold it, so a mismatched public
+        // key would be produced (and signed-off-by-the-struct) rather than an obvious error.
+        if (n.bitLength() > KEY_BITS) throw new IllegalArgumentException("modulus is larger than " + KEY_BITS + " bits");
         BigInteger r32 = BigInteger.ONE.shiftLeft(32);
         BigInteger n0inv = n.mod(r32).modInverse(r32).negate().mod(r32);
         BigInteger rr = BigInteger.ONE.shiftLeft(KEY_BITS).pow(2).mod(n);
@@ -112,9 +124,11 @@ public final class AdbKeyManager {
     }
 
     public static byte[] readFile(File f) throws Exception {
+        long length = f.length();
+        if (length > Integer.MAX_VALUE) throw new IllegalStateException("file too large to read into memory: " + f);
         FileInputStream in = new FileInputStream(f);
         try {
-            byte[] data = new byte[(int) f.length()];
+            byte[] data = new byte[(int) length];
             int off = 0;
             while (off < data.length) {
                 int r = in.read(data, off, data.length - off);
