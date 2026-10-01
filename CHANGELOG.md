@@ -1,5 +1,12 @@
 # Changelog
 
+## v3.4-Pro (versionCode 240)
+
+Installs over v3.1 – v3.3 without uninstalling (same signing key).
+
+- Color & Themes: **Material 3** is now the first palette and **Material You** the second, with the
+  six classic palettes below them.
+
 ## v3.3-Pro (versionCode 230)
 
 Installs over v3.1 / v3.2 without uninstalling (same signing key).

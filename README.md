@@ -5,7 +5,7 @@ package, freeze/enable, force-stop, clear data, uninstall for user 0, reinstall 
 manage permissions, save package lists, and run shell commands — through ADB TCP, Wireless
 Debugging, Shizuku or Root.
 
-**Latest release:** [`release/ADB_Application_Manager_Pro-v3.3.apk`](release/ADB_Application_Manager_Pro-v3.3.apk) — see [CHANGELOG.md](CHANGELOG.md).
+**Latest release:** [`release/ADB_Application_Manager_Pro-v3.4.apk`](release/ADB_Application_Manager_Pro-v3.4.apk) — see [CHANGELOG.md](CHANGELOG.md).
 
 ## Working modes
 
@@ -35,8 +35,8 @@ Reinstall, Remove Updates, App Info) and five tabs:
 
 ## Themes
 
-Six dark palettes plus **Material 3** (M3 baseline dark scheme) and **Material You** (M3 dynamic
-color from your wallpaper, Android 12+). Every color can be fine-tuned, and the theme is remembered
+**Material 3** (M3 baseline dark scheme) and **Material You** (M3 dynamic color from your
+wallpaper, Android 12+) come first, followed by six classic dark palettes. Every color can be fine-tuned, and the theme is remembered
 between launches.
 
 ## Project layout
