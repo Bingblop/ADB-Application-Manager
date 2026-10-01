@@ -1813,6 +1813,26 @@
             color: var(--status-bloat);
             font-weight: 800;
         }
+        .uad-brand-row {
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            scrollbar-width: none;
+            padding-bottom: 2px;
+        }
+
+        .uad-brand-row::-webkit-scrollbar {
+            display: none;
+        }
+
+        .uad-brand-row .filter-chip {
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .uad-brand-row .filter-chip.device-brand:not(.active) {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
     </style>
 </head>
 <body>
@@ -1949,6 +1969,7 @@
                 <span class="filter-chip" data-list="Carrier" onclick="setUadList('Carrier')">Carrier</span>
                 <span class="filter-chip" data-list="Misc" onclick="setUadList('Misc')">Misc</span>
             </div>
+            <div class="chip-row uad-brand-row" id="uadBrandRow"></div>
             <div class="chip-row" id="uadStateRow">
                 <span class="filter-chip active" data-state="present" onclick="setUadState('present')">On device</span>
                 <span class="filter-chip" data-state="enabled" onclick="setUadState('enabled')">Enabled</span>
@@ -3472,7 +3493,105 @@ Type any command below (e.g. pm list packages -d)
         let uadLoaded = false;
         const uadSelected = new Set();
         const uadExpanded = new Set();
-        const uadFilters = { removal: new Set(['Recommended']), list: 'all', state: 'present' };
+        const uadFilters = { removal: new Set(['Recommended']), list: 'all', state: 'present', brand: 'all' };
+
+        // UAD-NG has no brand field, so the maker is derived from the package name
+        const UAD_BRAND_PREFIXES = [
+            ['Samsung', ['com.samsung.', 'com.sec.', 'com.osp.', 'com.wssyncmldm', 'com.wsomacp', 'com.policydm', 'com.skms.']],
+            ['Google', ['com.google.', 'com.android.vending', 'com.android.chrome']],
+            ['Meta', ['com.facebook.', 'com.instagram.', 'com.whatsapp', 'com.meta.']],
+            ['Microsoft', ['com.microsoft.', 'com.skype.', 'com.linkedin.']],
+            ['Amazon', ['com.amazon.', 'in.amazon.']],
+            ['Xiaomi', ['com.xiaomi.', 'com.miui.', 'com.mi.']],
+            ['Huawei', ['com.huawei.', 'com.hihonor.']],
+            ['OnePlus', ['com.oneplus.', 'net.oneplus.']],
+            ['Oppo', ['com.oppo.', 'com.oplus.', 'com.coloros.', 'com.heytap.', 'com.nearme.']],
+            ['Realme', ['com.realme.']],
+            ['Vivo', ['com.vivo.', 'com.bbk.', 'com.iqoo.']],
+            ['Motorola', ['com.motorola.']],
+            ['Lenovo', ['com.lenovo.', 'com.zui.']],
+            ['TCL', ['com.tcl.', 'com.tct.']],
+            ['Transsion', ['com.transsion.', 'com.infinix.', 'com.tecno.', 'com.itel.']],
+            ['Docomo', ['com.nttdocomo.', 'jp.co.nttdocomo.']],
+            ['LG', ['com.lge.', 'com.lg.']],
+            ['Sony', ['com.sony.', 'com.sonyericsson.', 'com.sonymobile.']],
+            ['Asus', ['com.asus.']],
+            ['Nokia', ['com.hmdglobal.', 'com.evenwell.', 'com.nokia.']],
+            ['Qualcomm', ['com.qualcomm.', 'com.qti.', 'org.codeaurora.', 'vendor.qti.']],
+            ['MediaTek', ['com.mediatek.', 'com.mtk.']],
+            ['Unisoc', ['com.sprd.', 'com.unisoc.']],
+            ['ZTE', ['com.zte.']],
+            ['T-Mobile', ['com.tmobile.', 'com.tmo.', 'com.mobitv.', 'us.com.dt.']],
+            ['Verizon', ['com.verizon.', 'com.vzw.', 'com.motricity.verizon']],
+            ['AT&T', ['com.att.', 'com.attvideo.']],
+            ['Sprint', ['com.sprint.']],
+            ['Android', ['com.android.', 'android.']]
+        ];
+        // Build.MANUFACTURER values that differ from the brand names above
+        const UAD_MANUFACTURER_ALIASES = { 'hmd global': 'Nokia', 'zte': 'ZTE', 'honor': 'Huawei', 'iqoo': 'Vivo', 'lge': 'LG', 'tecno': 'Transsion', 'tecno mobile limited': 'Transsion', 'infinix': 'Transsion', 'infinix mobility limited': 'Transsion', 'itel': 'Transsion', 'tcl': 'TCL' };
+        // Brand names that appear as a whole segment in generic android.* / com.android.* packages
+        const UAD_SEGMENT_BRANDS = { samsung: 'Samsung', sec: 'Samsung', xiaomi: 'Xiaomi', miui: 'Xiaomi', huawei: 'Huawei', oneplus: 'OnePlus', oppo: 'Oppo', vivo: 'Vivo', motorola: 'Motorola', sony: 'Sony', lge: 'LG', asus: 'Asus', qualcomm: 'Qualcomm', mediatek: 'MediaTek' };
+        const UAD_TLDS = ['com', 'org', 'net', 'de', 'in', 'tv', 'io', 'co', 'cn', 'jp', 'kr', 'tw', 'us', 'uk', 'eu', 'me', 'fr', 'it', 'es', 'br', 'ru', 'mx', 'au', 'ca', 'nl', 'se', 'ch', 'at', 'pl', 'vn', 'id', 'my', 'th', 'ph', 'sg', 'hk', 'za', 'ar', 'cl', 'pe', 'tr', 'gr', 'pt', 'be', 'dk', 'no', 'fi', 'ie', 'il', 'ae', 'sa', 'eg', 'ng', 'ke', 'pk', 'bd', 'lk', 'nz', 'app', 'dev']
+        let uadDeviceBrand = null;
+
+        function uadBrandOf(pkg) {
+            const parts = pkg.split('.');
+            for (const [brand, prefixes] of UAD_BRAND_PREFIXES) {
+                if (!prefixes.some(pre => pkg === pre.replace(/\.$/, '') || pkg.startsWith(pre))) continue;
+                if (brand === 'Android') {
+                    // e.g. android.autoinstalls.config.samsung belongs to the OEM, not AOSP
+                    const seg = parts.find(x => UAD_SEGMENT_BRANDS[x]);
+                    if (seg) return UAD_SEGMENT_BRANDS[seg];
+                }
+                return brand;
+            }
+            // Fallback: the organisation part of the name (com.netflix.mediaclient -> Netflix, jp.co.rakuten.x -> Rakuten)
+            let i = 0;
+            if (UAD_TLDS.includes(parts[0]) && parts.length > 1) i = 1;
+            if (i === 1 && ['co', 'com', 'ne', 'or', 'ac'].includes(parts[1]) && parts.length > 2) i = 2;
+            const org = parts[i] || pkg;
+            // microsoftsdk -> Microsoft, samsungpay -> Samsung
+            const known = UAD_BRAND_PREFIXES.map(b => b[0]).find(b => b.length >= 4 && org.toLowerCase().startsWith(b.toLowerCase()));
+            if (known) return known;
+            return org.charAt(0).toUpperCase() + org.slice(1);
+        }
+
+        function detectDeviceBrand() {
+            if (uadDeviceBrand !== null) return uadDeviceBrand;
+            uadDeviceBrand = '';
+            try {
+                const info = JSON.parse(window.AndroidBridge.getSystemInfo() || '{}');
+                const raw = String(info.manufacturer || info.brand || '').trim().toLowerCase();
+                if (raw) {
+                    const known = UAD_BRAND_PREFIXES.map(b => b[0]).find(b => b.toLowerCase() === raw);
+                    uadDeviceBrand = known || UAD_MANUFACTURER_ALIASES[raw] || (raw.charAt(0).toUpperCase() + raw.slice(1));
+                }
+            } catch (e) {}
+            return uadDeviceBrand;
+        }
+
+        function setUadBrand(brand) {
+            uadFilters.brand = brand;
+            haptic();
+            renderUadList();
+        }
+
+        // Brand chips: this phone's brand first, then the others by package count (counts follow the other filters)
+        function renderUadBrandChips() {
+            const row = document.getElementById('uadBrandRow');
+            if (!row) return;
+            const counts = new Map();
+            uadVisiblePackages(true).forEach(p => counts.set(p.brand, (counts.get(p.brand) || 0) + 1));
+            const device = detectDeviceBrand();
+            const brands = Array.from(counts.keys()).sort((a, b) =>
+                (b === device) - (a === device) || counts.get(b) - counts.get(a) || a.localeCompare(b));
+            if (uadFilters.brand !== 'all' && !counts.has(uadFilters.brand)) brands.unshift(uadFilters.brand);
+            const total = Array.from(counts.values()).reduce((a, b) => a + b, 0);
+            const chip = (value, label, extra) =>
+                `<span class="filter-chip ${uadFilters.brand === value ? 'active' : ''} ${extra || ''}" data-brand="${escapeHtml(value)}" onclick="setUadBrand(this.getAttribute('data-brand'))">${label}</span>`;
+            row.innerHTML = chip('all', `All brands (${total})`) + brands.map(b =>
+                chip(b, `${b === device ? '📱 ' : ''}${escapeHtml(b)} (${counts.get(b) || 0})`, b === device ? 'device-brand' : '')).join('');
+        }
 
         function uadBridge() {
             return window.AndroidBridge && window.AndroidBridge.getUadMatches ? window.AndroidBridge : null;
@@ -3520,7 +3639,7 @@ Type any command below (e.g. pm list packages -d)
             if (!bridge) return;
             try {
                 const r = JSON.parse(bridge.getUadMatches() || '{}');
-                uadPackages = r.packages || [];
+                uadPackages = (r.packages || []).map(p => Object.assign(p, { brand: uadBrandOf(p.pkg) }));
                 uadLoaded = true;
                 const present = new Set(uadPackages.map(p => p.pkg));
                 Array.from(uadSelected).forEach(p => { if (!present.has(p)) uadSelected.delete(p); });
@@ -3583,14 +3702,15 @@ Type any command below (e.g. pm list packages -d)
             renderUadList();
         }
 
-        function uadVisiblePackages() {
+        function uadVisiblePackages(ignoreBrand) {
             const q = (document.getElementById('uadSearch').value || '').toLowerCase().trim();
             return uadPackages.filter(p => {
+                if (!ignoreBrand && uadFilters.brand !== 'all' && p.brand !== uadFilters.brand) return false;
                 if (uadFilters.removal.size && !uadFilters.removal.has(p.removal)) return false;
                 if (uadFilters.list !== 'all' && p.list !== uadFilters.list) return false;
                 if (uadFilters.state === 'present' && p.state === 'uninstalled') return false;
                 if (['enabled', 'disabled', 'uninstalled'].includes(uadFilters.state) && p.state !== uadFilters.state) return false;
-                if (q && !(p.pkg.toLowerCase().includes(q) || p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q))) return false;
+                if (q && !(p.pkg.toLowerCase().includes(q) || p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q))) return false;
                 return true;
             }).sort((a, b) => (UAD_LEVEL_ORDER[a.removal] - UAD_LEVEL_ORDER[b.removal]) || a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
         }
@@ -3611,6 +3731,7 @@ Type any command below (e.g. pm list packages -d)
                 container.innerHTML = '<div class="list-empty">Waiting for the UAD-NG list...</div>';
                 return;
             }
+            renderUadBrandChips();
             const rows = uadVisiblePackages();
             document.getElementById('uadCount').innerText = `${rows.length} shown • ${uadSelected.size} selected`;
             if (!rows.length) {
@@ -3636,7 +3757,7 @@ Type any command below (e.g. pm list packages -d)
                         <div class="uad-main" onclick="toggleUadExpand(this.parentElement.getAttribute('data-pkg'))">
                             <div class="uad-name">${escapeHtml(p.name)}</div>
                             <div class="uad-pkg">${escapeHtml(p.pkg)}</div>
-                            <div>${uadRemovalBadge(p.removal)}<span class="uad-badge uad-tag">${escapeHtml(p.list)}</span>${state}${p.isSuspended ? '<span class="uad-badge" style="color:var(--status-suspended)">suspended</span>' : ''}</div>
+                            <div>${uadRemovalBadge(p.removal)}<span class="uad-badge uad-tag">${escapeHtml(p.brand)}</span><span class="uad-badge uad-tag">${escapeHtml(p.list)}</span>${state}${p.isSuspended ? '<span class="uad-badge" style="color:var(--status-suspended)">suspended</span>' : ''}</div>
                             ${p.description ? `<div class="uad-desc">${escapeHtml(p.description.trim())}</div>` : ''}
                             ${warn}
                         </div>

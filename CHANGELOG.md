@@ -1,5 +1,18 @@
 # Changelog
 
+## v3.9-Pro (versionCode 290)
+
+Installs over v3.1 – v3.8 without uninstalling (same signing key).
+
+### Debloater: filter by brand
+- New brand filter row in the Debloater. Your phone's own brand comes first (📱, detected from the
+  phone's manufacturer), followed by the other brands found on the phone (Google, Meta, Microsoft,
+  carriers, chip makers...), each with a package count that follows the other filters.
+- UAD-NG has no brand field, so the maker is worked out from the package name (`com.samsung.*` /
+  `com.sec.*` → Samsung, `com.facebook.*` → Meta, `com.oplus.*` → Oppo, and so on), with a
+  fallback to the organisation part of the name. Each package also shows its brand as a badge,
+  and search matches brand names.
+
 ## v3.8-Pro (versionCode 280)
 
 Installs over v3.1 – v3.7 without uninstalling (same signing key).

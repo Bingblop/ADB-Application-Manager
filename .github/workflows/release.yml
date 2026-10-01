@@ -10,7 +10,7 @@ on:
       version:
         description: 'Version to publish (matches release/ADB_Application_Manager_Pro-v<version>.apk)'
         required: true
-        default: '3.8'
+        default: '3.9'
 
 permissions:
   contents: write
