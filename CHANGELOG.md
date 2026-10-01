@@ -1,5 +1,21 @@
 # Changelog
 
+## v4.6-Pro (versionCode 360)
+
+Installs over v3.1 – v4.5 without uninstalling (same signing key).
+
+- **Copy buttons and share sheet**: 📋 Package / Version / Name chips and 📤 Share in the app menu;
+  **Copy Packages** and **Share List** for a batch selection; **Share CSV** for the app list; **Share**
+  for the manifest and the terminal output; **Share APK** extracts an app and opens the share sheet.
+  Files go through a private, non-exported provider (`ShareProvider`) with one-off read grants.
+- **Search with highlight**: the manifest viewer and the terminal highlight every match, show
+  "2 / 7 matches" and jump with ▲ ▼. The manifest viewer keeps "Matches only" (with line numbers) and can
+  show the whole file in context instead.
+- **🗂️ App profiles**: save the disabled / suspended / uninstalled apps under a name, preview what
+  applying would change, apply (recorded in History, so it can be undone), share as
+  `.adbprofile.json` and import on another phone.
+- README rewritten with screenshots, code snippets and the full feature list.
+
 ## v4.5-Pro (versionCode 350)
 
 Installs over v3.1 – v4.4 without uninstalling (same signing key).

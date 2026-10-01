@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.bloatware.bingblop"
-    android:versionCode="350"
-    android:versionName="4.5-Pro">
+    android:versionCode="360"
+    android:versionName="4.6-Pro">
 
     <uses-sdk
         android:minSdkVersion="26"
@@ -70,6 +70,13 @@
             android:enabled="true"
             android:exported="true"
             android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
+
+        <!-- Lets the share sheet read exported lists/APKs from this app's cache (one-off URI grants only) -->
+        <provider
+            android:name=".ShareProvider"
+            android:authorities="com.bloatware.bingblop.share"
+            android:exported="false"
+            android:grantUriPermissions="true" />
 
     </application>
 </manifest>

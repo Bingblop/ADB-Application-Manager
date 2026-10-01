@@ -67,6 +67,28 @@
             user-select: none;
         }
 
+        .copy-chip, .find-nav, .profile-btn { -webkit-user-select: none; user-select: none; }
+        .copy-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+        .copy-chip {
+            border: 1px solid var(--border); background: var(--bg-card, transparent); color: var(--text-main);
+            font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 12px; cursor: pointer;
+        }
+        .copy-chip:active { transform: scale(0.96); }
+        .find-bar { display: flex; align-items: center; gap: 6px; margin: 8px 0; }
+        .find-bar .list-search { flex: 1; min-width: 0; margin: 0; }
+        .find-nav {
+            border: 1px solid var(--border); background: transparent; color: var(--text-main);
+            border-radius: 10px; padding: 6px 10px; font-size: 13px; cursor: pointer;
+        }
+        mark.find-hit { background: #FFA726; color: #000; border-radius: 2px; }
+        mark.find-hit.current { background: #FF5252; color: #fff; outline: 1px solid #fff; }
+        .profile-item { border: 1px solid var(--border); border-radius: 14px; padding: 10px 12px; margin-bottom: 8px; }
+        .profile-item h4 { font-size: 14px; margin-bottom: 2px; }
+        .profile-item p { font-size: 11px; color: var(--text-muted); }
+        .profile-btn { border: 1px solid var(--border); background: transparent; color: var(--text-main); border-radius: 10px; padding: 5px 10px; font-size: 11px; font-weight: 700; cursor: pointer; margin: 6px 6px 0 0; }
+        .profile-btn.accent { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .profile-btn.danger { color: var(--status-danger, #FF5252); }
+        .profile-preview { font-size: 12px; line-height: 1.5; padding: 8px 10px; border-radius: 10px; background: var(--accent-glow); margin-top: 8px; }
         ::selection {
             background: var(--accent-glow);
             color: var(--text-main);
@@ -1993,6 +2015,7 @@
             align-items: center;
             gap: 8px;
             margin: -4px 0 10px;
+            flex-wrap: wrap;
         }
 
         .apps-sort-label {
@@ -2003,7 +2026,7 @@
 
         .apps-sort-select {
             flex: 1;
-            min-width: 0;
+            min-width: 120px;
         }
 
         .app-meta-line {
@@ -2107,6 +2130,8 @@
                     <option value="updates">Updates first</option>
                 </select>
                 <button class="mode-action-btn" onclick="exportAppList()">📤 Export</button>
+                <button class="mode-action-btn" onclick="exportAppList(true)">📨 Share CSV</button>
+                <button class="mode-action-btn" onclick="openProfiles()">🗂️ Profiles</button>
             </div>
 
             <div class="filter-scroll">
@@ -2464,6 +2489,14 @@
                 </div>
             </div>
 
+            <div class="find-bar">
+                <input type="text" class="list-search" id="termSearch" placeholder="Find in output..." oninput="termFind(0)" autocomplete="off" autocapitalize="off" spellcheck="false">
+                <span class="manifest-meta" id="termFindCount"></span>
+                <button class="find-nav" onclick="termFind(-1)">▲</button>
+                <button class="find-nav" onclick="termFind(1)">▼</button>
+                <button class="find-nav" onclick="copyTerminal()">📋</button>
+                <button class="find-nav" onclick="shareTerminal()">📤</button>
+            </div>
             <div class="terminal-box" id="termOutput">ADB Application Manager Shell Terminal Ready.
 Type any command below (e.g. pm list packages -d)
 </div>
@@ -2490,6 +2523,10 @@ Type any command below (e.g. pm list packages -d)
         </div>
         <div class="batch-save-row">
             <button class="batch-grid-btn accent" onclick="openSaveSelectedModal()">💾 Save to List</button>
+            <div class="copy-row">
+                <button class="batch-grid-btn" onclick="copySelectedPackages()">📋 Copy Packages</button>
+                <button class="batch-grid-btn" onclick="shareSelectedPackages()">📤 Share List</button>
+            </div>
         </div>
         <div class="batch-actions-grid">
             <button class="batch-grid-btn" onclick="batchAction('freeze')">❄️ Freeze</button>
@@ -2524,6 +2561,33 @@ Type any command below (e.g. pm list packages -d)
         </div>
     </div>
 
+    <!-- App profiles -->
+    <div class="modal-overlay" id="profilesModal" onclick="if(event.target===this) closeProfiles()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-avatar" style="background:linear-gradient(135deg, var(--accent), var(--secondary));">🗂️</div>
+                    <div class="sheet-title">
+                        <h3>App Profiles</h3>
+                        <p>Save which apps are disabled, suspended or uninstalled, and re-apply it later or on another phone</p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="closeProfiles()">✕</div>
+            </div>
+            <div class="find-bar">
+                <input type="text" class="list-search" id="profileName" placeholder="Profile name (e.g. Lean Samsung)" autocomplete="off">
+                <button class="find-nav" onclick="saveProfile()">💾 Save</button>
+            </div>
+            <p style="font-size:11px; color:var(--text-muted);" id="profileScopeHint"></p>
+            <div id="profilesList" style="max-height:38vh; overflow-y:auto; margin-top:8px;"></div>
+            <div id="profilePreview" class="profile-preview" style="display:none;"></div>
+            <textarea id="profileImport" class="list-search" rows="3" style="width:100%; margin-top:10px;" placeholder="Paste a shared profile here to import it" spellcheck="false"></textarea>
+            <div class="mode-btn-row" style="margin-top:8px;">
+                <button class="mode-action-btn" onclick="importProfile()">📥 Import</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Inspector Modal -->
     <div class="modal-overlay" id="inspectorModal" onclick="if(event.target===this) closeInspector()">
         <div class="modal-sheet">
@@ -2534,6 +2598,12 @@ Type any command below (e.g. pm list packages -d)
                         <h3 id="sheetTitle">App Title</h3>
                         <p id="sheetPkg">com.example.package</p>
                         <p id="sheetVersion" class="sheet-version"></p>
+                        <div class="copy-row">
+                            <span class="copy-chip" onclick="copyAppField('pkg')">📋 Package</span>
+                            <span class="copy-chip" onclick="copyAppField('version')">📋 Version</span>
+                            <span class="copy-chip" onclick="copyAppField('name')">📋 Name</span>
+                            <span class="copy-chip" onclick="shareAppInfo()">📤 Share</span>
+                        </div>
                         <p id="sheetDates" class="sheet-dates"></p>
                         <p id="sheetSizes" class="sheet-dates"></p>
                         <div id="sheetUpdateHint" class="sheet-update-hint" style="display:none;"></div>
@@ -2579,6 +2649,9 @@ Type any command below (e.g. pm list packages -d)
                 </button>
                 <button class="sheet-btn" onclick="extractApkUI()" id="sheetBtnExtract">
                     <span>📦</span><span>Extract APK</span>
+                </button>
+                <button class="sheet-btn" onclick="extractApkUI(true)" id="sheetBtnShareApk">
+                    <span>📤</span><span>Share APK</span>
                 </button>
             </div>
 
@@ -2657,7 +2730,11 @@ Type any command below (e.g. pm list packages -d)
                     <input type="text" class="list-search" id="manifestSearch" placeholder="Find in manifest..." oninput="renderManifest()" autocomplete="off" autocapitalize="off" spellcheck="false">
                 </div>
                 <div class="chip-row">
+                    <span class="filter-chip" onclick="manifestStep(-1)">▲</span>
+                    <span class="filter-chip" onclick="manifestStep(1)">▼</span>
+                    <span class="filter-chip active" id="manifestOnlyChip" onclick="toggleManifestOnly()">Matches only</span>
                     <span class="filter-chip" onclick="copyManifest()">📋 Copy</span>
+                    <span class="filter-chip" onclick="shareManifest()">📤 Share</span>
                     <span class="filter-chip" onclick="saveManifest()">💾 Save to Downloads</span>
                     <span class="manifest-meta" id="manifestMeta"></span>
                 </div>
@@ -4704,7 +4781,7 @@ Type any command below (e.g. pm list packages -d)
         }
 
         // Every app (not just the filtered view) with version, dates, state and size
-        function exportAppList() {
+        function exportAppList(share) {
             haptic();
             if (!allApps.length) { showToast('No apps loaded yet', 'ℹ️'); return; }
             const iso = ms => ms ? new Date(ms).toISOString().slice(0, 10) : '';
@@ -4716,6 +4793,7 @@ Type any command below (e.g. pm list packages -d)
             });
             const csv = rows.map(r => r.map(csvCell).join(',')).join('\n') + '\n';
             const name = 'app_list_' + new Date().toISOString().slice(0, 10) + '.csv';
+            if (share) { shareFileViaBridge(name, csv, 'text/csv'); return; }
             if (window.AndroidBridge && window.AndroidBridge.saveTextToDownloads) {
                 const res = window.AndroidBridge.saveTextToDownloads(name, csv) || '';
                 showToast(res.startsWith('Error:') ? res : `Exported ${allApps.length} apps to ${res}`, res.startsWith('Error:') ? '⚠️' : '📤');
@@ -4752,16 +4830,26 @@ Type any command below (e.g. pm list packages -d)
             }
         }
 
-        function extractApkUI() {
+        let shareAfterExtract = false;
+        function extractApkUI(share) {
             if (!inspectedPkg || !window.AndroidBridge || !window.AndroidBridge.extractApk) return;
             haptic();
-            showToast('Extracting APK...', '📦');
+            shareAfterExtract = share === true;
+            showToast(shareAfterExtract ? 'Extracting APK to share...' : 'Extracting APK...', '📦');
             window.AndroidBridge.extractApk(inspectedPkg);
         }
 
         // Called by MainActivity when the APK copy finishes
         function onApkExtracted(json) {
             const r = JSON.parse(json || '{}');
+            if (r.ok && shareAfterExtract) {
+                shareAfterExtract = false;
+                const nm = String(r.path || '').split('/').pop();
+                const err = window.AndroidBridge && window.AndroidBridge.shareStoredFile ? window.AndroidBridge.shareStoredFile(r.ref || r.path, r.mime || 'application/octet-stream', nm) : 'Error: sharing unavailable';
+                if (err) showToast(err, '⚠️');
+                return;
+            }
+            shareAfterExtract = false;
             if (r.ok) {
                 showToast(`Saved ${formatBytes(r.bytes)} to ${r.path}${r.splits > 1 ? ' (split app: install the .apks with a split-APK installer such as SAI)' : ''}`, '📦');
             } else {
@@ -5616,7 +5704,14 @@ Type any command below (e.g. pm list packages -d)
                 .replace(/([\w.:-]+)=(&quot;)(.*?)(&quot;)/g, '<span class="x-attr">$1</span>=$2<span class="x-val">$3</span>$4');
         }
 
-        function renderManifest() {
+        let manifestOnlyMatches = true;
+        function toggleManifestOnly() {
+            manifestOnlyMatches = !manifestOnlyMatches;
+            document.getElementById('manifestOnlyChip').classList.toggle('active', manifestOnlyMatches);
+            renderManifest();
+        }
+
+        function renderManifest(dir) {
             const container = document.getElementById('manifestContainer');
             const meta = document.getElementById('manifestMeta');
             if (!manifestText) return;
@@ -5630,19 +5725,166 @@ Type any command below (e.g. pm list packages -d)
             if (!q) {
                 container.innerHTML = lines.map(highlightXmlLine).join('\n');
                 meta.innerText = lines.length + ' lines';
+                findState.manifest = { idx: -1, hits: [] };
                 return;
             }
-            // Find mode: show only matching lines with their line numbers
-            const needle = q.toLowerCase();
-            const re = new RegExp(escapeHtml(q).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-            const hits = [];
-            lines.forEach((line, i) => {
-                if (line.toLowerCase().includes(needle)) {
-                    hits.push(String(i + 1).padStart(4, ' ') + '  ' + escapeHtml(line.trim()).replace(re, m => '<mark>' + m + '</mark>'));
-                }
+            if (manifestOnlyMatches) {
+                // Only the matching lines, each with its line number
+                const needle = q.toLowerCase();
+                const hits = [];
+                lines.forEach((line, i) => {
+                    if (line.toLowerCase().includes(needle)) hits.push(String(i + 1).padStart(4, ' ') + '  ' + escapeHtml(line.trim()));
+                });
+                container.innerHTML = hits.length ? hits.join('\n') : 'No matches.';
+            } else {
+                container.innerHTML = lines.map(highlightXmlLine).join('\n');
+            }
+            runFind('manifest', container, meta, q, dir === undefined ? 0 : dir, ' lines');
+        }
+
+        function manifestStep(dir) {
+            haptic();
+            renderManifest(dir);
+        }
+
+        // ---------- Find: highlight every match with next/previous ----------
+        const findState = { manifest: { idx: -1, hits: [] }, term: { idx: -1, hits: [] } };
+
+        function clearFind(el) {
+            el.querySelectorAll('mark.find-hit').forEach(m => {
+                const parent = m.parentNode;
+                parent.replaceChild(document.createTextNode(m.textContent), m);
+                parent.normalize();
             });
-            container.innerHTML = hits.length ? hits.join('\n') : 'No matches.';
-            meta.innerText = hits.length + ' matching line' + (hits.length === 1 ? '' : 's');
+        }
+
+        function applyFind(el, q) {
+            clearFind(el);
+            if (!q) return [];
+            const needle = q.toLowerCase();
+            const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+            const nodes = [];
+            let n;
+            while ((n = walker.nextNode())) nodes.push(n);
+            const hits = [];
+            nodes.forEach(node => {
+                const text = node.nodeValue;
+                const low = text.toLowerCase();
+                let i = low.indexOf(needle);
+                if (i < 0) return;
+                const frag = document.createDocumentFragment();
+                let last = 0;
+                while (i >= 0) {
+                    frag.appendChild(document.createTextNode(text.slice(last, i)));
+                    const m = document.createElement('mark');
+                    m.className = 'find-hit';
+                    m.textContent = text.slice(i, i + q.length);
+                    frag.appendChild(m);
+                    hits.push(m);
+                    last = i + q.length;
+                    i = low.indexOf(needle, last);
+                }
+                frag.appendChild(document.createTextNode(text.slice(last)));
+                node.parentNode.replaceChild(frag, node);
+            });
+            return hits;
+        }
+
+        // dir 0: a new query (jump to the first match); +1 / -1: next / previous (wraps around)
+        function runFind(key, el, countEl, q, dir, suffix) {
+            const st = findState[key];
+            st.hits = applyFind(el, q);
+            if (!st.hits.length) {
+                st.idx = -1;
+                if (countEl) countEl.innerText = q ? '0 matches' : (suffix ? countEl.innerText : '');
+                return;
+            }
+            st.idx = dir === 0 ? 0 : (st.idx + dir + st.hits.length) % st.hits.length;
+            const cur = st.hits[st.idx];
+            cur.classList.add('current');
+            cur.scrollIntoView({ block: 'center', inline: 'nearest' });
+            if (countEl) countEl.innerText = (st.idx + 1) + ' / ' + st.hits.length + ' matches';
+        }
+
+        function termFind(dir) {
+            const term = document.getElementById('termOutput');
+            const q = (document.getElementById('termSearch').value || '').trim();
+            runFind('term', term, document.getElementById('termFindCount'), q, dir);
+        }
+
+        function termText() {
+            return document.getElementById('termOutput').innerText;
+        }
+
+        function copyTerminal() {
+            haptic();
+            if (window.AndroidBridge && window.AndroidBridge.copyToClipboard) window.AndroidBridge.copyToClipboard(termText());
+        }
+
+        function shareTerminal() {
+            haptic();
+            shareFileViaBridge('terminal_output.txt', termText(), 'text/plain');
+        }
+
+        // ---------- Copy and share ----------
+        function copyText(text) {
+            haptic();
+            if (window.AndroidBridge && window.AndroidBridge.copyToClipboard) {
+                window.AndroidBridge.copyToClipboard(text);
+            } else if (navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(() => showToast('Copied', '📋'), () => {});
+            }
+        }
+
+        function shareFileViaBridge(name, text, mime) {
+            if (!window.AndroidBridge || !window.AndroidBridge.shareTextFile) { showToast('Sharing is only available in the app', 'ℹ️'); return; }
+            const err = window.AndroidBridge.shareTextFile(name, text, mime);
+            if (err) showToast(err, '⚠️');
+        }
+
+        function shareText(subject, text) {
+            if (!window.AndroidBridge || !window.AndroidBridge.shareText) { showToast('Sharing is only available in the app', 'ℹ️'); return; }
+            window.AndroidBridge.shareText(subject, text);
+        }
+
+        function inspectedApp() {
+            return allApps.find(a => a.pkg === inspectedPkg) || null;
+        }
+
+        function copyAppField(field) {
+            const a = inspectedApp();
+            if (!a) return;
+            const value = field === 'pkg' ? a.pkg : field === 'name' ? a.name : (a.version || '');
+            if (!value) { showToast('Not available for this app', 'ℹ️'); return; }
+            copyText(value);
+        }
+
+        function shareAppInfo() {
+            haptic();
+            const a = inspectedApp();
+            if (!a) return;
+            shareText(a.name, `${a.name}\n${a.pkg}${a.version ? '\nVersion ' + a.version : ''}`);
+        }
+
+        function selectedPackagesText() {
+            return Array.from(selectedPkgs).join('\n');
+        }
+
+        function copySelectedPackages() {
+            if (!selectedPkgs.size) { showToast('Select apps first', 'ℹ️'); return; }
+            copyText(selectedPackagesText());
+        }
+
+        function shareSelectedPackages() {
+            haptic();
+            if (!selectedPkgs.size) { showToast('Select apps first', 'ℹ️'); return; }
+            shareText('Package list', selectedPackagesText());
+        }
+
+        function shareManifest() {
+            haptic();
+            if (!manifestText || manifestText.startsWith('Error:')) { showToast('Manifest not loaded', '⚠️'); return; }
+            shareFileViaBridge(inspectedPkg + '_AndroidManifest.xml', manifestText, 'text/xml');
         }
 
         function copyManifest() {
@@ -5949,6 +6191,7 @@ Type any command below (e.g. pm list packages -d)
             input.value = '';
 
             const term = document.getElementById('termOutput');
+            clearFind(term);
             term.innerHTML += `
 <span style="color:var(--text-main);">$ ${escapeHtml(cmd)}</span>
 `;
@@ -5959,6 +6202,173 @@ Type any command below (e.g. pm list packages -d)
                 showCommandResults('Shell Command Result', cmd, [{ name: cmd, pkg: 'shell', output: res, success: true }]);
             }
             term.scrollTop = term.scrollHeight;
+            if (document.getElementById('termSearch').value) termFind(0);
+        }
+
+        // ---------- App profiles ----------
+        let profiles = null;
+        let profilePending = null;
+
+        function loadProfiles() {
+            if (profiles === null) profiles = loadStoreJson('profiles', []);
+            return profiles;
+        }
+
+        function persistProfiles() {
+            saveStoreJson('profiles', profiles);
+        }
+
+        function appStateOf(a) {
+            return a.isUninstalled ? 'uninstalled' : a.isSuspended ? 'suspended' : a.isFrozen ? 'disabled' : 'enabled';
+        }
+
+        function openProfiles() {
+            haptic();
+            loadProfiles();
+            profilePending = null;
+            document.getElementById('profilePreview').style.display = 'none';
+            document.getElementById('profileName').value = '';
+            document.getElementById('profilesModal').classList.add('show');
+            renderProfiles();
+        }
+
+        function closeProfiles() {
+            haptic();
+            document.getElementById('profilesModal').classList.remove('show');
+        }
+
+        function profileScope() {
+            const sel = selectedPkgs.size ? allApps.filter(a => selectedPkgs.has(a.pkg)) : allApps;
+            return sel.filter(a => appStateOf(a) !== 'enabled');
+        }
+
+        function renderProfiles() {
+            const scope = profileScope();
+            document.getElementById('profileScopeHint').innerText = (selectedPkgs.size ? 'Only the selected apps are saved. ' : 'Every app that is not enabled is saved. ') + scope.length + ' app' + (scope.length === 1 ? '' : 's') + ' would be saved now.';
+            const list = loadProfiles();
+            const el = document.getElementById('profilesList');
+            if (!list.length) { el.innerHTML = '<p style="font-size:12px; color:var(--text-muted);">No profiles yet. Disable, suspend or uninstall apps the way you like, then save them here.</p>'; return; }
+            el.innerHTML = list.map(pr => {
+                const c = { disabled: 0, suspended: 0, uninstalled: 0 };
+                pr.apps.forEach(a => { if (c[a.state] !== undefined) c[a.state]++; });
+                return `<div class="profile-item"><h4>${escapeHtml(pr.name)}</h4>
+                    <p>${pr.apps.length} apps • ${c.disabled} disabled • ${c.suspended} suspended • ${c.uninstalled} uninstalled • ${new Date(pr.created).toLocaleDateString()}</p>
+                    <button class="profile-btn accent" onclick="previewProfile('${pr.id}')">▶ Apply</button>
+                    <button class="profile-btn" onclick="shareProfile('${pr.id}')">📤 Share</button>
+                    <button class="profile-btn" onclick="copyProfile('${pr.id}')">📋 Copy</button>
+                    <button class="profile-btn danger" onclick="deleteProfile('${pr.id}')">🗑️ Delete</button></div>`;
+            }).join('');
+        }
+
+        function saveProfile() {
+            const name = document.getElementById('profileName').value.trim();
+            if (!name) { showToast('Give the profile a name', '⚠️'); return; }
+            const apps = profileScope().map(a => ({ pkg: a.pkg, name: a.name, state: appStateOf(a) }));
+            if (!apps.length) { showToast('No disabled, suspended or uninstalled apps to save', 'ℹ️'); return; }
+            loadProfiles().unshift({ id: 'prof_' + Date.now(), name, created: Date.now(), apps });
+            persistProfiles();
+            document.getElementById('profileName').value = '';
+            renderProfiles();
+            showToast(`Saved profile "${name}" (${apps.length} apps)`, '🗂️');
+        }
+
+        function profileJson(id) {
+            const pr = loadProfiles().find(x => x.id === id);
+            return pr ? JSON.stringify({ format: 'adb-app-manager-profile', v: 1, name: pr.name, created: pr.created, apps: pr.apps }, null, 2) : '';
+        }
+
+        function shareProfile(id) {
+            haptic();
+            const pr = loadProfiles().find(x => x.id === id);
+            if (pr) shareFileViaBridge(pr.name.replace(/[^A-Za-z0-9 _-]/g, '_') + '.adbprofile.json', profileJson(id), 'application/json');
+        }
+
+        function copyProfile(id) {
+            copyText(profileJson(id));
+        }
+
+        function deleteProfile(id) {
+            haptic();
+            profiles = loadProfiles().filter(x => x.id !== id);
+            persistProfiles();
+            profilePending = null;
+            document.getElementById('profilePreview').style.display = 'none';
+            renderProfiles();
+        }
+
+        function importProfile() {
+            const raw = document.getElementById('profileImport').value.trim();
+            if (!raw) { showToast('Paste a profile first', 'ℹ️'); return; }
+            try {
+                const d = JSON.parse(raw);
+                if (d.format !== 'adb-app-manager-profile' || !Array.isArray(d.apps)) throw new Error('not a profile');
+                const apps = d.apps.filter(a => a && typeof a.pkg === 'string' && ['disabled', 'suspended', 'uninstalled'].includes(a.state))
+                    .map(a => ({ pkg: a.pkg, name: String(a.name || a.pkg), state: a.state }));
+                if (!apps.length) throw new Error('no apps');
+                loadProfiles().unshift({ id: 'prof_' + Date.now(), name: String(d.name || 'Imported profile').slice(0, 60), created: Date.now(), apps });
+                persistProfiles();
+                document.getElementById('profileImport').value = '';
+                renderProfiles();
+                showToast('Imported ' + apps.length + ' apps', '📥');
+            } catch (e) {
+                showToast('That is not a valid profile', '⚠️');
+            }
+        }
+
+        // Works out what has to change on this phone to match the profile
+        function profilePlan(pr) {
+            const plan = { freeze: [], suspend: [], uninstall: [], same: 0, missing: 0 };
+            pr.apps.forEach(entry => {
+                const a = allApps.find(x => x.pkg === entry.pkg);
+                if (!a) { plan.missing++; return; }
+                const now = appStateOf(a);
+                if (now === entry.state) { plan.same++; return; }
+                if (entry.state === 'disabled' && now === 'enabled') plan.freeze.push(a.pkg);
+                else if (entry.state === 'suspended' && now === 'enabled') plan.suspend.push(a.pkg);
+                else if (entry.state === 'uninstalled' && now !== 'uninstalled') plan.uninstall.push(a.pkg);
+                else plan.same++;
+            });
+            return plan;
+        }
+
+        function previewProfile(id) {
+            haptic();
+            const pr = loadProfiles().find(x => x.id === id);
+            if (!pr) return;
+            const plan = profilePlan(pr);
+            profilePending = { id, plan };
+            const total = plan.freeze.length + plan.suspend.length + plan.uninstall.length;
+            const box = document.getElementById('profilePreview');
+            box.style.display = 'block';
+            box.innerHTML = `<b>${escapeHtml(pr.name)}</b><br>Will disable ${plan.freeze.length}, suspend ${plan.suspend.length} and uninstall ${plan.uninstall.length} apps.<br>
+                ${plan.same} already match, ${plan.missing} are not on this phone and are skipped.<br>
+                <button class="profile-btn accent" ${total ? '' : 'disabled'} onclick="applyProfile()">Confirm apply (${total})</button>
+                <button class="profile-btn" onclick="document.getElementById('profilePreview').style.display='none'">Cancel</button>`;
+        }
+
+        function applyProfile() {
+            if (!profilePending) return;
+            if (!guardPrivilege('Apply profile')) return;
+            haptic();
+            const pr = loadProfiles().find(x => x.id === profilePending.id);
+            const plan = profilePending.plan;
+            profilePending = null;
+            document.getElementById('profilePreview').style.display = 'none';
+            if (!pr || !window.AndroidBridge) return;
+            const histRows = [];
+            const shown = [];
+            let ok = 0, bad = 0;
+            [['freeze', plan.freeze], ['suspend', plan.suspend], ['uninstall', plan.uninstall]].forEach(([action, pkgs]) => {
+                if (!pkgs.length) return;
+                const res = performDetailedBatchAction(action, pkgs);
+                ok += res.success; bad += res.failed;
+                res.rows.forEach(r => { shown.push(r); histRows.push({ pkg: r.pkg, name: r.name, action, success: r.success }); });
+            });
+            recordHistory('apps', `Applied profile "${pr.name}"`, histRows);
+            showToast(`Profile applied: ${ok} succeeded, ${bad} failed`, bad ? '⚠️' : '✔');
+            closeProfiles();
+            showCommandResults('Profile Results', pr.name + ' • ' + shown.length + ' apps', shown);
+            setTimeout(loadPackageData, 400);
         }
 
         // Init App on load

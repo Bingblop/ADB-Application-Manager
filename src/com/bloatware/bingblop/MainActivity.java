@@ -1502,12 +1502,12 @@ public class MainActivity extends Activity {
             values.put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, "Download/" + folder);
             Uri uri = getContentResolver().insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
             if (uri == null) throw new IllegalStateException("could not create " + safeName);
-            return new Object[]{getContentResolver().openOutputStream(uri), "Download/" + folder + "/" + safeName};
+            return new Object[]{getContentResolver().openOutputStream(uri), "Download/" + folder + "/" + safeName, uri.toString()};
         }
         File dir = new File(getExternalFilesDir(null), folder);
         if (!dir.exists()) dir.mkdirs();
         File file = new File(dir, safeName);
-        return new Object[]{new FileOutputStream(file), file.getAbsolutePath()};
+        return new Object[]{new FileOutputStream(file), file.getAbsolutePath(), file.getAbsolutePath()};
     }
 
     /** Copies an app's APK (or base + splits as a .apks bundle) to Downloads. Result via window.onApkExtracted(json). */
@@ -1552,6 +1552,8 @@ public class MainActivity extends Activity {
                     }
                     res.put("ok", true);
                     res.put("path", target[1]);
+                    res.put("ref", target[2]);
+                    res.put("mime", files.length == 1 ? "application/vnd.android.package-archive" : "application/octet-stream");
                     res.put("bytes", total);
                     res.put("splits", files.length);
                 } catch (Exception e) {
@@ -1582,7 +1584,7 @@ public class MainActivity extends Activity {
     }
 
     // Small JSON documents the UI keeps between launches (remembered filters, debloat history)
-    private static final java.util.Set<String> UI_STORE_KEYS = new HashSet<String>(java.util.Arrays.asList("ui_state", "debloat_history"));
+    private static final java.util.Set<String> UI_STORE_KEYS = new HashSet<String>(java.util.Arrays.asList("ui_state", "debloat_history", "profiles"));
 
     private int systemColor(String name) {
         int id = getResources().getIdentifier(name, "color", "android");
@@ -2578,6 +2580,88 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public String loadCustomLists() {
             return prefs.getString("custom_app_lists", "[]");
+        }
+
+        /** Opens the Android share sheet with plain text (package lists, versions, manifests). */
+        @JavascriptInterface
+        public void shareText(final String subject, final String text) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Intent send = new Intent(Intent.ACTION_SEND);
+                        send.setType("text/plain");
+                        send.putExtra(Intent.EXTRA_SUBJECT, subject == null ? "" : subject);
+                        send.putExtra(Intent.EXTRA_TEXT, text == null ? "" : text);
+                        startActivity(Intent.createChooser(send, "Share"));
+                    } catch (Exception e) {
+                        Log.e(TAG, "shareText failed", e);
+                    }
+                }
+            });
+        }
+
+        /** Writes text to a private cache file and shares it as an attachment (CSV, XML, JSON). Returns "" or "Error: ...". */
+        @JavascriptInterface
+        public String shareTextFile(String fileName, String text, String mime) {
+            try {
+                File f = ShareProvider.newShareFile(MainActivity.this, fileName);
+                OutputStream out = new FileOutputStream(f);
+                try {
+                    out.write((text == null ? "" : text).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                } finally {
+                    out.close();
+                }
+                shareUri(ShareProvider.uriFor(f), mime == null || mime.isEmpty() ? "text/plain" : mime, f.getName());
+                return "";
+            } catch (Exception e) {
+                return "Error: " + e.getMessage();
+            }
+        }
+
+        /** Shares a file this app saved to Downloads (a content:// reference, or a file path on Android 9 and older). */
+        @JavascriptInterface
+        public String shareStoredFile(String ref, String mime, String name) {
+            try {
+                Uri uri;
+                if (ref != null && ref.startsWith("content://")) {
+                    uri = Uri.parse(ref);
+                } else {
+                    File src = new File(ref);
+                    File copy = ShareProvider.newShareFile(MainActivity.this, name != null ? name : src.getName());
+                    java.io.FileOutputStream out = new java.io.FileOutputStream(copy);
+                    try {
+                        copyFile(src, out);
+                    } finally {
+                        out.close();
+                    }
+                    uri = ShareProvider.uriFor(copy);
+                }
+                shareUri(uri, mime == null || mime.isEmpty() ? "application/octet-stream" : mime, name);
+                return "";
+            } catch (Exception e) {
+                return "Error: " + e.getMessage();
+            }
+        }
+
+        private void shareUri(final Uri uri, final String mime, final String name) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Intent send = new Intent(Intent.ACTION_SEND);
+                        send.setType(mime);
+                        send.putExtra(Intent.EXTRA_STREAM, uri);
+                        if (name != null) send.putExtra(Intent.EXTRA_SUBJECT, name);
+                        send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                        Intent chooser = Intent.createChooser(send, "Share");
+                        chooser.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                        startActivity(chooser);
+                    } catch (Exception e) {
+                        Log.e(TAG, "share failed", e);
+                    }
+                }
+            });
         }
 
         @JavascriptInterface

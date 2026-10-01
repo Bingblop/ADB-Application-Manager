@@ -1,11 +1,114 @@
-# ADB Application Manager Pro
+<div align="center">
 
-Turn the Tasker bloatware removal tool into a native Android application: browse every installed
-package, freeze/enable, force-stop, clear data, uninstall for user 0, reinstall removed system apps,
-manage permissions, save package lists, and run shell commands — through ADB TCP, Wireless
-Debugging, Shizuku or Root.
+# ⚡ ADB Application Manager Pro
 
-**Latest release:** [`release/ADB_Application_Manager_Pro-v4.5.apk`](release/ADB_Application_Manager_Pro-v4.5.apk) — see [CHANGELOG.md](CHANGELOG.md).
+**Manage, debloat, update and inspect every app on your Android phone — straight from the phone.**
+
+Freeze · Suspend · Uninstall · Debloat · Update · Inspect manifests · Launch hidden activities · Extract APKs
+through **ADB over TCP, Wireless Debugging, Shizuku or Root**.
+
+[![Build APK](https://github.com/Bingblop/ADB-Application-Manager/actions/workflows/build.yml/badge.svg)](https://github.com/Bingblop/ADB-Application-Manager/actions/workflows/build.yml)
+[![Latest release](https://img.shields.io/github/v/release/Bingblop/ADB-Application-Manager?label=release)](https://github.com/Bingblop/ADB-Application-Manager/releases/latest)
+![Android 8.0+](https://img.shields.io/badge/Android-8.0%2B-3DDC84?logo=android&logoColor=white)
+
+### [⬇️ Download the latest APK](https://github.com/Bingblop/ADB-Application-Manager/releases/latest)
+
+`com.bloatware.bingblop` · v4.6-Pro · signed APK, installs over every earlier version without uninstalling
+
+<table>
+  <tr>
+    <td><img src="docs/screenshots/apps-dark.png" width="230" alt="Application list"></td>
+    <td><img src="docs/screenshots/app-menu.png" width="230" alt="App menu"></td>
+    <td><img src="docs/screenshots/debloater.png" width="230" alt="Debloater"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>App list: versions, update hints, sorting</sub></td>
+    <td align="center"><sub>App menu: sizes, dates, copy &amp; share</sub></td>
+    <td align="center"><sub>Debloater powered by UAD-NG</sub></td>
+  </tr>
+</table>
+
+</div>
+
+---
+
+## Contents
+
+[Download](#download--install) · [Features](#features) · [Screenshots](#screenshots) · [Working modes](#working-modes) ·
+[Debloater](#debloater) · [Updates](#updates) · [App menu](#app-menu) · [Profiles](#app-profiles) ·
+[Copy, share &amp; search](#copy-share-and-search) · [Themes](#themes) · [How it works](#how-it-works) ·
+[Building](#building) · [Project layout](#project-layout) · [Privacy &amp; security](#privacy--security)
+
+## Download &amp; install
+
+1. Open the [**Releases** page](https://github.com/Bingblop/ADB-Application-Manager/releases/latest) and download
+   `ADB_Application_Manager_Pro-v4.6.apk` (every version is also in [`release/`](release/), with
+   [`SHA256SUMS.txt`](release/SHA256SUMS.txt)).
+2. Allow installing from your browser or file manager when Android asks, then open the APK.
+3. Pick a [working mode](#working-modes). The easiest is **ADB over TCP**: run `adb tcpip 5555` once from a
+   computer, or use Wireless Debugging (Android 11+) with the in-app pairing flow.
+
+Check the download:
+
+```bash
+sha256sum -c SHA256SUMS.txt --ignore-missing
+```
+
+Updating: install the new APK over the old one. All releases are signed with the same key. The app can also
+tell you when a new version is out (see [Updates](#updates)).
+
+## Features
+
+| | |
+|---|---|
+| **Apps** | Browse every package, including ones uninstalled for your user · search · sort by name, update date, install date, size or "updates first" · filters for running, 3rd party, system, frozen, suspended, uninstalled and **updated in the last 7 days** · versions and update hints in the list · select many and run batch actions · save selections as named lists · export everything to CSV |
+| **Actions** | Launch · Force Stop · Freeze / Enable · **Suspend / Unsuspend** · Clear Data · Uninstall for user 0 · Reinstall removed system apps · Remove Updates · App Info · **Extract APK** · **Share APK**, all single-app or batch |
+| **Debloater** | The [UAD-NG](https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation) community list (5,000+ packages) with descriptions and dependency warnings · filter by removal level, vendor list, state and **phone brand** · review step before anything runs · **history log with one-tap Undo** |
+| **Updates** | **Galaxy Store** (Samsung system apps) · **GitHub, Codeberg, F-Droid, IzzyOnDroid and the Obtainium catalog** for sideloaded open-source apps · import your **Obtainium** export · Update one or **Update All** · signing-key check before installing |
+| **Inspector** | Permissions and App Ops as separate lists · all activities including **unexported ones, launchable through ADB / Shizuku / Root** · services · decoded **AndroidManifest.xml** viewer · version, install and update dates · APK, data and cache sizes |
+| **Profiles** | Save which apps are disabled, suspended or uninstalled; re-apply on this phone or **share to another phone** |
+| **Productivity** | Select and copy any text · copy buttons for package, version and name · **share sheet** for package lists, CSV, manifest, terminal output and APKs · **search with highlight and next/previous** in the manifest viewer and terminal · remembered filters and sort |
+| **Terminal** | Run shell commands through the active mode, with output search, copy and share |
+| **Modes** | ADB over TCP · Wireless Debugging (pairing and mDNS port detection) · Shizuku · Root · Automatic · Read-Only |
+| **Themes** | **Material 3** (default) · **Material You** (follows your wallpaper) · six more palettes · Light / Dark / System / Schedule · pure-black AMOLED option · per-mode color tuning |
+| **Security** | A **private ADB key is generated on each install** (nothing is bundled) · fingerprint shown in the app · signing-certificate comparison before every update |
+
+## Screenshots
+
+<table>
+  <tr>
+    <td><img src="docs/screenshots/batch-select.png" width="230" alt="Batch actions"></td>
+    <td><img src="docs/screenshots/manifest-search.png" width="230" alt="Manifest viewer with search"></td>
+    <td><img src="docs/screenshots/updates.png" width="230" alt="Updates tab"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Batch actions on the selection</sub></td>
+    <td align="center"><sub>Manifest viewer with highlighted matches and next/previous</sub></td>
+    <td align="center"><sub>Updates: Galaxy Store, F-Droid, GitHub</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/profiles.png" width="230" alt="App profiles"></td>
+    <td><img src="docs/screenshots/terminal-search.png" width="230" alt="Terminal search"></td>
+    <td><img src="docs/screenshots/working-modes.png" width="230" alt="Working modes"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>App profiles with a preview before applying</sub></td>
+    <td align="center"><sub>Terminal with find, copy and share</sub></td>
+    <td align="center"><sub>Working modes, ADB key fingerprint</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/apps-light.png" width="230" alt="Light theme"></td>
+    <td><img src="docs/screenshots/themes.png" width="230" alt="Theme picker"></td>
+    <td><img src="docs/screenshots/pure-black.png" width="230" alt="Pure black"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Light appearance</sub></td>
+    <td align="center"><sub>Material 3, Material You and more</sub></td>
+    <td align="center"><sub>Pure black for AMOLED</sub></td>
+  </tr>
+</table>
+
+> The screenshots are rendered from the app's real UI with sample data. The app itself runs on a phone.
 
 ## Working modes
 
@@ -14,80 +117,180 @@ Debugging, Shizuku or Root.
 | **Automatic** (default) | — | Uses the first ready backend: ADB TCP → Wireless Debugging → Shizuku |
 | **ADB over TCP** | `adb tcpip 5555` once | Connects to `127.0.0.1:5555` or any `IP:port` |
 | **Wireless Debugging** | Android 11+ | Pair with code, then connect. Fields accept `IP:port` or just the port; **Auto-Detect Ports** uses mDNS |
-| **Shizuku** | Shizuku running | Tap **Authorize & Use Shizuku** and approve the prompt |
+| **Shizuku** | Shizuku running | Tap **Authorize &amp; Use Shizuku** and approve the prompt |
 | **Root** | su (Magisk / KernelSU / APatch) | Requested on demand |
 | **Read-Only** | — | Inspect only |
 
-Every mode card has a **Use This Mode** button, so you can switch modes at any time — including
-while ADB TCP 5555 is enabled. Status checks never change the selected mode.
+Every mode card has a **Use This Mode** button, so you can switch at any time, including while ADB TCP 5555
+is enabled. Status checks never change the selected mode.
 
-**ADB key:** each install generates its own private ADB key on the phone (nothing is bundled in the
-APK). Working Modes shows its fingerprint, which matches the phone's "Allow debugging?" prompt.
+**ADB key:** each install generates its own private ADB key (nothing is bundled in the APK). Working Modes
+shows its fingerprint, which matches the phone's "Allow USB debugging?" prompt, with Copy and Regenerate.
 
 ## Debloater
 
-The **🧹 Debloater** tab uses the community package list from
-[Universal Android Debloater Next Generation](https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation/wiki)
-(UAD-NG). It shows the packages on your phone with UAD-NG's description and removal level
-(Recommended, Advanced, Expert, Unsafe). Filter by removal level, vendor list, state or brand (your
-phone's brand first), and uninstall (for your user), disable or restore
-them after a review step. The list is GPL-3.0 licensed, so it is downloaded from UAD-NG's GitHub at
-runtime and cached on the phone rather than included in this repository.
+The **🧹 Debloater** tab shows the packages on your phone with
+[UAD-NG](https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation/wiki)'s
+description and removal level (Recommended, Advanced, Expert, Unsafe).
 
-Every action is recorded in **📜 History** with one-tap **Undo**, and your filters are remembered
-between launches.
+- Filter by removal level, vendor list (OEM, Google, AOSP, Carrier, Misc), state and **brand** (your phone's
+  brand first).
+- **Uninstall** (for your user), **Disable**, **Restore** or **Save to List**, each behind a review step that
+  warns about Expert and Unsafe packages.
+- Every action lands in **📜 History** with **Undo**. Filters are remembered between launches.
+- The list is GPL-3.0, so it is downloaded from UAD-NG's GitHub at runtime and cached on the phone (refreshed
+  weekly or on demand) rather than bundled in this repository.
 
 ## Updates
 
 The **⬆️ Updates** tab checks:
 
 - **Samsung system apps and Galaxy Store apps** against the Galaxy Store
-- **Sideloaded open-source apps** against your sources, your imported Obtainium list, the Obtainium
-  community catalog, IzzyOnDroid and F-Droid, with releases read from GitHub and Codeberg
+- **Sideloaded open-source apps** against your own sources, your imported **Obtainium** list, the Obtainium
+  community catalog, **IzzyOnDroid** and **F-Droid**, with releases read from **GitHub** and **Codeberg**
 - **This app** against its GitHub Releases
 
-Update apps one by one or all at once. Each download is verified (same package, newer version, same
-signing key) and installed through ADB, Shizuku or Root. Apps only Obtainium can track open in
-Obtainium. Play Store apps keep updating through the Play Store.
+Update apps one by one or **Update All**. Each download is checked first: same package, newer version, **same
+signing key** (a mismatch such as an F-Droid build over a developer build is stopped with an explanation),
+then installed through ADB, Shizuku or Root. Apps only Obtainium can track open in Obtainium; untracked apps
+get **＋ Set source**. Play Store apps keep updating through the Play Store, since Google gives other apps no
+way to check them.
 
 ## App menu
 
-Each app shows its version in the list (toggle with **🔢 Versions**), with "→ new version" when
-an update is available. Sort by name, date, size or updates; filter apps updated in the last 7 days;
-and export the whole list as CSV. Tap **⋯** on any app to see its version, install and update dates, any
-available update, and actions (Launch, Force Stop, Freeze/Enable, Suspend/Unsuspend, Clear Data, Uninstall,
-Reinstall, Remove Updates, App Info, Extract APK), its sizes (APK, data, cache) and five tabs:
+Tap **⋯** on any app for its version, install and update dates, any available update, sizes (APK, data,
+cache; data and cache need *usage access*, which the app can grant through ADB/Shizuku/Root) and actions:
+Launch, Force Stop, Freeze/Enable, Suspend/Unsuspend, Clear Data, Uninstall, Reinstall, Remove Updates, App
+Info, **Extract APK** (a `.apk`, or an `.apks` bundle for split apps) and **Share APK**. Five tabs follow:
 
-- **Permissions**: searchable, filterable list; toggle runtime and development permissions
-- **App Ops**: per-op Allow / Foreground / Ignore / Deny / Reset, plus setting any op by name
-- **Components**: all activities (exported and unexported) with Launch, plus services; unexported
-  activities launch through ADB / Shizuku / Root and show Android's answer if refused
-- **Manifest**: decoded `AndroidManifest.xml` with find, copy and save to Downloads
+- **Permissions**: searchable, filterable; toggle runtime and development permissions
+- **App Ops**: Allow / Foreground / Ignore / Deny / Reset per op, plus setting any op by name
+- **Components**: all activities (exported and unexported) with **Launch**, plus services. Unexported
+  activities launch through ADB / Shizuku / Root and show Android's answer if it refuses
+- **Manifest**: decoded `AndroidManifest.xml` with search, copy, share and save to Downloads
 - **Raw**: the full details JSON
+
+App rows show only **App Settings**, **Force Stop** and the **⋯ menu**, so the list stays clean.
+
+## App profiles
+
+**🗂️ Profiles** (on the Applications tab) saves the apps you have disabled, suspended or uninstalled under a
+name. Applying a profile first shows what will change (for example "disable 12, suspend 3, uninstall 8; 41
+already match, 5 are not on this phone"), then runs it and records it in History so it can be undone.
+**Share** sends the profile as a `.adbprofile.json` file; paste it into **Import** on another phone.
+
+```json
+{
+  "format": "adb-app-manager-profile",
+  "v": 1,
+  "name": "Lean Samsung",
+  "apps": [
+    { "pkg": "com.facebook.appmanager", "name": "Facebook App Manager", "state": "disabled" },
+    { "pkg": "com.netflix.partner.activation", "name": "Netflix Partner Activation", "state": "suspended" },
+    { "pkg": "com.microsoft.skydrive", "name": "OneDrive", "state": "uninstalled" }
+  ]
+}
+```
+
+With nothing selected a profile covers every non-enabled app; with apps selected it covers only those.
+
+## Copy, share and search
+
+- **Select and copy any text**: long-press app names, package names, versions, permissions, activities,
+  manifest and terminal output. Buttons stay unselectable so taps work as usual.
+- **Copy chips** for package, version and name in the app menu; **Copy Packages** and **Share List** for a
+  batch selection.
+- **Share sheet** (Android's own): package lists, the app-list CSV, a manifest, terminal output, profiles and
+  extracted APKs. Files go through a private cache provider that grants one-off read access to the receiving
+  app, so no storage permission is needed.
+- **Find** in the manifest viewer and the terminal highlights every match, shows `2 / 7 matches`, and jumps
+  with ▲ ▼. The manifest viewer can show only matching lines (with line numbers) or the whole file in context.
 
 ## Themes
 
-**Appearance:** Light, Dark, System (follows the phone's dark mode) or Schedule (light/dark start
-times). Optional **pure black** backgrounds in dark mode for AMOLED screens.
+**Appearance:** Light, Dark, System (follows the phone), or Schedule (light/dark start times), plus optional
+**pure black** in dark mode.
 
-**Material 3** (the default) and **Material You** (dynamic color from your wallpaper, Android 12+,
-updates when the wallpaper changes) come first, followed by six classic palettes. Every palette has a
-light and a dark version. Colors can be fine-tuned per mode, and everything is remembered between
-launches.
+**Material 3** (default) and **Material You** (dynamic color from your wallpaper, Android 12+, follows
+wallpaper changes) come first, followed by six classic palettes. Every palette has light and dark variants,
+colors can be fine-tuned per mode, and everything is remembered between launches.
 
-## Project layout
+## How it works
 
+The UI is one HTML file rendered in a `WebView`; a small Java bridge turns taps into package-manager
+commands and runs them through whichever backend is active. There is no Gradle: `build.sh` drives `aapt2`,
+`javac`, `d8` and an APK signer directly, so the whole app builds in Termux.
+
+**Actions are plain `pm` / `am` commands** ([`MainActivity.java`](src/com/bloatware/bingblop/MainActivity.java)):
+
+```java
+@JavascriptInterface
+public String executeAppAction(String action, String pkg) {
+    if ("freeze".equals(action))      return executeShell("pm disable-user " + pkg);
+    if ("suspend".equals(action))     return executeShell("pm suspend " + pkg);
+    if ("force_stop".equals(action))  return executeShell("am force-stop " + pkg);
+    if ("uninstall".equals(action))   return executeShell("pm uninstall --user 0 " + pkg);
+    if ("reinstall".equals(action))   return executeShell("pm install-existing " + pkg);
+    // ...
+}
 ```
-AndroidManifest.xml          App manifest (includes the Shizuku provider)
-src/                         Java sources (MainActivity + JavaScript bridge, ManifestDecoder, AdbKeyManager, UpdateManager)
-assets/index.html            The whole UI (HTML/CSS/JS, rendered in a WebView)
-assets/libadb.so             arm64 adb client used for ADB TCP / Wireless Debugging
-assets/rish, rish_shizuku.dex  Shizuku shell fallback
-res/                         Launcher icons and strings
-libs/                        Shizuku API 13.1.5 (api, provider, shared, aidl)
-build.sh                     Build script (Termux or Linux)
-release/                     Signed release APKs
+
+**Shizuku** runs commands in its own process through its remote-process API, with the `rish` shell as a
+fallback:
+
+```java
+Method m = Shizuku.class.getDeclaredMethod("newProcess", String[].class, String[].class, String.class);
+m.setAccessible(true);
+Process p = (Process) m.invoke(null, new String[]{"sh", "-c", "exec 2>&1; " + cmd}, null, null);
 ```
+
+**A private ADB key per install.** [`AdbKeyManager`](src/com/bloatware/bingblop/AdbKeyManager.java) generates a
+2048-bit RSA key and writes the public half in adb's own binary format (little-endian modulus, `n0inv`, and
+`R² mod n`), checked byte-for-byte against `adb`:
+
+```java
+static byte[] encodePublicKey(BigInteger n, BigInteger e) {
+    BigInteger r32 = BigInteger.ONE.shiftLeft(32);
+    BigInteger n0inv = n.mod(r32).modInverse(r32).negate().mod(r32);
+    BigInteger rr = BigInteger.ONE.shiftLeft(KEY_BITS).pow(2).mod(n);
+    ByteBuffer bb = ByteBuffer.allocate(4 + 4 + MODULUS_BYTES * 2 + 4).order(ByteOrder.LITTLE_ENDIAN);
+    bb.putInt(MODULUS_BYTES / 4);  bb.putInt(n0inv.intValue());
+    bb.put(toLittleEndian(n));     bb.put(toLittleEndian(rr));
+    bb.putInt(e.intValue());
+    return bb.array();
+}
+```
+
+**Version comparison** for updates reads the first dotted number anywhere in the string, so `v1.2.3`,
+`release-1.2.3` and `app_1.2.3-beta` all compare correctly
+([`UpdateManager`](src/com/bloatware/bingblop/UpdateManager.java)):
+
+```java
+Matcher m = Pattern.compile("([0-9]+(?:\\.[0-9]+)*)").matcher(v.trim());
+```
+
+**Sharing without a support library**: [`ShareProvider`](src/com/bloatware/bingblop/ShareProvider.java) is a
+tiny non-exported `ContentProvider` that serves `cache/share/` to the share sheet with one-off URI grants.
+
+**The UI talks to Java through one object** and Java calls back with `evaluateJavascript`:
+
+```js
+const err = window.AndroidBridge.shareTextFile('app_list.csv', csv, 'text/csv');   // JS → Java
+// Java → JS: window.onApkExtracted(json)
+```
+
+Also in the sources: [`ManifestDecoder`](src/com/bloatware/bingblop/ManifestDecoder.java) turns the binary
+`AndroidManifest.xml` inside an APK back into readable XML.
+
+## Privacy &amp; security
+
+- **No analytics, no account, no server of ours.** The app only makes requests you trigger: the UAD-NG list,
+  Galaxy Store / GitHub / Codeberg / F-Droid / IzzyOnDroid lookups for updates, and update downloads.
+- The ADB key is created on your phone and never leaves it. The APK contains no key.
+- Updates are installed only after the package name, version and **signing certificate** match.
+- Powerful actions (uninstall, disable, clear data) always go through a privileged mode you set up yourself.
+  Read-Only mode can inspect but not change anything.
+- The release keystore is git-ignored. Never commit one to a public repository.
 
 ## Building
 
@@ -100,29 +303,30 @@ cd ADB-Application-Manager
 ./build.sh
 ```
 
-The APK is written to `bin/ADB_Application_Manager_Pro.apk` and copied to `Download/` when Termux
-has storage access (`termux-setup-storage`).
+The APK is written to `bin/ADB_Application_Manager_Pro.apk` and copied to `Download/` when Termux has storage
+access (`termux-setup-storage`).
 
 ### Signing and updating in place
 
-Android only installs an update over an existing install when both APKs are signed with the same
-key. `build.sh` signs with `./release.keystore` (alias `adbmanager`, password `password`, same as the
-original `compile.sh`). Copy the keystore you used before into the repo folder to update without
-uninstalling. Keystores are git-ignored — never commit them to this public repository.
+Android only installs an update over an existing install when both APKs are signed with the same key.
+`build.sh` signs with `./release.keystore` (alias `adbmanager`, password `password`). Copy the keystore you
+used before into the repo folder to update without uninstalling.
 
 ### On GitHub (automatic)
 
-The **Build APK** workflow builds every push and pull request. Download the APK from the run's
-**Artifacts** section in the Actions tab. To sign it with your release key (so it installs over the
-app on your phone), add two repository secrets under Settings → Secrets and variables → Actions:
+The **Build APK** workflow builds every push and pull request; download the APK from the run's **Artifacts**.
+To sign it with your release key, add repository secrets under Settings → Secrets and variables → Actions:
 
 | Secret | Value |
 |---|---|
-| `KEYSTORE_BASE64` | output of `base64 -w0 release.keystore` (run in Termux) |
+| `KEYSTORE_BASE64` | output of `base64 -w0 release.keystore` |
 | `KEYSTORE_PASSWORD` | your keystore password (`password` if you used build.sh's default) |
 | `KEY_ALIAS` | optional, defaults to `adbmanager` |
 
-Without the secrets, builds are signed with a throwaway test key and named `-test-signed`.
+Without the secrets, builds use a throwaway test key and are named `-test-signed`.
+
+The **Publish release** workflow (Actions → Publish release → enter the version, for example `4.6`) creates a
+GitHub Release with the signed APK and its checksum attached.
 
 ### On Linux without an Android SDK
 
@@ -130,10 +334,37 @@ Every tool can be overridden with environment variables:
 
 ```bash
 AAPT2=/path/to/aapt2 \
-ANDROID_JAR=/path/to/android.jar \        # resources for aapt2 -I
+ANDROID_JAR=/path/to/android.jar \              # resources for aapt2 -I
 BOOTCLASSPATH=/path/to/android-classes.jar \
-D8_JAR=/path/to/r8.jar \                  # or have `d8` on PATH
+D8_JAR=/path/to/r8.jar \                        # or have `d8` on PATH
 UBER_SIGNER_JAR=/path/to/uber-apk-signer.jar \  # or have zipalign + apksigner on PATH
 KEYSTORE=/path/to/release.keystore \
 ./build.sh
 ```
+
+## Project layout
+
+```
+AndroidManifest.xml            App manifest (Shizuku provider, share provider)
+src/                           MainActivity (+ JavaScript bridge), ManifestDecoder, AdbKeyManager,
+                               UpdateManager, ShareProvider
+assets/index.html              The whole UI (HTML/CSS/JS, rendered in a WebView)
+assets/libadb.so               arm64 adb client for ADB TCP / Wireless Debugging
+assets/rish, rish_shizuku.dex  Shizuku shell fallback
+res/                           Launcher icons and strings
+libs/                          Shizuku API 13.1.5 (api, provider, shared, aidl)
+docs/screenshots/              Images used in this README
+build.sh                       Build script (Termux or Linux)
+release/                       Signed release APKs and SHA256SUMS.txt
+.github/workflows/             build.yml (CI) and release.yml (publish a GitHub Release)
+```
+
+## Credits
+
+Debloat data from [UAD-NG](https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation)
+(GPL-3.0, downloaded at runtime). Shell access via [Shizuku](https://github.com/RikkaApps/Shizuku-API).
+Update sources: Galaxy Store, GitHub, Codeberg, [F-Droid](https://f-droid.org),
+[IzzyOnDroid](https://apt.izzysoft.de/fdroid) and the [Obtainium](https://github.com/ImranR98/Obtainium)
+community catalog.
+
+Changes by version: [CHANGELOG.md](CHANGELOG.md).
