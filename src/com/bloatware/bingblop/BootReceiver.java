@@ -25,7 +25,11 @@ public class BootReceiver extends BroadcastReceiver {
         if (intent == null || !Intent.ACTION_BOOT_COMPLETED.equals(intent.getAction())) return;
         SharedPreferences p = QuickActions.prefs(ctx);
         String fingerprint = Build.FINGERPRINT == null ? "" : Build.FINGERPRINT;
-        String last = p.getString("receiver_fp", null);
+        // "app_fp" is written by MainActivity on every normal launch (see onCreate); it is the only
+        // baseline that can exist before this receiver has ever recorded one of its own, so if the OTA
+        // reboot is the very first reboot since the user turned profile watching on, that value - not
+        // a missing "nothing to compare" - is what "before the update" means here.
+        String last = p.getString("receiver_fp", p.getString("app_fp", null));
         p.edit().putString("receiver_fp", fingerprint).apply();
         String watched = p.getString("watched_profile", "");
         if (last == null || last.equals(fingerprint) || watched.isEmpty()) return;

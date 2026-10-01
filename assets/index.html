@@ -6649,8 +6649,14 @@ Type any command below (e.g. pm list packages -d)
         function deleteProfile(id) {
             haptic();
             const before = loadProfiles();
+            const removed = before.find(x => x.id === id);
             profiles = before.filter(x => x.id !== id);
-            if (!persistProfiles()) { profiles = before; profilesFull(); }
+            if (!persistProfiles()) { profiles = before; profilesFull(); return; }
+            // Deleting the watched profile must also clear the native preference BootReceiver reads, or a
+            // reboot notification could still name a profile that no longer exists.
+            if (removed && removed.watch && window.AndroidBridge && window.AndroidBridge.setWatchedProfile) {
+                window.AndroidBridge.setWatchedProfile('');
+            }
             profilePending = null;
             document.getElementById('profilePreview').style.display = 'none';
             renderProfiles();

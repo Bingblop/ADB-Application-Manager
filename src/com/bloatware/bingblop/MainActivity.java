@@ -2742,6 +2742,10 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public String executeAppAction(String action, String pkg) {
             try {
+                // Every legitimate caller gets pkg from PackageManager, but a saved/quick list is free-form
+                // text the user typed; everything below concatenates pkg into a shell command (or a monkey
+                // fallback), so refuse anything that isn't a well-formed package name before it gets there.
+                if (!BackupScripts.isPackageName(pkg)) return "Error: \"" + pkg + "\" is not a valid package name";
                 if ("freeze".equals(action)) return executeShell("pm disable-user " + pkg);
                 if ("unfreeze".equals(action)) {
                     executeShell("pm enable " + pkg);

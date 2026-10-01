@@ -22,8 +22,12 @@ final class BackupScripts {
 
     private BackupScripts() {}
 
+    static boolean isPackageName(String pkg) {
+        return pkg != null && PACKAGE.matcher(pkg).matches();
+    }
+
     static String checkedPackage(String pkg) {
-        if (pkg == null || !PACKAGE.matcher(pkg).matches()) throw new IllegalArgumentException("invalid package name");
+        if (!isPackageName(pkg)) throw new IllegalArgumentException("invalid package name");
         return pkg;
     }
 
