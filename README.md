@@ -5,7 +5,7 @@ package, freeze/enable, force-stop, clear data, uninstall for user 0, reinstall 
 manage permissions, save package lists, and run shell commands — through ADB TCP, Wireless
 Debugging, Shizuku or Root.
 
-**Latest release:** [`release/ADB_Application_Manager_Pro-v3.2.apk`](release/ADB_Application_Manager_Pro-v3.2.apk) — see [CHANGELOG.md](CHANGELOG.md).
+**Latest release:** [`release/ADB_Application_Manager_Pro-v3.3.apk`](release/ADB_Application_Manager_Pro-v3.3.apk) — see [CHANGELOG.md](CHANGELOG.md).
 
 ## Working modes
 
@@ -28,7 +28,8 @@ Reinstall, Remove Updates, App Info) and five tabs:
 
 - **Permissions**: searchable, filterable list; toggle runtime and development permissions
 - **App Ops**: per-op Allow / Foreground / Ignore / Deny / Reset, plus setting any op by name
-- **Components**: activities and services
+- **Components**: all activities (exported and unexported) with Launch, plus services; unexported
+  activities launch through ADB / Shizuku / Root and show Android's answer if refused
 - **Manifest**: decoded `AndroidManifest.xml` with find, copy and save to Downloads
 - **Raw**: the full details JSON
 

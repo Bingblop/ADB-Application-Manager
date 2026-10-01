@@ -1,2 +1,3 @@
 8c9128617b7c87406661e9602d8d6854dab16678409cf949b9e1626c6f08e430  ADB_Application_Manager_Pro-v3.1.apk
 ffeb40561b0fb31c5a99a48c2e478889a2468a5d8085a731eedd03c513e9c4bb  ADB_Application_Manager_Pro-v3.2.apk
+8b2a8c02919d2063c2ee4c2640ccf3aee36c348de69fc15b67edbf6c93b24f45  ADB_Application_Manager_Pro-v3.3.apk

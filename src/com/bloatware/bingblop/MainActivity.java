@@ -1176,7 +1176,8 @@ public class MainActivity extends Activity {
                 JSONObject obj = new JSONObject();
                 try {
                     int flags = PackageManager.GET_ACTIVITIES | PackageManager.GET_RECEIVERS | PackageManager.GET_SERVICES
-                            | PackageManager.GET_PROVIDERS | PackageManager.GET_PERMISSIONS;
+                            | PackageManager.GET_PROVIDERS | PackageManager.GET_PERMISSIONS
+                            | PackageManager.MATCH_DISABLED_COMPONENTS;
                     PackageInfo info = getPackageManager().getPackageInfo(pkg, flags);
                     obj.put("versionName", info.versionName != null ? info.versionName : "N/A");
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -1210,10 +1211,20 @@ public class MainActivity extends Activity {
                     obj.put("permissions", perms);
 
                     JSONArray activities = new JSONArray();
+                    JSONArray activityInfo = new JSONArray();
                     if (info.activities != null) {
-                        for (ActivityInfo a : info.activities) activities.put(a.name);
+                        for (ActivityInfo a : info.activities) {
+                            activities.put(a.name);
+                            JSONObject ao = new JSONObject();
+                            ao.put("name", a.name);
+                            ao.put("exported", a.exported);
+                            ao.put("enabled", a.enabled);
+                            ao.put("permission", a.permission != null ? a.permission : "");
+                            activityInfo.put(ao);
+                        }
                     }
                     obj.put("activities", activities);
+                    obj.put("activityInfo", activityInfo);
 
                     JSONArray services = new JSONArray();
                     if (info.services != null) {
@@ -1233,6 +1244,64 @@ public class MainActivity extends Activity {
             } catch (Exception e) {
                 return "{}";
             }
+        }
+
+        /**
+         * Launches an activity. Exported activities start with a normal intent; unexported ones are
+         * started with `am start` through the active privileged mode (ADB / Shizuku / Root). Whatever
+         * Android answers is returned as-is, so a refused launch reports the system's error.
+         * Returns {"ok":bool,"method":"intent|shell","output":"..."}
+         */
+        @JavascriptInterface
+        public String launchActivity(String pkg, String cls, boolean exported) {
+            JSONObject res = new JSONObject();
+            try {
+                if (pkg == null || cls == null || !pkg.matches("[A-Za-z0-9._]+") || !cls.matches("[A-Za-z0-9._$]+")) {
+                    res.put("ok", false);
+                    res.put("method", "none");
+                    res.put("output", "Error: invalid component name");
+                    return res.toString();
+                }
+                String fullCls = cls.startsWith(".") ? pkg + cls : cls;
+
+                if (exported) {
+                    try {
+                        Intent intent = new Intent();
+                        intent.setClassName(pkg, fullCls);
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(intent);
+                        res.put("ok", true);
+                        res.put("method", "intent");
+                        res.put("output", "Started " + pkg + "/" + fullCls);
+                        return res.toString();
+                    } catch (Exception e) {
+                        // Fall through to the privileged shell (e.g. permission-protected activity)
+                        Log.w(TAG, "Intent launch failed, trying shell: " + e.getMessage());
+                    }
+                }
+
+                if ("standard".equals(resolveExecMode())) {
+                    res.put("ok", false);
+                    res.put("method", "shell");
+                    res.put("output", "Error: launching this activity needs ADB, Shizuku or Root. Set up a working mode first.");
+                    return res.toString();
+                }
+
+                String output = executeShell("am start -W -n '" + pkg + "/" + fullCls + "'");
+                String lower = output.toLowerCase();
+                boolean ok = lower.contains("status: ok") || (lower.contains("starting: intent")
+                        && !lower.contains("error") && !lower.contains("exception") && !lower.contains("permission denial"));
+                res.put("ok", ok);
+                res.put("method", "shell");
+                res.put("output", output);
+            } catch (Exception e) {
+                try {
+                    res.put("ok", false);
+                    res.put("method", "none");
+                    res.put("output", "Error: " + e.getMessage());
+                } catch (Exception ignored) {}
+            }
+            return res.toString();
         }
 
         /** Decoded AndroidManifest.xml of an installed package, or "Error: ..." */

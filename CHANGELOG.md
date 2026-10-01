@@ -1,5 +1,23 @@
 # Changelog
 
+## v3.3-Pro (versionCode 230)
+
+Installs over v3.1 / v3.2 without uninstalling (same signing key).
+
+### Components
+- The Components tab now lists **every** activity, including **unexported** and disabled ones, with
+  badges (exported / unexported / disabled / protected), a count, search and filters
+  (All / Exported / Unexported).
+- Every activity has a **Launch** button:
+  - Exported activities start with a normal intent (works in any mode).
+  - Unexported activities start with `am start -W -n` through the active privileged mode
+    (ADB TCP, Wireless Debugging, Shizuku or Root). Read-Only mode asks you to set one up first.
+  - The full `am start` output is shown, so when Android refuses a launch (for example a
+    "Permission Denial" for the shell user, or a disabled activity) you see the exact reason.
+    Root can usually start activities the shell user cannot.
+- Component names are validated and single-quoted in shell commands, so inner classes with `$`
+  launch and stop correctly.
+
 ## v3.2-Pro (versionCode 220)
 
 Installs over v3.1 without uninstalling (same signing key).

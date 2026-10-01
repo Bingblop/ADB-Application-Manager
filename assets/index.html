@@ -1953,6 +1953,14 @@ Type any command below (e.g. pm list packages -d)
 
             <!-- Tab 3: Components -->
             <div id="sheetTabComps" class="sheet-tab-content">
+                <div class="list-toolbar">
+                    <input type="text" class="list-search" id="compsSearch" placeholder="Search activities & services..." oninput="renderComponentsList()" autocomplete="off" autocapitalize="off" spellcheck="false">
+                </div>
+                <div class="chip-row" id="compsFilterRow">
+                    <span class="filter-chip active" data-filter="all" onclick="setCompsFilter('all')">All</span>
+                    <span class="filter-chip" data-filter="exported" onclick="setCompsFilter('exported')">Exported</span>
+                    <span class="filter-chip" data-filter="unexported" onclick="setCompsFilter('unexported')">Unexported</span>
+                </div>
                 <div id="compsContainer">
                     <div class="list-empty">Loading activities & services...</div>
                 </div>
@@ -3376,7 +3384,9 @@ Type any command below (e.g. pm list packages -d)
             appOpsList = [];
             manifestText = '';
             manifestPkg = null;
-            ['permsSearch', 'opsSearch', 'manifestSearch'].forEach(id => { document.getElementById(id).value = ''; });
+            ['permsSearch', 'opsSearch', 'manifestSearch', 'compsSearch'].forEach(id => { document.getElementById(id).value = ''; });
+            compsFilter = 'all';
+            document.querySelectorAll('#compsFilterRow .filter-chip').forEach(c => c.classList.toggle('active', c.getAttribute('data-filter') === 'all'));
             document.getElementById('manifestContainer').innerText = 'Open this tab to load the manifest.';
             document.getElementById('manifestMeta').innerText = '';
             document.getElementById('permsContainer').innerHTML = '<div class="list-empty">Loading permissions...</div>';
@@ -3397,34 +3407,70 @@ Type any command below (e.g. pm list packages -d)
             renderPermissionsList();
             renderAppOpsList();
 
-            const compsContainer = document.getElementById('compsContainer');
-            let compHtml = '';
-            if (d.activities && d.activities.length > 0) {
-                compHtml += '<div style="font-weight:800; font-size:11px; margin-bottom:6px; color:var(--accent);">ACTIVITIES</div>';
-                d.activities.forEach(a => {
-                    const shortAct = a.split('.').pop();
-                    compHtml += `
-                        <div class="perm-item">
-                            <span>${escapeHtml(shortAct)}</span>
-                            <button class="perm-toggle-btn granted" data-comp="${escapeHtml(a)}" onclick="launchComponent(this.getAttribute('data-comp'))">START</button>
-                        </div>
-                    `;
-                });
-            }
-            if (d.services && d.services.length > 0) {
-                compHtml += '<div style="font-weight:800; font-size:11px; margin:12px 0 6px 0; color:var(--secondary);">SERVICES</div>';
-                d.services.forEach(s => {
-                    const shortSrv = s.split('.').pop();
-                    compHtml += `
-                        <div class="perm-item">
-                            <span>${escapeHtml(shortSrv)}</span>
-                            <button class="perm-toggle-btn revoked" data-comp="${escapeHtml(s)}" onclick="stopComponentService(this.getAttribute('data-comp'))">STOP</button>
-                        </div>
-                    `;
-                });
-            }
-            compsContainer.innerHTML = compHtml || '<div class="list-empty">No exported activities or services found.</div>';
+            renderComponentsList();
             document.getElementById('rawContainer').innerText = JSON.stringify(d, null, 2);
+        }
+
+        // ---------- Components list ----------
+        let compsFilter = 'all';
+
+        function setCompsFilter(f) {
+            compsFilter = f;
+            document.querySelectorAll('#compsFilterRow .filter-chip').forEach(c => c.classList.toggle('active', c.getAttribute('data-filter') === f));
+            haptic();
+            renderComponentsList();
+        }
+
+        function renderComponentsList() {
+            const container = document.getElementById('compsContainer');
+            const d = inspectorData || {};
+            // Older bridge versions only return names; treat those as exported
+            const acts = (d.activityInfo && d.activityInfo.length) ? d.activityInfo
+                : (d.activities || []).map(n => ({ name: n, exported: true, enabled: true, permission: '' }));
+            const q = (document.getElementById('compsSearch').value || '').toLowerCase().trim();
+            const unexportedCount = acts.filter(a => !a.exported).length;
+
+            const shownActs = acts.filter(a => {
+                if (compsFilter === 'exported' && !a.exported) return false;
+                if (compsFilter === 'unexported' && a.exported) return false;
+                return !q || a.name.toLowerCase().includes(q);
+            }).sort((a, b) => (b.exported - a.exported) || a.name.localeCompare(b.name));
+
+            let html = `<div style="font-weight:800; font-size:11px; margin-bottom:6px; color:var(--accent);">ACTIVITIES (${acts.length} • ${unexportedCount} unexported)</div>`;
+            if (!shownActs.length) {
+                html += '<div class="list-empty">No activities match.</div>';
+            }
+            shownActs.forEach(a => {
+                const shortAct = a.name.split('.').pop();
+                const badges = `<span class="perm-kind" style="${a.exported ? '' : 'color:#FFA726;border-color:rgba(255,145,0,0.4);'}">${a.exported ? 'exported' : 'unexported'}</span>` +
+                    (a.enabled === false ? '<span class="perm-kind">disabled</span>' : '') +
+                    (a.permission ? `<span class="perm-kind" title="${escapeHtml(a.permission)}">protected</span>` : '');
+                html += `
+                    <div class="perm-row">
+                        <div class="perm-info">
+                            <div class="perm-name">${escapeHtml(shortAct)}</div>
+                            <div class="perm-sub">${badges}${escapeHtml(a.name)}</div>
+                        </div>
+                        <button class="perm-toggle-btn ${a.exported ? 'granted' : 'locked'}" style="cursor:pointer;" data-comp="${escapeHtml(a.name)}" data-exported="${a.exported}"
+                            onclick="launchComponent(this.getAttribute('data-comp'), this.getAttribute('data-exported') === 'true')">${a.exported ? 'LAUNCH' : '⚡ LAUNCH'}</button>
+                    </div>`;
+            });
+
+            const services = (d.services || []).filter(s => compsFilter === 'all' && (!q || s.toLowerCase().includes(q)));
+            if (services.length) {
+                html += '<div style="font-weight:800; font-size:11px; margin:12px 0 6px 0; color:var(--secondary);">SERVICES</div>';
+                services.forEach(srv => {
+                    html += `
+                        <div class="perm-row">
+                            <div class="perm-info">
+                                <div class="perm-name">${escapeHtml(srv.split('.').pop())}</div>
+                                <div class="perm-sub">${escapeHtml(srv)}</div>
+                            </div>
+                            <button class="perm-toggle-btn revoked" data-comp="${escapeHtml(srv)}" onclick="stopComponentService(this.getAttribute('data-comp'))">STOP</button>
+                        </div>`;
+                });
+            }
+            container.innerHTML = html;
         }
 
         // ---------- Permissions list ----------
@@ -3675,19 +3721,41 @@ Type any command below (e.g. pm list packages -d)
             closeInspector();
         }
 
-        function launchComponent(comp) {
+        // Exported activities launch with a normal intent. Unexported ones use `am start` through the
+        // active ADB / Shizuku / Root mode; if Android refuses, its error is shown as-is.
+        function launchComponent(comp, exported) {
+            if (exported === undefined) exported = true;
+            if (!exported && !guardPrivilege('Launch unexported activity')) return;
             haptic();
-            if (window.AndroidBridge && inspectedPkg) {
-                window.AndroidBridge.executeShell(`am start -n "${inspectedPkg}/${comp}"`);
+            if (!window.AndroidBridge || !inspectedPkg) return;
+            if (!window.AndroidBridge.launchActivity) {
+                window.AndroidBridge.executeShell(`am start -n '${inspectedPkg}/${comp}'`);
                 showToast('Activity launched', '🚀');
+                return;
             }
+            showToast('Launching ' + comp.split('.').pop() + '...', '🚀');
+            setTimeout(() => {
+                let r;
+                try {
+                    r = JSON.parse(window.AndroidBridge.launchActivity(inspectedPkg, comp, !!exported));
+                } catch (e) {
+                    r = { ok: false, method: 'none', output: 'Error: ' + e.message };
+                }
+                if (r.ok && r.method === 'intent') {
+                    showToast('Activity launched', '🚀');
+                    return;
+                }
+                showToast(r.ok ? 'Activity launched' : 'Launch failed', r.ok ? '🚀' : '⚠️');
+                showCommandResults('Launch Activity', (exported ? 'Exported' : 'Unexported') + ' • via ' + (r.method === 'shell' ? currentWorkingMode : r.method),
+                    [{ name: comp.split('.').pop(), pkg: inspectedPkg + '/' + comp, output: r.output, success: !!r.ok }]);
+            }, 60);
         }
 
         function stopComponentService(srv) {
             if (!guardPrivilege('Stop Service')) return;
             haptic();
             if (window.AndroidBridge && inspectedPkg) {
-                window.AndroidBridge.executeShell(`am stopservice "${inspectedPkg}/${srv}"`);
+                window.AndroidBridge.executeShell(`am stopservice '${inspectedPkg}/${srv}'`);
                 showToast('Service stopped', '🛑');
             }
         }
