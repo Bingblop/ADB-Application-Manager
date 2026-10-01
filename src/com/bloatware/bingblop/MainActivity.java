@@ -139,10 +139,13 @@ public class MainActivity extends Activity {
         }
 
         // A changed build fingerprint means the system was updated since the app last ran
-        String fingerprint = Build.FINGERPRINT == null ? "" : Build.FINGERPRINT;
-        String seenFingerprint = prefs.getString("app_fp", null);
-        buildChangedThisLaunch = seenFingerprint != null && !seenFingerprint.equals(fingerprint);
-        prefs.edit().putString("app_fp", fingerprint).apply();
+        // (a tile or widget tap runs headless and must not use up the flag before the user opens the app)
+        if (!isHeadless()) {
+            String fingerprint = Build.FINGERPRINT == null ? "" : Build.FINGERPRINT;
+            String seenFingerprint = prefs.getString("app_fp", null);
+            buildChangedThisLaunch = seenFingerprint != null && !seenFingerprint.equals(fingerprint);
+            prefs.edit().putString("app_fp", fingerprint).apply();
+        }
 
         // Extract binaries and ADB keys in background
         setupBinariesAndKeys();
@@ -1649,8 +1652,26 @@ public class MainActivity extends Activity {
                     for (File f : apks) if (f.getName().equals("base.apk")) ordered.add(f);
                     for (File f : apks) if (!f.getName().equals("base.apk")) ordered.add(f);
 
+                    // A system app removed for this user is still on the system image: bring it back instead of installing
+                    String installNote = null;
+                    if (!installed) {
+                        boolean onSystemImage = false;
+                        try {
+                            pm.getPackageInfo(pkg, PackageManager.MATCH_UNINSTALLED_PACKAGES);
+                            onSystemImage = true;
+                        } catch (PackageManager.NameNotFoundException ignored) {}
+                        if (onSystemImage) {
+                            String o = new AndroidBridge().executeShell("pm install-existing " + pkg);
+                            if (o.contains("installed for user")) {
+                                installed = true;
+                                sameVersion = true;
+                                installNote = "restored for your user (it is part of the system)";
+                            }
+                        }
+                    }
+
                     if (installed && sameVersion) {
-                        res.put("install", "already installed (same version)");
+                        res.put("install", installNote != null ? installNote : "already installed (same version)");
                     } else {
                         backupEvent("restore", "install", 40, "Installing " + meta.optString("label", pkg) + "...");
                         String out = installApks(ordered);
