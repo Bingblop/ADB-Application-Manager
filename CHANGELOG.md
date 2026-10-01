@@ -6,9 +6,9 @@ Installs over v3.1 – v4.6 without uninstalling (same signing key).
 
 - **✨ What's new**: the changelog is bundled in the app. After an update it opens once with the changes
   since the version you last ran; **Color & Themes → About** has the button, version and links.
-- **👁️ Watch a profile**: in **🗂️ Profiles**, tap **👁️ Watch** on one profile. When apps from it come back
-  (typically after a system update) a banner on the Applications tab says how many and opens the same
-  reviewed Apply step. After a reboot with a new system build, a notification reminds you (Android 13+
+- **👁️ Watch a profile**: in **🗂️ Profiles**, tap **👁️ Watch** on one profile. When apps no longer match it
+  (typically after a system update brings them back) a banner on the Applications tab says how many and
+  opens the same reviewed Apply step. After a reboot with a new system build, a notification reminds you (Android 13+
   asks for notification permission the first time you watch a profile). Nothing is changed without your
   confirmation.
 - **Quick Settings tiles and a home-screen widget** (they run without opening the app):
@@ -23,6 +23,12 @@ Installs over v3.1 – v4.6 without uninstalling (same signing key).
   data back. You can **Share** a backup or **Choose a backup file** from another phone. Data restore
   refuses archives that would write outside the app's own folders.
   Without Root, private app data cannot be read on current Android, so backups are APK + settings only.
+- **Profiles are applied properly**: a profile now remembers disabled and suspended separately, and applying
+  works out the steps per app (bring back, re-enable, unsuspend, disable, suspend, uninstall), so an app that
+  is in a different state than the profile wants is changed instead of being counted as matching. Undo of a
+  profile run unwinds the steps newest first. Saving profiles that the app cannot keep (too large) now says so.
+- Extracting or sharing an APK handles one request at a time, so a second tap cannot mix up the results; the
+  share sheet gets each file from its own private folder.
 - README: debloat-flow animation, light-theme screenshots and the new features.
 
 ## v4.6-Pro (versionCode 360)

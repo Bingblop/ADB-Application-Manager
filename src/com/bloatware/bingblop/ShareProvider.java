@@ -12,27 +12,53 @@ import android.webkit.MimeTypeMap;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.security.SecureRandom;
+import java.util.regex.Pattern;
 
 /**
  * Serves files from this app's cache/share folder to the Android share sheet.
  * Not exported: other apps can only read a file through the one-off URI grant on the share intent.
  * (A hand-rolled provider because androidx FileProvider is not available in the Gradle-free build.)
+ *
+ * Every share gets its own random folder (cache/share/<id>/<name>), so a later share can never replace
+ * a file an earlier recipient still has access to, and old shares are only removed once they are an
+ * hour old, so a receiving app that is slow to open its file never loses it.
  */
 public class ShareProvider extends ContentProvider {
 
     static final String AUTHORITY = "com.bloatware.bingblop.share";
+    private static final long KEEP_MS = 60 * 60 * 1000L;
+    private static final Pattern ID = Pattern.compile("[0-9a-f]{16}");
+    private static final SecureRandom RANDOM = new SecureRandom();
 
-    /** A fresh, empty file in cache/share. Old shares are cleared first so the folder cannot grow. */
+    /** A fresh path cache/share/<random id>/<name>; the folder exists, the file does not yet. */
     static File newShareFile(Context ctx, String name) {
-        File dir = new File(ctx.getCacheDir(), "share");
-        if (!dir.exists()) dir.mkdirs();
-        File[] old = dir.listFiles();
-        if (old != null) for (File f : old) f.delete();
+        File root = new File(ctx.getCacheDir(), "share");
+        root.mkdirs();
+        deleteOlderThan(root, System.currentTimeMillis() - KEEP_MS);
+        byte[] b = new byte[8];
+        RANDOM.nextBytes(b);
+        StringBuilder id = new StringBuilder();
+        for (byte x : b) id.append(String.format("%02x", x & 0xFF));
+        File dir = new File(root, id.toString());
+        dir.mkdirs();
         return new File(dir, safeName(name));
     }
 
     static Uri uriFor(File f) {
-        return new Uri.Builder().scheme("content").authority(AUTHORITY).appendPath(f.getName()).build();
+        return new Uri.Builder().scheme("content").authority(AUTHORITY)
+                .appendPath(f.getParentFile().getName()).appendPath(f.getName()).build();
+    }
+
+    private static void deleteOlderThan(File root, long cutoff) {
+        File[] dirs = root.listFiles();
+        if (dirs == null) return;
+        for (File d : dirs) {
+            if (d.lastModified() >= cutoff) continue;
+            File[] files = d.listFiles();
+            if (files != null) for (File f : files) f.delete();
+            d.delete();
+        }
     }
 
     private static String safeName(String name) {
@@ -41,10 +67,12 @@ public class ShareProvider extends ContentProvider {
     }
 
     private File fileFor(Uri uri) throws FileNotFoundException {
-        String name = uri.getLastPathSegment();
-        if (name == null || !name.equals(safeName(name))) throw new FileNotFoundException("bad name");
-        File f = new File(new File(getContext().getCacheDir(), "share"), name);
-        if (!f.isFile()) throw new FileNotFoundException(name);
+        java.util.List<String> seg = uri.getPathSegments();
+        if (seg.size() != 2 || !ID.matcher(seg.get(0)).matches() || !seg.get(1).equals(safeName(seg.get(1)))) {
+            throw new FileNotFoundException("bad path");
+        }
+        File f = new File(new File(new File(getContext().getCacheDir(), "share"), seg.get(0)), seg.get(1));
+        if (!f.isFile()) throw new FileNotFoundException(seg.get(1));
         return f;
     }
 

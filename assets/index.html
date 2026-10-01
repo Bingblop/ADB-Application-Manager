@@ -4309,10 +4309,12 @@ Type any command below (e.g. pm list packages -d)
             }
         }
 
+        // true unless the app reported that it could not keep the data (for example, it is too large)
         function saveStoreJson(key, value) {
             try {
-                if (window.AndroidBridge && window.AndroidBridge.saveStore) window.AndroidBridge.saveStore(key, JSON.stringify(value));
+                if (window.AndroidBridge && window.AndroidBridge.saveStore) return window.AndroidBridge.saveStore(key, JSON.stringify(value)) !== false;
             } catch (e) {}
+            return true;
         }
 
         function saveUiState() {
@@ -4431,7 +4433,8 @@ Type any command below (e.g. pm list packages -d)
             showToast('Undoing ' + items.length + ' actions...', '↺');
             setTimeout(() => {
                 const rows = [];
-                items.forEach(i => {
+                // Newest step first, so a profile run that touched one app twice is unwound in the right order
+                items.slice().reverse().forEach(i => {
                     const undo = UNDO_ACTION[i.action];
                     performDetailedBatchAction(undo, [i.pkg]).rows.forEach(r => rows.push({ pkg: i.pkg, name: i.name, action: undo, success: r.success, output: r.output, removal: i.removal }));
                 });
@@ -4940,26 +4943,29 @@ Type any command below (e.g. pm list packages -d)
             }
         }
 
-        let shareAfterExtract = false;
+        // One extraction at a time: the result carries the package, and the request remembers whether to share it
+        let extractPending = null;
         function extractApkUI(share) {
             if (!inspectedPkg || !window.AndroidBridge || !window.AndroidBridge.extractApk) return;
+            if (extractPending) { showToast('An APK is still being extracted. Try again in a moment.', 'ℹ️'); return; }
             haptic();
-            shareAfterExtract = share === true;
-            showToast(shareAfterExtract ? 'Extracting APK to share...' : 'Extracting APK...', '📦');
+            const req = extractPending = { pkg: inspectedPkg, share: share === true };
+            setTimeout(() => { if (extractPending === req) extractPending = null; }, 300000);   // never block forever
+            showToast(req.share ? 'Extracting APK to share...' : 'Extracting APK...', '📦');
             window.AndroidBridge.extractApk(inspectedPkg);
         }
 
         // Called by MainActivity when the APK copy finishes
         function onApkExtracted(json) {
             const r = JSON.parse(json || '{}');
-            if (r.ok && shareAfterExtract) {
-                shareAfterExtract = false;
+            const req = extractPending;
+            extractPending = null;
+            if (r.ok && req && req.share && (!r.pkg || r.pkg === req.pkg)) {
                 const nm = String(r.path || '').split('/').pop();
                 const err = window.AndroidBridge && window.AndroidBridge.shareStoredFile ? window.AndroidBridge.shareStoredFile(r.ref || r.path, r.mime || 'application/octet-stream', nm) : 'Error: sharing unavailable';
                 if (err) showToast(err, '⚠️');
                 return;
             }
-            shareAfterExtract = false;
             if (r.ok) {
                 showToast(`Saved ${formatBytes(r.bytes)} to ${r.path}${r.splits > 1 ? ' (split app: install the .apks with a split-APK installer such as SAI)' : ''}`, '📦');
             } else {
@@ -6554,8 +6560,13 @@ Type any command below (e.g. pm list packages -d)
             return profiles;
         }
 
+        // false when the app could not keep the profiles (too much data); callers undo their change and say so
         function persistProfiles() {
-            saveStoreJson('profiles', profiles);
+            return saveStoreJson('profiles', profiles);
+        }
+
+        function profilesFull() {
+            showToast('Profiles are full. Delete one to make room.', '⚠️');
         }
 
         function appStateOf(a) {
@@ -6604,10 +6615,10 @@ Type any command below (e.g. pm list packages -d)
         function saveProfile() {
             const name = document.getElementById('profileName').value.trim();
             if (!name) { showToast('Give the profile a name', '⚠️'); return; }
-            const apps = profileScope().map(a => ({ pkg: a.pkg, name: a.name, state: appStateOf(a) }));
+            const apps = profileScope().map(a => ({ pkg: a.pkg, name: a.name, state: appStateOf(a), frozen: !!a.isFrozen, suspended: !!a.isSuspended }));
             if (!apps.length) { showToast('No disabled, suspended or uninstalled apps to save', 'ℹ️'); return; }
             loadProfiles().unshift({ id: 'prof_' + Date.now(), name, created: Date.now(), apps });
-            persistProfiles();
+            if (!persistProfiles()) { profiles.shift(); profilesFull(); return; }
             document.getElementById('profileName').value = '';
             renderProfiles();
             showToast(`Saved profile "${name}" (${apps.length} apps)`, '🗂️');
@@ -6630,8 +6641,9 @@ Type any command below (e.g. pm list packages -d)
 
         function deleteProfile(id) {
             haptic();
-            profiles = loadProfiles().filter(x => x.id !== id);
-            persistProfiles();
+            const before = loadProfiles();
+            profiles = before.filter(x => x.id !== id);
+            if (!persistProfiles()) { profiles = before; profilesFull(); }
             profilePending = null;
             document.getElementById('profilePreview').style.display = 'none';
             renderProfiles();
@@ -6644,10 +6656,14 @@ Type any command below (e.g. pm list packages -d)
                 const d = JSON.parse(raw);
                 if (d.format !== 'adb-app-manager-profile' || !Array.isArray(d.apps)) throw new Error('not a profile');
                 const apps = d.apps.filter(a => a && typeof a.pkg === 'string' && ['disabled', 'suspended', 'uninstalled'].includes(a.state))
-                    .map(a => ({ pkg: a.pkg, name: String(a.name || a.pkg), state: a.state }));
+                    .map(a => {
+                        const e = { pkg: a.pkg, name: String(a.name || a.pkg), state: a.state };
+                        if (typeof a.frozen === 'boolean' && typeof a.suspended === 'boolean') { e.frozen = a.frozen; e.suspended = a.suspended; }
+                        return e;
+                    });
                 if (!apps.length) throw new Error('no apps');
                 loadProfiles().unshift({ id: 'prof_' + Date.now(), name: String(d.name || 'Imported profile').slice(0, 60), created: Date.now(), apps });
-                persistProfiles();
+                if (!persistProfiles()) { profiles.shift(); profilesFull(); return; }
                 document.getElementById('profileImport').value = '';
                 renderProfiles();
                 showToast('Imported ' + apps.length + ' apps', '📥');
@@ -6670,9 +6686,10 @@ Type any command below (e.g. pm list packages -d)
             const target = list.find(p => p.id === id);
             if (!target) return;
             const turnOn = !target.watch;
+            const wasWatching = list.map(p => !!p.watch);
             list.forEach(p => { p.watch = false; });
             target.watch = turnOn;
-            persistProfiles();
+            if (!persistProfiles()) { list.forEach((p, i) => { p.watch = wasWatching[i]; }); profilesFull(); return; }
             if (window.AndroidBridge && window.AndroidBridge.setWatchedProfile) window.AndroidBridge.setWatchedProfile(turnOn ? target.name : '');
             driftDismissed = false;
             renderProfiles();
@@ -6686,10 +6703,11 @@ Type any command below (e.g. pm list packages -d)
             const pr = watchedProfile();
             if (!pr || driftDismissed || !allApps.length) { banner.style.display = 'none'; return; }
             const plan = profilePlan(pr);
-            const n = plan.freeze.length + plan.suspend.length + plan.uninstall.length;
+            const n = plan.apps;
             if (!n) { banner.style.display = 'none'; return; }
-            document.getElementById('driftTitle').innerText = (buildChangedThisLaunch ? 'Your phone was updated. ' : '') + `${n} app${n === 1 ? '' : 's'} from "${pr.name}" ${n === 1 ? 'is' : 'are'} back`;
-            document.getElementById('driftDesc').innerText = `Disable ${plan.freeze.length} • Suspend ${plan.suspend.length} • Uninstall ${plan.uninstall.length}. Review before applying.`;
+            document.getElementById('driftTitle').innerText = (buildChangedThisLaunch ? 'Your phone was updated. ' : '') + `${n} app${n === 1 ? '' : 's'} from "${pr.name}" ${n === 1 ? 'no longer matches' : 'no longer match'} it`;
+            const sum = planSummary(plan);
+            document.getElementById('driftDesc').innerText = sum.charAt(0).toUpperCase() + sum.slice(1) + '. Review before applying.';
             banner.style.display = 'flex';
         }
 
@@ -6706,20 +6724,51 @@ Type any command below (e.g. pm list packages -d)
             previewProfile(pr.id);
         }
 
-        // Works out what has to change on this phone to match the profile
+        // What the profile wants for one entry: uninstalled, or frozen / suspended (true, false, or null = leave as is)
+        function profileTarget(entry) {
+            if (entry.state === 'uninstalled') return { uninstalled: true };
+            if (typeof entry.frozen === 'boolean' && typeof entry.suspended === 'boolean') return { frozen: entry.frozen, suspended: entry.suspended };
+            // Profiles saved before the flags existed only have the (collapsed) state
+            return entry.state === 'disabled' ? { frozen: true, suspended: false } : { frozen: null, suspended: true };
+        }
+
+        const PLAN_ORDER = ['reinstall', 'unfreeze', 'unsuspend', 'freeze', 'suspend', 'uninstall'];
+        const PLAN_WORDS = { reinstall: 'bring back', unfreeze: 're-enable', unsuspend: 'unsuspend', freeze: 'disable', suspend: 'suspend', uninstall: 'uninstall' };
+
+        // Works out, per app, the ordered steps that make this phone match the profile.
+        // unfreeze also unsuspends, so it runs before suspend; apps removed for this user are brought back first.
         function profilePlan(pr) {
-            const plan = { freeze: [], suspend: [], uninstall: [], same: 0, missing: 0 };
+            const plan = { steps: {}, same: 0, missing: 0, apps: 0, total: 0 };
+            PLAN_ORDER.forEach(k => { plan.steps[k] = []; });
             pr.apps.forEach(entry => {
                 const a = allApps.find(x => x.pkg === entry.pkg);
                 if (!a) { plan.missing++; return; }
-                const now = appStateOf(a);
-                if (now === entry.state) { plan.same++; return; }
-                if (entry.state === 'disabled' && now === 'enabled') plan.freeze.push(a.pkg);
-                else if (entry.state === 'suspended' && now === 'enabled') plan.suspend.push(a.pkg);
-                else if (entry.state === 'uninstalled' && now !== 'uninstalled') plan.uninstall.push(a.pkg);
-                else plan.same++;
+                const t = profileTarget(entry);
+                const touched = [];
+                const add = (step) => { plan.steps[step].push(a.pkg); touched.push(step); };
+                if (t.uninstalled) {
+                    if (!a.isUninstalled) add('uninstall');
+                } else {
+                    let f = !!a.isFrozen, s = !!a.isSuspended;
+                    if (a.isUninstalled) {
+                        add('reinstall');
+                        f = t.frozen === false;   // after install-existing the old state is unknown: assume the opposite so the step below runs
+                        s = t.suspended === false;
+                    }
+                    if (t.frozen === false && f) { add('unfreeze'); f = false; s = false; }
+                    if (t.suspended === false && s) { add('unsuspend'); s = false; }
+                    if (t.frozen === true && !f) { add('freeze'); f = true; }
+                    if (t.suspended === true && !s) { add('suspend'); s = true; }
+                }
+                if (touched.length) plan.apps++; else plan.same++;
+                plan.total += touched.length;
             });
             return plan;
+        }
+
+        function planSummary(plan) {
+            const parts = PLAN_ORDER.filter(k => plan.steps[k].length).map(k => `${PLAN_WORDS[k]} ${plan.steps[k].length}`);
+            return parts.length ? parts.join(', ') : 'nothing to change';
         }
 
         function previewProfile(id) {
@@ -6728,10 +6777,10 @@ Type any command below (e.g. pm list packages -d)
             if (!pr) return;
             const plan = profilePlan(pr);
             profilePending = { id, plan };
-            const total = plan.freeze.length + plan.suspend.length + plan.uninstall.length;
+            const total = plan.apps;
             const box = document.getElementById('profilePreview');
             box.style.display = 'block';
-            box.innerHTML = `<b>${escapeHtml(pr.name)}</b><br>Will disable ${plan.freeze.length}, suspend ${plan.suspend.length} and uninstall ${plan.uninstall.length} apps.<br>
+            box.innerHTML = `<b>${escapeHtml(pr.name)}</b><br>Will ${escapeHtml(planSummary(plan))} (${total} app${total === 1 ? '' : 's'}).<br>
                 ${plan.same} already match, ${plan.missing} are not on this phone and are skipped.<br>
                 <button class="profile-btn accent" ${total ? '' : 'disabled'} onclick="applyProfile()">Confirm apply (${total})</button>
                 <button class="profile-btn" onclick="document.getElementById('profilePreview').style.display='none'">Cancel</button>`;
@@ -6749,7 +6798,8 @@ Type any command below (e.g. pm list packages -d)
             const histRows = [];
             const shown = [];
             let ok = 0, bad = 0;
-            [['freeze', plan.freeze], ['suspend', plan.suspend], ['uninstall', plan.uninstall]].forEach(([action, pkgs]) => {
+            PLAN_ORDER.forEach(action => {
+                const pkgs = plan.steps[action];
                 if (!pkgs.length) return;
                 const res = performDetailedBatchAction(action, pkgs);
                 ok += res.success; bad += res.failed;

@@ -3033,10 +3033,12 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
-        public void saveStore(String key, String json) {
+        public boolean saveStore(String key, String json) {
             if (UI_STORE_KEYS.contains(key) && json != null && json.length() < 512 * 1024) {
                 prefs.edit().putString("store_" + key, json).apply();
+                return true;
             }
+            return false; // too large or not an allowed key: the page shows an error instead of losing the data silently
         }
 
         @JavascriptInterface

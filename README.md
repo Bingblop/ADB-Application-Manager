@@ -63,7 +63,7 @@ tell you when a new version is out (see [Updates](#updates)).
 | | |
 |---|---|
 | **Apps** | Browse every package, including ones uninstalled for your user · search · sort by name, update date, install date, size or "updates first" · filters for running, 3rd party, system, frozen, suspended, uninstalled and **updated in the last 7 days** · versions and update hints in the list · select many and run batch actions · save selections as named lists · export everything to CSV |
-| **Actions** | Launch · Force Stop · Freeze / Enable · **Suspend / Unsuspend** · Clear Data · Uninstall for user 0 · Reinstall removed system apps · Remove Updates · App Info · **Extract APK** · **Share APK**, all single-app or batch |
+| **Actions** | **App menu (one app):** Launch · Force Stop · Freeze / Enable · **Suspend / Unsuspend** · Clear Data · Uninstall for user 0 · Reinstall removed system apps · Remove Updates · App Info · **Extract APK** · **Share APK** · **Backup**. **Batch (selected apps):** Freeze · Enable · Force Stop · Suspend · Unsuspend · Clear Data · Uninstall · Reinstall · Save to List · Copy Packages · Share List |
 | **Debloater** | The [UAD-NG](https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation) community list (5,000+ packages) with descriptions and dependency warnings · filter by removal level, vendor list, state and **phone brand** · review step before anything runs · **history log with one-tap Undo** |
 | **Updates** | **Galaxy Store** (Samsung system apps) · **GitHub, Codeberg, F-Droid, IzzyOnDroid and the Obtainium catalog** for sideloaded open-source apps · import your **Obtainium** export · Update one or **Update All** · signing-key check before installing |
 | **Inspector** | Permissions and App Ops as separate lists · all activities including **unexported ones, launchable through ADB / Shizuku / Root** · services · decoded **AndroidManifest.xml** viewer · version, install and update dates · APK, data and cache sizes |
@@ -244,8 +244,8 @@ With nothing selected a profile covers every non-enabled app; with apps selected
 
 **👁️ Watch a profile.** System updates often bring removed apps back. Tap **👁️ Watch** on one profile and the
 app compares your phone with it every time it opens. When apps have come back, a banner on the Applications
-tab says how many ("Your phone was updated. 3 apps from "Lean Samsung" are back") and **Review** opens the
-usual preview. After a reboot into a new system build a notification reminds you too (Android 13+ asks for
+tab says how many ("Your phone was updated. 3 apps from "Lean Samsung" no longer match it") and **Review**
+opens the usual preview. After a reboot into a new system build a notification reminds you too (Android 13+ asks for
 notification permission the first time). Nothing is applied automatically: removing apps always goes through
 a review you confirm.
 
@@ -476,7 +476,7 @@ release/                       Signed release APKs and SHA256SUMS.txt
 
 ## Testing
 
-- **UI**: 20 headless-browser suites drive the real `index.html` against a mock Android bridge (every tab,
+- **UI**: 21 headless-browser suites drive the real `index.html` against a mock Android bridge (every tab,
   theme, filter, share/copy/find action, profiles, drift banner, What's new, quick list, backup and restore flows).
 - **Backup scripts**: run against a fake `/data` tree with real `tar`, including hostile archives (other apps'
   paths, `..`, hard links, outward links, damaged files): 24 checks.
