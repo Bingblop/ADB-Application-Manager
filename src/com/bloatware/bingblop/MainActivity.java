@@ -4075,6 +4075,7 @@ public class MainActivity extends Activity {
             JSONObject res = new JSONObject();
             try {
                 String p = (path == null || path.isEmpty()) ? "/" : path;
+                p = p.replaceAll("/{2,}", "/");                 // collapse any // so paths self-heal
                 if (p.length() > 1 && p.endsWith("/")) p = p.substring(0, p.length() - 1);
                 res.put("path", p);
                 int slash = p.lastIndexOf('/');
@@ -4111,8 +4112,11 @@ public class MainActivity extends Activity {
                     res.put("error", "Can't read this folder. For storage, grant All-files access; for system folders, set up ADB, Shizuku or Root.");
                     return res.toString();
                 }
-                String out = executeShell("ls -la " + BackupScripts.quote(p));
-                String names = executeShell("ls -1p " + BackupScripts.quote(p));
+                // Append a trailing "/" so a symlinked directory (e.g. /sdcard -> /storage/self/primary)
+                // is listed by its CONTENTS rather than printing the link itself as a lone entry.
+                String listTarget = p.equals("/") ? "/" : p + "/";
+                String out = executeShell("ls -la " + BackupScripts.quote(listTarget));
+                String names = executeShell("ls -1p " + BackupScripts.quote(listTarget));
                 res.put("raw", out != null ? out : "");
                 res.put("names", names != null ? names : "");
                 res.put("source", "shell");
@@ -4157,11 +4161,27 @@ public class MainActivity extends Activity {
             });
         }
 
-        /** First 128 KB of a file as text (for viewing). */
+        /** First 128 KB of a file as text (for viewing). Reads directly when the app can (e.g. /sdcard),
+         *  else through the shell for privileged paths. */
         @JavascriptInterface
         public String fmRead(String path) {
             try {
-                if ("standard".equals(resolveExecMode())) return "Error: needs ADB, Shizuku or Root.";
+                File f = new File(path);
+                if (f.isFile() && f.canRead()) {
+                    java.io.FileInputStream in = new java.io.FileInputStream(f);
+                    try {
+                        java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
+                        byte[] buf = new byte[65536];
+                        int n, total = 0;
+                        while ((n = in.read(buf)) > 0) {
+                            bo.write(buf, 0, n);
+                            total += n;
+                            if (total >= 131072) break;
+                        }
+                        return new String(bo.toByteArray(), "UTF-8");
+                    } finally { in.close(); }
+                }
+                if ("standard".equals(resolveExecMode())) return "Error: needs ADB, Shizuku or Root (or grant All-files access for storage).";
                 return executeShell("toybox head -c 131072 " + BackupScripts.quote(path) + " 2>&1 || head -c 131072 " + BackupScripts.quote(path));
             } catch (Exception e) { return "Error: " + e.getMessage(); }
         }
@@ -4190,12 +4210,18 @@ public class MainActivity extends Activity {
             return res.toString();
         }
 
-        /** Stages an APK from an arbitrary (privileged) path to a readable temp, for the Installer. {ok,ref}|{error}. */
+        /** Stages an APK from an arbitrary (privileged) path to a readable temp, for the Installer. {ok,ref}|{error}.
+         *  When the app itself can read the file (storage with All-files access), the Installer reads it in
+         *  place with no shell at all; only truly privileged paths fall back to staging in /data/local/tmp. */
         @JavascriptInterface
         public String fmInstall(String path) {
             JSONObject res = new JSONObject();
             try {
-                if ("standard".equals(resolveExecMode())) { res.put("ok", false); res.put("error", "needs ADB, Shizuku or Root"); return res.toString(); }
+                try {
+                    File f = new File(path);
+                    if (f.isFile() && f.canRead()) { res.put("ok", true); res.put("ref", path); return res.toString(); }
+                } catch (Exception ignored) {}
+                if ("standard".equals(resolveExecMode())) { res.put("ok", false); res.put("error", "Can't read this APK. For storage, grant All-files access; for system paths, set up ADB, Shizuku or Root."); return res.toString(); }
                 String staged = "/data/local/tmp/fm_install.apk";
                 String out = executeShell("cp " + BackupScripts.quote(path) + " " + staged + " && chmod 644 " + staged + " && echo OK");
                 if (out == null || !out.contains("OK")) { res.put("ok", false); res.put("error", out != null ? out.trim() : "copy failed"); return res.toString(); }

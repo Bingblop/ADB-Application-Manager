@@ -6139,7 +6139,7 @@ Type any command below (e.g. pm list packages -d)
             if (!window.AndroidBridge || !window.AndroidBridge.fmList) { showToast('Needs the app build', '⚠️'); return; }
             let d;
             try { d = JSON.parse(window.AndroidBridge.fmList(path)); } catch (e) { d = { error: String(e && e.message || e) }; }
-            fmPath = d.path || path;
+            fmPath = fmNormalizePath(d.path || path);
             document.getElementById('fmPathInput').value = fmPath;
             document.getElementById('fmCurrentPath').innerText = fmPath;
             let entries;
@@ -6214,6 +6214,8 @@ Type any command below (e.g. pm list packages -d)
             let link = null;
             const arrow = name.indexOf(' -> ');
             if (arrow >= 0) { link = name.slice(arrow + 4); name = name.slice(0, arrow); }
+            // Reduce an absolute/slashed name (e.g. a lone symlink listing printed as "/sdcard") to its basename.
+            name = name.replace(/\/+$/, ''); if (name.indexOf('/') >= 0) name = name.slice(name.lastIndexOf('/') + 1);
             if (!name || name === '.' || name === '..') return null;
             return { name, isDir: type === 'd', isLink: type === 'l', perms, size, link };
         }
@@ -6222,8 +6224,15 @@ Type any command below (e.g. pm list packages -d)
             const i = fmPath.lastIndexOf('/');
             fmGo(i <= 0 ? '/' : fmPath.substring(0, i));
         }
-        function fmParent(p) { const i = p.lastIndexOf('/'); return i <= 0 ? '/' : p.substring(0, i); }
-        function fmJoin(name) { return (fmPath === '/' ? '' : fmPath) + '/' + name; }
+        // Collapse any run of slashes to one and drop a trailing slash (keeping root "/").
+        function fmNormalizePath(p) {
+            if (!p) return '/';
+            p = String(p).replace(/\/{2,}/g, '/');
+            if (p.length > 1) p = p.replace(/\/+$/, '');
+            return p || '/';
+        }
+        function fmParent(p) { p = fmNormalizePath(p); const i = p.lastIndexOf('/'); return i <= 0 ? '/' : p.substring(0, i); }
+        function fmJoin(name) { return fmNormalizePath((fmPath === '/' ? '' : fmPath) + '/' + name); }
 
         function renderFm(d) {
             const el = document.getElementById('fmList');

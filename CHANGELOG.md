@@ -1,5 +1,18 @@
 # Changelog
 
+## v4.9.4-Pro (versionCode 394)
+
+More file-manager fixes from on-device testing:
+
+- **Fixed the `/sdcard//sdcard` doubled-path bug.** Because `/sdcard` is a symlink to the real storage
+  volume, the shell fallback was listing the *link itself* as a lone entry instead of the folder's contents.
+  Storage folders are now dereferenced when listed, and all paths are normalized (no more duplicate slashes),
+  so `/sdcard` opens straight into its contents.
+- **View and Install from the file manager no longer need a shell.** Viewing a file and installing an APK
+  found in storage now read the file directly through the app's own file access (matching how listing already
+  works), so they work on storage with All-files access and avoid shell-visibility limits. Privileged system
+  paths still fall back to the shell.
+
 ## v4.9.3-Pro (versionCode 393)
 
 More on-device fixes:
