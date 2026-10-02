@@ -2136,6 +2136,7 @@
     <nav class="tab-bar">
         <button class="tab-btn active" onclick="switchView('apps')">📱 Applications</button>
         <button class="tab-btn" onclick="switchView('debloater')">🧹 Debloater</button>
+        <button class="tab-btn" onclick="switchView('installer')">📦 Installer</button>
         <button class="tab-btn" onclick="switchView('updates')" id="updatesTabBtn">⬆️ Updates</button>
         <button class="tab-btn" onclick="switchView('saved-lists')">📋 Saved Lists</button>
         <button class="tab-btn" onclick="switchView('colors')">🎨 Color & Themes</button>
@@ -2304,6 +2305,158 @@
 
             <div id="uadContainer">
                 <div class="list-empty">Open this tab to load the debloat list.</div>
+            </div>
+        </section>
+
+        <!-- VIEW: INSTALLER (APK / APKS / APKM) -->
+        <section id="view-installer" class="view-content">
+            <div class="color-card">
+                <div class="color-card-title">📦 Install a package</div>
+                <div class="color-card-subtitle">APK, APKS or APKM — base plus splits, with full install control</div>
+                <button class="batch-grid-btn accent" style="width:100%;height:46px;margin-top:6px;" onclick="pickInstallFile()">📂 Choose APK / APKS / APKM</button>
+                <div id="installPickHint" class="color-card-subtitle" style="margin-top:10px;">Pick a package file to read it and choose how to install it.</div>
+            </div>
+
+            <!-- Package info (after a pick) -->
+            <div class="color-card" id="installInfoCard" style="display:none;">
+                <div class="color-card-title" id="installPkgLabel">—</div>
+                <div class="color-card-subtitle" id="installPkgName" style="font-family:monospace;word-break:break-all;"></div>
+                <div id="installInfoGrid" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;"></div>
+                <div id="installSignRow" class="color-card-subtitle" style="margin-top:8px;"></div>
+            </div>
+
+            <!-- Splits (APKS/APKM) -->
+            <div class="color-card" id="installSplitsCard" style="display:none;">
+                <div class="color-card-title">🧩 Splits</div>
+                <div class="color-card-subtitle">Pick which split APKs to install. The base APK is always included.</div>
+                <div class="batch-sheet-tools" style="margin:8px 0;gap:14px;">
+                    <button class="batch-tool-link" onclick="installSelectAllSplits(true)">Select all</button>
+                    <button class="batch-tool-link" onclick="installSelectAllSplits(false)" style="color:var(--text-muted);">Only base</button>
+                </div>
+                <div id="installSplitsList"></div>
+            </div>
+
+            <!-- Install options -->
+            <div class="color-card" id="installOptionsCard" style="display:none;">
+                <div class="color-card-title">⚙️ Install options</div>
+
+                <label class="switch-row">
+                    <div><div class="switch-title">Authorizer</div><div class="switch-sub">Which backend performs the install</div></div>
+                    <select class="op-select" id="optAuthorizer" onchange="installAuthorizerChanged()">
+                        <option value="adb">ADB</option>
+                        <option value="shizuku">Shizuku</option>
+                        <option value="root">Root</option>
+                        <option value="none">No privilege</option>
+                    </select>
+                </label>
+
+                <label class="switch-row">
+                    <div><div class="switch-title">Grant all permissions</div><div class="switch-sub">pm install -g</div></div>
+                    <input type="checkbox" class="switch-input" data-priv="1" id="optGrantAll" onchange="updateInstallPreview()"><span class="switch-track"></span>
+                </label>
+                <label class="switch-row">
+                    <div><div class="switch-title">Bypass low target SDK block</div><div class="switch-sub">--bypass-low-target-sdk-block (Android 14+)</div></div>
+                    <input type="checkbox" class="switch-input" data-priv="1" id="optBypassSdk" onchange="updateInstallPreview()"><span class="switch-track"></span>
+                </label>
+                <label class="switch-row">
+                    <div><div class="switch-title">Allow downgrade</div><div class="switch-sub">-d — install an older version over a newer one</div></div>
+                    <input type="checkbox" class="switch-input" data-priv="1" id="optDowngrade" onchange="updateInstallPreview()"><span class="switch-track"></span>
+                </label>
+                <label class="switch-row">
+                    <div><div class="switch-title">Allow test packages</div><div class="switch-sub">-t — allow android:testOnly APKs</div></div>
+                    <input type="checkbox" class="switch-input" data-priv="1" id="optAllowTest" onchange="updateInstallPreview()"><span class="switch-track"></span>
+                </label>
+                <label class="switch-row">
+                    <div><div class="switch-title">Install for all users</div><div class="switch-sub">--user all</div></div>
+                    <input type="checkbox" class="switch-input" data-priv="1" id="optAllUsers" onchange="updateInstallPreview()"><span class="switch-track"></span>
+                </label>
+                <label class="switch-row">
+                    <div><div class="switch-title">Request update ownership</div><div class="switch-sub">--update-ownership (Android 14+)</div></div>
+                    <input type="checkbox" class="switch-input" data-priv="1" id="optUpdateOwner" onchange="updateInstallPreview()"><span class="switch-track"></span>
+                </label>
+
+                <label class="switch-row">
+                    <div><div class="switch-title">Install reason</div><div class="switch-sub">--install-reason</div></div>
+                    <select class="op-select" id="optInstallReason" onchange="updateInstallPreview()">
+                        <option value="-1">Default</option>
+                        <option value="0">Unknown</option>
+                        <option value="1">Policy</option>
+                        <option value="2">Device restore</option>
+                        <option value="3">Device setup</option>
+                        <option value="4">User</option>
+                    </select>
+                </label>
+                <label class="switch-row">
+                    <div><div class="switch-title">Package source</div><div class="switch-sub">--package-source (Android 13+)</div></div>
+                    <select class="op-select" id="optPackageSource" onchange="updateInstallPreview()">
+                        <option value="-1">Default</option>
+                        <option value="0">Unspecified</option>
+                        <option value="1">Store</option>
+                        <option value="2">Local file</option>
+                        <option value="3">Downloaded file</option>
+                        <option value="4">Other</option>
+                    </select>
+                </label>
+
+                <div style="margin-top:12px;">
+                    <div class="switch-title">Install source / installer package <span class="switch-sub" style="font-weight:600;">(-i)</span></div>
+                    <input class="modal-text-input" id="optInstaller" placeholder="e.g. com.android.vending (optional)" oninput="updateInstallPreview()">
+                </div>
+                <div style="margin-top:10px;">
+                    <div class="switch-title">Install requester / originating URI <span class="switch-sub" style="font-weight:600;">(--originating-uri)</span></div>
+                    <input class="modal-text-input" id="optOriginating" placeholder="optional" oninput="updateInstallPreview()">
+                </div>
+
+                <label class="switch-row" style="margin-top:12px;">
+                    <div><div class="switch-title">Manual dex optimization</div><div class="switch-sub">Run pm compile after install</div></div>
+                    <input type="checkbox" class="switch-input" data-priv="1" id="optDexopt" onchange="updateInstallPreview()"><span class="switch-track"></span>
+                </label>
+                <label class="switch-row">
+                    <div><div class="switch-title">Dex optimization mode</div><div class="switch-sub">pm compile -m</div></div>
+                    <select class="op-select" id="optDexMode" onchange="updateInstallPreview()">
+                        <option value="verify">verify</option>
+                        <option value="speed-profile">speed-profile</option>
+                        <option value="speed" selected>speed</option>
+                        <option value="everything">everything</option>
+                    </select>
+                </label>
+                <label class="switch-row">
+                    <div><div class="switch-title">Force optimization</div><div class="switch-sub">pm compile -f — recompile even if up to date</div></div>
+                    <input type="checkbox" class="switch-input" data-priv="1" id="optDexForce" onchange="updateInstallPreview()"><span class="switch-track"></span>
+                </label>
+
+                <label class="switch-row" style="margin-top:12px;">
+                    <div><div class="switch-title">Block signature mismatch</div><div class="switch-sub">Refuse if an installed copy is signed with a different key</div></div>
+                    <input type="checkbox" class="switch-input" id="optBlockMismatch" checked onchange="updateInstallPreview()"><span class="switch-track"></span>
+                </label>
+                <label class="switch-row">
+                    <div><div class="switch-title">Block unknown signature</div><div class="switch-sub">Refuse an unsigned or unreadable package</div></div>
+                    <input type="checkbox" class="switch-input" id="optBlockUnknown" checked onchange="updateInstallPreview()"><span class="switch-track"></span>
+                </label>
+                <label class="switch-row">
+                    <div><div class="switch-title">Auto-delete package after install</div><div class="switch-sub">Delete the chosen file once it installs successfully</div></div>
+                    <input type="checkbox" class="switch-input" id="optAutoDelete" onchange="updateInstallPreview()"><span class="switch-track"></span>
+                </label>
+
+                <label class="switch-row">
+                    <div><div class="switch-title">Display SDK information</div><div class="switch-sub">Show min / target SDK above</div></div>
+                    <input type="checkbox" class="switch-input" id="optShowSdk" checked onchange="renderInstallInfo()"><span class="switch-track"></span>
+                </label>
+                <label class="switch-row">
+                    <div><div class="switch-title">Display package size</div><div class="switch-sub">Show the download size above</div></div>
+                    <input type="checkbox" class="switch-input" id="optShowSize" checked onchange="renderInstallInfo()"><span class="switch-track"></span>
+                </label>
+                <label class="switch-row">
+                    <div><div class="switch-title">Display package version</div><div class="switch-sub">Show versionName / versionCode above</div></div>
+                    <input type="checkbox" class="switch-input" id="optShowVersion" checked onchange="renderInstallInfo()"><span class="switch-track"></span>
+                </label>
+                <label class="switch-row">
+                    <div><div class="switch-title">Select all splits by default</div><div class="switch-sub">Tick every split when a package is opened</div></div>
+                    <input type="checkbox" class="switch-input" id="optSelectAllSplits" checked><span class="switch-track"></span>
+                </label>
+
+                <button class="batch-grid-btn accent" style="width:100%;height:48px;margin-top:16px;" onclick="runInstall()">⬇️ Install</button>
+                <div id="installPreview" class="color-card-subtitle" style="margin-top:10px;font-family:monospace;word-break:break-all;"></div>
             </div>
         </section>
 
@@ -3449,7 +3602,7 @@ Type any command below (e.g. pm list packages -d)
             return Object.assign(resolvePresetScheme(themeState.preset, mode), definedColors(themeState.overrides[mode]));
         }
 
-        const tabKeys = ['apps', 'debloater', 'updates', 'saved-lists', 'colors', 'terminal'];
+        const tabKeys = ['apps', 'debloater', 'installer', 'updates', 'saved-lists', 'colors', 'terminal'];
 
         function switchView(viewName) {
             const targetIdx = tabKeys.indexOf(viewName);
@@ -3474,6 +3627,7 @@ Type any command below (e.g. pm list packages -d)
             }
             if (viewName === 'debloater') onDebloaterShown();
             if (viewName === 'updates') onUpdatesShown();
+            if (viewName === 'installer') onInstallerShown();
             haptic();
         }
 
@@ -5610,6 +5764,229 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('searchClear').style.display = 'none';
             renderApps();
         }
+
+        // ---- Installer (APK / APKS / APKM) ----
+        let installData = null;
+        let installerAuthPicked = false;
+
+        function fmtInstallSize(n) {
+            n = Number(n) || 0;
+            if (n < 1024) return n + ' B';
+            if (n < 1048576) return (n / 1024).toFixed(1) + ' KB';
+            return (n / 1048576).toFixed(1) + ' MB';
+        }
+
+        function onInstallerShown() {
+            // First time in (before a package is loaded), default the authorizer to the active mode.
+            if (!installerAuthPicked && !installData) {
+                const map = { adb_tcp: 'adb', adb_wireless: 'adb', shizuku: 'shizuku', root: 'root' };
+                const sel = document.getElementById('optAuthorizer');
+                if (sel) { sel.value = map[currentWorkingMode] || (isPrivilegedActive ? 'adb' : 'none'); }
+            }
+            installAuthorizerChanged();
+        }
+
+        function pickInstallFile() {
+            haptic();
+            if (!window.AndroidBridge || !window.AndroidBridge.pickInstallerFile) {
+                showToast('Installer needs the app build', '⚠️');
+                return;
+            }
+            document.getElementById('installPickHint').innerText = 'Opening file picker...';
+            window.AndroidBridge.pickInstallerFile();
+        }
+
+        function onInstallFilePicked(ref) {
+            document.getElementById('installPickHint').innerText = 'Reading package...';
+            if (window.AndroidBridge && window.AndroidBridge.inspectInstallSource) {
+                window.AndroidBridge.inspectInstallSource(ref);
+            }
+        }
+        window.onInstallFilePicked = onInstallFilePicked;
+
+        function onInstallInspected(json) {
+            let d;
+            try { d = JSON.parse(json); } catch (e) { d = { error: 'could not read package' }; }
+            if (d.error) {
+                installData = null;
+                document.getElementById('installPickHint').innerText = '⚠️ ' + d.error;
+                document.getElementById('installInfoCard').style.display = 'none';
+                document.getElementById('installSplitsCard').style.display = 'none';
+                document.getElementById('installOptionsCard').style.display = 'none';
+                showToast('Could not read package', '⚠️');
+                return;
+            }
+            installData = d;
+            document.getElementById('installPickHint').innerText = 'Loaded ' + (d.type || 'apk').toUpperCase() + ' — review and install below.';
+            renderInstallInfo();
+            renderInstallSplits();
+            document.getElementById('installInfoCard').style.display = '';
+            document.getElementById('installSplitsCard').style.display = (d.splits && d.splits.length > 1) ? '' : 'none';
+            document.getElementById('installOptionsCard').style.display = '';
+            installAuthorizerChanged();
+        }
+        window.onInstallInspected = onInstallInspected;
+
+        function renderInstallInfo() {
+            if (!installData) return;
+            const d = installData;
+            document.getElementById('installPkgLabel').innerText = d.label || d.pkg || 'Package';
+            document.getElementById('installPkgName').innerText = d.pkg || '';
+            const chips = [];
+            const chip = (k, v) => `<div style="background:rgba(var(--ov),0.08);border:1px solid var(--border-glass);border-radius:10px;padding:6px 10px;font-size:12px;font-weight:700;color:var(--text-main);">${escapeHtml(k)}: ${escapeHtml(v)}</div>`;
+            if (document.getElementById('optShowVersion').checked) {
+                chips.push(chip('Version', (d.versionName || '?') + ' (' + (d.versionCode != null ? d.versionCode : '?') + ')'));
+                if (d.installed) chips.push(chip('Installed', (d.installedVersionName || '?') + ' (' + (d.installedVersionCode != null ? d.installedVersionCode : '?') + ')'));
+            }
+            if (document.getElementById('optShowSdk').checked) {
+                if (d.minSdk != null) chips.push(chip('Min SDK', d.minSdk));
+                if (d.targetSdk != null) chips.push(chip('Target SDK', d.targetSdk));
+            }
+            if (document.getElementById('optShowSize').checked) {
+                chips.push(chip('Size', fmtInstallSize(d.totalSize)));
+                chips.push(chip('Splits', (d.splits || []).length));
+            }
+            document.getElementById('installInfoGrid').innerHTML = chips.join('');
+            let sign = '';
+            if (!d.signed) sign = '⚠️ Unsigned or unreadable signature.';
+            else if (d.installed) sign = d.signerMatchesInstalled ? '🔑 Signature matches the installed app.' : '⚠️ Signed with a different key than the installed app — Android will reject this as an update.';
+            else sign = '🔑 Signed. Not currently installed.';
+            document.getElementById('installSignRow').innerText = sign;
+        }
+
+        function renderInstallSplits() {
+            if (!installData) return;
+            const selectAll = document.getElementById('optSelectAllSplits').checked;
+            const rows = (installData.splits || []).map((s, i) => {
+                const label = s.isBase ? 'Base APK' : (s.split || s.name);
+                const checked = s.isBase || selectAll ? 'checked' : '';
+                const dis = s.isBase ? 'disabled' : '';
+                return `<label class="switch-row">
+                    <div><div class="switch-title">${escapeHtml(label)}</div><div class="switch-sub">${escapeHtml(s.name)} • ${fmtInstallSize(s.size)}</div></div>
+                    <input type="checkbox" class="switch-input install-split-cb" data-idx="${i}" ${checked} ${dis} onchange="updateInstallPreview()"><span class="switch-track"></span>
+                </label>`;
+            });
+            document.getElementById('installSplitsList').innerHTML = rows.join('');
+            updateInstallPreview();
+        }
+
+        function installSelectAllSplits(all) {
+            document.querySelectorAll('#installSplitsList .install-split-cb').forEach(cb => {
+                if (!cb.disabled) cb.checked = all;
+            });
+            updateInstallPreview();
+        }
+
+        function installAuthorizerChanged() {
+            const none = document.getElementById('optAuthorizer').value === 'none';
+            document.querySelectorAll('#installOptionsCard [data-priv="1"]').forEach(el => {
+                el.disabled = none;
+                if (none) el.checked = false;
+            });
+            ['optInstaller', 'optOriginating'].forEach(id => {
+                const el = document.getElementById(id);
+                el.disabled = none;
+                if (none) el.value = '';
+            });
+            installerAuthPicked = true;
+            updateInstallPreview();
+        }
+
+        function collectSelectedSplits() {
+            if (!installData) return [];
+            const picked = [];
+            const cbs = document.querySelectorAll('#installSplitsList .install-split-cb');
+            (installData.splits || []).forEach((s, i) => {
+                let on = s.isBase;
+                cbs.forEach(cb => { if (Number(cb.getAttribute('data-idx')) === i && cb.checked) on = true; });
+                if (on) picked.push({ path: s.path, name: s.name, isBase: !!s.isBase });
+            });
+            return picked;
+        }
+
+        // Builds { createFlags, opts } from the current controls. Pure function of the DOM, so the
+        // Playwright test can assert the exact pm command for a given set of toggles.
+        function buildInstallOptions() {
+            const val = id => document.getElementById(id);
+            const none = val('optAuthorizer').value === 'none';
+            const flags = ['-r'];
+            if (!none) {
+                if (val('optGrantAll').checked) flags.push('-g');
+                if (val('optDowngrade').checked) flags.push('-d');
+                if (val('optAllowTest').checked) flags.push('-t');
+                if (val('optAllUsers').checked) { flags.push('--user', 'all'); }
+                if (val('optBypassSdk').checked) flags.push('--bypass-low-target-sdk-block');
+                if (val('optUpdateOwner').checked) flags.push('--update-ownership');
+                const inst = val('optInstaller').value.trim();
+                if (inst) { flags.push('-i', inst); }
+                const orig = val('optOriginating').value.trim();
+                if (orig) { flags.push('--originating-uri', orig); }
+            }
+            const reason = parseInt(val('optInstallReason').value, 10);
+            const source = parseInt(val('optPackageSource').value, 10);
+            if (!none) {
+                if (reason >= 0) flags.push('--install-reason', String(reason));
+                if (source >= 0) flags.push('--package-source', String(source));
+            }
+            return {
+                opts: {
+                    splits: collectSelectedSplits(),
+                    createFlags: flags.join(' '),
+                    authorizer: val('optAuthorizer').value,
+                    blockMismatch: val('optBlockMismatch').checked,
+                    blockUnknown: val('optBlockUnknown').checked,
+                    dexopt: !none && val('optDexopt').checked,
+                    dexoptMode: val('optDexMode').value,
+                    dexForce: !none && val('optDexForce').checked,
+                    autoDelete: val('optAutoDelete').checked,
+                    sourceRef: installData ? (installData.ref || '') : '',
+                    pkg: installData ? (installData.pkg || '') : '',
+                    installReason: isNaN(reason) ? -1 : reason,
+                    packageSource: isNaN(source) ? -1 : source
+                },
+                createFlags: flags.join(' ')
+            };
+        }
+
+        function updateInstallPreview() {
+            if (!installData) { document.getElementById('installPreview').innerText = ''; return; }
+            const built = buildInstallOptions();
+            const n = built.opts.splits.length;
+            const el = document.getElementById('installPreview');
+            if (built.opts.authorizer === 'none') {
+                el.innerText = 'No privilege: a system install dialog will ask you to confirm. Most power options don\'t apply; install reason / package source are passed through where supported.';
+                return;
+            }
+            const verb = n > 1 ? 'install-multiple' : 'install';
+            el.innerText = 'pm ' + verb + ' ' + built.createFlags + '  (' + n + ' file' + (n === 1 ? '' : 's') + ')'
+                + (built.opts.dexopt ? '\npm compile -m ' + built.opts.dexoptMode + (built.opts.dexForce ? ' -f ' : ' ') + (built.opts.pkg || '<pkg>') : '');
+        }
+
+        function runInstall() {
+            if (!installData) { showToast('Pick a package first', '⚠️'); return; }
+            const built = buildInstallOptions();
+            if (!built.opts.splits.length) { showToast('No APK selected', '⚠️'); return; }
+            haptic();
+            if (!window.AndroidBridge || !window.AndroidBridge.installSelected) { showToast('Installer needs the app build', '⚠️'); return; }
+            showToast('Installing ' + (installData.label || installData.pkg) + '...', '📦');
+            window.AndroidBridge.installSelected(JSON.stringify(built.opts));
+        }
+
+        function onInstallResult(json) {
+            let r;
+            try { r = JSON.parse(json); } catch (e) { r = { ok: false, output: 'could not read result' }; }
+            showToast(r.ok ? 'Installed' : 'Install failed', r.ok ? '✅' : '⚠️');
+            let out = r.output || '';
+            if (r.dexopt) out += '\n\nDex optimization:\n' + r.dexopt;
+            if (r.sourceDeleted) out += '\n\nSource file deleted.';
+            showCommandResults('Install ' + (installData ? (installData.pkg || '') : ''), 'via ' + (r.method || 'install'),
+                [{ name: installData ? (installData.label || installData.pkg) : 'Package', pkg: installData ? (installData.pkg || '') : '', output: out, success: !!r.ok }]);
+            if (r.ok) {
+                // A fresh install changes the device's app list; refresh it in the background.
+                setTimeout(loadPackageData, 600);
+            }
+        }
+        window.onInstallResult = onInstallResult;
 
         // Inspector Modal
         let inspectorData = null;
