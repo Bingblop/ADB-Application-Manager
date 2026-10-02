@@ -1,5 +1,16 @@
 # Changelog
 
+## v4.9.2-Pro (versionCode 392)
+
+Follow-up on-device fixes:
+
+- **File-manager folder listing is now robust across `ls` variants.** When a device's `ls -la` columns
+  don't match the detailed parser, the listing falls back to a plain `ls -1p` name list (names, with a
+  trailing `/` marking folders), so `/sdcard` and other folders list regardless. If a folder genuinely
+  can't be read, the raw command output is shown instead of an empty screen, so the format is visible.
+- **Logcat "Clear" now actually empties the on-screen terminal** (and the device buffer) and stops live
+  play, instead of immediately repopulating.
+
 ## v4.9.1-Pro (versionCode 391)
 
 On-device fixes from testing v4.9:

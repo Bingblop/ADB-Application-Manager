@@ -6140,7 +6140,25 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('fmPathInput').value = fmPath;
             document.getElementById('fmCurrentPath').innerText = fmPath;
             const parsed = parseLsOutput(d.raw || '');
-            renderFm({ error: d.error || parsed.error, entries: parsed.entries });
+            let entries = parsed.entries;
+            // Fallback: if detailed `ls -la` didn't parse on this device, use the simple name list.
+            if (!entries.length && d.names) entries = parseNameList(d.names);
+            renderFm({ error: d.error || parsed.error, entries, raw: d.raw || '' });
+        }
+        // Parses `ls -1p` output: one name per line, a trailing "/" marking directories.
+        function parseNameList(names) {
+            const out = [];
+            (names || '').split('\n').forEach(line => {
+                let n = line.replace(/\r$/, '').trim();
+                if (!n) return;
+                const low = n.toLowerCase();
+                if (low.startsWith('ls:') || low.includes('permission denied') || low.includes('no such file') || low.includes('not a directory')) return;
+                const isDir = n.endsWith('/');
+                if (isDir) n = n.replace(/\/+$/, '');
+                if (!n || n === '.' || n === '..') return;
+                out.push({ name: n, isDir, isLink: false, perms: isDir ? 'd' : '-', size: 0, link: null });
+            });
+            return out;
         }
         // Parses `ls -la` output. Robust to toybox ("2024-01-01 12:00") and busybox ("Jan  1 12:00")
         // date formats by locating the HH:MM time token and taking the name as everything after it.
@@ -6186,9 +6204,18 @@ Type any command below (e.g. pm list packages -d)
 
         function renderFm(d) {
             const el = document.getElementById('fmList');
-            if (d.error && (!d.entries || !d.entries.length)) { el.innerHTML = '<div class="list-empty">' + escapeHtml(d.error) + '</div>'; return; }
-            const entries = (d.entries || []).slice().sort((a, b) => (b.isDir - a.isDir) || a.name.localeCompare(b.name));
-            if (!entries.length) { el.innerHTML = '<div class="list-empty">Empty folder.</div>'; return; }
+            if (!d.entries || !d.entries.length) {
+                if (d.error) { el.innerHTML = '<div class="list-empty">' + escapeHtml(d.error) + '</div>'; return; }
+                if (d.raw && d.raw.trim()) {
+                    // Nothing parsed but the listing wasn't empty - show the raw output so the format is visible.
+                    el.innerHTML = '<div class="list-empty">Couldn\'t read this listing. Raw output:</div>'
+                        + '<pre style="white-space:pre-wrap; word-break:break-all; font-size:11px; color:var(--text-muted); padding:8px;">' + escapeHtml(d.raw.slice(0, 4000)) + '</pre>';
+                    return;
+                }
+                el.innerHTML = '<div class="list-empty">Empty folder.</div>';
+                return;
+            }
+            const entries = d.entries.slice().sort((a, b) => (b.isDir - a.isDir) || a.name.localeCompare(b.name));
             el.innerHTML = entries.map(e => {
                 const icon = e.isDir ? '📁' : (e.isLink ? '↪' : '📄');
                 const sub = escapeHtml(e.perms + (e.isDir ? '' : ' • ' + fmtInstallSize(e.size)) + (e.link ? ' → ' + e.link : ''));
@@ -6348,9 +6375,12 @@ Type any command below (e.g. pm list packages -d)
         }
         function logcatClear() {
             if (!guardPrivilege('Logcat')) return;
+            logcatStop();
+            // Clear the on-screen terminal directly (and the device buffer) - don't re-fetch, so it stays
+            // visibly empty until the next Play/Refresh instead of instantly repopulating.
             if (window.AndroidBridge && window.AndroidBridge.clearLogcat) window.AndroidBridge.clearLogcat();
+            document.getElementById('logcatOutput').innerText = '(cleared)';
             showToast('Log cleared', '🧹');
-            logcatFetch();
         }
         function logcatCopy() {
             const txt = document.getElementById('logcatOutput').innerText || '';

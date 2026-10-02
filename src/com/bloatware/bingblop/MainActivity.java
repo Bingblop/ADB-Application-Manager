@@ -4076,10 +4076,14 @@ public class MainActivity extends Activity {
                 String p = (path == null || path.isEmpty()) ? "/" : path;
                 if (p.length() > 1 && p.endsWith("/")) p = p.substring(0, p.length() - 1);
                 String out = executeShell("ls -la " + BackupScripts.quote(p));
+                // A dead-simple name list (one per line, trailing / on dirs) as a fallback the JS can parse
+                // when a device's `ls -la` columns don't match - this is what makes listing robust.
+                String names = executeShell("ls -1p " + BackupScripts.quote(p));
                 res.put("path", p);
                 int slash = p.lastIndexOf('/');
                 res.put("parent", p.equals("/") ? "/" : (slash <= 0 ? "/" : p.substring(0, slash)));
                 res.put("raw", out != null ? out : "");
+                res.put("names", names != null ? names : "");
             } catch (Exception e) {
                 try { res.put("error", e.getMessage()); } catch (Exception ignored) {}
             }
