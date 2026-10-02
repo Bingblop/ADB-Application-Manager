@@ -2127,23 +2127,25 @@
                 <p id="deviceInfoSubtitle">Samsung One UI 9.0</p>
             </div>
         </div>
-        <div class="status-badge" id="execModeBadge" onclick="openWorkingModesModal()" title="Working Modes & ADB Setup">
-            <div class="status-dot" id="execModeDot"></div>
-            <span id="execModeText">Checking Mode...</span>
+        <div style="display:flex; align-items:center; gap:8px;">
+            <div class="status-badge" id="colorsHeaderBtn" onclick="switchView('colors')" title="Colors &amp; Themes" aria-label="Colors and Themes" style="cursor:pointer;">🎨</div>
+            <div class="status-badge" id="execModeBadge" onclick="openWorkingModesModal()" title="Working Modes & ADB Setup">
+                <div class="status-dot" id="execModeDot"></div>
+                <span id="execModeText">Checking Mode...</span>
+            </div>
         </div>
     </header>
 
     <!-- Top Navigation Tabs -->
     <nav class="tab-bar">
         <button class="tab-btn active" onclick="switchView('apps')">📱 Applications</button>
+        <button class="tab-btn" onclick="switchView('saved-lists')">📋 Saved Lists</button>
         <button class="tab-btn" onclick="switchView('debloater')">🧹 Debloater</button>
         <button class="tab-btn" onclick="switchView('installer')">📦 Installer</button>
         <button class="tab-btn" onclick="switchView('files')">📁 Files</button>
         <button class="tab-btn" onclick="switchView('updates')" id="updatesTabBtn">⬆️ Updates</button>
-        <button class="tab-btn" onclick="switchView('saved-lists')">📋 Saved Lists</button>
-        <button class="tab-btn" onclick="switchView('colors')">🎨 Color & Themes</button>
-        <button class="tab-btn" onclick="switchView('logcat')">📄 Logcat</button>
         <button class="tab-btn" onclick="switchView('terminal')">💻 ADB Console</button>
+        <button class="tab-btn" onclick="switchView('logcat')">📄 Logcat</button>
     </nav>
 
     <div class="container">
@@ -2519,6 +2521,18 @@
 
         <!-- VIEW: UPDATES -->
         <section id="view-updates" class="view-content">
+            <div class="color-card" id="selfUpdateCard">
+                <div class="color-card-title">🚀 App update</div>
+                <div class="color-card-subtitle">Update ADB Application Manager Pro itself, straight from its GitHub releases. The download is checked to be this app, a newer version and signed with the same key before installing.</div>
+                <div class="uad-status" id="selfUpdStatus">Checking this app's version…</div>
+                <div class="mode-btn-row" style="margin-top:6px;">
+                    <button class="mode-action-btn primary" id="selfUpdCheckBtn" onclick="checkSelfUpdateUI()">🔍 Check for app update</button>
+                    <button class="mode-action-btn primary" id="selfUpdInstallBtn" onclick="installSelfUpdateUI()" style="display:none;">⬆️ Update now</button>
+                    <button class="mode-action-btn" id="selfUpdPageBtn" onclick="openSelfUpdatePage()" style="display:none;">↗ Release notes</button>
+                </div>
+                <div class="upd-bar" id="selfUpdBar" style="display:none;"><div style="width:2%"></div></div>
+                <div class="upd-msg" id="selfUpdNotes" style="display:none;"></div>
+            </div>
             <div class="color-card">
                 <div class="color-card-title">⬆️ Updates Available</div>
                 <div class="color-card-subtitle">Galaxy Store updates for Samsung apps, and open-source updates for sideloaded apps from GitHub, Codeberg, F-Droid, IzzyOnDroid and Obtainium</div>
@@ -3726,7 +3740,9 @@ Type any command below (e.g. pm list packages -d)
             return Object.assign(resolvePresetScheme(themeState.preset, mode), definedColors(themeState.overrides[mode]));
         }
 
-        const tabKeys = ['apps', 'debloater', 'installer', 'files', 'updates', 'saved-lists', 'colors', 'logcat', 'terminal'];
+        // Order must match the .tab-btn buttons above. 'colors' has no tab button (it opens from the
+        // header 🎨 icon), so it sits last with no matching button index.
+        const tabKeys = ['apps', 'saved-lists', 'debloater', 'installer', 'files', 'updates', 'terminal', 'logcat', 'colors'];
 
         function switchView(viewName) {
             const targetIdx = tabKeys.indexOf(viewName);
@@ -4843,13 +4859,14 @@ Type any command below (e.g. pm list packages -d)
 
         function onUpdatesShown() {
             renderGithubTokenBtn();
+            if (!selfUpdChecked) checkSelfUpdateUI(true);  // this app's own update, in its own card
             const b = updBridge();
             if (!b) {
                 document.getElementById('updContainer').innerHTML = '<div class="list-empty">Updates are only available in the app.</div>';
                 return;
             }
             const st = JSON.parse(b.getUpdateState() || '{}');
-            updList = st.updates || [];
+            updList = (st.updates || []).filter(u => u.source !== 'self');
             if (st.running) {
                 document.getElementById('updStatus').innerText = 'Checking for updates...';
             } else if (!st.checkedAt && !updChecked) {
@@ -4860,6 +4877,7 @@ Type any command below (e.g. pm list packages -d)
         }
 
         function checkUpdatesUI(silent) {
+            checkSelfUpdateUI(true);  // refresh this app's own update card alongside the other-apps check
             const b = updBridge();
             if (!b) return;
             if (!silent) haptic();
@@ -4878,7 +4896,7 @@ Type any command below (e.g. pm list packages -d)
 
         function onUpdatesChecked(json) {
             const r = JSON.parse(json || '{}');
-            updList = r.updates || [];
+            updList = (r.updates || []).filter(u => u.source !== 'self');  // self-update has its own card
             updUntracked = (r.untracked || []).sort((a, b) => a.name.localeCompare(b.name));
             updExternal = (r.external || []).sort((a, b) => a.name.localeCompare(b.name));
             Object.keys(updProgress).forEach(k => { if (!['downloading', 'installing', 'queued'].includes(updProgress[k].stage)) delete updProgress[k]; });
@@ -4887,7 +4905,6 @@ Type any command below (e.g. pm list packages -d)
                 `checked ${r.checked || 0} Galaxy Store and ${r.openSourceChecked || 0} sideloaded apps`];
             const errs = (r.errors || 0) + (r.openSourceErrors || 0);
             if (errs) parts.push(`${errs} couldn't be checked${r.lastError ? ' (' + r.lastError + ')' : ''}`);
-            if (r.selfStatus === 'no_releases') parts.push('this app has no GitHub releases yet');
             document.getElementById('updStatus').innerText = parts.join(' • ') + ' • ' + new Date(r.checkedAt || Date.now()).toLocaleTimeString();
             renderUpdates();
             updateUpdatesTabBadge();
@@ -4919,9 +4936,7 @@ Type any command below (e.g. pm list packages -d)
             container.innerHTML = sorted.map(u => {
                 const pr = updProgress[u.pkg];
                 let btn;
-                if (u.source === 'self') {
-                    btn = `<button class="mode-action-btn primary" data-pkg="${escapeHtml(u.pkg)}" onclick="openSelfUpdate()">⬇️ Download</button>`;
-                } else if (u.noApk) {
+                if (u.noApk) {
                     btn = `<button class="mode-action-btn" data-url="${escapeHtml(u.page || '')}" onclick="openUpdatePage(this.getAttribute('data-url'))">↗ Release</button>`;
                 } else if (pr && (pr.stage === 'downloading' || pr.stage === 'installing' || pr.stage === 'queued')) {
                     btn = `<button class="mode-action-btn" disabled>${pr.stage === 'queued' ? '⏳ Queued' : pr.stage === 'installing' ? '⚙️ Installing' : '⬇️ ' + (pr.percent >= 0 ? pr.percent + '%' : '...')}</button>`;
@@ -5049,11 +5064,96 @@ Type any command below (e.g. pm list packages -d)
             if (btn && b && b.hasGithubToken) btn.innerText = b.hasGithubToken() ? '🔑 GitHub Token ✓' : '🔑 GitHub Token';
         }
 
-        function openSelfUpdate() {
-            const u = updList.find(x => x.source === 'self');
-            if (!u || !window.AndroidBridge || !window.AndroidBridge.openUrl) return;
-            window.AndroidBridge.openUrl(u.downloadUrl || u.page);
-            showToast('Downloading in your browser. Open the APK when it finishes to update.', '⬇️');
+        // ---------- Self-update: this application only ----------
+        let selfUpd = null;        // last self-update check result
+        let selfUpdChecked = false;
+        function selfUpdBridge() { return (window.AndroidBridge && window.AndroidBridge.checkSelfUpdate) ? window.AndroidBridge : null; }
+
+        function checkSelfUpdateUI(silent) {
+            const b = selfUpdBridge();
+            const card = document.getElementById('selfUpdateCard');
+            if (!b) { if (card) card.style.display = 'none'; return; }
+            if (!silent) haptic();
+            selfUpdChecked = true;
+            document.getElementById('selfUpdStatus').innerText = 'Checking GitHub for the latest release…';
+            document.getElementById('selfUpdCheckBtn').disabled = true;
+            b.checkSelfUpdate();
+        }
+
+        function onSelfUpdate(json) {
+            let d; try { d = JSON.parse(json || '{}'); } catch (e) { d = { status: 'error', error: 'bad response' }; }
+            selfUpd = d;
+            const status = document.getElementById('selfUpdStatus');
+            const installBtn = document.getElementById('selfUpdInstallBtn');
+            const pageBtn = document.getElementById('selfUpdPageBtn');
+            const notes = document.getElementById('selfUpdNotes');
+            document.getElementById('selfUpdCheckBtn').disabled = false;
+            const inst = d.installedVersion || '?';
+            const hideExtras = () => { installBtn.style.display = 'none'; pageBtn.style.display = 'none'; notes.style.display = 'none'; };
+            if (d.status === 'ok' && d.newer) {
+                status.innerHTML = 'Update available: <b>' + escapeHtml(inst) + ' → ' + escapeHtml(d.latestVersion || '?') + '</b>';
+                installBtn.style.display = d.hasApk ? 'inline-flex' : 'none';
+                installBtn.disabled = false;
+                pageBtn.style.display = 'inline-flex';
+                if (d.notes) { notes.style.display = ''; notes.innerText = d.notes.length > 400 ? d.notes.slice(0, 400) + '…' : d.notes; }
+                else notes.style.display = 'none';
+            } else if (d.status === 'ok') {
+                status.innerText = 'You’re on the latest version (' + inst + '). ✓';
+                hideExtras();
+            } else if (d.status === 'no_releases') {
+                status.innerText = 'Installed ' + inst + ' · no GitHub releases found yet.';
+                hideExtras();
+            } else {
+                status.innerText = 'Installed ' + inst + ' · couldn’t check' + (d.error ? ' (' + d.error + ')' : '') + '.';
+                hideExtras();
+            }
+        }
+        window.onSelfUpdate = onSelfUpdate;
+
+        function installSelfUpdateUI() {
+            const b = selfUpdBridge();
+            if (!b || !b.installSelfUpdate) return;
+            haptic();
+            document.getElementById('selfUpdInstallBtn').disabled = true;
+            const bar = document.getElementById('selfUpdBar');
+            bar.style.display = ''; bar.firstElementChild.style.width = '2%';
+            document.getElementById('selfUpdStatus').innerText = 'Starting update…';
+            b.installSelfUpdate();
+        }
+
+        function onSelfUpdateProgress(json) {
+            let p; try { p = JSON.parse(json || '{}'); } catch (e) { return; }
+            const status = document.getElementById('selfUpdStatus');
+            const bar = document.getElementById('selfUpdBar');
+            const installBtn = document.getElementById('selfUpdInstallBtn');
+            if (p.stage === 'downloading') {
+                bar.style.display = ''; bar.firstElementChild.style.width = Math.max(2, p.percent >= 0 ? p.percent : 2) + '%';
+                status.innerText = 'Downloading… ' + (p.message || '');
+            } else if (p.stage === 'installing') {
+                bar.style.display = ''; bar.firstElementChild.style.width = '100%';
+                status.innerText = p.message || 'Installing…';
+            } else if (p.stage === 'opened') {
+                bar.style.display = 'none';
+                status.innerText = p.message || 'Confirm the install to finish updating.';
+                installBtn.disabled = false;
+            } else if (p.stage === 'done') {
+                bar.style.display = ''; bar.firstElementChild.style.width = '100%';
+                status.innerText = p.message || 'Updated. The app will restart.';
+                showToast('App updated', '✔');
+            } else if (p.stage === 'error') {
+                bar.style.display = 'none';
+                status.innerText = 'Update failed: ' + (p.message || 'unknown error');
+                installBtn.disabled = false;
+                showToast('App update failed', '⚠️');
+            }
+        }
+        window.onSelfUpdateProgress = onSelfUpdateProgress;
+
+        function openSelfUpdatePage() {
+            const d = selfUpd;
+            if (d && (d.page || d.downloadUrl) && window.AndroidBridge && window.AndroidBridge.openUrl) {
+                window.AndroidBridge.openUrl(d.page || d.downloadUrl);
+            }
         }
 
         function updateOneUI(pkg) {

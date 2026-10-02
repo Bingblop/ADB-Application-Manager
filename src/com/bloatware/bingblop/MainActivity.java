@@ -1258,6 +1258,139 @@ public class MainActivity extends Activity {
         });
     }
 
+    private void selfUpdateProgress(String stage, int percent, String message) {
+        try {
+            JSONObject o = new JSONObject();
+            o.put("stage", stage);
+            o.put("percent", percent);
+            o.put("message", message == null ? "" : message);
+            notifyUpdates("onSelfUpdateProgress", o);
+        } catch (Exception ignored) {}
+    }
+
+    /** Checks this app's own latest GitHub release and reports it to window.onSelfUpdate(json). */
+    private void runCheckSelfUpdate() {
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                JSONObject o = new JSONObject();
+                String installed = currentVersionName();
+                try {
+                    o.put("installedVersion", installed);
+                    JSONObject rel = UpdateManager.githubLatest(UpdateManager.SELF_REPO);
+                    String latest = rel.optString("version");
+                    o.put("latestVersion", latest);
+                    o.put("page", rel.optString("page"));
+                    o.put("downloadUrl", rel.optString("url"));
+                    o.put("notes", rel.optString("notes"));
+                    o.put("hasApk", !rel.optString("url").isEmpty());
+                    o.put("newer", UpdateManager.compareVersions(latest, installed) > 0);
+                    o.put("status", "ok");
+                } catch (Exception e) {
+                    try {
+                        o.put("installedVersion", installed);
+                        String m = e.getMessage();
+                        o.put("status", m != null && m.contains("404") ? "no_releases" : "error");
+                        o.put("error", m);
+                    } catch (Exception ignored) {}
+                }
+                notifyUpdates("onSelfUpdate", o);
+            }
+        });
+    }
+
+    /**
+     * Downloads the latest release APK of this app, verifies it is this package, newer and signed with the
+     * same key, then installs it: through the active privileged mode (seamless, the app restarts), or - with
+     * no privileged mode - by handing it to the system package installer for a normal install confirmation.
+     */
+    private void runInstallSelfUpdate() {
+        final String pkg = getPackageName();
+        if (!installingUpdates.add("self")) return;
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                File apk = new File(new File(getCacheDir(), "updates"), "self.apk");
+                boolean standard = "standard".equals(resolveExecMode());
+                try {
+                    apk.getParentFile().mkdirs();
+                    selfUpdateProgress("downloading", 0, "Getting the latest release...");
+                    JSONObject rel = UpdateManager.githubLatest(UpdateManager.SELF_REPO);
+                    String url = rel.optString("url");
+                    if (url == null || url.isEmpty()) throw new IllegalStateException("the latest release has no APK to download");
+                    UpdateManager.download(url, apk, new UpdateManager.Progress() {
+                        @Override
+                        public void onProgress(long done, long total) {
+                            selfUpdateProgress("downloading", total > 0 ? (int) (done * 100 / total) : -1, (done / (1024 * 1024)) + " MB");
+                        }
+                    });
+
+                    PackageInfo archive = getPackageManager().getPackageArchiveInfo(apk.getAbsolutePath(), 0);
+                    if (archive == null || !pkg.equals(archive.packageName)) throw new IllegalStateException("the downloaded file is not this app");
+                    long installedVc = versionCodeOf(getPackageManager().getPackageInfo(pkg, 0));
+                    if (versionCodeOf(archive) <= installedVc) throw new IllegalStateException("already up to date (" + archive.versionName + ")");
+                    // Android only accepts an update signed with the same key - fail clearly if it isn't.
+                    int sigFlags = Build.VERSION.SDK_INT >= 28 ? PackageManager.GET_SIGNING_CERTIFICATES : PackageManager.GET_SIGNATURES;
+                    java.util.Set<String> installedSigners = signerDigests(getPackageManager().getPackageInfo(pkg, sigFlags), true);
+                    PackageInfo archiveSigned = getPackageManager().getPackageArchiveInfo(apk.getAbsolutePath(), sigFlags);
+                    java.util.Set<String> newSigners = archiveSigned != null ? signerDigests(archiveSigned, false) : new HashSet<String>();
+                    if (!installedSigners.isEmpty() && !newSigners.isEmpty()) {
+                        java.util.Set<String> common = new HashSet<String>(installedSigners);
+                        common.retainAll(newSigners);
+                        if (common.isEmpty()) throw new IllegalStateException("the release APK is signed with a different key than this install, so Android won't accept it as an update");
+                    }
+
+                    if (standard) {
+                        selfUpdateProgress("installing", 100, "Opening the installer...");
+                        launchSystemInstaller(apk);
+                        selfUpdateProgress("opened", 100, "Confirm the install to update to " + archive.versionName + ".");
+                    } else {
+                        selfUpdateProgress("installing", 100, "Installing " + archive.versionName + "...");
+                        String out = installApk(apk);
+                        if (out != null && out.contains("Success")) {
+                            selfUpdateProgress("done", 100, "Updated to " + archive.versionName + ". The app will restart.");
+                        } else {
+                            throw new IllegalStateException(out == null || out.trim().isEmpty() ? "install failed" : out.trim());
+                        }
+                    }
+                } catch (Exception e) {
+                    selfUpdateProgress("error", 0, e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
+                } finally {
+                    // The system installer reads the file asynchronously, so keep it in that path; the
+                    // privileged path has already consumed it and can clean up.
+                    if (!standard) apk.delete();
+                    installingUpdates.remove("self");
+                }
+            }
+        });
+    }
+
+    /** Hands an APK to the system package installer (normal install confirmation, no privileged mode needed). */
+    private void launchSystemInstaller(File apk) throws Exception {
+        File shareApk = ShareProvider.newShareFile(this, "app-update.apk");
+        java.io.FileInputStream in = new java.io.FileInputStream(apk);
+        try {
+            FileOutputStream out = new FileOutputStream(shareApk);
+            try {
+                byte[] buf = new byte[65536];
+                int r;
+                while ((r = in.read(buf)) > 0) out.write(buf, 0, r);
+            } finally { out.close(); }
+        } finally { in.close(); }
+        final Uri uri = ShareProvider.uriFor(shareApk);
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Intent i = new Intent(Intent.ACTION_VIEW);
+                    i.setDataAndType(uri, "application/vnd.android.package-archive");
+                    i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    startActivity(i);
+                } catch (Exception ignored) {}
+            }
+        });
+    }
+
     private String installApk(File apk) throws Exception {
         String mode = resolveExecMode();
         if ("adb_tcp".equals(mode) || "adb_wireless".equals(mode)) {
@@ -3585,13 +3718,33 @@ public class MainActivity extends Activity {
                 String fullCls = cls.startsWith(".") ? pkg + cls : cls;
 
                 if (!"standard".equals(resolveExecMode())) {
-                    String output = executeShell("am start -W -n '" + pkg + "/" + fullCls + "'");
-                    String lower = output.toLowerCase();
-                    boolean ok = lower.contains("status: ok") || (lower.contains("starting: intent")
-                            && !lower.contains("error") && !lower.contains("exception") && !lower.contains("permission denial"));
+                    String comp = pkg + "/" + fullCls;
+                    // Launch into a NEW task so the activity actually surfaces. Without FLAG_ACTIVITY_NEW_TASK
+                    // an am-started activity frequently reports "Status: ok" yet never appears, because it is
+                    // queued behind the caller's task - the usual reason an unexported activity "won't launch".
+                    // Fall back to a plain start, then `cmd activity`; on failure return every attempt's output.
+                    String[] attempts = {
+                        "am start -W -f 0x10000000 -n '" + comp + "'",
+                        "am start -W -n '" + comp + "'",
+                        "cmd activity start-activity -W -f 0x10000000 -n '" + comp + "'",
+                    };
+                    StringBuilder tried = new StringBuilder();
+                    boolean ok = false;
+                    String okOut = "";
+                    for (String cmd : attempts) {
+                        String out = executeShell(cmd);
+                        String lower = out == null ? "" : out.toLowerCase();
+                        boolean denied = lower.contains("permission denial") || lower.contains("securityexception")
+                                || lower.contains("does not exist") || lower.contains("unable to resolve")
+                                || lower.contains("not found");
+                        boolean good = lower.contains("status: ok")
+                                || (lower.contains("starting: intent") && !lower.contains("error") && !lower.contains("exception") && !denied);
+                        tried.append("$ ").append(cmd).append('\n').append(out == null ? "" : out.trim()).append("\n\n");
+                        if (good) { ok = true; okOut = out; break; }
+                    }
                     res.put("ok", ok);
                     res.put("method", "shell");
-                    res.put("output", output);
+                    res.put("output", ok ? okOut.trim() : tried.toString().trim());
                     return res.toString();
                 }
 
@@ -3649,6 +3802,18 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void installUpdate(String pkg) {
             runInstallUpdate(pkg);
+        }
+
+        /** Checks THIS app's own latest GitHub release. Result -> window.onSelfUpdate(json). */
+        @JavascriptInterface
+        public void checkSelfUpdate() {
+            runCheckSelfUpdate();
+        }
+
+        /** Downloads and installs the latest release of THIS app (privileged, else the system installer). */
+        @JavascriptInterface
+        public void installSelfUpdate() {
+            runInstallSelfUpdate();
         }
 
         /** Tracks an app's releases at a GitHub / Codeberg / F-Droid URL. Empty url removes it. */
