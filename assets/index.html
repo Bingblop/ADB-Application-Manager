@@ -5608,9 +5608,13 @@ Type any command below (e.g. pm list packages -d)
         function renderComponentsList() {
             const container = document.getElementById('compsContainer');
             const d = inspectorData || {};
-            // Older bridge versions only return names; treat those as exported
+            // Older bridge versions only return names, with no per-activity exported/enabled/permission
+            // detail. Treat those as NOT exported (needs a working mode to launch) rather than assuming
+            // exported: a wrong "exported" guess can make launchComponent try an unverifiable plain Intent
+            // that silently does nothing for an activity that's actually unexported, while a wrong
+            // "unexported" guess just asks for a working mode it may not have actually needed.
             const acts = (d.activityInfo && d.activityInfo.length) ? d.activityInfo
-                : (d.activities || []).map(n => ({ name: n, exported: true, enabled: true, permission: '' }));
+                : (d.activities || []).map(n => ({ name: n, exported: false, enabled: true, permission: '' }));
             const q = (document.getElementById('compsSearch').value || '').toLowerCase().trim();
             const unexportedCount = acts.filter(a => !a.exported).length;
 
@@ -6059,10 +6063,13 @@ Type any command below (e.g. pm list packages -d)
             closeInspector();
         }
 
-        // Exported activities launch with a normal intent. Unexported ones use `am start` through the
-        // active ADB / Shizuku / Root mode; if Android refuses, its error is shown as-is.
+        // Whenever a working mode (ADB / Shizuku / Root) is active, every launch goes through `am start -W`
+        // via shell regardless of the exported flag - that's the only result that can be trusted, since
+        // Android's exported=false denial often doesn't throw back to a plain Intent launch, it just does
+        // nothing. The plain Intent is only used as a fallback with no working mode set up, and even then
+        // its reported success can't be verified the same way - shown as-is below, not specially hidden.
         function launchComponent(comp, exported) {
-            if (exported === undefined) exported = true;
+            if (exported === undefined) exported = false;
             if (!exported && !guardPrivilege('Launch unexported activity')) return;
             haptic();
             if (!window.AndroidBridge || !inspectedPkg) return;
@@ -6078,10 +6085,6 @@ Type any command below (e.g. pm list packages -d)
                     r = JSON.parse(window.AndroidBridge.launchActivity(inspectedPkg, comp, !!exported));
                 } catch (e) {
                     r = { ok: false, method: 'none', output: 'Error: ' + e.message };
-                }
-                if (r.ok && r.method === 'intent') {
-                    showToast('Activity launched', '🚀');
-                    return;
                 }
                 showToast(r.ok ? 'Activity launched' : 'Launch failed', r.ok ? '🚀' : '⚠️');
                 showCommandResults('Launch Activity', (exported ? 'Exported' : 'Unexported') + ' • via ' + (r.method === 'shell' ? currentWorkingMode : r.method),

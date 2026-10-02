@@ -3006,9 +3006,16 @@ public class MainActivity extends Activity {
         }
 
         /**
-         * Launches an activity. Exported activities start with a normal intent; unexported ones are
-         * started with `am start` through the active privileged mode (ADB / Shizuku / Root). Whatever
-         * Android answers is returned as-is, so a refused launch reports the system's error.
+         * Launches an activity. Whenever a privileged mode (ADB / Shizuku / Root) is active, this always
+         * goes through `am start -W` via shell - regardless of the exported flag - because that's the only
+         * path whose result can actually be trusted: Android's exported=false denial frequently does not
+         * throw an exception back to a plain startActivity() caller, it just silently does nothing, so a
+         * caller that only tries the Intent path for anything it *believes* is exported can end up reporting
+         * a launch as successful when nothing actually opened (including whenever that belief is wrong, e.g.
+         * a caller that doesn't have per-activity detail and defaults everything to exported). `am start -W`
+         * always prints a real "Status: ok" or a specific denial, so its result is trustworthy either way.
+         * The plain Intent is only a fallback for when no privileged mode is set up at all, and only for an
+         * activity actually believed exported; even then its "ok" can't be verified the same way.
          * Returns {"ok":bool,"method":"intent|shell","output":"..."}
          */
         @JavascriptInterface
@@ -3023,6 +3030,17 @@ public class MainActivity extends Activity {
                 }
                 String fullCls = cls.startsWith(".") ? pkg + cls : cls;
 
+                if (!"standard".equals(resolveExecMode())) {
+                    String output = executeShell("am start -W -n '" + pkg + "/" + fullCls + "'");
+                    String lower = output.toLowerCase();
+                    boolean ok = lower.contains("status: ok") || (lower.contains("starting: intent")
+                            && !lower.contains("error") && !lower.contains("exception") && !lower.contains("permission denial"));
+                    res.put("ok", ok);
+                    res.put("method", "shell");
+                    res.put("output", output);
+                    return res.toString();
+                }
+
                 if (exported) {
                     try {
                         Intent intent = new Intent();
@@ -3031,28 +3049,19 @@ public class MainActivity extends Activity {
                         startActivity(intent);
                         res.put("ok", true);
                         res.put("method", "intent");
-                        res.put("output", "Started " + pkg + "/" + fullCls);
+                        res.put("output", "Requested " + pkg + "/" + fullCls + " (no working mode set up, so this can't be verified)");
                         return res.toString();
                     } catch (Exception e) {
-                        // Fall through to the privileged shell (e.g. permission-protected activity)
-                        Log.w(TAG, "Intent launch failed, trying shell: " + e.getMessage());
+                        res.put("ok", false);
+                        res.put("method", "intent");
+                        res.put("output", "Error: " + e.getMessage());
+                        return res.toString();
                     }
                 }
 
-                if ("standard".equals(resolveExecMode())) {
-                    res.put("ok", false);
-                    res.put("method", "shell");
-                    res.put("output", "Error: launching this activity needs ADB, Shizuku or Root. Set up a working mode first.");
-                    return res.toString();
-                }
-
-                String output = executeShell("am start -W -n '" + pkg + "/" + fullCls + "'");
-                String lower = output.toLowerCase();
-                boolean ok = lower.contains("status: ok") || (lower.contains("starting: intent")
-                        && !lower.contains("error") && !lower.contains("exception") && !lower.contains("permission denial"));
-                res.put("ok", ok);
-                res.put("method", "shell");
-                res.put("output", output);
+                res.put("ok", false);
+                res.put("method", "none");
+                res.put("output", "Error: launching this activity needs ADB, Shizuku or Root. Set up a working mode first.");
             } catch (Exception e) {
                 try {
                     res.put("ok", false);
