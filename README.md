@@ -13,7 +13,7 @@ through **ADB over TCP, Wireless Debugging, Shizuku or Root**.
 
 ### [⬇️ Download the latest APK](https://github.com/Bingblop/ADB-Application-Manager/releases/latest)
 
-`com.bloatware.bingblop` · v5.0-Pro · signed APK, installs over every earlier version without uninstalling
+`com.bloatware.bingblop` · v5.1-Pro · signed APK, installs over every earlier version without uninstalling
 
 <table>
   <tr>
@@ -72,10 +72,14 @@ tell you when a new version is out (see [Updates](#updates)).
 | **Quick actions** | **Quick Settings tiles** and a **home-screen widget** to switch the working mode and force-stop a list of apps without opening the app |
 | **What's new** | The changelog is inside the app: it opens once after an update, and from Color &amp; Themes → About |
 | **Productivity** | Select and copy any text · copy buttons for package, version and name · **share sheet** for package lists, CSV, manifest, terminal output and APKs · **search with highlight and next/previous** in the manifest viewer and terminal · remembered filters and sort |
-| **Terminal** | Run shell commands through the active mode, with output search, copy and share |
+| **Terminal** | Run shell commands through the active mode, with output search, copy and share · a searchable **📋 ADB cheat sheet** of ~90 commands you tap to drop into the input · input defaults to lower case (no auto-capitalize) |
 | **Modes** | ADB over TCP · Wireless Debugging (pairing and mDNS port detection) · Shizuku · Root · Automatic · Read-Only |
 | **Themes** | **Material 3** (default) · **Material You** (follows your wallpaper) · six more palettes · Light / Dark / System / Schedule · pure-black AMOLED option · per-mode color tuning |
 | **Security** | A **private ADB key is generated on each install** (nothing is bundled) · fingerprint shown in the app · signing-certificate comparison before every update |
+
+## New in v5.1
+
+- **ADB cheat sheet** — the ADB Console has a 📋 **Cheat Sheet** button: a searchable, categorized reference of ~90 commands (device info, packages, app control, permissions, intents, input & key events, screen, connectivity, battery testing, logs, files, reboot). Tap a command to drop it into the input (placeholders selected for quick editing). Commands are in on-device shell form — no `adb shell` prefix. The terminal input also defaults to lower case (no auto-capitalize).
 
 ## New in v5.0
 

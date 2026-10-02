@@ -1,5 +1,15 @@
 # Changelog
 
+## v5.1-Pro (versionCode 510)
+
+- **ADB cheat sheet in the terminal.** The ADB Console tab has a **📋 Cheat Sheet** button: a searchable,
+  categorized reference of ~90 commands (device info, packages, app control, permissions, intents, input &
+  key events, screen, connectivity, battery testing, logs, files, reboot). Tap any command to drop it into
+  the input (with `<placeholders>` selected for quick editing). Commands are in on-device shell form - no
+  `adb shell` prefix needed, since the terminal already runs on the device. Compiled from Pulimet's ADB gist.
+- **The terminal input no longer auto-capitalizes.** It defaults to lower case (ADB commands are
+  lower case); hold Shift to type capitals when you actually need them.
+
 ## v5.0-Pro (versionCode 500)
 
 - **Update this app from inside the app.** The Updates tab now has a dedicated **🚀 App update** card at the
