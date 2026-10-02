@@ -1555,6 +1555,34 @@ public class MainActivity extends Activity {
         return e.getMessage() != null && !e.getMessage().isEmpty() ? e.getMessage() : e.getClass().getSimpleName();
     }
 
+    /** X.500 subject DNs of a package's signing certificates (for repackage / debug-key detection). */
+    private List<String> signerDnList(String pkg) {
+        List<String> out = new ArrayList<String>();
+        try {
+            int sigFlags = Build.VERSION.SDK_INT >= 28 ? PackageManager.GET_SIGNING_CERTIFICATES : PackageManager.GET_SIGNATURES;
+            PackageInfo pi = getPackageManager().getPackageInfo(pkg, sigFlags);
+            android.content.pm.Signature[] sigs;
+            if (Build.VERSION.SDK_INT >= 28 && pi.signingInfo != null) {
+                sigs = pi.signingInfo.hasMultipleSigners()
+                        ? pi.signingInfo.getApkContentsSigners()
+                        : pi.signingInfo.getSigningCertificateHistory();
+            } else {
+                sigs = pi.signatures;
+            }
+            if (sigs != null) {
+                java.security.cert.CertificateFactory cf = java.security.cert.CertificateFactory.getInstance("X.509");
+                for (android.content.pm.Signature s : sigs) {
+                    try {
+                        java.security.cert.X509Certificate c = (java.security.cert.X509Certificate)
+                                cf.generateCertificate(new java.io.ByteArrayInputStream(s.toByteArray()));
+                        out.add(c.getSubjectDN().getName());
+                    } catch (Exception ignored) {}
+                }
+            }
+        } catch (Exception ignored) {}
+        return out;
+    }
+
     // ---------------------------------------------------------------------------------------------
     // ShizuStore catalog (browse + install Shizuku apps straight from their upstream sources)
     // ---------------------------------------------------------------------------------------------
@@ -3771,6 +3799,9 @@ public class MainActivity extends Activity {
                         o.put("updatedAt", pi.lastUpdateTime);
                     }
                     o.put("apkSize", apkBytes(info));
+                    String installer = null;
+                    try { installer = pm.getInstallerPackageName(info.packageName); } catch (Exception ignored) {}
+                    o.put("mods", ModDetect.cheapArray(info, installer));
                     arr.put(o);
                 }
                 for (String pkg : uninstalledPkgs) {
@@ -3909,6 +3940,17 @@ public class MainActivity extends Activity {
                         obj.put("targetSdk", info.applicationInfo.targetSdkVersion);
                         obj.put("minSdk", info.applicationInfo.minSdkVersion);
                     }
+
+                    // Third-party patch / repackage detection (ReVanced, Xposed/LSPosed module,
+                    // LSPatch, NPatch, debug-signed). Deep scan: opens the APK + reads the signer,
+                    // which is fine for one app on demand.
+                    try {
+                        ApplicationInfo ai = getPackageManager().getApplicationInfo(pkg, PackageManager.GET_META_DATA);
+                        String installer = null;
+                        try { installer = getPackageManager().getInstallerPackageName(pkg); } catch (Exception ignored) {}
+                        obj.put("installer", installer == null ? "" : installer);
+                        obj.put("mods", ModDetect.deep(ai, installer, ai.sourceDir, signerDnList(pkg)));
+                    } catch (Exception ignored) {}
 
                     JSONArray perms = new JSONArray();
                     if (info.requestedPermissions != null) {

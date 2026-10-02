@@ -1,5 +1,17 @@
 # Changelog
 
+## v5.4-Pro (versionCode 540)
+
+- **Patched / modified apps are flagged in the list.** Each app in the Applications list now shows a
+  **🧩 badge** when it looks patched or repackaged by a third-party tool — **ReVanced**, an
+  **Xposed / LSPosed module**, **LSPatch**, **NPatch**, or an app re-signed with a **debug key**. A new
+  **🧩 Patched** filter lists only those apps. Detection in the list is free (package name, the manifest's
+  `appComponentFactory` and meta-data, and the installer), so it adds no load time.
+- **A definitive breakdown in the app inspector.** Opening an app (⋯ → inspector) runs a deeper scan that
+  also reads the signing certificate and the APK's own entries (`assets/lspatch/`, `assets/xposed_init`,
+  `META-INF/xposed/`, NPatch and ReVanced markers), and shows exactly which tool(s) touched the app and
+  which installer put it there — so you can tell a genuine store build from a modified one before trusting it.
+
 ## v5.3-Pro (versionCode 530)
 
 - **ShizuStore tab.** A new **🛍️ Store** tab (at the end) browses [ShizuStore](https://github.com/timschneeb/ShizuStore)'s

@@ -488,6 +488,12 @@
             border: 1px solid rgba(255, 82, 82, 0.3);
         }
 
+        .tag-mod {
+            background: rgba(0, 200, 180, 0.14);
+            color: #19D3C5;
+            border: 1px solid rgba(0, 200, 180, 0.38);
+        }
+
         .tag-suspended {
             background: rgba(255, 196, 0, 0.14);
             color: var(--status-suspended);
@@ -2248,6 +2254,7 @@
                 <div class="filter-pill" data-filter="system" onclick="setFilter('system', this)">⚙️ System (<span id="countSystem">0</span>)</div>
                 <div class="filter-pill" data-filter="frozen" onclick="setFilter('frozen', this)">❄️ Frozen (<span id="countFrozen">0</span>)</div>
                 <div class="filter-pill" data-filter="suspended" onclick="setFilter('suspended', this)">⏸️ Suspended (<span id="countSuspended">0</span>)</div>
+                <div class="filter-pill" data-filter="patched" onclick="setFilter('patched', this)">🧩 Patched (<span id="countPatched">0</span>)</div>
                 <div class="filter-pill" data-filter="uninstalled" onclick="setFilter('uninstalled', this)">🗑️ Uninstalled (<span id="countUninstalled">0</span>)</div>
                 <div class="toggle-pill active" id="versionTogglePill" onclick="toggleListVersions()" title="Show app versions in the list">🔢 Versions</div>
             </div>
@@ -3100,6 +3107,7 @@ Type any command below (e.g. pm list packages -d)
                         <p id="sheetDates" class="sheet-dates"></p>
                         <p id="sheetSizes" class="sheet-dates"></p>
                         <div id="sheetUpdateHint" class="sheet-update-hint" style="display:none;"></div>
+                        <div id="sheetMods" class="sheet-update-hint" style="display:none;"></div>
                     </div>
                 </div>
                 <div style="font-size:20px; cursor:pointer;" onclick="closeInspector()">✕</div>
@@ -5378,6 +5386,17 @@ Type any command below (e.g. pm list packages -d)
             el.style.display = parts.length ? 'block' : 'none';
         }
 
+        function renderInspectorMods(d) {
+            const el = document.getElementById('sheetMods');
+            if (!el) return;
+            const mods = (d && d.mods) || [];
+            if (!mods.length) { el.style.display = 'none'; el.innerHTML = ''; return; }
+            el.style.display = 'block';
+            const chips = mods.map(m => `<span class="tag-badge tag-mod">🧩 ${escapeHtml(m)}</span>`).join(' ');
+            const by = d.installer ? `<div style="margin-top:4px; font-size:11px; color:var(--text-muted);">Installed by <code>${escapeHtml(d.installer)}</code></div>` : '';
+            el.innerHTML = `<div style="font-weight:700; margin-bottom:4px;">Patched / modified</div>${chips}${by}`;
+        }
+
         function renderInspectorUpdateHint(pkg) {
             const el = document.getElementById('sheetUpdateHint');
             if (!el) return;
@@ -6078,6 +6097,7 @@ Type any command below (e.g. pm list packages -d)
                 if (currentFilter === 'system' && (!app.isSystem || app.isUninstalled)) return false;
                 if (currentFilter === 'uninstalled' && !app.isUninstalled) return false;
                 if (currentFilter === 'recent' && !isRecentlyUpdated(app)) return false;
+                if (currentFilter === 'patched' && !(app.mods && app.mods.length)) return false;
 
                 if (query) {
                     return app.name.toLowerCase().includes(query) || app.pkg.toLowerCase().includes(query);
@@ -6102,6 +6122,7 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('countRecent').innerText = allApps.filter(isRecentlyUpdated).length;
             document.getElementById('countSuspended').innerText = allApps.filter(a => a.isSuspended).length;
             document.getElementById('countUninstalled').innerText = allApps.filter(a => a.isUninstalled).length;
+            document.getElementById('countPatched').innerText = allApps.filter(a => a.mods && a.mods.length).length;
 
             const container = document.getElementById('appsListContainer');
             if (filteredApps.length === 0) {
@@ -6126,6 +6147,7 @@ Type any command below (e.g. pm list packages -d)
                 if (app.isUninstalled) badges += '<span class="tag-badge tag-bloat">UNINSTALLED</span>';
                 if (app.isSystem) badges += '<span class="tag-badge tag-system">SYSTEM</span>';
                 else badges += '<span class="tag-badge tag-user">USER</span>';
+                if (app.mods && app.mods.length) app.mods.forEach(m => badges += `<span class="tag-badge tag-mod">🧩 ${escapeHtml(m)}</span>`);
 
                 html += `
                     <div class="app-card ${isSelected ? 'selected' : ''} ${app.isSuspended ? 'suspended' : ''}" id="card_${app.pkg}">
@@ -6998,6 +7020,7 @@ Type any command below (e.g. pm list packages -d)
                 ver.innerText = name || code ? `Version ${name || code}${name && code ? ' (' + code + ')' : ''}` : 'Version unavailable';
             }
             renderInspectorDates(d);
+            renderInspectorMods(d);
             appOpsList = parseAppOps(d.appopsRaw || '');
             renderPermissionsList();
             renderAppOpsList();
