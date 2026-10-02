@@ -1555,6 +1555,63 @@ public class MainActivity extends Activity {
         return e.getMessage() != null && !e.getMessage().isEmpty() ? e.getMessage() : e.getClass().getSimpleName();
     }
 
+    // ---------------------------------------------------------------------------------------------
+    // Activity launch helpers
+    // ---------------------------------------------------------------------------------------------
+
+    /** True when an `am start` output indicates the activity actually started. */
+    private static boolean isLaunchOk(String out) {
+        String low = out == null ? "" : out.toLowerCase();
+        boolean denied = low.contains("permission denial") || low.contains("securityexception")
+                || low.contains("does not exist") || low.contains("unable to resolve")
+                || low.contains("not found") || low.contains("exception");
+        return low.contains("status: ok")
+                || (low.contains("starting: intent") && !denied);
+    }
+
+    private String trimSetting(String s) {
+        if (s == null) return "";
+        s = s.trim();
+        return "null".equals(s) ? "" : s;
+    }
+
+    private void restoreSecureSetting(AndroidBridge sh, String key, String val) {
+        if (val == null || val.isEmpty()) sh.executeShell("settings delete secure " + key);
+        else sh.executeShell("settings put secure " + key + " '" + val + "'");
+    }
+
+    /**
+     * Launches an activity the system's way, so the exported / START_ANY_ACTIVITY check is bypassed:
+     * temporarily make the target the device "assistant", press KEYCODE_ASSIST so the SYSTEM (not the
+     * shell) starts it, then restore the user's assistant. This is how "Activity Manager" launches
+     * unexported activities over Shizuku - a shell (uid 2000) can't `am start` an unexported activity of
+     * another uid, but it can set the secure settings and inject the assist key. Needs WRITE_SECURE_SETTINGS,
+     * which the shell (ADB / Shizuku) and root both already hold. Returns the `input keyevent` output.
+     */
+    private String launchViaAssistant(String comp, StringBuilder tried) {
+        AndroidBridge sh = new AndroidBridge();
+        String oldAssist = trimSetting(sh.executeShell("settings get secure assistant"));
+        String oldVis = trimSetting(sh.executeShell("settings get secure voice_interaction_service"));
+        String keyOut = "";
+        try {
+            sh.executeShell("settings put secure assistant '" + comp + "'");
+            // Clear the voice-interaction service so the assist key resolves to the 'assistant' component
+            // (a set VIS takes precedence). It is restored in finally.
+            sh.executeShell("settings delete secure voice_interaction_service");
+            keyOut = sh.executeShell("input keyevent 219"); // KEYCODE_ASSIST
+            if (tried != null) {
+                tried.append("$ settings put secure assistant '").append(comp).append("'\n");
+                tried.append("$ input keyevent 219 (KEYCODE_ASSIST)\n").append(keyOut == null ? "" : keyOut.trim()).append("\n\n");
+            }
+            // Give the system a moment to start the activity before the settings are restored.
+            try { Thread.sleep(1500); } catch (InterruptedException ignored) {}
+        } finally {
+            restoreSecureSetting(sh, "assistant", oldAssist);
+            restoreSecureSetting(sh, "voice_interaction_service", oldVis);
+        }
+        return keyOut == null ? "" : keyOut;
+    }
+
     /** X.500 subject DNs of a package's signing certificates (for repackage / debug-key detection). */
     private List<String> signerDnList(String pkg) {
         List<String> out = new ArrayList<String>();
@@ -4036,17 +4093,14 @@ public class MainActivity extends Activity {
         }
 
         /**
-         * Launches an activity. Whenever a privileged mode (ADB / Shizuku / Root) is active, this always
-         * goes through `am start -W` via shell - regardless of the exported flag - because that's the only
-         * path whose result can actually be trusted: Android's exported=false denial frequently does not
-         * throw an exception back to a plain startActivity() caller, it just silently does nothing, so a
-         * caller that only tries the Intent path for anything it *believes* is exported can end up reporting
-         * a launch as successful when nothing actually opened (including whenever that belief is wrong, e.g.
-         * a caller that doesn't have per-activity detail and defaults everything to exported). `am start -W`
-         * always prints a real "Status: ok" or a specific denial, so its result is trustworthy either way.
-         * The plain Intent is only a fallback for when no privileged mode is set up at all, and only for an
-         * activity actually believed exported; even then its "ok" can't be verified the same way.
-         * Returns {"ok":bool,"method":"intent|shell","output":"..."}
+         * Launches an activity using a privileged mode (ADB / Shizuku / Root). An EXPORTED activity is
+         * started with `am start -W` (trustworthy "Status: ok"/denial, launched in a new task so it
+         * surfaces). An UNEXPORTED activity can't be started that way from the shell - uid 2000 isn't its
+         * owner and lacks START_ANY_ACTIVITY (the "not exported from uid …" denial) - so it is launched the
+         * system's way: the target is set as the device assistant and KEYCODE_ASSIST is injected so the
+         * SYSTEM starts it (bypassing the exported check), after which the user's assistant is restored.
+         * With no privileged mode, a plain Intent is the only fallback and only for an activity believed
+         * exported. Returns {"ok":bool,"method":"intent|shell|assistant|none","output":"..."}
          */
         @JavascriptInterface
         public String launchActivity(String pkg, String cls, boolean exported) {
@@ -4062,32 +4116,47 @@ public class MainActivity extends Activity {
 
                 if (!"standard".equals(resolveExecMode())) {
                     String comp = pkg + "/" + fullCls;
-                    // Launch into a NEW task so the activity actually surfaces. Without FLAG_ACTIVITY_NEW_TASK
-                    // an am-started activity frequently reports "Status: ok" yet never appears, because it is
-                    // queued behind the caller's task - the usual reason an unexported activity "won't launch".
-                    // Fall back to a plain start, then `cmd activity`; on failure return every attempt's output.
-                    String[] attempts = {
-                        "am start -W -f 0x10000000 -n '" + comp + "'",
-                        "am start -W -n '" + comp + "'",
-                        "cmd activity start-activity -W -f 0x10000000 -n '" + comp + "'",
-                    };
                     StringBuilder tried = new StringBuilder();
-                    boolean ok = false;
-                    String okOut = "";
-                    for (String cmd : attempts) {
-                        String out = executeShell(cmd);
-                        String lower = out == null ? "" : out.toLowerCase();
-                        boolean denied = lower.contains("permission denial") || lower.contains("securityexception")
-                                || lower.contains("does not exist") || lower.contains("unable to resolve")
-                                || lower.contains("not found");
-                        boolean good = lower.contains("status: ok")
-                                || (lower.contains("starting: intent") && !lower.contains("error") && !lower.contains("exception") && !denied);
-                        tried.append("$ ").append(cmd).append('\n').append(out == null ? "" : out.trim()).append("\n\n");
-                        if (good) { ok = true; okOut = out; break; }
+
+                    // An exported activity starts directly with `am start` (fast, and FLAG_ACTIVITY_NEW_TASK
+                    // makes it surface reliably). An unexported activity of another app can't be started this
+                    // way from the shell - uid 2000 isn't its owner and lacks START_ANY_ACTIVITY - so skip
+                    // straight to the assistant method, which is the only thing that works there.
+                    if (exported) {
+                        String[] attempts = {
+                            "am start -W -f 0x10000000 -n '" + comp + "'",
+                            "am start -W -n '" + comp + "'",
+                        };
+                        for (String cmd : attempts) {
+                            String out = executeShell(cmd);
+                            tried.append("$ ").append(cmd).append('\n').append(out == null ? "" : out.trim()).append("\n\n");
+                            if (isLaunchOk(out)) {
+                                res.put("ok", true);
+                                res.put("method", "shell");
+                                res.put("output", out == null ? "" : out.trim());
+                                return res.toString();
+                            }
+                        }
                     }
-                    res.put("ok", ok);
-                    res.put("method", "shell");
-                    res.put("output", ok ? okOut.trim() : tried.toString().trim());
+
+                    // The system's way: temporarily make the target the device assistant and press
+                    // KEYCODE_ASSIST, so the SYSTEM launches it (bypassing the exported / START_ANY_ACTIVITY
+                    // check), then restore the user's assistant. This is how dedicated activity launchers
+                    // open unexported activities over Shizuku.
+                    String keyOut = launchViaAssistant(comp, tried);
+                    String kl = keyOut == null ? "" : keyOut.toLowerCase();
+                    // `input keyevent` prints nothing on success; a clean run means the assist key was dispatched.
+                    boolean dispatched = !(kl.contains("error") || kl.contains("exception")
+                            || kl.contains("not found") || kl.contains("permission denial"));
+                    res.put("ok", dispatched);
+                    res.put("method", "assistant");
+                    res.put("output", dispatched
+                        ? ("Launched “" + comp + "” via the assistant method: set it as the device "
+                           + "assistant, pressed the ASSIST key so the system started it (this bypasses the "
+                           + "exported check), then restored your assistant. If it did not open, the activity "
+                           + "may need extra arguments, or another app is holding the assist gesture.\n\n"
+                           + tried.toString().trim())
+                        : tried.toString().trim());
                     return res.toString();
                 }
 
