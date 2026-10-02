@@ -15,9 +15,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to publish (e.g. 5.1)'
+        description: 'Version to publish (e.g. 5.2)'
         required: true
-        default: '5.1'
+        default: '5.2'
 
 permissions:
   contents: write

@@ -3475,6 +3475,12 @@ Type any command below (e.g. pm list packages -d)
                     <button class="mode-action-btn primary" onclick="pairAdbWirelessUI()">
                         <span>📶</span> Pair Device
                     </button>
+                    <button class="mode-action-btn" onclick="pairViaNotificationUI()">
+                        <span>🔔</span> Pair via Notification
+                    </button>
+                </div>
+                <div class="mode-tip-box" style="margin-bottom:14px;">
+                    🔔 <b>Pair via Notification</b> drops a notification with a reply box, so you can type the 6-digit code straight from the shade while Android's pairing dialog is on screen — no need to switch back to this app.
                 </div>
 
                 <!-- Step 2: Connect -->
@@ -5645,6 +5651,16 @@ Type any command below (e.g. pm list packages -d)
                     showToast(res || 'Pairing completed', '📶');
                     checkAllWorkingModes(true);
                 }, 100);
+            }
+        }
+
+        function pairViaNotificationUI() {
+            haptic();
+            if (window.AndroidBridge && window.AndroidBridge.showWirelessPairingNotification) {
+                window.AndroidBridge.showWirelessPairingNotification();
+                showToast('Check your notification shade to enter the pairing code', '🔔');
+            } else {
+                showToast('Notification pairing needs the app build (Android bridge)', '⚠️');
             }
         }
 
