@@ -1330,6 +1330,25 @@ public class MainActivity extends Activity {
     // packages are staged into getCacheDir()/installer; nothing outside that directory is ever installed.
     // ---------------------------------------------------------------------------------------------
 
+    /** The real current enabled state of a component: the pm override if one is set, else the manifest default. */
+    private boolean componentEnabled(String pkg, String name, boolean manifestEnabled) {
+        try {
+            int st = getPackageManager().getComponentEnabledSetting(new android.content.ComponentName(pkg, name));
+            if (st == PackageManager.COMPONENT_ENABLED_STATE_ENABLED) return true;
+            if (st == PackageManager.COMPONENT_ENABLED_STATE_DISABLED) return false;
+        } catch (Exception ignored) {}
+        return manifestEnabled;
+    }
+
+    private JSONObject componentEntry(String pkg, String name, boolean exported, boolean manifestEnabled, String permission) throws Exception {
+        JSONObject o = new JSONObject();
+        o.put("name", name);
+        o.put("exported", exported);
+        o.put("enabled", componentEnabled(pkg, name, manifestEnabled));
+        o.put("permission", permission != null ? permission : "");
+        return o;
+    }
+
     private File installerWorkDir() {
         return new File(getCacheDir(), "installer");
     }
@@ -3412,27 +3431,58 @@ public class MainActivity extends Activity {
                     }
                     obj.put("permissions", perms);
 
+                    // Four component kinds, each with per-component exported/enabled/permission so the UI
+                    // can show and toggle them. The plain name arrays stay for older callers.
                     JSONArray activities = new JSONArray();
                     JSONArray activityInfo = new JSONArray();
                     if (info.activities != null) {
                         for (ActivityInfo a : info.activities) {
+                            if (a.name == null) continue;
                             activities.put(a.name);
-                            JSONObject ao = new JSONObject();
-                            ao.put("name", a.name);
-                            ao.put("exported", a.exported);
-                            ao.put("enabled", a.enabled);
-                            ao.put("permission", a.permission != null ? a.permission : "");
-                            activityInfo.put(ao);
+                            activityInfo.put(componentEntry(pkg, a.name, a.exported, a.enabled, a.permission));
                         }
                     }
                     obj.put("activities", activities);
                     obj.put("activityInfo", activityInfo);
 
                     JSONArray services = new JSONArray();
+                    JSONArray serviceInfo = new JSONArray();
                     if (info.services != null) {
-                        for (ServiceInfo s : info.services) services.put(s.name);
+                        for (ServiceInfo s : info.services) {
+                            if (s.name == null) continue;
+                            services.put(s.name);
+                            serviceInfo.put(componentEntry(pkg, s.name, s.exported, s.enabled, s.permission));
+                        }
                     }
                     obj.put("services", services);
+                    obj.put("serviceInfo", serviceInfo);
+
+                    JSONArray receivers = new JSONArray();
+                    JSONArray receiverInfo = new JSONArray();
+                    if (info.receivers != null) {
+                        for (ActivityInfo r : info.receivers) {
+                            if (r.name == null) continue;
+                            receivers.put(r.name);
+                            receiverInfo.put(componentEntry(pkg, r.name, r.exported, r.enabled, r.permission));
+                        }
+                    }
+                    obj.put("receivers", receivers);
+                    obj.put("receiverInfo", receiverInfo);
+
+                    JSONArray providers = new JSONArray();
+                    JSONArray providerInfo = new JSONArray();
+                    if (info.providers != null) {
+                        for (android.content.pm.ProviderInfo p : info.providers) {
+                            if (p.name == null) continue;
+                            providers.put(p.name);
+                            String perm = p.readPermission != null ? p.readPermission : p.writePermission;
+                            JSONObject po = componentEntry(pkg, p.name, p.exported, p.enabled, perm);
+                            if (p.authority != null) po.put("authority", p.authority);
+                            providerInfo.put(po);
+                        }
+                    }
+                    obj.put("providers", providers);
+                    obj.put("providerInfo", providerInfo);
                 } catch (Exception e) {
                     obj.put("error", e.getMessage());
                 }
@@ -3847,6 +3897,47 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void installSelected(String optsJson) {
             runInstallSelected(optsJson);
+        }
+
+        /** Enables or disables one component (pm enable/disable pkg/component) via the active backend. */
+        @JavascriptInterface
+        public String setComponentEnabled(String pkg, String component, boolean enable) {
+            JSONObject r = new JSONObject();
+            try {
+                if (pkg == null || component == null || !pkg.matches("[A-Za-z0-9._]+") || !component.matches("[A-Za-z0-9._$]+")) {
+                    r.put("ok", false); r.put("output", "Error: invalid component name"); return r.toString();
+                }
+                if ("standard".equals(resolveExecMode())) {
+                    r.put("ok", false); r.put("output", "Error: enabling or disabling a component needs ADB, Shizuku or Root."); return r.toString();
+                }
+                String full = component.startsWith(".") ? pkg + component : component;
+                String out = executeShell("pm " + (enable ? "enable" : "disable") + " " + pkg + "/" + full);
+                String low = out == null ? "" : out.toLowerCase();
+                r.put("ok", low.contains("new state") || low.contains(enable ? "enabled" : "disabled"));
+                r.put("output", out != null ? out.trim() : "");
+            } catch (Exception e) {
+                try { r.put("ok", false); r.put("output", "Error: " + e.getMessage()); } catch (Exception ignored) {}
+            }
+            return r.toString();
+        }
+
+        /** Runs ART dex optimization for a package (pm compile -m <mode> [-f]) via the active backend. */
+        @JavascriptInterface
+        public String optimizeApp(String pkg, String mode, boolean force) {
+            JSONObject r = new JSONObject();
+            try {
+                if (pkg == null || !pkg.matches("[A-Za-z0-9._]+")) { r.put("ok", false); r.put("output", "Error: invalid package"); return r.toString(); }
+                if ("standard".equals(resolveExecMode())) { r.put("ok", false); r.put("output", "Error: dex optimization needs ADB, Shizuku or Root."); return r.toString(); }
+                String m = mode == null ? "speed" : mode.replaceAll("[^a-z-]", "");
+                if (m.isEmpty()) m = "speed";
+                String out = executeShell("pm compile -m " + m + (force ? " -f " : " ") + pkg);
+                String low = out == null ? "" : out.toLowerCase();
+                r.put("ok", low.contains("success") || low.contains("performed") || (!low.contains("error") && !low.contains("failure") && !low.contains("unknown") && !low.contains("usage")));
+                r.put("output", out != null && !out.trim().isEmpty() ? out.trim() : "Done");
+            } catch (Exception e) {
+                try { r.put("ok", false); r.put("output", "Error: " + e.getMessage()); } catch (Exception ignored) {}
+            }
+            return r.toString();
         }
 
         @JavascriptInterface
