@@ -3549,6 +3549,13 @@ Type any command below (e.g. pm list packages -d)
             const idx = customLists.findIndex(l => l.id === payload.id);
             if (idx >= 0) customLists[idx] = payload; else customLists.unshift(payload);
             persistSavedLists();
+            // The widget/tile always force-stops the CURRENT packages for this id (looked up fresh, not a
+            // snapshot), so editing the active quick list is never functionally stale - but the widget's own
+            // displayed label (app count) only repaints when setQuickList runs, so nudge it now instead of
+            // leaving a stale count on the home screen until Android's next periodic widget update.
+            if (payload.id === quickListId && window.AndroidBridge && window.AndroidBridge.setQuickList) {
+                window.AndroidBridge.setQuickList(quickListId);
+            }
             renderSavedLists();
             closeListEditorModal();
             showToast('Saved list: ' + name, '✔');
@@ -3619,6 +3626,13 @@ Type any command below (e.g. pm list packages -d)
         function confirmDeleteList() {
             if (!pendingDeleteListId) return;
             customLists = customLists.filter(l => l.id !== pendingDeleteListId);
+            // Clear the quick list (native pref + widget label) if the deleted list was it, the same way
+            // deleteProfile already clears the watched profile - otherwise quick_list_id keeps pointing at
+            // a list that no longer exists.
+            if (pendingDeleteListId === quickListId) {
+                quickListId = '';
+                if (window.AndroidBridge && window.AndroidBridge.setQuickList) window.AndroidBridge.setQuickList('');
+            }
             pendingDeleteListId = null;
             persistSavedLists();
             renderSavedLists();
@@ -6668,12 +6682,19 @@ Type any command below (e.g. pm list packages -d)
             try {
                 const d = JSON.parse(raw);
                 if (d.format !== 'adb-app-manager-profile' || !Array.isArray(d.apps)) throw new Error('not a profile');
-                const apps = d.apps.filter(a => a && typeof a.pkg === 'string' && ['disabled', 'suspended', 'uninstalled'].includes(a.state))
+                const parsed = d.apps.filter(a => a && typeof a.pkg === 'string' && ['disabled', 'suspended', 'uninstalled'].includes(a.state))
                     .map(a => {
                         const e = { pkg: a.pkg, name: String(a.name || a.pkg), state: a.state };
                         if (typeof a.frozen === 'boolean' && typeof a.suspended === 'boolean') { e.frozen = a.frozen; e.suspended = a.suspended; }
                         return e;
                     });
+                // A profile defines one target state per app; a file with the same package listed twice
+                // (even accidentally) would otherwise queue both states' steps in profilePlan - possibly
+                // contradictory ones (freeze AND unfreeze for the same app). Keep one entry per package,
+                // the last one listed winning so an intentional override in a hand-edited file still works.
+                const byPkg = new Map();
+                parsed.forEach(e => byPkg.set(e.pkg, e));
+                const apps = Array.from(byPkg.values());
                 if (!apps.length) throw new Error('no apps');
                 loadProfiles().unshift({ id: 'prof_' + Date.now(), name: String(d.name || 'Imported profile').slice(0, 60), created: Date.now(), apps });
                 if (!persistProfiles()) { profiles.shift(); profilesFull(); return; }

@@ -2195,7 +2195,11 @@ public class MainActivity extends Activity {
         }
     }
 
-    /** Opens a file in Download/ADB App Manager/<sub> (MediaStore on Android 10+, app storage before). */
+    /** Opens a file in Download/ADB App Manager/<sub> via MediaStore (Android 10+). Before MediaStore.Downloads
+     *  existed (Android 8.0-9, API 26-28) this instead uses this app's own external-files storage, which is
+     *  removed if the app is uninstalled - there is no public-Downloads write path on those versions without
+     *  a runtime WRITE_EXTERNAL_STORAGE grant this app doesn't request. target[1], returned to the caller,
+     *  always reflects the real path used, so the UI and the backup index never claim the wrong one. */
     private Object[] openDownloadOutput(String fileName, String mime, String sub) throws Exception {
         String safeName = fileName.replaceAll("[^A-Za-z0-9._ -]", "_").trim();
         String folder = "ADB App Manager" + (sub == null || sub.isEmpty() ? "" : "/" + sub);

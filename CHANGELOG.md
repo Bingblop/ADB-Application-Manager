@@ -2,10 +2,10 @@
 
 ## Unreleased (source-complete, not yet in a signed build)
 
-A second GitHub Copilot review pass on v4.7-Pro's diff found a few more genuine issues, all fixed in
+Two more GitHub Copilot review passes on v4.7-Pro's diff found further genuine issues, all fixed in
 source and confirmed by a clean CI compile plus standalone tests, but **not included in the
 `release/ADB_Application_Manager_Pro-v4.7.apk` below** - that APK was already built, signed and verified
-before this pass ran, and the environment this round's fixes were made in has no way to re-sign with the
+before these passes ran, and the environment this round's fixes were made in has no way to re-sign with the
 same release key. They'll be in the APK for the next version bump; until then, building `./build.sh`
 yourself from this source (with the project's usual `release.keystore`) picks them up immediately.
 
@@ -34,6 +34,22 @@ yourself from this source (with the project's usual `release.keystore`) picks th
   everything after it. Separately, a timed-out match was indistinguishable from "didn't match", which an
   inverted asset filter could read as "nothing to exclude"; a timeout now always rejects the candidate
   instead.
+- **A Root data backup could report success from a tar run that actually failed**, as long as it had
+  written something to the output file first (a disk-full or I/O error partway through can do that). Only
+  tar's own "some files changed while being read" code is now treated as the recoverable case it always
+  was meant to be; anything else deletes the partial file and fails the backup.
+- **A Root data restore deleted the app's current data before extraction had even been attempted**, so a
+  failure at that point (which the preceding checks can't fully rule out) left the app with nothing instead
+  of its original data plus a clean error. The current data is now moved aside instead of deleted, and
+  restored if extraction or the ownership/SELinux repair after it fails.
+- Editing the packages in the saved list currently used as the quick list now refreshes the Quick Settings
+  tile/widget's label immediately instead of waiting for Android's next periodic update; deleting that list
+  now clears it as the quick list instead of leaving a dangling reference.
+- Importing a profile that lists the same package twice (even by accident) now keeps one entry for it
+  instead of queuing both states' steps - including, in the worst case, contradictory ones for the same app.
+- Clarified that on Android 8.0-9 (API 26-28, before `MediaStore.Downloads` existed) backups and extracted
+  APKs are saved to this app's own storage instead of the public `Download/` folder, and are removed if you
+  uninstall the app - this was already the actual behavior, just not previously documented.
 
 ## v4.7-Pro (versionCode 370)
 

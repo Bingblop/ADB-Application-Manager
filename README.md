@@ -266,7 +266,10 @@ another phone. Before restoring it checks the signing key against the installed 
 downgrade or key mismatch instead of failing silently.
 
 Private app data lives in `/data/user/0/<package>`, which only Root can read on current Android, so without
-Root a backup is APK + settings. The data scripts treat the backup file as untrusted: before touching
+Root a backup is APK + settings. On Android 8.0–9 (API 26–28, before `MediaStore.Downloads` existed)
+backups and extracted APKs are saved to this app's own storage instead of the public `Download/` folder,
+and are removed if you uninstall it - keep a copy elsewhere before uninstalling on those versions. The data
+scripts treat the backup file as untrusted: before touching
 anything the restore refuses archives with paths outside the app's own folders, `..` steps, hard links or
 links pointing elsewhere (checked in [`BackupScripts`](src/com/bloatware/bingblop/BackupScripts.java)):
 
@@ -481,15 +484,21 @@ release/                       Signed release APKs and SHA256SUMS.txt
 ## Testing
 
 A full pass through every source file, not just this round's diff, backed by GitHub Copilot's automated
-review (six rounds on this PR) plus a standalone, independent full-file audit, with a runnable check for
+review (seven rounds on this PR) plus a standalone, independent full-file audit, with a runnable check for
 every finding that survived verification:
 
-- **UI**: 23 headless-browser suites drive the real `index.html` against a mock Android bridge (every tab,
-  theme, filter, share/copy/find action, profiles, drift banner, What's new, quick list, backup and restore flows).
+- **UI**: 24 headless-browser suites drive the real `index.html` against a mock Android bridge (every tab,
+  theme, filter, share/copy/find action, profiles, drift banner, What's new, quick list, backup and restore
+  flows, and - the latest addition - that editing or deleting the active quick list correctly nudges or
+  clears it instead of leaving a stale widget label or a dangling reference, and that importing a profile
+  with a duplicated package keeps exactly one entry for it).
 - **Backup scripts**: run against a fake `/data` tree with real `tar`, including hostile archives (other apps'
-  paths, `..`, hard links, outward links, device/FIFO entries, damaged files) and, with `chown`/`restorecon`
+  paths, `..`, hard links, outward links, device/FIFO entries, damaged files); with `chown`/`restorecon`
   stood in for on `PATH`, both a real device's success path and a failed ownership/SELinux repair correctly
-  reported as an error rather than silently restored: 33 checks.
+  reported as an error rather than silently restored; with a stand-in `tar`, its own exit code (not just
+  "did it leave a file behind") decides OK/WARN/ERROR, and a failure partway through restoring data rolls
+  the app's original data back instead of having already deleted it before extraction could even be
+  attempted: 42 checks.
 - **Manifest decoder**: hand-built adversarial binary AXML (negative strings-pool count, an overflowing chunk
   size, a mismatched closing-tag reference, an oversized manifest, a strings-pool count that passes a
   byte-size check but could never fit its own offset table) alongside a well-formed one, run against the real

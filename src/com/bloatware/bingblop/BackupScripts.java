@@ -54,9 +54,13 @@ final class BackupScripts {
             + "[ -n \"$paths\" ] || { echo 'ERROR: " + pkg + " has no data folder'; exit 3; }\n"
             + "rm -f " + quote(outFile) + "\n"
             + "tar -cf " + quote(outFile) + " $paths >/dev/null 2>&1; rc=$?\n"
-            + "[ -s " + quote(outFile) + " ] || { echo \"ERROR: tar failed ($rc)\"; exit 4; }\n"
+            // tar's own exit codes: 0 ok, 1 "some files differ" (e.g. a file changed while being read -
+            // recoverable, the archive is still usable). Anything else is a real failure (I/O error, out of
+            // space, ...) and the partial file it may have produced must not be kept as if it were a backup.
+            + "if [ $rc -gt 1 ]; then rm -f " + quote(outFile) + "; echo \"ERROR: tar failed ($rc)\"; exit 4; fi\n"
+            + "[ -s " + quote(outFile) + " ] || { echo 'ERROR: tar produced no output'; exit 4; }\n"
             + "chown " + ownerUid + ":" + ownerUid + " " + quote(outFile) + " && chmod 600 " + quote(outFile) + "\n"
-            + "[ $rc -eq 0 ] || echo \"WARN: tar exited with $rc\"\n"
+            + "[ $rc -eq 0 ] || echo 'WARN: some files changed while being read; the backup may be incomplete'\n"
             + "echo OK\n";
     }
 
@@ -82,12 +86,19 @@ final class BackupScripts {
             + "if tar -tvf " + t + " | grep -q -E '^[bcp]'; then echo 'ERROR: the archive has device or FIFO entries'; exit 6; fi\n"
             + "if tar -tvf " + t + " | grep -E '^l' | grep -q -E -- ' -> (/|.*\\.\\.)'; then echo 'ERROR: the archive has links that point outside the app'; exit 6; fi\n"
             + "am force-stop " + pkg + " >/dev/null 2>&1\n"
-            + "for d in user/0/" + pkg + " user_de/0/" + pkg + "; do [ -d \"$d\" ] && find \"$d\" -mindepth 1 -maxdepth 1 -exec rm -rf {} \\; ; done\n"
+            // The app's current data must survive any failure from here on, so it's moved aside rather than
+            // deleted: a disk-full or interrupted extraction (the preceding checks can't rule those out)
+            // used to delete the real data first and only then discover extraction had failed, leaving the
+            // app with nothing at all instead of its original data plus a clean error.
+            + "restore_rollback() { for d in user/0/" + pkg + " user_de/0/" + pkg + "; do rm -rf \"$d\"; [ -d \"$d.restorebak\" ] && mv \"$d.restorebak\" \"$d\"; done; }\n"
+            + "for d in user/0/" + pkg + " user_de/0/" + pkg + "; do rm -rf \"$d.restorebak\"; [ -d \"$d\" ] && mv \"$d\" \"$d.restorebak\"; done\n"
+            + "mkdir -p user/0/" + pkg + " user_de/0/" + pkg + "\n"
             + "tar -xf " + t + " -C " + quote(dataRoot) + " >/dev/null 2>&1; rc=$?\n"
-            + "[ $rc -eq 0 ] || { echo \"ERROR: extracting failed ($rc)\"; exit 4; }\n"
+            + "[ $rc -eq 0 ] || { restore_rollback; echo \"ERROR: extracting failed ($rc)\"; exit 4; }\n"
             + "fail=0\n"
             + "for d in user/0/" + pkg + " user_de/0/" + pkg + "; do if [ -d \"$d\" ]; then chown -R $uid:$uid \"$d\" || fail=1; restorecon -RF \"$d\" >/dev/null 2>&1 || fail=1; fi; done\n"
-            + "[ \"$fail\" -eq 0 ] || { echo 'ERROR: could not restore ownership or SELinux labels on the restored data'; exit 7; }\n"
+            + "[ \"$fail\" -eq 0 ] || { restore_rollback; echo 'ERROR: could not restore ownership or SELinux labels on the restored data'; exit 7; }\n"
+            + "for d in user/0/" + pkg + " user_de/0/" + pkg + "; do rm -rf \"$d.restorebak\"; done\n"
             + "echo OK\n";
     }
 
