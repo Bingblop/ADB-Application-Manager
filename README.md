@@ -77,6 +77,16 @@ tell you when a new version is out (see [Updates](#updates)).
 | **Themes** | **Material 3** (default) · **Material You** (follows your wallpaper) · six more palettes · Light / Dark / System / Schedule · pure-black AMOLED option · per-mode color tuning |
 | **Security** | A **private ADB key is generated on each install** (nothing is bundled) · fingerprint shown in the app · signing-certificate comparison before every update |
 
+## New in v4.9
+
+- **All-in-one installer** — install `.apk`, `.apks` (bundletool) and `.apkm` (APKMirror) packages. Reads the package name, version, min/target SDK, size and signing certificate before installing; for split bundles you pick which splits to install. Full `pm install` control: grant all permissions, allow downgrade, allow test, all users, bypass low target-SDK block, request update ownership, install reason, package source, installer package. Pick the authorizer (ADB / Shizuku / Root / No-privilege), optional post-install dex optimization and auto-delete, and signature-mismatch / unknown-signature gates.
+- **Default installer** — set the app as the handler for APK files; opening an APK routes into the installer (privileged install when a mode is active, otherwise the normal system installer).
+- **Components** — now lists activities, **receivers**, **services** and **providers**, each with its exported/enabled/permission detail, and any component can be **enabled or disabled**.
+- **Dex optimization** — `pm compile` as a single-app and batch action, with a compile-mode picker.
+- **Privileged file manager** — browse any path with ADB/Shizuku/Root; view text, create, rename, copy, move, delete, and install APKs from anywhere.
+- **Logcat reader** — read the device log with level, line-count and text filters.
+- **Play Store (via Aurora)** — detects Aurora Store / Play Store and routes app updates to their store page.
+
 ## Screenshots
 
 <div align="center">
@@ -88,6 +98,16 @@ tell you when a new version is out (see [Updates](#updates)).
 </div>
 
 <table>
+  <tr>
+    <td><img src="docs/screenshots/installer.png" width="230" alt="All-in-one installer"></td>
+    <td><img src="docs/screenshots/files.png" width="230" alt="Privileged file manager"></td>
+    <td><img src="docs/screenshots/logcat.png" width="230" alt="Logcat reader"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>All-in-one APK / APKS / APKM installer</sub></td>
+    <td align="center"><sub>Privileged file manager</sub></td>
+    <td align="center"><sub>Logcat reader</sub></td>
+  </tr>
   <tr>
     <td><img src="docs/screenshots/batch-select.png" width="230" alt="Batch actions"></td>
     <td><img src="docs/screenshots/manifest-search.png" width="230" alt="Manifest viewer with search"></td>

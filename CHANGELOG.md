@@ -25,6 +25,25 @@ Installs over v3.1 – v4.8 without uninstalling (same signing key).
   unsigned or unreadable package), both on by default and read straight from the APK. Packages are staged in
   the app's own cache and nothing outside that directory is ever installed.
 - Toggles to show or hide the SDK, size and version readouts for the picked package.
+- **Default installer.** The app now handles opening an APK file (a VIEW / INSTALL_PACKAGE intent for
+  `application/vnd.android.package-archive`), so it can be set as the default APK handler. Opening an APK
+  routes into the Installer tab; a privileged mode installs, and with no privileged mode it falls back to
+  the normal system installer. A button deep-links to the default-apps settings.
+- **Components now cover all four kinds.** The Components tab lists activities, **receivers**, **services**
+  and **providers**, each with its exported / enabled / permission detail, and any component can be
+  **enabled or disabled** (`pm enable` / `pm disable`). The shown state reflects the real pm override.
+- **Dex optimization** is available as a single-app action (in the app menu) and as a batch action, with a
+  compile-mode picker (`pm compile -m <mode>`, optional force `-f`).
+- **New 📁 Files tab — a privileged file manager.** Browse any path with ADB / Shizuku / Root, view text
+  files, create folders, rename, copy, move and delete, and install an APK from any location (staged to a
+  readable temp, then handed to the Installer). Every path is shell-quoted.
+- **New 📄 Logcat tab.** Read the device log (`logcat -d`) with level, line-count and text/tag filters
+  (the filter is applied in-process, never in the shell), plus clear and copy.
+- **Play Store (via Aurora) routing** in the Updates tab: detects whether Aurora Store / Play Store are
+  installed, opens Aurora Store's in-app updates, and routes any installed app to its store page. (Automatic
+  Play version detection is a planned follow-up, since it needs anonymous Play authentication.)
+- The release workflow now builds, signs and publishes from a version tag; set the `KEYSTORE_BASE64` /
+  `KEYSTORE_PASSWORD` repo secrets for a build signed with your key.
 
 ## v4.8-Pro (versionCode 380)
 
