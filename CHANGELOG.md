@@ -50,6 +50,22 @@ yourself from this source (with the project's usual `release.keystore`) picks th
 - Clarified that on Android 8.0-9 (API 26-28, before `MediaStore.Downloads` existed) backups and extracted
   APKs are saved to this app's own storage instead of the public `Download/` folder, and are removed if you
   uninstall the app - this was already the actual behavior, just not previously documented.
+- **Restoring permissions now applies the same dangerous-permission check backup creation already uses.**
+  Without it, a crafted backup wrapped around an otherwise-legitimate, correctly-signed APK could list any
+  syntactically valid permission in `backup.json` - including signature or development-level ones this
+  format never actually produces - and have the privileged restore backend asked to grant it.
+- A backup's filename only had minute precision; two backups of the same app and version within the same
+  minute could collide on Android 8-9 specifically, where that name is opened directly as a file rather
+  than through `MediaStore` (one backup silently overwriting the other, or a failed second write deleting
+  an earlier valid one). Added millisecond precision.
+- **Replaced the hand-rolled timeout around the two regexes matched against untrusted Obtainium catalog
+  data with [RE2J](https://github.com/google/re2j), a linear-time (non-backtracking) regex engine.** Two
+  earlier fixes in this same spot (a shared thread pool, then a fresh thread per attempt) both tried to
+  survive `java.util.regex` hanging on a catastrophic pattern without actually being able to stop it; the
+  second attempt still let a single hostile catalog entry leak an unbounded number of permanently-running
+  threads over time; since `pickApk` matches the filter once per APK asset on every update check, that is
+  an eventual resource exhaustion, not just a leak. RE2J has no pathological input by construction, so
+  matching now runs directly with no thread or timeout machinery at all.
 
 ## v4.7-Pro (versionCode 370)
 

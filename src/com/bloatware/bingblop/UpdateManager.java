@@ -31,45 +31,23 @@ public final class UpdateManager {
         void onProgress(long done, long total);
     }
 
-    // Every regex matched here (Obtainium catalog's versionExtractionRegEx, apkFilterRegEx) comes from a
-    // network response - a community catalog entry or a self-hosted source - so a syntactically valid but
-    // catastrophically-backtracking pattern must not be able to hang the caller. Java's Matcher has no
-    // interruptible find(), so a timed-out match is simply abandoned rather than stopped - that thread
-    // keeps backtracking in the background forever. A shared, fixed-size pool was tried first, but a
-    // thread that never comes back permanently occupies one of its workers; after as few hostile patterns
-    // as the pool has slots, every later, unrelated, perfectly ordinary match would queue behind them and
-    // never run at all, turning one or two bad catalog entries into a permanent outage for every update
-    // check from then on. A fresh daemon thread per attempt instead means a stuck match leaks one thread
-    // (bounded by how many hostile patterns are ever actually matched, not fatal) without ever blocking
-    // another call's own thread from running and returning its own correct result on time.
-    private static final long REGEX_TIMEOUT_MS = 2000;
-
-    private enum MatchResult { MATCHED, NOT_MATCHED, TIMED_OUT }
-
-    private static MatchResult findWithTimeout(final Matcher m) {
-        final MatchResult[] result = {MatchResult.NOT_MATCHED};
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    result[0] = m.find() ? MatchResult.MATCHED : MatchResult.NOT_MATCHED;
-                } catch (Throwable ignored) {
-                    result[0] = MatchResult.NOT_MATCHED;
-                }
-            }
-        }, "update-regex");
-        t.setDaemon(true);
-        t.start();
-        try {
-            t.join(REGEX_TIMEOUT_MS);
-        } catch (InterruptedException ignored) {
-            Thread.currentThread().interrupt();
-        }
-        // join() returning because the thread finished happens-before this read of result[0]; returning
-        // because the timeout elapsed instead means it's still running, so the result it will eventually
-        // write can't be trusted (and isn't waited for).
-        return t.isAlive() ? MatchResult.TIMED_OUT : result[0];
-    }
+    // The two regexes from the Obtainium catalog (versionExtractionRegEx, apkFilterRegEx) are the only
+    // ones in this file matched against untrusted, network-supplied patterns - a community catalog entry
+    // or a self-hosted source - so a syntactically valid but catastrophically-backtracking pattern must
+    // not be able to hang or exhaust the caller. A timeout around java.util.regex was tried first, twice:
+    // a shared thread pool meant a couple of stuck matches could permanently occupy every worker and block
+    // every later, unrelated match; a fresh thread per attempt fixed that but still leaked one unkillable,
+    // permanently-backtracking thread per hostile match, and pickApk calls this once per APK asset on every
+    // update check, so a single bad catalog entry could still leak an unbounded number of threads over time
+    // and eventually exhaust the process. Neither is a real fix, because java.util.regex's backtracking
+    // engine has no actual bound on a pattern's running time. RE2J (com.google.re2j, bundled in libs/) is a
+    // different engine - automaton-based, not backtracking - that is linear-time in the input length for
+    // any pattern it accepts, by construction; there is no pathological input to guard against, so matching
+    // these two regexes runs directly and synchronously with it, no thread or timeout machinery needed.
+    // It doesn't support backreferences or lookaround, which is exactly the handful of constructs that make
+    // catastrophic backtracking possible in the first place; an unsupported pattern throws a checked
+    // exception, already caught at both call sites below, falling back to "no transformation"/"no filter"
+    // rather than failing unsafely.
 
     /** Device identity Samsung's service uses to pick the right build for this phone and region. */
     public static final class Device {
@@ -437,8 +415,8 @@ public final class UpdateManager {
     public static String extractVersion(String tag, String regex, String group) {
         if (regex == null || regex.isEmpty()) return tag;
         try {
-            Matcher m = Pattern.compile(regex).matcher(tag);
-            if (findWithTimeout(m) != MatchResult.MATCHED) return tag;
+            com.google.re2j.Matcher m = com.google.re2j.Pattern.compile(regex).matcher(tag);
+            if (!m.find()) return tag;
             int g = 0;
             try {
                 g = Integer.parseInt(group == null || group.isEmpty() ? "0" : group.replaceAll("[^0-9]", ""));
@@ -456,21 +434,15 @@ public final class UpdateManager {
     public static String[] pickApk(java.util.List<String[]> assets, String filterRegex, boolean invertFilter, String[] abis) {
         String[] best = null;
         int bestScore = Integer.MIN_VALUE;
-        Pattern filter = null;
+        com.google.re2j.Pattern filter = null;
         try {
-            if (filterRegex != null && !filterRegex.isEmpty()) filter = Pattern.compile(filterRegex);
+            if (filterRegex != null && !filterRegex.isEmpty()) filter = com.google.re2j.Pattern.compile(filterRegex);
         } catch (Exception ignored) {}
         String primary = abis != null && abis.length > 0 ? abis[0].toLowerCase() : "arm64-v8a";
         for (String[] a : assets) {
             String name = a[0].toLowerCase();
             if (!name.endsWith(".apk")) continue;
-            if (filter != null) {
-                // A timed-out match is neither "matched" nor "not matched" - it's unknown, and treating it
-                // as "not matched" would, under an inverted filter, keep exactly the candidate the filter
-                // was written to exclude. Reject the candidate on timeout regardless of inversion instead.
-                MatchResult r = findWithTimeout(filter.matcher(a[0]));
-                if (r == MatchResult.TIMED_OUT || (r == MatchResult.MATCHED) == invertFilter) continue;
-            }
+            if (filter != null && filter.matcher(a[0]).find() == invertFilter) continue;
             int score = 0;
             boolean mentionsArch = false;
             String[][] archNames = {{"arm64-v8a", "arm64", "aarch64", "armv8"}, {"armeabi-v7a", "armeabi", "armv7", "arm32"}, {"x86_64", "x64", "amd64"}, {"x86", "i686"}};

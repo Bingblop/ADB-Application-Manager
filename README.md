@@ -474,7 +474,8 @@ assets/index.html              The whole UI (HTML/CSS/JS, rendered in a WebView)
 assets/libadb.so               arm64 adb client for ADB TCP / Wireless Debugging
 assets/rish, rish_shizuku.dex  Shizuku shell fallback
 res/                           Launcher icons, widget layout, tile and notification icons, strings
-libs/                          Shizuku API 13.1.5 (api, provider, shared, aidl)
+libs/                          Shizuku API 13.1.5 (api, provider, shared, aidl); RE2J 1.8 (linear-time
+                               regex for untrusted, network-supplied patterns, see UpdateManager)
 docs/screenshots/              Images and the debloat-flow animation used in this README
 build.sh                       Build script (Termux or Linux)
 release/                       Signed release APKs and SHA256SUMS.txt
@@ -484,7 +485,7 @@ release/                       Signed release APKs and SHA256SUMS.txt
 ## Testing
 
 A full pass through every source file, not just this round's diff, backed by GitHub Copilot's automated
-review (seven rounds on this PR) plus a standalone, independent full-file audit, with a runnable check for
+review (eight rounds on this PR) plus a standalone, independent full-file audit, with a runnable check for
 every finding that survived verification:
 
 - **UI**: 24 headless-browser suites drive the real `index.html` against a mock Android bridge (every tab,
@@ -505,10 +506,14 @@ every finding that survived verification:
   decoder with Android's own framework classes on the classpath: 6 checks.
 - **Update checks**: a package-name validator rejecting shell metacharacters (19 cases); the working-mode
   tile/widget's fallback order (8 cases); a direct timing proof that skipping an unwanted multi-gigabyte
-  backup entry no longer decompresses it (6.9s → 0ms); a regex timeout guard verified against an ordinary
-  fast pattern, an artificially slow one, and - the regression this round's second Copilot pass caught in the
-  guard itself - three consecutive timeouts followed by one more ordinary match, proving a hostile pattern
-  can no longer permanently starve every update check after it (11 checks).
+  backup entry no longer decompresses it (6.9s → 0ms); the two regexes matched against untrusted catalog
+  data run through [RE2J](https://github.com/google/re2j) instead of a timeout around `java.util.regex` -
+  two earlier attempts at that timeout (a shared thread pool, then a fresh thread per attempt) each turned
+  out to leak unkillable, permanently-backtracking threads in a way a determined catalog entry could still
+  turn into a standing or growing problem, which a genuinely linear-time engine doesn't have in the first
+  place. Proven directly: the classic `(a+)+$` ReDoS pattern against 35 `a`s resolves in low tens of
+  milliseconds, not the exponential blowup a backtracking engine would hit; a pattern using a backreference
+  (unsupported by RE2J) falls back to "no transformation"/"no filter" instead of throwing (9 checks).
 - **Build**: every APK is compiled, signed and verified (zipalign, v2/v3 signatures) by `build.sh`.
 - The parts that only exist on a phone (the ADB, Shizuku and Root backends, the Quick Settings tiles, the
   widget, the share sheet and the boot notification) are checked by compilation and review rather than on

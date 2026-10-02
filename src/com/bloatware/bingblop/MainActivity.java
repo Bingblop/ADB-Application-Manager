@@ -1547,7 +1547,11 @@ public class MainActivity extends Activity {
                     meta.put("dataBytes", withData ? tmpTar.length() : 0);
 
                     backupEvent("backup", "write", 55, "Saving the backup...");
-                    String stamp = new java.text.SimpleDateFormat("yyyyMMdd-HHmm", java.util.Locale.US).format(new java.util.Date());
+                    // Millisecond precision: on Android 8-9 (API 26-28, see openDownloadOutput) this name is
+                    // opened directly with FileOutputStream, so two backups of the same app/version within
+                    // the same minute would otherwise overwrite each other while both index records still
+                    // point at one file - and a failed second write could delete an earlier, valid backup.
+                    String stamp = new java.text.SimpleDateFormat("yyyyMMdd-HHmmss-SSS", java.util.Locale.US).format(new java.util.Date());
                     String fileName = (label.isEmpty() ? pkg : label) + "_" + version + "_" + stamp + ".adbbackup";
                     target = openDownloadOutput(fileName, "application/octet-stream", "Backups");
                     java.util.zip.ZipOutputStream zip = new java.util.zip.ZipOutputStream(new java.io.BufferedOutputStream((OutputStream) target[0]));
@@ -1770,7 +1774,13 @@ public class MainActivity extends Activity {
                     int granted = 0, total = perms == null ? 0 : perms.length();
                     for (int i = 0; i < total; i++) {
                         String perm = perms.optString(i);
-                        if (!BackupScripts.isPermission(perm)) continue;
+                        // backup.json is untrusted, so restore must accept nothing wider than what backup
+                        // creation itself ever writes: a syntactically valid, dangerous runtime permission.
+                        // Without the same isDangerousPermission check used there, a crafted backup wrapped
+                        // around an otherwise-legitimate APK could list any real, syntactically valid
+                        // permission - including signature/development-level ones this format never
+                        // produces - and have the privileged backend asked to grant it.
+                        if (!BackupScripts.isPermission(perm) || !isDangerousPermission(pm, perm)) continue;
                         String o = bridge.setPermission(pkg, perm, true).toLowerCase();
                         if (!o.contains("exception") && !o.contains("error") && !o.contains("not a changeable")) granted++;
                     }
