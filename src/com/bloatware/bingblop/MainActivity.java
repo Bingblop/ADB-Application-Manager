@@ -3911,6 +3911,59 @@ public class MainActivity extends Activity {
             });
         }
 
+        private boolean isInstalled(String pkg) {
+            try { getPackageManager().getPackageInfo(pkg, 0); return true; } catch (Exception e) { return false; }
+        }
+
+        /** Whether Aurora Store / Play Store are installed, for routing Play-sourced updates. */
+        @JavascriptInterface
+        public String storeStatus() {
+            JSONObject o = new JSONObject();
+            try {
+                o.put("aurora", isInstalled("com.aurora.store"));
+                o.put("play", isInstalled("com.android.vending"));
+            } catch (Exception ignored) {}
+            return o.toString();
+        }
+
+        /** Opens a package's store page (market:// resolves to Aurora Store or Play, whichever handles it). */
+        @JavascriptInterface
+        public void openInStore(final String pkg) {
+            if (pkg == null || !pkg.matches("[A-Za-z0-9._]+")) return;
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + pkg));
+                        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(i);
+                    } catch (Exception e) {
+                        try {
+                            Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=" + pkg));
+                            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(i);
+                        } catch (Exception ignored) {}
+                    }
+                }
+            });
+        }
+
+        /** Opens Aurora Store (its Updates screen lives in-app), falling back to its store listing. */
+        @JavascriptInterface
+        public void openAuroraStore() {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Intent i = getPackageManager().getLaunchIntentForPackage("com.aurora.store");
+                        if (i == null) i = new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=com.aurora.store"));
+                        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(i);
+                    } catch (Exception ignored) {}
+                }
+            });
+        }
+
         /** Opens the system screen where the user can make this app the default for opening APK files. */
         @JavascriptInterface
         public void openDefaultAppsSettings() {

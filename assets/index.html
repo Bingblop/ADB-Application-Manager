@@ -2527,6 +2527,16 @@
                 </div>
                 <div class="uad-credit" style="margin-top:10px;">Sideloaded apps are matched to their source through your sources, your imported Obtainium list, the Obtainium community catalog, IzzyOnDroid and F-Droid. Every download is checked to be the same app, a newer version and signed with the same key before installing through ADB, Shizuku or Root. Play Store apps keep updating through the Play Store.</div>
             </div>
+            <div class="color-card" id="playUpdateCard">
+                <div class="color-card-title">🛍️ Play Store apps (via Aurora)</div>
+                <div class="color-card-subtitle" id="playStoreStatus">Play Store apps update through the Play Store or Aurora Store.</div>
+                <div class="mode-btn-row" style="margin-top:6px;">
+                    <button class="mode-action-btn primary" id="openAuroraBtn" onclick="openAuroraStore()">🛍️ Open Aurora Store</button>
+                    <button class="mode-action-btn" onclick="listPlayApps()">📄 List installed apps</button>
+                </div>
+                <div id="playAppsList" style="margin-top:8px;"></div>
+                <div class="uad-credit" style="margin-top:8px;">Aurora Store is an open-source Play Store client. Automatic Play version detection is a planned follow-up (it needs anonymous Play authentication); for now this routes each app to its store page, opening Aurora Store when it's installed.</div>
+            </div>
             <div id="updContainer">
                 <div class="list-empty">Tap Check for Updates.</div>
             </div>
@@ -3734,7 +3744,7 @@ Type any command below (e.g. pm list packages -d)
                 activeView.classList.add('active');
             }
             if (viewName === 'debloater') onDebloaterShown();
-            if (viewName === 'updates') onUpdatesShown();
+            if (viewName === 'updates') { onUpdatesShown(); refreshStoreStatus(); }
             if (viewName === 'installer') onInstallerShown();
             if (viewName === 'files') onFilesShown();
             if (viewName === 'logcat') onLogcatShown();
@@ -6290,6 +6300,34 @@ Type any command below (e.g. pm list packages -d)
         function logcatCopy() {
             const txt = document.getElementById('logcatOutput').innerText || '';
             if (window.AndroidBridge && window.AndroidBridge.copyToClipboard) { window.AndroidBridge.copyToClipboard(txt); showToast('Copied log', '📋'); }
+        }
+
+        // ---- Play Store / Aurora update routing (lightweight) ----
+        function refreshStoreStatus() {
+            const el = document.getElementById('playStoreStatus');
+            if (!el || !window.AndroidBridge || !window.AndroidBridge.storeStatus) return;
+            let s; try { s = JSON.parse(window.AndroidBridge.storeStatus()); } catch (e) { s = {}; }
+            el.innerText = 'Aurora Store: ' + (s.aurora ? 'installed' : 'not installed') + ' · Play Store: ' + (s.play ? 'installed' : 'not installed') + '. Tap an app below to open its store page.';
+            const btn = document.getElementById('openAuroraBtn');
+            if (btn) btn.style.display = s.aurora ? '' : 'none';
+        }
+        function openAuroraStore() {
+            haptic();
+            if (window.AndroidBridge && window.AndroidBridge.openAuroraStore) window.AndroidBridge.openAuroraStore();
+            else showToast('Needs the app build', '⚠️');
+        }
+        function openInStore(pkg) {
+            haptic();
+            if (window.AndroidBridge && window.AndroidBridge.openInStore) window.AndroidBridge.openInStore(pkg);
+        }
+        function listPlayApps() {
+            const el = document.getElementById('playAppsList');
+            const apps = (allApps || []).filter(a => !a.isSystem).slice().sort((a, b) => a.name.localeCompare(b.name));
+            if (!apps.length) { el.innerHTML = '<div class="list-empty">No user apps loaded yet.</div>'; return; }
+            el.innerHTML = apps.map(a => `<div class="perm-row">
+                <div class="perm-info"><div class="perm-name">${escapeHtml(a.name)}</div><div class="perm-sub">${escapeHtml(a.pkg)}</div></div>
+                <button class="perm-toggle-btn granted" onclick='openInStore(${JSON.stringify(a.pkg)})'>Store</button>
+            </div>`).join('');
         }
 
         // Inspector Modal
