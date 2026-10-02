@@ -1355,7 +1355,8 @@
             border: 1px solid var(--border-glass);
             border-radius: var(--radius-lg);
             padding: 12px;
-            height: 350px;
+            height: 68vh;
+            min-height: 300px;
             overflow-y: auto;
             font-family: monospace;
             font-size: 12px;
@@ -2137,9 +2138,11 @@
         <button class="tab-btn active" onclick="switchView('apps')">📱 Applications</button>
         <button class="tab-btn" onclick="switchView('debloater')">🧹 Debloater</button>
         <button class="tab-btn" onclick="switchView('installer')">📦 Installer</button>
+        <button class="tab-btn" onclick="switchView('files')">📁 Files</button>
         <button class="tab-btn" onclick="switchView('updates')" id="updatesTabBtn">⬆️ Updates</button>
         <button class="tab-btn" onclick="switchView('saved-lists')">📋 Saved Lists</button>
         <button class="tab-btn" onclick="switchView('colors')">🎨 Color & Themes</button>
+        <button class="tab-btn" onclick="switchView('logcat')">📄 Logcat</button>
         <button class="tab-btn" onclick="switchView('terminal')">💻 ADB Console</button>
     </nav>
 
@@ -2314,7 +2317,8 @@
                 <div class="color-card-title">📦 Install a package</div>
                 <div class="color-card-subtitle">APK, APKS or APKM — base plus splits, with full install control</div>
                 <button class="batch-grid-btn accent" style="width:100%;height:46px;margin-top:6px;" onclick="pickInstallFile()">📂 Choose APK / APKS / APKM</button>
-                <div id="installPickHint" class="color-card-subtitle" style="margin-top:10px;">Pick a package file to read it and choose how to install it.</div>
+                <button class="batch-grid-btn" style="width:100%;height:40px;margin-top:8px;" onclick="installDefaultSettings()">⭐ Set as default installer</button>
+                <div id="installPickHint" class="color-card-subtitle" style="margin-top:10px;">Pick a package file to read it and choose how to install it. To make this the default installer, open any APK, choose this app, and tap "Always".</div>
             </div>
 
             <!-- Package info (after a pick) -->
@@ -2460,6 +2464,59 @@
             </div>
         </section>
 
+        <!-- VIEW: FILE MANAGER -->
+        <section id="view-files" class="view-content">
+            <div class="color-card">
+                <div class="color-card-title">📁 File manager</div>
+                <div class="color-card-subtitle">Storage browses with All-files access; system folders need ADB / Shizuku / Root.</div>
+                <div id="fmAccessHint" style="display:none; margin-top:8px; padding:8px 10px; border:1px solid var(--border-glass); border-radius:10px; background:rgba(255,145,0,0.08);">
+                    <div class="switch-sub" style="margin-bottom:6px;">Storage looks inaccessible. Grant All-files access to browse /sdcard without a privileged mode.</div>
+                    <button class="batch-grid-btn accent" style="height:38px;" onclick="fmGrantAccess()">⭐ Grant storage access</button>
+                </div>
+                <div class="list-toolbar" style="margin-top:8px;">
+                    <input type="text" class="list-search" id="fmPathInput" placeholder="/storage/emulated/0" value="/storage/emulated/0" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter') fmGo(this.value)">
+                    <button class="term-run-btn" onclick="fmGo(document.getElementById('fmPathInput').value)">Go</button>
+                </div>
+                <div class="batch-sheet-tools" style="margin:8px 0; gap:12px; flex-wrap:wrap;">
+                    <button class="batch-tool-link" onclick="fmUp()">⬆️ Up</button>
+                    <button class="batch-tool-link" onclick="fmGo('/storage/emulated/0')">📁 Storage</button>
+                    <button class="batch-tool-link" onclick="fmGo('/data/local/tmp')">/data/local/tmp</button>
+                    <button class="batch-tool-link" onclick="fmGo('/system')">/system</button>
+                    <button class="batch-tool-link" onclick="fmNewFolder()">＋ Folder</button>
+                    <button class="batch-tool-link" onclick="fmRefresh()">↻ Refresh</button>
+                </div>
+            </div>
+            <div class="color-card">
+                <div id="fmCurrentPath" class="color-card-subtitle" style="font-family:monospace; word-break:break-all; margin-bottom:6px;">/storage/emulated/0</div>
+                <div id="fmList"><div class="list-empty">Open this tab to browse files.</div></div>
+            </div>
+        </section>
+
+        <!-- VIEW: LOGCAT -->
+        <section id="view-logcat" class="view-content">
+            <div class="color-card">
+                <div class="color-card-title">📄 Logcat</div>
+                <div class="color-card-subtitle">Read the device log with ADB / Shizuku / Root.</div>
+                <div class="batch-sheet-tools" style="margin:8px 0; gap:10px; flex-wrap:wrap; align-items:center;">
+                    <select class="op-select" id="logcatLevel" onchange="logcatRefresh()">
+                        <option value="V">Verbose</option><option value="D">Debug</option><option value="I" selected>Info</option>
+                        <option value="W">Warn</option><option value="E">Error</option><option value="F">Fatal</option>
+                    </select>
+                    <select class="op-select" id="logcatLines" onchange="logcatRefresh()">
+                        <option value="200">200</option><option value="500" selected>500</option><option value="1000">1000</option><option value="2000">2000</option>
+                    </select>
+                    <input type="text" class="list-search" id="logcatFilter" placeholder="filter text / tag" style="flex:1; min-width:120px;" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter') logcatRefresh()">
+                </div>
+                <div class="batch-sheet-tools" style="margin-bottom:4px; gap:14px;">
+                    <button class="batch-tool-link" id="logcatPlayBtn" onclick="logcatTogglePlay()" style="color:#4ADE80;">▶ Play</button>
+                    <button class="batch-tool-link" onclick="logcatRefresh()">↻ Refresh</button>
+                    <button class="batch-tool-link" onclick="logcatClear()">🧹 Clear</button>
+                    <button class="batch-tool-link" onclick="logcatCopy()">📋 Copy</button>
+                </div>
+            </div>
+            <div class="terminal-box" id="logcatOutput">Open this tab to read the log.</div>
+        </section>
+
         <!-- VIEW: UPDATES -->
         <section id="view-updates" class="view-content">
             <div class="color-card">
@@ -2475,6 +2532,16 @@
                     <button class="mode-action-btn" id="ghTokenBtn" onclick="setGithubTokenUI()">🔑 GitHub Token</button>
                 </div>
                 <div class="uad-credit" style="margin-top:10px;">Sideloaded apps are matched to their source through your sources, your imported Obtainium list, the Obtainium community catalog, IzzyOnDroid and F-Droid. Every download is checked to be the same app, a newer version and signed with the same key before installing through ADB, Shizuku or Root. Play Store apps keep updating through the Play Store.</div>
+            </div>
+            <div class="color-card" id="playUpdateCard">
+                <div class="color-card-title">🛍️ Play Store apps (via Aurora)</div>
+                <div class="color-card-subtitle" id="playStoreStatus">Play Store apps update through the Play Store or Aurora Store.</div>
+                <div class="mode-btn-row" style="margin-top:6px;">
+                    <button class="mode-action-btn primary" id="openAuroraBtn" onclick="openAuroraStore()">🛍️ Open Aurora Store</button>
+                    <button class="mode-action-btn" onclick="listPlayApps()">📄 List installed apps</button>
+                </div>
+                <div id="playAppsList" style="margin-top:8px;"></div>
+                <div class="uad-credit" style="margin-top:8px;">Aurora Store is an open-source Play Store client. Automatic Play version detection is a planned follow-up (it needs anonymous Play authentication); for now this routes each app to its store page, opening Aurora Store when it's installed.</div>
             </div>
             <div id="updContainer">
                 <div class="list-empty">Tap Check for Updates.</div>
@@ -2794,6 +2861,7 @@ Type any command below (e.g. pm list packages -d)
             <button class="batch-grid-btn" onclick="batchAction('suspend')">⏸️ Suspend</button>
             <button class="batch-grid-btn" onclick="batchAction('unsuspend')">▶️ Unsuspend</button>
             <button class="batch-grid-btn" onclick="batchAction('clear_data')">🧹 Clear Data</button>
+            <button class="batch-grid-btn" onclick="openOptimizeModal('batch')">⚡ Optimize</button>
             <button class="batch-grid-btn danger" onclick="batchAction('uninstall')">🗑️ Uninstall</button>
             <button class="batch-grid-btn accent" onclick="batchAction('reinstall')">📥 Reinstall</button>
         </div>
@@ -2963,6 +3031,9 @@ Type any command below (e.g. pm list packages -d)
                 <button class="sheet-btn" onclick="openBackups(inspectedPkg)" id="sheetBtnBackup">
                     <span>💾</span><span>Backup</span>
                 </button>
+                <button class="sheet-btn" onclick="openOptimizeModal('single')" id="sheetBtnOptimize">
+                    <span>⚡</span><span>Optimize</span>
+                </button>
             </div>
 
             <!-- Sub Tabs -->
@@ -3022,7 +3093,7 @@ Type any command below (e.g. pm list packages -d)
             <!-- Tab 3: Components -->
             <div id="sheetTabComps" class="sheet-tab-content">
                 <div class="list-toolbar">
-                    <input type="text" class="list-search" id="compsSearch" placeholder="Search activities & services..." oninput="renderComponentsList()" autocomplete="off" autocapitalize="off" spellcheck="false">
+                    <input type="text" class="list-search" id="compsSearch" placeholder="Search activities, receivers, services, providers..." oninput="renderComponentsList()" autocomplete="off" autocapitalize="off" spellcheck="false">
                 </div>
                 <div class="chip-row" id="compsFilterRow">
                     <span class="filter-chip active" data-filter="all" onclick="setCompsFilter('all')">All</span>
@@ -3030,7 +3101,7 @@ Type any command below (e.g. pm list packages -d)
                     <span class="filter-chip" data-filter="unexported" onclick="setCompsFilter('unexported')">Unexported</span>
                 </div>
                 <div id="compsContainer">
-                    <div class="list-empty">Loading activities & services...</div>
+                    <div class="list-empty">Loading components...</div>
                 </div>
             </div>
 
@@ -3141,6 +3212,59 @@ Type any command below (e.g. pm list packages -d)
                 <button class="mode-action-btn primary" style="flex:1; justify-content:center;" id="batchConfirmExecuteBtn" onclick="confirmPendingBatchAction()">Confirm</button>
                 <button class="mode-action-btn" style="padding:10px 16px;" onclick="closeBatchConfirmModal()">Cancel</button>
             </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="optimizeModal" onclick="if(event.target===this) closeOptimizeModal()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-avatar" style="background:rgba(0,200,255,0.18); color:var(--accent);">⚡</div>
+                    <div class="sheet-title">
+                        <h3>Dex optimization</h3>
+                        <p id="optimizeSubtitle">Recompile the app's code for faster runtime.</p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="closeOptimizeModal()">✕</div>
+            </div>
+            <label class="switch-row" style="margin-top:4px;">
+                <div><div class="switch-title">Compile mode</div><div class="switch-sub">pm compile -m</div></div>
+                <select class="op-select" id="optimizeMode">
+                    <option value="verify">verify</option>
+                    <option value="speed-profile">speed-profile</option>
+                    <option value="speed" selected>speed</option>
+                    <option value="everything">everything</option>
+                </select>
+            </label>
+            <label class="switch-row">
+                <div><div class="switch-title">Force</div><div class="switch-sub">Recompile even if already optimized (-f)</div></div>
+                <input type="checkbox" class="switch-input" id="optimizeForce" checked><span class="switch-track"></span>
+            </label>
+            <div style="display:flex; gap:10px; margin-top:8px;">
+                <button class="mode-action-btn primary" style="flex:1; justify-content:center;" onclick="confirmOptimize()">Run</button>
+                <button class="mode-action-btn" style="padding:10px 16px;" onclick="closeOptimizeModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="fmActionModal" onclick="if(event.target===this) closeFmAction()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-avatar" style="background:rgba(0,200,255,0.18); color:var(--accent);">📄</div>
+                    <div class="sheet-title">
+                        <h3 id="fmActionName">File</h3>
+                        <p id="fmActionPath" style="font-family:monospace; word-break:break-all;"></p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="closeFmAction()">✕</div>
+            </div>
+            <div class="batch-actions-grid" id="fmActionBtns"></div>
+            <div id="fmDestRow" style="display:none; margin-top:10px;">
+                <input class="modal-text-input" id="fmDestInput" placeholder="Destination path" autocomplete="off" autocapitalize="off" spellcheck="false">
+                <button class="mode-action-btn primary" style="width:100%; justify-content:center; margin-top:8px;" id="fmDestConfirm" onclick="fmDestConfirm()">Confirm</button>
+            </div>
+            <div id="fmViewer" class="terminal-box" style="display:none; max-height:50vh; overflow:auto; margin-top:10px;"></div>
         </div>
     </div>
 
@@ -3602,7 +3726,7 @@ Type any command below (e.g. pm list packages -d)
             return Object.assign(resolvePresetScheme(themeState.preset, mode), definedColors(themeState.overrides[mode]));
         }
 
-        const tabKeys = ['apps', 'debloater', 'installer', 'updates', 'saved-lists', 'colors', 'terminal'];
+        const tabKeys = ['apps', 'debloater', 'installer', 'files', 'updates', 'saved-lists', 'colors', 'logcat', 'terminal'];
 
         function switchView(viewName) {
             const targetIdx = tabKeys.indexOf(viewName);
@@ -3625,9 +3749,12 @@ Type any command below (e.g. pm list packages -d)
             if (activeView) {
                 activeView.classList.add('active');
             }
+            if (viewName !== 'logcat' && typeof logcatStop === 'function') logcatStop();
             if (viewName === 'debloater') onDebloaterShown();
-            if (viewName === 'updates') onUpdatesShown();
+            if (viewName === 'updates') { onUpdatesShown(); refreshStoreStatus(); }
             if (viewName === 'installer') onInstallerShown();
+            if (viewName === 'files') onFilesShown();
+            if (viewName === 'logcat') onLogcatShown();
             haptic();
         }
 
@@ -5804,6 +5931,19 @@ Type any command below (e.g. pm list packages -d)
         }
         window.onInstallFilePicked = onInstallFilePicked;
 
+        // An APK opened from outside the app (default-installer intent): jump to the Installer tab and load it.
+        function onInstallIntent(ref) {
+            switchView('installer');
+            onInstallFilePicked(ref);
+        }
+        window.onInstallIntent = onInstallIntent;
+
+        function installDefaultSettings() {
+            haptic();
+            showToast('Opening default-apps settings...', '⭐');
+            if (window.AndroidBridge && window.AndroidBridge.openDefaultAppsSettings) window.AndroidBridge.openDefaultAppsSettings();
+        }
+
         function onInstallInspected(json) {
             let d;
             try { d = JSON.parse(json); } catch (e) { d = { error: 'could not read package' }; }
@@ -5988,6 +6128,327 @@ Type any command below (e.g. pm list packages -d)
         }
         window.onInstallResult = onInstallResult;
 
+        // ---- File manager ----
+        let fmPath = '/storage/emulated/0';
+        let fmActionTarget = null;
+        let fmPendingOp = null;
+
+        function onFilesShown() { fmGo(fmPath); }
+        function fmGo(path) {
+            path = (path || '/').trim() || '/';
+            if (!window.AndroidBridge || !window.AndroidBridge.fmList) { showToast('Needs the app build', '⚠️'); return; }
+            let d;
+            try { d = JSON.parse(window.AndroidBridge.fmList(path)); } catch (e) { d = { error: String(e && e.message || e) }; }
+            fmPath = fmNormalizePath(d.path || path);
+            document.getElementById('fmPathInput').value = fmPath;
+            document.getElementById('fmCurrentPath').innerText = fmPath;
+            let entries;
+            if (d.entries) {
+                entries = d.entries; // structured entries straight from the app's File API
+            } else {
+                const parsed = parseLsOutput(d.raw || '');
+                entries = parsed.entries;
+                // Fallback: if detailed `ls -la` didn't parse on this device, use the simple name list.
+                if (!entries.length && d.names) entries = parseNameList(d.names);
+                d.error = d.error || parsed.error;
+            }
+            renderFm({ error: d.error, entries, raw: d.raw || '' });
+            updateFmAccessHint(fmPath, entries);
+        }
+        function updateFmAccessHint(path, entries) {
+            const hint = document.getElementById('fmAccessHint');
+            if (!hint) return;
+            const isStorage = /^\/(sdcard|storage)(\/|$)/.test(path);
+            let has = true;
+            try { has = window.AndroidBridge && window.AndroidBridge.hasAllFilesAccess ? window.AndroidBridge.hasAllFilesAccess() : true; } catch (e) {}
+            hint.style.display = (isStorage && (!has || !entries.length)) ? '' : 'none';
+        }
+        function fmGrantAccess() {
+            haptic();
+            if (window.AndroidBridge && window.AndroidBridge.requestAllFilesAccess) window.AndroidBridge.requestAllFilesAccess();
+            showToast('Grant "All files access", then come back', '⭐');
+        }
+        // Parses `ls -1p` output: one name per line, a trailing "/" marking directories.
+        function parseNameList(names) {
+            const out = [];
+            (names || '').split('\n').forEach(line => {
+                let n = line.replace(/\r$/, '').trim();
+                if (!n) return;
+                const low = n.toLowerCase();
+                if (low.startsWith('ls:') || low.includes('permission denied') || low.includes('no such file') || low.includes('not a directory')) return;
+                const isDir = n.endsWith('/');
+                if (isDir) n = n.replace(/\/+$/, '');
+                if (!n || n === '.' || n === '..') return;
+                out.push({ name: n, isDir, isLink: false, perms: isDir ? 'd' : '-', size: 0, link: null });
+            });
+            return out;
+        }
+        // Parses `ls -la` output. Robust to toybox ("2024-01-01 12:00") and busybox ("Jan  1 12:00")
+        // date formats by locating the HH:MM time token and taking the name as everything after it.
+        function parseLsOutput(raw) {
+            const entries = [];
+            let error = null;
+            (raw || '').split('\n').forEach(line => {
+                const t = line.replace(/\r$/, '').trim();
+                if (!t || t.startsWith('total ')) return;
+                const low = t.toLowerCase();
+                if (low.startsWith('ls:') || low.includes('permission denied') || low.includes('no such file') || low.includes('not a directory') || low.includes('operation not permitted')) { if (!error) error = t; return; }
+                const e = parseLsLine(t);
+                if (e) entries.push(e);
+            });
+            return { entries, error: entries.length ? null : error };
+        }
+        function parseLsLine(ln) {
+            const parts = ln.split(/\s+/);
+            if (parts.length < 4) return null;
+            const perms = parts[0];
+            if (!/^[-dlbcps][-rwxsStT]{9}/.test(perms)) return null;
+            const type = perms[0];
+            let timeIdx = -1;
+            for (let i = 2; i < parts.length; i++) { if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(parts[i])) { timeIdx = i; break; } }
+            let name;
+            let size = 0;
+            const sz = parseInt(parts[4], 10); if (!isNaN(sz)) size = sz;
+            if (timeIdx >= 0 && timeIdx + 1 < parts.length) name = parts.slice(timeIdx + 1).join(' ');
+            else name = parts[parts.length - 1];
+            let link = null;
+            const arrow = name.indexOf(' -> ');
+            if (arrow >= 0) { link = name.slice(arrow + 4); name = name.slice(0, arrow); }
+            // Reduce an absolute/slashed name (e.g. a lone symlink listing printed as "/sdcard") to its basename.
+            name = name.replace(/\/+$/, ''); if (name.indexOf('/') >= 0) name = name.slice(name.lastIndexOf('/') + 1);
+            if (!name || name === '.' || name === '..') return null;
+            return { name, isDir: type === 'd', isLink: type === 'l', perms, size, link };
+        }
+        function fmRefresh() { fmGo(fmPath); }
+        function fmUp() {
+            const i = fmPath.lastIndexOf('/');
+            fmGo(i <= 0 ? '/' : fmPath.substring(0, i));
+        }
+        // Collapse any run of slashes to one and drop a trailing slash (keeping root "/").
+        function fmNormalizePath(p) {
+            if (!p) return '/';
+            p = String(p).replace(/\/{2,}/g, '/');
+            if (p.length > 1) p = p.replace(/\/+$/, '');
+            return p || '/';
+        }
+        function fmParent(p) { p = fmNormalizePath(p); const i = p.lastIndexOf('/'); return i <= 0 ? '/' : p.substring(0, i); }
+        function fmJoin(name) { return fmNormalizePath((fmPath === '/' ? '' : fmPath) + '/' + name); }
+
+        function renderFm(d) {
+            const el = document.getElementById('fmList');
+            if (!d.entries || !d.entries.length) {
+                if (d.error) { el.innerHTML = '<div class="list-empty">' + escapeHtml(d.error) + '</div>'; return; }
+                if (d.raw && d.raw.trim()) {
+                    // Nothing parsed but the listing wasn't empty - show the raw output so the format is visible.
+                    el.innerHTML = '<div class="list-empty">Couldn\'t read this listing. Raw output:</div>'
+                        + '<pre style="white-space:pre-wrap; word-break:break-all; font-size:11px; color:var(--text-muted); padding:8px;">' + escapeHtml(d.raw.slice(0, 4000)) + '</pre>';
+                    return;
+                }
+                el.innerHTML = '<div class="list-empty">Empty folder.</div>';
+                return;
+            }
+            const entries = d.entries.slice().sort((a, b) => (b.isDir - a.isDir) || a.name.localeCompare(b.name));
+            el.innerHTML = entries.map(e => {
+                const icon = e.isDir ? '📁' : (e.isLink ? '↪' : '📄');
+                const sub = escapeHtml(e.perms + (e.isDir ? '' : ' • ' + fmtInstallSize(e.size)) + (e.link ? ' → ' + e.link : ''));
+                const full = fmJoin(e.name);
+                return `<div class="perm-row">
+                    <div class="perm-info" style="cursor:pointer;" onclick='fmTap(${e.isDir ? 'true' : 'false'}, ${JSON.stringify(full)}, ${JSON.stringify(e.name)})'>
+                        <div class="perm-name">${icon} ${escapeHtml(e.name)}</div>
+                        <div class="perm-sub">${sub}</div>
+                    </div>
+                    <button class="perm-toggle-btn locked" onclick='fmActions(${JSON.stringify(full)}, ${e.isDir ? 'true' : 'false'}, ${JSON.stringify(e.name)})'>⋯</button>
+                </div>`;
+            }).join('');
+        }
+        function fmTap(isDir, full, name) { if (isDir) fmGo(full); else fmActions(full, false, name); }
+
+        function fmActions(full, isDir, name) {
+            fmActionTarget = { full, isDir, name };
+            fmPendingOp = null;
+            document.getElementById('fmActionName').innerText = name;
+            document.getElementById('fmActionPath').innerText = full;
+            document.getElementById('fmDestRow').style.display = 'none';
+            document.getElementById('fmViewer').style.display = 'none';
+            const btns = [];
+            if (!isDir && name.toLowerCase().endsWith('.apk')) btns.push(`<button class="batch-grid-btn accent" onclick="fmInstallFile()">📦 Install</button>`);
+            if (!isDir) btns.push(`<button class="batch-grid-btn" onclick="fmViewFile()">👁 View</button>`);
+            btns.push(`<button class="batch-grid-btn" onclick="fmStartDest('rename')">✏️ Rename</button>`);
+            btns.push(`<button class="batch-grid-btn" onclick="fmStartDest('cp')">📋 Copy</button>`);
+            btns.push(`<button class="batch-grid-btn" onclick="fmStartDest('mv')">➡️ Move</button>`);
+            btns.push(`<button class="batch-grid-btn danger" onclick="fmStartDest('rm')">🗑️ Delete</button>`);
+            document.getElementById('fmActionBtns').innerHTML = btns.join('');
+            haptic();
+            document.getElementById('fmActionModal').classList.add('show');
+        }
+        function closeFmAction() { haptic(); document.getElementById('fmActionModal').classList.remove('show'); }
+
+        function fmStartDest(op) {
+            if (!fmActionTarget) return;
+            fmPendingOp = op;
+            const row = document.getElementById('fmDestRow');
+            const input = document.getElementById('fmDestInput');
+            const confirm = document.getElementById('fmDestConfirm');
+            row.style.display = '';
+            document.getElementById('fmViewer').style.display = 'none';
+            if (op === 'rm') {
+                input.style.display = 'none';
+                confirm.innerText = 'Delete ' + fmActionTarget.name + '?';
+                confirm.className = 'mode-action-btn';
+                confirm.style.background = 'var(--danger, #e5484d)';
+            } else {
+                input.style.display = '';
+                confirm.className = 'mode-action-btn primary';
+                confirm.style.background = '';
+                confirm.innerText = 'Confirm';
+                input.value = op === 'rename' ? fmActionTarget.name : fmActionTarget.full;
+                input.placeholder = op === 'rename' ? 'New name' : 'Destination path';
+            }
+        }
+        function fmDestConfirm() {
+            if (!fmActionTarget || !fmPendingOp) return;
+            const src = fmActionTarget.full;
+            const val = (document.getElementById('fmDestInput').value || '').trim();
+            if (fmPendingOp === 'mkdir') {
+                if (!val) { showToast('Enter a name', '⚠️'); return; }
+                let rk;
+                try { rk = JSON.parse(window.AndroidBridge.fmOp('mkdir', (fmPath === '/' ? '' : fmPath) + '/' + val, null)); } catch (e) { rk = { ok: false }; }
+                showToast(rk.ok ? 'Folder created' : 'Failed', rk.ok ? '✔' : '⚠️');
+                closeFmAction();
+                fmRefresh();
+                return;
+            }
+            let op = fmPendingOp, a = src, b = null;
+            if (op === 'rename') {
+                if (!val) { showToast('Enter a name', '⚠️'); return; }
+                op = 'mv'; b = fmParent(src) + '/' + val;
+            } else if (op === 'cp' || op === 'mv') {
+                if (!val) { showToast('Enter a destination', '⚠️'); return; }
+                b = val;
+            } else if (op === 'rm') {
+                b = null;
+            }
+            let r;
+            try { r = JSON.parse(window.AndroidBridge.fmOp(op, a, b)); } catch (e) { r = { ok: false, output: String(e && e.message || e) }; }
+            showToast(r.ok ? 'Done' : 'Failed', r.ok ? '✔' : '⚠️');
+            closeFmAction();
+            fmRefresh();
+            if (!r.ok) showCommandResults('File op', op, [{ name: fmActionTarget ? fmActionTarget.name : '', pkg: a, output: r.output, success: false }]);
+        }
+        function fmViewFile() {
+            if (!fmActionTarget) return;
+            const v = document.getElementById('fmViewer');
+            document.getElementById('fmDestRow').style.display = 'none';
+            let txt;
+            try { txt = window.AndroidBridge.fmRead(fmActionTarget.full); } catch (e) { txt = 'Error: ' + (e && e.message || e); }
+            v.innerText = txt || '(empty)';
+            v.style.display = '';
+        }
+        function fmInstallFile() {
+            if (!fmActionTarget) return;
+            let r;
+            try { r = JSON.parse(window.AndroidBridge.fmInstall(fmActionTarget.full)); } catch (e) { r = { ok: false, error: String(e && e.message || e) }; }
+            if (r.ok && r.ref) { closeFmAction(); onInstallIntent(r.ref); }
+            else { showToast('Could not stage APK', '⚠️'); showCommandResults('Install from files', fmActionTarget.name, [{ name: fmActionTarget.name, pkg: fmActionTarget.full, output: r.error || 'failed', success: false }]); }
+        }
+        function fmNewFolder() {
+            if (!guardPrivilege('Create folder')) return;
+            fmActionTarget = { full: fmPath, isDir: true, name: fmPath };
+            fmPendingOp = 'mkdir';
+            document.getElementById('fmActionName').innerText = 'New folder';
+            document.getElementById('fmActionPath').innerText = fmPath;
+            document.getElementById('fmActionBtns').innerHTML = '';
+            document.getElementById('fmViewer').style.display = 'none';
+            const row = document.getElementById('fmDestRow');
+            const input = document.getElementById('fmDestInput');
+            const confirm = document.getElementById('fmDestConfirm');
+            row.style.display = '';
+            input.style.display = '';
+            input.value = '';
+            input.placeholder = 'Folder name';
+            confirm.className = 'mode-action-btn primary';
+            confirm.style.background = '';
+            confirm.innerText = 'Create';
+            haptic();
+            document.getElementById('fmActionModal').classList.add('show');
+        }
+
+        // ---- Logcat ----
+        let logcatTimer = null;
+        function onLogcatShown() { logcatRefresh(); }
+        // The actual fetch, with no privilege prompt, so the live-poll loop can't spam the guard modal.
+        // While live, a smaller tail keeps each (synchronous) shell call light so updates feel quicker.
+        function logcatFetch(live) {
+            if (!window.AndroidBridge || !window.AndroidBridge.getLogcat) { document.getElementById('logcatOutput').innerText = 'Logcat needs the app build.'; return; }
+            const level = document.getElementById('logcatLevel').value;
+            let lines = parseInt(document.getElementById('logcatLines').value, 10) || 500;
+            if (live) lines = Math.min(lines, 300);
+            const filter = document.getElementById('logcatFilter').value || '';
+            const out = window.AndroidBridge.getLogcat(level, filter, lines);
+            const el = document.getElementById('logcatOutput');
+            el.innerText = out || '(no output)';
+            el.scrollTop = el.scrollHeight;
+        }
+        function logcatRefresh() {
+            if (!guardPrivilege('Logcat')) return;
+            logcatFetch(false);
+        }
+        function logcatTogglePlay() {
+            const btn = document.getElementById('logcatPlayBtn');
+            if (logcatTimer) { logcatStop(); return; }
+            if (!guardPrivilege('Logcat')) return;
+            btn.innerText = '⏸ Pause';
+            btn.style.color = '#FFA726';
+            logcatFetch(true);
+            logcatTimer = setInterval(function () { logcatFetch(true); }, 1000);
+        }
+        function logcatStop() {
+            if (logcatTimer) { clearInterval(logcatTimer); logcatTimer = null; }
+            const btn = document.getElementById('logcatPlayBtn');
+            if (btn) { btn.innerText = '▶ Play'; btn.style.color = '#4ADE80'; }
+        }
+        function logcatClear() {
+            if (!guardPrivilege('Logcat')) return;
+            logcatStop();
+            // Clear the on-screen terminal directly (and the device buffer) - don't re-fetch, so it stays
+            // visibly empty until the next Play/Refresh instead of instantly repopulating.
+            if (window.AndroidBridge && window.AndroidBridge.clearLogcat) window.AndroidBridge.clearLogcat();
+            document.getElementById('logcatOutput').innerText = '(cleared)';
+            showToast('Log cleared', '🧹');
+        }
+        function logcatCopy() {
+            const txt = document.getElementById('logcatOutput').innerText || '';
+            if (window.AndroidBridge && window.AndroidBridge.copyToClipboard) { window.AndroidBridge.copyToClipboard(txt); showToast('Copied log', '📋'); }
+        }
+
+        // ---- Play Store / Aurora update routing (lightweight) ----
+        function refreshStoreStatus() {
+            const el = document.getElementById('playStoreStatus');
+            if (!el || !window.AndroidBridge || !window.AndroidBridge.storeStatus) return;
+            let s; try { s = JSON.parse(window.AndroidBridge.storeStatus()); } catch (e) { s = {}; }
+            el.innerText = 'Aurora Store: ' + (s.aurora ? 'installed' : 'not installed') + ' · Play Store: ' + (s.play ? 'installed' : 'not installed') + '. Tap an app below to open its store page.';
+            const btn = document.getElementById('openAuroraBtn');
+            if (btn) btn.style.display = s.aurora ? '' : 'none';
+        }
+        function openAuroraStore() {
+            haptic();
+            if (window.AndroidBridge && window.AndroidBridge.openAuroraStore) window.AndroidBridge.openAuroraStore();
+            else showToast('Needs the app build', '⚠️');
+        }
+        function openInStore(pkg) {
+            haptic();
+            if (window.AndroidBridge && window.AndroidBridge.openInStore) window.AndroidBridge.openInStore(pkg);
+        }
+        function listPlayApps() {
+            const el = document.getElementById('playAppsList');
+            const apps = (allApps || []).filter(a => !a.isSystem).slice().sort((a, b) => a.name.localeCompare(b.name));
+            if (!apps.length) { el.innerHTML = '<div class="list-empty">No user apps loaded yet.</div>'; return; }
+            el.innerHTML = apps.map(a => `<div class="perm-row">
+                <div class="perm-info"><div class="perm-name">${escapeHtml(a.name)}</div><div class="perm-sub">${escapeHtml(a.pkg)}</div></div>
+                <button class="perm-toggle-btn granted" onclick='openInStore(${JSON.stringify(a.pkg)})'>Store</button>
+            </div>`).join('');
+        }
+
         // Inspector Modal
         let inspectorData = null;
         let permsFilter = 'all';
@@ -6074,57 +6535,121 @@ Type any command below (e.g. pm list packages -d)
         function renderComponentsList() {
             const container = document.getElementById('compsContainer');
             const d = inspectorData || {};
-            // Older bridge versions only return names, with no per-activity exported/enabled/permission
+            // Older bridge versions only return names, with no per-component exported/enabled/permission
             // detail. Treat those as NOT exported (needs a working mode to launch) rather than assuming
             // exported: a wrong "exported" guess can make launchComponent try an unverifiable plain Intent
-            // that silently does nothing for an activity that's actually unexported, while a wrong
-            // "unexported" guess just asks for a working mode it may not have actually needed.
-            const acts = (d.activityInfo && d.activityInfo.length) ? d.activityInfo
-                : (d.activities || []).map(n => ({ name: n, exported: false, enabled: true, permission: '' }));
+            // that silently does nothing, while a wrong "unexported" guess just asks for a working mode it
+            // may not have actually needed.
+            const norm = (infoKey, namesKey) => (d[infoKey] && d[infoKey].length) ? d[infoKey]
+                : (d[namesKey] || []).map(n => ({ name: n, exported: false, enabled: true, permission: '' }));
+            const kinds = [
+                { key: 'ACTIVITIES', color: 'var(--accent)', list: norm('activityInfo', 'activities'), launch: true },
+                { key: 'RECEIVERS', color: 'var(--secondary)', list: norm('receiverInfo', 'receivers') },
+                { key: 'SERVICES', color: 'var(--secondary)', list: norm('serviceInfo', 'services'), stop: true },
+                { key: 'PROVIDERS', color: 'var(--secondary)', list: norm('providerInfo', 'providers') },
+            ];
             const q = (document.getElementById('compsSearch').value || '').toLowerCase().trim();
-            const unexportedCount = acts.filter(a => !a.exported).length;
+            const match = c => {
+                if (compsFilter === 'exported' && !c.exported) return false;
+                if (compsFilter === 'unexported' && c.exported) return false;
+                return !q || c.name.toLowerCase().includes(q);
+            };
 
-            const shownActs = acts.filter(a => {
-                if (compsFilter === 'exported' && !a.exported) return false;
-                if (compsFilter === 'unexported' && a.exported) return false;
-                return !q || a.name.toLowerCase().includes(q);
-            }).sort((a, b) => (b.exported - a.exported) || a.name.localeCompare(b.name));
-
-            let html = `<div style="font-weight:800; font-size:11px; margin-bottom:6px; color:var(--accent);">ACTIVITIES (${acts.length} • ${unexportedCount} unexported)</div>`;
-            if (!shownActs.length) {
-                html += '<div class="list-empty">No activities match.</div>';
-            }
-            shownActs.forEach(a => {
-                const shortAct = a.name.split('.').pop();
-                const badges = `<span class="perm-kind" style="${a.exported ? '' : 'color:#FFA726;border-color:rgba(255,145,0,0.4);'}">${a.exported ? 'exported' : 'unexported'}</span>` +
-                    (a.enabled === false ? '<span class="perm-kind">disabled</span>' : '') +
-                    (a.permission ? `<span class="perm-kind" title="${escapeHtml(a.permission)}">protected</span>` : '');
-                html += `
-                    <div class="perm-row">
-                        <div class="perm-info">
-                            <div class="perm-name">${escapeHtml(shortAct)}</div>
-                            <div class="perm-sub">${badges}${escapeHtml(a.name)}</div>
-                        </div>
-                        <button class="perm-toggle-btn ${a.exported ? 'granted' : 'locked'}" style="cursor:pointer;" data-comp="${escapeHtml(a.name)}" data-exported="${a.exported}"
-                            onclick="launchComponent(this.getAttribute('data-comp'), this.getAttribute('data-exported') === 'true')">${a.exported ? 'LAUNCH' : '⚡ LAUNCH'}</button>
-                    </div>`;
-            });
-
-            const services = (d.services || []).filter(s => compsFilter === 'all' && (!q || s.toLowerCase().includes(q)));
-            if (services.length) {
-                html += '<div style="font-weight:800; font-size:11px; margin:12px 0 6px 0; color:var(--secondary);">SERVICES</div>';
-                services.forEach(srv => {
+            let html = '';
+            kinds.forEach(k => {
+                if (!k.list.length) return;
+                const shown = k.list.filter(match).sort((a, b) => (b.exported - a.exported) || a.name.localeCompare(b.name));
+                const unexp = k.list.filter(c => !c.exported).length;
+                html += `<div style="font-weight:800; font-size:11px; margin:12px 0 6px 0; color:${k.color};">${k.key} (${k.list.length}${k.key === 'ACTIVITIES' ? ' • ' + unexp + ' unexported' : ''})</div>`;
+                if (!shown.length) { html += '<div class="list-empty">None match.</div>'; return; }
+                shown.forEach(c => {
+                    const short = c.name.split('.').pop();
+                    const badges = `<span class="perm-kind" style="${c.exported ? '' : 'color:#FFA726;border-color:rgba(255,145,0,0.4);'}">${c.exported ? 'exported' : 'unexported'}</span>` +
+                        (c.enabled === false ? '<span class="perm-kind" style="color:#FFA726;border-color:rgba(255,145,0,0.4);">disabled</span>' : '') +
+                        (c.permission ? `<span class="perm-kind" title="${escapeHtml(c.permission)}">protected</span>` : '');
+                    let btns = '';
+                    if (k.launch) btns += `<button class="perm-toggle-btn ${c.exported ? 'granted' : 'locked'}" style="cursor:pointer;" data-comp="${escapeHtml(c.name)}" data-exported="${c.exported}" onclick="launchComponent(this.getAttribute('data-comp'), this.getAttribute('data-exported') === 'true')">${c.exported ? 'LAUNCH' : '⚡ LAUNCH'}</button>`;
+                    if (k.stop) btns += `<button class="perm-toggle-btn revoked" data-comp="${escapeHtml(c.name)}" onclick="stopComponentService(this.getAttribute('data-comp'))">STOP</button>`;
+                    btns += `<button class="perm-toggle-btn ${c.enabled === false ? 'granted' : 'revoked'}" data-comp="${escapeHtml(c.name)}" onclick="toggleComponent(this.getAttribute('data-comp'), ${c.enabled === false ? 'true' : 'false'})">${c.enabled === false ? 'ENABLE' : 'DISABLE'}</button>`;
                     html += `
                         <div class="perm-row">
                             <div class="perm-info">
-                                <div class="perm-name">${escapeHtml(srv.split('.').pop())}</div>
-                                <div class="perm-sub">${escapeHtml(srv)}</div>
+                                <div class="perm-name">${escapeHtml(short)}</div>
+                                <div class="perm-sub">${badges}${escapeHtml(c.name)}</div>
                             </div>
-                            <button class="perm-toggle-btn revoked" data-comp="${escapeHtml(srv)}" onclick="stopComponentService(this.getAttribute('data-comp'))">STOP</button>
+                            <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">${btns}</div>
                         </div>`;
                 });
+            });
+            container.innerHTML = html || '<div class="list-empty">No components.</div>';
+        }
+
+        // Enable or disable a component (pm enable/disable) and reflect the new state locally.
+        function toggleComponent(name, enable) {
+            if (!guardPrivilege((enable ? 'Enable' : 'Disable') + ' component')) return;
+            haptic();
+            if (!window.AndroidBridge || !window.AndroidBridge.setComponentEnabled || !inspectedPkg) return;
+            let r;
+            try { r = JSON.parse(window.AndroidBridge.setComponentEnabled(inspectedPkg, name, !!enable)); }
+            catch (e) { r = { ok: false, output: String(e && e.message || e) }; }
+            showToast(r.ok ? (enable ? 'Component enabled' : 'Component disabled') : 'Failed', r.ok ? '✔' : '⚠️');
+            if (r.ok) {
+                ['activityInfo', 'receiverInfo', 'serviceInfo', 'providerInfo'].forEach(key => {
+                    (inspectorData[key] || []).forEach(c => { if (c.name === name) c.enabled = enable; });
+                });
+                renderComponentsList();
+            } else {
+                showCommandResults('Toggle component', name.split('.').pop(), [{ name: name.split('.').pop(), pkg: inspectedPkg + '/' + name, output: r.output, success: false }]);
             }
-            container.innerHTML = html;
+        }
+
+        // ---- Dex optimization (single app inspector + batch) ----
+        let pendingOptimizeTarget = null;
+        function openOptimizeModal(target) {
+            pendingOptimizeTarget = target;
+            if (target === 'batch' && selectedPkgs.size === 0) { showToast('No apps selected', '⚠️'); return; }
+            if (target === 'single' && !inspectedPkg) return;
+            if (!guardPrivilege('Dex optimization')) return;
+            haptic();
+            document.getElementById('optimizeSubtitle').innerText = target === 'batch'
+                ? `Recompile ${selectedPkgs.size} selected app${selectedPkgs.size === 1 ? '' : 's'}.`
+                : 'Recompile ' + (inspectedPkg || 'this app') + ' for faster runtime.';
+            document.getElementById('optimizeModal').classList.add('show');
+        }
+        function closeOptimizeModal() {
+            haptic();
+            document.getElementById('optimizeModal').classList.remove('show');
+        }
+        function confirmOptimize() {
+            const mode = document.getElementById('optimizeMode').value;
+            const force = document.getElementById('optimizeForce').checked;
+            document.getElementById('optimizeModal').classList.remove('show');
+            if (!window.AndroidBridge || !window.AndroidBridge.optimizeApp) { showToast('Needs the app build', '⚠️'); return; }
+            haptic();
+            const sub = 'compile -m ' + mode + (force ? ' -f' : '');
+            const run = pkg => { try { return JSON.parse(window.AndroidBridge.optimizeApp(pkg, mode, force)); } catch (e) { return { ok: false, output: String(e && e.message || e) }; } };
+            if (pendingOptimizeTarget === 'batch') {
+                const arr = Array.from(selectedPkgs);
+                showToast(`Optimizing ${arr.length} apps...`, '⚡');
+                const rows = [];
+                let ok = 0;
+                arr.forEach(pkg => {
+                    const app = allApps.find(a => a.pkg === pkg) || { name: pkg, pkg };
+                    const r = run(pkg);
+                    if (r.ok) ok++;
+                    rows.push({ name: app.name, pkg, output: r.output, success: !!r.ok });
+                });
+                showToast(`Optimized ${ok}/${arr.length}`, ok === arr.length ? '✔' : '⚠️');
+                showCommandResults('Dex optimization', sub + ' • ' + arr.length + ' apps', rows);
+            } else {
+                const pkg = inspectedPkg;
+                if (!pkg) return;
+                const app = allApps.find(a => a.pkg === pkg) || { name: pkg, pkg };
+                showToast('Optimizing ' + app.name + '...', '⚡');
+                const r = run(pkg);
+                showToast(r.ok ? 'Optimized' : 'Failed', r.ok ? '✔' : '⚠️');
+                showCommandResults('Dex optimization', sub + ' • ' + app.name, [{ name: app.name, pkg, output: r.output, success: !!r.ok }]);
+            }
         }
 
         // ---------- Permissions list ----------

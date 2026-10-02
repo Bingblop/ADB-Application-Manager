@@ -63,6 +63,9 @@ public class MainActivity extends Activity {
     private static final String SHIZUKU_PLUS_PKG = "af.shizuku.plus.api";
 
     private WebView webView;
+    private boolean pageReady = false;
+    // An APK opened from outside (default-installer intent) waiting to be handed to the Installer tab.
+    private String pendingInstallRef = null;
     private Vibrator vibrator;
     private SharedPreferences prefs;
     private boolean buildChangedThisLaunch = false;
@@ -172,7 +175,13 @@ public class MainActivity extends Activity {
         settings.setUseWideViewPort(false);
 
         webView.setWebChromeClient(new WebChromeClient());
-        webView.setWebViewClient(new WebViewClient());
+        webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                pageReady = true;
+                deliverPendingInstall();
+            }
+        });
         webView.setBackgroundColor(0xFF080A0F);
 
         WebView.setWebContentsDebuggingEnabled(true);
@@ -180,6 +189,33 @@ public class MainActivity extends Activity {
         webView.addJavascriptInterface(new AndroidBridge(), "AndroidBridge");
         webView.loadUrl("file:///android_asset/index.html");
         registerWallpaperListener();
+        handleIncomingIntent(getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleIncomingIntent(intent);
+    }
+
+    /** Picks up an APK opened from outside (the default-installer intent-filter) and remembers it. */
+    private void handleIncomingIntent(Intent intent) {
+        if (intent == null) return;
+        String action = intent.getAction();
+        if (!Intent.ACTION_VIEW.equals(action) && !"android.intent.action.INSTALL_PACKAGE".equals(action)) return;
+        Uri data = intent.getData();
+        if (data == null) return;
+        pendingInstallRef = "file".equals(data.getScheme()) ? data.getPath() : data.toString();
+        deliverPendingInstall();
+    }
+
+    /** Hands a pending opened-APK to the Installer tab once the WebView is ready. */
+    private void deliverPendingInstall() {
+        if (!pageReady || pendingInstallRef == null) return;
+        final String ref = pendingInstallRef;
+        pendingInstallRef = null;
+        notifyJs("window.onInstallIntent && window.onInstallIntent(" + JSONObject.quote(ref) + ")");
     }
 
     private void setupBinariesAndKeys() {
@@ -1330,6 +1366,25 @@ public class MainActivity extends Activity {
     // packages are staged into getCacheDir()/installer; nothing outside that directory is ever installed.
     // ---------------------------------------------------------------------------------------------
 
+    /** The real current enabled state of a component: the pm override if one is set, else the manifest default. */
+    private boolean componentEnabled(String pkg, String name, boolean manifestEnabled) {
+        try {
+            int st = getPackageManager().getComponentEnabledSetting(new android.content.ComponentName(pkg, name));
+            if (st == PackageManager.COMPONENT_ENABLED_STATE_ENABLED) return true;
+            if (st == PackageManager.COMPONENT_ENABLED_STATE_DISABLED) return false;
+        } catch (Exception ignored) {}
+        return manifestEnabled;
+    }
+
+    private JSONObject componentEntry(String pkg, String name, boolean exported, boolean manifestEnabled, String permission) throws Exception {
+        JSONObject o = new JSONObject();
+        o.put("name", name);
+        o.put("exported", exported);
+        o.put("enabled", componentEnabled(pkg, name, manifestEnabled));
+        o.put("permission", permission != null ? permission : "");
+        return o;
+    }
+
     private File installerWorkDir() {
         return new File(getCacheDir(), "installer");
     }
@@ -1832,6 +1887,31 @@ public class MainActivity extends Activity {
             return in;
         }
         return new java.io.FileInputStream(ref);
+    }
+
+    /**
+     * Resolves the primary-storage aliases to the concrete /storage/emulated/0 path. /sdcard and
+     * /storage/self/primary are symlinks, and the "self" view resolves differently for an ADB/Shizuku
+     * shell (uid 2000) than for the app, so a shell often can't read through them. The concrete
+     * /storage/emulated/0 path is readable the same way by both, so browsing storage works regardless
+     * of mode. Also collapses duplicate slashes and strips a trailing slash (except root).
+     */
+    private String fmCanonicalPath(String path) {
+        if (path == null || path.isEmpty()) return "/";
+        String p = path.replaceAll("/{2,}", "/");
+        if (p.length() > 1 && p.endsWith("/")) p = p.substring(0, p.length() - 1);
+        String primary = "/storage/emulated/0";
+        try {
+            File ext = android.os.Environment.getExternalStorageDirectory();
+            if (ext != null && ext.getAbsolutePath() != null && !ext.getAbsolutePath().isEmpty())
+                primary = ext.getAbsolutePath();
+        } catch (Exception ignored) {}
+        String[] aliases = { "/sdcard", "/storage/self/primary" };
+        for (String a : aliases) {
+            if (p.equals(a)) return primary;
+            if (p.startsWith(a + "/")) return primary + p.substring(a.length());
+        }
+        return p;
     }
 
     private boolean backupExists(String ref) {
@@ -3412,27 +3492,58 @@ public class MainActivity extends Activity {
                     }
                     obj.put("permissions", perms);
 
+                    // Four component kinds, each with per-component exported/enabled/permission so the UI
+                    // can show and toggle them. The plain name arrays stay for older callers.
                     JSONArray activities = new JSONArray();
                     JSONArray activityInfo = new JSONArray();
                     if (info.activities != null) {
                         for (ActivityInfo a : info.activities) {
+                            if (a.name == null) continue;
                             activities.put(a.name);
-                            JSONObject ao = new JSONObject();
-                            ao.put("name", a.name);
-                            ao.put("exported", a.exported);
-                            ao.put("enabled", a.enabled);
-                            ao.put("permission", a.permission != null ? a.permission : "");
-                            activityInfo.put(ao);
+                            activityInfo.put(componentEntry(pkg, a.name, a.exported, a.enabled, a.permission));
                         }
                     }
                     obj.put("activities", activities);
                     obj.put("activityInfo", activityInfo);
 
                     JSONArray services = new JSONArray();
+                    JSONArray serviceInfo = new JSONArray();
                     if (info.services != null) {
-                        for (ServiceInfo s : info.services) services.put(s.name);
+                        for (ServiceInfo s : info.services) {
+                            if (s.name == null) continue;
+                            services.put(s.name);
+                            serviceInfo.put(componentEntry(pkg, s.name, s.exported, s.enabled, s.permission));
+                        }
                     }
                     obj.put("services", services);
+                    obj.put("serviceInfo", serviceInfo);
+
+                    JSONArray receivers = new JSONArray();
+                    JSONArray receiverInfo = new JSONArray();
+                    if (info.receivers != null) {
+                        for (ActivityInfo r : info.receivers) {
+                            if (r.name == null) continue;
+                            receivers.put(r.name);
+                            receiverInfo.put(componentEntry(pkg, r.name, r.exported, r.enabled, r.permission));
+                        }
+                    }
+                    obj.put("receivers", receivers);
+                    obj.put("receiverInfo", receiverInfo);
+
+                    JSONArray providers = new JSONArray();
+                    JSONArray providerInfo = new JSONArray();
+                    if (info.providers != null) {
+                        for (android.content.pm.ProviderInfo p : info.providers) {
+                            if (p.name == null) continue;
+                            providers.put(p.name);
+                            String perm = p.readPermission != null ? p.readPermission : p.writePermission;
+                            JSONObject po = componentEntry(pkg, p.name, p.exported, p.enabled, perm);
+                            if (p.authority != null) po.put("authority", p.authority);
+                            providerInfo.put(po);
+                        }
+                    }
+                    obj.put("providers", providers);
+                    obj.put("providerInfo", providerInfo);
                 } catch (Exception e) {
                     obj.put("error", e.getMessage());
                 }
@@ -3825,6 +3936,82 @@ public class MainActivity extends Activity {
             });
         }
 
+        private boolean isInstalled(String pkg) {
+            try { getPackageManager().getPackageInfo(pkg, 0); return true; } catch (Exception e) { return false; }
+        }
+
+        /** Whether Aurora Store / Play Store are installed, for routing Play-sourced updates. */
+        @JavascriptInterface
+        public String storeStatus() {
+            JSONObject o = new JSONObject();
+            try {
+                o.put("aurora", isInstalled("com.aurora.store"));
+                o.put("play", isInstalled("com.android.vending"));
+            } catch (Exception ignored) {}
+            return o.toString();
+        }
+
+        /** Opens a package's store page (market:// resolves to Aurora Store or Play, whichever handles it). */
+        @JavascriptInterface
+        public void openInStore(final String pkg) {
+            if (pkg == null || !pkg.matches("[A-Za-z0-9._]+")) return;
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + pkg));
+                        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(i);
+                    } catch (Exception e) {
+                        try {
+                            Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=" + pkg));
+                            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(i);
+                        } catch (Exception ignored) {}
+                    }
+                }
+            });
+        }
+
+        /** Opens Aurora Store (its Updates screen lives in-app), falling back to its store listing. */
+        @JavascriptInterface
+        public void openAuroraStore() {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Intent i = getPackageManager().getLaunchIntentForPackage("com.aurora.store");
+                        if (i == null) i = new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=com.aurora.store"));
+                        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(i);
+                    } catch (Exception ignored) {}
+                }
+            });
+        }
+
+        /** Opens the system screen where the user can make this app the default for opening APK files. */
+        @JavascriptInterface
+        public void openDefaultAppsSettings() {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Intent i = Build.VERSION.SDK_INT >= 24
+                                ? new Intent(android.provider.Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS)
+                                : new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + getPackageName()));
+                        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(i);
+                    } catch (Exception e) {
+                        try {
+                            Intent i = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + getPackageName()));
+                            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(i);
+                        } catch (Exception ignored) {}
+                    }
+                }
+            });
+        }
+
         /** Reads a picked package and returns its info + splits. Answer: window.onInstallInspected(json). */
         @JavascriptInterface
         public void inspectInstallSource(final String ref) {
@@ -3847,6 +4034,251 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void installSelected(String optsJson) {
             runInstallSelected(optsJson);
+        }
+
+        /** Enables or disables one component (pm enable/disable pkg/component) via the active backend. */
+        @JavascriptInterface
+        public String setComponentEnabled(String pkg, String component, boolean enable) {
+            JSONObject r = new JSONObject();
+            try {
+                if (pkg == null || component == null || !pkg.matches("[A-Za-z0-9._]+") || !component.matches("[A-Za-z0-9._$]+")) {
+                    r.put("ok", false); r.put("output", "Error: invalid component name"); return r.toString();
+                }
+                if ("standard".equals(resolveExecMode())) {
+                    r.put("ok", false); r.put("output", "Error: enabling or disabling a component needs ADB, Shizuku or Root."); return r.toString();
+                }
+                String full = component.startsWith(".") ? pkg + component : component;
+                String out = executeShell("pm " + (enable ? "enable" : "disable") + " " + pkg + "/" + full);
+                String low = out == null ? "" : out.toLowerCase();
+                r.put("ok", low.contains("new state") || low.contains(enable ? "enabled" : "disabled"));
+                r.put("output", out != null ? out.trim() : "");
+            } catch (Exception e) {
+                try { r.put("ok", false); r.put("output", "Error: " + e.getMessage()); } catch (Exception ignored) {}
+            }
+            return r.toString();
+        }
+
+        // ---- Logcat reader ----
+        /** Recent logcat lines. level=V/D/I/W/E/F, filter=optional text grepped in-process, lines=tail count. */
+        @JavascriptInterface
+        public String getLogcat(String level, String filter, int lines) {
+            try {
+                if ("standard".equals(resolveExecMode())) return "Error: reading logcat needs ADB, Shizuku or Root.";
+                String lv = (level == null || !level.matches("[VDIWEF]")) ? "V" : level;
+                int n = (lines <= 0 || lines > 5000) ? 500 : lines;
+                String out = executeShell("logcat -d -v threadtime -t " + n + " *:" + lv);
+                if (out == null) out = "";
+                // The filter is applied here, never in the shell, so it can't inject anything.
+                if (filter != null && !filter.trim().isEmpty()) {
+                    String f = filter.toLowerCase();
+                    StringBuilder sb = new StringBuilder();
+                    for (String line : out.split("\n")) if (line.toLowerCase().contains(f)) sb.append(line).append('\n');
+                    out = sb.toString();
+                }
+                return out.trim().isEmpty() ? "(no matching log lines)" : out;
+            } catch (Exception e) {
+                return "Error: " + (e.getMessage() != null ? e.getMessage() : "logcat failed");
+            }
+        }
+
+        @JavascriptInterface
+        public String clearLogcat() {
+            try {
+                if ("standard".equals(resolveExecMode())) return "Error: needs ADB, Shizuku or Root.";
+                executeShell("logcat -c");
+                return "cleared";
+            } catch (Exception e) { return "Error: " + e.getMessage(); }
+        }
+
+        // ---- Privileged file manager ----
+        /** Lists a directory. Tries the app's own filesystem first (works for /sdcard and other storage when
+         *  All-files access is granted - fast and reliable, no shell), and falls back to the shell for
+         *  privileged-only paths (/data, /system, ...). Returns structured {entries} from the File API, or
+         *  {raw,names} for the JS side to parse from the shell. */
+        @JavascriptInterface
+        public String fmList(String path) {
+            JSONObject res = new JSONObject();
+            try {
+                // Resolve /sdcard and /storage/self/primary to the concrete /storage/emulated/0 (readable
+                // by both the app and a shell), and normalize slashes so paths self-heal.
+                String p = fmCanonicalPath(path);
+                res.put("path", p);
+                int slash = p.lastIndexOf('/');
+                res.put("parent", p.equals("/") ? "/" : (slash <= 0 ? "/" : p.substring(0, slash)));
+
+                // 1) Direct filesystem access (storage the app can read itself - no shell, no ADB latency).
+                try {
+                    File dir = new File(p);
+                    if (dir.isDirectory()) {
+                        File[] kids = dir.listFiles();
+                        if (kids != null) {
+                            JSONArray entries = new JSONArray();
+                            for (File k : kids) {
+                                JSONObject e = new JSONObject();
+                                boolean d = k.isDirectory();
+                                boolean link = false;
+                                try { link = !k.getAbsolutePath().equals(k.getCanonicalPath()); } catch (Exception ignored) {}
+                                e.put("name", k.getName());
+                                e.put("isDir", d);
+                                e.put("isLink", link);
+                                e.put("size", k.isFile() ? k.length() : 0);
+                                e.put("perms", (d ? "d" : "-") + (k.canRead() ? "r" : "-") + (k.canWrite() ? "w" : "-") + (k.canExecute() ? "x" : "-"));
+                                entries.put(e);
+                            }
+                            res.put("entries", entries);
+                            res.put("source", "file");
+                            return res.toString();
+                        }
+                    }
+                } catch (Exception ignored) {}
+
+                // 2) Shell fallback for privileged paths. Also a simple name list so the JS parser is robust.
+                if ("standard".equals(resolveExecMode())) {
+                    res.put("error", "Can't read this folder. For storage, grant All-files access; for system folders, set up ADB, Shizuku or Root.");
+                    return res.toString();
+                }
+                // Append a trailing "/" so a symlinked directory (e.g. /sdcard -> /storage/self/primary)
+                // is listed by its CONTENTS rather than printing the link itself as a lone entry.
+                String listTarget = p.equals("/") ? "/" : p + "/";
+                String out = executeShell("ls -la " + BackupScripts.quote(listTarget));
+                String names = executeShell("ls -1p " + BackupScripts.quote(listTarget));
+                res.put("raw", out != null ? out : "");
+                res.put("names", names != null ? names : "");
+                res.put("source", "shell");
+            } catch (Exception e) {
+                try { res.put("error", e.getMessage()); } catch (Exception ignored) {}
+            }
+            return res.toString();
+        }
+
+        /** Whether the app has broad storage access (All-files access on Android 11+). */
+        @JavascriptInterface
+        public boolean hasAllFilesAccess() {
+            try {
+                if (Build.VERSION.SDK_INT >= 30) return android.os.Environment.isExternalStorageManager();
+                return checkSelfPermission(android.Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
+            } catch (Exception e) { return false; }
+        }
+
+        /** Opens the system screen to grant this app All-files access (for browsing /sdcard without a shell). */
+        @JavascriptInterface
+        public void requestAllFilesAccess() {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Intent i;
+                        if (Build.VERSION.SDK_INT >= 30) {
+                            i = new Intent(android.provider.Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, Uri.parse("package:" + getPackageName()));
+                        } else {
+                            i = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + getPackageName()));
+                        }
+                        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(i);
+                    } catch (Exception e) {
+                        try {
+                            Intent i = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + getPackageName()));
+                            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(i);
+                        } catch (Exception ignored) {}
+                    }
+                }
+            });
+        }
+
+        /** First 128 KB of a file as text (for viewing). Reads directly when the app can (e.g. /sdcard),
+         *  else through the shell for privileged paths. */
+        @JavascriptInterface
+        public String fmRead(String path) {
+            try {
+                path = fmCanonicalPath(path);
+                File f = new File(path);
+                if (f.isFile() && f.canRead()) {
+                    java.io.FileInputStream in = new java.io.FileInputStream(f);
+                    try {
+                        java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
+                        byte[] buf = new byte[65536];
+                        int n, total = 0;
+                        while ((n = in.read(buf)) > 0) {
+                            bo.write(buf, 0, n);
+                            total += n;
+                            if (total >= 131072) break;
+                        }
+                        return new String(bo.toByteArray(), "UTF-8");
+                    } finally { in.close(); }
+                }
+                if ("standard".equals(resolveExecMode())) return "Error: needs ADB, Shizuku or Root (or grant All-files access for storage).";
+                return executeShell("toybox head -c 131072 " + BackupScripts.quote(path) + " 2>&1 || head -c 131072 " + BackupScripts.quote(path));
+            } catch (Exception e) { return "Error: " + e.getMessage(); }
+        }
+
+        /** File op: mkdir|touch|rm|cp|mv. For rm, dirs are removed recursively. */
+        @JavascriptInterface
+        public String fmOp(String op, String a, String b) {
+            JSONObject res = new JSONObject();
+            try {
+                if ("standard".equals(resolveExecMode())) { res.put("ok", false); res.put("output", "needs ADB, Shizuku or Root"); return res.toString(); }
+                if (a == null || a.isEmpty()) { res.put("ok", false); res.put("output", "no path"); return res.toString(); }
+                a = fmCanonicalPath(a);
+                if (b != null && !b.isEmpty()) b = fmCanonicalPath(b);
+                String qa = BackupScripts.quote(a);
+                String cmd;
+                if ("mkdir".equals(op)) cmd = "mkdir -p " + qa + " && echo OK";
+                else if ("touch".equals(op)) cmd = "touch " + qa + " && echo OK";
+                else if ("rm".equals(op)) cmd = "rm -rf " + qa + " && echo OK";
+                else if ("cp".equals(op)) cmd = "cp -r " + qa + " " + BackupScripts.quote(b) + " && echo OK";
+                else if ("mv".equals(op)) cmd = "mv " + qa + " " + BackupScripts.quote(b) + " && echo OK";
+                else { res.put("ok", false); res.put("output", "unknown op"); return res.toString(); }
+                String out = executeShell(cmd);
+                res.put("ok", out != null && out.contains("OK"));
+                res.put("output", out != null ? out.trim() : "");
+            } catch (Exception e) {
+                try { res.put("ok", false); res.put("output", "Error: " + e.getMessage()); } catch (Exception ignored) {}
+            }
+            return res.toString();
+        }
+
+        /** Stages an APK from an arbitrary (privileged) path to a readable temp, for the Installer. {ok,ref}|{error}.
+         *  When the app itself can read the file (storage with All-files access), the Installer reads it in
+         *  place with no shell at all; only truly privileged paths fall back to staging in /data/local/tmp. */
+        @JavascriptInterface
+        public String fmInstall(String path) {
+            JSONObject res = new JSONObject();
+            try {
+                path = fmCanonicalPath(path);
+                try {
+                    File f = new File(path);
+                    if (f.isFile() && f.canRead()) { res.put("ok", true); res.put("ref", path); return res.toString(); }
+                } catch (Exception ignored) {}
+                if ("standard".equals(resolveExecMode())) { res.put("ok", false); res.put("error", "Can't read this APK. For storage, grant All-files access; for system paths, set up ADB, Shizuku or Root."); return res.toString(); }
+                String staged = "/data/local/tmp/fm_install.apk";
+                String out = executeShell("cp " + BackupScripts.quote(path) + " " + staged + " && chmod 644 " + staged + " && echo OK");
+                if (out == null || !out.contains("OK")) { res.put("ok", false); res.put("error", out != null ? out.trim() : "copy failed"); return res.toString(); }
+                res.put("ok", true);
+                res.put("ref", staged);
+            } catch (Exception e) {
+                try { res.put("ok", false); res.put("error", e.getMessage()); } catch (Exception ignored) {}
+            }
+            return res.toString();
+        }
+
+        /** Runs ART dex optimization for a package (pm compile -m <mode> [-f]) via the active backend. */
+        @JavascriptInterface
+        public String optimizeApp(String pkg, String mode, boolean force) {
+            JSONObject r = new JSONObject();
+            try {
+                if (pkg == null || !pkg.matches("[A-Za-z0-9._]+")) { r.put("ok", false); r.put("output", "Error: invalid package"); return r.toString(); }
+                if ("standard".equals(resolveExecMode())) { r.put("ok", false); r.put("output", "Error: dex optimization needs ADB, Shizuku or Root."); return r.toString(); }
+                String m = mode == null ? "speed" : mode.replaceAll("[^a-z-]", "");
+                if (m.isEmpty()) m = "speed";
+                String out = executeShell("pm compile -m " + m + (force ? " -f " : " ") + pkg);
+                String low = out == null ? "" : out.toLowerCase();
+                r.put("ok", low.contains("success") || low.contains("performed") || (!low.contains("error") && !low.contains("failure") && !low.contains("unknown") && !low.contains("usage")));
+                r.put("output", out != null && !out.trim().isEmpty() ? out.trim() : "Done");
+            } catch (Exception e) {
+                try { r.put("ok", false); r.put("output", "Error: " + e.getMessage()); } catch (Exception ignored) {}
+            }
+            return r.toString();
         }
 
         @JavascriptInterface

@@ -1,5 +1,60 @@
 # Changelog
 
+## v4.9.5-Pro (versionCode 395)
+
+- **The file manager resolves storage to `/storage/emulated/0`.** `/sdcard` and `/storage/self/primary`
+  are symlinks, and the `self` view resolves differently for an ADB/Shizuku shell (uid 2000) than for the
+  app, so a shell often can't read through them - which is why `/sdcard` could come up empty. Storage paths
+  now resolve to the concrete `/storage/emulated/0`, which the app and a privileged shell read the same way,
+  so storage browses correctly in every mode. The Storage shortcut and the default path use it too.
+
+## v4.9.4-Pro (versionCode 394)
+
+More file-manager fixes from on-device testing:
+
+- **Fixed the `/sdcard//sdcard` doubled-path bug.** Because `/sdcard` is a symlink to the real storage
+  volume, the shell fallback was listing the *link itself* as a lone entry instead of the folder's contents.
+  Storage folders are now dereferenced when listed, and all paths are normalized (no more duplicate slashes),
+  so `/sdcard` opens straight into its contents.
+- **View and Install from the file manager no longer need a shell.** Viewing a file and installing an APK
+  found in storage now read the file directly through the app's own file access (matching how listing already
+  works), so they work on storage with All-files access and avoid shell-visibility limits. Privileged system
+  paths still fall back to the shell.
+
+## v4.9.3-Pro (versionCode 393)
+
+More on-device fixes:
+
+- **The file manager now reads storage directly.** `/sdcard` and other storage folders are listed through
+  the app's own file access, which is instant and avoids the shell-visibility limits that can leave an
+  ADB/Shizuku shell unable to see `/sdcard`. It falls back to the shell only for privileged system folders
+  (`/data`, `/system`, ...). If storage looks inaccessible, a **Grant All-files access** button opens the
+  right settings screen - after granting it, `/sdcard` lists with no privileged mode needed.
+- **Logcat live tail is snappier** - shorter refresh interval and a lighter per-poll fetch while playing.
+
+## v4.9.2-Pro (versionCode 392)
+
+Follow-up on-device fixes:
+
+- **File-manager folder listing is now robust across `ls` variants.** When a device's `ls -la` columns
+  don't match the detailed parser, the listing falls back to a plain `ls -1p` name list (names, with a
+  trailing `/` marking folders), so `/sdcard` and other folders list regardless. If a folder genuinely
+  can't be read, the raw command output is shown instead of an empty screen, so the format is visible.
+- **Logcat "Clear" now actually empties the on-screen terminal** (and the device buffer) and stops live
+  play, instead of immediately repopulating.
+
+## v4.9.1-Pro (versionCode 391)
+
+On-device fixes from testing v4.9:
+
+- **The file manager now lists `/sdcard` and other folders reliably.** The `ls -la` parser was rebuilt to
+  handle both toybox and busybox date formats - it finds the time field and takes the name after it - so
+  listings, names with spaces, symlink targets and sizes all parse correctly, and a permission-denied folder
+  shows the error instead of looking empty. Opening the Files tab now always refreshes.
+- **Logcat has a Play / Pause control.** While playing it live-updates (polls about every 1.5s) and
+  auto-scrolls; it stops when you pause or leave the tab. Opening the tab always refreshes.
+- **The Logcat and ADB Console panes are taller** (more terminal space).
+
 ## v4.9-Pro (versionCode 390)
 
 Installs over v3.1 – v4.8 without uninstalling (same signing key).
@@ -25,6 +80,25 @@ Installs over v3.1 – v4.8 without uninstalling (same signing key).
   unsigned or unreadable package), both on by default and read straight from the APK. Packages are staged in
   the app's own cache and nothing outside that directory is ever installed.
 - Toggles to show or hide the SDK, size and version readouts for the picked package.
+- **Default installer.** The app now handles opening an APK file (a VIEW / INSTALL_PACKAGE intent for
+  `application/vnd.android.package-archive`), so it can be set as the default APK handler. Opening an APK
+  routes into the Installer tab; a privileged mode installs, and with no privileged mode it falls back to
+  the normal system installer. A button deep-links to the default-apps settings.
+- **Components now cover all four kinds.** The Components tab lists activities, **receivers**, **services**
+  and **providers**, each with its exported / enabled / permission detail, and any component can be
+  **enabled or disabled** (`pm enable` / `pm disable`). The shown state reflects the real pm override.
+- **Dex optimization** is available as a single-app action (in the app menu) and as a batch action, with a
+  compile-mode picker (`pm compile -m <mode>`, optional force `-f`).
+- **New 📁 Files tab — a privileged file manager.** Browse any path with ADB / Shizuku / Root, view text
+  files, create folders, rename, copy, move and delete, and install an APK from any location (staged to a
+  readable temp, then handed to the Installer). Every path is shell-quoted.
+- **New 📄 Logcat tab.** Read the device log (`logcat -d`) with level, line-count and text/tag filters
+  (the filter is applied in-process, never in the shell), plus clear and copy.
+- **Play Store (via Aurora) routing** in the Updates tab: detects whether Aurora Store / Play Store are
+  installed, opens Aurora Store's in-app updates, and routes any installed app to its store page. (Automatic
+  Play version detection is a planned follow-up, since it needs anonymous Play authentication.)
+- The release workflow now builds, signs and publishes from a version tag; set the `KEYSTORE_BASE64` /
+  `KEYSTORE_PASSWORD` repo secrets for a build signed with your key.
 
 ## v4.8-Pro (versionCode 380)
 
