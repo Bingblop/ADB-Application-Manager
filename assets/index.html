@@ -2474,12 +2474,12 @@
                     <button class="batch-grid-btn accent" style="height:38px;" onclick="fmGrantAccess()">⭐ Grant storage access</button>
                 </div>
                 <div class="list-toolbar" style="margin-top:8px;">
-                    <input type="text" class="list-search" id="fmPathInput" placeholder="/sdcard" value="/sdcard" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter') fmGo(this.value)">
+                    <input type="text" class="list-search" id="fmPathInput" placeholder="/storage/emulated/0" value="/storage/emulated/0" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter') fmGo(this.value)">
                     <button class="term-run-btn" onclick="fmGo(document.getElementById('fmPathInput').value)">Go</button>
                 </div>
                 <div class="batch-sheet-tools" style="margin:8px 0; gap:12px; flex-wrap:wrap;">
                     <button class="batch-tool-link" onclick="fmUp()">⬆️ Up</button>
-                    <button class="batch-tool-link" onclick="fmGo('/sdcard')">/sdcard</button>
+                    <button class="batch-tool-link" onclick="fmGo('/storage/emulated/0')">📁 Storage</button>
                     <button class="batch-tool-link" onclick="fmGo('/data/local/tmp')">/data/local/tmp</button>
                     <button class="batch-tool-link" onclick="fmGo('/system')">/system</button>
                     <button class="batch-tool-link" onclick="fmNewFolder()">＋ Folder</button>
@@ -2487,7 +2487,7 @@
                 </div>
             </div>
             <div class="color-card">
-                <div id="fmCurrentPath" class="color-card-subtitle" style="font-family:monospace; word-break:break-all; margin-bottom:6px;">/sdcard</div>
+                <div id="fmCurrentPath" class="color-card-subtitle" style="font-family:monospace; word-break:break-all; margin-bottom:6px;">/storage/emulated/0</div>
                 <div id="fmList"><div class="list-empty">Open this tab to browse files.</div></div>
             </div>
         </section>
@@ -6129,7 +6129,7 @@ Type any command below (e.g. pm list packages -d)
         window.onInstallResult = onInstallResult;
 
         // ---- File manager ----
-        let fmPath = '/sdcard';
+        let fmPath = '/storage/emulated/0';
         let fmActionTarget = null;
         let fmPendingOp = null;
 

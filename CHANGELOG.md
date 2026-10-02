@@ -1,5 +1,13 @@
 # Changelog
 
+## v4.9.5-Pro (versionCode 395)
+
+- **The file manager resolves storage to `/storage/emulated/0`.** `/sdcard` and `/storage/self/primary`
+  are symlinks, and the `self` view resolves differently for an ADB/Shizuku shell (uid 2000) than for the
+  app, so a shell often can't read through them - which is why `/sdcard` could come up empty. Storage paths
+  now resolve to the concrete `/storage/emulated/0`, which the app and a privileged shell read the same way,
+  so storage browses correctly in every mode. The Storage shortcut and the default path use it too.
+
 ## v4.9.4-Pro (versionCode 394)
 
 More file-manager fixes from on-device testing:

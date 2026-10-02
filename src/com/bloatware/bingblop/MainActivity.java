@@ -1889,6 +1889,31 @@ public class MainActivity extends Activity {
         return new java.io.FileInputStream(ref);
     }
 
+    /**
+     * Resolves the primary-storage aliases to the concrete /storage/emulated/0 path. /sdcard and
+     * /storage/self/primary are symlinks, and the "self" view resolves differently for an ADB/Shizuku
+     * shell (uid 2000) than for the app, so a shell often can't read through them. The concrete
+     * /storage/emulated/0 path is readable the same way by both, so browsing storage works regardless
+     * of mode. Also collapses duplicate slashes and strips a trailing slash (except root).
+     */
+    private String fmCanonicalPath(String path) {
+        if (path == null || path.isEmpty()) return "/";
+        String p = path.replaceAll("/{2,}", "/");
+        if (p.length() > 1 && p.endsWith("/")) p = p.substring(0, p.length() - 1);
+        String primary = "/storage/emulated/0";
+        try {
+            File ext = android.os.Environment.getExternalStorageDirectory();
+            if (ext != null && ext.getAbsolutePath() != null && !ext.getAbsolutePath().isEmpty())
+                primary = ext.getAbsolutePath();
+        } catch (Exception ignored) {}
+        String[] aliases = { "/sdcard", "/storage/self/primary" };
+        for (String a : aliases) {
+            if (p.equals(a)) return primary;
+            if (p.startsWith(a + "/")) return primary + p.substring(a.length());
+        }
+        return p;
+    }
+
     private boolean backupExists(String ref) {
         try {
             if (ref != null && ref.startsWith("content://")) {
@@ -4074,9 +4099,9 @@ public class MainActivity extends Activity {
         public String fmList(String path) {
             JSONObject res = new JSONObject();
             try {
-                String p = (path == null || path.isEmpty()) ? "/" : path;
-                p = p.replaceAll("/{2,}", "/");                 // collapse any // so paths self-heal
-                if (p.length() > 1 && p.endsWith("/")) p = p.substring(0, p.length() - 1);
+                // Resolve /sdcard and /storage/self/primary to the concrete /storage/emulated/0 (readable
+                // by both the app and a shell), and normalize slashes so paths self-heal.
+                String p = fmCanonicalPath(path);
                 res.put("path", p);
                 int slash = p.lastIndexOf('/');
                 res.put("parent", p.equals("/") ? "/" : (slash <= 0 ? "/" : p.substring(0, slash)));
@@ -4166,6 +4191,7 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public String fmRead(String path) {
             try {
+                path = fmCanonicalPath(path);
                 File f = new File(path);
                 if (f.isFile() && f.canRead()) {
                     java.io.FileInputStream in = new java.io.FileInputStream(f);
@@ -4193,6 +4219,8 @@ public class MainActivity extends Activity {
             try {
                 if ("standard".equals(resolveExecMode())) { res.put("ok", false); res.put("output", "needs ADB, Shizuku or Root"); return res.toString(); }
                 if (a == null || a.isEmpty()) { res.put("ok", false); res.put("output", "no path"); return res.toString(); }
+                a = fmCanonicalPath(a);
+                if (b != null && !b.isEmpty()) b = fmCanonicalPath(b);
                 String qa = BackupScripts.quote(a);
                 String cmd;
                 if ("mkdir".equals(op)) cmd = "mkdir -p " + qa + " && echo OK";
@@ -4217,6 +4245,7 @@ public class MainActivity extends Activity {
         public String fmInstall(String path) {
             JSONObject res = new JSONObject();
             try {
+                path = fmCanonicalPath(path);
                 try {
                     File f = new File(path);
                     if (f.isFile() && f.canRead()) { res.put("ok", true); res.put("ref", path); return res.toString(); }
