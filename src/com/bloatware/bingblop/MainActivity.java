@@ -65,6 +65,12 @@ public class MainActivity extends Activity {
     private WebView webView;
     private Vibrator vibrator;
     private SharedPreferences prefs;
+    private boolean buildChangedThisLaunch = false;
+
+    /** True for QuickActionActivity: run a tile/widget action without building the UI. */
+    protected boolean isHeadless() {
+        return false;
+    }
 
     private File rishFile;
     private File rishDexFile;
@@ -132,8 +138,22 @@ public class MainActivity extends Activity {
             Log.w(TAG, "Shizuku listener registration failed: " + t.getMessage());
         }
 
+        // A changed build fingerprint means the system was updated since the app last ran
+        // (a tile or widget tap runs headless and must not use up the flag before the user opens the app)
+        if (!isHeadless()) {
+            String fingerprint = Build.FINGERPRINT == null ? "" : Build.FINGERPRINT;
+            String seenFingerprint = prefs.getString("app_fp", null);
+            buildChangedThisLaunch = seenFingerprint != null && !seenFingerprint.equals(fingerprint);
+            prefs.edit().putString("app_fp", fingerprint).apply();
+        }
+
         // Extract binaries and ADB keys in background
         setupBinariesAndKeys();
+
+        if (isHeadless()) {
+            runQuickAction(getIntent());
+            return;
+        }
 
         webView = new WebView(this);
         setContentView(webView);
@@ -318,6 +338,88 @@ public class MainActivity extends Activity {
         activeWorkingMode = (mode == null || mode.trim().isEmpty()) ? "auto" : mode.trim();
         cachedAutoMode = null;
         prefs.edit().putString("working_mode", activeWorkingMode).apply();
+    }
+
+
+    // ---------------------------------------------------------------------------------------------
+    // Quick actions (Quick Settings tiles and the home-screen widget run these through QuickActionActivity)
+    // ---------------------------------------------------------------------------------------------
+
+    private void runQuickAction(Intent intent) {
+        final String action = intent == null ? null : intent.getStringExtra(QuickActions.EXTRA_ACTION);
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                String message;
+                try {
+                    if (QuickActions.ACTION_CYCLE_MODE.equals(action)) message = quickCycleMode();
+                    else if (QuickActions.ACTION_STOP_LIST.equals(action)) message = quickStopList();
+                    else message = "Unknown quick action";
+                } catch (Exception e) {
+                    message = "Failed: " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
+                }
+                finishQuickAction(message);
+            }
+        });
+    }
+
+    private void finishQuickAction(final String message) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(MainActivity.this, message, Toast.LENGTH_LONG).show();
+                QuickWidgetProvider.refreshAll(MainActivity.this);
+                try {
+                    android.service.quicksettings.TileService.requestListeningState(MainActivity.this, new android.content.ComponentName(MainActivity.this, ModeTileService.class));
+                    android.service.quicksettings.TileService.requestListeningState(MainActivity.this, new android.content.ComponentName(MainActivity.this, StopListTileService.class));
+                } catch (Throwable ignored) {}
+                finish();
+            }
+        });
+    }
+
+    /** Is this backend usable right now, without showing any prompt? */
+    private boolean modeReadyQuiet(String mode) {
+        if ("adb_tcp".equals(mode)) return isAdbTargetConnected(tcpTarget());
+        if ("adb_wireless".equals(mode)) return adbWirelessPort > 0 && isAdbTargetConnected(wirelessTarget());
+        if ("shizuku".equals(mode)) return isShizukuAuthorized();
+        if ("root".equals(mode)) return isRootAvailable();
+        return false;
+    }
+
+    /** Switches to the next working mode that is ready (ADB TCP, Wireless, Shizuku, Root), else back to Automatic. */
+    private String quickCycleMode() {
+        String[] order = {"adb_tcp", "adb_wireless", "shizuku", "root"};
+        int start = -1;
+        for (int i = 0; i < order.length; i++) if (order[i].equals(activeWorkingMode)) start = i;
+        // Starting from an explicit mode, only look at the OTHER backends (exclude step == order.length,
+        // which would wrap back to the current one and "switch" to the mode already selected).
+        int steps = start == -1 ? order.length : order.length - 1;
+        for (int step = 1; step <= steps; step++) {
+            String candidate = order[(start + step) % order.length];
+            if (modeReadyQuiet(candidate)) {
+                setConfiguredMode(candidate);
+                return "Working mode: " + QuickActions.modeLabel(candidate);
+            }
+        }
+        setConfiguredMode("auto");
+        return "No other mode is ready. Using Automatic.";
+    }
+
+    /** Force-stops every app in the quick list. */
+    private String quickStopList() throws Exception {
+        JSONObject list = QuickActions.quickList(this);
+        if (list == null) return "No quick list set. Open Saved Lists in the app and tap \u26a1 Quick list.";
+        if ("standard".equals(resolveExecMode())) return "Needs ADB, Shizuku or Root. Set up a working mode first.";
+        org.json.JSONArray pkgs = list.optJSONArray("packages");
+        AndroidBridge bridge = new AndroidBridge();
+        int ok = 0, failed = 0;
+        for (int i = 0; pkgs != null && i < pkgs.length(); i++) {
+            String out = bridge.executeAppAction("force_stop", pkgs.optString(i)).toLowerCase();
+            if (out.contains("error") || out.contains("exception") || out.contains("denied")) failed++;
+            else ok++;
+        }
+        return "Force-stopped " + ok + " app" + (ok == 1 ? "" : "s") + (failed > 0 ? ", " + failed + " failed" : "");
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -1130,23 +1232,8 @@ public class MainActivity extends Activity {
             return runProcessWithTimeout(buildAdbProcess("-s", target, "install", "-r", apk.getAbsolutePath()), 300000);
         }
         if ("shizuku".equals(mode)) {
-            if (shizukuNewProcessMethod == null) {
-                Method m = Shizuku.class.getDeclaredMethod("newProcess", String[].class, String[].class, String.class);
-                m.setAccessible(true);
-                shizukuNewProcessMethod = m;
-            }
             // The shell user can't read app-private files, so stream the APK into `pm install -S`
-            Process p = (Process) shizukuNewProcessMethod.invoke(null,
-                    new String[]{"sh", "-c", "exec 2>&1; pm install -r -S " + apk.length()}, null, null);
-            OutputStream os = p.getOutputStream();
-            java.io.FileInputStream in = new java.io.FileInputStream(apk);
-            byte[] buf = new byte[65536];
-            int n;
-            while ((n = in.read(buf)) > 0) os.write(buf, 0, n);
-            in.close();
-            os.flush();
-            os.close();
-            return readProcessWithTimeout(p, 300000);
+            return shizukuStream("pm install -r -S " + apk.length(), apk);
         }
         if ("root".equals(mode)) {
             apk.setReadable(true, false);
@@ -1155,6 +1242,594 @@ public class MainActivity extends Activity {
             return runProcessWithTimeout(pb, 300000);
         }
         return "Error: installing updates needs ADB, Shizuku or Root";
+    }
+
+    /** Runs a command through the Shizuku API, optionally streaming a file into its stdin. */
+    private String shizukuStream(String cmd, File stdinFile) throws Exception {
+        if (shizukuNewProcessMethod == null) {
+            Method m = Shizuku.class.getDeclaredMethod("newProcess", String[].class, String[].class, String.class);
+            m.setAccessible(true);
+            shizukuNewProcessMethod = m;
+        }
+        Process p = (Process) shizukuNewProcessMethod.invoke(null,
+                new String[]{"sh", "-c", "exec 2>&1; " + cmd}, null, null);
+        OutputStream os = p.getOutputStream();
+        if (stdinFile != null) {
+            java.io.FileInputStream in = new java.io.FileInputStream(stdinFile);
+            try {
+                byte[] buf = new byte[65536];
+                int n;
+                while ((n = in.read(buf)) > 0) os.write(buf, 0, n);
+            } finally {
+                in.close();
+            }
+        }
+        os.flush();
+        os.close();
+        return readProcessWithTimeout(p, 300000);
+    }
+
+    /** Installs one APK, or a base APK with its splits, through the active mode. */
+    private String installApks(List<File> apks) throws Exception {
+        String mode = resolveExecMode();
+        if ("adb_tcp".equals(mode) || "adb_wireless".equals(mode)) {
+            boolean tcp = "adb_tcp".equals(mode);
+            String target = tcp ? tcpTarget() : wirelessTarget();
+            if (!isAdbTargetConnected(target)) performConnect(tcp ? adbTcpHost : adbWirelessHost, tcp ? adbTcpPort : adbWirelessPort, null);
+            List<String> args = new ArrayList<String>();
+            args.add("-s");
+            args.add(target);
+            args.add(apks.size() == 1 ? "install" : "install-multiple");
+            args.add("-r");
+            for (File f : apks) args.add(f.getAbsolutePath());
+            return runProcessWithTimeout(buildAdbProcess(args.toArray(new String[0])), 600000);
+        }
+        if ("shizuku".equals(mode)) {
+            String created = shizukuStream("pm install-create -r", null);
+            String id = BackupScripts.parseSessionId(created);
+            if (id == null) return created;
+            // A thrown exception mid-write (not just a "Success"-less return) must still abandon the
+            // session - otherwise a staged PackageInstaller session and its backing files are left behind
+            // with no owner. Only a successful commit excuses the cleanup below.
+            boolean committed = false;
+            try {
+                int index = 0;
+                for (File f : apks) {
+                    String name = (index++) + "_" + f.getName().replaceAll("[^A-Za-z0-9._-]", "_");
+                    String written = shizukuStream("pm install-write -S " + f.length() + " " + id + " " + name + " -", f);
+                    if (!written.contains("Success")) return written;
+                }
+                String result = shizukuStream("pm install-commit " + id, null);
+                committed = true;
+                return result;
+            } finally {
+                if (!committed) {
+                    try {
+                        shizukuStream("pm install-abandon " + id, null);
+                    } catch (Exception ignored) {}
+                }
+            }
+        }
+        if ("root".equals(mode)) {
+            StringBuilder cmd = new StringBuilder(apks.size() == 1 ? "pm install -r" : "pm install-multiple -r");
+            for (File f : apks) {
+                f.setReadable(true, false);
+                cmd.append(' ').append(BackupScripts.quote(f.getAbsolutePath()));
+            }
+            ProcessBuilder pb = new ProcessBuilder("su", "-c", cmd.toString());
+            pb.redirectErrorStream(true);
+            return runProcessWithTimeout(pb, 600000);
+        }
+        return "Error: restoring needs ADB, Shizuku or Root";
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Backup and restore
+    //
+    // A backup is one .adbbackup file (a zip): backup.json, apk/<each APK>, and data.tar when the data
+    // was included. App data is private to the app, so it needs Root; the APK, permissions and app ops
+    // work in every privileged mode.
+    // ---------------------------------------------------------------------------------------------
+
+    private static final int REQ_PICK_BACKUP = 4202;
+    private final java.util.concurrent.atomic.AtomicBoolean backupBusy = new java.util.concurrent.atomic.AtomicBoolean(false);
+    // A real app + its data is rarely anywhere near this; bounds how much a crafted or damaged backup can
+    // make the restore step write before it gives up, instead of grinding on a zip bomb until storage fills.
+    private static final long MAX_RESTORE_EXTRACT_BYTES = 8L * 1024 * 1024 * 1024;
+
+    private void backupEvent(String op, String stage, int pct, String message) {
+        try {
+            JSONObject o = new JSONObject();
+            o.put("op", op);
+            o.put("stage", stage);
+            o.put("pct", pct);
+            o.put("msg", message);
+            notifyJs("window.onBackupProgress && window.onBackupProgress(" + JSONObject.quote(o.toString()) + ")");
+        } catch (Exception ignored) {}
+    }
+
+    private void backupDone(JSONObject res) {
+        notifyJs("window.onBackupDone && window.onBackupDone(" + JSONObject.quote(res.toString()) + ")");
+    }
+
+    /** Runs a script as root through su, whatever working mode is selected. */
+    private String runRootScript(String script, int timeoutMs) throws Exception {
+        File f = new File(getCacheDir(), "root_" + System.nanoTime() + ".sh");
+        try {
+            FileOutputStream out = new FileOutputStream(f);
+            try {
+                out.write(script.getBytes("UTF-8"));
+            } finally {
+                out.close();
+            }
+            f.setReadable(true, false);
+            ProcessBuilder pb = new ProcessBuilder("su", "-c", "sh " + BackupScripts.quote(f.getAbsolutePath()));
+            pb.redirectErrorStream(true);
+            String out2 = runProcessWithTimeout(pb, timeoutMs);
+            return out2 == null ? "" : out2;
+        } finally {
+            f.delete();
+        }
+    }
+
+    private static String rootError(String out) {
+        for (String line : out.split("\n")) {
+            if (line.startsWith("ERROR")) return line.substring(line.indexOf(':') + 1).trim();
+        }
+        return out.trim().isEmpty() ? "Root access was denied or is not available" : out.trim();
+    }
+
+    private static String installHint(String out) {
+        String o = out == null ? "" : out;
+        if (o.contains("INSTALL_FAILED_VERSION_DOWNGRADE")) return "A newer version is installed than the one in the backup. Uninstall the app first (keep its data if you want it restored), then restore.";
+        if (o.contains("INSTALL_FAILED_UPDATE_INCOMPATIBLE") || o.contains("signatures do not match")) return "The installed app is signed with a different key than the backup. Uninstall it first, then restore.";
+        if (o.contains("INSTALL_FAILED_INSUFFICIENT_STORAGE")) return "Not enough storage to install the app.";
+        if (o.contains("INSTALL_FAILED_MISSING_SPLIT")) return "A split APK is missing from the backup.";
+        return o.trim().isEmpty() ? "install failed" : o.trim();
+    }
+
+    private InputStream openRef(String ref) throws Exception {
+        if (ref != null && ref.startsWith("content://")) {
+            InputStream in = getContentResolver().openInputStream(Uri.parse(ref));
+            if (in == null) throw new java.io.FileNotFoundException("cannot open the backup file");
+            return in;
+        }
+        return new java.io.FileInputStream(ref);
+    }
+
+    private boolean backupExists(String ref) {
+        try {
+            if (ref != null && ref.startsWith("content://")) {
+                android.os.ParcelFileDescriptor pfd = getContentResolver().openFileDescriptor(Uri.parse(ref), "r");
+                if (pfd == null) return false;
+                pfd.close();
+                return true;
+            }
+            return ref != null && new File(ref).exists();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private JSONArray backupIndex() {
+        try {
+            return new JSONArray(prefs.getString("backups_index", "[]"));
+        } catch (Exception e) {
+            return new JSONArray();
+        }
+    }
+
+    /** backup.json must be the first entry, so this reads a few KB even from a multi-GB backup. */
+    private JSONObject readBackupMeta(String ref) throws Exception {
+        java.util.zip.ZipInputStream zin = new java.util.zip.ZipInputStream(new java.io.BufferedInputStream(openRef(ref)));
+        try {
+            // A picked backup file is untrusted, so scanning forward for backup.json by name cannot be
+            // allowed: skipping a non-matching entry via another getNextEntry() call first fully inflates
+            // it to find its end, with no byte cap - a tiny zip bomb placed before backup.json would be
+            // decompressed in full before this method ever gets to check anything. Require it to be the
+            // very first entry instead and refuse immediately otherwise.
+            java.util.zip.ZipEntry e = zin.getNextEntry();
+            if (e == null || !"backup.json".equals(e.getName())) {
+                throw new IllegalStateException("not a valid backup file (backup.json must be the first entry)");
+            }
+            {
+                java.io.ByteArrayOutputStream buf = new java.io.ByteArrayOutputStream();
+                byte[] b = new byte[8192];
+                int n;
+                while ((n = zin.read(b)) > 0) {
+                    buf.write(b, 0, n);
+                    if (buf.size() > 1024 * 1024) throw new IllegalStateException("backup.json is too large");
+                }
+                JSONObject meta = new JSONObject(buf.toString("UTF-8"));
+                if (!"adb-app-manager-backup".equals(meta.optString("format")) || meta.optInt("v") != 1) {
+                    throw new IllegalStateException("this backup was made by a different version of the app");
+                }
+                BackupScripts.checkedPackage(meta.optString("pkg"));
+                return meta;
+            }
+        } finally {
+            zin.close();
+        }
+    }
+
+    private static boolean isDangerousPermission(PackageManager pm, String name) {
+        try {
+            android.content.pm.PermissionInfo info = pm.getPermissionInfo(name, 0);
+            return (info.protectionLevel & android.content.pm.PermissionInfo.PROTECTION_MASK_BASE) == android.content.pm.PermissionInfo.PROTECTION_DANGEROUS;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private void runBackup(final String pkg, final boolean includeData) {
+        if (!backupBusy.compareAndSet(false, true)) {
+            JSONObject busy = new JSONObject();
+            try { busy.put("op", "backup"); busy.put("ok", false); busy.put("error", "Another backup or restore is still running"); } catch (Exception ignored) {}
+            backupDone(busy);
+            return;
+        }
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                JSONObject res = new JSONObject();
+                File tmpTar = null;
+                Object[] target = null;
+                try {
+                    res.put("op", "backup");
+                    res.put("pkg", pkg);
+                    BackupScripts.checkedPackage(pkg);
+                    if ("standard".equals(resolveExecMode())) {
+                        throw new IllegalStateException("backing up needs ADB, Shizuku or Root (app ops can't be read otherwise). Set up a working mode first.");
+                    }
+                    PackageManager pm = getPackageManager();
+                    ApplicationInfo ai = pm.getApplicationInfo(pkg, PackageManager.MATCH_UNINSTALLED_PACKAGES);
+                    int sigFlags = Build.VERSION.SDK_INT >= 28 ? PackageManager.GET_SIGNING_CERTIFICATES : PackageManager.GET_SIGNATURES;
+                    PackageInfo pi = pm.getPackageInfo(pkg, PackageManager.MATCH_UNINSTALLED_PACKAGES | PackageManager.GET_PERMISSIONS | sigFlags);
+                    File[] files = apkFiles(ai);
+                    if (files.length == 0 || !files[0].canRead()) throw new IllegalStateException("the APK is not readable");
+                    String label = pm.getApplicationLabel(ai).toString();
+                    String version = pi.versionName != null ? pi.versionName : String.valueOf(versionCodeOf(pi));
+                    backupEvent("backup", "info", 5, "Reading " + label + "...");
+
+                    JSONObject meta = new JSONObject();
+                    meta.put("format", "adb-app-manager-backup");
+                    meta.put("v", 1);
+                    meta.put("pkg", pkg);
+                    meta.put("label", label);
+                    meta.put("versionName", version);
+                    meta.put("versionCode", versionCodeOf(pi));
+                    meta.put("createdAt", System.currentTimeMillis());
+                    meta.put("device", Build.MODEL);
+                    meta.put("sdk", Build.VERSION.SDK_INT);
+                    meta.put("installer", installerOf(pkg));
+                    meta.put("suspended", (ai.flags & ApplicationInfo.FLAG_SUSPENDED) != 0);
+                    JSONArray signers = new JSONArray();
+                    for (String d : signerDigests(pi, false)) signers.put(d);
+                    meta.put("signers", signers);
+                    JSONArray perms = new JSONArray();
+                    if (pi.requestedPermissions != null && pi.requestedPermissionsFlags != null) {
+                        for (int i = 0; i < pi.requestedPermissions.length; i++) {
+                            String name = pi.requestedPermissions[i];
+                            if ((pi.requestedPermissionsFlags[i] & PackageInfo.REQUESTED_PERMISSION_GRANTED) != 0
+                                    && BackupScripts.isPermission(name) && isDangerousPermission(pm, name)) perms.put(name);
+                        }
+                    }
+                    meta.put("permissions", perms);
+                    JSONArray warnings = new JSONArray();
+                    JSONObject ops = new JSONObject();
+                    try {
+                        String opsRaw = new AndroidBridge().executeShell("cmd appops get " + pkg);
+                        for (Map.Entry<String, String> e : BackupScripts.changedAppOps(opsRaw).entrySet()) {
+                            ops.put(e.getKey(), e.getValue());
+                        }
+                        // An empty result is the common, legitimate case (no overrides) - but if the backend
+                        // reported a failure instead of actual appops output, that looks identical unless
+                        // checked for, and the backup would otherwise silently claim a complete settings
+                        // snapshot it doesn't have.
+                        String lowered = opsRaw == null ? "" : opsRaw.toLowerCase();
+                        if (ops.length() == 0 && (opsRaw == null || lowered.contains("error") || lowered.contains("exception") || lowered.contains("denied") || lowered.contains("unknown command"))) {
+                            warnings.put("Could not read this app's app ops" + (opsRaw == null || opsRaw.trim().isEmpty() ? "" : " (" + opsRaw.trim() + ")") + "; any app op overrides will be missing from this backup");
+                        }
+                    } catch (Exception e) {
+                        warnings.put("Could not read this app's app ops (" + e.getMessage() + "); any app op overrides will be missing from this backup");
+                    }
+                    meta.put("appops", ops);
+                    boolean withData = false;
+                    if (includeData) {
+                        backupEvent("backup", "data", 20, "Backing up data (Root)...");
+                        tmpTar = new File(getCacheDir(), "backup_data_" + System.nanoTime() + ".tar");
+                        String out = runRootScript(BackupScripts.dataBackup("/data", pkg, tmpTar.getAbsolutePath(), android.os.Process.myUid()), 900000);
+                        if (!out.contains("OK")) throw new IllegalStateException("data: " + rootError(out));
+                        if (out.contains("WARN")) warnings.put("Some data changed while it was being read; the backup may be incomplete");
+                        withData = true;
+                    }
+                    meta.put("hasData", withData);
+                    meta.put("dataBytes", withData ? tmpTar.length() : 0);
+
+                    backupEvent("backup", "write", 55, "Saving the backup...");
+                    // Millisecond precision: on Android 8-9 (API 26-28, see openDownloadOutput) this name is
+                    // opened directly with FileOutputStream, so two backups of the same app/version within
+                    // the same minute would otherwise overwrite each other while both index records still
+                    // point at one file - and a failed second write could delete an earlier, valid backup.
+                    String stamp = new java.text.SimpleDateFormat("yyyyMMdd-HHmmss-SSS", java.util.Locale.US).format(new java.util.Date());
+                    String fileName = (label.isEmpty() ? pkg : label) + "_" + version + "_" + stamp + ".adbbackup";
+                    target = openDownloadOutput(fileName, "application/octet-stream", "Backups");
+                    java.util.zip.ZipOutputStream zip = new java.util.zip.ZipOutputStream(new java.io.BufferedOutputStream((OutputStream) target[0]));
+                    long total = 0;
+                    try {
+                        zip.setLevel(1); // APKs are already compressed; keep it fast
+                        zip.putNextEntry(new java.util.zip.ZipEntry("backup.json"));
+                        zip.write(meta.toString(2).getBytes("UTF-8"));
+                        zip.closeEntry();
+                        for (int i = 0; i < files.length; i++) {
+                            // apkFiles() always returns the base APK (ai.sourceDir) first; name it "base.apk"
+                            // regardless of its real on-disk name, since restore looks for that name and a
+                            // system app's source file is rarely actually called that (e.g. .../Settings.apk)
+                            String entryName = i == 0 ? "base.apk" : files[i].getName();
+                            zip.putNextEntry(new java.util.zip.ZipEntry("apk/" + entryName));
+                            total += copyFile(files[i], zip);
+                            zip.closeEntry();
+                        }
+                        if (withData) {
+                            zip.putNextEntry(new java.util.zip.ZipEntry("data.tar"));
+                            total += copyFile(tmpTar, zip);
+                            zip.closeEntry();
+                        }
+                    } finally {
+                        zip.close();
+                    }
+
+                    JSONObject rec = new JSONObject();
+                    rec.put("ref", target[2]);
+                    rec.put("path", target[1]);
+                    rec.put("name", fileName);
+                    rec.put("pkg", pkg);
+                    rec.put("label", label);
+                    rec.put("versionName", version);
+                    rec.put("createdAt", meta.getLong("createdAt"));
+                    rec.put("bytes", total);
+                    rec.put("hasData", withData);
+                    JSONArray index = backupIndex();
+                    JSONArray next = new JSONArray();
+                    next.put(rec);
+                    for (int i = 0; i < index.length() && next.length() < 200; i++) next.put(index.get(i));
+                    prefs.edit().putString("backups_index", next.toString()).apply();
+
+                    res.put("ok", true);
+                    res.put("label", label);
+                    res.put("path", target[1]);
+                    res.put("ref", target[2]);
+                    res.put("bytes", total);
+                    res.put("hasData", withData);
+                    res.put("warnings", warnings);
+                } catch (Exception e) {
+                    // A target already created (a MediaStore row on Android 10+, indexed the moment it's
+                    // inserted, before any bytes are written) must not survive a failure partway through
+                    // writing it - otherwise a failed backup still shows up in Downloads looking like a
+                    // complete, restorable .adbbackup file.
+                    deleteDownloadTarget(target);
+                    try {
+                        res.put("ok", false);
+                        res.put("error", e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
+                    } catch (Exception ignored) {}
+                } finally {
+                    if (tmpTar != null) tmpTar.delete();
+                    backupBusy.set(false);
+                }
+                backupDone(res);
+            }
+        });
+    }
+
+    private void runRestore(final String ref, final boolean restoreData) {
+        if (!backupBusy.compareAndSet(false, true)) {
+            JSONObject busy = new JSONObject();
+            try { busy.put("op", "restore"); busy.put("ok", false); busy.put("error", "Another backup or restore is still running"); } catch (Exception ignored) {}
+            backupDone(busy);
+            return;
+        }
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                JSONObject res = new JSONObject();
+                File work = new File(getCacheDir(), "restore_" + System.nanoTime());
+                try {
+                    res.put("op", "restore");
+                    JSONObject meta = readBackupMeta(ref);
+                    // backup.json can come from "Choose backup file..." - an arbitrary file the user picked -
+                    // so nothing in it is trusted yet. It only supplies a label for the UI until the APK inside
+                    // proves what it actually is, below.
+                    String claimedPkg = meta.optString("pkg", "");
+                    res.put("pkg", claimedPkg);
+                    res.put("label", meta.optString("label", claimedPkg));
+                    if ("standard".equals(resolveExecMode())) {
+                        throw new IllegalStateException("restoring needs ADB, Shizuku or Root. Set up a working mode first.");
+                    }
+                    boolean wantData = restoreData && meta.optBoolean("hasData");
+                    if (restoreData && !meta.optBoolean("hasData")) {
+                        res.put("data", "this backup has no data");
+                    }
+
+                    backupEvent("restore", "read", 10, "Reading the backup...");
+                    File apkDir = new File(work, "apk");
+                    apkDir.mkdirs();
+                    File dataTar = wantData ? new File(work, "data.tar") : null;
+                    long extracted = 0;
+                    java.util.zip.ZipInputStream zin = new java.util.zip.ZipInputStream(new java.io.BufferedInputStream(openRef(ref)));
+                    try {
+                        java.util.zip.ZipEntry e;
+                        while ((e = zin.getNextEntry()) != null) {
+                            String n = e.getName();
+                            // runBackup always writes data.tar last. Skipping an unwanted entry by calling
+                            // getNextEntry() again would still make ZipInputStream fully inflate it first just to
+                            // find the end - for a multi-gigabyte data.tar that defeats the byte cap below before
+                            // it ever runs. Since nothing of ours follows data.tar, stop scanning instead.
+                            if ("data.tar".equals(n) && dataTar == null) break;
+                            File dest = null;
+                            if (n.matches("apk/[A-Za-z0-9_.+-]+\\.apk")) dest = new File(apkDir, n.substring(4));
+                            else if ("data.tar".equals(n)) dest = dataTar;
+                            // Anything else in the file is ignored, but still has to be read through the same
+                            // counted loop below: a bare "continue" here would make the next getNextEntry()
+                            // call silently inflate the whole entry first to find its end, bypassing the byte
+                            // cap entirely for a huge entry under a name this code doesn't recognize.
+                            OutputStream out = dest != null ? new FileOutputStream(dest) : new OutputStream() {
+                                public void write(int b) {}
+                                public void write(byte[] b, int off, int len) {}
+                            };
+                            try {
+                                byte[] buf = new byte[65536];
+                                int r;
+                                while ((r = zin.read(buf)) > 0) {
+                                    extracted += r;
+                                    // A real app plus its data is rarely anywhere near this; past it, this is either
+                                    // a damaged file or one crafted to fill the phone's storage, so stop reading it.
+                                    if (extracted > MAX_RESTORE_EXTRACT_BYTES) {
+                                        throw new IllegalStateException("this backup is far larger than any real app (stopped past "
+                                                + (MAX_RESTORE_EXTRACT_BYTES / (1024 * 1024)) + " MB) - it looks damaged or unsafe to extract");
+                                    }
+                                    out.write(buf, 0, r);
+                                }
+                            } finally {
+                                out.close();
+                            }
+                        }
+                    } finally {
+                        zin.close();
+                    }
+                    File[] apks = apkDir.listFiles();
+                    if (apks == null || apks.length == 0) throw new IllegalStateException("the backup has no APK");
+                    java.util.Arrays.sort(apks);
+                    // The base APK must come first
+                    List<File> ordered = new ArrayList<File>();
+                    File baseApk = null;
+                    for (File f : apks) if (f.getName().equals("base.apk")) { ordered.add(f); baseApk = f; }
+                    for (File f : apks) if (!f.getName().equals("base.apk")) ordered.add(f);
+                    if (baseApk == null) throw new IllegalStateException("the backup has no base.apk");
+
+                    // The truth from here on is the APK itself, never backup.json: a picked file can claim to be
+                    // anything, but its APK cannot lie about the package name it installs as or who signed it.
+                    PackageManager pm = getPackageManager();
+                    int sigFlags = Build.VERSION.SDK_INT >= 28 ? PackageManager.GET_SIGNING_CERTIFICATES : PackageManager.GET_SIGNATURES;
+                    PackageInfo archiveInfo = pm.getPackageArchiveInfo(baseApk.getAbsolutePath(), sigFlags);
+                    if (archiveInfo == null || archiveInfo.packageName == null) {
+                        throw new IllegalStateException("base.apk in this backup could not be read as an APK");
+                    }
+                    final String pkg = archiveInfo.packageName;
+                    res.put("pkg", pkg);
+                    if (!claimedPkg.isEmpty() && !claimedPkg.equals(pkg)) {
+                        throw new IllegalStateException("backup.json says " + claimedPkg + " but base.apk installs as " + pkg + " - this backup looks damaged or tampered with");
+                    }
+                    long archiveVersionCode = versionCodeOf(archiveInfo);
+                    java.util.Set<String> archiveSigners = signerDigests(archiveInfo, false);
+
+                    // Same package already installed? Compare keys and versions - both read from the APK above,
+                    // not from backup.json - before deciding whether install can be skipped.
+                    boolean installed = false;
+                    boolean sameVersion = false;
+                    try {
+                        PackageInfo cur = pm.getPackageInfo(pkg, sigFlags);
+                        installed = (cur.applicationInfo.flags & ApplicationInfo.FLAG_INSTALLED) != 0;
+                        if (installed) {
+                            requireCompatibleSigner(signerDigests(cur, true), archiveSigners,
+                                    "the installed app is signed with a different key than this backup's APK. Uninstall it first, then restore.");
+                        }
+                        sameVersion = installed && versionCodeOf(cur) == archiveVersionCode;
+                    } catch (PackageManager.NameNotFoundException ignored) {}
+
+                    // A system app removed for this user is still on the system image: bring it back instead of
+                    // installing. getPackageInfo(pkg, sigFlags) above throws for an app uninstalled-for-user, so
+                    // this is the only identity check this path gets - it must verify the signer itself, the
+                    // same as the installed-app branch above, rather than trusting the archive on its say-so.
+                    String installNote = null;
+                    if (!installed) {
+                        PackageInfo sysInfo = null;
+                        try {
+                            sysInfo = pm.getPackageInfo(pkg, PackageManager.MATCH_UNINSTALLED_PACKAGES | sigFlags);
+                        } catch (PackageManager.NameNotFoundException ignored) {}
+                        if (sysInfo != null) {
+                            requireCompatibleSigner(signerDigests(sysInfo, true), archiveSigners,
+                                    "the system app on this phone is signed with a different key than this backup's APK - it does not match this device");
+                            String o = new AndroidBridge().executeShell("pm install-existing " + pkg);
+                            if (o.contains("installed for user")) {
+                                installed = true;
+                                sameVersion = true;
+                                installNote = "restored for your user (it is part of the system)";
+                            }
+                        }
+                    }
+
+                    if (installed && sameVersion) {
+                        res.put("install", installNote != null ? installNote : "already installed (same version)");
+                    } else {
+                        backupEvent("restore", "install", 40, "Installing " + meta.optString("label", pkg) + "...");
+                        String out = installApks(ordered);
+                        if (!out.contains("Success")) throw new IllegalStateException(installHint(out));
+                        res.put("install", "installed " + meta.optString("versionName"));
+                    }
+
+                    // Permissions and app ops
+                    backupEvent("restore", "settings", 65, "Restoring permissions...");
+                    AndroidBridge bridge = new AndroidBridge();
+                    JSONArray perms = meta.optJSONArray("permissions");
+                    int granted = 0, total = perms == null ? 0 : perms.length();
+                    for (int i = 0; i < total; i++) {
+                        String perm = perms.optString(i);
+                        // backup.json is untrusted, so restore must accept nothing wider than what backup
+                        // creation itself ever writes: a syntactically valid, dangerous runtime permission.
+                        // Without the same isDangerousPermission check used there, a crafted backup wrapped
+                        // around an otherwise-legitimate APK could list any real, syntactically valid
+                        // permission - including signature/development-level ones this format never
+                        // produces - and have the privileged backend asked to grant it.
+                        if (!BackupScripts.isPermission(perm) || !isDangerousPermission(pm, perm)) continue;
+                        String o = bridge.setPermission(pkg, perm, true).toLowerCase();
+                        if (!o.contains("exception") && !o.contains("error") && !o.contains("not a changeable")) granted++;
+                    }
+                    res.put("permissionsGranted", granted);
+                    res.put("permissionsTotal", total);
+                    JSONObject ops = meta.optJSONObject("appops");
+                    int opsSet = 0;
+                    java.util.Iterator<String> it = ops == null ? null : ops.keys();
+                    while (it != null && it.hasNext()) {
+                        String op = it.next();
+                        String mode = ops.optString(op);
+                        if (!op.matches("[A-Z][A-Z0-9_]+") || !mode.matches("allow|ignore|deny|foreground")) continue;
+                        String o = bridge.setAppOp(pkg, op, mode).toLowerCase();
+                        if (!o.contains("exception") && !o.contains("error")) opsSet++;
+                    }
+                    res.put("appopsSet", opsSet);
+
+                    // Data (Root only)
+                    JSONArray warnings = new JSONArray();
+                    if (wantData) {
+                        backupEvent("restore", "data", 80, "Restoring data (Root)...");
+                        String out = runRootScript(BackupScripts.dataRestore("/data", pkg, dataTar.getAbsolutePath()), 900000);
+                        if (out.contains("OK")) {
+                            res.put("data", "restored");
+                        } else {
+                            res.put("data", "not restored");
+                            warnings.put("Data was not restored: " + rootError(out));
+                        }
+                    }
+                    res.put("warnings", warnings);
+                    res.put("ok", true);
+                } catch (Exception e) {
+                    try {
+                        res.put("ok", false);
+                        res.put("error", e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
+                    } catch (Exception ignored) {}
+                } finally {
+                    deleteRecursively(work);
+                    backupBusy.set(false);
+                }
+                backupDone(res);
+            }
+        });
+    }
+
+    private static void deleteRecursively(File f) {
+        File[] kids = f.listFiles();
+        if (kids != null) for (File k : kids) deleteRecursively(k);
+        f.delete();
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -1392,11 +2067,50 @@ public class MainActivity extends Activity {
         return out;
     }
 
+    /**
+     * Throws when two non-empty signer sets share no certificate. Used by both restore paths (an app
+     * currently installed for the user, and a system app only present on the system image) so a future
+     * change to this check can't land in one copy and leave the other unprotected.
+     */
+    private static void requireCompatibleSigner(java.util.Set<String> installedSigners, java.util.Set<String> archiveSigners, String message) {
+        // Fail closed: every real, installable APK has at least one signer, so an empty set here means the
+        // archive is unsigned/unreadable, not "nothing to compare". Treating that as a pass would let a
+        // backup whose signature can't be read skip verification entirely.
+        if (installedSigners.isEmpty() || archiveSigners.isEmpty()) throw new IllegalStateException(message);
+        java.util.Set<String> common = new HashSet<String>(installedSigners);
+        common.retainAll(archiveSigners);
+        if (common.isEmpty()) throw new IllegalStateException(message);
+    }
+
     private static final int REQ_IMPORT_OBTAINIUM = 4201;
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQ_PICK_BACKUP) {
+            final Uri picked = (resultCode == RESULT_OK && data != null) ? data.getData() : null;
+            if (picked == null) return;
+            executor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject res = new JSONObject();
+                    try {
+                        JSONObject meta = readBackupMeta(picked.toString());
+                        res.put("ref", picked.toString());
+                        res.put("pkg", meta.optString("pkg"));
+                        res.put("label", meta.optString("label"));
+                        res.put("versionName", meta.optString("versionName"));
+                        res.put("createdAt", meta.optLong("createdAt"));
+                        res.put("hasData", meta.optBoolean("hasData"));
+                        res.put("bytes", meta.optLong("dataBytes"));
+                    } catch (Exception e) {
+                        try { res.put("error", e.getMessage() != null ? e.getMessage() : "not a backup file"); } catch (Exception ignored) {}
+                    }
+                    notifyJs("window.onBackupPicked && window.onBackupPicked(" + JSONObject.quote(res.toString()) + ")");
+                }
+            });
+            return;
+        }
         if (requestCode != REQ_IMPORT_OBTAINIUM) return;
         final Uri uri = (resultCode == RESULT_OK && data != null) ? data.getData() : null;
         executor.submit(new Runnable() {
@@ -1491,7 +2205,11 @@ public class MainActivity extends Activity {
         }
     }
 
-    /** Opens a file in Download/ADB App Manager/<sub> (MediaStore on Android 10+, app storage before). */
+    /** Opens a file in Download/ADB App Manager/<sub> via MediaStore (Android 10+). Before MediaStore.Downloads
+     *  existed (Android 8.0-9, API 26-28) this instead uses this app's own external-files storage, which is
+     *  removed if the app is uninstalled - there is no public-Downloads write path on those versions without
+     *  a runtime WRITE_EXTERNAL_STORAGE grant this app doesn't request. target[1], returned to the caller,
+     *  always reflects the real path used, so the UI and the backup index never claim the wrong one. */
     private Object[] openDownloadOutput(String fileName, String mime, String sub) throws Exception {
         String safeName = fileName.replaceAll("[^A-Za-z0-9._ -]", "_").trim();
         String folder = "ADB App Manager" + (sub == null || sub.isEmpty() ? "" : "/" + sub);
@@ -1502,12 +2220,26 @@ public class MainActivity extends Activity {
             values.put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, "Download/" + folder);
             Uri uri = getContentResolver().insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
             if (uri == null) throw new IllegalStateException("could not create " + safeName);
-            return new Object[]{getContentResolver().openOutputStream(uri), "Download/" + folder + "/" + safeName};
+            return new Object[]{getContentResolver().openOutputStream(uri), "Download/" + folder + "/" + safeName, uri.toString()};
         }
         File dir = new File(getExternalFilesDir(null), folder);
         if (!dir.exists()) dir.mkdirs();
         File file = new File(dir, safeName);
-        return new Object[]{new FileOutputStream(file), file.getAbsolutePath()};
+        return new Object[]{new FileOutputStream(file), file.getAbsolutePath(), file.getAbsolutePath()};
+    }
+
+    /** Deletes a target from openDownloadOutput after a failure, so a file that never finished writing
+     *  doesn't stay indexed (or on disk) looking like a complete, usable one. */
+    private void deleteDownloadTarget(Object[] target) {
+        if (target == null) return;
+        try {
+            String ref = (String) target[2];
+            if (ref.startsWith("content://")) {
+                getContentResolver().delete(Uri.parse(ref), null, null);
+            } else {
+                new File(ref).delete();
+            }
+        } catch (Exception ignored) {}
     }
 
     /** Copies an app's APK (or base + splits as a .apks bundle) to Downloads. Result via window.onApkExtracted(json). */
@@ -1516,6 +2248,7 @@ public class MainActivity extends Activity {
             @Override
             public void run() {
                 JSONObject res = new JSONObject();
+                Object[] target = null;
                 try {
                     res.put("pkg", pkg);
                     PackageManager pm = getPackageManager();
@@ -1526,7 +2259,6 @@ public class MainActivity extends Activity {
                     String label = pm.getApplicationLabel(ai).toString();
                     String base = (label.isEmpty() ? pkg : label) + "_" + (pi.versionName != null ? pi.versionName : String.valueOf(versionCodeOf(pi)));
                     long total = 0;
-                    Object[] target;
                     if (files.length == 1) {
                         target = openDownloadOutput(base + ".apk", "application/vnd.android.package-archive", "APKs");
                         OutputStream out = (OutputStream) target[0];
@@ -1552,9 +2284,12 @@ public class MainActivity extends Activity {
                     }
                     res.put("ok", true);
                     res.put("path", target[1]);
+                    res.put("ref", target[2]);
+                    res.put("mime", files.length == 1 ? "application/vnd.android.package-archive" : "application/octet-stream");
                     res.put("bytes", total);
                     res.put("splits", files.length);
                 } catch (Exception e) {
+                    deleteDownloadTarget(target);
                     try {
                         res.put("ok", false);
                         res.put("error", e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
@@ -1582,7 +2317,7 @@ public class MainActivity extends Activity {
     }
 
     // Small JSON documents the UI keeps between launches (remembered filters, debloat history)
-    private static final java.util.Set<String> UI_STORE_KEYS = new HashSet<String>(java.util.Arrays.asList("ui_state", "debloat_history"));
+    private static final java.util.Set<String> UI_STORE_KEYS = new HashSet<String>(java.util.Arrays.asList("ui_state", "debloat_history", "profiles", "seen_version"));
 
     private int systemColor(String name) {
         int id = getResources().getIdentifier(name, "color", "android");
@@ -1929,6 +2664,67 @@ public class MainActivity extends Activity {
             return output != null ? output : "";
         }
 
+        /** The profile whose apps the user wants to be told about when they come back ("" = none). */
+        @JavascriptInterface
+        public void setWatchedProfile(final String name) {
+            // No separate baseline write needed here: this bridge method only exists once the WebView is up,
+            // which means onCreate's non-headless branch has already run this launch and recorded "app_fp" -
+            // the exact value BootReceiver falls back to when it has no baseline of its own yet.
+            prefs.edit().putString("watched_profile", name == null ? "" : name).apply();
+            if (name != null && !name.isEmpty() && Build.VERSION.SDK_INT >= 33
+                    && checkSelfPermission("android.permission.POST_NOTIFICATIONS") != PackageManager.PERMISSION_GRANTED) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, 5043);
+                    }
+                });
+            }
+        }
+
+        /** Saved list used by the Quick Settings tile and the widget ("" = none). */
+        @JavascriptInterface
+        public void setQuickList(String id) {
+            prefs.edit().putString("quick_list_id", id == null ? "" : id).apply();
+            QuickWidgetProvider.refreshAll(MainActivity.this);
+        }
+
+        @JavascriptInterface
+        public String getQuickList() {
+            return prefs.getString("quick_list_id", "");
+        }
+
+        /** The changelog bundled into the APK by build.sh (empty if the build did not include it). */
+        @JavascriptInterface
+        public String getChangelog() {
+            try {
+                InputStream in = getAssets().open("changelog.md");
+                java.io.ByteArrayOutputStream buf = new java.io.ByteArrayOutputStream();
+                byte[] b = new byte[8192];
+                int n;
+                while ((n = in.read(b)) > 0) buf.write(b, 0, n);
+                in.close();
+                return buf.toString("UTF-8");
+            } catch (Exception e) {
+                return "";
+            }
+        }
+
+        @JavascriptInterface
+        public String getAppVersion() {
+            try {
+                PackageInfo pi = getPackageManager().getPackageInfo(getPackageName(), 0);
+                JSONObject o = new JSONObject();
+                o.put("versionName", pi.versionName);
+                o.put("versionCode", versionCodeOf(pi));
+                o.put("firstInstallTime", pi.firstInstallTime);
+                o.put("lastUpdateTime", pi.lastUpdateTime);
+                return o.toString();
+            } catch (Exception e) {
+                return "{}";
+            }
+        }
+
         @JavascriptInterface
         public String getSystemInfo() {
             try {
@@ -1939,6 +2735,7 @@ public class MainActivity extends Activity {
                 obj.put("sdk", Build.VERSION.SDK_INT);
                 obj.put("release", Build.VERSION.RELEASE);
                 obj.put("materialYou", Build.VERSION.SDK_INT >= 31);
+                obj.put("buildChanged", buildChangedThisLaunch);
                 return obj.toString();
             } catch (Exception e) {
                 return "{}";
@@ -2040,6 +2837,10 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public String executeAppAction(String action, String pkg) {
             try {
+                // Every legitimate caller gets pkg from PackageManager, but a saved/quick list is free-form
+                // text the user typed; everything below concatenates pkg into a shell command (or a monkey
+                // fallback), so refuse anything that isn't a well-formed package name before it gets there.
+                if (!BackupScripts.isPackageName(pkg)) return "Error: \"" + pkg + "\" is not a valid package name";
                 if ("freeze".equals(action)) return executeShell("pm disable-user " + pkg);
                 if ("unfreeze".equals(action)) {
                     executeShell("pm enable " + pkg);
@@ -2369,10 +3170,12 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
-        public void saveStore(String key, String json) {
+        public boolean saveStore(String key, String json) {
             if (UI_STORE_KEYS.contains(key) && json != null && json.length() < 512 * 1024) {
                 prefs.edit().putString("store_" + key, json).apply();
+                return true;
             }
+            return false; // too large or not an allowed key: the page shows an error instead of losing the data silently
         }
 
         @JavascriptInterface
@@ -2492,6 +3295,71 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public boolean hasRoot() {
+            return isRootAvailable();
+        }
+
+        /** Backs up an app to Download/ADB App Manager/Backups. Progress and result arrive as JS callbacks. */
+        @JavascriptInterface
+        public void backupApp(String pkg, boolean includeData) {
+            runBackup(pkg, includeData);
+        }
+
+        @JavascriptInterface
+        public void restoreBackup(String ref, boolean restoreData) {
+            runRestore(ref, restoreData);
+        }
+
+        /** Backups made by this app that still exist, newest first. */
+        @JavascriptInterface
+        public String getBackups() {
+            JSONArray index = backupIndex();
+            JSONArray keep = new JSONArray();
+            try {
+                for (int i = 0; i < index.length(); i++) {
+                    JSONObject rec = index.getJSONObject(i);
+                    if (backupExists(rec.optString("ref"))) keep.put(rec);
+                }
+                if (keep.length() != index.length()) prefs.edit().putString("backups_index", keep.toString()).apply();
+            } catch (Exception e) {
+                return index.toString();
+            }
+            return keep.toString();
+        }
+
+        @JavascriptInterface
+        public String deleteBackup(String ref) {
+            try {
+                boolean ok;
+                if (ref != null && ref.startsWith("content://")) ok = getContentResolver().delete(Uri.parse(ref), null, null) > 0;
+                else ok = ref != null && new File(ref).delete();
+                JSONArray index = backupIndex();
+                JSONArray keep = new JSONArray();
+                for (int i = 0; i < index.length(); i++) {
+                    if (!index.getJSONObject(i).optString("ref").equals(ref)) keep.put(index.get(i));
+                }
+                prefs.edit().putString("backups_index", keep.toString()).apply();
+                return ok ? "" : "Error: could not delete the file (it may already be gone)";
+            } catch (Exception e) {
+                return "Error: " + e.getMessage();
+            }
+        }
+
+        /** Lets the user choose a .adbbackup file (for example from another phone). Answer: window.onBackupPicked(json). */
+        @JavascriptInterface
+        public void pickBackupFile() {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                    i.addCategory(Intent.CATEGORY_OPENABLE);
+                    i.setType("*/*");
+                    startActivityForResult(i, REQ_PICK_BACKUP);
+                }
+            });
+        }
+
+        @JavascriptInterface
         public void extractApk(String pkg) {
             runExtractApk(pkg);
         }
@@ -2580,6 +3448,88 @@ public class MainActivity extends Activity {
             return prefs.getString("custom_app_lists", "[]");
         }
 
+        /** Opens the Android share sheet with plain text (package lists, versions, manifests). */
+        @JavascriptInterface
+        public void shareText(final String subject, final String text) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Intent send = new Intent(Intent.ACTION_SEND);
+                        send.setType("text/plain");
+                        send.putExtra(Intent.EXTRA_SUBJECT, subject == null ? "" : subject);
+                        send.putExtra(Intent.EXTRA_TEXT, text == null ? "" : text);
+                        startActivity(Intent.createChooser(send, "Share"));
+                    } catch (Exception e) {
+                        Log.e(TAG, "shareText failed", e);
+                    }
+                }
+            });
+        }
+
+        /** Writes text to a private cache file and shares it as an attachment (CSV, XML, JSON). Returns "" or "Error: ...". */
+        @JavascriptInterface
+        public String shareTextFile(String fileName, String text, String mime) {
+            try {
+                File f = ShareProvider.newShareFile(MainActivity.this, fileName);
+                OutputStream out = new FileOutputStream(f);
+                try {
+                    out.write((text == null ? "" : text).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                } finally {
+                    out.close();
+                }
+                shareUri(ShareProvider.uriFor(f), mime == null || mime.isEmpty() ? "text/plain" : mime, f.getName());
+                return "";
+            } catch (Exception e) {
+                return "Error: " + e.getMessage();
+            }
+        }
+
+        /** Shares a file this app saved to Downloads (a content:// reference, or a file path on Android 9 and older). */
+        @JavascriptInterface
+        public String shareStoredFile(String ref, String mime, String name) {
+            try {
+                Uri uri;
+                if (ref != null && ref.startsWith("content://")) {
+                    uri = Uri.parse(ref);
+                } else {
+                    File src = new File(ref);
+                    File copy = ShareProvider.newShareFile(MainActivity.this, name != null ? name : src.getName());
+                    java.io.FileOutputStream out = new java.io.FileOutputStream(copy);
+                    try {
+                        copyFile(src, out);
+                    } finally {
+                        out.close();
+                    }
+                    uri = ShareProvider.uriFor(copy);
+                }
+                shareUri(uri, mime == null || mime.isEmpty() ? "application/octet-stream" : mime, name);
+                return "";
+            } catch (Exception e) {
+                return "Error: " + e.getMessage();
+            }
+        }
+
+        private void shareUri(final Uri uri, final String mime, final String name) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Intent send = new Intent(Intent.ACTION_SEND);
+                        send.setType(mime);
+                        send.putExtra(Intent.EXTRA_STREAM, uri);
+                        if (name != null) send.putExtra(Intent.EXTRA_SUBJECT, name);
+                        send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                        Intent chooser = Intent.createChooser(send, "Share");
+                        chooser.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                        startActivity(chooser);
+                    } catch (Exception e) {
+                        Log.e(TAG, "share failed", e);
+                    }
+                }
+            });
+        }
+
         @JavascriptInterface
         public void copyToClipboard(final String text) {
             runOnUiThread(new Runnable() {
@@ -2663,6 +3613,14 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        if (isHeadless()) return;
+        String saved = prefs.getString("working_mode", activeWorkingMode);
+        if (!saved.equals(activeWorkingMode)) {
+            // A tile or the widget switched the mode while the app was in the background
+            activeWorkingMode = saved;
+            cachedAutoMode = null;
+            notifyJs("window.checkAllWorkingModes && window.checkAllWorkingModes(false)");
+        }
         notifyJs("window.onAppResume && window.onAppResume()");
     }
 

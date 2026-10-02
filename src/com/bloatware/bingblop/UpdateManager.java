@@ -31,6 +31,24 @@ public final class UpdateManager {
         void onProgress(long done, long total);
     }
 
+    // The two regexes from the Obtainium catalog (versionExtractionRegEx, apkFilterRegEx) are the only
+    // ones in this file matched against untrusted, network-supplied patterns - a community catalog entry
+    // or a self-hosted source - so a syntactically valid but catastrophically-backtracking pattern must
+    // not be able to hang or exhaust the caller. A timeout around java.util.regex was tried first, twice:
+    // a shared thread pool meant a couple of stuck matches could permanently occupy every worker and block
+    // every later, unrelated match; a fresh thread per attempt fixed that but still leaked one unkillable,
+    // permanently-backtracking thread per hostile match, and pickApk calls this once per APK asset on every
+    // update check, so a single bad catalog entry could still leak an unbounded number of threads over time
+    // and eventually exhaust the process. Neither is a real fix, because java.util.regex's backtracking
+    // engine has no actual bound on a pattern's running time. RE2J (com.google.re2j, bundled in libs/) is a
+    // different engine - automaton-based, not backtracking - that is linear-time in the input length for
+    // any pattern it accepts, by construction; there is no pathological input to guard against, so matching
+    // these two regexes runs directly and synchronously with it, no thread or timeout machinery needed.
+    // It doesn't support backreferences or lookaround, which is exactly the handful of constructs that make
+    // catastrophic backtracking possible in the first place; an unsupported pattern throws a checked
+    // exception, already caught at both call sites below, falling back to "no transformation"/"no filter"
+    // rather than failing unsafely.
+
     /** Device identity Samsung's service uses to pick the right build for this phone and region. */
     public static final class Device {
         public final String model, mcc, mnc, csc;
@@ -86,6 +104,10 @@ public final class UpdateManager {
         }
     }
 
+    // No real update APK comes anywhere near this; it exists so an open-ended or misbehaving response
+    // (no Content-Length to check completeness against) can't fill the phone's storage.
+    private static final long MAX_DOWNLOAD_BYTES = 2L * 1024 * 1024 * 1024;
+
     public static void download(String url, File dest, Progress progress) throws Exception {
         HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
         File tmp = new File(dest.getParentFile(), dest.getName() + ".part");
@@ -105,8 +127,9 @@ public final class UpdateManager {
             int n;
             try {
                 while ((n = in.read(buf)) > 0) {
-                    out.write(buf, 0, n);
                     done += n;
+                    if (done > MAX_DOWNLOAD_BYTES) throw new IllegalStateException("download is far larger than any real update; stopped");
+                    out.write(buf, 0, n);
                     if (progress != null && done - lastReport > 256 * 1024) {
                         lastReport = done;
                         progress.onProgress(done, total);
@@ -116,7 +139,10 @@ public final class UpdateManager {
                 in.close();
                 out.close();
             }
-            if (total > 0 && done != total) throw new IllegalStateException("download incomplete");
+            // A known total must match exactly; an unknown one (no Content-Length, e.g. chunked) at least
+            // must not be empty - the caller verifies the actual package/version/signature before installing
+            // anything, so this only guards against treating a trivially-empty or truncated stream as success.
+            if (total > 0 ? done != total : done == 0) throw new IllegalStateException("download incomplete");
             if (dest.exists()) dest.delete();
             if (!tmp.renameTo(dest)) throw new IllegalStateException("could not save download");
             if (progress != null) progress.onProgress(done, total);
@@ -163,7 +189,7 @@ public final class UpdateManager {
         String url = STUB_BASE + "stubDownload.as?appId=" + enc(pkg) + d.query();
         String xml = new String(httpGet(url, null, 256 * 1024), "UTF-8");
         String uri = xmlTag(xml, "downloadURI");
-        if (uri.isEmpty() || !uri.startsWith("http")) {
+        if (uri.isEmpty() || !uri.startsWith("https://")) {
             String msg = xmlTag(xml, "resultMsg");
             throw new IllegalStateException("Galaxy Store gave no download link" + (msg.isEmpty() ? "" : ": " + msg));
         }
@@ -389,7 +415,7 @@ public final class UpdateManager {
     public static String extractVersion(String tag, String regex, String group) {
         if (regex == null || regex.isEmpty()) return tag;
         try {
-            Matcher m = Pattern.compile(regex).matcher(tag);
+            com.google.re2j.Matcher m = com.google.re2j.Pattern.compile(regex).matcher(tag);
             if (!m.find()) return tag;
             int g = 0;
             try {
@@ -408,9 +434,9 @@ public final class UpdateManager {
     public static String[] pickApk(java.util.List<String[]> assets, String filterRegex, boolean invertFilter, String[] abis) {
         String[] best = null;
         int bestScore = Integer.MIN_VALUE;
-        Pattern filter = null;
+        com.google.re2j.Pattern filter = null;
         try {
-            if (filterRegex != null && !filterRegex.isEmpty()) filter = Pattern.compile(filterRegex);
+            if (filterRegex != null && !filterRegex.isEmpty()) filter = com.google.re2j.Pattern.compile(filterRegex);
         } catch (Exception ignored) {}
         String primary = abis != null && abis.length > 0 ? abis[0].toLowerCase() : "arm64-v8a";
         for (String[] a : assets) {

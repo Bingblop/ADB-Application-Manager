@@ -1,0 +1,127 @@
+package com.bloatware.bingblop;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+/**
+ * Shell scripts and parsers for app backup and restore. No Android dependencies, so the scripts can be
+ * run against a fake /data tree on a normal Linux machine.
+ *
+ * App data is only reachable as Root: the scripts run through `su -c`. A backup can come from any file
+ * the user picks, so the restore script refuses archives that could write outside the app's own folders
+ * (other paths, "..", hard links, or links pointing elsewhere) before it touches anything.
+ */
+final class BackupScripts {
+
+    // At least one dotted-and-letter-led segment; "android" itself (returned by PackageManager for
+    // several framework-owned permissions and components) is a real, valid single-segment package name.
+    private static final Pattern PACKAGE = Pattern.compile("[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z0-9_]+)*");
+    private static final Pattern PERMISSION = Pattern.compile("[A-Za-z][A-Za-z0-9_.]*");
+    private static final Pattern APP_OP = Pattern.compile("^([A-Z][A-Z0-9_]+):\\s*(allow|ignore|deny|foreground)\\b", Pattern.MULTILINE);
+    private static final Pattern SESSION = Pattern.compile("\\[(\\d+)\\]");
+
+    private BackupScripts() {}
+
+    static boolean isPackageName(String pkg) {
+        return pkg != null && PACKAGE.matcher(pkg).matches();
+    }
+
+    static String checkedPackage(String pkg) {
+        if (!isPackageName(pkg)) throw new IllegalArgumentException("invalid package name");
+        return pkg;
+    }
+
+    static boolean isPermission(String s) {
+        return s != null && PERMISSION.matcher(s).matches();
+    }
+
+    /** Single-quotes a value for sh. */
+    static String quote(String s) {
+        return "'" + s.replace("'", "'\\''") + "'";
+    }
+
+    /** Root script: archives the app's data folders into outFile and hands the file to ownerUid. Prints OK on success. */
+    static String dataBackup(String dataRoot, String pkg, String outFile, int ownerUid) {
+        checkedPackage(pkg);
+        return ""
+            + "cd " + quote(dataRoot) + " || { echo 'ERROR: cannot open the data folder'; exit 2; }\n"
+            + "am force-stop " + pkg + " >/dev/null 2>&1\n"
+            + "paths=''\n"
+            + "[ -d user/0/" + pkg + " ] && paths=\"$paths user/0/" + pkg + "\"\n"
+            + "[ -d user_de/0/" + pkg + " ] && paths=\"$paths user_de/0/" + pkg + "\"\n"
+            + "[ -n \"$paths\" ] || { echo 'ERROR: " + pkg + " has no data folder'; exit 3; }\n"
+            + "rm -f " + quote(outFile) + "\n"
+            + "tar -cf " + quote(outFile) + " $paths >/dev/null 2>&1; rc=$?\n"
+            // tar's own exit codes: 0 ok, 1 "some files differ" (e.g. a file changed while being read -
+            // recoverable, the archive is still usable). Anything else is a real failure (I/O error, out of
+            // space, ...) and the partial file it may have produced must not be kept as if it were a backup.
+            + "if [ $rc -gt 1 ]; then rm -f " + quote(outFile) + "; echo \"ERROR: tar failed ($rc)\"; exit 4; fi\n"
+            + "[ -s " + quote(outFile) + " ] || { echo 'ERROR: tar produced no output'; exit 4; }\n"
+            + "chown " + ownerUid + ":" + ownerUid + " " + quote(outFile) + " && chmod 600 " + quote(outFile) + "\n"
+            + "[ $rc -eq 0 ] || echo 'WARN: some files changed while being read; the backup may be incomplete'\n"
+            + "echo OK\n";
+    }
+
+    /**
+     * Root script: replaces the app's data with the archive. The app must already be installed (its folder
+     * gives the uid). Everything is checked before anything is deleted. Prints OK on success.
+     */
+    static String dataRestore(String dataRoot, String pkg, String tarFile) {
+        checkedPackage(pkg);
+        String re = "^(user/0|user_de/0)/" + pkg.replace(".", "\\.") + "(/|$)";
+        String t = quote(tarFile);
+        return ""
+            + "cd " + quote(dataRoot) + " || { echo 'ERROR: cannot open the data folder'; exit 2; }\n"
+            + "uid=$(stat -c %u user/0/" + pkg + " 2>/dev/null)\n"
+            + "[ -n \"$uid\" ] || { echo 'ERROR: " + pkg + " is not installed for this user'; exit 2; }\n"
+            + "[ -s " + t + " ] || { echo 'ERROR: the backup has no data'; exit 3; }\n"
+            + "tar -tf " + t + " >/dev/null 2>&1 || { echo 'ERROR: the data archive is damaged'; exit 5; }\n"
+            // Only this app's own folders, nothing with a parent-directory step, no hard links,
+            // and links only when they point inside (relative, without ..)
+            + "if tar -tf " + t + " | grep -v -E '" + re + "' | grep -q .; then echo 'ERROR: the archive has files outside this app'; exit 6; fi\n"
+            + "if tar -tf " + t + " | grep -q -E '(^|/)\\.\\.(/|$)'; then echo 'ERROR: the archive has unsafe paths'; exit 6; fi\n"
+            + "if tar -tvf " + t + " | grep -q -E '^h'; then echo 'ERROR: the archive has hard links'; exit 6; fi\n"
+            + "if tar -tvf " + t + " | grep -q -E '^[bcp]'; then echo 'ERROR: the archive has device or FIFO entries'; exit 6; fi\n"
+            + "if tar -tvf " + t + " | grep -E '^l' | grep -q -E -- ' -> (/|.*\\.\\.)'; then echo 'ERROR: the archive has links that point outside the app'; exit 6; fi\n"
+            + "am force-stop " + pkg + " >/dev/null 2>&1\n"
+            // The app's current data must survive any failure from here on, so it's moved aside rather than
+            // deleted: a disk-full or interrupted extraction (the preceding checks can't rule those out)
+            // used to delete the real data first and only then discover extraction had failed, leaving the
+            // app with nothing at all instead of its original data plus a clean error.
+            + "restore_rollback() { for d in user/0/" + pkg + " user_de/0/" + pkg + "; do rm -rf \"$d\"; [ -d \"$d.restorebak\" ] && mv \"$d.restorebak\" \"$d\"; done; }\n"
+            + "for d in user/0/" + pkg + " user_de/0/" + pkg + "; do rm -rf \"$d.restorebak\"; [ -d \"$d\" ] && mv \"$d\" \"$d.restorebak\"; done\n"
+            + "mkdir -p user/0/" + pkg + " user_de/0/" + pkg + "\n"
+            + "tar -xf " + t + " -C " + quote(dataRoot) + " >/dev/null 2>&1; rc=$?\n"
+            + "[ $rc -eq 0 ] || { restore_rollback; echo \"ERROR: extracting failed ($rc)\"; exit 4; }\n"
+            + "fail=0\n"
+            + "for d in user/0/" + pkg + " user_de/0/" + pkg + "; do if [ -d \"$d\" ]; then chown -R $uid:$uid \"$d\" || fail=1; restorecon -RF \"$d\" >/dev/null 2>&1 || fail=1; fi; done\n"
+            + "[ \"$fail\" -eq 0 ] || { restore_rollback; echo 'ERROR: could not restore ownership or SELinux labels on the restored data'; exit 7; }\n"
+            + "for d in user/0/" + pkg + " user_de/0/" + pkg + "; do rm -rf \"$d.restorebak\"; done\n"
+            + "echo OK\n";
+    }
+
+    /** "Success: created install session [1234]" -> "1234", or null. */
+    static String parseSessionId(String output) {
+        if (output == null) return null;
+        Matcher m = SESSION.matcher(output);
+        return m.find() ? m.group(1) : null;
+    }
+
+    /**
+     * From `cmd appops get <pkg>`: every op it reports. Android only persists and prints an op here once
+     * something has explicitly set it away from its own baseline, so every line - including "allow" on an
+     * op that doesn't default to it (for example a dangerous permission grant also flips its app op to
+     * allow) - is a real override the user made, not just "the normal state", and is worth restoring.
+     */
+    static Map<String, String> changedAppOps(String output) {
+        Map<String, String> ops = new LinkedHashMap<String, String>();
+        if (output == null) return ops;
+        Matcher m = APP_OP.matcher(output);
+        while (m.find()) {
+            ops.put(m.group(1), m.group(2));
+        }
+        return ops;
+    }
+}

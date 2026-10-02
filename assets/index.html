@@ -67,6 +67,41 @@
             user-select: none;
         }
 
+        .copy-chip, .find-nav, .profile-btn { -webkit-user-select: none; user-select: none; }
+        .copy-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+        .copy-chip {
+            border: 1px solid var(--border); background: var(--bg-card, transparent); color: var(--text-main);
+            font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 12px; cursor: pointer;
+        }
+        .copy-chip:active { transform: scale(0.96); }
+        .find-bar { display: flex; align-items: center; gap: 6px; margin: 8px 0; }
+        .find-bar .list-search { flex: 1; min-width: 0; margin: 0; }
+        .find-nav {
+            border: 1px solid var(--border); background: transparent; color: var(--text-main);
+            border-radius: 10px; padding: 6px 10px; font-size: 13px; cursor: pointer;
+        }
+        mark.find-hit { background: #FFA726; color: #000; border-radius: 2px; }
+        mark.find-hit.current { background: #FF5252; color: #fff; outline: 1px solid #fff; }
+        .profile-item { border: 1px solid var(--border); border-radius: 14px; padding: 10px 12px; margin-bottom: 8px; }
+        .profile-item h4 { font-size: 14px; margin-bottom: 2px; }
+        .profile-item p { font-size: 11px; color: var(--text-muted); }
+        .profile-btn { border: 1px solid var(--border); background: transparent; color: var(--text-main); border-radius: 10px; padding: 5px 10px; font-size: 11px; font-weight: 700; cursor: pointer; margin: 6px 6px 0 0; }
+        .profile-btn.accent { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .profile-btn.danger { color: var(--status-danger, #FF5252); }
+        .profile-preview { font-size: 12px; line-height: 1.5; padding: 8px 10px; border-radius: 10px; background: var(--accent-glow); margin-top: 8px; }
+        .whatsnew-body h4 { font-size: 15px; font-weight: 800; color: var(--accent); margin: 14px 0 6px; }
+        .whatsnew-body h5 { font-size: 12px; font-weight: 800; margin: 10px 0 4px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .4px; }
+        .whatsnew-body ul { margin: 0 0 6px 18px; padding: 0; }
+        .whatsnew-body li { font-size: 12.5px; line-height: 1.5; margin-bottom: 5px; }
+        .whatsnew-body p { font-size: 12px; color: var(--text-muted); margin: 4px 0; }
+        .whatsnew-body code { font-family: monospace; font-size: 11.5px; background: var(--accent-glow); padding: 0 4px; border-radius: 4px; }
+        .backup-item { border: 1px solid var(--border); border-radius: 14px; padding: 10px 12px; margin-bottom: 8px; }
+        .backup-item h4 { font-size: 14px; margin-bottom: 2px; }
+        .backup-item p { font-size: 11px; color: var(--text-muted); }
+        .backup-bar { height: 8px; border-radius: 6px; background: var(--accent-glow); overflow: hidden; margin-top: 8px; }
+        .backup-bar > div { height: 100%; width: 0; background: var(--accent); transition: width .3s; }
+        .backup-note { font-size: 12px; line-height: 1.5; padding: 8px 10px; border-radius: 10px; background: var(--accent-glow); margin-top: 8px; }
+        .backup-note.err { background: rgba(255, 82, 82, 0.15); }
         ::selection {
             background: var(--accent-glow);
             color: var(--text-main);
@@ -1993,6 +2028,7 @@
             align-items: center;
             gap: 8px;
             margin: -4px 0 10px;
+            flex-wrap: wrap;
         }
 
         .apps-sort-label {
@@ -2003,7 +2039,7 @@
 
         .apps-sort-select {
             flex: 1;
-            min-width: 0;
+            min-width: 120px;
         }
 
         .app-meta-line {
@@ -2062,6 +2098,17 @@
                 <button class="mode-alert-btn" onclick="openWorkingModesModal()">Set Up ⚡</button>
             </div>
             
+            <!-- A watched profile has drifted (e.g. bloatware came back after a system update) -->
+            <div class="mode-alert-card" id="driftBanner" style="display:none;">
+                <div class="mode-alert-icon">👁️</div>
+                <div class="mode-alert-body">
+                    <div class="mode-alert-title" id="driftTitle"></div>
+                    <div class="mode-alert-desc" id="driftDesc"></div>
+                </div>
+                <button class="mode-alert-btn" onclick="reviewDrift()">Review</button>
+                <button class="mode-alert-btn" onclick="dismissDrift()" style="margin-left:6px;">✕</button>
+            </div>
+
             <!-- Live Statistics Grid -->
             <div class="stats-grid">
                 <div class="stat-card" onclick="setFilter('all')">
@@ -2107,6 +2154,9 @@
                     <option value="updates">Updates first</option>
                 </select>
                 <button class="mode-action-btn" onclick="exportAppList()">📤 Export</button>
+                <button class="mode-action-btn" onclick="exportAppList(true)">📨 Share CSV</button>
+                <button class="mode-action-btn" onclick="openProfiles()">🗂️ Profiles</button>
+                <button class="mode-action-btn" onclick="openBackups()">🗄️ Backups</button>
             </div>
 
             <div class="filter-scroll">
@@ -2221,6 +2271,11 @@
         </section>
 
         <section id="view-saved-lists" class="view-content">
+            <div class="color-card" id="quickActionsHelp">
+                <div class="color-card-title">⚡ Quick actions</div>
+                <div class="color-card-subtitle">Tap <b>🛑 Quick list</b> on a list, then add the tiles or the widget: swipe down twice, tap ✏️ and drag <b>Working mode</b> and <b>Stop apps</b> into your panel; or long-press the home screen → Widgets → ADB App Manager. They run without opening the app.</div>
+            </div>
+
             <div style="margin-bottom:14px;">
                 <h3 style="font-size:15px; font-weight:800; margin-bottom:4px;">Saved App Lists</h3>
                 <p style="font-size:11px; color:var(--text-muted);">Create reusable named app selections, recall them instantly, edit packages, or delete old lists.</p>
@@ -2442,6 +2497,16 @@
                     </label>
                 </div>
             </div>
+        
+            <div class="color-card" id="aboutCard">
+                <div class="color-card-title">ℹ️ About</div>
+                <div class="color-card-subtitle" id="aboutVersion">ADB Application Manager Pro</div>
+                <div class="mode-btn-row" style="margin-top:10px;">
+                    <button class="mode-action-btn" onclick="openWhatsNew({ max: 3 })">✨ What's new</button>
+                    <button class="mode-action-btn" onclick="openUrlExternal('https://github.com/Bingblop/ADB-Application-Manager/releases')">⬇️ Releases</button>
+                    <button class="mode-action-btn" onclick="openUrlExternal('https://github.com/Bingblop/ADB-Application-Manager/issues')">🐞 Report an issue</button>
+                </div>
+            </div>
         </section>
 
         <!-- VIEW 4: ADB CONSOLE -->
@@ -2464,6 +2529,14 @@
                 </div>
             </div>
 
+            <div class="find-bar">
+                <input type="text" class="list-search" id="termSearch" placeholder="Find in output..." oninput="termFind(0)" autocomplete="off" autocapitalize="off" spellcheck="false">
+                <span class="manifest-meta" id="termFindCount"></span>
+                <button class="find-nav" onclick="termFind(-1)">▲</button>
+                <button class="find-nav" onclick="termFind(1)">▼</button>
+                <button class="find-nav" onclick="copyTerminal()">📋</button>
+                <button class="find-nav" onclick="shareTerminal()">📤</button>
+            </div>
             <div class="terminal-box" id="termOutput">ADB Application Manager Shell Terminal Ready.
 Type any command below (e.g. pm list packages -d)
 </div>
@@ -2490,6 +2563,10 @@ Type any command below (e.g. pm list packages -d)
         </div>
         <div class="batch-save-row">
             <button class="batch-grid-btn accent" onclick="openSaveSelectedModal()">💾 Save to List</button>
+            <div class="copy-row">
+                <button class="batch-grid-btn" onclick="copySelectedPackages()">📋 Copy Packages</button>
+                <button class="batch-grid-btn" onclick="shareSelectedPackages()">📤 Share List</button>
+            </div>
         </div>
         <div class="batch-actions-grid">
             <button class="batch-grid-btn" onclick="batchAction('freeze')">❄️ Freeze</button>
@@ -2524,6 +2601,81 @@ Type any command below (e.g. pm list packages -d)
         </div>
     </div>
 
+    <!-- Backup and restore -->
+    <div class="modal-overlay" id="backupsModal" onclick="if(event.target===this) closeBackups()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-avatar" style="background:linear-gradient(135deg, var(--accent), var(--secondary));">🗄️</div>
+                    <div class="sheet-title">
+                        <h3>Backups</h3>
+                        <p>APK, permissions and app ops in any privileged mode. App data needs Root.</p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="closeBackups()">✕</div>
+            </div>
+            <div id="backupTarget" class="backup-item" style="display:none;"></div>
+            <div id="backupProgress" style="display:none;">
+                <div id="backupProgressText" style="font-size:12px;"></div>
+                <div class="backup-bar"><div id="backupProgressBar"></div></div>
+            </div>
+            <div id="backupResult" class="backup-note" style="display:none;"></div>
+            <div id="backupsList" style="max-height:34vh; overflow-y:auto; margin-top:10px;"></div>
+            <div id="restorePreview" class="backup-note" style="display:none;"></div>
+            <div class="mode-btn-row" style="margin-top:10px;">
+                <button class="mode-action-btn" onclick="pickBackupUI()">📂 Choose backup file…</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- What's new -->
+    <div class="modal-overlay" id="whatsNewModal" onclick="if(event.target===this) closeWhatsNew()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-avatar" style="background:linear-gradient(135deg, var(--accent), var(--secondary));">✨</div>
+                    <div class="sheet-title">
+                        <h3>What's New</h3>
+                        <p id="whatsNewSubtitle"></p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="closeWhatsNew()">✕</div>
+            </div>
+            <div id="whatsNewBody" class="whatsnew-body" style="max-height:62vh; overflow-y:auto;"></div>
+            <div class="mode-btn-row" style="margin-top:12px;">
+                <button class="mode-action-btn" onclick="openUrlExternal('https://github.com/Bingblop/ADB-Application-Manager/blob/main/CHANGELOG.md')">📖 Full changelog</button>
+                <button class="mode-action-btn primary" onclick="closeWhatsNew()">Got it</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- App profiles -->
+    <div class="modal-overlay" id="profilesModal" onclick="if(event.target===this) closeProfiles()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-avatar" style="background:linear-gradient(135deg, var(--accent), var(--secondary));">🗂️</div>
+                    <div class="sheet-title">
+                        <h3>App Profiles</h3>
+                        <p>Save which apps are disabled, suspended or uninstalled, and re-apply it later or on another phone</p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="closeProfiles()">✕</div>
+            </div>
+            <div class="find-bar">
+                <input type="text" class="list-search" id="profileName" placeholder="Profile name (e.g. Lean Samsung)" autocomplete="off">
+                <button class="find-nav" onclick="saveProfile()">💾 Save</button>
+            </div>
+            <p style="font-size:11px; color:var(--text-muted);" id="profileScopeHint"></p>
+            <div id="profilesList" style="max-height:38vh; overflow-y:auto; margin-top:8px;"></div>
+            <div id="profilePreview" class="profile-preview" style="display:none;"></div>
+            <textarea id="profileImport" class="list-search" rows="3" style="width:100%; margin-top:10px;" placeholder="Paste a shared profile here to import it" spellcheck="false"></textarea>
+            <div class="mode-btn-row" style="margin-top:8px;">
+                <button class="mode-action-btn" onclick="importProfile()">📥 Import</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Inspector Modal -->
     <div class="modal-overlay" id="inspectorModal" onclick="if(event.target===this) closeInspector()">
         <div class="modal-sheet">
@@ -2534,6 +2686,12 @@ Type any command below (e.g. pm list packages -d)
                         <h3 id="sheetTitle">App Title</h3>
                         <p id="sheetPkg">com.example.package</p>
                         <p id="sheetVersion" class="sheet-version"></p>
+                        <div class="copy-row">
+                            <span class="copy-chip" onclick="copyAppField('pkg')">📋 Package</span>
+                            <span class="copy-chip" onclick="copyAppField('version')">📋 Version</span>
+                            <span class="copy-chip" onclick="copyAppField('name')">📋 Name</span>
+                            <span class="copy-chip" onclick="shareAppInfo()">📤 Share</span>
+                        </div>
                         <p id="sheetDates" class="sheet-dates"></p>
                         <p id="sheetSizes" class="sheet-dates"></p>
                         <div id="sheetUpdateHint" class="sheet-update-hint" style="display:none;"></div>
@@ -2579,6 +2737,12 @@ Type any command below (e.g. pm list packages -d)
                 </button>
                 <button class="sheet-btn" onclick="extractApkUI()" id="sheetBtnExtract">
                     <span>📦</span><span>Extract APK</span>
+                </button>
+                <button class="sheet-btn" onclick="extractApkUI(true)" id="sheetBtnShareApk">
+                    <span>📤</span><span>Share APK</span>
+                </button>
+                <button class="sheet-btn" onclick="openBackups(inspectedPkg)" id="sheetBtnBackup">
+                    <span>💾</span><span>Backup</span>
                 </button>
             </div>
 
@@ -2657,7 +2821,11 @@ Type any command below (e.g. pm list packages -d)
                     <input type="text" class="list-search" id="manifestSearch" placeholder="Find in manifest..." oninput="renderManifest()" autocomplete="off" autocapitalize="off" spellcheck="false">
                 </div>
                 <div class="chip-row">
+                    <span class="filter-chip" onclick="manifestStep(-1)">▲</span>
+                    <span class="filter-chip" onclick="manifestStep(1)">▼</span>
+                    <span class="filter-chip active" id="manifestOnlyChip" onclick="toggleManifestOnly()">Matches only</span>
                     <span class="filter-chip" onclick="copyManifest()">📋 Copy</span>
+                    <span class="filter-chip" onclick="shareManifest()">📤 Share</span>
                     <span class="filter-chip" onclick="saveManifest()">💾 Save to Downloads</span>
                     <span class="manifest-meta" id="manifestMeta"></span>
                 </div>
@@ -3325,12 +3493,31 @@ Type any command below (e.g. pm list packages -d)
                         <div class="saved-list-pkgs">${chips || '<span class="saved-pkg-chip">No packages</span>'}${more}</div>
                         <div class="saved-list-actions">
                             <button class="apps-tool-btn" data-list-id="${listId}" onclick="recallSavedList(this.getAttribute('data-list-id'))">⚡ Recall</button>
+                            <button class="apps-tool-btn${quickListId === (list.id || '') ? ' active' : ''}" data-list-id="${listId}" onclick="toggleQuickList(this.getAttribute('data-list-id'))" title="Use this list for the Quick Settings tile and the widget">${quickListId === (list.id || '') ? '🛑 Quick list ✓' : '🛑 Quick list'}</button>
                             <button class="apps-tool-btn" data-list-id="${listId}" onclick="openListEditorModal(this.getAttribute('data-list-id'))">✏️ Edit</button>
                             <button class="apps-tool-btn" data-list-id="${listId}" onclick="copySavedList(this.getAttribute('data-list-id'))">📋 Copy</button>
                             <button class="apps-tool-btn" data-list-id="${listId}" onclick="deleteSavedList(this.getAttribute('data-list-id'))">🗑️ Delete</button>
                         </div>
                     </div>`;
             }).join('');
+        }
+
+        // The list the "Stop apps" Quick Settings tile and the home-screen widget force-stop
+        let quickListId = '';
+        function loadQuickList() {
+            try {
+                quickListId = (window.AndroidBridge && window.AndroidBridge.getQuickList && window.AndroidBridge.getQuickList()) || '';
+            } catch (e) { quickListId = ''; }
+        }
+
+        function toggleQuickList(id) {
+            haptic();
+            if (!window.AndroidBridge || !window.AndroidBridge.setQuickList) { showToast('Quick actions are only available in the app', 'ℹ️'); return; }
+            quickListId = quickListId === id ? '' : id;
+            window.AndroidBridge.setQuickList(quickListId);
+            renderSavedLists();
+            const l = customLists.find(x => x.id === quickListId);
+            showToast(l ? `"${l.name}" is now the quick list. Add the "Stop apps" tile or the widget to use it.` : 'Quick list cleared', '🛑');
         }
 
         function openListEditorModal(listId) {
@@ -3362,6 +3549,13 @@ Type any command below (e.g. pm list packages -d)
             const idx = customLists.findIndex(l => l.id === payload.id);
             if (idx >= 0) customLists[idx] = payload; else customLists.unshift(payload);
             persistSavedLists();
+            // The widget/tile always force-stops the CURRENT packages for this id (looked up fresh, not a
+            // snapshot), so editing the active quick list is never functionally stale - but the widget's own
+            // displayed label (app count) only repaints when setQuickList runs, so nudge it now instead of
+            // leaving a stale count on the home screen until Android's next periodic widget update.
+            if (payload.id === quickListId && window.AndroidBridge && window.AndroidBridge.setQuickList) {
+                window.AndroidBridge.setQuickList(quickListId);
+            }
             renderSavedLists();
             closeListEditorModal();
             showToast('Saved list: ' + name, '✔');
@@ -3432,6 +3626,13 @@ Type any command below (e.g. pm list packages -d)
         function confirmDeleteList() {
             if (!pendingDeleteListId) return;
             customLists = customLists.filter(l => l.id !== pendingDeleteListId);
+            // Clear the quick list (native pref + widget label) if the deleted list was it, the same way
+            // deleteProfile already clears the watched profile - otherwise quick_list_id keeps pointing at
+            // a list that no longer exists.
+            if (pendingDeleteListId === quickListId) {
+                quickListId = '';
+                if (window.AndroidBridge && window.AndroidBridge.setQuickList) window.AndroidBridge.setQuickList('');
+            }
             pendingDeleteListId = null;
             persistSavedLists();
             renderSavedLists();
@@ -4122,10 +4323,12 @@ Type any command below (e.g. pm list packages -d)
             }
         }
 
+        // true unless the app reported that it could not keep the data (for example, it is too large)
         function saveStoreJson(key, value) {
             try {
-                if (window.AndroidBridge && window.AndroidBridge.saveStore) window.AndroidBridge.saveStore(key, JSON.stringify(value));
+                if (window.AndroidBridge && window.AndroidBridge.saveStore) return window.AndroidBridge.saveStore(key, JSON.stringify(value)) !== false;
             } catch (e) {}
+            return true;
         }
 
         function saveUiState() {
@@ -4244,7 +4447,8 @@ Type any command below (e.g. pm list packages -d)
             showToast('Undoing ' + items.length + ' actions...', '↺');
             setTimeout(() => {
                 const rows = [];
-                items.forEach(i => {
+                // Newest step first, so a profile run that touched one app twice is unwound in the right order
+                items.slice().reverse().forEach(i => {
                     const undo = UNDO_ACTION[i.action];
                     performDetailedBatchAction(undo, [i.pkg]).rows.forEach(r => rows.push({ pkg: i.pkg, name: i.name, action: undo, success: r.success, output: r.output, removal: i.removal }));
                 });
@@ -4704,7 +4908,7 @@ Type any command below (e.g. pm list packages -d)
         }
 
         // Every app (not just the filtered view) with version, dates, state and size
-        function exportAppList() {
+        function exportAppList(share) {
             haptic();
             if (!allApps.length) { showToast('No apps loaded yet', 'ℹ️'); return; }
             const iso = ms => ms ? new Date(ms).toISOString().slice(0, 10) : '';
@@ -4716,6 +4920,7 @@ Type any command below (e.g. pm list packages -d)
             });
             const csv = rows.map(r => r.map(csvCell).join(',')).join('\n') + '\n';
             const name = 'app_list_' + new Date().toISOString().slice(0, 10) + '.csv';
+            if (share) { shareFileViaBridge(name, csv, 'text/csv'); return; }
             if (window.AndroidBridge && window.AndroidBridge.saveTextToDownloads) {
                 const res = window.AndroidBridge.saveTextToDownloads(name, csv) || '';
                 showToast(res.startsWith('Error:') ? res : `Exported ${allApps.length} apps to ${res}`, res.startsWith('Error:') ? '⚠️' : '📤');
@@ -4752,16 +4957,29 @@ Type any command below (e.g. pm list packages -d)
             }
         }
 
-        function extractApkUI() {
+        // One extraction at a time: the result carries the package, and the request remembers whether to share it
+        let extractPending = null;
+        function extractApkUI(share) {
             if (!inspectedPkg || !window.AndroidBridge || !window.AndroidBridge.extractApk) return;
+            if (extractPending) { showToast('An APK is still being extracted. Try again in a moment.', 'ℹ️'); return; }
             haptic();
-            showToast('Extracting APK...', '📦');
+            const req = extractPending = { pkg: inspectedPkg, share: share === true };
+            setTimeout(() => { if (extractPending === req) extractPending = null; }, 300000);   // never block forever
+            showToast(req.share ? 'Extracting APK to share...' : 'Extracting APK...', '📦');
             window.AndroidBridge.extractApk(inspectedPkg);
         }
 
         // Called by MainActivity when the APK copy finishes
         function onApkExtracted(json) {
             const r = JSON.parse(json || '{}');
+            const req = extractPending;
+            extractPending = null;
+            if (r.ok && req && req.share && (!r.pkg || r.pkg === req.pkg)) {
+                const nm = String(r.path || '').split('/').pop();
+                const err = window.AndroidBridge && window.AndroidBridge.shareStoredFile ? window.AndroidBridge.shareStoredFile(r.ref || r.path, r.mime || 'application/octet-stream', nm) : 'Error: sharing unavailable';
+                if (err) showToast(err, '⚠️');
+                return;
+            }
             if (r.ok) {
                 showToast(`Saved ${formatBytes(r.bytes)} to ${r.path}${r.splits > 1 ? ' (split app: install the .apks with a split-APK installer such as SAI)' : ''}`, '📦');
             } else {
@@ -5029,6 +5247,7 @@ Type any command below (e.g. pm list packages -d)
                 try {
                     const sysInfoStr = window.AndroidBridge.getSystemInfo();
                     const info = JSON.parse(sysInfoStr);
+                    buildChangedThisLaunch = !!info.buildChanged;
                     if (info.device) {
                         document.getElementById('deviceInfoSubtitle').innerText = `${info.manufacturer} ${info.device} • Android ${info.release}`;
                     }
@@ -5036,6 +5255,7 @@ Type any command below (e.g. pm list packages -d)
 
                 // Load packages immediately
                 loadPackageData();
+                setTimeout(maybeShowWhatsNew, 1200);
             } else {
                 // Mock packages for preview
                 for (let i = 1; i <= 60; i++) {
@@ -5061,6 +5281,7 @@ Type any command below (e.g. pm list packages -d)
                 allApps = JSON.parse(jsonStr);
                 allApps.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
                 renderApps();
+                checkProfileDrift();
                 // A remembered "Size" sort needs full sizes, which are measured on demand
                 if (appSort === 'size' && !allSizes && window.AndroidBridge.getAllAppSizes) {
                     setTimeout(() => {
@@ -5616,7 +5837,14 @@ Type any command below (e.g. pm list packages -d)
                 .replace(/([\w.:-]+)=(&quot;)(.*?)(&quot;)/g, '<span class="x-attr">$1</span>=$2<span class="x-val">$3</span>$4');
         }
 
-        function renderManifest() {
+        let manifestOnlyMatches = true;
+        function toggleManifestOnly() {
+            manifestOnlyMatches = !manifestOnlyMatches;
+            document.getElementById('manifestOnlyChip').classList.toggle('active', manifestOnlyMatches);
+            renderManifest();
+        }
+
+        function renderManifest(dir) {
             const container = document.getElementById('manifestContainer');
             const meta = document.getElementById('manifestMeta');
             if (!manifestText) return;
@@ -5630,19 +5858,166 @@ Type any command below (e.g. pm list packages -d)
             if (!q) {
                 container.innerHTML = lines.map(highlightXmlLine).join('\n');
                 meta.innerText = lines.length + ' lines';
+                findState.manifest = { idx: -1, hits: [] };
                 return;
             }
-            // Find mode: show only matching lines with their line numbers
-            const needle = q.toLowerCase();
-            const re = new RegExp(escapeHtml(q).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-            const hits = [];
-            lines.forEach((line, i) => {
-                if (line.toLowerCase().includes(needle)) {
-                    hits.push(String(i + 1).padStart(4, ' ') + '  ' + escapeHtml(line.trim()).replace(re, m => '<mark>' + m + '</mark>'));
-                }
+            if (manifestOnlyMatches) {
+                // Only the matching lines, each with its line number
+                const needle = q.toLowerCase();
+                const hits = [];
+                lines.forEach((line, i) => {
+                    if (line.toLowerCase().includes(needle)) hits.push(String(i + 1).padStart(4, ' ') + '  ' + escapeHtml(line.trim()));
+                });
+                container.innerHTML = hits.length ? hits.join('\n') : 'No matches.';
+            } else {
+                container.innerHTML = lines.map(highlightXmlLine).join('\n');
+            }
+            runFind('manifest', container, meta, q, dir === undefined ? 0 : dir, ' lines');
+        }
+
+        function manifestStep(dir) {
+            haptic();
+            renderManifest(dir);
+        }
+
+        // ---------- Find: highlight every match with next/previous ----------
+        const findState = { manifest: { idx: -1, hits: [] }, term: { idx: -1, hits: [] } };
+
+        function clearFind(el) {
+            el.querySelectorAll('mark.find-hit').forEach(m => {
+                const parent = m.parentNode;
+                parent.replaceChild(document.createTextNode(m.textContent), m);
+                parent.normalize();
             });
-            container.innerHTML = hits.length ? hits.join('\n') : 'No matches.';
-            meta.innerText = hits.length + ' matching line' + (hits.length === 1 ? '' : 's');
+        }
+
+        function applyFind(el, q) {
+            clearFind(el);
+            if (!q) return [];
+            const needle = q.toLowerCase();
+            const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+            const nodes = [];
+            let n;
+            while ((n = walker.nextNode())) nodes.push(n);
+            const hits = [];
+            nodes.forEach(node => {
+                const text = node.nodeValue;
+                const low = text.toLowerCase();
+                let i = low.indexOf(needle);
+                if (i < 0) return;
+                const frag = document.createDocumentFragment();
+                let last = 0;
+                while (i >= 0) {
+                    frag.appendChild(document.createTextNode(text.slice(last, i)));
+                    const m = document.createElement('mark');
+                    m.className = 'find-hit';
+                    m.textContent = text.slice(i, i + q.length);
+                    frag.appendChild(m);
+                    hits.push(m);
+                    last = i + q.length;
+                    i = low.indexOf(needle, last);
+                }
+                frag.appendChild(document.createTextNode(text.slice(last)));
+                node.parentNode.replaceChild(frag, node);
+            });
+            return hits;
+        }
+
+        // dir 0: a new query (jump to the first match); +1 / -1: next / previous (wraps around)
+        function runFind(key, el, countEl, q, dir, suffix) {
+            const st = findState[key];
+            st.hits = applyFind(el, q);
+            if (!st.hits.length) {
+                st.idx = -1;
+                if (countEl) countEl.innerText = q ? '0 matches' : (suffix ? countEl.innerText : '');
+                return;
+            }
+            st.idx = dir === 0 ? 0 : (st.idx + dir + st.hits.length) % st.hits.length;
+            const cur = st.hits[st.idx];
+            cur.classList.add('current');
+            cur.scrollIntoView({ block: 'center', inline: 'nearest' });
+            if (countEl) countEl.innerText = (st.idx + 1) + ' / ' + st.hits.length + ' matches';
+        }
+
+        function termFind(dir) {
+            const term = document.getElementById('termOutput');
+            const q = (document.getElementById('termSearch').value || '').trim();
+            runFind('term', term, document.getElementById('termFindCount'), q, dir);
+        }
+
+        function termText() {
+            return document.getElementById('termOutput').innerText;
+        }
+
+        function copyTerminal() {
+            haptic();
+            if (window.AndroidBridge && window.AndroidBridge.copyToClipboard) window.AndroidBridge.copyToClipboard(termText());
+        }
+
+        function shareTerminal() {
+            haptic();
+            shareFileViaBridge('terminal_output.txt', termText(), 'text/plain');
+        }
+
+        // ---------- Copy and share ----------
+        function copyText(text) {
+            haptic();
+            if (window.AndroidBridge && window.AndroidBridge.copyToClipboard) {
+                window.AndroidBridge.copyToClipboard(text);
+            } else if (navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(() => showToast('Copied', '📋'), () => {});
+            }
+        }
+
+        function shareFileViaBridge(name, text, mime) {
+            if (!window.AndroidBridge || !window.AndroidBridge.shareTextFile) { showToast('Sharing is only available in the app', 'ℹ️'); return; }
+            const err = window.AndroidBridge.shareTextFile(name, text, mime);
+            if (err) showToast(err, '⚠️');
+        }
+
+        function shareText(subject, text) {
+            if (!window.AndroidBridge || !window.AndroidBridge.shareText) { showToast('Sharing is only available in the app', 'ℹ️'); return; }
+            window.AndroidBridge.shareText(subject, text);
+        }
+
+        function inspectedApp() {
+            return allApps.find(a => a.pkg === inspectedPkg) || null;
+        }
+
+        function copyAppField(field) {
+            const a = inspectedApp();
+            if (!a) return;
+            const value = field === 'pkg' ? a.pkg : field === 'name' ? a.name : (a.version || '');
+            if (!value) { showToast('Not available for this app', 'ℹ️'); return; }
+            copyText(value);
+        }
+
+        function shareAppInfo() {
+            haptic();
+            const a = inspectedApp();
+            if (!a) return;
+            shareText(a.name, `${a.name}\n${a.pkg}${a.version ? '\nVersion ' + a.version : ''}`);
+        }
+
+        function selectedPackagesText() {
+            return Array.from(selectedPkgs).join('\n');
+        }
+
+        function copySelectedPackages() {
+            if (!selectedPkgs.size) { showToast('Select apps first', 'ℹ️'); return; }
+            copyText(selectedPackagesText());
+        }
+
+        function shareSelectedPackages() {
+            haptic();
+            if (!selectedPkgs.size) { showToast('Select apps first', 'ℹ️'); return; }
+            shareText('Package list', selectedPackagesText());
+        }
+
+        function shareManifest() {
+            haptic();
+            if (!manifestText || manifestText.startsWith('Error:')) { showToast('Manifest not loaded', '⚠️'); return; }
+            shareFileViaBridge(inspectedPkg + '_AndroidManifest.xml', manifestText, 'text/xml');
         }
 
         function copyManifest() {
@@ -5949,6 +6324,7 @@ Type any command below (e.g. pm list packages -d)
             input.value = '';
 
             const term = document.getElementById('termOutput');
+            clearFind(term);
             term.innerHTML += `
 <span style="color:var(--text-main);">$ ${escapeHtml(cmd)}</span>
 `;
@@ -5959,6 +6335,515 @@ Type any command below (e.g. pm list packages -d)
                 showCommandResults('Shell Command Result', cmd, [{ name: cmd, pkg: 'shell', output: res, success: true }]);
             }
             term.scrollTop = term.scrollHeight;
+            if (document.getElementById('termSearch').value) termFind(0);
+        }
+
+        // ---------- Backup and restore ----------
+        let backupTargetPkg = null;
+        let restoreTarget = null;
+        let backupRunning = false;
+
+        function hasRootAccess() {
+            try { return !!(window.AndroidBridge && window.AndroidBridge.hasRoot && window.AndroidBridge.hasRoot()); } catch (e) { return false; }
+        }
+
+        function backupList() {
+            try { return JSON.parse((window.AndroidBridge && window.AndroidBridge.getBackups && window.AndroidBridge.getBackups()) || '[]'); } catch (e) { return []; }
+        }
+
+        function openBackups(pkg) {
+            haptic();
+            if (!window.AndroidBridge || !window.AndroidBridge.backupApp) { showToast('Backups are only available in the app', 'ℹ️'); return; }
+            backupTargetPkg = pkg || null;
+            restoreTarget = null;
+            document.getElementById('restorePreview').style.display = 'none';
+            document.getElementById('backupResult').style.display = 'none';
+            if (pkg) closeInspector();
+            renderBackups();
+            document.getElementById('backupsModal').classList.add('show');
+        }
+
+        function closeBackups() {
+            haptic();
+            document.getElementById('backupsModal').classList.remove('show');
+        }
+
+        function renderBackups() {
+            const tgt = document.getElementById('backupTarget');
+            const app = backupTargetPkg ? allApps.find(a => a.pkg === backupTargetPkg) : null;
+            if (app) {
+                const root = hasRootAccess();
+                tgt.style.display = 'block';
+                tgt.innerHTML = `<h4>Back up ${escapeHtml(app.name)}</h4><p>${escapeHtml(app.pkg)}${app.version ? ' • v' + escapeHtml(app.version) : ''}</p>
+                    <label class="switch-row" style="margin-top:8px;"><div><div class="switch-title">Include app data</div>
+                    <div class="switch-sub" style="font-size:11px; color:var(--text-muted);">${root ? 'Uses Root. The app is stopped while its data is copied.' : 'Needs Root, which was not found on this phone.'}</div></div>
+                    <input type="checkbox" id="backupIncludeData" ${root ? '' : 'disabled'}></label>
+                    <button class="profile-btn accent" ${backupRunning ? 'disabled' : ''} onclick="startBackup()">💾 Create backup</button>`;
+            } else {
+                tgt.style.display = 'none';
+            }
+            const list = backupList();
+            const el = document.getElementById('backupsList');
+            if (!list.length) { el.innerHTML = '<p style="font-size:12px; color:var(--text-muted);">No backups yet. Open an app\'s ⋯ menu and tap 💾 Backup, or choose a backup file from another phone.</p>'; return; }
+            el.innerHTML = list.map(r => `<div class="backup-item"><h4>${escapeHtml(r.label || r.pkg)} <span style="font-weight:600; color:var(--text-muted);">v${escapeHtml(r.versionName || '')}</span></h4>
+                <p>${new Date(r.createdAt).toLocaleString()} • ${formatBytes(r.bytes)} • ${r.hasData ? '🔒 with data' : 'APK + settings'}</p>
+                <button class="profile-btn accent" data-ref="${escapeHtml(r.ref)}" onclick="previewRestore(this.dataset.ref)">♻️ Restore</button>
+                <button class="profile-btn" data-ref="${escapeHtml(r.ref)}" data-name="${escapeHtml(r.name || 'backup.adbbackup')}" onclick="shareBackupUI(this.dataset.ref, this.dataset.name)">📤 Share</button>
+                <button class="profile-btn danger" data-ref="${escapeHtml(r.ref)}" onclick="deleteBackupUI(this.dataset.ref)">🗑️ Delete</button></div>`).join('');
+        }
+
+        function setBackupProgress(text, pct) {
+            document.getElementById('backupProgress').style.display = text ? 'block' : 'none';
+            document.getElementById('backupProgressText').innerText = text || '';
+            document.getElementById('backupProgressBar').style.width = (pct || 0) + '%';
+        }
+
+        function startBackup() {
+            if (backupRunning || !backupTargetPkg) return;
+            if (!guardPrivilege('Backup app')) return;
+            haptic();
+            const include = !!(document.getElementById('backupIncludeData') && document.getElementById('backupIncludeData').checked);
+            backupRunning = true;
+            document.getElementById('backupResult').style.display = 'none';
+            setBackupProgress('Starting...', 2);
+            renderBackups();
+            window.AndroidBridge.backupApp(backupTargetPkg, include);
+        }
+
+        function previewRestore(ref) {
+            haptic();
+            const rec = backupList().find(r => r.ref === ref) || restoreTarget;
+            if (!rec) return;
+            restoreTarget = rec;
+            const root = hasRootAccess();
+            const box = document.getElementById('restorePreview');
+            box.className = 'backup-note';
+            box.style.display = 'block';
+            box.innerHTML = `<b>Restore ${escapeHtml(rec.label || rec.pkg)} ${escapeHtml(rec.versionName || '')}?</b><br>
+                Installs the backed-up APK over the installed one, then re-applies its permissions and app ops.<br>
+                <label style="display:block; margin-top:6px;"><input type="checkbox" id="restoreIncludeData" ${rec.hasData && root ? '' : 'disabled'}> Also restore app data ${rec.hasData ? (root ? '(replaces its current data)' : '(needs Root)') : '(none in this backup)'}</label>
+                <button class="profile-btn accent" onclick="confirmRestore()">Confirm restore</button>
+                <button class="profile-btn" onclick="document.getElementById('restorePreview').style.display='none'">Cancel</button>`;
+        }
+
+        function confirmRestore() {
+            if (!restoreTarget || backupRunning) return;
+            if (!guardPrivilege('Restore backup')) return;
+            haptic();
+            const withData = !!(document.getElementById('restoreIncludeData') && document.getElementById('restoreIncludeData').checked);
+            document.getElementById('restorePreview').style.display = 'none';
+            document.getElementById('backupResult').style.display = 'none';
+            backupRunning = true;
+            setBackupProgress('Starting...', 2);
+            window.AndroidBridge.restoreBackup(restoreTarget.ref, withData);
+        }
+
+        function shareBackupUI(ref, name) {
+            haptic();
+            const err = window.AndroidBridge.shareStoredFile(ref, 'application/octet-stream', name);
+            if (err) showToast(err, '⚠️');
+        }
+
+        function deleteBackupUI(ref) {
+            haptic();
+            const err = window.AndroidBridge.deleteBackup(ref);
+            if (err) showToast(err, '⚠️');
+            renderBackups();
+        }
+
+        function pickBackupUI() {
+            haptic();
+            if (window.AndroidBridge && window.AndroidBridge.pickBackupFile) window.AndroidBridge.pickBackupFile();
+        }
+
+        function onBackupPicked(json) {
+            const r = JSON.parse(json || '{}');
+            if (r.error) { showToast('Not a usable backup: ' + r.error, '⚠️'); return; }
+            restoreTarget = r;
+            document.getElementById('backupsModal').classList.add('show');
+            previewRestore(r.ref);
+        }
+
+        function onBackupProgress(json) {
+            const r = JSON.parse(json || '{}');
+            setBackupProgress(r.msg || '', r.pct || 0);
+        }
+
+        function onBackupDone(json) {
+            const r = JSON.parse(json || '{}');
+            backupRunning = false;
+            setBackupProgress('', 0);
+            const box = document.getElementById('backupResult');
+            box.style.display = 'block';
+            box.className = 'backup-note' + (r.ok ? '' : ' err');
+            if (!r.ok) {
+                box.innerText = (r.op === 'restore' ? 'Restore failed: ' : 'Backup failed: ') + (r.error || 'unknown error');
+            } else if (r.op === 'backup') {
+                box.innerHTML = `Saved ${escapeHtml(r.label || r.pkg)} (${formatBytes(r.bytes)}${r.hasData ? ', with data' : ''}) to ${escapeHtml(r.path || '')}` +
+                    (r.warnings && r.warnings.length ? '<br>⚠️ ' + r.warnings.map(escapeHtml).join('<br>⚠️ ') : '');
+                backupTargetPkg = null;
+            } else {
+                const lines = [`${escapeHtml(r.label || r.pkg)}: ${escapeHtml(r.install || 'done')}`,
+                    `Permissions ${r.permissionsGranted || 0} of ${r.permissionsTotal || 0} granted, ${r.appopsSet || 0} app op${r.appopsSet === 1 ? '' : 's'} restored`];
+                if (r.data) lines.push('Data: ' + escapeHtml(r.data));
+                (r.warnings || []).forEach(w => lines.push('⚠️ ' + escapeHtml(w)));
+                box.innerHTML = lines.join('<br>');
+                setTimeout(loadPackageData, 600);
+            }
+            renderBackups();
+        }
+
+        // ---------- What's new (reads the changelog bundled in the APK) ----------
+        function openUrlExternal(url) {
+            if (window.AndroidBridge && window.AndroidBridge.openUrl) window.AndroidBridge.openUrl(url);
+            else window.open(url, '_blank');
+        }
+
+        function appVersionInfo() {
+            try { return JSON.parse((window.AndroidBridge && window.AndroidBridge.getAppVersion && window.AndroidBridge.getAppVersion()) || '{}'); } catch (e) { return {}; }
+        }
+
+        function parseChangelog(md) {
+            return String(md || '').split(/^## /m).slice(1).map(block => {
+                const nl = block.indexOf('\n');
+                const title = (nl < 0 ? block : block.slice(0, nl)).trim();
+                const code = (title.match(/versionCode\s+(\d+)/) || [])[1];
+                return { title, name: title.split(' ')[0], code: code ? parseInt(code, 10) : 0, body: nl < 0 ? '' : block.slice(nl + 1) };
+            });
+        }
+
+        function mdInline(text) {
+            return escapeHtml(text)
+                .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+                .replace(/`([^`]+)`/g, '<code>$1</code>')
+                .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1');
+        }
+
+        // Just enough Markdown for the changelog: ### headings, "- " bullets (with wrapped lines), paragraphs
+        function mdToHtml(md) {
+            const out = [];
+            let inList = false, item = null, sub = false;
+            const flushItem = () => { if (item !== null) { out.push('<li' + (sub ? ' style="list-style:circle; margin-left:16px;"' : '') + '>' + mdInline(item) + '</li>'); item = null; } };
+            const closeList = () => { flushItem(); if (inList) { out.push('</ul>'); inList = false; } };
+            String(md || '').split('\n').forEach(line => {
+                if (/^###\s+/.test(line)) { closeList(); out.push('<h5>' + mdInline(line.replace(/^###\s+/, '')) + '</h5>'); }
+                else if (/^\s*- /.test(line)) { flushItem(); if (!inList) { out.push('<ul>'); inList = true; } sub = /^\s+- /.test(line); item = line.replace(/^\s*- /, ''); }
+                else if (/^\s+\S/.test(line) && item !== null) { item += ' ' + line.trim(); }
+                else if (!line.trim()) { flushItem(); }
+                else { closeList(); out.push('<p>' + mdInline(line) + '</p>'); }
+            });
+            closeList();
+            return out.join('');
+        }
+
+        function openWhatsNew(opts) {
+            opts = opts || {};
+            haptic();
+            const md = window.AndroidBridge && window.AndroidBridge.getChangelog ? window.AndroidBridge.getChangelog() : '';
+            const versions = parseChangelog(md).filter(v => v.code > (opts.since || 0)).slice(0, opts.max || 3);
+            if (!versions.length) { showToast('No release notes in this build', 'ℹ️'); return; }
+            document.getElementById('whatsNewSubtitle').innerText = versions.length > 1 ? `${versions[0].name} and ${versions.length - 1} earlier release${versions.length > 2 ? 's' : ''}` : versions[0].title;
+            document.getElementById('whatsNewBody').innerHTML = versions.map(v => '<h4>' + escapeHtml(v.title) + '</h4>' + mdToHtml(v.body)).join('');
+            document.getElementById('whatsNewModal').classList.add('show');
+        }
+
+        function closeWhatsNew() {
+            haptic();
+            document.getElementById('whatsNewModal').classList.remove('show');
+        }
+
+        // Shown once after the app was updated; fresh installs just record the version
+        function maybeShowWhatsNew() {
+            const cur = appVersionInfo();
+            if (!cur.versionCode) return;
+            const about = document.getElementById('aboutVersion');
+            if (about) about.innerText = 'ADB Application Manager Pro ' + (cur.versionName || '') + ' (' + cur.versionCode + ')';
+            const seen = loadStoreJson('seen_version', null);
+            let since = null;
+            if (seen && seen.code) {
+                since = seen.code < cur.versionCode ? seen.code : null;
+            } else if (!seen) {
+                // No record yet: tell an upgrade (this feature is new to the install) from a true fresh install
+                // using the install timestamps themselves, not a UI setting that may never have been touched
+                const isUpgrade = cur.lastUpdateTime && cur.firstInstallTime && (cur.lastUpdateTime - cur.firstInstallTime) > 60000;
+                if (isUpgrade) since = 0;
+            }
+            saveStoreJson('seen_version', { code: cur.versionCode });
+            if (since !== null) openWhatsNew({ since, max: since === 0 ? 2 : 4 });
+        }
+
+        // ---------- App profiles ----------
+        let profiles = null;
+        let profilePending = null;
+
+        function loadProfiles() {
+            if (profiles === null) profiles = loadStoreJson('profiles', []);
+            return profiles;
+        }
+
+        // false when the app could not keep the profiles (too much data); callers undo their change and say so
+        function persistProfiles() {
+            return saveStoreJson('profiles', profiles);
+        }
+
+        function profilesFull() {
+            showToast('Profiles are full. Delete one to make room.', '⚠️');
+        }
+
+        function appStateOf(a) {
+            return a.isUninstalled ? 'uninstalled' : a.isSuspended ? 'suspended' : a.isFrozen ? 'disabled' : 'enabled';
+        }
+
+        function openProfiles() {
+            haptic();
+            loadProfiles();
+            profilePending = null;
+            document.getElementById('profilePreview').style.display = 'none';
+            document.getElementById('profileName').value = '';
+            document.getElementById('profilesModal').classList.add('show');
+            renderProfiles();
+        }
+
+        function closeProfiles() {
+            haptic();
+            document.getElementById('profilesModal').classList.remove('show');
+        }
+
+        function profileScope() {
+            const sel = selectedPkgs.size ? allApps.filter(a => selectedPkgs.has(a.pkg)) : allApps;
+            return sel.filter(a => appStateOf(a) !== 'enabled');
+        }
+
+        function renderProfiles() {
+            const scope = profileScope();
+            document.getElementById('profileScopeHint').innerText = (selectedPkgs.size ? 'Only the selected apps are saved. ' : 'Every app that is not enabled is saved. ') + scope.length + ' app' + (scope.length === 1 ? '' : 's') + ' would be saved now.';
+            const list = loadProfiles();
+            const el = document.getElementById('profilesList');
+            if (!list.length) { el.innerHTML = '<p style="font-size:12px; color:var(--text-muted);">No profiles yet. Disable, suspend or uninstall apps the way you like, then save them here.</p>'; return; }
+            el.innerHTML = list.map(pr => {
+                const c = { disabled: 0, suspended: 0, uninstalled: 0 };
+                pr.apps.forEach(a => { if (c[a.state] !== undefined) c[a.state]++; });
+                return `<div class="profile-item"><h4>${escapeHtml(pr.name)}</h4>
+                    <p>${pr.apps.length} apps • ${c.disabled} disabled • ${c.suspended} suspended • ${c.uninstalled} uninstalled • ${new Date(pr.created).toLocaleDateString()}</p>
+                    <button class="profile-btn accent" onclick="previewProfile('${pr.id}')">▶ Apply</button>
+                    <button class="profile-btn${pr.watch ? ' accent' : ''}" onclick="toggleWatchProfile('${pr.id}')" title="Alert me when these apps come back, for example after a system update">${pr.watch ? '👁️ Watching' : '👁️ Watch'}</button>
+                    <button class="profile-btn" onclick="shareProfile('${pr.id}')">📤 Share</button>
+                    <button class="profile-btn" onclick="copyProfile('${pr.id}')">📋 Copy</button>
+                    <button class="profile-btn danger" onclick="deleteProfile('${pr.id}')">🗑️ Delete</button></div>`;
+            }).join('');
+        }
+
+        function saveProfile() {
+            const name = document.getElementById('profileName').value.trim();
+            if (!name) { showToast('Give the profile a name', '⚠️'); return; }
+            const apps = profileScope().map(a => ({ pkg: a.pkg, name: a.name, state: appStateOf(a), frozen: !!a.isFrozen, suspended: !!a.isSuspended }));
+            if (!apps.length) { showToast('No disabled, suspended or uninstalled apps to save', 'ℹ️'); return; }
+            loadProfiles().unshift({ id: 'prof_' + Date.now(), name, created: Date.now(), apps });
+            if (!persistProfiles()) { profiles.shift(); profilesFull(); return; }
+            document.getElementById('profileName').value = '';
+            renderProfiles();
+            showToast(`Saved profile "${name}" (${apps.length} apps)`, '🗂️');
+        }
+
+        function profileJson(id) {
+            const pr = loadProfiles().find(x => x.id === id);
+            return pr ? JSON.stringify({ format: 'adb-app-manager-profile', v: 1, name: pr.name, created: pr.created, apps: pr.apps }, null, 2) : '';
+        }
+
+        function shareProfile(id) {
+            haptic();
+            const pr = loadProfiles().find(x => x.id === id);
+            if (pr) shareFileViaBridge(pr.name.replace(/[^A-Za-z0-9 _-]/g, '_') + '.adbprofile.json', profileJson(id), 'application/json');
+        }
+
+        function copyProfile(id) {
+            copyText(profileJson(id));
+        }
+
+        function deleteProfile(id) {
+            haptic();
+            const before = loadProfiles();
+            const removed = before.find(x => x.id === id);
+            profiles = before.filter(x => x.id !== id);
+            if (!persistProfiles()) { profiles = before; profilesFull(); return; }
+            // Deleting the watched profile must also clear the native preference BootReceiver reads, or a
+            // reboot notification could still name a profile that no longer exists.
+            if (removed && removed.watch && window.AndroidBridge && window.AndroidBridge.setWatchedProfile) {
+                window.AndroidBridge.setWatchedProfile('');
+            }
+            profilePending = null;
+            document.getElementById('profilePreview').style.display = 'none';
+            renderProfiles();
+        }
+
+        function importProfile() {
+            const raw = document.getElementById('profileImport').value.trim();
+            if (!raw) { showToast('Paste a profile first', 'ℹ️'); return; }
+            try {
+                const d = JSON.parse(raw);
+                if (d.format !== 'adb-app-manager-profile' || !Array.isArray(d.apps)) throw new Error('not a profile');
+                const parsed = d.apps.filter(a => a && typeof a.pkg === 'string' && ['disabled', 'suspended', 'uninstalled'].includes(a.state))
+                    .map(a => {
+                        const e = { pkg: a.pkg, name: String(a.name || a.pkg), state: a.state };
+                        if (typeof a.frozen === 'boolean' && typeof a.suspended === 'boolean') { e.frozen = a.frozen; e.suspended = a.suspended; }
+                        return e;
+                    });
+                // A profile defines one target state per app; a file with the same package listed twice
+                // (even accidentally) would otherwise queue both states' steps in profilePlan - possibly
+                // contradictory ones (freeze AND unfreeze for the same app). Keep one entry per package,
+                // the last one listed winning so an intentional override in a hand-edited file still works.
+                const byPkg = new Map();
+                parsed.forEach(e => byPkg.set(e.pkg, e));
+                const apps = Array.from(byPkg.values());
+                if (!apps.length) throw new Error('no apps');
+                loadProfiles().unshift({ id: 'prof_' + Date.now(), name: String(d.name || 'Imported profile').slice(0, 60), created: Date.now(), apps });
+                if (!persistProfiles()) { profiles.shift(); profilesFull(); return; }
+                document.getElementById('profileImport').value = '';
+                renderProfiles();
+                showToast('Imported ' + apps.length + ' apps', '📥');
+            } catch (e) {
+                showToast('That is not a valid profile', '⚠️');
+            }
+        }
+
+        // ---------- Watched profile: tell me when the apps come back ----------
+        let driftDismissed = false;
+        let buildChangedThisLaunch = false;
+
+        function watchedProfile() {
+            return loadProfiles().find(p => p.watch) || null;
+        }
+
+        function toggleWatchProfile(id) {
+            haptic();
+            const list = loadProfiles();
+            const target = list.find(p => p.id === id);
+            if (!target) return;
+            const turnOn = !target.watch;
+            const wasWatching = list.map(p => !!p.watch);
+            list.forEach(p => { p.watch = false; });
+            target.watch = turnOn;
+            if (!persistProfiles()) { list.forEach((p, i) => { p.watch = wasWatching[i]; }); profilesFull(); return; }
+            if (window.AndroidBridge && window.AndroidBridge.setWatchedProfile) window.AndroidBridge.setWatchedProfile(turnOn ? target.name : '');
+            driftDismissed = false;
+            renderProfiles();
+            checkProfileDrift();
+            showToast(turnOn ? `Watching "${target.name}". You'll be told when its apps come back.` : 'Stopped watching', '👁️');
+        }
+
+        function checkProfileDrift() {
+            const banner = document.getElementById('driftBanner');
+            if (!banner) return;
+            const pr = watchedProfile();
+            if (!pr || driftDismissed || !allApps.length) { banner.style.display = 'none'; return; }
+            const plan = profilePlan(pr);
+            const n = plan.apps;
+            if (!n) { banner.style.display = 'none'; return; }
+            document.getElementById('driftTitle').innerText = (buildChangedThisLaunch ? 'Your phone was updated. ' : '') + `${n} app${n === 1 ? '' : 's'} from "${pr.name}" ${n === 1 ? 'no longer matches' : 'no longer match'} it`;
+            const sum = planSummary(plan);
+            document.getElementById('driftDesc').innerText = sum.charAt(0).toUpperCase() + sum.slice(1) + '. Review before applying.';
+            banner.style.display = 'flex';
+        }
+
+        function dismissDrift() {
+            haptic();
+            driftDismissed = true;
+            document.getElementById('driftBanner').style.display = 'none';
+        }
+
+        function reviewDrift() {
+            const pr = watchedProfile();
+            if (!pr) return;
+            openProfiles();
+            previewProfile(pr.id);
+        }
+
+        // What the profile wants for one entry: uninstalled, or frozen / suspended (true, false, or null = leave as is)
+        function profileTarget(entry) {
+            if (entry.state === 'uninstalled') return { uninstalled: true };
+            if (typeof entry.frozen === 'boolean' && typeof entry.suspended === 'boolean') return { frozen: entry.frozen, suspended: entry.suspended };
+            // Profiles saved before the flags existed only have the (collapsed) state
+            return entry.state === 'disabled' ? { frozen: true, suspended: false } : { frozen: null, suspended: true };
+        }
+
+        const PLAN_ORDER = ['reinstall', 'unfreeze', 'unsuspend', 'freeze', 'suspend', 'uninstall'];
+        const PLAN_WORDS = { reinstall: 'bring back', unfreeze: 're-enable', unsuspend: 'unsuspend', freeze: 'disable', suspend: 'suspend', uninstall: 'uninstall' };
+
+        // Works out, per app, the ordered steps that make this phone match the profile.
+        // unfreeze also unsuspends, so it runs before suspend; apps removed for this user are brought back first.
+        function profilePlan(pr) {
+            const plan = { steps: {}, same: 0, missing: 0, apps: 0, total: 0 };
+            PLAN_ORDER.forEach(k => { plan.steps[k] = []; });
+            pr.apps.forEach(entry => {
+                const a = allApps.find(x => x.pkg === entry.pkg);
+                if (!a) { plan.missing++; return; }
+                const t = profileTarget(entry);
+                const touched = [];
+                const add = (step) => { plan.steps[step].push(a.pkg); touched.push(step); };
+                if (t.uninstalled) {
+                    if (!a.isUninstalled) add('uninstall');
+                } else {
+                    let f = !!a.isFrozen, s = !!a.isSuspended;
+                    if (a.isUninstalled) {
+                        add('reinstall');
+                        f = t.frozen === false;   // after install-existing the old state is unknown: assume the opposite so the step below runs
+                        s = t.suspended === false;
+                    }
+                    if (t.frozen === false && f) { add('unfreeze'); f = false; s = false; }
+                    if (t.suspended === false && s) { add('unsuspend'); s = false; }
+                    if (t.frozen === true && !f) { add('freeze'); f = true; }
+                    if (t.suspended === true && !s) { add('suspend'); s = true; }
+                }
+                if (touched.length) plan.apps++; else plan.same++;
+                plan.total += touched.length;
+            });
+            return plan;
+        }
+
+        function planSummary(plan) {
+            const parts = PLAN_ORDER.filter(k => plan.steps[k].length).map(k => `${PLAN_WORDS[k]} ${plan.steps[k].length}`);
+            return parts.length ? parts.join(', ') : 'nothing to change';
+        }
+
+        function previewProfile(id) {
+            haptic();
+            const pr = loadProfiles().find(x => x.id === id);
+            if (!pr) return;
+            const plan = profilePlan(pr);
+            profilePending = { id, plan };
+            const total = plan.apps;
+            const box = document.getElementById('profilePreview');
+            box.style.display = 'block';
+            box.innerHTML = `<b>${escapeHtml(pr.name)}</b><br>Will ${escapeHtml(planSummary(plan))} (${total} app${total === 1 ? '' : 's'}).<br>
+                ${plan.same} already match, ${plan.missing} are not on this phone and are skipped.<br>
+                <button class="profile-btn accent" ${total ? '' : 'disabled'} onclick="applyProfile()">Confirm apply (${total})</button>
+                <button class="profile-btn" onclick="document.getElementById('profilePreview').style.display='none'">Cancel</button>`;
+        }
+
+        function applyProfile() {
+            if (!profilePending) return;
+            if (!guardPrivilege('Apply profile')) return;
+            haptic();
+            const pr = loadProfiles().find(x => x.id === profilePending.id);
+            const plan = profilePending.plan;
+            profilePending = null;
+            document.getElementById('profilePreview').style.display = 'none';
+            if (!pr || !window.AndroidBridge) return;
+            const histRows = [];
+            const shown = [];
+            let ok = 0, bad = 0;
+            PLAN_ORDER.forEach(action => {
+                const pkgs = plan.steps[action];
+                if (!pkgs.length) return;
+                const res = performDetailedBatchAction(action, pkgs);
+                ok += res.success; bad += res.failed;
+                res.rows.forEach(r => { shown.push(r); histRows.push({ pkg: r.pkg, name: r.name, action, success: r.success }); });
+            });
+            recordHistory('apps', `Applied profile "${pr.name}"`, histRows);
+            showToast(`Profile applied: ${ok} succeeded, ${bad} failed`, bad ? '⚠️' : '✔');
+            closeProfiles();
+            showCommandResults('Profile Results', pr.name + ' • ' + shown.length + ' apps', shown);
+            setTimeout(loadPackageData, 400);
         }
 
         // Init App on load
@@ -5968,6 +6853,8 @@ Type any command below (e.g. pm list packages -d)
             restoreUiState();
             initApp();
             loadSavedLists();
+            loadQuickList();
+            renderSavedLists();
         });
     </script>
 </body>
