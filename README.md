@@ -13,7 +13,7 @@ through **ADB over TCP, Wireless Debugging, Shizuku or Root**.
 
 ### [⬇️ Download the latest APK](https://github.com/Bingblop/ADB-Application-Manager/releases/latest)
 
-`com.bloatware.bingblop` · v5.3-Pro · signed APK, installs over every earlier version without uninstalling
+`com.bloatware.bingblop` · v5.4-Pro · signed APK, installs over every earlier version without uninstalling
 
 <table>
   <tr>
@@ -76,6 +76,10 @@ tell you when a new version is out (see [Updates](#updates)).
 | **Modes** | ADB over TCP · Wireless Debugging (pairing and mDNS port detection) · Shizuku · Root · Automatic · Read-Only |
 | **Themes** | **Material 3** (default) · **Material You** (follows your wallpaper) · six more palettes · Light / Dark / System / Schedule · pure-black AMOLED option · per-mode color tuning |
 | **Security** | A **private ADB key is generated on each install** (nothing is bundled) · fingerprint shown in the app · signing-certificate comparison before every update |
+
+## New in v5.4
+
+- **Patched-app detection** — the app list flags apps modified by third-party tools with a 🧩 badge: **ReVanced**, **Xposed / LSPosed modules**, **LSPatch**, **NPatch**, and **debug-signed / repackaged** builds. A **🧩 Patched** filter shows only those. The inspector runs a deeper scan (signing certificate + APK markers like `assets/lspatch/`, `assets/xposed_init`, `META-INF/xposed/`) and names the tool and installer, so you can tell a genuine build from a modified one.
 
 ## New in v5.3
 
