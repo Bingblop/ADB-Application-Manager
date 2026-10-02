@@ -1,5 +1,31 @@
 # Changelog
 
+## v4.9-Pro (versionCode 390)
+
+Installs over v3.1 – v4.8 without uninstalling (same signing key).
+
+- **New 📦 Installer tab — an all-in-one APK / APKS / APKM installer.** Pick a package file and the app
+  reads it (package name, version, min/target SDK, size, signing certificate) before anything is installed;
+  for a split bundle (`.apks` from bundletool, `.apkm` from APKMirror) it lists every split APK and lets you
+  choose which to install, with the base always included and "select all splits" on by default.
+- The install runs through whichever **authorizer** you pick — ADB, Shizuku, Root, or **No privilege** (the
+  platform's own confirm-dialog installer, which still handles split bundles). It reuses the same
+  session-based install path (`pm install-create` / `install-write` / `install-commit`) the restore flow
+  already uses.
+- Full install control, each mapped to the matching `pm install` flag: grant all permissions (`-g`), allow
+  downgrade (`-d`), allow test packages (`-t`), install for all users (`--user all`), bypass low target-SDK
+  block (`--bypass-low-target-sdk-block`, Android 14+), request update ownership (`--update-ownership`,
+  Android 14+), install reason (`--install-reason`), package source (`--package-source`, Android 13+),
+  installer package / install source (`-i`), and originating URI (`--originating-uri`). Privileged-only
+  options are disabled automatically under the No-privilege authorizer, where the OS wouldn't honor them.
+- Post-install **dex optimization** (`pm compile -m <mode>`, with an optional force recompile `-f`) and an
+  optional **auto-delete** of the chosen package file once it installs successfully.
+- Two safety gates before committing: **block signature mismatch** (refuse when an installed copy is signed
+  with a different key, which Android would reject anyway) and **block unknown signature** (refuse an
+  unsigned or unreadable package), both on by default and read straight from the APK. Packages are staged in
+  the app's own cache and nothing outside that directory is ever installed.
+- Toggles to show or hide the SDK, size and version readouts for the picked package.
+
 ## v4.8-Pro (versionCode 380)
 
 Installs over v3.1 – v4.7 without uninstalling (same signing key). Three more GitHub Copilot review

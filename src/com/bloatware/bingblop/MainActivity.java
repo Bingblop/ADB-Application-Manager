@@ -1324,6 +1324,440 @@ public class MainActivity extends Activity {
     }
 
     // ---------------------------------------------------------------------------------------------
+    // All-in-one installer (APK / APKS / APKM) - the "Installer" tab.
+    // Reuses the same per-backend install shapes as installApks() above, but with a caller-chosen set
+    // of pm flags and a caller-chosen authorizer, plus a no-privilege PackageInstaller fallback. Picked
+    // packages are staged into getCacheDir()/installer; nothing outside that directory is ever installed.
+    // ---------------------------------------------------------------------------------------------
+
+    private File installerWorkDir() {
+        return new File(getCacheDir(), "installer");
+    }
+
+    private void clearInstallerWorkDir() {
+        File[] fs = installerWorkDir().listFiles();
+        if (fs != null) for (File f : fs) { try { f.delete(); } catch (Exception ignored) {} }
+    }
+
+    /** The split="..." value from an APK's binary manifest, or null for a base APK. Best-effort. */
+    private String manifestSplitName(File apk) {
+        try {
+            String xml = ManifestDecoder.decodeApk(apk.getAbsolutePath(), null);
+            if (xml == null) return null;
+            // A config/feature split declares <manifest ... split="config.xxxhdpi">; a base APK has no such
+            // attribute. \bsplit= deliberately won't match splitName=/splitTypes= on other elements.
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("(?i)\\bsplit\\s*=\\s*\"([^\"]+)\"").matcher(xml);
+            if (m.find()) return m.group(1);
+        } catch (Throwable ignored) {}
+        return null;
+    }
+
+    /** Streams a picked .apk/.apks/.apkm into the installer cache and returns its package info + split list. */
+    private JSONObject inspectInstallSourceImpl(String ref) throws Exception {
+        clearInstallerWorkDir();
+        File work = installerWorkDir();
+        work.mkdirs();
+        // A content:// stream is one-shot, so copy it to the cache once (capped like restore, so a crafted
+        // archive can't fill storage) and work from concrete files afterwards.
+        File raw = new File(work, "source.bin");
+        long copied = 0;
+        InputStream in0 = openRef(ref);
+        try {
+            FileOutputStream out = new FileOutputStream(raw);
+            try {
+                byte[] buf = new byte[65536];
+                int r;
+                while ((r = in0.read(buf)) > 0) {
+                    copied += r;
+                    if (copied > MAX_RESTORE_EXTRACT_BYTES) throw new IllegalStateException("file is far too large to be an app package");
+                    out.write(buf, 0, r);
+                }
+            } finally { out.close(); }
+        } finally { in0.close(); }
+
+        PackageManager pm = getPackageManager();
+        int sigFlags = Build.VERSION.SDK_INT >= 28 ? PackageManager.GET_SIGNING_CERTIFICATES : PackageManager.GET_SIGNATURES;
+
+        List<File> splits = new ArrayList<File>();
+        File base = null;
+        String type;
+
+        // A lone APK is itself a ZIP, so tell them apart by whether the file parses as an installable APK.
+        PackageInfo direct = pm.getPackageArchiveInfo(raw.getAbsolutePath(), 0);
+        if (direct != null && direct.packageName != null) {
+            type = "apk";
+            File apk = new File(work, "base.apk");
+            if (!raw.renameTo(apk)) apk = raw;
+            base = apk;
+            splits.add(apk);
+        } else {
+            // An .apks (bundletool) or .apkm (APKMirror) archive: a ZIP of split APKs. Extract every *.apk
+            // entry through the same byte-capped loop restore uses (an unwanted entry is still drained,
+            // never skipped, so the cap can't be bypassed by a huge entry under an unrecognized name).
+            type = "apks";
+            java.util.zip.ZipInputStream zin = new java.util.zip.ZipInputStream(new java.io.BufferedInputStream(new java.io.FileInputStream(raw)));
+            long extracted = 0;
+            int idx = 0;
+            boolean sawApkm = false;
+            try {
+                java.util.zip.ZipEntry e;
+                while ((e = zin.getNextEntry()) != null) {
+                    String n = e.getName();
+                    String low = n.toLowerCase(java.util.Locale.US);
+                    if (low.endsWith("info.json") || low.endsWith(".sai_v2.json") || low.endsWith("icon.png")) sawApkm = true;
+                    File dest = null;
+                    if (low.endsWith(".apk")) {
+                        String flat = n.substring(n.lastIndexOf('/') + 1).replaceAll("[^A-Za-z0-9._-]", "_");
+                        dest = new File(work, (idx++) + "__" + flat);
+                    }
+                    OutputStream out = dest != null ? new FileOutputStream(dest) : new OutputStream() {
+                        public void write(int b) {}
+                        public void write(byte[] b, int off, int len) {}
+                    };
+                    try {
+                        byte[] buf = new byte[65536];
+                        int r;
+                        while ((r = zin.read(buf)) > 0) {
+                            extracted += r;
+                            if (extracted > MAX_RESTORE_EXTRACT_BYTES) throw new IllegalStateException("archive is far too large to be an app package");
+                            out.write(buf, 0, r);
+                        }
+                    } finally { out.close(); }
+                    if (dest != null) splits.add(dest);
+                }
+            } finally { zin.close(); }
+            raw.delete();
+            if (sawApkm) type = "apkm";
+            if (splits.isEmpty()) throw new IllegalStateException("no APKs found inside this archive");
+            // Base = the split whose manifest has no split="..." attribute.
+            for (File f : splits) {
+                if (manifestSplitName(f) == null) { base = f; break; }
+            }
+            if (base == null) base = splits.get(0);
+        }
+
+        PackageInfo archive = pm.getPackageArchiveInfo(base.getAbsolutePath(), sigFlags);
+        if (archive == null || archive.packageName == null) throw new IllegalStateException("could not read the base APK of this package");
+        final String pkg = archive.packageName;
+
+        JSONObject res = new JSONObject();
+        res.put("ref", ref);
+        res.put("type", type);
+        res.put("pkg", pkg);
+        res.put("versionName", archive.versionName != null ? archive.versionName : "");
+        res.put("versionCode", versionCodeOf(archive));
+        if (archive.applicationInfo != null) {
+            try {
+                CharSequence lbl = pm.getApplicationLabel(archive.applicationInfo);
+                if (lbl != null) res.put("label", lbl.toString());
+            } catch (Exception ignored) {}
+            if (Build.VERSION.SDK_INT >= 24) res.put("minSdk", archive.applicationInfo.minSdkVersion);
+            res.put("targetSdk", archive.applicationInfo.targetSdkVersion);
+        }
+
+        List<File> ordered = new ArrayList<File>();
+        ordered.add(base);
+        for (File f : splits) if (f != base) ordered.add(f);
+        long total = 0;
+        JSONArray arr = new JSONArray();
+        for (File f : ordered) {
+            total += f.length();
+            String split = (f == base) ? null : manifestSplitName(f);
+            JSONObject s = new JSONObject();
+            s.put("path", f.getAbsolutePath());
+            s.put("name", f.getName());
+            s.put("size", f.length());
+            s.put("isBase", f == base);
+            s.put("split", split != null ? split : "");
+            arr.put(s);
+        }
+        res.put("splits", arr);
+        res.put("totalSize", total);
+
+        // Signer of the archive + comparison to an already-installed copy, for the two signature gates.
+        java.util.Set<String> archiveSigners = signerDigests(archive, false);
+        res.put("signed", !archiveSigners.isEmpty());
+        try {
+            PackageInfo cur = pm.getPackageInfo(pkg, sigFlags);
+            res.put("installed", true);
+            res.put("installedVersionName", cur.versionName != null ? cur.versionName : "");
+            res.put("installedVersionCode", versionCodeOf(cur));
+            java.util.Set<String> curSigners = signerDigests(cur, true);
+            java.util.Set<String> common = new HashSet<String>(curSigners);
+            common.retainAll(archiveSigners);
+            res.put("signerMatchesInstalled", !curSigners.isEmpty() && !archiveSigners.isEmpty() && !common.isEmpty());
+        } catch (PackageManager.NameNotFoundException nf) {
+            res.put("installed", false);
+        }
+        return res;
+    }
+
+    /** Maps the installer's authorizer choice to a concrete backend mode. */
+    private String resolveAuthorizerMode(String authorizer) {
+        if ("shizuku".equals(authorizer)) return "shizuku";
+        if ("root".equals(authorizer)) return "root";
+        if ("none".equals(authorizer)) return "none";
+        if ("adb".equals(authorizer)) {
+            String m = resolveExecMode();
+            if ("adb_tcp".equals(m) || "adb_wireless".equals(m)) return m;
+            if (isAdbTargetConnected(tcpTarget())) return "adb_tcp";
+            if (isAdbTargetConnected(wirelessTarget())) return "adb_wireless";
+            return "adb_tcp";
+        }
+        return resolveExecMode();
+    }
+
+    /** Installs the given files (base first) with a caller-built flag set, via a specific backend. */
+    private String installApksOptions(List<File> apks, String createFlags, String mode) throws Exception {
+        if (createFlags == null || createFlags.trim().isEmpty()) createFlags = "-r";
+        if ("adb_tcp".equals(mode) || "adb_wireless".equals(mode)) {
+            boolean tcp = "adb_tcp".equals(mode);
+            String target = tcp ? tcpTarget() : wirelessTarget();
+            if (!isAdbTargetConnected(target)) performConnect(tcp ? adbTcpHost : adbWirelessHost, tcp ? adbTcpPort : adbWirelessPort, null);
+            List<String> args = new ArrayList<String>();
+            args.add("-s");
+            args.add(target);
+            args.add(apks.size() == 1 ? "install" : "install-multiple");
+            // adb forwards -r/-g/-d/-t natively and passes the pm-only flags (--user, --install-reason,
+            // --package-source, --update-ownership, --bypass-low-target-sdk-block) through to install-create.
+            for (String fl : createFlags.trim().split("\\s+")) if (!fl.isEmpty()) args.add(fl);
+            for (File f : apks) args.add(f.getAbsolutePath());
+            return runProcessWithTimeout(buildAdbProcess(args.toArray(new String[0])), 600000);
+        }
+        if ("shizuku".equals(mode)) {
+            String created = shizukuStream("pm install-create " + createFlags, null);
+            String id = BackupScripts.parseSessionId(created);
+            if (id == null) return created;
+            boolean committed = false;
+            try {
+                int index = 0;
+                for (File f : apks) {
+                    String name = (index++) + "_" + f.getName().replaceAll("[^A-Za-z0-9._-]", "_");
+                    String written = shizukuStream("pm install-write -S " + f.length() + " " + id + " " + name + " -", f);
+                    if (!written.contains("Success")) return written;
+                }
+                String result = shizukuStream("pm install-commit " + id, null);
+                committed = true;
+                return result;
+            } finally {
+                if (!committed) {
+                    try { shizukuStream("pm install-abandon " + id, null); } catch (Exception ignored) {}
+                }
+            }
+        }
+        if ("root".equals(mode)) {
+            StringBuilder cmd = new StringBuilder(apks.size() == 1 ? "pm install" : "pm install-multiple");
+            cmd.append(' ').append(createFlags.trim());
+            for (File f : apks) {
+                f.setReadable(true, false);
+                cmd.append(' ').append(BackupScripts.quote(f.getAbsolutePath()));
+            }
+            ProcessBuilder pb = new ProcessBuilder("su", "-c", cmd.toString());
+            pb.redirectErrorStream(true);
+            return runProcessWithTimeout(pb, 600000);
+        }
+        return "Error: this authorizer needs ADB, Shizuku or Root";
+    }
+
+    /** Runs a short pm command through a specific backend (for post-install dexopt). */
+    private String shellVia(String mode, String cmd) throws Exception {
+        if ("adb_tcp".equals(mode) || "adb_wireless".equals(mode)) {
+            boolean tcp = "adb_tcp".equals(mode);
+            String target = tcp ? tcpTarget() : wirelessTarget();
+            if (!isAdbTargetConnected(target)) performConnect(tcp ? adbTcpHost : adbWirelessHost, tcp ? adbTcpPort : adbWirelessPort, null);
+            return runProcessWithTimeout(buildAdbProcess("-s", target, "shell", cmd), 600000);
+        }
+        if ("shizuku".equals(mode)) return shizukuStream(cmd, null);
+        if ("root".equals(mode)) {
+            ProcessBuilder pb = new ProcessBuilder("su", "-c", cmd);
+            pb.redirectErrorStream(true);
+            return runProcessWithTimeout(pb, 600000);
+        }
+        return "Error: needs ADB, Shizuku or Root";
+    }
+
+    /** Post-install dexopt + auto-delete of the source, then reports the outcome to the WebView. */
+    private void finishInstall(JSONObject res, JSONObject opts, String mode) {
+        try {
+            boolean success = res.optBoolean("ok", false);
+            if (success && opts.optBoolean("dexopt", false) && !"none".equals(mode)) {
+                String pkg = opts.optString("pkg");
+                String cm = opts.optString("dexoptMode", "speed").replaceAll("[^a-z-]", "");
+                if (!pkg.isEmpty() && !cm.isEmpty() && pkg.matches("[A-Za-z0-9._]+")) {
+                    try {
+                        String comp = "pm compile -m " + cm + (opts.optBoolean("dexForce", false) ? " -f " : " ") + pkg;
+                        res.put("dexopt", shellVia(mode, comp).trim());
+                    } catch (Exception e) {
+                        try { res.put("dexopt", "Error: " + e.getMessage()); } catch (Exception ignored) {}
+                    }
+                }
+            }
+            if (success && opts.optBoolean("autoDelete", false)) {
+                String ref = opts.optString("sourceRef");
+                boolean deleted = false;
+                try {
+                    if (ref.startsWith("content://")) {
+                        deleted = android.provider.DocumentsContract.deleteDocument(getContentResolver(), Uri.parse(ref));
+                    } else if (!ref.isEmpty()) {
+                        deleted = new File(ref).delete();
+                    }
+                } catch (Exception ignored) {}
+                try { res.put("sourceDeleted", deleted); } catch (Exception ignored) {}
+            }
+        } catch (Exception ignored) {}
+        clearInstallerWorkDir();
+        notifyJs("window.onInstallResult && window.onInstallResult(" + JSONObject.quote(res.toString()) + ")");
+    }
+
+    /** Installs via the platform PackageInstaller with user confirmation - no ADB/Shizuku/Root. The
+     *  privileged pm flags (grant-all, downgrade, all-users, bypass, update-ownership) are not available
+     *  to an ordinary app here, so only install reason / package source are passed through. */
+    private void installNoPrivilege(final List<File> apks, final JSONObject opts) {
+        try {
+            android.content.pm.PackageInstaller pi = getPackageManager().getPackageInstaller();
+            android.content.pm.PackageInstaller.SessionParams params =
+                    new android.content.pm.PackageInstaller.SessionParams(android.content.pm.PackageInstaller.SessionParams.MODE_FULL_INSTALL);
+            try { if (opts.optInt("installReason", -1) >= 0) params.setInstallReason(opts.optInt("installReason")); } catch (Exception ignored) {}
+            try { if (Build.VERSION.SDK_INT >= 33 && opts.optInt("packageSource", -1) >= 0) params.setPackageSource(opts.optInt("packageSource")); } catch (Exception ignored) {}
+            final int sessionId = pi.createSession(params);
+            android.content.pm.PackageInstaller.Session session = pi.openSession(sessionId);
+            boolean staged = false;
+            try {
+                for (File f : apks) {
+                    java.io.FileInputStream fin = new java.io.FileInputStream(f);
+                    OutputStream sout = session.openWrite(f.getName().replaceAll("[^A-Za-z0-9._-]", "_"), 0, f.length());
+                    try {
+                        byte[] buf = new byte[65536];
+                        int r;
+                        while ((r = fin.read(buf)) > 0) sout.write(buf, 0, r);
+                        session.fsync(sout);
+                    } finally { fin.close(); sout.close(); }
+                }
+                staged = true;
+            } finally {
+                if (!staged) { try { session.abandon(); } catch (Exception ignored) {} }
+            }
+
+            final String action = getPackageName() + ".INSTALL_RESULT." + (installReceiverSeq++);
+            android.content.BroadcastReceiver rcv = new android.content.BroadcastReceiver() {
+                @Override
+                public void onReceive(Context c, Intent i) {
+                    int status = i.getIntExtra(android.content.pm.PackageInstaller.EXTRA_STATUS, -999);
+                    if (status == android.content.pm.PackageInstaller.STATUS_PENDING_USER_ACTION) {
+                        Intent confirm = (Intent) i.getParcelableExtra(Intent.EXTRA_INTENT);
+                        if (confirm != null) {
+                            confirm.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            try { startActivity(confirm); } catch (Exception ignored) {}
+                        }
+                        return; // not terminal - wait for the user to confirm or cancel
+                    }
+                    try { c.unregisterReceiver(this); } catch (Exception ignored) {}
+                    JSONObject r = new JSONObject();
+                    try {
+                        boolean success = status == android.content.pm.PackageInstaller.STATUS_SUCCESS;
+                        String msg = i.getStringExtra(android.content.pm.PackageInstaller.EXTRA_STATUS_MESSAGE);
+                        r.put("ok", success);
+                        r.put("method", "No privilege");
+                        r.put("output", success ? "Success"
+                                : ("Install " + (status == android.content.pm.PackageInstaller.STATUS_FAILURE_ABORTED ? "cancelled" : "failed")
+                                   + (msg != null && !msg.isEmpty() ? ": " + msg : "")));
+                    } catch (Exception ignored) {}
+                    finishInstall(r, opts, "none");
+                }
+            };
+            android.content.IntentFilter filter = new android.content.IntentFilter(action);
+            if (Build.VERSION.SDK_INT >= 33) registerReceiver(rcv, filter, Context.RECEIVER_NOT_EXPORTED);
+            else registerReceiver(rcv, filter);
+            int piFlags = android.app.PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= 31 ? android.app.PendingIntent.FLAG_MUTABLE : 0);
+            android.app.PendingIntent sender = android.app.PendingIntent.getBroadcast(this, sessionId, new Intent(action).setPackage(getPackageName()), piFlags);
+            session.commit(sender.getIntentSender());
+            session.close();
+        } catch (Exception e) {
+            JSONObject r = new JSONObject();
+            try {
+                r.put("ok", false);
+                r.put("method", "No privilege");
+                r.put("output", "Error: " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
+            } catch (Exception ignored) {}
+            finishInstall(r, opts, "none");
+        }
+    }
+
+    /** The Installer tab's install action. Validates the selection, runs the signature gates, installs
+     *  through the chosen authorizer, then dexopts/auto-deletes. Result: window.onInstallResult(json). */
+    private void runInstallSelected(final String optsJson) {
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                JSONObject res = new JSONObject();
+                try {
+                    JSONObject opts = new JSONObject(optsJson);
+                    JSONArray sel = opts.optJSONArray("splits");
+                    if (sel == null || sel.length() == 0) throw new IllegalStateException("no APK selected to install");
+                    // Only ever install files we extracted into our own installer cache - never an arbitrary
+                    // path handed in from JS.
+                    String workPath = installerWorkDir().getCanonicalPath();
+                    List<File> files = new ArrayList<File>();
+                    File base = null;
+                    for (int i = 0; i < sel.length(); i++) {
+                        JSONObject s = sel.optJSONObject(i);
+                        if (s == null) continue;
+                        File f = new File(s.optString("path"));
+                        if (!f.getCanonicalPath().startsWith(workPath + File.separator) || !f.exists()) {
+                            throw new IllegalStateException("install files are no longer available - pick the package again");
+                        }
+                        if (s.optBoolean("isBase")) base = f;
+                        files.add(f);
+                    }
+                    if (files.isEmpty()) throw new IllegalStateException("no APK selected to install");
+                    if (base != null) { files.remove(base); files.add(0, base); }
+
+                    // Signature gates, read from the base APK, before anything is installed.
+                    PackageManager pm = getPackageManager();
+                    int sigFlags = Build.VERSION.SDK_INT >= 28 ? PackageManager.GET_SIGNING_CERTIFICATES : PackageManager.GET_SIGNATURES;
+                    File gateApk = base != null ? base : files.get(0);
+                    PackageInfo archive = pm.getPackageArchiveInfo(gateApk.getAbsolutePath(), sigFlags);
+                    java.util.Set<String> archiveSigners = archive != null ? signerDigests(archive, false) : new HashSet<String>();
+                    if (opts.optBoolean("blockUnknown", true) && archiveSigners.isEmpty()) {
+                        throw new IllegalStateException("this package is unsigned or its signature can't be read (blocked by \"block unknown signature\")");
+                    }
+                    if (opts.optBoolean("blockMismatch", true) && archive != null && archive.packageName != null) {
+                        try {
+                            PackageInfo cur = pm.getPackageInfo(archive.packageName, sigFlags);
+                            java.util.Set<String> curSigners = signerDigests(cur, true);
+                            if (!curSigners.isEmpty() && !archiveSigners.isEmpty()) {
+                                java.util.Set<String> common = new HashSet<String>(curSigners);
+                                common.retainAll(archiveSigners);
+                                if (common.isEmpty()) {
+                                    throw new IllegalStateException(archive.packageName + " is already installed with a different signing key (blocked by \"block signature mismatch\")");
+                                }
+                            }
+                        } catch (PackageManager.NameNotFoundException ignored) {}
+                    }
+
+                    String mode = resolveAuthorizerMode(opts.optString("authorizer", ""));
+                    if ("none".equals(mode)) {
+                        installNoPrivilege(files, opts); // result arrives via the PackageInstaller receiver
+                        return;
+                    }
+                    String out = installApksOptions(files, opts.optString("createFlags", "-r"), mode);
+                    res.put("ok", out != null && out.contains("Success"));
+                    res.put("method", mode);
+                    res.put("output", out != null ? out.trim() : "");
+                    finishInstall(res, opts, mode);
+                } catch (Exception e) {
+                    try {
+                        res.put("ok", false);
+                        res.put("method", "none");
+                        res.put("output", "Error: " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
+                    } catch (Exception ignored) {}
+                    notifyJs("window.onInstallResult && window.onInstallResult(" + JSONObject.quote(res.toString()) + ")");
+                }
+            }
+        });
+    }
+
+    // ---------------------------------------------------------------------------------------------
     // Backup and restore
     //
     // A backup is one .adbbackup file (a zip): backup.json, apk/<each APK>, and data.tar when the data
@@ -1332,6 +1766,9 @@ public class MainActivity extends Activity {
     // ---------------------------------------------------------------------------------------------
 
     private static final int REQ_PICK_BACKUP = 4202;
+    private static final int REQ_PICK_INSTALL = 4203;
+    // Distinguishes each no-privilege install's result broadcast so two in-flight installs can't cross wires.
+    private int installReceiverSeq = 0;
     private final java.util.concurrent.atomic.AtomicBoolean backupBusy = new java.util.concurrent.atomic.AtomicBoolean(false);
     // A real app + its data is rarely anywhere near this; bounds how much a crafted or damaged backup can
     // make the restore step write before it gives up, instead of grinding on a zip bomb until storage fills.
@@ -2109,6 +2546,12 @@ public class MainActivity extends Activity {
                     notifyJs("window.onBackupPicked && window.onBackupPicked(" + JSONObject.quote(res.toString()) + ")");
                 }
             });
+            return;
+        }
+        if (requestCode == REQ_PICK_INSTALL) {
+            final Uri picked = (resultCode == RESULT_OK && data != null) ? data.getData() : null;
+            if (picked == null) return;
+            notifyJs("window.onInstallFilePicked && window.onInstallFilePicked(" + JSONObject.quote(picked.toString()) + ")");
             return;
         }
         if (requestCode != REQ_IMPORT_OBTAINIUM) return;
@@ -3366,6 +3809,44 @@ public class MainActivity extends Activity {
                     startActivityForResult(i, REQ_PICK_BACKUP);
                 }
             });
+        }
+
+        /** Lets the user choose an .apk/.apks/.apkm to install. Answer: window.onInstallFilePicked(ref). */
+        @JavascriptInterface
+        public void pickInstallerFile() {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                    i.addCategory(Intent.CATEGORY_OPENABLE);
+                    i.setType("*/*");
+                    startActivityForResult(i, REQ_PICK_INSTALL);
+                }
+            });
+        }
+
+        /** Reads a picked package and returns its info + splits. Answer: window.onInstallInspected(json). */
+        @JavascriptInterface
+        public void inspectInstallSource(final String ref) {
+            executor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject res;
+                    try {
+                        res = inspectInstallSourceImpl(ref);
+                    } catch (Exception e) {
+                        res = new JSONObject();
+                        try { res.put("error", e.getMessage() != null ? e.getMessage() : "could not read this package"); } catch (Exception ignored) {}
+                    }
+                    notifyJs("window.onInstallInspected && window.onInstallInspected(" + JSONObject.quote(res.toString()) + ")");
+                }
+            });
+        }
+
+        /** Installs the selected splits with the chosen options. Answer: window.onInstallResult(json). */
+        @JavascriptInterface
+        public void installSelected(String optsJson) {
+            runInstallSelected(optsJson);
         }
 
         @JavascriptInterface
