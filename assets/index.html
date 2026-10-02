@@ -616,6 +616,65 @@
             transform: scale(0.96);
         }
 
+        /* Compact stand-in for the batch sheet while apps are still being selected, so the
+           full action panel doesn't cover the list until the user actually wants it. */
+        .batch-fab {
+            position: fixed;
+            right: 20px;
+            bottom: 24px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: var(--on-accent);
+            border: none;
+            font-size: 22px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5), 0 0 20px var(--accent-glow);
+            z-index: 200;
+            cursor: pointer;
+            transform: scale(0);
+            opacity: 0;
+            pointer-events: none;
+            transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+        }
+
+        .batch-fab.show {
+            transform: scale(1);
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .batch-fab:active {
+            transform: scale(0.92);
+        }
+
+        .batch-fab-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            min-width: 20px;
+            height: 20px;
+            padding: 0 4px;
+            border-radius: 10px;
+            background: var(--bg-sheet);
+            border: 2px solid var(--accent);
+            color: var(--text-main);
+            font-size: 11px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .batch-collapse-btn {
+            font-size: 15px;
+            color: var(--text-muted);
+        }
+
         /* Color Settings View */
         .color-card {
             background: var(--bg-card);
@@ -2549,6 +2608,12 @@ Type any command below (e.g. pm list packages -d)
 
     </div>
 
+    <!-- Compact FAB shown while apps are being selected, so the list stays clear until the user is done. -->
+    <button class="batch-fab" id="batchFab" onclick="expandBatchPanel()" aria-label="Open batch actions">
+        <span>✓</span>
+        <span class="batch-fab-badge" id="batchFabBadge">0</span>
+    </button>
+
     <!-- DOCKED BATCH COMMANDS SHEET (One UI 2-Row Grid: Never Cut Off, No Side Scroll Needed!) -->
     <div class="batch-bottom-sheet" id="floatingBatchBar">
         <div class="batch-sheet-header">
@@ -2557,6 +2622,7 @@ Type any command below (e.g. pm list packages -d)
                 <span id="batchCountText">0 Selected</span>
             </div>
             <div class="batch-sheet-tools">
+                <button class="batch-tool-link batch-collapse-btn" onclick="collapseBatchPanel()" aria-label="Minimize">▾</button>
                 <button class="batch-tool-link" onclick="selectAllFiltered()">Select All</button>
                 <button class="batch-tool-link" onclick="clearBatchSelection()" style="color:var(--text-muted);">✕ Clear</button>
             </div>
@@ -3199,6 +3265,7 @@ Type any command below (e.g. pm list packages -d)
         let allApps = [];
         let filteredApps = [];
         let selectedPkgs = new Set();
+        let batchPanelExpanded = false;
         let currentFilter = 'all';
         let inspectedPkg = null;
         let currentWorkingMode = 'unprivileged';
@@ -3595,6 +3662,7 @@ Type any command below (e.g. pm list packages -d)
             const list = customLists.find(l => l.id === listId);
             if (!list) return;
             selectedPkgs.clear();
+            batchPanelExpanded = false;
             (list.packages || []).forEach(pkg => selectedPkgs.add(pkg));
             updateBatchBar();
             renderApps();
@@ -5424,15 +5492,36 @@ Type any command below (e.g. pm list packages -d)
             selectAllVisible(true);
         }
 
+        // Two states while apps are selected: a compact FAB (doesn't cover the list) until the
+        // user taps it, then the full action sheet. Dropping to zero selected always resets back
+        // to the FAB state, so the next selection starts compact again.
         function updateBatchBar() {
             const bar = document.getElementById('floatingBatchBar');
+            const fab = document.getElementById('batchFab');
             const count = selectedPkgs.size;
-            if (count > 0) {
-                bar.classList.add('show');
-                document.getElementById('batchCountText').innerText = `${count} Selected`;
-            } else {
+            if (count === 0) {
+                batchPanelExpanded = false;
                 bar.classList.remove('show');
+                fab.classList.remove('show');
+                return;
             }
+            document.getElementById('batchCountText').innerText = `${count} Selected`;
+            document.getElementById('batchFabBadge').innerText = count;
+            bar.classList.toggle('show', batchPanelExpanded);
+            fab.classList.toggle('show', !batchPanelExpanded);
+        }
+
+        function expandBatchPanel() {
+            if (selectedPkgs.size === 0) return;
+            haptic();
+            batchPanelExpanded = true;
+            updateBatchBar();
+        }
+
+        function collapseBatchPanel() {
+            haptic();
+            batchPanelExpanded = false;
+            updateBatchBar();
         }
 
         function clearBatchSelection() {
