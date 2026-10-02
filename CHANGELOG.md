@@ -5,6 +5,16 @@
 Installs over v3.1 – v4.7 without uninstalling (same signing key). Three more GitHub Copilot review
 passes on v4.7-Pro's diff, after it had already shipped, found further genuine issues - all fixed here:
 
+- **Unexported-activity launches from the Components tab could report success while doing nothing.**
+  Android's `exported=false` denial frequently doesn't throw an exception back to a plain
+  `startActivity()` call - it's just logged server-side and nothing opens - and activities without
+  detailed per-activity info were defaulting to "exported" rather than "not exported". Launching an
+  activity now always goes through the verifiable `am start` shell path whenever a working mode
+  (ADB/Shizuku/Root) is active, regardless of the exported flag, and unknown/legacy activity info now
+  defaults to not-exported instead of exported.
+- Selecting multiple apps for a batch action no longer immediately covers most of the list with the
+  full action panel; a small checkmark button appears in the bottom-right corner instead, which opens
+  the panel on tap (and can collapse it back without losing the selection).
 - **Restore no longer scans forward for `backup.json` by name.** A picked file is untrusted, and skipping
   past an unexpected entry first still fully decompresses it to find its end - a tiny zip bomb placed
   before `backup.json` would have been inflated in full before this app ever got to check anything.
