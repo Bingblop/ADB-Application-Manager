@@ -2137,9 +2137,11 @@
         <button class="tab-btn active" onclick="switchView('apps')">📱 Applications</button>
         <button class="tab-btn" onclick="switchView('debloater')">🧹 Debloater</button>
         <button class="tab-btn" onclick="switchView('installer')">📦 Installer</button>
+        <button class="tab-btn" onclick="switchView('files')">📁 Files</button>
         <button class="tab-btn" onclick="switchView('updates')" id="updatesTabBtn">⬆️ Updates</button>
         <button class="tab-btn" onclick="switchView('saved-lists')">📋 Saved Lists</button>
         <button class="tab-btn" onclick="switchView('colors')">🎨 Color & Themes</button>
+        <button class="tab-btn" onclick="switchView('logcat')">📄 Logcat</button>
         <button class="tab-btn" onclick="switchView('terminal')">💻 ADB Console</button>
     </nav>
 
@@ -2314,7 +2316,8 @@
                 <div class="color-card-title">📦 Install a package</div>
                 <div class="color-card-subtitle">APK, APKS or APKM — base plus splits, with full install control</div>
                 <button class="batch-grid-btn accent" style="width:100%;height:46px;margin-top:6px;" onclick="pickInstallFile()">📂 Choose APK / APKS / APKM</button>
-                <div id="installPickHint" class="color-card-subtitle" style="margin-top:10px;">Pick a package file to read it and choose how to install it.</div>
+                <button class="batch-grid-btn" style="width:100%;height:40px;margin-top:8px;" onclick="installDefaultSettings()">⭐ Set as default installer</button>
+                <div id="installPickHint" class="color-card-subtitle" style="margin-top:10px;">Pick a package file to read it and choose how to install it. To make this the default installer, open any APK, choose this app, and tap "Always".</div>
             </div>
 
             <!-- Package info (after a pick) -->
@@ -2458,6 +2461,54 @@
                 <button class="batch-grid-btn accent" style="width:100%;height:48px;margin-top:16px;" onclick="runInstall()">⬇️ Install</button>
                 <div id="installPreview" class="color-card-subtitle" style="margin-top:10px;font-family:monospace;word-break:break-all;"></div>
             </div>
+        </section>
+
+        <!-- VIEW: FILE MANAGER -->
+        <section id="view-files" class="view-content">
+            <div class="color-card">
+                <div class="color-card-title">📁 File manager</div>
+                <div class="color-card-subtitle">Browse and manage files with ADB / Shizuku / Root privileges.</div>
+                <div class="list-toolbar" style="margin-top:8px;">
+                    <input type="text" class="list-search" id="fmPathInput" placeholder="/sdcard" value="/sdcard" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter') fmGo(this.value)">
+                    <button class="term-run-btn" onclick="fmGo(document.getElementById('fmPathInput').value)">Go</button>
+                </div>
+                <div class="batch-sheet-tools" style="margin:8px 0; gap:12px; flex-wrap:wrap;">
+                    <button class="batch-tool-link" onclick="fmUp()">⬆️ Up</button>
+                    <button class="batch-tool-link" onclick="fmGo('/sdcard')">/sdcard</button>
+                    <button class="batch-tool-link" onclick="fmGo('/data/local/tmp')">/data/local/tmp</button>
+                    <button class="batch-tool-link" onclick="fmGo('/system')">/system</button>
+                    <button class="batch-tool-link" onclick="fmNewFolder()">＋ Folder</button>
+                    <button class="batch-tool-link" onclick="fmRefresh()">↻ Refresh</button>
+                </div>
+            </div>
+            <div class="color-card">
+                <div id="fmCurrentPath" class="color-card-subtitle" style="font-family:monospace; word-break:break-all; margin-bottom:6px;">/sdcard</div>
+                <div id="fmList"><div class="list-empty">Open this tab to browse files.</div></div>
+            </div>
+        </section>
+
+        <!-- VIEW: LOGCAT -->
+        <section id="view-logcat" class="view-content">
+            <div class="color-card">
+                <div class="color-card-title">📄 Logcat</div>
+                <div class="color-card-subtitle">Read the device log with ADB / Shizuku / Root.</div>
+                <div class="batch-sheet-tools" style="margin:8px 0; gap:10px; flex-wrap:wrap; align-items:center;">
+                    <select class="op-select" id="logcatLevel" onchange="logcatRefresh()">
+                        <option value="V">Verbose</option><option value="D">Debug</option><option value="I" selected>Info</option>
+                        <option value="W">Warn</option><option value="E">Error</option><option value="F">Fatal</option>
+                    </select>
+                    <select class="op-select" id="logcatLines" onchange="logcatRefresh()">
+                        <option value="200">200</option><option value="500" selected>500</option><option value="1000">1000</option><option value="2000">2000</option>
+                    </select>
+                    <input type="text" class="list-search" id="logcatFilter" placeholder="filter text / tag" style="flex:1; min-width:120px;" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter') logcatRefresh()">
+                </div>
+                <div class="batch-sheet-tools" style="margin-bottom:4px; gap:14px;">
+                    <button class="batch-tool-link" onclick="logcatRefresh()">↻ Refresh</button>
+                    <button class="batch-tool-link" onclick="logcatClear()">🧹 Clear</button>
+                    <button class="batch-tool-link" onclick="logcatCopy()">📋 Copy</button>
+                </div>
+            </div>
+            <div class="terminal-box" id="logcatOutput" style="max-height:60vh; overflow:auto;">Open this tab to read the log.</div>
         </section>
 
         <!-- VIEW: UPDATES -->
@@ -3180,6 +3231,27 @@ Type any command below (e.g. pm list packages -d)
         </div>
     </div>
 
+    <div class="modal-overlay" id="fmActionModal" onclick="if(event.target===this) closeFmAction()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-avatar" style="background:rgba(0,200,255,0.18); color:var(--accent);">📄</div>
+                    <div class="sheet-title">
+                        <h3 id="fmActionName">File</h3>
+                        <p id="fmActionPath" style="font-family:monospace; word-break:break-all;"></p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="closeFmAction()">✕</div>
+            </div>
+            <div class="batch-actions-grid" id="fmActionBtns"></div>
+            <div id="fmDestRow" style="display:none; margin-top:10px;">
+                <input class="modal-text-input" id="fmDestInput" placeholder="Destination path" autocomplete="off" autocapitalize="off" spellcheck="false">
+                <button class="mode-action-btn primary" style="width:100%; justify-content:center; margin-top:8px;" id="fmDestConfirm" onclick="fmDestConfirm()">Confirm</button>
+            </div>
+            <div id="fmViewer" class="terminal-box" style="display:none; max-height:50vh; overflow:auto; margin-top:10px;"></div>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="deleteListModal" onclick="if(event.target===this) closeDeleteListModal()">
         <div class="modal-sheet" style="max-width:440px;">
             <div class="sheet-header">
@@ -3638,7 +3710,7 @@ Type any command below (e.g. pm list packages -d)
             return Object.assign(resolvePresetScheme(themeState.preset, mode), definedColors(themeState.overrides[mode]));
         }
 
-        const tabKeys = ['apps', 'debloater', 'installer', 'updates', 'saved-lists', 'colors', 'terminal'];
+        const tabKeys = ['apps', 'debloater', 'installer', 'files', 'updates', 'saved-lists', 'colors', 'logcat', 'terminal'];
 
         function switchView(viewName) {
             const targetIdx = tabKeys.indexOf(viewName);
@@ -3664,6 +3736,8 @@ Type any command below (e.g. pm list packages -d)
             if (viewName === 'debloater') onDebloaterShown();
             if (viewName === 'updates') onUpdatesShown();
             if (viewName === 'installer') onInstallerShown();
+            if (viewName === 'files') onFilesShown();
+            if (viewName === 'logcat') onLogcatShown();
             haptic();
         }
 
@@ -5840,6 +5914,19 @@ Type any command below (e.g. pm list packages -d)
         }
         window.onInstallFilePicked = onInstallFilePicked;
 
+        // An APK opened from outside the app (default-installer intent): jump to the Installer tab and load it.
+        function onInstallIntent(ref) {
+            switchView('installer');
+            onInstallFilePicked(ref);
+        }
+        window.onInstallIntent = onInstallIntent;
+
+        function installDefaultSettings() {
+            haptic();
+            showToast('Opening default-apps settings...', '⭐');
+            if (window.AndroidBridge && window.AndroidBridge.openDefaultAppsSettings) window.AndroidBridge.openDefaultAppsSettings();
+        }
+
         function onInstallInspected(json) {
             let d;
             try { d = JSON.parse(json); } catch (e) { d = { error: 'could not read package' }; }
@@ -6023,6 +6110,187 @@ Type any command below (e.g. pm list packages -d)
             }
         }
         window.onInstallResult = onInstallResult;
+
+        // ---- File manager ----
+        let fmPath = '/sdcard';
+        let fmActionTarget = null;
+        let fmPendingOp = null;
+
+        function onFilesShown() {
+            if (!window.__fmLoaded) { window.__fmLoaded = true; fmGo(fmPath); }
+        }
+        function fmGo(path) {
+            if (!guardPrivilege('File manager')) return;
+            path = (path || '/').trim() || '/';
+            if (!window.AndroidBridge || !window.AndroidBridge.fmList) { showToast('Needs the app build', '⚠️'); return; }
+            let d;
+            try { d = JSON.parse(window.AndroidBridge.fmList(path)); } catch (e) { d = { error: String(e && e.message || e) }; }
+            fmPath = d.path || path;
+            document.getElementById('fmPathInput').value = fmPath;
+            document.getElementById('fmCurrentPath').innerText = fmPath;
+            renderFm(d);
+        }
+        function fmRefresh() { fmGo(fmPath); }
+        function fmUp() {
+            const i = fmPath.lastIndexOf('/');
+            fmGo(i <= 0 ? '/' : fmPath.substring(0, i));
+        }
+        function fmParent(p) { const i = p.lastIndexOf('/'); return i <= 0 ? '/' : p.substring(0, i); }
+        function fmJoin(name) { return (fmPath === '/' ? '' : fmPath) + '/' + name; }
+
+        function renderFm(d) {
+            const el = document.getElementById('fmList');
+            if (d.error && (!d.entries || !d.entries.length)) { el.innerHTML = '<div class="list-empty">' + escapeHtml(d.error) + '</div>'; return; }
+            const entries = (d.entries || []).slice().sort((a, b) => (b.isDir - a.isDir) || a.name.localeCompare(b.name));
+            if (!entries.length) { el.innerHTML = '<div class="list-empty">Empty folder.</div>'; return; }
+            el.innerHTML = entries.map(e => {
+                const icon = e.isDir ? '📁' : (e.isLink ? '↪' : '📄');
+                const sub = escapeHtml(e.perms + (e.isDir ? '' : ' • ' + fmtInstallSize(e.size)) + (e.link ? ' → ' + e.link : ''));
+                const full = fmJoin(e.name);
+                return `<div class="perm-row">
+                    <div class="perm-info" style="cursor:pointer;" onclick='fmTap(${e.isDir ? 'true' : 'false'}, ${JSON.stringify(full)}, ${JSON.stringify(e.name)})'>
+                        <div class="perm-name">${icon} ${escapeHtml(e.name)}</div>
+                        <div class="perm-sub">${sub}</div>
+                    </div>
+                    <button class="perm-toggle-btn locked" onclick='fmActions(${JSON.stringify(full)}, ${e.isDir ? 'true' : 'false'}, ${JSON.stringify(e.name)})'>⋯</button>
+                </div>`;
+            }).join('');
+        }
+        function fmTap(isDir, full, name) { if (isDir) fmGo(full); else fmActions(full, false, name); }
+
+        function fmActions(full, isDir, name) {
+            fmActionTarget = { full, isDir, name };
+            fmPendingOp = null;
+            document.getElementById('fmActionName').innerText = name;
+            document.getElementById('fmActionPath').innerText = full;
+            document.getElementById('fmDestRow').style.display = 'none';
+            document.getElementById('fmViewer').style.display = 'none';
+            const btns = [];
+            if (!isDir && name.toLowerCase().endsWith('.apk')) btns.push(`<button class="batch-grid-btn accent" onclick="fmInstallFile()">📦 Install</button>`);
+            if (!isDir) btns.push(`<button class="batch-grid-btn" onclick="fmViewFile()">👁 View</button>`);
+            btns.push(`<button class="batch-grid-btn" onclick="fmStartDest('rename')">✏️ Rename</button>`);
+            btns.push(`<button class="batch-grid-btn" onclick="fmStartDest('cp')">📋 Copy</button>`);
+            btns.push(`<button class="batch-grid-btn" onclick="fmStartDest('mv')">➡️ Move</button>`);
+            btns.push(`<button class="batch-grid-btn danger" onclick="fmStartDest('rm')">🗑️ Delete</button>`);
+            document.getElementById('fmActionBtns').innerHTML = btns.join('');
+            haptic();
+            document.getElementById('fmActionModal').classList.add('show');
+        }
+        function closeFmAction() { haptic(); document.getElementById('fmActionModal').classList.remove('show'); }
+
+        function fmStartDest(op) {
+            if (!fmActionTarget) return;
+            fmPendingOp = op;
+            const row = document.getElementById('fmDestRow');
+            const input = document.getElementById('fmDestInput');
+            const confirm = document.getElementById('fmDestConfirm');
+            row.style.display = '';
+            document.getElementById('fmViewer').style.display = 'none';
+            if (op === 'rm') {
+                input.style.display = 'none';
+                confirm.innerText = 'Delete ' + fmActionTarget.name + '?';
+                confirm.className = 'mode-action-btn';
+                confirm.style.background = 'var(--danger, #e5484d)';
+            } else {
+                input.style.display = '';
+                confirm.className = 'mode-action-btn primary';
+                confirm.style.background = '';
+                confirm.innerText = 'Confirm';
+                input.value = op === 'rename' ? fmActionTarget.name : fmActionTarget.full;
+                input.placeholder = op === 'rename' ? 'New name' : 'Destination path';
+            }
+        }
+        function fmDestConfirm() {
+            if (!fmActionTarget || !fmPendingOp) return;
+            const src = fmActionTarget.full;
+            const val = (document.getElementById('fmDestInput').value || '').trim();
+            if (fmPendingOp === 'mkdir') {
+                if (!val) { showToast('Enter a name', '⚠️'); return; }
+                let rk;
+                try { rk = JSON.parse(window.AndroidBridge.fmOp('mkdir', (fmPath === '/' ? '' : fmPath) + '/' + val, null)); } catch (e) { rk = { ok: false }; }
+                showToast(rk.ok ? 'Folder created' : 'Failed', rk.ok ? '✔' : '⚠️');
+                closeFmAction();
+                fmRefresh();
+                return;
+            }
+            let op = fmPendingOp, a = src, b = null;
+            if (op === 'rename') {
+                if (!val) { showToast('Enter a name', '⚠️'); return; }
+                op = 'mv'; b = fmParent(src) + '/' + val;
+            } else if (op === 'cp' || op === 'mv') {
+                if (!val) { showToast('Enter a destination', '⚠️'); return; }
+                b = val;
+            } else if (op === 'rm') {
+                b = null;
+            }
+            let r;
+            try { r = JSON.parse(window.AndroidBridge.fmOp(op, a, b)); } catch (e) { r = { ok: false, output: String(e && e.message || e) }; }
+            showToast(r.ok ? 'Done' : 'Failed', r.ok ? '✔' : '⚠️');
+            closeFmAction();
+            fmRefresh();
+            if (!r.ok) showCommandResults('File op', op, [{ name: fmActionTarget ? fmActionTarget.name : '', pkg: a, output: r.output, success: false }]);
+        }
+        function fmViewFile() {
+            if (!fmActionTarget) return;
+            const v = document.getElementById('fmViewer');
+            document.getElementById('fmDestRow').style.display = 'none';
+            let txt;
+            try { txt = window.AndroidBridge.fmRead(fmActionTarget.full); } catch (e) { txt = 'Error: ' + (e && e.message || e); }
+            v.innerText = txt || '(empty)';
+            v.style.display = '';
+        }
+        function fmInstallFile() {
+            if (!fmActionTarget) return;
+            let r;
+            try { r = JSON.parse(window.AndroidBridge.fmInstall(fmActionTarget.full)); } catch (e) { r = { ok: false, error: String(e && e.message || e) }; }
+            if (r.ok && r.ref) { closeFmAction(); onInstallIntent(r.ref); }
+            else { showToast('Could not stage APK', '⚠️'); showCommandResults('Install from files', fmActionTarget.name, [{ name: fmActionTarget.name, pkg: fmActionTarget.full, output: r.error || 'failed', success: false }]); }
+        }
+        function fmNewFolder() {
+            if (!guardPrivilege('Create folder')) return;
+            fmActionTarget = { full: fmPath, isDir: true, name: fmPath };
+            fmPendingOp = 'mkdir';
+            document.getElementById('fmActionName').innerText = 'New folder';
+            document.getElementById('fmActionPath').innerText = fmPath;
+            document.getElementById('fmActionBtns').innerHTML = '';
+            document.getElementById('fmViewer').style.display = 'none';
+            const row = document.getElementById('fmDestRow');
+            const input = document.getElementById('fmDestInput');
+            const confirm = document.getElementById('fmDestConfirm');
+            row.style.display = '';
+            input.style.display = '';
+            input.value = '';
+            input.placeholder = 'Folder name';
+            confirm.className = 'mode-action-btn primary';
+            confirm.style.background = '';
+            confirm.innerText = 'Create';
+            haptic();
+            document.getElementById('fmActionModal').classList.add('show');
+        }
+
+        // ---- Logcat ----
+        function onLogcatShown() { if (!window.__logcatLoaded) { window.__logcatLoaded = true; logcatRefresh(); } }
+        function logcatRefresh() {
+            if (!guardPrivilege('Logcat')) return;
+            if (!window.AndroidBridge || !window.AndroidBridge.getLogcat) { document.getElementById('logcatOutput').innerText = 'Logcat needs the app build.'; return; }
+            const level = document.getElementById('logcatLevel').value;
+            const lines = parseInt(document.getElementById('logcatLines').value, 10) || 500;
+            const filter = document.getElementById('logcatFilter').value || '';
+            const out = window.AndroidBridge.getLogcat(level, filter, lines);
+            const el = document.getElementById('logcatOutput');
+            el.innerText = out || '(no output)';
+            el.scrollTop = el.scrollHeight;
+        }
+        function logcatClear() {
+            if (!guardPrivilege('Logcat')) return;
+            if (window.AndroidBridge && window.AndroidBridge.clearLogcat) window.AndroidBridge.clearLogcat();
+            showToast('Log cleared', '🧹');
+            logcatRefresh();
+        }
+        function logcatCopy() {
+            const txt = document.getElementById('logcatOutput').innerText || '';
+            if (window.AndroidBridge && window.AndroidBridge.copyToClipboard) { window.AndroidBridge.copyToClipboard(txt); showToast('Copied log', '📋'); }
+        }
 
         // Inspector Modal
         let inspectorData = null;

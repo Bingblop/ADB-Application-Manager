@@ -63,6 +63,9 @@ public class MainActivity extends Activity {
     private static final String SHIZUKU_PLUS_PKG = "af.shizuku.plus.api";
 
     private WebView webView;
+    private boolean pageReady = false;
+    // An APK opened from outside (default-installer intent) waiting to be handed to the Installer tab.
+    private String pendingInstallRef = null;
     private Vibrator vibrator;
     private SharedPreferences prefs;
     private boolean buildChangedThisLaunch = false;
@@ -172,7 +175,13 @@ public class MainActivity extends Activity {
         settings.setUseWideViewPort(false);
 
         webView.setWebChromeClient(new WebChromeClient());
-        webView.setWebViewClient(new WebViewClient());
+        webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                pageReady = true;
+                deliverPendingInstall();
+            }
+        });
         webView.setBackgroundColor(0xFF080A0F);
 
         WebView.setWebContentsDebuggingEnabled(true);
@@ -180,6 +189,33 @@ public class MainActivity extends Activity {
         webView.addJavascriptInterface(new AndroidBridge(), "AndroidBridge");
         webView.loadUrl("file:///android_asset/index.html");
         registerWallpaperListener();
+        handleIncomingIntent(getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleIncomingIntent(intent);
+    }
+
+    /** Picks up an APK opened from outside (the default-installer intent-filter) and remembers it. */
+    private void handleIncomingIntent(Intent intent) {
+        if (intent == null) return;
+        String action = intent.getAction();
+        if (!Intent.ACTION_VIEW.equals(action) && !"android.intent.action.INSTALL_PACKAGE".equals(action)) return;
+        Uri data = intent.getData();
+        if (data == null) return;
+        pendingInstallRef = "file".equals(data.getScheme()) ? data.getPath() : data.toString();
+        deliverPendingInstall();
+    }
+
+    /** Hands a pending opened-APK to the Installer tab once the WebView is ready. */
+    private void deliverPendingInstall() {
+        if (!pageReady || pendingInstallRef == null) return;
+        final String ref = pendingInstallRef;
+        pendingInstallRef = null;
+        notifyJs("window.onInstallIntent && window.onInstallIntent(" + JSONObject.quote(ref) + ")");
     }
 
     private void setupBinariesAndKeys() {
@@ -3875,6 +3911,29 @@ public class MainActivity extends Activity {
             });
         }
 
+        /** Opens the system screen where the user can make this app the default for opening APK files. */
+        @JavascriptInterface
+        public void openDefaultAppsSettings() {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Intent i = Build.VERSION.SDK_INT >= 24
+                                ? new Intent(android.provider.Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS)
+                                : new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + getPackageName()));
+                        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(i);
+                    } catch (Exception e) {
+                        try {
+                            Intent i = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + getPackageName()));
+                            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(i);
+                        } catch (Exception ignored) {}
+                    }
+                }
+            });
+        }
+
         /** Reads a picked package and returns its info + splits. Answer: window.onInstallInspected(json). */
         @JavascriptInterface
         public void inspectInstallSource(final String ref) {
@@ -3919,6 +3978,136 @@ public class MainActivity extends Activity {
                 try { r.put("ok", false); r.put("output", "Error: " + e.getMessage()); } catch (Exception ignored) {}
             }
             return r.toString();
+        }
+
+        // ---- Logcat reader ----
+        /** Recent logcat lines. level=V/D/I/W/E/F, filter=optional text grepped in-process, lines=tail count. */
+        @JavascriptInterface
+        public String getLogcat(String level, String filter, int lines) {
+            try {
+                if ("standard".equals(resolveExecMode())) return "Error: reading logcat needs ADB, Shizuku or Root.";
+                String lv = (level == null || !level.matches("[VDIWEF]")) ? "V" : level;
+                int n = (lines <= 0 || lines > 5000) ? 500 : lines;
+                String out = executeShell("logcat -d -v threadtime -t " + n + " *:" + lv);
+                if (out == null) out = "";
+                // The filter is applied here, never in the shell, so it can't inject anything.
+                if (filter != null && !filter.trim().isEmpty()) {
+                    String f = filter.toLowerCase();
+                    StringBuilder sb = new StringBuilder();
+                    for (String line : out.split("\n")) if (line.toLowerCase().contains(f)) sb.append(line).append('\n');
+                    out = sb.toString();
+                }
+                return out.trim().isEmpty() ? "(no matching log lines)" : out;
+            } catch (Exception e) {
+                return "Error: " + (e.getMessage() != null ? e.getMessage() : "logcat failed");
+            }
+        }
+
+        @JavascriptInterface
+        public String clearLogcat() {
+            try {
+                if ("standard".equals(resolveExecMode())) return "Error: needs ADB, Shizuku or Root.";
+                executeShell("logcat -c");
+                return "cleared";
+            } catch (Exception e) { return "Error: " + e.getMessage(); }
+        }
+
+        // ---- Privileged file manager ----
+        /** Lists a directory via the active backend. {path,parent,entries:[{name,isDir,isLink,size,perms,link}]} or {error}. */
+        @JavascriptInterface
+        public String fmList(String path) {
+            JSONObject res = new JSONObject();
+            try {
+                if ("standard".equals(resolveExecMode())) { res.put("error", "File manager needs ADB, Shizuku or Root."); return res.toString(); }
+                String p = (path == null || path.isEmpty()) ? "/" : path;
+                if (p.length() > 1 && p.endsWith("/")) p = p.substring(0, p.length() - 1);
+                String out = executeShell("ls -la " + BackupScripts.quote(p));
+                res.put("path", p);
+                int slash = p.lastIndexOf('/');
+                res.put("parent", p.equals("/") ? "/" : (slash <= 0 ? "/" : p.substring(0, slash)));
+                JSONArray entries = new JSONArray();
+                if (out != null) {
+                    for (String line : out.split("\n")) {
+                        String ln = line.trim();
+                        if (ln.isEmpty() || ln.startsWith("total ")) continue;
+                        if (ln.toLowerCase().startsWith("ls:") || ln.toLowerCase().contains("permission denied") || ln.toLowerCase().contains("no such file")) {
+                            res.put("error", ln); continue;
+                        }
+                        // perms links owner group size date time name  (toybox ls: date is YYYY-MM-DD HH:MM)
+                        String[] t = ln.split("\\s+", 8);
+                        if (t.length < 8) continue;
+                        String perms = t[0];
+                        char type = perms.charAt(0);
+                        String rest = t[7], name = rest, link = null;
+                        int arrow = rest.indexOf(" -> ");
+                        if (arrow >= 0) { name = rest.substring(0, arrow); link = rest.substring(arrow + 4); }
+                        if (name.equals(".") || name.equals("..")) continue;
+                        long size = 0; try { size = Long.parseLong(t[4]); } catch (Exception ignored) {}
+                        JSONObject e = new JSONObject();
+                        e.put("name", name);
+                        e.put("isDir", type == 'd');
+                        e.put("isLink", type == 'l');
+                        e.put("perms", perms);
+                        e.put("size", size);
+                        if (link != null) e.put("link", link);
+                        entries.put(e);
+                    }
+                }
+                res.put("entries", entries);
+            } catch (Exception e) {
+                try { res.put("error", e.getMessage()); } catch (Exception ignored) {}
+            }
+            return res.toString();
+        }
+
+        /** First 128 KB of a file as text (for viewing). */
+        @JavascriptInterface
+        public String fmRead(String path) {
+            try {
+                if ("standard".equals(resolveExecMode())) return "Error: needs ADB, Shizuku or Root.";
+                return executeShell("toybox head -c 131072 " + BackupScripts.quote(path) + " 2>&1 || head -c 131072 " + BackupScripts.quote(path));
+            } catch (Exception e) { return "Error: " + e.getMessage(); }
+        }
+
+        /** File op: mkdir|touch|rm|cp|mv. For rm, dirs are removed recursively. */
+        @JavascriptInterface
+        public String fmOp(String op, String a, String b) {
+            JSONObject res = new JSONObject();
+            try {
+                if ("standard".equals(resolveExecMode())) { res.put("ok", false); res.put("output", "needs ADB, Shizuku or Root"); return res.toString(); }
+                if (a == null || a.isEmpty()) { res.put("ok", false); res.put("output", "no path"); return res.toString(); }
+                String qa = BackupScripts.quote(a);
+                String cmd;
+                if ("mkdir".equals(op)) cmd = "mkdir -p " + qa + " && echo OK";
+                else if ("touch".equals(op)) cmd = "touch " + qa + " && echo OK";
+                else if ("rm".equals(op)) cmd = "rm -rf " + qa + " && echo OK";
+                else if ("cp".equals(op)) cmd = "cp -r " + qa + " " + BackupScripts.quote(b) + " && echo OK";
+                else if ("mv".equals(op)) cmd = "mv " + qa + " " + BackupScripts.quote(b) + " && echo OK";
+                else { res.put("ok", false); res.put("output", "unknown op"); return res.toString(); }
+                String out = executeShell(cmd);
+                res.put("ok", out != null && out.contains("OK"));
+                res.put("output", out != null ? out.trim() : "");
+            } catch (Exception e) {
+                try { res.put("ok", false); res.put("output", "Error: " + e.getMessage()); } catch (Exception ignored) {}
+            }
+            return res.toString();
+        }
+
+        /** Stages an APK from an arbitrary (privileged) path to a readable temp, for the Installer. {ok,ref}|{error}. */
+        @JavascriptInterface
+        public String fmInstall(String path) {
+            JSONObject res = new JSONObject();
+            try {
+                if ("standard".equals(resolveExecMode())) { res.put("ok", false); res.put("error", "needs ADB, Shizuku or Root"); return res.toString(); }
+                String staged = "/data/local/tmp/fm_install.apk";
+                String out = executeShell("cp " + BackupScripts.quote(path) + " " + staged + " && chmod 644 " + staged + " && echo OK");
+                if (out == null || !out.contains("OK")) { res.put("ok", false); res.put("error", out != null ? out.trim() : "copy failed"); return res.toString(); }
+                res.put("ok", true);
+                res.put("ref", staged);
+            } catch (Exception e) {
+                try { res.put("ok", false); res.put("error", e.getMessage()); } catch (Exception ignored) {}
+            }
+            return res.toString();
         }
 
         /** Runs ART dex optimization for a package (pm compile -m <mode> [-f]) via the active backend. */

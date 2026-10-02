@@ -62,6 +62,16 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Default-installer: handle opening an APK file, so this app can be set as the APK handler.
+                 When launched this way it routes into the Installer tab; a privileged mode installs, and
+                 with no privileged mode it falls back to the normal system installer. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <action android:name="android.intent.action.INSTALL_PACKAGE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" android:mimeType="application/vnd.android.package-archive" />
+                <data android:scheme="file" android:mimeType="application/vnd.android.package-archive" />
+            </intent-filter>
         </activity>
 
         <!-- Shizuku delivers its binder to the app through this provider -->
