@@ -13,7 +13,7 @@ through **ADB over TCP, Wireless Debugging, Shizuku or Root**.
 
 ### [⬇️ Download the latest APK](https://github.com/Bingblop/ADB-Application-Manager/releases/latest)
 
-`com.bloatware.bingblop` · v5.2-Pro · signed APK, installs over every earlier version without uninstalling
+`com.bloatware.bingblop` · v5.3-Pro · signed APK, installs over every earlier version without uninstalling
 
 <table>
   <tr>
@@ -76,6 +76,13 @@ tell you when a new version is out (see [Updates](#updates)).
 | **Modes** | ADB over TCP · Wireless Debugging (pairing and mDNS port detection) · Shizuku · Root · Automatic · Read-Only |
 | **Themes** | **Material 3** (default) · **Material You** (follows your wallpaper) · six more palettes · Light / Dark / System / Schedule · pure-black AMOLED option · per-mode color tuning |
 | **Security** | A **private ADB key is generated on each install** (nothing is bundled) · fingerprint shown in the app · signing-certificate comparison before every update |
+
+## New in v5.3
+
+- **ShizuStore tab** — a 🛍️ **Store** tab browses [ShizuStore](https://github.com/timschneeb/ShizuStore)'s curated catalog of Shizuku apps. Search and sort (most starred / downloaded / recently updated / added), open an app for its description, screenshots, stars, permissions and source, then **Install** pulls the APK from the developer's own upstream (GitHub / GitLab / F-Droid) and installs it through your active mode or the system installer. APKs are served by each developer, not rehosted.
+- **Optional VirusTotal scan** — the Installer tab can check a package against 70+ antivirus engines before you install, using your own VirusTotal API key. It's a SHA-256 lookup (nothing is uploaded); if the file is unknown you can opt to upload it. Shows malicious / suspicious / harmless counts, a verdict and a report link.
+- **No icon background** — the adaptive launcher icon is now fully transparent behind the mark, taking your launcher's own shape.
+- **Material You by default** — fresh installs start on the dynamic wallpaper-based theme (Material 3 baseline on Android 11 and older); existing themes are untouched.
 
 ## New in v5.2
 

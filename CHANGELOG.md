@@ -1,5 +1,25 @@
 # Changelog
 
+## v5.3-Pro (versionCode 530)
+
+- **ShizuStore tab.** A new **🛍️ Store** tab (at the end) browses [ShizuStore](https://github.com/timschneeb/ShizuStore)'s
+  curated catalog of Shizuku-powered apps. Search and sort by most starred, most downloaded, recently
+  updated or added; open an app for its description, screenshots, star count, requested permissions and
+  source link; then **Install** downloads the APK straight from the developer's own upstream (GitHub /
+  GitLab / F-Droid) and installs it through your active mode (ADB / Shizuku / Root), or hands it to the
+  system installer with no privileged mode. Catalog and metadata come from ShizuStore by timschneeb; APKs
+  are served by each app's developer, not rehosted.
+- **Optional VirusTotal scan in the Installer.** The Installer tab has a new **🛡️ VirusTotal scan** card.
+  Paste your own VirusTotal API key and scan a package against 70+ antivirus engines before installing. The
+  scan is a SHA-256 lookup, so **nothing is uploaded**; only if VirusTotal hasn't seen the file can you
+  choose to upload it for analysis. Results show the malicious / suspicious / harmless counts with a verdict
+  and a link to the full report. Entirely optional — leave the key blank to ignore it.
+- **The app icon has no background.** The adaptive launcher icon is now fully transparent behind the mark,
+  so it takes your launcher's own icon shape and backdrop instead of a filled square.
+- **New installs start on Material You.** A fresh install now defaults to the Material You (dynamic,
+  wallpaper-based) theme, falling back to the Material 3 baseline on Android 11 and older. Your saved theme
+  is untouched on upgrade.
+
 ## v5.2-Pro (versionCode 520)
 
 - **Pair over Wi-Fi from a notification.** The Wireless Debugging card has a new **🔔 Pair via Notification**

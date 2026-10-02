@@ -1551,6 +1551,162 @@ public class MainActivity extends Activity {
         return "Error: installing updates needs ADB, Shizuku or Root";
     }
 
+    private static String errMsg(Throwable e) {
+        return e.getMessage() != null && !e.getMessage().isEmpty() ? e.getMessage() : e.getClass().getSimpleName();
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // ShizuStore catalog (browse + install Shizuku apps straight from their upstream sources)
+    // ---------------------------------------------------------------------------------------------
+
+    /** Loads the ShizuStore catalog off-thread and reports it to window.onStoreCatalog(json). */
+    private void runStoreCatalog() {
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                JSONObject o = new JSONObject();
+                try {
+                    JSONObject cat = ShizuStore.catalog(200, 2000);
+                    o.put("status", "ok");
+                    o.put("base", ShizuStore.BASE);
+                    o.put("items", cat.optJSONArray("items"));
+                    o.put("total", cat.optInt("total"));
+                } catch (Exception e) {
+                    try { o.put("status", "error"); o.put("error", errMsg(e)); } catch (Exception ignored) {}
+                }
+                notifyUpdates("onStoreCatalog", o);
+            }
+        });
+    }
+
+    /** Loads one ShizuStore app detail off-thread and reports it to window.onStoreApp(json). */
+    private void runStoreApp(final String slug) {
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                JSONObject o = new JSONObject();
+                try {
+                    JSONObject detail = ShizuStore.app(slug);
+                    o.put("status", "ok");
+                    o.put("base", ShizuStore.BASE);
+                    o.put("app", detail);
+                    JSONObject dl = ShizuStore.primaryDownload(detail);
+                    if (dl != null) o.put("download", dl);
+                } catch (Exception e) {
+                    try { o.put("status", "error"); o.put("error", errMsg(e)); } catch (Exception ignored) {}
+                }
+                try { o.put("slug", slug); } catch (Exception ignored) {}
+                notifyUpdates("onStoreApp", o);
+            }
+        });
+    }
+
+    private final java.util.Set<String> storeInstalling =
+            java.util.Collections.synchronizedSet(new HashSet<String>());
+
+    /**
+     * Downloads a ShizuStore APK from its upstream URL and installs it through the active mode (or hands
+     * it to the system installer with no privileged mode). Progress -> window.onStoreInstallProgress(json).
+     */
+    private void runStoreInstall(final String apkUrl, final String pkg, final String label) {
+        final String key = pkg == null || pkg.isEmpty() ? apkUrl : pkg;
+        if (apkUrl == null || !apkUrl.startsWith("https://")) {
+            storeInstallProgress(pkg, "error", 0, "This app has no direct APK to install.");
+            return;
+        }
+        if (!storeInstalling.add(key)) return;
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                File apk = new File(new File(getCacheDir(), "updates"), "store.apk");
+                boolean standard = "standard".equals(resolveExecMode());
+                try {
+                    apk.getParentFile().mkdirs();
+                    final String name = label == null || label.isEmpty() ? (pkg == null ? "app" : pkg) : label;
+                    storeInstallProgress(pkg, "downloading", 0, "Downloading " + name + "…");
+                    UpdateManager.download(apkUrl, apk, new UpdateManager.Progress() {
+                        @Override
+                        public void onProgress(long done, long total) {
+                            storeInstallProgress(pkg, "downloading", total > 0 ? (int) (done * 100 / total) : -1,
+                                    (done / (1024 * 1024)) + " MB");
+                        }
+                    });
+                    PackageInfo archive = getPackageManager().getPackageArchiveInfo(apk.getAbsolutePath(), 0);
+                    if (archive == null || archive.packageName == null) throw new IllegalStateException("the download is not a valid APK");
+                    // Guard against a redirected/wrong download installing an unexpected package.
+                    if (pkg != null && !pkg.isEmpty() && !pkg.equals(archive.packageName))
+                        throw new IllegalStateException("the download is " + archive.packageName + ", not " + pkg);
+                    if (standard) {
+                        storeInstallProgress(pkg, "installing", 100, "Opening the installer…");
+                        launchSystemInstaller(apk);
+                        storeInstallProgress(pkg, "opened", 100, "Confirm the install of " + name + ".");
+                    } else {
+                        storeInstallProgress(pkg, "installing", 100, "Installing " + name + "…");
+                        String out = installApk(apk);
+                        if (out != null && out.contains("Success")) {
+                            storeInstallProgress(pkg, "done", 100, "Installed " + name
+                                    + (archive.versionName != null ? " " + archive.versionName : "") + ".");
+                        } else {
+                            throw new IllegalStateException(out == null || out.trim().isEmpty() ? "install failed" : out.trim());
+                        }
+                    }
+                } catch (Exception e) {
+                    storeInstallProgress(pkg, "error", 0, errMsg(e));
+                } finally {
+                    if (!standard) apk.delete();
+                    storeInstalling.remove(key);
+                }
+            }
+        });
+    }
+
+    private void storeInstallProgress(String pkg, String stage, int percent, String message) {
+        try {
+            JSONObject o = new JSONObject();
+            o.put("pkg", pkg == null ? "" : pkg);
+            o.put("stage", stage);
+            o.put("percent", percent);
+            o.put("message", message == null ? "" : message);
+            notifyUpdates("onStoreInstallProgress", o);
+        } catch (Exception ignored) {}
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // VirusTotal (optional, user-supplied API key) pre-install scan
+    // ---------------------------------------------------------------------------------------------
+
+    /**
+     * Scans a local APK with VirusTotal. A SHA-256 lookup (private, no upload) when upload=false; a full
+     * upload-and-wait when upload=true. Progress and the final result -> window.onVtResult(json).
+     */
+    private void runVirusTotalScan(final String apiKey, final String path, final boolean upload) {
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    if (apiKey == null || apiKey.trim().isEmpty()) throw new IllegalStateException("Enter your VirusTotal API key first.");
+                    if (path == null || path.isEmpty()) throw new IllegalStateException("Load a package first.");
+                    File f = new File(path);
+                    if (!f.exists()) throw new IllegalStateException("The selected package is no longer available. Pick it again.");
+                    notifyUpdates("onVtResult", new JSONObject()
+                            .put("stage", upload ? "uploading" : "scanning")
+                            .put("message", upload ? "Uploading to VirusTotal… this can take a minute." : "Checking VirusTotal…"));
+                    String sha = VirusTotal.sha256(f);
+                    JSONObject res = upload
+                            ? VirusTotal.uploadAndWait(apiKey.trim(), f, sha, 180000)
+                            : VirusTotal.lookup(apiKey.trim(), sha);
+                    res.put("stage", "done");
+                    res.put("size", f.length());
+                    notifyUpdates("onVtResult", res);
+                } catch (Exception e) {
+                    try {
+                        notifyUpdates("onVtResult", new JSONObject().put("stage", "error").put("error", errMsg(e)));
+                    } catch (Exception ignored) {}
+                }
+            }
+        });
+    }
+
     /** Runs a command through the Shizuku API, optionally streaming a file into its stdin. */
     private String shizukuStream(String cmd, File stdinFile) throws Exception {
         if (shizukuNewProcessMethod == null) {
@@ -4344,6 +4500,54 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void installSelected(String optsJson) {
             runInstallSelected(optsJson);
+        }
+
+        // ---- ShizuStore ----------------------------------------------------------------------
+
+        /** Loads the ShizuStore catalog. Answer: window.onStoreCatalog(json). */
+        @JavascriptInterface
+        public void storeLoadCatalog() {
+            runStoreCatalog();
+        }
+
+        /** Loads one ShizuStore app's detail. Answer: window.onStoreApp(json). */
+        @JavascriptInterface
+        public void storeLoadApp(String slug) {
+            if (slug != null && !slug.isEmpty()) runStoreApp(slug);
+        }
+
+        /** Downloads and installs a ShizuStore app. Progress: window.onStoreInstallProgress(json). */
+        @JavascriptInterface
+        public void storeInstall(String apkUrl, String pkg, String label) {
+            runStoreInstall(apkUrl, pkg, label);
+        }
+
+        // ---- VirusTotal (optional, user key) -------------------------------------------------
+
+        /** SHA-256 lookup of the given APK on VirusTotal (no upload). Answer: window.onVtResult(json). */
+        @JavascriptInterface
+        public void virusTotalScan(String apiKey, String path) {
+            runVirusTotalScan(apiKey, path, false);
+        }
+
+        /** Uploads the given APK to VirusTotal and waits for analysis. Answer: window.onVtResult(json). */
+        @JavascriptInterface
+        public void virusTotalUpload(String apiKey, String path) {
+            runVirusTotalScan(apiKey, path, true);
+        }
+
+        // ---- Small key/value settings (e.g. the VirusTotal API key) --------------------------
+
+        @JavascriptInterface
+        public void saveSetting(String key, String value) {
+            if (key == null || key.isEmpty() || prefs == null) return;
+            prefs.edit().putString("kv_" + key, value == null ? "" : value).apply();
+        }
+
+        @JavascriptInterface
+        public String loadSetting(String key) {
+            if (key == null || key.isEmpty() || prefs == null) return "";
+            return prefs.getString("kv_" + key, "");
         }
 
         /** Enables or disables one component (pm enable/disable pkg/component) via the active backend. */

@@ -2161,6 +2161,7 @@
         <button class="tab-btn" onclick="switchView('updates')" id="updatesTabBtn">⬆️ Updates</button>
         <button class="tab-btn" onclick="switchView('terminal')">💻 ADB Console</button>
         <button class="tab-btn" onclick="switchView('logcat')">📄 Logcat</button>
+        <button class="tab-btn" onclick="switchView('store')">🛍️ Store</button>
     </nav>
 
     <div class="container">
@@ -2344,6 +2345,21 @@
                 <div class="color-card-subtitle" id="installPkgName" style="font-family:monospace;word-break:break-all;"></div>
                 <div id="installInfoGrid" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;"></div>
                 <div id="installSignRow" class="color-card-subtitle" style="margin-top:8px;"></div>
+            </div>
+
+            <!-- VirusTotal scan (optional) -->
+            <div class="color-card" id="installVtCard" style="display:none;">
+                <div class="color-card-title">🛡️ VirusTotal scan <span class="switch-sub" style="font-weight:600;">(optional)</span></div>
+                <div class="color-card-subtitle">Check this package against 70+ antivirus engines before installing, with your own VirusTotal API key. The scan is a SHA-256 lookup — <b>nothing is uploaded</b>; only if VirusTotal hasn't seen the file can you choose to upload it.</div>
+                <div style="margin-top:10px;">
+                    <div class="switch-title">VirusTotal API key</div>
+                    <input class="modal-text-input" id="vtApiKey" type="password" placeholder="Paste your personal API key (optional)" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="vtKeyChanged()">
+                    <div class="switch-sub" style="margin-top:4px;">Free key from <a href="#" onclick="openUrlExternal('https://www.virustotal.com/gui/my-apikey'); return false;">virustotal.com</a> → your account → API key. Stored on this device only.</div>
+                </div>
+                <div class="batch-sheet-tools" style="margin-top:10px;gap:10px;flex-wrap:wrap;">
+                    <button class="mode-action-btn primary" id="vtScanBtn" onclick="vtScan(false)">🛡️ Scan this package</button>
+                </div>
+                <div id="vtResultBox" class="uad-status" style="display:none;margin-top:10px;"></div>
             </div>
 
             <!-- Splits (APKS/APKM) -->
@@ -2532,6 +2548,31 @@
                 </div>
             </div>
             <div class="terminal-box" id="logcatOutput">Open this tab to read the log.</div>
+        </section>
+
+        <!-- VIEW: SHIZUSTORE -->
+        <section id="view-store" class="view-content">
+            <div class="color-card">
+                <div class="color-card-title">🛍️ ShizuStore</div>
+                <div class="color-card-subtitle">Browse Shizuku-powered apps from <b>timschneeb</b>'s curated catalog and install them straight from their upstream sources (GitHub, GitLab, F-Droid). Installs use your active mode (ADB / Shizuku / Root), or hand off to the system installer with no privileged mode.</div>
+                <div class="batch-sheet-tools" style="margin:8px 0; gap:10px; flex-wrap:wrap; align-items:center;">
+                    <input type="text" class="list-search" id="storeSearch" placeholder="Search apps…" style="flex:1; min-width:140px;" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="renderStoreList()">
+                    <select class="op-select" id="storeSort" onchange="renderStoreList()">
+                        <option value="stars">Most starred</option>
+                        <option value="downloads">Most downloaded</option>
+                        <option value="updated">Recently updated</option>
+                        <option value="added">Recently added</option>
+                        <option value="name">Name (A–Z)</option>
+                    </select>
+                </div>
+                <div class="batch-sheet-tools" style="margin-bottom:2px; gap:14px; align-items:center;">
+                    <button class="batch-tool-link" onclick="loadStoreCatalog(true)">↻ Refresh catalog</button>
+                    <span id="storeCount" style="font-size:12px; color:var(--text-muted);"></span>
+                </div>
+                <div class="uad-credit" style="margin-top:6px;">Catalog &amp; metadata from <a href="#" onclick="openUrlExternal('https://github.com/timschneeb/ShizuStore'); return false;">ShizuStore</a> by timschneeb · APKs are served by each app's own developer, not rehosted.</div>
+            </div>
+            <div id="storeStatus" class="uad-status" style="margin:6px 2px;">Open to load the catalog.</div>
+            <div id="storeList" style="display:flex; flex-direction:column; gap:10px;"></div>
         </section>
 
         <!-- VIEW: UPDATES -->
@@ -2986,6 +3027,30 @@ Type any command below (e.g. pm list packages -d)
                 <div id="cheatGistBox" style="margin-top:8px; max-height:40vh; overflow:auto;"></div>
             </div>
             <div class="uad-credit" style="margin-top:10px;">Quick list in on-device shell form; the full reference loads live from <a href="#" onclick="openUrlExternal('https://gist.github.com/Pulimet/5013acf2cd5b28e55036c82c91bd56d8'); return false;">Pulimet's ADB gist</a>. Commands with &lt;placeholders&gt; need editing before they run.</div>
+        </div>
+    </div>
+
+    <!-- ShizuStore app detail -->
+    <div class="modal-overlay" id="storeModal" onclick="if(event.target===this) closeStoreModal()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-avatar" id="storeDetailAvatar" style="background:linear-gradient(135deg, var(--accent), var(--secondary)); overflow:hidden;">🛍️</div>
+                    <div class="sheet-title">
+                        <h3 id="storeDetailName">App</h3>
+                        <p id="storeDetailSub"></p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="closeStoreModal()">✕</div>
+            </div>
+            <div id="storeDetailBody" style="max-height:52vh; overflow-y:auto;">Loading…</div>
+            <div style="margin-top:12px; border-top:1px solid var(--border-glass, rgba(128,128,128,0.22)); padding-top:10px;">
+                <div id="storeInstallProgress" class="uad-status" style="display:none; margin-bottom:8px;"></div>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button class="mode-action-btn primary" id="storeInstallBtn" onclick="installStoreApp()">⬇️ Install</button>
+                    <button class="mode-action-btn" id="storeSourceBtn" onclick="openStoreSource()">🔗 Source</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -3631,7 +3696,7 @@ Type any command below (e.g. pm list packages -d)
         };
 
         const themeState = {
-            preset: 'material3',        // default for new installs
+            preset: 'materialyou',      // default for new installs (falls back to Material 3 baseline on <Android 12)
             appearance: 'system',       // 'light' | 'dark' | 'system' | 'schedule'
             schedule: { lightAt: '07:00', darkAt: '19:00' },
             pureBlack: false,           // true black backgrounds in dark mode (AMOLED)
@@ -3787,7 +3852,7 @@ Type any command below (e.g. pm list packages -d)
 
         // Order must match the .tab-btn buttons above. 'colors' has no tab button (it opens from the
         // header 🎨 icon), so it sits last with no matching button index.
-        const tabKeys = ['apps', 'saved-lists', 'debloater', 'installer', 'files', 'updates', 'terminal', 'logcat', 'colors'];
+        const tabKeys = ['apps', 'saved-lists', 'debloater', 'installer', 'files', 'updates', 'terminal', 'logcat', 'store', 'colors'];
 
         function switchView(viewName) {
             const targetIdx = tabKeys.indexOf(viewName);
@@ -3816,6 +3881,7 @@ Type any command below (e.g. pm list packages -d)
             if (viewName === 'installer') onInstallerShown();
             if (viewName === 'files') onFilesShown();
             if (viewName === 'logcat') onLogcatShown();
+            if (viewName === 'store') onStoreShown();
             haptic();
         }
 
@@ -5664,6 +5730,202 @@ Type any command below (e.g. pm list packages -d)
             }
         }
 
+        // ---------- ShizuStore ----------
+        let storeApps = [];
+        let storeBase = 'https://shizustore.timschneeberger.me';
+        let storeLoaded = false;
+        let storeLoading = false;
+        let storeCurrent = null;            // { slug, app, download } for the open detail
+        const storeDetailCache = {};
+
+        function onStoreShown() {
+            if (!storeLoaded && !storeLoading) loadStoreCatalog(false);
+        }
+
+        function loadStoreCatalog(force) {
+            if (storeLoading) return;
+            if (storeLoaded && !force) { renderStoreList(); return; }
+            const status = document.getElementById('storeStatus');
+            if (!window.AndroidBridge || !window.AndroidBridge.storeLoadCatalog) {
+                status.style.display = ''; status.innerText = 'The store needs the app build (Android bridge).';
+                return;
+            }
+            storeLoading = true;
+            status.style.display = ''; status.innerText = 'Loading the ShizuStore catalog…';
+            document.getElementById('storeList').innerHTML = '';
+            window.AndroidBridge.storeLoadCatalog();
+        }
+
+        function onStoreCatalog(json) {
+            storeLoading = false;
+            let d; try { d = JSON.parse(json); } catch (e) { d = { status: 'error', error: 'bad response' }; }
+            const status = document.getElementById('storeStatus');
+            if (d.status !== 'ok') {
+                status.style.display = ''; status.innerText = '⚠️ Could not load the catalog: ' + (d.error || 'unknown error');
+                return;
+            }
+            storeBase = d.base || storeBase;
+            storeApps = Array.isArray(d.items) ? d.items : [];
+            storeLoaded = true;
+            renderStoreList();
+        }
+        window.onStoreCatalog = onStoreCatalog;
+
+        function storeSorted(apps) {
+            const sort = document.getElementById('storeSort').value;
+            const num = v => (typeof v === 'number' ? v : 0);
+            const arr = apps.slice();
+            if (sort === 'name') arr.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+            else if (sort === 'downloads') arr.sort((a, b) => (num(b.installCount) + num(b.downloadTotal)) - (num(a.installCount) + num(a.downloadTotal)));
+            else if (sort === 'updated') arr.sort((a, b) => String(b.versionUpdatedAt || b.updatedAt || '').localeCompare(String(a.versionUpdatedAt || a.updatedAt || '')));
+            else if (sort === 'added') arr.sort((a, b) => String(b.listUpdatedAt || b.updatedAt || '').localeCompare(String(a.listUpdatedAt || a.updatedAt || '')));
+            else arr.sort((a, b) => num(b.stars) - num(a.stars));
+            return arr;
+        }
+
+        function renderStoreList() {
+            if (!storeLoaded) return;
+            const q = (document.getElementById('storeSearch').value || '').trim().toLowerCase();
+            let apps = storeApps;
+            if (q) apps = apps.filter(a => (a.name || '').toLowerCase().includes(q) || (a.packageName || '').toLowerCase().includes(q) || (a.description || '').toLowerCase().includes(q) || (a.authorName || '').toLowerCase().includes(q));
+            apps = storeSorted(apps);
+            document.getElementById('storeCount').innerText = apps.length + ' / ' + storeApps.length + ' apps';
+            document.getElementById('storeStatus').style.display = 'none';
+            const esc = escapeHtml;
+            const rows = apps.slice(0, 300).map(a => {
+                const img = a.iconHash ? `<img src="${storeBase}/icons/${esc(a.iconHash)}.png" alt="" style="width:46px;height:46px;border-radius:12px;object-fit:cover;flex-shrink:0;background:rgba(var(--ov),0.08);" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">` : '';
+                const fb = `<div style="width:46px;height:46px;border-radius:12px;flex-shrink:0;display:${a.iconHash ? 'none' : 'flex'};align-items:center;justify-content:center;background:linear-gradient(135deg,var(--accent),var(--secondary));font-weight:800;color:#fff;">${esc((a.name || '?').charAt(0).toUpperCase())}</div>`;
+                const chips = [];
+                if (a.stars != null) chips.push('⭐ ' + a.stars);
+                if (a.versionName) chips.push('v' + esc(a.versionName));
+                if (a.categorySlug) chips.push(esc(a.categorySlug));
+                if (a.requiresRoot) chips.push('root');
+                const meta = chips.map(c => `<span style="font-size:11px;color:var(--text-muted);background:rgba(var(--ov),0.08);border-radius:8px;padding:2px 7px;">${c}</span>`).join(' ');
+                return `<div onclick="openStoreApp('${esc(a.slug)}')" style="display:flex;gap:12px;align-items:flex-start;background:rgba(var(--ov),0.05);border:1px solid var(--border-glass);border-radius:14px;padding:12px;cursor:pointer;">
+                    ${img}${fb}
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-weight:700;color:var(--text-main);">${esc(a.name || a.slug)}</div>
+                        <div style="font-size:12px;color:var(--text-muted);margin:2px 0 6px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${esc(a.description || '')}</div>
+                        <div style="display:flex;gap:5px;flex-wrap:wrap;">${meta}</div>
+                    </div>
+                </div>`;
+            });
+            document.getElementById('storeList').innerHTML = rows.join('') || '<div class="uad-status">No apps match your search.</div>';
+        }
+
+        function setStoreAvatar(iconHash, name) {
+            const av = document.getElementById('storeDetailAvatar');
+            const letter = escapeHtml((name || '🛍️').charAt(0).toUpperCase());
+            if (iconHash) av.innerHTML = `<img src="${storeBase}/icons/${escapeHtml(iconHash)}.png" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.textContent='${letter}';">`;
+            else av.textContent = letter;
+        }
+
+        function openStoreApp(slug) {
+            haptic();
+            storeCurrent = { slug: slug, app: null, download: null };
+            document.getElementById('storeModal').classList.add('show');
+            document.getElementById('storeDetailBody').innerHTML = 'Loading…';
+            document.getElementById('storeInstallProgress').style.display = 'none';
+            const btn = document.getElementById('storeInstallBtn'); btn.disabled = true; btn.innerText = '⬇️ Install';
+            const sum = storeApps.find(a => a.slug === slug) || {};
+            document.getElementById('storeDetailName').innerText = sum.name || slug;
+            document.getElementById('storeDetailSub').innerText = sum.packageName || '';
+            setStoreAvatar(sum.iconHash, sum.name);
+            if (storeDetailCache[slug]) { renderStoreDetail(storeDetailCache[slug]); return; }
+            if (window.AndroidBridge && window.AndroidBridge.storeLoadApp) window.AndroidBridge.storeLoadApp(slug);
+        }
+
+        function onStoreApp(json) {
+            let d; try { d = JSON.parse(json); } catch (e) { d = { status: 'error', error: 'bad response' }; }
+            if (d.slug && d.status === 'ok') storeDetailCache[d.slug] = d;
+            if (!storeCurrent || d.slug !== storeCurrent.slug) return;
+            if (d.status !== 'ok') {
+                document.getElementById('storeDetailBody').innerHTML = '<div class="uad-status">⚠️ ' + escapeHtml(d.error || 'could not load this app') + '</div>';
+                return;
+            }
+            renderStoreDetail(d);
+        }
+        window.onStoreApp = onStoreApp;
+
+        function renderStoreDetail(d) {
+            storeCurrent.app = d.app || {};
+            storeCurrent.download = d.download || null;
+            const a = d.app || {};
+            const esc = escapeHtml;
+            setStoreAvatar(a.iconHash, a.name);
+            document.getElementById('storeDetailName').innerText = a.name || d.slug;
+            document.getElementById('storeDetailSub').innerText = (a.packageName || '') + (a.versionName ? ' · v' + a.versionName : '');
+            const parts = [];
+            const desc = a.fullDescription || a.description || '';
+            if (desc) parts.push(`<div style="font-size:13px;color:var(--text-main);white-space:pre-wrap;margin-bottom:10px;">${esc(desc)}</div>`);
+            const chips = [];
+            if (a.stars != null) chips.push('⭐ ' + a.stars + ' stars');
+            if (a.downloadTotal != null) chips.push('⬇️ ' + a.downloadTotal);
+            if (a.authorName) chips.push('👤 ' + esc(a.authorName));
+            if (a.license) chips.push('© ' + esc(a.license));
+            if (a.categorySlug) chips.push(esc(a.categorySlug));
+            if (a.requiresRoot) chips.push('⚠️ needs root');
+            if (chips.length) parts.push(`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">${chips.map(c => `<span style="font-size:11px;color:var(--text-muted);background:rgba(var(--ov),0.08);border-radius:8px;padding:3px 8px;">${c}</span>`).join('')}</div>`);
+            if (d.download) {
+                const dl = d.download;
+                parts.push(`<div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">Install source: <b>${esc(dl.source || 'upstream')}</b>${dl.size ? ' · ' + (Math.round(dl.size / 1048576 * 10) / 10) + ' MB' : ''}${dl.versionName ? ' · v' + esc(dl.versionName) : ''}</div>`);
+            } else if (a.storeUrl) {
+                parts.push(`<div class="uad-status" style="margin-bottom:10px;">Distributed on the Play Store — use Source to open it there.</div>`);
+            } else {
+                parts.push(`<div class="uad-status" style="margin-bottom:10px;">No direct APK is available for this app.</div>`);
+            }
+            if (Array.isArray(a.screenshots) && a.screenshots.length) {
+                parts.push(`<div style="display:flex;gap:8px;overflow-x:auto;margin-bottom:10px;padding-bottom:4px;">${a.screenshots.slice(0, 12).map(s => `<img src="${esc(s)}" alt="" style="height:220px;border-radius:10px;" loading="lazy">`).join('')}</div>`);
+            }
+            if (Array.isArray(a.permissions) && a.permissions.length) {
+                parts.push(`<details style="margin-bottom:8px;"><summary style="cursor:pointer;font-weight:700;font-size:13px;">Permissions (${a.permissions.length})</summary><div style="font-size:11px;color:var(--text-muted);margin-top:6px;word-break:break-all;">${a.permissions.map(esc).join('<br>')}</div></details>`);
+            }
+            document.getElementById('storeDetailBody').innerHTML = parts.join('');
+            const btn = document.getElementById('storeInstallBtn');
+            btn.disabled = !d.download;
+            btn.innerText = d.download ? '⬇️ Install' : 'No APK';
+        }
+
+        function openStoreSource() {
+            const a = storeCurrent && storeCurrent.app ? storeCurrent.app : null;
+            const url = a && (a.sourceUrl || a.url || a.storeUrl);
+            if (url) openUrlExternal(url); else showToast('No source link for this app', 'ℹ️');
+        }
+
+        function installStoreApp() {
+            if (!storeCurrent || !storeCurrent.download) { showToast('No APK to install', '⚠️'); return; }
+            haptic();
+            const dl = storeCurrent.download;
+            const name = (storeCurrent.app && storeCurrent.app.name) || storeCurrent.slug;
+            if (!window.AndroidBridge || !window.AndroidBridge.storeInstall) { showToast('Install needs the app build', '⚠️'); return; }
+            const p = document.getElementById('storeInstallProgress');
+            p.style.display = ''; p.innerText = '⏳ Starting…';
+            document.getElementById('storeInstallBtn').disabled = true;
+            window.AndroidBridge.storeInstall(dl.apkUrl, dl.packageName || '', name);
+        }
+
+        function onStoreInstallProgress(json) {
+            let d; try { d = JSON.parse(json); } catch (e) { return; }
+            const p = document.getElementById('storeInstallProgress');
+            if (!p) return;
+            p.style.display = '';
+            const pct = (d.percent != null && d.percent >= 0) ? ' ' + d.percent + '%' : '';
+            let icon = '⏳';
+            if (d.stage === 'done') icon = '✅';
+            else if (d.stage === 'error') icon = '⚠️';
+            else if (d.stage === 'opened') icon = '📦';
+            p.innerText = icon + ' ' + (d.message || d.stage) + pct;
+            if (d.stage === 'done' || d.stage === 'error' || d.stage === 'opened') {
+                document.getElementById('storeInstallBtn').disabled = false;
+                if (d.stage === 'done') showToast('Installed', '✅');
+            }
+        }
+        window.onStoreInstallProgress = onStoreInstallProgress;
+
+        function closeStoreModal() {
+            document.getElementById('storeModal').classList.remove('show');
+        }
+
         function connectAdbWirelessUI() {
             haptic();
             const hostField = document.getElementById('adbWirelessHostInput');
@@ -6106,6 +6368,7 @@ Type any command below (e.g. pm list packages -d)
                 installData = null;
                 document.getElementById('installPickHint').innerText = '⚠️ ' + d.error;
                 document.getElementById('installInfoCard').style.display = 'none';
+                document.getElementById('installVtCard').style.display = 'none';
                 document.getElementById('installSplitsCard').style.display = 'none';
                 document.getElementById('installOptionsCard').style.display = 'none';
                 showToast('Could not read package', '⚠️');
@@ -6116,11 +6379,77 @@ Type any command below (e.g. pm list packages -d)
             renderInstallInfo();
             renderInstallSplits();
             document.getElementById('installInfoCard').style.display = '';
+            document.getElementById('installVtCard').style.display = '';
+            resetVtScan();
             document.getElementById('installSplitsCard').style.display = (d.splits && d.splits.length > 1) ? '' : 'none';
             document.getElementById('installOptionsCard').style.display = '';
             installAuthorizerChanged();
         }
         window.onInstallInspected = onInstallInspected;
+
+        // ---------- VirusTotal (optional pre-install scan) ----------
+        function vtKeyChanged() {
+            const v = document.getElementById('vtApiKey').value || '';
+            if (window.AndroidBridge && window.AndroidBridge.saveSetting) window.AndroidBridge.saveSetting('vt_api_key', v);
+        }
+
+        function vtBaseApkPath() {
+            if (!installData || !installData.splits) return '';
+            const base = installData.splits.find(s => s.isBase) || installData.splits[0];
+            return base ? base.path : '';
+        }
+
+        function resetVtScan() {
+            const box = document.getElementById('vtResultBox');
+            if (box) { box.style.display = 'none'; box.innerHTML = ''; }
+            const btn = document.getElementById('vtScanBtn');
+            if (btn) btn.disabled = false;
+            const key = document.getElementById('vtApiKey');
+            if (key && !key.value && window.AndroidBridge && window.AndroidBridge.loadSetting) {
+                try { key.value = window.AndroidBridge.loadSetting('vt_api_key') || ''; } catch (e) {}
+            }
+        }
+
+        function vtScan(upload) {
+            const key = (document.getElementById('vtApiKey').value || '').trim();
+            if (!key) { showToast('Enter your VirusTotal API key first', '⚠️'); return; }
+            const path = vtBaseApkPath();
+            if (!path) { showToast('Load a package first', '⚠️'); return; }
+            if (!window.AndroidBridge || !window.AndroidBridge.virusTotalScan) { showToast('VirusTotal scan needs the app build', '⚠️'); return; }
+            haptic();
+            const box = document.getElementById('vtResultBox');
+            box.style.display = ''; box.innerHTML = upload ? '⏳ Uploading to VirusTotal…' : '⏳ Checking VirusTotal…';
+            document.getElementById('vtScanBtn').disabled = true;
+            if (upload) window.AndroidBridge.virusTotalUpload(key, path);
+            else window.AndroidBridge.virusTotalScan(key, path);
+        }
+
+        function onVtResult(json) {
+            let d; try { d = JSON.parse(json); } catch (e) { return; }
+            const box = document.getElementById('vtResultBox');
+            const btn = document.getElementById('vtScanBtn');
+            if (!box) return;
+            box.style.display = '';
+            if (d.stage === 'scanning' || d.stage === 'uploading') { box.innerHTML = '⏳ ' + escapeHtml(d.message || 'Working…'); return; }
+            if (btn) btn.disabled = false;
+            if (d.stage === 'error') { box.innerHTML = '⚠️ ' + escapeHtml(d.error || 'scan failed'); return; }
+            if (d.found === false) {
+                box.innerHTML = 'ℹ️ VirusTotal hasn\'t analyzed this file yet.<br><button class="batch-tool-link" style="margin-top:6px;" onclick="vtScan(true)">⬆️ Upload it for analysis</button>';
+                return;
+            }
+            const mal = d.malicious || 0, susp = d.suspicious || 0, harm = d.harmless || 0, undet = d.undetected || 0;
+            const total = d.total || (mal + susp + harm + undet);
+            let verdict, color;
+            if (mal > 0) { verdict = '⛔ ' + mal + ' engine' + (mal > 1 ? 's' : '') + ' flagged this as malicious'; color = 'var(--bloat, #F2B8B5)'; }
+            else if (susp > 0) { verdict = '⚠️ ' + susp + ' engine' + (susp > 1 ? 's' : '') + ' flagged this as suspicious'; color = '#F0C000'; }
+            else { verdict = '✅ Clean — no engine flagged this file'; color = 'var(--running, #4ADE80)'; }
+            const link = d.permalink ? `<a href="#" onclick="openUrlExternal('${escapeHtml(d.permalink)}'); return false;">Full VirusTotal report →</a>` : '';
+            box.innerHTML = `<div style="font-weight:700;color:${color};">${verdict}</div>
+                <div style="margin-top:6px;font-size:12px;color:var(--text-muted);">Malicious ${mal} · Suspicious ${susp} · Harmless ${harm} · Undetected ${undet}${total ? ' · ' + total + ' engines' : ''}</div>
+                ${d.name ? `<div style="font-size:12px;color:var(--text-muted);margin-top:3px;">Known as: ${escapeHtml(d.name)}</div>` : ''}
+                <div style="margin-top:6px;">${link}</div>`;
+        }
+        window.onVtResult = onVtResult;
 
         function renderInstallInfo() {
             if (!installData) return;
