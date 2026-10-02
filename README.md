@@ -13,7 +13,7 @@ through **ADB over TCP, Wireless Debugging, Shizuku or Root**.
 
 ### [⬇️ Download the latest APK](https://github.com/Bingblop/ADB-Application-Manager/releases/latest)
 
-`com.bloatware.bingblop` · v5.1-Pro · signed APK, installs over every earlier version without uninstalling
+`com.bloatware.bingblop` · v5.2-Pro · signed APK, installs over every earlier version without uninstalling
 
 <table>
   <tr>
@@ -76,6 +76,10 @@ tell you when a new version is out (see [Updates](#updates)).
 | **Modes** | ADB over TCP · Wireless Debugging (pairing and mDNS port detection) · Shizuku · Root · Automatic · Read-Only |
 | **Themes** | **Material 3** (default) · **Material You** (follows your wallpaper) · six more palettes · Light / Dark / System / Schedule · pure-black AMOLED option · per-mode color tuning |
 | **Security** | A **private ADB key is generated on each install** (nothing is bundled) · fingerprint shown in the app · signing-certificate comparison before every update |
+
+## New in v5.2
+
+- **Pair over Wi-Fi from a notification** — the Wireless Debugging card has a 🔔 **Pair via Notification** button. It posts a notification with an inline reply box, so you can type the 6-digit pairing code straight from the shade while Android's *Pair device with pairing code* dialog is open — no switching back to the app, so the code can't rotate out from under you. It finds the pairing port over mDNS automatically (or reply with `port code`, e.g. `37123 123456`), and pairs in the background without the app needing to be open.
 
 ## New in v5.1
 

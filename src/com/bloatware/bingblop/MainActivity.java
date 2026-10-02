@@ -509,6 +509,118 @@ public class MainActivity extends Activity {
         return pb;
     }
 
+    // ---------------------------------------------------------------------------------------------
+    // Wi-Fi pairing notification (inline reply runs `adb pair` straight from the shade)
+    // ---------------------------------------------------------------------------------------------
+
+    private void toastUi(final String msg) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(MainActivity.this, msg, Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    /** Posts the inline-reply pairing notification. Ensures notification permission, discovers the
+     *  current `_adb-tls-pairing` endpoint via mDNS off the UI thread, then builds the notification. */
+    private void postPairingNotification() {
+        if (Build.VERSION.SDK_INT >= 33) {
+            if (checkSelfPermission("android.permission.POST_NOTIFICATIONS")
+                    != PackageManager.PERMISSION_GRANTED) {
+                try {
+                    requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, 9201);
+                } catch (Exception ignored) {}
+                toastUi("Allow notifications, then tap “Pair via notification” again.");
+                return;
+            }
+        }
+        toastUi("Preparing pairing notification…");
+        new Thread(new Runnable() {
+            public void run() {
+                String endpoint = "";
+                try {
+                    String raw = runProcessWithTimeout(buildAdbProcess("mdns", "services"), 4000);
+                    if (raw != null) {
+                        for (String line : raw.split("\n")) {
+                            if (line.contains("_adb-tls-pairing")) {
+                                String[] parts = line.trim().split("\\s+");
+                                String ep = parts.length > 0 ? parts[parts.length - 1] : "";
+                                if (ep.contains(":")) { endpoint = ep; break; }
+                            }
+                        }
+                    }
+                } catch (Exception ignored) {}
+                final String ep = endpoint;
+                runOnUiThread(new Runnable() {
+                    public void run() { buildAndPostPairingNotification(ep); }
+                });
+            }
+        }).start();
+    }
+
+    /** Builds and shows the pairing notification with a RemoteInput "Pair" action. Replying runs
+     *  `adb pair` in {@link PairReceiver} without the app needing to be open. */
+    private void buildAndPostPairingNotification(String endpoint) {
+        try {
+            android.app.NotificationManager nm =
+                    (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+            if (nm == null) return;
+            nm.createNotificationChannel(new android.app.NotificationChannel(
+                    PairReceiver.CHANNEL, "Wi-Fi pairing", android.app.NotificationManager.IMPORTANCE_HIGH));
+
+            boolean haveEndpoint = endpoint != null && !endpoint.isEmpty();
+            String hint = haveEndpoint
+                    ? "6-digit pairing code"
+                    : "port code  (e.g. 37123 123456)";
+
+            android.app.RemoteInput remoteInput = new android.app.RemoteInput.Builder(PairReceiver.KEY_CODE)
+                    .setLabel(hint)
+                    .build();
+
+            Intent replyIntent = new Intent(this, PairReceiver.class).setAction(PairReceiver.ACTION);
+            if (haveEndpoint) replyIntent.putExtra(PairReceiver.EXTRA_ENDPOINT, endpoint);
+            int replyFlags = android.app.PendingIntent.FLAG_UPDATE_CURRENT;
+            if (Build.VERSION.SDK_INT >= 31) replyFlags |= android.app.PendingIntent.FLAG_MUTABLE;
+            android.app.PendingIntent replyPending = android.app.PendingIntent.getBroadcast(
+                    this, 71, replyIntent, replyFlags);
+
+            android.app.Notification.Action action = new android.app.Notification.Action.Builder(
+                    android.graphics.drawable.Icon.createWithResource(this, R.drawable.ic_stat),
+                    "Pair", replyPending)
+                    .addRemoteInput(remoteInput)
+                    .build();
+
+            String body = haveEndpoint
+                    ? ("Found pairing service at " + endpoint + ".\nTap Pair and type the 6-digit code shown on your device.")
+                    : "On your device: Wireless debugging ▸ Pair device with pairing code.\nTap Pair and reply with: port code  (e.g. 37123 123456).";
+
+            Intent openIntent = new Intent(this, MainActivity.class);
+            int openFlags = android.app.PendingIntent.FLAG_UPDATE_CURRENT;
+            if (Build.VERSION.SDK_INT >= 31) openFlags |= android.app.PendingIntent.FLAG_IMMUTABLE;
+            android.app.PendingIntent openPending =
+                    android.app.PendingIntent.getActivity(this, 72, openIntent, openFlags);
+
+            android.app.Notification n = new android.app.Notification.Builder(this, PairReceiver.CHANNEL)
+                    .setSmallIcon(R.drawable.ic_stat)
+                    .setContentTitle("Pair over Wi-Fi")
+                    .setContentText(haveEndpoint
+                            ? ("Tap Pair, then enter the code for " + endpoint)
+                            : "Tap Pair, then enter: port code")
+                    .setStyle(new android.app.Notification.BigTextStyle().bigText(body))
+                    .addAction(action)
+                    .setContentIntent(openPending)
+                    .setAutoCancel(false)
+                    .build();
+            nm.notify(PairReceiver.NOTIF_ID, n);
+            Toast.makeText(this, "Pairing notification posted — open your shade to enter the code.",
+                    Toast.LENGTH_LONG).show();
+        } catch (Exception e) {
+            Toast.makeText(this, "Couldn't post pairing notification: " + e.getMessage(),
+                    Toast.LENGTH_LONG).show();
+        }
+    }
+
     private String runProcessWithTimeout(ProcessBuilder pb, int timeoutMs) {
         try {
             return readProcessWithTimeout(pb.start(), timeoutMs);
@@ -3174,6 +3286,13 @@ public class MainActivity extends Activity {
                 obj.put("raw", raw);
             } catch (Exception ignored) {}
             return obj.toString();
+        }
+
+        /** Posts a notification with an inline reply so the user can type the Wi-Fi pairing code from the
+         *  shade (handy while the Wireless debugging "Pair with code" screen is open). */
+        @JavascriptInterface
+        public void showWirelessPairingNotification() {
+            postPairingNotification();
         }
 
         /** Read-only status report. Never connects, reconnects or changes the configured mode. */

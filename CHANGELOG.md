@@ -1,5 +1,15 @@
 # Changelog
 
+## v5.2-Pro (versionCode 520)
+
+- **Pair over Wi-Fi from a notification.** The Wireless Debugging card has a new **🔔 Pair via Notification**
+  button. It drops a high-priority notification with an inline reply box, so while Android's *Pair device with
+  pairing code* dialog is on screen you can type the 6-digit code straight from the notification shade - no
+  switching back to the app, so the code can't rotate out from under you. The app finds the current pairing
+  port over mDNS automatically; if it can't, reply with `port code` (e.g. `37123 123456`). Pairing runs in the
+  background and the notification updates with the result. If notifications aren't allowed yet, the button
+  requests the permission first.
+
 ## v5.1-Pro (versionCode 510)
 
 - **ADB cheat sheet in the terminal.** The ADB Console tab has a **📋 Cheat Sheet** button: a searchable,
