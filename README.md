@@ -13,7 +13,7 @@ through **ADB over TCP, Wireless Debugging, Shizuku or Root**.
 
 ### [⬇️ Download the latest APK](https://github.com/Bingblop/ADB-Application-Manager/releases/latest)
 
-`com.bloatware.bingblop` · v4.7-Pro · signed APK, installs over every earlier version without uninstalling
+`com.bloatware.bingblop` · v4.8-Pro · signed APK, installs over every earlier version without uninstalling
 
 <table>
   <tr>
@@ -43,7 +43,7 @@ through **ADB over TCP, Wireless Debugging, Shizuku or Root**.
 ## Download &amp; install
 
 1. Open the [**Releases** page](https://github.com/Bingblop/ADB-Application-Manager/releases/latest) and download
-   `ADB_Application_Manager_Pro-v4.7.apk` (every version is also in [`release/`](release/), with
+   the signed APK there (every version is also in [`release/`](release/), with
    [`SHA256SUMS.txt`](release/SHA256SUMS.txt)).
 2. Allow installing from your browser or file manager when Android asks, then open the APK.
 3. Pick a [working mode](#working-modes). The easiest is **ADB over TCP**: run `adb tcpip 5555` once from a

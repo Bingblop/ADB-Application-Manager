@@ -1,21 +1,17 @@
 # Changelog
 
-## Unreleased (source-complete, not yet in a signed build)
+## v4.8-Pro (versionCode 380)
 
-Two more GitHub Copilot review passes on v4.7-Pro's diff found further genuine issues, all fixed in
-source and confirmed by a clean CI compile plus standalone tests, but **not included in the
-`release/ADB_Application_Manager_Pro-v4.7.apk` below** - that APK was already built, signed and verified
-before these passes ran, and the environment this round's fixes were made in has no way to re-sign with the
-same release key. They'll be in the APK for the next version bump; until then, building `./build.sh`
-yourself from this source (with the project's usual `release.keystore`) picks them up immediately.
+Installs over v3.1 – v4.7 without uninstalling (same signing key). Three more GitHub Copilot review
+passes on v4.7-Pro's diff, after it had already shipped, found further genuine issues - all fixed here:
 
 - **Restore no longer scans forward for `backup.json` by name.** A picked file is untrusted, and skipping
   past an unexpected entry first still fully decompresses it to find its end - a tiny zip bomb placed
   before `backup.json` would have been inflated in full before this app ever got to check anything.
   `backup.json` must now be the very first entry, or the file is refused immediately. The same
   unbounded-decompression gap applied to any other unrecognized entry during restore (not just `data.tar`,
-  already fixed in v4.7-Pro below); every entry is now read through the same byte-capped loop regardless of
-  whether its contents end up kept.
+  already fixed in v4.7-Pro, below); every entry is now read through the same byte-capped loop regardless
+  of whether its contents end up kept.
 - The manifest viewer's string-pool size check compared a crafted count against the whole manifest's byte
   size, which at the 32 MB cap still let a count of ~33.5 million through and allocated a reference array
   in the hundreds of MB. It's now bounded by what could physically fit in that pool's own offset table.
@@ -135,8 +131,6 @@ Installs over v3.1 – v4.6 without uninstalling (same signing key).
     it open. Backing up an app whose app-ops can't be read now says so in the backup instead of silently
     recording an empty, misleadingly-successful-looking override list.
 - README: debloat-flow animation, light-theme screenshots and the new features.
-- A further Copilot pass after this APK was already built and signed found a few more issues; they're fixed
-  in source (see "Unreleased" above) but not in this version's APK.
 
 ## v4.6-Pro (versionCode 360)
 
