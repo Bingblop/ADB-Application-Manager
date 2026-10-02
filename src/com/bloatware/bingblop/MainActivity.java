@@ -4066,28 +4066,95 @@ public class MainActivity extends Activity {
         }
 
         // ---- Privileged file manager ----
-        /** Lists a directory via the active backend. Returns the raw `ls -la` output for the JS side to
-         *  parse ({path,parent,raw}), which keeps the parser testable and robust to toybox vs busybox. */
+        /** Lists a directory. Tries the app's own filesystem first (works for /sdcard and other storage when
+         *  All-files access is granted - fast and reliable, no shell), and falls back to the shell for
+         *  privileged-only paths (/data, /system, ...). Returns structured {entries} from the File API, or
+         *  {raw,names} for the JS side to parse from the shell. */
         @JavascriptInterface
         public String fmList(String path) {
             JSONObject res = new JSONObject();
             try {
-                if ("standard".equals(resolveExecMode())) { res.put("error", "File manager needs ADB, Shizuku or Root."); return res.toString(); }
                 String p = (path == null || path.isEmpty()) ? "/" : path;
                 if (p.length() > 1 && p.endsWith("/")) p = p.substring(0, p.length() - 1);
-                String out = executeShell("ls -la " + BackupScripts.quote(p));
-                // A dead-simple name list (one per line, trailing / on dirs) as a fallback the JS can parse
-                // when a device's `ls -la` columns don't match - this is what makes listing robust.
-                String names = executeShell("ls -1p " + BackupScripts.quote(p));
                 res.put("path", p);
                 int slash = p.lastIndexOf('/');
                 res.put("parent", p.equals("/") ? "/" : (slash <= 0 ? "/" : p.substring(0, slash)));
+
+                // 1) Direct filesystem access (storage the app can read itself - no shell, no ADB latency).
+                try {
+                    File dir = new File(p);
+                    if (dir.isDirectory()) {
+                        File[] kids = dir.listFiles();
+                        if (kids != null) {
+                            JSONArray entries = new JSONArray();
+                            for (File k : kids) {
+                                JSONObject e = new JSONObject();
+                                boolean d = k.isDirectory();
+                                boolean link = false;
+                                try { link = !k.getAbsolutePath().equals(k.getCanonicalPath()); } catch (Exception ignored) {}
+                                e.put("name", k.getName());
+                                e.put("isDir", d);
+                                e.put("isLink", link);
+                                e.put("size", k.isFile() ? k.length() : 0);
+                                e.put("perms", (d ? "d" : "-") + (k.canRead() ? "r" : "-") + (k.canWrite() ? "w" : "-") + (k.canExecute() ? "x" : "-"));
+                                entries.put(e);
+                            }
+                            res.put("entries", entries);
+                            res.put("source", "file");
+                            return res.toString();
+                        }
+                    }
+                } catch (Exception ignored) {}
+
+                // 2) Shell fallback for privileged paths. Also a simple name list so the JS parser is robust.
+                if ("standard".equals(resolveExecMode())) {
+                    res.put("error", "Can't read this folder. For storage, grant All-files access; for system folders, set up ADB, Shizuku or Root.");
+                    return res.toString();
+                }
+                String out = executeShell("ls -la " + BackupScripts.quote(p));
+                String names = executeShell("ls -1p " + BackupScripts.quote(p));
                 res.put("raw", out != null ? out : "");
                 res.put("names", names != null ? names : "");
+                res.put("source", "shell");
             } catch (Exception e) {
                 try { res.put("error", e.getMessage()); } catch (Exception ignored) {}
             }
             return res.toString();
+        }
+
+        /** Whether the app has broad storage access (All-files access on Android 11+). */
+        @JavascriptInterface
+        public boolean hasAllFilesAccess() {
+            try {
+                if (Build.VERSION.SDK_INT >= 30) return android.os.Environment.isExternalStorageManager();
+                return checkSelfPermission(android.Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
+            } catch (Exception e) { return false; }
+        }
+
+        /** Opens the system screen to grant this app All-files access (for browsing /sdcard without a shell). */
+        @JavascriptInterface
+        public void requestAllFilesAccess() {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Intent i;
+                        if (Build.VERSION.SDK_INT >= 30) {
+                            i = new Intent(android.provider.Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, Uri.parse("package:" + getPackageName()));
+                        } else {
+                            i = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + getPackageName()));
+                        }
+                        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(i);
+                    } catch (Exception e) {
+                        try {
+                            Intent i = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + getPackageName()));
+                            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(i);
+                        } catch (Exception ignored) {}
+                    }
+                }
+            });
         }
 
         /** First 128 KB of a file as text (for viewing). */

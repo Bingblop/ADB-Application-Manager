@@ -1,5 +1,16 @@
 # Changelog
 
+## v4.9.3-Pro (versionCode 393)
+
+More on-device fixes:
+
+- **The file manager now reads storage directly.** `/sdcard` and other storage folders are listed through
+  the app's own file access, which is instant and avoids the shell-visibility limits that can leave an
+  ADB/Shizuku shell unable to see `/sdcard`. It falls back to the shell only for privileged system folders
+  (`/data`, `/system`, ...). If storage looks inaccessible, a **Grant All-files access** button opens the
+  right settings screen - after granting it, `/sdcard` lists with no privileged mode needed.
+- **Logcat live tail is snappier** - shorter refresh interval and a lighter per-poll fetch while playing.
+
 ## v4.9.2-Pro (versionCode 392)
 
 Follow-up on-device fixes:

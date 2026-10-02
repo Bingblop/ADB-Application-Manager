@@ -2468,7 +2468,11 @@
         <section id="view-files" class="view-content">
             <div class="color-card">
                 <div class="color-card-title">📁 File manager</div>
-                <div class="color-card-subtitle">Browse and manage files with ADB / Shizuku / Root privileges.</div>
+                <div class="color-card-subtitle">Storage browses with All-files access; system folders need ADB / Shizuku / Root.</div>
+                <div id="fmAccessHint" style="display:none; margin-top:8px; padding:8px 10px; border:1px solid var(--border-glass); border-radius:10px; background:rgba(255,145,0,0.08);">
+                    <div class="switch-sub" style="margin-bottom:6px;">Storage looks inaccessible. Grant All-files access to browse /sdcard without a privileged mode.</div>
+                    <button class="batch-grid-btn accent" style="height:38px;" onclick="fmGrantAccess()">⭐ Grant storage access</button>
+                </div>
                 <div class="list-toolbar" style="margin-top:8px;">
                     <input type="text" class="list-search" id="fmPathInput" placeholder="/sdcard" value="/sdcard" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter') fmGo(this.value)">
                     <button class="term-run-btn" onclick="fmGo(document.getElementById('fmPathInput').value)">Go</button>
@@ -6131,7 +6135,6 @@ Type any command below (e.g. pm list packages -d)
 
         function onFilesShown() { fmGo(fmPath); }
         function fmGo(path) {
-            if (!guardPrivilege('File manager')) return;
             path = (path || '/').trim() || '/';
             if (!window.AndroidBridge || !window.AndroidBridge.fmList) { showToast('Needs the app build', '⚠️'); return; }
             let d;
@@ -6139,11 +6142,31 @@ Type any command below (e.g. pm list packages -d)
             fmPath = d.path || path;
             document.getElementById('fmPathInput').value = fmPath;
             document.getElementById('fmCurrentPath').innerText = fmPath;
-            const parsed = parseLsOutput(d.raw || '');
-            let entries = parsed.entries;
-            // Fallback: if detailed `ls -la` didn't parse on this device, use the simple name list.
-            if (!entries.length && d.names) entries = parseNameList(d.names);
-            renderFm({ error: d.error || parsed.error, entries, raw: d.raw || '' });
+            let entries;
+            if (d.entries) {
+                entries = d.entries; // structured entries straight from the app's File API
+            } else {
+                const parsed = parseLsOutput(d.raw || '');
+                entries = parsed.entries;
+                // Fallback: if detailed `ls -la` didn't parse on this device, use the simple name list.
+                if (!entries.length && d.names) entries = parseNameList(d.names);
+                d.error = d.error || parsed.error;
+            }
+            renderFm({ error: d.error, entries, raw: d.raw || '' });
+            updateFmAccessHint(fmPath, entries);
+        }
+        function updateFmAccessHint(path, entries) {
+            const hint = document.getElementById('fmAccessHint');
+            if (!hint) return;
+            const isStorage = /^\/(sdcard|storage)(\/|$)/.test(path);
+            let has = true;
+            try { has = window.AndroidBridge && window.AndroidBridge.hasAllFilesAccess ? window.AndroidBridge.hasAllFilesAccess() : true; } catch (e) {}
+            hint.style.display = (isStorage && (!has || !entries.length)) ? '' : 'none';
+        }
+        function fmGrantAccess() {
+            haptic();
+            if (window.AndroidBridge && window.AndroidBridge.requestAllFilesAccess) window.AndroidBridge.requestAllFilesAccess();
+            showToast('Grant "All files access", then come back', '⭐');
         }
         // Parses `ls -1p` output: one name per line, a trailing "/" marking directories.
         function parseNameList(names) {
@@ -6345,10 +6368,12 @@ Type any command below (e.g. pm list packages -d)
         let logcatTimer = null;
         function onLogcatShown() { logcatRefresh(); }
         // The actual fetch, with no privilege prompt, so the live-poll loop can't spam the guard modal.
-        function logcatFetch() {
+        // While live, a smaller tail keeps each (synchronous) shell call light so updates feel quicker.
+        function logcatFetch(live) {
             if (!window.AndroidBridge || !window.AndroidBridge.getLogcat) { document.getElementById('logcatOutput').innerText = 'Logcat needs the app build.'; return; }
             const level = document.getElementById('logcatLevel').value;
-            const lines = parseInt(document.getElementById('logcatLines').value, 10) || 500;
+            let lines = parseInt(document.getElementById('logcatLines').value, 10) || 500;
+            if (live) lines = Math.min(lines, 300);
             const filter = document.getElementById('logcatFilter').value || '';
             const out = window.AndroidBridge.getLogcat(level, filter, lines);
             const el = document.getElementById('logcatOutput');
@@ -6357,7 +6382,7 @@ Type any command below (e.g. pm list packages -d)
         }
         function logcatRefresh() {
             if (!guardPrivilege('Logcat')) return;
-            logcatFetch();
+            logcatFetch(false);
         }
         function logcatTogglePlay() {
             const btn = document.getElementById('logcatPlayBtn');
@@ -6365,8 +6390,8 @@ Type any command below (e.g. pm list packages -d)
             if (!guardPrivilege('Logcat')) return;
             btn.innerText = '⏸ Pause';
             btn.style.color = '#FFA726';
-            logcatFetch();
-            logcatTimer = setInterval(logcatFetch, 1500);
+            logcatFetch(true);
+            logcatTimer = setInterval(function () { logcatFetch(true); }, 1000);
         }
         function logcatStop() {
             if (logcatTimer) { clearInterval(logcatTimer); logcatTimer = null; }
