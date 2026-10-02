@@ -2559,27 +2559,115 @@
 
         <!-- VIEW: SHIZUSTORE -->
         <section id="view-store" class="view-content">
-            <div class="color-card">
-                <div class="color-card-title">🛍️ ShizuStore</div>
-                <div class="color-card-subtitle">Browse Shizuku-powered apps from <b>timschneeb</b>'s curated catalog and install them straight from their upstream sources (GitHub, GitLab, F-Droid). Installs use your active mode (ADB / Shizuku / Root), or hand off to the system installer with no privileged mode.</div>
-                <div class="batch-sheet-tools" style="margin:8px 0; gap:10px; flex-wrap:wrap; align-items:center;">
-                    <input type="text" class="list-search" id="storeSearch" placeholder="Search apps…" style="flex:1; min-width:140px;" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="renderStoreList()">
-                    <select class="op-select" id="storeSort" onchange="renderStoreList()">
-                        <option value="stars">Most starred</option>
-                        <option value="downloads">Most downloaded</option>
-                        <option value="updated">Recently updated</option>
-                        <option value="added">Recently added</option>
-                        <option value="name">Name (A–Z)</option>
-                    </select>
-                </div>
-                <div class="batch-sheet-tools" style="margin-bottom:2px; gap:14px; align-items:center;">
-                    <button class="batch-tool-link" onclick="loadStoreCatalog(true)">↻ Refresh catalog</button>
-                    <span id="storeCount" style="font-size:12px; color:var(--text-muted);"></span>
-                </div>
-                <div class="uad-credit" style="margin-top:6px;">Catalog &amp; metadata from <a href="#" onclick="openUrlExternal('https://github.com/timschneeb/ShizuStore'); return false;">ShizuStore</a> by timschneeb · APKs are served by each app's own developer, not rehosted.</div>
+            <style>
+                .store-subtabs { display:flex; gap:7px; overflow-x:auto; padding:2px 2px 8px; margin-bottom:4px; -webkit-overflow-scrolling:touch; }
+                .store-subtab { flex:0 0 auto; border:1px solid var(--border-glass); background:rgba(var(--ov),0.05); color:var(--text-muted); border-radius:999px; padding:7px 14px; font-size:13px; font-weight:700; cursor:pointer; white-space:nowrap; }
+                .store-subtab.active { background:linear-gradient(135deg,var(--accent),var(--secondary)); color:#fff; border-color:transparent; }
+                .store-rows { display:flex; flex-direction:column; gap:10px; }
+                .store-row { display:flex; gap:12px; align-items:flex-start; background:rgba(var(--ov),0.05); border:1px solid var(--border-glass); border-radius:14px; padding:12px; }
+                .store-row .sr-icon { width:46px; height:46px; border-radius:12px; object-fit:cover; flex-shrink:0; background:rgba(var(--ov),0.08); }
+                .store-row .sr-fallback { width:46px; height:46px; border-radius:12px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,var(--accent),var(--secondary)); font-weight:800; color:#fff; }
+                .store-row .sr-chip { font-size:11px; color:var(--text-muted); background:rgba(var(--ov),0.08); border-radius:8px; padding:2px 7px; }
+                .store-inst-btn { flex-shrink:0; align-self:center; border:none; border-radius:10px; padding:9px 12px; font-weight:800; color:#fff; background:linear-gradient(135deg,var(--accent),var(--secondary)); cursor:pointer; }
+                .store-inst-btn:disabled { opacity:0.55; }
+                .sr-status { font-size:11px; margin-top:6px; color:var(--text-muted); }
+            </style>
+
+            <div class="store-subtabs" id="storeSubtabs" role="tablist">
+                <button class="store-subtab active" data-store="shizu" onclick="switchStoreTab('shizu')">🛡️ ShizuStore</button>
+                <button class="store-subtab" data-store="komi" onclick="switchStoreTab('komi')">🐙 Komi</button>
+                <button class="store-subtab" data-store="fdroid" onclick="switchStoreTab('fdroid')">🤖 F-Droid</button>
+                <button class="store-subtab" data-store="orion" onclick="switchStoreTab('orion')">🪐 Orion</button>
+                <button class="store-subtab" data-store="aurora" onclick="switchStoreTab('aurora')">🌌 Aurora</button>
             </div>
-            <div id="storeStatus" class="uad-status" style="margin:6px 2px;">Open to load the catalog.</div>
-            <div id="storeList" style="display:flex; flex-direction:column; gap:10px;"></div>
+
+            <!-- Sub-tab: ShizuStore -->
+            <div class="substore" id="substore-shizu">
+                <div class="color-card">
+                    <div class="color-card-title">🛡️ ShizuStore</div>
+                    <div class="color-card-subtitle">Browse Shizuku-powered apps from <b>timschneeb</b>'s curated catalog and install them straight from their upstream sources (GitHub, GitLab, F-Droid). Installs use your active mode (ADB / Shizuku / Root), or hand off to the system installer with no privileged mode.</div>
+                    <div class="batch-sheet-tools" style="margin:8px 0; gap:10px; flex-wrap:wrap; align-items:center;">
+                        <input type="text" class="list-search" id="storeSearch" placeholder="Search apps…" style="flex:1; min-width:140px;" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="renderStoreList()">
+                        <select class="op-select" id="storeSort" onchange="renderStoreList()">
+                            <option value="stars">Most starred</option>
+                            <option value="downloads">Most downloaded</option>
+                            <option value="updated">Recently updated</option>
+                            <option value="added">Recently added</option>
+                            <option value="name">Name (A–Z)</option>
+                        </select>
+                    </div>
+                    <div class="batch-sheet-tools" style="margin-bottom:2px; gap:14px; align-items:center;">
+                        <button class="batch-tool-link" onclick="loadStoreCatalog(true)">↻ Refresh catalog</button>
+                        <span id="storeCount" style="font-size:12px; color:var(--text-muted);"></span>
+                    </div>
+                    <div class="uad-credit" style="margin-top:6px;">Catalog &amp; metadata from <a href="#" onclick="openUrlExternal('https://github.com/timschneeb/ShizuStore'); return false;">ShizuStore</a> by timschneeb · APKs are served by each app's own developer, not rehosted.</div>
+                </div>
+                <div id="storeStatus" class="uad-status" style="margin:6px 2px;">Open to load the catalog.</div>
+                <div id="storeList" style="display:flex; flex-direction:column; gap:10px;"></div>
+            </div>
+
+            <!-- Sub-tab: Komi (GitHub releases) -->
+            <div class="substore" id="substore-komi" style="display:none;">
+                <div class="color-card">
+                    <div class="color-card-title">🐙 Komi · GitHub releases</div>
+                    <div class="color-card-subtitle">A curated set of trusted open-source apps that publish their APK on GitHub Releases — the kind of GitHub app store <b>komi-store</b> is built for. Each app is resolved live to the right build for your device and installed through your active mode.</div>
+                    <div class="batch-sheet-tools" style="margin:8px 0 2px; gap:10px; flex-wrap:wrap; align-items:center;">
+                        <input type="text" class="list-search" id="komiSearch" placeholder="Search apps…" style="flex:1; min-width:140px;" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="setSrcQuery('komi', this.value)">
+                        <button class="batch-tool-link" onclick="loadSource('komi', true)">↻ Refresh</button>
+                        <span id="komiCount" style="font-size:12px; color:var(--text-muted);"></span>
+                    </div>
+                    <div class="uad-credit" style="margin-top:6px;">Inspired by <a href="#" onclick="openUrlExternal('https://github.com/komi-store/komi-store'); return false;">komi-store/komi-store</a> · APKs come from each project's own GitHub releases, not rehosted.</div>
+                </div>
+                <div id="komiStatus" class="uad-status" style="margin:6px 2px;">Loading…</div>
+                <div id="komiList" class="store-rows"></div>
+            </div>
+
+            <!-- Sub-tab: F-Droid repositories -->
+            <div class="substore" id="substore-fdroid" style="display:none;">
+                <div class="color-card">
+                    <div class="color-card-title">🤖 F-Droid repositories</div>
+                    <div class="color-card-subtitle">The known third-party F-Droid repositories from the community list. Tap a repo to browse and install its apps directly, or copy its address &amp; fingerprint to add it to your F-Droid client.</div>
+                    <div class="batch-sheet-tools" style="margin:8px 0 2px; gap:10px; flex-wrap:wrap; align-items:center;">
+                        <input type="text" class="list-search" id="fdroidSearch" placeholder="Search…" style="flex:1; min-width:140px;" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="setSrcQuery('fdroid', this.value)">
+                        <button class="batch-tool-link" id="fdroidBackBtn" onclick="fdroidBackToRepos()" style="display:none;">← All repos</button>
+                        <button class="batch-tool-link" onclick="loadSource('fdroid', true)">↻ Refresh</button>
+                        <span id="fdroidCount" style="font-size:12px; color:var(--text-muted);"></span>
+                    </div>
+                    <div class="uad-credit" style="margin-top:6px;">List from the <a href="#" onclick="openUrlExternal('https://forum.f-droid.org/t/known-repositories/721'); return false;">F-Droid known-repositories</a> thread · apps install from each repo's own servers.</div>
+                </div>
+                <div id="fdroidStatus" class="uad-status" style="margin:6px 2px;">Loading…</div>
+                <div id="fdroidList" class="store-rows"></div>
+            </div>
+
+            <!-- Sub-tab: Orion Store -->
+            <div class="substore" id="substore-orion" style="display:none;">
+                <div class="color-card">
+                    <div class="color-card-title">🪐 Orion Store</div>
+                    <div class="color-card-subtitle">The public Orion catalog (<b>RookieEnough/Orion-Data</b>) — Android apps resolved from GitHub, Codeberg and direct links, including Morphe-built apps. Only entries that resolve to an installable APK are shown.</div>
+                    <div class="batch-sheet-tools" style="margin:8px 0 2px; gap:10px; flex-wrap:wrap; align-items:center;">
+                        <input type="text" class="list-search" id="orionSearch" placeholder="Search apps…" style="flex:1; min-width:140px;" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="setSrcQuery('orion', this.value)">
+                        <button class="batch-tool-link" onclick="loadSource('orion', true)">↻ Refresh</button>
+                        <span id="orionCount" style="font-size:12px; color:var(--text-muted);"></span>
+                    </div>
+                    <div class="uad-credit" style="margin-top:6px;">Catalog from <a href="#" onclick="openUrlExternal('https://github.com/RookieEnough/Orion-Store'); return false;">Orion Store</a> by RookieEnough · APKs come from each app's own source, not rehosted.</div>
+                </div>
+                <div id="orionStatus" class="uad-status" style="margin:6px 2px;">Loading…</div>
+                <div id="orionList" class="store-rows"></div>
+            </div>
+
+            <!-- Sub-tab: Aurora Store (Play hand-off) -->
+            <div class="substore" id="substore-aurora" style="display:none;">
+                <div class="color-card">
+                    <div class="color-card-title">🌌 Aurora Store</div>
+                    <div class="color-card-subtitle">Aurora Store is an open-source Google Play client. Play apps need Google's private Play API and anonymous Play authentication, which can't be reimplemented inside this app — so this hands off to Aurora Store, which does it properly.</div>
+                    <div class="mode-btn-row" style="margin-top:6px;">
+                        <button class="mode-action-btn primary" onclick="openAuroraStore()">🌌 Open Aurora Store</button>
+                        <button class="mode-action-btn" onclick="installAuroraStore()">⬇️ Get Aurora Store</button>
+                    </div>
+                    <div id="auroraStatus" class="sr-status" style="margin-top:8px;"></div>
+                    <div class="uad-credit" style="margin-top:10px;">Aurora Store downloads from Google Play. Get it from <a href="#" onclick="openUrlExternal('https://auroraoss.com'); return false;">auroraoss.com</a> or its F-Droid repo. Google Play and APKMirror sources are intentionally not bundled.</div>
+                </div>
+            </div>
         </section>
 
         <!-- VIEW: UPDATES -->
@@ -5758,7 +5846,7 @@ Type any command below (e.g. pm list packages -d)
         const storeDetailCache = {};
 
         function onStoreShown() {
-            if (!storeLoaded && !storeLoading) loadStoreCatalog(false);
+            switchStoreTab(currentStoreTab || 'shizu');
         }
 
         function loadStoreCatalog(force) {
@@ -5925,24 +6013,269 @@ Type any command below (e.g. pm list packages -d)
 
         function onStoreInstallProgress(json) {
             let d; try { d = JSON.parse(json); } catch (e) { return; }
-            const p = document.getElementById('storeInstallProgress');
-            if (!p) return;
-            p.style.display = '';
             const pct = (d.percent != null && d.percent >= 0) ? ' ' + d.percent + '%' : '';
             let icon = '⏳';
             if (d.stage === 'done') icon = '✅';
             else if (d.stage === 'error') icon = '⚠️';
             else if (d.stage === 'opened') icon = '📦';
-            p.innerText = icon + ' ' + (d.message || d.stage) + pct;
-            if (d.stage === 'done' || d.stage === 'error' || d.stage === 'opened') {
-                document.getElementById('storeInstallBtn').disabled = false;
-                if (d.stage === 'done') showToast('Installed', '✅');
+            else if (d.stage === 'resolving') icon = '🔎';
+            const text = icon + ' ' + (d.message || d.stage) + pct;
+            const terminal = (d.stage === 'done' || d.stage === 'error' || d.stage === 'opened');
+
+            // ShizuStore detail modal (its own install path)
+            const modalOpen = document.getElementById('storeModal').classList.contains('show');
+            const p = document.getElementById('storeInstallProgress');
+            if (p && modalOpen) {
+                p.style.display = ''; p.innerText = text;
+                if (terminal) document.getElementById('storeInstallBtn').disabled = false;
             }
+
+            // Inline install card (Komi / Orion / F-Droid sub-tabs)
+            const ref = d.pkg ? storeInline[d.pkg] : null;
+            if (ref) {
+                const st = document.getElementById(ref.statusId);
+                const bt = document.getElementById(ref.btnId);
+                if (st) { st.style.display = ''; st.innerText = text; }
+                if (terminal && bt) bt.disabled = false;
+                if (terminal) delete storeInline[d.pkg];
+            }
+
+            if (d.stage === 'done') showToast('Installed', '✅');
         }
         window.onStoreInstallProgress = onStoreInstallProgress;
 
         function closeStoreModal() {
             document.getElementById('storeModal').classList.remove('show');
+        }
+
+        // ---- Store sub-tabs (v5.6): Komi · F-Droid · Orion · Aurora -------------------------------
+        let currentStoreTab = 'shizu';
+        const storeSrc = {
+            komi:   { loaded: false, loading: false, items: [], query: '' },
+            orion:  { loaded: false, loading: false, items: [], query: '' },
+            fdroid: { loaded: false, loading: false, repos: [], apps: [], mode: 'repos', repo: null, query: '' },
+        };
+        const storeInline = {};   // pkg -> { statusId, btnId } for an in-progress install card
+
+        function switchStoreTab(key) {
+            currentStoreTab = key;
+            document.querySelectorAll('.store-subtab').forEach(b => b.classList.toggle('active', b.dataset.store === key));
+            document.querySelectorAll('.substore').forEach(p => { p.style.display = (p.id === 'substore-' + key) ? '' : 'none'; });
+            if (key === 'shizu') { if (!storeLoaded && !storeLoading) loadStoreCatalog(false); }
+            else if (key === 'komi' || key === 'orion') loadSource(key, false);
+            else if (key === 'fdroid') loadSource('fdroid', false);
+        }
+
+        function setSrcStatus(key, msg, hide) {
+            const el = document.getElementById(key + 'Status');
+            if (!el) return;
+            if (!msg && hide) { el.style.display = 'none'; el.innerText = ''; return; }
+            el.style.display = ''; el.innerText = msg;
+        }
+
+        function setSrcQuery(key, v) {
+            storeSrc[key].query = (v || '').trim().toLowerCase();
+            if (key === 'fdroid') renderFdroid(); else renderSourceList(key);
+        }
+
+        function loadSource(key, force) {
+            const s = storeSrc[key];
+            if (s.loading) return;
+            if (!window.AndroidBridge || !window.AndroidBridge.storeSourceCatalog) { setSrcStatus(key, 'This store needs the app build (Android bridge).'); return; }
+            if (key === 'fdroid') {
+                if (s.loaded && !force) { renderFdroid(); return; }
+                s.loading = true; s.mode = 'repos'; s.repo = null;
+                document.getElementById('fdroidBackBtn').style.display = 'none';
+                document.getElementById('fdroidList').innerHTML = '';
+                setSrcStatus('fdroid', 'Loading known repositories…');
+                window.AndroidBridge.storeSourceCatalog('fdroid-repos', '');
+                return;
+            }
+            if (s.loaded && !force) { renderSourceList(key); return; }
+            s.loading = true;
+            document.getElementById(key + 'List').innerHTML = '';
+            setSrcStatus(key, key === 'komi' ? 'Loading apps…' : 'Loading the Orion catalog…');
+            window.AndroidBridge.storeSourceCatalog(key, '');
+        }
+
+        function fdroidBrowse(id) {
+            const s = storeSrc.fdroid;
+            if (s.loading) return;
+            const repo = s.repos.find(r => String(r.id) === String(id));
+            if (!repo) return;
+            haptic();
+            s.loading = true; s.mode = 'repo'; s.repo = repo; s.apps = []; s.query = '';
+            document.getElementById('fdroidSearch').value = '';
+            document.getElementById('fdroidBackBtn').style.display = '';
+            document.getElementById('fdroidList').innerHTML = '';
+            setSrcStatus('fdroid', 'Loading ' + (repo.name || 'repository') + '…');
+            window.AndroidBridge.storeSourceCatalog('fdroid-repo', repo.address);
+        }
+
+        function fdroidBackToRepos() {
+            const s = storeSrc.fdroid;
+            s.mode = 'repos'; s.repo = null; s.query = '';
+            document.getElementById('fdroidSearch').value = '';
+            document.getElementById('fdroidBackBtn').style.display = 'none';
+            renderFdroid();
+        }
+
+        function onStoreSource(json) {
+            let d; try { d = JSON.parse(json); } catch (e) { return; }
+            const src = d.source;
+            if (src === 'komi' || src === 'orion') {
+                const s = storeSrc[src]; s.loading = false;
+                if (d.status !== 'ok') { setSrcStatus(src, '⚠️ Could not load: ' + (d.error || 'unknown error')); return; }
+                s.items = Array.isArray(d.items) ? d.items : [];
+                s.loaded = true;
+                renderSourceList(src);
+            } else if (src === 'fdroid-repos') {
+                const s = storeSrc.fdroid; s.loading = false;
+                if (d.status !== 'ok') { setSrcStatus('fdroid', '⚠️ Could not load: ' + (d.error || 'unknown error')); return; }
+                s.repos = Array.isArray(d.items) ? d.items : [];
+                s.loaded = true; s.mode = 'repos';
+                renderFdroid();
+            } else if (src === 'fdroid-repo') {
+                const s = storeSrc.fdroid; s.loading = false;
+                if (d.status === 'too_large') { s.apps = []; setSrcStatus('fdroid', 'ℹ️ ' + (d.error || 'Too large to browse in-app.')); renderFdroid(); return; }
+                if (d.status !== 'ok') { s.apps = []; setSrcStatus('fdroid', '⚠️ ' + (d.error || 'could not load this repository')); renderFdroid(); return; }
+                s.apps = Array.isArray(d.items) ? d.items : [];
+                renderFdroid();
+            }
+        }
+        window.onStoreSource = onStoreSource;
+
+        function cssId(s) { return String(s || '').replace(/[^a-zA-Z0-9_-]/g, '_'); }
+
+        function matchItem(a, q) {
+            return (a.name || '').toLowerCase().includes(q) || (a.pkg || '').toLowerCase().includes(q)
+                || (a.desc || '').toLowerCase().includes(q) || (a.category || '').toLowerCase().includes(q);
+        }
+
+        function srcIconHtml(a) {
+            const esc = escapeHtml;
+            const letter = esc((a.name || '?').charAt(0).toUpperCase());
+            const img = a.icon ? `<img class="sr-icon" src="${esc(a.icon)}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">` : '';
+            const fb = `<div class="sr-fallback"${a.icon ? ' style="display:none;"' : ''}>${letter}</div>`;
+            return img + fb;
+        }
+
+        function itemCardHtml(a, key) {
+            const esc = escapeHtml;
+            const chips = [];
+            if (a.version && String(a.version).toLowerCase() !== 'latest') chips.push('v' + esc(String(a.version)));
+            if (a.category) chips.push(esc(a.category));
+            if (a.size) chips.push((Math.round(a.size / 1048576 * 10) / 10) + ' MB');
+            if (a.pkg) chips.push(esc(a.pkg));
+            const meta = chips.map(c => `<span class="sr-chip">${c}</span>`).join(' ');
+            const sid = key + '-' + cssId(a.id || a.pkg || a.name);
+            return `<div class="store-row">
+                ${srcIconHtml(a)}
+                <div style="flex:1;min-width:0;">
+                    <div style="font-weight:700;color:var(--text-main);">${esc(a.name || a.id || 'App')}</div>
+                    <div style="font-size:12px;color:var(--text-muted);margin:2px 0 6px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${esc(a.desc || '')}</div>
+                    <div style="display:flex;gap:5px;flex-wrap:wrap;">${meta}</div>
+                    <div class="sr-status" id="st-${sid}" style="display:none;"></div>
+                </div>
+                <button class="store-inst-btn" id="bt-${sid}" onclick="installSourceItem('${key}','${esc(String(a.id || a.pkg || ''))}')">⬇️</button>
+            </div>`;
+        }
+
+        function renderSourceList(key) {
+            const s = storeSrc[key];
+            if (!s.loaded) return;
+            const q = s.query;
+            let apps = s.items;
+            if (q) apps = apps.filter(a => matchItem(a, q));
+            document.getElementById(key + 'Count').innerText = apps.length + ' / ' + s.items.length + ' apps';
+            setSrcStatus(key, apps.length ? '' : 'No apps match your search.', apps.length > 0);
+            document.getElementById(key + 'List').innerHTML = apps.slice(0, 500).map(a => itemCardHtml(a, key)).join('');
+        }
+
+        function repoCardHtml(r) {
+            const esc = escapeHtml;
+            return `<div class="store-row">
+                <div class="sr-fallback">${esc((r.name || '?').charAt(0).toUpperCase())}</div>
+                <div style="flex:1;min-width:0;">
+                    <div style="font-weight:700;color:var(--text-main);">${esc(r.name)}</div>
+                    <div style="font-size:12px;color:var(--text-muted);margin:2px 0 6px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${esc(r.desc || '')}</div>
+                    <div style="font-size:11px;color:var(--text-muted);word-break:break-all;">${esc(r.address)}</div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:7px;">
+                        <button class="batch-tool-link" onclick="fdroidBrowse('${esc(String(r.id))}')">📂 Browse</button>
+                        <button class="batch-tool-link" onclick="copyStoreText('${esc(r.address)}','Address')">⧉ Address</button>
+                        ${r.fingerprint ? `<button class="batch-tool-link" onclick="copyStoreText('${esc(r.fingerprint)}','Fingerprint')">⧉ Fingerprint</button>` : ''}
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        function repoAddInfoHtml(r) {
+            const esc = escapeHtml;
+            return `<div class="color-card">
+                <div style="font-weight:700;margin-bottom:4px;">${esc(r.name)}</div>
+                <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">No apps to show here. If the catalog is too large to browse in-app, add this repo to your F-Droid client to install and auto-update its apps with signature verification.</div>
+                <div style="font-size:11px;color:var(--text-muted);word-break:break-all;margin-bottom:4px;"><b>Address:</b> ${esc(r.address)}</div>
+                ${r.fingerprint ? `<div style="font-size:11px;color:var(--text-muted);word-break:break-all;margin-bottom:8px;"><b>Fingerprint:</b> ${esc(r.fingerprint)}</div>` : ''}
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <button class="batch-tool-link" onclick="copyStoreText('${esc(r.address)}','Address')">⧉ Copy address</button>
+                    ${r.fingerprint ? `<button class="batch-tool-link" onclick="copyStoreText('${esc(r.fingerprint)}','Fingerprint')">⧉ Copy fingerprint</button>` : ''}
+                </div>
+            </div>`;
+        }
+
+        function renderFdroid() {
+            const s = storeSrc.fdroid;
+            const listEl = document.getElementById('fdroidList');
+            const q = s.query;
+            if (s.mode === 'repos') {
+                document.getElementById('fdroidBackBtn').style.display = 'none';
+                let repos = s.repos;
+                if (q) repos = repos.filter(r => (r.name || '').toLowerCase().includes(q) || (r.address || '').toLowerCase().includes(q) || (r.desc || '').toLowerCase().includes(q));
+                document.getElementById('fdroidCount').innerText = repos.length + ' / ' + s.repos.length + ' repos';
+                setSrcStatus('fdroid', repos.length ? '' : 'No repositories match your search.', repos.length > 0);
+                listEl.innerHTML = repos.map(repoCardHtml).join('');
+            } else {
+                document.getElementById('fdroidBackBtn').style.display = '';
+                let apps = s.apps;
+                if (q) apps = apps.filter(a => matchItem(a, q));
+                document.getElementById('fdroidCount').innerText = (s.repo ? s.repo.name + ' · ' : '') + apps.length + ' apps';
+                if (!s.apps.length) {
+                    listEl.innerHTML = s.repo ? repoAddInfoHtml(s.repo) : '';
+                } else {
+                    setSrcStatus('fdroid', '', true);
+                    listEl.innerHTML = apps.slice(0, 400).map(a => itemCardHtml(a, 'fdroid')).join('') || '<div class="uad-status">No apps match your search.</div>';
+                }
+            }
+        }
+
+        function srcItemById(key, id) {
+            if (key === 'fdroid') return storeSrc.fdroid.apps.find(a => String(a.id) === String(id) || String(a.pkg) === String(id));
+            return storeSrc[key].items.find(a => String(a.id) === String(id) || String(a.pkg) === String(id));
+        }
+
+        function installSourceItem(key, id) {
+            const item = srcItemById(key, id);
+            if (!item) return;
+            haptic();
+            if (!window.AndroidBridge || !window.AndroidBridge.storeSourceInstall) { showToast('Install needs the app build', '⚠️'); return; }
+            const sid = key + '-' + cssId(item.id || item.pkg || item.name);
+            const st = document.getElementById('st-' + sid);
+            const bt = document.getElementById('bt-' + sid);
+            if (st) { st.style.display = ''; st.innerText = '⏳ Starting…'; }
+            if (bt) bt.disabled = true;
+            const pkg = item.pkg || item.id || '';
+            if (pkg) storeInline[pkg] = { statusId: 'st-' + sid, btnId: 'bt-' + sid };
+            window.AndroidBridge.storeSourceInstall(JSON.stringify(item));
+        }
+
+        function copyStoreText(text, label) {
+            copyText(text);
+            showToast((label || 'Text') + ' copied', '📋');
+        }
+
+        function installAuroraStore() {
+            haptic();
+            openUrlExternal('https://gitlab.com/AuroraOSS/AuroraStore/-/releases');
         }
 
         function connectAdbWirelessUI() {

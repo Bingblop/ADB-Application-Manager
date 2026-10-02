@@ -1,5 +1,28 @@
 # Changelog
 
+## v5.6-Pro (versionCode 560)
+
+- **The Store is now five sources, in sub-tabs.** The 🛍️ Store tab opens on **ShizuStore** and adds four
+  more sub-tabs beside it:
+  - **🐙 Komi** — a curated set of trusted open-source apps that publish their APK on **GitHub Releases**
+    (the kind of GitHub app store [komi-store](https://github.com/komi-store/komi-store) is built for).
+    Each app is resolved live to the right build for your device's ABI and installed through your active mode.
+  - **🤖 F-Droid** — the known third-party **F-Droid repositories** from the community
+    [known-repositories](https://forum.f-droid.org/t/known-repositories/721) list. Tap a repo to browse and
+    install its apps directly, or copy its address & fingerprint to add it to your F-Droid client. (The very
+    large catalogs show their add-to-client details instead of browsing in-app.)
+  - **🪐 Orion** — the public [Orion Store](https://github.com/RookieEnough/Orion-Store) catalog
+    (`RookieEnough/Orion-Data`), including Morphe-built apps, resolved from GitHub, Codeberg and direct links.
+  - **🌌 Aurora** — an honest hand-off to **Aurora Store** for Google Play apps (the private Play API can't be
+    reimplemented in-app). Google Play and APKMirror sources are intentionally not bundled.
+
+  Every install still downloads from each app's own upstream — nothing is rehosted — and runs through this
+  app's installer (ADB / Shizuku / Root, or the system installer).
+- **Better patched-app detection: Morphe and same-package ReVanced builds.** The 🧩 patched detector now
+  flags **Morphe** (`app.morphe.*` and the Morphe installer), and the inspector's deep scan streams each
+  `classes*.dex` to recognise **ReVanced** and **Morphe** builds even when the patch keeps the app's
+  original package name — the case the old signals (package, installer, manifest) missed.
+
 ## v5.5-Pro (versionCode 550)
 
 - **Unexported activities now actually launch (ADB / Shizuku / Root).** Launching an activity that another

@@ -1694,11 +1694,16 @@ public class MainActivity extends Activity {
      * it to the system installer with no privileged mode). Progress -> window.onStoreInstallProgress(json).
      */
     private void runStoreInstall(final String apkUrl, final String pkg, final String label) {
-        final String key = pkg == null || pkg.isEmpty() ? apkUrl : pkg;
         if (apkUrl == null || !apkUrl.startsWith("https://")) {
             storeInstallProgress(pkg, "error", 0, "This app has no direct APK to install.");
             return;
         }
+        downloadAndInstall(apkUrl, pkg, label);
+    }
+
+    /** Downloads an https APK and installs it through the active mode (shared by every Store source). */
+    private void downloadAndInstall(final String apkUrl, final String pkg, final String label) {
+        final String key = pkg == null || pkg.isEmpty() ? apkUrl : pkg;
         if (!storeInstalling.add(key)) return;
         executor.submit(new Runnable() {
             @Override
@@ -1754,6 +1759,72 @@ public class MainActivity extends Activity {
             o.put("message", message == null ? "" : message);
             notifyUpdates("onStoreInstallProgress", o);
         } catch (Exception ignored) {}
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Extra Store sub-tabs (v5.6): Komi (GitHub releases), Orion (Orion-Data), F-Droid repositories
+    // ---------------------------------------------------------------------------------------------
+
+    /**
+     * Loads a sub-tab's catalog off-thread and reports it to window.onStoreSource(json). source is one of
+     * "komi", "orion", "fdroid-repos" (the known-repo directory) or "fdroid-repo" (arg = a repo address).
+     */
+    private void runStoreSourceCatalog(final String source, final String arg) {
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                JSONObject o = new JSONObject();
+                try {
+                    JSONObject res;
+                    if ("komi".equals(source)) res = Stores.komiCatalog();
+                    else if ("orion".equals(source)) res = Stores.orionCatalog(800);
+                    else if ("fdroid-repos".equals(source)) res = Stores.fdroidRepos();
+                    else if ("fdroid-repo".equals(source)) res = Stores.fdroidRepoIndex(arg, 1500, 10 * 1024 * 1024);
+                    else throw new IllegalStateException("unknown store source");
+                    o.put("source", source);
+                    if (arg != null) o.put("arg", arg);
+                    o.put("status", res.optString("status", "ok"));
+                    if (res.has("items")) o.put("items", res.optJSONArray("items"));
+                    if (res.has("total")) o.put("total", res.optInt("total"));
+                    if (res.has("error")) o.put("error", res.optString("error"));
+                } catch (Exception e) {
+                    try {
+                        o.put("source", source);
+                        if (arg != null) o.put("arg", arg);
+                        o.put("status", "error");
+                        o.put("error", errMsg(e));
+                    } catch (Exception ignored) {}
+                }
+                notifyUpdates("onStoreSource", o);
+            }
+        });
+    }
+
+    /**
+     * Resolves a Komi/Orion/F-Droid catalog item (a direct APK, or a GitHub/Codeberg release picked for
+     * this device's ABI) and installs it. Progress -> window.onStoreInstallProgress(json), keyed by pkg.
+     */
+    private void runStoreSourceInstall(final String itemJson) {
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                String pkg = "";
+                try {
+                    JSONObject item = new JSONObject(itemJson);
+                    pkg = item.optString("pkg", "");
+                    String name = item.optString("name", pkg.isEmpty() ? "app" : pkg);
+                    boolean direct = "direct".equals(item.optString("resolveKind", ""))
+                            && !item.optString("apkUrl", "").isEmpty();
+                    if (!direct) storeInstallProgress(pkg, "resolving", -1, "Finding the latest release of " + name + "…");
+                    JSONObject r = Stores.resolve(item, Build.SUPPORTED_ABIS);
+                    String apkUrl = r.optString("apkUrl", "");
+                    String rpkg = r.optString("pkg", pkg);
+                    downloadAndInstall(apkUrl, rpkg == null || rpkg.isEmpty() ? pkg : rpkg, name);
+                } catch (Exception e) {
+                    storeInstallProgress(pkg, "error", 0, errMsg(e));
+                }
+            }
+        });
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -4631,6 +4702,21 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void storeInstall(String apkUrl, String pkg, String label) {
             runStoreInstall(apkUrl, pkg, label);
+        }
+
+        /**
+         * Loads a Store sub-tab catalog: source = "komi" | "orion" | "fdroid-repos" | "fdroid-repo"
+         * (arg = repo address for "fdroid-repo"). Answer: window.onStoreSource(json).
+         */
+        @JavascriptInterface
+        public void storeSourceCatalog(String source, String arg) {
+            if (source != null && !source.isEmpty()) runStoreSourceCatalog(source, arg);
+        }
+
+        /** Resolves and installs a Komi/Orion/F-Droid catalog item. Progress: window.onStoreInstallProgress(json). */
+        @JavascriptInterface
+        public void storeSourceInstall(String itemJson) {
+            if (itemJson != null && !itemJson.isEmpty()) runStoreSourceInstall(itemJson);
         }
 
         // ---- VirusTotal (optional, user key) -------------------------------------------------
