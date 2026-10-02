@@ -1355,7 +1355,8 @@
             border: 1px solid var(--border-glass);
             border-radius: var(--radius-lg);
             padding: 12px;
-            height: 350px;
+            height: 68vh;
+            min-height: 300px;
             overflow-y: auto;
             font-family: monospace;
             font-size: 12px;
@@ -2503,12 +2504,13 @@
                     <input type="text" class="list-search" id="logcatFilter" placeholder="filter text / tag" style="flex:1; min-width:120px;" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter') logcatRefresh()">
                 </div>
                 <div class="batch-sheet-tools" style="margin-bottom:4px; gap:14px;">
+                    <button class="batch-tool-link" id="logcatPlayBtn" onclick="logcatTogglePlay()" style="color:#4ADE80;">▶ Play</button>
                     <button class="batch-tool-link" onclick="logcatRefresh()">↻ Refresh</button>
                     <button class="batch-tool-link" onclick="logcatClear()">🧹 Clear</button>
                     <button class="batch-tool-link" onclick="logcatCopy()">📋 Copy</button>
                 </div>
             </div>
-            <div class="terminal-box" id="logcatOutput" style="max-height:60vh; overflow:auto;">Open this tab to read the log.</div>
+            <div class="terminal-box" id="logcatOutput">Open this tab to read the log.</div>
         </section>
 
         <!-- VIEW: UPDATES -->
@@ -3743,6 +3745,7 @@ Type any command below (e.g. pm list packages -d)
             if (activeView) {
                 activeView.classList.add('active');
             }
+            if (viewName !== 'logcat' && typeof logcatStop === 'function') logcatStop();
             if (viewName === 'debloater') onDebloaterShown();
             if (viewName === 'updates') { onUpdatesShown(); refreshStoreStatus(); }
             if (viewName === 'installer') onInstallerShown();
@@ -6126,9 +6129,7 @@ Type any command below (e.g. pm list packages -d)
         let fmActionTarget = null;
         let fmPendingOp = null;
 
-        function onFilesShown() {
-            if (!window.__fmLoaded) { window.__fmLoaded = true; fmGo(fmPath); }
-        }
+        function onFilesShown() { fmGo(fmPath); }
         function fmGo(path) {
             if (!guardPrivilege('File manager')) return;
             path = (path || '/').trim() || '/';
@@ -6138,7 +6139,42 @@ Type any command below (e.g. pm list packages -d)
             fmPath = d.path || path;
             document.getElementById('fmPathInput').value = fmPath;
             document.getElementById('fmCurrentPath').innerText = fmPath;
-            renderFm(d);
+            const parsed = parseLsOutput(d.raw || '');
+            renderFm({ error: d.error || parsed.error, entries: parsed.entries });
+        }
+        // Parses `ls -la` output. Robust to toybox ("2024-01-01 12:00") and busybox ("Jan  1 12:00")
+        // date formats by locating the HH:MM time token and taking the name as everything after it.
+        function parseLsOutput(raw) {
+            const entries = [];
+            let error = null;
+            (raw || '').split('\n').forEach(line => {
+                const t = line.replace(/\r$/, '').trim();
+                if (!t || t.startsWith('total ')) return;
+                const low = t.toLowerCase();
+                if (low.startsWith('ls:') || low.includes('permission denied') || low.includes('no such file') || low.includes('not a directory') || low.includes('operation not permitted')) { if (!error) error = t; return; }
+                const e = parseLsLine(t);
+                if (e) entries.push(e);
+            });
+            return { entries, error: entries.length ? null : error };
+        }
+        function parseLsLine(ln) {
+            const parts = ln.split(/\s+/);
+            if (parts.length < 4) return null;
+            const perms = parts[0];
+            if (!/^[-dlbcps][-rwxsStT]{9}/.test(perms)) return null;
+            const type = perms[0];
+            let timeIdx = -1;
+            for (let i = 2; i < parts.length; i++) { if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(parts[i])) { timeIdx = i; break; } }
+            let name;
+            let size = 0;
+            const sz = parseInt(parts[4], 10); if (!isNaN(sz)) size = sz;
+            if (timeIdx >= 0 && timeIdx + 1 < parts.length) name = parts.slice(timeIdx + 1).join(' ');
+            else name = parts[parts.length - 1];
+            let link = null;
+            const arrow = name.indexOf(' -> ');
+            if (arrow >= 0) { link = name.slice(arrow + 4); name = name.slice(0, arrow); }
+            if (!name || name === '.' || name === '..') return null;
+            return { name, isDir: type === 'd', isLink: type === 'l', perms, size, link };
         }
         function fmRefresh() { fmGo(fmPath); }
         function fmUp() {
@@ -6279,9 +6315,10 @@ Type any command below (e.g. pm list packages -d)
         }
 
         // ---- Logcat ----
-        function onLogcatShown() { if (!window.__logcatLoaded) { window.__logcatLoaded = true; logcatRefresh(); } }
-        function logcatRefresh() {
-            if (!guardPrivilege('Logcat')) return;
+        let logcatTimer = null;
+        function onLogcatShown() { logcatRefresh(); }
+        // The actual fetch, with no privilege prompt, so the live-poll loop can't spam the guard modal.
+        function logcatFetch() {
             if (!window.AndroidBridge || !window.AndroidBridge.getLogcat) { document.getElementById('logcatOutput').innerText = 'Logcat needs the app build.'; return; }
             const level = document.getElementById('logcatLevel').value;
             const lines = parseInt(document.getElementById('logcatLines').value, 10) || 500;
@@ -6291,11 +6328,29 @@ Type any command below (e.g. pm list packages -d)
             el.innerText = out || '(no output)';
             el.scrollTop = el.scrollHeight;
         }
+        function logcatRefresh() {
+            if (!guardPrivilege('Logcat')) return;
+            logcatFetch();
+        }
+        function logcatTogglePlay() {
+            const btn = document.getElementById('logcatPlayBtn');
+            if (logcatTimer) { logcatStop(); return; }
+            if (!guardPrivilege('Logcat')) return;
+            btn.innerText = '⏸ Pause';
+            btn.style.color = '#FFA726';
+            logcatFetch();
+            logcatTimer = setInterval(logcatFetch, 1500);
+        }
+        function logcatStop() {
+            if (logcatTimer) { clearInterval(logcatTimer); logcatTimer = null; }
+            const btn = document.getElementById('logcatPlayBtn');
+            if (btn) { btn.innerText = '▶ Play'; btn.style.color = '#4ADE80'; }
+        }
         function logcatClear() {
             if (!guardPrivilege('Logcat')) return;
             if (window.AndroidBridge && window.AndroidBridge.clearLogcat) window.AndroidBridge.clearLogcat();
             showToast('Log cleared', '🧹');
-            logcatRefresh();
+            logcatFetch();
         }
         function logcatCopy() {
             const txt = document.getElementById('logcatOutput').innerText || '';

@@ -4066,7 +4066,8 @@ public class MainActivity extends Activity {
         }
 
         // ---- Privileged file manager ----
-        /** Lists a directory via the active backend. {path,parent,entries:[{name,isDir,isLink,size,perms,link}]} or {error}. */
+        /** Lists a directory via the active backend. Returns the raw `ls -la` output for the JS side to
+         *  parse ({path,parent,raw}), which keeps the parser testable and robust to toybox vs busybox. */
         @JavascriptInterface
         public String fmList(String path) {
             JSONObject res = new JSONObject();
@@ -4078,35 +4079,7 @@ public class MainActivity extends Activity {
                 res.put("path", p);
                 int slash = p.lastIndexOf('/');
                 res.put("parent", p.equals("/") ? "/" : (slash <= 0 ? "/" : p.substring(0, slash)));
-                JSONArray entries = new JSONArray();
-                if (out != null) {
-                    for (String line : out.split("\n")) {
-                        String ln = line.trim();
-                        if (ln.isEmpty() || ln.startsWith("total ")) continue;
-                        if (ln.toLowerCase().startsWith("ls:") || ln.toLowerCase().contains("permission denied") || ln.toLowerCase().contains("no such file")) {
-                            res.put("error", ln); continue;
-                        }
-                        // perms links owner group size date time name  (toybox ls: date is YYYY-MM-DD HH:MM)
-                        String[] t = ln.split("\\s+", 8);
-                        if (t.length < 8) continue;
-                        String perms = t[0];
-                        char type = perms.charAt(0);
-                        String rest = t[7], name = rest, link = null;
-                        int arrow = rest.indexOf(" -> ");
-                        if (arrow >= 0) { name = rest.substring(0, arrow); link = rest.substring(arrow + 4); }
-                        if (name.equals(".") || name.equals("..")) continue;
-                        long size = 0; try { size = Long.parseLong(t[4]); } catch (Exception ignored) {}
-                        JSONObject e = new JSONObject();
-                        e.put("name", name);
-                        e.put("isDir", type == 'd');
-                        e.put("isLink", type == 'l');
-                        e.put("perms", perms);
-                        e.put("size", size);
-                        if (link != null) e.put("link", link);
-                        entries.put(e);
-                    }
-                }
-                res.put("entries", entries);
+                res.put("raw", out != null ? out : "");
             } catch (Exception e) {
                 try { res.put("error", e.getMessage()); } catch (Exception ignored) {}
             }

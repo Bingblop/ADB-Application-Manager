@@ -1,5 +1,17 @@
 # Changelog
 
+## v4.9.1-Pro (versionCode 391)
+
+On-device fixes from testing v4.9:
+
+- **The file manager now lists `/sdcard` and other folders reliably.** The `ls -la` parser was rebuilt to
+  handle both toybox and busybox date formats - it finds the time field and takes the name after it - so
+  listings, names with spaces, symlink targets and sizes all parse correctly, and a permission-denied folder
+  shows the error instead of looking empty. Opening the Files tab now always refreshes.
+- **Logcat has a Play / Pause control.** While playing it live-updates (polls about every 1.5s) and
+  auto-scrolls; it stops when you pause or leave the tab. Opening the tab always refreshes.
+- **The Logcat and ADB Console panes are taller** (more terminal space).
+
 ## v4.9-Pro (versionCode 390)
 
 Installs over v3.1 – v4.8 without uninstalling (same signing key).
