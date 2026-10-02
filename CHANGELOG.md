@@ -1,5 +1,14 @@
 # Changelog
 
+## v5.0-Pro (versionCode 500)
+
+- **Update this app from inside the app.** The Updates tab now has a dedicated **🚀 App update** card at the
+  top, just for ADB Application Manager Pro itself. It checks this project's GitHub releases, shows your
+  installed version vs. the latest with the release notes, and updates in one tap. The download is verified to
+  be this app, a newer version and **signed with the same key** before installing. With ADB / Shizuku / Root
+  the install is seamless (the app restarts); with no privileged mode it hands the APK to the system installer
+  for a normal confirmation. The self-update is no longer mixed into the other-apps update list.
+
 ## v4.9.5-Pro (versionCode 395)
 
 - **The file manager resolves storage to `/storage/emulated/0`.** `/sdcard` and `/storage/self/primary`
