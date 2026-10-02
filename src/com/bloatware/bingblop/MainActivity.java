@@ -190,6 +190,32 @@ public class MainActivity extends Activity {
         webView.loadUrl("file:///android_asset/index.html");
         registerWallpaperListener();
         handleIncomingIntent(getIntent());
+        maybeRequestFirstLaunchPermissions();
+    }
+
+    /**
+     * On the very first launch, check and request the standard runtime permissions the app uses
+     * (notifications, and legacy storage on pre-Android 11). Special-access permissions - All-files
+     * access, usage access and overlay - are still requested in context from their own screens.
+     */
+    private void maybeRequestFirstLaunchPermissions() {
+        try {
+            if (prefs == null || prefs.getBoolean("first_launch_perms_done", false)) return;
+            prefs.edit().putBoolean("first_launch_perms_done", true).apply();
+            java.util.List<String> req = new java.util.ArrayList<String>();
+            if (Build.VERSION.SDK_INT >= 33
+                    && checkSelfPermission("android.permission.POST_NOTIFICATIONS") != PackageManager.PERMISSION_GRANTED) {
+                req.add("android.permission.POST_NOTIFICATIONS");
+            }
+            // Android 11+ browses storage through All-files access (a special-access grant), not these.
+            if (Build.VERSION.SDK_INT < 30) {
+                if (checkSelfPermission(android.Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
+                    req.add(android.Manifest.permission.READ_EXTERNAL_STORAGE);
+                if (checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
+                    req.add(android.Manifest.permission.WRITE_EXTERNAL_STORAGE);
+            }
+            if (!req.isEmpty()) requestPermissions(req.toArray(new String[0]), 9100);
+        } catch (Exception ignored) {}
     }
 
     @Override

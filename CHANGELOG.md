@@ -7,8 +7,14 @@
   key events, screen, connectivity, battery testing, logs, files, reboot). Tap any command to drop it into
   the input (with `<placeholders>` selected for quick editing). Commands are in on-device shell form - no
   `adb shell` prefix needed, since the terminal already runs on the device. Compiled from Pulimet's ADB gist.
+  The cheat sheet can also **load the full reference live from the gist** (Pulimet's list) inside the modal.
 - **The terminal input no longer auto-capitalizes.** It defaults to lower case (ADB commands are
   lower case); hold Shift to type capitals when you actually need them.
+- **App icon no longer has a black background.** The adaptive launcher icon now uses a clean white
+  background behind the mark.
+- **First-launch permission prompt.** On the first launch the app now checks and requests the standard
+  runtime permissions it uses (notifications, and legacy storage on pre-Android 11). Special-access grants
+  (All-files access, usage access, overlay) are still requested in context from their own screens.
 
 ## v5.0-Pro (versionCode 500)
 

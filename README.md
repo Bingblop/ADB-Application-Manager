@@ -79,7 +79,9 @@ tell you when a new version is out (see [Updates](#updates)).
 
 ## New in v5.1
 
-- **ADB cheat sheet** — the ADB Console has a 📋 **Cheat Sheet** button: a searchable, categorized reference of ~90 commands (device info, packages, app control, permissions, intents, input & key events, screen, connectivity, battery testing, logs, files, reboot). Tap a command to drop it into the input (placeholders selected for quick editing). Commands are in on-device shell form — no `adb shell` prefix. The terminal input also defaults to lower case (no auto-capitalize).
+- **ADB cheat sheet** — the ADB Console has a 📋 **Cheat Sheet** button: a searchable, categorized reference of ~90 commands (device info, packages, app control, permissions, intents, input & key events, screen, connectivity, battery testing, logs, files, reboot). Tap a command to drop it into the input (placeholders selected for quick editing). Commands are in on-device shell form — no `adb shell` prefix. The cheat sheet can also load the **full reference live from [Pulimet's gist](https://gist.github.com/Pulimet/5013acf2cd5b28e55036c82c91bd56d8)**. The terminal input also defaults to lower case (no auto-capitalize).
+- **Cleaner launcher icon** — the adaptive app icon drops its black background for a clean white one.
+- **First-launch permissions** — on first launch the app checks and requests the runtime permissions it uses (notifications, and legacy storage pre-Android 11); special-access grants stay contextual.
 
 ## New in v5.0
 

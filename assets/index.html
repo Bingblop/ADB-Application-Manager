@@ -2980,8 +2980,12 @@ Type any command below (e.g. pm list packages -d)
                 <div style="font-size:20px; cursor:pointer;" onclick="closeCheatSheet()">✕</div>
             </div>
             <input type="text" class="list-search" id="cheatSearch" placeholder="Search commands…" oninput="renderCheatSheet(this.value)" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" style="margin-bottom:10px;">
-            <div id="cheatSheetBody" style="max-height:58vh; overflow-y:auto;"></div>
-            <div class="uad-credit" style="margin-top:10px;">Compiled from Pulimet's ADB gist and automatetheplanet.com. Commands with &lt;placeholders&gt; need editing before they run.</div>
+            <div id="cheatSheetBody" style="max-height:48vh; overflow-y:auto;"></div>
+            <div style="margin-top:12px; border-top:1px solid var(--border-glass, rgba(128,128,128,0.22)); padding-top:10px;">
+                <button class="mode-action-btn" id="cheatGistBtn" onclick="loadCheatGist()">📜 Load the full reference from the gist</button>
+                <div id="cheatGistBox" style="margin-top:8px; max-height:40vh; overflow:auto;"></div>
+            </div>
+            <div class="uad-credit" style="margin-top:10px;">Quick list in on-device shell form; the full reference loads live from <a href="#" onclick="openUrlExternal('https://gist.github.com/Pulimet/5013acf2cd5b28e55036c82c91bd56d8'); return false;">Pulimet's ADB gist</a>. Commands with &lt;placeholders&gt; need editing before they run.</div>
         </div>
     </div>
 
@@ -7634,6 +7638,42 @@ Type any command below (e.g. pm list packages -d)
                 else { input.setSelectionRange(cmd.length, cmd.length); }
             } catch (e) {}
             showToast('Command ready — edit any <placeholder>, then RUN', '📋');
+        }
+
+        // Load the full command reference live from Pulimet's gist via its JSONP script src.
+        let cheatGistLoaded = false;
+        function cheatGistFallback() {
+            cheatGistLoaded = false;
+            const btn = document.getElementById('cheatGistBtn');
+            const box = document.getElementById('cheatGistBox');
+            if (btn) { btn.disabled = false; btn.innerText = '📜 Retry loading the gist'; }
+            if (box) box.innerHTML = '<div class="list-empty">Couldn’t load the gist (offline or blocked). <a href="#" onclick="openUrlExternal(\'https://gist.github.com/Pulimet/5013acf2cd5b28e55036c82c91bd56d8\'); return false;">Open it on GitHub</a>.</div>';
+        }
+        function loadCheatGist() {
+            if (cheatGistLoaded) return;
+            cheatGistLoaded = true;
+            const btn = document.getElementById('cheatGistBtn');
+            const box = document.getElementById('cheatGistBox');
+            if (btn) { btn.disabled = true; btn.innerText = '📜 Loading from GitHub…'; }
+            if (box) box.innerHTML = '<div class="list-empty">Fetching the gist…</div>';
+            let done = false;
+            window.__onPulimetGist = function (data) {
+                done = true;
+                try {
+                    if (data && data.stylesheet) {
+                        const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = data.stylesheet; document.head.appendChild(l);
+                    }
+                    if (box) box.innerHTML = (data && data.div) ? data.div : '<div class="list-empty">The gist returned no content.</div>';
+                    if (btn) btn.style.display = 'none';
+                } catch (e) { cheatGistFallback(); }
+            };
+            try {
+                const s = document.createElement('script');
+                s.src = 'https://gist.github.com/Pulimet/5013acf2cd5b28e55036c82c91bd56d8.json?callback=__onPulimetGist';
+                s.onerror = function () { if (!done) cheatGistFallback(); };
+                document.body.appendChild(s);
+                setTimeout(function () { if (!done) cheatGistFallback(); }, 8000);
+            } catch (e) { cheatGistFallback(); }
         }
 
         // ---------- Backup and restore ----------
