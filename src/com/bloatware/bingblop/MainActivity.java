@@ -3718,13 +3718,33 @@ public class MainActivity extends Activity {
                 String fullCls = cls.startsWith(".") ? pkg + cls : cls;
 
                 if (!"standard".equals(resolveExecMode())) {
-                    String output = executeShell("am start -W -n '" + pkg + "/" + fullCls + "'");
-                    String lower = output.toLowerCase();
-                    boolean ok = lower.contains("status: ok") || (lower.contains("starting: intent")
-                            && !lower.contains("error") && !lower.contains("exception") && !lower.contains("permission denial"));
+                    String comp = pkg + "/" + fullCls;
+                    // Launch into a NEW task so the activity actually surfaces. Without FLAG_ACTIVITY_NEW_TASK
+                    // an am-started activity frequently reports "Status: ok" yet never appears, because it is
+                    // queued behind the caller's task - the usual reason an unexported activity "won't launch".
+                    // Fall back to a plain start, then `cmd activity`; on failure return every attempt's output.
+                    String[] attempts = {
+                        "am start -W -f 0x10000000 -n '" + comp + "'",
+                        "am start -W -n '" + comp + "'",
+                        "cmd activity start-activity -W -f 0x10000000 -n '" + comp + "'",
+                    };
+                    StringBuilder tried = new StringBuilder();
+                    boolean ok = false;
+                    String okOut = "";
+                    for (String cmd : attempts) {
+                        String out = executeShell(cmd);
+                        String lower = out == null ? "" : out.toLowerCase();
+                        boolean denied = lower.contains("permission denial") || lower.contains("securityexception")
+                                || lower.contains("does not exist") || lower.contains("unable to resolve")
+                                || lower.contains("not found");
+                        boolean good = lower.contains("status: ok")
+                                || (lower.contains("starting: intent") && !lower.contains("error") && !lower.contains("exception") && !denied);
+                        tried.append("$ ").append(cmd).append('\n').append(out == null ? "" : out.trim()).append("\n\n");
+                        if (good) { ok = true; okOut = out; break; }
+                    }
                     res.put("ok", ok);
                     res.put("method", "shell");
-                    res.put("output", output);
+                    res.put("output", ok ? okOut.trim() : tried.toString().trim());
                     return res.toString();
                 }
 

@@ -7,7 +7,14 @@
   installed version vs. the latest with the release notes, and updates in one tap. The download is verified to
   be this app, a newer version and **signed with the same key** before installing. With ADB / Shizuku / Root
   the install is seamless (the app restarts); with no privileged mode it hands the APK to the system installer
-  for a normal confirmation. The self-update is no longer mixed into the other-apps update list.
+  for a normal confirmation. Checking for updates also refreshes this card.
+- **Unexported activities launch reliably.** Launching an activity through ADB / Shizuku / Root now starts it
+  in a **new task** (`FLAG_ACTIVITY_NEW_TASK`), with fall-backs to a plain start and `cmd activity`. Without
+  the new-task flag an activity often reported success yet never appeared - the usual reason an unexported
+  activity "wouldn't launch". If every method fails, each attempt's output is shown so the real error is visible.
+- **Navigation tidy-up.** A 🎨 **Colors & Themes** button moved to the header (top-right), so themes are one
+  tap from anywhere and no longer take a tab slot. Tabs are reordered: **Applications → Saved Lists →
+  Debloater → Installer → Files → Updates → ADB Console → Logcat** (Logcat is now last).
 
 ## v4.9.5-Pro (versionCode 395)
 

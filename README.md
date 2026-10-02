@@ -80,6 +80,8 @@ tell you when a new version is out (see [Updates](#updates)).
 ## New in v5.0
 
 - **Self-update** — a dedicated **🚀 App update** card at the top of the Updates tab updates ADB Application Manager Pro itself from its GitHub releases: installed vs. latest version with release notes, and a one-tap update. The download is verified to be this app, a newer version and **signed with the same key** before installing — seamlessly through ADB / Shizuku / Root, or via the system installer with no privileged mode.
+- **Reliable unexported-activity launch** — launching an activity through ADB / Shizuku / Root starts it in a new task (`FLAG_ACTIVITY_NEW_TASK`), with fall-backs to a plain start and `cmd activity`, so unexported activities actually surface instead of silently going nowhere.
+- **Themes in the header** — a 🎨 **Colors & Themes** button in the top-right opens themes from anywhere; tabs are reordered (Applications → Saved Lists → Debloater → Installer → Files → Updates → ADB Console → Logcat).
 
 ## New in v4.9
 

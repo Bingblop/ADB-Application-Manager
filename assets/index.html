@@ -2127,23 +2127,25 @@
                 <p id="deviceInfoSubtitle">Samsung One UI 9.0</p>
             </div>
         </div>
-        <div class="status-badge" id="execModeBadge" onclick="openWorkingModesModal()" title="Working Modes & ADB Setup">
-            <div class="status-dot" id="execModeDot"></div>
-            <span id="execModeText">Checking Mode...</span>
+        <div style="display:flex; align-items:center; gap:8px;">
+            <div class="status-badge" id="colorsHeaderBtn" onclick="switchView('colors')" title="Colors &amp; Themes" aria-label="Colors and Themes" style="cursor:pointer;">🎨</div>
+            <div class="status-badge" id="execModeBadge" onclick="openWorkingModesModal()" title="Working Modes & ADB Setup">
+                <div class="status-dot" id="execModeDot"></div>
+                <span id="execModeText">Checking Mode...</span>
+            </div>
         </div>
     </header>
 
     <!-- Top Navigation Tabs -->
     <nav class="tab-bar">
         <button class="tab-btn active" onclick="switchView('apps')">📱 Applications</button>
+        <button class="tab-btn" onclick="switchView('saved-lists')">📋 Saved Lists</button>
         <button class="tab-btn" onclick="switchView('debloater')">🧹 Debloater</button>
         <button class="tab-btn" onclick="switchView('installer')">📦 Installer</button>
         <button class="tab-btn" onclick="switchView('files')">📁 Files</button>
         <button class="tab-btn" onclick="switchView('updates')" id="updatesTabBtn">⬆️ Updates</button>
-        <button class="tab-btn" onclick="switchView('saved-lists')">📋 Saved Lists</button>
-        <button class="tab-btn" onclick="switchView('colors')">🎨 Color & Themes</button>
-        <button class="tab-btn" onclick="switchView('logcat')">📄 Logcat</button>
         <button class="tab-btn" onclick="switchView('terminal')">💻 ADB Console</button>
+        <button class="tab-btn" onclick="switchView('logcat')">📄 Logcat</button>
     </nav>
 
     <div class="container">
@@ -3738,7 +3740,9 @@ Type any command below (e.g. pm list packages -d)
             return Object.assign(resolvePresetScheme(themeState.preset, mode), definedColors(themeState.overrides[mode]));
         }
 
-        const tabKeys = ['apps', 'debloater', 'installer', 'files', 'updates', 'saved-lists', 'colors', 'logcat', 'terminal'];
+        // Order must match the .tab-btn buttons above. 'colors' has no tab button (it opens from the
+        // header 🎨 icon), so it sits last with no matching button index.
+        const tabKeys = ['apps', 'saved-lists', 'debloater', 'installer', 'files', 'updates', 'terminal', 'logcat', 'colors'];
 
         function switchView(viewName) {
             const targetIdx = tabKeys.indexOf(viewName);
@@ -4873,6 +4877,7 @@ Type any command below (e.g. pm list packages -d)
         }
 
         function checkUpdatesUI(silent) {
+            checkSelfUpdateUI(true);  // refresh this app's own update card alongside the other-apps check
             const b = updBridge();
             if (!b) return;
             if (!silent) haptic();
