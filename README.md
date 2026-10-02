@@ -77,6 +77,17 @@ tell you when a new version is out (see [Updates](#updates)).
 | **Themes** | **Material 3** (default) · **Material You** (follows your wallpaper) · six more palettes · Light / Dark / System / Schedule · pure-black AMOLED option · per-mode color tuning |
 | **Security** | A **private ADB key is generated on each install** (nothing is bundled) · fingerprint shown in the app · signing-certificate comparison before every update |
 
+## New in v5.6
+
+- **The Store is five sources in sub-tabs** — the 🛍️ **Store** tab opens on **ShizuStore** and adds four sub-tabs:
+  - **🐙 Komi** — a curated set of trusted open-source apps published on **GitHub Releases** (the kind of GitHub app store [komi-store](https://github.com/komi-store/komi-store) is built for); each is resolved live to the right build for your device.
+  - **🤖 F-Droid** — the known third-party **F-Droid repositories** from the community [known-repositories](https://forum.f-droid.org/t/known-repositories/721) list; tap a repo to browse and install its apps, or copy its address & fingerprint to add it to your F-Droid client.
+  - **🪐 Orion** — the public [Orion Store](https://github.com/RookieEnough/Orion-Store) catalog (including Morphe builds), resolved from GitHub, Codeberg and direct links.
+  - **🌌 Aurora** — an honest hand-off to **Aurora Store** for Google Play apps (the private Play API can't be reimplemented in-app). Google Play and APKMirror sources are intentionally not bundled.
+
+  Every install downloads from each app's own upstream — nothing is rehosted — through your active mode or the system installer.
+- **Sharper patched-app detection** — the 🧩 detector now flags **Morphe** (`app.morphe.*` and the Morphe installer), and the inspector's deep scan streams each `classes*.dex` to recognise **ReVanced** and **Morphe** even when the patch keeps the app's original package name.
+
 ## New in v5.5
 
 - **Unexported activities launch reliably** — opening an activity another app doesn't export no longer fails with *"not exported from uid …"*. The app launches it the system's way (briefly sets it as the device assistant and injects `KEYCODE_ASSIST`, so the system starts it past the exported check, then restores your assistant), the same technique dedicated activity launchers use over Shizuku. Exported activities still start directly with `am start`.
