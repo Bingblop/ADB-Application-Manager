@@ -13,7 +13,7 @@ through **ADB over TCP, Wireless Debugging, Shizuku or Root**.
 
 ### [⬇️ Download the latest APK](https://github.com/Bingblop/ADB-Application-Manager/releases/latest)
 
-`com.bloatware.bingblop` · v4.8-Pro · signed APK, installs over every earlier version without uninstalling
+`com.bloatware.bingblop` · v4.9.5-Pro · signed APK, installs over every earlier version without uninstalling
 
 <table>
   <tr>
@@ -66,7 +66,7 @@ tell you when a new version is out (see [Updates](#updates)).
 | **Actions** | **App menu (one app):** Launch · Force Stop · Freeze / Enable · **Suspend / Unsuspend** · Clear Data · Uninstall for user 0 · Reinstall removed system apps · Remove Updates · App Info · **Extract APK** · **Share APK** · **Backup**. **Batch (selected apps):** Freeze · Enable · Force Stop · Suspend · Unsuspend · Clear Data · Uninstall · Reinstall · Save to List · Copy Packages · Share List |
 | **Debloater** | The [UAD-NG](https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation) community list (5,000+ packages) with descriptions and dependency warnings · filter by removal level, vendor list, state and **phone brand** · review step before anything runs · **history log with one-tap Undo** |
 | **Updates** | **Galaxy Store** (Samsung system apps) · **GitHub, Codeberg, F-Droid, IzzyOnDroid and the Obtainium catalog** for sideloaded open-source apps · import your **Obtainium** export · Update one or **Update All** · signing-key check before installing |
-| **Inspector** | Permissions and App Ops as separate lists · all activities including **unexported ones, launchable through ADB / Shizuku / Root** · services · decoded **AndroidManifest.xml** viewer · version, install and update dates · APK, data and cache sizes |
+| **Inspector** | Permissions and App Ops as separate lists · **activities, services, broadcast receivers and content providers**, each with its exported / enabled / permission state, and any component can be **enabled or disabled** · unexported activities are **launchable through ADB / Shizuku / Root** · decoded **AndroidManifest.xml** viewer · version, install and update dates · APK, data and cache sizes |
 | **Profiles** | Save which apps are disabled, suspended or uninstalled; re-apply on this phone or **share to another phone** · **👁️ Watch** a profile to be told when its apps come back after a system update |
 | **Backup &amp; restore** | **💾 Backup** an app's APK (with splits), permissions and app ops in any privileged mode, plus its **data with Root** · restore through ADB / Shizuku / Root · share backups or pick one from another phone |
 | **Quick actions** | **Quick Settings tiles** and a **home-screen widget** to switch the working mode and force-stop a list of apps without opening the app |
@@ -83,8 +83,8 @@ tell you when a new version is out (see [Updates](#updates)).
 - **Default installer** — set the app as the handler for APK files; opening an APK routes into the installer (privileged install when a mode is active, otherwise the normal system installer).
 - **Components** — now lists activities, **receivers**, **services** and **providers**, each with its exported/enabled/permission detail, and any component can be **enabled or disabled**.
 - **Dex optimization** — `pm compile` as a single-app and batch action, with a compile-mode picker.
-- **Privileged file manager** — browse any path with ADB/Shizuku/Root; view text, create, rename, copy, move, delete, and install APKs from anywhere.
-- **Logcat reader** — read the device log with level, line-count and text filters.
+- **Privileged file manager** — browse storage and any system path. With **All-files access** granted, storage (`/storage/emulated/0`) lists, views and installs directly — no privileged mode needed; ADB / Shizuku / Root reach system paths. View text, create, rename, copy, move, delete, and install APKs from anywhere.
+- **Logcat reader** — read the device log with level, line-count and text filters, with **live Play / Pause** tailing, clear and copy.
 - **Play Store (via Aurora)** — detects Aurora Store / Play Store and routes app updates to their store page.
 
 ## Screenshots
