@@ -1,5 +1,15 @@
 # Changelog
 
+## v5.5-Pro (versionCode 550)
+
+- **Unexported activities now actually launch (ADB / Shizuku / Root).** Launching an activity that another
+  app doesn't export used to fail with *"Permission Denial: … not exported from uid …"*, because the shell
+  (uid 2000) isn't the activity's owner and doesn't hold `START_ANY_ACTIVITY`. The app now launches those the
+  system's way: it briefly sets the target as the device **assistant**, injects **KEYCODE_ASSIST**, so the
+  **system** starts the activity (which bypasses the exported check), then restores your assistant. Exported
+  activities still start directly with `am start`. This is the same technique dedicated activity launchers
+  use over Shizuku.
+
 ## v5.4-Pro (versionCode 540)
 
 - **Patched / modified apps are flagged in the list.** Each app in the Applications list now shows a
