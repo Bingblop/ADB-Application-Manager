@@ -1,5 +1,45 @@
 # Changelog
 
+## v5.7-Pro (versionCode 570)
+
+- **Terminal: Rish mode replaces "adb devices".** Tap **🐚 Rish mode** and the app switches the working mode to
+  **Shizuku** (asking for Shizuku permission if needed) and opens a **persistent Rish shell** — one long-lived
+  shell running as the Shizuku shell user, so `cd`, `export` and shell variables stay put from one command to the
+  next. The prompt shows the device and folder (`husky:/sdcard $`, `#` for root), output **streams in as it is
+  produced**, **RUN becomes STOP** while a command runs (it ends the command and keeps the shell), and tapping
+  **Exit Rish** (or typing `exit`) goes back to the normal terminal. Unbalanced quotes and other typos can't wedge
+  the shell, and very chatty commands are trimmed instead of freezing the page.
+- **File manager: View now opens inside .apk, .zip and other package files — without extracting them.** The
+  contents appear as folders (with search, breadcrumbs and paging for huge archives). Tap a file to preview it
+  (text, images, **compiled Android XML shown back as XML**, hex for binaries) and then extract it, rename or move
+  it, delete it, add files, create folders, or **edit a text file in place**. Archives are rewritten safely next
+  to the original and swapped in only when that worked; unchanged entries are copied as raw compressed bytes, and
+  APK-style alignment is kept. Works on ZIP64, protects against path-traversal names, and installed/system
+  packages open **view-only**. (An edited APK's signature no longer matches, so it must be re-signed before
+  Android will install it — the app says so.) Any file can also be tried with **Open as archive**.
+- **Installer: XAPK support and a storage search.** Install `.xapk` bundles (base + splits, with the game data /
+  OBB files copied into place afterwards). The old **Set as default installer** button is gone — the explanation
+  of how to make this app the APK handler stays at the bottom of the card — and in its place a **🔍 Find APKs on
+  this device** button runs an automatic storage search for every `.apk`, `.apks`, `.apkm` and `.xapk`
+  and lists them (with size, age, folder, search and type filter); tap one to load it.
+- **Store: "Komi" is now "GitHub", the catalogs are complete, and every store has a category drop-down.**
+  - **🐙 GitHub** (was Komi) browses the whole catalog page by page (up to 5,000 Android apps) with live search
+    and direct `owner/repo` install, and falls back to a built-in list when offline.
+  - **🤖 F-Droid** now lists **every app in the chosen repo** (the index is streamed, so even the very large official
+    index loads), defaults to the official F-Droid repo with a repo picker, caches for 12 hours, verifies each
+    download's SHA-256, and asks first on a metered connection.
+  - **🪐 Orion** now shows its whole catalog (887 apps; a size cap used to cut the last 87 off).
+  - A **category drop-down** filters the apps in each store by the categories they are tagged with.
+- **Logcat is readable.** Every log entry is its own row (a stack trace stays together), with a **level badge and
+  color for Verbose / Debug / Info / Warn / Error / Fatal**, dimmed time / tag / pid, a **color key** you can tap
+  to hide or show levels (with counts), highlighted filter matches, and live updates that don't yank your scroll
+  position. Copy still gives the raw log lines.
+- **Debloater checkmarks match the Applications tab** — a selected row fills the whole box with the accent colour.
+- **Press and hold the ✓ button to clear every selection** in the Applications tab (a normal tap still opens the
+  batch actions).
+- **More room in the app list** — the per-row **Force Stop** button is gone (Force Stop is still in each app's
+  ⋯ menu and in the batch actions), so names and badges get the space.
+
 ## v5.6-Pro (versionCode 560)
 
 - **The Store is now five sources, in sub-tabs.** The 🛍️ Store tab opens on **ShizuStore** and adds four

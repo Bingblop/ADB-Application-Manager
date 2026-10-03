@@ -658,6 +658,24 @@
             transform: scale(0.92);
         }
 
+        /* Press-and-hold clears the selection, so keep the OS from starting its own long-press
+           (text selection / callout) on the button. */
+        .batch-fab {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: manipulation;
+        }
+
+        .batch-fab.clearing {
+            animation: fabClear 0.28s ease-out;
+        }
+
+        @keyframes fabClear {
+            0% { box-shadow: 0 0 0 0 var(--accent-glow); }
+            100% { box-shadow: 0 0 0 26px rgba(0, 0, 0, 0); }
+        }
+
         .batch-fab-badge {
             position: absolute;
             top: -4px;
@@ -1373,6 +1391,159 @@
             word-break: break-word;
         }
 
+        /* ---- Logcat: one row per log entry, colored by level ---- */
+        :root {
+            --lc-v: #9AA0A6;
+            --lc-d: #29B6F6;
+            --lc-i: #2EBD6B;
+            --lc-w: #FFA000;
+            --lc-e: #FF5252;
+            --lc-f: #E040FB;
+        }
+
+        .lvl-V { --lc: var(--lc-v); }
+        .lvl-D { --lc: var(--lc-d); }
+        .lvl-I { --lc: var(--lc-i); }
+        .lvl-W { --lc: var(--lc-w); }
+        .lvl-E { --lc: var(--lc-e); }
+        .lvl-F { --lc: var(--lc-f); }
+
+        .lc-key {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin: 6px 0 2px;
+        }
+
+        .lc-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px 4px 8px;
+            border-radius: 999px;
+            border: 1px solid var(--border-glass);
+            background: rgba(var(--ov), 0.05);
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--text-main);
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .lc-chip .lc-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--lc);
+            box-shadow: 0 0 0 2px rgba(var(--ov), 0.08);
+        }
+
+        .lc-chip .lc-n {
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+
+        .lc-chip.off {
+            opacity: 0.4;
+        }
+
+        .lc-chip.off .lc-name {
+            text-decoration: line-through;
+        }
+
+        .logcat-box {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            height: 68vh;
+            min-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .lc-row {
+            display: flex;
+            gap: 8px;
+            padding: 7px 10px 7px 0;
+            border-bottom: 1px solid var(--border-glass);
+            border-left: 4px solid var(--lc);
+            align-items: flex-start;
+        }
+
+        .lc-row.lvl-W { background: rgba(255, 160, 0, 0.07); }
+        .lc-row.lvl-E { background: rgba(255, 82, 82, 0.09); }
+        .lc-row.lvl-F { background: rgba(224, 64, 251, 0.13); }
+
+        .lc-badge {
+            flex: 0 0 20px;
+            height: 20px;
+            margin: 1px 0 0 6px;
+            border-radius: 6px;
+            background: var(--lc);
+            color: #000;
+            font: 900 11px/20px monospace;
+            text-align: center;
+        }
+
+        .lc-main {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .lc-head {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px 10px;
+            align-items: baseline;
+            font-size: 10.5px;
+            color: var(--text-muted);
+        }
+
+        .lc-tag {
+            font-size: 12px;
+            font-weight: 800;
+            color: var(--text-main);
+            word-break: break-all;
+        }
+
+        .lc-time, .lc-pid {
+            font-family: monospace;
+        }
+
+        .lc-msg {
+            margin-top: 2px;
+            font-family: monospace;
+            font-size: 12px;
+            line-height: 1.45;
+            color: var(--lc);
+            /* pull the level color toward the theme's text color so it stays readable in light and dark */
+            color: color-mix(in srgb, var(--lc) 86%, var(--text-main));
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .lc-row.lvl-E .lc-msg, .lc-row.lvl-F .lc-msg {
+            font-weight: 700;
+        }
+
+        .lc-meta {
+            padding: 8px 10px;
+            text-align: center;
+            font-size: 10.5px;
+            letter-spacing: 0.3px;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-glass);
+            background: rgba(var(--ov), 0.04);
+        }
+
+        .lc-hit {
+            background: rgba(255, 213, 0, 0.35);
+            color: inherit;
+            border-radius: 3px;
+        }
+
         .term-input-row {
             display: flex;
             gap: 8px;
@@ -1402,6 +1573,135 @@
             font-size: 12px;
             cursor: pointer;
         }
+        .term-run-btn.stop {
+            background: #E53935;
+            color: #fff;
+        }
+
+        /* ---- File manager: archive browser ---- */
+        .arc-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .arc-crumbs {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 2px 4px;
+            margin: 8px 0 4px;
+            font-size: 11px;
+        }
+
+        .arc-crumb {
+            background: none;
+            border: none;
+            color: var(--accent);
+            font-size: 11px;
+            font-weight: 800;
+            padding: 3px 2px;
+            cursor: pointer;
+            word-break: break-all;
+            text-align: left;
+        }
+
+        .arc-crumb.cur {
+            color: var(--text-main);
+            cursor: default;
+        }
+
+        .arc-sep {
+            color: var(--text-muted);
+            font-size: 11px;
+        }
+
+        .arc-note {
+            margin-top: 8px;
+            padding: 8px 10px;
+            border: 1px solid var(--border-glass);
+            border-radius: 10px;
+            background: rgba(255, 145, 0, 0.08);
+            font-size: 10.5px;
+            line-height: 1.4;
+            color: var(--text-main);
+        }
+
+        .arc-textarea {
+            width: 100%;
+            min-height: 38vh;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            color: var(--text-main);
+            font-family: monospace;
+            font-size: 11.5px;
+            line-height: 1.45;
+            padding: 10px;
+            resize: vertical;
+            white-space: pre;
+            overflow: auto;
+            outline: none;
+        }
+
+        .arc-textarea:focus {
+            border-color: var(--accent);
+        }
+
+        .arc-img {
+            max-width: 100%;
+            max-height: 46vh;
+            display: block;
+            margin: 0 auto;
+            border-radius: 8px;
+            background: repeating-conic-gradient(rgba(var(--ov), 0.10) 0% 25%, transparent 0% 50%) 50% / 16px 16px;
+        }
+
+        .arc-meta {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            word-break: break-all;
+        }
+
+        /* ---- Rish mode: a persistent Shizuku shell in the terminal ---- */
+        .apps-tool-btn.rish-on {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: var(--on-accent);
+        }
+
+        .apps-tool-btn.rish-busy {
+            opacity: .6;
+            pointer-events: none;
+        }
+
+        .terminal-box.rish-on {
+            border-color: var(--accent);
+        }
+
+        .rish-prompt {
+            color: var(--text-main);
+            font-weight: 700;
+        }
+
+        .rish-note {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .rish-promptline {
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
         .cheat-cat {
             font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px;
             color: var(--accent); margin: 14px 2px 6px;
@@ -1906,6 +2206,12 @@
             cursor: pointer;
         }
 
+        /* Same filled box as the Applications tab's selected checkbox */
+        .uad-row.selected .app-checkbox {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
         .uad-main {
             flex: 1;
             min-width: 0;
@@ -2336,14 +2642,43 @@
             </div>
         </section>
 
-        <!-- VIEW: INSTALLER (APK / APKS / APKM) -->
+        <!-- VIEW: INSTALLER (APK / APKS / APKM / XAPK) -->
         <section id="view-installer" class="view-content">
+            <style>
+                .apk-scan-list { display:flex; flex-direction:column; gap:8px; max-height:44vh; overflow-y:auto; margin-top:8px; -webkit-overflow-scrolling:touch; }
+                .apk-scan-row { display:flex; gap:10px; align-items:center; padding:9px 10px; border-radius:12px; background:rgba(var(--ov),0.05); border:1px solid var(--border-glass); cursor:pointer; }
+                .apk-scan-row:active { background:rgba(var(--ov),0.12); }
+                .apk-kind { flex:0 0 auto; min-width:44px; text-align:center; padding:4px 0; border-radius:8px; font-size:10px; font-weight:900; letter-spacing:.4px; color:#000; background:var(--accent); }
+                .apk-kind.k-apks, .apk-kind.k-apkm { background:#B39DFF; }
+                .apk-kind.k-xapk { background:#FFB74D; }
+                .apk-scan-name { font-size:13px; font-weight:800; color:var(--text-main); word-break:break-word; }
+                .apk-scan-meta { font-size:10.5px; color:var(--text-muted); word-break:break-all; margin-top:2px; }
+            </style>
             <div class="color-card">
                 <div class="color-card-title">📦 Install a package</div>
-                <div class="color-card-subtitle">APK, APKS or APKM — base plus splits, with full install control</div>
-                <button class="batch-grid-btn accent" style="width:100%;height:46px;margin-top:6px;" onclick="pickInstallFile()">📂 Choose APK / APKS / APKM</button>
-                <button class="batch-grid-btn" style="width:100%;height:40px;margin-top:8px;" onclick="installDefaultSettings()">⭐ Set as default installer</button>
-                <div id="installPickHint" class="color-card-subtitle" style="margin-top:10px;">Pick a package file to read it and choose how to install it. To make this the default installer, open any APK, choose this app, and tap "Always".</div>
+                <div class="color-card-subtitle">APK, APKS, APKM or XAPK — base plus splits (and OBB game data), with full install control</div>
+                <button class="batch-grid-btn accent" style="width:100%;height:46px;margin-top:6px;" onclick="pickInstallFile()">📂 Choose APK / APKS / APKM / XAPK</button>
+                <button class="batch-grid-btn" id="installXapkBtn" style="width:100%;height:40px;margin-top:8px;" onclick="pickInstallFile('xapk')">🎮 Install XAPK (APK + OBB data)</button>
+                <button class="batch-grid-btn" id="apkScanBtn" style="width:100%;height:40px;margin-top:8px;" onclick="scanApkFiles()">🔍 Find APKs on this device</button>
+                <div id="installPickHint" class="color-card-subtitle" style="margin-top:10px;">Pick a package file to read it and choose how to install it.</div>
+
+                <!-- Automatic storage search results -->
+                <div id="apkScanBox" style="display:none;margin-top:6px;">
+                    <div class="batch-sheet-tools" style="gap:10px;flex-wrap:wrap;align-items:center;">
+                        <input type="text" class="list-search" id="apkScanSearch" placeholder="Filter found files…" style="flex:1;min-width:130px;" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="renderApkScan()">
+                        <select class="op-select" id="apkScanKind" onchange="renderApkScan()">
+                            <option value="">All types</option>
+                            <option value="apk">APK</option>
+                            <option value="apks">APKS</option>
+                            <option value="apkm">APKM</option>
+                            <option value="xapk">XAPK</option>
+                        </select>
+                    </div>
+                    <div id="apkScanStatus" class="uad-status" style="margin:8px 0 0;"></div>
+                    <div id="apkScanList" class="apk-scan-list"></div>
+                </div>
+
+                <div class="color-card-subtitle" style="margin-top:12px;">To make this the default installer, open any APK, choose this app, and tap "Always".</div>
             </div>
 
             <!-- Package info (after a pick) -->
@@ -2378,6 +2713,17 @@
                     <button class="batch-tool-link" onclick="installSelectAllSplits(false)" style="color:var(--text-muted);">Only base</button>
                 </div>
                 <div id="installSplitsList"></div>
+            </div>
+
+            <!-- XAPK data files (OBB / Android/data) -->
+            <div class="color-card" id="installExtrasCard" style="display:none;">
+                <div class="color-card-title">🎮 Game data (OBB)</div>
+                <div class="color-card-subtitle">This package carries data files that live outside the APK. Right after the install succeeds they are copied into place.</div>
+                <div id="installExtrasList" style="margin-top:8px;"></div>
+                <label class="switch-row">
+                    <div><div class="switch-title">Copy data files after install</div><div class="switch-sub" id="installExtrasSub">Needs ADB, Shizuku or Root on Android 11+</div></div>
+                    <input type="checkbox" class="switch-input" id="optCopyExtras" checked onchange="updateInstallPreview()"><span class="switch-track"></span>
+                </label>
             </div>
 
             <!-- Install options -->
@@ -2500,13 +2846,14 @@
                 </label>
 
                 <button class="batch-grid-btn accent" style="width:100%;height:48px;margin-top:16px;" onclick="runInstall()">⬇️ Install</button>
+                <div id="installProgress" class="uad-status" style="display:none;margin-top:10px;"></div>
                 <div id="installPreview" class="color-card-subtitle" style="margin-top:10px;font-family:monospace;word-break:break-all;"></div>
             </div>
         </section>
 
         <!-- VIEW: FILE MANAGER -->
         <section id="view-files" class="view-content">
-            <div class="color-card">
+            <div class="color-card" id="fmTopCard">
                 <div class="color-card-title">📁 File manager</div>
                 <div class="color-card-subtitle">Storage browses with All-files access; system folders need ADB / Shizuku / Root.</div>
                 <div id="fmAccessHint" style="display:none; margin-top:8px; padding:8px 10px; border:1px solid var(--border-glass); border-radius:10px; background:rgba(255,145,0,0.08);">
@@ -2526,9 +2873,34 @@
                     <button class="batch-tool-link" onclick="fmRefresh()">↻ Refresh</button>
                 </div>
             </div>
-            <div class="color-card">
+            <div class="color-card" id="fmListCard">
                 <div id="fmCurrentPath" class="color-card-subtitle" style="font-family:monospace; word-break:break-all; margin-bottom:6px;">/storage/emulated/0</div>
                 <div id="fmList"><div class="list-empty">Open this tab to browse files.</div></div>
+            </div>
+
+            <!-- Archive browser: the contents of an .apk / .zip / package file, opened without extracting -->
+            <div class="color-card" id="arcCard" style="display:none;">
+                <div class="arc-head">
+                    <div style="min-width:0;">
+                        <div class="color-card-title" id="arcTitle" style="word-break:break-all;">📦 Archive</div>
+                        <div class="color-card-subtitle" id="arcMeta" style="word-break:break-all;"></div>
+                    </div>
+                    <button class="batch-tool-link" onclick="arcClose()">✕ Close</button>
+                </div>
+                <div class="arc-note" id="arcNote" style="display:none;"></div>
+                <div class="list-toolbar" style="margin-top:8px;">
+                    <input type="text" class="list-search" id="arcSearch" placeholder="Search inside the archive…" oninput="arcSearchInput()" autocomplete="off" autocapitalize="off" spellcheck="false">
+                </div>
+                <div class="arc-crumbs" id="arcCrumbs"></div>
+                <div class="batch-sheet-tools" style="margin:6px 0; gap:12px; flex-wrap:wrap;">
+                    <button class="batch-tool-link" onclick="arcUp()">⬆️ Up</button>
+                    <button class="batch-tool-link" onclick="arcExtractHere()">📥 Extract this folder</button>
+                    <button class="batch-tool-link" id="arcAddBtn" onclick="arcAddFile()">＋ Add file</button>
+                    <button class="batch-tool-link" id="arcFolderBtn" onclick="arcNewFolder()">＋ Folder</button>
+                </div>
+                <div id="arcStatus" class="uad-status" style="display:none;"></div>
+                <div id="arcList"></div>
+                <button class="mode-action-btn" id="arcMoreBtn" style="display:none; width:100%; justify-content:center; margin-top:8px;" onclick="arcLoadMore()">Show more</button>
             </div>
         </section>
 
@@ -2553,8 +2925,10 @@
                     <button class="batch-tool-link" onclick="logcatClear()">🧹 Clear</button>
                     <button class="batch-tool-link" onclick="logcatCopy()">📋 Copy</button>
                 </div>
+                <!-- Color key. Each chip is also a switch: tap to hide / show that level. -->
+                <div class="lc-key" id="logcatKey" aria-label="Log level color key"></div>
             </div>
-            <div class="terminal-box" id="logcatOutput">Open this tab to read the log.</div>
+            <div class="logcat-box" id="logcatOutput"><div class="lc-meta">Open this tab to read the log.</div></div>
         </section>
 
         <!-- VIEW: SHIZUSTORE -->
@@ -2563,19 +2937,26 @@
                 .store-subtabs { display:flex; gap:7px; overflow-x:auto; padding:2px 2px 8px; margin-bottom:4px; -webkit-overflow-scrolling:touch; }
                 .store-subtab { flex:0 0 auto; border:1px solid var(--border-glass); background:rgba(var(--ov),0.05); color:var(--text-muted); border-radius:999px; padding:7px 14px; font-size:13px; font-weight:700; cursor:pointer; white-space:nowrap; }
                 .store-subtab.active { background:linear-gradient(135deg,var(--accent),var(--secondary)); color:#fff; border-color:transparent; }
+                .store-toolbar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:8px 0 2px; }
+                /* search on its own full row; the category and sort dropdowns share the next one */
+                .store-toolbar .list-search { flex:1 1 100%; min-width:0; }
+                .store-toolbar .op-select { flex:1 1 calc(50% - 8px); min-width:0; max-width:100%; }
                 .store-rows { display:flex; flex-direction:column; gap:10px; }
                 .store-row { display:flex; gap:12px; align-items:flex-start; background:rgba(var(--ov),0.05); border:1px solid var(--border-glass); border-radius:14px; padding:12px; }
                 .store-row .sr-icon { width:46px; height:46px; border-radius:12px; object-fit:cover; flex-shrink:0; background:rgba(var(--ov),0.08); }
                 .store-row .sr-fallback { width:46px; height:46px; border-radius:12px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,var(--accent),var(--secondary)); font-weight:800; color:#fff; }
                 .store-row .sr-chip { font-size:11px; color:var(--text-muted); background:rgba(var(--ov),0.08); border-radius:8px; padding:2px 7px; }
+                .store-row .sr-chip.cat { color:var(--accent); background:rgba(var(--ov),0.1); font-weight:700; }
                 .store-inst-btn { flex-shrink:0; align-self:center; border:none; border-radius:10px; padding:9px 12px; font-weight:800; color:#fff; background:linear-gradient(135deg,var(--accent),var(--secondary)); cursor:pointer; }
                 .store-inst-btn:disabled { opacity:0.55; }
                 .sr-status { font-size:11px; margin-top:6px; color:var(--text-muted); }
+                .store-more { text-align:center; margin:10px 0 4px; }
+                .store-prompt { display:flex; gap:10px; align-items:center; background:rgba(var(--ov),0.07); border:1px dashed var(--accent); border-radius:14px; padding:10px 12px; margin-bottom:10px; font-size:12px; color:var(--text-main); }
             </style>
 
             <div class="store-subtabs" id="storeSubtabs" role="tablist">
                 <button class="store-subtab active" data-store="shizu" onclick="switchStoreTab('shizu')">🛡️ ShizuStore</button>
-                <button class="store-subtab" data-store="komi" onclick="switchStoreTab('komi')">🐙 Komi</button>
+                <button class="store-subtab" data-store="github" onclick="switchStoreTab('github')">🐙 GitHub</button>
                 <button class="store-subtab" data-store="fdroid" onclick="switchStoreTab('fdroid')">🤖 F-Droid</button>
                 <button class="store-subtab" data-store="orion" onclick="switchStoreTab('orion')">🪐 Orion</button>
                 <button class="store-subtab" data-store="aurora" onclick="switchStoreTab('aurora')">🌌 Aurora</button>
@@ -2586,9 +2967,10 @@
                 <div class="color-card">
                     <div class="color-card-title">🛡️ ShizuStore</div>
                     <div class="color-card-subtitle">Browse Shizuku-powered apps from <b>timschneeb</b>'s curated catalog and install them straight from their upstream sources (GitHub, GitLab, F-Droid). Installs use your active mode (ADB / Shizuku / Root), or hand off to the system installer with no privileged mode.</div>
-                    <div class="batch-sheet-tools" style="margin:8px 0; gap:10px; flex-wrap:wrap; align-items:center;">
-                        <input type="text" class="list-search" id="storeSearch" placeholder="Search apps…" style="flex:1; min-width:140px;" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="renderStoreList()">
-                        <select class="op-select" id="storeSort" onchange="renderStoreList()">
+                    <div class="store-toolbar">
+                        <input type="text" class="list-search" id="storeSearch" placeholder="Search apps…" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="storeShown = 60; renderStoreList()">
+                        <select class="op-select" id="storeCat" onchange="storeShown = 60; renderStoreList()" aria-label="Category"><option value="">All categories</option></select>
+                        <select class="op-select" id="storeSort" onchange="storeShown = 60; renderStoreList()" aria-label="Sort">
                             <option value="stars">Most starred</option>
                             <option value="downloads">Most downloaded</option>
                             <option value="updated">Recently updated</option>
@@ -2604,39 +2986,64 @@
                 </div>
                 <div id="storeStatus" class="uad-status" style="margin:6px 2px;">Open to load the catalog.</div>
                 <div id="storeList" style="display:flex; flex-direction:column; gap:10px;"></div>
+                <div id="storeMore" class="store-more"></div>
             </div>
 
-            <!-- Sub-tab: Komi (GitHub releases) -->
-            <div class="substore" id="substore-komi" style="display:none;">
+            <!-- Sub-tab: GitHub (the Komi Store catalog) -->
+            <div class="substore" id="substore-github" style="display:none;">
                 <div class="color-card">
-                    <div class="color-card-title">🐙 Komi · GitHub releases</div>
-                    <div class="color-card-subtitle">A curated set of trusted open-source apps that publish their APK on GitHub Releases — the kind of GitHub app store <b>komi-store</b> is built for. Each app is resolved live to the right build for your device and installed through your active mode.</div>
-                    <div class="batch-sheet-tools" style="margin:8px 0 2px; gap:10px; flex-wrap:wrap; align-items:center;">
-                        <input type="text" class="list-search" id="komiSearch" placeholder="Search apps…" style="flex:1; min-width:140px;" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="setSrcQuery('komi', this.value)">
-                        <button class="batch-tool-link" onclick="loadSource('komi', true)">↻ Refresh</button>
-                        <span id="komiCount" style="font-size:12px; color:var(--text-muted);"></span>
+                    <div class="color-card-title">🐙 GitHub apps</div>
+                    <div class="color-card-subtitle">Android apps that publish an APK on <b>GitHub Releases</b> — the whole Komi Store catalog, filled in as it loads. Each app is resolved to the right build for your device and installed through your active mode. Type <b>owner/repo</b> to install any GitHub project directly.</div>
+                    <div class="store-toolbar">
+                        <input type="text" class="list-search" id="githubSearch" placeholder="Search apps, or owner/repo…" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="setSrcQuery('github', this.value)" onkeydown="if(event.key==='Enter') githubSearchLive()">
+                        <select class="op-select" id="githubCat" onchange="setSrcCat('github', this.value)" aria-label="Category"><option value="">All categories</option></select>
+                        <select class="op-select" id="githubSort" onchange="setSrcSort('github', this.value)" aria-label="Sort">
+                            <option value="stars">Most starred</option>
+                            <option value="updated">Recently released</option>
+                            <option value="downloads">Most downloaded</option>
+                            <option value="name">Name (A–Z)</option>
+                        </select>
                     </div>
-                    <div class="uad-credit" style="margin-top:6px;">Inspired by <a href="#" onclick="openUrlExternal('https://github.com/komi-store/komi-store'); return false;">komi-store/komi-store</a> · APKs come from each project's own GitHub releases, not rehosted.</div>
+                    <div class="batch-sheet-tools" style="margin-bottom:2px; gap:14px; align-items:center;">
+                        <button class="batch-tool-link" onclick="refreshSource('github')">↻ Refresh</button>
+                        <span id="githubCount" style="font-size:12px; color:var(--text-muted);"></span>
+                    </div>
+                    <div class="uad-credit" style="margin-top:6px;">Catalog by <a href="#" onclick="openUrlExternal('https://github.com/komi-store/komi-store'); return false;">Komi Store</a> · categories come from each repository's GitHub topics · APKs are downloaded from the project's own releases, not rehosted.</div>
                 </div>
-                <div id="komiStatus" class="uad-status" style="margin:6px 2px;">Loading…</div>
-                <div id="komiList" class="store-rows"></div>
+                <div id="githubStatus" class="uad-status" style="margin:6px 2px;">Loading…</div>
+                <div id="githubExtra"></div>
+                <div id="githubList" class="store-rows"></div>
+                <div id="githubMore" class="store-more"></div>
             </div>
 
-            <!-- Sub-tab: F-Droid repositories -->
+            <!-- Sub-tab: F-Droid (any repository) -->
             <div class="substore" id="substore-fdroid" style="display:none;">
                 <div class="color-card">
-                    <div class="color-card-title">🤖 F-Droid repositories</div>
-                    <div class="color-card-subtitle">The known third-party F-Droid repositories from the community list. Tap a repo to browse and install its apps directly, or copy its address &amp; fingerprint to add it to your F-Droid client.</div>
-                    <div class="batch-sheet-tools" style="margin:8px 0 2px; gap:10px; flex-wrap:wrap; align-items:center;">
-                        <input type="text" class="list-search" id="fdroidSearch" placeholder="Search…" style="flex:1; min-width:140px;" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="setSrcQuery('fdroid', this.value)">
-                        <button class="batch-tool-link" id="fdroidBackBtn" onclick="fdroidBackToRepos()" style="display:none;">← All repos</button>
-                        <button class="batch-tool-link" onclick="loadSource('fdroid', true)">↻ Refresh</button>
+                    <div class="color-card-title">🤖 F-Droid</div>
+                    <div class="color-card-subtitle">Every app in the F-Droid catalog, or in any of the known third-party repositories. Pick a repository, browse by category and install directly — downloads are checked against the repository's published SHA-256.</div>
+                    <div class="store-toolbar">
+                        <select class="op-select" id="fdroidRepo" onchange="fdroidSelectRepo(this.value)" aria-label="Repository" style="flex:3 1 180px;"></select>
+                        <button class="batch-tool-link" id="fdroidReposBtn" onclick="fdroidToggleRepoList()">📚 Repos</button>
+                    </div>
+                    <div class="store-toolbar" id="fdroidFilters">
+                        <input type="text" class="list-search" id="fdroidSearch" placeholder="Search apps…" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="setSrcQuery('fdroid', this.value)">
+                        <select class="op-select" id="fdroidCat" onchange="setSrcCat('fdroid', this.value)" aria-label="Category"><option value="">All categories</option></select>
+                        <select class="op-select" id="fdroidSort" onchange="setSrcSort('fdroid', this.value)" aria-label="Sort">
+                            <option value="updated">Recently updated</option>
+                            <option value="name">Name (A–Z)</option>
+                        </select>
+                    </div>
+                    <div class="batch-sheet-tools" style="margin-bottom:2px; gap:14px; align-items:center;">
+                        <button class="batch-tool-link" onclick="refreshSource('fdroid')">↻ Refresh</button>
+                        <button class="batch-tool-link" id="fdroidCopyBtn" onclick="fdroidCopyRepoInfo()">⧉ Address &amp; fingerprint</button>
                         <span id="fdroidCount" style="font-size:12px; color:var(--text-muted);"></span>
                     </div>
-                    <div class="uad-credit" style="margin-top:6px;">List from the <a href="#" onclick="openUrlExternal('https://forum.f-droid.org/t/known-repositories/721'); return false;">F-Droid known-repositories</a> thread · apps install from each repo's own servers.</div>
+                    <div class="uad-credit" style="margin-top:6px;">Repository list from the <a href="#" onclick="openUrlExternal('https://forum.f-droid.org/t/known-repositories/721'); return false;">F-Droid known-repositories</a> thread · a catalog is downloaded once and kept for 12 hours · apps install from each repository's own servers.</div>
                 </div>
                 <div id="fdroidStatus" class="uad-status" style="margin:6px 2px;">Loading…</div>
+                <div id="fdroidExtra"></div>
                 <div id="fdroidList" class="store-rows"></div>
+                <div id="fdroidMore" class="store-more"></div>
             </div>
 
             <!-- Sub-tab: Orion Store -->
@@ -2644,15 +3051,23 @@
                 <div class="color-card">
                     <div class="color-card-title">🪐 Orion Store</div>
                     <div class="color-card-subtitle">The public Orion catalog (<b>RookieEnough/Orion-Data</b>) — Android apps resolved from GitHub, Codeberg and direct links, including Morphe-built apps. Only entries that resolve to an installable APK are shown.</div>
-                    <div class="batch-sheet-tools" style="margin:8px 0 2px; gap:10px; flex-wrap:wrap; align-items:center;">
-                        <input type="text" class="list-search" id="orionSearch" placeholder="Search apps…" style="flex:1; min-width:140px;" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="setSrcQuery('orion', this.value)">
-                        <button class="batch-tool-link" onclick="loadSource('orion', true)">↻ Refresh</button>
+                    <div class="store-toolbar">
+                        <input type="text" class="list-search" id="orionSearch" placeholder="Search apps…" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="setSrcQuery('orion', this.value)">
+                        <select class="op-select" id="orionCat" onchange="setSrcCat('orion', this.value)" aria-label="Category"><option value="">All categories</option></select>
+                        <select class="op-select" id="orionSort" onchange="setSrcSort('orion', this.value)" aria-label="Sort">
+                            <option value="name">Name (A–Z)</option>
+                            <option value="name-desc">Name (Z–A)</option>
+                        </select>
+                    </div>
+                    <div class="batch-sheet-tools" style="margin-bottom:2px; gap:14px; align-items:center;">
+                        <button class="batch-tool-link" onclick="refreshSource('orion')">↻ Refresh</button>
                         <span id="orionCount" style="font-size:12px; color:var(--text-muted);"></span>
                     </div>
                     <div class="uad-credit" style="margin-top:6px;">Catalog from <a href="#" onclick="openUrlExternal('https://github.com/RookieEnough/Orion-Store'); return false;">Orion Store</a> by RookieEnough · APKs come from each app's own source, not rehosted.</div>
                 </div>
                 <div id="orionStatus" class="uad-status" style="margin:6px 2px;">Loading…</div>
                 <div id="orionList" class="store-rows"></div>
+                <div id="orionMore" class="store-more"></div>
             </div>
 
             <!-- Sub-tab: Aurora Store (Play hand-off) -->
@@ -2965,7 +3380,7 @@
                 </div>
                 <div class="mode-btn-row" style="margin-top:10px;">
                     <button class="apps-tool-btn" onclick="openWorkingModesModal()">⚙️ Working Modes</button>
-                    <button class="apps-tool-btn" onclick="document.getElementById('termCmd').value = 'adb devices'; runTerminalCmd();">📱 adb devices</button>
+                    <button class="apps-tool-btn" id="rishBtn" onclick="toggleRishMode()" title="Rish mode: switches to Shizuku and opens a persistent shell">🐚 Rish mode</button>
                     <button class="apps-tool-btn" onclick="document.getElementById('termCmd').value = 'id'; runTerminalCmd();">🆔 UID (id)</button>
                     <button class="apps-tool-btn" onclick="connectAdbTcpUI()">⚡ Connect 5555</button>
                     <button class="apps-tool-btn" onclick="restartAdbTcpipUI()">🔄 tcpip 5555</button>
@@ -2986,16 +3401,17 @@
 Type any command below (e.g. pm list packages -d)
 </div>
 
+            <div class="rish-promptline" id="termPromptLine" style="display:none;"></div>
             <div class="term-input-row" style="margin-top:12px;">
                 <input type="text" class="term-input" id="termCmd" placeholder="Enter shell command..." onkeydown="if(event.key==='Enter') runTerminalCmd()" autocapitalize="none" autocorrect="off" autocomplete="off" spellcheck="false" inputmode="text">
-                <button class="term-run-btn" onclick="runTerminalCmd()">RUN</button>
+                <button class="term-run-btn" id="termRunBtn" onclick="termRunClick()">RUN</button>
             </div>
         </section>
 
     </div>
 
     <!-- Compact FAB shown while apps are being selected, so the list stays clear until the user is done. -->
-    <button class="batch-fab" id="batchFab" onclick="expandBatchPanel()" aria-label="Open batch actions">
+    <button class="batch-fab" id="batchFab" onclick="expandBatchPanel()" aria-label="Open batch actions (hold to clear the selection)" title="Tap: batch actions · Hold: clear selection">
         <span>✓</span>
         <span class="batch-fab-badge" id="batchFabBadge">0</span>
     </button>
@@ -3482,6 +3898,41 @@ Type any command below (e.g. pm list packages -d)
         </div>
     </div>
 
+    <div class="modal-overlay" id="arcModal" onclick="if(event.target===this) arcCloseModal()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-avatar" id="arcModalIcon" style="background:rgba(0,200,255,0.18); color:var(--accent);">📄</div>
+                    <div class="sheet-title">
+                        <h3 id="arcModalName" style="word-break:break-all;">Entry</h3>
+                        <p id="arcModalPath" style="font-family:monospace; word-break:break-all;"></p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="arcCloseModal()">✕</div>
+            </div>
+            <div class="batch-actions-grid" id="arcModalBtns"></div>
+            <div id="arcInputRow" style="display:none; margin-top:10px;">
+                <div class="switch-sub" id="arcInputLabel" style="margin-bottom:4px;"></div>
+                <input class="modal-text-input" id="arcInput" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter') arcInputConfirm()">
+                <div class="switch-sub" id="arcInput2Label" style="margin:8px 0 4px; display:none;"></div>
+                <input class="modal-text-input" id="arcInput2" style="display:none;" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter') arcInputConfirm()">
+                <button class="mode-action-btn primary" style="width:100%; justify-content:center; margin-top:8px;" id="arcInputConfirm" onclick="arcInputConfirm()">Confirm</button>
+            </div>
+            <div id="arcView" style="display:none; margin-top:10px;">
+                <div class="arc-meta" id="arcViewMeta"></div>
+                <div class="terminal-box" id="arcViewText" style="display:none; max-height:46vh; height:auto; min-height:0; overflow:auto; margin-bottom:0;"></div>
+                <img class="arc-img" id="arcViewImg" style="display:none;" alt="">
+            </div>
+            <div id="arcEditor" style="display:none; margin-top:10px;">
+                <textarea class="arc-textarea" id="arcEditText" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off"></textarea>
+                <div style="display:flex; gap:10px; margin-top:8px;">
+                    <button class="mode-action-btn primary" style="flex:1; justify-content:center;" onclick="arcSaveEdit()">💾 Save to archive</button>
+                    <button class="mode-action-btn" style="padding:10px 16px;" onclick="arcCancelEdit()">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="deleteListModal" onclick="if(event.target===this) closeDeleteListModal()">
         <div class="modal-sheet" style="max-width:440px;">
             <div class="sheet-header">
@@ -3768,6 +4219,21 @@ Type any command below (e.g. pm list packages -d)
         let currentWorkingMode = 'unprivileged';
         let isPrivilegedActive = false;
         let lastModesData = null;
+
+        // Rish mode state (the terminal's persistent Shizuku shell; see toggleRishMode below)
+        let rishActive = false;        // the terminal is talking to the persistent shell
+        let rishStarting = false;      // the app is opening the shell
+        let rishAwaitingAuth = false;  // waiting for the Shizuku permission prompt
+        let rishRunning = false;       // a command is running in the shell
+        let rishPromptText = '$';
+        let rishUid = -1;
+        let rishRunSeq = 0;
+        let rishEndsNl = true;         // did the last output end with a newline?
+        let rishStick = true;          // keep the terminal scrolled to the newest output
+        let rishScrollQueued = false;
+        let rishTermChars = 0;         // streamed characters currently in the terminal (older ones get trimmed)
+        const RISH_TERM_MAX = 800000;
+        const RISH_TERM_KEEP = 500000;
         let customLists = [];
         let pendingBatchAction = null;
         let pendingDeleteListId = null;
@@ -4422,6 +4888,8 @@ Type any command below (e.g. pm list packages -d)
                         termDesc.innerText = 'Connect via ADB TCP 5555, Wireless Debugging, Shizuku, or Root.';
                     }
                 }
+
+                if (typeof rishSyncUi === 'function') rishSyncUi();
 
                 // Update Modal Content
                 document.getElementById('modalActiveModeDesc').innerText = `Selected: ${MODE_LABELS[configured] || configured} • Active: ${text.innerText}`;
@@ -5701,6 +6169,7 @@ Type any command below (e.g. pm list packages -d)
         function selectModeUI(mode, afterSelect) {
             haptic();
             if (!window.AndroidBridge) return;
+            if (rishActive && mode !== 'shizuku') leaveRish('🐚 Left the Rish shell: the working mode changed.');
             showToast(`Switching to ${MODE_LABELS[mode] || mode}...`, '⚙️');
             setTimeout(() => {
                 let res = { ok: true, message: '' };
@@ -5844,6 +6313,13 @@ Type any command below (e.g. pm list packages -d)
         let storeLoading = false;
         let storeCurrent = null;            // { slug, app, download } for the open detail
         const storeDetailCache = {};
+        let storeShown = 60;                // how many ShizuStore rows are drawn (grows with "Show more")
+
+        // "system-tools" -> "System Tools"; apps without a category -> "Other"
+        function storeCatLabel(a) {
+            const s = String((a && a.categorySlug) || '');
+            return s ? s.replace(/[-_]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'Other';
+        }
 
         function onStoreShown() {
             switchStoreTab(currentStoreTab || 'shizu');
@@ -5874,6 +6350,9 @@ Type any command below (e.g. pm list packages -d)
             storeBase = d.base || storeBase;
             storeApps = Array.isArray(d.items) ? d.items : [];
             storeLoaded = true;
+            storeShown = 60;
+            const catSel = document.getElementById('storeCat');
+            if (catSel) fillCatSelect('storeCat', storeApps.map(a => ({ cats: [storeCatLabel(a)] })), catSel.value);
             renderStoreList();
         }
         window.onStoreCatalog = onStoreCatalog;
@@ -5895,11 +6374,16 @@ Type any command below (e.g. pm list packages -d)
             const q = (document.getElementById('storeSearch').value || '').trim().toLowerCase();
             let apps = storeApps;
             if (q) apps = apps.filter(a => (a.name || '').toLowerCase().includes(q) || (a.packageName || '').toLowerCase().includes(q) || (a.description || '').toLowerCase().includes(q) || (a.authorName || '').toLowerCase().includes(q));
+            const cat = (document.getElementById('storeCat') || {}).value || '';
+            if (cat) apps = apps.filter(a => storeCatLabel(a) === cat);
             apps = storeSorted(apps);
             document.getElementById('storeCount').innerText = apps.length + ' / ' + storeApps.length + ' apps';
             document.getElementById('storeStatus').style.display = 'none';
+            const left = apps.length - storeShown;
+            document.getElementById('storeMore').innerHTML = left > 0
+                ? `<button class="batch-tool-link" onclick="storeShown += 60; renderStoreList()">Show ${Math.min(60, left)} more · ${left} left</button>` : '';
             const esc = escapeHtml;
-            const rows = apps.slice(0, 300).map(a => {
+            const rows = apps.slice(0, storeShown).map(a => {
                 const img = a.iconHash ? `<img src="${storeBase}/icons/${esc(a.iconHash)}.png" alt="" style="width:46px;height:46px;border-radius:12px;object-fit:cover;flex-shrink:0;background:rgba(var(--ov),0.08);" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">` : '';
                 const fb = `<div style="width:46px;height:46px;border-radius:12px;flex-shrink:0;display:${a.iconHash ? 'none' : 'flex'};align-items:center;justify-content:center;background:linear-gradient(135deg,var(--accent),var(--secondary));font-weight:800;color:#fff;">${esc((a.name || '?').charAt(0).toUpperCase())}</div>`;
                 const chips = [];
@@ -6048,160 +6532,315 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('storeModal').classList.remove('show');
         }
 
-        // ---- Store sub-tabs (v5.6): Komi · F-Droid · Orion · Aurora -------------------------------
+        // ---- Store sub-tabs: GitHub (Komi catalog) · F-Droid · Orion · Aurora ------------------------
+        // One pipeline for the three catalog tabs: items arrive from the native side in chunks
+        // (window.onStoreSource), then are filtered by search + category, sorted, and drawn 60 at a time.
         let currentStoreTab = 'shizu';
+        const STORE_PAGE = 60;
+
+        function newSrc(sort) {
+            return { items: [], loaded: false, loading: false, query: '', cat: '', sort: sort, shown: STORE_PAGE, note: '', progress: '', error: '', searching: false };
+        }
+
         const storeSrc = {
-            komi:   { loaded: false, loading: false, items: [], query: '' },
-            orion:  { loaded: false, loading: false, items: [], query: '' },
-            fdroid: { loaded: false, loading: false, repos: [], apps: [], mode: 'repos', repo: null, query: '' },
+            github: newSrc('stars'),
+            orion:  newSrc('name'),
+            fdroid: Object.assign(newSrc('updated'), { repos: [], repoId: 'fdroid', showRepos: false, meteredOk: false, pendingMetered: false, cache: {}, meta: {}, current: '' }),
         };
-        const storeInline = {};   // pkg -> { statusId, btnId } for an in-progress install card
+        const storeInline = {};   // progress key -> { statusId, btnId } of the card that started an install
+
+        function fmtCount(n) {
+            n = Number(n) || 0;
+            if (n >= 1e6) return (n / 1e6).toFixed(n >= 1e7 ? 0 : 1).replace(/\.0$/, '') + 'M';
+            if (n >= 1e3) return (n / 1e3).toFixed(n >= 1e4 ? 0 : 1).replace(/\.0$/, '') + 'k';
+            return String(n);
+        }
+
+        function cssId(s) { return String(s || '').replace(/[^a-zA-Z0-9_-]/g, '_'); }
+        function itemKey(a) { return String(a.key || a.id || a.pkg || a.name || ''); }
+        function srcEl(key, suffix) { return document.getElementById(key + suffix); }
 
         function switchStoreTab(key) {
             currentStoreTab = key;
             document.querySelectorAll('.store-subtab').forEach(b => b.classList.toggle('active', b.dataset.store === key));
             document.querySelectorAll('.substore').forEach(p => { p.style.display = (p.id === 'substore-' + key) ? '' : 'none'; });
             if (key === 'shizu') { if (!storeLoaded && !storeLoading) loadStoreCatalog(false); }
-            else if (key === 'komi' || key === 'orion') loadSource(key, false);
-            else if (key === 'fdroid') loadSource('fdroid', false);
+            else if (key === 'github' || key === 'orion') loadSource(key, false);
+            else if (key === 'fdroid') loadFdroid();
         }
 
-        function setSrcStatus(key, msg, hide) {
-            const el = document.getElementById(key + 'Status');
-            if (!el) return;
-            if (!msg && hide) { el.style.display = 'none'; el.innerText = ''; return; }
-            el.style.display = ''; el.innerText = msg;
+        // ---- shared filter / sort / category helpers ----
+        function srcMatches(a, q) {
+            if (a._hit === q) return true;   // a live-search hit for exactly this query always shows
+            return (a.name || '').toLowerCase().includes(q) || (a.pkg || '').toLowerCase().includes(q)
+                || (a.key || '').toLowerCase().includes(q) || (a.desc || '').toLowerCase().includes(q)
+                || (a.author || '').toLowerCase().includes(q) || (a.cats || []).some(c => c.toLowerCase().includes(q));
+        }
+
+        function srcSort(list, sort) {
+            const arr = list.slice();
+            const num = v => (typeof v === 'number' ? v : 0);
+            const byName = (a, b) => (a.name || '').localeCompare(b.name || '');
+            if (sort === 'name') arr.sort(byName);
+            else if (sort === 'name-desc') arr.sort((a, b) => byName(b, a));
+            else if (sort === 'stars') arr.sort((a, b) => num(b.stars) - num(a.stars) || byName(a, b));
+            else if (sort === 'downloads') arr.sort((a, b) => num(b.downloads) - num(a.downloads) || byName(a, b));
+            else if (sort === 'updated') arr.sort((a, b) => num(b.updated) - num(a.updated) || byName(a, b));
+            return arr;
+        }
+
+        function srcFiltered(key) {
+            const s = storeSrc[key];
+            let list = s.items;
+            if (s.cat) list = list.filter(a => (a.cats || []).indexOf(s.cat) >= 0);
+            if (s.query) list = list.filter(a => srcMatches(a, s.query));
+            return srcSort(list, s.sort);
+        }
+
+        // Fills a category <select> from the items' category tags, with counts. Returns the (possibly reset) selection.
+        function fillCatSelect(selectId, items, current) {
+            const sel = document.getElementById(selectId);
+            if (!sel) return current;
+            const counts = {};
+            items.forEach(a => (a.cats || []).forEach(c => { counts[c] = (counts[c] || 0) + 1; }));
+            const last = new Set(['Other', 'Uncategorized']);
+            const names = Object.keys(counts).sort((x, y) => (last.has(x) - last.has(y)) || counts[y] - counts[x] || x.localeCompare(y));
+            sel.innerHTML = '<option value="">All categories (' + items.length + ')</option>'
+                + names.map(n => '<option value="' + escapeHtml(n) + '">' + escapeHtml(n) + ' (' + counts[n] + ')</option>').join('');
+            if (current && counts[current]) { sel.value = current; return current; }
+            sel.value = '';
+            return '';
+        }
+
+        function refreshCats(key) {
+            const s = storeSrc[key];
+            s.cat = fillCatSelect(key + 'Cat', s.items, s.cat);
         }
 
         function setSrcQuery(key, v) {
-            storeSrc[key].query = (v || '').trim().toLowerCase();
-            if (key === 'fdroid') renderFdroid(); else renderSourceList(key);
-        }
-
-        function loadSource(key, force) {
             const s = storeSrc[key];
-            if (s.loading) return;
-            if (!window.AndroidBridge || !window.AndroidBridge.storeSourceCatalog) { setSrcStatus(key, 'This store needs the app build (Android bridge).'); return; }
-            if (key === 'fdroid') {
-                if (s.loaded && !force) { renderFdroid(); return; }
-                s.loading = true; s.mode = 'repos'; s.repo = null;
-                document.getElementById('fdroidBackBtn').style.display = 'none';
-                document.getElementById('fdroidList').innerHTML = '';
-                setSrcStatus('fdroid', 'Loading known repositories…');
-                window.AndroidBridge.storeSourceCatalog('fdroid-repos', '');
-                return;
-            }
-            if (s.loaded && !force) { renderSourceList(key); return; }
-            s.loading = true;
-            document.getElementById(key + 'List').innerHTML = '';
-            setSrcStatus(key, key === 'komi' ? 'Loading apps…' : 'Loading the Orion catalog…');
-            window.AndroidBridge.storeSourceCatalog(key, '');
+            s.query = (v || '').trim().toLowerCase();
+            s.shown = STORE_PAGE;
+            renderSource(key);
         }
 
-        function fdroidBrowse(id) {
-            const s = storeSrc.fdroid;
-            if (s.loading) return;
-            const repo = s.repos.find(r => String(r.id) === String(id));
-            if (!repo) return;
-            haptic();
-            s.loading = true; s.mode = 'repo'; s.repo = repo; s.apps = []; s.query = '';
-            document.getElementById('fdroidSearch').value = '';
-            document.getElementById('fdroidBackBtn').style.display = '';
-            document.getElementById('fdroidList').innerHTML = '';
-            setSrcStatus('fdroid', 'Loading ' + (repo.name || 'repository') + '…');
-            window.AndroidBridge.storeSourceCatalog('fdroid-repo', repo.address);
-        }
+        function setSrcCat(key, v) { storeSrc[key].cat = v || ''; storeSrc[key].shown = STORE_PAGE; renderSource(key); }
+        function setSrcSort(key, v) { storeSrc[key].sort = v; storeSrc[key].shown = STORE_PAGE; renderSource(key); }
+        function showMoreSource(key) { haptic(); storeSrc[key].shown += STORE_PAGE; renderSource(key); }
 
-        function fdroidBackToRepos() {
-            const s = storeSrc.fdroid;
-            s.mode = 'repos'; s.repo = null; s.query = '';
-            document.getElementById('fdroidSearch').value = '';
-            document.getElementById('fdroidBackBtn').style.display = 'none';
-            renderFdroid();
-        }
-
-        function onStoreSource(json) {
-            let d; try { d = JSON.parse(json); } catch (e) { return; }
-            const src = d.source;
-            if (src === 'komi' || src === 'orion') {
-                const s = storeSrc[src]; s.loading = false;
-                if (d.status !== 'ok') { setSrcStatus(src, '⚠️ Could not load: ' + (d.error || 'unknown error')); return; }
-                s.items = Array.isArray(d.items) ? d.items : [];
-                s.loaded = true;
-                renderSourceList(src);
-            } else if (src === 'fdroid-repos') {
-                const s = storeSrc.fdroid; s.loading = false;
-                if (d.status !== 'ok') { setSrcStatus('fdroid', '⚠️ Could not load: ' + (d.error || 'unknown error')); return; }
-                s.repos = Array.isArray(d.items) ? d.items : [];
-                s.loaded = true; s.mode = 'repos';
-                renderFdroid();
-            } else if (src === 'fdroid-repo') {
-                const s = storeSrc.fdroid; s.loading = false;
-                if (d.status === 'too_large') { s.apps = []; setSrcStatus('fdroid', 'ℹ️ ' + (d.error || 'Too large to browse in-app.')); renderFdroid(); return; }
-                if (d.status !== 'ok') { s.apps = []; setSrcStatus('fdroid', '⚠️ ' + (d.error || 'could not load this repository')); renderFdroid(); return; }
-                s.apps = Array.isArray(d.items) ? d.items : [];
-                renderFdroid();
-            }
-        }
-        window.onStoreSource = onStoreSource;
-
-        function cssId(s) { return String(s || '').replace(/[^a-zA-Z0-9_-]/g, '_'); }
-
-        function matchItem(a, q) {
-            return (a.name || '').toLowerCase().includes(q) || (a.pkg || '').toLowerCase().includes(q)
-                || (a.desc || '').toLowerCase().includes(q) || (a.category || '').toLowerCase().includes(q);
-        }
-
+        // ---- cards ----
         function srcIconHtml(a) {
             const esc = escapeHtml;
             const letter = esc((a.name || '?').charAt(0).toUpperCase());
-            const img = a.icon ? `<img class="sr-icon" src="${esc(a.icon)}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">` : '';
+            const img = a.icon ? `<img class="sr-icon" loading="lazy" src="${esc(a.icon)}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">` : '';
             const fb = `<div class="sr-fallback"${a.icon ? ' style="display:none;"' : ''}>${letter}</div>`;
             return img + fb;
         }
 
         function itemCardHtml(a, key) {
             const esc = escapeHtml;
+            const k = itemKey(a);
             const chips = [];
-            if (a.version && String(a.version).toLowerCase() !== 'latest') chips.push('v' + esc(String(a.version)));
-            if (a.category) chips.push(esc(a.category));
-            if (a.size) chips.push((Math.round(a.size / 1048576 * 10) / 10) + ' MB');
-            if (a.pkg) chips.push(esc(a.pkg));
-            const meta = chips.map(c => `<span class="sr-chip">${c}</span>`).join(' ');
-            const sid = key + '-' + cssId(a.id || a.pkg || a.name);
+            if (a.stars) chips.push('<span class="sr-chip">⭐ ' + fmtCount(a.stars) + '</span>');
+            if (a.downloads) chips.push('<span class="sr-chip">⬇ ' + fmtCount(a.downloads) + '</span>');
+            const ver = a.ver || a.version;
+            if (ver && String(ver).toLowerCase() !== 'latest') chips.push('<span class="sr-chip">v' + esc(String(ver).replace(/^v/i, '')) + '</span>');
+            if (a.size) chips.push('<span class="sr-chip">' + (Math.round(a.size / 1048576 * 10) / 10) + ' MB</span>');
+            (a.cats || []).slice(0, 2).forEach(c => chips.push('<span class="sr-chip cat">' + esc(c) + '</span>'));
+            const sid = key + '-' + cssId(k);
+            const sub = key === 'github' ? (a.owner ? esc(a.owner + '/' + a.repo) : '') : (a.author ? esc(a.author) : '');
             return `<div class="store-row">
                 ${srcIconHtml(a)}
                 <div style="flex:1;min-width:0;">
-                    <div style="font-weight:700;color:var(--text-main);">${esc(a.name || a.id || 'App')}</div>
+                    <div style="font-weight:700;color:var(--text-main);">${esc(a.name || k || 'App')}</div>
+                    ${sub ? `<div style="font-size:11px;color:var(--text-muted);word-break:break-all;">${sub}</div>` : ''}
                     <div style="font-size:12px;color:var(--text-muted);margin:2px 0 6px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${esc(a.desc || '')}</div>
-                    <div style="display:flex;gap:5px;flex-wrap:wrap;">${meta}</div>
+                    <div style="display:flex;gap:5px;flex-wrap:wrap;">${chips.join(' ')}</div>
                     <div class="sr-status" id="st-${sid}" style="display:none;"></div>
                 </div>
-                <button class="store-inst-btn" id="bt-${sid}" onclick="installSourceItem('${key}','${esc(String(a.id || a.pkg || ''))}')">⬇️</button>
+                <button class="store-inst-btn" id="bt-${sid}" data-src="${key}" data-key="${esc(k)}" onclick="installSourceItemEl(this)" aria-label="Install ${esc(a.name || k)}">⬇️</button>
             </div>`;
         }
 
-        function renderSourceList(key) {
+        // ---- list rendering (GitHub / Orion; F-Droid has its own wrapper below) ----
+        function renderSourceStatus(key, filteredLen) {
             const s = storeSrc[key];
-            if (!s.loaded) return;
-            const q = s.query;
-            let apps = s.items;
-            if (q) apps = apps.filter(a => matchItem(a, q));
-            document.getElementById(key + 'Count').innerText = apps.length + ' / ' + s.items.length + ' apps';
-            setSrcStatus(key, apps.length ? '' : 'No apps match your search.', apps.length > 0);
-            document.getElementById(key + 'List').innerHTML = apps.slice(0, 500).map(a => itemCardHtml(a, key)).join('');
+            const st = srcEl(key, 'Status');
+            if (!st) return;
+            let msg = '';
+            if (s.error) msg = '⚠️ ' + s.error;
+            else if (s.loading && !s.items.length) msg = '⏳ ' + (s.progress || 'Loading…');
+            else if (s.loading) msg = '⏳ Loading more… ' + s.items.length + ' apps so far';
+            else if (s.pendingMetered) msg = '';
+            else if (!filteredLen) msg = s.items.length ? 'No apps match your filters.' : (s.loaded ? 'No apps found.' : '');
+            else if (s.note) msg = 'ℹ️ ' + s.note;
+            st.style.display = msg ? '' : 'none';
+            st.innerText = msg;
         }
 
-        function repoCardHtml(r) {
+        function renderSource(key) {
+            if (key === 'fdroid') { renderFdroid(); return; }
+            const s = storeSrc[key];
+            const filtered = srcFiltered(key);
+            const shown = filtered.slice(0, s.shown);
+            srcEl(key, 'Count').innerText = filtered.length + (filtered.length !== s.items.length ? ' / ' + s.items.length : '') + ' apps';
+            srcEl(key, 'List').innerHTML = shown.map(a => itemCardHtml(a, key)).join('');
+            const left = filtered.length - shown.length;
+            srcEl(key, 'More').innerHTML = left > 0
+                ? `<button class="batch-tool-link" onclick="showMoreSource('${key}')">Show ${Math.min(STORE_PAGE, left)} more · ${left} left</button>` : '';
+            renderSourceStatus(key, filtered.length);
+            if (key === 'github') renderGithubExtras();
+        }
+
+        function srcBridgeOk(key) {
+            if (window.AndroidBridge && window.AndroidBridge.storeSourceCatalog) return true;
+            const s = storeSrc[key];
+            s.error = 'This store needs the app build (Android bridge).';
+            renderSource(key);
+            return false;
+        }
+
+        function loadSource(key, force) {
+            const s = storeSrc[key];
+            if (s.loading) return;
+            if (s.loaded && !force) { renderSource(key); return; }
+            if (!srcBridgeOk(key)) return;
+            s.items = []; s.loading = true; s.error = ''; s.note = ''; s.shown = STORE_PAGE;
+            s.progress = key === 'github' ? 'Loading the catalog…' : 'Loading the Orion catalog…';
+            renderSource(key);
+            window.AndroidBridge.storeSourceCatalog(key, '');
+        }
+
+        function refreshSource(key) {
+            haptic();
+            if (key === 'fdroid') { fdroidLoadRepo(true); return; }
+            const s = storeSrc[key];
+            if (!srcBridgeOk(key)) return;
+            s.items = []; s.loaded = false; s.loading = true; s.error = ''; s.note = ''; s.shown = STORE_PAGE;
+            s.progress = 'Refreshing…';
+            renderSource(key);
+            window.AndroidBridge.storeSourceRefresh(key, '');
+        }
+
+        // ---- GitHub: live search + install any owner/repo ----
+        function renderGithubExtras() {
+            const s = storeSrc.github;
+            const el = document.getElementById('githubExtra');
+            if (!el) return;
+            const esc = escapeHtml;
+            const q = (document.getElementById('githubSearch').value || '').trim();
+            const m = /^([A-Za-z0-9](?:[A-Za-z0-9-]{0,38}))\/([A-Za-z0-9._-]{1,100})$/.exec(q);
+            let html = '';
+            if (m) {
+                html = `<div class="store-prompt"><div style="flex:1;min-width:0;"><b style="word-break:break-all;">${esc(m[1])}/${esc(m[2])}</b>
+                    <div style="color:var(--text-muted);">Install the latest APK release of this GitHub project</div></div>
+                    <button class="store-inst-btn" id="bt-github-adhoc" onclick="installAdHocGithub('${esc(m[1])}','${esc(m[2])}')" aria-label="Install ${esc(q)}">⬇️</button></div>
+                    <div class="sr-status" id="st-github-adhoc" style="display:none;margin:-4px 0 8px 4px;"></div>`;
+            } else if (q.length >= 2) {
+                html = `<div class="store-prompt"><div style="flex:1;">Not in the list? Search the whole catalog for <b>${esc(q)}</b>.</div>
+                    <button class="batch-tool-link" id="githubSearchBtn" onclick="githubSearchLive()"${s.searching ? ' disabled' : ''}>${s.searching ? '⏳ Searching…' : '🔎 Search'}</button></div>`;
+            }
+            el.innerHTML = html;
+        }
+
+        function githubSearchLive() {
+            const s = storeSrc.github;
+            const q = (document.getElementById('githubSearch').value || '').trim();
+            if (q.length < 2 || s.searching || !srcBridgeOk('github')) return;
+            if (/^[^/\s]+\/[^/\s]+$/.test(q)) return;   // owner/repo is handled by the install prompt
+            haptic();
+            s.searching = true;
+            renderGithubExtras();
+            window.AndroidBridge.storeSourceCatalog('github', 'q:' + q);
+        }
+
+        function installAdHocGithub(owner, repo) {
+            if (!window.AndroidBridge || !window.AndroidBridge.storeSourceInstall) { showToast('Install needs the app build', '⚠️'); return; }
+            haptic();
+            const key = owner + '/' + repo;
+            const item = { key: key, id: key, name: repo, owner: owner, repo: repo, pkg: '', cats: ['Other'], resolveKind: 'github', source: 'github', assetFilter: '' };
+            const st = document.getElementById('st-github-adhoc');
+            const bt = document.getElementById('bt-github-adhoc');
+            if (st) { st.style.display = ''; st.innerText = '⏳ Starting…'; }
+            if (bt) bt.disabled = true;
+            storeInline[key] = { statusId: 'st-github-adhoc', btnId: 'bt-github-adhoc' };
+            window.AndroidBridge.storeSourceInstall(JSON.stringify(item));
+        }
+
+        // ---- F-Droid: pick a repository, then browse its whole catalog ----
+        function fdroidCurrentRepo() {
+            const s = storeSrc.fdroid;
+            return s.repos.find(r => String(r.id) === String(s.repoId)) || null;
+        }
+
+        function loadFdroid() {
+            const s = storeSrc.fdroid;
+            if (!srcBridgeOk('fdroid')) return;
+            if (!s.repos.length) { window.AndroidBridge.storeSourceCatalog('fdroid-repos', ''); return; }
+            if (s.loaded || s.loading || s.pendingMetered || s.error) { renderFdroid(); return; }
+            fdroidLoadRepo(false);
+        }
+
+        function fdroidLoadRepo(force) {
+            const s = storeSrc.fdroid;
+            const repo = fdroidCurrentRepo();
+            if (!repo || !srcBridgeOk('fdroid')) return;
+            s.showRepos = false;
+            const cached = s.cache[repo.address];
+            if (cached && !force) {
+                s.items = cached.items; s.meta = cached.meta; s.loaded = true; s.loading = false; s.error = ''; s.note = ''; s.pendingMetered = false;
+                s.shown = STORE_PAGE; s.cat = ''; refreshCats('fdroid'); renderFdroid();
+                return;
+            }
+            // Catalogs run from a few MB to tens of MB: ask first on mobile data
+            if (!s.meteredOk && window.AndroidBridge.isNetworkMetered && window.AndroidBridge.isNetworkMetered()) {
+                s.items = []; s.loaded = false; s.loading = false; s.error = ''; s.pendingMetered = true;
+                refreshCats('fdroid'); renderFdroid();
+                return;
+            }
+            s.pendingMetered = false;
+            s.items = []; s.loaded = false; s.loading = true; s.error = ''; s.note = ''; s.shown = STORE_PAGE; s.cat = '';
+            s.progress = 'Contacting ' + repo.name + '…'; s.current = repo.address; s.meta = {};
+            refreshCats('fdroid');
+            renderFdroid();
+            if (force) window.AndroidBridge.storeSourceRefresh('fdroid-repo', repo.address);
+            else window.AndroidBridge.storeSourceCatalog('fdroid-repo', repo.address);
+        }
+
+        function fdroidAllowMetered() { storeSrc.fdroid.meteredOk = true; haptic(); fdroidLoadRepo(false); }
+
+        function fdroidSelectRepo(id) {
+            const s = storeSrc.fdroid;
+            s.repoId = id; s.query = ''; s.cat = ''; s.showRepos = false; s.error = ''; s.pendingMetered = false;
+            const inp = document.getElementById('fdroidSearch'); if (inp) inp.value = '';
+            const sel = document.getElementById('fdroidRepo'); if (sel && sel.value !== String(id)) sel.value = String(id);
+            fdroidLoadRepo(false);
+        }
+
+        function fdroidToggleRepoList() {
+            haptic();
+            const s = storeSrc.fdroid;
+            s.showRepos = !s.showRepos;
+            renderFdroid();
+        }
+
+        function fdroidCopyRepoInfo() {
+            const r = fdroidCurrentRepo();
+            if (!r) return;
+            copyText(r.address + (r.fingerprint ? '\n' + r.fingerprint : ''));
+            showToast('Repository address' + (r.fingerprint ? ' & fingerprint' : '') + ' copied', '📋');
+        }
+
+        function fdroidRepoCardHtml(r) {
             const esc = escapeHtml;
             return `<div class="store-row">
                 <div class="sr-fallback">${esc((r.name || '?').charAt(0).toUpperCase())}</div>
                 <div style="flex:1;min-width:0;">
                     <div style="font-weight:700;color:var(--text-main);">${esc(r.name)}</div>
-                    <div style="font-size:12px;color:var(--text-muted);margin:2px 0 6px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${esc(r.desc || '')}</div>
+                    <div style="font-size:12px;color:var(--text-muted);margin:2px 0 6px;">${esc(r.desc || '')}</div>
                     <div style="font-size:11px;color:var(--text-muted);word-break:break-all;">${esc(r.address)}</div>
                     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:7px;">
-                        <button class="batch-tool-link" onclick="fdroidBrowse('${esc(String(r.id))}')">📂 Browse</button>
+                        <button class="batch-tool-link" onclick="fdroidSelectRepo('${esc(String(r.id))}')">📂 Browse apps</button>
                         <button class="batch-tool-link" onclick="copyStoreText('${esc(r.address)}','Address')">⧉ Address</button>
                         ${r.fingerprint ? `<button class="batch-tool-link" onclick="copyStoreText('${esc(r.fingerprint)}','Fingerprint')">⧉ Fingerprint</button>` : ''}
                     </div>
@@ -6209,63 +6848,130 @@ Type any command below (e.g. pm list packages -d)
             </div>`;
         }
 
-        function repoAddInfoHtml(r) {
-            const esc = escapeHtml;
-            return `<div class="color-card">
-                <div style="font-weight:700;margin-bottom:4px;">${esc(r.name)}</div>
-                <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">No apps to show here. If the catalog is too large to browse in-app, add this repo to your F-Droid client to install and auto-update its apps with signature verification.</div>
-                <div style="font-size:11px;color:var(--text-muted);word-break:break-all;margin-bottom:4px;"><b>Address:</b> ${esc(r.address)}</div>
-                ${r.fingerprint ? `<div style="font-size:11px;color:var(--text-muted);word-break:break-all;margin-bottom:8px;"><b>Fingerprint:</b> ${esc(r.fingerprint)}</div>` : ''}
-                <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                    <button class="batch-tool-link" onclick="copyStoreText('${esc(r.address)}','Address')">⧉ Copy address</button>
-                    ${r.fingerprint ? `<button class="batch-tool-link" onclick="copyStoreText('${esc(r.fingerprint)}','Fingerprint')">⧉ Copy fingerprint</button>` : ''}
-                </div>
-            </div>`;
-        }
-
         function renderFdroid() {
             const s = storeSrc.fdroid;
-            const listEl = document.getElementById('fdroidList');
-            const q = s.query;
-            if (s.mode === 'repos') {
-                document.getElementById('fdroidBackBtn').style.display = 'none';
-                let repos = s.repos;
-                if (q) repos = repos.filter(r => (r.name || '').toLowerCase().includes(q) || (r.address || '').toLowerCase().includes(q) || (r.desc || '').toLowerCase().includes(q));
-                document.getElementById('fdroidCount').innerText = repos.length + ' / ' + s.repos.length + ' repos';
-                setSrcStatus('fdroid', repos.length ? '' : 'No repositories match your search.', repos.length > 0);
-                listEl.innerHTML = repos.map(repoCardHtml).join('');
-            } else {
-                document.getElementById('fdroidBackBtn').style.display = '';
-                let apps = s.apps;
-                if (q) apps = apps.filter(a => matchItem(a, q));
-                document.getElementById('fdroidCount').innerText = (s.repo ? s.repo.name + ' · ' : '') + apps.length + ' apps';
-                if (!s.apps.length) {
-                    listEl.innerHTML = s.repo ? repoAddInfoHtml(s.repo) : '';
-                } else {
-                    setSrcStatus('fdroid', '', true);
-                    listEl.innerHTML = apps.slice(0, 400).map(a => itemCardHtml(a, 'fdroid')).join('') || '<div class="uad-status">No apps match your search.</div>';
-                }
+            const list = srcEl('fdroid', 'List');
+            const more = srcEl('fdroid', 'More');
+            const extra = srcEl('fdroid', 'Extra');
+            const repo = fdroidCurrentRepo();
+            const filters = document.getElementById('fdroidFilters');
+            document.getElementById('fdroidReposBtn').innerText = s.showRepos ? '← Apps' : '📚 Repos';
+            document.getElementById('fdroidCopyBtn').style.display = repo ? '' : 'none';
+            extra.innerHTML = '';
+
+            if (s.showRepos) {
+                filters.style.display = 'none';
+                srcEl('fdroid', 'Count').innerText = s.repos.length + ' repositories';
+                const st = srcEl('fdroid', 'Status'); st.style.display = 'none';
+                list.innerHTML = s.repos.map(fdroidRepoCardHtml).join('');
+                more.innerHTML = '';
+                return;
             }
+            filters.style.display = '';
+            if (s.pendingMetered) {
+                extra.innerHTML = `<div class="store-prompt"><div style="flex:1;">You're on a metered connection (mobile data / hotspot). <b>${escapeHtml(repo ? repo.name : 'This repository')}</b>'s catalog can be several MB — F-Droid's own is tens of MB. It's downloaded once and kept for 12 hours.</div>
+                    <button class="batch-tool-link" onclick="fdroidAllowMetered()">⬇️ Download</button></div>`;
+            }
+            const filtered = srcFiltered('fdroid');
+            const shown = filtered.slice(0, s.shown);
+            srcEl('fdroid', 'Count').innerText = (s.items.length ? filtered.length + (filtered.length !== s.items.length ? ' / ' + s.items.length : '') + ' apps' : '');
+            list.innerHTML = shown.map(a => itemCardHtml(a, 'fdroid')).join('');
+            const left = filtered.length - shown.length;
+            more.innerHTML = left > 0 ? `<button class="batch-tool-link" onclick="showMoreSource('fdroid')">Show ${Math.min(STORE_PAGE, left)} more · ${left} left</button>` : '';
+            if (!s.error && !s.loading && s.loaded && s.meta && s.meta.skipped && !s.note) {
+                s.note = (s.meta.repoName ? s.meta.repoName + ' · ' : '') + s.meta.skipped + ' app' + (s.meta.skipped === 1 ? '' : 's') + ' hidden (no build for this device).';
+            }
+            renderSourceStatus('fdroid', filtered.length);
         }
 
-        function srcItemById(key, id) {
-            if (key === 'fdroid') return storeSrc.fdroid.apps.find(a => String(a.id) === String(id) || String(a.pkg) === String(id));
-            return storeSrc[key].items.find(a => String(a.id) === String(id) || String(a.pkg) === String(id));
+        function onFdroidRepos(d) {
+            const s = storeSrc.fdroid;
+            if (d.status !== 'ok') { s.error = d.error || 'Could not load the repository list.'; renderFdroid(); return; }
+            const first = !d.append;
+            if (first) s.repos = [];
+            (d.items || []).forEach(r => s.repos.push(r));
+            const sel = document.getElementById('fdroidRepo');
+            sel.innerHTML = s.repos.map(r => `<option value="${escapeHtml(String(r.id))}">${escapeHtml(r.name)}</option>`).join('');
+            if (!fdroidCurrentRepo() && s.repos.length) s.repoId = s.repos[0].id;
+            sel.value = String(s.repoId);
+            if (d.done) fdroidLoadRepo(false);
         }
 
-        function installSourceItem(key, id) {
-            const item = srcItemById(key, id);
+        function onFdroidRepoEvent(d) {
+            const s = storeSrc.fdroid;
+            if (d.arg !== s.current) return;   // an answer for a repository the user has since switched away from
+            if (d.status === 'progress') { s.progress = d.message || ''; if (s.loading) renderFdroid(); return; }
+            if (d.status === 'error') { s.loading = false; s.error = d.error || 'unknown error'; renderFdroid(); return; }
+            if (!d.append) s.items = [];
+            (d.items || []).forEach(a => s.items.push(a));
+            s.loaded = true;
+            if (d.done) {
+                s.loading = false;
+                s.meta = { repoName: d.repoName || '', format: d.format || '', skipped: d.skipped || 0 };
+                s.note = '';
+                s.cache[d.arg] = { items: s.items, meta: s.meta };
+            }
+            refreshCats('fdroid');
+            renderFdroid();
+        }
+
+        // ---- the single entry point the native side calls ----
+        function onStoreSource(json) {
+            let d; try { d = JSON.parse(json); } catch (e) { return; }
+            const src = d.source;
+            if (src === 'fdroid-repos') { onFdroidRepos(d); return; }
+            if (src === 'fdroid-repo') { onFdroidRepoEvent(d); return; }
+            if (src !== 'github' && src !== 'orion') return;
+            const s = storeSrc[src];
+            if (d.status === 'progress') { s.progress = d.message || ''; if (s.loading) renderSource(src); return; }
+            if (d.status === 'error') { s.loading = false; s.searching = false; s.error = d.error || 'unknown error'; renderSource(src); return; }
+            if (d.search) {
+                // A live GitHub search: merge anything new into the list and show it for this query
+                const known = new Set(s.items.map(itemKey));
+                const added = (d.items || []).filter(a => !known.has(itemKey(a)));
+                const q = String(d.query || '').toLowerCase();
+                (d.items || []).forEach(a => { a._hit = q; });
+                added.forEach(a => s.items.push(a));
+                s.searching = false;
+                s.note = added.length ? ('Found ' + added.length + ' more for “' + d.query + '”.') : ('No more results for “' + d.query + '”.');
+                refreshCats(src);
+                renderSource(src);
+                return;
+            }
+            if (!d.append) s.items = [];
+            (d.items || []).forEach(a => s.items.push(a));
+            s.loaded = true;
+            if (d.done) { s.loading = false; s.note = d.note || ''; }
+            else if (d.note) s.note = d.note;
+            refreshCats(src);
+            renderSource(src);
+        }
+        window.onStoreSource = onStoreSource;
+
+        // ---- install ----
+        function srcItemByKey(src, k) {
+            return storeSrc[src].items.find(a => itemKey(a) === String(k));
+        }
+
+        function installSourceItemEl(btn) { installSourceItem(btn.dataset.src, btn.dataset.key); }
+
+        function installSourceItem(src, k) {
+            const item = srcItemByKey(src, k);
             if (!item) return;
             haptic();
             if (!window.AndroidBridge || !window.AndroidBridge.storeSourceInstall) { showToast('Install needs the app build', '⚠️'); return; }
-            const sid = key + '-' + cssId(item.id || item.pkg || item.name);
+            const key = itemKey(item);
+            const sid = src + '-' + cssId(key);
             const st = document.getElementById('st-' + sid);
             const bt = document.getElementById('bt-' + sid);
             if (st) { st.style.display = ''; st.innerText = '⏳ Starting…'; }
             if (bt) bt.disabled = true;
-            const pkg = item.pkg || item.id || '';
-            if (pkg) storeInline[pkg] = { statusId: 'st-' + sid, btnId: 'bt-' + sid };
-            window.AndroidBridge.storeSourceInstall(JSON.stringify(item));
+            storeInline[key] = { statusId: 'st-' + sid, btnId: 'bt-' + sid };
+            // The native side only needs what resolves and verifies the download
+            window.AndroidBridge.storeSourceInstall(JSON.stringify({
+                key: key, id: item.id || key, name: item.name, pkg: item.pkg || '', owner: item.owner || '', repo: item.repo || '',
+                resolveKind: item.resolveKind, apkUrl: item.apkUrl || '', assetFilter: item.assetFilter || '', sha256: item.sha256 || '', version: item.ver || item.version || ''
+            }));
         }
 
         function copyStoreText(text, label) {
@@ -6333,6 +7039,10 @@ Type any command below (e.g. pm list packages -d)
             showToast(granted ? 'Shizuku authorized. Using Shizuku mode.' : 'Shizuku authorization denied', granted ? '🛡️' : '⚠️');
             checkAllWorkingModes(false);
             if (granted) loadPackageData();
+            if (rishAwaitingAuth) {
+                rishAwaitingAuth = false;
+                if (granted) startRishShell();
+            }
         }
 
         function openShizukuAppUI() {
@@ -6495,7 +7205,6 @@ Type any command below (e.g. pm list packages -d)
                         </div>
                         <div class="app-actions">
                             <button class="btn-mini" title="App Settings" onclick="openAppSettings('${app.pkg}')">⚙️</button>
-                            <button class="btn-mini" title="Force Stop" onclick="quickAction('force_stop', '${app.pkg}')">🛑</button>
                             <button class="btn-mini" title="Menu" onclick="openInspector('${app.pkg}')">⋯</button>
                         </div>
                     </div>
@@ -6565,6 +7274,8 @@ Type any command below (e.g. pm list packages -d)
         }
 
         function expandBatchPanel() {
+            // The click that ends a long press (which just cleared the selection) must not open the panel
+            if (fabHoldFired) { fabHoldFired = false; return; }
             if (selectedPkgs.size === 0) return;
             haptic();
             batchPanelExpanded = true;
@@ -6587,6 +7298,50 @@ Type any command below (e.g. pm list packages -d)
             });
             haptic();
         }
+
+        // Press-and-hold the floating checkmark to drop every selection at once. A normal tap still
+        // opens the batch panel; the click that follows a long press is swallowed so it can't also
+        // expand the panel, and dragging off the button cancels the hold.
+        const FAB_HOLD_MS = 550;
+        let fabHoldTimer = null;
+        let fabHoldFired = false;
+        let fabHoldX = 0, fabHoldY = 0;
+
+        function fabHoldCancel() {
+            if (fabHoldTimer) { clearTimeout(fabHoldTimer); fabHoldTimer = null; }
+        }
+
+        function fabHoldStart(x, y) {
+            fabHoldFired = false;
+            fabHoldX = x; fabHoldY = y;
+            fabHoldCancel();
+            fabHoldTimer = setTimeout(() => {
+                fabHoldTimer = null;
+                if (!selectedPkgs.size) return;
+                fabHoldFired = true;
+                const n = selectedPkgs.size;
+                const fab = document.getElementById('batchFab');
+                if (fab) { fab.classList.remove('clearing'); void fab.offsetWidth; fab.classList.add('clearing'); }
+                clearBatchSelection();
+                showToast(`Cleared ${n} selection${n === 1 ? '' : 's'}`, '🧹');
+            }, FAB_HOLD_MS);
+        }
+
+        (function initBatchFabLongPress() {
+            const fab = document.getElementById('batchFab');
+            if (!fab) return;
+            fab.addEventListener('touchstart', e => { const t = e.touches[0]; if (t) fabHoldStart(t.clientX, t.clientY); }, { passive: true });
+            fab.addEventListener('touchmove', e => {
+                const t = e.touches[0];
+                if (t && (Math.abs(t.clientX - fabHoldX) > 12 || Math.abs(t.clientY - fabHoldY) > 12)) fabHoldCancel();
+            }, { passive: true });
+            fab.addEventListener('touchend', fabHoldCancel);
+            fab.addEventListener('touchcancel', fabHoldCancel);
+            fab.addEventListener('mousedown', e => { if (e.button === 0) fabHoldStart(e.clientX, e.clientY); });
+            fab.addEventListener('mouseup', fabHoldCancel);
+            fab.addEventListener('mouseleave', fabHoldCancel);
+            fab.addEventListener('contextmenu', e => e.preventDefault());
+        })();
 
         function batchAction(action) {
             if (selectedPkgs.size === 0) return;
@@ -6683,25 +7438,136 @@ Type any command below (e.g. pm list packages -d)
                 if (sel) { sel.value = map[currentWorkingMode] || (isPrivilegedActive ? 'adb' : 'none'); }
             }
             installAuthorizerChanged();
+            // Search storage for package files automatically the first time this tab opens.
+            if (!apkScanDone && !apkScanning) scanApkFiles(true);
         }
 
-        function pickInstallFile() {
+        function pickInstallFile(kind) {
             haptic();
             if (!window.AndroidBridge || !window.AndroidBridge.pickInstallerFile) {
                 showToast('Installer needs the app build', '⚠️');
                 return;
             }
-            document.getElementById('installPickHint').innerText = 'Opening file picker...';
+            document.getElementById('installPickHint').innerText = kind === 'xapk'
+                ? 'Opening file picker — choose an .xapk (its OBB / game data is copied after the install).'
+                : 'Opening file picker...';
             window.AndroidBridge.pickInstallerFile();
         }
 
         function onInstallFilePicked(ref) {
             document.getElementById('installPickHint').innerText = 'Reading package...';
+            const prog = document.getElementById('installProgress');
+            if (prog) { prog.style.display = 'none'; prog.innerText = ''; }
             if (window.AndroidBridge && window.AndroidBridge.inspectInstallSource) {
                 window.AndroidBridge.inspectInstallSource(ref);
             }
         }
         window.onInstallFilePicked = onInstallFilePicked;
+
+        // ---- Find package files on storage (automatic search) ----
+        let apkScanFiles = [];
+        let apkScanDone = false;
+        let apkScanning = false;
+
+        function apkScanShort(path) {
+            return String(path || '').replace(/^\/storage\/emulated\/0\//, 'Internal storage › ')
+                .replace(/^\/storage\/([0-9A-Fa-f]{4}-[0-9A-Fa-f]{4})\//, 'SD card $1 › ').replace(/\//g, ' › ');
+        }
+
+        function apkScanAge(ms) {
+            if (!ms) return '';
+            const d = Math.floor((Date.now() - ms) / 86400000);
+            if (d <= 0) return 'today';
+            if (d === 1) return 'yesterday';
+            if (d < 30) return d + ' days ago';
+            return new Date(ms).toLocaleDateString();
+        }
+
+        function scanApkFiles(auto) {
+            if (apkScanning) return;
+            if (!window.AndroidBridge || !window.AndroidBridge.scanApkFiles) {
+                if (!auto) showToast('Storage search needs the app build', '⚠️');
+                return;
+            }
+            if (!auto) haptic();
+            apkScanning = true;
+            const box = document.getElementById('apkScanBox');
+            box.style.display = '';
+            document.getElementById('apkScanList').innerHTML = '';
+            const st = document.getElementById('apkScanStatus');
+            st.style.display = ''; st.innerText = '🔎 Searching storage for APK, APKS, APKM and XAPK files…';
+            const btn = document.getElementById('apkScanBtn'); if (btn) btn.disabled = true;
+            window.AndroidBridge.scanApkFiles();
+        }
+
+        function onApkScan(json) {
+            let d; try { d = JSON.parse(json); } catch (e) { d = { status: 'error', error: 'bad response' }; }
+            apkScanning = false;
+            const btn = document.getElementById('apkScanBtn'); if (btn) btn.disabled = false;
+            const st = document.getElementById('apkScanStatus');
+            if (d.status === 'noaccess') {
+                apkScanDone = false;
+                st.style.display = '';
+                st.innerHTML = 'To search storage, this app needs <b>All-files access</b> (or ADB / Shizuku / Root). <button class="batch-tool-link" style="margin-top:6px;" onclick="requestStorageAccessForScan()">Grant access</button>';
+                return;
+            }
+            if (d.status !== 'ok') { st.style.display = ''; st.innerText = '⚠️ ' + (d.error || 'Search failed'); return; }
+            apkScanDone = true;
+            apkScanFiles = Array.isArray(d.files) ? d.files : [];
+            apkScanFiles.forEach(f => { f._trunc = !!d.truncated; });
+            renderApkScan();
+        }
+        window.onApkScan = onApkScan;
+
+        function requestStorageAccessForScan() {
+            haptic();
+            if (window.AndroidBridge && window.AndroidBridge.requestAllFilesAccess) window.AndroidBridge.requestAllFilesAccess();
+            showToast('Allow all-files access, come back, then tap Find APKs again', '📂');
+        }
+
+        function renderApkScan() {
+            const st = document.getElementById('apkScanStatus');
+            const list = document.getElementById('apkScanList');
+            const q = (document.getElementById('apkScanSearch').value || '').trim().toLowerCase();
+            const kind = document.getElementById('apkScanKind').value;
+            const shown = apkScanFiles.map((f, i) => ({ f: f, i: i }))
+                .filter(x => (!kind || x.f.kind === kind) && (!q || (x.f.name + ' ' + x.f.path).toLowerCase().includes(q)));
+            if (!apkScanFiles.length) {
+                st.style.display = ''; st.innerText = 'No APK, APKS, APKM or XAPK files found on this device.';
+                list.innerHTML = '';
+                return;
+            }
+            const trunc = apkScanFiles[0]._trunc ? ' (search stopped early — narrow it with the filter)' : '';
+            st.style.display = ''; st.innerText = shown.length + ' of ' + apkScanFiles.length + ' file' + (apkScanFiles.length === 1 ? '' : 's') + ' found' + trunc + ' · tap one to load it';
+            list.innerHTML = shown.slice(0, 300).map(x => {
+                const f = x.f;
+                const meta = [f.size ? fmtInstallSize(f.size) : '', apkScanAge(f.mtime)].filter(Boolean).join(' · ');
+                return `<div class="apk-scan-row" onclick="installFromScan(${x.i})">
+                    <div class="apk-kind k-${escapeHtml(f.kind)}">${escapeHtml(String(f.kind || '').toUpperCase())}</div>
+                    <div style="flex:1;min-width:0;">
+                        <div class="apk-scan-name">${escapeHtml(f.name)}</div>
+                        <div class="apk-scan-meta">${escapeHtml(meta)}</div>
+                        <div class="apk-scan-meta">${escapeHtml(apkScanShort(f.path.slice(0, f.path.lastIndexOf('/'))))}</div>
+                    </div>
+                </div>`;
+            }).join('') || '<div class="uad-status">Nothing matches that filter.</div>';
+        }
+
+        // Loads a found file into the installer. Files only the shell can read are staged first.
+        function installFromScan(i) {
+            const f = apkScanFiles[i];
+            if (!f) return;
+            haptic();
+            if (f.shell && window.AndroidBridge && window.AndroidBridge.fmInstall) {
+                let r;
+                try { r = JSON.parse(window.AndroidBridge.fmInstall(f.path)); } catch (e) { r = { ok: false, error: String(e && e.message || e) }; }
+                if (r.ok && r.ref) { onInstallFilePicked(r.ref); return; }
+                showToast('Could not read that file', '⚠️');
+                document.getElementById('installPickHint').innerText = '⚠️ ' + (r.error || 'Could not read that file');
+                return;
+            }
+            onInstallFilePicked(f.path);
+        }
 
         // An APK opened from outside the app (default-installer intent): jump to the Installer tab and load it.
         function onInstallIntent(ref) {
@@ -6709,12 +7575,6 @@ Type any command below (e.g. pm list packages -d)
             onInstallFilePicked(ref);
         }
         window.onInstallIntent = onInstallIntent;
-
-        function installDefaultSettings() {
-            haptic();
-            showToast('Opening default-apps settings...', '⭐');
-            if (window.AndroidBridge && window.AndroidBridge.openDefaultAppsSettings) window.AndroidBridge.openDefaultAppsSettings();
-        }
 
         function onInstallInspected(json) {
             let d;
@@ -6725,22 +7585,46 @@ Type any command below (e.g. pm list packages -d)
                 document.getElementById('installInfoCard').style.display = 'none';
                 document.getElementById('installVtCard').style.display = 'none';
                 document.getElementById('installSplitsCard').style.display = 'none';
+                document.getElementById('installExtrasCard').style.display = 'none';
                 document.getElementById('installOptionsCard').style.display = 'none';
                 showToast('Could not read package', '⚠️');
                 return;
             }
             installData = d;
-            document.getElementById('installPickHint').innerText = 'Loaded ' + (d.type || 'apk').toUpperCase() + ' — review and install below.';
+            const extras = Array.isArray(d.extras) ? d.extras : [];
+            document.getElementById('installPickHint').innerText = 'Loaded ' + (d.type || 'apk').toUpperCase()
+                + (extras.length ? ' with ' + extras.length + ' game data file' + (extras.length === 1 ? '' : 's') : '') + ' — review and install below.';
             renderInstallInfo();
             renderInstallSplits();
+            renderInstallExtras();
             document.getElementById('installInfoCard').style.display = '';
             document.getElementById('installVtCard').style.display = '';
             resetVtScan();
             document.getElementById('installSplitsCard').style.display = (d.splits && d.splits.length > 1) ? '' : 'none';
+            document.getElementById('installExtrasCard').style.display = extras.length ? '' : 'none';
             document.getElementById('installOptionsCard').style.display = '';
             installAuthorizerChanged();
         }
         window.onInstallInspected = onInstallInspected;
+
+        // OBB / Android-data files carried by an XAPK: listed with their destination, copied after the install.
+        function renderInstallExtras() {
+            const el = document.getElementById('installExtrasList');
+            const extras = (installData && Array.isArray(installData.extras)) ? installData.extras : [];
+            if (!el) return;
+            el.innerHTML = extras.map(x => `<div class="switch-row" style="cursor:default;">
+                <div style="min-width:0;"><div class="switch-title" style="word-break:break-all;">${escapeHtml(x.name)}</div>
+                <div class="switch-sub" style="word-break:break-all;">/sdcard/${escapeHtml(x.dest.slice(0, x.dest.lastIndexOf('/') + 1))} • ${fmtInstallSize(x.size)}</div></div>
+            </div>`).join('');
+        }
+
+        // Live progress from the native side while data files are copied after an install.
+        function onInstallProgress(msg) {
+            const p = document.getElementById('installProgress');
+            if (!p) return;
+            p.style.display = ''; p.innerText = '⏳ ' + msg;
+        }
+        window.onInstallProgress = onInstallProgress;
 
         // ---------- VirusTotal (optional pre-install scan) ----------
         function vtKeyChanged() {
@@ -6921,7 +7805,10 @@ Type any command below (e.g. pm list packages -d)
                     sourceRef: installData ? (installData.ref || '') : '',
                     pkg: installData ? (installData.pkg || '') : '',
                     installReason: isNaN(reason) ? -1 : reason,
-                    packageSource: isNaN(source) ? -1 : source
+                    packageSource: isNaN(source) ? -1 : source,
+                    // XAPK: copy its OBB / game data after a successful install
+                    copyExtras: !!(installData && Array.isArray(installData.extras) && installData.extras.length
+                        && document.getElementById('optCopyExtras') && document.getElementById('optCopyExtras').checked)
                 },
                 createFlags: flags.join(' ')
             };
@@ -6937,7 +7824,9 @@ Type any command below (e.g. pm list packages -d)
                 return;
             }
             const verb = n > 1 ? 'install-multiple' : 'install';
+            const ex = (installData && Array.isArray(installData.extras)) ? installData.extras.length : 0;
             el.innerText = 'pm ' + verb + ' ' + built.createFlags + '  (' + n + ' file' + (n === 1 ? '' : 's') + ')'
+                + (built.opts.copyExtras ? '\ncopy ' + ex + ' data file' + (ex === 1 ? '' : 's') + ' to /sdcard/Android/' : '')
                 + (built.opts.dexopt ? '\npm compile -m ' + built.opts.dexoptMode + (built.opts.dexForce ? ' -f ' : ' ') + (built.opts.pkg || '<pkg>') : '');
         }
 
@@ -6955,7 +7844,10 @@ Type any command below (e.g. pm list packages -d)
             let r;
             try { r = JSON.parse(json); } catch (e) { r = { ok: false, output: 'could not read result' }; }
             showToast(r.ok ? 'Installed' : 'Install failed', r.ok ? '✅' : '⚠️');
+            const prog = document.getElementById('installProgress');
+            if (prog) { prog.style.display = 'none'; prog.innerText = ''; }
             let out = r.output || '';
+            if (r.extras) out += '\n\nGame data (OBB):\n' + r.extras;
             if (r.dexopt) out += '\n\nDex optimization:\n' + r.dexopt;
             if (r.sourceDeleted) out += '\n\nSource file deleted.';
             showCommandResults('Install ' + (installData ? (installData.pkg || '') : ''), 'via ' + (r.method || 'install'),
@@ -7110,8 +8002,9 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('fmDestRow').style.display = 'none';
             document.getElementById('fmViewer').style.display = 'none';
             const btns = [];
-            if (!isDir && name.toLowerCase().endsWith('.apk')) btns.push(`<button class="batch-grid-btn accent" onclick="fmInstallFile()">📦 Install</button>`);
-            if (!isDir) btns.push(`<button class="batch-grid-btn" onclick="fmViewFile()">👁 View</button>`);
+            if (!isDir && /\.(apk|apks|apkm|xapk)$/i.test(name)) btns.push(`<button class="batch-grid-btn accent" onclick="fmInstallFile()">📦 Install</button>`);
+            if (!isDir) btns.push(`<button class="batch-grid-btn" onclick="fmViewFile()">${ARC_EXT.test(name) ? '📂 View contents' : '👁 View'}</button>`);
+            if (!isDir && !ARC_EXT.test(name)) btns.push(`<button class="batch-grid-btn" onclick="fmOpenAsArchive()">📂 Open as archive</button>`);
             btns.push(`<button class="batch-grid-btn" onclick="fmStartDest('rename')">✏️ Rename</button>`);
             btns.push(`<button class="batch-grid-btn" onclick="fmStartDest('cp')">📋 Copy</button>`);
             btns.push(`<button class="batch-grid-btn" onclick="fmStartDest('mv')">➡️ Move</button>`);
@@ -7176,6 +8069,25 @@ Type any command below (e.g. pm list packages -d)
         }
         function fmViewFile() {
             if (!fmActionTarget) return;
+            // .apk / .zip / package files open as a folder tree (nothing is extracted). If one turns out not to be a
+            // readable archive, fall back to the plain text viewer below.
+            if (ARC_EXT.test(fmActionTarget.name)) {
+                const target = fmActionTarget;
+                arcOpen(target.full, r => {
+                    showToast((r && r.error) || 'Not a readable archive', '⚠️');
+                    fmActionTarget = target;
+                    fmViewText();
+                });
+                return;
+            }
+            fmViewText();
+        }
+        function fmOpenAsArchive() {
+            if (!fmActionTarget) return;
+            arcOpen(fmActionTarget.full, r => showToast((r && r.error) || 'Not a readable archive', '⚠️'));
+        }
+        function fmViewText() {
+            if (!fmActionTarget) return;
             const v = document.getElementById('fmViewer');
             document.getElementById('fmDestRow').style.display = 'none';
             let txt;
@@ -7212,21 +8124,591 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('fmActionModal').classList.add('show');
         }
 
+        // ---- File manager: archive browser ----
+        // View on an .apk / .zip / package file opens its contents as folders without extracting anything. Entries
+        // can be previewed (text, images, compiled XML decoded back to XML, hex), extracted, renamed, deleted or
+        // edited in place: the archive is rewritten next to the original and swapped in only once that worked.
+        const ARC_EXT = /\.(apk|apks|apkm|xapk|zip|jar|aar|aab|war|epub|docx|xlsx|pptx|odt|ods|odp|ipa|xpi|crx|kmz|cbz|whl|nupkg|vsix|mrpack|3mf|mcpack|mcworld)$/i;
+        const ARC_PAGE = 400;
+        let arc = null;                 // the open archive: { path, name, count, files, size, editable, whyNot, apk, staged, zip64 }
+        let arcDir = '';                // folder shown: "" or "res/layout/"
+        let arcQuery = '';
+        let arcOffset = 0;
+        let arcTotal = 0;
+        let arcRows = [];               // entries drawn so far (rows refer to them by index)
+        let arcBusy = false;
+        let arcTarget = null;           // the entry the sheet is about: { path, dir, name }
+        let arcInputMode = null;        // 'extract' | 'rename' | 'delete' | 'add' | 'mkdir'
+        let arcPreview = null;          // the last preview shown
+        let arcLastOp = null;
+        let arcApkAcked = false;
+        let arcSearchTimer = null;
+
+        function arcBridge(fn, ...args) {
+            if (!window.AndroidBridge || !window.AndroidBridge[fn]) return { ok: false, error: 'Needs the app build' };
+            try { return JSON.parse(window.AndroidBridge[fn](...args)); } catch (e) { return { ok: false, error: String(e && e.message || e) }; }
+        }
+
+        function arcSize(n) {
+            n = Number(n) || 0;
+            if (n < 1024) return n + ' B';
+            if (n < 1048576) return (n / 1024).toFixed(1) + ' KB';
+            if (n < 1073741824) return (n / 1048576).toFixed(1) + ' MB';
+            return (n / 1073741824).toFixed(2) + ' GB';
+        }
+
+        function arcDate(t) {
+            try { return new Date(t).toISOString().slice(0, 10); } catch (e) { return ''; }
+        }
+
+        function arcIcon(name) {
+            const ext = (name.split('.').pop() || '').toLowerCase();
+            if (/^(png|jpe?g|gif|webp|bmp|ico|svg)$/.test(ext)) return '🖼️';
+            if (/^(xml|json|txt|md|html?|js|css|kt|java|smali|properties|mf|sf|yml|yaml|ini|cfg|conf|csv|log|sh|pro|gradle|version|xsd|rc)$/.test(ext)) return '📄';
+            if (ext === 'dex') return '🧩';
+            if (ext === 'so') return '⚙️';
+            if (ext === 'arsc') return '📚';
+            if (ARC_EXT.test(name)) return '📦';
+            if (/^(mp3|ogg|wav|m4a|opus|flac|mp4|mkv|webm)$/.test(ext)) return '🎞️';
+            return '📄';
+        }
+
+        function arcOpen(path, onFail) {
+            if (arcBusy) { showToast('Another archive job is still running', '⏳'); return; }
+            const name = path.split('/').pop();
+            showToast('Opening ' + name + '…', '📦');
+            // let the toast paint first: the bridge call is synchronous
+            setTimeout(() => {
+                const r = arcBridge('archiveOpen', path);
+                if (!r.ok) { if (onFail) onFail(r); else showToast(r.error || 'Not a readable archive', '⚠️'); return; }
+                closeFmAction();
+                arc = r;
+                arcDir = '';
+                arcQuery = '';
+                arcApkAcked = false;
+                document.getElementById('arcSearch').value = '';
+                document.getElementById('fmTopCard').style.display = 'none';
+                document.getElementById('fmListCard').style.display = 'none';
+                document.getElementById('arcCard').style.display = '';
+                arcHeader();
+                arcLoad(true);
+                const card = document.getElementById('arcCard');
+                if (card && card.scrollIntoView) card.scrollIntoView({ block: 'start' });
+            }, 40);
+        }
+
+        function arcClose() {
+            haptic();
+            if (window.AndroidBridge && window.AndroidBridge.archiveClose) window.AndroidBridge.archiveClose();
+            arc = null;
+            arcRows = [];
+            document.getElementById('arcCard').style.display = 'none';
+            document.getElementById('fmTopCard').style.display = '';
+            document.getElementById('fmListCard').style.display = '';
+            fmRefresh();
+        }
+
+        function arcHeader() {
+            if (!arc) return;
+            document.getElementById('arcTitle').innerText = '📦 ' + arc.name;
+            document.getElementById('arcMeta').innerText = arc.files + ' file' + (arc.files === 1 ? '' : 's') + ' • ' + arcSize(arc.size)
+                + (arc.zip64 ? ' • ZIP64' : '') + (arc.staged ? ' • opened from a temporary copy' : '') + '\n' + arc.path;
+            const note = document.getElementById('arcNote');
+            let msg = '';
+            if (!arc.editable) msg = '👁 View only: ' + (arc.whyNot || 'this archive can not be edited here.');
+            else if (arc.apk) msg = '⚠️ Editing an APK changes its contents, so its signature no longer matches. Android will not install it until it is re-signed.';
+            note.style.display = msg ? '' : 'none';
+            note.innerText = msg;
+            document.getElementById('arcAddBtn').style.display = arc.editable ? '' : 'none';
+            document.getElementById('arcFolderBtn').style.display = arc.editable ? '' : 'none';
+        }
+
+        function arcCrumbs() {
+            const el = document.getElementById('arcCrumbs');
+            if (arcQuery) { el.innerHTML = '<span class="arc-sep">Search results for “' + escapeHtml(arcQuery) + '”</span>'; return; }
+            const parts = arcDir ? arcDir.slice(0, -1).split('/') : [];
+            let html = '<button class="arc-crumb' + (parts.length ? '' : ' cur') + '" data-dir="">📦 ' + escapeHtml(arc.name) + '</button>';
+            let acc = '';
+            parts.forEach((seg, i) => {
+                acc += seg + '/';
+                html += '<span class="arc-sep">›</span><button class="arc-crumb' + (i === parts.length - 1 ? ' cur' : '') + '" data-dir="' + escapeHtml(acc) + '">' + escapeHtml(seg) + '</button>';
+            });
+            el.innerHTML = html;
+            el.querySelectorAll('.arc-crumb:not(.cur)').forEach(b => b.addEventListener('click', () => arcGo(b.getAttribute('data-dir'))));
+        }
+
+        function arcRow(e, i) {
+            const flat = !!arcQuery;
+            let sub;
+            if (e.d) {
+                sub = e.f ? e.f + ' file' + (e.f === 1 ? '' : 's') + ' • ' + arcSize(e.s) : 'empty folder';
+            } else {
+                sub = arcSize(e.s);
+                if (e.e) sub += ' • 🔒 encrypted';
+                else if (e.m === 0) sub += ' • stored';
+                else if (e.s > 0 && e.c >= 0) sub += e.c >= e.s ? ' • no gain from packing' : ' • ' + Math.round((e.c / e.s) * 100) + '% packed';
+            }
+            if (e.t) sub += ' • ' + arcDate(e.t);
+            return `<div class="perm-row">
+                <div class="perm-info" style="cursor:pointer;" onclick="arcTap(${i})">
+                    <div class="perm-name">${e.d ? '📁' : arcIcon(e.n)} ${escapeHtml(flat ? e.p : e.n)}</div>
+                    <div class="perm-sub">${escapeHtml(sub)}</div>
+                </div>
+                <button class="perm-toggle-btn locked" onclick="arcMenu(${i})">⋯</button>
+            </div>`;
+        }
+
+        function arcLoad(reset) {
+            if (!arc) return;
+            const list = document.getElementById('arcList');
+            if (reset) { arcOffset = 0; arcRows = []; list.innerHTML = ''; arcCrumbs(); }
+            const r = arcBridge('archiveList', arc.path, arcDir, arcQuery, arcOffset, ARC_PAGE);
+            if (!r.ok) { list.innerHTML = '<div class="list-empty">' + escapeHtml(r.error || 'Could not read the archive') + '</div>'; return; }
+            arcTotal = r.total;
+            const start = arcRows.length;
+            r.entries.forEach(e => arcRows.push(e));
+            if (!arcRows.length) {
+                list.innerHTML = '<div class="list-empty">' + (arcQuery ? 'Nothing matches.' : 'This folder is empty.') + '</div>';
+            } else {
+                list.insertAdjacentHTML('beforeend', r.entries.map((e, k) => arcRow(e, start + k)).join(''));
+            }
+            arcOffset += r.entries.length;
+            const more = document.getElementById('arcMoreBtn');
+            more.style.display = r.more ? '' : 'none';
+            if (r.more) more.innerText = 'Show more (' + (arcTotal - arcOffset) + ' left)';
+        }
+
+        function arcLoadMore() { arcLoad(false); }
+
+        function arcGo(dir) {
+            arcQuery = '';
+            document.getElementById('arcSearch').value = '';
+            arcDir = dir || '';
+            arcLoad(true);
+        }
+
+        function arcUp() {
+            if (arcQuery) { arcGo(arcDir); return; }
+            if (!arcDir) return;
+            const parts = arcDir.slice(0, -1).split('/');
+            parts.pop();
+            arcGo(parts.length ? parts.join('/') + '/' : '');
+        }
+
+        function arcSearchInput() {
+            clearTimeout(arcSearchTimer);
+            arcSearchTimer = setTimeout(() => {
+                arcQuery = (document.getElementById('arcSearch').value || '').trim();
+                arcLoad(true);
+            }, 220);
+        }
+
+        function arcTap(i) {
+            const e = arcRows[i];
+            if (!e) return;
+            if (e.d) arcGo(e.p); else arcMenu(i, true);
+        }
+
+        // ---- the entry sheet ----
+        function arcMenu(i, andView) {
+            const e = arcRows[i];
+            if (!e) return;
+            arcTarget = { path: e.p, dir: !!e.d, name: e.n };
+            arcPreview = null;
+            arcResetSheet();
+            document.getElementById('arcModalName').innerText = e.n;
+            document.getElementById('arcModalPath').innerText = e.p + (e.d ? '' : '\n' + arcSize(e.s) + (e.e ? ' • encrypted' : ''));
+            document.getElementById('arcModalIcon').innerText = e.d ? '📁' : arcIcon(e.n);
+            arcSheetButtons(false);
+            document.getElementById('arcModal').classList.add('show');
+            haptic();
+            if (andView && !e.d) arcViewEntry();
+        }
+
+        function arcSheetButtons(withEdit) {
+            const btns = [];
+            if (!arcTarget.dir) btns.push(`<button class="batch-grid-btn accent" onclick="arcViewEntry()">👁 View</button>`);
+            if (withEdit && arcPreview && arcPreview.editable) btns.push(`<button class="batch-grid-btn accent" onclick="arcEditStart()">✏️ Edit text</button>`);
+            btns.push(`<button class="batch-grid-btn" onclick="arcExtractStart()">📥 Extract…</button>`);
+            if (arc && arc.editable) {
+                btns.push(`<button class="batch-grid-btn" onclick="arcRenameStart()">✏️ Rename / move</button>`);
+                btns.push(`<button class="batch-grid-btn danger" onclick="arcDeleteStart()">🗑️ Delete</button>`);
+            }
+            document.getElementById('arcModalBtns').innerHTML = btns.join('');
+        }
+
+        function arcResetSheet() {
+            ['arcInputRow', 'arcView', 'arcEditor'].forEach(id => { document.getElementById(id).style.display = 'none'; });
+            document.getElementById('arcViewText').style.display = 'none';
+            document.getElementById('arcViewImg').style.display = 'none';
+            document.getElementById('arcViewImg').removeAttribute('src');
+            arcInputMode = null;
+        }
+
+        function arcCloseModal() {
+            haptic();
+            document.getElementById('arcModal').classList.remove('show');
+            document.getElementById('arcViewImg').removeAttribute('src');
+        }
+
+        function arcViewEntry() {
+            if (!arc || !arcTarget || arcTarget.dir) return;
+            const r = arcBridge('archiveRead', arc.path, arcTarget.path);
+            if (!r.ok) { showToast(r.error || 'Could not read the entry', '⚠️'); return; }
+            arcPreview = r;
+            arcResetSheet();
+            document.getElementById('arcView').style.display = '';
+            let meta = arcSize(r.size);
+            if (r.method === 8 && r.size > 0) meta += ' • ' + arcSize(r.csize) + ' packed';
+            else if (r.method === 0) meta += ' • stored';
+            meta += ' • CRC ' + ((r.crc >>> 0).toString(16).padStart(8, '0')) + (r.mtime ? ' • ' + arcDate(r.mtime) : '');
+            const box = document.getElementById('arcViewText');
+            const img = document.getElementById('arcViewImg');
+            if (r.kind === 'image') {
+                img.src = 'data:' + r.mime + ';base64,' + r.b64;
+                img.style.display = '';
+            } else {
+                box.style.display = '';
+                if (r.kind === 'hex') {
+                    box.style.whiteSpace = 'pre';
+                    box.style.wordBreak = 'normal';
+                    box.textContent = (r.note ? r.note + '\n\n' : '') + (r.hex || '(empty)') + (r.size > 512 ? '\n… first 512 bytes of ' + arcSize(r.size) : '');
+                } else {
+                    box.style.whiteSpace = 'pre-wrap';
+                    box.style.wordBreak = 'break-word';
+                    box.textContent = r.text || '(empty)';
+                    if (r.kind === 'axml') meta += ' • compiled XML shown as text (read-only)';
+                    if (r.truncated) meta += ' • showing the first ' + arcSize(262144);
+                    if (r.kind === 'text' && !r.editable && r.editNote) meta += ' • ' + r.editNote;
+                }
+            }
+            document.getElementById('arcViewMeta').innerText = meta;
+            arcSheetButtons(true);
+        }
+
+        function arcEditStart() {
+            if (!arcPreview || !arcPreview.editable) return;
+            arcResetSheet();
+            document.getElementById('arcEditor').style.display = '';
+            const ta = document.getElementById('arcEditText');
+            ta.value = arcPreview.text;
+            ta.focus();
+        }
+
+        function arcCancelEdit() {
+            arcResetSheet();
+            if (arcPreview) arcViewEntry();
+        }
+
+        function arcSaveEdit() {
+            if (!arcPreview || !arcTarget) return;
+            const text = document.getElementById('arcEditText').value;
+            arcRunEdit({ op: 'replaceText', name: arcTarget.path, text, crlf: !!arcPreview.crlf });
+        }
+
+        function arcInputSetup(mode, label, value, confirmText, danger, label2, value2) {
+            arcResetSheet();
+            arcInputMode = mode;
+            document.getElementById('arcInputRow').style.display = '';
+            document.getElementById('arcInputLabel').innerText = label;
+            const input = document.getElementById('arcInput');
+            input.style.display = label ? '' : 'none';
+            input.value = value || '';
+            const l2 = document.getElementById('arcInput2Label'), i2 = document.getElementById('arcInput2');
+            l2.style.display = i2.style.display = label2 ? '' : 'none';
+            l2.innerText = label2 || '';
+            i2.value = value2 || '';
+            const btn = document.getElementById('arcInputConfirm');
+            btn.innerText = confirmText;
+            btn.className = danger ? 'mode-action-btn' : 'mode-action-btn primary';
+            btn.style.background = danger ? 'var(--danger, #e5484d)' : '';
+            if (label) input.focus();
+        }
+
+        function arcDefaultDest() {
+            const base = (arc.name || 'archive').replace(/\.[^.]+$/, '');
+            return '/storage/emulated/0/Download/' + base;
+        }
+
+        function arcExtractStart() {
+            if (!arcTarget) return;
+            arcInputSetup('extract', arcTarget.dir ? 'Extract this folder into (its own folder is created inside)' : 'Extract this file into folder', arcDefaultDest(), '📥 Extract');
+        }
+
+        function arcExtractHere() {
+            if (!arc) return;
+            const name = arcDir ? arcDir.slice(0, -1).split('/').pop() : arc.name;
+            arcTarget = { path: arcDir, dir: true, name };
+            arcPreview = null;
+            document.getElementById('arcModalName').innerText = arcDir ? name : 'Whole archive';
+            document.getElementById('arcModalPath').innerText = arcDir || arc.path;
+            document.getElementById('arcModalIcon').innerText = '📁';
+            document.getElementById('arcModalBtns').innerHTML = '';
+            arcExtractStart();
+            document.getElementById('arcModal').classList.add('show');
+            haptic();
+        }
+
+        function arcRenameStart() {
+            if (!arcTarget) return;
+            arcInputSetup('rename', 'New path inside the archive (change the folder part to move it)', arcTarget.path, 'Rename');
+        }
+
+        function arcDeleteStart() {
+            if (!arcTarget) return;
+            arcInputSetup('delete', '', '', 'Delete “' + arcTarget.name + '” from the archive?', true);
+            document.getElementById('arcInputLabel').innerText = 'The archive file is rewritten without ' + (arcTarget.dir ? 'this folder and everything in it.' : 'this file.');
+            document.getElementById('arcInputLabel').style.display = '';
+        }
+
+        function arcAddFile() {
+            if (!arc || !arc.editable) return;
+            arcTarget = { path: arcDir, dir: true, name: arcDir || arc.name };
+            document.getElementById('arcModalName').innerText = 'Add a file';
+            document.getElementById('arcModalPath').innerText = 'to ' + (arcDir || arc.name);
+            document.getElementById('arcModalIcon').innerText = '＋';
+            document.getElementById('arcModalBtns').innerHTML = '';
+            arcInputSetup('add', 'File to add (path on storage)', '/storage/emulated/0/Download/', 'Add to archive',
+                false, 'Name inside the archive (a folder ending in / keeps the file name)', arcDir);
+            document.getElementById('arcModal').classList.add('show');
+            haptic();
+        }
+
+        function arcNewFolder() {
+            if (!arc || !arc.editable) return;
+            arcTarget = { path: arcDir, dir: true, name: arcDir || arc.name };
+            document.getElementById('arcModalName').innerText = 'New folder';
+            document.getElementById('arcModalPath').innerText = 'in ' + (arcDir || arc.name);
+            document.getElementById('arcModalIcon').innerText = '＋';
+            document.getElementById('arcModalBtns').innerHTML = '';
+            arcInputSetup('mkdir', 'Folder name', '', 'Create');
+            document.getElementById('arcModal').classList.add('show');
+            haptic();
+        }
+
+        function arcInputConfirm() {
+            if (!arc || !arcTarget || !arcInputMode) return;
+            const v = (document.getElementById('arcInput').value || '').trim();
+            const v2 = (document.getElementById('arcInput2').value || '').trim();
+            if (arcInputMode === 'extract') {
+                if (!v) { showToast('Enter a folder', '⚠️'); return; }
+                arcStartExtract(arcTarget.path, v);
+            } else if (arcInputMode === 'rename') {
+                if (!v || v === arcTarget.path) { showToast('Enter a new path', '⚠️'); return; }
+                arcRunEdit({ op: 'rename', name: arcTarget.path, to: v });
+            } else if (arcInputMode === 'delete') {
+                arcRunEdit({ op: 'delete', name: arcTarget.path });
+            } else if (arcInputMode === 'mkdir') {
+                if (!v) { showToast('Enter a name', '⚠️'); return; }
+                arcRunEdit({ op: 'mkdir', to: arcDir + v.replace(/^\/+/, '') });
+            } else if (arcInputMode === 'add') {
+                if (!v) { showToast('Enter the file to add', '⚠️'); return; }
+                const base = v.split('/').pop();
+                let to = v2.replace(/^\/+/, '');
+                if (!to || to.endsWith('/')) to += base;
+                arcRunEdit({ op: 'add', from: v, to, overwrite: false });
+            }
+        }
+
+        // ---- running jobs ----
+        function arcSetBusy(on, text) {
+            arcBusy = on;
+            const st = document.getElementById('arcStatus');
+            st.style.display = on ? '' : 'none';
+            if (on) st.innerText = text || 'Working…';
+        }
+
+        function arcStartExtract(path, dest) {
+            if (arcBusy) { showToast('Another archive job is still running', '⏳'); return; }
+            arcLastOp = { op: 'extract' };
+            arcSetBusy(true, 'Extracting…');
+            arcCloseModal();
+            const st = window.AndroidBridge && window.AndroidBridge.archiveExtract ? window.AndroidBridge.archiveExtract(arc.path, path, dest) : 'unavailable';
+            if (st !== 'started') { arcSetBusy(false); showToast(st === 'busy' ? 'Another archive job is still running' : 'Needs the app build', '⚠️'); }
+        }
+
+        function arcRunEdit(op) {
+            if (arcBusy) { showToast('Another archive job is still running', '⏳'); return; }
+            if (!arc.editable) { showToast(arc.whyNot || 'This archive is view-only', '⚠️'); return; }
+            if (arc.apk && !arcApkAcked) {
+                if (!confirm('Editing an APK changes its contents, so its signature no longer matches. Android will not install it until it is re-signed.\n\nContinue?')) return;
+                arcApkAcked = true;
+            }
+            arcLastOp = op;
+            arcSetBusy(true, 'Rewriting the archive…');
+            arcCloseModal();
+            const st = window.AndroidBridge && window.AndroidBridge.archiveEdit ? window.AndroidBridge.archiveEdit(arc.path, JSON.stringify(op)) : 'unavailable';
+            if (st !== 'started') { arcSetBusy(false); showToast(st === 'busy' ? 'Another archive job is still running' : 'Needs the app build', '⚠️'); }
+        }
+
+        function onArchiveProgress(msg) {
+            if (!arcBusy) return;
+            const st = document.getElementById('arcStatus');
+            st.style.display = '';
+            st.innerText = msg;
+        }
+
+        function onArchiveResult(r) {
+            arcSetBusy(false);
+            if (!r) return;
+            if (!r.ok) {
+                const wasAdd = arcLastOp && arcLastOp.op === 'add';
+                if (wasAdd && /already in the archive/.test(r.error || '') && confirm('“' + arcLastOp.to + '” is already in the archive. Replace it?')) {
+                    arcRunEdit(Object.assign({}, arcLastOp, { overwrite: true }));
+                    return;
+                }
+                showToast(r.error || 'The archive job failed', '⚠️');
+                showCommandResults('Archive', (arcLastOp && arcLastOp.op) || '', [{ name: arc ? arc.name : '', pkg: arc ? arc.path : '', output: r.error || 'failed', success: false }]);
+                return;
+            }
+            if (r.op === 'extract') {
+                showToast('Extracted ' + r.files + ' file' + (r.files === 1 ? '' : 's') + ' (' + arcSize(r.bytes) + ') to ' + r.dest + (r.skipped ? ' • ' + r.skipped + ' unsafe name(s) skipped' : ''), '📥');
+                return;
+            }
+            showToast(r.message || 'Done', '✔');
+            arcAfterEdit();
+        }
+
+        // The archive changed on disk: re-open it (fresh counts, size, staging) and show the same folder if it still exists.
+        function arcAfterEdit() {
+            if (!arc) return;
+            const keep = arcDir;
+            const r = arcBridge('archiveOpen', arc.path);
+            if (!r.ok) { showToast(r.error || 'Could not re-open the archive', '⚠️'); arcClose(); return; }
+            arc = r;
+            arcHeader();
+            arcDir = keep;
+            arcQuery = (document.getElementById('arcSearch').value || '').trim();
+            arcLoad(true);
+            if (arcDir && arcTotal === 0 && !arcQuery) arcUp();
+        }
+
         // ---- Logcat ----
+        // The device returns plain `logcat -v threadtime` text. It is split into one entry per log call
+        // (consecutive lines sharing time + pid + tid + level + tag - e.g. a stack trace - become one
+        // block), then drawn as rows with a level badge, a level-colored message, and a tappable key.
+        const LC_LEVELS = [['V', 'Verbose'], ['D', 'Debug'], ['I', 'Info'], ['W', 'Warn'], ['E', 'Error'], ['F', 'Fatal']];
+        const LC_RE = /^(\d{2}-\d{2})\s+(\d{2}:\d{2}:\d{2}\.\d{3})\s+(\d+)\s+(\d+)\s+([VDIWEF])\s+(.*?)\s*:\s?(.*)$/;
+        const LC_MAX_ENTRIES = 2500;
         let logcatTimer = null;
+        let logcatEntries = [];                 // parsed entries of the last fetch
+        let logcatCounts = { V: 0, D: 0, I: 0, W: 0, E: 0, F: 0 };
+        const logcatHidden = new Set();         // levels switched off through the key
+
         function onLogcatShown() { logcatRefresh(); }
+
+        function logcatParse(text) {
+            const out = [];
+            let cur = null;
+            String(text || '').split('\n').forEach(line => {
+                const raw = line.replace(/\r$/, '');
+                if (!raw.trim()) return;
+                const m = LC_RE.exec(raw);
+                if (m) {
+                    const date = m[1], time = m[2], pid = m[3], tid = m[4], lvl = m[5], tag = m[6], msg = m[7];
+                    if (cur && cur.time === time && cur.pid === pid && cur.tid === tid && cur.lvl === lvl && cur.tag === tag) {
+                        cur.lines.push(msg); cur.raws.push(raw);
+                    } else {
+                        cur = { kind: 'entry', date: date, time: time, pid: pid, tid: tid, lvl: lvl, tag: tag, lines: [msg], raws: [raw] };
+                        out.push(cur);
+                    }
+                } else if (/^-{3,}\s*beginning of/i.test(raw)) {
+                    cur = null;
+                    out.push({ kind: 'meta', text: raw.replace(/^-+\s*/, ''), raws: [raw] });
+                } else if (cur) {
+                    cur.lines.push(raw); cur.raws.push(raw);      // a line without its own header continues the entry
+                } else {
+                    out.push({ kind: 'meta', text: raw, raws: [raw] });
+                }
+            });
+            return out;
+        }
+
+        // Escapes text and wraps every match of the filter in <mark>.
+        function lcHighlight(s, rx) {
+            if (!rx) return escapeHtml(s);
+            let out = '', last = 0, m;
+            rx.lastIndex = 0;
+            while ((m = rx.exec(s)) !== null) {
+                if (m[0] === '') { rx.lastIndex++; continue; }
+                out += escapeHtml(s.slice(last, m.index)) + '<mark class="lc-hit">' + escapeHtml(m[0]) + '</mark>';
+                last = m.index + m[0].length;
+            }
+            return out + escapeHtml(s.slice(last));
+        }
+
+        function logcatRenderKey() {
+            const key = document.getElementById('logcatKey');
+            if (!key) return;
+            key.innerHTML = LC_LEVELS.map(l =>
+                `<span class="lc-chip lvl-${l[0]}${logcatHidden.has(l[0]) ? ' off' : ''}" data-lvl="${l[0]}" role="button" tabindex="0" onclick="logcatToggleLevel('${l[0]}')" title="Tap to ${logcatHidden.has(l[0]) ? 'show' : 'hide'} ${l[1]} lines">` +
+                `<span class="lc-dot"></span><span class="lc-name">${l[0]} · ${l[1]}</span><span class="lc-n">${logcatCounts[l[0]] || 0}</span></span>`
+            ).join('');
+        }
+
+        function logcatToggleLevel(lvl) {
+            haptic();
+            if (logcatHidden.has(lvl)) logcatHidden.delete(lvl); else logcatHidden.add(lvl);
+            logcatRenderKey();
+            logcatDraw(false);
+        }
+
+        // Shows a plain status line (errors, "no matching lines", cleared) instead of entries.
+        function logcatNotice(msg) {
+            logcatEntries = [];
+            logcatCounts = { V: 0, D: 0, I: 0, W: 0, E: 0, F: 0 };
+            logcatRenderKey();
+            const el = document.getElementById('logcatOutput');
+            if (el) el.innerHTML = `<div class="lc-meta">${escapeHtml(msg)}</div>`;
+        }
+
+        // Draws logcatEntries. toBottom: jump to the newest line; otherwise only follow the log when the
+        // reader is already at the bottom, so a live update never yanks them away from what they're reading.
+        function logcatDraw(toBottom) {
+            const el = document.getElementById('logcatOutput');
+            if (!el) return;
+            const wasAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
+            const needle = (document.getElementById('logcatFilter').value || '').trim();
+            const rx = needle ? new RegExp(needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'ig') : null;
+            let entries = logcatEntries;
+            if (entries.length > LC_MAX_ENTRIES) entries = entries.slice(entries.length - LC_MAX_ENTRIES);
+            const html = entries.map(e => {
+                if (e.kind === 'meta') return `<div class="lc-meta">${escapeHtml(e.text)}</div>`;
+                if (logcatHidden.has(e.lvl)) return '';
+                return `<div class="lc-row lvl-${e.lvl}">` +
+                    `<div class="lc-badge" title="${e.lvl}">${e.lvl}</div>` +
+                    `<div class="lc-main">` +
+                    `<div class="lc-head"><span class="lc-tag">${lcHighlight(e.tag, rx)}</span><span class="lc-time">${e.time}</span><span class="lc-pid">${e.pid}/${e.tid}</span></div>` +
+                    `<div class="lc-msg">${e.lines.map(l => lcHighlight(l, rx)).join('\n')}</div>` +
+                    `</div></div>`;
+            }).join('');
+            const anyVisible = entries.some(e => e.kind === 'entry' && !logcatHidden.has(e.lvl));
+            el.innerHTML = anyVisible ? html : (html || '') + `<div class="lc-meta">${entries.some(e => e.kind === 'entry') ? 'Every level is hidden - tap the color key above to show some.' : 'No log lines.'}</div>`;
+            if (toBottom || wasAtBottom) el.scrollTop = el.scrollHeight;
+        }
+
+        function logcatRender(text, toBottom) {
+            const t = String(text || '');
+            // The bridge reports problems as plain text rather than log lines
+            if (!t.trim()) { logcatNotice('(no output)'); return; }
+            if (/^Error:/.test(t) || /^\(no matching/.test(t)) { logcatNotice(t.trim()); return; }
+            logcatEntries = logcatParse(t);
+            logcatCounts = { V: 0, D: 0, I: 0, W: 0, E: 0, F: 0 };
+            logcatEntries.forEach(e => { if (e.kind === 'entry') logcatCounts[e.lvl] += e.lines.length; });
+            logcatRenderKey();
+            logcatDraw(toBottom);
+        }
+
         // The actual fetch, with no privilege prompt, so the live-poll loop can't spam the guard modal.
         // While live, a smaller tail keeps each (synchronous) shell call light so updates feel quicker.
         function logcatFetch(live) {
-            if (!window.AndroidBridge || !window.AndroidBridge.getLogcat) { document.getElementById('logcatOutput').innerText = 'Logcat needs the app build.'; return; }
+            if (!window.AndroidBridge || !window.AndroidBridge.getLogcat) { logcatNotice('Logcat needs the app build.'); return; }
             const level = document.getElementById('logcatLevel').value;
             let lines = parseInt(document.getElementById('logcatLines').value, 10) || 500;
             if (live) lines = Math.min(lines, 300);
             const filter = document.getElementById('logcatFilter').value || '';
             const out = window.AndroidBridge.getLogcat(level, filter, lines);
-            const el = document.getElementById('logcatOutput');
-            el.innerText = out || '(no output)';
-            el.scrollTop = el.scrollHeight;
+            logcatRender(out, !live);
         }
         function logcatRefresh() {
             if (!guardPrivilege('Logcat')) return;
@@ -7252,13 +8734,17 @@ Type any command below (e.g. pm list packages -d)
             // Clear the on-screen terminal directly (and the device buffer) - don't re-fetch, so it stays
             // visibly empty until the next Play/Refresh instead of instantly repopulating.
             if (window.AndroidBridge && window.AndroidBridge.clearLogcat) window.AndroidBridge.clearLogcat();
-            document.getElementById('logcatOutput').innerText = '(cleared)';
+            logcatNotice('(cleared)');
             showToast('Log cleared', '🧹');
         }
+        // Copies the original log lines (not the redrawn rows), skipping any level hidden via the key.
         function logcatCopy() {
-            const txt = document.getElementById('logcatOutput').innerText || '';
+            const lines = [];
+            logcatEntries.forEach(e => { if (e.kind === 'meta' || !logcatHidden.has(e.lvl)) e.raws.forEach(r => lines.push(r)); });
+            const txt = lines.join('\n') || document.getElementById('logcatOutput').innerText || '';
             if (window.AndroidBridge && window.AndroidBridge.copyToClipboard) { window.AndroidBridge.copyToClipboard(txt); showToast('Copied log', '📋'); }
         }
+        logcatRenderKey();
 
         // ---- Play Store / Aurora update routing (lightweight) ----
         function refreshStoreStatus() {
@@ -8151,6 +9637,7 @@ Type any command below (e.g. pm list packages -d)
 
         // Terminal Console
         function runTerminalCmd() {
+            if (rishActive) { rishSubmit(); return; }
             const input = document.getElementById('termCmd');
             const cmd = input.value.trim();
             if (!cmd) return;
@@ -8169,6 +9656,231 @@ Type any command below (e.g. pm list packages -d)
                 showCommandResults('Shell Command Result', cmd, [{ name: cmd, pkg: 'shell', output: res, success: true }]);
             }
             term.scrollTop = term.scrollHeight;
+            if (document.getElementById('termSearch').value) termFind(0);
+        }
+
+        // ---------- Rish mode: a persistent Shizuku shell inside the terminal ----------
+        // Tapping 🐚 Rish switches the working mode to Shizuku and opens ONE long-lived shell as the Shizuku
+        // shell user, so cd / export / variables stick from one command to the next (like `adb shell` or the
+        // real rish). Output streams in while a command runs and the RUN button turns into STOP.
+
+        function rishShortPrompt() {
+            const p = rishPromptText || '$';
+            return p.length > 36 ? '…' + p.slice(-35) : p;
+        }
+
+        function rishWho() {
+            return rishUid === 0 ? 'root (uid 0)' : rishUid > 0 ? 'shell (uid ' + rishUid + ')' : 'Shizuku shell';
+        }
+
+        function rishSyncUi() {
+            const btn = document.getElementById('rishBtn');
+            const run = document.getElementById('termRunBtn');
+            const line = document.getElementById('termPromptLine');
+            const input = document.getElementById('termCmd');
+            const box = document.getElementById('termOutput');
+            if (btn) {
+                btn.classList.toggle('rish-on', rishActive);
+                btn.classList.toggle('rish-busy', rishStarting);
+                btn.innerText = rishStarting ? '🐚 Starting…' : (rishActive ? '🐚 Exit Rish' : '🐚 Rish mode');
+            }
+            if (box) box.classList.toggle('rish-on', rishActive);
+            if (line) {
+                line.style.display = rishActive ? '' : 'none';
+                line.innerText = rishShortPrompt();
+            }
+            if (run) {
+                const stopping = rishActive && rishRunning;
+                run.classList.toggle('stop', stopping);
+                run.innerText = stopping ? 'STOP' : 'RUN';
+            }
+            if (input) input.placeholder = rishActive ? 'Rish shell command…' : 'Enter shell command...';
+            if (rishActive) {
+                const title = document.getElementById('termActiveModeTitle');
+                const desc = document.getElementById('termActiveModeDesc');
+                if (title) title.innerText = '🐚 Rish shell • ' + rishWho();
+                if (desc) desc.innerText = 'A persistent Shizuku shell: cd and exports stick. Type exit or tap Exit Rish to leave.';
+            }
+        }
+
+        function rishNote(text) {
+            const term = document.getElementById('termOutput');
+            if (!term) return;
+            if (!rishEndsNl) term.appendChild(document.createTextNode('\n'));
+            rishEndsNl = true;
+            term.insertAdjacentHTML('beforeend', '<span class="rish-note">' + escapeHtml(text) + '</span>\n');
+            term.scrollTop = term.scrollHeight;
+        }
+
+        function toggleRishMode() {
+            haptic();
+            if (rishActive) { leaveRish('🐚 Left the Rish shell. The working mode is still Shizuku.'); return; }
+            if (rishStarting) return;
+            if (!window.AndroidBridge || !window.AndroidBridge.rishStart) { showToast('Rish mode needs the app and Shizuku', 'ℹ️'); return; }
+            rishAwaitingAuth = false;
+            let ready = false;
+            try {
+                const sz = JSON.parse(window.AndroidBridge.checkShizukuStatus() || '{}');
+                ready = !!sz.authorized && lastModesData && lastModesData.configuredMode === 'shizuku';
+            } catch (e) {}
+            if (ready) { startRishShell(); return; }
+            // Switch the working mode to Shizuku first (this also asks for Shizuku permission when needed)
+            selectModeUI('shizuku', res => {
+                if (res && res.ok) { startRishShell(); return; }
+                const msg = String((res && res.message) || '');
+                if (/approve/i.test(msg)) { rishAwaitingAuth = true; return; }   // onShizukuPermissionResult continues
+                if (/not running/i.test(msg)) openShizukuAppUI();
+            });
+        }
+
+        function startRishShell() {
+            rishStarting = true;
+            rishSyncUi();
+            const st = String(window.AndroidBridge.rishStart() || '');
+            if (st === 'not_authorized') {
+                rishStarting = false;
+                rishSyncUi();
+                showToast('Shizuku is not authorized yet. Approve it to use Rish.', '🛡️');
+            }
+            // otherwise onRishStarted() reports the result
+        }
+
+        function onRishStarted(res) {
+            rishStarting = false;
+            if (!res || !res.ok) {
+                rishSyncUi();
+                showToast((res && res.message) || 'Could not start the Rish shell', '⚠️');
+                return;
+            }
+            rishActive = true;
+            rishRunning = false;
+            rishUid = typeof res.uid === 'number' ? res.uid : -1;
+            rishPromptText = res.prompt || '$';
+            const term = document.getElementById('termOutput');
+            clearFind(term);
+            if (!rishEndsNl) term.appendChild(document.createTextNode('\n'));
+            rishEndsNl = true;
+            term.insertAdjacentHTML('beforeend', '<span class="rish-note">' + escapeHtml(
+                (res.reused ? '🐚 Back in the open Rish shell' : '🐚 Rish shell ready') + ' — running as ' + rishWho() + ' through Shizuku.\n' +
+                'cd and exports persist between commands. Type exit (or tap Exit Rish) to leave.') + '</span>\n');
+            term.scrollTop = term.scrollHeight;
+            rishSyncUi();
+            showToast('Rish shell ready • working mode: Shizuku', '🐚');
+            const input = document.getElementById('termCmd');
+            if (input) input.focus();
+        }
+
+        function leaveRish(note) {
+            if (window.AndroidBridge && window.AndroidBridge.rishClose) { try { window.AndroidBridge.rishClose(); } catch (e) {} }
+            const wasActive = rishActive;
+            rishActive = false;
+            rishRunning = false;
+            rishStarting = false;
+            rishAwaitingAuth = false;
+            if (wasActive && note) rishNote(note);
+            rishSyncUi();
+            if (typeof checkAllWorkingModes === 'function') checkAllWorkingModes(false);
+        }
+
+        function termRunClick() {
+            if (rishActive && rishRunning) { rishStopCmd(); return; }
+            runTerminalCmd();
+        }
+
+        function rishStopCmd() {
+            haptic();
+            if (window.AndroidBridge && window.AndroidBridge.rishStop) window.AndroidBridge.rishStop();
+            showToast('Stopping the command…', '⏹');
+        }
+
+        function rishSubmit() {
+            const input = document.getElementById('termCmd');
+            const cmd = input.value.trim();
+            if (!cmd) return;
+            if (rishRunning) { showToast('A command is still running. Tap STOP to end it.', '⏳'); return; }
+            haptic();
+            input.value = '';
+            const term = document.getElementById('termOutput');
+            clearFind(term);
+            if (/^(clear|cls|reset)$/.test(cmd)) { term.textContent = ''; rishEndsNl = true; rishTermChars = 0; return; }
+            rishStick = true;
+            if (/^exit(\s+-?\d+)?$/.test(cmd)) { leaveRish('🐚 Left the Rish shell. The working mode is still Shizuku.'); return; }
+            if (!rishEndsNl) term.appendChild(document.createTextNode('\n'));
+            rishEndsNl = true;
+            term.insertAdjacentHTML('beforeend', '<span class="rish-prompt">' + escapeHtml(rishShortPrompt()) + '</span> ' + escapeHtml(cmd) + '\n');
+            term.scrollTop = term.scrollHeight;
+            const st = window.AndroidBridge ? String(window.AndroidBridge.rishRun(cmd, 'r' + (++rishRunSeq)) || '') : 'no_shell';
+            if (st === 'ok') { rishRunning = true; rishSyncUi(); return; }
+            if (st === 'busy') { showToast('A command is still running. Tap STOP to end it.', '⏳'); return; }
+            leaveRish('🐚 The Rish shell is no longer running.');
+        }
+
+        // Output streams in from the app while a command runs (and from background jobs between commands).
+        // Appending a text node is cheap; the scroll is done once per frame, and the oldest output is trimmed so
+        // a very chatty command cannot make the page heavy.
+        function rishTrim(term) {
+            let n = term.firstChild;
+            if (n && n.nodeType === 1 && n.classList.contains('rish-trim')) n = n.nextSibling;   // keep the marker
+            let removed = 0;
+            while (n && n.nextSibling && rishTermChars > RISH_TERM_KEEP) {
+                const next = n.nextSibling;
+                const len = (n.textContent || '').length;
+                term.removeChild(n);
+                rishTermChars -= len;
+                removed += len;
+                n = next;
+            }
+            const first = term.firstChild;
+            if (removed && !(first && first.nodeType === 1 && first.classList.contains('rish-trim'))) {
+                const m = document.createElement('span');
+                m.className = 'rish-note rish-trim';
+                m.textContent = '[older output trimmed]\n';
+                term.insertBefore(m, first);
+            }
+        }
+
+        function onRishOutput(runId, text) {
+            const term = document.getElementById('termOutput');
+            if (!term || !text) return;
+            term.appendChild(document.createTextNode(text));
+            rishTermChars += text.length;
+            rishEndsNl = text.charAt(text.length - 1) === '\n';
+            if (rishTermChars > RISH_TERM_MAX) rishTrim(term);
+            if (rishStick && !rishScrollQueued) {
+                rishScrollQueued = true;
+                requestAnimationFrame(() => { rishScrollQueued = false; term.scrollTop = term.scrollHeight; });
+            }
+        }
+
+        (function initRishScroll() {
+            const term = document.getElementById('termOutput');
+            if (term) term.addEventListener('scroll', () => {
+                rishStick = term.scrollHeight - term.scrollTop - term.clientHeight < 80;
+            }, { passive: true });
+        })();
+
+        function onRishDone(runId, info) {
+            if (!rishActive) return;          // the shell was closed while the command was running
+            info = info || {};
+            rishRunning = false;
+            if (info.prompt) rishPromptText = info.prompt;
+            let note = '';
+            if (info.error) note = info.error;
+            else if (info.restarted) note = 'stopped: the command ignored the stop signal, so the shell was restarted (your folder was kept, exported variables were reset)';
+            else if (info.timedOut) note = 'stopped after 10 minutes without finishing';
+            else if (info.stopped) note = 'stopped';
+            else if (!info.exited && typeof info.exit === 'number' && info.exit !== 0) note = 'exit ' + info.exit;
+            if (note) {
+                rishNote('[' + note + ']');
+            } else if (!rishEndsNl) {
+                document.getElementById('termOutput').appendChild(document.createTextNode('\n'));
+                rishEndsNl = true;
+            }
+            if (info.exited) {
+                leaveRish('🐚 The Rish shell ended' + (typeof info.exit === 'number' && info.exit >= 0 ? ' (exit ' + info.exit + ')' : '') + '. Tap Rish mode to open a new one.');
+                return;
+            }
+            rishSyncUi();
             if (document.getElementById('termSearch').value) termFind(0);
         }
 

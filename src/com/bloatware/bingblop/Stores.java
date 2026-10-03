@@ -4,7 +4,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 
@@ -37,52 +36,77 @@ public final class Stores {
      * than one app's APKs. The icon is the GitHub owner's avatar (github.com/{owner}.png).
      */
     private static final String[][] KOMI = {
-        {"newpipe", "NewPipe", "TeamNewPipe", "NewPipe", "org.schabi.newpipe", "", "Media", "Lightweight YouTube frontend - no ads, background play, downloads."},
-        {"libretube", "LibreTube", "libre-tube", "LibreTube", "com.github.libretube", "", "Media", "Privacy-friendly YouTube through the Piped backend."},
-        {"mihon", "Mihon", "mihonapp", "mihon", "app.mihon", "", "Media", "Manga reader (the maintained Tachiyomi successor)."},
-        {"seal", "Seal", "JunkFood02", "Seal", "com.junkfood.seal", "", "Utility", "Video/audio downloader powered by yt-dlp."},
-        {"revanced-manager", "ReVanced Manager", "ReVanced", "revanced-manager", "app.revanced.manager.flutter", "", "Utility", "Patch your own apps with ReVanced."},
-        {"obtainium", "Obtainium", "ImranR98", "Obtainium", "dev.imranr.obtainium", "", "Utility", "Get app updates straight from the source."},
-        {"aegis", "Aegis Authenticator", "beemdevelopment", "Aegis", "com.beemdevelopment.aegis", "", "Security", "Secure, encrypted 2FA / TOTP authenticator."},
-        {"keepassdx", "KeePassDX", "Kunzisoft", "KeePassDX", "com.kunzisoft.keepass.libre", "", "Security", "Lightweight KeePass password manager."},
+        {"newpipe", "NewPipe", "TeamNewPipe", "NewPipe", "org.schabi.newpipe", "", "Video", "Lightweight YouTube frontend - no ads, background play, downloads."},
+        {"libretube", "LibreTube", "libre-tube", "LibreTube", "com.github.libretube", "", "Video", "Privacy-friendly YouTube through the Piped backend."},
+        {"mihon", "Mihon", "mihonapp", "mihon", "app.mihon", "", "Reading", "Manga reader (the maintained Tachiyomi successor)."},
+        {"seal", "Seal", "JunkFood02", "Seal", "com.junkfood.seal", "", "Video", "Video/audio downloader powered by yt-dlp."},
+        {"revanced-manager", "ReVanced Manager", "ReVanced", "revanced-manager", "app.revanced.manager.flutter", "", "System tools", "Patch your own apps with ReVanced."},
+        {"obtainium", "Obtainium", "ImranR98", "Obtainium", "dev.imranr.obtainium", "", "System tools", "Get app updates straight from the source."},
+        {"aegis", "Aegis Authenticator", "beemdevelopment", "Aegis", "com.beemdevelopment.aegis", "", "Privacy & Security", "Secure, encrypted 2FA / TOTP authenticator."},
+        {"keepassdx", "KeePassDX", "Kunzisoft", "KeePassDX", "com.kunzisoft.keepass.libre", "", "Privacy & Security", "Lightweight KeePass password manager."},
         {"ankidroid", "AnkiDroid", "ankidroid", "Anki-Android", "com.ichi2.anki", "", "Education", "Flashcards with spaced repetition."},
-        {"organicmaps", "Organic Maps", "organicmaps", "organicmaps", "app.organicmaps", "", "Navigation", "Offline OpenStreetMap maps & navigation."},
-        {"cromite", "Cromite", "uazo", "cromite", "org.cromite.cromite", "", "Browser", "Chromium fork with built-in ad-blocking and privacy."},
-        {"materialfiles", "Material Files", "zhanghai", "MaterialFiles", "me.zhanghai.android.files", "", "Utility", "Material Design open-source file manager."},
-        {"fossify-gallery", "Fossify Gallery", "FossifyOrg", "Gallery", "org.fossify.gallery", "", "Media", "Offline photo gallery, no ads or tracking."},
+        {"organicmaps", "Organic Maps", "organicmaps", "organicmaps", "app.organicmaps", "", "Maps & Navigation", "Offline OpenStreetMap maps & navigation."},
+        {"cromite", "Cromite", "uazo", "cromite", "org.cromite.cromite", "", "Browsers", "Chromium fork with built-in ad-blocking and privacy."},
+        {"materialfiles", "Material Files", "zhanghai", "MaterialFiles", "me.zhanghai.android.files", "", "File management", "Material Design open-source file manager."},
+        {"fossify-gallery", "Fossify Gallery", "FossifyOrg", "Gallery", "org.fossify.gallery", "", "Photos & Camera", "Offline photo gallery, no ads or tracking."},
         {"fossify-calendar", "Fossify Calendar", "FossifyOrg", "Calendar", "org.fossify.calendar", "", "Productivity", "Private offline calendar."},
-        {"fossify-phone", "Fossify Phone", "FossifyOrg", "Phone", "org.fossify.phone", "", "Utility", "Dialer with no ads or tracking."},
+        {"fossify-phone", "Fossify Phone", "FossifyOrg", "Phone", "org.fossify.phone", "", "System tools", "Dialer with no ads or tracking."},
         {"tasks", "Tasks.org", "tasks", "tasks", "org.tasks", "", "Productivity", "To-do lists and reminders with optional sync."},
-        {"catima", "Catima", "CatimaLoyalty", "Android", "me.hackerchick.catima", "", "Utility", "Loyalty / membership card wallet."},
+        {"catima", "Catima", "CatimaLoyalty", "Android", "me.hackerchick.catima", "", "Productivity", "Loyalty / membership card wallet."},
         {"breezyweather", "Breezy Weather", "breezy-weather", "breezy-weather", "org.breezyweather", "", "Weather", "Material weather app with many providers."},
-        {"feeder", "Feeder", "spacecowboys", "Feeder", "com.nononsenseapps.feeder", "", "News", "Lightweight, offline-friendly RSS reader."},
+        {"feeder", "Feeder", "spacecowboys", "Feeder", "com.nononsenseapps.feeder", "", "Reading", "Lightweight, offline-friendly RSS reader."},
         {"jerboa", "Jerboa", "dessalines", "jerboa", "com.jerboa", "", "Social", "A Lemmy client for Android."},
         {"infinity", "Infinity for Reddit", "Docile-Alligator", "Infinity-For-Reddit", "ml.docilealligator.infinityforreddit", "", "Social", "Feature-rich, ad-free Reddit client."},
-        {"streetcomplete", "StreetComplete", "streetcomplete", "StreetComplete", "de.westnordost.streetcomplete", "", "Navigation", "Improve OpenStreetMap by answering quests."},
+        {"streetcomplete", "StreetComplete", "streetcomplete", "StreetComplete", "de.westnordost.streetcomplete", "", "Maps & Navigation", "Improve OpenStreetMap by answering quests."},
     };
 
-    public static JSONObject komiCatalog() throws Exception {
+    /**
+     * A small built-in list of well-known GitHub-release apps, used only when neither the Komi catalog nor its
+     * offline mirror can be reached, so the GitHub tab is never empty. Same item shape as {@link KomiApi#item}.
+     */
+    public static JSONArray githubBuiltin() throws Exception {
         JSONArray items = new JSONArray();
         for (String[] e : KOMI) {
             JSONObject o = new JSONObject();
-            o.put("id", e[0]);
+            o.put("id", e[2] + "/" + e[3]);
+            o.put("key", e[2] + "/" + e[3]);
             o.put("name", e[1]);
             o.put("owner", e[2]);
             o.put("repo", e[3]);
             o.put("pkg", e[4]);
             o.put("assetFilter", e[5]);
-            o.put("category", e[6]);
+            o.put("cats", new JSONArray().put(e[6]));
             o.put("desc", e[7]);
             o.put("icon", "https://github.com/" + e[2] + ".png?size=96");
             o.put("page", "https://github.com/" + e[2] + "/" + e[3]);
-            o.put("source", "komi");
+            o.put("stars", 0);
+            o.put("updated", 0);
+            o.put("ver", "");
+            o.put("source", "github");
             o.put("resolveKind", "github");
             items.put(o);
         }
-        JSONObject out = new JSONObject();
-        out.put("status", "ok");
-        out.put("items", items);
-        out.put("total", items.length());
+        return items;
+    }
+
+    /** "Multimedia/Creative" -> ["Multimedia", "Creative"]; "health" -> ["Health"]; blank -> ["Other"]. */
+    static List<String> splitCategories(String raw) {
+        List<String> out = new ArrayList<String>();
+        if (raw != null) {
+            for (String part : raw.split("/")) {
+                String p = part.trim();
+                if (p.isEmpty()) continue;
+                StringBuilder sb = new StringBuilder();
+                for (String w : p.split("\\s+")) {
+                    if (w.isEmpty()) continue;
+                    if (sb.length() > 0) sb.append(' ');
+                    sb.append(Character.toUpperCase(w.charAt(0))).append(w.substring(1).toLowerCase(Locale.US));
+                }
+                String label = sb.toString();
+                if (!out.contains(label)) out.add(label);
+            }
+        }
+        if (out.isEmpty()) out.add("Other");
         return out;
     }
 
@@ -122,12 +146,13 @@ public final class Stores {
         for (int i = 0; i < arr.length() && items.length() < maxItems; i++) {
             JSONObject e = arr.optJSONObject(i);
             if (e == null) continue;
-            if (!isAndroid(e.optString("platform", ""))) continue;
+            // KomiApi.str: Android's optString() turns a JSON null into the text "null"
+            if (!isAndroid(KomiApi.str(e, "platform"))) continue;
 
-            String downloadUrl = e.optString("downloadUrl", "");
-            String githubRepo = e.optString("githubRepo", "");
-            String repoUrl = e.optString("repoUrl", "");
-            String keyword = e.optString("releaseKeyword", "");
+            String downloadUrl = KomiApi.str(e, "downloadUrl");
+            String githubRepo = KomiApi.str(e, "githubRepo");
+            String repoUrl = KomiApi.str(e, "repoUrl");
+            String keyword = KomiApi.str(e, "releaseKeyword");
 
             String resolveKind, owner = "", repo = "", apkUrl = "";
             if (isDirectApk(downloadUrl)) {
@@ -153,16 +178,23 @@ public final class Stores {
                 }
             }
 
+            String id = KomiApi.str(e, "id");
+            if (id.isEmpty()) id = KomiApi.str(e, "packageName");
+            if (id.isEmpty()) id = "orion-" + i;
+            String nm = KomiApi.str(e, "name");
             JSONObject o = new JSONObject();
-            o.put("id", e.optString("id", e.optString("packageName", "orion-" + i)));
-            o.put("name", e.optString("name", "App"));
-            o.put("desc", trim(e.optString("description", ""), 200));
-            o.put("icon", e.optString("icon", ""));
-            o.put("version", e.optString("latestVersion", e.optString("version", "")));
-            o.put("pkg", e.optString("packageName", ""));
-            o.put("category", e.optString("category", ""));
-            o.put("author", e.optString("author", ""));
-            o.put("page", repoUrl == null ? "" : repoUrl);
+            o.put("id", id);
+            o.put("key", id);
+            o.put("name", nm.isEmpty() ? "App" : nm);
+            o.put("desc", trim(KomiApi.str(e, "description"), 200));
+            o.put("icon", KomiApi.str(e, "icon"));
+            String ver = KomiApi.str(e, "latestVersion");
+            if (ver.isEmpty()) ver = KomiApi.str(e, "version");
+            o.put("version", ver);
+            o.put("pkg", KomiApi.str(e, "packageName"));
+            o.put("cats", new JSONArray(splitCategories(KomiApi.str(e, "category"))));
+            o.put("author", KomiApi.str(e, "author"));
+            o.put("page", repoUrl);
             o.put("source", "orion");
             o.put("resolveKind", resolveKind);
             o.put("owner", owner);
@@ -185,7 +217,7 @@ public final class Stores {
     }
 
     // =============================================================================================
-    // F-Droid - known-repository directory + per-repo index-v2 parsing
+    // F-Droid - the known-repository directory (catalog parsing lives in FdroidIndex)
     // =============================================================================================
 
     /** {id, name, address, fingerprint, description}. Addresses end in /repo; fingerprints are SHA-256. */
@@ -210,117 +242,16 @@ public final class Stores {
         return out;
     }
 
-    private static String localized(JSONObject map, String fallback) {
-        if (map == null) return fallback;
-        String v = map.optString("en-US", "");
-        if (!v.isEmpty()) return v;
-        v = map.optString("en", "");
-        if (!v.isEmpty()) return v;
-        Iterator<String> it = map.keys();
-        if (it.hasNext()) return map.optString(it.next(), fallback);
-        return fallback;
-    }
-
-    /**
-     * Fetches and parses a repo's index-v2.json into installable items. Each item's apkUrl is
-     * {address}{file.name}. Capped by maxBytes: a repo whose index is larger than the cap (the big
-     * aggregators) returns status "too_large" instead, so the UI can tell the user honestly.
-     */
-    public static JSONObject fdroidRepoIndex(String address, int maxItems, int maxBytes) throws Exception {
-        JSONObject out = new JSONObject();
-        if (address == null || !address.startsWith("https://")) {
-            out.put("status", "error");
-            out.put("error", "Invalid repository address.");
-            return out;
-        }
-        String base = address.endsWith("/") ? address.substring(0, address.length() - 1) : address;
-        String indexUrl = base + "/index-v2.json";
-        byte[] raw;
-        try {
-            raw = UpdateManager.httpGet(indexUrl, "application/json", maxBytes);
-        } catch (Exception e) {
-            String msg = String.valueOf(e.getMessage());
-            if (msg.contains("too large")) {
-                out.put("status", "too_large");
-                out.put("error", "This repository's catalog is too large to browse in-app. Add it to an F-Droid client with its address and fingerprint.");
-                return out;
-            }
-            throw e;
-        }
-        JSONObject index = new JSONObject(new String(raw, "UTF-8"));
-        JSONObject packages = index.optJSONObject("packages");
-        JSONArray items = new JSONArray();
-        if (packages != null) {
-            Iterator<String> pkgs = packages.keys();
-            while (pkgs.hasNext() && items.length() < maxItems) {
-                String pkg = pkgs.next();
-                JSONObject p = packages.optJSONObject(pkg);
-                if (p == null) continue;
-                JSONObject meta = p.optJSONObject("metadata");
-                JSONObject versions = p.optJSONObject("versions");
-                if (versions == null || versions.length() == 0) continue;
-
-                // Latest version = highest versionCode across the version map.
-                JSONObject best = null;
-                long bestCode = Long.MIN_VALUE;
-                Iterator<String> vit = versions.keys();
-                while (vit.hasNext()) {
-                    JSONObject v = versions.optJSONObject(vit.next());
-                    if (v == null) continue;
-                    JSONObject mani = v.optJSONObject("manifest");
-                    long code = mani != null ? mani.optLong("versionCode", 0) : 0;
-                    if (code >= bestCode) { bestCode = code; best = v; }
-                }
-                if (best == null) continue;
-                JSONObject file = best.optJSONObject("file");
-                if (file == null) continue;
-                String fname = file.optString("name", "");
-                if (fname.isEmpty()) continue;
-                JSONObject mani = best.optJSONObject("manifest");
-
-                String name = meta != null ? localized(meta.optJSONObject("name"), pkg) : pkg;
-                String summary = meta != null ? localized(meta.optJSONObject("summary"), "") : "";
-                String icon = "";
-                if (meta != null) {
-                    JSONObject ic = meta.optJSONObject("icon");
-                    String ipath = ic != null ? localized(ic, "") : "";
-                    if (ipath.isEmpty() && ic != null) {
-                        JSONObject enus = ic.optJSONObject("en-US");
-                        if (enus != null) ipath = enus.optString("name", "");
-                    }
-                    if (!ipath.isEmpty()) icon = base + (ipath.startsWith("/") ? ipath : "/" + ipath);
-                }
-
-                JSONObject o = new JSONObject();
-                o.put("id", pkg);
-                o.put("name", name);
-                o.put("desc", trim(summary, 200));
-                o.put("icon", icon);
-                o.put("pkg", pkg);
-                o.put("version", mani != null ? mani.optString("versionName", "") : "");
-                o.put("size", file.optLong("size", 0));
-                o.put("apkUrl", base + (fname.startsWith("/") ? fname : "/" + fname));
-                o.put("source", "fdroid");
-                o.put("resolveKind", "direct");
-                items.put(o);
-            }
-        }
-        out.put("status", "ok");
-        out.put("items", items);
-        out.put("total", items.length());
-        return out;
-    }
-
     // =============================================================================================
-    // Resolve a Komi / Orion item to a concrete APK URL (for the on-device installer)
+    // Resolve a GitHub / Orion item to a concrete APK URL (for the on-device installer)
     // =============================================================================================
 
     /**
-     * Resolves one catalog item to {apkUrl, pkg, name, version, size}. Direct/F-Droid items already carry
+     * Resolves one catalog item to {apkUrl, pkg, name, version}. Direct/F-Droid items already carry
      * an apkUrl; GitHub/Codeberg items hit the release API and pick the APK for this device's ABI (honoring
      * the item's assetFilter keyword). Throws with a human message when no installable APK is found.
      */
-    public static JSONObject resolve(JSONObject item, String[] abis) throws Exception {
+    public static JSONObject resolve(JSONObject item, String[] abis, String githubToken) throws Exception {
         String kind = item.optString("resolveKind", "");
         String name = item.optString("name", item.optString("pkg", "app"));
         String pkg = item.optString("pkg", "");
@@ -347,7 +278,7 @@ public final class Stores {
         if ("codeberg".equals(kind)) {
             rel = UpdateManager.codebergRelease(owner, repo);
         } else {
-            rel = UpdateManager.githubRelease(owner, repo, "", false);
+            rel = UpdateManager.githubRelease(owner, repo, githubToken == null ? "" : githubToken, false);
         }
         if (rel == null || rel.assets.isEmpty())
             throw new IllegalStateException("The latest release of " + owner + "/" + repo + " has no APK asset.");

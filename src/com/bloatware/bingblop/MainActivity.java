@@ -33,6 +33,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
@@ -847,6 +848,123 @@ public class MainActivity extends Activity {
             return runProcessWithTimeout(pb, 10000);
         }
         return "Error: Shizuku is not authorized for this app";
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Rish shell: the Terminal tab's persistent shell (see RishShell). It runs as the Shizuku shell
+    // user, so cd / export / variables persist between commands. Output is streamed to the page.
+    // ---------------------------------------------------------------------------------------------
+
+    private static final long RISH_COMMAND_TIMEOUT_MS = 10 * 60 * 1000;
+    private static final int RISH_OUTPUT_CAP = 1500000;    // characters shown per command
+    private static final int RISH_FLUSH_CHARS = 24000;
+    private static final long RISH_FLUSH_MS = 40;
+
+    private final Object rishGate = new Object();
+    private RishShell rishShell;           // guarded by rishGate
+    private boolean rishStarting;          // guarded by rishGate
+    private boolean rishRunning;           // guarded by rishGate
+    private final StringBuilder rishOut = new StringBuilder();   // guarded by itself
+    private String rishOutRunId = "";
+    private boolean rishFlushScheduled;
+    private final android.os.Handler rishHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private final Runnable rishFlusher = new Runnable() {
+        @Override
+        public void run() {
+            rishFlush();
+        }
+    };
+
+    /** Starts a process through the Shizuku API, or through the bundled rish when that call fails. */
+    private Process rishSpawn(String[] argv) throws Exception {
+        if (isShizukuAuthorized()) {
+            try {
+                if (shizukuNewProcessMethod == null) {
+                    Method m = Shizuku.class.getDeclaredMethod("newProcess", String[].class, String[].class, String.class);
+                    m.setAccessible(true);
+                    shizukuNewProcessMethod = m;
+                }
+                return (Process) shizukuNewProcessMethod.invoke(null, argv, null, null);
+            } catch (Throwable t) {
+                Log.w(TAG, "Shizuku newProcess failed for the Rish shell, trying the bundled rish: " + t.getMessage());
+            }
+        }
+        if (rishFile != null && rishFile.exists()) {
+            List<String> cmd = new ArrayList<String>();
+            cmd.add("/system/bin/sh");
+            cmd.add(rishFile.getAbsolutePath());
+            if (argv.length > 1) {
+                cmd.add("-c");
+                StringBuilder script = new StringBuilder();
+                for (int i = 2; i < argv.length; i++) script.append(i > 2 ? " " : "").append(argv[i]);
+                cmd.add(script.toString());
+            }
+            ProcessBuilder pb = new ProcessBuilder(cmd);
+            pb.environment().put("RISH_APPLICATION_ID", getPackageName());
+            return pb.start();
+        }
+        throw new IOException("Shizuku is not authorized for this app");
+    }
+
+    /** Buffers shell output and sends it to the page a few times a second instead of once per read. */
+    private void rishEmit(String runId, String text) {
+        synchronized (rishOut) {
+            if (rishOut.length() > 0 && !runId.equals(rishOutRunId)) rishFlushLocked();
+            rishOutRunId = runId;
+            rishOut.append(text);
+            if (rishOut.length() >= RISH_FLUSH_CHARS) {
+                rishFlushLocked();
+            } else if (!rishFlushScheduled) {
+                rishFlushScheduled = true;
+                rishHandler.postDelayed(rishFlusher, RISH_FLUSH_MS);
+            }
+        }
+    }
+
+    private void rishFlush() {
+        synchronized (rishOut) {
+            rishFlushLocked();
+        }
+    }
+
+    /** Posts the buffered output to the UI thread in order (post order == buffer order). */
+    private void rishFlushLocked() {
+        rishFlushScheduled = false;
+        rishHandler.removeCallbacks(rishFlusher);
+        if (rishOut.length() == 0) return;
+        final String runId = rishOutRunId;
+        final String text = rishOut.toString();
+        rishOut.setLength(0);
+        rishHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                if (webView == null) return;
+                int i = 0;
+                while (i < text.length()) {
+                    int end = Math.min(text.length(), i + 32000);
+                    if (end < text.length() && Character.isHighSurrogate(text.charAt(end - 1))) end++;
+                    webView.evaluateJavascript("window.onRishOutput && window.onRishOutput(" + JSONObject.quote(runId)
+                            + "," + JSONObject.quote(text.substring(i, end)) + ")", null);
+                    i = end;
+                }
+            }
+        });
+    }
+
+    private void closeRishShell() {
+        final RishShell sh;
+        synchronized (rishGate) {
+            sh = rishShell;
+            rishShell = null;
+        }
+        if (sh != null) {
+            executor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    sh.close();
+                }
+            });
+        }
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -1698,50 +1816,68 @@ public class MainActivity extends Activity {
             storeInstallProgress(pkg, "error", 0, "This app has no direct APK to install.");
             return;
         }
-        downloadAndInstall(apkUrl, pkg, label);
+        downloadAndInstall(apkUrl, pkg, label, pkg, "");
     }
 
-    /** Downloads an https APK and installs it through the active mode (shared by every Store source). */
-    private void downloadAndInstall(final String apkUrl, final String pkg, final String label) {
-        final String key = pkg == null || pkg.isEmpty() ? apkUrl : pkg;
+    /**
+     * Downloads an https APK and installs it through the active mode (shared by every Store source).
+     * {@code pkg}: the package the download must turn out to be ("" when the catalog doesn't know it).
+     * {@code progressKey}: identity used for progress events and the one-at-a-time guard (a GitHub repo has no
+     * package name until the APK is read). {@code sha256}: a checksum published by the repository, verified
+     * before anything is installed ("" = none available).
+     */
+    private void downloadAndInstall(final String apkUrl, final String pkg, final String label,
+                                    final String progressKey, final String sha256) {
+        final String key = progressKey != null && !progressKey.isEmpty() ? progressKey
+                : (pkg == null || pkg.isEmpty() ? apkUrl : pkg);
         if (!storeInstalling.add(key)) return;
         executor.submit(new Runnable() {
             @Override
             public void run() {
-                File apk = new File(new File(getCacheDir(), "updates"), "store.apk");
+                // One file per item, so two installs started back to back can't overwrite each other's download
+                File apk = new File(new File(getCacheDir(), "updates"), "store-" + Integer.toHexString(key.hashCode()) + ".apk");
                 boolean standard = "standard".equals(resolveExecMode());
                 try {
                     apk.getParentFile().mkdirs();
-                    final String name = label == null || label.isEmpty() ? (pkg == null ? "app" : pkg) : label;
-                    storeInstallProgress(pkg, "downloading", 0, "Downloading " + name + "…");
+                    final String name = label == null || label.isEmpty() ? (pkg == null || pkg.isEmpty() ? "app" : pkg) : label;
+                    storeInstallProgress(key, "downloading", 0, "Downloading " + name + "…");
                     UpdateManager.download(apkUrl, apk, new UpdateManager.Progress() {
                         @Override
                         public void onProgress(long done, long total) {
-                            storeInstallProgress(pkg, "downloading", total > 0 ? (int) (done * 100 / total) : -1,
+                            storeInstallProgress(key, "downloading", total > 0 ? (int) (done * 100 / total) : -1,
                                     (done / (1024 * 1024)) + " MB");
                         }
                     });
+                    // The repository's own checksum, when it publishes one (F-Droid index, ShizuStore)
+                    if (sha256 != null && sha256.matches("(?i)[0-9a-f]{64}")) {
+                        storeInstallProgress(key, "verifying", 100, "Checking the download's SHA-256…");
+                        String got = VirusTotal.sha256(apk);
+                        if (!got.equalsIgnoreCase(sha256)) {
+                            throw new IllegalStateException("the download doesn't match the checksum published by the repository "
+                                    + "(expected " + sha256.substring(0, 12) + "…, got " + got.substring(0, 12) + "…) - not installed");
+                        }
+                    }
                     PackageInfo archive = getPackageManager().getPackageArchiveInfo(apk.getAbsolutePath(), 0);
                     if (archive == null || archive.packageName == null) throw new IllegalStateException("the download is not a valid APK");
                     // Guard against a redirected/wrong download installing an unexpected package.
                     if (pkg != null && !pkg.isEmpty() && !pkg.equals(archive.packageName))
                         throw new IllegalStateException("the download is " + archive.packageName + ", not " + pkg);
                     if (standard) {
-                        storeInstallProgress(pkg, "installing", 100, "Opening the installer…");
+                        storeInstallProgress(key, "installing", 100, "Opening the installer…");
                         launchSystemInstaller(apk);
-                        storeInstallProgress(pkg, "opened", 100, "Confirm the install of " + name + ".");
+                        storeInstallProgress(key, "opened", 100, "Confirm the install of " + name + ".");
                     } else {
-                        storeInstallProgress(pkg, "installing", 100, "Installing " + name + "…");
+                        storeInstallProgress(key, "installing", 100, "Installing " + name + "…");
                         String out = installApk(apk);
                         if (out != null && out.contains("Success")) {
-                            storeInstallProgress(pkg, "done", 100, "Installed " + name
+                            storeInstallProgress(key, "done", 100, "Installed " + name
                                     + (archive.versionName != null ? " " + archive.versionName : "") + ".");
                         } else {
                             throw new IllegalStateException(out == null || out.trim().isEmpty() ? "install failed" : out.trim());
                         }
                     }
                 } catch (Exception e) {
-                    storeInstallProgress(pkg, "error", 0, errMsg(e));
+                    storeInstallProgress(key, "error", 0, errMsg(e));
                 } finally {
                     if (!standard) apk.delete();
                     storeInstalling.remove(key);
@@ -1762,66 +1898,278 @@ public class MainActivity extends Activity {
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Extra Store sub-tabs (v5.6): Komi (GitHub releases), Orion (Orion-Data), F-Droid repositories
+    // Store sub-tabs: GitHub (Komi catalog), F-Droid repositories, Orion
+    //
+    // Catalogs reach the WebView as window.onStoreSource(json) events:
+    //   {source, arg?, status:"ok", items:[...], append, done, total, note?, fallback?}   (chunks of <=400 items)
+    //   {source, arg?, status:"progress", message}
+    //   {source, arg?, status:"error", error}
+    // The first chunk has append=false (replace the list); the last has done=true.
     // ---------------------------------------------------------------------------------------------
 
+    private static final int STORE_CHUNK = 400;
+    private static final long STORE_CACHE_TTL_MS = 12L * 3600 * 1000;
+    private static final int GITHUB_MAX_APPS = 5000;
+
+    private File storeCacheFile(String key) {
+        File d = new File(getCacheDir(), "store");
+        d.mkdirs();
+        return new File(d, key.replaceAll("[^A-Za-z0-9._-]", "_") + ".json");
+    }
+
+    /** A cached catalog (JSON array of items) younger than {@code ttlMs}, or null. */
+    private JSONArray storeCacheRead(String key, long ttlMs) {
+        try {
+            File f = storeCacheFile(key);
+            if (!f.isFile() || System.currentTimeMillis() - f.lastModified() > ttlMs || f.length() > 40L * 1024 * 1024) return null;
+            java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream((int) f.length());
+            java.io.FileInputStream in = new java.io.FileInputStream(f);
+            try {
+                byte[] buf = new byte[65536];
+                int n;
+                while ((n = in.read(buf)) > 0) bo.write(buf, 0, n);
+            } finally { in.close(); }
+            return new JSONArray(bo.toString("UTF-8"));
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    private void storeCacheWrite(String key, JSONArray items) {
+        try {
+            FileOutputStream out = new FileOutputStream(storeCacheFile(key));
+            try { out.write(items.toString().getBytes("UTF-8")); } finally { out.close(); }
+        } catch (Throwable ignored) {}
+    }
+
+    private void storeCacheClear(String key) {
+        try { storeCacheFile(key).delete(); } catch (Throwable ignored) {}
+    }
+
+    private JSONObject storeEvent(String source, String arg, String status) throws Exception {
+        JSONObject o = new JSONObject();
+        o.put("source", source);
+        if (arg != null) o.put("arg", arg);
+        o.put("status", status);
+        return o;
+    }
+
+    private void storeProgress(String source, String arg, String message) {
+        try {
+            JSONObject o = storeEvent(source, arg, "progress");
+            o.put("message", message);
+            notifyUpdates("onStoreSource", o);
+        } catch (Exception ignored) {}
+    }
+
+    private void storeError(String source, String arg, String message) {
+        try {
+            JSONObject o = storeEvent(source, arg, "error");
+            o.put("error", message);
+            notifyUpdates("onStoreSource", o);
+        } catch (Exception ignored) {}
+    }
+
+    /** Sends one chunk of items. {@code extra} (may be null) is merged into the event. */
+    private void storeChunk(String source, String arg, JSONArray items, boolean append, boolean done, int total, JSONObject extra) {
+        try {
+            JSONObject o = storeEvent(source, arg, "ok");
+            o.put("items", items);
+            o.put("append", append);
+            o.put("done", done);
+            o.put("total", total);
+            if (extra != null) {
+                java.util.Iterator<String> it = extra.keys();
+                while (it.hasNext()) { String k = it.next(); o.put(k, extra.get(k)); }
+            }
+            notifyUpdates("onStoreSource", o);
+        } catch (Exception ignored) {}
+    }
+
+    /** Delivers a whole catalog in chunks so no single message to the WebView is huge. */
+    private void storeDeliver(String source, String arg, JSONArray items, JSONObject extra) {
+        int total = items.length();
+        if (total == 0) { storeChunk(source, arg, new JSONArray(), false, true, 0, extra); return; }
+        for (int i = 0; i < total; i += STORE_CHUNK) {
+            JSONArray part = new JSONArray();
+            for (int j = i; j < Math.min(i + STORE_CHUNK, total); j++) part.put(items.opt(j));
+            boolean last = i + STORE_CHUNK >= total;
+            storeChunk(source, arg, part, i > 0, last, total, last ? extra : null);
+        }
+    }
+
     /**
-     * Loads a sub-tab's catalog off-thread and reports it to window.onStoreSource(json). source is one of
-     * "komi", "orion", "fdroid-repos" (the known-repo directory) or "fdroid-repo" (arg = a repo address).
+     * The GitHub tab: pages the Komi catalog's whole Android list (50 per request, shown as it arrives), or
+     * - for arg "q:<text>" - runs a live relevance search. When Komi's server can't be reached it falls back
+     * to its offline mirror, then to a small built-in list, and says so.
      */
-    private void runStoreSourceCatalog(final String source, final String arg) {
+    private void loadGithubCatalog(String arg, boolean force) throws Exception {
+        final String source = "github";
+        if (arg != null && arg.startsWith("q:")) {
+            String q = arg.substring(2).trim();
+            if (q.isEmpty()) { storeDeliver(source, arg, new JSONArray(), null); return; }
+            JSONArray found = new JSONArray();
+            Set<String> seen = new HashSet<String>();
+            for (int page = 0; page < 2; page++) {
+                JSONObject body = KomiApi.searchRaw(q, "", page * KomiApi.PAGE, KomiApi.PAGE);
+                JSONArray rawItems = body.optJSONArray("items");
+                JSONArray part = KomiApi.mapItems(body, seen);
+                for (int i = 0; i < part.length(); i++) found.put(part.get(i));
+                if (rawItems == null || rawItems.length() < KomiApi.PAGE) break;
+            }
+            JSONObject extra = new JSONObject();
+            extra.put("search", true);
+            extra.put("query", q);
+            storeDeliver(source, arg, found, extra);
+            return;
+        }
+
+        if (force) storeCacheClear("github-browse");
+        JSONArray cached = force ? null : storeCacheRead("github-browse", 6L * 3600 * 1000);
+        if (cached != null && cached.length() > 0) {
+            JSONObject extra = new JSONObject();
+            extra.put("cached", true);
+            storeDeliver(source, arg, cached, extra);
+            return;
+        }
+
+        JSONArray all = new JSONArray();
+        Set<String> seen = new HashSet<String>();
+        boolean first = true;
+        int offset = 0;
+        String stopNote = "";
+        try {
+            while (all.length() < GITHUB_MAX_APPS) {
+                JSONObject body = KomiApi.searchRaw("", "stars", offset, KomiApi.PAGE);
+                JSONArray rawItems = body.optJSONArray("items");
+                int got = rawItems == null ? 0 : rawItems.length();
+                JSONArray part = KomiApi.mapItems(body, seen);
+                for (int i = 0; i < part.length(); i++) all.put(part.get(i));
+                if (part.length() > 0 || first) storeChunk(source, arg, part, !first, false, all.length(), null);
+                first = false;
+                if (got < KomiApi.PAGE) break;
+                offset += got;
+                Thread.sleep(100); // be a polite client: ~10 requests a second at most
+            }
+        } catch (Exception e) {
+            if (all.length() == 0) {
+                githubFallback(arg);
+                return;
+            }
+            stopNote = "Stopped early after " + all.length() + " apps (" + errMsg(e) + "). Tap Refresh to retry.";
+        }
+        JSONObject extra = new JSONObject();
+        if (!stopNote.isEmpty()) extra.put("note", stopNote);
+        storeChunk(source, arg, new JSONArray(), true, true, all.length(), extra);
+        if (stopNote.isEmpty() && all.length() > 0) storeCacheWrite("github-browse", all);
+    }
+
+    /** Komi's server is unreachable: its static mirror, else a small built-in list. */
+    private void githubFallback(String arg) throws Exception {
+        JSONObject extra = new JSONObject();
+        extra.put("fallback", true);
+        try {
+            JSONArray mirror = KomiApi.mirrorItems();
+            extra.put("note", "Couldn't reach the Komi catalog server, so this is its offline mirror (" + mirror.length()
+                    + " popular apps). Tap Refresh to try the full catalog again.");
+            storeDeliver("github", arg, mirror, extra);
+        } catch (Exception e) {
+            JSONArray builtin = Stores.githubBuiltin();
+            extra.put("note", "Couldn't reach the Komi catalog. Showing " + builtin.length() + " built-in apps; search still works once you're online.");
+            storeDeliver("github", arg, builtin, extra);
+        }
+    }
+
+    private void loadOrionCatalog(boolean force) throws Exception {
+        if (force) storeCacheClear("orion");
+        JSONArray cached = force ? null : storeCacheRead("orion", STORE_CACHE_TTL_MS);
+        if (cached != null && cached.length() > 0) { storeDeliver("orion", null, cached, null); return; }
+        storeProgress("orion", null, "Downloading the Orion catalog…");
+        JSONArray items = Stores.orionCatalog(4000).optJSONArray("items");
+        if (items == null) items = new JSONArray();
+        storeCacheWrite("orion", items);
+        storeDeliver("orion", null, items, null);
+    }
+
+    private void loadFdroidRepo(final String address, boolean force) throws Exception {
+        final String source = "fdroid-repo";
+        if (address == null || !address.startsWith("https://")) {
+            storeError(source, address, "Invalid repository address.");
+            return;
+        }
+        final String ckey = "fdroid-" + Integer.toHexString(address.hashCode());
+        if (force) storeCacheClear(ckey);
+        JSONArray cached = force ? null : storeCacheRead(ckey, STORE_CACHE_TTL_MS);
+        if (cached != null && cached.length() > 0) {
+            JSONObject extra = new JSONObject();
+            extra.put("cached", true);
+            storeDeliver(source, address, cached, extra);
+            return;
+        }
+        storeProgress(source, address, "Contacting the repository…");
+        FdroidIndex.Result res = FdroidIndex.load(address, Build.SUPPORTED_ABIS, Build.VERSION.SDK_INT, new FdroidIndex.Sink() {
+            @Override
+            public void onProgress(long bytes, int apps) {
+                storeProgress(source, address, "Reading the catalog… " + XapkInfo.humanBytes(bytes) + " · " + apps + " apps");
+            }
+        });
+        storeCacheWrite(ckey, res.items);
+        JSONObject extra = new JSONObject();
+        extra.put("repoName", res.repoName);
+        extra.put("format", res.format);
+        extra.put("skipped", res.skipped);
+        storeDeliver(source, address, res.items, extra);
+    }
+
+    /**
+     * Loads a sub-tab's catalog off-thread (see the event protocol above). source: "github" (arg "" = browse,
+     * "q:<text>" = search), "orion", "fdroid-repos" (the known-repo directory) or "fdroid-repo" (arg = address).
+     * {@code force} bypasses the on-disk cache.
+     */
+    private void runStoreSourceCatalog(final String source, final String arg, final boolean force) {
         executor.submit(new Runnable() {
             @Override
             public void run() {
-                JSONObject o = new JSONObject();
                 try {
-                    JSONObject res;
-                    if ("komi".equals(source)) res = Stores.komiCatalog();
-                    else if ("orion".equals(source)) res = Stores.orionCatalog(800);
-                    else if ("fdroid-repos".equals(source)) res = Stores.fdroidRepos();
-                    else if ("fdroid-repo".equals(source)) res = Stores.fdroidRepoIndex(arg, 1500, 10 * 1024 * 1024);
+                    if ("github".equals(source)) loadGithubCatalog(arg, force);
+                    else if ("orion".equals(source)) loadOrionCatalog(force);
+                    else if ("fdroid-repos".equals(source)) {
+                        JSONObject res = Stores.fdroidRepos();
+                        storeDeliver(source, arg, res.optJSONArray("items"), null);
+                    } else if ("fdroid-repo".equals(source)) loadFdroidRepo(arg, force);
                     else throw new IllegalStateException("unknown store source");
-                    o.put("source", source);
-                    if (arg != null) o.put("arg", arg);
-                    o.put("status", res.optString("status", "ok"));
-                    if (res.has("items")) o.put("items", res.optJSONArray("items"));
-                    if (res.has("total")) o.put("total", res.optInt("total"));
-                    if (res.has("error")) o.put("error", res.optString("error"));
-                } catch (Exception e) {
-                    try {
-                        o.put("source", source);
-                        if (arg != null) o.put("arg", arg);
-                        o.put("status", "error");
-                        o.put("error", errMsg(e));
-                    } catch (Exception ignored) {}
+                } catch (Throwable e) {
+                    storeError(source, arg, e instanceof Exception ? errMsg((Exception) e) : String.valueOf(e.getMessage()));
                 }
-                notifyUpdates("onStoreSource", o);
             }
         });
     }
 
     /**
-     * Resolves a Komi/Orion/F-Droid catalog item (a direct APK, or a GitHub/Codeberg release picked for
-     * this device's ABI) and installs it. Progress -> window.onStoreInstallProgress(json), keyed by pkg.
+     * Resolves a GitHub/Orion/F-Droid catalog item (a direct APK, or a GitHub/Codeberg release picked for
+     * this device's ABI) and installs it. Progress -> window.onStoreInstallProgress(json), keyed by the item's key.
      */
     private void runStoreSourceInstall(final String itemJson) {
         executor.submit(new Runnable() {
             @Override
             public void run() {
-                String pkg = "";
+                String key = "";
                 try {
                     JSONObject item = new JSONObject(itemJson);
-                    pkg = item.optString("pkg", "");
+                    String pkg = item.optString("pkg", "");
+                    key = item.optString("key", "");
+                    if (key.isEmpty()) key = pkg.isEmpty() ? item.optString("id", "") : pkg;
                     String name = item.optString("name", pkg.isEmpty() ? "app" : pkg);
                     boolean direct = "direct".equals(item.optString("resolveKind", ""))
                             && !item.optString("apkUrl", "").isEmpty();
-                    if (!direct) storeInstallProgress(pkg, "resolving", -1, "Finding the latest release of " + name + "…");
-                    JSONObject r = Stores.resolve(item, Build.SUPPORTED_ABIS);
+                    if (!direct) storeInstallProgress(key, "resolving", -1, "Finding the latest release of " + name + "…");
+                    // A saved GitHub token (Updates tab) lifts the API's anonymous rate limit
+                    JSONObject r = Stores.resolve(item, Build.SUPPORTED_ABIS, prefs.getString("github_token", ""));
                     String apkUrl = r.optString("apkUrl", "");
                     String rpkg = r.optString("pkg", pkg);
-                    downloadAndInstall(apkUrl, rpkg == null || rpkg.isEmpty() ? pkg : rpkg, name);
+                    downloadAndInstall(apkUrl, rpkg == null || rpkg.isEmpty() ? pkg : rpkg, name, key, item.optString("sha256", ""));
                 } catch (Exception e) {
-                    storeInstallProgress(pkg, "error", 0, errMsg(e));
+                    storeInstallProgress(key, "error", 0, errMsg(e));
                 }
             }
         });
@@ -1865,6 +2213,17 @@ public class MainActivity extends Activity {
 
     /** Runs a command through the Shizuku API, optionally streaming a file into its stdin. */
     private String shizukuStream(String cmd, File stdinFile) throws Exception {
+        if (stdinFile == null) return shizukuPipe(cmd, null);
+        java.io.FileInputStream in = new java.io.FileInputStream(stdinFile);
+        try {
+            return shizukuPipe(cmd, in);
+        } finally {
+            in.close();
+        }
+    }
+
+    /** Runs a command through the Shizuku API, optionally streaming any InputStream into its stdin. */
+    private String shizukuPipe(String cmd, InputStream stdin) throws Exception {
         if (shizukuNewProcessMethod == null) {
             Method m = Shizuku.class.getDeclaredMethod("newProcess", String[].class, String[].class, String.class);
             m.setAccessible(true);
@@ -1873,15 +2232,10 @@ public class MainActivity extends Activity {
         Process p = (Process) shizukuNewProcessMethod.invoke(null,
                 new String[]{"sh", "-c", "exec 2>&1; " + cmd}, null, null);
         OutputStream os = p.getOutputStream();
-        if (stdinFile != null) {
-            java.io.FileInputStream in = new java.io.FileInputStream(stdinFile);
-            try {
-                byte[] buf = new byte[65536];
-                int n;
-                while ((n = in.read(buf)) > 0) os.write(buf, 0, n);
-            } finally {
-                in.close();
-            }
+        if (stdin != null) {
+            byte[] buf = new byte[65536];
+            int n;
+            while ((n = stdin.read(buf)) > 0) os.write(buf, 0, n);
         }
         os.flush();
         os.close();
@@ -1972,7 +2326,13 @@ public class MainActivity extends Activity {
         return new File(getCacheDir(), "installer");
     }
 
+    /** OBB / Android-data files of the XAPK currently loaded in the Installer, and the archive that holds them. */
+    private volatile List<XapkInfo.Extra> installExtras = new ArrayList<XapkInfo.Extra>();
+    private volatile File installSourceZip = null;
+
     private void clearInstallerWorkDir() {
+        installExtras = new ArrayList<XapkInfo.Extra>();
+        installSourceZip = null;
         File[] fs = installerWorkDir().listFiles();
         if (fs != null) for (File f : fs) { try { f.delete(); } catch (Exception ignored) {} }
     }
@@ -2019,6 +2379,7 @@ public class MainActivity extends Activity {
         List<File> splits = new ArrayList<File>();
         File base = null;
         String type;
+        XapkInfo.Info xinfo = null;   // set for archives (.apks / .apkm / .xapk)
 
         // A lone APK is itself a ZIP, so tell them apart by whether the file parses as an installable APK.
         PackageInfo direct = pm.getPackageArchiveInfo(raw.getAbsolutePath(), 0);
@@ -2033,6 +2394,8 @@ public class MainActivity extends Activity {
             // entry through the same byte-capped loop restore uses (an unwanted entry is still drained,
             // never skipped, so the cap can't be bypassed by a huge entry under an unrecognized name).
             type = "apks";
+            // XAPK: read the central directory (no extraction) for OBB / Android-data files and manifest.json.
+            xinfo = XapkInfo.inspect(raw);
             java.util.zip.ZipInputStream zin = new java.util.zip.ZipInputStream(new java.io.BufferedInputStream(new java.io.FileInputStream(raw)));
             long extracted = 0;
             int idx = 0;
@@ -2064,8 +2427,10 @@ public class MainActivity extends Activity {
                     if (dest != null) splits.add(dest);
                 }
             } finally { zin.close(); }
-            raw.delete();
+            // The archive itself is kept (below) when it carries OBB / data files, so they can be copied
+            // after the install; otherwise it is deleted once the package name is known.
             if (sawApkm) type = "apkm";
+            if (xinfo.isXapk()) type = "xapk";
             if (splits.isEmpty()) throw new IllegalStateException("no APKs found inside this archive");
             // Base = the split whose manifest has no split="..." attribute.
             for (File f : splits) {
@@ -2078,10 +2443,35 @@ public class MainActivity extends Activity {
         if (archive == null || archive.packageName == null) throw new IllegalStateException("could not read the base APK of this package");
         final String pkg = archive.packageName;
 
+        // Data files that belong to THIS package (a wrong package folder in the archive is dropped). Keep the
+        // archive only when there is something to copy from it later.
+        List<XapkInfo.Extra> extras = xinfo != null ? xinfo.forPackage(pkg) : new ArrayList<XapkInfo.Extra>();
+        if (xinfo != null) {
+            if (extras.isEmpty()) {
+                raw.delete();
+            } else {
+                File keep = new File(work, "source.zip");
+                installSourceZip = raw.renameTo(keep) ? keep : raw;
+            }
+        }
+        installExtras = extras;
+
         JSONObject res = new JSONObject();
         res.put("ref", ref);
         res.put("type", type);
         res.put("pkg", pkg);
+        JSONArray extraArr = new JSONArray();
+        long extrasTotal = 0;
+        for (XapkInfo.Extra x : extras) {
+            JSONObject o = new JSONObject();
+            o.put("name", x.dest.substring(x.dest.lastIndexOf('/') + 1));
+            o.put("dest", x.dest);
+            o.put("size", x.size);
+            extraArr.put(o);
+            if (x.size > 0) extrasTotal += x.size;
+        }
+        res.put("extras", extraArr);
+        res.put("extrasTotal", extrasTotal);
         res.put("versionName", archive.versionName != null ? archive.versionName : "");
         res.put("versionCode", versionCodeOf(archive));
         if (archive.applicationInfo != null) {
@@ -2214,10 +2604,140 @@ public class MainActivity extends Activity {
         return "Error: needs ADB, Shizuku or Root";
     }
 
-    /** Post-install dexopt + auto-delete of the source, then reports the outcome to the WebView. */
-    private void finishInstall(JSONObject res, JSONObject opts, String mode) {
+    /** Post-install OBB/data copy, dexopt and auto-delete of the source, then reports the outcome to the WebView. */
+    private void finishInstall(final JSONObject res, final JSONObject opts, final String mode) {
+        // The no-privilege install result arrives on the main thread; copying GB-sized OBB files there would ANR.
+        if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) {
+            executor.submit(new Runnable() {
+                @Override
+                public void run() { finishInstallImpl(res, opts, mode); }
+            });
+            return;
+        }
+        finishInstallImpl(res, opts, mode);
+    }
+
+    private void notifyInstallProgress(String msg) {
+        notifyJs("window.onInstallProgress && window.onInstallProgress(" + JSONObject.quote(msg) + ")");
+    }
+
+    /** Extracts one archive entry to a temp file in the installer cache. */
+    private File extractExtraToTemp(java.util.zip.ZipFile zf, java.util.zip.ZipEntry e) throws Exception {
+        File tmp = new File(installerWorkDir(), "extra.tmp");
+        InputStream in = zf.getInputStream(e);
+        try {
+            FileOutputStream out = new FileOutputStream(tmp);
+            try {
+                byte[] buf = new byte[65536];
+                int n;
+                while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+            } finally { out.close(); }
+        } finally { in.close(); }
+        return tmp;
+    }
+
+    /** Writes one data file to {@code dest} (an absolute path on shared storage). Returns null on success, else why not. */
+    private String writeInstallExtra(String mode, java.util.zip.ZipFile zf, java.util.zip.ZipEntry e, String dir, String dest) throws Exception {
+        if ("shizuku".equals(mode)) {
+            // Streams straight from the archive through Shizuku's shell: no temp copy of a multi-GB file.
+            InputStream in = zf.getInputStream(e);
+            try {
+                String out = shizukuPipe("mkdir -p " + BackupScripts.quote(dir) + " && cat > " + BackupScripts.quote(dest) + " && echo COPY_OK", in);
+                return out != null && out.contains("COPY_OK") ? null : (out == null || out.trim().isEmpty() ? "copy failed" : out.trim());
+            } finally { in.close(); }
+        }
+        if ("adb_tcp".equals(mode) || "adb_wireless".equals(mode)) {
+            File tmp = extractExtraToTemp(zf, e);
+            try {
+                boolean tcp = "adb_tcp".equals(mode);
+                String target = tcp ? tcpTarget() : wirelessTarget();
+                if (!isAdbTargetConnected(target)) performConnect(tcp ? adbTcpHost : adbWirelessHost, tcp ? adbTcpPort : adbWirelessPort, null);
+                shellVia(mode, "mkdir -p " + BackupScripts.quote(dir));
+                String out = runProcessWithTimeout(buildAdbProcess("-s", target, "push", tmp.getAbsolutePath(), dest), 3600000);
+                return out != null && out.toLowerCase(java.util.Locale.US).contains("pushed") ? null
+                        : (out == null || out.trim().isEmpty() ? "push failed" : out.trim());
+            } finally { tmp.delete(); }
+        }
+        if ("root".equals(mode)) {
+            File tmp = extractExtraToTemp(zf, e);
+            try {
+                tmp.setReadable(true, false);
+                ProcessBuilder pb = new ProcessBuilder("su", "-c", "mkdir -p " + BackupScripts.quote(dir)
+                        + " && cp " + BackupScripts.quote(tmp.getAbsolutePath()) + " " + BackupScripts.quote(dest) + " && echo COPY_OK");
+                pb.redirectErrorStream(true);
+                String out = runProcessWithTimeout(pb, 3600000);
+                return out != null && out.contains("COPY_OK") ? null : (out == null || out.trim().isEmpty() ? "copy failed" : out.trim());
+            } finally { tmp.delete(); }
+        }
+        // No privilege: only works where this app may write there itself (older Android, or open storage).
+        File d = new File(dir);
+        if (!d.isDirectory() && !d.mkdirs()) {
+            return "Android doesn't let this app create that folder without ADB, Shizuku or Root. Copy it by hand to " + dest;
+        }
+        InputStream in = zf.getInputStream(e);
+        try {
+            FileOutputStream out = new FileOutputStream(new File(dest));
+            try {
+                byte[] buf = new byte[65536];
+                int n;
+                while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+            } finally { out.close(); }
+        } catch (java.io.IOException io) {
+            return "can't write there without ADB, Shizuku or Root (" + io.getMessage() + ")";
+        } finally { in.close(); }
+        return null;
+    }
+
+    /** Copies the XAPK's OBB / Android-data files into place after a successful install. Returns a summary. */
+    private String copyInstallExtras(String mode) {
+        final List<XapkInfo.Extra> extras = installExtras;
+        final File zip = installSourceZip;
+        if (extras == null || extras.isEmpty() || zip == null || !zip.exists()) return "";
+        String root = fmCanonicalPath("/sdcard");
+        StringBuilder problems = new StringBuilder();
+        int done = 0;
+        long bytes = 0;
+        String lastDir = "";
+        java.util.zip.ZipFile zf = null;
+        try {
+            zf = new java.util.zip.ZipFile(zip);
+            for (int i = 0; i < extras.size(); i++) {
+                XapkInfo.Extra x = extras.get(i);
+                String shortName = x.dest.substring(x.dest.lastIndexOf('/') + 1);
+                java.util.zip.ZipEntry e = zf.getEntry(x.entry);
+                if (e == null) { problems.append(shortName).append(": missing from the archive\n"); continue; }
+                notifyInstallProgress("Copying data file " + (i + 1) + " of " + extras.size() + ": " + shortName + " (" + XapkInfo.humanBytes(x.size) + ")…");
+                String dest = root + "/" + x.dest;
+                String dir = dest.substring(0, dest.lastIndexOf('/'));
+                String err;
+                try {
+                    err = writeInstallExtra(mode, zf, e, dir, dest);
+                } catch (Exception ex) {
+                    err = ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName();
+                }
+                if (err == null) { done++; if (x.size > 0) bytes += x.size; lastDir = x.dest.substring(0, x.dest.lastIndexOf('/')); }
+                else problems.append(shortName).append(": ").append(err).append('\n');
+            }
+        } catch (Exception ex) {
+            problems.append("Error: ").append(ex.getMessage()).append('\n');
+        } finally {
+            if (zf != null) try { zf.close(); } catch (Exception ignored) {}
+        }
+        String head = done + " of " + extras.size() + " data file" + (extras.size() == 1 ? "" : "s") + " copied"
+                + (done > 0 ? " (" + XapkInfo.humanBytes(bytes) + ") to " + lastDir + "/" : "");
+        return problems.length() == 0 ? head : head + "\n" + problems.toString().trim();
+    }
+
+    private void finishInstallImpl(JSONObject res, JSONObject opts, String mode) {
         try {
             boolean success = res.optBoolean("ok", false);
+            if (success && opts.optBoolean("copyExtras", false) && installExtras != null && !installExtras.isEmpty()) {
+                try {
+                    res.put("extras", copyInstallExtras(mode));
+                } catch (Exception e) {
+                    try { res.put("extras", "Error: " + e.getMessage()); } catch (Exception ignored) {}
+                }
+            }
             if (success && opts.optBoolean("dexopt", false) && !"none".equals(mode)) {
                 String pkg = opts.optString("pkg");
                 String cm = opts.optString("dexoptMode", "speed").replaceAll("[^a-z-]", "");
@@ -2391,6 +2911,297 @@ public class MainActivity extends Activity {
                     } catch (Exception ignored) {}
                     notifyJs("window.onInstallResult && window.onInstallResult(" + JSONObject.quote(res.toString()) + ")");
                 }
+            }
+        });
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Archive browser: File manager -> View on an .apk / .zip / package file opens its contents as a folder
+    // tree without extracting. ZipTool does the zip work; this part resolves the path, picks the route for
+    // files only a privileged shell can reach, and reports long jobs to the page.
+    // ---------------------------------------------------------------------------------------------
+
+    private static final int ARCHIVE_PAGE = 400;
+    private static final int ARCHIVE_TEXT_LIMIT = 262144;            // preview / edit limit for text
+    private static final int ARCHIVE_IMAGE_LIMIT = 4 * 1024 * 1024;
+    private static final int ARCHIVE_AXML_LIMIT = 8 * 1024 * 1024;
+    private static final String ARCHIVE_STAGE = "/data/local/tmp/fm_archive.zip";
+    private static final String[] ARCHIVE_NO_EDIT = {"/system/", "/product/", "/vendor/", "/system_ext/", "/apex/", "/odm/", "/data/app/"};
+
+    private final Object archiveLock = new Object();
+    private ZipTool.Archive archiveCache;      // the archive open in the file manager
+    private String archiveCachePath;           // the path the page asked for
+    private boolean archiveCacheStaged;        // true when archiveCache is a shell-staged copy
+    private boolean archiveBusy;               // an extract / edit job is running
+
+    /** The archive the page named: the file itself when this app can read it, else a copy staged through the shell. */
+    private ZipTool.Archive archiveFor(String path, boolean fresh) throws Exception {
+        String p = fmCanonicalPath(path);
+        synchronized (archiveLock) {
+            if (!fresh && archiveCache != null && p.equals(archiveCachePath) && !archiveCache.isStale()) return archiveCache;
+            File f = new File(p);
+            File use = f;
+            boolean staged = false;
+            if (!(f.isFile() && f.canRead())) {
+                use = stageArchive(p);
+                staged = true;
+            }
+            ZipTool.Archive a = ZipTool.open(use);
+            archiveCache = a;
+            archiveCachePath = p;
+            archiveCacheStaged = staged;
+            return a;
+        }
+    }
+
+    private File stageArchive(String p) throws Exception {
+        String mode = resolveExecMode();
+        if ("standard".equals(mode)) {
+            throw new IOException("Can't read this file. For storage, grant All-files access; for system folders, set up ADB, Shizuku or Root.");
+        }
+        String sz = shellVia(mode, "stat -c %s " + BackupScripts.quote(p) + " 2>&1");
+        long size = -1;
+        try { size = Long.parseLong(sz.trim()); } catch (Exception ignored) {}
+        if (size > (3L << 30)) {
+            throw new IOException("This file is " + XapkInfo.humanBytes(size) + ", too large to open through the shell. Copy it to storage first.");
+        }
+        String out = shellVia(mode, "cp " + BackupScripts.quote(p) + " " + ARCHIVE_STAGE + " && chmod 644 " + ARCHIVE_STAGE + " && echo OK");
+        if (out == null || !out.contains("OK")) throw new IOException(out == null || out.trim().isEmpty() ? "copy failed" : out.trim());
+        File f = new File(ARCHIVE_STAGE);
+        if (!f.canRead()) throw new IOException("The shell copied the file, but this app can't read " + ARCHIVE_STAGE);
+        return f;
+    }
+
+    /** Null when the archive can be edited and written back, else why not. */
+    private String archiveEditBlock(String p) {
+        for (String s : ARCHIVE_NO_EDIT) {
+            if (p.startsWith(s)) return "Installed and system packages can't be edited in place. Copy it to storage first.";
+        }
+        File f = new File(p);
+        File dir = f.getParentFile();
+        if (f.canWrite() && dir != null && dir.canWrite()) return null;
+        if ("standard".equals(resolveExecMode())) return "Editing needs All-files access for storage, or ADB / Shizuku / Root for other folders.";
+        return null;
+    }
+
+    private static String archiveFail(Throwable t) {
+        return archiveFail(errMsg(t));
+    }
+
+    private static String archiveFail(String message) {
+        try {
+            return new JSONObject().put("ok", false).put("error", message).toString();
+        } catch (Exception e) {
+            return "{\"ok\":false}";
+        }
+    }
+
+    /** Copies a file this app can read to dest through the best route: its own access, else the active privileged mode. */
+    private String writeFileTo(File src, String dest) {
+        try {
+            File d = new File(dest);
+            File dir = d.getParentFile();
+            if (dir != null && (dir.isDirectory() || dir.mkdirs()) && dir.canWrite()) {
+                File tmp = new File(dir, "." + d.getName() + ".copy-tmp");
+                copyFile(src, tmp);
+                if (!tmp.renameTo(d)) {
+                    tmp.delete();
+                    return "Couldn't replace " + dest;
+                }
+                return null;
+            }
+        } catch (IOException ignored) {
+            // fall through to the privileged route
+        }
+        String mode = resolveExecMode();
+        if ("standard".equals(mode)) {
+            return "This app can't write there. Grant All-files access, or set up ADB, Shizuku or Root.";
+        }
+        try {
+            return writeFileViaMode(mode, src, dest);
+        } catch (Exception e) {
+            return errMsg(e);
+        }
+    }
+
+    private static void copyFile(File src, File dst) throws IOException {
+        InputStream in = new java.io.FileInputStream(src);
+        try {
+            OutputStream out = new FileOutputStream(dst);
+            try {
+                byte[] buf = new byte[65536];
+                int n;
+                while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+            } finally { out.close(); }
+        } finally { in.close(); }
+    }
+
+    /** Writes src to dest through ADB / Shizuku / Root, via a temp name so an interrupted copy never corrupts dest. */
+    private String writeFileViaMode(String mode, File src, String dest) throws Exception {
+        String dir = dest.substring(0, dest.lastIndexOf('/'));
+        String tmpDest = dest + ".copy-tmp";
+        String qd = BackupScripts.quote(dest), qt = BackupScripts.quote(tmpDest);
+        if ("shizuku".equals(mode)) {
+            InputStream in = new java.io.FileInputStream(src);
+            try {
+                String out = shizukuPipe("mkdir -p " + BackupScripts.quote(dir) + " && cat > " + qt + " && mv -f " + qt + " " + qd + " && echo COPY_OK", in);
+                return out != null && out.contains("COPY_OK") ? null : (out == null || out.trim().isEmpty() ? "copy failed" : out.trim());
+            } finally { in.close(); }
+        }
+        if ("adb_tcp".equals(mode) || "adb_wireless".equals(mode)) {
+            boolean tcp = "adb_tcp".equals(mode);
+            String target = tcp ? tcpTarget() : wirelessTarget();
+            if (!isAdbTargetConnected(target)) performConnect(tcp ? adbTcpHost : adbWirelessHost, tcp ? adbTcpPort : adbWirelessPort, null);
+            shellVia(mode, "mkdir -p " + BackupScripts.quote(dir));
+            String out = runProcessWithTimeout(buildAdbProcess("-s", target, "push", src.getAbsolutePath(), tmpDest), 3600000);
+            if (out == null || !out.toLowerCase(java.util.Locale.US).contains("pushed")) return out == null || out.trim().isEmpty() ? "push failed" : out.trim();
+            String mv = shellVia(mode, "mv -f " + qt + " " + qd + " && echo COPY_OK");
+            return mv != null && mv.contains("COPY_OK") ? null : (mv == null || mv.trim().isEmpty() ? "move failed" : mv.trim());
+        }
+        if ("root".equals(mode)) {
+            src.setReadable(true, false);
+            ProcessBuilder pb = new ProcessBuilder("su", "-c", "mkdir -p " + BackupScripts.quote(dir) + " && cp " + BackupScripts.quote(src.getAbsolutePath())
+                    + " " + qt + " && mv -f " + qt + " " + qd + " && echo COPY_OK");
+            pb.redirectErrorStream(true);
+            String out = runProcessWithTimeout(pb, 3600000);
+            return out != null && out.contains("COPY_OK") ? null : (out == null || out.trim().isEmpty() ? "copy failed" : out.trim());
+        }
+        return "needs ADB, Shizuku or Root";
+    }
+
+    private void notifyArchiveProgress(String msg) {
+        notifyJs("window.onArchiveProgress && window.onArchiveProgress(" + JSONObject.quote(msg) + ")");
+    }
+
+    private static JSONObject archiveEntryJson(ZipTool.Entry e) throws Exception {
+        return new JSONObject().put("n", e.baseName()).put("p", e.name).put("d", e.dir).put("s", e.size).put("c", e.csize)
+                .put("t", e.mtime()).put("m", e.method).put("e", e.encrypted());
+    }
+
+    private static JSONObject archiveChildJson(ZipTool.Child c) throws Exception {
+        JSONObject o = new JSONObject().put("n", c.name).put("p", c.path).put("d", c.dir).put("s", c.size).put("c", c.csize)
+                .put("t", c.mtime).put("f", c.count);
+        if (c.entry != null) o.put("m", c.entry.method).put("e", c.entry.encrypted());
+        else o.put("m", -1).put("e", false);
+        return o;
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Installer: find package files (.apk / .apks / .apkm / .xapk) on storage
+    // ---------------------------------------------------------------------------------------------
+
+    /** Whether this app can read shared storage itself (All-files access on Android 11+, else the storage permission). */
+    private boolean hasStorageAccess() {
+        try {
+            if (Build.VERSION.SDK_INT >= 30) return android.os.Environment.isExternalStorageManager();
+            return checkSelfPermission(android.Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
+        } catch (Exception e) { return false; }
+    }
+
+    private static final String SCAN_FIND_PREDICATE =
+            "-type f \\( -iname '*.apk' -o -iname '*.apks' -o -iname '*.apkm' -o -iname '*.xapk' \\)";
+
+    /**
+     * Scans storage off-thread and reports to window.onApkScan(json): {status, files[], truncated, ms, fs, shell}.
+     * Folders this app can read are walked directly; with a privileged mode the shell also covers the ones it
+     * can't (Android/data, Android/obb - or everything when All-files access isn't granted).
+     */
+    private void runApkScan() {
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                JSONObject res = new JSONObject();
+                long t0 = System.currentTimeMillis();
+                try {
+                    boolean fsAccess = hasStorageAccess();
+                    boolean privileged = !"standard".equals(resolveExecMode());
+                    res.put("fs", fsAccess);
+                    res.put("shell", privileged);
+                    if (!fsAccess && !privileged) {
+                        res.put("status", "noaccess");
+                        notifyJs("window.onApkScan && window.onApkScan(" + JSONObject.quote(res.toString()) + ")");
+                        return;
+                    }
+
+                    List<ApkScan.Entry> found = new ArrayList<ApkScan.Entry>();
+                    Set<String> seen = new HashSet<String>();
+                    ApkScan.Limits lim = new ApkScan.Limits();
+                    lim.deadlineMs = t0 + 25000;
+
+                    String primary = fmCanonicalPath("/sdcard");
+                    List<File> roots = new ArrayList<File>();
+                    roots.add(new File(primary));
+                    File[] vols = new File("/storage").listFiles();   // SD cards / USB drives
+                    if (vols != null) {
+                        for (File v : vols) if (v.getName().matches("[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}")) roots.add(v);
+                    }
+
+                    if (fsAccess) {
+                        for (File r : roots) ApkScan.walk(r, 0, found, seen, lim);
+                    }
+
+                    if (privileged) {
+                        StringBuilder where = new StringBuilder();
+                        if (fsAccess) {
+                            where.append(BackupScripts.quote(primary + "/Android/data")).append(' ')
+                                 .append(BackupScripts.quote(primary + "/Android/obb"));
+                        } else {
+                            for (File r : roots) where.append(BackupScripts.quote(r.getAbsolutePath())).append(' ');
+                        }
+                        AndroidBridge sh = new AndroidBridge();
+                        String out = sh.executeShell("find " + where.toString().trim() + " -maxdepth 12 " + SCAN_FIND_PREDICATE
+                                + " 2>/dev/null | head -n 2500");
+                        List<String> unreadable = new ArrayList<String>();
+                        for (String path : ApkScan.parseFindOutput(out, 2500)) {
+                            if (found.size() >= lim.maxResults) { lim.hitLimit = true; break; }
+                            if (!seen.add(path)) continue;
+                            ApkScan.Entry e = new ApkScan.Entry();
+                            e.path = path;
+                            e.name = path.substring(path.lastIndexOf('/') + 1);
+                            e.kind = ApkScan.kindOf(e.name);
+                            File f = new File(path);
+                            if (f.isFile() && f.canRead()) {
+                                e.size = f.length();
+                                e.mtime = f.lastModified();
+                                e.shell = false;
+                            } else {
+                                e.shell = true;
+                                unreadable.add(path);
+                            }
+                            found.add(e);
+                        }
+                        // Size + date of the files only the shell can see, 40 per call
+                        Map<String, long[]> stats = new java.util.HashMap<String, long[]>();
+                        for (int i = 0; i < unreadable.size(); i += 40) {
+                            StringBuilder args = new StringBuilder();
+                            for (int j = i; j < Math.min(i + 40, unreadable.size()); j++) {
+                                args.append(' ').append(BackupScripts.quote(unreadable.get(j)));
+                            }
+                            stats.putAll(ApkScan.parseStatOutput(sh.executeShell("stat -c '%s|%Y|%n'" + args + " 2>/dev/null")));
+                        }
+                        List<ApkScan.Entry> keep = new ArrayList<ApkScan.Entry>();
+                        for (ApkScan.Entry e : found) {
+                            if (e.shell) {
+                                long[] st = stats.get(e.path);
+                                if (st != null) { e.size = st[0]; e.mtime = st[1] * 1000L; }
+                                if (stats.size() > 0 && st != null && st[0] <= 0) continue; // empty placeholder
+                            }
+                            keep.add(e);
+                        }
+                        found = keep;
+                    }
+
+                    ApkScan.sort(found);
+                    JSONArray files = new JSONArray();
+                    for (ApkScan.Entry e : found) files.put(ApkScan.toJson(e));
+                    res.put("status", "ok");
+                    res.put("files", files);
+                    res.put("truncated", lim.hitLimit);
+                    res.put("ms", System.currentTimeMillis() - t0);
+                } catch (Exception e) {
+                    try { res.put("status", "error"); res.put("error", e.getMessage() != null ? e.getMessage() : "scan failed"); } catch (Exception ignored) {}
+                }
+                notifyJs("window.onApkScan && window.onApkScan(" + JSONObject.quote(res.toString()) + ")");
             }
         });
     }
@@ -3777,6 +4588,144 @@ public class MainActivity extends Activity {
             return output != null ? output : "";
         }
 
+        /**
+         * Starts the Rish shell: a persistent shell running as the Shizuku shell user. Returns "not_authorized"
+         * when Shizuku is not ready, else "starting"; the outcome arrives as window.onRishStarted(json) with
+         * ok, uid, host, cwd, prompt or message.
+         */
+        @JavascriptInterface
+        public String rishStart() {
+            if (!isShizukuAuthorized()) return "not_authorized";
+            synchronized (rishGate) {
+                if (rishStarting) return "starting";
+                rishStarting = true;
+            }
+            executor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject res = new JSONObject();
+                    try {
+                        RishShell sh;
+                        synchronized (rishGate) {
+                            sh = rishShell;
+                        }
+                        boolean reused = sh != null && sh.isAlive();
+                        if (!reused) {
+                            sh = new RishShell(new RishShell.Spawner() {
+                                @Override
+                                public Process spawn(String[] argv) throws Exception {
+                                    return rishSpawn(argv);
+                                }
+                            });
+                            sh.setIdleSink(new RishShell.Sink() {
+                                @Override
+                                public void onOutput(String text) {
+                                    rishEmit("", text);
+                                }
+                            });
+                            sh.start();
+                            synchronized (rishGate) {
+                                rishShell = sh;
+                            }
+                        }
+                        res.put("ok", true);
+                        res.put("reused", reused);
+                        res.put("uid", sh.uid());
+                        res.put("host", sh.host());
+                        res.put("cwd", sh.cwd());
+                        res.put("prompt", sh.prompt());
+                    } catch (Throwable t) {
+                        try {
+                            res.put("ok", false);
+                            res.put("message", "Could not start the Rish shell: " + errMsg(t));
+                        } catch (Exception ignored) {}
+                    } finally {
+                        synchronized (rishGate) {
+                            rishStarting = false;
+                        }
+                    }
+                    notifyJs("window.onRishStarted && window.onRishStarted(" + res.toString() + ")");
+                }
+            });
+            return "starting";
+        }
+
+        /**
+         * Runs one command in the Rish shell. Returns "ok", "busy" (one is already running) or "no_shell".
+         * Output streams to window.onRishOutput(runId, text); the end arrives as window.onRishDone(runId, json)
+         * with exit, cwd, prompt, exited, stopped, timedOut, restarted (or error).
+         */
+        @JavascriptInterface
+        public String rishRun(final String cmd, final String runId) {
+            final RishShell sh;
+            synchronized (rishGate) {
+                sh = rishShell;
+                if (sh == null || !sh.isAlive()) return "no_shell";
+                if (rishRunning) return "busy";
+                rishRunning = true;
+            }
+            final String rid = runId == null ? "" : runId;
+            executor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject done = new JSONObject();
+                    final int[] shown = {0};
+                    try {
+                        RishShell.Result r = sh.run(cmd == null ? "" : cmd, RISH_COMMAND_TIMEOUT_MS, new RishShell.Sink() {
+                            @Override
+                            public void onOutput(String text) {
+                                if (shown[0] > RISH_OUTPUT_CAP) return;
+                                int room = RISH_OUTPUT_CAP - shown[0];
+                                if (text.length() > room) {
+                                    text = text.substring(0, room)
+                                            + "\n... output cut off here (the command keeps running; tap STOP to end it)\n";
+                                    shown[0] = RISH_OUTPUT_CAP + 1;
+                                } else {
+                                    shown[0] += text.length();
+                                }
+                                rishEmit(rid, text);
+                            }
+                        });
+                        done.put("exit", r.exit);
+                        done.put("cwd", r.cwd);
+                        done.put("prompt", sh.prompt());
+                        done.put("exited", r.exited);
+                        done.put("stopped", r.stopped);
+                        done.put("timedOut", r.timedOut);
+                        done.put("restarted", r.restarted);
+                    } catch (Throwable t) {
+                        try {
+                            done.put("error", errMsg(t));
+                            done.put("exited", !sh.isAlive());
+                            done.put("exit", -1);
+                        } catch (Exception ignored) {}
+                    }
+                    rishFlush();
+                    synchronized (rishGate) {
+                        rishRunning = false;
+                    }
+                    notifyJs("window.onRishDone && window.onRishDone(" + JSONObject.quote(rid) + "," + done.toString() + ")");
+                }
+            });
+            return "ok";
+        }
+
+        /** Ends the command running in the Rish shell (SIGTERM, then SIGKILL if it ignores that). */
+        @JavascriptInterface
+        public void rishStop() {
+            RishShell sh;
+            synchronized (rishGate) {
+                sh = rishShell;
+            }
+            if (sh != null) sh.stop();
+        }
+
+        /** Closes the Rish shell. */
+        @JavascriptInterface
+        public void rishClose() {
+            closeRishShell();
+        }
+
         /** The profile whose apps the user wants to be told about when they come back ("" = none). */
         @JavascriptInterface
         public void setWatchedProfile(final String name) {
@@ -4570,7 +5519,13 @@ public class MainActivity extends Activity {
             });
         }
 
-        /** Lets the user choose an .apk/.apks/.apkm to install. Answer: window.onInstallFilePicked(ref). */
+        /** Scans storage for .apk/.apks/.apkm/.xapk files. Answer: window.onApkScan(json). */
+        @JavascriptInterface
+        public void scanApkFiles() {
+            runApkScan();
+        }
+
+        /** Lets the user choose an .apk/.apks/.apkm/.xapk to install. Answer: window.onInstallFilePicked(ref). */
         @JavascriptInterface
         public void pickInstallerFile() {
             runOnUiThread(new Runnable() {
@@ -4710,7 +5665,24 @@ public class MainActivity extends Activity {
          */
         @JavascriptInterface
         public void storeSourceCatalog(String source, String arg) {
-            if (source != null && !source.isEmpty()) runStoreSourceCatalog(source, arg);
+            if (source != null && !source.isEmpty()) runStoreSourceCatalog(source, arg, false);
+        }
+
+        /** Same as storeSourceCatalog but ignores the on-disk cache (the Refresh buttons). */
+        @JavascriptInterface
+        public void storeSourceRefresh(String source, String arg) {
+            if (source != null && !source.isEmpty()) runStoreSourceCatalog(source, arg, true);
+        }
+
+        /** True on a metered connection (mobile data / hotspot) - the UI asks before a big catalog download. */
+        @JavascriptInterface
+        public boolean isNetworkMetered() {
+            try {
+                android.net.ConnectivityManager cm = (android.net.ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+                return cm != null && cm.isActiveNetworkMetered();
+            } catch (Throwable t) {
+                return false;
+            }
         }
 
         /** Resolves and installs a Komi/Orion/F-Droid catalog item. Progress: window.onStoreInstallProgress(json). */
@@ -4971,6 +5943,358 @@ public class MainActivity extends Activity {
                 try { res.put("ok", false); res.put("error", e.getMessage()); } catch (Exception ignored) {}
             }
             return res.toString();
+        }
+
+        // ---- Archive browser (see ZipTool). The page names the archive by path on every call. ----
+
+        /** Opens an archive for browsing: {ok, path, name, count, files, size, zip64, staged, apk, editable, whyNot}. */
+        @JavascriptInterface
+        public String archiveOpen(String path) {
+            try {
+                ZipTool.Archive a = archiveFor(path, true);
+                String p = fmCanonicalPath(path);
+                int files = 0;
+                for (ZipTool.Entry e : a.entries) if (!e.dir) files++;
+                String block = archiveEditBlock(p);
+                JSONObject r = new JSONObject();
+                r.put("ok", true);
+                r.put("path", p);
+                r.put("name", new File(p).getName());
+                r.put("count", a.entries.size());
+                r.put("files", files);
+                r.put("size", a.length);
+                r.put("zip64", a.zip64);
+                r.put("staged", archiveCacheStaged);
+                r.put("apk", p.toLowerCase(java.util.Locale.US).endsWith(".apk"));
+                r.put("editable", block == null);
+                r.put("whyNot", block == null ? "" : block);
+                return r.toString();
+            } catch (Throwable t) {
+                return archiveFail(t);
+            }
+        }
+
+        /**
+         * One page of a folder (dir = "" or "a/b/"), or of a search across the whole archive (query != ""):
+         * {ok, total, offset, more, entries:[{n,p,d,s,c,t,m,e,f}]}.
+         */
+        @JavascriptInterface
+        public String archiveList(String path, String dir, String query, int offset, int limit) {
+            try {
+                ZipTool.Archive a = archiveFor(path, false);
+                if (limit <= 0 || limit > 2000) limit = ARCHIVE_PAGE;
+                if (offset < 0) offset = 0;
+                String q = query == null ? "" : query.trim();
+                JSONArray arr = new JSONArray();
+                int total;
+                if (!q.isEmpty()) {
+                    List<ZipTool.Entry> hits = ZipTool.search(a, q, 5000);
+                    total = hits.size();
+                    for (int i = offset; i < Math.min(total, offset + limit); i++) arr.put(archiveEntryJson(hits.get(i)));
+                } else {
+                    List<ZipTool.Child> kids = ZipTool.children(a, dir == null ? "" : dir);
+                    total = kids.size();
+                    for (int i = offset; i < Math.min(total, offset + limit); i++) arr.put(archiveChildJson(kids.get(i)));
+                }
+                JSONObject r = new JSONObject();
+                r.put("ok", true);
+                r.put("dir", dir == null ? "" : dir);
+                r.put("query", q);
+                r.put("total", total);
+                r.put("offset", offset);
+                r.put("more", offset + limit < total);
+                r.put("entries", arr);
+                return r.toString();
+            } catch (Throwable t) {
+                return archiveFail(t);
+            }
+        }
+
+        /**
+         * Previews one entry. kind is "text" (text, truncated, editable, crlf), "image" (mime, b64), "axml" (text:
+         * compiled XML decoded back to XML) or "hex" (hex, note). Every kind also carries size, csize, method, crc, mtime.
+         */
+        @JavascriptInterface
+        public String archiveRead(String path, String entry) {
+            try {
+                ZipTool.Archive a = archiveFor(path, false);
+                ZipTool.Entry e = a.find(entry);
+                if (e == null || e.dir) return archiveFail("Not found in the archive: " + entry);
+                JSONObject r = new JSONObject();
+                r.put("ok", true);
+                r.put("name", e.name);
+                r.put("size", e.size);
+                r.put("csize", e.csize);
+                r.put("method", e.method);
+                r.put("crc", e.crc);
+                r.put("mtime", e.mtime());
+                if (e.encrypted()) {
+                    r.put("kind", "hex");
+                    r.put("hex", "");
+                    r.put("note", "This entry is password-protected, so it can't be previewed.");
+                    return r.toString();
+                }
+                ZipTool.Head head = ZipTool.readHead(a, e, 4096);
+                String kind = ZipTool.classify(e.name, head.data, head.data.length);
+                String note = "";
+                if ("image".equals(kind)) {
+                    if (e.size > ARCHIVE_IMAGE_LIMIT) {
+                        kind = "hex";
+                        note = "This image is " + XapkInfo.humanBytes(e.size) + ", too large to preview here. Extract it to open it.";
+                    } else {
+                        ZipTool.Head full = ZipTool.readHead(a, e, ARCHIVE_IMAGE_LIMIT);
+                        r.put("mime", ZipTool.imageMime(e.name));
+                        r.put("b64", android.util.Base64.encodeToString(full.data, android.util.Base64.NO_WRAP));
+                    }
+                }
+                if ("axml".equals(kind)) {
+                    if (e.size > ARCHIVE_AXML_LIMIT) {
+                        kind = "hex";
+                        note = "This compiled XML is too large to decode here.";
+                    } else {
+                        try {
+                            ZipTool.Head full = ZipTool.readHead(a, e, ARCHIVE_AXML_LIMIT);
+                            r.put("text", ManifestDecoder.decodeBytes(full.data, null));
+                        } catch (Throwable t) {
+                            kind = "hex";
+                            note = "Couldn't decode this compiled XML (" + errMsg(t) + ").";
+                        }
+                    }
+                }
+                if ("text".equals(kind)) {
+                    ZipTool.Head full = ZipTool.readHead(a, e, ARCHIVE_TEXT_LIMIT);
+                    String text = new String(full.data, "UTF-8");
+                    boolean valid = !full.truncated && ZipTool.isValidUtf8(full.data, full.data.length, false);
+                    String block = archiveEditBlock(fmCanonicalPath(path));
+                    r.put("text", text);
+                    r.put("truncated", full.truncated);
+                    r.put("crlf", text.contains("\r\n") && !text.replace("\r\n", "").contains("\n"));
+                    r.put("editable", valid && block == null);
+                    if (full.truncated) r.put("editNote", "Too large to edit here (over " + XapkInfo.humanBytes(ARCHIVE_TEXT_LIMIT) + ").");
+                    else if (!valid) r.put("editNote", "Not plain UTF-8 text, so it can't be edited safely.");
+                    else if (block != null) r.put("editNote", block);
+                }
+                if ("hex".equals(kind)) {
+                    r.put("hex", ZipTool.hexDump(head.data, head.data.length, 512));
+                    if (!note.isEmpty()) r.put("note", note);
+                }
+                r.put("kind", kind);
+                return r.toString();
+            } catch (Throwable t) {
+                return archiveFail(t);
+            }
+        }
+
+        /**
+         * Extracts a file, or a folder (entry ends with '/'; "" is everything), into destDir. Returns "started" or
+         * "busy"; progress arrives as window.onArchiveProgress(text) and the end as window.onArchiveResult(json).
+         */
+        @JavascriptInterface
+        public String archiveExtract(final String path, final String entry, final String destDir) {
+            synchronized (archiveLock) {
+                if (archiveBusy) return "busy";
+                archiveBusy = true;
+            }
+            executor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject res = new JSONObject();
+                    File tmp = null;
+                    try {
+                        res.put("op", "extract");
+                        ZipTool.Archive a = archiveFor(path, false);
+                        String dest = fmCanonicalPath(destDir == null || destDir.trim().isEmpty() ? "/storage/emulated/0/Download" : destDir.trim());
+                        File dir = new File(dest);
+                        String name = entry == null ? "" : entry;
+                        boolean tree = name.isEmpty() || name.endsWith("/");
+                        boolean writable = (dir.isDirectory() || dir.mkdirs()) && dir.canWrite();
+                        if (!tree) {
+                            ZipTool.Entry e = a.find(name);
+                            if (e == null || e.dir) throw new IOException("Not found in the archive: " + name);
+                            String base = ZipTool.safeName(e.baseName());
+                            if (base == null) throw new IOException("Unsafe file name: " + name);
+                            notifyArchiveProgress("Extracting " + base + "…");
+                            long bytes;
+                            if (writable) {
+                                bytes = ZipTool.extractTo(a, e, new File(dir, base));
+                            } else {
+                                tmp = new File(getCacheDir(), "archive_extract.tmp");
+                                bytes = ZipTool.extractTo(a, e, tmp);
+                                String err = writeFileTo(tmp, dest + "/" + base);
+                                if (err != null) throw new IOException(err);
+                            }
+                            res.put("files", 1);
+                            res.put("bytes", bytes);
+                            res.put("skipped", 0);
+                            res.put("dest", dest + "/" + base);
+                        } else {
+                            if (!writable) {
+                                throw new IOException("This app can't write to " + dest + ". Choose a folder on shared storage, like /storage/emulated/0/Download/…");
+                            }
+                            final long[] last = {0};
+                            long[] r = ZipTool.extractTree(a, name, dir, new ZipTool.Progress() {
+                                @Override
+                                public boolean onProgress(long doneBytes, int doneFiles, String current) {
+                                    long now = System.currentTimeMillis();
+                                    if (now - last[0] > 200 && !current.isEmpty()) {
+                                        last[0] = now;
+                                        notifyArchiveProgress("Extracting " + (doneFiles + 1) + ": " + current);
+                                    }
+                                    return true;
+                                }
+                            });
+                            res.put("files", r[0]);
+                            res.put("bytes", r[1]);
+                            res.put("skipped", r[2]);
+                            res.put("dest", dest);
+                        }
+                        res.put("ok", true);
+                    } catch (Throwable t) {
+                        try {
+                            res.put("ok", false);
+                            res.put("error", errMsg(t));
+                        } catch (Exception ignored) {}
+                    } finally {
+                        if (tmp != null) tmp.delete();
+                        synchronized (archiveLock) {
+                            archiveBusy = false;
+                        }
+                    }
+                    notifyJs("window.onArchiveResult && window.onArchiveResult(" + res.toString() + ")");
+                }
+            });
+            return "started";
+        }
+
+        /**
+         * Edits the archive in place. opJson is one of {op:"delete",name} (a trailing '/' deletes the folder),
+         * {op:"rename",name,to}, {op:"replaceText",name,text,crlf}, {op:"add",from,to,overwrite} or {op:"mkdir",to}.
+         * The archive is rewritten next to the original and swapped in only when that worked. Returns "started" or
+         * "busy"; the end arrives as window.onArchiveResult(json). An edited APK's signature no longer matches.
+         */
+        @JavascriptInterface
+        public String archiveEdit(final String path, final String opJson) {
+            synchronized (archiveLock) {
+                if (archiveBusy) return "busy";
+                archiveBusy = true;
+            }
+            executor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject res = new JSONObject();
+                    File tmp = null;
+                    try {
+                        JSONObject op = new JSONObject(opJson);
+                        String kind = op.optString("op");
+                        res.put("op", kind);
+                        String p = fmCanonicalPath(path);
+                        String block = archiveEditBlock(p);
+                        if (block != null) throw new IOException(block);
+                        ZipTool.Archive a = archiveFor(p, false);
+                        List<ZipTool.Edit> edits = new ArrayList<ZipTool.Edit>();
+                        String msg;
+                        String name = op.optString("name");
+                        if ("delete".equals(kind)) {
+                            edits.add(name.endsWith("/") ? ZipTool.Edit.deleteTree(name) : ZipTool.Edit.delete(name));
+                            msg = "Deleted " + name;
+                        } else if ("rename".equals(kind)) {
+                            String to = op.optString("to");
+                            if (name.endsWith("/")) edits.add(ZipTool.Edit.renameTree(name, to.endsWith("/") ? to : to + "/"));
+                            else edits.add(ZipTool.Edit.rename(name, to));
+                            msg = "Renamed " + name + " to " + to;
+                        } else if ("replaceText".equals(kind)) {
+                            String text = op.optString("text");
+                            if (op.optBoolean("crlf")) text = text.replace("\r\n", "\n").replace("\n", "\r\n");
+                            if (a.find(name) == null) throw new IOException("Not found in the archive: " + name);
+                            edits.add(ZipTool.Edit.replace(name, text.getBytes("UTF-8")));
+                            msg = "Saved " + name;
+                        } else if ("add".equals(kind)) {
+                            String from = fmCanonicalPath(op.optString("from"));
+                            File src = new File(from);
+                            if (!src.isFile() || !src.canRead()) {
+                                throw new IOException("Can't read " + from + ". Pick a file on shared storage (All-files access is needed).");
+                            }
+                            String to = op.optString("to");
+                            if (a.find(to) != null) {
+                                if (!op.optBoolean("overwrite")) throw new IOException("\"" + to + "\" is already in the archive");
+                                edits.add(ZipTool.Edit.replace(to, src));
+                            } else {
+                                edits.add(ZipTool.Edit.add(to, src));
+                            }
+                            msg = "Added " + to;
+                        } else if ("mkdir".equals(kind)) {
+                            String to = op.optString("to");
+                            edits.add(ZipTool.Edit.add(to.endsWith("/") ? to : to + "/", new byte[0]));
+                            msg = "Created folder " + to;
+                        } else {
+                            throw new IOException("Unknown edit: " + kind);
+                        }
+
+                        File orig = new File(p);
+                        File dir = orig.getParentFile();
+                        boolean direct = orig.canWrite() && dir != null && dir.canWrite();
+                        tmp = direct ? new File(dir, "." + orig.getName() + ".edit-tmp") : new File(getCacheDir(), "archive_edit.tmp");
+                        notifyArchiveProgress("Rewriting " + orig.getName() + "…");
+                        final long[] last = {0};
+                        ZipTool.rewrite(a, tmp, edits, p.toLowerCase(java.util.Locale.US).endsWith(".apk"), new ZipTool.Progress() {
+                            @Override
+                            public boolean onProgress(long doneBytes, int doneFiles, String current) {
+                                long now = System.currentTimeMillis();
+                                if (now - last[0] > 250) {
+                                    last[0] = now;
+                                    notifyArchiveProgress("Rewriting… " + doneFiles + " entries, " + XapkInfo.humanBytes(doneBytes));
+                                }
+                                return true;
+                            }
+                        });
+                        ZipTool.open(tmp);      // a result that can't be read back never replaces the original
+                        if (direct) {
+                            if (!tmp.renameTo(orig)) throw new IOException("Couldn't replace " + orig.getName());
+                        } else {
+                            String err = writeFileTo(tmp, p);
+                            if (err != null) throw new IOException(err);
+                        }
+                        synchronized (archiveLock) {
+                            archiveCache = null;
+                        }
+                        res.put("ok", true);
+                        res.put("message", msg);
+                        res.put("apk", p.toLowerCase(java.util.Locale.US).endsWith(".apk"));
+                    } catch (Throwable t) {
+                        try {
+                            res.put("ok", false);
+                            res.put("error", errMsg(t));
+                        } catch (Exception ignored) {}
+                    } finally {
+                        if (tmp != null) tmp.delete();
+                        synchronized (archiveLock) {
+                            archiveBusy = false;
+                        }
+                    }
+                    notifyJs("window.onArchiveResult && window.onArchiveResult(" + res.toString() + ")");
+                }
+            });
+            return "started";
+        }
+
+        /** Forgets the open archive (and the shell-staged copy, if there was one). */
+        @JavascriptInterface
+        public void archiveClose() {
+            final boolean staged;
+            synchronized (archiveLock) {
+                staged = archiveCacheStaged;
+                archiveCache = null;
+                archiveCachePath = null;
+                archiveCacheStaged = false;
+            }
+            if (staged) {
+                executor.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        try { shellVia(resolveExecMode(), "rm -f " + ARCHIVE_STAGE); } catch (Throwable ignored) {}
+                    }
+                });
+            }
         }
 
         /** Runs ART dex optimization for a package (pm compile -m <mode> [-f]) via the active backend. */
@@ -5305,6 +6629,10 @@ public class MainActivity extends Activity {
         try {
             Shizuku.removeRequestPermissionResultListener(shizukuPermissionListener);
             Shizuku.removeBinderReceivedListener(shizukuBinderListener);
+        } catch (Throwable ignored) {}
+        try {
+            RishShell sh = rishShell;
+            if (sh != null) sh.close();
         } catch (Throwable ignored) {}
         try {
             executor.shutdown();
