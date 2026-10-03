@@ -30,6 +30,12 @@ public final class ManifestDecoder {
 
     private static final int UTF8_FLAG = 1 << 8;
 
+    // A real manifest or layout is a few hundred KB of text at most. A crafted file can be a few KB that expands
+    // to gigabytes (long strings repeated across attributes, tens of thousands of nested tags), so the output and
+    // the nesting depth are capped and the rest is left out with a note.
+    private static final int MAX_OUTPUT_CHARS = 4 * 1024 * 1024;
+    private static final int MAX_DEPTH = 256;
+
     private static final int TYPE_REFERENCE = 0x01;
     private static final int TYPE_ATTRIBUTE = 0x02;
     private static final int TYPE_STRING = 0x03;
@@ -104,8 +110,11 @@ public final class ManifestDecoder {
         // wrong pool string can't make the output claim to close a tag that was never opened.
         java.util.ArrayDeque<String> openTags = new java.util.ArrayDeque<String>();
 
+        boolean truncated = false;
         int pos = headerSize;
+        decodeLoop:
         while (pos + 8 <= data.length) {
+          if (xml.length() > MAX_OUTPUT_CHARS) { truncated = true; break; }
           try {
             int type = bb.getShort(pos) & 0xFFFF;
             int chunkHeaderSize = bb.getShort(pos + 2) & 0xFFFF;
@@ -138,6 +147,7 @@ public final class ManifestDecoder {
                 case RES_XML_END_NAMESPACE_TYPE:
                     break;
                 case RES_XML_START_ELEMENT_TYPE: {
+                    if (depth >= MAX_DEPTH) { truncated = true; break decodeLoop; }
                     if (openTagPending) xml.append(">\n");
                     int ext = pos + chunkHeaderSize;
                     String name = str(bb.getInt(ext + 4));
@@ -155,6 +165,7 @@ public final class ManifestDecoder {
                     pendingNamespaces.clear();
 
                     for (int i = 0; i < attrCount; i++) {
+                        if (xml.length() > MAX_OUTPUT_CHARS) { truncated = true; break; }
                         int a = ext + attrStart + i * attrSize;
                         if (attrSize < 20 || a < 0 || (long) a + 20 > data.length) break; // crafted/short chunk: keep the attributes already read
                         String nsUri = str(bb.getInt(a));
@@ -213,6 +224,7 @@ public final class ManifestDecoder {
               break;
           }
         }
+        if (truncated) xml.append("\n<!-- output cut here: this file is far larger than a real manifest -->\n");
         return xml.toString();
     }
 
