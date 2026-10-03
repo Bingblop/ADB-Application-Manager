@@ -1,5 +1,11 @@
 # Changelog
 
+## v6.0.3-Pro (versionCode 603)
+
+- **⬆️ The app menu is a little taller.** The sheet that opens from ⋯ on an app now stands 93% of the screen high instead of
+  85%, so the lists under its buttons (Permissions, App Ops, Components, Manifest) get more room: 64 px more on a 360 × 800
+  screen. Only this sheet changed; the others keep their height, and the strip above it still closes it when you tap it.
+
 ## v6.0.2-Pro (versionCode 602)
 
 - **📤 The Share APK button is gone from the app menu.** Tap ⋯ on an app and the action grid no longer has it. **Extract APK**

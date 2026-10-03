@@ -14,7 +14,7 @@ Debugging, Shizuku or Root**.
 
 ### [⬇️ Download the latest APK](https://github.com/Bingblop/ADB-Application-Manager/releases/latest)
 
-`com.bloatware.bingblop` · v6.0.2-Pro · signed APK, installs over every earlier version without uninstalling
+`com.bloatware.bingblop` · v6.0.3-Pro · signed APK, installs over every earlier version without uninstalling
 
 <table>
   <tr>
@@ -105,6 +105,12 @@ Left to right, with the 🎨 **Colors &amp; Themes** button in the header:
 | 🌈 **Overlays** | Recolor Android (Material You: wallpaper or any color, six styles) and switch system overlays on or off ([details](#overlays-and-material-you)) |
 | 🛍️ **Store** | ShizuStore, GitHub, F-Droid, Orion and an Aurora hand-off |
 | ℹ️ **About** | Who made it, which build and key you have, debug info, and the coffee button |
+
+## New in v6.0.3
+
+- **⬆️ A taller app menu.** The sheet that opens from **⋯** on an app now stands 93% of the screen high instead of 85%, so the
+  lists under its buttons (Permissions, App Ops, Components, Manifest) get more room: 64 px more on a 360 × 800 screen. The
+  other sheets keep their height, and the strip above it still closes it when you tap it.
 
 ## New in v6.0.2
 
@@ -813,9 +819,9 @@ CHANGELOG.md                   Release notes; the app shows them in What's new
 What was checked before each release, and what was not. The test scripts are not part of this repository, so none of
 this is something you can re-run from a clone.
 
-- **The UI**: 67 headless-Chromium scripts drive the real `assets/index.html` against a mock Android bridge:
+- **The UI**: 69 headless-Chromium scripts drive the real `assets/index.html` against a mock Android bridge:
   every tab, theme, filter, share / copy / find action, profiles and the drift banner, backups, the Installer, the
-  Store, the file manager and archive browser, the terminal, About, the Back button and, for the Hidden Settings tab, the
+  Store, the file manager and archive browser, the terminal, About, the Back button, the height of the app menu and, for the Hidden Settings tab, the
   list, search, filters and sort, tap-to-edit, press-and-hold flipping (with touch events of any hold length), creating,
   deleting, Undo, the change log, refused, unanswered and late requests, a 720-row table, and the layout at 320 and 360 px in
   light and dark. For the Overlays tab: the theme editor (hex, sliders, the 657 presets, styles), apply, reset and Undo, an
