@@ -8518,12 +8518,14 @@ Type any command below (e.g. pm list packages -d)
                 + (built.opts.dexopt ? '\npm compile -m ' + built.opts.dexoptMode + (built.opts.dexForce ? ' -f ' : ' ') + (built.opts.pkg || '<pkg>') : '');
         }
 
-        function installUninstallAsk(name) {
-            return name + ' is installed with a different signing key, so Android refuses to update it.\n\nUninstall the installed copy first and then install this one? The app and its data are deleted (for every user of this phone), and if the new install then fails the app stays uninstalled.';
+        function installUninstallAsk(name, pkg) {
+            const who = pkg && pkg !== name ? name + ' (' + pkg + ')' : name;
+            return who + ' is installed with a different signing key, so Android refuses to update it.\n\nUninstall the installed copy first and then install this one? The app and its data are deleted (for every user of this phone), and if the new install then fails the app stays uninstalled.';
         }
 
         let installRunningTimer = null;
         function runInstall(uninstallFirst) {
+            if (installRunning) { showToast('An install is already running', '⏳'); return; }
             if (!installData) { showToast('Pick a package first', '⚠️'); return; }
             const built = buildInstallOptions();
             if (!built.opts.splits.length) { showToast('No APK selected', '⚠️'); return; }
@@ -8533,7 +8535,7 @@ Type any command below (e.g. pm list packages -d)
             if (installFromFiles && built.opts.authorizer === 'none') { showToast('Installs from Files need ADB, Wireless Debugging or Shizuku', '⚠️'); return; }
             // Known before trying: an installed copy signed with another key can't be updated, only replaced.
             if (installFromFiles && uninstallFirst !== true && installData.installed && installData.signed && installData.signerMatchesInstalled === false) {
-                if (!confirm(installUninstallAsk(name))) return;
+                if (!confirm(installUninstallAsk(name, installData.pkg))) return;
                 uninstallFirst = true;
             }
             built.opts.uninstallFirst = installFromFiles && uninstallFirst === true;
@@ -8553,7 +8555,7 @@ Type any command below (e.g. pm list packages -d)
             if (prog) { prog.style.display = 'none'; prog.innerText = ''; }
             // From Files, an app signed with another key can only be replaced after uninstalling it: ask, then run again.
             if (r.retry === 'uninstall' && installFromFiles && installData) {
-                if (confirm(installUninstallAsk(installData.label || installData.pkg))) { runInstall(true); return; }
+                if (confirm(installUninstallAsk(installData.label || installData.pkg, installData.pkg))) { runInstall(true); return; }
             }
             showToast(r.ok ? 'Installed' : 'Install failed', r.ok ? '✅' : '⚠️');
             let out = r.output || '';

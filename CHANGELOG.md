@@ -12,7 +12,9 @@
   ready (and offers Working Modes when none is), with this app's own signature gates off so an edited or re-signed
   APK still opens. Android itself still verifies signatures (this app can't switch that off), so an APK whose signature
   Android refuses is signed with this app's key and installed, and an app signed by someone else is replaced only
-  after you agree to uninstall it (its data is deleted). Failures say why and what to turn on.
+  after you agree to uninstall it (its data is deleted; the copy that will replace it is prepared first, so a failure
+  while preparing leaves your app alone, and with Shizuku as the backend Shizuku's own app is never the one removed).
+  Failures say why and what to turn on. A key that was rotated still matches the key it replaced.
 - **ℹ️ An About tab.** The new last tab shows the developer (**Bingblop**) and the GitHub repo, this build's version,
   package, device, WebView and **signing certificate** (✅ when it is the official release key), copy / share
   **debug info** for bug reports, tips, privacy and credits, and **☕ Buy me a coffee**: one tap opens PayPal to
@@ -35,7 +37,10 @@
   draws the latest 800 entries, skips redraws when nothing changed, and polls off the page's thread.
 - **File manager: select many.** Press and hold a row (or tap ☑ Select), pick files and folders, then **Copy** or **Move**
   them (open the target folder, **📥 Paste here**) or **Delete** them in one go. Many files go through a few shell commands
-  instead of one each, conflicts ask first, failures are listed with the reason, and system locations are protected.
+  instead of one each, conflicts ask first, failures are listed with the reason, and system locations are protected
+  (including the same storage seen through `/mnt/...` mounts and however a path is spelled, `/a/../sdcard` too). A lost
+  connection stops the batch instead of waiting on every item, and a file merely *named* like an adb error isn't
+  mistaken for one.
 - **Rish shell hardening.** A mistake that makes some shells quit (`. missing.sh`, `export a-b=1`, `$((1/0))`) no longer drops
   you out: the shell is restarted in the same folder with a note. **STOP** is gentler (Ctrl-C first, then terminate, then
   kill — on the whole process tree, so a script's children don't linger and unrelated background jobs survive), closing

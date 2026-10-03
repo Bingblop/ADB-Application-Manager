@@ -81,13 +81,23 @@ public class MainActivity extends Activity {
     private File adbBinFile;
     private File adbHomeDir;
 
-    // A cached pool (as Executors.newCachedThreadPool), except that a job handed in after shutdown runs on the caller instead
-    // of being refused: the jobs that set a process-wide "busy" mark before submitting always get to clear it.
     private static int renderGoneCount;               // WebView renderer deaths within the last minute (process-wide: a re-created Activity must not forget them)
     private static long renderGoneAt;
 
-    private final ExecutorService executor = new java.util.concurrent.ThreadPoolExecutor(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
-            new java.util.concurrent.SynchronousQueue<Runnable>(), new java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy());
+    private final ExecutorService executor = Executors.newCachedThreadPool();
+
+    /**
+     * Hands a job to the executor. False when it refuses (shut down with the Activity): the caller then clears the
+     * process-wide "busy" mark it set before submitting, so a re-created page isn't told "busy" for the rest of the process.
+     */
+    private boolean submitJob(Runnable job) {
+        try {
+            executor.submit(job);
+            return true;
+        } catch (java.util.concurrent.RejectedExecutionException refused) {
+            return false;
+        }
+    }
 
     // Working modes: "auto", "adb_tcp", "adb_wireless", "shizuku", "root", "unprivileged".
     // The configured mode is only ever changed by an explicit user action (selecting a mode,
@@ -1618,7 +1628,7 @@ public class MainActivity extends Activity {
                     int sigFlags = Build.VERSION.SDK_INT >= 28 ? PackageManager.GET_SIGNING_CERTIFICATES : PackageManager.GET_SIGNATURES;
                     java.util.Set<String> installedSigners = signerDigests(getPackageManager().getPackageInfo(pkg, sigFlags), true);
                     PackageInfo archiveSigned = getPackageManager().getPackageArchiveInfo(apk.getAbsolutePath(), sigFlags);
-                    java.util.Set<String> newSigners = archiveSigned != null ? signerDigests(archiveSigned, false) : new HashSet<String>();
+                    java.util.Set<String> newSigners = archiveSigned != null ? signerDigests(archiveSigned, true) : new HashSet<String>();
                     if (!installedSigners.isEmpty() && !newSigners.isEmpty()) {
                         java.util.Set<String> common = new HashSet<String>(installedSigners);
                         common.retainAll(newSigners);
@@ -1721,7 +1731,7 @@ public class MainActivity extends Activity {
                     int sigFlags = Build.VERSION.SDK_INT >= 28 ? PackageManager.GET_SIGNING_CERTIFICATES : PackageManager.GET_SIGNATURES;
                     java.util.Set<String> installedSigners = signerDigests(getPackageManager().getPackageInfo(pkg, sigFlags), true);
                     PackageInfo archiveSigned = getPackageManager().getPackageArchiveInfo(apk.getAbsolutePath(), sigFlags);
-                    java.util.Set<String> newSigners = archiveSigned != null ? signerDigests(archiveSigned, false) : new HashSet<String>();
+                    java.util.Set<String> newSigners = archiveSigned != null ? signerDigests(archiveSigned, true) : new HashSet<String>();
                     if (!installedSigners.isEmpty() && !newSigners.isEmpty()) {
                         java.util.Set<String> common = new HashSet<String>(installedSigners);
                         common.retainAll(newSigners);
@@ -2660,8 +2670,10 @@ public class MainActivity extends Activity {
         res.put("splits", arr);
         res.put("totalSize", total);
 
-        // Signer of the archive + comparison to an already-installed copy, for the two signature gates.
+        // Signer of the archive + comparison to an already-installed copy, for the two signature gates. Both sides
+        // are compared with their rotation history, so a rotated key still matches the key it replaced.
         java.util.Set<String> archiveSigners = signerDigests(archive, false);
+        java.util.Set<String> archiveLineage = signerDigests(archive, true);
         res.put("signed", !archiveSigners.isEmpty());
         res.put("sigUnreadable", sigUnreadable);
         try {
@@ -2671,8 +2683,8 @@ public class MainActivity extends Activity {
             res.put("installedVersionCode", versionCodeOf(cur));
             java.util.Set<String> curSigners = signerDigests(cur, true);
             java.util.Set<String> common = new HashSet<String>(curSigners);
-            common.retainAll(archiveSigners);
-            res.put("signerMatchesInstalled", !curSigners.isEmpty() && !archiveSigners.isEmpty() && !common.isEmpty());
+            common.retainAll(archiveLineage);
+            res.put("signerMatchesInstalled", !curSigners.isEmpty() && !archiveLineage.isEmpty() && !common.isEmpty());
         } catch (PackageManager.NameNotFoundException nf) {
             res.put("installed", false);
         }
@@ -2699,9 +2711,18 @@ public class MainActivity extends Activity {
         return "adb_tcp".equals(mode) || "adb_wireless".equals(mode) || "shizuku".equals(mode) || "root".equals(mode);
     }
 
-    /** True when {@code pkg} is an installed, non-system app other than this one: the kind that can be removed to make room for a differently signed copy. */
-    private boolean canUninstallFirst(String pkg) {
+    /** The app that provides Shizuku. With Shizuku as the backend, removing it would take the install's own rights away. */
+    private static boolean isShizukuApp(String pkg) {
+        return SHIZUKU_PKG.equals(pkg) || SHIZUKU_PLUS_PKG.equals(pkg);
+    }
+
+    /**
+     * True when {@code pkg} is an installed, non-system app other than this one: the kind that can be removed to make room
+     * for a differently signed copy. With Shizuku as the backend that excludes Shizuku's own app.
+     */
+    private boolean canUninstallFirst(String pkg, String mode) {
         if (pkg == null || !pkg.matches("[A-Za-z0-9._]+") || pkg.equals(getPackageName())) return false;
+        if ("shizuku".equals(mode) && isShizukuApp(pkg)) return false;
         try {
             ApplicationInfo ai = getPackageManager().getApplicationInfo(pkg, 0);
             return (ai.flags & ApplicationInfo.FLAG_SYSTEM) == 0;
@@ -2717,7 +2738,10 @@ public class MainActivity extends Activity {
     private void uninstallInstalledCopy(String mode, String pkg) throws Exception {
         if (pkg == null || !pkg.matches("[A-Za-z0-9._]+")) throw new IllegalStateException("can't tell which app to uninstall first");
         if (pkg.equals(getPackageName())) throw new IllegalStateException("this app can't uninstall itself first");
-        if (!canUninstallFirst(pkg)) {
+        if ("shizuku".equals(mode) && isShizukuApp(pkg)) {
+            throw new IllegalStateException("Shizuku is doing this install and can't remove its own app. Use ADB or Root for this one.");
+        }
+        if (!canUninstallFirst(pkg, mode)) {
             try {
                 getPackageManager().getApplicationInfo(pkg, 0);
             } catch (PackageManager.NameNotFoundException nf) {
@@ -3069,6 +3093,8 @@ public class MainActivity extends Activity {
             @Override
             public void run() {
                 JSONObject res = new JSONObject();
+                // What was done to the phone along the way; it leads the report, also when a later step fails.
+                StringBuilder notes = new StringBuilder();
                 try {
                     JSONObject opts = new JSONObject(optsJson);
                     JSONArray sel = opts.optJSONArray("splits");
@@ -3104,9 +3130,10 @@ public class MainActivity extends Activity {
                         try {
                             PackageInfo cur = pm.getPackageInfo(archive.packageName, sigFlags);
                             java.util.Set<String> curSigners = signerDigests(cur, true);
-                            if (!curSigners.isEmpty() && !archiveSigners.isEmpty()) {
+                            java.util.Set<String> archiveLineage = archive != null ? signerDigests(archive, true) : new HashSet<String>();
+                            if (!curSigners.isEmpty() && !archiveLineage.isEmpty()) {
                                 java.util.Set<String> common = new HashSet<String>(curSigners);
-                                common.retainAll(archiveSigners);
+                                common.retainAll(archiveLineage);
                                 if (common.isEmpty()) {
                                     throw new IllegalStateException(archive.packageName + " is already installed with a different signing key (blocked by \"block signature mismatch\")");
                                 }
@@ -3130,8 +3157,14 @@ public class MainActivity extends Activity {
                     PackageInfo named = pm.getPackageArchiveInfo(gateApk.getAbsolutePath(), 0);
                     String pkgName = named != null ? named.packageName : null;
                     res.put("pkg", pkgName == null ? "" : pkgName);
-                    StringBuilder notes = new StringBuilder();
+                    List<File> preSigned = null;
                     if (viaFiles && opts.optBoolean("uninstallFirst", false)) {
+                        // Whatever can fail without touching the phone is done before the installed copy (and its data) goes:
+                        // an APK Android can't read a signature from will need the signed copy, so make it now.
+                        if (archiveSigners.isEmpty()) {
+                            notifyInstallProgress("Signing a copy with this app's key...");
+                            preSigned = signedCopies(files);
+                        }
                         notifyInstallProgress("Uninstalling the installed copy first...");
                         uninstallInstalledCopy(mode, pkgName);
                         notes.append("The installed copy was uninstalled first.\n");
@@ -3141,7 +3174,7 @@ public class MainActivity extends Activity {
                         // Android won't take the signature as it is (edited after signing, or unsigned). Sign a copy
                         // with this app's own key and try once more; the original file is not touched.
                         notifyInstallProgress("Android couldn't verify the signature - signing a copy with this app's key...");
-                        String again = installApksOptions(signedCopies(files), flags, mode);
+                        String again = installApksOptions(preSigned != null ? preSigned : signedCopies(files), flags, mode);
                         if (InstallHints.success(again)) {
                             notes.append("Android could not verify the APK's signature, so a copy was signed with this app's key and installed.\n");
                             out = again;
@@ -3155,7 +3188,7 @@ public class MainActivity extends Activity {
                     res.put("method", mode);
                     res.put("output", text);
                     if (!ok && viaFiles && !opts.optBoolean("uninstallFirst", false)
-                            && InstallHints.updateIncompatible(out) && canUninstallFirst(pkgName)) {
+                            && InstallHints.updateIncompatible(out) && canUninstallFirst(pkgName, mode)) {
                         // The page may ask for the installed copy to be removed and this to run again, so the
                         // staged files stay until it decides.
                         res.put("ok", false);
@@ -3169,7 +3202,7 @@ public class MainActivity extends Activity {
                     try {
                         res.put("ok", false);
                         res.put("method", "none");
-                        res.put("output", "Error: " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
+                        res.put("output", notes + "Error: " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
                     } catch (Exception ignored) {}
                     notifyJs("window.onInstallResult && window.onInstallResult(" + JSONObject.quote(res.toString()) + ")");
                 }
@@ -4069,7 +4102,7 @@ public class MainActivity extends Activity {
                         throw new IllegalStateException("backup.json says " + claimedPkg + " but base.apk installs as " + pkg + " - this backup looks damaged or tampered with");
                     }
                     long archiveVersionCode = versionCodeOf(archiveInfo);
-                    java.util.Set<String> archiveSigners = signerDigests(archiveInfo, false);
+                    java.util.Set<String> archiveSigners = signerDigests(archiveInfo, true);
 
                     // Same package already installed? Compare keys and versions - both read from the APK above,
                     // not from backup.json - before deciding whether install can be skipped.
@@ -4392,15 +4425,18 @@ public class MainActivity extends Activity {
         summary.put("upToDateOpenSource", upToDate.length());
     }
 
-    /** SHA-256 digests of the signing certificates (including past keys for installed apps). */
+    /**
+     * SHA-256 digests of the signing certificates. With {@code includeHistory}, a key that was rotated also lists the
+     * keys before it, which is what two packages are compared by: an APK signed with the newer key of a rotation may
+     * update an install signed with the older one, and the other way round.
+     */
     private static java.util.Set<String> signerDigests(PackageInfo pi, boolean includeHistory) {
         java.util.Set<String> out = new HashSet<String>();
         try {
             android.content.pm.Signature[] sigs = null;
             if (Build.VERSION.SDK_INT >= 28 && pi.signingInfo != null) {
-                sigs = includeHistory && !pi.signingInfo.hasMultipleSigners()
-                        ? pi.signingInfo.getSigningCertificateHistory()
-                        : pi.signingInfo.getApkContentsSigners();
+                if (includeHistory && !pi.signingInfo.hasMultipleSigners()) sigs = pi.signingInfo.getSigningCertificateHistory();
+                if (sigs == null || sigs.length == 0) sigs = pi.signingInfo.getApkContentsSigners();
             } else {
                 sigs = pi.signatures;
             }
@@ -6375,8 +6411,13 @@ public class MainActivity extends Activity {
             }
             if (first.isEmpty()) return false;
             if (first.matches("^\\d\\d-\\d\\d\\s+\\d\\d:\\d\\d:\\d\\d.*") || first.startsWith("---------")) return false;     // a real log line / buffer header
-            return first.startsWith("usage:") || first.startsWith("logcat:") || first.contains("unrecognized option")
-                    || first.contains("unknown option") || first.contains("invalid option") || first.contains("unknown argument");
+            if (first.startsWith("usage:")) return true;
+            // "logcat: ..." is also how it reports a failed read ("logcat: Unexpected EOF!"), so it only counts when it is about the options
+            if (first.startsWith("logcat:")) {
+                return first.contains("unrecognized") || first.contains("unknown") || first.contains("invalid") || first.contains("unexpected argument")
+                        || first.contains("usage");
+            }
+            return first.contains("unrecognized option") || first.contains("unknown option") || first.contains("invalid option") || first.contains("unknown argument");
         }
 
         @JavascriptInterface
@@ -6581,7 +6622,7 @@ public class MainActivity extends Activity {
                 if (fmBatchBusy) return "busy";
                 fmBatchBusy = true;
             }
-            executor.submit(new Runnable() {
+            if (!submitJob(new Runnable() {
                 @Override
                 public void run() {
                     JSONObject res = new JSONObject();
@@ -6611,8 +6652,13 @@ public class MainActivity extends Activity {
                         int done = 0;
                         String qd = BackupScripts.quote(dest);
                         final int chunk = 40;
+                        boolean linkLost = false;                         // the connection to the device is gone: nothing after that point is tried
                         for (int from = 0; from < todo.size(); from += chunk) {
                             List<String> part = todo.subList(from, Math.min(todo.size(), from + chunk));
+                            if (linkLost) {
+                                for (String q : part) failed.put(new JSONObject().put("p", q).put("error", "The connection to the device was lost"));
+                                continue;
+                            }
                             notifyJs("window.onFmBatchProgress && window.onFmBatchProgress(" + JSONObject.quote(fmBatchLabel(op) + " " + Math.min(todo.size(), from + chunk) + " of " + todo.size() + "…") + ")");
                             StringBuilder args = new StringBuilder();
                             for (String q : part) args.append(' ').append(BackupScripts.quote(q));
@@ -6624,10 +6670,17 @@ public class MainActivity extends Activity {
                                 done += part.size();
                                 continue;
                             }
+                            if (out != null && fmTransportLost(out.trim())) {
+                                // The whole group's answer says the link is gone: asking about each item would only wait on a dead connection.
+                                linkLost = true;
+                                for (String q : part) failed.put(new JSONObject().put("p", q).put("error", "The connection to the device was lost"));
+                                continue;
+                            }
                             // something in the group failed: do them one at a time to say which
                             int lost = 0;                                 // answers in a row that say the connection is gone
                             for (String q : part) {
                                 if (lost >= 3) {
+                                    linkLost = true;
                                     failed.put(new JSONObject().put("p", q).put("error", "The connection to the device was lost"));
                                     continue;
                                 }
@@ -6670,7 +6723,12 @@ public class MainActivity extends Activity {
                     }
                     notifyJs("window.onFmBatchDone && window.onFmBatchDone(" + res.toString() + ")");
                 }
-            });
+            })) {
+                synchronized (fmBatchLock) {
+                    fmBatchBusy = false;
+                }
+                return "error";
+            }
             return "started";
         }
 
@@ -6858,7 +6916,7 @@ public class MainActivity extends Activity {
                 if (archiveBusy) return "busy";
                 archiveBusy = true;
             }
-            executor.submit(new Runnable() {
+            if (!submitJob(new Runnable() {
                 @Override
                 public void run() {
                     JSONObject res = new JSONObject();
@@ -6928,7 +6986,12 @@ public class MainActivity extends Activity {
                     }
                     notifyJs("window.onArchiveResult && window.onArchiveResult(" + res.toString() + ")");
                 }
-            });
+            })) {
+                synchronized (archiveLock) {
+                    archiveBusy = false;
+                }
+                return "error";
+            }
             return "started";
         }
 
@@ -6944,7 +7007,7 @@ public class MainActivity extends Activity {
                 if (archiveBusy) return "busy";
                 archiveBusy = true;
             }
-            executor.submit(new Runnable() {
+            if (!submitJob(new Runnable() {
                 @Override
                 public void run() {
                     JSONObject res = new JSONObject();
@@ -7038,7 +7101,12 @@ public class MainActivity extends Activity {
                     }
                     notifyJs("window.onArchiveResult && window.onArchiveResult(" + res.toString() + ")");
                 }
-            });
+            })) {
+                synchronized (archiveLock) {
+                    archiveBusy = false;
+                }
+                return "error";
+            }
             return "started";
         }
 
@@ -7080,7 +7148,7 @@ public class MainActivity extends Activity {
                 if (archiveBusy) return "busy";
                 archiveBusy = true;
             }
-            executor.submit(new Runnable() {
+            if (!submitJob(new Runnable() {
                 @Override
                 public void run() {
                     JSONObject res = new JSONObject();
@@ -7117,7 +7185,12 @@ public class MainActivity extends Activity {
                     }
                     notifyJs("window.onArchiveStaged && window.onArchiveStaged(" + res.toString() + ")");
                 }
-            });
+            })) {
+                synchronized (archiveLock) {
+                    archiveBusy = false;
+                }
+                return "error";
+            }
             return "started";
         }
 
@@ -7132,7 +7205,7 @@ public class MainActivity extends Activity {
                 if (archiveBusy) return "busy";
                 archiveBusy = true;
             }
-            executor.submit(new Runnable() {
+            if (!submitJob(new Runnable() {
                 @Override
                 public void run() {
                     JSONObject res = new JSONObject();
@@ -7174,7 +7247,12 @@ public class MainActivity extends Activity {
                     }
                     notifyJs("window.onArchiveDiff && window.onArchiveDiff(" + res.toString() + ")");
                 }
-            });
+            })) {
+                synchronized (archiveLock) {
+                    archiveBusy = false;
+                }
+                return "error";
+            }
             return "started";
         }
 
@@ -7196,7 +7274,7 @@ public class MainActivity extends Activity {
                 if (archiveBusy) return "busy";
                 archiveBusy = true;
             }
-            executor.submit(new Runnable() {
+            if (!submitJob(new Runnable() {
                 @Override
                 public void run() {
                     String json;
@@ -7211,7 +7289,12 @@ public class MainActivity extends Activity {
                     }
                     notifyJs("window.onSigningKey && window.onSigningKey(" + json + ")");
                 }
-            });
+            })) {
+                synchronized (archiveLock) {
+                    archiveBusy = false;
+                }
+                return "error";
+            }
             return "started";
         }
 
@@ -7294,7 +7377,7 @@ public class MainActivity extends Activity {
                 if (archiveBusy) return "busy";
                 archiveBusy = true;
             }
-            executor.submit(new Runnable() {
+            if (!submitJob(new Runnable() {
                 @Override
                 public void run() {
                     JSONObject res = new JSONObject();
@@ -7349,7 +7432,12 @@ public class MainActivity extends Activity {
                     }
                     notifyJs("window.onArchiveSigned && window.onArchiveSigned(" + res.toString() + ")");
                 }
-            });
+            })) {
+                synchronized (archiveLock) {
+                    archiveBusy = false;
+                }
+                return "error";
+            }
             return "started";
         }
 
@@ -7677,6 +7765,10 @@ public class MainActivity extends Activity {
      */
     @Override
     public void onBackPressed() {
+        if (isHeadless()) {                                // a tile / widget action has no page: Back just closes it
+            super.onBackPressed();
+            return;
+        }
         final WebView wv = webView;
         if (wv == null || !pageReady) {
             backWithoutPage();
