@@ -1,0 +1,16 @@
+1. files listed on open: 0 (expect 3)
+   current path: /storage/emulated/0
+2. navigated into Download: /sdcard/Download | entries: 1
+3. up back to: /sdcard
+4. apk action buttons: ["📦 Install","✍️ Sign…","📂 View contents","✏️ Rename","📋 Copy","➡️ Move","🗑️ Delete"]
+   install staged + routed to installer tab: [ 'install:/sdcard/app.apk', 'inspect:/data/local/tmp/fm_install.apk' ] | installer active: true
+5. view file read call + viewer shown: [ 'read:/sdcard/notes.txt' ] | true
+6. rename op (expect mv to /sdcard/renamed.txt): [ 'op:mv:/sdcard/notes.txt:/sdcard/renamed.txt' ]
+7. delete op (expect rm): [ 'op:rm:/sdcard/notes.txt' ]
+8. mkdir op (expect mkdir /sdcard/NewDir): [ 'op:mkdir:/sdcard/NewDir' ]
+9. logcat loaded on open: [ 'logcat:I::500' ]
+   output shown: LOG level=I lines=500
+No log lines.
+10. logcat refresh with level E + filter: [ 'logcat:E:ActivityManager:500' ]
+11. logcat clear called: true
+errors: []

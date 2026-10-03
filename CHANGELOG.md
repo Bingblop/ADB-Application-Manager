@@ -1,5 +1,11 @@
 # Changelog
 
+## v6.0.4-Pro (versionCode 604)
+
+- **🚀 A launch that works shows no dialog.** In an app's **Components** tab, **Launch** now just opens the activity and a toast
+  says it went through. The sheet with Android's answer opens only when the launch fails, so a launch that worked no longer leaves
+  a dialog to close.
+
 ## v6.0.3-Pro (versionCode 603)
 
 - **⬆️ The app menu is a little taller.** The sheet that opens from ⋯ on an app now stands 93% of the screen high instead of

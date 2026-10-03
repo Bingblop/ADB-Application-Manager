@@ -1,0 +1,12 @@
+header: ACTIVITIES (3 • 2 unexported)
+unexported rows: [ 'Hidden$Debug', 'TestingSettings', 'SettingsService$Inner' ]
+result 1 (unexported, passes): dialog shown: false | toast: Activity launched
+result 2 (unexported, refused): dialog shown: true | toast: Launch failed
+   title: Launch Activity | subtitle: Unexported • via shizuku
+   answer: Hidden$Debug | FAILED | com.android.settings/com.android.settings.Hidden$Debug | Starting: Intent { cmp=com.android.settings/.Hidden$Debug } | Error: Activity class does not exist / Permission Denial: not exported from uid 1000
+result 3 (exported, intent, passes): dialog shown: false | toast: Activity launched
+a passing launch after a refused one: dialog shown: false
+read-only guard shown: true
+search debug: [ 'Hidden$Debug' ]
+calls: ["launch:com.android.settings.TestingSettings:false","launch:com.android.settings.Hidden$Debug:false","launch:com.android.settings.Settings:true","launch:com.android.settings.Hidden$Debug:false","launch:com.android.settings.TestingSettings:false"]
+errors: []

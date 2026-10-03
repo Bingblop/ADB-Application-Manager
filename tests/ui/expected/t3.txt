@@ -1,0 +1,14 @@
+row buttons: App Settings, Menu
+frozen app menu shows Enable: true Freeze: false
+perm rows: 4 | tab label: 🛡️ Permissions (4)
+changeable rows: 2
+camera after toggle: CAMERA
+RUNTIMEtake pictures and videos • android.permission.CAMERA
+DENIED
+ops rows: 4
+CAMERA mode now: Ignore
+restricted ops: [ 'CAMERA', 'RUN_ANY_IN_BACKGROUND', 'WAKE_LOCK' ]
+manifest meta: 120 lines
+find meta: 1 / 2 matches |   15  android:name="android.intent.action.SCREEN_OFF" />
+calls: ["action:app_settings:com.sec.android.app.camera","perm:android.permission.CAMERA=false","appop:CAMERA=ignore","appop:RUN_ANY_IN_BACKGROUND=deny","copy:5443","save:com.sec.android.app.camera_AndroidManifest.xml:5443"]
+errors: []

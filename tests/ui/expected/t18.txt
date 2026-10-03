@@ -1,0 +1,8 @@
+selectable  app name: text | pkg: text | header: text
+unselectable tab: none | pill: none | row button: none | checkbox: none
+drag on package name → "com.sec.android.app.sbrowser" | row toggled by the drag: false
+drag on a button     → ""
+row tap still selects app: true
+drag on menu version  → "Version 26.0.3.1 (2600031)"
+terminal selection contains output: true
+errors: []

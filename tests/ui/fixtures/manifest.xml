@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:sharedUserId="android.uid.system"
+        android:versionCode="23"
+        android:versionName="6.0-2438415"
+        android:sharedUserLabel="@0x01040119"
+        package="android"
+        coreApp="true">
+    <uses-sdk
+            android:minSdkVersion="23"
+            android:targetSdkVersion="23" />
+    <eat-comment />
+    <protected-broadcast
+            android:name="android.intent.action.SCREEN_OFF" />
+    <protected-broadcast
+            android:name="android.intent.action.SCREEN_ON" />
+    <protected-broadcast
+            android:name="android.intent.action.USER_PRESENT" />
+    <protected-broadcast
+            android:name="android.intent.action.TIME_SET" />
+    <protected-broadcast
+            android:name="android.intent.action.TIME_TICK" />
+    <protected-broadcast
+            android:name="android.intent.action.TIMEZONE_CHANGED" />
+    <protected-broadcast
+            android:name="android.intent.action.DATE_CHANGED" />
+    <protected-broadcast
+            android:name="android.intent.action.BOOT_COMPLETED" />
+    <protected-broadcast
+            android:name="android.intent.action.PACKAGE_INSTALL" />
+    <protected-broadcast
+            android:name="android.intent.action.PACKAGE_ADDED" />
+    <protected-broadcast
+            android:name="android.intent.action.PACKAGE_REPLACED" />
+    <protected-broadcast
+            android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+    <protected-broadcast
+            android:name="android.intent.action.PACKAGE_REMOVED" />
+    <protected-broadcast
+            android:name="android.intent.action.PACKAGE_FULLY_REMOVED" />
+    <protected-broadcast
+            android:name="android.intent.action.PACKAGE_CHANGED" />
+    <protected-broadcast
+            android:name="android.intent.action.PACKAGE_RESTARTED" />
+    <protected-broadcast
+            android:name="android.intent.action.PACKAGE_DATA_CLEARED" />
+    <protected-broadcast
+            android:name="android.intent.action.PACKAGE_FIRST_LAUNCH" />
+    <protected-broadcast
+            android:name="android.intent.action.PACKAGE_NEEDS_VERIFICATION" />
+    <protected-broadcast
+            android:name="android.intent.action.PACKAGE_VERIFIED" />
+    <protected-broadcast
+            android:name="android.intent.action.UID_REMOVED" />
+    <protected-broadcast
+            android:name="android.intent.action.QUERY_PACKAGE_RESTART" />
+    <protected-broadcast
+            android:name="android.intent.action.CONFIGURATION_CHANGED" />
+    <protected-broadcast
+            android:name="android.intent.action.LOCALE_CHANGED" />
+    <protected-broadcast
+            android:name="android.intent.action.BATTERY_CHANGED" />
+    <protected-broadcast
+            android:name="android.intent.action.BATTERY_LOW" />
+    <protected-broadcast
+            android:name="android.intent.action.BATTERY_OKAY" />
+    <protected-broadcast
+            android:name="android.intent.action.ACTION_POWER_CONNECTED" />
+    <protected-broadcast
+            android:name="android.intent.action.ACTION_POWER_DISCONNECTED" />
+    <protected-broadcast
+            android:name="android.intent.action.ACTION_SHUTDOWN" />
+    <protected-broadcast
+            android:name="android.intent.action.CHARGING" />
+    <protected-broadcast
+            android:name="android.intent.action.DISCHARGING" />
+    <protected-broadcast
+            android:name="android.intent.action.DEVICE_STORAGE_LOW" />
+    <protected-broadcast
+            android:name="android.intent.action.DEVICE_STORAGE_OK" />
+    <protected-broadcast
+            android:name="android.intent.action.DEVICE_STORAGE_FULL" />
+    <protected-broadcast
+            android:name="android.intent.action.DEVICE_STORAGE_NOT_FULL" />
+    <protected-broadcast
+            android:name="android.intent.action.NEW_OUTGOING_CALL" />
+    <protected-broadcast
+            android:name="android.intent.action.REBOOT" />
+    <protected-broadcast
+            android:name="android.intent.action.DOCK_EVENT" />
+    <protected-broadcast
+            android:name="android.intent.action.MASTER_CLEAR_NOTIFICATION" />
+    <protected-broadcast
+            android:name="android.intent.action.USER_ADDED" />
+    <protected-broadcast
+            android:name="android.intent.action.USER_REMOVED" />
+    <protected-broadcast
+            android:name="android.intent.action.USER_STARTING" />
+    <protected-broadcast
+            android:name="android.intent.action.USER_STARTED" />
+    <protected-broadcast
+            android:name="android.intent.action.USER_STOPPING" />
+    <protected-broadcast
+            android:name="android.intent.action.USER_STOPPED" />
+    <protected-broadcast
+            android:name="android.intent.action.USER_BACKGROUND" />
+    <protected-broadcast
+            android:name="android.intent.action.USER_FOREGROUND" />
+    <protected-broadcast
+            android:name="android.intent.action.USER_SWITCHED" />
+    <protected-broadcast
+            android:name="android.intent.action.INTENT_FILTER_NEEDS_VERIFICATION" />
+    <protected-broadcast
+            android:name="android.os.action.POWER_SAVE_MODE_CHANGED" />
+    <protected-broadcast
+            android:name="android.os.action.POWER_SAVE_MODE_CHANGING" />
+    <protected-broadcast
+            android:name="android.os.action.DEVICE_IDLE_MODE_CHANGED" />
+    <protected-broadcast

@@ -1,0 +1,157 @@
+{
+  "repo": {
+    "name": {
+      "en-US": "Seeker slsk client"
+    },
+    "description": {
+      "en-US": "This repository contains official releases of the Seeker soulseek client from https://github.com/jackBonadies/SeekerAndroid"
+    },
+    "icon": {
+      "en-US": {
+        "name": "/icons/icon.png",
+        "sha256": "6ccac13982e0ea13a5995ac45a19e20caa988b5c02b98d1dc0d1aed0b8793e53",
+        "size": 978
+      }
+    },
+    "address": "https://raw.githubusercontent.com/jackBonadies/SeekerAndroid/fdroid/fdroid/repo",
+    "timestamp": 1709681425000
+  },
+  "packages": {
+    "com.companyname.andriodapp1": {
+      "metadata": {
+        "added": 1709681419000,
+        "categories": [
+          "Internet"
+        ],
+        "changelog": "https://github.com/jackBonadies/SeekerAndroid/releases",
+        "issueTracker": "https://github.com/jackBonadies/SeekerAndroid/issues",
+        "lastUpdated": 1709681419000,
+        "license": "GPL-3.0",
+        "sourceCode": "https://github.com/jackBonadies/SeekerAndroid",
+        "screenshots": {
+          "phone": {
+            "en-US": [
+              {
+                "name": "/com.companyname.andriodapp1/en-US/phoneScreenshots/1.png",
+                "sha256": "2b0c2ece03722cb85820d97cc5dd52db5f1a9087cbe20e90e709d3b956ef7927",
+                "size": 40885
+              },
+              {
+                "name": "/com.companyname.andriodapp1/en-US/phoneScreenshots/2.png",
+                "sha256": "070a3291a524d511fcc0c322206a7e7cdbb1794ff1ce60b5d422cc79d51ea8da",
+                "size": 153419
+              },
+              {
+                "name": "/com.companyname.andriodapp1/en-US/phoneScreenshots/3.png",
+                "sha256": "af69a33ae37a87a2422514f707e172f1095b2dba4fdfe05ad7aa0f4f477b247b",
+                "size": 139174
+              },
+              {
+                "name": "/com.companyname.andriodapp1/en-US/phoneScreenshots/4.png",
+                "sha256": "409d62e84c451aa41f8eef74475ad0ae0c0cf6bb6d2568d6f7663be1ba060b03",
+                "size": 187841
+              },
+              {
+                "name": "/com.companyname.andriodapp1/en-US/phoneScreenshots/5.png",
+                "sha256": "86f5860e7d546e6605305fcacf937e4512cf3ce8b8ffbe3ca98ad96da5ff24a6",
+                "size": 57512
+              },
+              {
+                "name": "/com.companyname.andriodapp1/en-US/phoneScreenshots/6.png",
+                "sha256": "764eaa2460d0f80f6fc720a41cc20d19e1efe006a10966772089fd9481b4f7e4",
+                "size": 163576
+              }
+            ]
+          }
+        },
+        "authorEmail": "author@example.com",
+        "authorName": "jackBonadies",
+        "name": {
+          "en-US": "Seeker"
+        },
+        "summary": {
+          "en-US": "Android client for the Soulseek peer-to-peer network"
+        },
+        "description": {
+          "en-US": "Android client for the Soulseek peer-to-peer network\n\n\nSeeker is a Soulseek client for Android written in C# (with Xamarin) supporting downloading, searching (including wishlist and filters), sharing, messages, chatrooms, port forwarding, user info, privileges, and more.\n\nThis work uses the Soulseek.NET library for communicating with Soulseek server and network peers. It also references the unofficial Soulseek Protocol Documentation implemented by the developers of the Nicotine+ client.\n\n- The Soulseek server, which makes this app possible, relies on donations. Donate: at https://www.slsknet.org/donate.php\n- Please help translate: https://crowdin.com/project/seeker\n- Official release is through Google Play store: https://play.google.com/store/apps/details?id=com.companyname.andriodapp1\n\nThis app will always be completely free and open source software, no ads, no 'premium' versions or paid features, etc.\n"
+        },
+        "icon": {
+          "en-US": {
+            "name": "/icons/com.companyname.andriodapp1.104.png",
+            "sha256": "dc1e9a6009e228c32dd75b0e5eedc0aec9372d33d16ff390271d941ba754f77c",
+            "size": 1282
+          }
+        },
+        "preferredSigner": "73345e7d43feb55939450de4497d64c001d2ae764265b69c2cbf3ea03677a8a2"
+      },
+      "versions": {
+        "b9d259e392f3e653ea2f7ca52d2491adad95d35d3a1276745b177ff3be9813ec": {
+          "added": 1709681419000,
+          "file": {
+            "name": "/seeker_v2.10.5.apk",
+            "sha256": "b9d259e392f3e653ea2f7ca52d2491adad95d35d3a1276745b177ff3be9813ec",
+            "size": 18494187
+          },
+          "manifest": {
+            "nativecode": [
+              "arm64-v8a",
+              "armeabi-v7a"
+            ],
+            "versionName": "2.10.5",
+            "versionCode": 104,
+            "usesSdk": {
+              "minSdkVersion": 19,
+              "targetSdkVersion": 33
+            },
+            "signer": {
+              "sha256": [
+                "73345e7d43feb55939450de4497d64c001d2ae764265b69c2cbf3ea03677a8a2"
+              ]
+            },
+            "usesPermission": [
+              {
+                "name": "android.permission.ACCESS_NETWORK_STATE"
+              },
+              {
+                "name": "android.permission.INTERNET"
+              },
+              {
+                "name": "android.permission.WRITE_EXTERNAL_STORAGE"
+              },
+              {
+                "name": "android.permission.FOREGROUND_SERVICE"
+              },
+              {
+                "name": "android.permission.ACCESS_WIFI_STATE"
+              },
+              {
+                "name": "android.permission.CHANGE_WIFI_MULTICAST_STATE"
+              },
+              {
+                "name": "android.permission.WAKE_LOCK"
+              },
+              {
+                "name": "android.permission.MANAGE_EXTERNAL_STORAGE"
+              },
+              {
+                "name": "android.permission.POST_NOTIFICATIONS"
+              },
+              {
+                "name": "android.permission.READ_MEDIA_AUDIO"
+              },
+              {
+                "name": "com.companyname.andriodapp1.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+              },
+              {
+                "name": "android.permission.READ_EXTERNAL_STORAGE"
+              }
+            ]
+          },
+          "antiFeatures": {
+            "NonFreeNet": {}
+          }
+        }
+      }
+    }
+  }
+}
