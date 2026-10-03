@@ -170,6 +170,16 @@
             transition: all 0.2s;
         }
 
+        /* The theme button is a tap target of its own, so it is larger than the mode badge's text pill */
+        #colorsHeaderBtn {
+            min-width: 44px;
+            height: 36px;
+            padding: 0 10px;
+            justify-content: center;
+            font-size: 19px;
+            line-height: 1;
+        }
+
         .status-dot {
             width: 8px;
             height: 8px;
@@ -264,6 +274,17 @@
         .stat-card:active {
             transform: scale(0.96);
             background: var(--bg-card-hover);
+        }
+
+        /* the card whose filter the list below is showing */
+        .stat-card.active {
+            border-color: var(--accent);
+            background: rgba(var(--ov), 0.1);
+            box-shadow: 0 0 0 1px var(--accent), 0 2px 12px var(--accent-glow);
+        }
+
+        .stat-card.active .stat-label {
+            color: var(--text-main);
         }
 
         .stat-num {
@@ -839,6 +860,9 @@
            at the same z-index the sheet later in the page would hide it. */
         #commandResultsModal { z-index: 310; }
 
+        /* The permission prompt comes from an action that may be inside any sheet (signing, an archive, a file action): it goes on top of them. */
+        #permModal { z-index: 320; }
+
         .modal-sheet {
             background: var(--bg-sheet);
             border: 1px solid var(--border-glass);
@@ -1351,6 +1375,180 @@
             white-space: pre-wrap;
             word-break: break-word;
             line-height: 1.45;
+        }
+
+        /* Buttons a result can offer above Done (after an install: Launch Application, Application Settings). The sheet grows by
+           their height, so the output box above them keeps the height it has without them. */
+        .result-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .result-actions .mode-action-btn,
+        #commandResultsModal.has-actions #commandResultsDone {
+            width: 100%;
+            justify-content: center;
+            min-height: 44px;
+            font-size: 12.5px;
+        }
+
+        #commandResultsModal.has-actions .modal-sheet {
+            max-height: 94vh;
+        }
+
+        /* a text box with a small drop-down button at its end (the installer's source and requester fields) */
+        .input-combo {
+            position: relative;
+            margin-bottom: 10px;
+        }
+
+        .input-combo .modal-text-input {
+            margin-bottom: 0;
+            padding-right: 54px;
+        }
+
+        .input-combo-btn {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            bottom: 4px;
+            width: 40px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border-glass);
+            border-radius: 8px;
+            background: rgba(var(--ov), 0.08);
+            color: var(--text-main);
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .input-combo-btn:disabled {
+            opacity: 0.4;
+            cursor: default;
+        }
+
+        .input-combo-btn[aria-expanded="true"] {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: var(--on-accent);
+        }
+
+        .combo-menu {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: calc(100% + 4px);
+            z-index: 80;
+            max-height: min(320px, 50vh);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 4px;
+            background: var(--bg-sheet);
+            border: 1px solid var(--border-glass);
+            border-radius: 12px;
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+        }
+
+        .combo-item {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1px;
+            width: 100%;
+            padding: 9px 10px;
+            border: none;
+            border-radius: 8px;
+            background: none;
+            color: var(--text-main);
+            font-size: 12.5px;
+            font-weight: 800;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .combo-item:hover,
+        .combo-item:active {
+            background: rgba(var(--ov), 0.1);
+        }
+
+        .combo-item small {
+            font-family: ui-monospace, Menlo, Consolas, monospace;
+            font-size: 10.5px;
+            font-weight: 600;
+            color: var(--text-muted);
+            word-break: break-all;
+        }
+
+        .combo-item.clear {
+            color: var(--text-muted);
+        }
+
+        /* the permissions sheet */
+        #permSubtitle {
+            word-break: normal;          /* the other sheets' subtitles break anywhere (package names); this one is a sentence */
+            overflow-wrap: break-word;
+        }
+
+        .pm-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-top: 1px solid var(--border-glass);
+        }
+
+        .pm-row:first-child {
+            border-top: none;
+        }
+
+        .pm-ico {
+            flex: 0 0 auto;
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 19px;
+            background: rgba(var(--ov), 0.07);
+        }
+
+        .pm-txt {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .pm-name {
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        .pm-why {
+            font-size: 11px;
+            line-height: 1.4;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .pm-ok {
+            flex: 0 0 auto;
+            font-size: 11.5px;
+            font-weight: 800;
+            color: var(--status-running);
+        }
+
+        .pm-row .mode-action-btn {
+            flex: 0 0 auto;
+            min-height: 40px;
+            padding-left: 16px;
+            padding-right: 16px;
+            justify-content: center;
         }
 
         .confirm-list-box {
@@ -2579,6 +2777,48 @@
             color: var(--text-muted);
         }
 
+        /* A small tip bubble between the buttons and the filter chips, its point aimed at the chips */
+        .filters-hint {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin: 2px 0 10px;
+            padding: 6px 10px;
+            border: 1px dashed var(--border-glass);
+            border-radius: 10px;
+            background: rgba(var(--ov), 0.04);
+            font-size: 10.5px;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+
+        .filters-hint::after {
+            content: '';
+            position: absolute;
+            left: 22px;
+            bottom: -6px;
+            width: 10px;
+            height: 10px;
+            background: var(--bg-base);
+            border-right: 1px dashed var(--border-glass);
+            border-bottom: 1px dashed var(--border-glass);
+            transform: rotate(45deg);
+        }
+
+        .filters-hint-x {
+            flex: 0 0 auto;
+            padding: 8px 10px;
+            margin: -6px -6px -6px 0;
+            cursor: pointer;
+            border-radius: 8px;
+        }
+
+        .filters-hint-x:focus-visible {
+            outline: 2px solid var(--accent);
+        }
+
         .apps-sort-select {
             flex: 1;
             min-width: 120px;
@@ -2656,7 +2896,7 @@
             </div>
         </div>
         <div style="display:flex; align-items:center; gap:8px;">
-            <div class="status-badge" id="colorsHeaderBtn" onclick="switchView('colors')" title="Colors &amp; Themes" aria-label="Colors and Themes" style="cursor:pointer;">🎨</div>
+            <div class="status-badge" id="colorsHeaderBtn" role="button" tabindex="0" onclick="switchView('colors')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();switchView('colors');}" title="Colors &amp; Themes" aria-label="Colors and Themes" style="cursor:pointer;">🎨</div>
             <div class="status-badge" id="execModeBadge" onclick="openWorkingModesModal()" title="Working Modes & ADB Setup">
                 <div class="status-dot" id="execModeDot"></div>
                 <span id="execModeText">Checking Mode...</span>
@@ -2708,27 +2948,27 @@
 
             <!-- Live Statistics Grid -->
             <div class="stats-grid">
-                <div class="stat-card" onclick="setFilter('all')">
+                <div class="stat-card" data-filter="all" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('all')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
                     <div class="stat-num" id="statTotal">--</div>
                     <div class="stat-label">Total Installed</div>
                 </div>
-                <div class="stat-card" onclick="setFilter('running')">
+                <div class="stat-card" data-filter="running" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('running')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
                     <div class="stat-num" style="color:var(--status-running);" id="statRunning">--</div>
                     <div class="stat-label">Running</div>
                 </div>
-                <div class="stat-card" onclick="setFilter('frozen')">
+                <div class="stat-card" data-filter="frozen" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('frozen')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
                     <div class="stat-num" style="color:var(--status-frozen);" id="statFrozen">--</div>
                     <div class="stat-label">Frozen / Disabled</div>
                 </div>
-                <div class="stat-card" onclick="setFilter('user')">
+                <div class="stat-card" data-filter="user" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('user')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
                     <div class="stat-num" style="color:var(--status-user);" id="statUser">--</div>
                     <div class="stat-label">User Apps</div>
                 </div>
-                <div class="stat-card" onclick="setFilter('system')">
+                <div class="stat-card" data-filter="system" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('system')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
                     <div class="stat-num" style="color:var(--status-system);" id="statSystem">--</div>
                     <div class="stat-label">System Apps</div>
                 </div>
-                <div class="stat-card" onclick="setFilter('uninstalled')">
+                <div class="stat-card" data-filter="uninstalled" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('uninstalled')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
                     <div class="stat-num" style="color:var(--status-bloat);" id="statUninstalled">--</div>
                     <div class="stat-label">Bloatware (Uninstalled)</div>
                 </div>
@@ -2756,7 +2996,13 @@
                 <button class="mode-action-btn" onclick="openBackups()">🗄️ Backups</button>
             </div>
 
-            <div class="filter-scroll">
+            <!-- Tooltip under the Export / Share CSV buttons: the filter chips below scroll sideways -->
+            <div class="filters-hint" id="filtersHint" role="note">
+                <span class="filters-hint-text">👉 Scroll the filters below sideways for more filters</span>
+                <span class="filters-hint-x" role="button" tabindex="0" aria-label="Hide this tip" onclick="dismissFiltersHint()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dismissFiltersHint();}">✕</span>
+            </div>
+
+            <div class="filter-scroll" id="filterScroll" onscroll="filtersScrolled()">
                 <div class="filter-pill active" data-filter="all" onclick="setFilter('all', this)">All Apps (<span id="countAll">0</span>)</div>
                 <div class="filter-pill" data-filter="recent" onclick="setFilter('recent', this)">🆕 Updated 7d (<span id="countRecent">0</span>)</div>
                 <div class="filter-pill" data-filter="running" onclick="setFilter('running', this)">⚡ Running (<span id="countRunning">0</span>)</div>
@@ -2855,6 +3101,12 @@
                 .apk-kind { flex:0 0 auto; min-width:44px; text-align:center; padding:4px 0; border-radius:8px; font-size:10px; font-weight:900; letter-spacing:.4px; color:#000; background:var(--accent); }
                 .apk-kind.k-apks, .apk-kind.k-apkm { background:#B39DFF; }
                 .apk-kind.k-xapk { background:#FFB74D; }
+                .apk-scan-bar { height:8px; border-radius:6px; background:var(--accent-glow); overflow:hidden; margin-top:8px; position:relative; }
+                .apk-scan-bar > div { height:100%; width:0; background:var(--accent); border-radius:6px; transition:width .2s ease; }
+                .apk-scan-bar.indeterminate > div { width:35%; position:absolute; top:0; animation:apkScanSlide 1.1s ease-in-out infinite; }
+                @keyframes apkScanSlide { 0% { left:-35%; } 100% { left:100%; } }
+                .apk-scan-tip { font-size:11px; color:var(--text-muted); margin-top:8px; }
+                .apk-scan-row { -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; touch-action:pan-y; }
                 .apk-scan-name { font-size:13px; font-weight:800; color:var(--text-main); word-break:break-word; }
                 .apk-scan-meta { font-size:10.5px; color:var(--text-muted); word-break:break-all; margin-top:2px; }
             </style>
@@ -2879,6 +3131,8 @@
                         </select>
                     </div>
                     <div id="apkScanStatus" class="uad-status" style="margin:8px 0 0;"></div>
+                    <div id="apkScanBar" class="apk-scan-bar" role="progressbar" aria-label="Searching storage" aria-valuemin="0" aria-valuemax="100" style="display:none;"><div id="apkScanBarFill"></div></div>
+                    <div id="apkScanTip" class="apk-scan-tip" style="display:none;">💡 Press and hold a file to delete it from this device. You get an Undo right after.</div>
                     <div id="apkScanList" class="apk-scan-list"></div>
                 </div>
 
@@ -2886,7 +3140,7 @@
             </div>
 
             <!-- Package info (after a pick) -->
-            <div class="color-card" id="installInfoCard" style="display:none;">
+            <div class="color-card" id="installInfoCard" style="display:none; scroll-margin-top:140px;">
                 <div class="color-card-title" id="installPkgLabel">—</div>
                 <div class="color-card-subtitle" id="installPkgName" style="font-family:monospace;word-break:break-all;"></div>
                 <div id="installInfoGrid" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;"></div>
@@ -2911,8 +3165,9 @@
             <!-- Splits (APKS/APKM) -->
             <div class="color-card" id="installSplitsCard" style="display:none;">
                 <div class="color-card-title">🧩 Splits</div>
-                <div class="color-card-subtitle">Pick which split APKs to install. The base APK is always included.</div>
-                <div class="batch-sheet-tools" style="margin:8px 0;gap:14px;">
+                <div class="color-card-subtitle" id="installSplitsSub">Pick which split APKs to install. The base APK is always included; the splits that fit this phone are ticked and the others are left off for you to add.</div>
+                <div class="batch-sheet-tools" style="margin:8px 0;gap:14px;flex-wrap:wrap;">
+                    <button class="batch-tool-link" onclick="installSelectAllSplits('device')">Match this phone</button>
                     <button class="batch-tool-link" onclick="installSelectAllSplits(true)">Select all</button>
                     <button class="batch-tool-link" onclick="installSelectAllSplits(false)" style="color:var(--text-muted);">Only base</button>
                 </div>
@@ -2995,11 +3250,19 @@
 
                 <div style="margin-top:12px;">
                     <div class="switch-title">Install source / installer package <span class="switch-sub" style="font-weight:600;">(-i)</span></div>
-                    <input class="modal-text-input" id="optInstaller" placeholder="e.g. com.android.vending (optional)" oninput="updateInstallPreview()">
+                    <div class="input-combo">
+                        <input class="modal-text-input" id="optInstaller" placeholder="e.g. com.android.vending (optional)" oninput="updateInstallPreview()" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false">
+                        <button type="button" class="input-combo-btn" id="optInstallerBtn" aria-label="Choose a common installer source" aria-haspopup="menu" aria-controls="comboMenuInstaller" aria-expanded="false" onclick="toggleInstallCombo('installer')">▾</button>
+                        <div class="combo-menu" id="comboMenuInstaller" role="menu" aria-label="Common installer sources" style="display:none;"></div>
+                    </div>
                 </div>
-                <div style="margin-top:10px;">
+                <div style="margin-top:2px;">
                     <div class="switch-title">Install requester / originating URI <span class="switch-sub" style="font-weight:600;">(--originating-uri)</span></div>
-                    <input class="modal-text-input" id="optOriginating" placeholder="optional" oninput="updateInstallPreview()">
+                    <div class="input-combo">
+                        <input class="modal-text-input" id="optOriginating" placeholder="optional" oninput="updateInstallPreview()" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false">
+                        <button type="button" class="input-combo-btn" id="optOriginatingBtn" aria-label="Choose a common requester address" aria-haspopup="menu" aria-controls="comboMenuOrigin" aria-expanded="false" onclick="toggleInstallCombo('origin')">▾</button>
+                        <div class="combo-menu" id="comboMenuOrigin" role="menu" aria-label="Common requester addresses" style="display:none;"></div>
+                    </div>
                 </div>
 
                 <label class="switch-row" style="margin-top:12px;">
@@ -3046,8 +3309,8 @@
                     <input type="checkbox" class="switch-input" id="optShowVersion" checked onchange="renderInstallInfo()"><span class="switch-track"></span>
                 </label>
                 <label class="switch-row">
-                    <div><div class="switch-title">Select all splits by default</div><div class="switch-sub">Tick every split when a package is opened</div></div>
-                    <input type="checkbox" class="switch-input" id="optSelectAllSplits" checked><span class="switch-track"></span>
+                    <div><div class="switch-title">Select all splits by default</div><div class="switch-sub">Tick every split when a package is opened. Off: only the base and the splits that fit this phone are ticked</div></div>
+                    <input type="checkbox" class="switch-input" id="optSelectAllSplits" onchange="renderInstallSplits()"><span class="switch-track"></span>
                 </label>
 
                 <button class="batch-grid-btn accent" style="width:100%;height:48px;margin-top:16px;" onclick="runInstall()">⬇️ Install</button>
@@ -3870,6 +4133,7 @@
                 <div class="mode-btn-row">
                     <button class="mode-action-btn primary" onclick="aboutOpenRepo()">🐙 GitHub</button>
                     <button class="mode-action-btn" onclick="openWhatsNew({ max: 3 })">✨ What's new</button>
+                    <button class="mode-action-btn" onclick="openPermSheet('manual')">🔐 Permissions</button>
                     <button class="mode-action-btn" onclick="aboutCheckUpdate()">⬆️ Check for update</button>
                 </div>
             </div>
@@ -4389,8 +4653,53 @@ Type any command below (e.g. pm list packages -d)
                 <div style="font-size:20px; cursor:pointer;" onclick="closeCommandResultsModal()">✕</div>
             </div>
             <div class="result-list" id="commandResultsList"></div>
+            <div class="result-actions" id="commandResultsActions" style="display:none;"></div>
             <div style="display:flex; gap:10px; margin-top:12px;">
-                <button class="mode-action-btn primary" style="flex:1; justify-content:center;" onclick="closeCommandResultsModal()">Done</button>
+                <button class="mode-action-btn primary" id="commandResultsDone" style="flex:1; justify-content:center;" onclick="closeCommandResultsModal()">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Press and hold a file the Installer's search found: delete it from the device (with an Undo) -->
+    <div class="modal-overlay" id="apkDeleteModal" onclick="if(event.target===this) closeApkDelete()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-avatar" style="background:rgba(255,82,82,0.18);">🗑️</div>
+                    <div class="sheet-title">
+                        <h3 id="apkDeleteTitle">Delete this file?</h3>
+                        <p id="apkDeleteSub"></p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="closeApkDelete()">✕</div>
+            </div>
+            <div class="result-item-pkg" id="apkDeletePath" style="margin-bottom:8px;"></div>
+            <div class="modal-helper">The file is removed from this phone's storage, not just from the list. An Undo bar stays for a few seconds, and the file only goes for good once that bar is gone.</div>
+            <div style="display:flex; gap:10px; margin-top:12px;">
+                <button class="mode-action-btn primary" id="apkDeleteBtn" style="flex:1; justify-content:center; background:linear-gradient(135deg,#FF5252,#FF8A65);" onclick="confirmApkDelete()">🗑️ Delete from this device</button>
+                <button class="mode-action-btn" style="padding:10px 16px;" onclick="closeApkDelete()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Permissions: the first-launch sheet, the same sheet from About, and the prompt for file access that an action asks for -->
+    <div class="modal-overlay" id="permModal" onclick="if(event.target===this) closePermSheet()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-avatar" style="background:rgba(0,229,255,0.15);">🔐</div>
+                    <div class="sheet-title">
+                        <h3 id="permTitle">Allow a few permissions</h3>
+                        <p id="permSubtitle"></p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="closePermSheet()">✕</div>
+            </div>
+            <div class="mode-tip-box" id="permReason" style="display:none; margin-bottom:10px;"></div>
+            <div id="permRows"></div>
+            <div style="display:flex; gap:10px; margin-top:14px;">
+                <button class="mode-action-btn primary" id="permAllBtn" style="flex:1; justify-content:center; min-height:44px;" onclick="permAllowAll()">Allow all</button>
+                <button class="mode-action-btn" id="permCloseBtn" style="padding:10px 16px; min-height:44px; justify-content:center;" onclick="closePermSheet()">Not now</button>
             </div>
         </div>
     </div>
@@ -5225,7 +5534,7 @@ Type any command below (e.g. pm list packages -d)
             if (viewName === 'installer') onInstallerShown();
             if (viewName === 'files') onFilesShown();
             if (viewName === 'logcat') onLogcatShown();
-            if (viewName !== 'settings' && viewName !== 'overlays' && typeof sdbSnackHide === 'function') sdbSnackHide();      // its Undo only makes sense next to what it undoes
+            if (typeof sdbSnackHide === 'function' && !(sdbSnackView ? viewName === sdbSnackView : (viewName === 'settings' || viewName === 'overlays'))) sdbSnackHide();      // its Undo only makes sense next to what it undoes
             if (viewName === 'settings') onSettingsShown();
             if (viewName === 'overlays') onOverlaysShown();
             if (viewName === 'store') onStoreShown();
@@ -5280,6 +5589,7 @@ Type any command below (e.g. pm list packages -d)
         }
 
         function backNavigate() {
+            if (typeof closeInstallCombo === 'function' && closeInstallCombo()) return true;
             const sheets = document.querySelectorAll('.modal-overlay.show');
             if (sheets.length) {
                 // the sheet on top is the one painted at the centre of the screen (later in the page wins a tie)
@@ -5570,7 +5880,19 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('commandResultsModal').classList.remove('show');
         }
 
-        function showCommandResults(title, subtitle, rows) {
+        // `actions` (optional): [{ label, onClick }] shown as full-width buttons above Done
+        let commandResultsActions = [];
+        function commandResultsAction(i) {
+            const a = commandResultsActions[i];
+            if (a && typeof a.onClick === 'function') a.onClick();
+        }
+
+        function showCommandResults(title, subtitle, rows, actions) {
+            commandResultsActions = Array.isArray(actions) ? actions : [];
+            const box = document.getElementById('commandResultsActions');
+            box.innerHTML = commandResultsActions.map((a, i) => '<button class="mode-action-btn" onclick="commandResultsAction(' + i + ')">' + escapeHtml(a.label) + '</button>').join('');
+            box.style.display = commandResultsActions.length ? '' : 'none';
+            document.getElementById('commandResultsModal').classList.toggle('has-actions', commandResultsActions.length > 0);
             document.getElementById('commandResultsTitle').innerText = title;
             document.getElementById('commandResultsSubtitle').innerText = subtitle;
             document.getElementById('commandResultsList').innerHTML = rows.map(row => '<div class="result-item ' + (row.success ? 'success' : 'failed') + '"><div class="result-item-header"><div class="result-item-name">' + escapeHtml(row.name || row.pkg) + '</div><div class="tag-badge ' + (row.success ? 'tag-running' : 'tag-bloat') + '">' + (row.success ? 'Success' : 'Failed') + '</div></div><div class="result-item-pkg">' + escapeHtml(row.pkg || '') + '</div><div class="result-item-output">' + escapeHtml((row.output || '').trim() || 'No output returned') + '</div></div>').join('');
@@ -6274,6 +6596,7 @@ Type any command below (e.g. pm list packages -d)
                 appsFilter: currentFilter,
                 showVersions: showListVersions,
                 appSort: appSort,
+                filtersHintDone: filtersHintDone,
                 uad: { removal: Array.from(uadFilters.removal), list: uadFilters.list, state: uadFilters.state, brand: uadFilters.brand }
             });
         }
@@ -6286,6 +6609,7 @@ Type any command below (e.g. pm list packages -d)
                     const sel = document.getElementById('appSort');
                     if (sel) sel.value = appSort;
                 }
+                if (st.filtersHintDone === true) filtersHintDone = true;
                 if (typeof st.showVersions === 'boolean') {
                     showListVersions = st.showVersions;
                     const pill = document.getElementById('versionTogglePill');
@@ -6305,6 +6629,8 @@ Type any command below (e.g. pm list packages -d)
             document.querySelectorAll('#uadRemovalRow .filter-chip').forEach(c => c.classList.toggle('active', uadFilters.removal.has(c.getAttribute('data-removal'))));
             document.querySelectorAll('#uadListRow .filter-chip').forEach(c => c.classList.toggle('active', c.getAttribute('data-list') === uadFilters.list));
             document.querySelectorAll('#uadStateRow .filter-chip').forEach(c => c.classList.toggle('active', c.getAttribute('data-state') === uadFilters.state));
+            syncStatCards();
+            applyFiltersHint();
             uiStateLoaded = true;
         }
 
@@ -8031,6 +8357,7 @@ Type any command below (e.g. pm list packages -d)
                 // Load packages immediately
                 loadPackageData();
                 setTimeout(maybeShowWhatsNew, 1200);
+                setTimeout(maybeShowPermIntro, 2300);
             } else {
                 // Mock packages for preview
                 for (let i = 1; i <= 60; i++) {
@@ -8397,8 +8724,35 @@ Type any command below (e.g. pm list packages -d)
                 el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
             }
             haptic();
+            syncStatCards();
             renderApps();
             window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // The big buttons at the top (Total installed, Running, ...) light up when the list below is showing their filter
+        function syncStatCards() {
+            document.querySelectorAll('.stat-card[data-filter]').forEach(c => {
+                const on = c.getAttribute('data-filter') === currentFilter;
+                c.classList.toggle('active', on);
+                c.setAttribute('aria-pressed', on ? 'true' : 'false');
+            });
+        }
+
+        // The tip under Export / Share CSV goes away for good once the filter chips have been scrolled sideways (or it is closed)
+        let filtersHintDone = false;
+        function applyFiltersHint() {
+            const h = document.getElementById('filtersHint');
+            if (h) h.style.display = filtersHintDone ? 'none' : '';
+        }
+        function dismissFiltersHint() {
+            if (filtersHintDone) return;
+            filtersHintDone = true;
+            applyFiltersHint();
+            saveUiState();
+        }
+        function filtersScrolled() {
+            const el = document.getElementById('filterScroll');
+            if (el && el.scrollLeft > 24) dismissFiltersHint();
         }
 
         let appsSearchTimer = null;
@@ -8431,6 +8785,7 @@ Type any command below (e.g. pm list packages -d)
         }
 
         function onInstallerShown() {
+            closeInstallCombo();
             // First time in (before a package is loaded), default the authorizer to the active mode.
             if (!installerAuthPicked && !installData) {
                 const map = { adb_tcp: 'adb', adb_wireless: 'adb', shizuku: 'shizuku', root: 'root' };
@@ -8479,12 +8834,37 @@ Type any command below (e.g. pm list packages -d)
         let apkScanShown = 300;
         let installInspectRef = null;      // the package the Installer is reading now; an answer for any other one is stale
 
+        let apkScanWasAuto = false;          // the search the Installer tab started by itself when it opened (no prompt for access then)
+
         function apkScanEnd() {
             apkScanning = false;
             if (apkScanTimer) { clearTimeout(apkScanTimer); apkScanTimer = null; }
             const btn = document.getElementById('apkScanBtn');
             if (btn) btn.disabled = false;
+            const bar = document.getElementById('apkScanBar');
+            if (bar) { bar.style.display = 'none'; bar.classList.remove('indeterminate'); }
         }
+
+        // The bar under the search's status line: pct 0-100, or -1 when there is no way to tell how far it is (a single shell command)
+        function apkScanBarSet(pct, msg, found) {
+            const bar = document.getElementById('apkScanBar'), fill = document.getElementById('apkScanBarFill'), st = document.getElementById('apkScanStatus');
+            if (!bar || !fill) return;
+            bar.style.display = '';
+            if (pct < 0) {
+                bar.classList.add('indeterminate'); fill.style.width = ''; bar.removeAttribute('aria-valuenow');
+            } else {
+                const v = Math.max(2, Math.min(100, Math.round(pct)));
+                bar.classList.remove('indeterminate'); fill.style.width = v + '%'; bar.setAttribute('aria-valuenow', String(v));
+            }
+            if (st && msg) { st.style.display = ''; st.innerText = '🔎 ' + msg + (found ? ' · ' + found + ' found' : ''); }
+        }
+
+        function onApkScanProgress(json) {
+            if (!apkScanning) return;
+            let d; try { d = JSON.parse(json); } catch (e) { return; }
+            apkScanBarSet(typeof d.pct === 'number' ? d.pct : -1, String(d.msg || ''), d.found | 0);
+        }
+        window.onApkScanProgress = onApkScanProgress;
 
         function apkScanShort(path) {
             return String(path || '').replace(/^\/storage\/emulated\/0\//, 'Internal storage › ')
@@ -8502,6 +8882,7 @@ Type any command below (e.g. pm list packages -d)
 
         function scanApkFiles(auto) {
             if (apkScanning) return;
+            apkScanWasAuto = auto === true;
             if (!window.AndroidBridge || !window.AndroidBridge.scanApkFiles) {
                 if (!auto) showToast('Storage search needs the app build', '⚠️');
                 return;
@@ -8514,6 +8895,8 @@ Type any command below (e.g. pm list packages -d)
             const st = document.getElementById('apkScanStatus');
             st.style.display = ''; st.innerText = '🔎 Searching storage for APK, APKS, APKM and XAPK files…';
             const btn = document.getElementById('apkScanBtn'); if (btn) btn.disabled = true;
+            document.getElementById('apkScanTip').style.display = 'none';
+            apkScanBarSet(0, 'Searching storage for APK, APKS, APKM and XAPK files…', 0);
             apkScanShown = 300;
             try {
                 window.AndroidBridge.scanApkFiles();
@@ -8538,6 +8921,7 @@ Type any command below (e.g. pm list packages -d)
                 apkScanDone = false;
                 st.style.display = '';
                 st.innerHTML = 'To search storage, this app needs <b>All-files access</b> (or ADB / Shizuku / Root). <button class="batch-tool-link" style="margin-top:6px;" onclick="requestStorageAccessForScan()">Grant access</button>';
+                if (!apkScanWasAuto) promptFileAccess('To search storage for APK, APKS, APKM and XAPK files, this app needs All-files access (or a working mode: ADB, Shizuku or Root).', () => scanApkFiles(), true);
                 return;
             }
             if (d.status !== 'ok') { st.style.display = ''; st.innerText = '⚠️ ' + (d.error || 'Search failed'); return; }
@@ -8550,8 +8934,10 @@ Type any command below (e.g. pm list packages -d)
 
         function requestStorageAccessForScan() {
             haptic();
+            setPermRetry(() => scanApkFiles());                  // the search runs again by itself when the access is there
+            permWaiting = 'files';
             if (window.AndroidBridge && window.AndroidBridge.requestAllFilesAccess) window.AndroidBridge.requestAllFilesAccess();
-            showToast('Allow all-files access, come back, then tap Find APKs again', '📂');
+            showToast('Allow all-files access, then come back: the search starts again', '📂');
         }
 
         function renderApkScan() {
@@ -8563,15 +8949,17 @@ Type any command below (e.g. pm list packages -d)
                 .filter(x => (!kind || x.f.kind === kind) && (!q || (x.f.name + ' ' + x.f.path).toLowerCase().includes(q)));
             if (!apkScanFiles.length) {
                 st.style.display = ''; st.innerText = 'No APK, APKS, APKM or XAPK files found on this device.';
+                document.getElementById('apkScanTip').style.display = 'none';
                 list.innerHTML = '';
                 return;
             }
             const trunc = apkScanFiles[0]._trunc ? ' (search stopped early — narrow it with the filter)' : '';
             st.style.display = ''; st.innerText = shown.length + ' of ' + apkScanFiles.length + ' file' + (apkScanFiles.length === 1 ? '' : 's') + ' found' + trunc + ' · tap one to load it';
+            document.getElementById('apkScanTip').style.display = '';
             list.innerHTML = shown.slice(0, apkScanShown).map(x => {
                 const f = x.f;
                 const meta = [f.size ? fmtInstallSize(f.size) : '', apkScanAge(f.mtime)].filter(Boolean).join(' · ');
-                return `<div class="apk-scan-row" onclick="installFromScan(${x.i})">
+                return `<div class="apk-scan-row" data-i="${x.i}" role="button" tabindex="0" title="Tap to load it · press and hold (or press Delete) to delete it" onclick="installFromScan(${x.i})" onkeydown="apkScanRowKey(event, ${x.i})">
                     <div class="apk-kind k-${escapeHtml(f.kind)}">${escapeHtml(String(f.kind || '').toUpperCase())}</div>
                     <div style="flex:1;min-width:0;">
                         <div class="apk-scan-name">${escapeHtml(f.name)}</div>
@@ -8587,6 +8975,7 @@ Type any command below (e.g. pm list packages -d)
 
         // Loads a found file into the installer. Files only the shell can read are staged first.
         function installFromScan(i) {
+            if (apkPress.fired) { apkPress.fired = false; return; }          // the press that opened the delete sheet is not also a tap
             const f = apkScanFiles[i];
             if (!f) return;
             haptic();
@@ -8599,6 +8988,131 @@ Type any command below (e.g. pm list packages -d)
                 return;
             }
             onInstallFilePicked(f.path);
+        }
+
+        // ---- Press and hold a found file to delete it from the device, with an Undo ----
+        // The file is moved into a hidden trash folder on its own storage (instant, and it cannot run out of room); Undo moves it back;
+        // it is deleted for good when the Undo bar goes (or, if the app was closed first, the next time the app starts).
+        const APK_HOLD_MS = 550;
+        const apkPress = { timer: null, fired: false, x: 0, y: 0 };
+        let apkDeleteFile = null;
+
+        function apkPressCancel() {
+            if (apkPress.timer) { clearTimeout(apkPress.timer); apkPress.timer = null; }
+        }
+
+        function apkPressStart(row, x, y) {
+            apkPress.fired = false;
+            apkPress.x = x; apkPress.y = y;
+            apkPressCancel();
+            const f = apkScanFiles[+row.dataset.i];                 // the file itself, not its place in the list: the list can be redrawn while the finger is down
+            apkPress.timer = setTimeout(() => {
+                apkPress.timer = null;
+                const i = f ? apkScanFiles.indexOf(f) : -1;
+                if (i < 0) return;
+                apkPress.fired = true;
+                haptic();
+                openApkDelete(i);
+            }, APK_HOLD_MS);
+        }
+
+        // Keyboard and screen readers: Enter or Space loads the file, Delete opens the delete sheet
+        function apkScanRowKey(e, i) {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); installFromScan(i); }
+            else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); openApkDelete(i); }
+        }
+
+        (function initApkScanLongPress() {
+            const list = document.getElementById('apkScanList');
+            if (!list) return;
+            const rowOf = e => (e.target && e.target.closest) ? e.target.closest('.apk-scan-row[data-i]') : null;
+            let lastTouchAt = 0;                       // the mouse events a touch screen makes up after a touch are not a second press
+            const fromTouch = () => Date.now() - lastTouchAt < 700;
+            list.addEventListener('touchstart', e => { lastTouchAt = Date.now(); apkPress.fired = false; const row = rowOf(e); const t = e.touches[0]; if (row && t) apkPressStart(row, t.clientX, t.clientY); }, { passive: true });
+            list.addEventListener('touchmove', e => {
+                const t = e.touches[0];
+                if (t && (Math.abs(t.clientX - apkPress.x) > 12 || Math.abs(t.clientY - apkPress.y) > 12)) apkPressCancel();
+            }, { passive: true });
+            list.addEventListener('touchend', e => {
+                lastTouchAt = Date.now();
+                apkPressCancel();
+                if (apkPress.fired && e.cancelable) e.preventDefault();       // the finger that opened the sheet must not also tap the row
+            });
+            list.addEventListener('touchcancel', apkPressCancel);
+            list.addEventListener('mousedown', e => { if (fromTouch()) return; apkPress.fired = false; const row = rowOf(e); if (row && e.button === 0) apkPressStart(row, e.clientX, e.clientY); });
+            list.addEventListener('mouseup', apkPressCancel);
+            list.addEventListener('mouseleave', apkPressCancel);
+            list.addEventListener('scroll', apkPressCancel, { passive: true });
+            list.addEventListener('contextmenu', e => { if (rowOf(e)) e.preventDefault(); });
+        })();
+
+        function openApkDelete(i) {
+            const f = apkScanFiles[i];
+            if (!f) return;
+            apkDeleteFile = f;
+            document.getElementById('apkDeleteTitle').innerText = 'Delete ' + f.name + '?';
+            document.getElementById('apkDeleteSub').innerText = [f.size ? fmtInstallSize(f.size) : '', apkScanAge(f.mtime)].filter(Boolean).join(' · ') || 'Package file';
+            document.getElementById('apkDeletePath').innerText = f.path;
+            document.getElementById('apkDeleteBtn').disabled = false;
+            document.getElementById('apkDeleteModal').classList.add('show');
+        }
+
+        function closeApkDelete() {
+            apkDeleteFile = null;
+            document.getElementById('apkDeleteModal').classList.remove('show');
+        }
+
+        // The native side answers each file operation on its own: window.onApkFileOp(id, json)
+        const apkOpWait = new Map();
+        let apkOpSeq = 0;
+        function apkFileOp(op, a, b, done) {
+            if (!window.AndroidBridge || !window.AndroidBridge.apkFileOp) { done({ ok: false, error: 'Needs the app build' }); return; }
+            const id = 'o' + (++apkOpSeq);
+            apkOpWait.set(id, done);
+            try { window.AndroidBridge.apkFileOp(id, op, a || '', b || ''); } catch (e) { apkOpWait.delete(id); done({ ok: false, error: String(e && e.message || e) }); return; }
+            setTimeout(() => { const cb = apkOpWait.get(id); if (cb) { apkOpWait.delete(id); cb({ ok: false, error: 'No answer from the device' }); } }, 60000);
+        }
+        function onApkFileOp(id, json) {
+            const cb = apkOpWait.get(id);
+            if (!cb) return;
+            apkOpWait.delete(id);
+            let r; try { r = JSON.parse(json); } catch (e) { r = { ok: false, error: 'bad answer' }; }
+            cb(r);
+        }
+        window.onApkFileOp = onApkFileOp;
+
+        function confirmApkDelete() {
+            const f = apkDeleteFile;
+            closeApkDelete();
+            if (!f) return;
+            haptic();
+            apkFileOp('trash', f.path, '', r => {
+                if (!r.ok) { showToast("Couldn't delete " + f.name + (r.error ? ': ' + String(r.error).slice(0, 80) : ''), '⚠️'); return; }
+                const at = apkScanFiles.findIndex(x => x === f || x.path === f.path);
+                if (at >= 0) apkScanFiles.splice(at, 1);
+                if (!apkScanning) renderApkScan();                  // a search that is running draws its own list when it ends
+                const rec = { trash: r.trash, file: f, at: at };
+                const purge = () => apkFileOp('purge', rec.trash, '', () => {});
+                // the answer can come after the person has gone to another tab: there is no bar to put Undo on there, so it is final
+                if (currentViewName() !== 'installer') { purge(); return; }
+                sdbSnack('🗑️ Deleted ' + f.name, () => apkUndoDelete(rec), { view: 'installer', ms: 8000, onExpire: purge });
+            });
+        }
+
+        function apkUndoDelete(rec) {
+            apkFileOp('untrash', rec.trash, rec.file.path, r => {
+                if (!r.ok) {
+                    showToast("Couldn't restore " + rec.file.name + (r.error ? ': ' + String(r.error).slice(0, 80) : ''), '⚠️');
+                    // the file is still in its hidden folder: offer Undo again (it is removed for good when this bar goes)
+                    if (currentViewName() === 'installer') sdbSnack('⚠️ Not restored: ' + rec.file.name, () => apkUndoDelete(rec), { view: 'installer', ms: 8000, onExpire: () => apkFileOp('purge', rec.trash, '', () => {}) });
+                    else apkFileOp('purge', rec.trash, '', () => {});
+                    return;
+                }
+                if (r.path && r.path !== rec.file.path) { rec.file.path = r.path; rec.file.name = r.path.slice(r.path.lastIndexOf('/') + 1); }
+                if (!apkScanFiles.some(x => x === rec.file || x.path === rec.file.path)) apkScanFiles.splice(Math.min(Math.max(rec.at, 0), apkScanFiles.length), 0, rec.file);
+                if (!apkScanning) renderApkScan();
+                showToast('Restored ' + rec.file.name, '↩️');
+            });
         }
 
         // An APK opened from outside the app (default-installer intent): jump to the Installer tab and load it.
@@ -8676,9 +9190,13 @@ Type any command below (e.g. pm list packages -d)
             let d;
             try { d = JSON.parse(json); } catch (e) { d = { error: 'could not read package' }; }
             if (d.ref && installInspectRef && d.ref !== installInspectRef) return;      // the answer for a file picked before the current one
+            const askedRef = d.ref || installInspectRef;
             installInspectRef = null;
             if (d.error) {
                 installData = null;
+                if (/EACCES|permission denied/i.test(String(d.error)) && askedRef && !String(askedRef).startsWith('content://') && !fileAccessGranted()) {
+                    setPermRetry(() => onInstallFilePicked(askedRef));    // read again once the access is there
+                }
                 document.getElementById('installPickHint').innerText = '⚠️ ' + d.error;
                 document.getElementById('installInfoCard').style.display = 'none';
                 document.getElementById('installVtCard').style.display = 'none';
@@ -8703,8 +9221,21 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('installOptionsCard').style.display = '';
             applyFilesInstallMode();
             installAuthorizerChanged();
+            installScrollToInfo();
         }
         window.onInstallInspected = onInstallInspected;
+
+        // After a package is picked (from the system picker or from the list Find APKs made) the page swipes down to the next box,
+        // the one that tells what was picked, so the choice does not seem to have done nothing.
+        function installScrollToInfo() {
+            setTimeout(() => {
+                const card = document.getElementById('installInfoCard');
+                if (!card || card.style.display === 'none' || currentViewName() !== 'installer') return;
+                let calm = false;
+                try { calm = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); } catch (e) {}
+                try { card.scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'start' }); } catch (e) { card.scrollIntoView(); }
+            }, 60);
+        }
 
         // OBB / Android-data files carried by an XAPK: listed with their destination, copied after the install.
         function renderInstallExtras() {
@@ -8820,15 +9351,129 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('installSignRow').innerText = sign;
         }
 
+        // ---- Which splits suit this phone ----
+        // A split APK is made for one CPU architecture, one screen density or one language ("config.arm64_v8a", "config.xxhdpi",
+        // "config.en"), or is a feature module of its own. The base plus the splits that match the phone are ticked when a package
+        // is opened; everything else is left off for the user to add.
+        const SPLIT_ABIS = { arm64_v8a: 'arm64-v8a', armeabi_v7a: 'armeabi-v7a', armeabi: 'armeabi', x86: 'x86', x86_64: 'x86_64', mips: 'mips', mips64: 'mips64', riscv64: 'riscv64' };
+        const SPLIT_DENSITIES = { ldpi: 120, mdpi: 160, tvdpi: 213, hdpi: 240, xhdpi: 320, xxhdpi: 480, xxxhdpi: 640 };
+        const LANG_ALIASES = { iw: 'he', in: 'id', ji: 'yi', tl: 'fil' };       // the old and the new code of one language (Android still hands out the old ones)
+        const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);       // a split may be called "constructor" or "__proto__"
+
+        // What the phone has: CPU architectures (best first), screen density, languages (best first). Falls back to what the page knows.
+        function getDeviceProfile() {
+            let p = null;
+            try { if (window.AndroidBridge && window.AndroidBridge.getDeviceProfile) p = JSON.parse(window.AndroidBridge.getDeviceProfile()); } catch (e) { p = null; }
+            p = (p && typeof p === 'object') ? p : {};
+            return {
+                abis: Array.isArray(p.abis) ? p.abis : [],
+                dpi: p.dpi > 0 ? p.dpi : Math.round((window.devicePixelRatio || 1) * 160),
+                locales: Array.isArray(p.locales) && p.locales.length ? p.locales : (navigator.languages && navigator.languages.length ? Array.from(navigator.languages) : [navigator.language || 'en'])
+            };
+        }
+
+        // "pt-BR" / "pt_BR" / "zh-Hans-CN" -> { lang: 'pt', region: 'BR' }
+        function parseLocaleTag(tag) {
+            let parts = String(tag || '').replace(/_/g, '-').split('-').filter(Boolean);
+            if (!parts.length || !/^[A-Za-z]{2,3}$/.test(parts[0])) return null;
+            const ext = parts.findIndex((x, i) => i > 0 && x.length === 1);          // "ar-u-nu-latn": what follows a one-letter singleton is an extension, not a region
+            if (ext > 0) parts = parts.slice(0, ext);
+            let lang = parts[0].toLowerCase();
+            lang = own(LANG_ALIASES, lang) ? LANG_ALIASES[lang] : lang;
+            const reg = parts.slice(1).find(x => /^([A-Za-z]{2}|[0-9]{3})$/.test(x));
+            return { lang, region: reg ? reg.toUpperCase() : '' };
+        }
+
+        // The name a split goes by: its manifest's split="…", else its file name ("3__split_config.en.apk" -> "config.en")
+        function splitConfigName(s) {
+            let n = String(s.split || '').trim();
+            if (!n) n = String(s.name || '').replace(/^.*[\\/]/, '').replace(/^\d+__/, '').replace(/\.apk$/i, '').replace(/^split_/, '');
+            return n;
+        }
+
+        // What one split is for: { kind: 'base' | 'abi' | 'density' | 'lang' | 'feature' | 'other', key, parent }
+        function splitKind(s) {
+            if (s.isBase) return { kind: 'base', key: '', parent: '' };
+            const n = splitConfigName(s);
+            const m = /(?:^|\.)config\.([A-Za-z0-9_\-]+)$/.exec(n);
+            if (!m) return { kind: s.feature ? 'feature' : 'other', key: '', parent: '' };
+            const key = m[1].toLowerCase().replace(/-/g, '_');
+            const parent = String(s.configFor || '').trim() || n.slice(0, m.index);          // '' = a config split of the base itself
+            let kind = 'other';
+            if (own(SPLIT_ABIS, key)) kind = 'abi';
+            else if (own(SPLIT_DENSITIES, key) || /^[0-9]+dpi$/.test(key)) kind = 'density';
+            else if (/^[a-z]{2,3}(_r?[a-z]{2})?$/.test(key)) kind = 'lang';                // en, pt_rbr, pt_br
+            return { kind, key, parent };
+        }
+
+        function splitDensity(key) { return own(SPLIT_DENSITIES, key) ? SPLIT_DENSITIES[key] : (parseInt(key, 10) || 0); }
+
+        // Which of two densities Android itself would take for a screen of `dpi` (ResTable_config::isBetterThan): the screen's own;
+        // with both above it the lower, with both below it the higher; between them the lower one when
+        // (2 * lower - dpi) * higher > dpi * dpi (it is the closer one, with a pull towards the bigger), else the higher one.
+        function densityBeats(a, b, dpi) {
+            if (a === b) return false;
+            const hi = Math.max(a, b), lo = Math.min(a, b), aIsHi = a > b;
+            if (hi === dpi) return aIsHi;
+            if (lo === dpi) return !aIsHi;
+            if (lo > dpi) return !aIsHi;
+            if (hi < dpi) return aIsHi;
+            return ((2 * lo - dpi) * hi > dpi * dpi) ? !aIsHi : aIsHi;
+        }
+
+        // For every split: does it suit the phone? -> [{ kind, key, parent, fits, note }] in the order of `splits`
+        function splitsFitDevice(splits, profile) {
+            const out = (splits || []).map(s => Object.assign(splitKind(s), { fits: !!s.isBase, note: '' }));
+            const base = out.filter(o => !o.parent);                       // only the base's own config splits: a feature module is never ticked for the user
+            // CPU: the first architecture of the phone's list that has a split (one is enough; the others only add size)
+            const abis = (profile.abis || []).map(a => String(a).toLowerCase().replace(/-/g, '_'));
+            let bestAbi = null, rank = 1e9;
+            base.forEach(o => { if (o.kind === 'abi') { const r = abis.indexOf(o.key); if (r >= 0 && r < rank) { rank = r; bestAbi = o; } } });
+            if (bestAbi) bestAbi.fits = true;
+            // Screen density: the one Android would use for the phone's, of those there are
+            const dpi = profile.dpi > 0 ? profile.dpi : 0;
+            const dens = base.filter(o => o.kind === 'density');
+            if (dpi && dens.length) {
+                let best = dens[0];
+                dens.forEach(o => { if (densityBeats(splitDensity(o.key), splitDensity(best.key), dpi)) best = o; });
+                best.fits = true;
+            }
+            // Languages: every language of the phone's list (a region only has to agree when both sides name one)
+            const locs = (profile.locales || []).map(parseLocaleTag).filter(Boolean);
+            base.forEach(o => {
+                if (o.kind !== 'lang') return;
+                const lm = /^([a-z]{2,3})(?:_r?([a-z]{2}))?$/.exec(o.key);
+                const lang = own(LANG_ALIASES, lm[1]) ? LANG_ALIASES[lm[1]] : lm[1];
+                const region = lm[2] ? lm[2].toUpperCase() : '';
+                if (locs.some(l => l.lang === lang && (!region || !l.region || l.region === region))) o.fits = true;
+            });
+            out.forEach(o => {
+                if (o.kind === 'base') return;
+                const what = o.kind === 'abi' ? 'CPU ' + (own(SPLIT_ABIS, o.key) ? SPLIT_ABIS[o.key] : o.key) : o.kind === 'density' ? 'screen ' + o.key : o.kind === 'lang' ? 'language ' + o.key : '';
+                if (o.fits) o.note = '✓ fits this phone (' + what + ')';
+                else if (o.parent) o.note = 'for a feature module';
+                else if (o.kind === 'abi') o.note = 'another CPU (' + what.slice(4) + ')';
+                else if (o.kind === 'density') o.note = 'another screen density';
+                else if (o.kind === 'lang') o.note = 'another language';
+                else o.note = o.kind === 'feature' ? 'feature module (optional)' : 'optional extra';
+            });
+            return out;
+        }
+
         function renderInstallSplits() {
             if (!installData) return;
             const selectAll = document.getElementById('optSelectAllSplits').checked;
+            document.getElementById('installSplitsSub').innerText = selectAll
+                ? 'Pick which split APKs to install. The base APK is always included, and every other split starts ticked because "Select all splits by default" is on.'
+                : 'Pick which split APKs to install. The base APK is always included; the splits that fit this phone are ticked and the others are left off for you to add.';
+            const fit = splitsFitDevice(installData.splits || [], getDeviceProfile());
             const rows = (installData.splits || []).map((s, i) => {
                 const label = s.isBase ? 'Base APK' : (s.split || s.name);
-                const checked = s.isBase || selectAll ? 'checked' : '';
+                const checked = s.isBase || selectAll || fit[i].fits ? 'checked' : '';
                 const dis = s.isBase ? 'disabled' : '';
+                const file = String(s.name || '').replace(/^\d+__/, '');
                 return `<label class="switch-row">
-                    <div><div class="switch-title">${escapeHtml(label)}</div><div class="switch-sub">${escapeHtml(s.name)} • ${fmtInstallSize(s.size)}</div></div>
+                    <div><div class="switch-title">${escapeHtml(label)}</div><div class="switch-sub">${escapeHtml(file)} • ${fmtInstallSize(s.size)}${fit[i].note ? ' • ' + escapeHtml(fit[i].note) : ''}</div></div>
                     <input type="checkbox" class="switch-input install-split-cb" data-idx="${i}" ${checked} ${dis} onchange="updateInstallPreview()"><span class="switch-track"></span>
                 </label>`;
             });
@@ -8836,9 +9481,12 @@ Type any command below (e.g. pm list packages -d)
             updateInstallPreview();
         }
 
+        // all: true = every split, false = only the base, 'device' = the base and the ones that fit this phone
         function installSelectAllSplits(all) {
+            const fit = all === 'device' ? splitsFitDevice((installData && installData.splits) || [], getDeviceProfile()) : null;
             document.querySelectorAll('#installSplitsList .install-split-cb').forEach(cb => {
-                if (!cb.disabled) cb.checked = all;
+                if (cb.disabled) return;
+                cb.checked = fit ? !!(fit[Number(cb.getAttribute('data-idx'))] || {}).fits : !!all;
             });
             updateInstallPreview();
         }
@@ -8853,10 +9501,126 @@ Type any command below (e.g. pm list packages -d)
                 const el = document.getElementById(id);
                 el.disabled = none;
                 if (none) el.value = '';
+                const btn = document.getElementById(id + 'Btn');
+                if (btn) btn.disabled = none;
             });
+            if (none) closeInstallCombo();
             installerAuthPicked = true;
             updateInstallPreview();
         }
+
+        // ---- Common values for the two source fields: a small ▾ button at the end of each box lists them ----
+        const INSTALLER_SOURCES = [
+            { name: 'Google Play Store', value: 'com.android.vending' },
+            { name: 'F-Droid', value: 'org.fdroid.fdroid' },
+            { name: 'Aurora Store', value: 'com.aurora.store' },
+            { name: 'Samsung Galaxy Store', value: 'com.sec.android.app.samsungapps' },
+            { name: 'Huawei AppGallery', value: 'com.huawei.appmarket' },
+            { name: 'Amazon Appstore', value: 'com.amazon.venezia' },
+            { name: 'Xiaomi GetApps', value: 'com.xiaomi.mipicks' },
+            { name: 'OPPO / realme App Market', value: 'com.heytap.market' },
+            { name: 'vivo App Store', value: 'com.bbk.appstore' },
+            { name: 'HONOR App Market', value: 'com.hihonor.appmarket' },
+            { name: 'APKMirror Installer', value: 'com.apkmirror.helper.prod' },
+            { name: 'Obtainium', value: 'dev.imranr.obtainium' },
+            { name: 'Droid-ify', value: 'com.looker.droidify' },
+            { name: 'Neo Store', value: 'com.machiav3lli.fdroid' },
+            { name: 'Accrescent', value: 'app.accrescent.client' },
+            { name: 'Aptoide', value: 'cm.aptoide.pt' },
+            { name: 'APKPure', value: 'com.apkpure.aegon' },
+            { name: 'Uptodown', value: 'com.uptodown' },
+            { name: 'itch.io app', value: 'io.itch' },
+            { name: 'Mitch (itch.io games)', value: 'ua.gardenapple.itchupdater' },
+            { name: 'Split APKs Installer (SAI)', value: 'com.aefyr.sai' },
+            { name: 'Package installer (Google)', value: 'com.google.android.packageinstaller' },
+            { name: 'Package installer (Android)', value: 'com.android.packageinstaller' },
+            { name: 'ADB / shell', value: 'com.android.shell' }
+        ];
+
+        // {pkg} is the package that is open in the Installer; with none open the address stops at the site
+        const ORIGIN_URIS = [
+            { name: 'Google Play page', tpl: 'https://play.google.com/store/apps/details?id={pkg}', plain: 'https://play.google.com/store/apps' },
+            { name: 'Google Play (market link)', tpl: 'market://details?id={pkg}', plain: 'market://details' },
+            { name: 'F-Droid page', tpl: 'https://f-droid.org/packages/{pkg}/', plain: 'https://f-droid.org/packages/' },
+            { name: 'IzzyOnDroid page', tpl: 'https://apt.izzysoft.de/fdroid/index/apk/{pkg}', plain: 'https://apt.izzysoft.de/fdroid/' },
+            { name: 'Samsung Galaxy Store page', tpl: 'https://galaxystore.samsung.com/detail/{pkg}', plain: 'https://galaxystore.samsung.com/' },
+            { name: 'Amazon Appstore page', tpl: 'https://www.amazon.com/gp/mas/dl/android?p={pkg}', plain: 'https://www.amazon.com/appstore' },
+            { name: 'Huawei AppGallery', tpl: 'https://appgallery.huawei.com/', plain: 'https://appgallery.huawei.com/' },
+            { name: 'APKMirror', tpl: 'https://www.apkmirror.com/', plain: 'https://www.apkmirror.com/' },
+            { name: 'APKPure', tpl: 'https://apkpure.com/', plain: 'https://apkpure.com/' },
+            { name: 'Uptodown', tpl: 'https://www.uptodown.com/android', plain: 'https://www.uptodown.com/android' },
+            { name: 'GitHub', tpl: 'https://github.com/', plain: 'https://github.com/' },
+            { name: 'itch.io', tpl: 'https://itch.io/', plain: 'https://itch.io/' }
+        ];
+
+        let installComboOpen = null;          // 'installer' | 'origin' | null: the list that is open
+
+        function installComboItems(kind) {
+            if (kind === 'installer') return INSTALLER_SOURCES.map(x => ({ title: x.name, sub: x.value, value: x.value }));
+            const pkg = installData && installData.pkg ? String(installData.pkg) : '';
+            return ORIGIN_URIS.map(x => { const v = pkg ? x.tpl.replace('{pkg}', pkg) : x.plain; return { title: x.name, sub: v, value: v }; });
+        }
+
+        function installComboIds(kind) {
+            return kind === 'installer' ? { input: 'optInstaller', btn: 'optInstallerBtn', menu: 'comboMenuInstaller' } : { input: 'optOriginating', btn: 'optOriginatingBtn', menu: 'comboMenuOrigin' };
+        }
+
+        // true when a list was open (and is closed now)
+        function closeInstallCombo() {
+            const kind = installComboOpen;
+            if (!kind) return false;
+            installComboOpen = null;
+            const ids = installComboIds(kind);
+            const menu = document.getElementById(ids.menu), btn = document.getElementById(ids.btn);
+            if (menu) { menu.style.display = 'none'; menu.innerHTML = ''; }
+            if (btn) btn.setAttribute('aria-expanded', 'false');
+            return true;
+        }
+
+        function toggleInstallCombo(kind) {
+            const ids = installComboIds(kind);
+            const input = document.getElementById(ids.input);
+            if (!input || input.disabled) return;
+            if (installComboOpen === kind) { closeInstallCombo(); return; }
+            closeInstallCombo();
+            haptic();
+            const items = installComboItems(kind);
+            const menu = document.getElementById(ids.menu);
+            const cur = input.value.trim();
+            menu.innerHTML = (cur ? '<button type="button" class="combo-item clear" role="menuitem" onclick="pickInstallCombo(\'' + kind + '\', -1)">✕ Clear this box</button>' : '')
+                + items.map((it, i) => '<button type="button" class="combo-item" role="menuitem" onclick="pickInstallCombo(\'' + kind + '\', ' + i + ')">' + escapeHtml(it.title) + '<small>' + escapeHtml(it.sub) + '</small></button>').join('');
+            menu.style.display = '';
+            document.getElementById(ids.btn).setAttribute('aria-expanded', 'true');
+            installComboOpen = kind;
+            try { menu.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {}
+        }
+
+        function pickInstallCombo(kind, i) {
+            const ids = installComboIds(kind);
+            const input = document.getElementById(ids.input);
+            const items = installComboItems(kind);
+            closeInstallCombo();
+            if (!input || input.disabled) return;
+            haptic();
+            input.value = i >= 0 && items[i] ? items[i].value : '';
+            updateInstallPreview();
+        }
+
+        // a tap anywhere outside the open list closes it: the other box counts as outside too
+        document.addEventListener('click', e => {
+            if (!installComboOpen) return;
+            const box = e.target && e.target.closest ? e.target.closest('.input-combo') : null;
+            const mine = document.getElementById(installComboIds(installComboOpen).input);
+            if (box && mine && box.contains(mine)) return;
+            closeInstallCombo();
+        });
+        // Escape closes it and puts the focus back on its button
+        document.addEventListener('keydown', e => {
+            if (e.key !== 'Escape' || !installComboOpen) return;
+            const btn = document.getElementById(installComboIds(installComboOpen).btn);
+            closeInstallCombo();
+            if (btn && document.activeElement && document.activeElement !== btn && btn.focus) { try { btn.focus(); } catch (err) {} }
+        });
 
         function collectSelectedSplits() {
             if (!installData) return [];
@@ -8940,6 +9704,7 @@ Type any command below (e.g. pm list packages -d)
         }
 
         let installRunningTimer = null;
+        let installRunInfo = null;             // { pkg, name } of the install in flight
         function runInstall(uninstallFirst) {
             if (installRunning) { showToast('An install is already running', '⏳'); return; }
             if (!installData) { showToast('Pick a package first', '⚠️'); return; }
@@ -8955,6 +9720,7 @@ Type any command below (e.g. pm list packages -d)
                 uninstallFirst = true;
             }
             built.opts.uninstallFirst = installFromFiles && uninstallFirst === true;
+            installRunInfo = { pkg: installData.pkg || '', name: name };          // what was started: the result may come after another package was opened
             installRunning = true;
             clearTimeout(installRunningTimer);
             installRunningTimer = setTimeout(() => { installRunning = false; }, 15 * 60 * 1000);       // never block leaving for ever
@@ -8978,8 +9744,15 @@ Type any command below (e.g. pm list packages -d)
             if (r.extras) out += '\n\nGame data (OBB):\n' + r.extras;
             if (r.dexopt) out += '\n\nDex optimization:\n' + r.dexopt;
             if (r.sourceDeleted) out += '\n\nSource file deleted.';
-            showCommandResults('Install ' + (installData ? (installData.pkg || '') : ''), 'via ' + (r.method || 'install'),
-                [{ name: installData ? (installData.label || installData.pkg) : 'Package', pkg: installData ? (installData.pkg || '') : '', output: out, success: !!r.ok }]);
+            const started = installRunInfo; installRunInfo = null;
+            const instPkg = started ? started.pkg : (r.pkg || (installData ? (installData.pkg || '') : ''));
+            const instName = started ? started.name : (installData ? (installData.label || installData.pkg) : 'Package');
+            showCommandResults('Install ' + instPkg, 'via ' + (r.method || 'install'),
+                [{ name: instName, pkg: instPkg, output: out, success: !!r.ok }],
+                r.ok && instPkg ? [
+                    { label: '🚀 Launch Application', onClick: () => installLaunchApp(instPkg, instName) },
+                    { label: '⚙️ Application Settings', onClick: () => openAppSettings(instPkg) }
+                ] : null);
             if (r.ok) {
                 // A fresh install changes the device's app list; refresh it in the background.
                 setTimeout(loadPackageData, 600);
@@ -8987,13 +9760,26 @@ Type any command below (e.g. pm list packages -d)
         }
         window.onInstallResult = onInstallResult;
 
+        // Opens the app that was just installed. The dialog stays, so Application Settings or Done can follow.
+        function installLaunchApp(pkg, name) {
+            haptic();
+            if (!window.AndroidBridge || !window.AndroidBridge.executeAppAction) { showToast('Needs the app build', '⚠️'); return; }
+            let out = '';
+            try { out = String(window.AndroidBridge.executeAppAction('launch', pkg) || ''); } catch (e) { out = 'Error: ' + String(e && e.message || e); }
+            const low = out.toLowerCase();
+            const failed = low.includes('error') || low.includes('failed') || low.includes('exception') || low.includes('aborted') || low.includes('no activities');
+            if (failed) showToast(name + " can't be opened from here" + (out.trim() ? ': ' + out.trim().split('\n')[0].slice(0, 80) : ''), '⚠️');
+            else showToast('Opening ' + name + '…', '🚀');
+        }
+
         // ---- File manager ----
         let fmPath = '/storage/emulated/0';
         let fmActionTarget = null;
         let fmPendingOp = null;
 
-        function onFilesShown() { fmGo(fmPath); }
-        function fmGo(path) {
+        function onFilesShown() { fmGo(fmPath, true); }
+        // auto: the tab opening by itself (the inline hint is enough then); a folder the user chose asks for the access when it is what is missing
+        function fmGo(path, auto) {
             path = (path || '/').trim() || '/';
             if (!window.AndroidBridge || !window.AndroidBridge.fmList) { showToast('Needs the app build', '⚠️'); return; }
             if (fmSelMode || fmSel.size) { fmSelMode = false; fmSel.clear(); }
@@ -9014,6 +9800,10 @@ Type any command below (e.g. pm list packages -d)
             }
             renderFm({ error: d.error, entries, raw: d.raw || '' });
             updateFmAccessHint(fmPath, entries);
+            // not when a working mode answered (d.source 'shell'): it reads storage without this access, and an empty folder is just empty
+            if (!auto && /^\/(sdcard|storage)(\/|$)/.test(fmPath) && (d.error || !entries.length) && d.source !== 'shell' && !fileAccessGranted()) {
+                promptFileAccess('To browse files on this phone, this app needs All-files access (or a working mode: ADB, Shizuku or Root).', () => fmGo(fmPath), true);
+            }
             fmSelRender();
             fmClipRender();
         }
@@ -9027,6 +9817,8 @@ Type any command below (e.g. pm list packages -d)
         }
         function fmGrantAccess() {
             haptic();
+            setPermRetry(() => fmGo(fmPath));                    // the folder is listed again by itself when the access is there
+            permWaiting = 'files';
             if (window.AndroidBridge && window.AndroidBridge.requestAllFilesAccess) window.AndroidBridge.requestAllFilesAccess();
             showToast('Grant "All files access", then come back', '⭐');
         }
@@ -11551,7 +12343,164 @@ Type any command below (e.g. pm list packages -d)
             applyTheme(false);
         }
 
+        // ---------- Permissions ----------
+        // Three accesses have no dialog of their own: All files access, Usage access and Display over other apps each live on a
+        // settings screen of Android. A sheet offers them once (the first time the app is opened, or after an update that brings the
+        // sheet) and from About; and any action that fails for want of file access asks for it on the spot.
+        const PERM_DEFS = [
+            { key: 'files', icon: '📁', name: 'All files access', why: 'Browse storage, find packages on it and install from it.' },
+            { key: 'usage', icon: '📊', name: 'Usage access', why: 'Show how big each app is and when it was last used.' },
+            { key: 'overlay', icon: '🪟', name: 'Display over other apps', why: "Lets this app open another app's screen from the background, such as an app you have just installed." }
+        ];
+        let permStatus = {};              // { files, usage, overlay }: true when allowed
+        let permMode = 'manual';          // 'intro' (first launch) | 'manual' (from About) | 'files' (an action needs file access)
+        let permWalk = [];                // what "Allow all" still has to open, one Android screen after the other
+        let permWaiting = '';             // the access whose Android screen was just opened
+        let permRetry = null;             // what to do once file access is allowed (the action that asked for it)
+        let permRetryAt = 0;              // when it was asked for: an old one is left alone (the access may come from another place, much later)
+        function setPermRetry(fn) { permRetry = fn || null; permRetryAt = fn ? Date.now() : 0; }
+        let permClosedAt = 0;             // when the file-access prompt was last turned down
+        const PERM_PAUSE_MS = 5000;       // a prompt turned down is not raised again by the failures that follow it straight away (one action, many files)
+        let permIntroWaiting = false;     // the first-launch sheet is waiting for another sheet to close first
+        let permIntroTries = 0;           // how often it has looked again (every three seconds, for two minutes)
+
+        function permRefresh() {
+            try { if (window.AndroidBridge && window.AndroidBridge.getPermissionStatus) permStatus = JSON.parse(window.AndroidBridge.getPermissionStatus()) || {}; } catch (e) {}
+            return permStatus;
+        }
+
+        // true when there is no way to tell (an old build or a browser), so nothing nags where nothing can be done
+        function fileAccessGranted() {
+            try { return window.AndroidBridge && window.AndroidBridge.hasAllFilesAccess ? !!window.AndroidBridge.hasAllFilesAccess() : true; } catch (e) { return true; }
+        }
+
+        function openPermSheet(mode, reason) {
+            permMode = mode || 'manual';
+            permRefresh();
+            const files = permMode === 'files';
+            document.getElementById('permTitle').innerText = files ? 'File access needed' : (permMode === 'intro' ? 'Allow a few permissions' : 'Permissions');
+            document.getElementById('permSubtitle').innerText = files ? 'Allow it to continue' : 'Allow what you like and skip the rest: every one can be changed later.';
+            const why = document.getElementById('permReason');
+            why.style.display = files && reason ? '' : 'none';
+            why.innerText = reason || '';
+            permRender();
+            document.getElementById('permModal').classList.add('show');
+            haptic();
+        }
+
+        function permRender() {
+            const files = permMode === 'files';
+            const defs = files ? PERM_DEFS.filter(d => d.key === 'files') : PERM_DEFS;
+            document.getElementById('permRows').innerHTML = defs.map(d => {
+                const on = !!permStatus[d.key];
+                return '<div class="pm-row"><div class="pm-ico">' + d.icon + '</div><div class="pm-txt"><div class="pm-name">' + escapeHtml(d.name) + '</div><div class="pm-why">' + escapeHtml(d.why) + '</div></div>'
+                    + (on ? '<div class="pm-ok">✓ Allowed</div>' : '<button class="mode-action-btn primary" aria-label="Allow ' + escapeHtml(d.name) + '" onclick="permAllow(\'' + d.key + '\')">Allow</button>') + '</div>';
+            }).join('');
+            const missing = defs.filter(d => !permStatus[d.key]).length;
+            const showAll = !files && missing > 1;
+            document.getElementById('permAllBtn').style.display = showAll ? '' : 'none';          // with one left its own Allow button is enough
+            const closeBtn = document.getElementById('permCloseBtn');
+            closeBtn.innerText = missing ? 'Not now' : 'Done';
+            closeBtn.style.flex = showAll ? '' : '1';                                             // alone it takes the whole row
+        }
+
+        // Opens the Android screen for one access (or grants it at once when a working mode can). The sheet updates when the app is back.
+        function permAllow(key) {
+            haptic();
+            const b = window.AndroidBridge;
+            if (!b) { showToast('Needs the app build', '⚠️'); return; }
+            permWaiting = key;
+            let answer = 'settings';
+            try {
+                if (key === 'files') { if (b.requestAllFilesAccess) b.requestAllFilesAccess(); }
+                else if (key === 'usage') { if (b.requestUsageAccess) answer = String(b.requestUsageAccess()); }
+                else if (key === 'overlay') { if (b.requestOverlayAccess) answer = String(b.requestOverlayAccess()); }
+            } catch (e) {}
+            if (answer === 'granted') { permWaiting = ''; permOnChange(); permWaiting = ''; if (permWalk.length) setTimeout(permNext, 200); }
+        }
+
+        function permNext() {
+            const k = permWalk.shift();
+            if (k) permAllow(k);
+        }
+
+        function permAllowAll() {
+            permRefresh();
+            permWalk = PERM_DEFS.filter(d => !permStatus[d.key]).map(d => d.key);
+            permNext();
+        }
+
+        // The app is back from an Android settings screen (or a permission dialog was answered)
+        function permOnChange() {
+            permRefresh();
+            const modal = document.getElementById('permModal');
+            if (modal && modal.classList.contains('show')) {
+                if (permMode === 'files' && permStatus.files) closePermSheet(false);
+                else permRender();
+            }
+            if (permWaiting) {
+                permWaiting = '';
+                if (permWalk.length) setTimeout(permNext, 300);               // "Allow all": the next screen
+            }
+            if (permStatus.files && permRetry) {
+                const fn = permRetry, fresh = Date.now() - permRetryAt < 300000;
+                permRetry = null;
+                showToast('File access allowed', '✅');
+                if (fresh) { try { fn(); } catch (e) {} }
+            }
+        }
+        window.onPermissionsChanged = permOnChange;
+
+        // byUser === false: closed by the page itself because the access arrived
+        function closePermSheet(byUser) {
+            const modal = document.getElementById('permModal');
+            if (!modal || !modal.classList.contains('show')) return;
+            modal.classList.remove('show');
+            permWalk = [];
+            if (permMode === 'intro') { try { if (window.AndroidBridge && window.AndroidBridge.saveSetting) window.AndroidBridge.saveSetting('perm_intro_v61', '1'); } catch (e) {} }
+            if (permMode === 'files' && byUser !== false && !fileAccessGranted()) { permClosedAt = Date.now(); setPermRetry(null); }
+        }
+
+        // Asks for file access because an action needs it. Returns true when the access is missing (the prompt is up, or was just turned
+        // down and is left alone for a few seconds, so one failing action that reports many times asks once), false when there is
+        // nothing to ask for: `retry` then runs at once. `force`: the person started this one (a button), so it asks whatever happened
+        // a moment ago.
+        function promptFileAccess(reason, retry, force) {
+            if (fileAccessGranted()) { if (retry) { try { retry(); } catch (e) {} } return false; }
+            if (retry) setPermRetry(retry);
+            const modal = document.getElementById('permModal');
+            if (modal && modal.classList.contains('show')) return true;
+            if (!force && Date.now() - permClosedAt < PERM_PAUSE_MS) return true;
+            openPermSheet('files', reason || 'This action needs access to files on this phone.');
+            return true;
+        }
+
+        // MainActivity: an action just failed for want of All-files access
+        function onFileAccessNeeded(reason) { promptFileAccess(reason ? reason + ', this app needs All-files access.' : '', null, false); }
+        window.onFileAccessNeeded = onFileAccessNeeded;
+
+        // The first time the app is opened (and once after the update that brings the sheet): offer the three accesses
+        function maybeShowPermIntro() {
+            const b = window.AndroidBridge;
+            if (!b || !b.getPermissionStatus || !b.loadSetting) return;
+            const up = document.getElementById('permModal');
+            if (up && up.classList.contains('show')) return;
+            let seen = '';
+            try { seen = b.loadSetting('perm_intro_v61'); } catch (e) {}
+            if (seen) return;
+            if (document.querySelector('.modal-overlay.show')) {              // after the sheet that is open (What's new, a menu): look again soon
+                permIntroWaiting = true;
+                if (permIntroTries++ < 40) setTimeout(maybeShowPermIntro, 3000);
+                return;
+            }
+            permRefresh();
+            if (PERM_DEFS.every(d => permStatus[d.key])) { try { b.saveSetting('perm_intro_v61', '1'); } catch (e) {} return; }
+            permIntroWaiting = false;
+            openPermSheet('intro');
+        }
+
         function onAppResume() {
+            permOnChange();
             // Material You follows the wallpaper: re-read the dynamic colors whenever the app comes back
             const before = JSON.stringify(materialYouCache);
             getMaterialYouSchemes(true);
@@ -12520,6 +13469,7 @@ Type any command below (e.g. pm list packages -d)
         function closeWhatsNew() {
             haptic();
             document.getElementById('whatsNewModal').classList.remove('show');
+            if (permIntroWaiting) setTimeout(maybeShowPermIntro, 400);
         }
 
         // Shown once after the app was updated; fresh installs just record the version
@@ -12721,7 +13671,7 @@ Type any command below (e.g. pm list packages -d)
         const sdbMemo = {};
         let sdbEditing = null;                   // { ns, key, orig } while the editor is open
         let sdbNewNs = 'global';
-        let sdbSnackTimer = null, sdbSnackUndo = null;
+        let sdbSnackTimer = null, sdbSnackUndo = null, sdbSnackExpire = null, sdbSnackView = null;
         let sdbReady = false;
         let sdbObserver = null;
         const sdbPress = { timer: null, fired: false, x: 0, y: 0 };
@@ -13256,21 +14206,33 @@ Type any command below (e.g. pm list packages -d)
 
         // ---- the undo bar and the history of changes ----
 
-        function sdbSnack(msg, undo) {
+        // opts (optional): { view: the one tab it belongs to (it goes when you leave it; by default Settings and Overlays share it),
+        //                    onExpire: runs when the bar goes without Undo being tapped (the change is final), ms: how long it stays }
+        function sdbSnack(msg, undo, opts) {
             const el = document.getElementById('sdbSnack');
             if (!el) return;
+            sdbSnackFinish();                                       // a new bar takes over: what the one on screen was holding back is final now
             document.getElementById('sdbSnackMsg').innerText = msg;
             sdbSnackUndo = undo || null;
+            sdbSnackExpire = (opts && opts.onExpire) || null;
+            sdbSnackView = (opts && opts.view) || null;
             document.getElementById('sdbSnackUndo').style.display = undo ? '' : 'none';
             el.classList.add('show');
             clearTimeout(sdbSnackTimer);
-            sdbSnackTimer = setTimeout(sdbSnackHide, 7000);
+            sdbSnackTimer = setTimeout(sdbSnackHide, (opts && opts.ms) || 7000);
         }
 
-        function sdbSnackHide() { const el = document.getElementById('sdbSnack'); if (el) el.classList.remove('show'); sdbSnackUndo = null; }
+        function sdbSnackFinish() {
+            const f = sdbSnackExpire;
+            sdbSnackExpire = null; sdbSnackView = null;
+            if (typeof f === 'function') { try { f(); } catch (e) {} }
+        }
+
+        function sdbSnackHide() { const el = document.getElementById('sdbSnack'); if (el) el.classList.remove('show'); sdbSnackUndo = null; sdbSnackFinish(); }
 
         function sdbSnackUndoNow() {
             const fn = sdbSnackUndo;
+            sdbSnackExpire = null; sdbSnackView = null;             // Undo was chosen: nothing becomes final
             sdbSnackHide();
             haptic();
             if (fn) fn();

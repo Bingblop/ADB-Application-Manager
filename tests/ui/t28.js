@@ -24,6 +24,7 @@ const { chromium, PAGE } = require('./lib/pw');
       loadPackages() { return JSON.stringify([{ pkg: 'com.a', name: 'A', isSystem: false }]); },
       getWorkingMode() { return JSON.stringify({ adbTcp: { connected: true, port: 5555 }, adbWireless: {}, shizuku: {}, configuredMode: 'auto', activeMode: 'adb_tcp', modeAvailable: true, isPrivileged: true }); },
       getAppDetails() { return '{}'; },
+      getDeviceProfile() { return JSON.stringify({ abis: ['arm64-v8a', 'armeabi-v7a'], dpi: 420, locales: ['en-US'], sdk: 34 }); },
       pickInstallerFile() { window.onInstallFilePicked(PKG.ref); },
       inspectInstallSource(ref) { window.onInstallInspected(JSON.stringify(PKG)); },
       installSelected(json) { window.__installCalls.push(JSON.parse(json)); },
@@ -42,7 +43,7 @@ const { chromium, PAGE } = require('./lib/pw');
   console.log('split rows:', await page.locator('#installSplitsList .switch-row').count());
   console.log('sign row:', await page.locator('#installSignRow').innerText());
 
-  // Default (select-all on): all three splits selected
+  // Default: the base plus the splits that fit this phone (arm64 CPU, English), here all three
   let built = await page.evaluate(() => buildInstallOptions());
   console.log('1. default authorizer=adb, createFlags:', built.createFlags);
   console.log('   splits selected:', built.opts.splits.length, '(expect 3)');

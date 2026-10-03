@@ -1,5 +1,63 @@
 # Changelog
 
+## v6.1-Pro (versionCode 610)
+
+- **🎨 A bigger theme button.** The 🎨 button at the top of the screen (it opens Colors & Themes) is now 44 × 36 px with a bigger
+  icon, where it was about 40 × 25 px, so it is easier to hit.
+- **✨ The big counters show the list you are looking at.** On the Applications tab, the cards at the top (Total installed, Running,
+  Frozen / disabled, User apps, System apps, Bloatware) light up with a colored border and glow for the filter that is on. They
+  follow the filter pills below them (and the pills follow them), and the last filter is lit again when the app opens. A filter
+  with no card of its own (Suspended, Updated 7d, Patched …) lights none. The cards also work from a keyboard and for screen
+  readers: each is a button with a pressed state.
+- **💡 A tip under Export and Share CSV.** It says to scroll the filter pills sideways for more filters. It goes as soon as you
+  scroll them (or tap its ✕) and stays gone.
+- **🔐 Permissions on first launch.** The first time the app opens, a sheet offers the three accesses Android keeps in its
+  settings: **All files access**, **Usage access** and **Display over other apps**. **Allow** opens that screen of Android's
+  settings; **Allow all** walks through the ones still missing; with ADB, Shizuku or Root the app switches the last two on by
+  itself, with no screen. Skip any of them with **Not now**: they are also under **About → 🔐 Permissions**. After this update
+  the sheet comes once, if one of the three is missing. It waits for What's new to be closed first.
+- **📁 File access is asked for when an action needs it.** When opening, editing, saving, adding or deleting a file, reading a
+  package from storage, listing a storage folder you chose, or searching storage fails for want of All-files access, a sheet
+  says what was being done and has an **Allow** button. When the access arrives the sheet closes and the action carries on by
+  itself: the folder is listed again, the search starts again, the package is read again (an action asked for more than five
+  minutes ago is left alone). **Not now** cancels it. The failures that follow straight away (one action, many files) do not ask
+  again, but a button you press yourself (Go in the file manager, Find APKs) asks every time. The Files tab and the search the
+  Installer starts when it opens only show a note with a button, not a sheet. With ADB, Shizuku or Root the storage is read
+  without the access, so nothing is asked. A failure on a path the access cannot help with (system folders, other apps' data)
+  asks for nothing. On Android 10 the app now also asks Android for the old file access (`requestLegacyExternalStorage`), which
+  its storage permission needs there to reach files at all.
+- **🚀 Launch Application and ⚙️ Application Settings after an install.** When the Installer reports a success, its result
+  dialog has two more buttons above **Done**: **Launch Application** opens the app that was just installed (a toast says it
+  went through; only a failure says why) and, under it, **Application Settings** opens Android's page for it. The dialog is
+  taller to make room, and the output box keeps its height. On a short screen the dialog scrolls instead. Both buttons act on
+  the package that was installed, even if you opened another one while the install ran.
+- **⬇️ The Installer scrolls to the package.** After you pick a file, also from the Find APKs list, the page glides down to the
+  box with the package's name, version and signature (it does not move if you have left the tab, and it does not animate when
+  your phone asks for reduced motion).
+- **📊 A progress bar for Find APKs on this device.** A bar under the status line shows how far the search is with the number of
+  files found so far. Where the search cannot tell (the one shell command of a working mode) the bar sweeps instead.
+- **🗑️ Delete a found package from the phone, with Undo.** Press and hold a file in the Find APKs list and confirm: the file is
+  removed from storage and an **Undo** bar stays for eight seconds. A tip under the list says so. While the bar is there the
+  file waits in a hidden folder on the same storage; it is removed for good when the bar goes, when you leave the Installer or
+  at the next start (if the app cannot reach storage then, at the one after). If a file with the same name has appeared in the
+  meantime, Undo restores yours as "name (2)" rather than replacing it, and an Undo that fails is offered again. Only regular
+  package files can be deleted this way, never a folder, and two files deleted at once cannot replace each other in the trash.
+- **🧩 The splits that fit this phone are ticked.** Opening a package with splits ticks the base, the one CPU split the phone runs
+  best, the screen-density split Android itself would pick for the phone's density and the phone's languages. The rest
+  stay off, each with a note (another CPU, another language, a feature module …) so you decide whether to add it. A **Match this
+  phone** link ticks them again after you changed things.
+- **▾ Common installers and requesters.** The **installer source (-i)** box and the **requester / originating URI** box each have
+  a small ▾ button at their end. It lists common values and fills the box when you pick one: Google Play, F-Droid, Aurora Store,
+  Amazon Appstore, Samsung Galaxy Store, Huawei AppGallery, Xiaomi, OPPO / realme, vivo and HONOR stores, APKMirror Installer,
+  Obtainium, Droid-ify, Neo Store, Accrescent, Aptoide, APKPure, Uptodown, itch.io and more for the first; Play, F-Droid,
+  APKMirror, GitHub, itch.io and other addresses (with the package filled in) for the second. A **Clear this box** entry empties it.
+- **♿ Keyboard and screen readers.** The found files (Enter loads one, Delete opens its delete sheet), the ✕ of the tip, the 🎨
+  button, the three Allow buttons (each named for what it allows) and the two ▾ lists work from a keyboard and say what they are.
+  Pressing and holding a found file no longer starts Android's own text selection, and the permission prompt is painted over
+  every other sheet, so it cannot hide under the one that raised it.
+- **☑️ "Select all splits by default" is off by default.** The switch at the bottom of the Installer's options starts off (only
+  the base and the splits that fit the phone are ticked). It still ticks every split when you turn it on.
+
 ## v6.0.4-Pro (versionCode 604)
 
 - **🚀 A launch that works shows no dialog.** In an app's **Components** tab, **Launch** now just opens the activity and a toast
