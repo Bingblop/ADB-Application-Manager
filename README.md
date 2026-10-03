@@ -14,7 +14,7 @@ Debugging, Shizuku or Root**.
 
 ### [⬇️ Download the latest APK](https://github.com/Bingblop/ADB-Application-Manager/releases/latest)
 
-`com.bloatware.bingblop` · v6.0-Pro · signed APK, installs over every earlier version without uninstalling
+`com.bloatware.bingblop` · v6.0.1-Pro · signed APK, installs over every earlier version without uninstalling
 
 <table>
   <tr>
@@ -36,7 +36,7 @@ Debugging, Shizuku or Root**.
 ## Contents
 
 [Download](#download--install) · [Features](#features) · [The tabs](#the-tabs) · [Screenshots](#screenshots) ·
-[Working modes](#working-modes) · [Debloater](#debloater) · [Updates](#updates) · [Settings](#android-settings) ·
+[Working modes](#working-modes) · [Debloater](#debloater) · [Updates](#updates) · [Hidden settings](#hidden-settings) ·
 [Overlays &amp; Material You](#overlays-and-material-you) · [App menu](#app-menu) · [Profiles](#app-profiles) · [Backup &amp; restore](#backup-and-restore) ·
 [Quick tiles &amp; widget](#quick-settings-tiles-and-widget) · [Copy, share &amp; search](#copy-share-and-search) ·
 [Themes](#themes) · [How it works](#how-it-works) · [Building](#building) · [Project layout](#project-layout) ·
@@ -78,7 +78,7 @@ tell you when a new version is out (see [Updates](#updates)).
 | **Terminal** | Run shell commands through the active mode (off the page's thread), with output search, copy and share · **🕘 history, ⭐ saved scripts and pinned chips** · **🐚 Rish mode**: a persistent Shizuku shell where `cd` and `export` stick, with a STOP that ends a command and its children · a searchable **📋 ADB cheat sheet** of ~90 commands you tap to drop into the input |
 | **Files** | Privileged file manager · **select many** and copy / move / delete together · open **.apk / .zip / .xapk / .jar … without extracting**, preview text, images and decoded Android XML, extract, rename, delete, add files and edit text in place · **install from inside an archive**, **open nested archives**, **compare two archives** · **sign an edited APK** on the device |
 | **Logcat** | Readable, **color-coded** log (one row per entry, tappable level key) · **limit it to one app** · save or share the filtered log as a bug-report text file |
-| **Settings** | Read and edit the phone's **Global**, **Secure** and **System** settings, one sub-tab per table · search names, values and descriptions · tap to edit, **press and hold to flip** a switch (1 / 0, true / false), **＋ to create** a setting · plain-English descriptions and ⚠️ warnings for the ones that bite · every change is read back to prove it, with **Undo** and a log of changes with **Revert** — see [Android settings](#android-settings) |
+| **Hidden Settings** | Read and edit the phone's **Global**, **Secure** and **System** settings, one sub-tab per table · search names, values and descriptions · tap to edit, **press and hold to flip** a switch (1 / 0, true / false), **＋ to create** a setting · plain-English descriptions and ⚠️ warnings for the ones that bite · every change is read back to prove it, with **Undo** and a log of changes with **Revert** — see [Hidden settings](#hidden-settings) |
 | **Overlays** | **New in v6.0:** change Android's **Material You** theme from the phone — the **wallpaper** or **any color** (hex, sliders or 657 named presets) with one of six **styles** (Tonal Spot … Spritz), and the palette Android is really using shown afterwards · list every **overlay** (`cmd overlay list`) grouped by the app it restyles, search and filter it, **switch one on or off** with its switch or by **pressing and holding** its row · every change is read back to prove it, with **Undo** — see [Overlays and Material You](#overlays-and-material-you) |
 | **Store** | **🛍️ ShizuStore**, **🐙 GitHub** (up to 5,000 apps, live search), **🤖 F-Droid** (any known repository, streamed), **🪐 Orion** and an **🌌 Aurora** hand-off as sub-tabs, each with a category drop-down · every install comes from the app's own upstream (nothing is rehosted), through your active mode or the system installer |
 | **Modes** | ADB over TCP · Wireless Debugging (pairing, mDNS port detection, and **🔔 pairing from a notification** so the code can't expire while you switch apps) · Shizuku · Root · Automatic · Read-Only |
@@ -101,14 +101,21 @@ Left to right, with the 🎨 **Colors &amp; Themes** button in the header:
 | ⬆️ **Updates** | This app, Galaxy Store apps and sideloaded open-source apps (GitHub, Codeberg, F-Droid, IzzyOnDroid, Obtainium) |
 | 💻 **ADB Console** | A shell through the active mode, with history, saved scripts, a cheat sheet and a persistent Rish shell |
 | 📄 **Logcat** | A color-coded device log you can limit to one app, save or share |
-| ⚙️ **Settings** | Read, flip, edit and create the Global, Secure and System settings ([details](#android-settings)) |
+| 🛠️ **Hidden Settings** | Read, flip, edit and create Android's own Global, Secure and System settings ([details](#hidden-settings)) |
 | 🌈 **Overlays** | Recolor Android (Material You: wallpaper or any color, six styles) and switch system overlays on or off ([details](#overlays-and-material-you)) |
 | 🛍️ **Store** | ShizuStore, GitHub, F-Droid, Orion and an Aurora hand-off |
 | ℹ️ **About** | Who made it, which build and key you have, debug info, and the coffee button |
 
+## New in v6.0.1
+
+- **🛠️ "Settings" is now "Hidden Settings".** The tab that reads and edits Android's own settings tables (Global, Secure
+  and System) was called *Settings*, which sounds like this app's own settings. It now says what it is, with a 🛠️ instead
+  of the gear. Nothing else about it changed, and what you had saved (the log of changes, the table and filter you last
+  used) is still there. See [Hidden settings](#hidden-settings).
+
 ## New in v6.0
 
-- **🌈 An Overlays tab** — right after Settings, with two halves. **Theme** changes the source color and style Android's
+- **🌈 An Overlays tab** — right after Hidden Settings, with two halves. **Theme** changes the source color and style Android's
   Material You engine builds every system color from: the wallpaper (Android's default) or **any color** you pick with
   a hex box, hue / saturation / lightness sliders or **657 named presets**, in one of six styles (Tonal Spot, Vibrant,
   Expressive, Fruit Salad, Rainbow, Spritz). **Overlays** lists every overlay `cmd overlay list` reports, grouped by the app it
@@ -117,13 +124,13 @@ Left to right, with the 🎨 **Colors &amp; Themes** button in the header:
 - **🎨 Colors in use** — the five tonal palettes Android is using right now (Accent 1–3, Neutral 1–2) are read from the system
   and drawn as swatches you can tap to copy; they redraw by themselves a moment after a change, once Android has repainted.
 - **↩️ Undo, everywhere** — a theme or overlay change reads itself back, offers **Undo**, and a theme change is also listed in
-  Settings → ⋯ → Changes with a **Revert**. Android restarts apps when the palette changes; the app picks up where it left
+  Hidden Settings → ⋯ → Changes with a **Revert**. Android restarts apps when the palette changes; the app picks up where it left
   off and the Undo bar is still there.
 - **🔍 Checked before it shipped** — three independent review passes over the new tab (the native side, the page, and a second look at the logic the first fixes added: 26 findings, 25 fixed and one left on purpose, see Testing).
 
 ## New in v5.9
 
-- **⚙️ A Settings tab** — read and edit Android's hidden **Global**, **Secure** and **System** settings: a sub-tab per table, search and filters, **tap to edit**, **press and hold to flip** a 1 / 0 or true / false switch, and **＋ to create** your own. Every change is read back to prove it worked and can be undone. See [Android settings](#android-settings).
+- **🛠️ A Hidden Settings tab** (called *Settings* when it arrived) — read and edit Android's hidden **Global**, **Secure** and **System** settings: a sub-tab per table, search and filters, **tap to edit**, **press and hold to flip** a 1 / 0 or true / false switch, and **＋ to create** your own. Every change is read back to prove it worked and can be undone. See [Hidden settings](#hidden-settings).
 - **🔍 Checked, then hardened** — two independent reviews of the new tab led to a stricter verdict on every change (Android's
   own refusal wins over a read-back that merely says `null`), lists that are only accepted when they arrive complete, and
   a clear "may still be applied" when the link drops.
@@ -265,12 +272,12 @@ Left to right, with the 🎨 **Colors &amp; Themes** button in the header:
     <td align="center"><sub>Pure black for AMOLED</sub></td>
   </tr>
   <tr>
-    <td><img src="docs/screenshots/settings.png" width="230" alt="Settings tab"></td>
+    <td><img src="docs/screenshots/settings.png" width="230" alt="Hidden Settings tab"></td>
     <td><img src="docs/screenshots/settings-edit.png" width="230" alt="Editing a setting"></td>
     <td><img src="docs/screenshots/settings-undo.png" width="230" alt="Undo after a flip"></td>
   </tr>
   <tr>
-    <td align="center"><sub>Settings: Global / Secure / System, with switches</sub></td>
+    <td align="center"><sub>Hidden Settings: Global / Secure / System, with switches</sub></td>
     <td align="center"><sub>Edit a value; ⚠️ warns about the risky ones</sub></td>
     <td align="center"><sub>Press and hold flips a switch, with Undo</sub></td>
   </tr>
@@ -312,12 +319,12 @@ Left to right, with the 🎨 **Colors &amp; Themes** button in the header:
   <tr>
     <td><img src="docs/screenshots/profiles-light.png" width="230" alt="Light: profiles"></td>
     <td><img src="docs/screenshots/backups-light.png" width="230" alt="Light: backups"></td>
-    <td><img src="docs/screenshots/settings-light.png" width="230" alt="Light: Settings"></td>
+    <td><img src="docs/screenshots/settings-light.png" width="230" alt="Light: Hidden Settings"></td>
   </tr>
   <tr>
     <td align="center"><sub>Profiles</sub></td>
     <td align="center"><sub>Backups</sub></td>
-    <td align="center"><sub>Settings</sub></td>
+    <td align="center"><sub>Hidden Settings</sub></td>
   </tr>
   <tr>
     <td><img src="docs/screenshots/settings-edit-light.png" width="230" alt="Light: editing a setting"></td>
@@ -325,7 +332,7 @@ Left to right, with the 🎨 **Colors &amp; Themes** button in the header:
     <td><img src="docs/screenshots/overlays-list-light.png" width="230" alt="Light: Overlays list"></td>
   </tr>
   <tr>
-    <td align="center"><sub>Settings editor</sub></td>
+    <td align="center"><sub>Hidden Settings editor</sub></td>
     <td align="center"><sub>Overlays: theme</sub></td>
     <td align="center"><sub>Overlays: list</sub></td>
   </tr>
@@ -380,9 +387,9 @@ then installed through ADB, Shizuku or Root. Apps only Obtainium can track open 
 get **＋ Set source**. Play Store apps keep updating through the Play Store, since Google gives other apps no
 way to check them.
 
-## Android settings
+## Hidden settings
 
-The **⚙️ Settings** tab (between Logcat and Store) is a front end for Android's own `settings` command: the three
+The **🛠️ Hidden Settings** tab (between Logcat and Overlays) is a front end for Android's own `settings` command: the three
 key-value tables behind things like USB debugging, animation speed, the screen timeout and the default keyboard.
 It needs ADB, Wireless Debugging, Shizuku or Root; with none of them ready the tab says so and opens Working Modes.
 
@@ -428,7 +435,7 @@ static String writeScript(String op, String ns, String key, String value) {
 
 ## Overlays and Material You
 
-The **🌈 Overlays** tab (right after Settings) has two halves, chosen by the sub-tabs at its top. Changing anything needs ADB,
+The **🌈 Overlays** tab (right after Hidden Settings) has two halves, chosen by the sub-tabs at its top. Changing anything needs ADB,
 Wireless Debugging, Shizuku or Root; with none of them ready the tab says so and opens Working Modes. The colors Android
 is using *now* are read without any of them.
 
@@ -446,7 +453,7 @@ style the palette is worked out with:
 - **Style:** Tonal Spot (Android's default), Vibrant, Expressive, Fruit Salad, Rainbow or Spritz, each with a line saying what it does.
 - **Apply theme** reads what the setting holds, writes the choice, reads it back, and shows **Undo**; **Default** returns to
   the wallpaper with Tonal Spot. The other choices stored in the same setting (a font, icon shape or icon pack on Pixel-like
-  phones) are kept: only the color keys are replaced. Every theme change is also kept in **Settings → ⋯ → Changes** with a
+  phones) are kept: only the color keys are replaced. Every theme change is also kept in **Hidden Settings → ⋯ → Changes** with a
   **Revert**. Android tends to restart apps (this one included) when the palette changes; the app notices that it was
   restarted, whether that came before or after the answer, and comes back to this tab with the Undo bar waiting.
 
@@ -703,7 +710,7 @@ Also in the sources: [`ManifestDecoder`](src/com/bloatware/bingblop/ManifestDeco
 - Backup files can hold app data; they are plain files in your Downloads folder, so treat them like the data
   they contain. Restoring data validates the archive first (see above).
 - Powerful actions (uninstall, disable, clear data, changing Android settings) always go through a privileged mode
-  you set up yourself. Read-Only mode can inspect but not change anything. The Settings tab only talks to the phone's
+  you set up yourself. Read-Only mode can inspect but not change anything. The Hidden Settings tab only talks to the phone's
   own `settings` command, and the Overlays tab to `cmd overlay` and the one theme setting; the log of changes stays on the phone.
 - The release keystore is git-ignored. Never commit one to a public repository.
 
@@ -770,7 +777,7 @@ src/com/bloatware/bingblop/
   QuickActions, QuickActionActivity, ModeTileService, StopListTileService, QuickWidgetProvider, BootReceiver
                                Quick Settings tiles, the home-screen widget and the after-update reminder
   BackupScripts                Backup and restore shell scripts, and the package-name check every command goes through
-  SettingsDb                   The Settings tab's rules: names, values, the commands and their read-back
+  SettingsDb                   The Hidden Settings tab's rules: names, values, the commands and their read-back
   OverlayRules                 The Overlays tab's rules: reading `cmd overlay list`, overlay names, the theme value, the read-back
   FileRules, InstallHints      File-manager path rules; reading what `pm install` answered
   ZipTool                      The archive engine behind the file manager's package browser
@@ -803,7 +810,7 @@ this is something you can re-run from a clone.
 
 - **The UI**: 67 headless-Chromium scripts drive the real `assets/index.html` against a mock Android bridge:
   every tab, theme, filter, share / copy / find action, profiles and the drift banner, backups, the Installer, the
-  Store, the file manager and archive browser, the terminal, About, the Back button and, for the Settings tab, the
+  Store, the file manager and archive browser, the terminal, About, the Back button and, for the Hidden Settings tab, the
   list, search, filters and sort, tap-to-edit, press-and-hold flipping (with touch events of any hold length), creating,
   deleting, Undo, the change log, refused, unanswered and late requests, a 720-row table, and the layout at 320 and 360 px in
   light and dark. For the Overlays tab: the theme editor (hex, sliders, the 657 presets, styles), apply, reset and Undo, an
@@ -811,7 +818,7 @@ this is something you can re-run from a clone.
   search, filters, press and hold with a touch screen, a refused, fixed-on, unavailable, unanswered or late change), a
   phone without Material You, and both halves at 320 and 360 px in light and dark.
 - **Native rules, off the device**: the parts of the Java that need no Android classes are compiled and run as plain
-  Java. For the Settings tab that is 311 checks of `SettingsDb`, including round trips through a real `sh` (and a fake
+  Java. For the Hidden Settings tab that is 311 checks of `SettingsDb`, including round trips through a real `sh` (and a fake
   `settings` that refuses on purpose) for hostile values (quotes, `;`, `$(...)`, backticks, `>`, newlines, Unicode), and a
   comparison of the name, value and size checks in Java and in the page over 1,322 cases (the color check of the Overlays tab
   included). For the Overlays tab that is 551 checks of `OverlayRules`: `cmd overlay list` output in the shapes different Android
@@ -824,7 +831,7 @@ this is something you can re-run from a clone.
 - **The build**: `build.sh` compiles, signs and verifies every APK (zipalign, v2 / v3 signatures), and each published
   release is downloaded again and checked: SHA-256, signing certificate, version and alignment.
 - **Reviews**: each release's new code gets separate, independent review passes (automated ones, not a human), and
-  what they found was fixed and re-tested before shipping. The Settings tab had two (native side: 9 findings, page: 17) and
+  what they found was fixed and re-tested before shipping. The Hidden Settings tab had two (native side: 9 findings, page: 17) and
   so did the Overlays tab (native side: 7 findings, then 8 more in a second look at what the first fixes added; page: 11);
   each finding was checked against the code and fixed, except that the sheets still do not trap keyboard focus, like the
   app's others, and that overlays are switched for the phone's main user (`--user current` could not be tried on a real phone).

@@ -1,5 +1,12 @@
 # Changelog
 
+## v6.0.1-Pro (versionCode 601)
+
+- **🛠️ The Settings tab is now called Hidden Settings.** "Settings" sounded like this app's own settings, but the tab reads
+  and edits Android's own **Global**, **Secure** and **System** settings tables, so it now says so, with a 🛠️ instead of the
+  gear (its card reads "Android's hidden settings"). Nothing else about it changed, and what you had saved (the log of
+  changes with its Revert buttons, the table, filter and sort you last used) is kept.
+
 ## v6.0-Pro (versionCode 600)
 
 - **🌈 An Overlays tab: recolor Android and switch its overlays.** A new tab right after Settings with two sub-tabs.

@@ -2669,7 +2669,7 @@
         <button class="tab-btn" onclick="switchView('updates')" id="updatesTabBtn">⬆️ Updates</button>
         <button class="tab-btn" onclick="switchView('terminal')">💻 ADB Console</button>
         <button class="tab-btn" onclick="switchView('logcat')">📄 Logcat</button>
-        <button class="tab-btn" onclick="switchView('settings')">⚙️ Settings</button>
+        <button class="tab-btn" onclick="switchView('settings')">🛠️ Hidden Settings</button>
         <button class="tab-btn" onclick="switchView('overlays')">🌈 Overlays</button>
         <button class="tab-btn" onclick="switchView('store')">🛍️ Store</button>
         <button class="tab-btn" onclick="switchView('about')">ℹ️ About</button>
@@ -3225,7 +3225,7 @@
             </style>
 
             <div class="color-card" id="sdbTop">
-                <div class="color-card-title">⚙️ Android settings</div>
+                <div class="color-card-title">🛠️ Android’s hidden settings</div>
                 <div class="color-card-subtitle">Read and change the <b>Global</b>, <b>Secure</b> and <b>System</b> settings of this phone. <b>Tap</b> a setting to edit it; <b>press and hold</b> a 1 / 0 or true / false value to flip it.</div>
 
                 <div class="mode-alert-card" id="sdbGate" style="display:none; margin:12px 0 0;">
@@ -4604,7 +4604,7 @@ Type any command below (e.g. pm list packages -d)
                 <div class="sheet-app-hero">
                     <div class="sheet-avatar" style="background:rgba(0,200,255,0.18); color:var(--accent);">⋯</div>
                     <div class="sheet-title">
-                        <h3>Settings tools</h3>
+                        <h3>Hidden settings tools</h3>
                         <p id="sdbMenuSub" style="word-break:normal;"></p>
                     </div>
                 </div>
@@ -14434,7 +14434,7 @@ Type any command below (e.g. pm list packages -d)
             if (rec.kind === 'apply' && !rec.done) ovlPendingFinish = rec;
         }
 
-        // the theme as the phone holds it now is what was applied: the colour joins the recent ones and the change is logged in Settings
+        // the theme as the phone holds it now is what was applied: the colour joins the recent ones and the change is logged in Hidden Settings
         function ovlFinishApply(rec) {
             if (!rec || rec.done || Date.now() - rec.t > 300000) return;
             const t = ovlTheme;
