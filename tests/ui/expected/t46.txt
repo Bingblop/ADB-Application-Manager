@@ -18,7 +18,7 @@
 8. app label with HTML shows as plain text, no element injected: true ["<img src=x onerror=\"window.__pwned=(window.__pwned||0)+1\">Evil <b>bold</b>","Quote ' \" <script>window.__pwned=9</script>"]
    rows still select by tap through data-pkg: true
    ⋯ opens that app's menu: true
-   file names with quotes / markup render as text: true ["📁 x');window.__pwned=7;x","📄 <b>html</b>.zip","📄 it's \"quoted\".txt"]
+   file names with quotes / markup render as text: true ["x');window.__pwned=7;x/","<b>html</b>.zip","it's \"quoted\".txt"]
    tapping the oddly named folder opens exactly that path: true "/storage/emulated/0/x');window.__pwned=7;x"
    the ⋯ sheet shows the exact file name, nothing executed: true "it's \"quoted\".txt"
 errors: [] | dialogs: 0

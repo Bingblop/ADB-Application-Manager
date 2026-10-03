@@ -3,7 +3,7 @@ splits card shown (apkm, >1 split): true
 options card shown: true
 pkg label: Example App
 split rows: 3
-sign row: 🔑 Signature matches the installed app.
+sign row: Signature matches the installed app.
 1. default authorizer=adb, createFlags: -r
    splits selected: 3 (expect 3)
    blockMismatch/blockUnknown default on: true true

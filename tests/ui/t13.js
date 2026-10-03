@@ -42,7 +42,7 @@ function bridgeInit([mock, store]) {
   const errors = []; page.on('pageerror', e => errors.push(e.message));
   await page.addInitScript(bridgeInit, [MOCK, null]);
   await page.goto(PAGE); await page.waitForTimeout(300);
-  console.log('tabs:', (await page.locator('.tab-btn').allInnerTexts()).join(' | '));
+  console.log('tabs:', (await page.locator('.tab-btn').allInnerTexts()).map(t => t.replace(/\s+/g, ' ')).join(' | '));
 
   // ---- 1. Remembered filters ----
   await page.click('.filter-pill[data-filter="system"]');
@@ -56,32 +56,32 @@ function bridgeInit([mock, store]) {
   await page.evaluate(() => { const rows = uadVisiblePackages().slice(0, 2); rows.forEach(r => toggleUadSelect(r.pkg)); });
   await page.click('.uad-action-grid >> text=Uninstall'); await page.click('#batchConfirmExecuteBtn'); await page.waitForTimeout(300);
   await page.evaluate(() => closeCommandResultsModal());
-  await page.click('text=📜 History'); await page.waitForTimeout(100);
+  await page.click('text=/^History$/'); await page.waitForTimeout(100);
   console.log('history entries:', await page.locator('.hist-entry').count(), '|', await page.locator('.hist-title').first().innerText());
   await page.screenshot({ path: 'history.png' });
-  await page.click('.hist-entry >> text=↺ Undo'); await page.waitForTimeout(300);
+  await page.click('.hist-entry >> text=Undo'); await page.waitForTimeout(300);
   await page.evaluate(() => closeCommandResultsModal());
   console.log('after undo:', (await page.locator('.hist-title').allInnerTexts()).join(' / '));
-  await page.click('text=📋 Copy Log');
+  await page.click('text=Copy Log');
   console.log('copied log first lines:', (await page.evaluate(() => window.__st.copied)).split('\n').slice(0, 3).join(' | '));
   await page.evaluate(() => closeHistoryModal());
   const calls1 = await page.evaluate(() => window.__st.calls.slice());
   console.log('debloat calls:', calls1.join(', '));
 
   // ---- 3. Updates ----
-  await page.click('.tab-btn:has-text("Updates")'); await page.waitForTimeout(100);
+  await page.click('.tab-btn[data-tab="updates"]'); await page.waitForTimeout(100);
   await page.waitForFunction(() => /40\/120/.test(document.getElementById('updStatus').innerText), null, { timeout: 5000 });
   console.log('auto-check status:', await page.locator('#updStatus').innerText());
   await page.waitForFunction(() => /updates? available/.test(document.getElementById('updStatus').innerText), null, { timeout: 5000 });
   console.log('after check:', await page.locator('#updStatus').innerText());
-  console.log('tab label:', await page.locator('#updatesTabBtn').innerText(), '| update-all:', await page.locator('#updAllBtn').innerText());
+  console.log('tab label:', (await page.locator('#updatesTabBtn').innerText()).replace(/\s+/g, ' '), '| update-all:', await page.locator('#updAllBtn').innerText());
   await page.screenshot({ path: 'updates.png' });
   await page.click('.upd-row:has-text("Calendar") >> text=Update');
   const rowHas = (name, re) => page.waitForFunction(([n, src]) => [...document.querySelectorAll('.upd-row')].some(r => r.innerText.includes(n) && new RegExp(src).test(r.innerText)), [name, re], { timeout: 5000 });
   await rowHas('Calendar', '30%');
   console.log('calendar mid-progress:', (await page.locator('.upd-row:has-text("Calendar")').innerText()).replace(/\s+/g, ' ').slice(0, 120));
   await rowHas('Calendar', 'Updated');
-  console.log('calendar done:', (await page.locator('.upd-row:has-text("Calendar") button').innerText()), '| tab:', await page.locator('#updatesTabBtn').innerText());
+  console.log('calendar done:', (await page.locator('.upd-row:has-text("Calendar") button').innerText()), '| tab:', (await page.locator('#updatesTabBtn').innerText()).replace(/\s+/g, ' '));
   await page.click('#updAllBtn');
   await page.waitForFunction(() => /30%/.test(document.getElementById('updContainer').innerText), null, { timeout: 5000 });
   console.log('queue started:', (await page.locator('.upd-row button').allInnerTexts()).join(' | '));
@@ -102,7 +102,7 @@ function bridgeInit([mock, store]) {
   console.log('RELAUNCH apps filter:', await p2.locator('.filter-pill.active').innerText());
   await p2.click('.tab-btn:has-text("Debloater")'); await p2.waitForTimeout(200);
   console.log('RELAUNCH uad chips:', (await p2.locator('#uadRemovalRow .active, #uadListRow .active, #uadStateRow .active, #uadBrandRow .active').allInnerTexts()).join(', '));
-  await p2.click('text=📜 History'); await p2.waitForTimeout(100);
+  await p2.click('text=/^History$/'); await p2.waitForTimeout(100);
   console.log('RELAUNCH history entries:', await p2.locator('.hist-entry').count());
   console.log('calls (other):', (await page.evaluate(() => window.__st.calls)).filter(c => c.startsWith('url') || c === 'check').join(', '));
   console.log('errors:', JSON.stringify(errors));

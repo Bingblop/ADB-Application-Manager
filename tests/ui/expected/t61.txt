@@ -7,7 +7,7 @@
 2. every change is recorded, newest first, with the old and new value: true [["global","device_name","Sam's phone","Renamed"],["global","stay_on_while_plugged_in","7","3"]]
    and kept in the app's settings store: true
    the Edited filter lists exactly those, each with a dot: true [{"k":"device_name","dot":true},{"k":"stay_on_while_plugged_in","dot":true}]
-   the Changes sheet shows them with "old → new" and a time: true ["device_name Global · just now Sam's phone → Renamed ↩️ Revert","stay_on_while_plugged_in Global · just now 7 → 3 ↩️ Revert"]
+   the Changes sheet shows them with "old → new" and a time: true ["device_name Global · just now Sam's phone → Renamed Revert","stay_on_while_plugged_in Global · just now 7 → 3 Revert"]
    Revert puts the old value back: true
    and the revert is itself recorded: true
    reverting something that has changed since asks first: true ["stay_on_while_plugged_in has changed since: it is now “5” (this change left it “3”).\n\nPut the old value back anyway?"]
@@ -35,7 +35,7 @@
    so does replacing one (first "already exists", then the risk): true
 8. losing the privileged mode shows the gate in place of the list: true
    and getting it back brings the list back: true
-9. a failed read shows the reason, the advice and a retry: true {"box":"Could not read the secure settings\njava.lang.SecurityException: not allowed\n\nAndroid refused the change.\n↻ Try again\n⚡ Working modes","tab":"Secure !"}
+9. a failed read shows the reason, the advice and a retry: true {"box":"Could not read the secure settings\njava.lang.SecurityException: not allowed\n\nAndroid refused the change.\nTry again\nWorking modes","tab":"Secure !"}
    Try again reads it: true
 errors: []
 ALL OK

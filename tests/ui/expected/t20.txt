@@ -15,7 +15,7 @@ dismissed hides banner: true
 all matching: banner visible: false
 unwatch call: ["watch:"] | stored watch: false
 rewatch call: ["watch:Lean Samsung"]
-quick buttons: ["🛑 Quick list","🛑 Quick list ✓"]
-chose l1 → ["quick:l1"] | ["🛑 Quick list ✓","🛑 Quick list"]
+quick buttons: ["Quick list","Quick list ✓"]
+chose l1 → ["quick:l1"] | ["Quick list ✓","Quick list"]
 toggle off → ["quick:"]
 errors: []

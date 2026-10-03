@@ -95,8 +95,8 @@ const { chromium, PAGE } = require('./lib/pw');
   // 4) Archive browser: toolbar button, edit -> banner -> sign in place.
   await page.evaluate(() => switchView('files')); await sleep(120);
   await page.evaluate(() => arcOpen('/sd/app.apk')); await sleep(300);
-  console.log('4. the archive browser of an .apk shows ✍️ Sign but no banner yet:', await vis('#arcSignBtn') && !(await vis('#arcSignBanner')));
-  console.log('   the note on APK editing now points at ✍️ Sign:', /Sign/.test(await page.locator('#arcNote').innerText()));
+  console.log('4. the archive browser of an .apk shows Sign but no banner yet:', await vis('#arcSignBtn') && !(await vis('#arcSignBanner')));
+  console.log('   the note on APK editing now points at Sign:', /Sign/.test(await page.locator('#arcNote').innerText()));
   await page.evaluate(() => arcRunEdit({ op: 'delete', name: 'res/a.xml' })); await sleep(200);
   console.log('   after an edit the "signature is no longer valid" banner shows:', await vis('#arcSignBanner'));
   await page.locator('#arcSignBanner button').click(); await sleep(250);

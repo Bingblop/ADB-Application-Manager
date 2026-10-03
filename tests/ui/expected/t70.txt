@@ -1,7 +1,7 @@
-1. the 🎨 button is a good tap target (at least 44 x 36, it was 40 x 25): true {"w":44,"h":36}
+1. the settings button is a good tap target (at least 44 x 36, it was 40 x 25): true {"w":44,"h":36}
    its emoji is bigger (19px, it was 11px): true 19px
    it fits in the header (no taller than the header) and the tab bar still starts where the header ends: true header 87px, tab bar at 87, header ends 87
-   it still opens Colors & Themes: true
+   it still opens Settings: true
 2. on opening, "Total installed" is lit (the list shows every app, like the All pill): true all:true
    a lit card looks different (its own border colour and a glow), the others do not: true {"lit":true,"borderDiffers":true,"shadow":true}
    tapping Running lights Running only, and the Running pill follows: true running:true
@@ -19,15 +19,15 @@
    the highlight does not shrink the card or move the grid: true
 3. a remembered filter lights its card at start: true frozen:true
    a remembered filter with no card lights none: true none
-4. a tip sits under the Export / Share CSV buttons and above the filters: true {"shown":true,"text":"👉 Scroll the filters below sideways for more filters ✕","belowButtons":true,"aboveFilters":true,"width":328,"sticky":"relative"}
-   it tells to scroll the filters sideways for more: true 👉 Scroll the filters below sideways for more filters ✕
+4. a tip sits under the Export / Share CSV buttons and above the filters: true {"shown":true,"text":"Scroll the filters below sideways for more filters ✕","belowButtons":true,"aboveFilters":true,"width":328,"sticky":"relative"}
+   it tells to scroll the filters sideways for more: true Scroll the filters below sideways for more filters ✕
    the filters really do scroll sideways (more pills than fit): true
    scrolling the filters sideways makes it go: true
    and it stays gone: the choice is kept with the other remembered view settings: true
    its ✕ is a button for a screen reader, reachable with Tab, and big enough to hit: true
    …and Enter on it closes the tip: true
-   the 🎨 button is a button too: focusable and named: true
-   …and Enter on it opens Colors & Themes: true
+   the settings button is a button too: focusable and named: true
+   …and Enter on it opens Settings: true
    on the next start it is not shown: true
    its ✕ closes it too (and remembers): true
    at 320 px wide the page does not scroll sideways: true 320 of 320

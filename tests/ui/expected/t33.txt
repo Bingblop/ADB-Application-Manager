@@ -1,11 +1,11 @@
-1. tab order: ["📱 Applications","📋 Saved Lists","🧹 Debloater","📦 Installer","📁 Files","⬆️ Updates","💻 ADB Console","📄 Logcat","🛠️ Hidden Settings","🌈 Overlays","🛍️ Store","ℹ️ About"]
-   Saved Lists right after Applications: true
-   Logcat is the last tab: false
+1. tab order: ["Application\nManager","Saved App\nLists","UAD-NG\nDebloater","APK\nInstaller","File\nManager","ADB Console","Hidden\nSettings","RRO/Monet\nCustomization","App\nUpdater","App\nStores","Logcat\nViewer","About"]
+   Saved App Lists right after Application Manager: true
+   About is the last tab, Logcat Viewer right before it: true
    no "Color" tab button: true
-2. header 🎨 icon present: true
-   opens colors view: true
-   no tab-btn marked active on colors: true
+2. header settings icon present: true
+   opens the Settings view: true
+   no tab-btn marked active on Settings: true
 3. back to Applications active: true
-   switchView(logcat) activates the last tab: true
+   switchView(logcat) activates the Logcat Viewer tab: true
 4. main Check also triggers self-update check: true
 errors: []

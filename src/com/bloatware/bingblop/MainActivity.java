@@ -614,7 +614,7 @@ public class MainActivity extends Activity {
     /** Force-stops every app in the quick list. */
     private String quickStopList() throws Exception {
         JSONObject list = QuickActions.quickList(this);
-        if (list == null) return "No quick list set. Open Saved Lists in the app and tap \u26a1 Quick list.";
+        if (list == null) return "No quick list set. Open Saved App Lists in the app and tap Quick list.";
         if ("standard".equals(resolveExecMode())) return "Needs ADB, Shizuku or Root. Set up a working mode first.";
         org.json.JSONArray pkgs = list.optJSONArray("packages");
         AndroidBridge bridge = new AndroidBridge();

@@ -4,7 +4,7 @@ The checks the app is released with. None of this is part of the APK. There are 
 
 | | What it is | Needs |
 |---|---|---|
-| **UI** — `run.js`, `ui/` | 75 headless-Chromium scripts drive the real `assets/index.html` against a mock Android bridge: every tab, theme, filter, action, sheet and dialog | Node 18+, Playwright with its Chromium |
+| **UI** — `run.js`, `ui/` | 79 headless-Chromium scripts drive the real `assets/index.html` against a mock Android bridge: every tab, theme, filter, action, sheet and dialog | Node 18+, Playwright with its Chromium |
 | **Java** — `java/run.js`, `java/src/` | The parts of the app's Java that need no Android classes (settings and overlay rules, file rules, install hints, the archive engine, the Rish shell, the APK signer, the manifest decoder, the store parsers), compiled straight from `src/` and run with the JDK | JDK 8+; some suites also need Node, Python 3 with `zip`, `mksh` + `toybox`, `apksigner`, an APK, or the `org.json` jar |
 
 ## Run them
@@ -120,7 +120,7 @@ checked by compilation, review and these simulations, not on a device.
 
 ## The UI scripts, one by one
 
-<details><summary>75 scripts</summary>
+<details><summary>79 scripts</summary>
 
 | Script | Covers |
 |---|---|
@@ -192,12 +192,16 @@ checked by compilation, review and these simulations, not on a device.
 | `t67` | Overlays tab, review round: what the independent reviews found (journal overwrite, the restart record, editor state, unknown styles, Android 11, focus and keyboard, "constructor" targets, a dead Back, a stale list, an empty list after a change, the switch warning). |
 | `t68` | v6.0.1: the Settings tab is now "Hidden Settings" (🛠️). The name, the card and the menu say so, the order of the tabs is the same, and what an earlier version saved (the last table, filter and sort; the log of changes) is still used. |
 | `t69` | v6.0.3: the single-app sheet (the ⋯ menu of an app) stands a little taller than the other sheets (93% of the screen, not 85%), so the lists under its buttons get more room. Nothing else changes: the other sheets keep their height, a strip above stays tappable, the end of a long list can still be reached, and the sheet follows a shorter window (on-screen keyboard). |
-| `t70` | v6.1 Applications tab top: the 🎨 theme button is bigger, the big stat buttons (Total installed, Running, ...) light up for the filter the list shows, and a tip under Export / Share CSV says the filters scroll sideways (and goes once they have been). |
+| `t70` | v6.1 Application Manager top: the header button (the colors palette then, the settings gear now) is bigger, the big stat buttons (Total installed, Running, ...) light up for the filter the list shows, and a tip under Export / Share CSV says the filters scroll sideways (and goes once they have been). |
 | `t71` | v6.1 Installer, splits: the base and the splits that fit this phone (CPU, screen density, language) are ticked and every other one is left off; "Select all splits by default" is off by default; "Match this phone", "Select all" and "Only base" work. |
 | `t72` | v6.1 Installer: a small ▾ button at the end of the installer source (-i) box and of the requester / originating URI box opens a list of common values; choosing one fills the box. |
 | `t73` | v6.1 Installer: when an install worked, the result dialog has "Launch Application" and, under it, "Application Settings", above "Done". The dialog stands taller for them and the output box keeps the height it has without them. |
 | `t74` | v6.1 Installer, finding and picking packages: a progress bar while "Find APKs on this device" runs; press and hold a found file to delete it from the device (with a tip that says so, and an Undo bar); the page swipes down to the next box once a package is picked. |
 | `t75` | v6.1 Permissions: the first time the app opens it offers the three accesses that have no dialog of their own (All files access, Usage access, Display over other apps); the same sheet is under About; and an action that fails for want of file access asks for it on the spot, then carries on by itself once the access is there (file manager, storage search, reading a package). |
+| `t76` | v7.0 Tabs: the tab bar is built from one registry (new names, two-line labels, new order); the header gear opens Settings; the Feature List (switches, arrows, Reset to Default) with Application Manager and About fixed; the choice is kept, a saved choice from an older version is made to fit, a tab that is off is not opened by a link or by Back (and the links do nothing else: no download starts, no sheet closes; an APK opened from outside brings APK Installer back); the keyboard focus and the moved row stay where they were; the bars that stick under the header follow its real height at three widths (and without ResizeObserver). |
+| `t77` | v7.0 Application Manager search: the bar sits under all the filters with a menu at its right end (names, package names, regex), all on at the start, kept between launches, one of names and packages always on, an invalid pattern or one that could freeze the list (3,000 apps) searched as text, exact matches with regex off; the menu opens in view with the batch button out of the way (five screens, with and without a selection), closes by tap, Escape, Back, typing, going into the box and leaving the tab but not by a scroll; the note is readable on the light page and set once. |
+| `t78` | v7.0: no emoji in the sources (page, changelog, layouts, Java) or in anything drawn on any tab or sheet; only the two settings gears remain. |
+| `t79` | v7.0 review of the emoji removal: a line that says something failed says so in words and color (store, installer, search, VirusTotal), the buttons that were told apart by a picture (danger, main action, pinned command, install-time permission, shell launch) are told apart again, the terminal find box at three widths, sub-tab sizes, the new tab names in sentences, no symbol written as an escape. |
 | `test` | Working Modes (switching, Shizuku, IP:port entry, auto-detect) and Material 3 / Material You color presets |
 
 </details>

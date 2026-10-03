@@ -1,6 +1,6 @@
 row buttons: App Settings, Menu
 frozen app menu shows Enable: true Freeze: false
-perm rows: 4 | tab label: 🛡️ Permissions (4)
+perm rows: 4 | tab label: Permissions (4)
 changeable rows: 2
 camera after toggle: CAMERA
 RUNTIMEtake pictures and videos • android.permission.CAMERA

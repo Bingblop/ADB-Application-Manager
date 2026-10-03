@@ -1,5 +1,5 @@
-1. sub-tabs ShizuStore/GitHub/F-Droid/Orion/Aurora (no Komi): true ["🛡️ ShizuStore","🐙 GitHub","🤖 F-Droid","🪐 Orion","🌌 Aurora"]
-2. github requested; first chunk shows 60 of 100 with loading note: true | 60 "⏳ Loading more… 100 apps so far"
+1. sub-tabs ShizuStore/GitHub/F-Droid/Orion (no Komi, no Aurora): true ["ShizuStore","GitHub","F-Droid","Orion"]
+2. github requested; first chunk shows 60 of 100 with loading note: true | 60 "Loading more… 100 apps so far"
    second chunk appends (200 total), loading note gone: true "200 apps" | status hidden: true
 3. show-more: label + next 60 rows: true "Show 60 more · 140 left" 120
 4. category dropdown has All + 5 categories with counts, "Other" last: true ["All categories (200)","Games (40)","Networking (40)","Privacy & Security (40)","Video (40)","Other (40)"]
@@ -7,16 +7,16 @@
    selected category preserved when more apps arrive: true
 5. search "app 007" -> 1 match: true
    sort name -> App 000 first, stars -> App 000 (most), updated -> newest (App 500): true App 000 App 000 App 500
-6. card chips (stars/downloads/version/category): true ["⭐ 10k","⬇ 500k","v1.0","Video"]
+6. card chips (stars/downloads/version/category): true ["10k stars","500k downloads","v1.0","Video"]
 7. install sends key/owner/repo/resolveKind: true
-   progress keyed by repo (no package name yet): downloading -> done, button re-enabled: true "⏳ 3 MB 40%" "✅ Installed App 000 v1.0. 100%"
-8. live search: prompt shown, bridge asked q:zzqq, hit merged + visible: true | "ℹ️ Found 1 more for “zzqq”."
-9. owner/repo prompt installs directly: true | "🔎 Finding the latest release of cool-app…"
+   progress keyed by repo (no package name yet): downloading -> done, button re-enabled: true "3 MB 40%" "Installed App 000 v1.0. 100%"
+8. live search: prompt shown, bridge asked q:zzqq, hit merged + visible: true | "Found 1 more for “zzqq”."
+9. owner/repo prompt installs directly: true | "Finding the latest release of cool-app…"
 10. offline-mirror fallback explained to the user: true
 11. Refresh calls storeSourceRefresh(github): true
 12. repo list requested; select has repos, F-Droid default; main catalog requested: true
 13. progress text shown while reading: true
-    whole catalog loaded (450 apps), newest first by default, hidden-apps note: true | "450 apps" FApp 0449 "ℹ️ F-Droid · 12 apps hidden (no build for this device)."
+    whole catalog loaded (450 apps), newest first by default, hidden-apps note: true | "450 apps" FApp 0449 "F-Droid · 12 apps hidden (no build for this device)."
     category dropdown (5 + All) and filter Security -> 60 shown of 90: true ["All categories (450)","Games (90)","Internet (90)","Multimedia (90)","Security (90)","System (90)"]
 14. switch repo asks Izzy, stale answer ignored, own list shown: true
     switching back to F-Droid is served from the in-memory cache (no new request): true
@@ -27,5 +27,6 @@
 17. metered: prompt shown, no download until confirmed, then requested: true 3 3 4
 18. orion requested, categories (incl. multi-tag) + Z–A sort + filter: true ["All categories (2)","Automation (1)","Media (1)","Utility (1)"]
 19. ShizuStore: category dropdown from slugs, show-more paging, filter: true ["All categories (130)","Automation (65)","System Tools (65)"] 60 60 "Show 5 more · 5 left"
-20. aurora hand-off still there: true
+20. no Aurora sub-tab or pane in App Stores: true
+    the Updates tab keeps its Play Store card with the Aurora button: true
 errors: []

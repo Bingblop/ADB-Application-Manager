@@ -33,7 +33,7 @@ const { chromium, PAGE, OUT } = require('./lib/pw');
 
   // 1) The tab: last in the bar, named About
   const tabs = await page.locator('.tab-btn').allInnerTexts();
-  console.log('1. About is the last tab in the top bar:', /About/.test(tabs[tabs.length - 1]), JSON.stringify(tabs));
+  console.log('1. About is the last tab in the top bar:', /About/.test(tabs[tabs.length - 1]), JSON.stringify(tabs.map(t => t.replace(/\s+/g, ' '))));
   await page.locator('.tab-btn', { hasText: 'About' }).click(); await sleep(250);
   const s1 = await ev(() => ({ view: currentViewName(), active: document.querySelectorAll('.tab-btn.active').length, last: [...document.querySelectorAll('.tab-btn')].pop().classList.contains('active'), shown: getComputedStyle(document.getElementById('view-about')).display !== 'none' }));
   console.log('   tapping it shows the About page and highlights that tab only:', s1.view === 'about' && s1.shown && s1.active === 1 && s1.last, JSON.stringify(s1));

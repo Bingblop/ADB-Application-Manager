@@ -1,5 +1,5 @@
 1. Pair-via-Notification button present: true
 2. bridge showWirelessPairingNotification invoked: ["notify"] | once: true
-3. toast text: "🔔\nCheck your notification shade to enter the pairing code" | mentions shade/code: true
-4. fallback toast when bridge absent: "⚠️\nNotification pairing needs the app build (Android bridge)" | no extra bridge call: true
+3. toast text: "Check your notification shade to enter the pairing code" | mentions shade/code: true
+4. fallback toast when bridge absent: "Notification pairing needs the app build (Android bridge)" | no extra bridge call: true
 errors: []

@@ -1,22 +1,69 @@
 # Changelog
 
+## v7.0-Pro (versionCode 700)
+
+- **New tab names, order and two-line labels.** The tab bar now reads Application Manager, Saved App Lists, UAD-NG Debloater, APK
+  Installer, File Manager, ADB Console, Hidden Settings, RRO/Monet Customization, App Updater, App Stores, Logcat Viewer and About.
+  App Updater moved to just before App Stores and Logcat Viewer to just before About. Names that are long break into two lines
+  (Application / Manager) so more of the bar shows at once; ADB Console and About stay on one. The title of each tab's first card
+  follows the new name.
+- **A settings gear instead of the colors button.** The button at the top right now opens **Settings**: Appearance, the theme
+  palettes and color pickers (what the colors button used to open) and, after them, the new Feature List. The gear lights up while
+  Settings is open.
+- **Feature List.** In Settings, every tab except Application Manager and About has a switch and two arrows. A switch off takes
+  the tab out of the tab bar (a link inside the app that points at it says that it is off and where to turn it on, and does
+  nothing else: no sheet closes, no download starts; only an APK opened from outside brings APK Installer back). The arrows
+  move it up or down, and the bar follows at once; the row stays under your thumb and the keyboard focus stays on the control
+  you used. **Reset to Default** switches them all on and puts them back in the first order. Application Manager always stays
+  first and About last. The choice is kept between launches; tabs a later version adds are placed after the tab that precedes
+  them by default, so a saved choice keeps working.
+- **No emoji.** Tabs, filters, buttons, sheets, toasts, the home-screen widget and this changelog no longer carry any. The only
+  ones left are the two settings gears: the one in the header (the app's settings) and the one on every app in the list (that
+  app's settings). The text in the tabs and in the filters is a little larger to make up for it. Buttons that were only a
+  picture now say what they do (Copy, Share, History, Saved, Run, Pin, Edit, Delete, Refresh, Install); the copy chips in an
+  app's menu read Copy package / Copy version / Copy name; folders in the file manager and in the archive browser end in a
+  slash; a store card says "10k stars" and "500k downloads". The terminal's History and Saved buttons moved under the command
+  box, so the box keeps its width.
+- **The Application Manager search bar sits under all the filters,** directly above the list, with a **menu (three dots) at its
+  right end**. Its three options, all on at the start: **Include application names**, **Include package names** and **Use regex
+  matching** (a line under it says that, with it off, applications and packages are matched exactly: the whole name has to be
+  typed). The choices are kept between searches and launches. One of names and packages is always on: turning off the one that is
+  left turns the other on. A pattern that is not valid (for example an open bracket), or that could freeze the list (a repeat inside
+  a repeat, like (a+)+), is searched as plain text and a note says so. The box says what it searches, and a change redraws the
+  list at once. The menu opens in view and the batch button steps aside while it is open; it closes when you tap elsewhere, type,
+  go into the box or leave the tab (a scroll leaves it open). The bars that stick under the header follow its real height, which
+  wraps on a narrow screen.
+- **The Aurora sub-tab of App Stores is gone.** The Play Store card on the Updates tab still opens Aurora Store.
+- **Error lines say that they are errors.** A failed store load, install, search for packages, package read or VirusTotal scan now
+  starts with words ("Could not load: ...", "Install failed: ...", "The search failed: ...") and is in the failed color; before,
+  the warning sign was the only thing that said so. The buttons the pictures used to tell apart are told apart again: Uninstall
+  and Delete are in the failed color, the main action (Install, Restore, Reinstall) is tinted, a pinned command in the terminal
+  has the accent color, a permission that cannot be changed (install-time) has a "locked" badge, and a component that is launched through the
+  shell says LAUNCH (SHELL). The terminal's find box keeps room for its hint at 320 px, the sub-tabs of Hidden Settings and App
+  Stores and the log level chips are a little larger, the filled accent buttons are readable in the dark theme, and sentences
+  that named Files or Applications now name File Manager and Application Manager.
+- **Tests.** Four new UI scripts: `t76` (the tab registry, the Feature List, saved choices from older versions, links into a tab
+  that is off), `t77` (the search bar and its menu, the freeze guard), `t78` (no emoji in the sources or in anything the page draws,
+  also when written as an escape) and `t79` (the findings of the review of the emoji removal); the others are updated for the new
+  names. 79 scripts in all.
+
 ## v6.1-Pro (versionCode 610)
 
-- **🎨 A bigger theme button.** The 🎨 button at the top of the screen (it opens Colors & Themes) is now 44 × 36 px with a bigger
+- **A bigger theme button.** The button at the top of the screen (it opens Colors & Themes) is now 44 × 36 px with a bigger
   icon, where it was about 40 × 25 px, so it is easier to hit.
-- **✨ The big counters show the list you are looking at.** On the Applications tab, the cards at the top (Total installed, Running,
+- **The big counters show the list you are looking at.** On the Applications tab, the cards at the top (Total installed, Running,
   Frozen / disabled, User apps, System apps, Bloatware) light up with a colored border and glow for the filter that is on. They
   follow the filter pills below them (and the pills follow them), and the last filter is lit again when the app opens. A filter
   with no card of its own (Suspended, Updated 7d, Patched …) lights none. The cards also work from a keyboard and for screen
   readers: each is a button with a pressed state.
-- **💡 A tip under Export and Share CSV.** It says to scroll the filter pills sideways for more filters. It goes as soon as you
+- **A tip under Export and Share CSV.** It says to scroll the filter pills sideways for more filters. It goes as soon as you
   scroll them (or tap its ✕) and stays gone.
-- **🔐 Permissions on first launch.** The first time the app opens, a sheet offers the three accesses Android keeps in its
+- **Permissions on first launch.** The first time the app opens, a sheet offers the three accesses Android keeps in its
   settings: **All files access**, **Usage access** and **Display over other apps**. **Allow** opens that screen of Android's
   settings; **Allow all** walks through the ones still missing; with ADB, Shizuku or Root the app switches the last two on by
-  itself, with no screen. Skip any of them with **Not now**: they are also under **About → 🔐 Permissions**. After this update
+  itself, with no screen. Skip any of them with **Not now**: they are also under **About → Permissions**. After this update
   the sheet comes once, if one of the three is missing. It waits for What's new to be closed first.
-- **📁 File access is asked for when an action needs it.** When opening, editing, saving, adding or deleting a file, reading a
+- **File access is asked for when an action needs it.** When opening, editing, saving, adding or deleting a file, reading a
   package from storage, listing a storage folder you chose, or searching storage fails for want of All-files access, a sheet
   says what was being done and has an **Allow** button. When the access arrives the sheet closes and the action carries on by
   itself: the folder is listed again, the search starts again, the package is read again (an action asked for more than five
@@ -26,23 +73,23 @@
   without the access, so nothing is asked. A failure on a path the access cannot help with (system folders, other apps' data)
   asks for nothing. On Android 10 the app now also asks Android for the old file access (`requestLegacyExternalStorage`), which
   its storage permission needs there to reach files at all.
-- **🚀 Launch Application and ⚙️ Application Settings after an install.** When the Installer reports a success, its result
+- **Launch Application and Application Settings after an install.** When the Installer reports a success, its result
   dialog has two more buttons above **Done**: **Launch Application** opens the app that was just installed (a toast says it
   went through; only a failure says why) and, under it, **Application Settings** opens Android's page for it. The dialog is
   taller to make room, and the output box keeps its height. On a short screen the dialog scrolls instead. Both buttons act on
   the package that was installed, even if you opened another one while the install ran.
-- **⬇️ The Installer scrolls to the package.** After you pick a file, also from the Find APKs list, the page glides down to the
+- **The Installer scrolls to the package.** After you pick a file, also from the Find APKs list, the page glides down to the
   box with the package's name, version and signature (it does not move if you have left the tab, and it does not animate when
   your phone asks for reduced motion).
-- **📊 A progress bar for Find APKs on this device.** A bar under the status line shows how far the search is with the number of
+- **A progress bar for Find APKs on this device.** A bar under the status line shows how far the search is with the number of
   files found so far. Where the search cannot tell (the one shell command of a working mode) the bar sweeps instead.
-- **🗑️ Delete a found package from the phone, with Undo.** Press and hold a file in the Find APKs list and confirm: the file is
+- **Delete a found package from the phone, with Undo.** Press and hold a file in the Find APKs list and confirm: the file is
   removed from storage and an **Undo** bar stays for eight seconds. A tip under the list says so. While the bar is there the
   file waits in a hidden folder on the same storage; it is removed for good when the bar goes, when you leave the Installer or
   at the next start (if the app cannot reach storage then, at the one after). If a file with the same name has appeared in the
   meantime, Undo restores yours as "name (2)" rather than replacing it, and an Undo that fails is offered again. Only regular
   package files can be deleted this way, never a folder, and two files deleted at once cannot replace each other in the trash.
-- **🧩 The splits that fit this phone are ticked.** Opening a package with splits ticks the base, the one CPU split the phone runs
+- **The splits that fit this phone are ticked.** Opening a package with splits ticks the base, the one CPU split the phone runs
   best, the screen-density split Android itself would pick for the phone's density and the phone's languages. The rest
   stay off, each with a note (another CPU, another language, a feature module …) so you decide whether to add it. A **Match this
   phone** link ticks them again after you changed things.
@@ -51,41 +98,41 @@
   Amazon Appstore, Samsung Galaxy Store, Huawei AppGallery, Xiaomi, OPPO / realme, vivo and HONOR stores, APKMirror Installer,
   Obtainium, Droid-ify, Neo Store, Accrescent, Aptoide, APKPure, Uptodown, itch.io and more for the first; Play, F-Droid,
   APKMirror, GitHub, itch.io and other addresses (with the package filled in) for the second. A **Clear this box** entry empties it.
-- **♿ Keyboard and screen readers.** The found files (Enter loads one, Delete opens its delete sheet), the ✕ of the tip, the 🎨
-  button, the three Allow buttons (each named for what it allows) and the two ▾ lists work from a keyboard and say what they are.
+- **Keyboard and screen readers.** The found files (Enter loads one, Delete opens its delete sheet), the ✕ of the tip, the
+  colors button, the three Allow buttons (each named for what it allows) and the two ▾ lists work from a keyboard and say what they are.
   Pressing and holding a found file no longer starts Android's own text selection, and the permission prompt is painted over
   every other sheet, so it cannot hide under the one that raised it.
-- **☑️ "Select all splits by default" is off by default.** The switch at the bottom of the Installer's options starts off (only
+- **"Select all splits by default" is off by default.** The switch at the bottom of the Installer's options starts off (only
   the base and the splits that fit the phone are ticked). It still ticks every split when you turn it on.
 
 ## v6.0.4-Pro (versionCode 604)
 
-- **🚀 A launch that works shows no dialog.** In an app's **Components** tab, **Launch** now just opens the activity and a toast
+- **A launch that works shows no dialog.** In an app's **Components** tab, **Launch** now just opens the activity and a toast
   says it went through. The sheet with Android's answer opens only when the launch fails, so a launch that worked no longer leaves
   a dialog to close.
 
 ## v6.0.3-Pro (versionCode 603)
 
-- **⬆️ The app menu is a little taller.** The sheet that opens from ⋯ on an app now stands 93% of the screen high instead of
+- **The app menu is a little taller.** The sheet that opens from ⋯ on an app now stands 93% of the screen high instead of
   85%, so the lists under its buttons (Permissions, App Ops, Components, Manifest) get more room: 64 px more on a 360 × 800
   screen. Only this sheet changed; the others keep their height, and the strip above it still closes it when you tap it.
 
 ## v6.0.2-Pro (versionCode 602)
 
-- **📤 The Share APK button is gone from the app menu.** Tap ⋯ on an app and the action grid no longer has it. **Extract APK**
+- **The Share APK button is gone from the app menu.** Tap ⋯ on an app and the action grid no longer has it. **Extract APK**
   is still there and still saves the app's `.apk` (or an `.apks` bundle for a split app) to Downloads and tells you where.
   Nothing else in the menu changed.
 
 ## v6.0.1-Pro (versionCode 601)
 
-- **🛠️ The Settings tab is now called Hidden Settings.** "Settings" sounded like this app's own settings, but the tab reads
-  and edits Android's own **Global**, **Secure** and **System** settings tables, so it now says so, with a 🛠️ instead of the
-  gear (its card reads "Android's hidden settings"). Nothing else about it changed, and what you had saved (the log of
+- **The Settings tab is now called Hidden Settings.** "Settings" sounded like this app's own settings, but the tab reads
+  and edits Android's own **Global**, **Secure** and **System** settings tables, so it now says so
+  (its card reads "Android's hidden settings"). Nothing else about it changed, and what you had saved (the log of
   changes with its Revert buttons, the table, filter and sort you last used) is kept.
 
 ## v6.0-Pro (versionCode 600)
 
-- **🌈 An Overlays tab: recolor Android and switch its overlays.** A new tab right after Settings with two sub-tabs.
+- **An Overlays tab: recolor Android and switch its overlays.** A new tab right after Settings with two sub-tabs.
   **Theme** changes the Material You theme of Android 12 and newer: the source color the whole system palette is built
   from (your **wallpaper**, which is Android's default, or **any color**) and one of six styles (**Tonal Spot**,
   **Vibrant**, **Expressive**, **Fruit Salad**, **Rainbow**, **Spritz**). **Overlays** lists every overlay that
@@ -128,7 +175,7 @@
 
 ## v5.9-Pro (versionCode 590)
 
-- **⚙️ A Settings tab: read and edit Android's hidden settings.** A new tab before Store lists every setting in the
+- **A Settings tab: read and edit Android's hidden settings.** A new tab before Store lists every setting in the
   phone's **Global**, **Secure** and **System** tables (what `settings list` prints), one sub-tab per table with its
   count. **Tap** a setting to edit it, **press and hold** one that is a switch (`1`/`0`, `true`/`false`, `on`/`off` or
   `yes`/`no`) to flip it, keeping the capitalisation it had, and tap **＋** to create a setting of your own in any of the
@@ -137,7 +184,7 @@
 - **Easy to find your way around.** Search matches names, values and descriptions; chips narrow the list to **Switches**,
   settings with a **Description**, or the ones **Edited** with this app; sort by name or by value. About 130 well-known
   settings carry a plain-English description (`adb_enabled` is "USB debugging"), the ones that can cut your ADB link, lock
-  you out of the screen or break setup are marked ⚠️ and ask before they change, and long tables are drawn 120 rows at a
+  you out of the screen or break setup are marked **careful** and ask before they change, and long tables are drawn 120 rows at a
   time with **Show more**.
 - **The editor.** A sheet with the value in a text box (multi-line values and anything up to 20,000 characters), quick
   values (`0` `1` `true` `false` `null` `(empty)` `-1`), **Flip**, copy of the name, the value or the exact
@@ -158,7 +205,7 @@
   whether it went through and reads the table again; the editor opens with the value the phone holds right now, and a refused
   Save keeps what you typed; settings that are a choice (private DNS, dark theme, ringer mode, rotation …) are no longer offered
   as on/off switches; press and hold works on a touch screen however long you hold; Revert acts on the row it is shown on;
-  a value too big for adb to carry is refused instead of corrupting the request; and **📋 Command** copies a command that runs
+  a value too big for adb to carry is refused instead of corrupting the request; and **Command** copies a command that runs
   on the phone (the old one broke when pasted into a PC terminal).
 
 ## v5.8-Pro (versionCode 580)
@@ -176,28 +223,28 @@
   after you agree to uninstall it (its data is deleted; the copy that will replace it is prepared first, so a failure
   while preparing leaves your app alone, and with Shizuku as the backend Shizuku's own app is never the one removed).
   Failures say why and what to turn on. A key that was rotated still matches the key it replaced.
-- **ℹ️ An About tab.** The new last tab shows the developer (**Bingblop**) and the GitHub repo, this build's version,
-  package, device, WebView and **signing certificate** (✅ when it is the official release key), copy / share
-  **debug info** for bug reports, tips, privacy and credits, and **☕ Buy me a coffee**: one tap opens PayPal to
+- **An About tab.** The new last tab shows the developer (**Bingblop**) and the GitHub repo, this build's version,
+  package, device, WebView and **signing certificate** (when it is the official release key), copy / share
+  **debug info** for bug reports, tips, privacy and credits, and **Buy me a coffee**: one tap opens PayPal to
   donate **$1**, or type any amount. Entirely optional; the app stays free.
 - **Sign APKs you edited — on the device.** Editing an APK in the archive browser breaks its signature, so there is now
-  a **✍️ Sign** button (and an "edited — sign it now" banner): it signs with **APK Signature Scheme v2** using a key that
+  a **Sign** button (and an "edited — sign it now" banner): it signs with **APK Signature Scheme v2** using a key that
   is generated inside the **Android Keystore** (in secure hardware where the phone has it, never exported). Sign in place
   or save a `-signed` copy, see the signature now / the installed copy's signer / this key's fingerprint, get a warning
   when an installed copy has a different signer, and install the result in one tap. Checked against the real
   `apksigner` for RSA and EC keys, multi-megabyte APKs and tampered files. Stored `.so` files are now 16 KB-aligned.
 - **Archive browser: install, nest, compare.** **Install** an APK/APKS/XAPK from inside an archive without extracting it
-  by hand, **open an archive inside an archive**, and **⚖️ Compare** two archives (or an archive and an installed app) —
+  by hand, **open an archive inside an archive**, and **Compare** two archives (or an archive and an installed app) —
   added / removed / changed files, and a **line-by-line diff** of changed text and compiled XML (a new permission shows
   up at a glance). The extract folder is remembered.
-- **Terminal: history, saved scripts and pinned buttons.** Up/Down arrows and a 🕘 list recall earlier commands, ⭐ keeps
+- **Terminal: history, saved scripts and pinned buttons.** Up/Down arrows and a History list recall earlier commands, Save keeps
   named commands and multi-line scripts, and up to six can be **pinned as one-tap chips**. Works in the normal terminal
   and in Rish mode. The normal terminal no longer freezes the page while a command runs.
 - **Logcat for one app.** Pick an app (or tap **Logs** in an app's menu) to see only the lines it wrote — across restarts,
   matched by its user ID — and **save or share** the filtered log as a bug-report text file with a header. The live view
   draws the latest 800 entries, skips redraws when nothing changed, and polls off the page's thread.
-- **File manager: select many.** Press and hold a row (or tap ☑ Select), pick files and folders, then **Copy** or **Move**
-  them (open the target folder, **📥 Paste here**) or **Delete** them in one go. Many files go through a few shell commands
+- **File manager: select many.** Press and hold a row (or tap Select), pick files and folders, then **Copy** or **Move**
+  them (open the target folder, **Paste here**) or **Delete** them in one go. Many files go through a few shell commands
   instead of one each, conflicts ask first, failures are listed with the reason, and system locations are protected
   (including the same storage seen through `/mnt/...` mounts and however a path is spelled, `/a/../sdcard` too). A lost
   connection stops the batch instead of waiting on every item, and a file merely *named* like an adb error isn't
@@ -231,7 +278,7 @@
 
 ## v5.7-Pro (versionCode 570)
 
-- **Terminal: Rish mode replaces "adb devices".** Tap **🐚 Rish mode** and the app switches the working mode to
+- **Terminal: Rish mode replaces "adb devices".** Tap **Rish mode** and the app switches the working mode to
   **Shizuku** (asking for Shizuku permission if needed) and opens a **persistent Rish shell** — one long-lived
   shell running as the Shizuku shell user, so `cd`, `export` and shell variables stay put from one command to the
   next. The prompt shows the device and folder (`husky:/sdcard $`, `#` for root), output **streams in as it is
@@ -248,16 +295,16 @@
   Android will install it — the app says so.) Any file can also be tried with **Open as archive**.
 - **Installer: XAPK support and a storage search.** Install `.xapk` bundles (base + splits, with the game data /
   OBB files copied into place afterwards). The old **Set as default installer** button is gone — the explanation
-  of how to make this app the APK handler stays at the bottom of the card — and in its place a **🔍 Find APKs on
+  of how to make this app the APK handler stays at the bottom of the card — and in its place a **Find APKs on
   this device** button runs an automatic storage search for every `.apk`, `.apks`, `.apkm` and `.xapk`
   and lists them (with size, age, folder, search and type filter); tap one to load it.
 - **Store: "Komi" is now "GitHub", the catalogs are complete, and every store has a category drop-down.**
-  - **🐙 GitHub** (was Komi) browses the whole catalog page by page (up to 5,000 Android apps) with live search
+  - **GitHub** (was Komi) browses the whole catalog page by page (up to 5,000 Android apps) with live search
     and direct `owner/repo` install, and falls back to a built-in list when offline.
-  - **🤖 F-Droid** now lists **every app in the chosen repo** (the index is streamed, so even the very large official
+  - **F-Droid** now lists **every app in the chosen repo** (the index is streamed, so even the very large official
     index loads), defaults to the official F-Droid repo with a repo picker, caches for 12 hours, verifies each
     download's SHA-256, and asks first on a metered connection.
-  - **🪐 Orion** now shows its whole catalog (887 apps; a size cap used to cut the last 87 off).
+  - **Orion** now shows its whole catalog (887 apps; a size cap used to cut the last 87 off).
   - A **category drop-down** filters the apps in each store by the categories they are tagged with.
 - **Logcat is readable.** Every log entry is its own row (a stack trace stays together), with a **level badge and
   color for Verbose / Debug / Info / Warn / Error / Fatal**, dimmed time / tag / pid, a **color key** you can tap
@@ -271,23 +318,23 @@
 
 ## v5.6-Pro (versionCode 560)
 
-- **The Store is now five sources, in sub-tabs.** The 🛍️ Store tab opens on **ShizuStore** and adds four
+- **The Store is now five sources, in sub-tabs.** The Store tab opens on **ShizuStore** and adds four
   more sub-tabs beside it:
-  - **🐙 Komi** — a curated set of trusted open-source apps that publish their APK on **GitHub Releases**
+  - **Komi** — a curated set of trusted open-source apps that publish their APK on **GitHub Releases**
     (the kind of GitHub app store [komi-store](https://github.com/komi-store/komi-store) is built for).
     Each app is resolved live to the right build for your device's ABI and installed through your active mode.
-  - **🤖 F-Droid** — the known third-party **F-Droid repositories** from the community
+  - **F-Droid** — the known third-party **F-Droid repositories** from the community
     [known-repositories](https://forum.f-droid.org/t/known-repositories/721) list. Tap a repo to browse and
     install its apps directly, or copy its address & fingerprint to add it to your F-Droid client. (The very
     large catalogs show their add-to-client details instead of browsing in-app.)
-  - **🪐 Orion** — the public [Orion Store](https://github.com/RookieEnough/Orion-Store) catalog
+  - **Orion** — the public [Orion Store](https://github.com/RookieEnough/Orion-Store) catalog
     (`RookieEnough/Orion-Data`), including Morphe-built apps, resolved from GitHub, Codeberg and direct links.
-  - **🌌 Aurora** — an honest hand-off to **Aurora Store** for Google Play apps (the private Play API can't be
+  - **Aurora** — an honest hand-off to **Aurora Store** for Google Play apps (the private Play API can't be
     reimplemented in-app). Google Play and APKMirror sources are intentionally not bundled.
 
   Every install still downloads from each app's own upstream — nothing is rehosted — and runs through this
   app's installer (ADB / Shizuku / Root, or the system installer).
-- **Better patched-app detection: Morphe and same-package ReVanced builds.** The 🧩 patched detector now
+- **Better patched-app detection: Morphe and same-package ReVanced builds.** The patched detector now
   flags **Morphe** (`app.morphe.*` and the Morphe installer), and the inspector's deep scan streams each
   `classes*.dex` to recognise **ReVanced** and **Morphe** builds even when the patch keeps the app's
   original package name — the case the old signals (package, installer, manifest) missed.
@@ -305,9 +352,9 @@
 ## v5.4-Pro (versionCode 540)
 
 - **Patched / modified apps are flagged in the list.** Each app in the Applications list now shows a
-  **🧩 badge** when it looks patched or repackaged by a third-party tool — **ReVanced**, an
+  **badge** when it looks patched or repackaged by a third-party tool — **ReVanced**, an
   **Xposed / LSPosed module**, **LSPatch**, **NPatch**, or an app re-signed with a **debug key**. A new
-  **🧩 Patched** filter lists only those apps. Detection in the list is free (package name, the manifest's
+  **Patched** filter lists only those apps. Detection in the list is free (package name, the manifest's
   `appComponentFactory` and meta-data, and the installer), so it adds no load time.
 - **A definitive breakdown in the app inspector.** Opening an app (⋯ → inspector) runs a deeper scan that
   also reads the signing certificate and the APK's own entries (`assets/lspatch/`, `assets/xposed_init`,
@@ -316,14 +363,14 @@
 
 ## v5.3-Pro (versionCode 530)
 
-- **ShizuStore tab.** A new **🛍️ Store** tab (at the end) browses [ShizuStore](https://github.com/timschneeb/ShizuStore)'s
+- **ShizuStore tab.** A new **Store** tab (at the end) browses [ShizuStore](https://github.com/timschneeb/ShizuStore)'s
   curated catalog of Shizuku-powered apps. Search and sort by most starred, most downloaded, recently
   updated or added; open an app for its description, screenshots, star count, requested permissions and
   source link; then **Install** downloads the APK straight from the developer's own upstream (GitHub /
   GitLab / F-Droid) and installs it through your active mode (ADB / Shizuku / Root), or hands it to the
   system installer with no privileged mode. Catalog and metadata come from ShizuStore by timschneeb; APKs
   are served by each app's developer, not rehosted.
-- **Optional VirusTotal scan in the Installer.** The Installer tab has a new **🛡️ VirusTotal scan** card.
+- **Optional VirusTotal scan in the Installer.** The Installer tab has a new **VirusTotal scan** card.
   Paste your own VirusTotal API key and scan a package against 70+ antivirus engines before installing. The
   scan is a SHA-256 lookup, so **nothing is uploaded**; only if VirusTotal hasn't seen the file can you
   choose to upload it for analysis. Results show the malicious / suspicious / harmless counts with a verdict
@@ -336,7 +383,7 @@
 
 ## v5.2-Pro (versionCode 520)
 
-- **Pair over Wi-Fi from a notification.** The Wireless Debugging card has a new **🔔 Pair via Notification**
+- **Pair over Wi-Fi from a notification.** The Wireless Debugging card has a new **Pair via Notification**
   button. It drops a high-priority notification with an inline reply box, so while Android's *Pair device with
   pairing code* dialog is on screen you can type the 6-digit code straight from the notification shade - no
   switching back to the app, so the code can't rotate out from under you. The app finds the current pairing
@@ -346,7 +393,7 @@
 
 ## v5.1-Pro (versionCode 510)
 
-- **ADB cheat sheet in the terminal.** The ADB Console tab has a **📋 Cheat Sheet** button: a searchable,
+- **ADB cheat sheet in the terminal.** The ADB Console tab has a **Cheat Sheet** button: a searchable,
   categorized reference of ~90 commands (device info, packages, app control, permissions, intents, input &
   key events, screen, connectivity, battery testing, logs, files, reboot). Tap any command to drop it into
   the input (with `<placeholders>` selected for quick editing). Commands are in on-device shell form - no
@@ -362,7 +409,7 @@
 
 ## v5.0-Pro (versionCode 500)
 
-- **Update this app from inside the app.** The Updates tab now has a dedicated **🚀 App update** card at the
+- **Update this app from inside the app.** The Updates tab now has a dedicated **App update** card at the
   top, just for ADB Application Manager Pro itself. It checks this project's GitHub releases, shows your
   installed version vs. the latest with the release notes, and updates in one tap. The download is verified to
   be this app, a newer version and **signed with the same key** before installing. With ADB / Shizuku / Root
@@ -372,7 +419,7 @@
   in a **new task** (`FLAG_ACTIVITY_NEW_TASK`), with fall-backs to a plain start and `cmd activity`. Without
   the new-task flag an activity often reported success yet never appeared - the usual reason an unexported
   activity "wouldn't launch". If every method fails, each attempt's output is shown so the real error is visible.
-- **Navigation tidy-up.** A 🎨 **Colors & Themes** button moved to the header (top-right), so themes are one
+- **Navigation tidy-up.** A **Colors & Themes** button moved to the header (top-right), so themes are one
   tap from anywhere and no longer take a tab slot. Tabs are reordered: **Applications → Saved Lists →
   Debloater → Installer → Files → Updates → ADB Console → Logcat** (Logcat is now last).
 
@@ -435,7 +482,7 @@ On-device fixes from testing v4.9:
 
 Installs over v3.1 – v4.8 without uninstalling (same signing key).
 
-- **New 📦 Installer tab — an all-in-one APK / APKS / APKM installer.** Pick a package file and the app
+- **New Installer tab — an all-in-one APK / APKS / APKM installer.** Pick a package file and the app
   reads it (package name, version, min/target SDK, size, signing certificate) before anything is installed;
   for a split bundle (`.apks` from bundletool, `.apkm` from APKMirror) it lists every split APK and lets you
   choose which to install, with the base always included and "select all splits" on by default.
@@ -465,10 +512,10 @@ Installs over v3.1 – v4.8 without uninstalling (same signing key).
   **enabled or disabled** (`pm enable` / `pm disable`). The shown state reflects the real pm override.
 - **Dex optimization** is available as a single-app action (in the app menu) and as a batch action, with a
   compile-mode picker (`pm compile -m <mode>`, optional force `-f`).
-- **New 📁 Files tab — a privileged file manager.** Browse any path with ADB / Shizuku / Root, view text
+- **New Files tab — a privileged file manager.** Browse any path with ADB / Shizuku / Root, view text
   files, create folders, rename, copy, move and delete, and install an APK from any location (staged to a
   readable temp, then handed to the Installer). Every path is shell-quoted.
-- **New 📄 Logcat tab.** Read the device log (`logcat -d`) with level, line-count and text/tag filters
+- **New Logcat tab.** Read the device log (`logcat -d`) with level, line-count and text/tag filters
   (the filter is applied in-process, never in the shell), plus clear and copy.
 - **Play Store (via Aurora) routing** in the Updates tab: detects whether Aurora Store / Play Store are
   installed, opens Aurora Store's in-app updates, and routes any installed app to its store page. (Automatic
@@ -553,19 +600,19 @@ passes on v4.7-Pro's diff, after it had already shipped, found further genuine i
 
 Installs over v3.1 – v4.6 without uninstalling (same signing key).
 
-- **✨ What's new**: the changelog is bundled in the app. After an update it opens once with the changes
+- **What's new**: the changelog is bundled in the app. After an update it opens once with the changes
   since the version you last ran; **Color & Themes → About** has the button, version and links.
-- **👁️ Watch a profile**: in **🗂️ Profiles**, tap **👁️ Watch** on one profile. When apps no longer match it
+- **Watch a profile**: in **Profiles**, tap **Watch** on one profile. When apps no longer match it
   (typically after a system update brings them back) a banner on the Applications tab says how many and
   opens the same reviewed Apply step. After a reboot with a new system build, a notification reminds you (Android 13+
   asks for notification permission the first time you watch a profile). Nothing is changed without your
   confirmation.
 - **Quick Settings tiles and a home-screen widget** (they run without opening the app):
-  - **Working mode** tile / **🔄 Mode** widget button: switches to the next mode that is ready
+  - **Working mode** tile / **Mode** widget button: switches to the next mode that is ready
     (ADB TCP → Wireless Debugging → Shizuku → Root), or back to Automatic.
-  - **Stop apps** tile / **🛑 Stop apps** widget button: force-stops every app in your **quick list**.
-    Choose it with **🛑 Quick list** on a card in **Saved Lists**.
-- **🗄️ Backup and restore**: **💾 Backup** in the app menu (and **🗄️ Backups** on the Applications tab).
+  - **Stop apps** tile / **Stop apps** widget button: force-stops every app in your **quick list**.
+    Choose it with **Quick list** on a card in **Saved Lists**.
+- **Backup and restore**: **Backup** in the app menu (and **Backups** on the Applications tab).
   A backup is one `.adbbackup` file in `Download/ADB App Manager/Backups/` holding the APK (with splits),
   granted permissions and changed app ops. With **Root** it can also hold the app's data. Restore
   installs the APK through ADB, Shizuku or Root, re-applies permissions and app ops, and with Root puts the
@@ -622,14 +669,14 @@ Installs over v3.1 – v4.6 without uninstalling (same signing key).
 
 Installs over v3.1 – v4.5 without uninstalling (same signing key).
 
-- **Copy buttons and share sheet**: 📋 Package / Version / Name chips and 📤 Share in the app menu;
+- **Copy buttons and share sheet**: Package / Version / Name chips and Share in the app menu;
   **Copy Packages** and **Share List** for a batch selection; **Share CSV** for the app list; **Share**
   for the manifest and the terminal output; **Share APK** extracts an app and opens the share sheet.
   Files go through a private, non-exported provider (`ShareProvider`) with one-off read grants.
 - **Search with highlight**: the manifest viewer and the terminal highlight every match, show
   "2 / 7 matches" and jump with ▲ ▼. The manifest viewer keeps "Matches only" (with line numbers) and can
   show the whole file in context instead.
-- **🗂️ App profiles**: save the disabled / suspended / uninstalled apps under a name, preview what
+- **App profiles**: save the disabled / suspended / uninstalled apps under a name, preview what
   applying would change, apply (recorded in History, so it can be undone), share as
   `.adbprofile.json` and import on another phone.
 - README rewritten with screenshots, code snippets and the full feature list.
@@ -651,15 +698,15 @@ Installs over v3.1 – v4.3 without uninstalling (same signing key).
 ### App list
 - **Sort** by name, last updated, install date, size, or updates first. When sorting by date or
   size, each row shows that value. The choice is remembered.
-- **🆕 Updated 7d** filter for apps updated in the last week (handy for spotting a bad update).
-- **📤 Export** saves every app with its version, install and update dates, type, state, APK size and
+- **Updated 7d** filter for apps updated in the last week (handy for spotting a bad update).
+- **Export** saves every app with its version, install and update dates, type, state, APK size and
   any known update as CSV to `Download/ADB App Manager/`.
 
 ### App menu
 - **Sizes**: APK size (and how many parts a split app has); data and cache too once **usage access**
   is allowed. "Show data usage" grants it through ADB/Shizuku/Root, or opens the settings page.
   Sorting by size then uses total storage instead of APK size.
-- **📦 Extract APK** saves the app to `Download/ADB App Manager/APKs/`: a single `.apk`, or for split
+- **Extract APK** saves the app to `Download/ADB App Manager/APKs/`: a single `.apk`, or for split
   apps a `.apks` bundle (base + splits) that split-APK installers such as SAI can install.
 
 ## v4.3-Pro (versionCode 330)
@@ -668,7 +715,7 @@ Installs over v3.1 – v4.2 without uninstalling (same signing key).
 
 - **Install and update dates** in the app menu, under the version
   ("Installed Jan 15, 2024 • Updated Sep 20, 2026").
-- **Versions in the app list**: each app shows its version on the badge row. The **🔢 Versions**
+- **Versions in the app list**: each app shows its version on the badge row. The **Versions**
   pill hides or shows them, and the choice is remembered.
 - **Update hints**: when the Updates tab has found a newer version, the app list shows
   "v26.0 → 27.1" and the app menu shows "→ 27.1 available on Galaxy Store" with an **Update**
@@ -693,9 +740,9 @@ Installs over v3.1 – v4.0 without uninstalling (same signing key).
 - Releases are read from **GitHub** (API, falling back to the public release pages when the
   60-checks-an-hour limit is reached; an optional **GitHub token** raises it to 5,000) and
   **Codeberg**. The APK matching the phone's architecture is picked automatically.
-- **📥 Import Obtainium List** reads an Obtainium export (Settings → Export) so every app you track
+- **Import Obtainium List** reads an Obtainium export (Settings → Export) so every app you track
   in Obtainium is checked here too.
-- Apps whose releases live somewhere only Obtainium can track get **Ⓞ Open in Obtainium**; sideloaded
+- Apps whose releases live somewhere only Obtainium can track get **Open in Obtainium**; sideloaded
   apps with no known source are listed under **Not tracked** with **＋ Set source**.
 - Before installing, the download's **signing key is compared** with the installed app. A mismatch
   (for example an F-Droid build over a developer build) is stopped with a clear explanation instead
@@ -707,7 +754,7 @@ Installs over v3.1 – v4.0 without uninstalling (same signing key).
 
 Installs over v3.1 – v3.9 without uninstalling (same signing key).
 
-### ⬆️ Updates tab
+### Updates tab
 - Checks the **Galaxy Store** for updates to Samsung system apps and apps installed from the Galaxy
   Store, using Samsung's public update service, and checks this app's **GitHub Releases**.
 - **Update** per app, or **Update All** (one at a time). Each update is the official APK from the
@@ -717,7 +764,7 @@ Installs over v3.1 – v3.9 without uninstalling (same signing key).
 - The tab shows how many updates are pending. Play Store apps aren't covered: Google provides no way
   for other apps to check them, and the Play Store keeps updating them itself.
 
-### 📜 Debloat history
+### Debloat history
 - Every Debloater run, batch action and single-app freeze/uninstall/suspend (and update) is logged
   with time, packages and result. **Undo** reverses a run (reinstall what was uninstalled, enable
   what was disabled, and so on). **Copy Log** and **Clear History** included. Kept between launches
@@ -732,7 +779,7 @@ Installs over v3.1 – v3.9 without uninstalling (same signing key).
 Installs over v3.1 – v3.8 without uninstalling (same signing key).
 
 ### Debloater: filter by brand
-- New brand filter row in the Debloater. Your phone's own brand comes first (📱, detected from the
+- New brand filter row in the Debloater. Your phone's own brand comes first (outlined in the accent color, detected from the
   phone's manufacturer), followed by the other brands found on the phone (Google, Meta, Microsoft,
   carriers, chip makers...), each with a package count that follows the other filters.
 - UAD-NG has no brand field, so the maker is worked out from the package name (`com.samsung.*` /
@@ -745,7 +792,7 @@ Installs over v3.1 – v3.8 without uninstalling (same signing key).
 Installs over v3.1 – v3.7 without uninstalling (same signing key).
 
 ### Debloater tab
-- New **🧹 Debloater** tab powered by the
+- New **Debloater** tab powered by the
   [Universal Android Debloater Next Generation](https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation/wiki)
   (UAD-NG) community list: descriptions, removal levels and dependency notes for 5,000+ packages.
 - The list (`uad_lists.json`, GPL-3.0) is **downloaded from UAD-NG's GitHub at runtime** and cached
@@ -767,8 +814,8 @@ Installs over v3.1 – v3.6 without uninstalling (same signing key).
 ### Suspend / Unsuspend
 - The app menu has **Suspend** (for active apps) and **Unsuspend** (for suspended ones).
   A suspended app stays installed with its data, but can't be opened until it is unsuspended.
-- Suspended apps are marked in the app list with a **⏸ SUSPENDED** badge and a greyed-out icon,
-  and a new **⏸️ Suspended** filter shows only them. Suspension is detected in every mode,
+- Suspended apps are marked in the app list with a **SUSPENDED** badge and a greyed-out icon,
+  and a new **Suspended** filter shows only them. Suspension is detected in every mode,
   including Read-Only.
 - The batch sheet has **Suspend** (asks for confirmation, like Freeze and Uninstall) and
   **Unsuspend**.

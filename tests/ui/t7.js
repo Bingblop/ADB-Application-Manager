@@ -28,7 +28,7 @@ const saved = p => p.evaluate(() => { const s = JSON.parse(window.__st.prefs); r
   let p = await boot(b, { dark: false });
   console.log('new install (phone light):', await vars(p)); console.log('  saved:', await saved(p));
   await p.screenshot({ path: 'light_apps.png' });
-  await p.evaluate(() => switchView('colors')); await p.waitForTimeout(300);
+  await p.evaluate(() => switchView('prefs')); await p.waitForTimeout(300);
   console.log('  note:', await p.locator('#appearanceNote').innerText());
   await p.screenshot({ path: 'light_colors.png' });
   // 2) Phone switches to dark mode -> follows
@@ -64,6 +64,6 @@ const saved = p => p.evaluate(() => { const s = JSON.parse(window.__st.prefs); r
   // 8) Old custom colors migrate as a custom palette
   p = await boot(b, { dark: true, prefs: JSON.stringify({ preset: 'custom', accent: '#FF00AA', bg: '#050505', card: '#202020', running: '#00E676', frozen: '#FF00AA', system: '#7C4DFF', bloat: '#FF5252' }) });
   console.log('migrated custom:', await vars(p));
-  await p.evaluate(() => switchView('colors')); await p.click('.appearance-btn[data-appearance="light"]'); console.log('  custom in light:', await vars(p));
+  await p.evaluate(() => switchView('prefs')); await p.click('.appearance-btn[data-appearance="light"]'); console.log('  custom in light:', await vars(p));
   console.log('errors2:', JSON.stringify(p.__errors));
   await b.close(); })();

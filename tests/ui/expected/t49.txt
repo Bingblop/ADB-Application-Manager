@@ -1,18 +1,18 @@
-1. the file manager sheet of an .apk offers Sign…: true ["📦 Install","✍️ Sign…","📂 View contents","✏️ Rename","📋 Copy","➡️ Move","🗑️ Delete"]
+1. the file manager sheet of an .apk offers Sign…: true ["Install","Sign…","View contents","Rename","Copy","Move","Delete"]
    a .zip does not: true
    tapping it opens the sign sheet and closes the file sheet: true
-   the sheet shows the app, its valid signature, the installed copy with a different signer and the not-yet-made key: true "APP\nExample <b>App</b> · com.example.app · v2.1\nSIGNATURE NOW\n✓ Valid\nAA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA\nINSTALLED COPY\n⚠️ v2.0 is signed by someone else. Android refuses to update it with this app’s key: uninstall it first (its data is lo"
+   the sheet shows the app, its valid signature, the installed copy with a different signer and the not-yet-made key: true "APP\nExample <b>App</b> · com.example.app · v2.1\nSIGNATURE NOW\n✓ Valid\nAA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA\nINSTALLED COPY\nv2.0 is signed by someone else. Android refuses to update it with this app’s key: uninstall it first (its data is lost)"
    the app label is escaped (no injected element): true
    the sheet asked the bridge for the info of that path: true
-2. the sheet offers Sign in place and Save a signed copy: true ["✍️ Sign in place","💾 Save a signed copy"]
+2. the sheet offers Sign in place and Save a signed copy: true ["Sign in place","Save a signed copy"]
    it is busy while working, buttons are disabled and progress is shown: true
    the copy was requested:  true
    done: result row with the new path, key now shown, Install offered: true ":BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB\nSIGNING KEY\nThis app’s key · 2048-bit RSA · in secure hardware\nCC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC\nRESULT\n✓ Signed app-signed.apk (5.3 KB)\n/sd/app-signed.apk"
    no confirm dialog for a copy: true
    the key now matches nothing installed (cc… vs bb…) so the warning stays: true
 3. Install stages the signed copy and opens the Installer: true {"install":["/sd/app-signed.apk"],"intent":["/cache/stage/app-signed.apk"],"tab":"installer","open":false}
-4. the archive browser of an .apk shows ✍️ Sign but no banner yet: true
-   the note on APK editing now points at ✍️ Sign: true
+4. the archive browser of an .apk shows Sign but no banner yet: true
+   the note on APK editing now points at Sign: true
    after an edit the "signature is no longer valid" banner shows: true
    its button opens the sheet for that file: true
    signing in place of a valid-signed file asks first (it replaces that signature): true ["“app.apk” already has a valid signature. Signing in place replaces it, and the old one can not be restored. Continue?"]

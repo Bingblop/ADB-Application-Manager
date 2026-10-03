@@ -1,0 +1,32 @@
+0. the scan reads symbols written as escapes too (\u26a1, a surrogate pair, \u{1F4A5}, &#x26A1;, &#9889;): true
+1. the page has no emoji but the gears (© is not an emoji and is left): true []
+   exactly two gears are written in it: the header button and the button on an app row: true
+   the header gear is the first, the row gear the one named App Settings: true
+   the changelog the What's new screen shows has none: true []
+   the layouts and resources (home-screen widget, tiles) have none: true
+   the Java sources have none (they put text on the page and in notifications): true
+2. the header shows the gear and every app in the list has its own gear: true {"header":"⚙","rows":12,"cards":12}
+   apps: no emoji in what is shown or hidden on the page: true []
+   saved-lists: no emoji in what is shown or hidden on the page: true []
+   debloater: no emoji in what is shown or hidden on the page: true []
+   installer: no emoji in what is shown or hidden on the page: true []
+   files: no emoji in what is shown or hidden on the page: true []
+   terminal: no emoji in what is shown or hidden on the page: true []
+   settings: no emoji in what is shown or hidden on the page: true []
+   overlays: no emoji in what is shown or hidden on the page: true []
+   updates: no emoji in what is shown or hidden on the page: true []
+   store: no emoji in what is shown or hidden on the page: true []
+   logcat: no emoji in what is shown or hidden on the page: true []
+   about: no emoji in what is shown or hidden on the page: true []
+   prefs: no emoji in what is shown or hidden on the page: true []
+   the single-app sheet: no emoji: true []
+   Working Modes: no emoji: true []
+   Permissions: no emoji: true []
+   Profiles: no emoji: true []
+   Backups: no emoji: true []
+   the cheat sheet: no emoji: true []
+   the debloat history: no emoji: true []
+   the batch bar: no emoji: true []
+   a toast is just its message (no icon element): true
+   folders in the file manager end in a slash (no folder picture): true ["Download/","a.txt"]
+all checks passed

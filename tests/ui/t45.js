@@ -44,7 +44,7 @@ const MOCK = fs.readFileSync(fixture('uad_mock.json'), 'utf8');
     console.log(tag + '   shows the ✓ mark; an unselected box is not filled:', uadOn.text === '✓' && rgb(uadOff.bg) === rgb(appsOff.bg) && rgb(uadOff.bg) !== rgb(accent), JSON.stringify({ on: uadOn.text, offBg: uadOff.bg }));
     await page.screenshot({ path: `${OUT}/uad_check_${dark ? 'dark' : 'light'}.png` });
     await page.evaluate(p => toggleUadSelect(p), firstPkg);
-    await page.click('.tab-btn:has-text("Applications"), .tab-btn:has-text("Apps")').catch(() => {});
+    await page.click('.tab-btn[data-tab="apps"]').catch(() => {});
     await page.evaluate(() => switchView('apps')); await sleep(150);
 
     // 2) No Force Stop button in the app rows (only settings + menu are left).

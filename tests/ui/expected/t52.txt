@@ -1,5 +1,5 @@
 1. five rows listed, no checkboxes visible, no selection bar: true
-   ☑ Select shows checkboxes and the bar, hides the ⋯ buttons, and the button reads Done: true
+   Select shows checkboxes and the bar, hides the ⋯ buttons, and the button reads Done: true
    tapping rows picks them (a folder is not opened): true ["a.txt","b.apk"]
    the count follows: true
    a folder row can be picked too and is not entered: true
@@ -21,7 +21,7 @@
    ✕ drops the clipboard: true
 6. Move sends mv to the open folder, no conflict prompt for a new name: true
    after a successful move the clipboard is gone: true
-   failures are reported (toast count + a results sheet naming each file and reason): true "📄\nFile manager\n\ndeleted\n\n✕\nx\nFAILED\n/storage/emulated/0/x\nPermission denied\ny\nFAILED\n/storage/emulated/0/y\nSystem locat"
+   failures are reported (toast count + a results sheet naming each file and reason): true "File manager\n\ndeleted\n\n✕\nx\nFAILED\n/storage/emulated/0/x\nPermission denied\ny\nFAILED\n/storage/emulated/0/y\nSystem location"
 7. a file name with quotes can be picked (no inline handler breaks): true ["it's \"q\".txt"]
 8. while a job runs the Paste button is disabled and a second job is refused: true
    …and it frees up afterwards: true

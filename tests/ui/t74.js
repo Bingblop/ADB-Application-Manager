@@ -93,7 +93,7 @@ const FILES = ['/storage/emulated/0/Download/Example-App-2.0.apks', '/storage/em
   const after = await calls();
   check('8. Delete asks the phone to move that one file to its trash', after.ops.length === 1 && after.ops[0] === 'trash:' + FILES[0], JSON.stringify(after.ops));
   check('   the file is gone from the list at once, and from the (fake) storage', (await rows()).join('|') === 'Another.apk|game_data.xapk|old-version.apkm' && !(await ev(p => window.__fs.has(p), FILES[0])), (await rows()).join('|'));
-  check('   an Undo bar says what was deleted', (await snack()) === '🗑️ Deleted Example-App-2.0.apks', await snack());
+  check('   an Undo bar says what was deleted', (await snack()) === 'Deleted Example-App-2.0.apks', await snack());
   check('   the file is only in the trash so far (nothing is deleted for good)', (await ev(() => Array.from(window.__fs).filter(p => p.includes('.adb_manager_trash')))).length === 1 && !after.ops.some(o => o.startsWith('purge')));
   check('   the status line counts what is left', /3 of 3 files found/.test(await page.locator('#apkScanStatus').innerText()));
   await page.click('#sdbSnackUndo');
@@ -234,7 +234,7 @@ const FILES = ['/storage/emulated/0/Download/Example-App-2.0.apks', '/storage/em
   await page.waitForTimeout(700);                     // the smooth scroll runs to its end
   const top = await ev(() => Math.round(document.getElementById('installInfoCard').getBoundingClientRect().top));
   const hdr = await ev(() => Math.round(document.querySelector('.tab-bar').getBoundingClientRect().bottom));
-  check('16. a tap loads the file and the page swipes down to the next box (the package info card), just below the header and tabs', (await calls()).inspect.slice(-1)[0] === FILES[1] && top >= hdr - 5 && top <= hdr + 80, 'card top ' + top + ', tabs end ' + hdr + ', scrollY ' + (await ev(() => Math.round(window.scrollY))) + ' from ' + y0);
+  check('16. a tap loads the file and the page swipes down to the next box (the package info card), just below the header and tabs', (await calls()).inspect.slice(-1)[0] === FILES[1] && top >= hdr - 5 && top <= hdr + 80, 'card top ' + top + ', tabs end ' + hdr);
   check('    the card it landed on says what was picked', (await page.locator('#installPkgLabel').innerText()) === 'Another');
   // from the system picker too
   await ev(() => { window.scrollTo(0, 0); });

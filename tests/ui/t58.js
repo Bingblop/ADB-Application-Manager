@@ -101,7 +101,7 @@ const { chromium, PAGE } = require('./lib/pw');
     return { msg, note, searching, error, after: { loading: s.loading, searching: s.searching, error: s.error } };
   });
   console.log('4. an empty list still shows "Search failed":', /Search failed: rate limit/.test(st.msg) && !st.error && st.searching === false, JSON.stringify(st.msg));
-  console.log('   the note has one icon, not two:', !/ℹ️ ⚠️/.test(st.msg));
+  console.log('   the note has no icon:', !/[ℹ⚠]/.test(st.msg));
   console.log('   a catalog error while a search is pending ends the load and is shown as the error:', st.after.loading === false && st.after.searching === false && st.after.error === 'boom', JSON.stringify(st.after));
   await ev(() => { const s = storeSrc.github; s.error = ''; s.note = ''; s.loading = false; });
 

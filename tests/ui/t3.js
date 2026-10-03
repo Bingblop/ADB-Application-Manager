@@ -58,7 +58,7 @@ const manifest = fs.readFileSync(fixture('manifest.xml'), 'utf8').split('\n').sl
   await page.screenshot({ path: 'manifest.png' });
   await page.fill('#manifestSearch', 'SCREEN_O');
   console.log('find meta:', await page.locator('#manifestMeta').innerText(), '|', (await page.locator('#manifestContainer').innerText()).split('\n')[0]);
-  await page.click('#sheetTabManifest >> text=📋 Copy'); await page.click('#sheetTabManifest >> text=💾 Save to Downloads');
+  await page.click('#sheetTabManifest >> text=Copy'); await page.click('#sheetTabManifest >> text=Save to Downloads');
   console.log('calls:', JSON.stringify(await page.evaluate(() => window.__st.calls)));
   console.log('errors:', JSON.stringify(errors));
   await b.close(); })();

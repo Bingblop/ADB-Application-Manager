@@ -361,7 +361,7 @@ const PKG = { type: 'apk', pkg: 'com.example.app', label: 'Example App', version
     await page.waitForFunction(() => /EACCES/.test(document.getElementById('installPickHint').innerText));
     const s = await sheet(page);
     check('17. a package on storage that cannot be read for want of the access asks for it, saying so', s.shown && s.title === 'File access needed' && s.reason === 'To read this package from storage, this app needs All-files access.', s.reason);
-    check('   the Installer says what failed', (await ev(page, () => document.getElementById('installPickHint').innerText)) === '⚠️ EACCES (Permission denied)');
+    check('   the Installer says what failed', (await ev(page, () => document.getElementById('installPickHint').innerText)) === 'Could not read that package: EACCES (Permission denied)');
     await ev(page, () => { window.__inspectError = ''; });
     await back(page, { files: true });
     await page.waitForFunction(() => /^Loaded/.test(document.getElementById('installPickHint').innerText));

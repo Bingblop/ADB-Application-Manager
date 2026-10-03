@@ -46,7 +46,7 @@ const { chromium, PAGE } = require('./lib/pw');
   console.log('recent apps:', await names());
   await page.click('.filter-pill[data-filter="all"]');
   // Export
-  await page.click('text=📤 Export');
+  await page.click('#view-apps >> text=Export');
   const saved = await page.evaluate(() => window.__st.saved);
   console.log('export file:', saved.name, '| toast:', await page.locator('#toastMsg').innerText());
   console.log(saved.text.split('\n').filter(l => l.startsWith('"Whats')).join(''));

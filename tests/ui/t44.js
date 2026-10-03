@@ -84,7 +84,7 @@ const { chromium, PAGE, OUT } = require('./lib/pw');
   // 1) The action sheet: archives say "View contents", other files offer "Open as archive".
   await page.evaluate(() => fmActions('/storage/emulated/0/Download/app.apk', false, 'app.apk'));
   let btns = await page.locator('#fmActionBtns button').allInnerTexts();
-  console.log('1. apk sheet: "View contents" (no plain View), still has Install:', btns.some(t => /View contents/.test(t)) && !btns.some(t => /^👁 View$/.test(t)) && btns.some(t => /Install/.test(t)), JSON.stringify(btns));
+  console.log('1. apk sheet: "View contents" (no plain View), still has Install:', btns.some(t => /View contents/.test(t)) && !btns.some(t => /^View$/.test(t)) && btns.some(t => /Install/.test(t)), JSON.stringify(btns));
   await page.evaluate(() => closeFmAction());
   await page.evaluate(() => fmActions('/storage/emulated/0/Download/data.zip', false, 'data.zip'));
   btns = await page.locator('#fmActionBtns button').allInnerTexts();
@@ -92,7 +92,7 @@ const { chromium, PAGE, OUT } = require('./lib/pw');
   await page.evaluate(() => closeFmAction());
   await page.evaluate(() => fmActions('/storage/emulated/0/Download/notes.txt', false, 'notes.txt'));
   btns = await page.locator('#fmActionBtns button').allInnerTexts();
-  console.log('   text file sheet: "View" + "Open as archive" (any package file):', btns.some(t => /^👁 View$/.test(t)) && btns.some(t => /Open as archive/.test(t)), JSON.stringify(btns));
+  console.log('   text file sheet: "View" + "Open as archive" (any package file):', btns.some(t => /^View$/.test(t)) && btns.some(t => /Open as archive/.test(t)), JSON.stringify(btns));
   await page.evaluate(() => closeFmAction());
 
   // 2) View contents opens the archive browser in place of the file list.
@@ -110,9 +110,9 @@ const { chromium, PAGE, OUT } = require('./lib/pw');
   console.log('3. root: folders first then files:', JSON.stringify(names0.slice(0, 5)) , names0.slice(0, 4).join() === 'assets,big,lib,META-INF' || names0.slice(0, 4).join() === 'assets,big,lib,META-INF');
   const firstFile = rows0.find(r => /AndroidManifest/.test(r)), arsc = rows0.find(r => /resources\.arsc/.test(r)), dex = rows0.find(r => /classes\.dex/.test(r)), enc = rows0.find(r => /secret\.bin/.test(r));
   console.log('   file rows show size + packed% / stored / encrypted + date:', /2\.0 KB/.test(firstFile) && /44% packed/.test(firstFile) && /2024-01-08/.test(firstFile) && /stored/.test(arsc) && /39% packed|40% packed/.test(dex) && /encrypted/.test(enc), JSON.stringify(firstFile.replace(/\n/g, ' | ')));
-  const assetsRow = rows0.find(r => /^📁 assets/.test(r));
+  const assetsRow = rows0.find(r => /^assets\//.test(r));
   console.log('   folder row shows file count + total size:', /2 files/.test(assetsRow) && /36 B/.test(assetsRow), JSON.stringify(assetsRow && assetsRow.replace(/\n/g, ' | ')));
-  const bigRow = rows0.find(r => /^📁 big/.test(r));
+  const bigRow = rows0.find(r => /^big\//.test(r));
   console.log('   big folder: 900 files:', /900 files/.test(bigRow));
   const crumb0 = await page.locator('#arcCrumbs').innerText();
   console.log('   breadcrumb root:', /app\.apk/.test(crumb0), JSON.stringify(crumb0));

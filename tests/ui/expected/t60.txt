@@ -1,6 +1,6 @@
-1. the Hidden Settings tab sits right after Logcat (the Overlays tab, added in v6.0, follows it before Store): true ["📱 Applications","📋 Saved Lists","🧹 Debloater","📦 Installer","📁 Files","⬆️ Updates","💻 ADB Console","📄 Logcat","🛠️ Hidden Settings","🌈 Overlays","🛍️ Store","ℹ️ About"]
+1. the Hidden Settings tab sits right after ADB Console (RRO/Monet Customization, added in v6.0, follows it): true ["Application Manager","Saved App Lists","UAD-NG Debloater","APK Installer","File Manager","ADB Console","Hidden Settings","RRO/Monet Customization","App Updater","App Stores","Logcat Viewer","About"]
    it activates its own button and view: true
-   and the neighbours still work (Store, About): true
+   and the neighbours still work (App Stores, About): true
    About keeps its button: true
 2. no privileged mode: the gate shows, the controls hide, nothing is read: true {"gate":"flex","controls":"none","rows":0,"listed":0}
    connecting a mode while the tab is open opens it and reads the tables, the shown one first: true ["global","secure","system"]
@@ -15,7 +15,7 @@
    System too: true
 5. search narrows the list by name, with the matches marked: true ["adb_enabled","adb_wifi_enabled"]
    the status line and the table button show matches / total: true 2 of 455 global settings · read <clock>
-↻ Refresh | Global 2 / 455
+Refresh | Global 2 / 455
    a clear button appears: true
    it also searches values: true
    and the descriptions: true
