@@ -1628,6 +1628,26 @@
             color: var(--text-main);
         }
 
+        /* file manager: select several, then copy / move / delete together */
+        .fm-selbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 8px 10px; margin-bottom: 8px; border: 1px solid var(--accent); border-radius: 12px; background: rgba(var(--ov), 0.06); position: sticky; top: 0; z-index: 4; backdrop-filter: blur(6px); }
+        .fm-selbar .fm-count { font-size: 12px; font-weight: 800; margin-right: auto; }
+        #fmList .fm-chk { display: none; width: 22px; height: 22px; flex-shrink: 0; margin-right: 10px; border: 2px solid var(--text-muted); border-radius: 6px; align-items: center; justify-content: center; font-size: 13px; font-weight: 900; color: transparent; }
+        #fmList.fm-selecting .fm-chk { display: flex; }
+        #fmList.fm-selecting .fm-more { display: none; }
+        #fmList .perm-row { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+        #fmList .perm-row.fm-picked { background: var(--accent-glow); border-radius: 10px; }
+        #fmList .perm-row.fm-picked .fm-chk { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+
+        .sign-row { padding: 7px 0; border-bottom: 1px solid rgba(var(--ov), 0.06); }
+        .sign-row:last-child { border-bottom: none; }
+        .sign-k { font-size: 9.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 800; }
+        .sign-v { font-size: 12px; font-weight: 700; margin-top: 2px; word-break: break-word; line-height: 1.35; }
+        .sign-v.ok { color: #4ADE80; }
+        .sign-v.warn { color: #FFB300; }
+        .sign-v.bad { color: #FF5252; }
+        .sign-fp { font-family: monospace; font-size: 9.5px; font-weight: 600; color: var(--text-muted); margin-top: 2px; word-break: break-all; line-height: 1.4; }
+        .batch-grid-btn:disabled { opacity: 0.4; pointer-events: none; }
+
         .arc-textarea {
             width: 100%;
             min-height: 38vh;
@@ -1658,11 +1678,135 @@
             background: repeating-conic-gradient(rgba(var(--ov), 0.10) 0% 25%, transparent 0% 50%) 50% / 16px 16px;
         }
 
+        .dif-add, .dif-del, .dif-ctx, .dif-gap {
+            display: block;
+            padding: 0 4px;
+        }
+
+        .dif-add {
+            color: #2EBD6B;
+            background: rgba(46, 189, 107, 0.12);
+        }
+
+        .dif-del {
+            color: #FF5252;
+            background: rgba(255, 82, 82, 0.12);
+        }
+
+        .dif-ctx {
+            color: var(--text-muted);
+        }
+
+        .dif-gap {
+            color: var(--text-muted);
+            text-align: center;
+            opacity: 0.7;
+        }
+
+        .dif-badge {
+            display: inline-block;
+            min-width: 18px;
+            text-align: center;
+            font-weight: 900;
+            border-radius: 6px;
+            padding: 0 4px;
+            margin-right: 4px;
+        }
+
+        .dif-badge.added { color: #2EBD6B; background: rgba(46, 189, 107, 0.15); }
+        .dif-badge.removed { color: #FF5252; background: rgba(255, 82, 82, 0.15); }
+        .dif-badge.changed { color: #FFA726; background: rgba(255, 167, 38, 0.15); }
+
         .arc-meta {
             font-size: 10px;
             color: var(--text-muted);
             margin-bottom: 6px;
             word-break: break-all;
+        }
+
+        /* ---- Terminal: history, saved commands, pinned chips ---- */
+        .term-icon-btn {
+            width: 44px;
+            height: 44px;
+            flex-shrink: 0;
+            background: rgba(var(--ov), 0.08);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            color: var(--text-main);
+            font-size: 17px;
+            cursor: pointer;
+        }
+
+        .term-icon-btn:active {
+            background: var(--accent);
+            color: var(--on-accent);
+        }
+
+        .term-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 0;
+            border-bottom: 1px solid rgba(var(--ov), 0.06);
+        }
+
+        .term-row-main {
+            flex: 1;
+            min-width: 0;
+            cursor: pointer;
+        }
+
+        .term-row-title {
+            font-size: 12px;
+            font-weight: 800;
+            word-break: break-word;
+        }
+
+        .term-row-cmd {
+            font-family: monospace;
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 3.6em;
+            overflow: hidden;
+        }
+
+        .term-mini {
+            background: rgba(var(--ov), 0.08);
+            border: 1px solid var(--border-glass);
+            border-radius: 10px;
+            color: var(--text-main);
+            font-size: 13px;
+            min-width: 34px;
+            height: 32px;
+            cursor: pointer;
+        }
+
+        .term-mini.run {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: var(--on-accent);
+        }
+
+        .term-mini.pinned {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .term-textarea {
+            width: 100%;
+            min-height: 120px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            color: var(--text-main);
+            font-family: monospace;
+            font-size: 12px;
+            padding: 10px;
+            resize: vertical;
+            outline: none;
         }
 
         /* ---- Rish mode: a persistent Shizuku shell in the terminal ---- */
@@ -2598,7 +2742,7 @@
             </div>
 
             <div class="list-toolbar">
-                <input type="text" class="list-search" id="uadSearch" placeholder="Search package, name or description..." oninput="renderUadList()" autocomplete="off" autocapitalize="off" spellcheck="false">
+                <input type="text" class="list-search" id="uadSearch" placeholder="Search package, name or description..." oninput="uadSearchInput()" autocomplete="off" autocapitalize="off" spellcheck="false">
             </div>
             <div class="chip-row" id="uadRemovalRow">
                 <span class="filter-chip active" data-removal="Recommended" onclick="toggleUadRemoval('Recommended')">Recommended</span>
@@ -2871,9 +3015,24 @@
                     <button class="batch-tool-link" onclick="fmGo('/system')">/system</button>
                     <button class="batch-tool-link" onclick="fmNewFolder()">＋ Folder</button>
                     <button class="batch-tool-link" onclick="fmRefresh()">↻ Refresh</button>
+                    <button class="batch-tool-link" id="fmSelectBtn" onclick="fmToggleSelectMode()">☑ Select</button>
                 </div>
             </div>
             <div class="color-card" id="fmListCard">
+                <div class="fm-selbar" id="fmSelBar" style="display:none;">
+                    <span class="fm-count" id="fmSelCount">0 selected</span>
+                    <button class="batch-tool-link" onclick="fmSelectAll()">All</button>
+                    <button class="batch-tool-link" onclick="fmClipSet('cp')">📋 Copy</button>
+                    <button class="batch-tool-link" onclick="fmClipSet('mv')">✂️ Move</button>
+                    <button class="batch-tool-link" style="color:#FF5252;" onclick="fmDeleteSelected()">🗑️ Delete</button>
+                    <button class="batch-tool-link" onclick="fmSelExit()">✕</button>
+                </div>
+                <div class="fm-selbar" id="fmClipBar" style="display:none;">
+                    <span class="fm-count" id="fmClipText"></span>
+                    <button class="batch-tool-link" id="fmPasteBtn" onclick="fmPaste()">📥 Paste here</button>
+                    <button class="batch-tool-link" onclick="fmClipClear()">✕</button>
+                </div>
+                <div id="fmBatchStatus" class="uad-status" style="display:none; margin-bottom:8px;"></div>
                 <div id="fmCurrentPath" class="color-card-subtitle" style="font-family:monospace; word-break:break-all; margin-bottom:6px;">/storage/emulated/0</div>
                 <div id="fmList"><div class="list-empty">Open this tab to browse files.</div></div>
             </div>
@@ -2888,6 +3047,10 @@
                     <button class="batch-tool-link" onclick="arcClose()">✕ Close</button>
                 </div>
                 <div class="arc-note" id="arcNote" style="display:none;"></div>
+                <div class="arc-note" id="arcSignBanner" style="display:none; background:rgba(255,82,82,0.10);">
+                    <div>✍️ You edited this APK, so its signature is no longer valid and Android will not install it as it is.</div>
+                    <button class="mode-action-btn primary" style="margin-top:6px; width:100%; justify-content:center;" onclick="signOpen(arc.path)">✍️ Sign it now…</button>
+                </div>
                 <div class="list-toolbar" style="margin-top:8px;">
                     <input type="text" class="list-search" id="arcSearch" placeholder="Search inside the archive…" oninput="arcSearchInput()" autocomplete="off" autocapitalize="off" spellcheck="false">
                 </div>
@@ -2897,7 +3060,10 @@
                     <button class="batch-tool-link" onclick="arcExtractHere()">📥 Extract this folder</button>
                     <button class="batch-tool-link" id="arcAddBtn" onclick="arcAddFile()">＋ Add file</button>
                     <button class="batch-tool-link" id="arcFolderBtn" onclick="arcNewFolder()">＋ Folder</button>
+                    <button class="batch-tool-link" id="arcCompareBtn" onclick="arcCompareStart()">⚖️ Compare</button>
+                    <button class="batch-tool-link" id="arcSignBtn" onclick="signOpen(arc.path)" style="display:none;">✍️ Sign</button>
                 </div>
+                <div id="arcDiffHead" style="display:none; margin:6px 0;"></div>
                 <div id="arcStatus" class="uad-status" style="display:none;"></div>
                 <div id="arcList"></div>
                 <button class="mode-action-btn" id="arcMoreBtn" style="display:none; width:100%; justify-content:center; margin-top:8px;" onclick="arcLoadMore()">Show more</button>
@@ -2919,11 +3085,17 @@
                     </select>
                     <input type="text" class="list-search" id="logcatFilter" placeholder="filter text / tag" style="flex:1; min-width:120px;" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter') logcatRefresh()">
                 </div>
-                <div class="batch-sheet-tools" style="margin-bottom:4px; gap:14px;">
+                <div class="batch-sheet-tools" style="margin:0 0 8px; gap:10px; flex-wrap:wrap; align-items:center;">
+                    <button class="batch-tool-link" id="logcatAppBtn" onclick="lcAppOpen()">🎯 All apps ▾</button>
+                    <button class="batch-tool-link" id="logcatAppClear" onclick="logcatSetApp(null)" style="display:none;">✕ Show all apps</button>
+                </div>
+                <div class="batch-sheet-tools" style="margin-bottom:4px; gap:14px; flex-wrap:wrap;">
                     <button class="batch-tool-link" id="logcatPlayBtn" onclick="logcatTogglePlay()" style="color:#4ADE80;">▶ Play</button>
                     <button class="batch-tool-link" onclick="logcatRefresh()">↻ Refresh</button>
                     <button class="batch-tool-link" onclick="logcatClear()">🧹 Clear</button>
                     <button class="batch-tool-link" onclick="logcatCopy()">📋 Copy</button>
+                    <button class="batch-tool-link" onclick="logcatSave()">💾 Save</button>
+                    <button class="batch-tool-link" onclick="logcatShare()">📤 Share</button>
                 </div>
                 <!-- Color key. Each chip is also a switch: tap to hide / show that level. -->
                 <div class="lc-key" id="logcatKey" aria-label="Log level color key"></div>
@@ -2945,7 +3117,8 @@
                 .store-row { display:flex; gap:12px; align-items:flex-start; background:rgba(var(--ov),0.05); border:1px solid var(--border-glass); border-radius:14px; padding:12px; }
                 .store-row .sr-icon { width:46px; height:46px; border-radius:12px; object-fit:cover; flex-shrink:0; background:rgba(var(--ov),0.08); }
                 .store-row .sr-fallback { width:46px; height:46px; border-radius:12px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,var(--accent),var(--secondary)); font-weight:800; color:#fff; }
-                .store-row .sr-chip { font-size:11px; color:var(--text-muted); background:rgba(var(--ov),0.08); border-radius:8px; padding:2px 7px; }
+                .store-row { min-width:0; }
+                .store-row .sr-chip { overflow-wrap:anywhere; max-width:100%; font-size:11px; color:var(--text-muted); background:rgba(var(--ov),0.08); border-radius:8px; padding:2px 7px; }
                 .store-row .sr-chip.cat { color:var(--accent); background:rgba(var(--ov),0.1); font-weight:700; }
                 .store-inst-btn { flex-shrink:0; align-self:center; border:none; border-radius:10px; padding:9px 12px; font-weight:800; color:#fff; background:linear-gradient(135deg,var(--accent),var(--secondary)); cursor:pointer; }
                 .store-inst-btn:disabled { opacity:0.55; }
@@ -3403,7 +3576,9 @@ Type any command below (e.g. pm list packages -d)
 
             <div class="rish-promptline" id="termPromptLine" style="display:none;"></div>
             <div class="term-input-row" style="margin-top:12px;">
-                <input type="text" class="term-input" id="termCmd" placeholder="Enter shell command..." onkeydown="if(event.key==='Enter') runTerminalCmd()" autocapitalize="none" autocorrect="off" autocomplete="off" spellcheck="false" inputmode="text">
+                <input type="text" class="term-input" id="termCmd" placeholder="Enter shell command..." onkeydown="termKey(event)" oninput="termHistPos = -1" autocapitalize="none" autocorrect="off" autocomplete="off" spellcheck="false" inputmode="text">
+                <button class="term-icon-btn" onclick="termOpenHistory()" title="Command history" aria-label="Command history">🕘</button>
+                <button class="term-icon-btn" onclick="termOpenSaved()" title="Saved commands" aria-label="Saved commands">⭐</button>
                 <button class="term-run-btn" id="termRunBtn" onclick="termRunClick()">RUN</button>
             </div>
         </section>
@@ -3664,6 +3839,9 @@ Type any command below (e.g. pm list packages -d)
                 <button class="sheet-btn" onclick="openOptimizeModal('single')" id="sheetBtnOptimize">
                     <span>⚡</span><span>Optimize</span>
                 </button>
+                <button class="sheet-btn" onclick="openAppLog()" id="sheetBtnLogs">
+                    <span>📄</span><span>Logs</span>
+                </button>
             </div>
 
             <!-- Sub Tabs -->
@@ -3898,6 +4076,22 @@ Type any command below (e.g. pm list packages -d)
         </div>
     </div>
 
+    <div class="modal-overlay" id="termModal" onclick="if(event.target===this) termCloseModal()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-avatar" id="termModalIcon" style="background:rgba(0,200,255,0.18); color:var(--accent);">🕘</div>
+                    <div class="sheet-title">
+                        <h3 id="termModalTitle">History</h3>
+                        <p id="termModalSub"></p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="termCloseModal()">✕</div>
+            </div>
+            <div id="termModalBody"></div>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="arcModal" onclick="if(event.target===this) arcCloseModal()">
         <div class="modal-sheet">
             <div class="sheet-header">
@@ -3930,6 +4124,42 @@ Type any command below (e.g. pm list packages -d)
                     <button class="mode-action-btn" style="padding:10px 16px;" onclick="arcCancelEdit()">Cancel</button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="lcAppModal" onclick="if(event.target===this) lcAppClose()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-avatar" style="background:rgba(0,200,255,0.18); color:var(--accent);">🎯</div>
+                    <div class="sheet-title">
+                        <h3>Log of one app</h3>
+                        <p>Only the lines written by the app you pick</p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="lcAppClose()">✕</div>
+            </div>
+            <input class="modal-text-input" id="lcAppSearch" placeholder="Search apps…" oninput="lcAppRender()" autocomplete="off" autocapitalize="off" spellcheck="false">
+            <div id="lcAppList" style="max-height:50vh; overflow:auto; margin-top:8px;"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="signModal" onclick="if(event.target===this) signClose()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-avatar" style="background:rgba(74,222,128,0.18); color:#4ADE80;">✍️</div>
+                    <div class="sheet-title">
+                        <h3>Sign APK</h3>
+                        <p id="signName" style="word-break:break-all;"></p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="signClose()">✕</div>
+            </div>
+            <div id="signRows"></div>
+            <div id="signStatus" class="uad-status" style="display:none;"></div>
+            <div class="batch-actions-grid" id="signBtns"></div>
+            <div class="modal-helper" id="signNote" style="margin-top:8px;"></div>
         </div>
     </div>
 
@@ -4228,6 +4458,8 @@ Type any command below (e.g. pm list packages -d)
         let rishPromptText = '$';
         let rishUid = -1;
         let rishRunSeq = 0;
+        let rishCurrentRun = null;     // id of the command in flight (null while one that started before a reload is adopted)
+        let rishAwaitingAuthAt = 0;    // when the permission prompt was asked for
         let rishEndsNl = true;         // did the last output end with a newline?
         let rishStick = true;          // keep the terminal scrolled to the newest output
         let rishScrollQueued = false;
@@ -4416,9 +4648,24 @@ Type any command below (e.g. pm list packages -d)
         // header 🎨 icon), so it sits last with no matching button index.
         const tabKeys = ['apps', 'saved-lists', 'debloater', 'installer', 'files', 'updates', 'terminal', 'logcat', 'store', 'colors'];
 
+        // Tabs visited before this one (most recent last), so Back can retrace them
+        let viewStack = [];
+        let navFromBack = false;
+        function currentViewName() {
+            const v = document.querySelector('.view-content.active');
+            return v ? v.id.replace(/^view-/, '') : 'apps';
+        }
+
         function switchView(viewName) {
             const targetIdx = tabKeys.indexOf(viewName);
             if (targetIdx === -1) return;
+            const fromView = currentViewName();
+            if (!navFromBack && fromView && fromView !== viewName) {
+                viewStack = viewStack.filter(v => v !== fromView);
+                viewStack.push(fromView);
+                if (viewStack.length > 8) viewStack.shift();
+            }
+            viewStack = viewStack.filter(v => v !== viewName);
 
             const tabBtns = document.querySelectorAll('.tab-btn');
             tabBtns.forEach((b, idx) => {
@@ -4451,6 +4698,62 @@ Type any command below (e.g. pm list packages -d)
             if (window.AndroidBridge && window.AndroidBridge.vibrate) {
                 window.AndroidBridge.vibrate();
             }
+        }
+
+        // Small key/value persistence: the app's own settings store, or localStorage in a plain browser
+        function kvGet(key, fallback) {
+            try {
+                const raw = window.AndroidBridge && window.AndroidBridge.loadSetting ? window.AndroidBridge.loadSetting(key) : localStorage.getItem(key);
+                return raw ? JSON.parse(raw) : fallback;
+            } catch (e) { return fallback; }
+        }
+
+        function kvSet(key, value) {
+            try {
+                const raw = JSON.stringify(value);
+                if (window.AndroidBridge && window.AndroidBridge.saveSetting) window.AndroidBridge.saveSetting(key, raw);
+                else localStorage.setItem(key, raw);
+            } catch (e) {}
+        }
+
+        // ---------- Android Back ----------
+        // The app asks the page first (see MainActivity.onBackPressed). Back closes the top-most sheet, then drops an open
+        // batch panel or a selection, steps up (or out) of the archive browser, returns to the tab you came from, and
+        // only at the first tab asks for a second press before leaving. Returning false lets the app exit.
+        let backExitArmedAt = 0;
+        function handleAndroidBack() {
+            const sheets = document.querySelectorAll('.modal-overlay.show');
+            if (sheets.length) {
+                // the sheet on top is the one painted at the centre of the screen (later in the page wins a tie)
+                const hit = document.elementFromPoint(window.innerWidth / 2, window.innerHeight / 2);
+                const top = (hit && hit.closest && hit.closest('.modal-overlay.show')) || sheets[sheets.length - 1];
+                top.click();                                                          // every sheet closes when its backdrop is tapped
+                return true;
+            }
+            if (batchPanelExpanded) { collapseBatchPanel(); return true; }
+            if (selectedPkgs.size) { clearBatchSelection(); return true; }
+            const cur = currentViewName();
+            if (cur === 'debloater' && typeof uadSelected !== 'undefined' && uadSelected.size) { clearUadSelection(); return true; }
+            if (cur === 'files' && typeof fmSelMode !== 'undefined' && fmSelMode) { fmSelExit(); return true; }
+            if (cur === 'files' && typeof arc !== 'undefined' && arc) {
+                if (arcQuery || arcDir) arcUp(); else arcClose();
+                return true;
+            }
+            if (viewStack.length) {
+                navFromBack = true;
+                try { switchView(viewStack.pop()); } finally { navFromBack = false; }
+                return true;
+            }
+            if (cur !== 'apps') {
+                navFromBack = true;
+                try { switchView('apps'); } finally { navFromBack = false; }
+                return true;
+            }
+            const now = Date.now();
+            if (now - backExitArmedAt < 2200) return false;
+            backExitArmedAt = now;
+            showToast('Press back again to exit', '👋');
+            return true;
         }
 
         function showToast(msg, icon = '✨') {
@@ -4817,7 +5120,8 @@ Type any command below (e.g. pm list packages -d)
                 return;
             }
             try {
-                const dataStr = window.AndroidBridge.getWorkingMode();
+                // an explicit check (the buttons, or right after a change) probes for real; the quiet ones may reuse a probe from the last moments
+                const dataStr = verbose && window.AndroidBridge.getWorkingModeFresh ? window.AndroidBridge.getWorkingModeFresh() : window.AndroidBridge.getWorkingMode();
                 const d = JSON.parse(dataStr);
                 lastModesData = d;
                 const configured = d.configuredMode || 'auto';
@@ -5214,6 +5518,13 @@ Type any command below (e.g. pm list packages -d)
 
         function uadRemovalBadge(r) {
             return `<span class="uad-badge uad-r-${String(r).toLowerCase()}">${escapeHtml(r)}</span>`;
+        }
+
+        let uadSearchTimer = null;
+        function uadSearchInput() {
+            clearTimeout(uadSearchTimer);
+            if (typeof uadPackages === 'undefined' || uadPackages.length <= 250) { renderUadList(); return; }
+            uadSearchTimer = setTimeout(renderUadList, 130);          // a long list waits for a pause in typing
         }
 
         function renderUadList() {
@@ -5824,6 +6135,15 @@ Type any command below (e.g. pm list packages -d)
         }
         window.onSelfUpdateProgress = onSelfUpdateProgress;
 
+        // The app sheet's "Download" for this app itself: go to the card that checks for and installs its own update.
+        function openSelfUpdate() {
+            closeInspector();
+            switchView('updates');
+            const card = document.getElementById('selfUpdateCard');
+            if (card && card.scrollIntoView) card.scrollIntoView({ block: 'start' });
+            if (!selfUpd) checkSelfUpdateUI();
+        }
+
         function openSelfUpdatePage() {
             const d = selfUpd;
             if (d && (d.page || d.downloadUrl) && window.AndroidBridge && window.AndroidBridge.openUrl) {
@@ -6021,6 +6341,7 @@ Type any command below (e.g. pm list packages -d)
 
         function setAppSort(value) {
             appSort = value;
+            resetAppsWindow();
             haptic();
             if (value === 'size' && !allSizes && window.AndroidBridge && window.AndroidBridge.getAllAppSizes) {
                 showToast('Measuring app sizes...', '📏');
@@ -6385,14 +6706,14 @@ Type any command below (e.g. pm list packages -d)
             const esc = escapeHtml;
             const rows = apps.slice(0, storeShown).map(a => {
                 const img = a.iconHash ? `<img src="${storeBase}/icons/${esc(a.iconHash)}.png" alt="" style="width:46px;height:46px;border-radius:12px;object-fit:cover;flex-shrink:0;background:rgba(var(--ov),0.08);" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">` : '';
-                const fb = `<div style="width:46px;height:46px;border-radius:12px;flex-shrink:0;display:${a.iconHash ? 'none' : 'flex'};align-items:center;justify-content:center;background:linear-gradient(135deg,var(--accent),var(--secondary));font-weight:800;color:#fff;">${esc((a.name || '?').charAt(0).toUpperCase())}</div>`;
+                const fb = `<div style="width:46px;height:46px;border-radius:12px;flex-shrink:0;display:${a.iconHash ? 'none' : 'flex'};align-items:center;justify-content:center;background:linear-gradient(135deg,var(--accent),var(--secondary));font-weight:800;color:#fff;">${esc(firstChar(a.name))}</div>`;
                 const chips = [];
-                if (a.stars != null) chips.push('⭐ ' + a.stars);
+                if (a.stars != null) chips.push('⭐ ' + esc(fmtCount(a.stars)));
                 if (a.versionName) chips.push('v' + esc(a.versionName));
                 if (a.categorySlug) chips.push(esc(a.categorySlug));
                 if (a.requiresRoot) chips.push('root');
                 const meta = chips.map(c => `<span style="font-size:11px;color:var(--text-muted);background:rgba(var(--ov),0.08);border-radius:8px;padding:2px 7px;">${c}</span>`).join(' ');
-                return `<div onclick="openStoreApp('${esc(a.slug)}')" style="display:flex;gap:12px;align-items:flex-start;background:rgba(var(--ov),0.05);border:1px solid var(--border-glass);border-radius:14px;padding:12px;cursor:pointer;">
+                return `<div data-slug="${esc(a.slug)}" onclick="openStoreApp(this.dataset.slug)" style="display:flex;gap:12px;align-items:flex-start;background:rgba(var(--ov),0.05);border:1px solid var(--border-glass);border-radius:14px;padding:12px;cursor:pointer;">
                     ${img}${fb}
                     <div style="flex:1;min-width:0;">
                         <div style="font-weight:700;color:var(--text-main);">${esc(a.name || a.slug)}</div>
@@ -6404,10 +6725,16 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('storeList').innerHTML = rows.join('') || '<div class="uad-status">No apps match your search.</div>';
         }
 
+        // The first character of a name, whole (an emoji is two UTF-16 units), upper-cased.
+        function firstChar(name, fallback) {
+            const c = Array.from(String(name || ''))[0];
+            return (c || fallback || '?').toUpperCase();
+        }
+
         function setStoreAvatar(iconHash, name) {
             const av = document.getElementById('storeDetailAvatar');
-            const letter = escapeHtml((name || '🛍️').charAt(0).toUpperCase());
-            if (iconHash) av.innerHTML = `<img src="${storeBase}/icons/${escapeHtml(iconHash)}.png" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.textContent='${letter}';">`;
+            const letter = firstChar(name, '🛍️');
+            if (iconHash) av.innerHTML = `<img src="${storeBase}/icons/${escapeHtml(iconHash)}.png" alt="" data-letter="${escapeHtml(letter)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.textContent=this.dataset.letter;">`;
             else av.textContent = letter;
         }
 
@@ -6450,8 +6777,8 @@ Type any command below (e.g. pm list packages -d)
             const desc = a.fullDescription || a.description || '';
             if (desc) parts.push(`<div style="font-size:13px;color:var(--text-main);white-space:pre-wrap;margin-bottom:10px;">${esc(desc)}</div>`);
             const chips = [];
-            if (a.stars != null) chips.push('⭐ ' + a.stars + ' stars');
-            if (a.downloadTotal != null) chips.push('⬇️ ' + a.downloadTotal);
+            if (a.stars != null) chips.push('⭐ ' + esc(fmtCount(a.stars)) + ' stars');
+            if (a.downloadTotal != null) chips.push('⬇️ ' + esc(fmtCount(a.downloadTotal)));
             if (a.authorName) chips.push('👤 ' + esc(a.authorName));
             if (a.license) chips.push('© ' + esc(a.license));
             if (a.categorySlug) chips.push(esc(a.categorySlug));
@@ -6556,7 +6883,8 @@ Type any command below (e.g. pm list packages -d)
             return String(n);
         }
 
-        function cssId(s) { return String(s || '').replace(/[^a-zA-Z0-9_-]/g, '_'); }
+        // An id-safe form of a key that can't collide: every character other than a-z, 0-9 and "-" becomes _hex_, so "a.b" and "a_b" differ.
+        function cssId(s) { return String(s || '').replace(/[^a-zA-Z0-9-]/g, ch => '_' + ch.charCodeAt(0).toString(16) + '_'); }
         function itemKey(a) { return String(a.key || a.id || a.pkg || a.name || ''); }
         function srcEl(key, suffix) { return document.getElementById(key + suffix); }
 
@@ -6601,7 +6929,7 @@ Type any command below (e.g. pm list packages -d)
         function fillCatSelect(selectId, items, current) {
             const sel = document.getElementById(selectId);
             if (!sel) return current;
-            const counts = {};
+            const counts = Object.create(null);         // a plain {} would answer "constructor" / "toString" with a function
             items.forEach(a => (a.cats || []).forEach(c => { counts[c] = (counts[c] || 0) + 1; }));
             const last = new Set(['Other', 'Uncategorized']);
             const names = Object.keys(counts).sort((x, y) => (last.has(x) - last.has(y)) || counts[y] - counts[x] || x.localeCompare(y));
@@ -6631,7 +6959,7 @@ Type any command below (e.g. pm list packages -d)
         // ---- cards ----
         function srcIconHtml(a) {
             const esc = escapeHtml;
-            const letter = esc((a.name || '?').charAt(0).toUpperCase());
+            const letter = esc(firstChar(a.name));
             const img = a.icon ? `<img class="sr-icon" loading="lazy" src="${esc(a.icon)}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">` : '';
             const fb = `<div class="sr-fallback"${a.icon ? ' style="display:none;"' : ''}>${letter}</div>`;
             return img + fb;
@@ -6652,7 +6980,7 @@ Type any command below (e.g. pm list packages -d)
             return `<div class="store-row">
                 ${srcIconHtml(a)}
                 <div style="flex:1;min-width:0;">
-                    <div style="font-weight:700;color:var(--text-main);">${esc(a.name || k || 'App')}</div>
+                    <div style="font-weight:700;color:var(--text-main);overflow-wrap:anywhere;">${esc(a.name || k || 'App')}</div>
                     ${sub ? `<div style="font-size:11px;color:var(--text-muted);word-break:break-all;">${sub}</div>` : ''}
                     <div style="font-size:12px;color:var(--text-muted);margin:2px 0 6px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${esc(a.desc || '')}</div>
                     <div style="display:flex;gap:5px;flex-wrap:wrap;">${chips.join(' ')}</div>
@@ -6705,36 +7033,51 @@ Type any command below (e.g. pm list packages -d)
             if (s.loading) return;
             if (s.loaded && !force) { renderSource(key); return; }
             if (!srcBridgeOk(key)) return;
-            s.items = []; s.loading = true; s.error = ''; s.note = ''; s.shown = STORE_PAGE;
+            s.items = []; s.keys = null; s.loading = true; s.error = ''; s.note = ''; s.shown = STORE_PAGE;
             s.progress = key === 'github' ? 'Loading the catalog…' : 'Loading the Orion catalog…';
             renderSource(key);
             window.AndroidBridge.storeSourceCatalog(key, '');
+        }
+
+        // A list that is filled from a stream of chunks ignores an item it already has, so two overlapping loads
+        // (a refresh tapped while the first one is still arriving) can't show everything twice.
+        function addItems(s, items) {
+            if (!s.keys) s.keys = new Set(s.items.map(itemKey));
+            (items || []).forEach(a => {
+                const k = itemKey(a);
+                if (s.keys.has(k)) return;
+                s.keys.add(k);
+                s.items.push(a);
+            });
         }
 
         function refreshSource(key) {
             haptic();
             if (key === 'fdroid') { fdroidLoadRepo(true); return; }
             const s = storeSrc[key];
+            if (s.loading) { showToast('Still loading…', '⏳'); return; }
             if (!srcBridgeOk(key)) return;
-            s.items = []; s.loaded = false; s.loading = true; s.error = ''; s.note = ''; s.shown = STORE_PAGE;
+            s.items = []; s.keys = null; s.loaded = false; s.loading = true; s.error = ''; s.note = ''; s.shown = STORE_PAGE;
             s.progress = 'Refreshing…';
             renderSource(key);
             window.AndroidBridge.storeSourceRefresh(key, '');
         }
 
         // ---- GitHub: live search + install any owner/repo ----
+        const GITHUB_REPO_RE = /^([A-Za-z0-9](?:[A-Za-z0-9-]{0,38}))\/([A-Za-z0-9._-]{1,100})$/;
+
         function renderGithubExtras() {
             const s = storeSrc.github;
             const el = document.getElementById('githubExtra');
             if (!el) return;
             const esc = escapeHtml;
             const q = (document.getElementById('githubSearch').value || '').trim();
-            const m = /^([A-Za-z0-9](?:[A-Za-z0-9-]{0,38}))\/([A-Za-z0-9._-]{1,100})$/.exec(q);
+            const m = GITHUB_REPO_RE.exec(q);
             let html = '';
             if (m) {
                 html = `<div class="store-prompt"><div style="flex:1;min-width:0;"><b style="word-break:break-all;">${esc(m[1])}/${esc(m[2])}</b>
                     <div style="color:var(--text-muted);">Install the latest APK release of this GitHub project</div></div>
-                    <button class="store-inst-btn" id="bt-github-adhoc" onclick="installAdHocGithub('${esc(m[1])}','${esc(m[2])}')" aria-label="Install ${esc(q)}">⬇️</button></div>
+                    <button class="store-inst-btn" id="bt-github-adhoc" data-owner="${esc(m[1])}" data-repo="${esc(m[2])}" onclick="installAdHocGithub(this.dataset.owner, this.dataset.repo)" aria-label="Install ${esc(q)}">⬇️</button></div>
                     <div class="sr-status" id="st-github-adhoc" style="display:none;margin:-4px 0 8px 4px;"></div>`;
             } else if (q.length >= 2) {
                 html = `<div class="store-prompt"><div style="flex:1;">Not in the list? Search the whole catalog for <b>${esc(q)}</b>.</div>
@@ -6747,7 +7090,7 @@ Type any command below (e.g. pm list packages -d)
             const s = storeSrc.github;
             const q = (document.getElementById('githubSearch').value || '').trim();
             if (q.length < 2 || s.searching || !srcBridgeOk('github')) return;
-            if (/^[^/\s]+\/[^/\s]+$/.test(q)) return;   // owner/repo is handled by the install prompt
+            if (GITHUB_REPO_RE.test(q)) return;   // a well-formed owner/repo is handled by the install prompt
             haptic();
             s.searching = true;
             renderGithubExtras();
@@ -6785,7 +7128,9 @@ Type any command below (e.g. pm list packages -d)
             const s = storeSrc.fdroid;
             const repo = fdroidCurrentRepo();
             if (!repo || !srcBridgeOk('fdroid')) return;
+            if (s.loading && s.current === repo.address) { if (force) showToast('Still loading…', '⏳'); return; }
             s.showRepos = false;
+            s.current = repo.address;          // chunks of the repository the user just left are ignored from here on
             const cached = s.cache[repo.address];
             if (cached && !force) {
                 s.items = cached.items; s.meta = cached.meta; s.loaded = true; s.loading = false; s.error = ''; s.note = ''; s.pendingMetered = false;
@@ -6799,8 +7144,8 @@ Type any command below (e.g. pm list packages -d)
                 return;
             }
             s.pendingMetered = false;
-            s.items = []; s.loaded = false; s.loading = true; s.error = ''; s.note = ''; s.shown = STORE_PAGE; s.cat = '';
-            s.progress = 'Contacting ' + repo.name + '…'; s.current = repo.address; s.meta = {};
+            s.items = []; s.keys = null; s.loaded = false; s.loading = true; s.error = ''; s.note = ''; s.shown = STORE_PAGE; s.cat = '';
+            s.progress = 'Contacting ' + repo.name + '…'; s.meta = {};
             refreshCats('fdroid');
             renderFdroid();
             if (force) window.AndroidBridge.storeSourceRefresh('fdroid-repo', repo.address);
@@ -6834,15 +7179,15 @@ Type any command below (e.g. pm list packages -d)
         function fdroidRepoCardHtml(r) {
             const esc = escapeHtml;
             return `<div class="store-row">
-                <div class="sr-fallback">${esc((r.name || '?').charAt(0).toUpperCase())}</div>
+                <div class="sr-fallback">${esc(firstChar(r.name))}</div>
                 <div style="flex:1;min-width:0;">
                     <div style="font-weight:700;color:var(--text-main);">${esc(r.name)}</div>
                     <div style="font-size:12px;color:var(--text-muted);margin:2px 0 6px;">${esc(r.desc || '')}</div>
                     <div style="font-size:11px;color:var(--text-muted);word-break:break-all;">${esc(r.address)}</div>
                     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:7px;">
-                        <button class="batch-tool-link" onclick="fdroidSelectRepo('${esc(String(r.id))}')">📂 Browse apps</button>
-                        <button class="batch-tool-link" onclick="copyStoreText('${esc(r.address)}','Address')">⧉ Address</button>
-                        ${r.fingerprint ? `<button class="batch-tool-link" onclick="copyStoreText('${esc(r.fingerprint)}','Fingerprint')">⧉ Fingerprint</button>` : ''}
+                        <button class="batch-tool-link" data-id="${esc(String(r.id))}" onclick="fdroidSelectRepo(this.dataset.id)">📂 Browse apps</button>
+                        <button class="batch-tool-link" data-text="${esc(r.address)}" onclick="copyStoreText(this.dataset.text, 'Address')">⧉ Address</button>
+                        ${r.fingerprint ? `<button class="batch-tool-link" data-text="${esc(r.fingerprint)}" onclick="copyStoreText(this.dataset.text, 'Fingerprint')">⧉ Fingerprint</button>` : ''}
                     </div>
                 </div>
             </div>`;
@@ -6902,8 +7247,8 @@ Type any command below (e.g. pm list packages -d)
             if (d.arg !== s.current) return;   // an answer for a repository the user has since switched away from
             if (d.status === 'progress') { s.progress = d.message || ''; if (s.loading) renderFdroid(); return; }
             if (d.status === 'error') { s.loading = false; s.error = d.error || 'unknown error'; renderFdroid(); return; }
-            if (!d.append) s.items = [];
-            (d.items || []).forEach(a => s.items.push(a));
+            if (!d.append) { s.items = []; s.keys = null; }
+            addItems(s, d.items);
             s.loaded = true;
             if (d.done) {
                 s.loading = false;
@@ -6924,22 +7269,35 @@ Type any command below (e.g. pm list packages -d)
             if (src !== 'github' && src !== 'orion') return;
             const s = storeSrc[src];
             if (d.status === 'progress') { s.progress = d.message || ''; if (s.loading) renderSource(src); return; }
-            if (d.status === 'error') { s.loading = false; s.searching = false; s.error = d.error || 'unknown error'; renderSource(src); return; }
+            if (d.status === 'error') {
+                if (s.searching) {         // a failed live search is a note, not a lasting error that hides the list
+                    s.searching = false;
+                    s.note = '⚠️ Search failed: ' + (d.error || 'unknown error');
+                    renderSource(src);
+                    return;
+                }
+                s.loading = false; s.searching = false; s.error = d.error || 'unknown error'; renderSource(src); return;
+            }
             if (d.search) {
-                // A live GitHub search: merge anything new into the list and show it for this query
-                const known = new Set(s.items.map(itemKey));
-                const added = (d.items || []).filter(a => !known.has(itemKey(a)));
+                // A live GitHub search: merge anything new into the list and show every hit for this query (also those already known)
+                const byKey = new Map(s.items.map(x => [itemKey(x), x]));
                 const q = String(d.query || '').toLowerCase();
-                (d.items || []).forEach(a => { a._hit = q; });
-                added.forEach(a => s.items.push(a));
+                const added = [];
+                (d.items || []).forEach(a => {
+                    const have = byKey.get(itemKey(a));
+                    if (have) { have._hit = q; return; }
+                    a._hit = q;
+                    added.push(a);
+                });
+                addItems(s, added);
                 s.searching = false;
                 s.note = added.length ? ('Found ' + added.length + ' more for “' + d.query + '”.') : ('No more results for “' + d.query + '”.');
                 refreshCats(src);
                 renderSource(src);
                 return;
             }
-            if (!d.append) s.items = [];
-            (d.items || []).forEach(a => s.items.push(a));
+            if (!d.append) { s.items = []; s.keys = null; }
+            addItems(s, d.items);
             s.loaded = true;
             if (d.done) { s.loading = false; s.note = d.note || ''; }
             else if (d.note) s.note = d.note;
@@ -7041,7 +7399,8 @@ Type any command below (e.g. pm list packages -d)
             if (granted) loadPackageData();
             if (rishAwaitingAuth) {
                 rishAwaitingAuth = false;
-                if (granted) startRishShell();
+                // only for the prompt this tap asked for: a grant given much later, from somewhere else, is not a request to open a shell
+                if (granted && Date.now() - rishAwaitingAuthAt < 120000) startRishShell();
             }
         }
 
@@ -7122,7 +7481,7 @@ Type any command below (e.g. pm list packages -d)
                     <div style="text-align:center; padding:35px 20px; color:var(--text-muted);">
                         <div style="font-size:28px; margin-bottom:8px;">📦</div>
                         <div style="font-size:13px; font-weight:700; color:var(--text-main); margin-bottom:4px;">No Applications Loaded</div>
-                        <div style="font-size:11px; margin-bottom:14px;">${e.message || "Failed to query system applications."}</div>
+                        <div style="font-size:11px; margin-bottom:14px;">${escapeHtml(e.message || "Failed to query system applications.")}</div>
                         <button class="mode-action-btn primary" onclick="loadPackageData()">🔄 Reload Packages</button>
                     </div>`;
             }
@@ -7149,23 +7508,34 @@ Type any command below (e.g. pm list packages -d)
             });
             sortApps(filteredApps);
 
-            // Update stats counts
+            // Update stats counts (one pass over the list)
+            const n = { running: 0, frozen: 0, user: 0, system: 0, uninstalled: 0, recent: 0, suspended: 0, patched: 0 };
+            allApps.forEach(a => {
+                if (a.isRunning) n.running++;
+                if (a.isFrozen) n.frozen++;
+                if (a.isUninstalled) n.uninstalled++;
+                else if (a.isSystem) n.system++;
+                else n.user++;
+                if (a.isSuspended) n.suspended++;
+                if (a.mods && a.mods.length) n.patched++;
+                if (isRecentlyUpdated(a)) n.recent++;
+            });
             document.getElementById('statTotal').innerText = allApps.length;
-            document.getElementById('statRunning').innerText = allApps.filter(a => a.isRunning).length;
-            document.getElementById('statFrozen').innerText = allApps.filter(a => a.isFrozen).length;
-            document.getElementById('statUser').innerText = allApps.filter(a => !a.isSystem && !a.isUninstalled).length;
-            document.getElementById('statSystem').innerText = allApps.filter(a => a.isSystem && !a.isUninstalled).length;
-            document.getElementById('statUninstalled').innerText = allApps.filter(a => a.isUninstalled).length;
+            document.getElementById('statRunning').innerText = n.running;
+            document.getElementById('statFrozen').innerText = n.frozen;
+            document.getElementById('statUser').innerText = n.user;
+            document.getElementById('statSystem').innerText = n.system;
+            document.getElementById('statUninstalled').innerText = n.uninstalled;
 
             document.getElementById('countAll').innerText = allApps.length;
-            document.getElementById('countRunning').innerText = allApps.filter(a => a.isRunning).length;
-            document.getElementById('countUser').innerText = allApps.filter(a => !a.isSystem && !a.isUninstalled).length;
-            document.getElementById('countSystem').innerText = allApps.filter(a => a.isSystem && !a.isUninstalled).length;
-            document.getElementById('countFrozen').innerText = allApps.filter(a => a.isFrozen).length;
-            document.getElementById('countRecent').innerText = allApps.filter(isRecentlyUpdated).length;
-            document.getElementById('countSuspended').innerText = allApps.filter(a => a.isSuspended).length;
-            document.getElementById('countUninstalled').innerText = allApps.filter(a => a.isUninstalled).length;
-            document.getElementById('countPatched').innerText = allApps.filter(a => a.mods && a.mods.length).length;
+            document.getElementById('countRunning').innerText = n.running;
+            document.getElementById('countUser').innerText = n.user;
+            document.getElementById('countSystem').innerText = n.system;
+            document.getElementById('countFrozen').innerText = n.frozen;
+            document.getElementById('countRecent').innerText = n.recent;
+            document.getElementById('countSuspended').innerText = n.suspended;
+            document.getElementById('countUninstalled').innerText = n.uninstalled;
+            document.getElementById('countPatched').innerText = n.patched;
 
             const container = document.getElementById('appsListContainer');
             if (filteredApps.length === 0) {
@@ -7178,40 +7548,75 @@ Type any command below (e.g. pm list packages -d)
                 return;
             }
 
-            let html = '';
-            filteredApps.forEach(app => {
-                const isSelected = selectedPkgs.has(app.pkg);
-                const initial = (app.name && app.name.length > 0) ? app.name.charAt(0).toUpperCase() : '⚡';
+            container.innerHTML = filteredApps.slice(0, appsShown).map(appCardHtml).join('') + appsMoreHtml();
+            appsWatchMore();
+        }
 
-                let badges = '';
-                if (app.isRunning) badges += '<span class="tag-badge tag-running">RUNNING</span>';
-                if (app.isFrozen && !app.isUninstalled) badges += '<span class="tag-badge tag-frozen">FROZEN</span>';
-                if (app.isSuspended) badges += '<span class="tag-badge tag-suspended">⏸ SUSPENDED</span>';
-                if (app.isUninstalled) badges += '<span class="tag-badge tag-bloat">UNINSTALLED</span>';
-                if (app.isSystem) badges += '<span class="tag-badge tag-system">SYSTEM</span>';
-                else badges += '<span class="tag-badge tag-user">USER</span>';
-                if (app.mods && app.mods.length) app.mods.forEach(m => badges += `<span class="tag-badge tag-mod">🧩 ${escapeHtml(m)}</span>`);
+        // The list is drawn a page at a time: a phone with a thousand packages used to build (and lay out) every card on
+        // each keystroke, filter tap and refresh. More cards are added as you scroll, or with the button.
+        const APPS_PAGE = 250;
+        let appsShown = APPS_PAGE;
+        let appsMoreObserver = null;
 
-                html += `
-                    <div class="app-card ${isSelected ? 'selected' : ''} ${app.isSuspended ? 'suspended' : ''}" id="card_${app.pkg}">
-                        <div class="app-left" onclick="toggleSelectPkg('${app.pkg}')">
-                            <div class="app-checkbox">${isSelected ? '✓' : ''}</div>
-                            <div class="app-avatar">${initial}</div>
-                            <div class="app-meta">
-                                <div class="app-name">${app.name}</div>
-                                <div class="app-pkg">${app.pkg}</div>
-                                <div class="badge-row">${badges}${listVersionLabel(app)}${listSortMeta(app)}</div>
-                            </div>
-                        </div>
-                        <div class="app-actions">
-                            <button class="btn-mini" title="App Settings" onclick="openAppSettings('${app.pkg}')">⚙️</button>
-                            <button class="btn-mini" title="Menu" onclick="openInspector('${app.pkg}')">⋯</button>
+        function resetAppsWindow() { appsShown = APPS_PAGE; }
+
+        function appsMoreHtml() {
+            const left = filteredApps.length - Math.min(filteredApps.length, appsShown);
+            return left > 0 ? `<div id="appsMore" style="text-align:center; padding:12px;"><button class="batch-tool-link" onclick="appsShowMore()">Show ${Math.min(APPS_PAGE, left)} more · ${left} left</button></div>` : '';
+        }
+
+        function appsShowMore() {
+            const container = document.getElementById('appsListContainer');
+            const old = document.getElementById('appsMore');
+            if (old) old.remove();
+            const from = Math.min(filteredApps.length, appsShown);
+            appsShown += APPS_PAGE;
+            container.insertAdjacentHTML('beforeend', filteredApps.slice(from, appsShown).map(appCardHtml).join('') + appsMoreHtml());
+            appsWatchMore();
+        }
+
+        // When the "more" row scrolls near the screen, add the next page.
+        function appsWatchMore() {
+            if (appsMoreObserver) { appsMoreObserver.disconnect(); appsMoreObserver = null; }
+            const more = document.getElementById('appsMore');
+            if (!more || typeof IntersectionObserver === 'undefined') return;
+            appsMoreObserver = new IntersectionObserver(entries => {
+                if (entries.some(e => e.isIntersecting)) appsShowMore();
+            }, { rootMargin: '600px 0px' });
+            appsMoreObserver.observe(more);
+        }
+
+        function appCardHtml(app) {
+            const isSelected = selectedPkgs.has(app.pkg);
+            const initial = (app.name && app.name.length > 0) ? firstChar(app.name, '⚡') : '⚡';
+
+            let badges = '';
+            if (app.isRunning) badges += '<span class="tag-badge tag-running">RUNNING</span>';
+            if (app.isFrozen && !app.isUninstalled) badges += '<span class="tag-badge tag-frozen">FROZEN</span>';
+            if (app.isSuspended) badges += '<span class="tag-badge tag-suspended">⏸ SUSPENDED</span>';
+            if (app.isUninstalled) badges += '<span class="tag-badge tag-bloat">UNINSTALLED</span>';
+            if (app.isSystem) badges += '<span class="tag-badge tag-system">SYSTEM</span>';
+            else badges += '<span class="tag-badge tag-user">USER</span>';
+            if (app.mods && app.mods.length) app.mods.forEach(m => badges += `<span class="tag-badge tag-mod">🧩 ${escapeHtml(m)}</span>`);
+
+            const pk = escapeHtml(app.pkg);
+            return `
+                <div class="app-card ${isSelected ? 'selected' : ''} ${app.isSuspended ? 'suspended' : ''}" id="card_${pk}" data-pkg="${pk}">
+                    <div class="app-left" onclick="toggleSelectPkg(this.parentElement.dataset.pkg)">
+                        <div class="app-checkbox">${isSelected ? '✓' : ''}</div>
+                        <div class="app-avatar">${escapeHtml(initial)}</div>
+                        <div class="app-meta">
+                            <div class="app-name">${escapeHtml(app.name)}</div>
+                            <div class="app-pkg">${pk}</div>
+                            <div class="badge-row">${badges}${listVersionLabel(app)}${listSortMeta(app)}</div>
                         </div>
                     </div>
-                `;
-            });
-
-            container.innerHTML = html;
+                    <div class="app-actions">
+                        <button class="btn-mini" title="App Settings" onclick="openAppSettings(this.closest('.app-card').dataset.pkg)">⚙️</button>
+                        <button class="btn-mini" title="Menu" onclick="openInspector(this.closest('.app-card').dataset.pkg)">⋯</button>
+                    </div>
+                </div>
+            `;
         }
 
         // Selection & Batch Operations
@@ -7393,6 +7798,7 @@ Type any command below (e.g. pm list packages -d)
 
         function setFilter(filter, el) {
             currentFilter = filter;
+            resetAppsWindow();
             saveUiState();
             if (!el) {
                 document.querySelectorAll('.filter-pill').forEach(p => p.classList.toggle('active', p.getAttribute('data-filter') === filter));
@@ -7407,15 +7813,21 @@ Type any command below (e.g. pm list packages -d)
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
+        let appsSearchTimer = null;
         function handleSearch() {
             const q = document.getElementById('searchInput').value;
             document.getElementById('searchClear').style.display = q ? 'block' : 'none';
-            renderApps();
+            resetAppsWindow();
+            clearTimeout(appsSearchTimer);
+            if (allApps.length <= 250) { renderApps(); return; }              // small lists redraw at once
+            appsSearchTimer = setTimeout(renderApps, 130);                   // big ones wait for a pause in typing
         }
 
         function clearSearch() {
+            clearTimeout(appsSearchTimer);
             document.getElementById('searchInput').value = '';
             document.getElementById('searchClear').style.display = 'none';
+            resetAppsWindow();
             renderApps();
         }
 
@@ -7458,8 +7870,14 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('installPickHint').innerText = 'Reading package...';
             const prog = document.getElementById('installProgress');
             if (prog) { prog.style.display = 'none'; prog.innerText = ''; }
+            installInspectRef = ref;           // the latest request wins; the answer to an earlier one is ignored
             if (window.AndroidBridge && window.AndroidBridge.inspectInstallSource) {
-                window.AndroidBridge.inspectInstallSource(ref);
+                try {
+                    window.AndroidBridge.inspectInstallSource(ref);
+                } catch (e) {
+                    installInspectRef = null;
+                    document.getElementById('installPickHint').innerText = '⚠️ ' + String(e && e.message || e);
+                }
             }
         }
         window.onInstallFilePicked = onInstallFilePicked;
@@ -7468,6 +7886,16 @@ Type any command below (e.g. pm list packages -d)
         let apkScanFiles = [];
         let apkScanDone = false;
         let apkScanning = false;
+        let apkScanTimer = null;
+        let apkScanShown = 300;
+        let installInspectRef = null;      // the package the Installer is reading now; an answer for any other one is stale
+
+        function apkScanEnd() {
+            apkScanning = false;
+            if (apkScanTimer) { clearTimeout(apkScanTimer); apkScanTimer = null; }
+            const btn = document.getElementById('apkScanBtn');
+            if (btn) btn.disabled = false;
+        }
 
         function apkScanShort(path) {
             return String(path || '').replace(/^\/storage\/emulated\/0\//, 'Internal storage › ')
@@ -7497,13 +7925,25 @@ Type any command below (e.g. pm list packages -d)
             const st = document.getElementById('apkScanStatus');
             st.style.display = ''; st.innerText = '🔎 Searching storage for APK, APKS, APKM and XAPK files…';
             const btn = document.getElementById('apkScanBtn'); if (btn) btn.disabled = true;
-            window.AndroidBridge.scanApkFiles();
+            apkScanShown = 300;
+            try {
+                window.AndroidBridge.scanApkFiles();
+            } catch (e) {
+                apkScanEnd();
+                st.innerText = '⚠️ ' + String(e && e.message || e);
+                return;
+            }
+            // if the answer never comes the search must not block the next one
+            apkScanTimer = setTimeout(() => {
+                if (!apkScanning) return;
+                apkScanEnd();
+                st.innerText = '⚠️ The search took too long. Tap Find APKs to try again.';
+            }, 180000);
         }
 
         function onApkScan(json) {
             let d; try { d = JSON.parse(json); } catch (e) { d = { status: 'error', error: 'bad response' }; }
-            apkScanning = false;
-            const btn = document.getElementById('apkScanBtn'); if (btn) btn.disabled = false;
+            apkScanEnd();
             const st = document.getElementById('apkScanStatus');
             if (d.status === 'noaccess') {
                 apkScanDone = false;
@@ -7539,7 +7979,7 @@ Type any command below (e.g. pm list packages -d)
             }
             const trunc = apkScanFiles[0]._trunc ? ' (search stopped early — narrow it with the filter)' : '';
             st.style.display = ''; st.innerText = shown.length + ' of ' + apkScanFiles.length + ' file' + (apkScanFiles.length === 1 ? '' : 's') + ' found' + trunc + ' · tap one to load it';
-            list.innerHTML = shown.slice(0, 300).map(x => {
+            list.innerHTML = shown.slice(0, apkScanShown).map(x => {
                 const f = x.f;
                 const meta = [f.size ? fmtInstallSize(f.size) : '', apkScanAge(f.mtime)].filter(Boolean).join(' · ');
                 return `<div class="apk-scan-row" onclick="installFromScan(${x.i})">
@@ -7551,6 +7991,9 @@ Type any command below (e.g. pm list packages -d)
                     </div>
                 </div>`;
             }).join('') || '<div class="uad-status">Nothing matches that filter.</div>';
+            if (shown.length > apkScanShown) {
+                list.insertAdjacentHTML('beforeend', `<button class="batch-tool-link" style="display:block;margin:8px auto;" onclick="apkScanShown += 300; renderApkScan()">Show ${Math.min(300, shown.length - apkScanShown)} more · ${shown.length - apkScanShown} left</button>`);
+            }
         }
 
         // Loads a found file into the installer. Files only the shell can read are staged first.
@@ -7579,6 +8022,8 @@ Type any command below (e.g. pm list packages -d)
         function onInstallInspected(json) {
             let d;
             try { d = JSON.parse(json); } catch (e) { d = { error: 'could not read package' }; }
+            if (d.ref && installInspectRef && d.ref !== installInspectRef) return;      // the answer for a file picked before the current one
+            installInspectRef = null;
             if (d.error) {
                 installData = null;
                 document.getElementById('installPickHint').innerText = '⚠️ ' + d.error;
@@ -7868,6 +8313,7 @@ Type any command below (e.g. pm list packages -d)
         function fmGo(path) {
             path = (path || '/').trim() || '/';
             if (!window.AndroidBridge || !window.AndroidBridge.fmList) { showToast('Needs the app build', '⚠️'); return; }
+            if (fmSelMode || fmSel.size) { fmSelMode = false; fmSel.clear(); }
             let d;
             try { d = JSON.parse(window.AndroidBridge.fmList(path)); } catch (e) { d = { error: String(e && e.message || e) }; }
             fmPath = fmNormalizePath(d.path || path);
@@ -7885,6 +8331,8 @@ Type any command below (e.g. pm list packages -d)
             }
             renderFm({ error: d.error, entries, raw: d.raw || '' });
             updateFmAccessHint(fmPath, entries);
+            fmSelRender();
+            fmClipRender();
         }
         function updateFmAccessHint(path, entries) {
             const hint = document.getElementById('fmAccessHint');
@@ -7967,6 +8415,7 @@ Type any command below (e.g. pm list packages -d)
 
         function renderFm(d) {
             const el = document.getElementById('fmList');
+            fmRows = [];
             if (!d.entries || !d.entries.length) {
                 if (d.error) { el.innerHTML = '<div class="list-empty">' + escapeHtml(d.error) + '</div>'; return; }
                 if (d.raw && d.raw.trim()) {
@@ -7979,19 +8428,219 @@ Type any command below (e.g. pm list packages -d)
                 return;
             }
             const entries = d.entries.slice().sort((a, b) => (b.isDir - a.isDir) || a.name.localeCompare(b.name));
-            el.innerHTML = entries.map(e => {
+            // Rows are looked up by index: a file name can hold any character (quotes included), so it is never put in a handler string
+            fmRows = entries.map(e => ({ name: e.name, isDir: !!e.isDir, full: fmJoin(e.name) }));
+            el.innerHTML = entries.map((e, i) => {
                 const icon = e.isDir ? '📁' : (e.isLink ? '↪' : '📄');
                 const sub = escapeHtml(e.perms + (e.isDir ? '' : ' • ' + fmtInstallSize(e.size)) + (e.link ? ' → ' + e.link : ''));
-                const full = fmJoin(e.name);
-                return `<div class="perm-row">
-                    <div class="perm-info" style="cursor:pointer;" onclick='fmTap(${e.isDir ? 'true' : 'false'}, ${JSON.stringify(full)}, ${JSON.stringify(e.name)})'>
+                return `<div class="perm-row${fmSel.has(fmRows[i].full) ? ' fm-picked' : ''}" data-i="${i}">
+                    <div class="fm-chk" aria-hidden="true" onclick="fmRowTap(${i})">✓</div>
+                    <div class="perm-info" style="cursor:pointer;" onclick="fmRowTap(${i})" data-i="${i}">
                         <div class="perm-name">${icon} ${escapeHtml(e.name)}</div>
                         <div class="perm-sub">${sub}</div>
                     </div>
-                    <button class="perm-toggle-btn locked" onclick='fmActions(${JSON.stringify(full)}, ${e.isDir ? 'true' : 'false'}, ${JSON.stringify(e.name)})'>⋯</button>
+                    <button class="perm-toggle-btn locked fm-more" onclick="fmActionsIdx(${i})">⋯</button>
                 </div>`;
             }).join('');
+            el.classList.toggle('fm-selecting', fmSelMode);
         }
+        let fmRows = [];
+
+        // ---- select several files and folders, then copy, move or delete them together ----
+        // Press and hold a row (or tap ☑ Select) to start. Copy / Move put the selection on a clipboard that stays while
+        // you open the target folder, where 📥 Paste here finishes it. The work runs in a few shell commands, not one per item.
+        let fmSelMode = false;
+        let fmSel = new Set();                 // full paths picked in the folder shown
+        let fmClip = null;                     // { op: 'cp' | 'mv', paths: [...] } waiting to be pasted
+        let fmBatchRunning = false;
+        const FM_HOLD_MS = 480;
+        const fmPress = { timer: null, fired: false, x: 0, y: 0 };
+
+        function fmSelCountText() {
+            const n = fmSel.size;
+            return n + ' selected';
+        }
+
+        function fmSelRender() {
+            const list = document.getElementById('fmList');
+            if (list) {
+                list.classList.toggle('fm-selecting', fmSelMode);
+                const rows = list.querySelectorAll('.perm-row[data-i]');
+                rows.forEach(row => {
+                    const r = fmRows[+row.dataset.i];
+                    row.classList.toggle('fm-picked', !!r && fmSel.has(r.full));
+                });
+            }
+            const bar = document.getElementById('fmSelBar');
+            if (bar) bar.style.display = fmSelMode ? '' : 'none';
+            const cnt = document.getElementById('fmSelCount');
+            if (cnt) cnt.innerText = fmSelCountText();
+            const btn = document.getElementById('fmSelectBtn');
+            if (btn) btn.innerText = fmSelMode ? '✕ Done' : '☑ Select';
+        }
+
+        function fmSelEnter(full) {
+            fmSelMode = true;
+            if (full) fmSel.add(full);
+            fmSelRender();
+        }
+
+        function fmSelExit() {
+            fmSelMode = false;
+            fmSel.clear();
+            fmSelRender();
+        }
+
+        function fmToggleSelectMode() {
+            haptic();
+            if (fmSelMode) fmSelExit(); else fmSelEnter(null);
+        }
+
+        function fmSelectAll() {
+            haptic();
+            const all = fmRows.length > 0 && fmRows.every(r => fmSel.has(r.full));
+            fmRows.forEach(r => { if (all) fmSel.delete(r.full); else fmSel.add(r.full); });
+            fmSelRender();
+        }
+
+        // A tap on a row: pick it while selecting, otherwise open it. The click that ends a long press is swallowed.
+        function fmRowTap(i) {
+            if (fmPress.fired) { fmPress.fired = false; return; }
+            const r = fmRows[i];
+            if (!r) return;
+            if (!fmSelMode) { fmTapIdx(i); return; }
+            if (fmSel.has(r.full)) fmSel.delete(r.full); else fmSel.add(r.full);
+            fmSelRender();
+        }
+
+        function fmPressCancel() {
+            if (fmPress.timer) { clearTimeout(fmPress.timer); fmPress.timer = null; }
+        }
+
+        function fmPressStart(row, x, y) {
+            fmPress.fired = false;
+            fmPress.x = x; fmPress.y = y;
+            fmPressCancel();
+            const i = +row.dataset.i;
+            fmPress.timer = setTimeout(() => {
+                fmPress.timer = null;
+                const r = fmRows[i];
+                if (!r) return;
+                fmPress.fired = true;
+                haptic();
+                fmSelEnter(r.full);
+            }, FM_HOLD_MS);
+        }
+
+        (function initFmLongPress() {
+            const list = document.getElementById('fmList');
+            if (!list) return;
+            const rowOf = e => (e.target && e.target.closest) ? e.target.closest('.perm-info[data-i]') : null;
+            // any new press forgets a long press whose click never arrived (the layout shifts when selecting starts, so it may not)
+            list.addEventListener('touchstart', e => { fmPress.fired = false; const row = rowOf(e); const t = e.touches[0]; if (row && t) fmPressStart(row, t.clientX, t.clientY); }, { passive: true });
+            list.addEventListener('touchmove', e => {
+                const t = e.touches[0];
+                if (t && (Math.abs(t.clientX - fmPress.x) > 12 || Math.abs(t.clientY - fmPress.y) > 12)) fmPressCancel();
+            }, { passive: true });
+            list.addEventListener('touchend', fmPressCancel);
+            list.addEventListener('touchcancel', fmPressCancel);
+            list.addEventListener('mousedown', e => { fmPress.fired = false; const row = rowOf(e); if (row && e.button === 0) fmPressStart(row, e.clientX, e.clientY); });
+            list.addEventListener('mouseup', fmPressCancel);
+            list.addEventListener('mouseleave', fmPressCancel);
+            list.addEventListener('scroll', fmPressCancel, { passive: true });
+            list.addEventListener('contextmenu', e => { if (rowOf(e)) e.preventDefault(); });
+        })();
+
+        function fmBase(p) { p = String(p || ''); const i = p.lastIndexOf('/'); return i < 0 ? p : p.slice(i + 1); }
+
+        function fmClipRender() {
+            const bar = document.getElementById('fmClipBar');
+            if (!bar) return;
+            bar.style.display = fmClip ? '' : 'none';
+            if (!fmClip) return;
+            const n = fmClip.paths.length;
+            document.getElementById('fmClipText').innerText = (fmClip.op === 'mv' ? '✂️ ' : '📋 ') + n + ' item' + (n === 1 ? '' : 's') + ' to ' + (fmClip.op === 'mv' ? 'move' : 'copy') + ': open the target folder, then tap Paste';
+            const btn = document.getElementById('fmPasteBtn');
+            if (btn) btn.disabled = fmBatchRunning;
+        }
+
+        function fmClipSet(op) {
+            if (!fmSel.size) { showToast('Select something first', 'ℹ️'); return; }
+            haptic();
+            fmClip = { op, paths: Array.from(fmSel) };
+            fmSelExit();
+            fmClipRender();
+            showToast(fmClip.paths.length + ' item' + (fmClip.paths.length === 1 ? '' : 's') + (op === 'mv' ? ' ready to move' : ' ready to copy'), op === 'mv' ? '✂️' : '📋');
+        }
+
+        function fmClipClear() { haptic(); fmClip = null; fmClipRender(); }
+
+        function fmBatchStart(op, paths, dest) {
+            if (fmBatchRunning) { showToast('A file job is still running', '⏳'); return false; }
+            if (!window.AndroidBridge || !window.AndroidBridge.fmBatch) { showToast('Needs the app build', '⚠️'); return false; }
+            let st = 'error';
+            try { st = window.AndroidBridge.fmBatch(op, JSON.stringify(paths), dest || ''); } catch (e) { st = 'error'; }
+            if (st !== 'started') { showToast(st === 'busy' ? 'A file job is still running' : 'The job could not start', '⚠️'); return false; }
+            fmBatchRunning = true;
+            const el = document.getElementById('fmBatchStatus');
+            if (el) { el.style.display = ''; el.innerText = '⏳ Working…'; }
+            fmClipRender();
+            return true;
+        }
+
+        function fmPaste() {
+            if (!fmClip) return;
+            if (!guardPrivilege('Paste')) return;
+            // something already in this folder can't be copied or moved onto itself
+            const here = fmNormalizePath(fmPath);
+            const paths = fmClip.paths.filter(p => fmParent(p) !== here);
+            if (!paths.length) { showToast('That is already in this folder', 'ℹ️'); return; }
+            const existing = new Set(fmRows.map(r => r.name));
+            const clash = paths.filter(p => existing.has(fmBase(p)));
+            if (clash.length && !confirm(clash.length + ' item' + (clash.length === 1 ? '' : 's') + ' with the same name already exist here (' + clash.slice(0, 3).map(fmBase).join(', ') + (clash.length > 3 ? ', …' : '') + '). Replace ' + (clash.length === 1 ? 'it' : 'them') + '?')) return;
+            haptic();
+            fmBatchStart(fmClip.op, paths, here);
+        }
+
+        function fmDeleteSelected() {
+            if (!fmSel.size) { showToast('Select something first', 'ℹ️'); return; }
+            if (!guardPrivilege('Delete')) return;
+            const paths = Array.from(fmSel);
+            const names = paths.slice(0, 3).map(fmBase).join(', ') + (paths.length > 3 ? ', …' : '');
+            if (!confirm('Delete ' + paths.length + ' item' + (paths.length === 1 ? '' : 's') + ' (' + names + ')? Folders go with everything in them. This can not be undone.')) return;
+            haptic();
+            if (fmBatchStart('rm', paths, '')) fmSelExit();
+        }
+
+        function onFmBatchProgress(msg) {
+            const el = document.getElementById('fmBatchStatus');
+            if (el && fmBatchRunning) { el.style.display = ''; el.innerText = '⏳ ' + msg; }
+        }
+
+        function onFmBatchDone(r) {
+            fmBatchRunning = false;
+            const el = document.getElementById('fmBatchStatus');
+            if (el) el.style.display = 'none';
+            r = r || {};
+            const verb = r.op === 'rm' ? 'Deleted' : r.op === 'cp' ? 'Copied' : 'Moved';
+            if (r.error) {
+                showToast(r.error, '⚠️');
+            } else {
+                const failed = Array.isArray(r.failed) ? r.failed : [];
+                showToast(verb + ' ' + (r.done || 0) + ' of ' + (r.total || 0) + (failed.length ? ' • ' + failed.length + ' failed' : ''), failed.length ? '⚠️' : '✔');
+                if (failed.length) {
+                    showCommandResults('File manager', verb.toLowerCase(), failed.map(f => ({ name: fmBase(f.p), pkg: f.p, output: f.error, success: false })));
+                }
+                if (r.op === 'mv' && fmClip && !failed.length) fmClip = null;
+            }
+            fmClipRender();
+            fmRefresh();
+        }
+        window.onFmBatchProgress = onFmBatchProgress;
+        window.onFmBatchDone = onFmBatchDone;
+
+        function fmTapIdx(i) { const r = fmRows[i]; if (r) fmTap(r.isDir, r.full, r.name); }
+        function fmActionsIdx(i) { const r = fmRows[i]; if (r) fmActions(r.full, r.isDir, r.name); }
         function fmTap(isDir, full, name) { if (isDir) fmGo(full); else fmActions(full, false, name); }
 
         function fmActions(full, isDir, name) {
@@ -8003,6 +8652,7 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('fmViewer').style.display = 'none';
             const btns = [];
             if (!isDir && /\.(apk|apks|apkm|xapk)$/i.test(name)) btns.push(`<button class="batch-grid-btn accent" onclick="fmInstallFile()">📦 Install</button>`);
+            if (!isDir && /\.apk$/i.test(name)) btns.push(`<button class="batch-grid-btn" onclick="fmSignFile()">✍️ Sign…</button>`);
             if (!isDir) btns.push(`<button class="batch-grid-btn" onclick="fmViewFile()">${ARC_EXT.test(name) ? '📂 View contents' : '👁 View'}</button>`);
             if (!isDir && !ARC_EXT.test(name)) btns.push(`<button class="batch-grid-btn" onclick="fmOpenAsArchive()">📂 Open as archive</button>`);
             btns.push(`<button class="batch-grid-btn" onclick="fmStartDest('rename')">✏️ Rename</button>`);
@@ -8095,6 +8745,12 @@ Type any command below (e.g. pm list packages -d)
             v.innerText = txt || '(empty)';
             v.style.display = '';
         }
+        function fmSignFile() {
+            if (!fmActionTarget) return;
+            const path = fmActionTarget.full;
+            closeFmAction();
+            signOpen(path);
+        }
         function fmInstallFile() {
             if (!fmActionTarget) return;
             let r;
@@ -8143,6 +8799,10 @@ Type any command below (e.g. pm list packages -d)
         let arcLastOp = null;
         let arcApkAcked = false;
         let arcSearchTimer = null;
+        let arcStack = [];              // parents of the nested archive being viewed: [{ arc, dir, query }]
+        let arcDiff = null;             // the comparison being shown (see onArchiveDiff), or null
+        let arcDiffFilter = 'all';
+        let arcDiffRows = [];
 
         function arcBridge(fn, ...args) {
             if (!window.AndroidBridge || !window.AndroidBridge[fn]) return { ok: false, error: 'Needs the app build' };
@@ -8183,9 +8843,14 @@ Type any command below (e.g. pm list packages -d)
                 if (!r.ok) { if (onFail) onFail(r); else showToast(r.error || 'Not a readable archive', '⚠️'); return; }
                 closeFmAction();
                 arc = r;
+                arcStack = [];
+                arcDiff = null;
+                document.getElementById('arcDiffHead').style.display = 'none';
+                document.getElementById('arcCrumbs').style.display = '';
                 arcDir = '';
                 arcQuery = '';
                 arcApkAcked = false;
+                arcNeedsSign = false;
                 document.getElementById('arcSearch').value = '';
                 document.getElementById('fmTopCard').style.display = 'none';
                 document.getElementById('fmListCard').style.display = 'none';
@@ -8199,8 +8864,22 @@ Type any command below (e.g. pm list packages -d)
 
         function arcClose() {
             haptic();
+            if (arcDiff) { arcDiffClose(); return; }
+            if (arcStack.length) {                       // leave a nested archive: back to the one it was opened from
+                const child = arc;
+                if (window.AndroidBridge && window.AndroidBridge.archiveRelease) window.AndroidBridge.archiveRelease(child.path);
+                const par = arcStack.pop();
+                arc = par.arc;
+                arcDir = par.dir;
+                arcQuery = par.query;
+                document.getElementById('arcSearch').value = arcQuery;
+                arcHeader();
+                arcLoad(true);
+                return;
+            }
             if (window.AndroidBridge && window.AndroidBridge.archiveClose) window.AndroidBridge.archiveClose();
             arc = null;
+            arcStack = [];
             arcRows = [];
             document.getElementById('arcCard').style.display = 'none';
             document.getElementById('fmTopCard').style.display = '';
@@ -8210,15 +8889,16 @@ Type any command below (e.g. pm list packages -d)
 
         function arcHeader() {
             if (!arc) return;
-            document.getElementById('arcTitle').innerText = '📦 ' + arc.name;
+            document.getElementById('arcTitle').innerText = '📦 ' + (arc.chain ? arc.chain.join(' › ') : arc.name);
             document.getElementById('arcMeta').innerText = arc.files + ' file' + (arc.files === 1 ? '' : 's') + ' • ' + arcSize(arc.size)
-                + (arc.zip64 ? ' • ZIP64' : '') + (arc.staged ? ' • opened from a temporary copy' : '') + '\n' + arc.path;
+                + (arc.zip64 ? ' • ZIP64' : '') + (arc.staged ? ' • opened from a temporary copy' : '') + '\n' + (arc.nested ? 'inside ' + (arc.chain.slice(0, -1).join(' › ')) : arc.path);
             const note = document.getElementById('arcNote');
             let msg = '';
             if (!arc.editable) msg = '👁 View only: ' + (arc.whyNot || 'this archive can not be edited here.');
-            else if (arc.apk) msg = '⚠️ Editing an APK changes its contents, so its signature no longer matches. Android will not install it until it is re-signed.';
+            else if (arc.apk) msg = '⚠️ Editing an APK changes its contents, so its signature no longer matches. Android will not install it until it is signed again: use ✍️ Sign (this app signs with a key of its own).';
             note.style.display = msg ? '' : 'none';
             note.innerText = msg;
+            arcSignBanner();
             document.getElementById('arcAddBtn').style.display = arc.editable ? '' : 'none';
             document.getElementById('arcFolderBtn').style.display = arc.editable ? '' : 'none';
         }
@@ -8263,7 +8943,15 @@ Type any command below (e.g. pm list packages -d)
             const list = document.getElementById('arcList');
             if (reset) { arcOffset = 0; arcRows = []; list.innerHTML = ''; arcCrumbs(); }
             const r = arcBridge('archiveList', arc.path, arcDir, arcQuery, arcOffset, ARC_PAGE);
-            if (!r.ok) { list.innerHTML = '<div class="list-empty">' + escapeHtml(r.error || 'Could not read the archive') + '</div>'; return; }
+            if (!r.ok) {
+                if (reset) {
+                    list.innerHTML = '<div class="list-empty">' + escapeHtml(r.error || 'Could not read the archive') + '</div>';
+                    document.getElementById('arcMoreBtn').style.display = 'none';
+                } else {
+                    showToast(r.error || 'Could not read the archive', '⚠️');       // "Show more" failed: what is already listed stays
+                }
+                return;
+            }
             arcTotal = r.total;
             const start = arcRows.length;
             r.entries.forEach(e => arcRows.push(e));
@@ -8276,6 +8964,7 @@ Type any command below (e.g. pm list packages -d)
             const more = document.getElementById('arcMoreBtn');
             more.style.display = r.more ? '' : 'none';
             if (r.more) more.innerText = 'Show more (' + (arcTotal - arcOffset) + ' left)';
+            if (r.capped && !r.more) list.insertAdjacentHTML('beforeend', '<div class="list-empty">Showing the first 5000 matches. Type more of the name to narrow it down.</div>');
         }
 
         function arcLoadMore() { arcLoad(false); }
@@ -8288,6 +8977,7 @@ Type any command below (e.g. pm list packages -d)
         }
 
         function arcUp() {
+            if (arcDiff) { arcDiffClose(); return; }
             if (arcQuery) { arcGo(arcDir); return; }
             if (!arcDir) return;
             const parts = arcDir.slice(0, -1).split('/');
@@ -8298,6 +8988,7 @@ Type any command below (e.g. pm list packages -d)
         function arcSearchInput() {
             clearTimeout(arcSearchTimer);
             arcSearchTimer = setTimeout(() => {
+                if (arcDiff) { arcRenderDiff(); return; }              // a comparison is filtered by the same box
                 arcQuery = (document.getElementById('arcSearch').value || '').trim();
                 arcLoad(true);
             }, 220);
@@ -8327,10 +9018,19 @@ Type any command below (e.g. pm list packages -d)
 
         function arcSheetButtons(withEdit) {
             const btns = [];
-            if (!arcTarget.dir) btns.push(`<button class="batch-grid-btn accent" onclick="arcViewEntry()">👁 View</button>`);
+            const d = arcTarget.diff;
+            if (d && d.status === 'changed') {
+                btns.push(`<button class="batch-grid-btn accent" onclick="arcDiffShow()">⚖️ Show differences</button>`);
+                btns.push(`<button class="batch-grid-btn" onclick="arcTarget.src = arcDiff.b.path; arcViewEntry()">👁 New</button>`);
+                btns.push(`<button class="batch-grid-btn" onclick="arcTarget.src = arcDiff.a.path; arcViewEntry()">👁 Old</button>`);
+            } else if (!arcTarget.dir) {
+                btns.push(`<button class="batch-grid-btn accent" onclick="arcViewEntry()">👁 View</button>`);
+            }
+            if (!arcTarget.dir && /\.(apk|apks|apkm|xapk)$/i.test(arcTarget.name)) btns.push(`<button class="batch-grid-btn accent" onclick="arcStageEntry('install')">📦 Install</button>`);
+            if (!arcTarget.dir && ARC_EXT.test(arcTarget.name)) btns.push(`<button class="batch-grid-btn" onclick="arcStageEntry('nested')">📂 Open inside</button>`);
             if (withEdit && arcPreview && arcPreview.editable) btns.push(`<button class="batch-grid-btn accent" onclick="arcEditStart()">✏️ Edit text</button>`);
             btns.push(`<button class="batch-grid-btn" onclick="arcExtractStart()">📥 Extract…</button>`);
-            if (arc && arc.editable) {
+            if (arc && arc.editable && !arcTarget.src) {
                 btns.push(`<button class="batch-grid-btn" onclick="arcRenameStart()">✏️ Rename / move</button>`);
                 btns.push(`<button class="batch-grid-btn danger" onclick="arcDeleteStart()">🗑️ Delete</button>`);
             }
@@ -8351,9 +9051,11 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('arcViewImg').removeAttribute('src');
         }
 
+        function arcSrcPath() { return (arcTarget && arcTarget.src) || arc.path; }
+
         function arcViewEntry() {
             if (!arc || !arcTarget || arcTarget.dir) return;
-            const r = arcBridge('archiveRead', arc.path, arcTarget.path);
+            const r = arcBridge('archiveRead', arcSrcPath(), arcTarget.path);
             if (!r.ok) { showToast(r.error || 'Could not read the entry', '⚠️'); return; }
             arcPreview = r;
             arcResetSheet();
@@ -8401,9 +9103,11 @@ Type any command below (e.g. pm list packages -d)
         }
 
         function arcSaveEdit() {
-            if (!arcPreview || !arcTarget) return;
+            if (!arc || !arcPreview || !arcTarget) return;
             const text = document.getElementById('arcEditText').value;
-            arcRunEdit({ op: 'replaceText', name: arcTarget.path, text, crlf: !!arcPreview.crlf });
+            // the edit box turns every line end into \n, so compare against the original in that form
+            if (text === String(arcPreview.text || '').replace(/\r\n?/g, '\n')) { showToast('No changes to save', 'ℹ️'); return; }     // a save would rewrite the whole archive (and unsign an APK) for nothing
+            arcRunEdit({ op: 'replaceText', name: arcTarget.path, text, crlf: !!arcPreview.crlf }, true);
         }
 
         function arcInputSetup(mode, label, value, confirmText, danger, label2, value2) {
@@ -8426,6 +9130,8 @@ Type any command below (e.g. pm list packages -d)
         }
 
         function arcDefaultDest() {
+            const last = kvGet('arc_last_dest', '');
+            if (last) return last;                       // the folder you extracted to last time
             const base = (arc.name || 'archive').replace(/\.[^.]+$/, '');
             return '/storage/emulated/0/Download/' + base;
         }
@@ -8451,7 +9157,7 @@ Type any command below (e.g. pm list packages -d)
 
         function arcRenameStart() {
             if (!arcTarget) return;
-            arcInputSetup('rename', 'New path inside the archive (change the folder part to move it)', arcTarget.path, 'Rename');
+            arcInputSetup('rename', 'New path inside the archive (change the folder part to move it; a name ending in / moves it into that folder)', arcTarget.path, 'Rename');
         }
 
         function arcDeleteStart() {
@@ -8495,18 +9201,21 @@ Type any command below (e.g. pm list packages -d)
                 arcStartExtract(arcTarget.path, v);
             } else if (arcInputMode === 'rename') {
                 if (!v || v === arcTarget.path) { showToast('Enter a new path', '⚠️'); return; }
-                arcRunEdit({ op: 'rename', name: arcTarget.path, to: v });
+                arcRunEdit({ op: 'rename', name: arcTarget.path, to: v }, true);
             } else if (arcInputMode === 'delete') {
                 arcRunEdit({ op: 'delete', name: arcTarget.path });
             } else if (arcInputMode === 'mkdir') {
                 if (!v) { showToast('Enter a name', '⚠️'); return; }
-                arcRunEdit({ op: 'mkdir', to: arcDir + v.replace(/^\/+/, '') });
+                arcRunEdit({ op: 'mkdir', to: arcDir + v.replace(/^\/+/, '') }, true);
+            } else if (arcInputMode === 'compare') {
+                if (!v) { showToast('Enter an archive or an app package name', '⚠️'); return; }
+                arcStartDiff(v);
             } else if (arcInputMode === 'add') {
                 if (!v) { showToast('Enter the file to add', '⚠️'); return; }
                 const base = v.split('/').pop();
                 let to = v2.replace(/^\/+/, '');
                 if (!to || to.endsWith('/')) to += base;
-                arcRunEdit({ op: 'add', from: v, to, overwrite: false });
+                arcRunEdit({ op: 'add', from: v, to, overwrite: false }, true);
             }
         }
 
@@ -8521,27 +9230,220 @@ Type any command below (e.g. pm list packages -d)
         function arcStartExtract(path, dest) {
             if (arcBusy) { showToast('Another archive job is still running', '⏳'); return; }
             arcLastOp = { op: 'extract' };
+            kvSet('arc_last_dest', dest);
             arcSetBusy(true, 'Extracting…');
+            const src = arcSrcPath();
             arcCloseModal();
-            const st = window.AndroidBridge && window.AndroidBridge.archiveExtract ? window.AndroidBridge.archiveExtract(arc.path, path, dest) : 'unavailable';
+            const st = window.AndroidBridge && window.AndroidBridge.archiveExtract ? window.AndroidBridge.archiveExtract(src, path, dest) : 'unavailable';
             if (st !== 'started') { arcSetBusy(false); showToast(st === 'busy' ? 'Another archive job is still running' : 'Needs the app build', '⚠️'); }
         }
 
-        function arcRunEdit(op) {
+        // keepSheet: leave the sheet (and what was typed in it) open until the job has worked, so a failure loses nothing.
+        function arcRunEdit(op, keepSheet) {
+            if (!arc) return;
             if (arcBusy) { showToast('Another archive job is still running', '⏳'); return; }
             if (!arc.editable) { showToast(arc.whyNot || 'This archive is view-only', '⚠️'); return; }
             if (arc.apk && !arcApkAcked) {
-                if (!confirm('Editing an APK changes its contents, so its signature no longer matches. Android will not install it until it is re-signed.\n\nContinue?')) return;
+                if (!confirm('Editing an APK changes its contents, so its signature no longer matches. Android will not install it until it is signed again; ✍️ Sign does that with a key of this app.\n\nContinue?')) return;
                 arcApkAcked = true;
             }
             arcLastOp = op;
             arcSetBusy(true, 'Rewriting the archive…');
+            if (!keepSheet) arcCloseModal();
+            let st = 'unavailable';
+            try {
+                if (window.AndroidBridge && window.AndroidBridge.archiveEdit) st = window.AndroidBridge.archiveEdit(arc.path, JSON.stringify(op));
+            } catch (e) { st = 'error'; }
+            if (st !== 'started') { arcSetBusy(false); showToast(st === 'busy' ? 'Another archive job is still running' : st === 'error' ? 'The edit could not start' : 'Needs the app build', '⚠️'); }
+        }
+
+        // ---- install from inside an archive / open a nested archive ----
+        function arcStageEntry(kind) {
+            if (!arc || !arcTarget || arcTarget.dir) return;
+            if (arcBusy) { showToast('Another archive job is still running', '⏳'); return; }
+            arcLastOp = { op: 'stage', kind };
+            arcSetBusy(true, 'Preparing ' + arcTarget.name + '…');
+            const src = arcSrcPath();
+            const entry = arcTarget.path;
             arcCloseModal();
-            const st = window.AndroidBridge && window.AndroidBridge.archiveEdit ? window.AndroidBridge.archiveEdit(arc.path, JSON.stringify(op)) : 'unavailable';
+            const st = window.AndroidBridge && window.AndroidBridge.archiveStage ? window.AndroidBridge.archiveStage(src, entry, kind) : 'unavailable';
             if (st !== 'started') { arcSetBusy(false); showToast(st === 'busy' ? 'Another archive job is still running' : 'Needs the app build', '⚠️'); }
         }
 
+        function onArchiveStaged(r) {
+            arcSetBusy(false);
+            if (!r || !r.ok) { showToast((r && r.error) || 'Could not copy the file out of the archive', '⚠️'); return; }
+            if (r.kind === 'install') { onInstallIntent(r.ref); return; }
+            arcOpenNested(r);
+        }
+
+        function arcOpenNested(r) {
+            const opened = arcBridge('archiveOpen', r.ref);
+            if (!opened.ok) { showToast(opened.error || 'Not a readable archive', '⚠️'); if (window.AndroidBridge && window.AndroidBridge.archiveRelease) window.AndroidBridge.archiveRelease(r.ref); return; }
+            const parent = { arc, dir: arcDir, query: arcQuery };
+            arcStack.push(parent);
+            opened.nested = true;
+            opened.name = r.name;
+            opened.chain = (parent.arc.chain || [parent.arc.name]).concat([r.name]);
+            opened.editable = false;
+            opened.apk = false;
+            opened.whyNot = 'Opened from inside another archive, so it is view-only. Extract it first to edit it.';
+            arc = opened;
+            arcDir = '';
+            arcQuery = '';
+            document.getElementById('arcSearch').value = '';
+            arcHeader();
+            arcLoad(true);
+        }
+
+        // ---- compare two archives ----
+        function arcCompareStart() {
+            if (!arc || arcBusy) return;
+            arcTarget = { path: '', dir: true, name: arc.name };
+            document.getElementById('arcModalName').innerText = 'Compare archives';
+            document.getElementById('arcModalPath').innerText = arc.name + ' against another archive or an installed app';
+            document.getElementById('arcModalIcon').innerText = '⚖️';
+            document.getElementById('arcModalBtns').innerHTML = '';
+            const folder = arc.path.replace(/[^/]*$/, '');
+            arcInputSetup('compare', 'Compare with: a path to an archive, or an installed app’s package name', kvGet('arc_last_cmp', '') || folder, '⚖️ Compare');
+            document.getElementById('arcModal').classList.add('show');
+            haptic();
+        }
+
+        function arcStartDiff(other) {
+            kvSet('arc_last_cmp', other);
+            arcLastOp = { op: 'diff' };
+            arcSetBusy(true, 'Comparing…');
+            arcCloseModal();
+            const st = window.AndroidBridge && window.AndroidBridge.archiveDiff ? window.AndroidBridge.archiveDiff(arc.path, other) : 'unavailable';
+            if (st !== 'started') { arcSetBusy(false); showToast(st === 'busy' ? 'Another archive job is still running' : 'Needs the app build', '⚠️'); }
+        }
+
+        function onArchiveDiff(r) {
+            arcSetBusy(false);
+            if (!r || !r.ok) { showToast((r && r.error) || 'Could not compare', '⚠️'); return; }
+            arcDiff = r;
+            arcDiffFilter = 'all';
+            document.getElementById('arcSearch').value = '';
+            arcQuery = '';
+            arcRenderDiff();
+        }
+
+        function arcDiffClose() {
+            arcDiff = null;
+            document.getElementById('arcDiffHead').style.display = 'none';
+            document.getElementById('arcCrumbs').style.display = '';
+            arcLoad(true);
+        }
+
+        function arcDiffSetFilter(f) { arcDiffFilter = f; arcRenderDiff(); }
+
+        function arcRenderDiff() {
+            if (!arcDiff) return;
+            const d = arcDiff;
+            const q = (document.getElementById('arcSearch').value || '').trim().toLowerCase();
+            const all = []
+                .concat(d.changed.map(x => Object.assign({ st: 'changed' }, x)))
+                .concat(d.added.map(x => Object.assign({ st: 'added' }, x)))
+                .concat(d.removed.map(x => Object.assign({ st: 'removed' }, x)));
+            arcDiffRows = all.filter(x => (arcDiffFilter === 'all' || x.st === arcDiffFilter) && (!q || x.p.toLowerCase().includes(q)));
+            const chip = (f, label, n) => `<button class="filter-pill${arcDiffFilter === f ? ' active' : ''}" onclick="arcDiffSetFilter('${f}')">${label} ${n}</button>`;
+            const head = document.getElementById('arcDiffHead');
+            head.style.display = '';
+            head.innerHTML = `<div class="arc-meta" style="font-size:11px;"><b>${escapeHtml(d.a.name)}</b> (${d.a.count}) ⇄ <b>${escapeHtml(d.b.name)}</b> (${d.b.count})</div>
+                <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:6px 0;">
+                    ${chip('all', 'All', d.added.length + d.removed.length + d.changed.length)}${chip('changed', '≠ Changed', d.changed.length)}${chip('added', '+ New', d.added.length)}${chip('removed', '− Gone', d.removed.length)}
+                    <span class="arc-sep">${d.same} unchanged</span>
+                    <button class="batch-tool-link" onclick="arcDiffClose()" style="margin-left:auto;">✕ Close comparison</button>
+                </div>${d.truncated ? '<div class="arc-note">The lists are cut at 3000 entries each.</div>' : ''}`;
+            document.getElementById('arcCrumbs').style.display = 'none';
+            document.getElementById('arcMoreBtn').style.display = 'none';
+            const list = document.getElementById('arcList');
+            if (!arcDiffRows.length) { list.innerHTML = '<div class="list-empty">' + (d.added.length + d.removed.length + d.changed.length ? 'Nothing matches.' : 'The two archives hold identical files.') + '</div>'; return; }
+            list.innerHTML = arcDiffRows.slice(0, 600).map((x, i) => {
+                const sym = x.st === 'added' ? '+' : x.st === 'removed' ? '−' : '≠';
+                const sz = x.st === 'added' ? arcSize(x.b) : x.st === 'removed' ? arcSize(x.a) : arcSize(x.a) + ' → ' + arcSize(x.b);
+                return `<div class="perm-row"><div class="perm-info" style="cursor:pointer;" onclick="arcDiffTap(${i})">
+                    <div class="perm-name"><span class="dif-badge ${x.st}">${sym}</span>${escapeHtml(x.p)}</div><div class="perm-sub">${escapeHtml(sz)}</div></div></div>`;
+            }).join('') + (arcDiffRows.length > 600 ? `<div class="list-empty">Showing the first 600 of ${arcDiffRows.length}. Narrow it with the search box.</div>` : '');
+        }
+
+        function arcDiffTap(i) {
+            const x = arcDiffRows[i];
+            if (!x) return;
+            const base = x.p.split('/').pop();
+            arcTarget = { path: x.p, dir: false, name: base, src: x.st === 'removed' ? arcDiff.a.path : arcDiff.b.path, diff: { status: x.st } };
+            arcPreview = null;
+            arcResetSheet();
+            document.getElementById('arcModalName').innerText = base;
+            document.getElementById('arcModalPath').innerText = x.p + '\n' + (x.st === 'added' ? 'only in ' + arcDiff.b.name : x.st === 'removed' ? 'only in ' + arcDiff.a.name : 'differs');
+            document.getElementById('arcModalIcon').innerText = x.st === 'added' ? '+' : x.st === 'removed' ? '−' : '≠';
+            arcSheetButtons(false);
+            document.getElementById('arcModal').classList.add('show');
+            haptic();
+        }
+
+        // Line diff of two text entries (a changed AndroidManifest.xml, a config file ...)
+        function arcLineDiff(a, b) {
+            let lo = 0;
+            while (lo < a.length && lo < b.length && a[lo] === b[lo]) lo++;
+            let ea = a.length, eb = b.length;
+            while (ea > lo && eb > lo && a[ea - 1] === b[eb - 1]) { ea--; eb--; }
+            const A = a.slice(lo, ea), B = b.slice(lo, eb), n = A.length, m = B.length;
+            if (n * m > 6000000) return null;
+            const w = m + 1, L = new Uint32Array((n + 1) * w);
+            for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) L[i * w + j] = A[i] === B[j] ? L[(i + 1) * w + j + 1] + 1 : Math.max(L[(i + 1) * w + j], L[i * w + j + 1]);
+            const ops = [];
+            for (let i = 0; i < lo; i++) ops.push({ t: ' ', s: a[i] });
+            let i = 0, j = 0;
+            while (i < n && j < m) {
+                if (A[i] === B[j]) { ops.push({ t: ' ', s: A[i] }); i++; j++; }
+                else if (L[(i + 1) * w + j] >= L[i * w + j + 1]) ops.push({ t: '-', s: A[i++] });
+                else ops.push({ t: '+', s: B[j++] });
+            }
+            while (i < n) ops.push({ t: '-', s: A[i++] });
+            while (j < m) ops.push({ t: '+', s: B[j++] });
+            for (let k = ea; k < a.length; k++) ops.push({ t: ' ', s: a[k] });
+            return ops;
+        }
+
+        function arcDiffShow() {
+            if (!arcDiff || !arcTarget || !arcTarget.diff) return;
+            const ra = arcBridge('archiveRead', arcDiff.a.path, arcTarget.path);
+            const rb = arcBridge('archiveRead', arcDiff.b.path, arcTarget.path);
+            if (!ra.ok || !rb.ok) { showToast((ra.ok ? rb.error : ra.error) || 'Could not read the entry', '⚠️'); return; }
+            if (!(typeof ra.text === 'string' && typeof rb.text === 'string')) { showToast('Only text and compiled XML files can be compared line by line', 'ℹ️'); return; }
+            const ops = arcLineDiff(ra.text.split('\n'), rb.text.split('\n'));
+            arcResetSheet();
+            document.getElementById('arcView').style.display = '';
+            const box = document.getElementById('arcViewText');
+            box.style.display = '';
+            box.style.whiteSpace = 'pre-wrap';
+            box.style.wordBreak = 'break-word';
+            if (!ops) { box.textContent = 'These files are too different to compare line by line. View each one instead.'; document.getElementById('arcViewMeta').innerText = ''; return; }
+            let add = 0, del = 0;
+            ops.forEach(o => { if (o.t === '+') add++; else if (o.t === '-') del++; });
+            // keep 3 lines of context around each change; collapse the rest
+            const keep = new Array(ops.length).fill(false);
+            ops.forEach((o, k) => { if (o.t !== ' ') for (let d = -3; d <= 3; d++) if (ops[k + d]) keep[k + d] = true; });
+            let html = '', gap = false;
+            ops.forEach((o, k) => {
+                if (!keep[k]) { gap = true; return; }
+                if (gap) { html += '<span class="dif-gap">⋯</span>'; gap = false; }
+                html += `<span class="${o.t === '+' ? 'dif-add' : o.t === '-' ? 'dif-del' : 'dif-ctx'}">${o.t === ' ' ? '  ' : o.t + ' '}${escapeHtml(o.s)}</span>`;
+            });
+            if (gap) html += '<span class="dif-gap">⋯</span>';
+            box.innerHTML = add || del ? html : '<span class="dif-ctx">The text is identical (only the packing differs).</span>';
+            document.getElementById('arcViewMeta').innerText = '+' + add + ' / −' + del + ' lines • ' + arcTarget.path + (ra.truncated || rb.truncated ? ' • only the first part of a large file is compared' : '');
+        }
+
         function onArchiveProgress(msg) {
+            if (signTarget && signTarget.busy) {
+                signTarget.status = msg;
+                const el = document.getElementById('signStatus');
+                if (el) { el.style.display = ''; el.innerText = msg; }
+                return;
+            }
             if (!arcBusy) return;
             const st = document.getElementById('arcStatus');
             st.style.display = '';
@@ -8554,7 +9456,7 @@ Type any command below (e.g. pm list packages -d)
             if (!r.ok) {
                 const wasAdd = arcLastOp && arcLastOp.op === 'add';
                 if (wasAdd && /already in the archive/.test(r.error || '') && confirm('“' + arcLastOp.to + '” is already in the archive. Replace it?')) {
-                    arcRunEdit(Object.assign({}, arcLastOp, { overwrite: true }));
+                    arcRunEdit(Object.assign({}, arcLastOp, { overwrite: true }), true);
                     return;
                 }
                 showToast(r.error || 'The archive job failed', '⚠️');
@@ -8562,10 +9464,13 @@ Type any command below (e.g. pm list packages -d)
                 return;
             }
             if (r.op === 'extract') {
-                showToast('Extracted ' + r.files + ' file' + (r.files === 1 ? '' : 's') + ' (' + arcSize(r.bytes) + ') to ' + r.dest + (r.skipped ? ' • ' + r.skipped + ' unsafe name(s) skipped' : ''), '📥');
+                showToast('Extracted ' + r.files + ' file' + (r.files === 1 ? '' : 's') + ' (' + arcSize(r.bytes) + ') to ' + r.dest + (r.skipped ? ' • ' + r.skipped + ' skipped' : ''), '📥');
+                if (r.problems && r.problems.length) showCommandResults('Archive', 'extract', [{ name: arc ? arc.name : '', pkg: arc ? arc.path : '', output: r.skipped + ' not extracted:\n' + r.problems.join('\n'), success: false }]);
                 return;
             }
+            arcCloseModal();                                 // it worked: the sheet (kept open for a retry) can go
             showToast(r.message || 'Done', '✔');
+            if (r.apk) arcNeedsSign = true;                  // the edit invalidated the APK's signature
             arcAfterEdit();
         }
 
@@ -8583,13 +9488,186 @@ Type any command below (e.g. pm list packages -d)
             if (arcDir && arcTotal === 0 && !arcQuery) arcUp();
         }
 
+        // ---- Sign an APK with the app's own key ----
+        // Android installs only a signed APK. Editing one in the archive browser invalidates its old signature, and the
+        // original author's key can't be had, so the APK is signed with a key made on this device (it lives in the Android
+        // Keystore and never leaves it). An installed copy with a different signer can't be updated over: uninstall first.
+        let signTarget = null;          // { path, name, info, busy, status, done }
+        let arcNeedsSign = false;       // the open APK was edited in this session
+
+        function signFp(h) {
+            return String(h || '').toUpperCase().replace(/(..)(?!$)/g, '$1:');
+        }
+
+        function arcSignBanner() {
+            const banner = document.getElementById('arcSignBanner');
+            const btn = document.getElementById('arcSignBtn');
+            if (banner) banner.style.display = (arc && arc.apk && arc.editable && !arc.nested && arcNeedsSign) ? '' : 'none';
+            if (btn) btn.style.display = (arc && arc.apk && !arc.nested) ? '' : 'none';
+        }
+
+        function signOpen(path) {
+            if (!path) return;
+            signTarget = { path, name: path.split('/').pop(), info: null, busy: false, status: '', done: null };
+            signRender();
+            document.getElementById('signModal').classList.add('show');
+            haptic();
+            if (window.AndroidBridge && window.AndroidBridge.archiveSignInfo) window.AndroidBridge.archiveSignInfo(path);
+        }
+
+        function onSignInfo(r) {
+            if (!signTarget || !r || r.path !== signTarget.path) return;
+            signTarget.info = r;
+            signRender();
+        }
+
+        function signRender() {
+            const t = signTarget;
+            if (!t) return;
+            const i = t.info;
+            document.getElementById('signName').innerText = t.name;
+            const rows = [];
+            const row = (k, v, cls, fp) => rows.push(`<div class="sign-row"><div class="sign-k">${k}</div><div class="sign-v ${cls || ''}">${v}</div>${fp ? `<div class="sign-fp">${escapeHtml(fp)}</div>` : ''}</div>`);
+            const key = (i && i.key) || {};
+            if (!i) {
+                row('Checking', 'Reading the APK…');
+            } else if (!i.ok) {
+                row('Problem', escapeHtml(i.error || 'This file could not be read'), 'bad');
+            } else {
+                if (i.pkg) row('App', escapeHtml((i.label ? i.label + ' · ' : '') + i.pkg) + (i.versionName ? ' · v' + escapeHtml(i.versionName) : ''));
+                else row('App', 'No package information could be read from this file', 'warn');
+                if (i.signed === true) row('Signature now', '✓ Valid', 'ok', signFp(i.signer));
+                else if (i.signed === false) row('Signature now', 'None, or no longer valid (the APK was edited)', 'warn');
+                else if (i.pkg) row('Signature now', 'Not checked (large file)');
+                if (i.installed === true) {
+                    if (i.keyMatchesInstalled) row('Installed copy', '✓ v' + escapeHtml(i.installedVersion || '?') + ' has the same signer as this app’s key, so it can be updated in place', 'ok');
+                    else row('Installed copy', '⚠️ v' + escapeHtml(i.installedVersion || '?') + ' is signed by someone else. Android refuses to update it with this app’s key: uninstall it first (its data is lost).', 'warn', signFp(i.installedSigner));
+                } else if (i.installed === false) {
+                    row('Installed copy', 'Not installed, so it installs fresh');
+                }
+                if (key.exists) row('Signing key', 'This app’s key · ' + (key.bits || 2048) + '-bit RSA · ' + (key.hardware ? 'in secure hardware' : 'in the Android Keystore'), '', signFp(key.sha256));
+                else row('Signing key', 'Made the first time you sign (kept in the Android Keystore, never exported)');
+            }
+            if (t.done) row('Result', '✓ Signed ' + escapeHtml(t.done.name) + ' (' + arcSize(t.done.size) + ')', 'ok', t.done.path);
+            document.getElementById('signRows').innerHTML = rows.join('');
+            const blocked = !!(i && i.editBlock);
+            const off = t.busy ? ' disabled' : '';
+            const btns = [];
+            if (t.done) btns.push(`<button class="batch-grid-btn accent" onclick="signInstall()">📦 Install it</button>`);
+            btns.push(`<button class="batch-grid-btn ${t.done ? '' : 'accent'}"${off || blocked ? ' disabled' : ''} onclick="signRun('inplace')">✍️ Sign in place</button>`);
+            btns.push(`<button class="batch-grid-btn"${off} onclick="signRun('copy')">💾 Save a signed copy</button>`);
+            if (key.exists) btns.push(`<button class="batch-grid-btn danger"${off} onclick="signNewKey()">🔑 New key…</button>`);
+            document.getElementById('signBtns').innerHTML = btns.join('');
+            const st = document.getElementById('signStatus');
+            st.style.display = t.busy ? '' : 'none';
+            if (t.busy) st.innerText = t.status || 'Working…';
+            document.getElementById('signNote').innerText = (blocked ? 'Signing in place is not possible here: ' + i.editBlock + ' ' : '')
+                + 'Signing uses APK Signature Scheme v2 and replaces any old signature. APKs signed with this key can update each other, but not an app signed by someone else.';
+        }
+
+        function signRun(mode) {
+            const t = signTarget;
+            if (!t || t.busy) return;
+            const br = window.AndroidBridge;
+            if (!br || !br.archiveSign) { showToast('Needs the app build', '⚠️'); return; }
+            if (mode === 'inplace' && t.info && t.info.signed === true && !confirm('“' + t.name + '” already has a valid signature. Signing in place replaces it, and the old one can not be restored. Continue?')) return;
+            const r = br.archiveSign(t.path, mode);
+            if (r === 'busy') { showToast('Another archive job is still running', '⏳'); return; }
+            t.busy = true;
+            t.done = null;
+            t.status = 'Working…';
+            signRender();
+        }
+
+        function onArchiveSigned(r) {
+            const t = signTarget;
+            if (t) { t.busy = false; t.status = ''; }
+            if (!r || !r.ok) {
+                showToast((r && r.error) || 'Signing failed', '⚠️');
+                showCommandResults('Sign APK', t ? t.name : '', [{ name: t ? t.name : '', pkg: t ? t.path : '', output: (r && r.error) || 'failed', success: false }]);
+                if (t) signRender();
+                return;
+            }
+            showToast('Signed ' + r.name, '✍️');
+            if (t) {
+                t.done = r;
+                if (t.info) {
+                    t.info.key = { ok: true, exists: true, sha256: r.sha256, hardware: r.hardware, bits: 2048 };
+                    if (r.inPlace) { t.info.signed = true; t.info.signer = r.sha256; }
+                    t.info.keyMatchesInstalled = t.info.installed === true && t.info.installedSigner === r.sha256;
+                }
+                signRender();
+            }
+            if (r.inPlace) {
+                arcNeedsSign = false;
+                if (arc && arc.path === r.path) arcAfterEdit();
+            } else if (!arc && typeof fmRefresh === 'function') {
+                fmRefresh();
+            }
+        }
+
+        function signInstall() {
+            const d = signTarget && signTarget.done;
+            if (!d) return;
+            let r;
+            try { r = JSON.parse(window.AndroidBridge.fmInstall(d.path)); } catch (e) { r = { ok: false, error: String(e && e.message || e) }; }
+            if (r.ok && r.ref) { signClose(); onInstallIntent(r.ref); }
+            else showToast((r && r.error) || 'Could not stage the APK', '⚠️');
+        }
+
+        function signNewKey() {
+            const t = signTarget;
+            if (!t || t.busy) return;
+            if (!confirm('Make a new signing key? An app you signed with the old key can then only be replaced by uninstalling it first.')) return;
+            if (window.AndroidBridge && window.AndroidBridge.signingKeyRegenerate) {
+                t.busy = true;
+                t.status = 'Making a new key…';
+                signRender();
+                window.AndroidBridge.signingKeyRegenerate();
+            }
+        }
+
+        function onSigningKey(r) {
+            const t = signTarget;
+            if (!t) return;
+            t.busy = false;
+            t.status = '';
+            if (!r || !r.ok) { showToast((r && r.error) || 'Could not make a key', '⚠️'); signRender(); return; }
+            showToast('New signing key made', '🔑');
+            t.done = null;
+            t.info = null;
+            signRender();
+            if (window.AndroidBridge && window.AndroidBridge.archiveSignInfo) window.AndroidBridge.archiveSignInfo(t.path);
+        }
+
+        function signClose() {
+            haptic();
+            document.getElementById('signModal').classList.remove('show');
+            signTarget = null;
+        }
+
         // ---- Logcat ----
         // The device returns plain `logcat -v threadtime` text. It is split into one entry per log call
         // (consecutive lines sharing time + pid + tid + level + tag - e.g. a stack trace - become one
         // block), then drawn as rows with a level badge, a level-colored message, and a tappable key.
         const LC_LEVELS = [['V', 'Verbose'], ['D', 'Debug'], ['I', 'Info'], ['W', 'Warn'], ['E', 'Error'], ['F', 'Fatal']];
-        const LC_RE = /^(\d{2}-\d{2})\s+(\d{2}:\d{2}:\d{2}\.\d{3})\s+(\d+)\s+(\d+)\s+([VDIWEF])\s+(.*?)\s*:\s?(.*)$/;
+        // Header, then everything after it split at the first colon by hand: one regex with "(.*?)\s*:" is cubic on a
+        // malformed line (a header followed by thousands of spaces and no colon froze the page for seconds).
+        const LC_HEAD = /^(\d{2}-\d{2})\s+(\d{2}:\d{2}:\d{2}\.\d{3})\s+(\d+)\s+(\d+)\s+([VDIWEF])\s+(.*)$/;
+        function lcMatch(raw) {
+            if (raw.length > 20000) return null;
+            const m = LC_HEAD.exec(raw);
+            if (!m) return null;
+            const rest = m[6], i = rest.indexOf(':');
+            if (i < 0) return null;
+            let msg = rest.slice(i + 1);
+            if (/^\s/.test(msg)) msg = msg.slice(1);
+            return [raw, m[1], m[2], m[3], m[4], m[5], rest.slice(0, i).replace(/\s+$/, ''), msg];
+        }
         const LC_MAX_ENTRIES = 2500;
+        const LC_VIEW_ROWS = 800;               // rows drawn at once; the rest is one tap away (2500 rows redrawn every second was the cost of Play)
+        let lcShowAll = false;
+        let lcLastText = null;                  // the last text drawn, so an unchanged poll costs nothing
         let logcatTimer = null;
         let logcatEntries = [];                 // parsed entries of the last fetch
         let logcatCounts = { V: 0, D: 0, I: 0, W: 0, E: 0, F: 0 };
@@ -8603,7 +9681,7 @@ Type any command below (e.g. pm list packages -d)
             String(text || '').split('\n').forEach(line => {
                 const raw = line.replace(/\r$/, '');
                 if (!raw.trim()) return;
-                const m = LC_RE.exec(raw);
+                const m = lcMatch(raw);
                 if (m) {
                     const date = m[1], time = m[2], pid = m[3], tid = m[4], lvl = m[5], tag = m[6], msg = m[7];
                     if (cur && cur.time === time && cur.pid === pid && cur.tid === tid && cur.lvl === lvl && cur.tag === tag) {
@@ -8641,13 +9719,14 @@ Type any command below (e.g. pm list packages -d)
             const key = document.getElementById('logcatKey');
             if (!key) return;
             key.innerHTML = LC_LEVELS.map(l =>
-                `<span class="lc-chip lvl-${l[0]}${logcatHidden.has(l[0]) ? ' off' : ''}" data-lvl="${l[0]}" role="button" tabindex="0" onclick="logcatToggleLevel('${l[0]}')" title="Tap to ${logcatHidden.has(l[0]) ? 'show' : 'hide'} ${l[1]} lines">` +
+                `<span class="lc-chip lvl-${l[0]}${logcatHidden.has(l[0]) ? ' off' : ''}" data-lvl="${l[0]}" role="button" tabindex="0" onclick="logcatToggleLevel('${l[0]}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();logcatToggleLevel('${l[0]}');}" title="Tap to ${logcatHidden.has(l[0]) ? 'show' : 'hide'} ${l[1]} lines">` +
                 `<span class="lc-dot"></span><span class="lc-name">${l[0]} · ${l[1]}</span><span class="lc-n">${logcatCounts[l[0]] || 0}</span></span>`
             ).join('');
         }
 
         function logcatToggleLevel(lvl) {
             haptic();
+            lcLastText = null;
             if (logcatHidden.has(lvl)) logcatHidden.delete(lvl); else logcatHidden.add(lvl);
             logcatRenderKey();
             logcatDraw(false);
@@ -8671,8 +9750,12 @@ Type any command below (e.g. pm list packages -d)
             const needle = (document.getElementById('logcatFilter').value || '').trim();
             const rx = needle ? new RegExp(needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'ig') : null;
             let entries = logcatEntries;
-            if (entries.length > LC_MAX_ENTRIES) entries = entries.slice(entries.length - LC_MAX_ENTRIES);
-            const html = entries.map(e => {
+            const cap = lcShowAll ? LC_MAX_ENTRIES : LC_VIEW_ROWS;
+            const total = entries.length;
+            if (entries.length > cap) entries = entries.slice(entries.length - cap);
+            const earlier = total > entries.length
+                ? `<div class="lc-meta" style="cursor:pointer;" onclick="lcShowAll = true; logcatDraw(false)">⬆ ${total - entries.length} earlier entr${total - entries.length === 1 ? 'y' : 'ies'} not shown · tap to show them</div>` : '';
+            const html = earlier + entries.map(e => {
                 if (e.kind === 'meta') return `<div class="lc-meta">${escapeHtml(e.text)}</div>`;
                 if (logcatHidden.has(e.lvl)) return '';
                 return `<div class="lc-row lvl-${e.lvl}">` +
@@ -8690,8 +9773,13 @@ Type any command below (e.g. pm list packages -d)
         function logcatRender(text, toBottom) {
             const t = String(text || '');
             // The bridge reports problems as plain text rather than log lines
-            if (!t.trim()) { logcatNotice('(no output)'); return; }
-            if (/^Error:/.test(t) || /^\(no matching/.test(t)) { logcatNotice(t.trim()); return; }
+            if (!t.trim()) { lcLastText = null; logcatNotice('(no output)'); return; }
+            if (/^Error:/.test(t) || /^\([^\n]*\)\s*$/.test(t)) { lcLastText = null; logcatNotice(t.trim()); return; }
+            if (t === lcLastText && logcatEntries.length) {          // nothing new since the last draw
+                if (toBottom) { const box = document.getElementById('logcatOutput'); if (box) box.scrollTop = box.scrollHeight; }
+                return;
+            }
+            lcLastText = t;
             logcatEntries = logcatParse(t);
             logcatCounts = { V: 0, D: 0, I: 0, W: 0, E: 0, F: 0 };
             logcatEntries.forEach(e => { if (e.kind === 'entry') logcatCounts[e.lvl] += e.lines.length; });
@@ -8702,16 +9790,43 @@ Type any command below (e.g. pm list packages -d)
         // The actual fetch, with no privilege prompt, so the live-poll loop can't spam the guard modal.
         // While live, a smaller tail keeps each (synchronous) shell call light so updates feel quicker.
         function logcatFetch(live) {
-            if (!window.AndroidBridge || !window.AndroidBridge.getLogcat) { logcatNotice('Logcat needs the app build.'); return; }
+            if (!window.AndroidBridge || !(window.AndroidBridge.getLogcatAsync || window.AndroidBridge.getLogcat)) { logcatNotice('Logcat needs the app build.'); return; }
             const level = document.getElementById('logcatLevel').value;
             let lines = parseInt(document.getElementById('logcatLines').value, 10) || 500;
             if (live) lines = Math.min(lines, 300);
             const filter = document.getElementById('logcatFilter').value || '';
-            const out = window.AndroidBridge.getLogcat(level, filter, lines);
+            if (window.AndroidBridge.getLogcatAsync) {
+                // fetched off the page's thread: a poll every second used to freeze the page for as long as adb took each time
+                if (live && lcPending && Date.now() - lcPending.at < 15000) return;       // the previous poll is still out
+                const id = ++lcReqSeq;
+                lcPending = { id, live, at: Date.now() };
+                try {
+                    window.AndroidBridge.getLogcatAsync(id, level, filter, lines, logcatApp ? logcatApp.pkg : '');
+                } catch (e) {
+                    lcPending = null;
+                    logcatNotice('Error: ' + String(e && e.message || e));
+                }
+                return;
+            }
+            const out = logcatApp && window.AndroidBridge.getLogcatFor
+                ? window.AndroidBridge.getLogcatFor(level, filter, lines, logcatApp.pkg)
+                : window.AndroidBridge.getLogcat(level, filter, lines);
             logcatRender(out, !live);
         }
+
+        let lcReqSeq = 0;
+        let lcPending = null;           // the request in flight: { id, live, at }
+        function onLogcatData(id, text) {
+            if (!lcPending || lcPending.id !== id) return;       // the answer to a request that was replaced
+            const live = lcPending.live;
+            lcPending = null;
+            logcatRender(text, !live);
+        }
+        window.onLogcatData = onLogcatData;
         function logcatRefresh() {
             if (!guardPrivilege('Logcat')) return;
+            lcLastText = null;
+            lcShowAll = false;
             logcatFetch(false);
         }
         function logcatTogglePlay() {
@@ -8720,11 +9835,14 @@ Type any command below (e.g. pm list packages -d)
             if (!guardPrivilege('Logcat')) return;
             btn.innerText = '⏸ Pause';
             btn.style.color = '#FFA726';
+            lcShowAll = false;
+            lcLastText = null;
             logcatFetch(true);
-            logcatTimer = setInterval(function () { logcatFetch(true); }, 1000);
+            logcatTimer = setInterval(function () { if (!document.hidden) logcatFetch(true); }, 1000);     // no polling while the app is in the background
         }
         function logcatStop() {
             if (logcatTimer) { clearInterval(logcatTimer); logcatTimer = null; }
+            if (lcPending && lcPending.live) lcPending = null;
             const btn = document.getElementById('logcatPlayBtn');
             if (btn) { btn.innerText = '▶ Play'; btn.style.color = '#4ADE80'; }
         }
@@ -8734,15 +9852,101 @@ Type any command below (e.g. pm list packages -d)
             // Clear the on-screen terminal directly (and the device buffer) - don't re-fetch, so it stays
             // visibly empty until the next Play/Refresh instead of instantly repopulating.
             if (window.AndroidBridge && window.AndroidBridge.clearLogcat) window.AndroidBridge.clearLogcat();
+            lcLastText = null;
             logcatNotice('(cleared)');
             showToast('Log cleared', '🧹');
         }
-        // Copies the original log lines (not the redrawn rows), skipping any level hidden via the key.
-        function logcatCopy() {
+        // The original log lines (not the redrawn rows), skipping any level hidden via the key.
+        function logcatLines() {
             const lines = [];
             logcatEntries.forEach(e => { if (e.kind === 'meta' || !logcatHidden.has(e.lvl)) e.raws.forEach(r => lines.push(r)); });
-            const txt = lines.join('\n') || document.getElementById('logcatOutput').innerText || '';
+            return lines;
+        }
+        function logcatCopy() {
+            const txt = logcatLines().join('\n') || document.getElementById('logcatOutput').innerText || '';
             if (window.AndroidBridge && window.AndroidBridge.copyToClipboard) { window.AndroidBridge.copyToClipboard(txt); showToast('Copied log', '📋'); }
+        }
+
+        // A text file for a bug report: a short header (when, which filters) and then the lines as shown.
+        function logcatReport() {
+            const lines = logcatLines();
+            if (!lines.length) return null;
+            const level = document.getElementById('logcatLevel');
+            const needle = (document.getElementById('logcatFilter').value || '').trim();
+            const hidden = LC_LEVELS.filter(l => logcatHidden.has(l[0])).map(l => l[1]);
+            const head = ['# ADB Application Manager - log export', '# ' + new Date().toString(),
+                '# Level: ' + level.options[level.selectedIndex].text + ' and above',
+                '# App: ' + (logcatApp ? logcatApp.name + ' (' + logcatApp.pkg + ')' : 'all apps')
+                    + (needle ? ' | Text filter: "' + needle + '"' : '') + (hidden.length ? ' | Hidden levels: ' + hidden.join(', ') : ''),
+                '# Lines: ' + lines.length, ''];
+            const stamp = new Date().toISOString().slice(0, 19).replace(/[-:T]/g, '');
+            const slug = logcatApp ? logcatApp.pkg.replace(/[^A-Za-z0-9._]/g, '_') : 'all';
+            return { name: 'logcat_' + slug + '_' + stamp + '.txt', text: head.concat(lines).join('\n') + '\n', count: lines.length };
+        }
+        function logcatSave() {
+            haptic();
+            const rep = logcatReport();
+            if (!rep) { showToast('Nothing to save: refresh the log first', 'ℹ️'); return; }
+            if (!window.AndroidBridge || !window.AndroidBridge.saveTextToDownloads) { showToast('Saving is only available in the app', 'ℹ️'); return; }
+            const res = window.AndroidBridge.saveTextToDownloads(rep.name, rep.text) || '';
+            showToast(/^Error/.test(res) ? res : 'Saved ' + rep.count + ' lines to ' + res, /^Error/.test(res) ? '⚠️' : '💾');
+        }
+        function logcatShare() {
+            haptic();
+            const rep = logcatReport();
+            if (!rep) { showToast('Nothing to share: refresh the log first', 'ℹ️'); return; }
+            shareFileViaBridge(rep.name, rep.text, 'text/plain');
+        }
+
+        // ---- log of one app ----
+        let logcatApp = null;           // { pkg, name } while the log is limited to one app
+
+        function logcatSetApp(app) {
+            logcatApp = app && app.pkg ? { pkg: app.pkg, name: app.name || app.pkg } : null;
+            const btn = document.getElementById('logcatAppBtn');
+            if (btn) btn.innerText = logcatApp ? '🎯 ' + logcatApp.name + ' ▾' : '🎯 All apps ▾';
+            const clr = document.getElementById('logcatAppClear');
+            if (clr) clr.style.display = logcatApp ? '' : 'none';
+            const sub = document.querySelector('#view-logcat .color-card-subtitle');
+            if (sub) sub.innerText = logcatApp ? 'Only the lines written by ' + logcatApp.pkg + ' (every process it has run as).' : 'Read the device log with ADB / Shizuku / Root.';
+            if (currentViewName() === 'logcat') logcatRefresh();
+        }
+
+        function lcAppOpen() {
+            haptic();
+            document.getElementById('lcAppSearch').value = '';
+            lcAppRender();
+            document.getElementById('lcAppModal').classList.add('show');
+        }
+        function lcAppClose() { haptic(); document.getElementById('lcAppModal').classList.remove('show'); }
+
+        let lcAppRows = [];
+        function lcAppRender() {
+            const q = (document.getElementById('lcAppSearch').value || '').trim().toLowerCase();
+            const rank = a => (a.isRunning ? 0 : 2) + (a.isSystem ? 1 : 0);
+            lcAppRows = (allApps || []).filter(a => !q || a.name.toLowerCase().includes(q) || a.pkg.toLowerCase().includes(q))
+                .sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name));
+            const shown = lcAppRows.slice(0, 120);
+            const rows = ['<div class="perm-row"><div class="perm-info" style="cursor:pointer;" onclick="lcAppPick(-1)"><div class="perm-name">All apps</div><div class="perm-sub">No app filter</div></div></div>'];
+            shown.forEach((a, i) => rows.push(`<div class="perm-row"><div class="perm-info" style="cursor:pointer;" onclick="lcAppPick(${i})"><div class="perm-name">${escapeHtml(a.name)}${a.isRunning ? ' <span style="color:var(--status-running);">● running</span>' : ''}</div><div class="perm-sub">${escapeHtml(a.pkg)}${a.isSystem ? ' • system' : ''}</div></div></div>`));
+            if (lcAppRows.length > shown.length) rows.push(`<div class="list-empty">Showing ${shown.length} of ${lcAppRows.length}. Type to narrow it down.</div>`);
+            if (!lcAppRows.length) rows.push('<div class="list-empty">No app matches.</div>');
+            document.getElementById('lcAppList').innerHTML = rows.join('');
+        }
+        function lcAppPick(i) {
+            lcAppClose();
+            logcatSetApp(i < 0 ? null : lcAppRows[i]);
+        }
+
+        // From the app sheet: the log of that app
+        function openAppLog() {
+            if (!inspectedPkg) return;
+            const a = inspectedApp();
+            const app = { pkg: inspectedPkg, name: a ? a.name : inspectedPkg };
+            closeInspector();
+            logcatApp = null;
+            switchView('logcat');
+            logcatSetApp(app);
         }
         logcatRenderKey();
 
@@ -8770,7 +9974,7 @@ Type any command below (e.g. pm list packages -d)
             if (!apps.length) { el.innerHTML = '<div class="list-empty">No user apps loaded yet.</div>'; return; }
             el.innerHTML = apps.map(a => `<div class="perm-row">
                 <div class="perm-info"><div class="perm-name">${escapeHtml(a.name)}</div><div class="perm-sub">${escapeHtml(a.pkg)}</div></div>
-                <button class="perm-toggle-btn granted" onclick='openInStore(${JSON.stringify(a.pkg)})'>Store</button>
+                <button class="perm-toggle-btn granted" data-pkg="${escapeHtml(a.pkg)}" onclick="openInStore(this.dataset.pkg)">Store</button>
             </div>`).join('');
         }
 
@@ -9636,28 +10840,255 @@ Type any command below (e.g. pm list packages -d)
         }
 
         // Terminal Console
-        function runTerminalCmd() {
-            if (rishActive) { rishSubmit(); return; }
+        function runTerminalCmd(override) {
+            if (rishActive) { rishSubmit(override); return; }
             const input = document.getElementById('termCmd');
-            const cmd = input.value.trim();
+            const cmd = (typeof override === 'string' ? override : input.value).trim();
             if (!cmd) return;
             haptic();
-            input.value = '';
+            if (typeof override !== 'string') input.value = '';
+            termRemember(cmd);
 
             const term = document.getElementById('termOutput');
+            if (termShellRun) { showToast('A command is still running. Wait for it to finish.', '⏳'); return; }
             clearFind(term);
-            term.innerHTML += `
-<span style="color:var(--text-main);">$ ${escapeHtml(cmd)}</span>
-`;
+            term.insertAdjacentHTML('beforeend', `<span style="color:var(--text-main);">$ ${escapeHtml(cmd).replace(/\n/g, '\n<span style="color:var(--text-muted);">&gt;</span> ')}</span>\n`);
 
+            if (window.AndroidBridge && window.AndroidBridge.executeShellAsync) {
+                // off the page's thread: the app stays usable while a slow command runs, and the answer is added when it comes
+                const id = 's' + (++termShellSeq);
+                termShellRun = { id, cmd };
+                term.insertAdjacentHTML('beforeend', '<span class="rish-note" id="termWait">⏳ running…\n</span>');
+                term.scrollTop = term.scrollHeight;
+                let st = '';
+                try { st = window.AndroidBridge.executeShellAsync(id, cmd); } catch (e) { st = ''; }
+                if (st !== 'started') onShellDone(id, 'Error: the command could not be started');
+                return;
+            }
             if (window.AndroidBridge) {
                 const res = window.AndroidBridge.executeShell(cmd) || '';
-                term.innerHTML += escapeHtml(res);
+                term.appendChild(document.createTextNode(res));
                 showCommandResults('Shell Command Result', cmd, [{ name: cmd, pkg: 'shell', output: res, success: true }]);
             }
             term.scrollTop = term.scrollHeight;
             if (document.getElementById('termSearch').value) termFind(0);
         }
+
+        let termShellRun = null;       // the command running in the normal terminal: { id, cmd }
+        let termShellSeq = 0;
+
+        function onShellDone(id, out) {
+            const run = termShellRun;
+            if (!run || run.id !== id) return;
+            termShellRun = null;
+            const term = document.getElementById('termOutput');
+            const wait = document.getElementById('termWait');
+            if (wait) wait.remove();
+            const res = String(out || '');
+            term.appendChild(document.createTextNode(res));
+            showCommandResults('Shell Command Result', run.cmd, [{ name: run.cmd, pkg: 'shell', output: res, success: true }]);
+            term.scrollTop = term.scrollHeight;
+            if (document.getElementById('termSearch').value) termFind(0);
+        }
+        window.onShellDone = onShellDone;
+
+        // ---------- Terminal: command history, saved commands, pinned chips ----------
+        // History keeps the last commands (any mode); Saved are named commands/scripts you keep, optionally pinned as
+        // one-tap chips in the terminal card. Both are stored in the app's settings.
+        const TERM_HIST_MAX = 80;
+        let termHistory = kvGet('term_hist', []);
+        let termSaved = kvGet('term_saved', []);
+        let termHistPos = -1;          // arrow-key position in history (-1 = not browsing)
+        let termModalMode = 'history';
+        let termEditIdx = -1;
+        let termEditDraft = '';        // starting text for a new saved command
+
+        function termRemember(cmd) {
+            if (!cmd || cmd.indexOf('\n') >= 0 || cmd.length > 600) return;     // scripts live under Saved
+            termHistory = [cmd].concat(termHistory.filter(c => c !== cmd)).slice(0, TERM_HIST_MAX);
+            kvSet('term_hist', termHistory);
+            termHistPos = -1;
+        }
+
+        function termKey(e) {
+            if (e.key === 'Enter') { runTerminalCmd(); return; }
+            if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                if (!termHistory.length) return;
+                e.preventDefault();
+                termHistPos = Math.max(-1, Math.min(termHistory.length - 1, termHistPos + (e.key === 'ArrowUp' ? 1 : -1)));
+                document.getElementById('termCmd').value = termHistPos < 0 ? '' : termHistory[termHistPos];
+            }
+        }
+
+        function termOpenModal(mode) {
+            termModalMode = mode;
+            haptic();
+            termRenderModal();
+            document.getElementById('termModal').classList.add('show');
+        }
+
+        function termOpenHistory() { termOpenModal('history'); }
+        function termOpenSaved() { termOpenModal('saved'); }
+
+        function termCloseModal() {
+            haptic();
+            document.getElementById('termModal').classList.remove('show');
+        }
+
+        function termRenderModal() {
+            const body = document.getElementById('termModalBody');
+            const icon = document.getElementById('termModalIcon');
+            const title = document.getElementById('termModalTitle');
+            const sub = document.getElementById('termModalSub');
+            if (termModalMode === 'history') {
+                icon.innerText = '🕘'; title.innerText = 'Command history';
+                sub.innerText = termHistory.length ? termHistory.length + ' recent command' + (termHistory.length === 1 ? '' : 's') + ' • tap to edit, ▶ to run' : '';
+                const q = (document.getElementById('termHistFilter') || {}).value || '';
+                const rows = termHistory.map((c, i) => ({ c, i })).filter(x => !q || x.c.toLowerCase().includes(q.toLowerCase()));
+                body.innerHTML = (termHistory.length > 6 ? `<input class="modal-text-input" id="termHistFilter" placeholder="Filter history…" value="${escapeHtml(q)}" oninput="termRenderModal()" autocomplete="off" autocapitalize="off" spellcheck="false" style="margin-bottom:6px;">` : '')
+                    + (rows.length ? rows.map(x => `<div class="term-row">
+                            <div class="term-row-main" onclick="termHistPick(${x.i})"><div class="term-row-cmd" style="color:var(--text-main);margin:0;">${escapeHtml(x.c)}</div></div>
+                            <button class="term-mini run" onclick="termHistRun(${x.i})" title="Run">▶</button>
+                            <button class="term-mini" onclick="termHistSave(${x.i})" title="Save">⭐</button>
+                            <button class="term-mini" onclick="termHistDelete(${x.i})" title="Remove">✕</button>
+                        </div>`).join('') : `<div class="list-empty">${termHistory.length ? 'Nothing matches.' : 'Commands you run show up here.'}</div>`)
+                    + (termHistory.length ? `<button class="mode-action-btn" style="width:100%; justify-content:center; margin-top:10px;" onclick="termHistClear()">🗑️ Clear history</button>` : '');
+                const f = document.getElementById('termHistFilter');
+                if (f && q) { f.focus(); f.setSelectionRange(q.length, q.length); }
+            } else if (termModalMode === 'saved') {
+                icon.innerText = '⭐'; title.innerText = 'Saved commands';
+                sub.innerText = 'Run in ' + (rishActive ? 'the Rish shell' : 'the current working mode');
+                body.innerHTML = `<button class="mode-action-btn primary" style="width:100%; justify-content:center; margin-bottom:6px;" onclick="termEditStart(-1)">＋ New saved command</button>`
+                    + (termSaved.length ? termSaved.map((x, i) => `<div class="term-row">
+                            <div class="term-row-main" onclick="termSavedRun(${i})">
+                                <div class="term-row-title">${x.pinned ? '📌 ' : ''}${escapeHtml(x.name)}</div>
+                                <div class="term-row-cmd">${escapeHtml(x.cmd)}</div>
+                            </div>
+                            <button class="term-mini run" onclick="termSavedRun(${i})" title="Run">▶</button>
+                            <button class="term-mini${x.pinned ? ' pinned' : ''}" onclick="termSavedPin(${i})" title="Pin as a chip">📌</button>
+                            <button class="term-mini" onclick="termEditStart(${i})" title="Edit">✏️</button>
+                        </div>`).join('') : `<div class="list-empty">Nothing saved yet. Save a command from the history (⭐), or tap “New saved command”. A script can have several lines.</div>`);
+            } else {
+                const x = termEditIdx >= 0 ? termSaved[termEditIdx] : { name: '', cmd: termEditDraft };
+                icon.innerText = '✏️'; title.innerText = termEditIdx >= 0 ? 'Edit saved command' : 'New saved command';
+                sub.innerText = 'Several lines are fine: the whole text runs as one script';
+                body.innerHTML = `<div class="switch-sub" style="margin-bottom:4px;">Name</div>
+                    <input class="modal-text-input" id="termEditName" value="${escapeHtml(x.name)}" placeholder="e.g. Disabled apps" autocomplete="off" spellcheck="false">
+                    <div class="switch-sub" style="margin:8px 0 4px;">Command</div>
+                    <textarea class="term-textarea" id="termEditCmd" spellcheck="false" autocapitalize="off" autocorrect="off" autocomplete="off" placeholder="pm list packages -d">${escapeHtml(x.cmd)}</textarea>
+                    <div style="display:flex; gap:10px; margin-top:10px;">
+                        <button class="mode-action-btn primary" style="flex:1; justify-content:center;" onclick="termEditSave()">💾 Save</button>
+                        ${termEditIdx >= 0 ? `<button class="mode-action-btn" style="background:var(--danger, #e5484d); padding:10px 14px;" onclick="termEditDelete()">🗑️</button>` : ''}
+                        <button class="mode-action-btn" style="padding:10px 16px;" onclick="termModalMode='saved'; termRenderModal()">Cancel</button>
+                    </div>`;
+            }
+        }
+
+        function termHistPick(i) {
+            const c = termHistory[i];
+            if (c == null) return;
+            const input = document.getElementById('termCmd');
+            input.value = c;
+            termCloseModal();
+            input.focus();
+        }
+
+        function termHistRun(i) {
+            const c = termHistory[i];
+            if (c == null) return;
+            termCloseModal();
+            runTerminalCmd(c);
+        }
+
+        function termHistSave(i) {
+            const c = termHistory[i];
+            if (c == null) return;
+            termEditIdx = -1;
+            termEditDraft = c;
+            termModalMode = 'edit';
+            termRenderModal();
+            document.getElementById('termEditName').value = c.length > 28 ? c.slice(0, 27) + '…' : c;
+        }
+
+        function termHistDelete(i) {
+            termHistory.splice(i, 1);
+            kvSet('term_hist', termHistory);
+            termRenderModal();
+        }
+
+        function termHistClear() {
+            if (!confirm('Clear the whole command history?')) return;
+            termHistory = [];
+            kvSet('term_hist', termHistory);
+            termRenderModal();
+        }
+
+        function termEditStart(i) {
+            termEditIdx = i;
+            if (i < 0) termEditDraft = document.getElementById('termCmd').value || '';
+            termModalMode = 'edit';
+            termRenderModal();
+            const n = document.getElementById('termEditName');
+            if (n) n.focus();
+        }
+
+        function termEditSave() {
+            const name = (document.getElementById('termEditName').value || '').trim();
+            const cmd = (document.getElementById('termEditCmd').value || '').replace(/\r\n/g, '\n').replace(/\s+$/, '');
+            if (!cmd.trim()) { showToast('Enter a command', '⚠️'); return; }
+            const entry = { name: name || (cmd.split('\n')[0].slice(0, 28)), cmd, pinned: termEditIdx >= 0 ? !!termSaved[termEditIdx].pinned : false };
+            if (termEditIdx >= 0) termSaved[termEditIdx] = entry; else termSaved.push(entry);
+            kvSet('term_saved', termSaved);
+            termRenderPins();
+            showToast('Saved “' + entry.name + '”', '⭐');
+            termModalMode = 'saved';
+            termRenderModal();
+        }
+
+        function termEditDelete() {
+            if (termEditIdx < 0) return;
+            if (!confirm('Delete “' + termSaved[termEditIdx].name + '”?')) return;
+            termSaved.splice(termEditIdx, 1);
+            kvSet('term_saved', termSaved);
+            termRenderPins();
+            termModalMode = 'saved';
+            termRenderModal();
+        }
+
+        function termSavedPin(i) {
+            const x = termSaved[i];
+            if (!x) return;
+            if (!x.pinned && termSaved.filter(y => y.pinned).length >= 6) { showToast('Up to 6 pinned chips', 'ℹ️'); return; }
+            x.pinned = !x.pinned;
+            kvSet('term_saved', termSaved);
+            termRenderPins();
+            termRenderModal();
+        }
+
+        function termSavedRun(i) {
+            const x = termSaved[i];
+            if (!x) return;
+            termCloseModal();
+            runTerminalCmd(x.cmd);
+        }
+
+        // Pinned saved commands become one-tap chips in the terminal card
+        function termRenderPins() {
+            const row = document.querySelector('#view-terminal .mode-btn-row');
+            if (!row) return;
+            row.querySelectorAll('.term-pin').forEach(b => b.remove());
+            termSaved.forEach((x, i) => {
+                if (!x.pinned) return;
+                const b = document.createElement('button');
+                b.className = 'apps-tool-btn term-pin';
+                b.textContent = '📌 ' + x.name;
+                b.title = x.cmd;
+                b.addEventListener('click', () => { haptic(); runTerminalCmd(x.cmd); });
+                row.appendChild(b);
+            });
+        }
+        document.addEventListener('DOMContentLoaded', () => termRenderPins());
+        if (document.readyState !== 'loading') termRenderPins();
 
         // ---------- Rish mode: a persistent Shizuku shell inside the terminal ----------
         // Tapping 🐚 Rish switches the working mode to Shizuku and opens ONE long-lived shell as the Shizuku
@@ -9703,10 +11134,18 @@ Type any command below (e.g. pm list packages -d)
             }
         }
 
+        // The normal terminal and the Rish shell share one output box, so ask the box itself rather than remembering.
+        function rishLineStart(term) {
+            const n = term.lastChild;
+            const t = n ? (n.textContent || '') : '';
+            rishEndsNl = !t || t.charAt(t.length - 1) === '\n';
+            return rishEndsNl;
+        }
+
         function rishNote(text) {
             const term = document.getElementById('termOutput');
             if (!term) return;
-            if (!rishEndsNl) term.appendChild(document.createTextNode('\n'));
+            if (!rishLineStart(term)) term.appendChild(document.createTextNode('\n'));
             rishEndsNl = true;
             term.insertAdjacentHTML('beforeend', '<span class="rish-note">' + escapeHtml(text) + '</span>\n');
             term.scrollTop = term.scrollHeight;
@@ -9728,7 +11167,7 @@ Type any command below (e.g. pm list packages -d)
             selectModeUI('shizuku', res => {
                 if (res && res.ok) { startRishShell(); return; }
                 const msg = String((res && res.message) || '');
-                if (/approve/i.test(msg)) { rishAwaitingAuth = true; return; }   // onShizukuPermissionResult continues
+                if (/approve/i.test(msg)) { rishAwaitingAuth = true; rishAwaitingAuthAt = Date.now(); return; }   // onShizukuPermissionResult continues
                 if (/not running/i.test(msg)) openShizukuAppUI();
             });
         }
@@ -9736,7 +11175,15 @@ Type any command below (e.g. pm list packages -d)
         function startRishShell() {
             rishStarting = true;
             rishSyncUi();
-            const st = String(window.AndroidBridge.rishStart() || '');
+            let st = '';
+            try {
+                st = String(window.AndroidBridge.rishStart() || '');
+            } catch (e) {
+                rishStarting = false;
+                rishSyncUi();
+                showToast('Could not start the Rish shell: ' + String(e && e.message || e), '⚠️');
+                return;
+            }
             if (st === 'not_authorized') {
                 rishStarting = false;
                 rishSyncUi();
@@ -9758,7 +11205,7 @@ Type any command below (e.g. pm list packages -d)
             rishPromptText = res.prompt || '$';
             const term = document.getElementById('termOutput');
             clearFind(term);
-            if (!rishEndsNl) term.appendChild(document.createTextNode('\n'));
+            if (!rishLineStart(term)) term.appendChild(document.createTextNode('\n'));
             rishEndsNl = true;
             term.insertAdjacentHTML('beforeend', '<span class="rish-note">' + escapeHtml(
                 (res.reused ? '🐚 Back in the open Rish shell' : '🐚 Rish shell ready') + ' — running as ' + rishWho() + ' through Shizuku.\n' +
@@ -9775,6 +11222,7 @@ Type any command below (e.g. pm list packages -d)
             const wasActive = rishActive;
             rishActive = false;
             rishRunning = false;
+            rishCurrentRun = null;
             rishStarting = false;
             rishAwaitingAuth = false;
             if (wasActive && note) rishNote(note);
@@ -9793,25 +11241,38 @@ Type any command below (e.g. pm list packages -d)
             showToast('Stopping the command…', '⏹');
         }
 
-        function rishSubmit() {
+        function rishSubmit(override) {
             const input = document.getElementById('termCmd');
-            const cmd = input.value.trim();
+            const cmd = (typeof override === 'string' ? override : input.value).trim();
             if (!cmd) return;
             if (rishRunning) { showToast('A command is still running. Tap STOP to end it.', '⏳'); return; }
             haptic();
-            input.value = '';
+            if (typeof override !== 'string') input.value = '';
+            termRemember(cmd);
             const term = document.getElementById('termOutput');
             clearFind(term);
             if (/^(clear|cls|reset)$/.test(cmd)) { term.textContent = ''; rishEndsNl = true; rishTermChars = 0; return; }
             rishStick = true;
             if (/^exit(\s+-?\d+)?$/.test(cmd)) { leaveRish('🐚 Left the Rish shell. The working mode is still Shizuku.'); return; }
-            if (!rishEndsNl) term.appendChild(document.createTextNode('\n'));
+            if (!rishLineStart(term)) term.appendChild(document.createTextNode('\n'));
             rishEndsNl = true;
-            term.insertAdjacentHTML('beforeend', '<span class="rish-prompt">' + escapeHtml(rishShortPrompt()) + '</span> ' + escapeHtml(cmd) + '\n');
+            term.insertAdjacentHTML('beforeend', '<span class="rish-prompt">' + escapeHtml(rishShortPrompt()) + '</span> ' + escapeHtml(cmd).replace(/\n/g, '\n<span class="rish-note">&gt;</span> ') + '\n');
             term.scrollTop = term.scrollHeight;
-            const st = window.AndroidBridge ? String(window.AndroidBridge.rishRun(cmd, 'r' + (++rishRunSeq)) || '') : 'no_shell';
-            if (st === 'ok') { rishRunning = true; rishSyncUi(); return; }
-            if (st === 'busy') { showToast('A command is still running. Tap STOP to end it.', '⏳'); return; }
+            const runId = 'r' + (++rishRunSeq);
+            let st = 'no_shell';
+            try {
+                if (window.AndroidBridge) st = String(window.AndroidBridge.rishRun(cmd, runId) || '');
+            } catch (e) { st = 'error'; }
+            if (st === 'ok') { rishRunning = true; rishCurrentRun = runId; rishSyncUi(); return; }
+            if (st === 'busy') {
+                // the shell is already running something (it started before the page was reloaded): show STOP, keep what was typed
+                rishRunning = true;
+                rishCurrentRun = null;
+                if (typeof override !== 'string') input.value = cmd;
+                rishNote('[a command is still running in the shell: tap STOP to end it, then run this again]');
+                rishSyncUi();
+                return;
+            }
             leaveRish('🐚 The Rish shell is no longer running.');
         }
 
@@ -9819,17 +11280,27 @@ Type any command below (e.g. pm list packages -d)
         // Appending a text node is cheap; the scroll is done once per frame, and the oldest output is trimmed so
         // a very chatty command cannot make the page heavy.
         function rishTrim(term) {
+            let excess = rishTermChars - RISH_TERM_KEEP;
+            if (excess <= 0) return;
             let n = term.firstChild;
             if (n && n.nodeType === 1 && n.classList.contains('rish-trim')) n = n.nextSibling;   // keep the marker
             let removed = 0;
-            while (n && n.nextSibling && rishTermChars > RISH_TERM_KEEP) {
-                const next = n.nextSibling;
+            while (n && excess > 0) {
                 const len = (n.textContent || '').length;
+                if (n.nodeType === 3 && len > excess) {          // one big text node (the box was normalized): cut just its front
+                    n.data = n.data.slice(excess);
+                    removed += excess;
+                    excess = 0;
+                    break;
+                }
+                const next = n.nextSibling;
+                if (!next) break;                                 // never drop the newest node whole
                 term.removeChild(n);
-                rishTermChars -= len;
+                excess -= len;
                 removed += len;
                 n = next;
             }
+            rishTermChars -= removed;
             const first = term.firstChild;
             if (removed && !(first && first.nodeType === 1 && first.classList.contains('rish-trim'))) {
                 const m = document.createElement('span');
@@ -9841,7 +11312,7 @@ Type any command below (e.g. pm list packages -d)
 
         function onRishOutput(runId, text) {
             const term = document.getElementById('termOutput');
-            if (!term || !text) return;
+            if (!term || !text || !rishActive) return;       // output of a shell that was left in the meantime is dropped
             term.appendChild(document.createTextNode(text));
             rishTermChars += text.length;
             rishEndsNl = text.charAt(text.length - 1) === '\n';
@@ -9861,18 +11332,22 @@ Type any command below (e.g. pm list packages -d)
 
         function onRishDone(runId, info) {
             if (!rishActive) return;          // the shell was closed while the command was running
+            // a result for a command of an earlier shell (left and re-entered meanwhile) must not touch this one
+            if (!rishRunning || (rishCurrentRun !== null && runId !== rishCurrentRun)) return;
             info = info || {};
             rishRunning = false;
+            rishCurrentRun = null;
             if (info.prompt) rishPromptText = info.prompt;
             let note = '';
             if (info.error) note = info.error;
+            else if (info.revived) note = 'the shell stopped itself on that' + (typeof info.exit === 'number' && info.exit >= 0 ? ' (exit ' + info.exit + ')' : '') + ' and was started again in ' + (info.cwd || '/') + ' (exported variables were reset)';
             else if (info.restarted) note = 'stopped: the command ignored the stop signal, so the shell was restarted (your folder was kept, exported variables were reset)';
             else if (info.timedOut) note = 'stopped after 10 minutes without finishing';
             else if (info.stopped) note = 'stopped';
             else if (!info.exited && typeof info.exit === 'number' && info.exit !== 0) note = 'exit ' + info.exit;
             if (note) {
                 rishNote('[' + note + ']');
-            } else if (!rishEndsNl) {
+            } else if (!rishLineStart(document.getElementById('termOutput'))) {
                 document.getElementById('termOutput').appendChild(document.createTextNode('\n'));
                 rishEndsNl = true;
             }

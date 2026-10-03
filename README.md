@@ -72,10 +72,24 @@ tell you when a new version is out (see [Updates](#updates)).
 | **Quick actions** | **Quick Settings tiles** and a **home-screen widget** to switch the working mode and force-stop a list of apps without opening the app |
 | **What's new** | The changelog is inside the app: it opens once after an update, and from Color &amp; Themes → About |
 | **Productivity** | Select and copy any text · copy buttons for package, version and name · **share sheet** for package lists, CSV, manifest, terminal output and APKs · **search with highlight and next/previous** in the manifest viewer and terminal · remembered filters and sort |
-| **Terminal** | Run shell commands through the active mode, with output search, copy and share · a searchable **📋 ADB cheat sheet** of ~90 commands you tap to drop into the input · input defaults to lower case (no auto-capitalize) |
+| **Terminal** | Run shell commands through the active mode (off the page's thread), with output search, copy and share · **🕘 history, ⭐ saved scripts and pinned chips** · **🐚 Rish mode**: a persistent Shizuku shell where `cd` and `export` stick, with a STOP that ends a command and its children · a searchable **📋 ADB cheat sheet** of ~90 commands you tap to drop into the input |
+| **Files** | Privileged file manager · **select many** and copy / move / delete together · open **.apk / .zip / .xapk / .jar … without extracting**, preview text, images and decoded Android XML, extract, rename, delete, add files and edit text in place · **install from inside an archive**, **open nested archives**, **compare two archives** · **sign an edited APK** on the device |
+| **Logcat** | Readable, **color-coded** log (one row per entry, tappable level key) · **limit it to one app** · save or share the filtered log as a bug-report text file |
 | **Modes** | ADB over TCP · Wireless Debugging (pairing and mDNS port detection) · Shizuku · Root · Automatic · Read-Only |
 | **Themes** | **Material 3** (default) · **Material You** (follows your wallpaper) · six more palettes · Light / Dark / System / Schedule · pure-black AMOLED option · per-mode color tuning |
 | **Security** | A **private ADB key is generated on each install** (nothing is bundled) · fingerprint shown in the app · signing-certificate comparison before every update |
+
+## New in v5.8
+
+- **↩️ A smarter Back button** — Back closes the open sheet, clears a selection, steps up a folder or out of an archive, goes to the previous tab, and only then asks you to press it again to exit.
+- **✍️ Sign the APKs you edit** — edit an APK in the archive browser, tap **Sign**, and it is signed on the device (APK Signature Scheme v2) with a key kept in the Android Keystore. Sign in place or save a `-signed` copy, see who signed what and whether it can update the installed app, and install it right away.
+- **📦 Archive browser: install, nest, compare** — install an APK from inside an archive, open archives inside archives, and **compare** two archives (or an archive and an installed app) with a line-by-line diff of changed text and compiled XML. Many archive-engine fixes: AES zips survive edits, ≥4 GB entries are refused instead of truncated, extraction is checksum-verified, CRX / self-extractors open, odd names are listed.
+- **🕘 Terminal history, saved scripts and pinned chips** — Up/Down and a history list, named commands and multi-line scripts, up to six pinned as one-tap buttons; works in normal and Rish mode. The terminal no longer freezes the page while a command runs.
+- **🐚 A sturdier Rish shell** — mistakes that make a shell quit are survived (it restarts in the same folder), **STOP** is Ctrl-C first and reaches the whole process tree, closing leaves nothing behind, and a runaway background job can't flood the screen.
+- **🎯 Logcat for one app + save / share** — pick an app (or tap **Logs** in its menu) to see only its lines, then save or share the filtered log as a bug-report file.
+- **☑ File manager: select many** — press and hold (or ☑ Select), then copy, move (via **Paste here**) or delete many files at once; conflicts ask first, failures are listed, system folders are protected.
+- **🛡️ Security hardening** — escaped app labels / file names / store fields, no `debuggable` release, backups off, a locked-down WebView.
+- **⚡ Faster** — the app list is drawn a page at a time, big-list search waits for a pause, logcat draws the latest 800 entries and polls off the page's thread, and the mode probe is cached.
 
 ## New in v5.7
 

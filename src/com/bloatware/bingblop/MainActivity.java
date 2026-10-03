@@ -99,6 +99,7 @@ public class MainActivity extends Activity {
     private final Shizuku.OnRequestPermissionResultListener shizukuPermissionListener = new Shizuku.OnRequestPermissionResultListener() {
         @Override
         public void onRequestPermissionResult(int requestCode, int grantResult) {
+            invalidateModeCache();
             if (requestCode != SHIZUKU_REQUEST_CODE) return;
             boolean granted = grantResult == PackageManager.PERMISSION_GRANTED;
             if (granted) {
@@ -182,13 +183,50 @@ public class MainActivity extends Activity {
                 pageReady = true;
                 deliverPendingInstall();
             }
+
+            // The page holds a powerful bridge (shell, files, installs), so it never navigates away from the
+            // bundled UI: a web link opens in the browser instead of loading inside this WebView.
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, android.webkit.WebResourceRequest request) {
+                Uri u = request.getUrl();
+                if (u.toString().startsWith("file:///android_asset/")) return false;
+                String scheme = u.getScheme();
+                if ("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme)) {
+                    try {
+                        startActivity(new Intent(Intent.ACTION_VIEW, u).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                    } catch (Exception ignored) {}
+                }
+                return true;
+            }
+
+            // If the WebView's renderer is killed (low memory), start over instead of crashing the app.
+            @Override
+            public boolean onRenderProcessGone(WebView view, android.webkit.RenderProcessGoneDetail detail) {
+                Log.w(TAG, "WebView renderer gone (crashed=" + detail.didCrash() + "), recreating");
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        recreate();
+                    }
+                });
+                return true;
+            }
         });
         webView.setBackgroundColor(0xFF080A0F);
 
-        WebView.setWebContentsDebuggingEnabled(true);
+        // Remote WebView debugging only for a debuggable build (the release build is not).
+        WebView.setWebContentsDebuggingEnabled((getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0);
 
         webView.addJavascriptInterface(new AndroidBridge(), "AndroidBridge");
         webView.loadUrl("file:///android_asset/index.html");
+        // Leftovers of archive browsing (nested archives, files staged for install) from a previous run
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                deleteContents(archiveNestedDir());
+                deleteContents(archiveStageDirLocal());
+            }
+        });
         registerWallpaperListener();
         handleIncomingIntent(getIntent());
         maybeRequestFirstLaunchPermissions();
@@ -397,7 +435,23 @@ public class MainActivity extends Activity {
         });
     }
 
+    // The mode probe is a few process spawns and a socket check, and the page asks for it on most view changes.
+    private static final Object modeCacheLock = new Object();
+    private static String modeCacheJson;
+    private static long modeCacheAt;
+    private static final long MODE_CACHE_MS = 2500;
+    private static boolean rootChecked;
+    private static boolean rootCached;
+    private static long rootCheckedAt;
+
+    private static void invalidateModeCache() {
+        synchronized (modeCacheLock) {
+            modeCacheJson = null;
+        }
+    }
+
     private void setConfiguredMode(String mode) {
+        invalidateModeCache();
         activeWorkingMode = (mode == null || mode.trim().isEmpty()) ? "auto" : mode.trim();
         cachedAutoMode = null;
         prefs.edit().putString("working_mode", activeWorkingMode).apply();
@@ -714,6 +768,7 @@ public class MainActivity extends Activity {
      * that mode becomes the configured mode (explicit user action). Otherwise the mode is untouched.
      */
     private String performConnect(String host, int port, String selectMode) {
+        invalidateModeCache();
         if (host == null || host.trim().isEmpty()) host = "127.0.0.1";
         host = host.trim();
         String target = host + ":" + port;
@@ -860,7 +915,13 @@ public class MainActivity extends Activity {
     private static final int RISH_FLUSH_CHARS = 24000;
     private static final long RISH_FLUSH_MS = 40;
 
+    private static final int RISH_IDLE_CHARS_PER_SEC = 200000;     // background-job output the page is sent per second at most
+
     private final Object rishGate = new Object();
+    private static String rishLastCwd = "";       // where the shell was last, so the next one opens there
+    private long rishIdleWindowAt;
+    private int rishIdleChars;
+    private boolean rishIdleDropped;
     private RishShell rishShell;           // guarded by rishGate
     private boolean rishStarting;          // guarded by rishGate
     private boolean rishRunning;           // guarded by rishGate
@@ -904,6 +965,33 @@ public class MainActivity extends Activity {
             return pb.start();
         }
         throw new IOException("Shizuku is not authorized for this app");
+    }
+
+    /**
+     * Output that arrives while no command is running (a background job). A runaway one (`yes &`) can produce tens of
+     * megabytes a second, so the page gets a bounded share and one note that the rest was dropped.
+     */
+    private void rishEmitIdle(String text) {
+        boolean notice = false;
+        synchronized (rishOut) {
+            long now = System.nanoTime() / 1000000L;
+            if (now - rishIdleWindowAt >= 1000) {
+                rishIdleWindowAt = now;
+                rishIdleChars = 0;
+                rishIdleDropped = false;
+            }
+            if (rishIdleChars >= RISH_IDLE_CHARS_PER_SEC) {
+                if (!rishIdleDropped) {
+                    rishIdleDropped = true;
+                    notice = true;
+                } else {
+                    return;
+                }
+            } else {
+                rishIdleChars += text.length();
+            }
+        }
+        rishEmit("", notice ? "\n[a background job is printing faster than this screen can show: output is being dropped]\n" : text);
     }
 
     /** Buffers shell output and sends it to the page a few times a second instead of once per read. */
@@ -980,12 +1068,23 @@ public class MainActivity extends Activity {
         for (String path : SU_PATHS) {
             if (new File(path).exists()) return true;
         }
+        // "no su" rarely changes (Magisk can be installed while the app runs): ask the shell once a minute, not on every probe
+        synchronized (modeCacheLock) {
+            if (rootChecked && System.nanoTime() / 1000000L - rootCheckedAt < 60000) return rootCached;
+        }
+        boolean found;
         try {
             Process p = Runtime.getRuntime().exec(new String[]{"sh", "-c", "command -v su"});
-            return p.waitFor() == 0;
+            found = p.waitFor() == 0;
         } catch (Exception e) {
-            return false;
+            found = false;
         }
+        synchronized (modeCacheLock) {
+            rootChecked = true;
+            rootCached = found;
+            rootCheckedAt = System.nanoTime() / 1000000L;
+        }
+        return found;
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -2330,6 +2429,32 @@ public class MainActivity extends Activity {
     private volatile List<XapkInfo.Extra> installExtras = new ArrayList<XapkInfo.Extra>();
     private volatile File installSourceZip = null;
 
+    private static final Object installInspectLock = new Object();
+
+    private static final Object fmBatchLock = new Object();
+    private static boolean fmBatchBusy;
+
+    private static String fmBatchLabel(String op) {
+        return "rm".equals(op) ? "Deleting" : "cp".equals(op) ? "Copying" : "Moving";
+    }
+
+    /** Places a batch delete / move must not touch: the root, any top-level folder, the user's whole storage, the system trees. */
+    private static boolean fmProtectedPath(String p) {
+        String c = p;
+        while (c.length() > 1 && c.endsWith("/")) c = c.substring(0, c.length() - 1);
+        if (c.isEmpty() || c.equals("/")) return true;
+        int depth = c.split("/").length - 1;                  // "/data" is 1
+        if (depth <= 1) return true;
+        if (c.equals("/storage/emulated") || c.equals("/storage/self") || c.equals("/storage/self/primary")) return true;
+        if (c.matches("/storage/emulated/[0-9]+") || c.matches("/storage/[^/]+") || c.matches("/mnt/[^/]+")) return true;      // a user's whole storage, an SD card or USB volume root
+        if (c.startsWith("/system/") || c.startsWith("/vendor/") || c.startsWith("/product/") || c.startsWith("/system_ext/")
+                || c.startsWith("/apex/") || c.startsWith("/odm/") || c.startsWith("/proc/") || c.startsWith("/sys/") || c.startsWith("/dev/")) {
+            return depth <= 2;
+        }
+        return c.equals("/data/data") || c.equals("/data/app") || c.equals("/data/user") || c.equals("/data/user_de") || c.equals("/data/media")
+                || c.equals("/data/misc") || c.equals("/data/system") || c.equals("/data/local") || c.equals("/data/local/tmp") || c.equals("/data/user/0");
+    }
+
     private void clearInstallerWorkDir() {
         installExtras = new ArrayList<XapkInfo.Extra>();
         installSourceZip = null;
@@ -2925,36 +3050,133 @@ public class MainActivity extends Activity {
     private static final int ARCHIVE_TEXT_LIMIT = 262144;            // preview / edit limit for text
     private static final int ARCHIVE_IMAGE_LIMIT = 4 * 1024 * 1024;
     private static final int ARCHIVE_AXML_LIMIT = 8 * 1024 * 1024;
-    private static final String ARCHIVE_STAGE = "/data/local/tmp/fm_archive.zip";
+    private static final String ARCHIVE_STAGE_DIR = "/data/local/tmp";
+    private static final String ARCHIVE_STAGE_PREFIX = "fm_archive_";
+    private static final long ARCHIVE_STAGE_MAX = 2L << 30;          // largest entry copied out to install / open
     private static final String[] ARCHIVE_NO_EDIT = {"/system/", "/product/", "/vendor/", "/system_ext/", "/apex/", "/odm/", "/data/app/"};
 
-    private final Object archiveLock = new Object();
-    private ZipTool.Archive archiveCache;      // the archive open in the file manager
-    private String archiveCachePath;           // the path the page asked for
-    private boolean archiveCacheStaged;        // true when archiveCache is a shell-staged copy
-    private boolean archiveBusy;               // an extract / edit job is running
+    private static final Object archiveLock = new Object();
+    private static boolean archiveBusy;        // an extract / edit / stage / compare / sign job is running (process-wide, so a re-created Activity can't start a second one)
+    private static boolean stageSwept;         // leftover shell-staged copies from an earlier run were removed
+
+    private static final class ArcSlot {
+        final ZipTool.Archive archive;
+        final String stagedPath;     // the shell-staged copy the archive was read from, or null when the real file is read directly
+        final String stamp;          // size:mtime of the real file when it was staged (to notice it changing underneath an edit)
+
+        ArcSlot(ZipTool.Archive archive, String stagedPath, String stamp) {
+            this.archive = archive;
+            this.stagedPath = stagedPath;
+            this.stamp = stamp;
+        }
+    }
+
+    private static final java.util.ArrayList<String> archiveEvictedStages = new java.util.ArrayList<String>();
+
+    /** The last two archives used (the open one and the one it is compared with / nested inside), by canonical path. */
+    private static final java.util.LinkedHashMap<String, ArcSlot> archiveSlots = new java.util.LinkedHashMap<String, ArcSlot>(4, 0.75f, true) {
+        @Override
+        protected boolean removeEldestEntry(java.util.Map.Entry<String, ArcSlot> eldest) {
+            if (size() <= 2) return false;
+            if (eldest.getValue().stagedPath != null) archiveEvictedStages.add(eldest.getValue().stagedPath);
+            return true;
+        }
+    };
+
+    private File archiveNestedDir() {
+        return new File(getCacheDir(), "archive_nested");
+    }
+
+    private File archiveStageDirLocal() {
+        return new File(getCacheDir(), "archive_stage");
+    }
+
+    private static void deleteContents(File dir) {
+        File[] kids = dir.listFiles();
+        if (kids == null) return;
+        for (File k : kids) {
+            if (k.isDirectory()) deleteContents(k);
+            k.delete();
+        }
+    }
+
+    private boolean archiveStaged(String canonicalPath) {
+        synchronized (archiveLock) {
+            ArcSlot s = archiveSlots.get(canonicalPath);
+            return s != null && s.stagedPath != null;
+        }
+    }
 
     /** The archive the page named: the file itself when this app can read it, else a copy staged through the shell. */
     private ZipTool.Archive archiveFor(String path, boolean fresh) throws Exception {
         String p = fmCanonicalPath(path);
         synchronized (archiveLock) {
-            if (!fresh && archiveCache != null && p.equals(archiveCachePath) && !archiveCache.isStale()) return archiveCache;
+            ArcSlot hit = fresh ? null : archiveSlots.get(p);
+            if (hit != null && !hit.archive.isStale()) return hit.archive;
             File f = new File(p);
             File use = f;
-            boolean staged = false;
+            String stagedPath = null, stamp = null;
+            ArcSlot old = archiveSlots.get(p);
             if (!(f.isFile() && f.canRead())) {
-                use = stageArchive(p);
-                staged = true;
+                String[] st = stageArchive(p);
+                stagedPath = st[0];
+                stamp = st[1];
+                use = new File(stagedPath);
             }
-            ZipTool.Archive a = ZipTool.open(use);
-            archiveCache = a;
-            archiveCachePath = p;
-            archiveCacheStaged = staged;
+            ZipTool.Archive a;
+            try {
+                a = ZipTool.open(use);
+            } catch (IOException | RuntimeException bad) {
+                if (stagedPath != null) deleteStagedFiles(java.util.Collections.singletonList(stagedPath));
+                throw bad;
+            }
+            archiveSlots.put(p, new ArcSlot(a, stagedPath, stamp));
+            java.util.ArrayList<String> gone = new java.util.ArrayList<String>(archiveEvictedStages);
+            archiveEvictedStages.clear();
+            if (old != null && old.stagedPath != null && !old.stagedPath.equals(stagedPath)) gone.add(old.stagedPath);
+            if (!gone.isEmpty()) deleteStagedFiles(gone);
             return a;
         }
     }
 
-    private File stageArchive(String p) throws Exception {
+    /** Forgets an archive that changed on disk, and removes the shell-staged copy it was read from. */
+    private void dropSlot(String canonicalPath) {
+        String staged = null;
+        synchronized (archiveLock) {
+            ArcSlot slot = archiveSlots.remove(canonicalPath);
+            if (slot != null) staged = slot.stagedPath;
+        }
+        if (staged != null) deleteStagedFiles(java.util.Collections.singletonList(staged));
+    }
+
+    /** A new name for each staging, so removing an old copy can never take a newer one with it. */
+    private static String newStagePath(String p) {
+        return ARCHIVE_STAGE_DIR + "/" + ARCHIVE_STAGE_PREFIX + Long.toHexString(System.nanoTime()) + "_" + Integer.toHexString(p.hashCode()) + ".zip";
+    }
+
+    /** "size:mtime" of a file as the shell sees it, or null when it can't be read. */
+    private String statStamp(String mode, String p) {
+        try {
+            String out = shellVia(mode, "stat -c %s:%Y " + BackupScripts.quote(p) + " 2>&1");
+            for (String line : out.split("\n")) if (line.trim().matches("[0-9]+:[0-9]+")) return line.trim();
+        } catch (Exception ignored) {}
+        return null;
+    }
+
+    /** Throws when a staged archive's real file changed after it was staged, so an edit can't overwrite those changes. */
+    private void requireUnchanged(String p) throws Exception {
+        ArcSlot slot;
+        synchronized (archiveLock) {
+            slot = archiveSlots.get(p);
+        }
+        if (slot == null || slot.stagedPath == null || slot.stamp == null) return;
+        String now = statStamp(resolveExecMode(), p);
+        if (now != null && !now.equals(slot.stamp)) {
+            throw new IOException("This file changed after it was opened. Close it and open it again, then redo the edit.");
+        }
+    }
+
+    private String[] stageArchive(String p) throws Exception {
         String mode = resolveExecMode();
         if ("standard".equals(mode)) {
             throw new IOException("Can't read this file. For storage, grant All-files access; for system folders, set up ADB, Shizuku or Root.");
@@ -2965,17 +3187,37 @@ public class MainActivity extends Activity {
         if (size > (3L << 30)) {
             throw new IOException("This file is " + XapkInfo.humanBytes(size) + ", too large to open through the shell. Copy it to storage first.");
         }
-        String out = shellVia(mode, "cp " + BackupScripts.quote(p) + " " + ARCHIVE_STAGE + " && chmod 644 " + ARCHIVE_STAGE + " && echo OK");
-        if (out == null || !out.contains("OK")) throw new IOException(out == null || out.trim().isEmpty() ? "copy failed" : out.trim());
-        File f = new File(ARCHIVE_STAGE);
-        if (!f.canRead()) throw new IOException("The shell copied the file, but this app can't read " + ARCHIVE_STAGE);
-        return f;
+        String stage = newStagePath(p);
+        String sweep = "";
+        synchronized (archiveLock) {
+            if (!stageSwept) {          // the first staging of this run: copies a killed earlier run left behind go first
+                stageSwept = true;
+                sweep = "rm -f " + ARCHIVE_STAGE_DIR + "/" + ARCHIVE_STAGE_PREFIX + "*.zip; ";
+            }
+        }
+        String out = shellVia(mode, sweep + "cp " + BackupScripts.quote(p) + " " + stage + " && chmod 644 " + stage + " && stat -c %s:%Y " + BackupScripts.quote(p) + " && echo OK");
+        if (out == null || !out.contains("OK")) {
+            deleteStagedFiles(java.util.Collections.singletonList(stage));
+            throw new IOException(out == null || out.trim().isEmpty() ? "copy failed" : out.trim());
+        }
+        String stamp = null;
+        for (String line : out.split("\n")) if (line.trim().matches("[0-9]+:[0-9]+")) stamp = line.trim();
+        File f = new File(stage);
+        if (!f.canRead()) {
+            deleteStagedFiles(java.util.Collections.singletonList(stage));
+            throw new IOException("The shell copied the file, but this app can't read " + stage);
+        }
+        return new String[]{stage, stamp};
     }
 
     /** Null when the archive can be edited and written back, else why not. */
     private String archiveEditBlock(String p) {
+        String canon = p;
+        try {
+            canon = new File(p).getCanonicalPath();           // resolves ".." and symlinks, so a path can't sidestep the list below
+        } catch (IOException ignored) {}
         for (String s : ARCHIVE_NO_EDIT) {
-            if (p.startsWith(s)) return "Installed and system packages can't be edited in place. Copy it to storage first.";
+            if (p.startsWith(s) || canon.startsWith(s)) return "Installed and system packages can't be edited in place. Copy it to storage first.";
         }
         File f = new File(p);
         File dir = f.getParentFile();
@@ -3003,7 +3245,12 @@ public class MainActivity extends Activity {
             File dir = d.getParentFile();
             if (dir != null && (dir.isDirectory() || dir.mkdirs()) && dir.canWrite()) {
                 File tmp = new File(dir, "." + d.getName() + ".copy-tmp");
-                copyFile(src, tmp);
+                try {
+                    copyFile(src, tmp);
+                } catch (IOException ioe) {
+                    tmp.delete();                       // no half-written hidden file left behind
+                    throw ioe;
+                }
                 if (!tmp.renameTo(d)) {
                     tmp.delete();
                     return "Couldn't replace " + dest;
@@ -3044,7 +3291,7 @@ public class MainActivity extends Activity {
         if ("shizuku".equals(mode)) {
             InputStream in = new java.io.FileInputStream(src);
             try {
-                String out = shizukuPipe("mkdir -p " + BackupScripts.quote(dir) + " && cat > " + qt + " && mv -f " + qt + " " + qd + " && echo COPY_OK", in);
+                String out = shizukuPipe("{ mkdir -p " + BackupScripts.quote(dir) + " && cat > " + qt + " && mv -f " + qt + " " + qd + " && echo COPY_OK; } || rm -f " + qt, in);
                 return out != null && out.contains("COPY_OK") ? null : (out == null || out.trim().isEmpty() ? "copy failed" : out.trim());
             } finally { in.close(); }
         }
@@ -3054,14 +3301,17 @@ public class MainActivity extends Activity {
             if (!isAdbTargetConnected(target)) performConnect(tcp ? adbTcpHost : adbWirelessHost, tcp ? adbTcpPort : adbWirelessPort, null);
             shellVia(mode, "mkdir -p " + BackupScripts.quote(dir));
             String out = runProcessWithTimeout(buildAdbProcess("-s", target, "push", src.getAbsolutePath(), tmpDest), 3600000);
-            if (out == null || !out.toLowerCase(java.util.Locale.US).contains("pushed")) return out == null || out.trim().isEmpty() ? "push failed" : out.trim();
-            String mv = shellVia(mode, "mv -f " + qt + " " + qd + " && echo COPY_OK");
+            if (out == null || !out.toLowerCase(java.util.Locale.US).contains("pushed")) {
+                try { shellVia(mode, "rm -f " + qt); } catch (Exception ignored) {}
+                return out == null || out.trim().isEmpty() ? "push failed" : out.trim();
+            }
+            String mv = shellVia(mode, "mv -f " + qt + " " + qd + " && echo COPY_OK || rm -f " + qt);
             return mv != null && mv.contains("COPY_OK") ? null : (mv == null || mv.trim().isEmpty() ? "move failed" : mv.trim());
         }
         if ("root".equals(mode)) {
             src.setReadable(true, false);
-            ProcessBuilder pb = new ProcessBuilder("su", "-c", "mkdir -p " + BackupScripts.quote(dir) + " && cp " + BackupScripts.quote(src.getAbsolutePath())
-                    + " " + qt + " && mv -f " + qt + " " + qd + " && echo COPY_OK");
+            ProcessBuilder pb = new ProcessBuilder("su", "-c", "{ mkdir -p " + BackupScripts.quote(dir) + " && cp " + BackupScripts.quote(src.getAbsolutePath())
+                    + " " + qt + " && mv -f " + qt + " " + qd + " && echo COPY_OK; } || rm -f " + qt);
             pb.redirectErrorStream(true);
             String out = runProcessWithTimeout(pb, 3600000);
             return out != null && out.contains("COPY_OK") ? null : (out == null || out.trim().isEmpty() ? "copy failed" : out.trim());
@@ -3069,8 +3319,63 @@ public class MainActivity extends Activity {
         return "needs ADB, Shizuku or Root";
     }
 
+    private static JSONObject signingKeyJson(SigningKey k) throws Exception {
+        JSONObject o = new JSONObject().put("ok", true).put("exists", k != null);
+        if (k != null) {
+            o.put("sha256", k.sha256()).put("subject", k.subject()).put("created", k.created).put("hardware", k.hardware).put("bits", k.bits);
+        }
+        return o;
+    }
+
+    /** Where "save a signed copy" goes: next to the file, or Downloads when that folder is not one we may write to. */
+    private static String signedCopyPath(String p) {
+        File f = new File(p);
+        String base = f.getName();
+        if (base.toLowerCase(java.util.Locale.US).endsWith(".apk")) base = base.substring(0, base.length() - 4);
+        if (!base.endsWith("-signed")) base += "-signed";
+        String dir = f.getParent();
+        boolean blocked = dir == null;
+        for (String s : ARCHIVE_NO_EDIT) if (p.startsWith(s)) blocked = true;
+        if (blocked) dir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS).getAbsolutePath();
+        return dir + "/" + base + ".apk";
+    }
+
+    private static final long SIGN_CHECK_MAX = 1536L << 20;       // larger APKs skip the (slow) signature read-back
+
+    /** Refuses to extract a file onto the archive it is being read from (a staged archive's real path included). */
+    private void requireNotArchive(String archivePath, File target) throws IOException {
+        if (target.getCanonicalPath().equals(new File(fmCanonicalPath(archivePath)).getCanonicalPath())) {
+            throw new IOException("That would overwrite the archive itself. Pick another folder.");
+        }
+    }
+
     private void notifyArchiveProgress(String msg) {
         notifyJs("window.onArchiveProgress && window.onArchiveProgress(" + JSONObject.quote(msg) + ")");
+    }
+
+    private static JSONArray diffJson(List<ZipTool.DiffItem> items) throws Exception {
+        JSONArray arr = new JSONArray();
+        for (ZipTool.DiffItem i : items) arr.put(new JSONObject().put("p", i.name).put("a", i.sizeA).put("b", i.sizeB));
+        return arr;
+    }
+
+    /** Removes specific shell-staged archive copies (they live in /data/local/tmp, which this app can't delete from). */
+    private void deleteStagedFiles(final java.util.List<String> paths) {
+        final StringBuilder cmd = new StringBuilder();
+        for (String sp : paths) {
+            if (sp != null && sp.startsWith(ARCHIVE_STAGE_DIR + "/" + ARCHIVE_STAGE_PREFIX) && sp.matches("[A-Za-z0-9_./]+")) {
+                cmd.append(cmd.length() == 0 ? "rm -f " : " ").append(sp);
+            }
+        }
+        if (cmd.length() == 0) return;
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    shellVia(resolveExecMode(), cmd.toString());
+                } catch (Throwable ignored) {}
+            }
+        });
     }
 
     private static JSONObject archiveEntryJson(ZipTool.Entry e) throws Exception {
@@ -4421,6 +4726,24 @@ public class MainActivity extends Activity {
         /** Read-only status report. Never connects, reconnects or changes the configured mode. */
         @JavascriptInterface
         public String getWorkingMode() {
+            synchronized (modeCacheLock) {
+                if (modeCacheJson != null && System.nanoTime() / 1000000L - modeCacheAt < MODE_CACHE_MS) return modeCacheJson;
+            }
+            return getWorkingModeFresh();
+        }
+
+        /** Like getWorkingMode, but always probes (an explicit "check now" or right after something changed). */
+        @JavascriptInterface
+        public String getWorkingModeFresh() {
+            String json = probeWorkingMode();
+            synchronized (modeCacheLock) {
+                modeCacheJson = json;
+                modeCacheAt = System.nanoTime() / 1000000L;
+            }
+            return json;
+        }
+
+        private String probeWorkingMode() {
             try {
                 JSONObject obj = new JSONObject();
                 String devices = adbDevicesOutput();
@@ -4552,6 +4875,41 @@ public class MainActivity extends Activity {
             return res.toString();
         }
 
+        /**
+         * Runs a command without blocking the page (a hung or slow one used to freeze every tap until it ended).
+         * Returns "started"; the output arrives as window.onShellDone(runId, text).
+         */
+        @JavascriptInterface
+        public String executeShellAsync(final String runId, final String cmd) {
+            final String id = runId == null ? "" : runId;
+            executor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    String out;
+                    try {
+                        out = executeShell(cmd);
+                    } catch (Throwable t) {
+                        out = "Error: " + errMsg(t);
+                    }
+                    notifyJs("window.onShellDone && window.onShellDone(" + JSONObject.quote(id) + "," + JSONObject.quote(out == null ? "" : out) + ")");
+                }
+            });
+            return "started";
+        }
+
+        /** The log, fetched off the page's thread. The answer arrives as window.onLogcatData(id, text). */
+        @JavascriptInterface
+        public String getLogcatAsync(final int id, final String level, final String filter, final int lines, final String pkg) {
+            executor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    String out = logcatImpl(level, filter, lines, pkg == null || pkg.isEmpty() ? null : pkg);
+                    notifyJs("window.onLogcatData && window.onLogcatData(" + id + "," + JSONObject.quote(out == null ? "" : out) + ")");
+                }
+            });
+            return "started";
+        }
+
         @JavascriptInterface
         public String executeShell(String cmd) {
             if (cmd == null || cmd.trim().isEmpty()) return "";
@@ -4620,12 +4978,20 @@ public class MainActivity extends Activity {
                             sh.setIdleSink(new RishShell.Sink() {
                                 @Override
                                 public void onOutput(String text) {
-                                    rishEmit("", text);
+                                    rishEmitIdle(text);
                                 }
                             });
-                            sh.start();
                             synchronized (rishGate) {
-                                rishShell = sh;
+                                rishShell = sh;            // reachable by close() (and onDestroy) while it is still starting
+                            }
+                            try {
+                                sh.start(rishLastCwd.isEmpty() ? null : rishLastCwd);
+                            } catch (Throwable failed) {
+                                synchronized (rishGate) {
+                                    if (rishShell == sh) rishShell = null;
+                                }
+                                sh.close();
+                                throw failed;
                             }
                         }
                         res.put("ok", true);
@@ -4653,7 +5019,7 @@ public class MainActivity extends Activity {
         /**
          * Runs one command in the Rish shell. Returns "ok", "busy" (one is already running) or "no_shell".
          * Output streams to window.onRishOutput(runId, text); the end arrives as window.onRishDone(runId, json)
-         * with exit, cwd, prompt, exited, stopped, timedOut, restarted (or error).
+         * with exit, cwd, prompt, exited, stopped, timedOut, restarted, revived (or error).
          */
         @JavascriptInterface
         public String rishRun(final String cmd, final String runId) {
@@ -4693,6 +5059,8 @@ public class MainActivity extends Activity {
                         done.put("stopped", r.stopped);
                         done.put("timedOut", r.timedOut);
                         done.put("restarted", r.restarted);
+                        done.put("revived", r.revived);
+                        if (r.cwd != null && !r.exited) rishLastCwd = r.cwd;
                     } catch (Throwable t) {
                         try {
                             done.put("error", errMsg(t));
@@ -5623,7 +5991,9 @@ public class MainActivity extends Activity {
                 public void run() {
                     JSONObject res;
                     try {
-                        res = inspectInstallSourceImpl(ref);
+                        synchronized (installInspectLock) {       // two overlapping runs would share (and clear) the same work folder
+                            res = inspectInstallSourceImpl(ref);
+                        }
                     } catch (Exception e) {
                         res = new JSONObject();
                         try { res.put("error", e.getMessage() != null ? e.getMessage() : "could not read this package"); } catch (Exception ignored) {}
@@ -5745,23 +6115,73 @@ public class MainActivity extends Activity {
         /** Recent logcat lines. level=V/D/I/W/E/F, filter=optional text grepped in-process, lines=tail count. */
         @JavascriptInterface
         public String getLogcat(String level, String filter, int lines) {
+            return logcatImpl(level, filter, lines, null);
+        }
+
+        /** Like getLogcat, but only the lines written by one app (every process it has run as, matched by its user id). */
+        @JavascriptInterface
+        public String getLogcatFor(String level, String filter, int lines, String pkg) {
+            return logcatImpl(level, filter, lines, pkg);
+        }
+
+        private String logcatImpl(String level, String filter, int lines, String pkg) {
             try {
                 if ("standard".equals(resolveExecMode())) return "Error: reading logcat needs ADB, Shizuku or Root.";
                 String lv = (level == null || !level.matches("[VDIWEF]")) ? "V" : level;
                 int n = (lines <= 0 || lines > 5000) ? 500 : lines;
-                String out = executeShell("logcat -d -v threadtime -t " + n + " *:" + lv);
-                if (out == null) out = "";
-                // The filter is applied here, never in the shell, so it can't inject anything.
-                if (filter != null && !filter.trim().isEmpty()) {
-                    String f = filter.toLowerCase();
-                    StringBuilder sb = new StringBuilder();
-                    for (String line : out.split("\n")) if (line.toLowerCase().contains(f)) sb.append(line).append('\n');
-                    out = sb.toString();
+                String scope = "";
+                String note = "";
+                int fetch = n;
+                int uid = -1;
+                if (pkg != null && !pkg.trim().isEmpty()) {
+                    pkg = pkg.trim();
+                    if (!pkg.matches("[A-Za-z0-9._]+")) return "Error: invalid package name";
+                    try {
+                        uid = getPackageManager().getApplicationInfo(pkg, 0).uid;
+                    } catch (PackageManager.NameNotFoundException nf) {
+                        return "Error: " + pkg + " is not installed.";
+                    }
+                    scope = " --uid=" + uid;
+                    fetch = Math.min(5000, n * 5);            // the tail is cut before the app filter on some versions, so read more
+                    String[] sharing = getPackageManager().getPackagesForUid(uid);
+                    if (sharing != null && sharing.length > 1) note = "note: " + pkg + " shares its user ID with " + (sharing.length - 1) + " other package(s), so their lines appear too\n";
                 }
-                return out.trim().isEmpty() ? "(no matching log lines)" : out;
+                String out = executeShell("logcat -d -v threadtime -t " + fetch + scope + " *:" + lv);
+                if (out == null) out = "";
+                if (!scope.isEmpty() && isLogcatUsageError(out)) {
+                    // an older logcat without --uid: follow the app's current process instead
+                    String pidOut = executeShell("pidof -s " + pkg);
+                    String pid = pidOut == null ? "" : pidOut.trim().split("\\s+")[0];
+                    if (!pid.matches("[0-9]+")) return "(" + pkg + " is not running, so there are no log lines to show)";
+                    out = executeShell("logcat -d -v threadtime -t " + fetch + " --pid=" + pid + " *:" + lv);
+                    if (out == null) out = "";
+                    note = "note: this Android version can't filter by app, so only the running process (pid " + pid + ") is shown\n";
+                }
+                // The filter is applied here, never in the shell, so it can't inject anything.
+                String[] all = out.split("\n");
+                java.util.ArrayList<String> keep = new java.util.ArrayList<String>();
+                String f = filter == null ? "" : filter.trim().toLowerCase();
+                for (String line : all) {
+                    if (line.isEmpty()) continue;
+                    if (f.isEmpty() || line.toLowerCase().contains(f)) keep.add(line);
+                }
+                int from = Math.max(0, keep.size() - n);
+                StringBuilder sb = new StringBuilder();
+                for (int i = from; i < keep.size(); i++) sb.append(keep.get(i)).append('\n');
+                String res = sb.toString();
+                if (res.trim().isEmpty()) return pkg != null && !pkg.isEmpty() ? "(no matching log lines from " + pkg + ")" : "(no matching log lines)";
+                return note + res;
             } catch (Exception e) {
                 return "Error: " + (e.getMessage() != null ? e.getMessage() : "logcat failed");
             }
+        }
+
+        private boolean isLogcatUsageError(String out) {
+            if (out == null) return false;
+            String head = out.length() > 400 ? out.substring(0, 400) : out;
+            String low = head.toLowerCase(java.util.Locale.US);
+            return low.contains("unrecognized option") || low.contains("unknown option") || low.contains("invalid option")
+                    || low.contains("unknown argument") || low.startsWith("usage:") || low.contains("\nusage:");
         }
 
         @JavascriptInterface
@@ -5921,6 +6341,94 @@ public class MainActivity extends Activity {
             return res.toString();
         }
 
+        /**
+         * Deletes ("rm"), copies ("cp") or moves ("mv") many files and folders in a few commands instead of one per item
+         * (destDir is where cp / mv put them). Returns "started" or "busy"; progress arrives as window.onFmBatchProgress(text)
+         * and the end as window.onFmBatchDone(json) with op, ok, total, done and failed: [{p, error}].
+         */
+        @JavascriptInterface
+        public String fmBatch(final String op, final String pathsJson, final String destDir) {
+            synchronized (fmBatchLock) {
+                if (fmBatchBusy) return "busy";
+                fmBatchBusy = true;
+            }
+            executor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject res = new JSONObject();
+                    try {
+                        res.put("op", op);
+                        if ("standard".equals(resolveExecMode())) throw new IOException("This needs ADB, Shizuku or Root.");
+                        if (!"rm".equals(op) && !"cp".equals(op) && !"mv".equals(op)) throw new IOException("Unknown operation: " + op);
+                        JSONArray in = new JSONArray(pathsJson);
+                        List<String> paths = new ArrayList<String>();
+                        for (int i = 0; i < in.length() && paths.size() < 5000; i++) {
+                            String q = fmCanonicalPath(in.optString(i, ""));
+                            if (!q.isEmpty() && !paths.contains(q)) paths.add(q);
+                        }
+                        if (paths.isEmpty()) throw new IOException("Nothing selected");
+                        String dest = "";
+                        if (!"rm".equals(op)) {
+                            dest = fmCanonicalPath(destDir == null ? "" : destDir.trim());
+                            if (dest.isEmpty() || dest.equals("/")) throw new IOException("Choose a destination folder");
+                        }
+                        JSONArray failed = new JSONArray();
+                        List<String> todo = new ArrayList<String>();
+                        for (String q : paths) {
+                            if (fmProtectedPath(q)) failed.put(new JSONObject().put("p", q).put("error", "System location: not touched"));
+                            else if (!"rm".equals(op) && (dest.equals(q) || dest.startsWith(q + "/"))) failed.put(new JSONObject().put("p", q).put("error", "Can't put a folder inside itself"));
+                            else todo.add(q);
+                        }
+                        int done = 0;
+                        String qd = BackupScripts.quote(dest);
+                        final int chunk = 40;
+                        for (int from = 0; from < todo.size(); from += chunk) {
+                            List<String> part = todo.subList(from, Math.min(todo.size(), from + chunk));
+                            notifyJs("window.onFmBatchProgress && window.onFmBatchProgress(" + JSONObject.quote(fmBatchLabel(op) + " " + Math.min(todo.size(), from + chunk) + " of " + todo.size() + "…") + ")");
+                            StringBuilder args = new StringBuilder();
+                            for (String q : part) args.append(' ').append(BackupScripts.quote(q));
+                            String cmd = "rm".equals(op) ? "rm -rf" + args
+                                    : "cp".equals(op) ? "mkdir -p " + qd + " && cp -r" + args + " " + qd + "/"
+                                    : "mkdir -p " + qd + " && mv" + args + " " + qd;
+                            String out = executeShell(cmd + " && echo FMOK");
+                            if (out != null && out.contains("FMOK")) {
+                                done += part.size();
+                                continue;
+                            }
+                            // something in the group failed: do them one at a time to say which
+                            for (String q : part) {
+                                String one = "rm".equals(op) ? "rm -rf " + BackupScripts.quote(q)
+                                        : "cp".equals(op) ? "mkdir -p " + qd + " && cp -r " + BackupScripts.quote(q) + " " + qd + "/"
+                                        : "mkdir -p " + qd + " && mv " + BackupScripts.quote(q) + " " + qd;
+                                String o1 = executeShell(one + " && echo FMOK");
+                                if (o1 != null && o1.contains("FMOK")) {
+                                    done++;
+                                } else {
+                                    String msg = o1 == null ? "failed" : o1.replace("FMOK", "").trim();
+                                    failed.put(new JSONObject().put("p", q).put("error", msg.isEmpty() ? "failed" : (msg.length() > 200 ? msg.substring(0, 200) : msg)));
+                                }
+                            }
+                        }
+                        res.put("total", paths.size());
+                        res.put("done", done);
+                        res.put("failed", failed);
+                        res.put("ok", failed.length() == 0);
+                    } catch (Throwable t) {
+                        try {
+                            res.put("ok", false);
+                            res.put("error", errMsg(t));
+                        } catch (Exception ignored) {}
+                    } finally {
+                        synchronized (fmBatchLock) {
+                            fmBatchBusy = false;
+                        }
+                    }
+                    notifyJs("window.onFmBatchDone && window.onFmBatchDone(" + res.toString() + ")");
+                }
+            });
+            return "started";
+        }
+
         /** Stages an APK from an arbitrary (privileged) path to a readable temp, for the Installer. {ok,ref}|{error}.
          *  When the app itself can read the file (storage with All-files access), the Installer reads it in
          *  place with no shell at all; only truly privileged paths fall back to staging in /data/local/tmp. */
@@ -5956,6 +6464,7 @@ public class MainActivity extends Activity {
                 int files = 0;
                 for (ZipTool.Entry e : a.entries) if (!e.dir) files++;
                 String block = archiveEditBlock(p);
+                if (block == null && a.prefix > 0) block = "This file has data in front of the archive (a self-extracting or signed package), so it can be viewed but not edited.";
                 JSONObject r = new JSONObject();
                 r.put("ok", true);
                 r.put("path", p);
@@ -5964,7 +6473,7 @@ public class MainActivity extends Activity {
                 r.put("files", files);
                 r.put("size", a.length);
                 r.put("zip64", a.zip64);
-                r.put("staged", archiveCacheStaged);
+                r.put("staged", archiveStaged(p));
                 r.put("apk", p.toLowerCase(java.util.Locale.US).endsWith(".apk"));
                 r.put("editable", block == null);
                 r.put("whyNot", block == null ? "" : block);
@@ -5987,9 +6496,11 @@ public class MainActivity extends Activity {
                 String q = query == null ? "" : query.trim();
                 JSONArray arr = new JSONArray();
                 int total;
+                boolean capped = false;
                 if (!q.isEmpty()) {
                     List<ZipTool.Entry> hits = ZipTool.search(a, q, 5000);
                     total = hits.size();
+                    capped = total >= 5000;
                     for (int i = offset; i < Math.min(total, offset + limit); i++) arr.put(archiveEntryJson(hits.get(i)));
                 } else {
                     List<ZipTool.Child> kids = ZipTool.children(a, dir == null ? "" : dir);
@@ -6003,6 +6514,7 @@ public class MainActivity extends Activity {
                 r.put("total", total);
                 r.put("offset", offset);
                 r.put("more", offset + limit < total);
+                r.put("capped", capped);
                 r.put("entries", arr);
                 return r.toString();
             } catch (Throwable t) {
@@ -6066,13 +6578,19 @@ public class MainActivity extends Activity {
                     String text = new String(full.data, "UTF-8");
                     boolean valid = !full.truncated && ZipTool.isValidUtf8(full.data, full.data.length, false);
                     String block = archiveEditBlock(fmCanonicalPath(path));
+                    boolean hasCrlf = text.contains("\r\n");
+                    String withoutCrlf = text.replace("\r\n", "");
+                    boolean bareLf = withoutCrlf.indexOf('\n') >= 0;
+                    boolean loneCr = withoutCrlf.indexOf('\r') >= 0;
+                    boolean mixed = loneCr || (hasCrlf && bareLf);        // the edit box would turn every line end into one kind
                     r.put("text", text);
                     r.put("truncated", full.truncated);
-                    r.put("crlf", text.contains("\r\n") && !text.replace("\r\n", "").contains("\n"));
-                    r.put("editable", valid && block == null);
+                    r.put("crlf", hasCrlf && !bareLf && !loneCr);
+                    r.put("editable", valid && block == null && !mixed);
                     if (full.truncated) r.put("editNote", "Too large to edit here (over " + XapkInfo.humanBytes(ARCHIVE_TEXT_LIMIT) + ").");
                     else if (!valid) r.put("editNote", "Not plain UTF-8 text, so it can't be edited safely.");
                     else if (block != null) r.put("editNote", block);
+                    else if (mixed) r.put("editNote", "Mixed line endings, so saving here would change them. Extract it to edit it elsewhere.");
                 }
                 if ("hex".equals(kind)) {
                     r.put("hex", ZipTool.hexDump(head.data, head.data.length, 512));
@@ -6114,9 +6632,10 @@ public class MainActivity extends Activity {
                             String base = ZipTool.safeName(e.baseName());
                             if (base == null) throw new IOException("Unsafe file name: " + name);
                             notifyArchiveProgress("Extracting " + base + "…");
+                            requireNotArchive(path, new File(dest, base));
                             long bytes;
                             if (writable) {
-                                bytes = ZipTool.extractTo(a, e, new File(dir, base));
+                                bytes = ZipTool.extractTo(a, e, new File(dir, base), new File(fmCanonicalPath(path)));
                             } else {
                                 tmp = new File(getCacheDir(), "archive_extract.tmp");
                                 bytes = ZipTool.extractTo(a, e, tmp);
@@ -6132,6 +6651,7 @@ public class MainActivity extends Activity {
                                 throw new IOException("This app can't write to " + dest + ". Choose a folder on shared storage, like /storage/emulated/0/Download/…");
                             }
                             final long[] last = {0};
+                            java.util.ArrayList<String> problems = new java.util.ArrayList<String>();
                             long[] r = ZipTool.extractTree(a, name, dir, new ZipTool.Progress() {
                                 @Override
                                 public boolean onProgress(long doneBytes, int doneFiles, String current) {
@@ -6142,10 +6662,11 @@ public class MainActivity extends Activity {
                                     }
                                     return true;
                                 }
-                            });
+                            }, problems, new File(fmCanonicalPath(path)));
                             res.put("files", r[0]);
                             res.put("bytes", r[1]);
                             res.put("skipped", r[2]);
+                            res.put("problems", new JSONArray(problems));
                             res.put("dest", dest);
                         }
                         res.put("ok", true);
@@ -6191,6 +6712,7 @@ public class MainActivity extends Activity {
                         String block = archiveEditBlock(p);
                         if (block != null) throw new IOException(block);
                         ZipTool.Archive a = archiveFor(p, false);
+                        requireUnchanged(p);
                         List<ZipTool.Edit> edits = new ArrayList<ZipTool.Edit>();
                         String msg;
                         String name = op.optString("name");
@@ -6254,9 +6776,7 @@ public class MainActivity extends Activity {
                             String err = writeFileTo(tmp, p);
                             if (err != null) throw new IOException(err);
                         }
-                        synchronized (archiveLock) {
-                            archiveCache = null;
-                        }
+                        dropSlot(p);
                         res.put("ok", true);
                         res.put("message", msg);
                         res.put("apk", p.toLowerCase(java.util.Locale.US).endsWith(".apk"));
@@ -6277,24 +6797,306 @@ public class MainActivity extends Activity {
             return "started";
         }
 
-        /** Forgets the open archive (and the shell-staged copy, if there was one). */
+        /** Forgets every open archive: shell-staged copies and the nested ones extracted to the cache are deleted. */
         @JavascriptInterface
         public void archiveClose() {
-            final boolean staged;
+            java.util.ArrayList<String> staged = new java.util.ArrayList<String>();
             synchronized (archiveLock) {
-                staged = archiveCacheStaged;
-                archiveCache = null;
-                archiveCachePath = null;
-                archiveCacheStaged = false;
+                for (ArcSlot slot : archiveSlots.values()) if (slot.stagedPath != null) staged.add(slot.stagedPath);
+                archiveSlots.clear();
+                staged.addAll(archiveEvictedStages);
+                archiveEvictedStages.clear();
             }
-            if (staged) {
-                executor.submit(new Runnable() {
-                    @Override
-                    public void run() {
-                        try { shellVia(resolveExecMode(), "rm -f " + ARCHIVE_STAGE); } catch (Throwable ignored) {}
+            deleteContents(archiveNestedDir());
+            if (!staged.isEmpty()) deleteStagedFiles(staged);
+        }
+
+        /** Forgets one archive (a nested one is also deleted from the cache). */
+        @JavascriptInterface
+        public void archiveRelease(String path) {
+            String p = fmCanonicalPath(path);
+            String staged = null;
+            synchronized (archiveLock) {
+                ArcSlot slot = archiveSlots.remove(p);
+                if (slot != null) staged = slot.stagedPath;
+            }
+            if (p.startsWith(archiveNestedDir().getAbsolutePath() + "/")) new File(p).delete();
+            if (staged != null) deleteStagedFiles(java.util.Collections.singletonList(staged));
+        }
+
+        /**
+         * Copies one entry out to the cache so it can be installed (kind "install") or opened as an archive of its
+         * own (kind "nested"). Returns "started" or "busy"; the end arrives as window.onArchiveStaged(json) with
+         * ok, kind, ref (the staged file), name, size.
+         */
+        @JavascriptInterface
+        public String archiveStage(final String path, final String entry, final String kind) {
+            synchronized (archiveLock) {
+                if (archiveBusy) return "busy";
+                archiveBusy = true;
+            }
+            executor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject res = new JSONObject();
+                    try {
+                        boolean nested = "nested".equals(kind);
+                        res.put("op", "stage");
+                        res.put("kind", nested ? "nested" : "install");
+                        ZipTool.Archive a = archiveFor(path, false);
+                        ZipTool.Entry e = a.find(entry == null ? "" : entry);
+                        if (e == null || e.dir) throw new IOException("Not found in the archive: " + entry);
+                        if (e.size > ARCHIVE_STAGE_MAX) throw new IOException("This file is " + XapkInfo.humanBytes(e.size) + ", too large to open here. Extract it instead.");
+                        File dir = nested ? archiveNestedDir() : archiveStageDirLocal();
+                        if (!nested) deleteContents(dir);
+                        if (!dir.isDirectory() && !dir.mkdirs()) throw new IOException("Can't create the cache folder");
+                        if (dir.getUsableSpace() < e.size + (16L << 20)) throw new IOException("Not enough free space in the app cache for " + XapkInfo.humanBytes(e.size));
+                        String base = ZipTool.safeName(e.baseName());
+                        if (base == null) base = "entry";
+                        File out = new File(dir, System.currentTimeMillis() + "_" + base.replaceAll("[^A-Za-z0-9._-]", "_"));
+                        notifyArchiveProgress("Preparing " + e.baseName() + " (" + XapkInfo.humanBytes(e.size) + ")…");
+                        ZipTool.extractTo(a, e, out);
+                        res.put("ok", true);
+                        res.put("ref", out.getAbsolutePath());
+                        res.put("name", e.baseName());
+                        res.put("size", e.size);
+                    } catch (Throwable t) {
+                        try {
+                            res.put("ok", false);
+                            res.put("error", errMsg(t));
+                        } catch (Exception ignored) {}
+                    } finally {
+                        synchronized (archiveLock) {
+                            archiveBusy = false;
+                        }
                     }
-                });
+                    notifyJs("window.onArchiveStaged && window.onArchiveStaged(" + res.toString() + ")");
+                }
+            });
+            return "started";
+        }
+
+        /**
+         * Compares two archives by size and CRC (nothing is extracted). The second can also be an installed app's
+         * package name. Returns "started" or "busy"; the end arrives as window.onArchiveDiff(json) with ok, a, b,
+         * same, truncated and the added / removed / changed lists of {p, a, b}.
+         */
+        @JavascriptInterface
+        public String archiveDiff(final String pathA, final String pathB) {
+            synchronized (archiveLock) {
+                if (archiveBusy) return "busy";
+                archiveBusy = true;
             }
+            executor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject res = new JSONObject();
+                    try {
+                        res.put("op", "diff");
+                        String pa = fmCanonicalPath(pathA);
+                        String other = pathB == null ? "" : pathB.trim();
+                        String pb;
+                        if (other.matches("[A-Za-z0-9_]+(\\.[A-Za-z0-9_]+)+")) {
+                            try {
+                                pb = getPackageManager().getApplicationInfo(other, 0).sourceDir;
+                            } catch (Exception nf) {
+                                throw new IOException("No installed app named " + other);
+                            }
+                        } else {
+                            pb = fmCanonicalPath(other);
+                        }
+                        notifyArchiveProgress("Comparing…");
+                        ZipTool.Archive a = archiveFor(pa, false);
+                        ZipTool.Archive b = archiveFor(pb, false);
+                        ZipTool.Diff d = ZipTool.diff(a, b, 3000);
+                        res.put("a", new JSONObject().put("path", pa).put("name", new File(pa).getName()).put("count", a.entries.size()));
+                        res.put("b", new JSONObject().put("path", pb).put("name", new File(pb).getName()).put("count", b.entries.size()));
+                        res.put("same", d.same);
+                        res.put("truncated", d.truncated);
+                        res.put("added", diffJson(d.added));
+                        res.put("removed", diffJson(d.removed));
+                        res.put("changed", diffJson(d.changed));
+                        res.put("ok", true);
+                    } catch (Throwable t) {
+                        try {
+                            res.put("ok", false);
+                            res.put("error", errMsg(t));
+                        } catch (Exception ignored) {}
+                    } finally {
+                        synchronized (archiveLock) {
+                            archiveBusy = false;
+                        }
+                    }
+                    notifyJs("window.onArchiveDiff && window.onArchiveDiff(" + res.toString() + ")");
+                }
+            });
+            return "started";
+        }
+
+        /** The signing key's fingerprint, without making one: {ok, exists, sha256, subject, created, hardware, bits}. */
+        @JavascriptInterface
+        public String signingKeyInfo() {
+            try {
+                return signingKeyJson(SigningKey.existing()).toString();
+            } catch (Throwable t) {
+                return archiveFail(t);
+            }
+        }
+
+        /** Throws the signing key away and makes a new one. The end arrives as window.onSigningKey(json). */
+        @JavascriptInterface
+        public String signingKeyRegenerate() {
+            executor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    String json;
+                    try {
+                        json = signingKeyJson(SigningKey.regenerate()).toString();
+                    } catch (Throwable t) {
+                        json = archiveFail(t);
+                    }
+                    notifyJs("window.onSigningKey && window.onSigningKey(" + json + ")");
+                }
+            });
+            return "started";
+        }
+
+        /**
+         * What the sign sheet shows for an .apk: its package, whether it carries a valid signature now, whether an
+         * installed copy has the same signer as the app's key, and the key itself. The end arrives as
+         * window.onSignInfo(json) with path, name, editBlock (why signing in place isn't possible, or ""), key,
+         * pkg, label, versionName, versionCode, signed, signer, installed, installedSigner, installedVersion.
+         */
+        @JavascriptInterface
+        public String archiveSignInfo(final String path) {
+            executor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject res = new JSONObject();
+                    try {
+                        String p = fmCanonicalPath(path);
+                        res.put("op", "signinfo");
+                        res.put("path", p);
+                        res.put("name", new File(p).getName());
+                        String block = archiveEditBlock(p);
+                        res.put("editBlock", block == null ? "" : block);
+                        SigningKey k = SigningKey.existing();
+                        res.put("key", signingKeyJson(k));
+                        File f = archiveFor(p, false).file;
+                        PackageManager pm = getPackageManager();
+                        PackageInfo plain = pm.getPackageArchiveInfo(f.getAbsolutePath(), 0);
+                        if (plain != null && plain.packageName != null) {
+                            res.put("pkg", plain.packageName);
+                            res.put("versionName", plain.versionName != null ? plain.versionName : "");
+                            res.put("versionCode", versionCodeOf(plain));
+                            if (plain.applicationInfo != null) {
+                                plain.applicationInfo.sourceDir = f.getAbsolutePath();
+                                plain.applicationInfo.publicSourceDir = f.getAbsolutePath();
+                                try {
+                                    CharSequence lbl = pm.getApplicationLabel(plain.applicationInfo);
+                                    if (lbl != null) res.put("label", lbl.toString());
+                                } catch (Throwable ignored) {}
+                            }
+                            int sigFlags = Build.VERSION.SDK_INT >= 28 ? PackageManager.GET_SIGNING_CERTIFICATES : PackageManager.GET_SIGNATURES;
+                            if (f.length() <= SIGN_CHECK_MAX) {
+                                PackageInfo withSig = pm.getPackageArchiveInfo(f.getAbsolutePath(), sigFlags);
+                                java.util.Set<String> now = withSig != null ? signerDigests(withSig, false) : new HashSet<String>();
+                                res.put("signed", !now.isEmpty());
+                                res.put("signer", now.isEmpty() ? "" : now.iterator().next());
+                            }
+                            try {
+                                PackageInfo cur = pm.getPackageInfo(plain.packageName, sigFlags);
+                                java.util.Set<String> curSigners = signerDigests(cur, true);
+                                res.put("installed", true);
+                                res.put("installedVersion", cur.versionName != null ? cur.versionName : "");
+                                res.put("installedSigner", curSigners.isEmpty() ? "" : curSigners.iterator().next());
+                                res.put("keyMatchesInstalled", k != null && curSigners.contains(k.sha256()));
+                            } catch (PackageManager.NameNotFoundException nf) {
+                                res.put("installed", false);
+                            }
+                        }
+                        res.put("ok", true);
+                    } catch (Throwable t) {
+                        try {
+                            res.put("ok", false);
+                            res.put("error", errMsg(t));
+                        } catch (Exception ignored) {}
+                    }
+                    notifyJs("window.onSignInfo && window.onSignInfo(" + res.toString() + ")");
+                }
+            });
+            return "started";
+        }
+
+        /**
+         * Signs an .apk with the app's own key (APK Signature Scheme v2): mode "inplace" replaces the file, "copy"
+         * writes NAME-signed.apk beside it. Old signature files are dropped and entries re-aligned first. Returns
+         * "started" or "busy"; the end arrives as window.onArchiveSigned(json) with ok, inPlace, path, name,
+         * sha256, size, hardware.
+         */
+        @JavascriptInterface
+        public String archiveSign(final String path, final String mode) {
+            synchronized (archiveLock) {
+                if (archiveBusy) return "busy";
+                archiveBusy = true;
+            }
+            executor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject res = new JSONObject();
+                    File prepared = null, signed = null;
+                    try {
+                        res.put("op", "sign");
+                        boolean inPlace = "inplace".equals(mode);
+                        String p = fmCanonicalPath(path);
+                        res.put("inPlace", inPlace);
+                        if (!p.toLowerCase(java.util.Locale.US).endsWith(".apk")) throw new IOException("Only .apk files can be signed.");
+                        if (inPlace) {
+                            String block = archiveEditBlock(p);
+                            if (block != null) throw new IOException(block);
+                        }
+                        ZipTool.Archive a = archiveFor(p, true);        // sign what is on disk right now
+                        File cache = getCacheDir();
+                        if (cache.getUsableSpace() < 2 * a.length + (32L << 20)) {
+                            throw new IOException("Not enough free space in the app cache to sign this (" + XapkInfo.humanBytes(a.length) + ").");
+                        }
+                        notifyArchiveProgress("Preparing " + new File(p).getName() + "…");
+                        prepared = new File(cache, "archive_sign_prep.apk");
+                        ApkSigner.prepare(a.file, prepared);
+                        notifyArchiveProgress("Signing…");
+                        SigningKey k = SigningKey.getOrCreate();
+                        signed = new File(cache, "archive_sign_out.apk");
+                        ApkSigner.signV2(prepared, signed, k.key, k.cert);
+                        prepared.delete();
+                        ZipTool.open(signed);                           // a result that can't be read back is never written out
+                        String dest = inPlace ? p : signedCopyPath(p);
+                        notifyArchiveProgress("Saving " + new File(dest).getName() + "…");
+                        String err = writeFileTo(signed, dest);
+                        if (err != null) throw new IOException(err);
+                        dropSlot(p);
+                        dropSlot(fmCanonicalPath(dest));
+                        res.put("ok", true);
+                        res.put("path", dest);
+                        res.put("name", new File(dest).getName());
+                        res.put("sha256", k.sha256());
+                        res.put("hardware", k.hardware);
+                        res.put("size", signed.length());
+                    } catch (Throwable t) {
+                        try {
+                            res.put("ok", false);
+                            res.put("error", errMsg(t));
+                        } catch (Exception ignored) {}
+                    } finally {
+                        if (prepared != null) prepared.delete();
+                        if (signed != null) signed.delete();
+                        synchronized (archiveLock) {
+                            archiveBusy = false;
+                        }
+                    }
+                    notifyJs("window.onArchiveSigned && window.onArchiveSigned(" + res.toString() + ")");
+                }
+            });
+            return "started";
         }
 
         /** Runs ART dex optimization for a package (pm compile -m <mode> [-f]) via the active backend. */
@@ -6608,13 +7410,27 @@ public class MainActivity extends Activity {
         }
     }
 
+    /**
+     * Back asks the page first (window.handleAndroidBack): it closes the top sheet, drops a selection, steps out
+     * of the archive browser or back to the previous tab, and only when it has nothing left to do (a second
+     * press at the first tab) does the app leave.
+     */
     @Override
     public void onBackPressed() {
-        if (webView != null && webView.canGoBack()) {
-            webView.goBack();
-        } else {
+        final WebView wv = webView;
+        if (wv == null || !pageReady) {
             super.onBackPressed();
+            return;
         }
+        wv.evaluateJavascript("(function(){try{return window.handleAndroidBack?!!window.handleAndroidBack():false;}catch(e){return false;}})()",
+                new android.webkit.ValueCallback<String>() {
+                    @Override
+                    public void onReceiveValue(String handled) {
+                        if ("true".equals(handled)) return;
+                        if (wv.canGoBack()) wv.goBack();
+                        else MainActivity.super.onBackPressed();
+                    }
+                });
     }
 
     @Override
@@ -6631,8 +7447,24 @@ public class MainActivity extends Activity {
             Shizuku.removeBinderReceivedListener(shizukuBinderListener);
         } catch (Throwable ignored) {}
         try {
-            RishShell sh = rishShell;
-            if (sh != null) sh.close();
+            final RishShell sh;
+            synchronized (rishGate) {
+                sh = rishShell;
+                rishShell = null;
+            }
+            if (sh != null) {
+                // closing ends the shell's whole process tree through helper processes: not on the UI thread
+                Thread closer = new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            sh.close();
+                        } catch (Throwable ignored) {}
+                    }
+                }, "rish-close");
+                closer.setDaemon(true);
+                closer.start();
+            }
         } catch (Throwable ignored) {}
         try {
             executor.shutdown();

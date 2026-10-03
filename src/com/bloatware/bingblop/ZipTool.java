@@ -2,6 +2,7 @@ package com.bloatware.bingblop;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -39,7 +40,7 @@ import java.util.zip.InflaterInputStream;
  * extracting them: lists the central directory (ZIP64 aware) as a folder tree, streams single entries,
  * extracts safely, and rewrites the archive with entries deleted / renamed / replaced / added. Unchanged
  * entries are copied as raw compressed bytes, so editing a large archive neither recompresses nor loads it
- * into memory, and APK-style 4-byte / 4 KB alignment of stored entries is kept.
+ * into memory, and APK-style 4-byte / 16 KB alignment of stored entries is kept.
  *
  * <p>Pure Java, no Android classes: unit-tested off-device against archives made by other tools.
  */
@@ -66,10 +67,14 @@ public final class ZipTool {
         public final long crc, csize, size, lho, externalAttrs;
         final byte[] rawName;
         final byte[] comment;
+        final byte[] extra;          // the central directory's extra-field records, as stored
+        final boolean latin1;        // the name bytes are not UTF-8, so the name was read one byte per character
 
-        Entry(byte[] rawName, String name, int versionMadeBy, int versionNeeded, int flags, int method, int dosTime, int dosDate,
-              long crc, long csize, long size, long lho, int internalAttrs, long externalAttrs, byte[] comment) {
+        Entry(byte[] rawName, String name, boolean latin1, int versionMadeBy, int versionNeeded, int flags, int method, int dosTime, int dosDate,
+              long crc, long csize, long size, long lho, int internalAttrs, long externalAttrs, byte[] comment, byte[] extra) {
             this.rawName = rawName;
+            this.latin1 = latin1;
+            this.extra = extra;
             this.name = name;
             this.dir = name.endsWith("/");
             this.versionMadeBy = versionMadeBy;
@@ -111,15 +116,24 @@ public final class ZipTool {
         public final List<Entry> entries;
         public final byte[] comment;
         public final boolean zip64;
+        /** Where the central directory starts and how long it is, and where the end-of-central-directory record starts (file positions). */
+        public final long cdOffset, cdSize, eocdOffset;
+        /** Bytes in front of the first entry (a self-extractor stub, a CRX header ...); 0 for an ordinary archive. */
+        public final long prefix;
         private Map<String, Entry> byName;
 
-        Archive(File file, long length, long lastModified, List<Entry> entries, byte[] comment, boolean zip64) {
+        Archive(File file, long length, long lastModified, List<Entry> entries, byte[] comment, boolean zip64,
+                long cdOffset, long cdSize, long eocdOffset, long prefix) {
+            this.prefix = prefix;
             this.file = file;
             this.length = length;
             this.lastModified = lastModified;
             this.entries = entries;
             this.comment = comment;
             this.zip64 = zip64;
+            this.cdOffset = cdOffset;
+            this.cdSize = cdSize;
+            this.eocdOffset = eocdOffset;
         }
 
         public synchronized Entry find(String name) {
@@ -138,6 +152,7 @@ public final class ZipTool {
         public InputStream open(Entry e) throws IOException {
             if (e.encrypted()) throw new IOException("This entry is encrypted");
             if (e.method != 0 && e.method != 8) throw new IOException("Unsupported compression method " + e.method);
+            if (e.size == 0 && e.csize == 0) return new ByteArrayInputStream(new byte[0]);     // some writers leave a deflated empty file with no stream at all
             final RandomAccessFile raf = new RandomAccessFile(file, "r");
             try {
                 long start = dataStart(raf, e);
@@ -244,6 +259,17 @@ public final class ZipTool {
                     }
                 }
             }
+            long prefix = 0;
+            if (!zip64 && cdSize > 0 && cdOff >= 0 && cdOff + cdSize <= len) {
+                // Offsets inside the archive count from where the zip data starts, so anything in front of it (a
+                // CRX header, a self-extractor stub) shifts them. The central directory tells: look where the end
+                // record says, then where it must be if there is a prefix.
+                long delta = eocdPos - cdSize - cdOff;
+                if (delta > 0 && !startsWithCentral(raf, cdOff) && startsWithCentral(raf, cdOff + delta)) {
+                    prefix = delta;
+                    cdOff += delta;
+                }
+            }
             if (cdSize < 0 || cdSize > MAX_CD_BYTES || cdOff < 0 || cdOff + cdSize > len) {
                 throw new IOException("Corrupt zip archive (bad central directory)");
             }
@@ -291,22 +317,35 @@ public final class ZipTool {
                     }
                 }
                 byte[] cmt = Arrays.copyOfRange(cd, pos + 46 + nl + el, pos + 46 + nl + el + cl);
-                list.add(new Entry(raw, decodeName(raw), madeBy, needed, flags, method, time, date, crc, csize, size, lho, internal, external, cmt));
+                byte[] ext = Arrays.copyOfRange(cd, pos + 46 + nl, pos + 46 + nl + el);
+                String decoded = decodeName(raw);
+                boolean fellBack = decoded == null;
+                if (fellBack) decoded = new String(raw, StandardCharsets.ISO_8859_1);
+                list.add(new Entry(raw, decoded, fellBack, madeBy, needed, flags, method, time, date, crc, csize, size, lho + prefix, internal, external, cmt, ext));
                 pos += 46 + nl + el + cl;
             }
-            return new Archive(f, len, f.lastModified(), Collections.unmodifiableList(list), comment, zip64);
+            return new Archive(f, len, f.lastModified(), Collections.unmodifiableList(list), comment, zip64, cdOff, cdSize, eocdPos, prefix);
         } finally {
             raf.close();
         }
     }
 
+    /** The name as UTF-8, or null when the bytes are not valid UTF-8 (older tools write the local code page). */
     private static String decodeName(byte[] raw) {
         try {
             return StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT)
                     .onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(raw)).toString();
         } catch (CharacterCodingException e) {
-            return new String(raw, StandardCharsets.ISO_8859_1);
+            return null;
         }
+    }
+
+    private static boolean startsWithCentral(RandomAccessFile raf, long pos) throws IOException {
+        if (pos < 0 || pos + 4 > raf.length()) return false;
+        byte[] h = new byte[4];
+        raf.seek(pos);
+        raf.readFully(h);
+        return le32(h, 0) == SIG_CENTRAL;
     }
 
     private static long dataStart(RandomAccessFile raf, Entry e) throws IOException {
@@ -362,8 +401,7 @@ public final class ZipTool {
                 out.add(new Child(rest, n, false, e.size, e.csize, 0, e.mtime(), e));
                 continue;
             }
-            if (slash == 0) continue;
-            String d = rest.substring(0, slash);
+            String d = rest.substring(0, slash);        // "" for a name like "a//b" or "/abs": shown as a folder with no name
             DirAcc acc = dirs.get(d);
             if (acc == null) {
                 acc = new DirAcc();
@@ -382,7 +420,7 @@ public final class ZipTool {
         List<Child> result = new ArrayList<Child>();
         for (Map.Entry<String, DirAcc> d : dirs.entrySet()) {
             DirAcc acc = d.getValue();
-            result.add(new Child(d.getKey(), prefix + d.getKey() + "/", true, acc.size, acc.csize, acc.count, acc.mtime, acc.entry));
+            result.add(new Child(d.getKey().isEmpty() ? "(no name)" : d.getKey(), prefix + d.getKey() + "/", true, acc.size, acc.csize, acc.count, acc.mtime, acc.entry));
         }
         Collections.sort(result, BY_NAME);
         Collections.sort(out, BY_NAME);
@@ -488,29 +526,54 @@ public final class ZipTool {
         boolean onProgress(long doneBytes, int doneFiles, String current);
     }
 
-    /** Extracts one entry to {@code dest} (parent folders are created). Returns the bytes written. */
+    /**
+     * Extracts one entry to {@code dest} (parent folders are created). The data goes to a hidden temporary file first,
+     * is checked against the entry's size and CRC-32, and only then replaces {@code dest}, so a damaged entry never
+     * leaves a half-written file behind. Returns the bytes written.
+     */
     public static long extractTo(Archive a, Entry e, File dest) throws IOException {
-        File parent = dest.getParentFile();
+        return extractTo(a, e, dest, null);
+    }
+
+    /** As {@link #extractTo(Archive, Entry, File)}; {@code protect} is another file that must not be overwritten (the real file of a staged copy). */
+    public static long extractTo(Archive a, Entry e, File dest, File protect) throws IOException {
+        File parent = dest.getAbsoluteFile().getParentFile();
         if (parent != null && !parent.isDirectory() && !parent.mkdirs()) throw new IOException("Can't create " + parent);
+        String canon = dest.getCanonicalPath();
+        if (canon.equals(a.file.getCanonicalPath()) || (protect != null && canon.equals(protect.getCanonicalPath()))) {
+            throw new IOException("That would overwrite the archive itself. Pick another folder.");
+        }
+        File part = new File(parent, "." + dest.getName() + ".part");
+        boolean ok = false;
         InputStream in = a.open(e);
         try {
-            OutputStream out = new FileOutputStream(dest);
             long total = 0;
+            CRC32 crc = new CRC32();
+            OutputStream out = new FileOutputStream(part);
             try {
                 byte[] buf = new byte[65536];
                 int n;
                 while ((n = in.read(buf)) > 0) {
                     out.write(buf, 0, n);
+                    crc.update(buf, 0, n);
                     total += n;
                 }
             } finally {
                 out.close();
             }
+            if (total != e.size) throw new IOException("\"" + e.name + "\" is damaged (its size doesn't match)");
+            if (crc.getValue() != e.crc) throw new IOException("\"" + e.name + "\" is damaged (its checksum doesn't match)");
+            if (!part.renameTo(dest)) {
+                dest.delete();
+                if (!part.renameTo(dest)) throw new IOException("Couldn't write " + dest);
+            }
+            ok = true;
             long when = e.mtime();
             if (when > 0) dest.setLastModified(when);
             return total;
         } finally {
             in.close();
+            if (!ok) part.delete();
         }
     }
 
@@ -520,6 +583,19 @@ public final class ZipTool {
      * Returns {files, bytes, skipped}.
      */
     public static long[] extractTree(Archive a, String path, File destDir, Progress cb) throws IOException {
+        return extractTree(a, path, destDir, cb, null);
+    }
+
+    /**
+     * Like {@link #extractTree(Archive, String, File, Progress)}, but an entry that can't be extracted (encrypted, an
+     * unsupported method, damaged, a file where a folder is needed) is skipped and described in {@code problems}
+     * (at most 20 lines) instead of ending the whole job.
+     */
+    public static long[] extractTree(Archive a, String path, File destDir, Progress cb, List<String> problems) throws IOException {
+        return extractTree(a, path, destDir, cb, problems, null);
+    }
+
+    public static long[] extractTree(Archive a, String path, File destDir, Progress cb, List<String> problems, File protect) throws IOException {
         boolean tree = path.isEmpty() || path.endsWith("/");
         String base = "";
         if (tree && !path.isEmpty()) {
@@ -535,16 +611,83 @@ public final class ZipTool {
             if (tree) rel = (base.isEmpty() ? "" : base + "/") + e.name.substring(path.length());
             else rel = e.baseName();
             String safe = safeName(rel);
-            if (safe == null) { skipped++; continue; }
+            if (safe == null) { skipped++; note(problems, e.name + ": unsafe name"); continue; }
             File out = new File(destDir, safe);
             String canon = out.getCanonicalPath();
-            if (!canon.startsWith(canonRoot + File.separator)) { skipped++; continue; }
+            if (!canon.startsWith(canonRoot + File.separator)) { skipped++; note(problems, e.name + ": unsafe name"); continue; }
             if (cb != null && !cb.onProgress(bytes, files, e.name)) throw new IOException("Cancelled");
-            bytes += extractTo(a, e, out);
-            files++;
+            try {
+                bytes += extractTo(a, e, out, protect);
+                files++;
+            } catch (IOException ex) {
+                skipped++;
+                note(problems, e.name + ": " + (ex.getMessage() == null ? "failed" : ex.getMessage()));
+            }
         }
         if (cb != null) cb.onProgress(bytes, files, "");
         return new long[]{files, bytes, skipped};
+    }
+
+    private static void note(List<String> problems, String line) {
+        if (problems != null && problems.size() < 20) problems.add(line);
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Comparing two archives
+    // ---------------------------------------------------------------------------------------------
+
+    public static final class DiffItem {
+        public final String name;
+        public final long sizeA, sizeB;     // -1 when the entry is missing on that side
+
+        DiffItem(String name, long sizeA, long sizeB) {
+            this.name = name;
+            this.sizeA = sizeA;
+            this.sizeB = sizeB;
+        }
+    }
+
+    public static final class Diff {
+        public final List<DiffItem> added = new ArrayList<DiffItem>();      // only in B
+        public final List<DiffItem> removed = new ArrayList<DiffItem>();    // only in A
+        public final List<DiffItem> changed = new ArrayList<DiffItem>();    // in both, content differs
+        public int same;
+        public boolean truncated;                                           // a list was cut at the limit
+    }
+
+    /** Files (not folders) compared by size and CRC-32, which the central directory already holds: nothing is extracted. */
+    public static Diff diff(Archive a, Archive b, int limit) {
+        Diff d = new Diff();
+        Map<String, Entry> inA = new HashMap<String, Entry>();
+        for (Entry e : a.entries) if (!e.dir && !inA.containsKey(e.name)) inA.put(e.name, e);
+        Set<String> seen = new HashSet<String>();
+        for (Entry e : b.entries) {
+            if (e.dir || !seen.add(e.name)) continue;
+            Entry o = inA.get(e.name);
+            if (o == null) {
+                if (d.added.size() < limit) d.added.add(new DiffItem(e.name, -1, e.size)); else d.truncated = true;
+            } else if (o.crc == e.crc && o.size == e.size) {
+                d.same++;
+            } else if (d.changed.size() < limit) {
+                d.changed.add(new DiffItem(e.name, o.size, e.size));
+            } else {
+                d.truncated = true;
+            }
+        }
+        for (Map.Entry<String, Entry> x : inA.entrySet()) {
+            if (seen.contains(x.getKey())) continue;
+            if (d.removed.size() < limit) d.removed.add(new DiffItem(x.getKey(), x.getValue().size, -1)); else d.truncated = true;
+        }
+        Comparator<DiffItem> byName = new Comparator<DiffItem>() {
+            @Override
+            public int compare(DiffItem p, DiffItem q) {
+                return p.name.compareToIgnoreCase(q.name);
+            }
+        };
+        Collections.sort(d.added, byName);
+        Collections.sort(d.removed, byName);
+        Collections.sort(d.changed, byName);
+        return d;
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -664,7 +807,7 @@ public final class ZipTool {
     }
 
     private static final class CdRec {
-        byte[] name, comment;
+        byte[] name, comment, extra;
         int madeBy, needed, flags, method, time, date, internal;
         long crc, csize, size, lho, external;
     }
@@ -702,10 +845,13 @@ public final class ZipTool {
 
     /**
      * Writes {@code dst} as {@code src} with the edits applied. Unchanged entries are copied as raw compressed
-     * bytes. With {@code align}, stored entries get zipalign-style padding (4 bytes, 4 KB for .so files), which
+     * bytes. With {@code align}, stored entries get zipalign-style padding (4 bytes, 16 KB for .so files), which
      * Android requires of an APK's resources.arsc and uncompressed native libraries.
      */
     public static void rewrite(Archive src, File dst, List<Edit> edits, boolean align, Progress cb) throws IOException {
+        if (src.prefix > 0) {
+            throw new IOException("This file has data in front of the archive (a self-extracting or signed package), so it can be viewed but not edited.");
+        }
         Set<String> deleted = new HashSet<String>();
         List<String> deletedTrees = new ArrayList<String>();
         Map<String, String> renames = new HashMap<String, String>();
@@ -727,6 +873,7 @@ public final class ZipTool {
         Out out = null;
         List<CdRec> cd = new ArrayList<CdRec>();
         Set<String> names = new HashSet<String>();
+        Set<String> editedNames = new HashSet<String>();      // names an edit produced (a duplicate the source already had is carried over as it is)
         boolean ok = false;
         try {
             out = new Out(new BufferedOutputStream(new FileOutputStream(dst), 131072));
@@ -736,24 +883,41 @@ public final class ZipTool {
                 String n = e.name;
                 if (deleted.contains(n) || startsWithAny(n, deletedTrees)) continue;
                 String outName = n;
+                byte[] rawOut = null;           // the name's bytes when they must not be re-encoded from the (decoded) string
+                boolean produced = false;
                 String renamed = renames.get(n);
                 if (renamed != null) {
+                    // a file renamed to "folder/" moves into that folder under its own name
+                    if (!e.dir && renamed.endsWith("/")) renamed = renamed + e.baseName();
                     outName = e.dir && !renamed.endsWith("/") ? renamed + "/" : renamed;
+                    produced = true;
                 } else {
                     for (String[] rt : renameTrees) {
                         if (n.startsWith(rt[0])) {
                             outName = rt[1] + n.substring(rt[0].length());
+                            // new folder prefix + the old name's own bytes after the old prefix (a non-UTF-8 name stays as it was)
+                            int oldLen = e.latin1 ? rt[0].length() : rt[0].getBytes(StandardCharsets.UTF_8).length;
+                            byte[] pre = rt[1].getBytes(StandardCharsets.UTF_8);
+                            byte[] tail = Arrays.copyOfRange(e.rawName, Math.min(oldLen, e.rawName.length), e.rawName.length);
+                            rawOut = new byte[pre.length + tail.length];
+                            System.arraycopy(pre, 0, rawOut, 0, pre.length);
+                            System.arraycopy(tail, 0, rawOut, pre.length, tail.length);
+                            produced = true;
                             break;
                         }
                     }
                 }
-                if (!names.add(outName)) throw new IOException("An entry named \"" + outName + "\" already exists");
+                if (!names.add(outName) && (produced || editedNames.contains(outName))) {
+                    throw new IOException("An entry named \"" + outName + "\" already exists");
+                }
+                if (produced) editedNames.add(outName);
                 if (cb != null && !cb.onProgress(copied, done, outName)) throw new IOException("Cancelled");
+                byte[] nameBytes = rawOut != null ? rawOut : (outName.equals(n) ? e.rawName : outName.getBytes(StandardCharsets.UTF_8));
                 Edit rep = replaced.get(n);
                 if (rep != null && !e.dir) {
-                    writeNew(out, cd, outName, rep, e.method == 0, align, e.externalAttrs, e.versionMadeBy);
+                    writeNew(out, cd, outName, nameBytes, rep, e.method == 0, align, e.externalAttrs, e.versionMadeBy);
                 } else {
-                    copyRaw(out, cd, raf, e, outName, align);
+                    copyRaw(out, cd, raf, e, nameBytes, outName, align);
                     copied += e.csize;
                 }
                 done++;
@@ -762,7 +926,7 @@ public final class ZipTool {
                 String name = requireSafe(ed.name);
                 if (!names.add(name)) throw new IOException("An entry named \"" + name + "\" already exists");
                 if (cb != null && !cb.onProgress(copied, done, name)) throw new IOException("Cancelled");
-                writeNew(out, cd, name, ed, false, align, 0, 0);
+                writeNew(out, cd, name, null, ed, false, align, 0, 0);
                 done++;
             }
             long cdStart = out.pos;
@@ -818,7 +982,29 @@ public final class ZipTool {
 
     private static int alignmentFor(String name, int method, boolean align) {
         if (!align || method != 0) return 1;
-        return name.toLowerCase(Locale.ROOT).endsWith(".so") ? 4096 : 4;
+        return name.toLowerCase(Locale.ROOT).endsWith(".so") ? 16384 : 4;
+    }
+
+    private static final long MAX_U32 = 0xFFFFFFFEL;
+
+    /**
+     * The extra-field records worth carrying over when an entry is copied: all of them (AES encryption data,
+     * timestamps, Unicode names ...) except the ZIP64 sizes (the sizes are rewritten), zipalign's padding and zero filler.
+     * {@code dropUnicodeName} also drops an Info-ZIP Unicode path, which describes the old name of a renamed entry.
+     */
+    private static byte[] keepExtra(byte[] extra, boolean dropUnicodeName) {
+        if (extra == null || extra.length == 0) return new byte[0];
+        ByteArrayOutputStream bo = new ByteArrayOutputStream(extra.length);
+        int p = 0;
+        while (p + 4 <= extra.length) {
+            int id = le16(extra, p);
+            int sz = le16(extra, p + 2);
+            if (p + 4 + sz > extra.length) break;                       // a broken tail goes
+            boolean drop = id == 0x0001 || id == 0xD935 || (id == 0 && sz == 0) || (dropUnicodeName && id == 0x7075);
+            if (!drop) bo.write(extra, p, 4 + sz);
+            p += 4 + sz;
+        }
+        return bo.toByteArray();
     }
 
     private static byte[] extraPadding(int pad) {
@@ -831,17 +1017,32 @@ public final class ZipTool {
         return x;
     }
 
-    private static void copyRaw(Out out, List<CdRec> cd, RandomAccessFile raf, Entry e, String outName, boolean align) throws IOException {
-        boolean same = outName.equals(e.name);
-        byte[] nameBytes = same ? e.rawName : outName.getBytes(StandardCharsets.UTF_8);
+    private static void copyRaw(Out out, List<CdRec> cd, RandomAccessFile raf, Entry e, byte[] nameBytes, String outName, boolean align) throws IOException {
+        if (e.csize > MAX_U32 || e.size > MAX_U32) {
+            throw new IOException("\"" + e.name + "\" is over 4 GB: an archive with an entry that large can't be rewritten here.");
+        }
+        if (out.pos > MAX_U32) throw new IOException("The rewritten archive would be over 4 GB, which can't be written here.");
+        boolean same = Arrays.equals(nameBytes, e.rawName);
         // Sizes are known now, so the data descriptor flag goes - except for encrypted entries, whose check byte
         // is derived from the flag (it must stay as it was, and the descriptor is written back below).
         boolean enc = e.encrypted();
         int flags = enc ? e.flags : e.flags & ~0x0008;
-        if (!same) flags = isAscii(nameBytes) ? flags & ~0x0800 : flags | 0x0800;
+        if (!same) flags = !isAscii(nameBytes) && isValidUtf8(nameBytes, nameBytes.length, false) ? flags | 0x0800 : flags & ~0x0800;
         int method = e.method;
-        long headerEnd = out.pos + 30 + nameBytes.length;
-        int pad = padFor(headerEnd, alignmentFor(outName, method, align));
+        // the source's local header: its extra field travels with the entry, and the data starts after it
+        byte[] lh = new byte[30];
+        raf.seek(e.lho);
+        raf.readFully(lh);
+        if (le32(lh, 0) != SIG_LOCAL) throw new IOException("Corrupt zip archive (bad local header for " + e.name + ")");
+        int srcNameLen = le16(lh, 26);
+        int srcExtraLen = le16(lh, 28);
+        byte[] srcExtra = new byte[srcExtraLen];
+        raf.seek(e.lho + 30 + srcNameLen);
+        raf.readFully(srcExtra);
+        long dataStart = e.lho + 30 + srcNameLen + srcExtraLen;
+        byte[] kept = keepExtra(srcExtra, !same);
+        int pad = padFor(out.pos + 30 + nameBytes.length + kept.length, alignmentFor(outName, method, align));
+        if (kept.length + pad > 0xFFFF) pad = 0;
         long lho = out.pos;
         byte[] h = new byte[30];
         put32(h, 0, SIG_LOCAL);
@@ -854,12 +1055,13 @@ public final class ZipTool {
         put32(h, 18, e.csize);
         put32(h, 22, e.size);
         put16(h, 26, nameBytes.length);
-        put16(h, 28, pad);
+        put16(h, 28, kept.length + pad);
         out.write(h);
         out.write(nameBytes);
+        if (kept.length > 0) out.write(kept);
         if (pad > 0) out.write(extraPadding(pad));
         if (e.csize > 0) {
-            raf.seek(dataStart(raf, e));
+            raf.seek(dataStart);
             byte[] buf = new byte[65536];
             long left = e.csize;
             while (left > 0) {
@@ -880,6 +1082,7 @@ public final class ZipTool {
         CdRec r = new CdRec();
         r.name = nameBytes;
         r.comment = e.comment;
+        r.extra = keepExtra(e.extra, !same);
         r.madeBy = e.versionMadeBy;
         r.needed = e.versionNeeded == 0 ? (method == 8 ? 20 : 10) : e.versionNeeded;
         r.flags = flags;
@@ -908,14 +1111,16 @@ public final class ZipTool {
         return false;
     }
 
-    private static void writeNew(Out out, List<CdRec> cd, String name, Edit ed, boolean keepStored, boolean align,
+    private static void writeNew(Out out, List<CdRec> cd, String name, byte[] rawName, Edit ed, boolean keepStored, boolean align,
                                  long external, int madeBy) throws IOException {
-        byte[] nameBytes = name.getBytes(StandardCharsets.UTF_8);
-        boolean utf8 = !isAscii(nameBytes);
+        byte[] nameBytes = rawName != null ? rawName : name.getBytes(StandardCharsets.UTF_8);
+        boolean utf8 = !isAscii(nameBytes) && isValidUtf8(nameBytes, nameBytes.length, false);
         boolean store = keepStored || alreadyCompressed(name) || name.endsWith("/");
         long when = System.currentTimeMillis();
         int dosTime = millisToDosTime(when), dosDate = millisToDosDate(when);
         long dataLen = ed.data != null ? ed.data.length : (ed.file != null ? ed.file.length() : 0);
+        if (dataLen > MAX_U32) throw new IOException("\"" + name + "\" is over 4 GB: a file that large can't be added here.");
+        if (out.pos > MAX_U32) throw new IOException("The rewritten archive would be over 4 GB, which can't be written here.");
         CdRec r = new CdRec();
         r.name = nameBytes;
         r.comment = new byte[0];
@@ -984,6 +1189,7 @@ public final class ZipTool {
             r.crc = crc.getValue();
             r.csize = out.pos - before;
             r.size = size;
+            if (r.csize > MAX_U32 || r.size > MAX_U32) throw new IOException("\"" + name + "\" is over 4 GB: a file that large can't be added here.");
             byte[] dd = new byte[16];
             put32(dd, 0, 0x08074b50);
             put32(dd, 4, r.crc);
@@ -1070,7 +1276,7 @@ public final class ZipTool {
         put32(h, 20, r.csize);
         put32(h, 24, r.size);
         put16(h, 28, r.name.length);
-        put16(h, 30, 0);
+        put16(h, 30, r.extra == null ? 0 : r.extra.length);
         put16(h, 32, r.comment == null ? 0 : r.comment.length);
         put16(h, 34, 0);
         put16(h, 36, r.internal);
@@ -1078,6 +1284,7 @@ public final class ZipTool {
         put32(h, 42, r.lho);
         out.write(h);
         out.write(r.name);
+        if (r.extra != null && r.extra.length > 0) out.write(r.extra);
         if (r.comment != null && r.comment.length > 0) out.write(r.comment);
     }
 

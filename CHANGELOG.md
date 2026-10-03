@@ -1,5 +1,56 @@
 # Changelog
 
+## v5.8-Pro (versionCode 580)
+
+- **A Back button that does the sensible thing.** The system Back button / gesture now closes the sheet that is open,
+  then clears a selection (apps, debloater, files), steps up a folder or out of an archive, returns to the previous
+  tab, and only then asks you to **press Back again to exit**. Nothing closes the app by accident any more.
+- **Sign APKs you edited — on the device.** Editing an APK in the archive browser breaks its signature, so there is now
+  a **✍️ Sign** button (and an "edited — sign it now" banner): it signs with **APK Signature Scheme v2** using a key that
+  is generated inside the **Android Keystore** (in secure hardware where the phone has it, never exported). Sign in place
+  or save a `-signed` copy, see the signature now / the installed copy's signer / this key's fingerprint, get a warning
+  when an installed copy has a different signer, and install the result in one tap. Checked against the real
+  `apksigner` for RSA and EC keys, multi-megabyte APKs and tampered files. Stored `.so` files are now 16 KB-aligned.
+- **Archive browser: install, nest, compare.** **Install** an APK/APKS/XAPK from inside an archive without extracting it
+  by hand, **open an archive inside an archive**, and **⚖️ Compare** two archives (or an archive and an installed app) —
+  added / removed / changed files, and a **line-by-line diff** of changed text and compiled XML (a new permission shows
+  up at a glance). The extract folder is remembered.
+- **Terminal: history, saved scripts and pinned buttons.** Up/Down arrows and a 🕘 list recall earlier commands, ⭐ keeps
+  named commands and multi-line scripts, and up to six can be **pinned as one-tap chips**. Works in the normal terminal
+  and in Rish mode. The normal terminal no longer freezes the page while a command runs.
+- **Logcat for one app.** Pick an app (or tap **Logs** in an app's menu) to see only the lines it wrote — across restarts,
+  matched by its user ID — and **save or share** the filtered log as a bug-report text file with a header. The live view
+  draws the latest 800 entries, skips redraws when nothing changed, and polls off the page's thread.
+- **File manager: select many.** Press and hold a row (or tap ☑ Select), pick files and folders, then **Copy** or **Move**
+  them (open the target folder, **📥 Paste here**) or **Delete** them in one go. Many files go through a few shell commands
+  instead of one each, conflicts ask first, failures are listed with the reason, and system locations are protected.
+- **Rish shell hardening.** A mistake that makes some shells quit (`. missing.sh`, `export a-b=1`, `$((1/0))`) no longer drops
+  you out: the shell is restarted in the same folder with a note. **STOP** is gentler (Ctrl-C first, then terminate, then
+  kill — on the whole process tree, so a script's children don't linger and unrelated background jobs survive), closing
+  can't leave stray processes or be undone by a restart in flight, a silent shell makes start fail instead of spinning,
+  `exec >/dev/null` or `PATH=` can't hide the end of a command, a runaway background job can't flood the screen, and the
+  next shell opens in the folder you left. Tested against a real mksh + toybox.
+- **Archive engine fixes (from an independent review).** Editing keeps what it used to drop — **AES-encrypted** entries stay
+  decryptable and Unicode names stay — and refuses (instead of silently truncating) entries of 4 GB or more; extraction
+  writes to a temporary file and **checks size and CRC**, so a damaged entry can't clobber an existing file and an entry
+  can never overwrite its own archive; one bad entry no longer stops a folder extraction; **CRX / self-extractor** archives
+  open (view-only); duplicate names don't block unrelated edits; renaming a file to `folder/` moves it into the folder;
+  non-UTF-8 names keep their bytes; odd names (`/abs`, `a//b`) are listed; a text file with mixed line endings is
+  view-only instead of being silently rewritten; an unchanged text save no longer rewrites (and unsigns) the APK; compiled
+  XML decoding is capped so a crafted file can't exhaust memory; temp files are never left behind.
+- **Security hardening.** App labels and file names are escaped everywhere (a package whose label contained HTML could run
+  script with access to the app's shell bridge), store fields from third-party catalogs are escaped, the release build is
+  no longer `debuggable`, backups are off (`allowBackup=false`), WebView debugging is only on in debuggable builds, the
+  WebView can't be navigated away from the app's own page, and a crashed WebView renderer is recovered.
+- **Faster.** The Applications list is drawn a page at a time (250, more as you scroll) so a phone with thousands of
+  packages stays responsive; typing in a long list's search waits for a pause; counts are one pass; the working-mode probe
+  is cached for a moment; logcat and terminal commands run off the page's thread.
+- **Fixes.** Store lists no longer show duplicates when refreshed mid-load or when switching F-Droid repos; GitHub live search
+  shows every hit and reports failures without hiding the list; the storage APK search can't get stuck, pages its results
+  and the installer ignores the answer for a file you picked before the current one; the **app's own "Download" update
+  button** works again; categories named like JavaScript built-ins, long unbroken names and emoji initials display
+  correctly; logcat's color key works from the keyboard and no longer lags on malformed lines.
+
 ## v5.7-Pro (versionCode 570)
 
 - **Terminal: Rish mode replaces "adb devices".** Tap **🐚 Rish mode** and the app switches the working mode to
