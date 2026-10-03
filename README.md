@@ -14,7 +14,7 @@ Debugging, Shizuku or Root**.
 
 ### [⬇️ Download the latest APK](https://github.com/Bingblop/ADB-Application-Manager/releases/latest)
 
-`com.bloatware.bingblop` · v6.0.1-Pro · signed APK, installs over every earlier version without uninstalling
+`com.bloatware.bingblop` · v6.0.2-Pro · signed APK, installs over every earlier version without uninstalling
 
 <table>
   <tr>
@@ -65,7 +65,7 @@ tell you when a new version is out (see [Updates](#updates)).
 | | |
 |---|---|
 | **Apps** | Browse every package, including ones uninstalled for your user · search · sort by name, update date, install date, size or "updates first" · filters for running, 3rd party, system, frozen, suspended, uninstalled, **updated in the last 7 days** and **🧩 patched** (ReVanced, Morphe, Xposed / LSPosed modules, LSPatch / NPatch, debug-signed repackages) · versions and update hints in the list · select many and run batch actions · save selections as named lists · export everything to CSV |
-| **Actions** | **App menu (one app):** Launch · Force Stop · Freeze / Enable · **Suspend / Unsuspend** · Clear Data · Uninstall for user 0 · Reinstall removed system apps · Remove Updates · App Info · **Extract APK** · **Share APK** · **Backup**. **Batch (selected apps):** Freeze · Enable · Force Stop · Suspend · Unsuspend · Clear Data · Uninstall · Reinstall · Save to List · Copy Packages · Share List |
+| **Actions** | **App menu (one app):** Launch · Force Stop · Freeze / Enable · **Suspend / Unsuspend** · Clear Data · Uninstall for user 0 · Reinstall removed system apps · Remove Updates · App Info · **Extract APK** · **Backup**. **Batch (selected apps):** Freeze · Enable · Force Stop · Suspend · Unsuspend · Clear Data · Uninstall · Reinstall · Save to List · Copy Packages · Share List |
 | **Debloater** | The [UAD-NG](https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation) community list (5,000+ packages) with descriptions and dependency warnings · filter by removal level, vendor list, state and **phone brand** · review step before anything runs · **history log with one-tap Undo** |
 | **Installer** | All-in-one installer for `.apk`, `.apks` (bundletool), `.apkm` (APKMirror) and `.xapk` (with OBB / game data) · reads the package name, version, SDK range, size and signing certificate first · pick the authorizer (ADB / Shizuku / Root / none) and every `pm install` flag (grant all permissions, downgrade, test, all users, update ownership …) · signature-mismatch and unknown-signature gates · optional dex optimization and auto-delete · **storage search** that lists every package file on the phone · optional **VirusTotal** check with your own API key (a SHA-256 lookup; nothing is uploaded unless you say so) · the app can be Android's handler for APK files |
 | **Updates** | **Update the app itself** from its own GitHub releases (dedicated card, signed-key check, seamless with a privileged mode or the system installer without one) · **Galaxy Store** (Samsung system apps) · **GitHub, Codeberg, F-Droid, IzzyOnDroid and the Obtainium catalog** for sideloaded open-source apps · import your **Obtainium** export · Update one or **Update All** · signing-key check before installing · Google Play apps hand off to Aurora Store or the Play Store page |
@@ -74,7 +74,7 @@ tell you when a new version is out (see [Updates](#updates)).
 | **Backup &amp; restore** | **💾 Backup** an app's APK (with splits), permissions and app ops in any privileged mode, plus its **data with Root** · restore through ADB / Shizuku / Root · share backups or pick one from another phone |
 | **Quick actions** | **Quick Settings tiles** and a **home-screen widget** to switch the working mode and force-stop a list of apps without opening the app |
 | **What's new** | The changelog is inside the app: it opens once after an update, and from Color &amp; Themes → About |
-| **Productivity** | Select and copy any text · copy buttons for package, version and name · **share sheet** for package lists, CSV, manifest, terminal output and APKs · **search with highlight and next/previous** in the manifest viewer and terminal · remembered filters and sort |
+| **Productivity** | Select and copy any text · copy buttons for package, version and name · **share sheet** for package lists, CSV, manifest, terminal output and backups · **search with highlight and next/previous** in the manifest viewer and terminal · remembered filters and sort |
 | **Terminal** | Run shell commands through the active mode (off the page's thread), with output search, copy and share · **🕘 history, ⭐ saved scripts and pinned chips** · **🐚 Rish mode**: a persistent Shizuku shell where `cd` and `export` stick, with a STOP that ends a command and its children · a searchable **📋 ADB cheat sheet** of ~90 commands you tap to drop into the input |
 | **Files** | Privileged file manager · **select many** and copy / move / delete together · open **.apk / .zip / .xapk / .jar … without extracting**, preview text, images and decoded Android XML, extract, rename, delete, add files and edit text in place · **install from inside an archive**, **open nested archives**, **compare two archives** · **sign an edited APK** on the device |
 | **Logcat** | Readable, **color-coded** log (one row per entry, tappable level key) · **limit it to one app** · save or share the filtered log as a bug-report text file |
@@ -105,6 +105,11 @@ Left to right, with the 🎨 **Colors &amp; Themes** button in the header:
 | 🌈 **Overlays** | Recolor Android (Material You: wallpaper or any color, six styles) and switch system overlays on or off ([details](#overlays-and-material-you)) |
 | 🛍️ **Store** | ShizuStore, GitHub, F-Droid, Orion and an Aurora hand-off |
 | ℹ️ **About** | Who made it, which build and key you have, debug info, and the coffee button |
+
+## New in v6.0.2
+
+- **📤 No more Share APK in the app menu.** The button is gone from the ⋯ menu of an app. **Extract APK** stays and still saves
+  the app's `.apk` (an `.apks` bundle for split apps) to Downloads and tells you where; nothing else in the menu changed.
 
 ## New in v6.0.1
 
@@ -508,7 +513,7 @@ switch that will not change is reported instead of hidden. **Default** leaves it
 Tap **⋯** on any app for its version, install and update dates, any available update, sizes (APK, data,
 cache; data and cache need *usage access*, which the app can grant through ADB/Shizuku/Root) and actions:
 Launch, Force Stop, Freeze/Enable, Suspend/Unsuspend, Clear Data, Uninstall, Reinstall, Remove Updates, App
-Info, **Extract APK** (a `.apk`, or an `.apks` bundle for split apps) and **Share APK**. Five tabs follow:
+Info and **Extract APK** (a `.apk`, or an `.apks` bundle for split apps, saved to Downloads). Five tabs follow:
 
 - **Permissions**: searchable, filterable; toggle runtime and development permissions
 - **App Ops**: Allow / Foreground / Ignore / Deny / Reset per op, plus setting any op by name
@@ -610,7 +615,7 @@ public class QuickActionActivity extends MainActivity {
 - **Copy chips** for package, version and name in the app menu; **Copy Packages** and **Share List** for a
   batch selection.
 - **Share sheet** (Android's own): package lists, the app-list CSV, a manifest, terminal output, profiles and
-  extracted APKs. Files go through a private cache provider that grants one-off read access to the receiving
+  backups. Files go through a private cache provider that grants one-off read access to the receiving
   app, so no storage permission is needed.
 - **Find** in the manifest viewer and the terminal highlights every match, shows `2 / 7 matches`, and jumps
   with ▲ ▼. The manifest viewer can show only matching lines (with line numbers) or the whole file in context.
