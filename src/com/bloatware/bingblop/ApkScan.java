@@ -56,7 +56,75 @@ public final class ApkScan {
     }
 
     private static boolean skipDir(String name) {
-        return name.startsWith(".trashed") || name.equals(".thumbnails") || name.equals(".Trash") || name.equals(".trash");
+        return name.startsWith(".trashed") || name.equals(".thumbnails") || name.equals(".Trash") || name.equals(".trash") || name.equals(ApkTrash.DIR);
+    }
+
+    /** Told after each top-level folder of a storage root has been searched: how many are done of how many, which one, and how many files were found so far. */
+    public interface Progress {
+        void onProgress(int done, int total, String folder, int found);
+    }
+
+    /** How many top-level folders of these roots {@link #walkRoot} will go through: the unit the search's progress is counted in. */
+    public static int countTopFolders(List<File> roots) {
+        int n = 0;
+        for (File r : roots) {
+            File[] kids = r == null ? null : r.listFiles();
+            if (kids == null) continue;
+            for (File k : kids) if (k.isDirectory() && !skipDir(k.getName())) n++;
+        }
+        return n;
+    }
+
+    private static boolean isSymlink(File d) {
+        try {
+            return !d.getAbsolutePath().equals(d.getCanonicalPath());
+        } catch (Exception e) {
+            return true;
+        }
+    }
+
+    /** Adds a package file to the results (empty placeholders and files already seen are left out). */
+    private static void addIfPackage(File k, List<Entry> out, Set<String> seen) {
+        String n = k.getName();
+        String kind = kindOf(n);
+        if (kind == null) return;
+        long len = k.length();
+        if (len <= 0) return; // empty placeholder
+        String path = k.getAbsolutePath();
+        if (!seen.add(path)) return;
+        Entry e = new Entry();
+        e.path = path;
+        e.name = n;
+        e.kind = kind;
+        e.size = len;
+        e.mtime = k.lastModified();
+        out.add(e);
+    }
+
+    /**
+     * Searches a whole root like {@link #walk}, one top-level folder at a time, and tells {@code progress} after each one
+     * ({@code doneBefore} folders of {@code total} were done before this root). Package files lying directly in the root are
+     * added first. Returns how many top-level folders were gone through.
+     */
+    public static int walkRoot(File root, List<Entry> out, Set<String> seen, Limits lim, int doneBefore, int total, Progress progress) {
+        if (root == null || lim.hitLimit) return 0;
+        if (System.currentTimeMillis() > lim.deadlineMs) { lim.hitLimit = true; return 0; }
+        File[] kids = root.listFiles();
+        if (kids == null) return 0;
+        for (File k : kids) {
+            if (lim.hitLimit) return 0;
+            if (out.size() >= lim.maxResults || ++lim.visited > lim.maxVisited) { lim.hitLimit = true; return 0; }
+            if (k.isFile()) addIfPackage(k, out, seen);
+        }
+        int done = 0;
+        for (File k : kids) {
+            if (lim.hitLimit) break;
+            if (!k.isDirectory() || skipDir(k.getName())) continue;
+            if (!isSymlink(k)) walk(k, 1, out, seen, lim);
+            done++;
+            if (progress != null) progress.onProgress(doneBefore + done, total, k.getName(), out.size());
+        }
+        return done;
     }
 
     /**
@@ -79,19 +147,7 @@ public final class ApkScan {
                 } catch (Exception e) { continue; }
                 walk(k, depth + 1, out, seen, lim);
             } else {
-                String kind = kindOf(n);
-                if (kind == null) continue;
-                long len = k.length();
-                if (len <= 0) continue; // empty placeholder
-                String path = k.getAbsolutePath();
-                if (!seen.add(path)) continue;
-                Entry e = new Entry();
-                e.path = path;
-                e.name = n;
-                e.kind = kind;
-                e.size = len;
-                e.mtime = k.lastModified();
-                out.add(e);
+                addIfPackage(k, out, seen);
             }
         }
     }
@@ -104,6 +160,7 @@ public final class ApkScan {
             String p = line.trim();
             if (p.isEmpty() || p.charAt(0) != '/') continue;
             if (kindOf(p.substring(p.lastIndexOf('/') + 1)) == null) continue;
+            if (p.contains("/" + ApkTrash.DIR + "/")) continue;                    // a deleted file waiting for its Undo is not on the device any more
             paths.add(p);
             if (paths.size() >= max) break;
         }

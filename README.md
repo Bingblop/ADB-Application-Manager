@@ -14,7 +14,7 @@ Debugging, Shizuku or Root**.
 
 ### [⬇️ Download the latest APK](https://github.com/Bingblop/ADB-Application-Manager/releases/latest)
 
-`com.bloatware.bingblop` · v6.0.4-Pro · signed APK, installs over every earlier version without uninstalling
+`com.bloatware.bingblop` · v6.1-Pro · signed APK, installs over every earlier version without uninstalling
 
 <table>
   <tr>
@@ -39,7 +39,7 @@ Debugging, Shizuku or Root**.
 [Working modes](#working-modes) · [Debloater](#debloater) · [Updates](#updates) · [Hidden settings](#hidden-settings) ·
 [Overlays &amp; Material You](#overlays-and-material-you) · [App menu](#app-menu) · [Profiles](#app-profiles) · [Backup &amp; restore](#backup-and-restore) ·
 [Quick tiles &amp; widget](#quick-settings-tiles-and-widget) · [Copy, share &amp; search](#copy-share-and-search) ·
-[Themes](#themes) · [How it works](#how-it-works) · [Building](#building) · [Project layout](#project-layout) ·
+[Permissions](#permissions) · [Themes](#themes) · [How it works](#how-it-works) · [Building](#building) · [Project layout](#project-layout) ·
 [Testing](#testing) · [Privacy &amp; security](#privacy--security)
 
 ## Download &amp; install
@@ -64,10 +64,10 @@ tell you when a new version is out (see [Updates](#updates)).
 
 | | |
 |---|---|
-| **Apps** | Browse every package, including ones uninstalled for your user · search · sort by name, update date, install date, size or "updates first" · filters for running, 3rd party, system, frozen, suspended, uninstalled, **updated in the last 7 days** and **🧩 patched** (ReVanced, Morphe, Xposed / LSPosed modules, LSPatch / NPatch, debug-signed repackages) · versions and update hints in the list · select many and run batch actions · save selections as named lists · export everything to CSV |
+| **Apps** | Browse every package, including ones uninstalled for your user · search · sort by name, update date, install date, size or "updates first" · filters for running, 3rd party, system, frozen, suspended, uninstalled, **updated in the last 7 days** and **🧩 patched** (ReVanced, Morphe, Xposed / LSPosed modules, LSPatch / NPatch, debug-signed repackages) · **the big counters at the top light up for the filter you are looking at** · versions and update hints in the list · select many and run batch actions · save selections as named lists · export everything to CSV |
 | **Actions** | **App menu (one app):** Launch · Force Stop · Freeze / Enable · **Suspend / Unsuspend** · Clear Data · Uninstall for user 0 · Reinstall removed system apps · Remove Updates · App Info · **Extract APK** · **Backup**. **Batch (selected apps):** Freeze · Enable · Force Stop · Suspend · Unsuspend · Clear Data · Uninstall · Reinstall · Save to List · Copy Packages · Share List |
 | **Debloater** | The [UAD-NG](https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation) community list (5,000+ packages) with descriptions and dependency warnings · filter by removal level, vendor list, state and **phone brand** · review step before anything runs · **history log with one-tap Undo** |
-| **Installer** | All-in-one installer for `.apk`, `.apks` (bundletool), `.apkm` (APKMirror) and `.xapk` (with OBB / game data) · reads the package name, version, SDK range, size and signing certificate first · pick the authorizer (ADB / Shizuku / Root / none) and every `pm install` flag (grant all permissions, downgrade, test, all users, update ownership …) · signature-mismatch and unknown-signature gates · optional dex optimization and auto-delete · **storage search** that lists every package file on the phone · optional **VirusTotal** check with your own API key (a SHA-256 lookup; nothing is uploaded unless you say so) · the app can be Android's handler for APK files |
+| **Installer** | All-in-one installer for `.apk`, `.apks` (bundletool), `.apkm` (APKMirror) and `.xapk` (with OBB / game data) · reads the package name, version, SDK range, size and signing certificate first · pick the authorizer (ADB / Shizuku / Root / none) and every `pm install` flag (grant all permissions, downgrade, test, all users, update ownership …) · signature-mismatch and unknown-signature gates · optional dex optimization and auto-delete · **storage search** with a progress bar that lists every package file on the phone, where **press and hold deletes a file with Undo** · **the splits that fit the phone are ticked** (CPU, screen density, language) · **▾ lists of common installers and requesters** for the `-i` and `--originating-uri` boxes · **Launch Application / Application Settings** buttons once an install worked · optional **VirusTotal** check with your own API key (a SHA-256 lookup; nothing is uploaded unless you say so) · the app can be Android's handler for APK files |
 | **Updates** | **Update the app itself** from its own GitHub releases (dedicated card, signed-key check, seamless with a privileged mode or the system installer without one) · **Galaxy Store** (Samsung system apps) · **GitHub, Codeberg, F-Droid, IzzyOnDroid and the Obtainium catalog** for sideloaded open-source apps · import your **Obtainium** export · Update one or **Update All** · signing-key check before installing · Google Play apps hand off to Aurora Store or the Play Store page |
 | **Inspector** | Permissions and App Ops as separate lists · **activities, services, broadcast receivers and content providers**, each with its exported / enabled / permission state, and any component can be **enabled or disabled** · unexported activities are **launchable through ADB / Shizuku / Root** · decoded **AndroidManifest.xml** viewer · version, install and update dates · APK, data and cache sizes |
 | **Profiles** | Save which apps are disabled, suspended or uninstalled; re-apply on this phone or **share to another phone** · **👁️ Watch** a profile to be told when its apps come back after a system update |
@@ -85,7 +85,8 @@ tell you when a new version is out (see [Updates](#updates)).
 | **Themes** | **Material 3** (default) · **Material You** (follows your wallpaper) · six more palettes · Light / Dark / System / Schedule · pure-black AMOLED option · per-mode color tuning |
 | **Security** | A **private ADB key is generated on each install** (nothing is bundled) · fingerprint shown in the app · signing-certificate comparison before every update |
 | **Navigation** | A Back button that closes the open sheet, clears a selection, steps up a folder or out of an archive, returns to the previous tab, and only then asks for a deliberate second press to leave (it also asks first while an install, update, file job or command is running) |
-| **About** | The developer and the GitHub repo, this build's version, device and **signing certificate** (✅ for the official release key), copyable debug info for bug reports, and an optional **☕ Buy me a coffee** (PayPal, $1 or any amount) |
+| **Permissions** | **New in v6.1:** a first-launch sheet offers **All files access**, **Usage access** and **Display over other apps** (each optional, also under About), and an action that fails for want of file access asks for it on the spot and carries on once it is allowed — see [Permissions](#permissions) |
+| **About** | The developer and the GitHub repo, this build's version, device and **signing certificate** (✅ for the official release key), copyable debug info for bug reports, the **🔐 Permissions** sheet, and an optional **☕ Buy me a coffee** (PayPal, $1 or any amount) |
 
 ## The tabs
 
@@ -104,7 +105,25 @@ Left to right, with the 🎨 **Colors &amp; Themes** button in the header:
 | 🛠️ **Hidden Settings** | Read, flip, edit and create Android's own Global, Secure and System settings ([details](#hidden-settings)) |
 | 🌈 **Overlays** | Recolor Android (Material You: wallpaper or any color, six styles) and switch system overlays on or off ([details](#overlays-and-material-you)) |
 | 🛍️ **Store** | ShizuStore, GitHub, F-Droid, Orion and an Aurora hand-off |
-| ℹ️ **About** | Who made it, which build and key you have, debug info, and the coffee button |
+| ℹ️ **About** | Who made it, which build and key you have, debug info, the 🔐 Permissions sheet, and the coffee button |
+
+## New in v6.1
+
+- **🔐 Permissions on first launch, and when an action needs one.** A sheet offers **All files access**, **Usage access** and
+  **Display over other apps** the first time the app opens; each one is optional and they are also under **About → 🔐
+  Permissions**. When something fails for want of file access, a sheet asks for it on the spot and the action carries on by
+  itself once it is allowed. See [Permissions](#permissions).
+- **🚀 Launch Application / ⚙️ Application Settings** after an install: two buttons above **Done** in the Installer's result
+  dialog, which is taller to make room (the output box keeps its height).
+- **⬇️ The Installer scrolls to the package** after you pick one, also from the list of found files.
+- **📊 A progress bar for Find APKs**, and **🗑️ press and hold a found file to delete it from the phone**, with an **Undo**
+  bar and a tip that says so.
+- **🧩 The splits that fit the phone are ticked** (base, CPU, screen density, language); the rest stay off with a note each.
+  **Select all splits by default** is off unless you turn it on.
+- **▾ Common installers and requesters** for the installer source (`-i`) and requester (`--originating-uri`) boxes: Google
+  Play, F-Droid, Aurora Store, Amazon Appstore, Samsung Galaxy Store, Huawei AppGallery, APKMirror, Obtainium, itch.io and more.
+- **🎨 / ✨ / 💡** A bigger theme button, big counters that light up for the filter in use, and a tip under Export and Share
+  CSV that says the filters scroll sideways.
 
 ## New in v6.0.4
 
@@ -235,6 +254,29 @@ Left to right, with the 🎨 **Colors &amp; Themes** button in the header:
 <sub><b>Debloat in seven steps</b>: open → filter → select → review → run → history → undo</sub>
 
 </div>
+
+<table>
+  <tr>
+    <td><img src="docs/screenshots/permissions.png" width="230" alt="First-launch permissions sheet"></td>
+    <td><img src="docs/screenshots/install-result.png" width="230" alt="Install result with Launch Application and Application Settings"></td>
+    <td><img src="docs/screenshots/installer-find.png" width="230" alt="Find APKs with a progress bar"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>New in v6.1: the first-launch permissions sheet</sub></td>
+    <td align="center"><sub>Launch Application / Application Settings after an install</sub></td>
+    <td align="center"><sub>Find APKs on this device, with progress</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/installer-undo.png" width="230" alt="A found file deleted, with Undo"></td>
+    <td><img src="docs/screenshots/installer-splits.png" width="230" alt="Splits that fit this phone are ticked"></td>
+    <td><img src="docs/screenshots/installer-sources.png" width="230" alt="Common installer sources"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Press and hold a found file to delete it, with Undo</sub></td>
+    <td align="center"><sub>The splits that fit this phone are ticked</sub></td>
+    <td align="center"><sub>▾ Common installers for the -i box</sub></td>
+  </tr>
+</table>
 
 <table>
   <tr>
@@ -632,6 +674,34 @@ public class QuickActionActivity extends MainActivity {
 - **Find** in the manifest viewer and the terminal highlights every match, shows `2 / 7 matches`, and jumps
   with ▲ ▼. The manifest viewer can show only matching lines (with line numbers) or the whole file in context.
 
+## Permissions
+
+Three accesses have no pop-up of their own: Android keeps each one on a screen of its settings. The first time the app opens
+(and once after the update that brought this sheet, if one of them is missing) a sheet offers them:
+
+| Access | What the app uses it for |
+|---|---|
+| 📁 **All files access** | Browsing storage in the file manager, finding package files on it and installing from it |
+| 📊 **Usage access** | Showing how big each app is and when it was last used |
+| 🪟 **Display over other apps** | Opening another app's screen from the background, such as an app you have just installed |
+
+**Allow** opens the Android screen for that access. **Allow all** walks through the ones still missing, one screen after the
+other (leaving a screen without allowing does not stop the walk, and closing the sheet cancels the rest); with ADB, Shizuku or
+Root the app switches the last two on itself, so only All files access needs its screen. **Not now** skips them all: the same
+sheet is under **About → 🔐 Permissions** and shows what is allowed. On Android 10 and older there is no All-files switch, so
+**Allow** shows Android's own storage dialog (and, after "don't ask again", the app's settings page); the app asks Android 10 for
+its legacy file access so that permission is enough there.
+
+**When an action needs file access** and the app has neither it nor a working mode, the action says so and the app opens the
+same sheet with just that access, naming what was being done. This covers opening, editing, saving or adding a file, reading
+a package from storage, deleting a found package file, listing a storage folder you chose and the Installer's search for
+package files. Once it is allowed the sheet closes and the action carries on by itself where that is safe: the folder is
+listed again, the search starts again, the package is read again (an action asked for more than five minutes ago is left
+alone). **Not now** cancels it; the failures that follow straight away (one action, many files) do not ask again, but a button
+you press yourself (Go in the file manager, Find APKs) asks every time. The Files tab and the search the Installer starts when
+it opens only show a note with a button. A failure on a path the access cannot help with (system folders, other apps' data) asks
+for nothing, and a working mode reads storage without it.
+
 ## Themes
 
 **Appearance:** Light, Dark, System (follows the phone), or Schedule (light/dark start times), plus optional
@@ -722,6 +792,9 @@ Also in the sources: [`ManifestDecoder`](src/com/bloatware/bingblop/ManifestDeco
   open, downloads you start and, only if you add your own API key, VirusTotal lookups. **☕ Buy me a coffee** just opens
   PayPal in your browser.
 - The ADB key is created on your phone and never leaves it. The APK contains no key.
+- The three special accesses are yours to give: the sheet only opens Android's own screens. With a working mode the app can switch
+  Usage access and Display over other apps on for itself (the same shell could do it anyway); All files access is only ever given on
+  Android's screen. Every one can be taken back there.
 - Updates are installed only after the package name, version and **signing certificate** match.
 - The reboot receiver only compares the build fingerprint and posts a reminder. It changes nothing.
 - Backup files can hold app data; they are plain files in your Downloads folder, so treat them like the data
@@ -801,7 +874,8 @@ src/com/bloatware/bingblop/
   ApkSigner, SigningKey        Signing edited APKs on the device (Android Keystore key)
   RishShell                    The persistent Rish shell in the terminal
   ManifestDecoder              Binary AndroidManifest.xml back to readable XML
-  ApkScan, XapkInfo            The Installer's storage search and XAPK reading
+  ApkScan, ApkTrash, XapkInfo  The Installer's storage search (with progress), the rules for deleting a found file with Undo, and XAPK reading
+  SplitInfo                    Which CPU / density / language / feature a split APK is for (read from its manifest)
   VirusTotal                   The optional VirusTotal lookup
   ModDetect                    Patched / repackaged app detection
   UpdateManager, FdroidIndex,  Update checks and the Store catalogs (ShizuStore, GitHub, F-Droid, Orion)
@@ -827,7 +901,7 @@ What is checked before each release, and what is not. The checks live in [`tests
 (`cd tests && npm install && npx playwright install chromium && node run.js && node java/run.js`; what each needs and how a
 script passes is in [tests/README.md](tests/README.md)).
 
-- **The UI** (`tests/run.js`, about four minutes): 69 headless-Chromium scripts drive the real `assets/index.html` against a mock Android bridge:
+- **The UI** (`tests/run.js`, about four minutes): 75 headless-Chromium scripts drive the real `assets/index.html` against a mock Android bridge:
   every tab, theme, filter, share / copy / find action, profiles and the drift banner, backups, the Installer, the
   Store, the file manager and archive browser, the terminal, About, the Back button, the height of the app menu and, for the Hidden Settings tab, the
   list, search, filters and sort, tap-to-edit, press-and-hold flipping (with touch events of any hold length), creating,
@@ -835,8 +909,13 @@ script passes is in [tests/README.md](tests/README.md)).
   light and dark. For the Overlays tab: the theme editor (hex, sliders, the 657 presets, styles), apply, reset and Undo, an
   app restart in the middle of a change, the palette redrawing, the overlay list (131 sample overlays, awkward names,
   search, filters, press and hold with a touch screen, a refused, fixed-on, unavailable, unanswered or late change), a
-  phone without Material You, and both halves at 320 and 360 px in light and dark.
-- **Native rules, off the device** (`tests/java/run.js`, 15 suites): the parts of the Java that need no Android classes are compiled
+  phone without Material You, and both halves at 320 and 360 px in light and dark. For v6.1: the permission sheets (first
+  launch, About, and the prompt an action raises, with the file manager, the storage search and the reading of a package each
+  carrying on once the access arrives, an old or declined request left alone, and a working mode that grants two of the three on the
+  spot), the Installer's result-dialog buttons at three screen sizes, the search's progress bar, press-and-hold delete with Undo
+  (touch included), the scroll to the package, the splits that fit the phone (CPU order, density rounding, language aliases and regions), both lists of common
+  installers and requesters, the lit counters and the tip under Export.
+- **Native rules, off the device** (`tests/java/run.js`, 17 suites): the parts of the Java that need no Android classes are compiled
   and run as plain Java. For the Hidden Settings tab that is 311 checks of `SettingsDb`, including round trips through a real `sh` (and a fake
   `settings` that refuses on purpose) for hostile values (quotes, `;`, `$(...)`, backticks, `>`, newlines, Unicode), and a
   comparison of the name, value and size checks in Java and in the page over 1,322 cases (the color check of the Overlays tab
@@ -847,8 +926,10 @@ script passes is in [tests/README.md](tests/README.md)).
   approach covers the file-manager path rules, the install-answer reader, the package-file scan and XAPK paths, the F-Droid and
   GitHub catalog parsers (against real indexes and feeds), the manifest decoder (against every compiled XML file of a real APK),
   the archive engine (two suites, with generated bad, truncated, encrypted and 4 GB archives), the Rish shell (one suite against
-  a real `mksh` with `toybox`) and the APK signer (v2 signatures cross-checked with `apksigner`). The backup scripts and the
-  regex handling of the update checks have no suite of their own yet.
+  a real `mksh` with `toybox`) and the APK signer (v2 signatures cross-checked with `apksigner`). For v6.1, 133 checks of `ApkTrash` (which
+  paths may be deleted, where a file waits and how it comes back, and the search's progress against a real folder tree) and 17 of
+  `SplitInfo` (what a split's manifest says about it). The backup scripts and the regex handling of the update checks have no suite of
+  their own yet.
 - **The build**: `build.sh` compiles, signs and verifies every APK (zipalign, v2 / v3 signatures), and each published
   release is downloaded again and checked: SHA-256, signing certificate, version and alignment.
 - **Reviews**: each release's new code gets separate, independent review passes (automated ones, not a human), and
@@ -856,6 +937,10 @@ script passes is in [tests/README.md](tests/README.md)).
   so did the Overlays tab (native side: 7 findings, then 8 more in a second look at what the first fixes added; page: 11);
   each finding was checked against the code and fixed, except that the sheets still do not trap keyboard focus, like the
   app's others, and that overlays are switched for the phone's main user (`--user current` could not be tried on a real phone).
+  The v6.1 code had three (native side: 8 findings, page: 13, and a second look at the native fixes: 4 more), all checked and fixed
+  with a test that fails when the fix is taken out, except that a command a working mode never answers is bounded only by that
+  mode's own ten-minute limit, and that a file deleted on an SD card that is removed before the app next starts leaves its hidden
+  trash folder on the card.
 - **Not tested on hardware**: the parts that only exist on a phone (the ADB, Shizuku and Root backends, the Quick
   Settings tiles, the widget, the share sheet, the boot notification, the real `settings` and `cmd overlay` commands and the
   Material You engine on your phone's Android version and skin) are checked by compilation, review and these simulations, not on a device. If something

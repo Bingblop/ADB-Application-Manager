@@ -4,7 +4,7 @@ The checks the app is released with. None of this is part of the APK. There are 
 
 | | What it is | Needs |
 |---|---|---|
-| **UI** — `run.js`, `ui/` | 69 headless-Chromium scripts drive the real `assets/index.html` against a mock Android bridge: every tab, theme, filter, action, sheet and dialog | Node 18+, Playwright with its Chromium |
+| **UI** — `run.js`, `ui/` | 75 headless-Chromium scripts drive the real `assets/index.html` against a mock Android bridge: every tab, theme, filter, action, sheet and dialog | Node 18+, Playwright with its Chromium |
 | **Java** — `java/run.js`, `java/src/` | The parts of the app's Java that need no Android classes (settings and overlay rules, file rules, install hints, the archive engine, the Rish shell, the APK signer, the manifest decoder, the store parsers), compiled straight from `src/` and run with the JDK | JDK 8+; some suites also need Node, Python 3 with `zip`, `mksh` + `toybox`, `apksigner`, an APK, or the `org.json` jar |
 
 ## Run them
@@ -87,6 +87,8 @@ Two things made scripts fail only on a busy machine, and what to do instead:
 | `filerules` | File manager path rules: canonical form, protected folders | |
 | `installhints` | What an install failure means | |
 | `pure` | Package-file scan output and XAPK data paths | `org.json` |
+| `apktrash` | Deleting a found package file with Undo (which paths may be deleted, where a file waits, how it comes back) and the storage search's progress, against a real folder tree | `org.json` |
+| `splitinfo` | What a split APK's manifest says about it (split name, the feature module it configures, the feature flag) | |
 | `fdroid` | F-Droid index v1 / v2 parsing against real indexes | `org.json` |
 | `komi` | GitHub catalog (Komi) feeds: mapping, de-duplication, dates | `org.json` |
 | `ziptool` | The archive engine: read, edit and rewrite zips (bad, truncated, encrypted, huge, zip64, streamed), alignment, diff | Python 3, `zip`; an APK is optional |
@@ -118,7 +120,7 @@ checked by compilation, review and these simulations, not on a device.
 
 ## The UI scripts, one by one
 
-<details><summary>69 scripts</summary>
+<details><summary>75 scripts</summary>
 
 | Script | Covers |
 |---|---|
@@ -190,6 +192,12 @@ checked by compilation, review and these simulations, not on a device.
 | `t67` | Overlays tab, review round: what the independent reviews found (journal overwrite, the restart record, editor state, unknown styles, Android 11, focus and keyboard, "constructor" targets, a dead Back, a stale list, an empty list after a change, the switch warning). |
 | `t68` | v6.0.1: the Settings tab is now "Hidden Settings" (🛠️). The name, the card and the menu say so, the order of the tabs is the same, and what an earlier version saved (the last table, filter and sort; the log of changes) is still used. |
 | `t69` | v6.0.3: the single-app sheet (the ⋯ menu of an app) stands a little taller than the other sheets (93% of the screen, not 85%), so the lists under its buttons get more room. Nothing else changes: the other sheets keep their height, a strip above stays tappable, the end of a long list can still be reached, and the sheet follows a shorter window (on-screen keyboard). |
+| `t70` | v6.1 Applications tab top: the 🎨 theme button is bigger, the big stat buttons (Total installed, Running, ...) light up for the filter the list shows, and a tip under Export / Share CSV says the filters scroll sideways (and goes once they have been). |
+| `t71` | v6.1 Installer, splits: the base and the splits that fit this phone (CPU, screen density, language) are ticked and every other one is left off; "Select all splits by default" is off by default; "Match this phone", "Select all" and "Only base" work. |
+| `t72` | v6.1 Installer: a small ▾ button at the end of the installer source (-i) box and of the requester / originating URI box opens a list of common values; choosing one fills the box. |
+| `t73` | v6.1 Installer: when an install worked, the result dialog has "Launch Application" and, under it, "Application Settings", above "Done". The dialog stands taller for them and the output box keeps the height it has without them. |
+| `t74` | v6.1 Installer, finding and picking packages: a progress bar while "Find APKs on this device" runs; press and hold a found file to delete it from the device (with a tip that says so, and an Undo bar); the page swipes down to the next box once a package is picked. |
+| `t75` | v6.1 Permissions: the first time the app opens it offers the three accesses that have no dialog of their own (All files access, Usage access, Display over other apps); the same sheet is under About; and an action that fails for want of file access asks for it on the spot, then carries on by itself once the access is there (file manager, storage search, reading a package). |
 | `test` | Working Modes (switching, Shizuku, IP:port entry, auto-detect) and Material 3 / Material You color presets |
 
 </details>

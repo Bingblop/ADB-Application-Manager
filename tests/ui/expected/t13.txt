@@ -1,5 +1,5 @@
 tabs: 📱 Applications | 📋 Saved Lists | 🧹 Debloater | 📦 Installer | 📁 Files | ⬆️ Updates | 💻 ADB Console | 📄 Logcat | 🛠️ Hidden Settings | 🌈 Overlays | 🛍️ Store | ℹ️ About
-saved ui_state: {"appsFilter":"system","showVersions":true,"appSort":"name","uad":{"removal":["Recommended","Advanced"],"list":"Oem","state":"enabled","brand":"Samsung"}}
+saved ui_state: {"appsFilter":"system","showVersions":true,"appSort":"name","filtersHintDone":true,"uad":{"removal":["Recommended","Advanced"],"list":"Oem","state":"enabled","brand":"Samsung"}}
 history entries: 1 | Uninstalled 2 packages
 after undo: Undo: Uninstalled 2 packages / Uninstalled 2 packages
 copied log first lines: [<iso time>] Undo: Uninstalled 2 packages |   OK   reinstall com.samsung.android.rubin.app (Recommended) |   OK   reinstall com.sec.android.app.aftersalecamera (Recommended)

@@ -284,12 +284,44 @@ public class MainActivity extends Activity {
         registerWallpaperListener();
         handleIncomingIntent(getIntent());
         maybeRequestFirstLaunchPermissions();
+        // A package file deleted with an Undo whose few seconds ran out while the app was closed: it is deleted for good now
+        if (prefs != null && prefs.getBoolean("apk_trash_pending", false)) {
+            executor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    try { purgeApkTrash(); } catch (Exception ignored) {}
+                }
+            });
+        }
+    }
+
+    private static final int REQ_STORAGE_PERM = 9301;
+
+    /** The system's permission dialog was answered: tell the page, and after a refusal for good send the user to the app's settings page, where the switch is. */
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        try {
+            if (requestCode == REQ_STORAGE_PERM) {
+                boolean never = false;
+                for (String p : permissions) {
+                    if (checkSelfPermission(p) != PackageManager.PERMISSION_GRANTED && !shouldShowRequestPermissionRationale(p)) never = true;
+                }
+                if (never) {
+                    Intent i = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + getPackageName()));
+                    i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(i);
+                }
+            }
+        } catch (Exception ignored) {}
+        notifyJs("window.onPermissionsChanged && window.onPermissionsChanged()");
     }
 
     /**
      * On the very first launch, check and request the standard runtime permissions the app uses
-     * (notifications, and legacy storage on pre-Android 11). Special-access permissions - All-files
-     * access, usage access and overlay - are still requested in context from their own screens.
+     * (notifications, and legacy storage on pre-Android 11). The special accesses - All-files access,
+     * usage access and display over other apps - have no dialog of their own: the page offers them in its
+     * first-launch sheet (and asks for All-files access again whenever an action needs it).
      */
     private void maybeRequestFirstLaunchPermissions() {
         try {
@@ -2526,13 +2558,18 @@ public class MainActivity extends Activity {
 
     /** The split="..." value from an APK's binary manifest, or null for a base APK. Best-effort. */
     private String manifestSplitName(File apk) {
+        String[] info = manifestSplitInfo(apk);
+        return info == null ? null : info[0];
+    }
+
+    /**
+     * What a split's manifest says about it: {split, configForSplit, isFeatureSplit}, or null when it can't be read. split is null for a
+     * base APK; configForSplit is "" for the base's own config splits and names the feature module otherwise.
+     */
+    private String[] manifestSplitInfo(File apk) {
         try {
-            String xml = ManifestDecoder.decodeApk(apk.getAbsolutePath(), null);
-            if (xml == null) return null;
-            // A config/feature split declares <manifest ... split="config.xxxhdpi">; a base APK has no such
-            // attribute. \bsplit= deliberately won't match splitName=/splitTypes= on other elements.
-            java.util.regex.Matcher m = java.util.regex.Pattern.compile("(?i)\\bsplit\\s*=\\s*\"([^\"]+)\"").matcher(xml);
-            if (m.find()) return m.group(1);
+            // A config/feature split declares <manifest ... split="config.xxxhdpi">; a base APK has no such attribute (see SplitInfo).
+            return SplitInfo.parse(ManifestDecoder.decodeApk(apk.getAbsolutePath(), null));
         } catch (Throwable ignored) {}
         return null;
     }
@@ -2684,13 +2721,16 @@ public class MainActivity extends Activity {
         JSONArray arr = new JSONArray();
         for (File f : ordered) {
             total += f.length();
-            String split = (f == base) ? null : manifestSplitName(f);
+            String[] info = (f == base) ? null : manifestSplitInfo(f);
+            String split = info == null ? null : info[0];
             JSONObject s = new JSONObject();
             s.put("path", f.getAbsolutePath());
             s.put("name", f.getName());
             s.put("size", f.length());
             s.put("isBase", f == base);
             s.put("split", split != null ? split : "");
+            s.put("configFor", info == null ? "" : info[1]);          // the feature module a config split belongs to ("" = the base)
+            s.put("feature", info != null && "true".equals(info[2])); // a feature (dynamic) module of its own
             arr.put(s);
         }
         res.put("splits", arr);
@@ -3747,6 +3787,7 @@ public class MainActivity extends Activity {
     private String[] stageArchive(String p) throws Exception {
         String mode = resolveExecMode();
         if ("standard".equals(mode)) {
+            needFileAccess("To open this file", p);
             throw new IOException("Can't read this file. For storage, grant All-files access; for system folders, set up ADB, Shizuku or Root.");
         }
         String sz = shellVia(mode, "stat -c %s " + BackupScripts.quote(p) + " 2>&1");
@@ -3790,7 +3831,7 @@ public class MainActivity extends Activity {
         File f = new File(p);
         File dir = f.getParentFile();
         if (f.canWrite() && dir != null && dir.canWrite()) return null;
-        if ("standard".equals(resolveExecMode())) return "Editing needs All-files access for storage, or ADB / Shizuku / Root for other folders.";
+        if ("standard".equals(resolveExecMode())) { needFileAccess("To change this file", p); return "Editing needs All-files access for storage, or ADB / Shizuku / Root for other folders."; }
         return null;
     }
 
@@ -3834,6 +3875,7 @@ public class MainActivity extends Activity {
         }
         String mode = resolveExecMode();
         if ("standard".equals(mode)) {
+            needFileAccess("To save a file there", dest);
             return "This app can't write there. Grant All-files access, or set up ADB, Shizuku or Root.";
         }
         try {
@@ -3973,8 +4015,194 @@ public class MainActivity extends Activity {
         } catch (Exception e) { return false; }
     }
 
+    /**
+     * Tells the page an action on {@code path} has just failed for want of All-files access, so that it asks for it. Nothing happens
+     * when the app has the access (the failure was something else), nor when the path is not on shared storage (system folders, other
+     * apps' data: the access would not help there), and the page shows its prompt once, not once per failure.
+     */
+    private void needFileAccess(String reason, String path) {
+        try {
+            if (hasStorageAccess()) return;
+            if (path == null || ApkTrash.volumeRoot(fmCanonicalPath(path)) == null) return;
+            notifyJs("window.onFileAccessNeeded && window.onFileAccessNeeded(" + JSONObject.quote(reason == null ? "" : reason) + ")");
+        } catch (Exception ignored) {}
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Deleting a package file the search found, with an Undo (the rules are in ApkTrash)
+    // ---------------------------------------------------------------------------------------------
+
+    /**
+     * Asks the working mode whether {@code test} (-e, -f) holds for a path: it answers YES or NO. Any other reply (the link is down, su is
+     * missing: the shell helpers report those as text, they do not throw) is an error and not a "no", so a dead shell is never read as
+     * "that file is not there".
+     */
+    private boolean shellTest(String mode, String test, String path) throws Exception {
+        return ApkTrash.yesNo(shellVia(mode, "[ " + test + " " + BackupScripts.quote(path) + " ] && echo YES || echo NO"));
+    }
+
+    // A purge at start-up can take seconds (the working mode may still be connecting): it must not touch what the person deletes meanwhile
+    private final Object apkTrashLock = new Object();
+    private volatile boolean apkTrashedThisRun = false;
+
+    private boolean pathExists(String mode, String path) throws Exception {
+        if (new File(path).exists()) return true;
+        if ("standard".equals(mode)) return false;
+        return shellTest(mode, "-e", path);
+    }
+
+    /** True for a regular file (not a folder that happens to be called "x.apk"). */
+    private boolean isRegularFile(String mode, String path) throws Exception {
+        File f = new File(path);
+        if (f.isFile()) return true;
+        if (f.exists() || "standard".equals(mode)) return false;
+        return shellTest(mode, "-f", path);
+    }
+
+    /**
+     * Moves one file: with the app's own access when it has it, else through the privileged shell. Never replaces a file that is already
+     * at the target (a rename would). null when it worked, otherwise why not.
+     */
+    private String moveFile(String mode, String from, String to) {
+        try {
+            File src = new File(from), dst = new File(to);
+            boolean own = hasStorageAccess();
+            if (own && src.isFile() && !dst.exists()) {
+                File dir = dst.getParentFile();
+                if (dir != null && (dir.mkdirs() || dir.isDirectory()) && src.renameTo(dst)) return null;          // (mkdirs is false when another call made it a moment ago)
+            }
+            if ("standard".equals(mode)) return own ? "Android wouldn't let this app move that file." : "This needs All-files access, or ADB, Shizuku or Root.";
+            String dir = to.substring(0, to.lastIndexOf('/'));
+            String out = shellVia(mode, "mkdir -p " + BackupScripts.quote(dir) + " && [ ! -e " + BackupScripts.quote(to) + " ] && mv " + BackupScripts.quote(from) + " " + BackupScripts.quote(to) + " && echo FMOK");
+            if (out != null && out.contains("FMOK")) return null;
+            String why = out == null ? "" : out.trim();
+            return why.isEmpty() ? "The file could not be moved." : why;
+        } catch (Exception e) {
+            return e.getMessage() != null ? e.getMessage() : "The file could not be moved.";
+        }
+    }
+
+    /** Deletes one trashed file or a whole trash folder, with the app's own access when it can and else through the shell. */
+    private void deleteQuietly(String mode, String path, boolean folder) {
+        try {
+            File f = new File(path);
+            if (hasStorageAccess()) {
+                if (folder && f.isDirectory()) { File[] kids = f.listFiles(); if (kids != null) for (File k : kids) k.delete(); }
+                f.delete();
+                if (!f.exists()) return;
+            }
+            if (!"standard".equals(mode)) shellVia(mode, (folder ? "rm -rf " : "rm -f ") + BackupScripts.quote(path));
+        } catch (Exception ignored) {}
+    }
+
+    /** The storage volumes a package file can be on: the primary storage and any SD card or USB drive. */
+    private List<String> storageVolumes() {
+        List<String> roots = new ArrayList<String>();
+        roots.add(fmCanonicalPath("/sdcard"));
+        File[] vols = new File("/storage").listFiles();
+        if (vols != null) {
+            for (File v : vols) if (v.getName().matches("[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}")) roots.add(v.getAbsolutePath());
+        }
+        return roots;
+    }
+
+    /**
+     * Deletes what every trash folder holds (what an app that was closed during an Undo's few seconds left behind). The "something is
+     * waiting" mark is cleared only when every trash folder is seen to be gone; when the app can neither read storage nor use a working
+     * mode (the connection is not up yet, say) it can't see them, so the mark stays and the next start tries again. true when all is gone.
+     */
+    private boolean purgeApkTrash() {
+        if (apkTrashedThisRun) return false;                  // a file deleted in this run waits for its Undo: leave it all to the next start
+        String mode = resolveExecMode();
+        boolean gone = hasStorageAccess() || !"standard".equals(mode);
+        for (String root : storageVolumes()) {
+            if (apkTrashedThisRun) return false;
+            String dir = ApkTrash.trashDir(root);
+            deleteQuietly(mode, dir, true);
+            try { if (hasStorageAccess() ? new File(dir).exists() : pathExists(mode, dir)) gone = false; } catch (Exception e) { gone = false; }
+        }
+        synchronized (apkTrashLock) {
+            if (gone && !apkTrashedThisRun) prefs.edit().putBoolean("apk_trash_pending", false).apply();
+        }
+        return gone && !apkTrashedThisRun;
+    }
+
+    /** op "trash" (a = path): move the file into its volume's trash; "untrash" (a = trash path, b = original path): put it back; "purge" (a = trash path, or empty for all): delete for good. */
+    private JSONObject apkFileOpImpl(String op, String a, String b) throws Exception {
+        JSONObject res = new JSONObject();
+        String mode = resolveExecMode();
+        if ("trash".equals(op)) {
+            String src = fmCanonicalPath(a);
+            if (!ApkTrash.deletable(src)) throw new IOException("Only app package files on storage can be deleted here.");
+            if ("standard".equals(mode) && !hasStorageAccess()) {          // the list came from a working mode that has gone since
+                needFileAccess("To delete files from storage", src);
+                throw new IOException("This needs All-files access, or ADB, Shizuku or Root.");
+            }
+            if (!isRegularFile(mode, src)) throw new IOException(pathExists(mode, src) ? "That is not a package file." : "That file is already gone.");
+            String dest = ApkTrash.trashPath(src, ApkTrash.nextStamp(System.currentTimeMillis()));
+            // marked before the move: if the app is killed in between, the next start still knows to look in the trash folders
+            synchronized (apkTrashLock) {
+                apkTrashedThisRun = true;
+                prefs.edit().putBoolean("apk_trash_pending", true).commit();
+            }
+            String why = moveFile(mode, src, dest);
+            if (why != null) {
+                if (why.contains("All-files access")) needFileAccess("To delete files from storage", src);
+                throw new IOException(why);
+            }
+            res.put("ok", true);
+            res.put("trash", dest);
+        } else if ("untrash".equals(op)) {
+            String trash = fmCanonicalPath(a), orig = fmCanonicalPath(b);
+            if (!ApkTrash.restorable(trash, orig)) throw new IOException("That file can't be put back.");
+            // a file of the same name may be there again: both are kept
+            final String m = mode;
+            String target = ApkTrash.uniqueTarget(orig, new ApkTrash.Exists() {
+                @Override
+                public boolean at(String path) throws Exception { return pathExists(m, path); }
+            });
+            if (target == null) throw new IOException("A file with that name is in the way.");
+            String why = moveFile(mode, trash, target);
+            if (why != null) throw new IOException(why);
+            res.put("ok", true);
+            res.put("path", target);
+        } else if ("purge".equals(op)) {
+            if (a == null || a.trim().isEmpty()) {
+                if (prefs.getBoolean("apk_trash_pending", false)) purgeApkTrash();          // nothing waiting: nothing to look for
+            } else {
+                String trash = fmCanonicalPath(a);
+                if (!ApkTrash.isTrashPath(trash)) throw new IOException("That is not a deleted file.");
+                deleteQuietly(mode, trash, false);
+                if (pathExists(mode, trash)) throw new IOException("The file could not be removed now. It is removed the next time the app starts.");
+            }
+            res.put("ok", true);
+        } else {
+            throw new IOException("Unknown operation: " + op);
+        }
+        return res;
+    }
+
     private static final String SCAN_FIND_PREDICATE =
             "-type f \\( -iname '*.apk' -o -iname '*.apks' -o -iname '*.apkm' -o -iname '*.xapk' \\)";
+
+    private volatile long apkScanProgressAt = 0;
+    // numbers the searches: when a newer one starts (the page gave up on the first, or was reloaded), the older one's progress and answer are dropped
+    private final java.util.concurrent.atomic.AtomicInteger apkScanSeq = new java.util.concurrent.atomic.AtomicInteger();
+
+    /** Tells the page how far the search has got: window.onApkScanProgress({pct (-1 = no way to tell), msg, found}). At most a few times a second unless forced. */
+    private void sendApkScanProgress(int scanId, int pct, String msg, int found, boolean force) {
+        if (scanId != apkScanSeq.get()) return;
+        long now = android.os.SystemClock.elapsedRealtime();
+        if (!force && now - apkScanProgressAt < 120) return;
+        apkScanProgressAt = now;
+        try {
+            JSONObject o = new JSONObject();
+            o.put("pct", pct);
+            o.put("msg", msg);
+            o.put("found", found);
+            notifyJs("window.onApkScanProgress && window.onApkScanProgress(" + JSONObject.quote(o.toString()) + ")");
+        } catch (Exception ignored) {}
+    }
 
     /**
      * Scans storage off-thread and reports to window.onApkScan(json): {status, files[], truncated, ms, fs, shell}.
@@ -3982,6 +4210,7 @@ public class MainActivity extends Activity {
      * can't (Android/data, Android/obb - or everything when All-files access isn't granted).
      */
     private void runApkScan() {
+        final int scanId = apkScanSeq.incrementAndGet();
         executor.submit(new Runnable() {
             @Override
             public void run() {
@@ -3994,7 +4223,7 @@ public class MainActivity extends Activity {
                     res.put("shell", privileged);
                     if (!fsAccess && !privileged) {
                         res.put("status", "noaccess");
-                        notifyJs("window.onApkScan && window.onApkScan(" + JSONObject.quote(res.toString()) + ")");
+                        if (scanId == apkScanSeq.get()) notifyJs("window.onApkScan && window.onApkScan(" + JSONObject.quote(res.toString()) + ")");
                         return;
                     }
 
@@ -4011,8 +4240,23 @@ public class MainActivity extends Activity {
                         for (File v : vols) if (v.getName().matches("[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}")) roots.add(v);
                     }
 
+                    // Progress: the folders this app can read fill the first part of the bar (all of it without a privileged mode),
+                    // the shell's search and its size look-ups the rest. The unit is a top-level folder of each volume.
+                    final int walkShare = privileged ? 85 : 98;
+                    apkScanProgressAt = 0;
+                    sendApkScanProgress(scanId, 0, "Looking through storage…", 0, true);
                     if (fsAccess) {
-                        for (File r : roots) ApkScan.walk(r, 0, found, seen, lim);
+                        final int totalTop = ApkScan.countTopFolders(roots);
+                        int doneBefore = 0;
+                        for (File r : roots) {
+                            doneBefore += ApkScan.walkRoot(r, found, seen, lim, doneBefore, totalTop, new ApkScan.Progress() {
+                                @Override
+                                public void onProgress(int done, int total, String folder, int foundNow) {
+                                    int pct = total > 0 ? Math.min(walkShare, done * walkShare / total) : walkShare;
+                                    sendApkScanProgress(scanId, pct, "Searched " + folder + " (" + done + " of " + total + " folders)", foundNow, done >= total);
+                                }
+                            });
+                        }
                     }
 
                     if (privileged) {
@@ -4024,6 +4268,7 @@ public class MainActivity extends Activity {
                             for (File r : roots) where.append(BackupScripts.quote(r.getAbsolutePath())).append(' ');
                         }
                         AndroidBridge sh = new AndroidBridge();
+                        sendApkScanProgress(scanId, -1, fsAccess ? "Searching Android/data and Android/obb with the privileged mode…" : "Searching storage with the privileged mode…", found.size(), true);
                         String out = sh.executeShell("find " + where.toString().trim() + " -maxdepth 12 " + SCAN_FIND_PREDICATE
                                 + " 2>/dev/null | head -n 2500");
                         List<String> unreadable = new ArrayList<String>();
@@ -4048,6 +4293,7 @@ public class MainActivity extends Activity {
                         // Size + date of the files only the shell can see, 40 per call
                         Map<String, long[]> stats = new java.util.HashMap<String, long[]>();
                         for (int i = 0; i < unreadable.size(); i += 40) {
+                            sendApkScanProgress(scanId, 90 + Math.min(9, i * 9 / Math.max(1, unreadable.size())), "Reading sizes and dates (" + Math.min(i + 40, unreadable.size()) + " of " + unreadable.size() + " files)", found.size(), false);
                             StringBuilder args = new StringBuilder();
                             for (int j = i; j < Math.min(i + 40, unreadable.size()); j++) {
                                 args.append(' ').append(BackupScripts.quote(unreadable.get(j)));
@@ -4076,7 +4322,7 @@ public class MainActivity extends Activity {
                 } catch (Exception e) {
                     try { res.put("status", "error"); res.put("error", e.getMessage() != null ? e.getMessage() : "scan failed"); } catch (Exception ignored) {}
                 }
-                notifyJs("window.onApkScan && window.onApkScan(" + JSONObject.quote(res.toString()) + ")");
+                if (scanId == apkScanSeq.get()) notifyJs("window.onApkScan && window.onApkScan(" + JSONObject.quote(res.toString()) + ")");
             }
         });
     }
@@ -4966,6 +5212,15 @@ public class MainActivity extends Activity {
         long total = 0;
         for (File f : apkFiles(ai)) total += f.length();
         return total;
+    }
+
+    /** "Display over other apps" (a special access with its own settings screen from Android 6 on). */
+    private boolean hasOverlayAccess() {
+        try {
+            return Build.VERSION.SDK_INT < 23 || android.provider.Settings.canDrawOverlays(this);
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     private boolean hasUsageAccess() {
@@ -5912,6 +6167,24 @@ public class MainActivity extends Activity {
             }
         }
 
+        /** What a split APK has to match to suit this phone: its CPU architectures (best first), screen density and languages (best first). */
+        @JavascriptInterface
+        public String getDeviceProfile() {
+            JSONObject o = new JSONObject();
+            try {
+                JSONArray abis = new JSONArray();
+                for (String a : Build.SUPPORTED_ABIS) abis.put(a);
+                o.put("abis", abis);
+                o.put("dpi", getResources().getDisplayMetrics().densityDpi);
+                JSONArray loc = new JSONArray();
+                android.os.LocaleList ll = getResources().getConfiguration().getLocales();
+                for (int i = 0; i < ll.size(); i++) loc.put(ll.get(i).toLanguageTag());
+                o.put("locales", loc);
+                o.put("sdk", Build.VERSION.SDK_INT);
+            } catch (Exception ignored) {}
+            return o.toString();
+        }
+
         @JavascriptInterface
         public String loadPackages() {
             try {
@@ -6553,10 +6826,17 @@ public class MainActivity extends Activity {
                 @Override
                 public void run() {
                     try {
-                        Intent i = new Intent(android.provider.Settings.ACTION_USAGE_ACCESS_SETTINGS);
+                        // straight to this app's own switch where the phone supports it, else the list of apps
+                        Intent i = new Intent(android.provider.Settings.ACTION_USAGE_ACCESS_SETTINGS, Uri.parse("package:" + getPackageName()));
                         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                         startActivity(i);
-                    } catch (Exception ignored) {}
+                    } catch (Exception e) {
+                        try {
+                            Intent i = new Intent(android.provider.Settings.ACTION_USAGE_ACCESS_SETTINGS);
+                            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(i);
+                        } catch (Exception ignored) {}
+                    }
                 }
             });
             return "settings";
@@ -6627,10 +6907,32 @@ public class MainActivity extends Activity {
             });
         }
 
-        /** Scans storage for .apk/.apks/.apkm/.xapk files. Answer: window.onApkScan(json). */
+        /** Scans storage for .apk/.apks/.apkm/.xapk files. Answer: window.onApkScan(json); progress: window.onApkScanProgress(json). */
         @JavascriptInterface
         public void scanApkFiles() {
             runApkScan();
+        }
+
+        /**
+         * Deletes a found package file with an Undo. op "trash" (a = path) moves it into its storage volume's trash folder,
+         * "untrash" (a = trash path, b = the original path) puts it back, "purge" (a = a trash path, or empty for every trash folder)
+         * deletes for good. Answer: window.onApkFileOp(id, json) with ok and trash / path, or error.
+         */
+        @JavascriptInterface
+        public void apkFileOp(final String id, final String op, final String a, final String b) {
+            submitJob(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject res;
+                    try {
+                        res = apkFileOpImpl(op, a, b);
+                    } catch (Exception e) {
+                        res = new JSONObject();
+                        try { res.put("ok", false); res.put("error", e.getMessage() != null ? e.getMessage() : "failed"); } catch (Exception ignored) {}
+                    }
+                    notifyJs("window.onApkFileOp && window.onApkFileOp(" + JSONObject.quote(id == null ? "" : id) + ", " + JSONObject.quote(res.toString()) + ")");
+                }
+            });
         }
 
         /** Lets the user choose an .apk/.apks/.apkm/.xapk to install. Answer: window.onInstallFilePicked(ref). */
@@ -6736,7 +7038,11 @@ public class MainActivity extends Activity {
                         }
                     } catch (Exception e) {
                         res = new JSONObject();
-                        try { res.put("error", e.getMessage() != null ? e.getMessage() : "could not read this package"); } catch (Exception ignored) {}
+                        String why = e.getMessage() != null ? e.getMessage() : "could not read this package";
+                        try { res.put("error", why); } catch (Exception ignored) {}
+                        if (ref != null && !ref.startsWith("content://") && (why.contains("EACCES") || why.toLowerCase(java.util.Locale.US).contains("permission denied"))) {
+                            needFileAccess("To read this package from storage", ref);
+                        }
                     }
                     notifyJs("window.onInstallInspected && window.onInstallInspected(" + JSONObject.quote(res.toString()) + ")");
                 }
@@ -7013,6 +7319,47 @@ public class MainActivity extends Activity {
             } catch (Exception e) { return false; }
         }
 
+        /** Which of the three special accesses this app has right now: {files, usage, overlay, sdk}. */
+        @JavascriptInterface
+        public String getPermissionStatus() {
+            JSONObject o = new JSONObject();
+            try {
+                o.put("files", hasStorageAccess());
+                o.put("usage", hasUsageAccess());
+                o.put("overlay", hasOverlayAccess());
+                o.put("sdk", Build.VERSION.SDK_INT);
+            } catch (Exception ignored) {}
+            return o.toString();
+        }
+
+        /** "Display over other apps": grants it through the privileged shell when there is one, else opens the system screen. Answer: "granted" or "settings". */
+        @JavascriptInterface
+        public String requestOverlayAccess() {
+            if (hasOverlayAccess()) return "granted";
+            if (!"standard".equals(resolveExecMode())) {
+                executeShell("appops set " + getPackageName() + " SYSTEM_ALERT_WINDOW allow");
+                if (hasOverlayAccess()) return "granted";
+            }
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        // straight to this app's own switch where the phone supports it, else the list of apps
+                        Intent i = new Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName()));
+                        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(i);
+                    } catch (Exception e) {
+                        try {
+                            Intent i = new Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION);
+                            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(i);
+                        } catch (Exception ignored) {}
+                    }
+                }
+            });
+            return "settings";
+        }
+
         /** Opens the system screen to grant this app All-files access (for browsing /sdcard without a shell). */
         @JavascriptInterface
         public void requestAllFilesAccess() {
@@ -7020,6 +7367,14 @@ public class MainActivity extends Activity {
                 @Override
                 public void run() {
                     try {
+                        if (Build.VERSION.SDK_INT < 30) {
+                            // Android 10 and older have no All-files switch: storage is a runtime permission with its own dialog
+                            // (onRequestPermissionsResult sends the app's settings page after a refusal for good)
+                            java.util.List<String> need = new java.util.ArrayList<String>();
+                            if (checkSelfPermission(android.Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) need.add(android.Manifest.permission.READ_EXTERNAL_STORAGE);
+                            if (checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) need.add(android.Manifest.permission.WRITE_EXTERNAL_STORAGE);
+                            if (!need.isEmpty()) { requestPermissions(need.toArray(new String[0]), REQ_STORAGE_PERM); return; }
+                        }
                         Intent i;
                         if (Build.VERSION.SDK_INT >= 30) {
                             i = new Intent(android.provider.Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, Uri.parse("package:" + getPackageName()));
@@ -7060,7 +7415,7 @@ public class MainActivity extends Activity {
                         return new String(bo.toByteArray(), "UTF-8");
                     } finally { in.close(); }
                 }
-                if ("standard".equals(resolveExecMode())) return "Error: needs ADB, Shizuku or Root (or grant All-files access for storage).";
+                if ("standard".equals(resolveExecMode())) { needFileAccess("To read this file", path); return "Error: needs ADB, Shizuku or Root (or grant All-files access for storage)."; }
                 return executeShell("toybox head -c 131072 " + BackupScripts.quote(path) + " 2>&1 || head -c 131072 " + BackupScripts.quote(path));
             } catch (Exception e) { return "Error: " + e.getMessage(); }
         }
@@ -7258,7 +7613,7 @@ public class MainActivity extends Activity {
                     File f = new File(path);
                     if (f.isFile() && f.canRead()) { res.put("ok", true); res.put("ref", path); return res.toString(); }
                 } catch (Exception ignored) {}
-                if ("standard".equals(resolveExecMode())) { res.put("ok", false); res.put("error", "Can't read this APK. For storage, grant All-files access; for system paths, set up ADB, Shizuku or Root."); return res.toString(); }
+                if ("standard".equals(resolveExecMode())) { needFileAccess("To read this package from storage", path); res.put("ok", false); res.put("error", "Can't read this APK. For storage, grant All-files access; for system paths, set up ADB, Shizuku or Root."); return res.toString(); }
                 String staged = "/data/local/tmp/fm_install.apk";
                 String out = executeShell("cp " + BackupScripts.quote(path) + " " + staged + " && chmod 644 " + staged + " && echo OK");
                 if (out == null || !out.contains("OK")) { res.put("ok", false); res.put("error", out != null ? out.trim() : "copy failed"); return res.toString(); }
@@ -7556,6 +7911,7 @@ public class MainActivity extends Activity {
                             String from = fmCanonicalPath(op.optString("from"));
                             File src = new File(from);
                             if (!src.isFile() || !src.canRead()) {
+                                needFileAccess("To add that file", from);
                                 throw new IOException("Can't read " + from + ". Pick a file on shared storage (All-files access is needed).");
                             }
                             String to = op.optString("to");
