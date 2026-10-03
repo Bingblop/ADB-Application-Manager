@@ -84,6 +84,11 @@ public final class ManifestDecoder {
         }
     }
 
+    /** Decodes compiled (binary) XML held in memory: AndroidManifest.xml or any res/*.xml file of an APK. */
+    public static String decodeBytes(byte[] data, Resources appResources) {
+        return new ManifestDecoder(appResources).decode(data);
+    }
+
     private String decode(byte[] data) {
         if (data.length < 8) throw new IllegalStateException("Not a binary XML file (too short)");
         ByteBuffer bb = ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN);
@@ -270,8 +275,9 @@ public final class ManifestDecoder {
         if (!name.isEmpty()) return name;
         if (index >= 0 && index < resourceMap.length) {
             try {
-                return Resources.getSystem().getResourceEntryName(resourceMap[index]);
-            } catch (Exception ignored) {}
+                Resources sys = systemResources();
+                if (sys != null) return sys.getResourceEntryName(resourceMap[index]);
+            } catch (Throwable ignored) {}
             return String.format("attr_0x%08x", resourceMap[index]);
         }
         return "unknown";
@@ -305,8 +311,17 @@ public final class ManifestDecoder {
         }
     }
 
+    /** The framework resources, or null where they can't be reached (a non-Android JVM, or a locked-down ROM). */
+    private static Resources systemResources() {
+        try {
+            return Resources.getSystem();
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
     private String resourceName(int id) {
-        Resources[] candidates = {appResources, Resources.getSystem()};
+        Resources[] candidates = {appResources, systemResources()};
         for (Resources res : candidates) {
             if (res == null) continue;
             try {
@@ -314,7 +329,7 @@ public final class ManifestDecoder {
                 String type = res.getResourceTypeName(id);
                 String entry = res.getResourceEntryName(id);
                 return ("android".equals(pkg) ? "android:" : "") + type + "/" + entry;
-            } catch (Exception ignored) {}
+            } catch (Throwable ignored) {}
         }
         return String.format("0x%08x", id);
     }

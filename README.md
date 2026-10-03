@@ -77,6 +77,15 @@ tell you when a new version is out (see [Updates](#updates)).
 | **Themes** | **Material 3** (default) · **Material You** (follows your wallpaper) · six more palettes · Light / Dark / System / Schedule · pure-black AMOLED option · per-mode color tuning |
 | **Security** | A **private ADB key is generated on each install** (nothing is bundled) · fingerprint shown in the app · signing-certificate comparison before every update |
 
+## New in v5.7
+
+- **🐚 Rish mode in the terminal** (replaces the "adb devices" button) — one tap switches the working mode to **Shizuku** and opens a **persistent Rish shell**: `cd`/`export`/variables persist, output streams live, **STOP** ends a running command, and typing `exit` (or tapping **Exit Rish**) returns to the normal terminal.
+- **📂 Look inside packages without extracting** — in the file manager, **View** on an `.apk`, `.zip`, `.xapk`, `.jar` … opens its contents as folders. Preview text, images, compiled Android XML (decoded back to XML) and binaries (hex); **extract** a file or folder, **rename / move**, **delete**, **add** files or folders, and **edit text in place**. Edits rewrite the archive safely (raw-copy of untouched entries, APK alignment kept, ZIP64 and path-traversal safe); installed and system packages are view-only, and an edited APK needs re-signing before it will install.
+- **Installer: XAPK + storage search** — install `.xapk` bundles (with OBB / game-data copy); the *Set as default installer* button is replaced by an automatic **storage search** that lists every `.apk` / `.apks` / `.apkm` / `.xapk` on the device (the how-to-make-it-the-default text stays at the bottom).
+- **Store: GitHub, full catalogs, categories** — Komi is now **🐙 GitHub**; GitHub (up to 5,000 apps + live search), **F-Droid** (every app in the chosen repo, streamed) and **Orion** (all 887 apps) now list their whole catalogs, and each store has a **category drop-down**.
+- **Readable logcat** — one row per entry, **color-coded Verbose / Debug / Info / Warn / Error / Fatal** with a tappable color key.
+- **Selection polish** — Debloater checkmarks fill like the Applications tab, **press-and-hold the ✓ button to clear all selections**, and the per-row Force Stop button is gone to give names more room (Force Stop stays in the ⋯ menu and batch actions).
+
 ## New in v5.6
 
 - **The Store is five sources in sub-tabs** — the 🛍️ **Store** tab opens on **ShizuStore** and adds four sub-tabs:
@@ -122,7 +131,7 @@ tell you when a new version is out (see [Updates](#updates)).
 ## New in v4.9
 
 - **All-in-one installer** — install `.apk`, `.apks` (bundletool) and `.apkm` (APKMirror) packages. Reads the package name, version, min/target SDK, size and signing certificate before installing; for split bundles you pick which splits to install. Full `pm install` control: grant all permissions, allow downgrade, allow test, all users, bypass low target-SDK block, request update ownership, install reason, package source, installer package. Pick the authorizer (ADB / Shizuku / Root / No-privilege), optional post-install dex optimization and auto-delete, and signature-mismatch / unknown-signature gates.
-- **Default installer** — set the app as the handler for APK files; opening an APK routes into the installer (privileged install when a mode is active, otherwise the normal system installer).
+- **Default installer** — choose the app as the handler for APK files in Android's *Open with → Always* prompt (the Installer tab explains how); opening an APK then routes into the installer (privileged install when a mode is active, otherwise the normal system installer).
 - **Components** — now lists activities, **receivers**, **services** and **providers**, each with its exported/enabled/permission detail, and any component can be **enabled or disabled**.
 - **Dex optimization** — `pm compile` as a single-app and batch action, with a compile-mode picker.
 - **Privileged file manager** — browse storage and any system path. With **All-files access** granted, storage (`/storage/emulated/0`) lists, views and installs directly — no privileged mode needed; ADB / Shizuku / Root reach system paths. View text, create, rename, copy, move, delete, and install APKs from anywhere.
@@ -280,7 +289,7 @@ Info, **Extract APK** (a `.apk`, or an `.apks` bundle for split apps) and **Shar
 - **Manifest**: decoded `AndroidManifest.xml` with search, copy, share and save to Downloads
 - **Raw**: the full details JSON
 
-App rows show only **App Settings**, **Force Stop** and the **⋯ menu**, so the list stays clean.
+App rows show only **App Settings** and the **⋯ menu** (Force Stop lives in the menu and the batch sheet), so the list stays clean.
 
 ## App profiles
 
