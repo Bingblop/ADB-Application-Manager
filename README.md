@@ -4,8 +4,8 @@
 
 **Manage, debloat, update and inspect every app on your Android phone — straight from the phone.**
 
-Freeze · Suspend · Uninstall · Debloat · Update · Back up &amp; restore · Inspect manifests · Launch hidden activities
-through **ADB over TCP, Wireless Debugging, Shizuku or Root**.
+Freeze · Suspend · Uninstall · Debloat · Update · Install · Back up &amp; restore · Inspect manifests · Launch hidden
+activities · Edit Android's hidden settings through **ADB over TCP, Wireless Debugging, Shizuku or Root**.
 
 [![Build APK](https://github.com/Bingblop/ADB-Application-Manager/actions/workflows/build.yml/badge.svg)](https://github.com/Bingblop/ADB-Application-Manager/actions/workflows/build.yml)
 [![Latest release](https://img.shields.io/github/v/release/Bingblop/ADB-Application-Manager?label=release)](https://github.com/Bingblop/ADB-Application-Manager/releases/latest)
@@ -13,7 +13,7 @@ through **ADB over TCP, Wireless Debugging, Shizuku or Root**.
 
 ### [⬇️ Download the latest APK](https://github.com/Bingblop/ADB-Application-Manager/releases/latest)
 
-`com.bloatware.bingblop` · v5.8-Pro · signed APK, installs over every earlier version without uninstalling
+`com.bloatware.bingblop` · v5.9-Pro · signed APK, installs over every earlier version without uninstalling
 
 <table>
   <tr>
@@ -34,22 +34,23 @@ through **ADB over TCP, Wireless Debugging, Shizuku or Root**.
 
 ## Contents
 
-[Download](#download--install) · [Features](#features) · [Screenshots](#screenshots) · [Working modes](#working-modes) ·
-[Debloater](#debloater) · [Updates](#updates) · [App menu](#app-menu) · [Profiles](#app-profiles) ·
-[Backup &amp; restore](#backup-and-restore) · [Quick tiles &amp; widget](#quick-settings-tiles-and-widget) ·
-[Copy, share &amp; search](#copy-share-and-search) · [Themes](#themes) · [How it works](#how-it-works) ·
-[Building](#building) · [Project layout](#project-layout) · [Privacy &amp; security](#privacy--security)
+[Download](#download--install) · [Features](#features) · [The tabs](#the-tabs) · [Screenshots](#screenshots) ·
+[Working modes](#working-modes) · [Debloater](#debloater) · [Updates](#updates) · [Settings](#android-settings) ·
+[App menu](#app-menu) · [Profiles](#app-profiles) · [Backup &amp; restore](#backup-and-restore) ·
+[Quick tiles &amp; widget](#quick-settings-tiles-and-widget) · [Copy, share &amp; search](#copy-share-and-search) ·
+[Themes](#themes) · [How it works](#how-it-works) · [Building](#building) · [Project layout](#project-layout) ·
+[Testing](#testing) · [Privacy &amp; security](#privacy--security)
 
 ## Download &amp; install
 
 1. Open the [**Releases** page](https://github.com/Bingblop/ADB-Application-Manager/releases/latest) and download
-   the signed APK there (every version is also in [`release/`](release/), with
-   [`SHA256SUMS.txt`](release/SHA256SUMS.txt)).
+   the signed APK there, together with that release's `SHA256SUMS.txt`. (Builds up to v5.1 are also kept in
+   [`release/`](release/); newer ones live only on the Releases page.)
 2. Allow installing from your browser or file manager when Android asks, then open the APK.
 3. Pick a [working mode](#working-modes). The easiest is **ADB over TCP**: run `adb tcpip 5555` once from a
    computer, or use Wireless Debugging (Android 11+) with the in-app pairing flow.
 
-Check the download:
+Check the download (put the APK and the `SHA256SUMS.txt` from the same release in one folder):
 
 ```bash
 sha256sum -c SHA256SUMS.txt --ignore-missing
@@ -62,10 +63,11 @@ tell you when a new version is out (see [Updates](#updates)).
 
 | | |
 |---|---|
-| **Apps** | Browse every package, including ones uninstalled for your user · search · sort by name, update date, install date, size or "updates first" · filters for running, 3rd party, system, frozen, suspended, uninstalled and **updated in the last 7 days** · versions and update hints in the list · select many and run batch actions · save selections as named lists · export everything to CSV |
+| **Apps** | Browse every package, including ones uninstalled for your user · search · sort by name, update date, install date, size or "updates first" · filters for running, 3rd party, system, frozen, suspended, uninstalled, **updated in the last 7 days** and **🧩 patched** (ReVanced, Morphe, Xposed / LSPosed modules, LSPatch / NPatch, debug-signed repackages) · versions and update hints in the list · select many and run batch actions · save selections as named lists · export everything to CSV |
 | **Actions** | **App menu (one app):** Launch · Force Stop · Freeze / Enable · **Suspend / Unsuspend** · Clear Data · Uninstall for user 0 · Reinstall removed system apps · Remove Updates · App Info · **Extract APK** · **Share APK** · **Backup**. **Batch (selected apps):** Freeze · Enable · Force Stop · Suspend · Unsuspend · Clear Data · Uninstall · Reinstall · Save to List · Copy Packages · Share List |
 | **Debloater** | The [UAD-NG](https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation) community list (5,000+ packages) with descriptions and dependency warnings · filter by removal level, vendor list, state and **phone brand** · review step before anything runs · **history log with one-tap Undo** |
-| **Updates** | **Update the app itself** from its own GitHub releases (dedicated card, signed-key check, seamless with a privileged mode or the system installer without one) · **Galaxy Store** (Samsung system apps) · **GitHub, Codeberg, F-Droid, IzzyOnDroid and the Obtainium catalog** for sideloaded open-source apps · import your **Obtainium** export · Update one or **Update All** · signing-key check before installing |
+| **Installer** | All-in-one installer for `.apk`, `.apks` (bundletool), `.apkm` (APKMirror) and `.xapk` (with OBB / game data) · reads the package name, version, SDK range, size and signing certificate first · pick the authorizer (ADB / Shizuku / Root / none) and every `pm install` flag (grant all permissions, downgrade, test, all users, update ownership …) · signature-mismatch and unknown-signature gates · optional dex optimization and auto-delete · **storage search** that lists every package file on the phone · optional **VirusTotal** check with your own API key (a SHA-256 lookup; nothing is uploaded unless you say so) · the app can be Android's handler for APK files |
+| **Updates** | **Update the app itself** from its own GitHub releases (dedicated card, signed-key check, seamless with a privileged mode or the system installer without one) · **Galaxy Store** (Samsung system apps) · **GitHub, Codeberg, F-Droid, IzzyOnDroid and the Obtainium catalog** for sideloaded open-source apps · import your **Obtainium** export · Update one or **Update All** · signing-key check before installing · Google Play apps hand off to Aurora Store or the Play Store page |
 | **Inspector** | Permissions and App Ops as separate lists · **activities, services, broadcast receivers and content providers**, each with its exported / enabled / permission state, and any component can be **enabled or disabled** · unexported activities are **launchable through ADB / Shizuku / Root** · decoded **AndroidManifest.xml** viewer · version, install and update dates · APK, data and cache sizes |
 | **Profiles** | Save which apps are disabled, suspended or uninstalled; re-apply on this phone or **share to another phone** · **👁️ Watch** a profile to be told when its apps come back after a system update |
 | **Backup &amp; restore** | **💾 Backup** an app's APK (with splits), permissions and app ops in any privileged mode, plus its **data with Root** · restore through ADB / Shizuku / Root · share backups or pick one from another phone |
@@ -75,9 +77,38 @@ tell you when a new version is out (see [Updates](#updates)).
 | **Terminal** | Run shell commands through the active mode (off the page's thread), with output search, copy and share · **🕘 history, ⭐ saved scripts and pinned chips** · **🐚 Rish mode**: a persistent Shizuku shell where `cd` and `export` stick, with a STOP that ends a command and its children · a searchable **📋 ADB cheat sheet** of ~90 commands you tap to drop into the input |
 | **Files** | Privileged file manager · **select many** and copy / move / delete together · open **.apk / .zip / .xapk / .jar … without extracting**, preview text, images and decoded Android XML, extract, rename, delete, add files and edit text in place · **install from inside an archive**, **open nested archives**, **compare two archives** · **sign an edited APK** on the device |
 | **Logcat** | Readable, **color-coded** log (one row per entry, tappable level key) · **limit it to one app** · save or share the filtered log as a bug-report text file |
-| **Modes** | ADB over TCP · Wireless Debugging (pairing and mDNS port detection) · Shizuku · Root · Automatic · Read-Only |
+| **Settings** | **New in v5.9:** read and edit the phone's **Global**, **Secure** and **System** settings, one sub-tab per table · search names, values and descriptions · tap to edit, **press and hold to flip** a switch (1 / 0, true / false), **＋ to create** a setting · plain-English descriptions and ⚠️ warnings for the ones that bite · every change is read back to prove it, with **Undo** and a log of changes with **Revert** — see [Android settings](#android-settings) |
+| **Store** | **🛍️ ShizuStore**, **🐙 GitHub** (up to 5,000 apps, live search), **🤖 F-Droid** (any known repository, streamed), **🪐 Orion** and an **🌌 Aurora** hand-off as sub-tabs, each with a category drop-down · every install comes from the app's own upstream (nothing is rehosted), through your active mode or the system installer |
+| **Modes** | ADB over TCP · Wireless Debugging (pairing, mDNS port detection, and **🔔 pairing from a notification** so the code can't expire while you switch apps) · Shizuku · Root · Automatic · Read-Only |
 | **Themes** | **Material 3** (default) · **Material You** (follows your wallpaper) · six more palettes · Light / Dark / System / Schedule · pure-black AMOLED option · per-mode color tuning |
 | **Security** | A **private ADB key is generated on each install** (nothing is bundled) · fingerprint shown in the app · signing-certificate comparison before every update |
+| **Navigation** | A Back button that closes the open sheet, clears a selection, steps up a folder or out of an archive, returns to the previous tab, and only then asks for a deliberate second press to leave (it also asks first while an install, update, file job or command is running) |
+| **About** | The developer and the GitHub repo, this build's version, device and **signing certificate** (✅ for the official release key), copyable debug info for bug reports, and an optional **☕ Buy me a coffee** (PayPal, $1 or any amount) |
+
+## The tabs
+
+Left to right, with the 🎨 **Colors &amp; Themes** button in the header:
+
+| Tab | For |
+|---|---|
+| 📱 **Applications** | Every package on the phone: search, sort, filter, batch actions, profiles, backups, CSV export; **⋯** opens an app's menu |
+| 📋 **Saved Lists** | Named groups of apps to freeze, enable, stop or share together, and the **quick list** behind the tile and widget |
+| 🧹 **Debloater** | The UAD-NG list for your phone, a review step before anything runs, history with Undo |
+| 📦 **Installer** | Install `.apk` / `.apks` / `.apkm` / `.xapk` with full control of the options, plus the optional VirusTotal check |
+| 📁 **Files** | A privileged file manager that also opens packages and archives without extracting them, and can sign an edited APK |
+| ⬆️ **Updates** | This app, Galaxy Store apps and sideloaded open-source apps (GitHub, Codeberg, F-Droid, IzzyOnDroid, Obtainium) |
+| 💻 **ADB Console** | A shell through the active mode, with history, saved scripts, a cheat sheet and a persistent Rish shell |
+| 📄 **Logcat** | A color-coded device log you can limit to one app, save or share |
+| ⚙️ **Settings** | Read, flip, edit and create the Global, Secure and System settings ([details](#android-settings)) |
+| 🛍️ **Store** | ShizuStore, GitHub, F-Droid, Orion and an Aurora hand-off |
+| ℹ️ **About** | Who made it, which build and key you have, debug info, and the coffee button |
+
+## New in v5.9
+
+- **⚙️ A Settings tab** — read and edit Android's hidden **Global**, **Secure** and **System** settings: a sub-tab per table, search and filters, **tap to edit**, **press and hold to flip** a 1 / 0 or true / false switch, and **＋ to create** your own. Every change is read back to prove it worked and can be undone. See [Android settings](#android-settings).
+- **🔍 Checked, then hardened** — two independent reviews of the new tab led to a stricter verdict on every change (Android's
+  own refusal wins over a read-back that merely says `null`), lists that are only accepted when they arrive complete, and
+  a clear "may still be applied" when the link drops.
 
 ## New in v5.8
 
@@ -216,6 +247,16 @@ tell you when a new version is out (see [Updates](#updates)).
     <td align="center"><sub>Pure black for AMOLED</sub></td>
   </tr>
   <tr>
+    <td><img src="docs/screenshots/settings.png" width="230" alt="Settings tab"></td>
+    <td><img src="docs/screenshots/settings-edit.png" width="230" alt="Editing a setting"></td>
+    <td><img src="docs/screenshots/settings-undo.png" width="230" alt="Undo after a flip"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Settings: Global / Secure / System, with switches</sub></td>
+    <td align="center"><sub>Edit a value; ⚠️ warns about the risky ones</sub></td>
+    <td align="center"><sub>Press and hold flips a switch, with Undo</sub></td>
+  </tr>
+  <tr>
     <td><img src="docs/screenshots/about.png" width="230" alt="About tab"></td>
     <td><img src="docs/screenshots/about-light.png" width="230" alt="About tab, light"></td>
     <td></td>
@@ -243,11 +284,21 @@ tell you when a new version is out (see [Updates](#updates)).
   <tr>
     <td><img src="docs/screenshots/profiles-light.png" width="230" alt="Light: profiles"></td>
     <td><img src="docs/screenshots/backups-light.png" width="230" alt="Light: backups"></td>
-    <td></td>
+    <td><img src="docs/screenshots/settings-light.png" width="230" alt="Light: Settings"></td>
   </tr>
   <tr>
     <td align="center"><sub>Profiles</sub></td>
     <td align="center"><sub>Backups</sub></td>
+    <td align="center"><sub>Settings</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/settings-edit-light.png" width="230" alt="Light: editing a setting"></td>
+    <td></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Settings editor</sub></td>
+    <td></td>
     <td></td>
   </tr>
 </table>
@@ -300,6 +351,52 @@ signing key** (a mismatch such as an F-Droid build over a developer build is sto
 then installed through ADB, Shizuku or Root. Apps only Obtainium can track open in Obtainium; untracked apps
 get **＋ Set source**. Play Store apps keep updating through the Play Store, since Google gives other apps no
 way to check them.
+
+## Android settings
+
+The **⚙️ Settings** tab (between Logcat and Store) is a front end for Android's own `settings` command: the three
+key-value tables behind things like USB debugging, animation speed, the screen timeout and the default keyboard.
+It needs ADB, Wireless Debugging, Shizuku or Root; with none of them ready the tab says so and opens Working Modes.
+
+| Table | What lives there | A few examples |
+|---|---|---|
+| **Global** | Settings for the whole phone | `adb_enabled`, `airplane_mode_on`, `development_settings_enabled`, `stay_on_while_plugged_in`, `animator_duration_scale` |
+| **Secure** | Per-user settings that only the system (or ADB) may change | `default_input_method`, `enabled_accessibility_services`, `accessibility_display_daltonizer_enabled` |
+| **System** | The classic per-user settings | `screen_off_timeout`, `screen_brightness`, `font_scale`, `user_rotation`, `volume_*` |
+
+- **Tap** a setting to edit it: a value box (multi-line values and up to 20,000 characters), quick values
+  (`0` `1` `true` `false` `null` `(empty)` `-1`), **Flip**, copy of the name, the value or the exact `settings put`
+  command, **Reload** and **Delete**.
+- **Press and hold** a setting whose value is a switch (`1`/`0`, `true`/`false`, `on`/`off`, `yes`/`no`) to flip it,
+  without opening anything. The capitalisation you had is kept.
+- **＋** creates a setting in any of the three tables (name, value, quick values), with the name checked before
+  anything runs. **⋯** reloads, shows your **Changes**, and copies or shares the list you are looking at as text.
+- **Search** matches names, values and descriptions; chips narrow the list to **Switches**, settings with a
+  **Description** or the ones you **Edited**; sort by name or value. About 130 well-known settings carry a plain-English
+  description, and the ones that can cut your ADB link, lock you out of the screen or break setup are marked ⚠️ and ask
+  first.
+- **Checked, then undoable.** After every change the setting is read back, so "saved" means the phone holds that
+  value; if Android refused, its own answer is shown with advice (Xiaomi, Redmi and POCO phones usually need
+  "USB debugging (Security settings)" on in Developer options). A bar offers **Undo**, and **⋯ → Changes** keeps the last 150
+  changes on the phone with a **Revert** for each.
+
+Names that can never work (empty, starting with `-`, containing `=`, spaces or control characters) are refused before a
+command is built, and values reach the shell single-quoted, so `;`, `$(...)`, backticks and `>` are stored as text. The
+change and its read-back go out as one line, which is how a write is told apart from a refusal
+([`SettingsDb`](src/com/bloatware/bingblop/SettingsDb.java)):
+
+```java
+static String writeScript(String op, String ns, String key, String value) {
+    String read = getCommand(ns, key);                       // settings get <table> '<name>'
+    String change = "put".equals(op) ? putCommand(ns, key, value) : deleteCommand(ns, key);
+    return change + "; echo " + GET_MARK + "; " + read + "; echo " + END_MARK;
+}
+```
+
+> Careful: these are the settings Android itself reads. Switching off `adb_enabled` over the very ADB connection the app
+> uses ends that connection, and a wrong value in `secure` can lock you out of the keyboard or the screen. The ⚠️ rows ask
+> before they change; everything else is on you, which is why every change is logged and undoable. Some phones (and some
+> keys) refuse changes from a shell whatever you do.
 
 ## App menu
 
@@ -499,14 +596,17 @@ Also in the sources: [`ManifestDecoder`](src/com/bloatware/bingblop/ManifestDeco
 ## Privacy &amp; security
 
 - **No analytics, no account, no server of ours.** The app only makes requests you trigger: the UAD-NG list,
-  Galaxy Store / GitHub / Codeberg / F-Droid / IzzyOnDroid lookups for updates, and update downloads.
+  update lookups (Galaxy Store, GitHub, Codeberg, F-Droid, IzzyOnDroid, the Obtainium catalog), the Store catalogs you
+  open, downloads you start and, only if you add your own API key, VirusTotal lookups. **☕ Buy me a coffee** just opens
+  PayPal in your browser.
 - The ADB key is created on your phone and never leaves it. The APK contains no key.
 - Updates are installed only after the package name, version and **signing certificate** match.
 - The reboot receiver only compares the build fingerprint and posts a reminder. It changes nothing.
 - Backup files can hold app data; they are plain files in your Downloads folder, so treat them like the data
   they contain. Restoring data validates the archive first (see above).
-- Powerful actions (uninstall, disable, clear data) always go through a privileged mode you set up yourself.
-  Read-Only mode can inspect but not change anything.
+- Powerful actions (uninstall, disable, clear data, changing Android settings) always go through a privileged mode
+  you set up yourself. Read-Only mode can inspect but not change anything. The Settings tab only talks to the phone's
+  own `settings` command; its log of changes stays on the phone.
 - The release keystore is git-ignored. Never commit one to a public repository.
 
 ## Building
@@ -542,8 +642,9 @@ To sign it with your release key, add repository secrets under Settings → Secr
 
 Without the secrets, builds use a throwaway test key and are named `-test-signed`.
 
-The **Publish release** workflow (Actions → Publish release → enter the version, for example `4.6`) creates a
-GitHub Release with the signed APK and its checksum attached.
+The **Build, sign and publish release** workflow (Actions → Build, sign and publish release → Run workflow → enter the
+version, for example `5.9`) creates a GitHub Release with the signed APK and its `SHA256SUMS.txt` attached; its notes
+are the matching section of [CHANGELOG.md](CHANGELOG.md). Pushing a `v*` tag does the same.
 
 ### On Linux without an Android SDK
 
@@ -562,13 +663,27 @@ KEYSTORE=/path/to/release.keystore \
 ## Project layout
 
 ```
-AndroidManifest.xml            App manifest (Shizuku provider, share provider)
-src/                           MainActivity (+ JavaScript bridge), ManifestDecoder, AdbKeyManager,
-                               UpdateManager, ShareProvider, BackupScripts, QuickActions,
-                               QuickActionActivity, ModeTileService, StopListTileService,
-                               QuickWidgetProvider, BootReceiver, ZipTool (archive engine),
-                               ApkSigner + SigningKey (on-device APK signing), RishShell,
-                               XapkInfo, InstallHints (reads what pm install answered)
+AndroidManifest.xml            App manifest (Shizuku provider, share provider, tiles, widget, pairing and boot receivers)
+src/com/bloatware/bingblop/
+  MainActivity                 The activity, the JavaScript bridge (AndroidBridge) and the ADB / Wireless Debugging /
+                               Shizuku / Root backends
+  AdbKeyManager, AdbPair,      The per-install ADB key, Wi-Fi pairing and the "pair from a notification" reply
+  PairReceiver
+  QuickActions, QuickActionActivity, ModeTileService, StopListTileService, QuickWidgetProvider, BootReceiver
+                               Quick Settings tiles, the home-screen widget and the after-update reminder
+  BackupScripts                Backup and restore shell scripts, and the package-name check every command goes through
+  SettingsDb                   The Settings tab's rules: names, values, the commands and their read-back
+  FileRules, InstallHints      File-manager path rules; reading what `pm install` answered
+  ZipTool                      The archive engine behind the file manager's package browser
+  ApkSigner, SigningKey        Signing edited APKs on the device (Android Keystore key)
+  RishShell                    The persistent Rish shell in the terminal
+  ManifestDecoder              Binary AndroidManifest.xml back to readable XML
+  ApkScan, XapkInfo            The Installer's storage search and XAPK reading
+  VirusTotal                   The optional VirusTotal lookup
+  ModDetect                    Patched / repackaged app detection
+  UpdateManager, FdroidIndex,  Update checks and the Store catalogs (ShizuStore, GitHub, F-Droid, Orion)
+  ShizuStore, KomiApi, Stores
+  ShareProvider                Share-sheet files without a storage permission
 assets/index.html              The whole UI (HTML/CSS/JS, rendered in a WebView)
 assets/libadb.so               arm64 adb client for ADB TCP / Wireless Debugging
 assets/rish, rish_shizuku.dex  Shizuku shell fallback
@@ -577,46 +692,39 @@ libs/                          Shizuku API 13.1.5 (api, provider, shared, aidl);
                                regex for untrusted, network-supplied patterns, see UpdateManager)
 docs/screenshots/              Images and the debloat-flow animation used in this README
 build.sh                       Build script (Termux or Linux)
-release/                       Signed release APKs and SHA256SUMS.txt
+release/                       Signed APKs up to v5.1 and SHA256SUMS.txt (newer ones are on the Releases page)
 .github/workflows/             build.yml (CI) and release.yml (publish a GitHub Release)
+CHANGELOG.md                   Release notes; the app shows them in What's new
 ```
 
 ## Testing
 
-A full pass through every source file, not just this round's diff, backed by GitHub Copilot's automated
-review (eight rounds on this PR) plus a standalone, independent full-file audit, with a runnable check for
-every finding that survived verification:
+What was checked before each release, and what was not. The test scripts are not part of this repository, so none of
+this is something you can re-run from a clone.
 
-- **UI**: 24 headless-browser suites drive the real `index.html` against a mock Android bridge (every tab,
-  theme, filter, share/copy/find action, profiles, drift banner, What's new, quick list, backup and restore
-  flows, and - the latest addition - that editing or deleting the active quick list correctly nudges or
-  clears it instead of leaving a stale widget label or a dangling reference, and that importing a profile
-  with a duplicated package keeps exactly one entry for it).
-- **Backup scripts**: run against a fake `/data` tree with real `tar`, including hostile archives (other apps'
-  paths, `..`, hard links, outward links, device/FIFO entries, damaged files); with `chown`/`restorecon`
-  stood in for on `PATH`, both a real device's success path and a failed ownership/SELinux repair correctly
-  reported as an error rather than silently restored; with a stand-in `tar`, its own exit code (not just
-  "did it leave a file behind") decides OK/WARN/ERROR, and a failure partway through restoring data rolls
-  the app's original data back instead of having already deleted it before extraction could even be
-  attempted: 42 checks.
-- **Manifest decoder**: hand-built adversarial binary AXML (negative strings-pool count, an overflowing chunk
-  size, a mismatched closing-tag reference, an oversized manifest, a strings-pool count that passes a
-  byte-size check but could never fit its own offset table) alongside a well-formed one, run against the real
-  decoder with Android's own framework classes on the classpath: 6 checks.
-- **Update checks**: a package-name validator rejecting shell metacharacters (19 cases); the working-mode
-  tile/widget's fallback order (8 cases); a direct timing proof that skipping an unwanted multi-gigabyte
-  backup entry no longer decompresses it (6.9s → 0ms); the two regexes matched against untrusted catalog
-  data run through [RE2J](https://github.com/google/re2j) instead of a timeout around `java.util.regex` -
-  two earlier attempts at that timeout (a shared thread pool, then a fresh thread per attempt) each turned
-  out to leak unkillable, permanently-backtracking threads in a way a determined catalog entry could still
-  turn into a standing or growing problem, which a genuinely linear-time engine doesn't have in the first
-  place. Proven directly: the classic `(a+)+$` ReDoS pattern against 35 `a`s resolves in low tens of
-  milliseconds, not the exponential blowup a backtracking engine would hit; a pattern using a backreference
-  (unsupported by RE2J) falls back to "no transformation"/"no filter" instead of throwing (9 checks).
-- **Build**: every APK is compiled, signed and verified (zipalign, v2/v3 signatures) by `build.sh`.
-- The parts that only exist on a phone (the ADB, Shizuku and Root backends, the Quick Settings tiles, the
-  widget, the share sheet and the boot notification) are checked by compilation and review rather than on
-  hardware. If something misbehaves on your device, please [open an issue](https://github.com/Bingblop/ADB-Application-Manager/issues).
+- **The UI**: more than 60 headless-Chromium scripts drive the real `assets/index.html` against a mock Android bridge:
+  every tab, theme, filter, share / copy / find action, profiles and the drift banner, backups, the Installer, the
+  Store, the file manager and archive browser, the terminal, About, the Back button and, for the Settings tab, the
+  list, search, filters and sort, tap-to-edit, press-and-hold flipping (with touch events of any hold length), creating,
+  deleting, Undo, the change log, refused, unanswered and late requests, a 720-row table, and the layout at 320 and 360 px in
+  light and dark.
+- **Native rules, off the device**: the parts of the Java that need no Android classes are compiled and run as plain
+  Java. For the Settings tab that is 311 checks of `SettingsDb`, including round trips through a real `sh` (and a fake
+  `settings` that refuses on purpose) for hostile values (quotes, `;`, `$(...)`, backticks, `>`, newlines, Unicode), and a
+  comparison of the name, value and size checks in Java and in the page over 1,284 cases. The same approach has been used for the backup scripts (against a fake `/data`
+  tree with real `tar`, hostile archives included), the file-manager path rules, the manifest decoder, the install-answer
+  reader, the archive engine, the Rish shell (against a real `mksh`), the APK signer (cross-checked with `apksigner`)
+  and the regex handling.
+- **The build**: `build.sh` compiles, signs and verifies every APK (zipalign, v2 / v3 signatures), and each published
+  release is downloaded again and checked: SHA-256, signing certificate, version and alignment.
+- **Reviews**: each release's new code gets separate, independent review passes (automated ones, not a human), and
+  what they found was fixed and re-tested before shipping. The Settings tab had two (native side: 9 findings, page: 17);
+  each was checked against the code and all were fixed, except that the sheets still do not trap keyboard focus, like the
+  app's others.
+- **Not tested on hardware**: the parts that only exist on a phone (the ADB, Shizuku and Root backends, the Quick
+  Settings tiles, the widget, the share sheet, the boot notification and the real `settings` command on your phone's
+  Android version and skin) are checked by compilation, review and these simulations, not on a device. If something
+  misbehaves on yours, please [open an issue](https://github.com/Bingblop/ADB-Application-Manager/issues).
 
 ## Credits
 

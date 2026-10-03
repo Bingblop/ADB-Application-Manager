@@ -52,6 +52,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import rikka.shizuku.Shizuku;
@@ -93,6 +95,18 @@ public class MainActivity extends Activity {
     private boolean submitJob(Runnable job) {
         try {
             executor.submit(job);
+            return true;
+        } catch (java.util.concurrent.RejectedExecutionException refused) {
+            return false;
+        }
+    }
+
+    /** One thread for the Settings tab: a toggle tapped twice quickly must reach the phone in that order, and reads must not overtake writes. */
+    private final ExecutorService settingsExecutor = Executors.newSingleThreadExecutor();
+
+    private boolean submitSettingsJob(Runnable job) {
+        try {
+            settingsExecutor.submit(job);
             return true;
         } catch (java.util.concurrent.RejectedExecutionException refused) {
             return false;
@@ -728,7 +742,7 @@ public class MainActivity extends Activity {
 
     private String readProcessWithTimeout(final Process p, int timeoutMs) {
         final StringBuilder sb = new StringBuilder();
-        Future<String> future = executor.submit(new Callable<String>() {
+        FutureTask<String> future = new FutureTask<String>(new Callable<String>() {
             @Override
             public String call() throws Exception {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
@@ -743,6 +757,14 @@ public class MainActivity extends Activity {
                 return "";
             }
         });
+        try {
+            executor.execute(future);
+        } catch (RejectedExecutionException closing) {
+            // the activity is being destroyed (a theme change restarts it): the command is already running, so read it out on a thread of its own
+            Thread reader = new Thread(future, "proc-read");
+            reader.setDaemon(true);
+            reader.start();
+        }
 
         try {
             future.get(timeoutMs, TimeUnit.MILLISECONDS);
@@ -2366,6 +2388,10 @@ public class MainActivity extends Activity {
 
     /** Runs a command through the Shizuku API, optionally streaming any InputStream into its stdin. */
     private String shizukuPipe(String cmd, InputStream stdin) throws Exception {
+        return shizukuPipe(cmd, stdin, 300000);
+    }
+
+    private String shizukuPipe(String cmd, InputStream stdin, int timeoutMs) throws Exception {
         if (shizukuNewProcessMethod == null) {
             Method m = Shizuku.class.getDeclaredMethod("newProcess", String[].class, String[].class, String.class);
             m.setAccessible(true);
@@ -2381,7 +2407,7 @@ public class MainActivity extends Activity {
         }
         os.flush();
         os.close();
-        return readProcessWithTimeout(p, 300000);
+        return readProcessWithTimeout(p, timeoutMs);
     }
 
     /** Installs one APK, or a base APK with its splits, through the active mode. */
@@ -2830,6 +2856,159 @@ public class MainActivity extends Activity {
             return runProcessWithTimeout(pb, 600000);
         }
         return "Error: this authorizer needs ADB, Shizuku or Root";
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Android settings (the Settings tab): `settings list|get|put|delete` on the global, secure and system tables, through the
+    // active privileged backend. What may be touched and how a command is built is SettingsDb's job (it is tested off the device).
+    // ---------------------------------------------------------------------------------------------
+
+    /** One command through a privileged backend with a timeout of its own; the text is the (merged) output, or an "Error: ..." line. */
+    private String runPrivilegedShell(String mode, String cmd, int timeoutMs) {
+        try {
+            if ("adb_tcp".equals(mode) || "adb_wireless".equals(mode)) {
+                boolean tcp = "adb_tcp".equals(mode);
+                if (!tcp && adbWirelessPort <= 0) return "Error: Wireless Debugging is not configured. Connect it in Working Modes.";
+                String target = tcp ? tcpTarget() : wirelessTarget();
+                String out = runProcessWithTimeout(buildAdbProcess("-s", target, "shell", cmd), timeoutMs);
+                if (out != null && out.contains("device '") && out.contains("' not found")) {
+                    // the link dropped (adbd restarted, say): reconnect once and ask again
+                    runProcessWithTimeout(buildAdbProcess("connect", target), 5000);
+                    out = runProcessWithTimeout(buildAdbProcess("-s", target, "shell", cmd), timeoutMs);
+                }
+                return out != null ? out : "";
+            }
+            if ("shizuku".equals(mode)) {
+                try {
+                    return shizukuPipe(cmd, null, timeoutMs);
+                } catch (Exception e) {
+                    return runShizukuShell(cmd);                 // the usual path, with its rish fallback
+                }
+            }
+            if ("root".equals(mode)) {
+                ProcessBuilder pb = new ProcessBuilder("su", "-c", cmd);
+                pb.redirectErrorStream(true);
+                return runProcessWithTimeout(pb, timeoutMs);
+            }
+            return "Error: this needs ADB, Wireless Debugging, Shizuku or Root";
+        } catch (Throwable t) {
+            return "Error: " + errMsg(t);
+        }
+    }
+
+    private void settingsReply(String callback, JSONObject res) {
+        notifyJs("window." + callback + " && window." + callback + "(" + JSONObject.quote(res.toString()) + ")");
+    }
+
+    /** The page gives up on a request after 60 s; one that waited this long behind slower ones is dropped instead of surprising the user later. */
+    private static final long SETTINGS_JOB_MAX_WAIT_MS = 55000;
+
+    private static boolean settingsJobStale(long queuedAt) {
+        return android.os.SystemClock.elapsedRealtime() - queuedAt > SETTINGS_JOB_MAX_WAIT_MS;
+    }
+
+    /** Reads one table and reports it as window.onSettingsList(json): req, ns, ok, entries [[name, value], ...], error, advice, needsPrivilege, mode, ms. */
+    private void settingsListJob(int req, String ns, long queuedAt) {
+        JSONObject res = new JSONObject();
+        long t0 = System.currentTimeMillis();
+        try {
+            res.put("req", req);
+            res.put("ns", ns);
+            if (settingsJobStale(queuedAt)) {
+                res.put("ok", false);
+                res.put("stale", true);
+                res.put("error", "Skipped: it waited too long behind other requests");
+                settingsReply("onSettingsList", res);
+                return;
+            }
+            String mode = resolveExecMode();
+            res.put("mode", mode);
+            if ("standard".equals(mode)) {
+                res.put("ok", false);
+                res.put("needsPrivilege", true);
+                res.put("error", "Needs ADB, Wireless Debugging, Shizuku or Root");
+            } else {
+                String out = runPrivilegedShell(mode, SettingsDb.listCommand(ns), 25000);
+                SettingsDb.ListResult lr = SettingsDb.readList(out);
+                String text = lr.text == null ? "" : lr.text.trim();
+                if (!lr.complete) {
+                    // the closing marker never came: the connection dropped or the command timed out, and what did arrive is only a part of the table
+                    res.put("ok", false);
+                    res.put("error", text.isEmpty() ? "Android returned no settings"
+                            : text.contains("[Process timed out") ? "Android took too long to answer, so the list is incomplete"
+                            : SettingsDb.looksLikeFailure(text) ? SettingsDb.summary(text)
+                            : "The list was cut short on the way (the connection may have dropped)");
+                    res.put("advice", SettingsDb.advice(text));
+                } else if (lr.entries.isEmpty() && SettingsDb.looksLikeFailure(text)) {
+                    res.put("ok", false);
+                    res.put("error", SettingsDb.summary(text));
+                    res.put("advice", SettingsDb.advice(text));
+                } else {
+                    JSONArray arr = new JSONArray();
+                    for (String[] e : lr.entries) arr.put(new JSONArray().put(e[0]).put(e[1]));
+                    res.put("ok", true);
+                    res.put("entries", arr);
+                }
+            }
+        } catch (Throwable t) {
+            try {
+                res.put("ok", false);
+                res.put("error", errMsg(t));
+            } catch (Exception ignored) {}
+        }
+        try { res.put("ms", System.currentTimeMillis() - t0); } catch (Exception ignored) {}
+        settingsReply("onSettingsList", res);
+    }
+
+    /**
+     * Reads, sets or deletes one setting and reports it as window.onSettingsOp(json): req, op, ns, key, ok, value (what the key
+     * holds now, "null" when it is not there), requested, deleted, answer, error, advice, needsPrivilege, unknown (the phone
+     * stopped answering, so what became of the change is not known), mode. Whether it worked is decided by the read-back (and,
+     * where the word null cannot vouch for itself, by Android's own error text, exit status and a listing), not by silence.
+     */
+    private void settingsOpJob(int req, String op, String ns, String key, String value, long queuedAt) {
+        JSONObject res = new JSONObject();
+        try {
+            res.put("req", req);
+            res.put("op", op);
+            res.put("ns", ns);
+            res.put("key", key);
+            if (value != null) res.put("requested", value);
+            if (settingsJobStale(queuedAt)) {
+                res.put("ok", false);
+                res.put("stale", true);
+                res.put("error", "Skipped: it waited too long behind other requests");
+                settingsReply("onSettingsOp", res);
+                return;
+            }
+            String mode = resolveExecMode();
+            res.put("mode", mode);
+            if ("standard".equals(mode)) {
+                res.put("ok", false);
+                res.put("needsPrivilege", true);
+                res.put("error", "Needs ADB, Wireless Debugging, Shizuku or Root");
+            } else {
+                String out = runPrivilegedShell(mode, SettingsDb.writeScript(op, ns, key, value), 20000);
+                SettingsDb.WriteResult w = SettingsDb.parseWrite(out, key);
+                SettingsDb.Verdict verdict = SettingsDb.judge(op, value, w);
+                res.put("ok", verdict.ok);
+                if (verdict.unknown) res.put("unknown", true);
+                if (w.value != null) res.put("value", w.value);
+                if (w.deleted >= 0) res.put("deleted", w.deleted);
+                String said = !w.answer.isEmpty() ? w.answer : w.readError;
+                if (!said.isEmpty()) res.put("answer", said.length() > 600 ? said.substring(0, 600) + "…" : said);
+                if (!verdict.ok) {
+                    res.put("error", verdict.error);
+                    res.put("advice", SettingsDb.advice(said));
+                }
+            }
+        } catch (Throwable t) {
+            try {
+                res.put("ok", false);
+                res.put("error", errMsg(t));
+            } catch (Exception ignored) {}
+        }
+        settingsReply("onSettingsOp", res);
     }
 
     /** Runs a short pm command through a specific backend (for post-install dexopt). */
@@ -5078,6 +5257,45 @@ public class MainActivity extends Activity {
                     notifyJs("window.onShellDone && window.onShellDone(" + JSONObject.quote(id) + "," + JSONObject.quote(out == null ? "" : out) + ")");
                 }
             });
+            return "started";
+        }
+
+        /**
+         * Reads one settings table (global, secure or system) off the page's thread. Returns "started", or "error: ..." when the
+         * request itself is not acceptable. The answer arrives as window.onSettingsList(json).
+         */
+        @JavascriptInterface
+        public String settingsList(final int req, final String ns) {
+            String bad = SettingsDb.namespaceProblem(ns);
+            if (bad != null) return "error: " + bad;
+            final long queuedAt = android.os.SystemClock.elapsedRealtime();
+            if (!submitSettingsJob(new Runnable() {
+                @Override
+                public void run() {
+                    settingsListJob(req, ns, queuedAt);
+                }
+            })) return "error: the app is closing";
+            return "started";
+        }
+
+        /**
+         * Reads ("get"), sets ("put") or removes ("delete") one setting, in the order the page asked. Returns "started", or
+         * "error: ..." when the table, the name or the value is not acceptable. The answer arrives as window.onSettingsOp(json).
+         */
+        @JavascriptInterface
+        public String settingsOp(final int req, final String op, final String ns, final String key, final String value) {
+            if (!"get".equals(op) && !"put".equals(op) && !"delete".equals(op)) return "error: unknown operation";
+            String bad = SettingsDb.namespaceProblem(ns);
+            if (bad == null) bad = SettingsDb.keyProblem(key);
+            if (bad == null && "put".equals(op)) bad = SettingsDb.valueProblem(value);
+            if (bad != null) return "error: " + bad;
+            final long queuedAt = android.os.SystemClock.elapsedRealtime();
+            if (!submitSettingsJob(new Runnable() {
+                @Override
+                public void run() {
+                    settingsOpJob(req, op, ns, key, "put".equals(op) ? value : null, queuedAt);
+                }
+            })) return "error: the app is closing";
             return "started";
         }
 
@@ -7839,6 +8057,9 @@ public class MainActivity extends Activity {
         } catch (Throwable ignored) {}
         try {
             executor.shutdown();
+        } catch (Exception ignored) {}
+        try {
+            settingsExecutor.shutdown();
         } catch (Exception ignored) {}
     }
 }

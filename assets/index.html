@@ -2669,6 +2669,7 @@
         <button class="tab-btn" onclick="switchView('updates')" id="updatesTabBtn">⬆️ Updates</button>
         <button class="tab-btn" onclick="switchView('terminal')">💻 ADB Console</button>
         <button class="tab-btn" onclick="switchView('logcat')">📄 Logcat</button>
+        <button class="tab-btn" onclick="switchView('settings')">⚙️ Settings</button>
         <button class="tab-btn" onclick="switchView('store')">🛍️ Store</button>
         <button class="tab-btn" onclick="switchView('about')">ℹ️ About</button>
     </nav>
@@ -3155,6 +3156,108 @@
                 <div class="lc-key" id="logcatKey" aria-label="Log level color key"></div>
             </div>
             <div class="logcat-box" id="logcatOutput"><div class="lc-meta">Open this tab to read the log.</div></div>
+        </section>
+
+        <!-- VIEW: ANDROID SETTINGS (the global, secure and system tables) -->
+        <section id="view-settings" class="view-content">
+            <style>
+                .sdb-tabs { display:flex; gap:8px; margin:12px 0 10px; }
+                .sdb-tab { flex:1 1 0; min-width:0; border:1px solid var(--border-glass); background:rgba(var(--ov),0.05); color:var(--text-muted); border-radius:14px; padding:8px 4px 7px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:1px; font-size:13px; font-weight:800; line-height:1.2; transition:background .15s; }
+                .sdb-tab b { font-size:10.5px; font-weight:700; opacity:.85; font-variant-numeric:tabular-nums; }
+                .sdb-tab.active { background:linear-gradient(135deg,var(--accent),var(--secondary)); color:var(--on-accent); border-color:transparent; }
+                .sdb-bar { display:flex; gap:8px; align-items:center; margin-bottom:8px; }
+                .sdb-iconbtn { flex:0 0 auto; width:38px; height:38px; border-radius:var(--radius-md); border:1px solid var(--border-glass); background:rgba(var(--ov),0.07); color:var(--text-main); font-size:17px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+                .sdb-iconbtn:active { transform:scale(0.94); }
+                .sdb-iconbtn.accent { background:linear-gradient(135deg,var(--accent),var(--secondary)); color:var(--on-accent); border-color:transparent; }
+                .sdb-searchwrap { position:relative; flex:1 1 auto; min-width:0; }
+                .sdb-searchwrap .list-search { width:100%; padding-right:30px; height:38px; font-size:13px; }
+                .sdb-searchwrap .search-clear { right:9px; }
+                .sdb-filters { display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin-bottom:6px; }
+                .sdb-filters .filter-chip { font-size:11px; padding:5px 11px; background:transparent; font-family:inherit; }
+                .sdb-status { font-size:11px; color:var(--text-muted); margin:2px 2px 0; line-height:1.4; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+                .sdb-spin { display:inline-block; width:11px; height:11px; border-radius:50%; border:2px solid var(--border-glass); border-top-color:var(--accent); animation:sdbSpin .8s linear infinite; vertical-align:-2px; }
+                @keyframes sdbSpin { to { transform:rotate(360deg); } }
+                .sdb-list { display:flex; flex-direction:column; gap:8px; margin-top:4px; }
+                .sdb-row { display:flex; gap:10px; align-items:center; padding:10px 12px; border:1px solid var(--border-glass); background:rgba(var(--ov),0.045); border-radius:14px; cursor:pointer; min-width:0; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; transition:background .12s, opacity .12s; }
+                .sdb-row:active { background:rgba(var(--ov),0.1); }
+                .sdb-row.busy { opacity:.55; pointer-events:none; }
+                .sdb-row.risky { border-left:3px solid #FFA726; }
+                .sdb-main { min-width:0; flex:1 1 auto; }
+                .sdb-key { font-family:ui-monospace,'SF Mono','Roboto Mono',monospace; font-size:12.5px; font-weight:800; overflow-wrap:anywhere; line-height:1.3; }
+                .sdb-dot { display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--accent); margin-left:6px; vertical-align:middle; }
+                .sdb-hint { font-size:10.5px; color:var(--text-muted); margin-top:1px; line-height:1.35; }
+                .sdb-val { font-family:ui-monospace,'SF Mono','Roboto Mono',monospace; font-size:11.5px; color:var(--accent); color:color-mix(in srgb, var(--accent) 72%, var(--text-main)); margin-top:3px; overflow-wrap:anywhere; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; white-space:pre-wrap; line-height:1.35; }
+                .sdb-val.empty { color:var(--text-muted); font-style:italic; }
+                .sdb-sw { flex:0 0 auto; width:44px; height:26px; border-radius:999px; border:1px solid var(--border-glass); background:rgba(var(--ov),0.15); position:relative; cursor:pointer; padding:0; transition:background .18s; }
+                .sdb-sw span { position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:var(--text-muted); transition:transform .18s, background .18s; }
+                .sdb-sw.on { background:var(--accent); border-color:transparent; }
+                .sdb-sw.on span { transform:translateX(18px); background:var(--on-accent); }
+                .sdb-empty { text-align:center; padding:26px 12px; color:var(--text-muted); font-size:12px; line-height:1.5; overflow-wrap:anywhere; }
+                .sdb-empty .mode-action-btn { margin-top:10px; max-width:100%; white-space:normal; }
+                .sdb-skel { height:62px; border-radius:14px; background:linear-gradient(90deg,rgba(var(--ov),0.04),rgba(var(--ov),0.09),rgba(var(--ov),0.04)); background-size:200% 100%; animation:sdbShimmer 1.2s linear infinite; }
+                @keyframes sdbShimmer { to { background-position:-200% 0; } }
+                .sdb-err { border:1px solid rgba(255,82,82,0.4); background:rgba(255,82,82,0.08); border-radius:14px; padding:12px; font-size:12px; line-height:1.5; }
+                .sdb-err b { display:block; margin-bottom:4px; }
+                .sdb-risk { font-size:11.5px; line-height:1.45; padding:8px 10px; border-radius:10px; background:rgba(255,145,0,0.12); border:1px solid rgba(255,145,0,0.35); margin-bottom:10px; }
+                .sdb-quick { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 2px; }
+                .sdb-quick button { border:1px solid var(--border-glass); background:rgba(var(--ov),0.06); color:var(--text-main); border-radius:999px; padding:4px 11px; font-size:11.5px; font-weight:800; font-family:ui-monospace,monospace; cursor:pointer; }
+                .sdb-quick button:active { background:var(--accent); color:var(--on-accent); }
+                .sdb-note { font-size:10.5px; color:var(--text-muted); line-height:1.45; margin-top:6px; overflow-wrap:anywhere; }
+                .sdb-seg { display:flex; gap:6px; margin-bottom:10px; }
+                .sdb-seg button { flex:1; border:1px solid var(--border-glass); background:rgba(var(--ov),0.05); color:var(--text-muted); border-radius:12px; padding:8px 4px; font-size:12.5px; font-weight:800; cursor:pointer; }
+                .sdb-seg button.active { background:linear-gradient(135deg,var(--accent),var(--secondary)); color:var(--on-accent); border-color:transparent; }
+                .sdb-field { width:100%; background:var(--bg-surface); border:1px solid var(--border-glass); border-radius:var(--radius-md); color:var(--text-main); padding:10px 12px; font-family:ui-monospace,'SF Mono','Roboto Mono',monospace; font-size:12.5px; outline:none; }
+                .sdb-field:focus { border-color:var(--accent); }
+                textarea.sdb-field { min-height:84px; max-height:38vh; resize:vertical; line-height:1.4; white-space:pre-wrap; overflow-wrap:anywhere; }
+                .sdb-label { font-size:10.5px; color:var(--text-muted); font-weight:700; margin:0 0 4px; display:flex; justify-content:space-between; gap:8px; }
+                .sdb-problem { color:var(--status-bloat); font-size:11px; margin-top:4px; min-height:14px; }
+                #sdbEditModal .mode-action-btn:disabled, #sdbNewModal .mode-action-btn:disabled { opacity:.4; cursor:not-allowed; }
+                .sdb-jrow { border:1px solid var(--border-glass); border-radius:12px; padding:9px 11px; margin-bottom:8px; }
+                .sdb-jrow .sdb-key { font-size:12px; }
+                .sdb-jrow .sdb-change { font-family:ui-monospace,monospace; font-size:11px; color:var(--text-muted); margin-top:3px; overflow-wrap:anywhere; }
+                .sdb-jrow .sdb-change em { color:var(--accent); font-style:normal; }
+                .sdb-snack { position:fixed; left:12px; right:12px; bottom:72px; margin:0 auto; max-width:480px; background:var(--bg-sheet); border:1px solid var(--accent); border-radius:14px; padding:8px 8px 8px 14px; display:flex; align-items:center; gap:10px; font-size:12px; font-weight:700; box-shadow:0 8px 24px rgba(0,0,0,.6); z-index:290; transform:translateY(140%); opacity:0; pointer-events:none; transition:transform .25s ease, opacity .25s ease; }
+                .sdb-snack.show { transform:translateY(0); opacity:1; pointer-events:auto; }
+                .sdb-snack span { flex:1; min-width:0; overflow-wrap:anywhere; font-family:ui-monospace,monospace; font-size:11.5px; }
+                .sdb-snack button { flex:0 0 auto; border:none; border-radius:10px; padding:8px 14px; font-weight:800; font-size:12px; background:var(--accent); color:var(--on-accent); cursor:pointer; }
+                .sdb-more { text-align:center; margin:10px 0 4px; }
+            </style>
+
+            <div class="color-card" id="sdbTop">
+                <div class="color-card-title">⚙️ Android settings</div>
+                <div class="color-card-subtitle">Read and change the <b>Global</b>, <b>Secure</b> and <b>System</b> settings of this phone. <b>Tap</b> a setting to edit it; <b>press and hold</b> a 1 / 0 or true / false value to flip it.</div>
+
+                <div class="mode-alert-card" id="sdbGate" style="display:none; margin:12px 0 0;">
+                    <div class="mode-alert-icon">🔒</div>
+                    <div class="mode-alert-body">
+                        <div class="mode-alert-title">Needs ADB, Wireless Debugging, Shizuku or Root</div>
+                        <div class="mode-alert-desc" id="sdbGateDesc">Android keeps its settings behind the shell. Connect one of them in Working Modes, then come back.</div>
+                    </div>
+                    <button class="mode-alert-btn" onclick="openWorkingModesModal()">Set Up ⚡</button>
+                </div>
+
+                <div id="sdbControls">
+                    <div class="sdb-tabs" id="sdbTabs" role="tablist" aria-label="Settings table"></div>
+                    <div class="sdb-bar">
+                        <div class="sdb-searchwrap">
+                            <input type="text" class="list-search" id="sdbSearch" placeholder="Search settings…" oninput="sdbSearchInput()" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" aria-label="Search settings">
+                            <span class="search-clear" id="sdbSearchClear" onclick="sdbClearSearch()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sdbClearSearch();}" role="button" tabindex="0" aria-label="Clear search">✕</span>
+                        </div>
+                        <button class="sdb-iconbtn accent" onclick="sdbOpenNew()" aria-label="Create a setting" title="Create a setting">＋</button>
+                        <button class="sdb-iconbtn" onclick="sdbOpenMenu()" aria-label="More" title="More">⋯</button>
+                    </div>
+                    <div class="sdb-filters" id="sdbFilters">
+                        <button class="filter-chip active" data-f="all" onclick="sdbSetFilter('all')">All</button>
+                        <button class="filter-chip" data-f="switch" onclick="sdbSetFilter('switch')">Switches</button>
+                        <button class="filter-chip" data-f="known" onclick="sdbSetFilter('known')">Described</button>
+                        <button class="filter-chip" data-f="edited" onclick="sdbSetFilter('edited')">Edited</button>
+                    </div>
+                    <div class="sdb-status" id="sdbStatus"></div>
+                </div>
+            </div>
+
+            <div id="sdbList" class="sdb-list" role="list"></div>
+            <div id="sdbMore" class="sdb-more"></div>
         </section>
 
         <!-- VIEW: SHIZUSTORE -->
@@ -4265,6 +4368,122 @@ Type any command below (e.g. pm list packages -d)
         </div>
     </div>
 
+    <!-- Android settings: edit one setting -->
+    <div class="modal-overlay" id="sdbEditModal" onclick="if(event.target===this) sdbEditClose()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-avatar" style="background:rgba(0,200,255,0.18); color:var(--accent);">⚙️</div>
+                    <div class="sheet-title">
+                        <h3 id="sdbEditKey" style="word-break:break-all; font-family:ui-monospace,monospace;"></h3>
+                        <p id="sdbEditSub" style="word-break:normal;"></p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="sdbEditClose()" role="button" aria-label="Close">✕</div>
+            </div>
+            <div class="sdb-risk" id="sdbEditRisk" style="display:none;"></div>
+            <div class="sdb-label"><span>Value</span><span id="sdbEditLen"></span></div>
+            <textarea class="sdb-field" id="sdbEditText" rows="3" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="sdbEditInput()" aria-label="Value"></textarea>
+            <div class="sdb-problem" id="sdbEditProblem"></div>
+            <div class="sdb-quick" id="sdbEditQuick" aria-label="Quick values"></div>
+            <div class="sdb-note" id="sdbEditNote"></div>
+            <div style="display:flex; gap:10px; margin-top:12px;">
+                <button class="mode-action-btn primary" id="sdbEditSaveBtn" style="flex:1; justify-content:center; min-height:40px;" onclick="sdbEditSave()">💾 Save</button>
+                <button class="mode-action-btn" id="sdbEditFlipBtn" style="min-height:40px;" onclick="sdbEditFlip()">🔁 Flip</button>
+            </div>
+            <div class="batch-sheet-tools" style="margin-top:8px; gap:12px; flex-wrap:wrap;">
+                <button class="batch-tool-link" onclick="sdbEditCopy('name')">📋 Name</button>
+                <button class="batch-tool-link" onclick="sdbEditCopy('value')">📋 Value</button>
+                <button class="batch-tool-link" onclick="sdbEditCopy('cmd')">📋 Command</button>
+                <button class="batch-tool-link" onclick="sdbEditReload()">↻ Reload</button>
+                <button class="batch-tool-link" style="color:var(--status-bloat);" onclick="sdbEditDelete()">🗑️ Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Android settings: create a setting -->
+    <div class="modal-overlay" id="sdbNewModal" onclick="if(event.target===this) sdbNewClose()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-avatar" style="background:rgba(74,222,128,0.18); color:#4ADE80;">＋</div>
+                    <div class="sheet-title">
+                        <h3>New setting</h3>
+                        <p style="word-break:normal;">Adds a name and a value to one of the settings tables</p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="sdbNewClose()" role="button" aria-label="Close">✕</div>
+            </div>
+            <div class="sdb-seg" id="sdbNewSeg" role="tablist" aria-label="Table"></div>
+            <div class="sdb-label"><span>Name</span></div>
+            <input type="text" class="sdb-field" id="sdbNewKey" placeholder="my_setting_name" oninput="this.dataset.touched='1'; sdbNewInput()" onblur="this.dataset.touched='1'; sdbNewInput()" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" aria-label="Name" onkeydown="if(event.key==='Enter') document.getElementById('sdbNewValue').focus()">
+            <div class="sdb-problem" id="sdbNewKeyProblem"></div>
+            <div class="sdb-label"><span>Value</span><span id="sdbNewLen"></span></div>
+            <textarea class="sdb-field" id="sdbNewValue" rows="2" placeholder="1" oninput="sdbNewInput()" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" aria-label="Value"></textarea>
+            <div class="sdb-problem" id="sdbNewValueProblem"></div>
+            <div class="sdb-quick" id="sdbNewQuick" aria-label="Quick values"></div>
+            <div class="sdb-note" id="sdbNewNote"></div>
+            <div style="display:flex; gap:10px; margin-top:12px;">
+                <button class="mode-action-btn primary" id="sdbNewCreateBtn" style="flex:1; justify-content:center; min-height:40px;" onclick="sdbNewCreate()">＋ Create</button>
+                <button class="mode-action-btn" style="min-height:40px;" onclick="sdbNewClose()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Android settings: more actions -->
+    <div class="modal-overlay" id="sdbMenuModal" onclick="if(event.target===this) sdbMenuClose()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-avatar" style="background:rgba(0,200,255,0.18); color:var(--accent);">⋯</div>
+                    <div class="sheet-title">
+                        <h3>Settings tools</h3>
+                        <p id="sdbMenuSub" style="word-break:normal;"></p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="sdbMenuClose()" role="button" aria-label="Close">✕</div>
+            </div>
+            <div class="sdb-label" style="margin-top:2px;"><span>Sort by</span></div>
+            <div class="sdb-seg" id="sdbSortSeg" role="tablist" aria-label="Sort"></div>
+            <div class="batch-actions-grid" style="grid-template-columns:repeat(2,1fr);">
+                <button class="batch-grid-btn" onclick="sdbMenuDo('reload')">↻ Reload all</button>
+                <button class="batch-grid-btn" onclick="sdbMenuDo('journal')">🕘 Changes</button>
+                <button class="batch-grid-btn" onclick="sdbMenuDo('copy')">📋 Copy shown</button>
+                <button class="batch-grid-btn" onclick="sdbMenuDo('share')">📤 Share shown</button>
+            </div>
+            <div class="modal-helper" style="margin-top:12px;"><b>Value guide</b><br>
+                <b>1</b> · <b>true</b> · on · yes → switched on &nbsp;|&nbsp; <b>0</b> · <b>false</b> · off · no → switched off.<br>
+                The word <b>null</b> is stored as that text. Use <b>(empty)</b> for a value with nothing in it, and <b>Delete</b> to remove a setting completely.
+            </div>
+            <div class="modal-helper" style="margin-top:10px;"><b>Careful</b><br>
+                These are the settings Android itself reads. Rows marked ⚠️ can cut your ADB connection, lock you out of the screen or keyboard, or break setup. Every change made here is kept under <b>Changes</b>, where it can be reverted.
+            </div>
+        </div>
+    </div>
+
+    <!-- Android settings: what was changed with this app -->
+    <div class="modal-overlay" id="sdbJournalModal" onclick="if(event.target===this) sdbJournalClose()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-avatar" style="background:rgba(0,200,255,0.18); color:var(--accent);">🕘</div>
+                    <div class="sheet-title">
+                        <h3>Changes</h3>
+                        <p style="word-break:normal;">Made with this app, newest first. Revert puts the old value back.</p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="sdbJournalClose()" role="button" aria-label="Close">✕</div>
+            </div>
+            <div id="sdbJournalList" style="max-height:52vh; overflow:auto;"></div>
+            <div style="display:flex; gap:10px; margin-top:8px;">
+                <button class="mode-action-btn" id="sdbJournalClear" onclick="sdbJournalClear()">🧹 Clear history</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Android settings: undo after a change -->
+    <div class="sdb-snack" id="sdbSnack" role="status" aria-live="polite"><span id="sdbSnackMsg"></span><button id="sdbSnackUndo" onclick="sdbSnackUndoNow()">Undo</button></div>
+
     <div class="modal-overlay" id="signModal" onclick="if(event.target===this) signClose()">
         <div class="modal-sheet">
             <div class="sheet-header">
@@ -4767,7 +4986,7 @@ Type any command below (e.g. pm list packages -d)
 
         // Order must match the .tab-btn buttons above. 'colors' has no tab button (it opens from the
         // header 🎨 icon), so it sits last with no matching button index.
-        const tabKeys = ['apps', 'saved-lists', 'debloater', 'installer', 'files', 'updates', 'terminal', 'logcat', 'store', 'about', 'colors'];
+        const tabKeys = ['apps', 'saved-lists', 'debloater', 'installer', 'files', 'updates', 'terminal', 'logcat', 'settings', 'store', 'about', 'colors'];
 
         // Tabs visited before this one (most recent last), so Back can retrace them
         let viewStack = [];
@@ -4811,6 +5030,8 @@ Type any command below (e.g. pm list packages -d)
             if (viewName === 'installer') onInstallerShown();
             if (viewName === 'files') onFilesShown();
             if (viewName === 'logcat') onLogcatShown();
+            if (viewName !== 'settings' && viewName !== 'overlays' && typeof sdbSnackHide === 'function') sdbSnackHide();      // its Undo only makes sense next to what it undoes
+            if (viewName === 'settings') onSettingsShown();
             if (viewName === 'store') onStoreShown();
             if (viewName === 'about') onAboutShown();
             haptic();
@@ -4856,6 +5077,7 @@ Type any command below (e.g. pm list packages -d)
             if (typeof fmBatchRunning !== 'undefined' && fmBatchRunning) return 'a file operation is running';
             if (typeof arcBusy !== 'undefined' && arcBusy) return 'an archive job is running';
             if (typeof backupRunning !== 'undefined' && backupRunning) return 'a backup or restore is running';
+            if (typeof sdbBusy !== 'undefined' && sdbBusy.size) return 'a settings change is being applied';
             if ((typeof termShellRun !== 'undefined' && termShellRun) || (typeof rishRunning !== 'undefined' && rishRunning)) return 'a terminal command is running';
             return '';
         }
@@ -4872,6 +5094,7 @@ Type any command below (e.g. pm list packages -d)
             if (batchPanelExpanded) { collapseBatchPanel(); return true; }
             if (selectedPkgs.size) { clearBatchSelection(); return true; }
             const cur = currentViewName();
+            if (cur === 'settings' && typeof sdbBackHandled === 'function' && sdbBackHandled()) return true;
             if (cur === 'debloater' && typeof uadSelected !== 'undefined' && uadSelected.size) { clearUadSelection(); return true; }
             if (cur === 'files' && typeof fmSelMode !== 'undefined' && fmSelMode) { fmSelExit(); return true; }
             if (cur === 'files' && typeof arc !== 'undefined' && arc) {
@@ -5357,6 +5580,7 @@ Type any command below (e.g. pm list packages -d)
                 }
 
                 if (typeof rishSyncUi === 'function') rishSyncUi();
+                try { if (typeof sdbOnModeChange === 'function') sdbOnModeChange(); } catch (e) { console.error('Settings tab: ' + e); }
 
                 // Update Modal Content
                 document.getElementById('modalActiveModeDesc').innerText = `Selected: ${MODE_LABELS[configured] || configured} • Active: ${text.innerText}`;
@@ -12120,6 +12344,1056 @@ Type any command below (e.g. pm list packages -d)
             }
             saveStoreJson('seen_version', { code: cur.versionCode });
             if (since !== null) openWhatsNew({ since, max: since === 0 ? 2 : 4 });
+        }
+
+        // ---------- Android settings (the global, secure and system tables) ----------
+        // `settings list | get | put | delete` through the active privileged mode (SettingsDb / MainActivity do the work and check every
+        // name and value). The page keeps one Map per table and shows it as a searchable list. A change is applied by the app and
+        // answered with what the phone holds afterwards: that read-back, not the request, is what the list then shows.
+        const SDB_TABLES = ['global', 'secure', 'system'];
+        const SDB_TITLES = { global: 'Global', secure: 'Secure', system: 'System' };
+        const SDB_PAGE = 120;                    // rows drawn at a time
+        const SDB_HOLD_MS = 480;                 // a press this long flips a switch
+        const SDB_MAX_KEY = 256, SDB_MAX_VALUE = 20000;
+        const SDB_JOURNAL_MAX = 150;
+        const SDB_RISKS = {
+            conn: 'This can cut the ADB connection this app uses, so you may not be able to change it back from here.',
+            lock: 'This can lock you out of parts of the phone (the screen, the keyboard or accessibility).',
+            break: 'Changing this can break setup, apps or the system. Only change it if you know what it does.'
+        };
+
+        // What the usual settings mean. A plain string is a description; [description, risk] marks one that can bite.
+        const SDB_HINTS = {
+            global: {
+                adb_enabled: ['USB debugging', 'conn'],
+                adb_wifi_enabled: ['Wireless debugging', 'conn'],
+                adb_allowed_connection_time: 'How long an ADB authorization stays valid (ms)',
+                airplane_mode_on: ['Airplane mode', 'conn'],
+                airplane_mode_radios: 'Radios that airplane mode switches off',
+                always_finish_activities: "Destroy activities as soon as they are left (developer option)",
+                animator_duration_scale: 'Animator duration scale (1 = normal, 0 = off)',
+                transition_animation_scale: 'Transition animation scale (1 = normal, 0 = off)',
+                window_animation_scale: 'Window animation scale (1 = normal, 0 = off)',
+                activity_manager_constants: 'Activity manager tuning values',
+                adaptive_battery_management_enabled: 'Adaptive Battery',
+                app_standby_enabled: 'App Standby (limits apps that are not in use)',
+                auto_time: 'Set the time automatically',
+                auto_time_zone: 'Set the time zone automatically',
+                battery_saver_constants: 'Battery Saver tuning values',
+                ble_scan_always_enabled: 'Bluetooth scanning even when Bluetooth is off',
+                bluetooth_on: 'Bluetooth',
+                boot_count: 'How many times the phone has started',
+                cached_apps_freezer: 'Freeze cached apps',
+                captive_portal_mode: 'When a Wi-Fi sign-in page is found (0 ignore, 1 ask, 2 avoid the network)',
+                charging_sounds_enabled: 'Charging sounds',
+                data_roaming: 'Mobile data roaming',
+                debug_app: 'App that waits for a debugger (developer option)',
+                development_settings_enabled: 'Developer options are shown',
+                device_idle_constants: 'Doze (device idle) tuning values',
+                device_name: 'Device name (Bluetooth, hotspot, network)',
+                device_provisioned: ['Setup wizard finished: leave this at 1', 'break'],
+                emergency_tone: 'Emergency tone',
+                enable_freeform_support: 'Freeform windows (developer option)',
+                force_allow_on_external: 'Allow every app on external storage (developer option)',
+                force_resizable_activities: 'Allow every app to be resized (developer option)',
+                heads_up_notifications_enabled: 'Pop-up (heads-up) notifications',
+                hidden_api_policy: 'Hidden (non-SDK) API enforcement (0 off, 1 warn only, 2 on)',
+                low_power: 'Battery Saver is on',
+                low_power_trigger_level: 'Battery Saver turns on at this charge (%)',
+                mobile_data: 'Mobile data',
+                mobile_data_always_on: 'Keep mobile data on while Wi-Fi is connected',
+                mode_ringer: 'Ringer mode (0 silent, 1 vibrate, 2 normal)',
+                notification_bubbles: 'Notification bubbles',
+                nsd_on: 'Network service discovery',
+                ntp_server: 'Network time server',
+                ota_disable_automatic_update: 'Turn off automatic system updates (1 = off)',
+                overlay_display_devices: 'Simulated secondary displays (developer option)',
+                package_verifier_enable: 'Check apps for harm before installing',
+                private_dns_mode: 'Private DNS (off, opportunistic or hostname)',
+                private_dns_specifier: 'Private DNS host name',
+                show_notification_channel_warnings: 'Warn about notifications without a channel (developer option)',
+                stay_on_while_plugged_in: 'Keep the screen on while charging (1 AC, 2 USB, 4 wireless; 7 = all)',
+                theater_mode_on: 'Theater mode (watches)',
+                verifier_verify_adb_installs: 'Check apps installed over ADB',
+                wait_for_debugger: 'Make the debug app wait for a debugger (developer option)',
+                wifi_networks_available_notification_on: 'Tell me about open Wi-Fi networks in range',
+                wifi_on: ['Wi-Fi', 'conn'],
+                wifi_scan_always_enabled: 'Wi-Fi scanning even when Wi-Fi is off',
+                wifi_scan_throttle_enabled: 'Limit how often apps may scan for Wi-Fi',
+                wifi_wakeup_enabled: 'Turn Wi-Fi back on near saved networks',
+                zen_mode: 'Do Not Disturb (0 off, 1 priority only, 2 total silence, 3 alarms only)'
+            },
+            secure: {
+                accessibility_captioning_enabled: 'Captions',
+                accessibility_display_daltonizer: 'Color correction mode (0 grayscale, 11 protanomaly, 12 deuteranomaly, 13 tritanomaly)',
+                accessibility_display_daltonizer_enabled: 'Color correction',
+                accessibility_display_inversion_enabled: 'Color inversion',
+                accessibility_display_magnification_enabled: 'Magnification by triple tap',
+                accessibility_enabled: ['Accessibility services are on', 'lock'],
+                adaptive_sleep: 'Screen attention (keep the screen on while you look at it)',
+                android_id: ['ID of this user that apps derive their own IDs from', 'break'],
+                anr_show_background: 'Show "not responding" for background apps (developer option)',
+                assistant: 'Default assistant app',
+                autofill_service: 'Autofill service',
+                back_gesture_inset_scale_left: 'Back gesture sensitivity, left edge',
+                back_gesture_inset_scale_right: 'Back gesture sensitivity, right edge',
+                bluetooth_address: 'Bluetooth address',
+                bluetooth_name: 'Bluetooth name',
+                bugreport_in_power_menu: 'Bug report shortcut in the power menu',
+                charging_vibration_enabled: 'Vibrate when charging starts',
+                default_input_method: ['Current keyboard (input method)', 'lock'],
+                doze_always_on: 'Always-on display',
+                doze_enabled: 'Ambient display (wake the screen for notifications)',
+                doze_pulse_on_double_tap: 'Wake the ambient display on double tap',
+                doze_pulse_on_pick_up: 'Wake the ambient display when picked up',
+                enabled_accessibility_services: ['Enabled accessibility services (separated by :)', 'lock'],
+                enabled_input_methods: ['Enabled keyboards', 'lock'],
+                enabled_notification_listeners: 'Apps allowed to read notifications',
+                high_text_contrast_enabled: 'High contrast text',
+                install_non_market_apps: 'Install unknown apps (older global switch)',
+                location_mode: 'Location mode (0 off, 1 device only, 2 battery saving, 3 high accuracy)',
+                location_providers_allowed: 'Location providers allowed (older setting)',
+                lock_screen_allow_private_notifications: 'Show sensitive notification content on the lock screen',
+                lock_screen_lock_after_timeout: 'Lock the screen this long after it times out (ms)',
+                lock_screen_show_notifications: 'Show notifications on the lock screen',
+                long_press_timeout: 'Touch and hold delay (ms)',
+                multi_press_timeout: 'Double-tap timeout (ms)',
+                navigation_mode: 'Navigation style (0 three buttons, 1 two buttons, 2 gestures)',
+                qs_auto_added_tiles: 'Quick Settings tiles added automatically',
+                screensaver_activate_on_dock: 'Start the screen saver while docked',
+                screensaver_activate_on_sleep: 'Start the screen saver while sleeping',
+                screensaver_enabled: 'Screen saver',
+                show_ime_with_hard_keyboard: 'Show the on-screen keyboard with a physical keyboard',
+                show_rotation_suggestions: 'Rotation suggestion button',
+                speak_password: 'Speak passwords aloud',
+                sysui_qs_tiles: 'Quick Settings tiles and their order',
+                touch_exploration_enabled: ['TalkBack touch exploration', 'lock'],
+                ui_night_mode: 'Dark theme (0 auto, 1 off, 2 on, 3 custom schedule)',
+                user_setup_complete: ['Setup wizard finished: leave this at 1', 'break'],
+                voice_interaction_service: 'Voice assistant service',
+                wake_gesture_enabled: 'Lift to wake'
+            },
+            system: {
+                accelerometer_rotation: 'Auto-rotate (1 on, 0 off)',
+                alarm_alert: 'Default alarm sound',
+                dtmf_tone: 'Dial pad tones',
+                end_button_behavior: 'What the power button does during a call',
+                font_scale: 'Text size (1.0 = normal)',
+                haptic_feedback_enabled: 'Touch vibration',
+                lock_to_app_enabled: 'Screen pinning',
+                lockscreen_sounds_enabled: 'Screen lock sounds',
+                min_refresh_rate: 'Lowest refresh rate (Hz)',
+                notification_light_pulse: 'Pulse the notification light',
+                notification_sound: 'Default notification sound',
+                peak_refresh_rate: 'Highest refresh rate (Hz)',
+                pointer_location: 'Pointer location overlay (developer option)',
+                pointer_speed: 'Pointer speed (-7 slowest to 7 fastest)',
+                ringtone: 'Default ringtone',
+                screen_auto_brightness_adj: 'Adaptive brightness adjustment (-1 to 1)',
+                screen_brightness: 'Brightness (0 to 255 on most phones)',
+                screen_brightness_mode: 'Adaptive brightness (1 on, 0 off)',
+                screen_off_timeout: 'Screen timeout (ms)',
+                show_touches: 'Show taps (developer option)',
+                sound_effects_enabled: 'Touch sounds',
+                system_locales: 'Language order',
+                time_12_24: 'Clock format (12 or 24)',
+                user_rotation: 'Orientation when auto-rotate is off (0 portrait, 1 landscape, 2 upside down, 3 reverse landscape)',
+                vibrate_when_ringing: 'Vibrate when ringing'
+            }
+        };
+        const SDB_VOLUMES = { music: 'Music', ring: 'Ringtone', alarm: 'Alarm', voice: 'Call', system: 'System', notification: 'Notification', bluetooth_sco: 'Bluetooth call', dtmf: 'Dial pad', tts: 'Speech', accessibility: 'Accessibility' };
+
+        // [on, off] pairs a long press can flip
+        const SDB_SWITCHES = [['1', '0'], ['true', 'false'], ['on', 'off'], ['yes', 'no']];
+        // settings whose value is one of several choices, so that 1 / 0 / off is not "on / off" (flipping would write something invalid or different)
+        const SDB_CHOICES = {
+            global: new Set(['mode_ringer', 'zen_mode', 'private_dns_mode', 'stay_on_while_plugged_in', 'captive_portal_mode', 'hidden_api_policy', 'wifi_sleep_policy', 'ringer_mode', 'low_power_trigger_level']),
+            secure: new Set(['ui_night_mode', 'location_mode', 'navigation_mode', 'accessibility_display_daltonizer', 'long_press_timeout', 'multi_press_timeout']),
+            system: new Set(['user_rotation', 'time_12_24', 'end_button_behavior', 'screen_brightness', 'screen_off_timeout', 'pointer_speed'])
+        };
+
+        let sdbNs = 'global', sdbQuery = '', sdbFilter = 'all', sdbSort = 'az', sdbLimit = SDB_PAGE;
+        const sdbData = { global: null, secure: null, system: null };      // Map name -> value once a table is read
+        const sdbLoading = { global: false, secure: false, system: false };
+        const sdbError = { global: null, secure: null, system: null };     // { text, advice } of the last read that failed
+        const sdbLoadedAt = { global: 0, secure: 0, system: 0 };      // when each table was last read
+        let sdbReqId = 0;
+        const sdbReqs = new Map();               // request id -> { cb, timer }
+        const sdbBusy = new Set();               // "table/name" with a change on its way
+        let sdbJournal = [];                     // newest first: { n (id), t, ns, k, f (before, null = was absent), v (after, null = removed) }
+        let sdbJournalSeq = 0;
+        let sdbEdited = new Set();               // "table/name" of everything in the journal
+        let sdbVersion = 0;                      // bumped by anything that changes what the list shows
+        const sdbMemo = {};
+        let sdbEditing = null;                   // { ns, key, orig } while the editor is open
+        let sdbNewNs = 'global';
+        let sdbSnackTimer = null, sdbSnackUndo = null;
+        let sdbReady = false;
+        let sdbObserver = null;
+        const sdbPress = { timer: null, fired: false, x: 0, y: 0 };
+
+        function sdbInit() {
+            if (sdbReady) return;
+            sdbReady = true;
+            const ui = kvGet('sdb_ui', {}) || {};
+            if (SDB_TABLES.includes(ui.ns)) sdbNs = ui.ns;
+            if (['all', 'switch', 'known', 'edited'].includes(ui.filter)) sdbFilter = ui.filter;
+            if (['az', 'za', 'val'].includes(ui.sort)) sdbSort = ui.sort;
+            const j = kvGet('sdb_journal', []);
+            const text = v => v === null || typeof v === 'string';
+            sdbJournal = Array.isArray(j) ? j.filter(e => e && SDB_TABLES.includes(e.ns) && typeof e.k === 'string' && typeof e.t === 'number' && isFinite(e.t)
+                && (text(e.f) || e.lf === true) && (text(e.v) || e.lv === true)).slice(0, SDB_JOURNAL_MAX) : [];
+            sdbJournal.forEach(e => { if (e.n > sdbJournalSeq) sdbJournalSeq = e.n; });
+            sdbJournal.forEach(e => { if (!(e.n > 0)) e.n = ++sdbJournalSeq; });
+            sdbEdited = new Set(sdbJournal.map(e => e.ns + '/' + e.k));
+        }
+
+        function sdbSaveUi() { kvSet('sdb_ui', { ns: sdbNs, filter: sdbFilter, sort: sdbSort }); }
+        function sdbDirty() { sdbVersion++; Object.keys(sdbMemo).forEach(k => { delete sdbMemo[k]; }); }
+        function sdbBridgeOk() { return !!(window.AndroidBridge && window.AndroidBridge.settingsList && window.AndroidBridge.settingsOp); }
+        function sdbUsable() { return sdbBridgeOk() && !!isPrivilegedActive; }
+
+        // ---- values: what can be flipped, what a name or value may be, what a setting means ----
+
+        // { on, next } when the value is one half of a switch pair (keeping its letter case), else null
+        function sdbSwitchInfo(v) {
+            if (typeof v !== 'string' || v.length > 5) return null;
+            const low = v.toLowerCase();
+            for (const pair of SDB_SWITCHES) {
+                if (low !== pair[0] && low !== pair[1]) continue;
+                const on = low === pair[0];
+                const other = on ? pair[1] : pair[0];
+                let next = other;
+                if (/[A-Z]/.test(v)) next = (v === v.toUpperCase() && v.length > 1) ? other.toUpperCase() : other.charAt(0).toUpperCase() + other.slice(1);
+                return { on, next };
+            }
+            return null;
+        }
+
+        // like sdbSwitchInfo, but for a named setting: the ones that are a choice among several values are never a switch
+        function sdbSwitchOf(ns, key, v) {
+            if (SDB_CHOICES[ns] && SDB_CHOICES[ns].has(key)) return null;
+            return sdbSwitchInfo(v);
+        }
+
+        function sdbKeyProblem(key) {
+            if (!key) return 'Enter a name';
+            if (key.length > SDB_MAX_KEY) return 'The name is too long (' + SDB_MAX_KEY + ' characters at most)';
+            if (key.charAt(0) === '-') return "A name can't start with a dash";
+            if (key.indexOf('=') >= 0) return "A name can't contain =";
+            if (/[\s\u0000-\u001f\u007f-\u009f]/.test(key)) return "A name can't contain spaces or control characters";      // \s covers every kind of space, line break included
+            return '';
+        }
+
+        // adb frames a request with four hex digits, so a command of 64 KiB or more is corrupted on the way (SettingsDb.MAX_QUOTED_VALUE_BYTES)
+        const SDB_MAX_QUOTED_BYTES = 62000;
+        function sdbQuotedBytes(value) {
+            const q = "'" + value.replace(/'/g, "'\\''") + "'";
+            try { return unescape(encodeURIComponent(q)).length; } catch (e) { return q.length * 3; }
+        }
+
+        function sdbValueProblem(value) {
+            if (value.length > SDB_MAX_VALUE) return 'The value is too long (' + SDB_MAX_VALUE + ' characters at most)';
+            if (value.indexOf('\r') >= 0) return "A value can't contain a carriage return (use plain line breaks)";
+            if (/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(value)) return "A value can't contain control characters";
+            const bytes = sdbQuotedBytes(value);
+            if (bytes > SDB_MAX_QUOTED_BYTES) return 'The value is too long for adb to carry (' + bytes + ' bytes once quoted, about ' + SDB_MAX_QUOTED_BYTES + ' at most)';
+            return '';
+        }
+
+        // { t, r } (description and risk) for a setting, or null when nothing is known about it
+        function sdbHint(ns, key) {
+            const tbl = SDB_HINTS[ns];
+            const h = tbl && Object.prototype.hasOwnProperty.call(tbl, key) ? tbl[key] : null;       // a setting may be called "constructor"
+            if (h) return Array.isArray(h) ? { t: h[0], r: h[1] } : { t: h, r: '' };
+            if (ns === 'system') {
+                const m = /^volume_([a-z_]+?)(?:_(speaker|headset|headphone|earpiece|bt_sco|bluetooth_a2dp|hdmi|usb_headset|usb_device))?$/.exec(key);
+                if (m && Object.prototype.hasOwnProperty.call(SDB_VOLUMES, m[1])) return { t: SDB_VOLUMES[m[1]] + ' volume' + (m[2] ? ' (' + m[2].replace(/_/g, ' ') + ')' : ''), r: '' };
+            }
+            return null;
+        }
+
+        function sdbClip(v, n) { v = String(v); n = n || 200; return v.length > n ? v.slice(0, n) + '…' : v; }
+
+        function sdbMark(text, terms) {
+            if (!terms.length) return escapeHtml(text);
+            const re = new RegExp('(' + terms.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')', 'gi');
+            return text.split(re).map((part, i) => i % 2 ? '<mark class="find-hit">' + escapeHtml(part) + '</mark>' : escapeHtml(part)).join('');
+        }
+
+        function sdbAgo(t) {
+            const s = Math.max(0, Math.round((Date.now() - t) / 1000));
+            if (s < 45) return 'just now';
+            if (s < 3600) return Math.round(s / 60) + ' min ago';
+            if (s < 86400) return Math.round(s / 3600) + ' h ago';
+            return Math.round(s / 86400) + ' d ago';
+        }
+
+        function sdbShellCommand(ns, key, value) {
+            const q = s => "'" + String(s).replace(/'/g, "'\\''") + "'";
+            return 'settings put ' + ns + ' ' + q(key) + ' ' + q(value);
+        }
+
+        // ---- talking to the app ----
+
+        // start(id) calls the bridge; cb gets the parsed answer, or { ok:false, error } if the request could not start or took too long
+        function sdbRequest(start, cb, timeoutMs) {
+            const id = ++sdbReqId;
+            let st = 'error: no answer';
+            try { st = start(id); } catch (e) { st = 'error: ' + (e && e.message || e); }
+            if (st !== 'started') { cb({ ok: false, error: String(st).replace(/^error:\s*/, '') || 'The request could not start' }); return false; }
+            const timer = setTimeout(() => { if (sdbReqs.delete(id)) cb({ ok: false, timedOut: true, error: 'No answer from the device (timed out)' }); }, timeoutMs || 60000);
+            sdbReqs.set(id, { cb, timer });
+            return true;
+        }
+
+        function sdbOnReply(json) {
+            let r;
+            try { r = JSON.parse(json); } catch (e) { return; }
+            const q = sdbReqs.get(r.req);
+            if (!q) {
+                // gave up on it already (timed out), or not ours. A change that answered late was still made: read the table again
+                if (r && r.op && SDB_TABLES.includes(r.ns) && !r.stale) sdbRefreshLater(r.ns);
+                return;
+            }
+            sdbReqs.delete(r.req);
+            clearTimeout(q.timer);
+            q.cb(r);
+        }
+        window.onSettingsList = sdbOnReply;
+        window.onSettingsOp = sdbOnReply;
+
+        // a request that got no answer may still have been applied (the link dropped, or the phone was slow): look again in a moment
+        function sdbRefreshLater(ns) {
+            setTimeout(() => { if (sdbUsable() && !sdbLoading[ns]) sdbReadTable(ns); }, 2500);
+        }
+
+        function sdbReadTable(ns) {
+            if (sdbLoading[ns]) return;
+            sdbLoading[ns] = true;
+            sdbError[ns] = null;
+            sdbRequest(id => window.AndroidBridge.settingsList(id, ns), r => {
+                sdbLoading[ns] = false;
+                if (r.ok) {
+                    const m = new Map();
+                    (r.entries || []).forEach(e => m.set(String(e[0]), String(e[1])));
+                    sdbData[ns] = m;
+                    sdbError[ns] = null;
+                    sdbLoadedAt[ns] = Date.now();
+                } else {
+                    sdbError[ns] = { text: r.error || 'Could not read the settings', advice: r.advice || '', needsPrivilege: !!r.needsPrivilege };
+                    if (sdbData[ns]) showToast('Could not refresh the ' + SDB_TITLES[ns].toLowerCase() + ' settings: ' + sdbClip(r.error || 'no answer', 80), '⚠️');      // the old list stays, so say so
+                }
+                sdbDirty();
+                sdbRender();
+            }, 60000);
+        }
+
+        // the table on screen first: the app reads them one after the other
+        function sdbReadAll() {
+            [sdbNs].concat(SDB_TABLES.filter(n => n !== sdbNs)).forEach(sdbReadTable);
+            sdbRender();
+        }
+
+        function sdbStale(ns) { return !sdbLoadedAt[ns] || Date.now() - sdbLoadedAt[ns] > 60000; }
+
+        function onSettingsShown() {
+            sdbInit();
+            if (!sdbUsable()) { sdbRender(); return; }
+            const need = SDB_TABLES.filter(n => !sdbData[n] || sdbError[n] || (n === sdbNs && sdbStale(n)));
+            [sdbNs].concat(SDB_TABLES.filter(n => n !== sdbNs)).filter(n => need.includes(n)).forEach(sdbReadTable);
+            sdbRender();
+        }
+
+        // called when the working mode is re-checked
+        function sdbOnModeChange() {
+            if (currentViewName() !== 'settings') return;
+            const wasGated = document.getElementById('sdbGate') && document.getElementById('sdbGate').style.display !== 'none';
+            if (sdbUsable() && wasGated) onSettingsShown(); else sdbRender();
+        }
+
+        // ---- what is shown ----
+
+        function sdbTerms() { return sdbQuery.toLowerCase().split(/\s+/).filter(Boolean); }
+
+        // the names of one table that pass the search and the filter, in the chosen order (null until the table is read)
+        function sdbFiltered(ns) {
+            const data = sdbData[ns];
+            if (!data) return null;
+            const memoKey = ns + '|' + sdbQuery + '|' + sdbFilter + '|' + sdbSort;
+            if (sdbMemo[memoKey]) return sdbMemo[memoKey];
+            const terms = sdbTerms();
+            const out = [];
+            data.forEach((v, k) => {
+                const hint = sdbHint(ns, k);
+                if (sdbFilter === 'switch' && !sdbSwitchOf(ns, k, v)) return;
+                if (sdbFilter === 'known' && !hint) return;
+                if (sdbFilter === 'edited' && !sdbEdited.has(ns + '/' + k)) return;
+                if (terms.length) {
+                    const hay = (k + '\n' + v + '\n' + (hint ? hint.t : '')).toLowerCase();
+                    for (let i = 0; i < terms.length; i++) if (hay.indexOf(terms[i]) < 0) return;
+                }
+                out.push(k);
+            });
+            const cmp = (a, b) => a < b ? -1 : a > b ? 1 : 0;
+            if (sdbSort === 'za') out.sort((a, b) => cmp(b, a));
+            else if (sdbSort === 'val') out.sort((a, b) => cmp(data.get(a).toLowerCase(), data.get(b).toLowerCase()) || cmp(a, b));
+            else out.sort(cmp);
+            sdbMemo[memoKey] = out;
+            return out;
+        }
+
+        function sdbRender() { sdbRenderChrome(); sdbRenderList(); }
+
+        function sdbRenderChrome() {
+            const usable = sdbUsable();
+            const gate = document.getElementById('sdbGate'), ctl = document.getElementById('sdbControls');
+            if (!gate || !ctl) return;
+            gate.style.display = usable ? 'none' : 'flex';
+            ctl.style.display = usable ? '' : 'none';
+            if (!usable) {
+                document.getElementById('sdbGateDesc').innerText = sdbBridgeOk()
+                    ? 'Android keeps its settings behind the shell. Connect one of them in Working Modes, then come back.'
+                    : 'This page is running without the app, so there is no phone to read the settings from.';
+                return;
+            }
+            const filtering = !!(sdbQuery || sdbFilter !== 'all');
+            const tabsBox = document.getElementById('sdbTabs');
+            const tabHadFocus = tabsBox.contains(document.activeElement) && document.activeElement !== document.body;
+            tabsBox.innerHTML = SDB_TABLES.map(ns => {
+                const data = sdbData[ns];
+                let count = '…';
+                if (data) count = filtering ? sdbFiltered(ns).length + ' / ' + data.size : String(data.size);
+                else if (sdbError[ns]) count = '!';
+                return '<button class="sdb-tab' + (ns === sdbNs ? ' active' : '') + '" role="tab" aria-selected="' + (ns === sdbNs) + '" onclick="sdbSetNs(\'' + ns + '\')"><span>' + SDB_TITLES[ns] + '</span><b>' + count + '</b></button>';
+            }).join('');
+            if (tabHadFocus) { const at = tabsBox.querySelector('.sdb-tab.active'); if (at) at.focus({ preventScroll: true }); }
+            document.querySelectorAll('#sdbFilters .filter-chip').forEach(c => c.classList.toggle('active', c.dataset.f === sdbFilter));
+            document.getElementById('sdbSearchClear').style.display = sdbQuery ? 'block' : 'none';
+            const st = document.getElementById('sdbStatus');
+            const data = sdbData[sdbNs];
+            let html = '';
+            if (sdbLoading[sdbNs]) html = '<span class="sdb-spin"></span> Reading the ' + SDB_TITLES[sdbNs].toLowerCase() + ' settings…';
+            else if (data) {
+                const shown = sdbFiltered(sdbNs).length;
+                html = filtering ? shown + ' of ' + data.size + ' ' + SDB_TITLES[sdbNs].toLowerCase() + ' settings' : data.size + ' ' + SDB_TITLES[sdbNs].toLowerCase() + ' settings';
+                if (sdbLoadedAt[sdbNs]) html += ' · read ' + new Date(sdbLoadedAt[sdbNs]).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                html += ' <button class="batch-tool-link" onclick="sdbReadTable(sdbNs)" style="padding:0 2px;">↻ Refresh</button>';
+            }
+            st.innerHTML = html;
+        }
+
+        function sdbRowHtml(ns, key, value, terms) {
+            const sw = sdbSwitchOf(ns, key, value);
+            const hint = sdbHint(ns, key);
+            const id = ns + '/' + key;
+            let h = '<div class="sdb-row' + (sdbBusy.has(id) ? ' busy' : '') + (hint && hint.r ? ' risky' : '') + '" role="listitem" tabindex="0" data-k="' + escapeHtml(key) + '">';
+            h += '<div class="sdb-main"><div class="sdb-key">' + sdbMark(key, terms) + (sdbEdited.has(id) ? '<span class="sdb-dot" title="Changed with this app"></span>' : '') + '</div>';
+            if (hint) h += '<div class="sdb-hint">' + sdbMark(hint.t, terms) + (hint.r ? ' · ⚠️ careful' : '') + '</div>';
+            const blank = value === '' ? '(empty)' : /^\s+$/.test(value) ? '(blank)' : '';
+            h += '<div class="sdb-val' + (blank ? ' empty' : '') + '">' + (blank || sdbMark(sdbClip(value), terms)) + '</div></div>';
+            if (sw) h += '<button class="sdb-sw' + (sw.on ? ' on' : '') + '" role="switch" aria-checked="' + sw.on + '" aria-label="Flip ' + escapeHtml(key) + '"><span></span></button>';
+            return h + '</div>';
+        }
+
+        function sdbRenderList() {
+            const box = document.getElementById('sdbList'), more = document.getElementById('sdbMore');
+            if (!box || !more) return;
+            if (sdbObserver) { sdbObserver.disconnect(); sdbObserver = null; }
+            if (!sdbUsable()) { box.innerHTML = ''; more.innerHTML = ''; return; }
+            const ae = document.activeElement;
+            let refocus = null;                                      // a keyboard user pressing Enter on a switch must still be on it afterwards
+            if (ae && ae !== document.body && box.contains(ae)) { const rw = ae.closest('.sdb-row[data-k]'); if (rw) refocus = { k: rw.dataset.k, sw: ae.classList.contains('sdb-sw') }; }
+            try { sdbRenderListInner(box, more); } finally {
+                if (refocus) {
+                    const rw = Array.from(box.querySelectorAll('.sdb-row')).find(x => x.dataset.k === refocus.k);
+                    const el = rw && ((refocus.sw && rw.querySelector('.sdb-sw')) || rw);
+                    if (el && el.focus) el.focus({ preventScroll: true });
+                }
+            }
+        }
+
+        function sdbRenderListInner(box, more) {
+            const ns = sdbNs, data = sdbData[ns];
+            more.innerHTML = '';
+            if (!data) {
+                if (sdbError[ns]) {
+                    const e = sdbError[ns];
+                    box.innerHTML = '<div class="sdb-err"><b>Could not read the ' + SDB_TITLES[ns].toLowerCase() + ' settings</b>' + escapeHtml(e.text) + (e.advice ? '<br><br>' + escapeHtml(e.advice) : '')
+                        + '<div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;"><button class="mode-action-btn primary" onclick="sdbReadTable(\'' + ns + '\')">↻ Try again</button><button class="mode-action-btn" onclick="openWorkingModesModal()">⚡ Working modes</button></div></div>';
+                } else {
+                    box.innerHTML = '<div class="sdb-skel"></div><div class="sdb-skel"></div><div class="sdb-skel"></div><div class="sdb-skel"></div>';
+                }
+                return;
+            }
+            const keys = sdbFiltered(ns);
+            if (!keys.length) {
+                const q = sdbQuery.trim();
+                let msg = q ? 'Nothing matches “' + escapeHtml(q) + '” in ' + SDB_TITLES[ns] + '.' : sdbFilter === 'edited' ? 'Nothing here was changed with this app yet.' : sdbFilter === 'switch' ? 'No switch-like values here.' : 'Nothing to show.';
+                let act = '';
+                if (q && !/\s/.test(q) && !sdbKeyProblem(q)) act = '<div><button class="mode-action-btn primary" onclick="sdbOpenNew(\'' + ns + '\', ' + escapeHtml(JSON.stringify(q)).replace(/'/g, '&#39;') + ')">＋ Create “' + escapeHtml(sdbClip(q, 40)) + '” in ' + SDB_TITLES[ns] + '</button></div>';
+                if (q || sdbFilter !== 'all') act += '<div><button class="mode-action-btn" onclick="sdbResetView()">Show everything</button></div>';
+                box.innerHTML = '<div class="sdb-empty">' + msg + act + '</div>';
+                return;
+            }
+            const terms = sdbTerms();
+            const slice = keys.slice(0, sdbLimit);
+            box.innerHTML = slice.map(k => sdbRowHtml(ns, k, data.get(k), terms)).join('');
+            if (keys.length > slice.length) {
+                more.innerHTML = '<button class="mode-action-btn" id="sdbMoreBtn" onclick="sdbShowMore()">Show ' + Math.min(SDB_PAGE, keys.length - slice.length) + ' more (' + (keys.length - slice.length) + ' left)</button>';
+                if (window.IntersectionObserver) {
+                    sdbObserver = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) sdbShowMore(); }, { rootMargin: '500px' });
+                    sdbObserver.observe(document.getElementById('sdbMoreBtn'));
+                }
+            }
+        }
+
+        function sdbShowMore() { sdbLimit += SDB_PAGE; sdbRenderList(); }
+
+        // ---- the search, the table, the filter and the order ----
+
+        let sdbSearchTimer = null;
+        function sdbSearchInput() {
+            clearTimeout(sdbSearchTimer);
+            sdbSearchTimer = setTimeout(() => {
+                sdbQuery = document.getElementById('sdbSearch').value.trim();
+                sdbLimit = SDB_PAGE;
+                sdbRender();
+            }, 130);
+            document.getElementById('sdbSearchClear').style.display = document.getElementById('sdbSearch').value ? 'block' : 'none';
+        }
+
+        function sdbClearSearch() {
+            clearTimeout(sdbSearchTimer);
+            document.getElementById('sdbSearch').value = '';
+            sdbQuery = '';
+            sdbLimit = SDB_PAGE;
+            sdbRender();
+        }
+
+        function sdbResetView() {
+            clearTimeout(sdbSearchTimer);
+            document.getElementById('sdbSearch').value = '';
+            sdbQuery = ''; sdbFilter = 'all'; sdbLimit = SDB_PAGE;
+            sdbSaveUi();
+            sdbRender();
+        }
+
+        function sdbSetNs(ns) {
+            if (!SDB_TABLES.includes(ns) || ns === sdbNs) return;
+            haptic();
+            sdbNs = ns;
+            sdbLimit = SDB_PAGE;
+            sdbSaveUi();
+            if ((!sdbData[ns] || sdbStale(ns)) && !sdbLoading[ns]) sdbReadTable(ns);        // what was read a while ago may have changed behind the app's back
+            sdbRender();
+            window.scrollTo({ top: 0, behavior: 'auto' });
+        }
+
+        function sdbSetFilter(f) { sdbFilter = f; sdbLimit = SDB_PAGE; sdbSaveUi(); sdbRender(); }
+        function sdbSetSort(s) { sdbSort = s; sdbLimit = SDB_PAGE; sdbSaveUi(); sdbRenderSortSeg(); sdbRender(); }
+
+        function sdbRenderSortSeg() {
+            const box = document.getElementById('sdbSortSeg');
+            if (!box) return;
+            box.innerHTML = [['az', 'Name A–Z'], ['za', 'Name Z–A'], ['val', 'Value']].map(p => '<button type="button" class="' + (p[0] === sdbSort ? 'active' : '') + '" role="tab" aria-selected="' + (p[0] === sdbSort) + '" onclick="sdbSetSort(\'' + p[0] + '\')">' + p[1] + '</button>').join('');
+        }
+
+        // ---- press and hold ----
+
+        function sdbPressCancel() { if (sdbPress.timer) { clearTimeout(sdbPress.timer); sdbPress.timer = null; } }
+
+        function sdbPressStart(row, x, y) {
+            sdbPress.fired = false;
+            sdbPress.x = x; sdbPress.y = y;
+            sdbPressCancel();
+            const key = row.dataset.k;
+            sdbPress.timer = setTimeout(() => {
+                sdbPress.timer = null;
+                sdbPress.fired = true;
+                haptic();
+                sdbLongPress(sdbNs, key);
+            }, SDB_HOLD_MS);
+        }
+
+        function sdbLongPress(ns, key) {
+            const v = sdbData[ns] && sdbData[ns].get(key);
+            if (v == null) return;
+            if (sdbSwitchOf(ns, key, v)) sdbToggle(ns, key);
+            else showToast('Not a switch: tap it to edit', 'ℹ️');
+        }
+
+        (function sdbInitEvents() {
+            const list = document.getElementById('sdbList');
+            if (!list) return;
+            const rowOf = e => (e.target && e.target.closest) ? e.target.closest('.sdb-row[data-k]') : null;
+            let lastTouchAt = 0;                       // the mouse events a touch screen makes up after a touch are not a second press
+            const fromTouch = () => Date.now() - lastTouchAt < 700;
+            list.addEventListener('click', e => {
+                if (sdbPress.fired) { sdbPress.fired = false; return; }          // the click that ends a long press
+                const row = rowOf(e);
+                if (!row) return;
+                if (e.target.closest('.sdb-sw')) sdbToggle(sdbNs, row.dataset.k);
+                else sdbOpenEditor(sdbNs, row.dataset.k);
+            });
+            list.addEventListener('keydown', e => {
+                if (e.key !== 'Enter' && e.key !== ' ') return;
+                const row = rowOf(e);
+                if (!row || e.target.closest('.sdb-sw')) return;
+                e.preventDefault();
+                sdbOpenEditor(sdbNs, row.dataset.k);
+            });
+            const endTouch = e => {
+                lastTouchAt = Date.now();
+                sdbPressCancel();
+                if (sdbPress.fired && e.cancelable) e.preventDefault();          // the finger that flipped it must not also "tap" the row
+            };
+            list.addEventListener('touchstart', e => {
+                lastTouchAt = Date.now(); sdbPress.fired = false;
+                const row = rowOf(e); const t = e.touches[0];
+                if (row && t) sdbPressStart(row, t.clientX, t.clientY);
+                // Flipping redraws the row while the finger is still down. A removed element no longer passes its touch events up to the
+                // list, so the end of the touch is listened for on the element itself (otherwise a long hold ends in a second flip or the editor)
+                const target = e.target;
+                const done = ev => { target.removeEventListener('touchend', done); target.removeEventListener('touchcancel', done); endTouch(ev); };
+                target.addEventListener('touchend', done);
+                target.addEventListener('touchcancel', done);
+            }, { passive: true });
+            list.addEventListener('touchmove', e => {
+                const t = e.touches[0];
+                if (t && (Math.abs(t.clientX - sdbPress.x) > 12 || Math.abs(t.clientY - sdbPress.y) > 12)) sdbPressCancel();
+            }, { passive: true });
+            list.addEventListener('touchend', endTouch);
+            list.addEventListener('touchcancel', sdbPressCancel);
+            list.addEventListener('mousedown', e => { if (fromTouch()) return; sdbPress.fired = false; const row = rowOf(e); if (row && e.button === 0) sdbPressStart(row, e.clientX, e.clientY); });
+            list.addEventListener('mouseup', sdbPressCancel);
+            list.addEventListener('mouseleave', sdbPressCancel);
+            window.addEventListener('scroll', sdbPressCancel, { passive: true });
+            list.addEventListener('contextmenu', e => { if (rowOf(e)) e.preventDefault(); });
+        })();
+
+        // ---- changing things ----
+
+        function sdbConfirmRisk(ns, key, verb) {
+            const h = sdbHint(ns, key);
+            if (!h || !h.r) return true;
+            return confirm((verb === 'delete' ? 'Delete ' : 'Change ') + key + ' (' + SDB_TITLES[ns] + ')?\n\n' + (h.t ? h.t + '\n\n' : '') + SDB_RISKS[h.r]);
+        }
+
+        function sdbToggle(ns, key) {
+            const cur = sdbData[ns] && sdbData[ns].get(key);
+            const sw = cur == null ? null : sdbSwitchOf(ns, key, cur);
+            if (!sw) { showToast('Not a switch: tap it to edit', 'ℹ️'); return; }
+            if (sdbBusy.has(ns + '/' + key)) { showToast('Still applying the last change…', '⏳'); return; }
+            if (!sdbConfirmRisk(ns, key, 'change')) return;
+            sdbPut(ns, key, sw.next, { verb: 'Flipped' });
+        }
+
+        function sdbFailure(r, ns, key, op) {
+            const verb = op === 'delete' ? 'delete' : op === 'get' ? 'read' : 'change';
+            showToast('Could not ' + verb + ' ' + sdbClip(key, 30), '⚠️');
+            let text = r.error || 'It did not work';
+            if (r.answer && r.answer !== r.error) {
+                if (r.answer.indexOf(text) >= 0) text = r.answer;                       // Android's own text already holds the summary line
+                else if (text.indexOf(r.answer) < 0) text += '\n\n' + r.answer;
+            }
+            if (r.timedOut || r.unknown) text += '\n\nThe phone may still apply it. The list is read again in a moment.';
+            if (r.advice) text += '\n\n' + r.advice;
+            if (r.needsPrivilege) text = 'Needs ADB, Wireless Debugging, Shizuku or Root.\n\nConnect one in Working Modes, then try again.';
+            showCommandResults(verb === 'change' ? 'Change refused' : 'Could not ' + verb, SDB_TITLES[ns] + ' · ' + key, [{ name: key, pkg: SDB_TITLES[ns], output: text, success: false }]);
+        }
+
+        // Sets a value (creating the setting if it is new). opts: verb (for the message), quiet (an undo: no new undo), after(r).
+        function sdbPut(ns, key, value, opts) {
+            opts = opts || {};
+            const id = ns + '/' + key;
+            if (sdbBusy.has(id)) { showToast('Still applying the last change…', '⏳'); return; }
+            const had = !!(sdbData[ns] && sdbData[ns].has(key));
+            const before = had ? sdbData[ns].get(key) : null;
+            sdbBusy.add(id);
+            sdbRenderList();
+            sdbRequest(reqId => window.AndroidBridge.settingsOp(reqId, 'put', ns, key, value), r => {
+                sdbBusy.delete(id);
+                if (r.ok) {
+                    const now = r.value != null ? r.value : value;
+                    if (sdbData[ns]) sdbData[ns].set(key, now); else sdbReadTable(ns);       // never make up a table out of one entry
+                    sdbRecord(ns, key, had ? before : null, now);
+                    if (opts.quiet) showToast('Put back: ' + sdbClip(key, 40), '↩️');
+                    else {
+                        const what = opts.verb === 'Flipped' ? key + ': ' + sdbClip(before, 20) + ' → ' + sdbClip(now, 20) : (opts.verb || 'Saved') + ' ' + key;
+                        sdbSnack((opts.verb === 'Created' ? '＋ ' : '') + what, () => { had ? sdbPut(ns, key, before, { quiet: true }) : sdbDelete(ns, key, { quiet: true }); });
+                    }
+                } else {
+                    if (r.value != null && sdbData[ns] && (had || r.value !== 'null')) sdbData[ns].set(key, r.value);        // show what Android really holds ("null" for a name that was never there is not a value)
+                    sdbFailure(r, ns, key, 'put');
+                    if (r.timedOut || r.unknown) sdbRefreshLater(ns);
+                }
+                sdbDirty();
+                sdbRender();
+                if (opts.after) opts.after(r);
+            }, 60000);
+        }
+
+        function sdbDelete(ns, key, opts) {
+            opts = opts || {};
+            const id = ns + '/' + key;
+            if (sdbBusy.has(id)) { showToast('Still applying the last change…', '⏳'); return; }
+            const had = !!(sdbData[ns] && sdbData[ns].has(key));
+            const before = had ? sdbData[ns].get(key) : null;
+            sdbBusy.add(id);
+            sdbRenderList();
+            sdbRequest(reqId => window.AndroidBridge.settingsOp(reqId, 'delete', ns, key, ''), r => {
+                sdbBusy.delete(id);
+                if (r.ok) {
+                    if (sdbData[ns]) sdbData[ns].delete(key);
+                    if (had) sdbRecord(ns, key, before, null);
+                    if (opts.quiet) showToast('Removed: ' + sdbClip(key, 40), '↩️');
+                    else if (had) sdbSnack('Deleted ' + key, () => sdbPut(ns, key, before, { quiet: true }));
+                    else showToast(key + ' was already gone', 'ℹ️');
+                } else {
+                    sdbFailure(r, ns, key, 'delete');
+                    if (r.timedOut || r.unknown) sdbRefreshLater(ns);
+                }
+                sdbDirty();
+                sdbRender();
+                if (opts.after) opts.after(r);
+            }, 60000);
+        }
+
+        // ---- the undo bar and the history of changes ----
+
+        function sdbSnack(msg, undo) {
+            const el = document.getElementById('sdbSnack');
+            if (!el) return;
+            document.getElementById('sdbSnackMsg').innerText = msg;
+            sdbSnackUndo = undo || null;
+            document.getElementById('sdbSnackUndo').style.display = undo ? '' : 'none';
+            el.classList.add('show');
+            clearTimeout(sdbSnackTimer);
+            sdbSnackTimer = setTimeout(sdbSnackHide, 7000);
+        }
+
+        function sdbSnackHide() { const el = document.getElementById('sdbSnack'); if (el) el.classList.remove('show'); sdbSnackUndo = null; }
+
+        function sdbSnackUndoNow() {
+            const fn = sdbSnackUndo;
+            sdbSnackHide();
+            haptic();
+            if (fn) fn();
+        }
+
+        // keeps the old and new value so a change can be put back later. f / v: null = the setting was absent / is gone;
+        // lf / lv: that value was too long to keep, so its text is not stored (and the change can't be put back)
+        function sdbRecord(ns, key, from, to) {
+            const tooLong = s => s != null && s.length > 2000;
+            sdbJournal.unshift({ n: ++sdbJournalSeq, t: Date.now(), ns, k: key, f: tooLong(from) ? null : from, lf: tooLong(from), v: tooLong(to) ? null : to, lv: tooLong(to) });
+            if (sdbJournal.length > SDB_JOURNAL_MAX) sdbJournal.length = SDB_JOURNAL_MAX;
+            sdbEdited = new Set(sdbJournal.map(e => e.ns + '/' + e.k));
+            kvSet('sdb_journal', sdbJournal);
+            sdbDirty();
+            const jm = document.getElementById('sdbJournalModal');
+            if (jm && jm.classList.contains('show')) sdbRenderJournal();          // an open sheet must show the rows its Revert buttons act on
+        }
+
+        function sdbOpenJournal() {
+            sdbMenuClose();
+            sdbRenderJournal();
+            document.getElementById('sdbJournalModal').classList.add('show');
+        }
+        function sdbJournalClose() { document.getElementById('sdbJournalModal').classList.remove('show'); }
+
+        function sdbShowValue(v, tooLong) {
+            if (tooLong) return '<em>(too long to keep)</em>';
+            if (v === null || v === undefined) return '<em>(not set)</em>';
+            return v === '' ? '<em>(empty)</em>' : '<em>' + escapeHtml(sdbClip(v, 60)) + '</em>';
+        }
+
+        function sdbRenderJournal() {
+            const box = document.getElementById('sdbJournalList');
+            document.getElementById('sdbJournalClear').style.display = sdbJournal.length ? '' : 'none';
+            if (!sdbJournal.length) { box.innerHTML = '<div class="sdb-empty">Nothing was changed with this app yet.</div>'; return; }
+            box.innerHTML = sdbJournal.map(e => '<div class="sdb-jrow"><div class="sdb-key">' + escapeHtml(e.k) + '</div>'
+                + '<div class="sdb-hint">' + SDB_TITLES[e.ns] + ' · ' + sdbAgo(e.t) + '</div>'
+                + '<div class="sdb-change">' + sdbShowValue(e.f, e.lf) + ' → ' + sdbShowValue(e.v, e.lv) + '</div>'
+                + (e.lf ? '' : '<button class="batch-tool-link" style="padding:6px 0 0;" onclick="sdbRevert(' + e.n + ')">↩️ Revert</button>') + '</div>').join('');
+        }
+
+        function sdbRevert(n) {
+            const e = sdbJournal.find(x => x.n === n);
+            if (!e || e.lf) return;
+            const cur = sdbData[e.ns] && sdbData[e.ns].has(e.k) ? sdbData[e.ns].get(e.k) : null;
+            const say = v => v === null ? 'not set' : '“' + sdbClip(v, 60) + '”';
+            if (!e.lv && cur !== e.v && !confirm(e.k + ' has changed since: it is now ' + say(cur) + ' (this change left it ' + say(e.v) + ').\n\nPut the old value back anyway?')) return;
+            if (!sdbConfirmRisk(e.ns, e.k, 'change')) return;
+            sdbJournalClose();
+            if (e.f === null) sdbDelete(e.ns, e.k, { quiet: true });
+            else sdbPut(e.ns, e.k, e.f, { quiet: true });
+        }
+
+        function sdbJournalClear() {
+            if (!confirm('Forget the history of changes? The settings themselves stay as they are.')) return;
+            sdbJournal = [];
+            sdbEdited = new Set();
+            kvSet('sdb_journal', sdbJournal);
+            sdbDirty();
+            sdbRenderJournal();
+            sdbRender();
+        }
+
+        // ---- the editor ----
+
+        function sdbQuickChips(boxId, targetId, onPick) {
+            const vals = [['0', '0'], ['1', '1'], ['true', 'true'], ['false', 'false'], ['null', 'null'], ['(empty)', ''], ['-1', '-1']];
+            document.getElementById(boxId).innerHTML = vals.map((p, i) => '<button type="button" data-v="' + escapeHtml(p[1]) + '">' + escapeHtml(p[0]) + '</button>').join('');
+            document.getElementById(boxId).onclick = e => {
+                const b = e.target.closest('button[data-v]');
+                if (!b) return;
+                const t = document.getElementById(targetId);
+                t.value = b.dataset.v;              // (no focus here: that would open the on-screen keyboard over the Save button)
+                onPick();
+            };
+        }
+
+        function sdbTypeNote(v) {
+            if (v === '') return 'The value is empty.';
+            if (v === 'null') return 'The value is the text “null”.';
+            const sw = sdbEditing ? sdbSwitchOf(sdbEditing.ns, sdbEditing.key, v) : sdbSwitchInfo(v);
+            if (sw) return 'Looks like a switch (' + v + '). “🔁 Flip” changes it to ' + sw.next + '.';
+            if (/^-?\d+$/.test(v)) return 'A whole number.';
+            if (/^-?\d*\.\d+$/.test(v)) return 'A decimal number.';
+            if (/^[a-z][a-z0-9+.-]*:\/\//i.test(v)) return 'A web address or URI.';
+            if (/\//.test(v) && /^[\w.]+\/[\w.$]+/.test(v)) return 'Looks like an app component (package/class). Several can be joined with “:”.';
+            if (v.indexOf('\n') >= 0) return 'A value with several lines.';
+            return 'Text.';
+        }
+
+        function sdbOpenEditor(ns, key) {
+            const data = sdbData[ns];
+            if (!data || !data.has(key)) return;
+            const v = data.get(key);
+            sdbEditing = { ns, key, orig: v };
+            const hint = sdbHint(ns, key);
+            document.getElementById('sdbEditKey').innerText = key;
+            document.getElementById('sdbEditSub').innerText = SDB_TITLES[ns] + (hint ? ' · ' + hint.t : '');
+            const risk = document.getElementById('sdbEditRisk');
+            risk.style.display = hint && hint.r ? '' : 'none';
+            risk.innerText = hint && hint.r ? '⚠️ ' + SDB_RISKS[hint.r] : '';
+            const t = document.getElementById('sdbEditText');
+            t.value = v;
+            sdbQuickChips('sdbEditQuick', 'sdbEditText', sdbEditInput);
+            document.getElementById('sdbEditFlipBtn').style.display = sdbSwitchOf(ns, key, v) ? '' : 'none';
+            sdbEditInput();
+            document.getElementById('sdbEditModal').classList.add('show');
+            sdbEditRefreshQuiet();
+        }
+
+        // The listing can show a value shorter than the real one (a line of a multi-line value that looks like "name=value" is read as an entry of its
+        // own), and the list may be a minute old: ask the phone for the real value while the sheet opens, and show it if nothing was typed yet.
+        function sdbEditRefreshQuiet() {
+            if (!sdbEditing || !sdbUsable()) return;
+            const { ns, key, orig } = sdbEditing;
+            sdbRequest(id => window.AndroidBridge.settingsOp(id, 'get', ns, key, ''), r => {
+                if (!r.ok || r.value == null || r.value === 'null' || r.value === orig) return;          // (null cannot tell a missing setting from the text null)
+                if (!sdbEditing || sdbEditing.ns !== ns || sdbEditing.key !== key || sdbEditing.orig !== orig) return;
+                const box = document.getElementById('sdbEditText');
+                if (box.value !== orig) return;                                                          // already typing: leave it
+                if (sdbData[ns]) { sdbData[ns].set(key, r.value); sdbDirty(); sdbRender(); }
+                sdbEditing.orig = r.value;
+                box.value = r.value;
+                document.getElementById('sdbEditFlipBtn').style.display = sdbSwitchOf(ns, key, r.value) ? '' : 'none';
+                sdbEditInput();
+                showToast('Showing the value the phone holds now', 'ℹ️');
+            }, 20000);
+        }
+
+        function sdbEditInput() {
+            const t = document.getElementById('sdbEditText');
+            const p = sdbValueProblem(t.value);
+            document.getElementById('sdbEditProblem').innerText = p;
+            const extraBreak = sdbEditing && /\n$/.test(t.value) && !/\n$/.test(sdbEditing.orig);
+            document.getElementById('sdbEditLen').innerText = (t.value.length ? t.value.length + ' character' + (t.value.length === 1 ? '' : 's') : '') + (extraBreak ? ' · ends with a line break' : '');
+            document.getElementById('sdbEditNote').innerText = sdbTypeNote(t.value) + (sdbEditing && t.value !== sdbEditing.orig ? ' · was ' + (sdbEditing.orig === '' ? '(empty)' : sdbClip(sdbEditing.orig, 40)) : '');
+            document.getElementById('sdbEditSaveBtn').disabled = !!p;
+        }
+
+        function sdbEditClose() { document.getElementById('sdbEditModal').classList.remove('show'); sdbEditing = null; }
+
+        function sdbEditSave() {
+            if (!sdbEditing) return;
+            const { ns, key, orig } = sdbEditing;
+            const val = document.getElementById('sdbEditText').value;
+            if (sdbValueProblem(val)) return;
+            if (val === orig) { showToast('No change', 'ℹ️'); sdbEditClose(); return; }
+            if (!sdbConfirmRisk(ns, key, 'change')) return;
+            if (sdbBusy.has(ns + '/' + key)) { showToast('Still applying the last change…', '⏳'); return; }
+            const btn = document.getElementById('sdbEditSaveBtn');
+            btn.disabled = true;
+            // the sheet stays until the phone has accepted it: a refusal must not throw away what was typed
+            sdbPut(ns, key, val, { verb: 'Saved', after: r => { if (r.ok) sdbEditClose(); else if (sdbEditing) sdbEditInput(); } });
+        }
+
+        function sdbEditFlip() {
+            if (!sdbEditing) return;
+            const { ns, key } = sdbEditing;
+            const cur = document.getElementById('sdbEditText').value;
+            const sw = sdbSwitchOf(ns, key, cur);
+            if (!sw) { showToast('Not a switch', 'ℹ️'); return; }
+            document.getElementById('sdbEditText').value = sw.next;
+            sdbEditInput();
+        }
+
+        function sdbEditDelete() {
+            if (!sdbEditing) return;
+            const { ns, key } = sdbEditing;
+            if (!sdbConfirmRisk(ns, key, 'delete')) return;
+            if (!confirm('Delete ' + key + ' from the ' + SDB_TITLES[ns].toLowerCase() + ' settings?\n\nAndroid and apps then behave as if it was never set. It can be put back from the Undo bar or from Changes.')) return;
+            sdbDelete(ns, key, { after: r => { if (r.ok) sdbEditClose(); } });
+        }
+
+        function sdbEditCopy(what) {
+            if (!sdbEditing) return;
+            const { ns, key } = sdbEditing;
+            const val = document.getElementById('sdbEditText').value;
+            if (what === 'name') copyText(key);
+            else if (what === 'value') copyText(val);
+            else { copyText(sdbShellCommand(ns, key, val)); showToast('Copied: it runs on the phone (paste it in the ADB Console)', '📋'); return; }
+        }
+
+        function sdbEditReload() {
+            if (!sdbEditing) return;
+            const { ns, key } = sdbEditing;
+            sdbRequest(id => window.AndroidBridge.settingsOp(id, 'get', ns, key, ''), r => {
+                if (!r.ok || r.value == null) { sdbFailure(r, ns, key, 'get'); return; }
+                // `settings get` says "null" both for the text null and for a setting that is not there any more: read the table again to tell
+                if (r.value === 'null' && sdbData[ns] && sdbData[ns].get(key) !== 'null') {
+                    showToast('It is not set any more', 'ℹ️');
+                    sdbEditClose();
+                    sdbReadTable(ns);
+                    return;
+                }
+                if (sdbData[ns]) sdbData[ns].set(key, r.value);
+                sdbDirty();
+                sdbRender();
+                if (sdbEditing && sdbEditing.key === key) {
+                    sdbEditing.orig = r.value;
+                    document.getElementById('sdbEditText').value = r.value;
+                    document.getElementById('sdbEditFlipBtn').style.display = sdbSwitchOf(ns, key, r.value) ? '' : 'none';
+                    sdbEditInput();
+                }
+                showToast('Reloaded', '↻');
+            }, 30000);
+        }
+
+        // ---- creating a setting ----
+
+        function sdbOpenNew(ns, key) {
+            sdbInit();
+            sdbNewNs = SDB_TABLES.includes(ns) ? ns : sdbNs;
+            document.getElementById('sdbNewKey').value = key || '';
+            document.getElementById('sdbNewKey').dataset.touched = '';
+            document.getElementById('sdbNewValue').value = '';
+            sdbQuickChips('sdbNewQuick', 'sdbNewValue', sdbNewInput);
+            sdbNewSeg();
+            sdbNewInput();
+            document.getElementById('sdbMenuModal').classList.remove('show');
+            document.getElementById('sdbNewModal').classList.add('show');
+        }
+
+        function sdbNewSeg() {
+            document.getElementById('sdbNewSeg').innerHTML = SDB_TABLES.map(n => '<button type="button" class="' + (n === sdbNewNs ? 'active' : '') + '" role="tab" aria-selected="' + (n === sdbNewNs) + '" onclick="sdbNewPick(\'' + n + '\')">' + SDB_TITLES[n] + '</button>').join('');
+        }
+
+        function sdbNewPick(ns) { sdbNewNs = ns; sdbNewSeg(); sdbNewInput(); }
+
+        function sdbNewInput() {
+            const k = document.getElementById('sdbNewKey').value;
+            const v = document.getElementById('sdbNewValue').value;
+            const kp = k ? sdbKeyProblem(k) : (document.getElementById('sdbNewKey').dataset.touched === '1' ? 'Enter a name' : '');
+            const vp = sdbValueProblem(v);
+            document.getElementById('sdbNewKeyProblem').innerText = kp;
+            document.getElementById('sdbNewValueProblem').innerText = vp;
+            document.getElementById('sdbNewLen').innerText = v.length ? v.length + ' character' + (v.length === 1 ? '' : 's') : '';
+            const exists = !!(k && !kp && sdbData[sdbNewNs] && sdbData[sdbNewNs].has(k));
+            document.getElementById('sdbNewNote').innerText = exists
+                ? '“' + k + '” already exists in ' + SDB_TITLES[sdbNewNs] + ' (now ' + (sdbData[sdbNewNs].get(k) === '' ? '(empty)' : sdbClip(sdbData[sdbNewNs].get(k), 40)) + '). Creating it again replaces that value.'
+                : 'Android only uses a setting that something reads by that name. Leave the value empty to create it with nothing in it.';
+            const btn = document.getElementById('sdbNewCreateBtn');
+            btn.disabled = !k || !!kp || !!vp;
+            btn.innerText = exists ? '💾 Replace' : '＋ Create';
+        }
+
+        function sdbNewClose() { document.getElementById('sdbNewModal').classList.remove('show'); }
+
+        function sdbNewCreate() {
+            const ns = sdbNewNs;
+            const key = document.getElementById('sdbNewKey').value;
+            const val = document.getElementById('sdbNewValue').value;
+            if (!key || sdbKeyProblem(key) || sdbValueProblem(val)) return;
+            if (sdbData[ns] && sdbData[ns].has(key)) { sdbNewCommit(ns, key, val, true); return; }
+            // not in the list, but the list can be old or incomplete: ask the phone whether the name is taken before writing over something
+            const btn = document.getElementById('sdbNewCreateBtn');
+            btn.disabled = true;
+            sdbRequest(id => window.AndroidBridge.settingsOp(id, 'get', ns, key, ''), r => {
+                btn.disabled = false;
+                sdbNewInput();
+                if (!r.ok || r.value == null) { sdbFailure(r, ns, key, 'get'); return; }
+                const taken = r.value !== 'null';                       // (the text null cannot be told from a name that is not there: treated as free)
+                if (taken && sdbData[ns]) { sdbData[ns].set(key, r.value); sdbDirty(); sdbRender(); }
+                sdbNewCommit(ns, key, val, taken);
+            }, 30000);
+        }
+
+        function sdbNewCommit(ns, key, val, exists) {
+            if (exists) {
+                const now = sdbData[ns] && sdbData[ns].has(key) ? sdbData[ns].get(key) : '';
+                if (!confirm(key + ' already exists in ' + SDB_TITLES[ns] + ' (now ' + (now === '' ? '(empty)' : '“' + sdbClip(now, 60) + '”') + ').\n\nReplace its value?')) return;
+            }
+            if (!sdbConfirmRisk(ns, key, 'change')) return;
+            sdbNewClose();
+            sdbPut(ns, key, val, {
+                verb: exists ? 'Saved' : 'Created',
+                after: r => {
+                    if (!r.ok) return;
+                    sdbNs = ns; sdbFilter = 'all'; sdbLimit = SDB_PAGE;
+                    document.getElementById('sdbSearch').value = key;
+                    sdbQuery = key;
+                    sdbSaveUi();
+                    sdbRender();
+                }
+            });
+        }
+
+        // ---- the tools menu ----
+
+        function sdbOpenMenu() {
+            sdbRenderSortSeg();
+            const keys = sdbFiltered(sdbNs);
+            document.getElementById('sdbMenuSub').innerText = SDB_TITLES[sdbNs] + (keys ? ' · ' + keys.length + ' shown' : '');
+            document.getElementById('sdbMenuModal').classList.add('show');
+        }
+        function sdbMenuClose() { document.getElementById('sdbMenuModal').classList.remove('show'); }
+
+        function sdbShownText() {
+            const keys = sdbFiltered(sdbNs) || [];
+            const data = sdbData[sdbNs];
+            return keys.map(k => k + '=' + data.get(k)).join('\n');
+        }
+
+        function sdbMenuDo(what) {
+            haptic();
+            if (what === 'journal') { sdbOpenJournal(); return; }
+            sdbMenuClose();
+            if (what === 'reload') { sdbReadAll(); return; }
+            const text = sdbShownText();
+            if (!text) { showToast('Nothing to ' + (what === 'copy' ? 'copy' : 'share'), 'ℹ️'); return; }
+            if (what === 'copy') { copyText(text); showToast('Copied ' + (sdbFiltered(sdbNs) || []).length + ' settings', '📋'); }
+            else shareText('Android ' + sdbNs + ' settings', text);
+        }
+
+        // Back clears the search before it leaves the tab
+        function sdbBackHandled() {
+            if (currentViewName() === 'settings' && sdbQuery) { sdbClearSearch(); return true; }
+            return false;
         }
 
         // ---------- About ----------
