@@ -1,0 +1,41 @@
+1. a name that looks like an <img onerror> is shown as text, nothing runs: true {"imgs":0,"pwned":0,"rows":1}
+   a value with <script> and <b> is text too: true <div class="sdb-main"><div class="sdb-key"><mark class="find-hit">xss_value</mark></div><div class="sdb-val">&lt;script&gt;window.__pwned=2&lt;/script&gt;&lt;b&gt;bold&lt;/b&gt;</div></div>
+   quotes in a name survive the round trip to the editor: true {"n":1,"pwned":0,"key":"quote\"key's"}
+   and it opens: true
+   Copy command escapes both kinds of quote: true settings put global 'quote"key'\''s' '"><svg onload=window.__pwned=3>'
+   nothing ran while the editor filled in: true
+2. every change is recorded, newest first, with the old and new value: true [["global","device_name","Sam's phone","Renamed"],["global","stay_on_while_plugged_in","7","3"]]
+   and kept in the app's settings store: true
+   the Edited filter lists exactly those, each with a dot: true [{"k":"device_name","dot":true},{"k":"stay_on_while_plugged_in","dot":true}]
+   the Changes sheet shows them with "old → new" and a time: true ["device_name Global · just now Sam's phone → Renamed ↩️ Revert","stay_on_while_plugged_in Global · just now 7 → 3 ↩️ Revert"]
+   Revert puts the old value back: true
+   and the revert is itself recorded: true
+   reverting something that has changed since asks first: true ["stay_on_while_plugged_in has changed since: it is now “5” (this change left it “3”).\n\nPut the old value back anyway?"]
+   and goes ahead when told to: true
+   a setting that was created reverts by being removed: true
+   Clear history forgets the list but not the settings: true
+3. a long value shows clipped in the list but whole in the editor: true
+   too long to keep: the entry has no text for the new value: true {"lv":true,"v":null,"lf":false}
+   and says so in the Changes sheet: true
+4. Back clears the search first: true
+   with the editor open it closes the editor: true
+   and the create sheet: true
+   and the tools sheet: true
+   then it goes back to the tab you came from: true
+5. while a change is on its way the row is dimmed and Back warns it would be cut off: true a settings change is being applied
+   a second flip of the same setting is refused until the first is done: true
+   afterwards it is free again: true
+6. the tools sheet names the table and how many are shown: true
+   Copy shown copies name=value lines of what is on screen: true 26 lines
+   Share shown hands the same text to the share sheet: true
+   the sort is chosen there: true
+   Reload all reads the three tables again, the shown one first: true
+7. a risky setting shows its warning in the editor: true
+   Delete asks about the risk first: true "Delete device_provisioned (Global)?\n\nSetup wizard finished: leave this at 1\n\nChanging this can break setup, apps or the system. Only change it if you know what it does."
+   so does replacing one (first "already exists", then the risk): true
+8. losing the privileged mode shows the gate in place of the list: true
+   and getting it back brings the list back: true
+9. a failed read shows the reason, the advice and a retry: true {"box":"Could not read the secure settings\njava.lang.SecurityException: not allowed\n\nAndroid refused the change.\n↻ Try again\n⚡ Working modes","tab":"Secure !"}
+   Try again reads it: true
+errors: []
+ALL OK

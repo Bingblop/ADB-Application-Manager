@@ -1,0 +1,23 @@
+new install (phone light): #415F91 #FDFBFF #F0F0F7 #1A1C20 #FFFFFF | mode=light bar=#FDFBFF
+  saved: preset=materialyou appearance=system overrides={"dark":{},"light":{}}
+  note: Following your phone's setting (currently Light)
+phone -> dark: #A8C7FA #0B0D11 #1A1C21 #E2E2E9 #000000 | mode=dark bar=#0B0D11
+forced light: #415F91 #FDFBFF #F0F0F7 #1A1C20 #FFFFFF | mode=light bar=#FDFBFF
+  after light tweak: preset=materialyou appearance=light overrides={"dark":{},"light":{"accent":"#0061A4"}} | reset visible: true
+dark (tweak not applied): #A8C7FA #0B0D11 #1A1C21 #E2E2E9 #000000 | mode=dark bar=#0B0D11 | reset visible: false
+material you dark: #A8C7FA #0B0D11 #1A1C21 #E2E2E9 #000000 | mode=dark bar=#0B0D11
+material you light: #415F91 #FDFBFF #F0F0F7 #1A1C20 #FFFFFF | mode=light bar=#FDFBFF
+light contrast (vs card):
+  amoled: accent 4.7 text 16.2 muted 6.1 running 3.7 bloat 3.7
+  cyberpunk: accent 4.5 text 15.5 muted 6.1 running 3.9 bloat 3.7
+  emerald: accent 5.0 text 16.2 muted 6.1 running 3.8 bloat 3.7
+  amber: accent 4.9 text 16.1 muted 6.1 running 3.7 bloat 3.7
+  slate: accent 5.1 text 16.0 muted 6.1 running 3.7 bloat 3.7
+  crimson: accent 5.2 text 15.6 muted 6.1 running 3.7 bloat 3.7
+  material3: accent 5.6 text 16.2 muted 8.1 running 5.6 bloat 5.7
+errors1: []
+migrated v3.4 user: #00E5FF #000000 #141A28 #FFFFFF #000000 | mode=dark bar=#000000
+  saved: preset=amoled appearance=dark overrides={"dark":{},"light":{}}
+migrated custom: #FF00AA #050505 #202020 #FFFFFF #000000 | mode=dark bar=#050505
+  custom in light: #D80090 #F5ECF5 #FFFFFF #14171C #FFFFFF | mode=light bar=#F5ECF5
+errors2: []

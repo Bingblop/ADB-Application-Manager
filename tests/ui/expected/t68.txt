@@ -1,0 +1,10 @@
+1. the tab bar names it "🛠️ Hidden Settings": true ["📱 Applications","📋 Saved Lists","🧹 Debloater","📦 Installer","📁 Files","⬆️ Updates","💻 ADB Console","📄 Logcat","🛠️ Hidden Settings","🌈 Overlays","🛍️ Store","ℹ️ About"]
+   it is still between Logcat and Overlays: true ["📄 Logcat","🛠️ Hidden Settings","🌈 Overlays","🛍️ Store"]
+2. the button opens it and becomes the active one: true
+3. its card says what it is: true
+4. the ⋯ menu is "Hidden settings tools": true
+5. what an earlier version saved is still used (table, filter, sort): true secure,switch,za
+   and the log of changes (2 entries): true
+6. no heading or label of the tab calls it just "Settings": true []
+no page errors: true
+ALL OK

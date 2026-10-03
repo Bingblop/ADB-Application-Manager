@@ -14,7 +14,7 @@ Debugging, Shizuku or Root**.
 
 ### [⬇️ Download the latest APK](https://github.com/Bingblop/ADB-Application-Manager/releases/latest)
 
-`com.bloatware.bingblop` · v6.0.3-Pro · signed APK, installs over every earlier version without uninstalling
+`com.bloatware.bingblop` · v6.0.4-Pro · signed APK, installs over every earlier version without uninstalling
 
 <table>
   <tr>
@@ -105,6 +105,11 @@ Left to right, with the 🎨 **Colors &amp; Themes** button in the header:
 | 🌈 **Overlays** | Recolor Android (Material You: wallpaper or any color, six styles) and switch system overlays on or off ([details](#overlays-and-material-you)) |
 | 🛍️ **Store** | ShizuStore, GitHub, F-Droid, Orion and an Aurora hand-off |
 | ℹ️ **About** | Who made it, which build and key you have, debug info, and the coffee button |
+
+## New in v6.0.4
+
+- **🚀 A launch that works shows no dialog.** In an app's Components tab, **Launch** just opens the activity (a toast says it went
+  through); the sheet with Android's answer opens only when the launch fails.
 
 ## New in v6.0.3
 
@@ -524,7 +529,8 @@ Info and **Extract APK** (a `.apk`, or an `.apks` bundle for split apps, saved t
 - **Permissions**: searchable, filterable; toggle runtime and development permissions
 - **App Ops**: Allow / Foreground / Ignore / Deny / Reset per op, plus setting any op by name
 - **Components**: all activities (exported and unexported) with **Launch**, plus services. Unexported
-  activities launch through ADB / Shizuku / Root and show Android's answer if it refuses
+  activities launch through ADB / Shizuku / Root; a launch that goes through just opens the activity, and Android's answer is
+  shown only if it refuses
 - **Manifest**: decoded `AndroidManifest.xml` with search, copy, share and save to Downloads
 - **Raw**: the full details JSON
 
@@ -808,6 +814,7 @@ res/                           Launcher icons, widget layout, tile and notificat
 libs/                          Shizuku API 13.1.5 (api, provider, shared, aidl); RE2J 1.8 (linear-time
                                regex for untrusted, network-supplied patterns, see UpdateManager)
 docs/screenshots/              Images and the debloat-flow animation used in this README
+tests/                         The UI scripts and Java suites the app is checked with, and how to run them (tests/README.md)
 build.sh                       Build script (Termux or Linux)
 release/                       Signed APKs up to v5.1 and SHA256SUMS.txt (newer ones are on the Releases page)
 .github/workflows/             build.yml (CI) and release.yml (publish a GitHub Release)
@@ -816,10 +823,11 @@ CHANGELOG.md                   Release notes; the app shows them in What's new
 
 ## Testing
 
-What was checked before each release, and what was not. The test scripts are not part of this repository, so none of
-this is something you can re-run from a clone.
+What is checked before each release, and what is not. The checks live in [`tests/`](tests/) and can be re-run from a clone
+(`cd tests && npm install && npx playwright install chromium && node run.js && node java/run.js`; what each needs and how a
+script passes is in [tests/README.md](tests/README.md)).
 
-- **The UI**: 69 headless-Chromium scripts drive the real `assets/index.html` against a mock Android bridge:
+- **The UI** (`tests/run.js`, about four minutes): 69 headless-Chromium scripts drive the real `assets/index.html` against a mock Android bridge:
   every tab, theme, filter, share / copy / find action, profiles and the drift banner, backups, the Installer, the
   Store, the file manager and archive browser, the terminal, About, the Back button, the height of the app menu and, for the Hidden Settings tab, the
   list, search, filters and sort, tap-to-edit, press-and-hold flipping (with touch events of any hold length), creating,
@@ -828,17 +836,19 @@ this is something you can re-run from a clone.
   app restart in the middle of a change, the palette redrawing, the overlay list (131 sample overlays, awkward names,
   search, filters, press and hold with a touch screen, a refused, fixed-on, unavailable, unanswered or late change), a
   phone without Material You, and both halves at 320 and 360 px in light and dark.
-- **Native rules, off the device**: the parts of the Java that need no Android classes are compiled and run as plain
-  Java. For the Hidden Settings tab that is 311 checks of `SettingsDb`, including round trips through a real `sh` (and a fake
+- **Native rules, off the device** (`tests/java/run.js`, 15 suites): the parts of the Java that need no Android classes are compiled
+  and run as plain Java. For the Hidden Settings tab that is 311 checks of `SettingsDb`, including round trips through a real `sh` (and a fake
   `settings` that refuses on purpose) for hostile values (quotes, `;`, `$(...)`, backticks, `>`, newlines, Unicode), and a
   comparison of the name, value and size checks in Java and in the page over 1,322 cases (the color check of the Overlays tab
   included). For the Overlays tab that is 551 checks of `OverlayRules`: `cmd overlay list` output in the shapes different Android
   versions print, hostile overlay names and theme values run through a real `sh` (with a fake `cmd` and `settings`), every
   verdict for a refused, fixed-on, vanished or unanswered change, the exact theme value and its merge into what the setting
-  holds, and every step of an Apply, Undo, Default and refusal against a fake phone (the Samsung switch included). The same approach has been used for the backup scripts (against a fake `/data`
-  tree with real `tar`, hostile archives included), the file-manager path rules, the manifest decoder, the install-answer
-  reader, the archive engine, the Rish shell (against a real `mksh`), the APK signer (cross-checked with `apksigner`)
-  and the regex handling.
+  holds, and every step of an Apply, Undo, Default and refusal against a fake phone (the Samsung switch included). The same
+  approach covers the file-manager path rules, the install-answer reader, the package-file scan and XAPK paths, the F-Droid and
+  GitHub catalog parsers (against real indexes and feeds), the manifest decoder (against every compiled XML file of a real APK),
+  the archive engine (two suites, with generated bad, truncated, encrypted and 4 GB archives), the Rish shell (one suite against
+  a real `mksh` with `toybox`) and the APK signer (v2 signatures cross-checked with `apksigner`). The backup scripts and the
+  regex handling of the update checks have no suite of their own yet.
 - **The build**: `build.sh` compiles, signs and verifies every APK (zipalign, v2 / v3 signatures), and each published
   release is downloaded again and checked: SHA-256, signing certificate, version and alignment.
 - **Reviews**: each release's new code gets separate, independent review passes (automated ones, not a human), and

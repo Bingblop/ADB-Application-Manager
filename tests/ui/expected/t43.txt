@@ -1,0 +1,38 @@
+1. no "adb devices" button: true | Rish button present: true ["⚙️ Working Modes","🐚 Rish mode","🆔 UID (id)","⚡ Connect 5555","🔄 tcpip 5555","⚙️ Dev Options","📋 Cheat Sheet"]
+   no stale adb-devices handler in markup: true
+2. normal mode uses executeShell: true
+3. switched to Shizuku, then started the shell: true ["exec:id","select:shizuku","rishStart"]
+   button shows Exit Rish + highlighted: true "🐚 Exit Rish"
+   prompt line shown: true {"shown":true,"text":"husky:/ $"}
+   header says Rish shell (uid 2000): true "🐚 Rish shell • shell (uid 2000)"
+   working-mode badge now Shizuku: true "Shizuku ADB (UID 2000)"
+   banner printed: true
+   placeholder changed: true "Rish shell command…"
+4. command echoed with prompt + output shown: true "ap Exit Rish) to leave.\nhusky:/ $ pwd\n/\n"
+   went through rishRun, not executeShell: true
+   prompt follows cd: true "husky:/sdcard/Download $"
+   next echo uses the new prompt + state kept: true
+5. no-newline output separated from next prompt: true "d/Download $ printf nonl\nnonl\nhusky:/sdcard/Download $ false\n[exit 1]\n"
+   non-zero exit shown: true
+6. RUN became STOP while running: true {"text":"STOP","stop":true}
+   Enter during a run is ignored and keeps the typed text: true pwd runs so far: 2
+   streamed lines arrived in order: true | button back to RUN: true
+7. STOP calls rishStop and notes it: true | shell still open: true
+8. "clear" clears locally: true
+9. Exit Rish closes the shell: true "🐚 Rish mode"
+   note says mode is still Shizuku: true | configured mode untouched: true
+   normal executeShell again: true
+10. re-enter skips the mode switch: true
+    typing exit leaves Rish: true | not sent to the shell: true
+11. shell exit leaves Rish with a note: true "🐚 The Rish shell ended (exit 3). Tap Rish mode to open a new one."
+12. picking another mode leaves Rish: true
+13. waits for the Shizuku prompt (no shell yet): true {"active":false,"awaiting":true,"starts":4}
+    approval starts the shell: true
+14. Shizuku not running: no shell, Shizuku app opened: true "⚠️\nShizuku is not running. Start it in the Shizuku app first."
+    a denied prompt does not start anything: true
+15. start failure leaves Rish off and the button usable: true "🐚 Rish mode"
+16. root shell labelled and # prompt: true {"title":"🐚 Rish shell • root (uid 0)","pl":"husky:/ #"}
+    4 MB streamed in under 3 s stays responsive and bounded: true len=776773
+    older output trimmed with a marker, newest kept, scrolled to the end: true {"head":"[older output trimmed]","top":455651,"max":455651}
+17. long prompt shortened from the left: true "…example.verylongpackagename/files $"
+errors: []

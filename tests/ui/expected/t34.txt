@@ -1,0 +1,16 @@
+1. termCmd autocapitalize: none | autocorrect: off | spellcheck: false
+   lowercase-by-default (autocapitalize none/off): true
+2. cheat sheet button present: true
+   modal shown: true
+   categories: 14 ["DEVICE INFO","CURRENT APP / FOCUS","PACKAGES","APP CONTROL"]
+   total command rows: 90
+3. search "keyevent" rows: 13 | all contain keyevent: true
+   search "screenshot" finds screencap: true
+   no-match shows empty state: true
+4. modal closed after insert: true
+   inserted into termCmd: "getprop ro.build.version.release" | no "adb shell" prefix: true
+5. placeholder command inserted: "am force-stop <package>"
+6. gist load button present: true
+   gist content rendered via callback: true
+   load button hidden after success: true
+errors: []

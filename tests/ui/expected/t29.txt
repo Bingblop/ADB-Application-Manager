@@ -1,0 +1,11 @@
+headers present: ACTIVITIES=true RECEIVERS=true SERVICES=true PROVIDERS=true
+provider authority row rendered: true
+service shows disabled badge: true
+setComponentEnabled called: [ 'toggle:com.x.BootRcv:false' ]
+BootRcv buttons after disable (expect ENABLE present): ["ENABLE"]
+exported filter: shows Main(act) & Provider, hides Hidden & Svc: true
+optimize modal shown (single): true
+single optimize call: [ 'opt:com.x:everything:true' ]
+optimize modal shown (batch): true
+batch optimize calls (expect 2, speed, false): [ 'opt:com.x:speed:false', 'opt:com.y:speed:false' ]
+errors: []

@@ -11335,8 +11335,10 @@ Type any command below (e.g. pm list packages -d)
                     r = { ok: false, method: 'none', output: 'Error: ' + e.message };
                 }
                 showToast(r.ok ? 'Activity launched' : 'Launch failed', r.ok ? '🚀' : '⚠️');
+                // A launch that went through needs no report (the activity opening is the answer); Android's answer is shown when it refused
+                if (r.ok) return;
                 showCommandResults('Launch Activity', (exported ? 'Exported' : 'Unexported') + ' • via ' + (r.method === 'shell' ? currentWorkingMode : r.method),
-                    [{ name: comp.split('.').pop(), pkg: inspectedPkg + '/' + comp, output: r.output, success: !!r.ok }]);
+                    [{ name: comp.split('.').pop(), pkg: inspectedPkg + '/' + comp, output: r.output, success: false }]);
             }, 60);
         }
 

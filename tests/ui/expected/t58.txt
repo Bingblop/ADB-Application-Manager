@@ -1,0 +1,33 @@
+1. the New side of a comparison has no Edit text (it is the other archive): true ["⚖️ Show differences","👁 New","👁 Old","📥 Extract…"]
+   the Old side is this archive: Edit text is offered: true ["⚖️ Show differences","👁 New","👁 Old","✏️ Edit text","📥 Extract…"]
+   an ordinary entry of the open archive still can be edited: true
+2. 320 px: RUN stays 70 px wide, inside the screen, no sideways scroll: true {"run":70,"right":304,"input":106}
+2. 360 px: RUN stays 70 px wide, inside the screen, no sideways scroll: true {"run":70,"right":344,"input":146}
+2. 412 px: RUN stays 70 px wide, inside the screen, no sideways scroll: true {"run":70,"right":396,"input":198}
+3. with the entry sheet open, the failure report is the top sheet: true commandResultsModal
+   closing it leaves the entry sheet for a retry: true
+   a retry that worked: no stale FAILED sheet is left under or over it: true
+   the sign sheet: its failure report is on top too: true
+   and after the successful retry no report remains: true
+4. an empty list still shows "Search failed": true "No apps found.⚠️ Search failed: rate limit"
+   the note has one icon, not two: true
+   a catalog error while a search is pending ends the load and is shown as the error: true {"loading":false,"searching":false,"error":"boom"}
+5. pressing RUN while one runs keeps the typed text and the history: true {"val":"echo keep me","hist":["older"]}
+   the answer arriving on another tab is a toast, not a sheet over that tab: true
+   on the Console tab the report sheet opens as before: true
+6. in a comparison Add file / New folder are hidden: true
+   closing it clears the filter text, brings Add file / New folder back, and re-lists the folder: true
+   opening an archive inside clears the comparison view (the header does not stay): true
+   leaving it brings the comparison back: true
+   an entry that arrives after the archive was closed is dropped (not an error) and released: true ok
+7. the late result for A shows nothing on the sheet of B: true "APP\ncom.x\nSIGNATURE NOW\n✓ Valid\nBB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:B"
+8. a throwing compare start frees the archive: true
+   a throwing stage start too: true
+9. an answer that was fetched before Clear does not bring the old log back: true "(cleared)"
+10. a whole archive never defaults into the folder of the last one: true {"firstWhole":"/storage/emulated/0/Download/B","nextWhole":"/storage/emulated/0/Download/B","nextFile":"/storage/emulated/0/Download/A","nextFolder":"/storage/emulated/0/Download/A"}
+    a single file / a folder still go where the last one went: true
+11. press-and-hold starts selecting, the lifting finger is swallowed, and the made-up mouse events + click do not un-pick the row: true {"selecting":true,"prevented":true,"stillPicked":true,"afterTap":0}
+    an ordinary tap afterwards still toggles the row: true
+12. typing in the history filter keeps the same input element, focus and text, and narrows the rows: true {"same":true,"rows":1,"focused":true,"val":"pm"}
+    reopening starts with an empty filter and every row: true
+errors: []

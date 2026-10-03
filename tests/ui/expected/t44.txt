@@ -1,0 +1,59 @@
+1. apk sheet: "View contents" (no plain View), still has Install: true ["📦 Install","✍️ Sign…","📂 View contents","✏️ Rename","📋 Copy","➡️ Move","🗑️ Delete"]
+   zip sheet: "View contents", no "Open as archive" duplicate: true
+   text file sheet: "View" + "Open as archive" (any package file): true ["👁 View","📂 Open as archive","✏️ Rename","📋 Copy","➡️ Move","🗑️ Delete"]
+2. archive opened through the bridge, browser shown, file list hidden, sheet closed: true {"calls":["/storage/emulated/0/Download/app.apk"],"card":"block","top":"none","list":"none","modal":false}
+   header: name, file count, size, path: true "910 files • 5.0 MB\n/storage/emulated/0/Download/app.apk"
+   APK signature warning shown: true
+3. root: folders first then files: ["assets","big","lib","META-INF","res"] true
+   file rows show size + packed% / stored / encrypted + date: true "📄 AndroidManifest.xml | 2.0 KB • 44% packed • 2024-01-08 | ⋯"
+   folder row shows file count + total size: true "📁 assets | 2 files • 36 B • 2024-01-08 | ⋯"
+   big folder: 900 files: true
+   breadcrumb root: true "📦 app.apk"
+4. inside res/: crumbs ["📦 app.apk","res"] rows ["📁 drawable","📁 layout"] true
+   nested crumbs 3 deep: true
+   tapping a crumb jumps there: true
+   Up goes to the parent / root: true
+5. 400 rows first, "Show more (500 left)": true 400 "Show more (500 left)"
+   then 800, then all 900 and the button disappears: true
+6. search shows matching files by full path: true ["📄 assets/config.json"]
+   no matches message: true
+   clearing the search returns to the folder: true
+7. tapping a file opens its preview: true "24 B • 30 B packed • CRC deadbeef • 2024-01-08"
+   sheet offers View, Edit text, Extract, Rename, Delete: true ["👁 View","✏️ Edit text","📥 Extract…","✏️ Rename / move","🗑️ Delete"]
+   editor opens with the text: true
+   save sends a replaceText edit with the new text: true {"op":"replaceText","name":"assets/config.json","text":"{\"a\": 2}\n","crlf":false}
+   APK warning confirm shown once: true
+   busy status shown while rewriting (the sheet stays open until it worked, so a failure loses nothing): true
+   progress text updates: true
+   success: toast, archive re-opened, same folder reloaded: true {"busy":false,"reopened":2,"dir":"assets/","rows":2,"status":"none"}
+8. CRLF files are flagged so the app writes them back with CRLF: true
+   compiled XML shown decoded, read-only (no Edit button): true "2.0 KB • 900 B packed • CRC deadbeef • 2024-01-08 • compiled XML shown as text (read-only)"
+   image preview uses a data URL: true {"shown":true,"src":"data:image/png;base64,iVBORw0K"}
+   binary entries show a hex dump (monospaced, no wrapping): true
+   encrypted entry explains why it has no preview: true
+9. extract asks for a folder, default is Download/<archive name>: true "/storage/emulated/0/Download/app"
+   bridge called with archive, entry, destination: true
+   progress shown: true
+   done toast names the destination: true "Extracted 1 file (24 B) to /storage/emulated/0/Download/out/config.json"
+   "Extract this folder" targets the folder being viewed: true {"label":"Extract this folder into (its own folder is created inside)","name":"res","btns":0}
+   ...and sends the folder path (trailing slash = tree): true
+   skipped unsafe names are mentioned: true
+   at the root it extracts the whole archive (empty path): true
+10. rename prefilled with the full path; sends rename with the new path: true {"op":"rename","name":"assets/notes.txt","to":"docs/readme.txt"}
+    delete asks by name and sends delete: true "Delete “config.json” from the archive?"
+    a folder sheet has Extract/Rename/Delete but no View: true ["📥 Extract…","✏️ Rename / move","🗑️ Delete"]
+    deleting a folder sends its path with a trailing slash: true
+    new folder goes into the current folder: true {"op":"mkdir","to":"res/newdir"}
+    add file: source field + name field defaulting to the current folder: true {"from":"/storage/emulated/0/Download/","to":"assets/","lbl2":"Name inside the archive (a folder ending in / keeps the file name)"}
+    add appends the file name to a folder target: true {"op":"add","from":"/storage/emulated/0/Download/extra.png","to":"assets/extra.png","overwrite":false}
+    existing name: asks to replace, then retries with overwrite: true 8
+    declining the replace prompt does not retry: true
+11. a failed job shows the reason in a toast: true
+    a second job while one is running is refused: true
+    app says busy -> not left spinning: true
+12. view-only: reason shown, Add/Folder hidden: true "👁 View only: Installed and system packages can't be edited in place. Copy it to storage first."
+    view-only sheet: View + Extract only, text not editable: true ["👁 View","📥 Extract…"]
+    editing through the API is refused too: true
+13. closing tells the app to drop the archive, file list is back: true
+    a ".zip" that is not an archive: error toast + plain text viewer, no archive card: true "Not a zip archive (no central directory found)"
+errors: []

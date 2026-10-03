@@ -1,0 +1,13 @@
+[
+  'Material 3',
+  'Material You',
+  'AMOLED Cyan',
+  'Cyberpunk Violet',
+  'Nordic Emerald',
+  'Sunset Amber',
+  'Midnight Slate',
+  'Blood Moon'
+]
+cards inside grid: 8
+accent: #6750A4
+errors: []

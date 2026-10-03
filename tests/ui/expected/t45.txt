@@ -1,0 +1,36 @@
+[dark] 1. Debloater selected box is filled with the accent color: true rgb(208, 188, 255) accent rgb(208, 188, 255)
+[dark]    identical to the Apps tab selected box (fill, border): true apps rgb(208, 188, 255)
+[dark]    shows the ✓ mark; an unselected box is not filled: true {"on":"✓","offBg":"rgba(0, 0, 0, 0)"}
+[dark] 2. app rows have only ⚙️ App Settings and ⋯ Menu: true ["App Settings|⚙️","Menu|⋯"]
+[dark]    no force-stop control or handler left in the row: true
+[dark]    the freed room goes to the text (meta width 174px of 256px): true
+[dark] 3. FAB shows the selection count: true {"shown":true,"badge":"3","sel":3,"panel":false}
+[dark]    tooltip/aria mention the hold gesture: true "Tap: batch actions · Hold: clear selection"
+[dark]    a quick tap opens the batch panel, selection kept: true {"panel":true,"sel":3}
+[dark] 4. before the hold completes nothing is cleared: true
+[dark]    hold clears all selections (rows unmarked), FAB hidden, panel stays closed: true {"sel":0,"fab":false,"panel":false,"checked":0,"marks":0}
+[dark]    toast says how many were cleared: true "Cleared 3 selections"
+[dark] 5. dragging off the button cancels the hold (selection kept): true
+[dark]    touch press-and-hold clears the selection: true {"sel":0,"panel":false}
+[dark] 6. a 120 ms press is a tap (opens the panel, nothing cleared): true
+[dark] 7. singular toast + context menu suppressed: true "Cleared 1 selection"
+[dark] 8. a hold with no selection leaves no flag behind; the next tap still opens the panel: true
+[dark] errors: []
+[light] 1. Debloater selected box is filled with the accent color: true rgb(103, 80, 164) accent rgb(103, 80, 164)
+[light]    identical to the Apps tab selected box (fill, border): true apps rgb(103, 80, 164)
+[light]    shows the ✓ mark; an unselected box is not filled: true {"on":"✓","offBg":"rgba(0, 0, 0, 0)"}
+[light] 2. app rows have only ⚙️ App Settings and ⋯ Menu: true ["App Settings|⚙️","Menu|⋯"]
+[light]    no force-stop control or handler left in the row: true
+[light]    the freed room goes to the text (meta width 174px of 256px): true
+[light] 3. FAB shows the selection count: true {"shown":true,"badge":"3","sel":3,"panel":false}
+[light]    tooltip/aria mention the hold gesture: true "Tap: batch actions · Hold: clear selection"
+[light]    a quick tap opens the batch panel, selection kept: true {"panel":true,"sel":3}
+[light] 4. before the hold completes nothing is cleared: true
+[light]    hold clears all selections (rows unmarked), FAB hidden, panel stays closed: true {"sel":0,"fab":false,"panel":false,"checked":0,"marks":0}
+[light]    toast says how many were cleared: true "Cleared 3 selections"
+[light] 5. dragging off the button cancels the hold (selection kept): true
+[light]    touch press-and-hold clears the selection: true {"sel":0,"panel":false}
+[light] 6. a 120 ms press is a tap (opens the panel, nothing cleared): true
+[light] 7. singular toast + context menu suppressed: true "Cleared 1 selection"
+[light] 8. a hold with no selection leaves no flag behind; the next tap still opens the panel: true
+[light] errors: []

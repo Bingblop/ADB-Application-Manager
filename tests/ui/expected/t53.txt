@@ -1,0 +1,16 @@
+1. 600 apps: the first 250 cards are drawn, with a "Show 250 more · 350 left" row: true 250
+   the counters still count every app (not only the drawn ones): true
+2. the button adds the next page (500 cards, 100 left): true 500
+3. scrolling to the end loads the last page by itself (all 600), and the more-row is gone: true 600
+4. Select all selects all 600, drawn or not: true
+5. search finds the app that was far down the list, and the window starts over: true
+   clearing the search is back to the first page: true
+6. a selected app that is drawn later still shows as selected: true
+7. six quick keystrokes on a long list: nothing is drawn until typing pauses: true 0
+   then one render shows the result: true 1 renders, 10 cards
+8. a filter tap draws that filter from its first page: true 200
+9. logcat draws the latest 800 of 1500 entries and says how many are not shown: true 800 rows, "⬆ 700 earlier entries not shown · tap to show them"
+   tapping the hint shows them all: true
+10. polling an unchanged log (live) redraws nothing: true 0
+    a new line makes it draw once and shows it: true
+errors: []

@@ -1,0 +1,76 @@
+1. an open Changes sheet follows the journal when a change lands (rows were bluetooth_on,wifi_on): true mobile_data,bluetooth_on,wifi_on
+   Revert on the bluetooth_on row changes bluetooth_on, not the newest entry: true [{"op":"put","ns":"global","key":"bluetooth_on","value":"1"}]
+   every journal entry has its own id: true
+2. a refused create: the table still has the same number of settings: true
+   and a search for the name finds nothing: true
+   a refused change of an existing name keeps showing what the phone holds: true
+10. a refused Save keeps the editor open with what was typed: true
+    and the Save button is usable again: true
+    a refused Delete keeps the editor open: true
+    an accepted Save closes it: true
+3. 150 characters with no space: nothing sticks out at 320 px: true {"sw":320,"cw":320,"btn":[292,219]}
+   and the Create note with a long existing name wraps: true {"sw":320,"cw":320,"note":301}
+5. touch hold 520 ms on the row: one flip (1 put), no editor: true {"pc":1,"editor":false}
+5. touch hold 600 ms on the row: one flip (1 put), no editor: true {"pc":1,"editor":false}
+5. touch hold 690 ms on the row: one flip (1 put), no editor: true {"pc":1,"editor":false}
+5. touch hold 800 ms on the row: one flip (1 put), no editor: true {"pc":1,"editor":false}
+5. touch hold 1000 ms on the row: one flip (1 put), no editor: true {"pc":1,"editor":false}
+5. touch hold 1500 ms on the row: one flip (1 put), no editor: true {"pc":1,"editor":false}
+   touch hold 700 ms on the switch: one flip, not two (1): true
+   touch hold 1200 ms on the switch: one flip, not two (1): true
+   a short tap opens the editor and changes nothing: true
+6. the old list stays and a toast explains why it was not refreshed: true Could not refresh the global settings: java.lang.SecurityException: not allowed
+7. no answer in time: a sheet says the phone may still apply it: true
+   the late answer makes the page read the table again (list calls: ["global","global"]): true
+   and the list shows what the phone holds now: true
+   an unknown outcome says the phone may still apply it: true
+   and the table is read again, so the row shows the real state: true
+8. showing a table that was read long ago reads it again: true
+   a table read a moment ago is not read again: true
+   creating a name the list does not know, but the phone has, asks before replacing it: true hidden_from_the_list already exists in Global (now “precious”).
+
+Replace its value?
+   and "Cancel" leaves it alone: true
+   "OK" replaces it, and the journal remembers the old value: true
+   a free name is created without a question: true
+9. private_dns_mode = off is not shown as a switch: true
+   a long press on it flips nothing and says so: true
+   ui_night_mode = 1 (dark theme off) is not a switch: true
+   user_rotation = 0 is not a switch: true
+   mode_ringer = 0 is not a switch: true
+   airplane_mode_on still is: true
+   the Switches filter leaves the choice settings out: true
+   the editor of a choice setting has no Flip: true
+11. the empty New sheet: Create is off and looks it: true
+    no complaint yet while nothing was typed: true
+    after leaving the name box empty it says "Enter a name": true
+    Save with an invalid value looks off in the editor too: true
+12. after a switch is used from the keyboard the focus is still on its row: true airplane_mode_on
+    (and the switch changed): true
+    a table tab keeps the focus when the tabs are redrawn: true
+    a quick value does not focus the text box (no keyboard over the button): true
+    the search clear button can be reached with the keyboard: true
+13. a setting named "constructor" is listed as a plain setting: true {"rows":["constructor|constructor c1"],"hint":"null"}
+    and so are toString / valueOf / hasOwnProperty: true
+    a mistake in the Settings tab's mode hook does not stop the Working Modes update: true console: Settings tab: Error: boom
+14. the color correction hint has the values the right way round: true
+15. error text and the Delete link use the theme's red: true {"prob":"rgb(242, 184, 181)","root":"#F2B8B5","del":"rgb(242, 184, 181)"}
+17. a value of only spaces shows (blank), not a gap: true blank_value
+(blank)
+    a line break added at the end is pointed out: true
+    the Undo bar goes away when leaving for another tab: true
+    but stays when moving between the tabs that make changes: true
+    entries that are not complete are dropped from the journal: true good
+    the Revert question says what it is now and what the change left: true revert_me has changed since: it is now “9” (this change left it “2”).
+
+Put the old value back anyway?
+    a refusal sheet does not say the same line twice: true revert_me | FAILED | Global | Exception occurred while executing 'put': | java.lang.SecurityException: not allowed |  | Android refused the change. Some phones (Xiaomi, Redmi, POCO) only allow it once "USB debugging (Security settings)" is on in Developer options.
+18. a carriage return is refused: true
+    15499 apostrophes fit, 15500 do not (adb's 64 KiB frame): true
+    20000 CJK characters fit: true
+    quoted size counts UTF-8 bytes like the Java side: true
+19. opening the editor shows the value the phone holds now, not an older copy: true
+    and the list is corrected: true
+    but never over what the user has already typed: true
+no page errors: true
+ALL OK
