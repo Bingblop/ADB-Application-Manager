@@ -1,5 +1,48 @@
 # Changelog
 
+## v6.0-Pro (versionCode 600)
+
+- **🌈 An Overlays tab: recolor Android and switch its overlays.** A new tab right after Settings with two sub-tabs.
+  **Theme** changes the Material You theme of Android 12 and newer: the source color the whole system palette is built
+  from (your **wallpaper**, which is Android's default, or **any color**) and one of six styles (**Tonal Spot**,
+  **Vibrant**, **Expressive**, **Fruit Salad**, **Rainbow**, **Spritz**). **Overlays** lists every overlay that
+  `cmd overlay list` reports and switches each one on or off. Both go through ADB, Wireless Debugging, Shizuku or Root; with
+  none of them ready the tab says so and opens Working Modes.
+- **Pick a color the way you like.** A hex box (`6750A4`, `#6750a4`, `#abc` and `FF6750A4` are all understood), **hue /
+  saturation / lightness** sliders, or **657 named presets** (searchable, with Red / Orange / Yellow / Green / Teal / Blue /
+  Purple / Pink / Neutral chips). The last eight colors you applied are kept as chips.
+- **Colors in use.** The five tonal palettes Android is using right now (Accent 1–3, Neutral 1–2, ten steps each) are read
+  from the system and drawn as swatches; tap one to copy its color. They redraw by themselves a moment after a change,
+  once Android has repainted, and on Android 11 and older the tab says that Material You needs Android 12.
+- **Overlays, easy to handle.** The list is grouped by the app each overlay restyles, with how many are on in each group;
+  search it, narrow it with **On**, **Off** and **Theme** chips, **tap the switch or press and hold the row** to flip an
+  overlay, or tap the row for its sheet (state, target, **Switch on / off**, copy the name, the target or the exact `cmd
+  overlay` command). Overlays Android lists as unavailable say so and are not offered as switches. Long lists are drawn 120
+  rows at a time.
+- **Honest about what happened.** An overlay change is read back by listing the overlays again in the same command, so a
+  row shows what Android reports; an overlay that is fixed on or off by the system says so instead of pretending, and Android
+  12's bare "commit failed" is called what it is (a refusal with no reason). A theme is read first, then written as the
+  color members Android's own wallpaper picker writes, **keeping the other choices the setting holds** (a font, icon shape
+  or icon pack on Pixel-like phones) because Android switches off whatever the setting leaves out, and read back. Phones with
+  Samsung's "wallpaper colors" switch get it set to match and read back too: **Undo** puts it back to what it was, a theme
+  Android refuses puts it back at once, and a switch that will not change is reported. Only fixed shapes can be written (six
+  hex digits, one of six styles, wallpaper or color); overlay names are single-quoted, and names that could confuse `cmd overlay`
+  (spaces, control characters, a leading `-`, over 300 characters) are refused before anything runs. When the link drops
+  mid-change the app says it cannot tell whether it went through and reads the state again; a listing that fails after a change
+  is not mistaken for "no overlays".
+- **Undo, a log, and surviving the restart.** Every overlay or theme change shows a bar with **Undo**; theme changes are
+  also listed in **Settings → ⋯ → Changes** with a **Revert**. Android restarts apps when the palette or an overlay
+  changes, before or after the answer arrives, so the app keeps a short-lived note of the change and, when it comes back,
+  returns to the tab with the Undo bar (and finishes the log entry the answer would have made). Back closes the overlay sheet,
+  then the preset list, then leaves the tab.
+- **Android 11 and older** open on the overlay list: Material You needs Android 12, so Apply theme and Default are off there
+  and say why. A style Android knows but this page does not list (Monochromatic, say) is shown as it is.
+- **Checked before it shipped.** Three independent review passes over the new tab (the native side, the page, and a second look at the logic the first fixes
+  added: 26 findings, 25 fixed and one left on purpose, because overlays are switched for the phone's main user), plus 551 checks of the
+  native rules (including round trips through a real `sh` for hostile overlay names and theme values, and every step of an
+  Apply, Undo, Default and refusal against a fake phone), a comparison of the page's color check with the Java one over more
+  than 1,300 cases, and a headless-browser pass over both halves of the tab at 320 and 360 px in light and dark.
+
 ## v5.9-Pro (versionCode 590)
 
 - **⚙️ A Settings tab: read and edit Android's hidden settings.** A new tab before Store lists every setting in the
