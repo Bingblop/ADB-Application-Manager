@@ -215,6 +215,16 @@ tell you when a new version is out (see [Updates](#updates)).
     <td align="center"><sub>Material 3, Material You and more</sub></td>
     <td align="center"><sub>Pure black for AMOLED</sub></td>
   </tr>
+  <tr>
+    <td><img src="docs/screenshots/about.png" width="230" alt="About tab"></td>
+    <td><img src="docs/screenshots/about-light.png" width="230" alt="About tab, light"></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>About: developer, repo, Buy me a coffee</sub></td>
+    <td align="center"><sub>About in the light theme</sub></td>
+    <td></td>
+  </tr>
 </table>
 
 ### Light appearance

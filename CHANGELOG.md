@@ -10,7 +10,7 @@
 - **Installs from Files always use ADB, Wireless Debugging, Shizuku or Root.** Installing from a file row, from inside an
   archive or right after signing never goes through the system installer: it runs on the privileged backend that is
   ready (and offers Working Modes when none is), with this app's own signature gates off so an edited or re-signed
-  APK still opens. Android itself still verifies signatures - no app can switch that off - so an APK whose signature
+  APK still opens. Android itself still verifies signatures (this app can't switch that off), so an APK whose signature
   Android refuses is signed with this app's key and installed, and an app signed by someone else is replaced only
   after you agree to uninstall it (its data is deleted). Failures say why and what to turn on.
 - **ℹ️ An About tab.** The new last tab shows the developer (**Bingblop**) and the GitHub repo, this build's version,
