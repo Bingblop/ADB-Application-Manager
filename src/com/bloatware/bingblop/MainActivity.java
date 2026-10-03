@@ -101,7 +101,7 @@ public class MainActivity extends Activity {
         }
     }
 
-    /** One thread for the Settings tab: a toggle tapped twice quickly must reach the phone in that order, and reads must not overtake writes. */
+    /** One thread for the Hidden Settings tab (and the Overlays tab): a toggle tapped twice quickly must reach the phone in that order, and reads must not overtake writes. */
     private final ExecutorService settingsExecutor = Executors.newSingleThreadExecutor();
 
     private boolean submitSettingsJob(Runnable job) {
@@ -2859,7 +2859,7 @@ public class MainActivity extends Activity {
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Android settings (the Settings tab): `settings list|get|put|delete` on the global, secure and system tables, through the
+    // Android settings (the Hidden Settings tab): `settings list|get|put|delete` on the global, secure and system tables, through the
     // active privileged backend. What may be touched and how a command is built is SettingsDb's job (it is tested off the device).
     // ---------------------------------------------------------------------------------------------
 
@@ -3013,7 +3013,7 @@ public class MainActivity extends Activity {
 
     // ---------------------------------------------------------------------------------------------
     // Overlays tab: `cmd overlay list|enable|disable`, the Material You theme setting, and the colours the system uses now. What may
-    // be touched and how a command is built is OverlayRules' job (tested off the device). They share the Settings tab's single
+    // be touched and how a command is built is OverlayRules' job (tested off the device). They share the Hidden Settings tab's single
     // thread, so a theme change and a settings change reach the phone in the order they were made.
     // ---------------------------------------------------------------------------------------------
 

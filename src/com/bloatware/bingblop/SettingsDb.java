@@ -8,7 +8,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * The Settings tab's rules, free of Android classes so they can be tested off the device: which tables and names may be
+ * The Hidden Settings tab's rules, free of Android classes so they can be tested off the device: which tables and names may be
  * touched, the exact shell commands (every name and value single-quoted for sh, so nothing typed can end up as shell code),
  * how the output of {@code settings list} is split into entries, and how the answer to a change is read.
  *
