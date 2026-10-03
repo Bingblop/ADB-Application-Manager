@@ -1,5 +1,40 @@
 # Changelog
 
+## v5.9-Pro (versionCode 590)
+
+- **⚙️ A Settings tab: read and edit Android's hidden settings.** A new tab before Store lists every setting in the
+  phone's **Global**, **Secure** and **System** tables (what `settings list` prints), one sub-tab per table with its
+  count. **Tap** a setting to edit it, **press and hold** one that is a switch (`1`/`0`, `true`/`false`, `on`/`off` or
+  `yes`/`no`) to flip it, keeping the capitalisation it had, and tap **＋** to create a setting of your own in any of the
+  three tables. It works through ADB, Wireless Debugging, Shizuku or Root; with none of them ready the tab says so and
+  opens Working Modes.
+- **Easy to find your way around.** Search matches names, values and descriptions; chips narrow the list to **Switches**,
+  settings with a **Description**, or the ones **Edited** with this app; sort by name or by value. About 130 well-known
+  settings carry a plain-English description (`adb_enabled` is "USB debugging"), the ones that can cut your ADB link, lock
+  you out of the screen or break setup are marked ⚠️ and ask before they change, and long tables are drawn 120 rows at a
+  time with **Show more**.
+- **The editor.** A sheet with the value in a text box (multi-line values and anything up to 20,000 characters), quick
+  values (`0` `1` `true` `false` `null` `(empty)` `-1`), **Flip**, copy of the name, the value or the exact
+  `settings put` command, **Reload** from the phone, and **Delete**.
+- **Honest about what happened.** Every change is checked by reading the setting back, so "saved" means the phone now
+  holds that value. When Android refuses, its own answer is shown with advice (Xiaomi, Redmi and POCO phones need
+  "USB debugging (Security settings)" on in Developer options for most changes). Names that can never work (empty, starting
+  with `-`, containing `=`, spaces or control characters) are refused before anything runs, and values reach the shell
+  quoted, so `;`, `$(…)`, quotes and `>` are stored as text and never run. One request at a time reaches the phone, in
+  the order you made them, and a request nobody answers times out instead of spinning.
+- **Undo, and a log of what you changed.** Each change shows a bar with **Undo**; **⋯ → Changes** lists the last 150
+  changes made with this app, newest first, and **Revert** puts the old value back (or removes a setting you created).
+  **Copy shown** and **Share shown** export the list you are looking at as text.
+- **Back works the way you expect.** Back closes the editor, then clears the search, then leaves the tab.
+- **Reviewed twice, then hardened.** Two independent reviews (the native side and the page) found and fixed: a table cut short
+  by a dropped connection or a timeout is reported instead of shown as if it were complete; a refused change or delete is no
+  longer taken for success when the value is the word `null`; when the link drops during a change the app says it cannot tell
+  whether it went through and reads the table again; the editor opens with the value the phone holds right now, and a refused
+  Save keeps what you typed; settings that are a choice (private DNS, dark theme, ringer mode, rotation …) are no longer offered
+  as on/off switches; press and hold works on a touch screen however long you hold; Revert acts on the row it is shown on;
+  a value too big for adb to carry is refused instead of corrupting the request; and **📋 Command** copies a command that runs
+  on the phone (the old one broke when pasted into a PC terminal).
+
 ## v5.8-Pro (versionCode 580)
 
 - **A Back button that does the sensible thing.** The system Back button / gesture now closes the sheet that is open,
