@@ -835,6 +835,10 @@
             pointer-events: auto;
         }
 
+        /* A result report belongs on top of whatever sheet it came from (the entry / sign sheets stay open for a retry);
+           at the same z-index the sheet later in the page would hide it. */
+        #commandResultsModal { z-index: 310; }
+
         .modal-sheet {
             background: var(--bg-sheet);
             border: 1px solid var(--border-glass);
@@ -1551,6 +1555,7 @@
 
         .term-input {
             flex: 1;
+            min-width: 0;                  /* an input's own minimum width would squeeze RUN off a narrow screen */
             height: 44px;
             background: var(--bg-surface);
             border: 1px solid var(--border-glass);
@@ -1564,6 +1569,7 @@
 
         .term-run-btn {
             width: 70px;
+            flex-shrink: 0;
             height: 44px;
             background: var(--accent);
             border: none;
@@ -5129,8 +5135,17 @@ Type any command below (e.g. pm list packages -d)
             showToast('Deleted saved list', '🗑️');
         }
 
+        let archiveReportShown = false;     // the failure report on screen came from an archive / sign job (a later success takes it down)
         function closeCommandResultsModal() {
             haptic();
+            archiveReportShown = false;
+            document.getElementById('commandResultsModal').classList.remove('show');
+        }
+
+        // a retry that worked: the failure report of the attempt before it has nothing left to say
+        function dropArchiveReport() {
+            if (!archiveReportShown) return;
+            archiveReportShown = false;
             document.getElementById('commandResultsModal').classList.remove('show');
         }
 
@@ -7147,12 +7162,17 @@ Type any command below (e.g. pm list packages -d)
             const st = srcEl(key, 'Status');
             if (!st) return;
             let msg = '';
+            const note = s.note ? (/^⚠️/.test(s.note) ? s.note : 'ℹ️ ' + s.note) : '';          // a failure note brings its own icon
             if (s.error) msg = '⚠️ ' + s.error;
             else if (s.loading && !s.items.length) msg = '⏳ ' + (s.progress || 'Loading…');
             else if (s.loading) msg = '⏳ Loading more… ' + s.items.length + ' apps so far';
             else if (s.pendingMetered) msg = '';
-            else if (!filteredLen) msg = s.items.length ? 'No apps match your filters.' : (s.loaded ? 'No apps found.' : '');
-            else if (s.note) msg = 'ℹ️ ' + s.note;
+            else if (!filteredLen) {
+                // the note (e.g. "Search failed") must not hide behind "No apps match": it is often the reason there are none
+                const none = s.items.length ? 'No apps match your filters.' : (s.loaded ? 'No apps found.' : '');
+                msg = none && note ? none + '\n' + note : (none || note);
+            }
+            else if (note) msg = note;
             st.style.display = msg ? '' : 'none';
             st.innerText = msg;
         }
@@ -7421,7 +7441,8 @@ Type any command below (e.g. pm list packages -d)
             const s = storeSrc[src];
             if (d.status === 'progress') { s.progress = d.message || ''; if (s.loading) renderSource(src); return; }
             if (d.status === 'error') {
-                if (s.searching) {         // a failed live search is a note, not a lasting error that hides the list
+                // a failed live search ("q:…") is a note, not a lasting error that hides the list; any other error is the catalog's
+                if (s.searching && /^q:/.test(String(d.arg || ''))) {
                     s.searching = false;
                     s.note = '⚠️ Search failed: ' + (d.error || 'unknown error');
                     renderSource(src);
@@ -8498,7 +8519,7 @@ Type any command below (e.g. pm list packages -d)
         }
 
         function installUninstallAsk(name) {
-            return name + ' is installed with a different signing key, so Android refuses to update it.\n\nUninstall the installed copy first and then install this one? The app\'s data is deleted, and if the new install then fails the app stays uninstalled.';
+            return name + ' is installed with a different signing key, so Android refuses to update it.\n\nUninstall the installed copy first and then install this one? The app and its data are deleted (for every user of this phone), and if the new install then fails the app stays uninstalled.';
         }
 
         let installRunningTimer = null;
@@ -8780,15 +8801,21 @@ Type any command below (e.g. pm list packages -d)
             const list = document.getElementById('fmList');
             if (!list) return;
             const rowOf = e => (e.target && e.target.closest) ? e.target.closest('.perm-info[data-i]') : null;
+            let lastTouchAt = 0;                       // the mouse events a touch screen makes up after a touch are not a second press
+            const fromTouch = () => Date.now() - lastTouchAt < 700;
             // any new press forgets a long press whose click never arrived (the layout shifts when selecting starts, so it may not)
-            list.addEventListener('touchstart', e => { fmPress.fired = false; const row = rowOf(e); const t = e.touches[0]; if (row && t) fmPressStart(row, t.clientX, t.clientY); }, { passive: true });
+            list.addEventListener('touchstart', e => { lastTouchAt = Date.now(); fmPress.fired = false; const row = rowOf(e); const t = e.touches[0]; if (row && t) fmPressStart(row, t.clientX, t.clientY); }, { passive: true });
             list.addEventListener('touchmove', e => {
                 const t = e.touches[0];
                 if (t && (Math.abs(t.clientX - fmPress.x) > 12 || Math.abs(t.clientY - fmPress.y) > 12)) fmPressCancel();
             }, { passive: true });
-            list.addEventListener('touchend', fmPressCancel);
+            list.addEventListener('touchend', e => {
+                lastTouchAt = Date.now();
+                fmPressCancel();
+                if (fmPress.fired && e.cancelable) e.preventDefault();       // the finger that started selecting must not also "tap" the row (no made-up mouse events, no click)
+            });
             list.addEventListener('touchcancel', fmPressCancel);
-            list.addEventListener('mousedown', e => { fmPress.fired = false; const row = rowOf(e); if (row && e.button === 0) fmPressStart(row, e.clientX, e.clientY); });
+            list.addEventListener('mousedown', e => { if (fromTouch()) return; fmPress.fired = false; const row = rowOf(e); if (row && e.button === 0) fmPressStart(row, e.clientX, e.clientY); });
             list.addEventListener('mouseup', fmPressCancel);
             list.addEventListener('mouseleave', fmPressCancel);
             list.addEventListener('scroll', fmPressCancel, { passive: true });
@@ -9119,7 +9146,8 @@ Type any command below (e.g. pm list packages -d)
                 arcQuery = par.query;
                 document.getElementById('arcSearch').value = arcQuery;
                 arcHeader();
-                arcLoad(true);
+                if (par.diff) { arcDiff = par.diff; arcRenderDiff(); }
+                else arcLoad(true);
                 return;
             }
             if (window.AndroidBridge && window.AndroidBridge.archiveClose) window.AndroidBridge.archiveClose();
@@ -9144,8 +9172,8 @@ Type any command below (e.g. pm list packages -d)
             note.style.display = msg ? '' : 'none';
             note.innerText = msg;
             arcSignBanner();
-            document.getElementById('arcAddBtn').style.display = arc.editable ? '' : 'none';
-            document.getElementById('arcFolderBtn').style.display = arc.editable ? '' : 'none';
+            document.getElementById('arcAddBtn').style.display = arc.editable && !arcDiff ? '' : 'none';
+            document.getElementById('arcFolderBtn').style.display = arc.editable && !arcDiff ? '' : 'none';
         }
 
         function arcCrumbs() {
@@ -9273,7 +9301,8 @@ Type any command below (e.g. pm list packages -d)
             }
             if (!arcTarget.dir && /\.(apk|apks|apkm|xapk)$/i.test(arcTarget.name)) btns.push(`<button class="batch-grid-btn accent" onclick="arcStageEntry('install')">📦 Install</button>`);
             if (!arcTarget.dir && ARC_EXT.test(arcTarget.name)) btns.push(`<button class="batch-grid-btn" onclick="arcStageEntry('nested')">📂 Open inside</button>`);
-            if (withEdit && arcPreview && arcPreview.editable) btns.push(`<button class="batch-grid-btn accent" onclick="arcEditStart()">✏️ Edit text</button>`);
+            // only an entry of the open archive can be edited: the "New" side of a comparison is another archive, and saving would write its text into this one
+            if (withEdit && arcPreview && arcPreview.editable && (!arcTarget.src || arcTarget.src === arc.path)) btns.push(`<button class="batch-grid-btn accent" onclick="arcEditStart()">✏️ Edit text</button>`);
             btns.push(`<button class="batch-grid-btn" onclick="arcExtractStart()">📥 Extract…</button>`);
             if (arc && arc.editable && !arcTarget.src) {
                 btns.push(`<button class="batch-grid-btn" onclick="arcRenameStart()">✏️ Rename / move</button>`);
@@ -9375,10 +9404,13 @@ Type any command below (e.g. pm list packages -d)
         }
 
         function arcDefaultDest() {
-            const last = kvGet('arc_last_dest', '');
-            if (last) return last;                       // the folder you extracted to last time
             const base = (arc.name || 'archive').replace(/\.[^.]+$/, '');
-            return '/storage/emulated/0/Download/' + base;
+            const last = kvGet('arc_last_dest', '');
+            if (!last) return '/storage/emulated/0/Download/' + base;
+            // A whole archive is extracted straight into the folder, so it gets one of its own beside the last one: two
+            // archives never end up (and overwrite each other) in the same folder. A file or a folder goes where the last one did.
+            if (arcTarget && arcTarget.dir && !arcTarget.path) return (last.replace(/\/[^/]*$/, '') || '/storage/emulated/0/Download') + '/' + base;
+            return last;
         }
 
         function arcExtractStart() {
@@ -9512,8 +9544,9 @@ Type any command below (e.g. pm list packages -d)
             const src = arcSrcPath();
             const entry = arcTarget.path;
             arcCloseModal();
-            const st = window.AndroidBridge && window.AndroidBridge.archiveStage ? window.AndroidBridge.archiveStage(src, entry, kind) : 'unavailable';
-            if (st !== 'started') { arcSetBusy(false); showToast(st === 'busy' ? 'Another archive job is still running' : 'Needs the app build', '⚠️'); }
+            let st = 'unavailable';
+            try { if (window.AndroidBridge && window.AndroidBridge.archiveStage) st = window.AndroidBridge.archiveStage(src, entry, kind); } catch (e) { st = 'error'; }
+            if (st !== 'started') { arcSetBusy(false); showToast(st === 'busy' ? 'Another archive job is still running' : st === 'error' ? 'That could not start' : 'Needs the app build', '⚠️'); }
         }
 
         function onArchiveStaged(r) {
@@ -9524,9 +9557,16 @@ Type any command below (e.g. pm list packages -d)
         }
 
         function arcOpenNested(r) {
+            if (!arc) {                                    // the archive was closed while the entry was being copied out: nothing to open it inside
+                if (r && r.ref && window.AndroidBridge && window.AndroidBridge.archiveRelease) window.AndroidBridge.archiveRelease(r.ref);
+                return;
+            }
             const opened = arcBridge('archiveOpen', r.ref);
             if (!opened.ok) { showToast(opened.error || 'Not a readable archive', '⚠️'); if (window.AndroidBridge && window.AndroidBridge.archiveRelease) window.AndroidBridge.archiveRelease(r.ref); return; }
-            const parent = { arc, dir: arcDir, query: arcQuery };
+            const parent = { arc, dir: arcDir, query: arcQuery, diff: arcDiff };       // a comparison comes back with its parent
+            arcDiff = null;
+            document.getElementById('arcDiffHead').style.display = 'none';
+            document.getElementById('arcCrumbs').style.display = '';
             arcStack.push(parent);
             opened.nested = true;
             opened.name = r.name;
@@ -9561,8 +9601,9 @@ Type any command below (e.g. pm list packages -d)
             arcLastOp = { op: 'diff' };
             arcSetBusy(true, 'Comparing…');
             arcCloseModal();
-            const st = window.AndroidBridge && window.AndroidBridge.archiveDiff ? window.AndroidBridge.archiveDiff(arc.path, other) : 'unavailable';
-            if (st !== 'started') { arcSetBusy(false); showToast(st === 'busy' ? 'Another archive job is still running' : 'Needs the app build', '⚠️'); }
+            let st = 'unavailable';
+            try { if (window.AndroidBridge && window.AndroidBridge.archiveDiff) st = window.AndroidBridge.archiveDiff(arc.path, other); } catch (e) { st = 'error'; }
+            if (st !== 'started') { arcSetBusy(false); showToast(st === 'busy' ? 'Another archive job is still running' : st === 'error' ? 'The comparison could not start' : 'Needs the app build', '⚠️'); }
         }
 
         function onArchiveDiff(r) {
@@ -9579,6 +9620,9 @@ Type any command below (e.g. pm list packages -d)
             arcDiff = null;
             document.getElementById('arcDiffHead').style.display = 'none';
             document.getElementById('arcCrumbs').style.display = '';
+            document.getElementById('arcSearch').value = '';                  // the box filtered the comparison: it must not look like a filter on the folder
+            arcQuery = '';
+            arcHeader();                                                      // brings Add file / New folder back
             arcLoad(true);
         }
 
@@ -9604,6 +9648,8 @@ Type any command below (e.g. pm list packages -d)
                 </div>${d.truncated ? '<div class="arc-note">The lists are cut at 3000 entries each.</div>' : ''}`;
             document.getElementById('arcCrumbs').style.display = 'none';
             document.getElementById('arcMoreBtn').style.display = 'none';
+            document.getElementById('arcAddBtn').style.display = 'none';          // nothing is added to or created in a comparison
+            document.getElementById('arcFolderBtn').style.display = 'none';
             const list = document.getElementById('arcList');
             if (!arcDiffRows.length) { list.innerHTML = '<div class="list-empty">' + (d.added.length + d.removed.length + d.changed.length ? 'Nothing matches.' : 'The two archives hold identical files.') + '</div>'; return; }
             list.innerHTML = arcDiffRows.slice(0, 600).map((x, i) => {
@@ -9707,8 +9753,10 @@ Type any command below (e.g. pm list packages -d)
                 }
                 showToast(r.error || 'The archive job failed', '⚠️');
                 showCommandResults('Archive', (arcLastOp && arcLastOp.op) || '', [{ name: arc ? arc.name : '', pkg: arc ? arc.path : '', output: r.error || 'failed', success: false }]);
+                archiveReportShown = true;
                 return;
             }
+            dropArchiveReport();
             if (r.op === 'extract') {
                 showToast('Extracted ' + r.files + ' file' + (r.files === 1 ? '' : 's') + ' (' + arcSize(r.bytes) + ') to ' + r.dest + (r.skipped ? ' • ' + r.skipped + ' skipped' : ''), '📥');
                 if (r.problems && r.problems.length) showCommandResults('Archive', 'extract', [{ name: arc ? arc.name : '', pkg: arc ? arc.path : '', output: r.skipped + ' not extracted:\n' + r.problems.join('\n'), success: false }]);
@@ -9819,21 +9867,29 @@ Type any command below (e.g. pm list packages -d)
             if (mode === 'inplace' && t.info && t.info.signed === true && !confirm('“' + t.name + '” already has a valid signature. Signing in place replaces it, and the old one can not be restored. Continue?')) return;
             const r = br.archiveSign(t.path, mode);
             if (r === 'busy') { showToast('Another archive job is still running', '⏳'); return; }
+            signJob = t;
             t.busy = true;
             t.done = null;
             t.status = 'Working…';
             signRender();
         }
 
+        let signJob = null;             // the sheet target the running signing job was started for: a late answer must not land on another file's sheet
+
         function onArchiveSigned(r) {
-            const t = signTarget;
+            const job = signJob;
+            signJob = null;
+            const t = job && job === signTarget ? signTarget : null;       // the sheet it was started from, if that one is still open
             if (t) { t.busy = false; t.status = ''; }
             if (!r || !r.ok) {
                 showToast((r && r.error) || 'Signing failed', '⚠️');
-                showCommandResults('Sign APK', t ? t.name : '', [{ name: t ? t.name : '', pkg: t ? t.path : '', output: (r && r.error) || 'failed', success: false }]);
+                const who = job || t;
+                showCommandResults('Sign APK', who ? who.name : '', [{ name: who ? who.name : '', pkg: who ? who.path : '', output: (r && r.error) || 'failed', success: false }]);
+                archiveReportShown = true;
                 if (t) signRender();
                 return;
             }
+            dropArchiveReport();
             showToast('Signed ' + r.name, '✍️');
             if (t) {
                 t.done = r;
@@ -10104,6 +10160,7 @@ Type any command below (e.g. pm list packages -d)
             // Clear the on-screen terminal directly (and the device buffer) - don't re-fetch, so it stays
             // visibly empty until the next Play/Refresh instead of instantly repopulating.
             if (window.AndroidBridge && window.AndroidBridge.clearLogcat) window.AndroidBridge.clearLogcat();
+            lcPending = null;                  // an answer still on its way (a Refresh) was fetched before the clear: it must not repaint the old log
             lcLastText = null;
             logcatNotice('(cleared)');
             showToast('Log cleared', '🧹');
@@ -11097,12 +11154,12 @@ Type any command below (e.g. pm list packages -d)
             const input = document.getElementById('termCmd');
             const cmd = (typeof override === 'string' ? override : input.value).trim();
             if (!cmd) return;
+            if (termShellRun) { showToast('A command is still running. Wait for it to finish.', '⏳'); return; }      // before the box is cleared: what was typed stays
             haptic();
             if (typeof override !== 'string') input.value = '';
             termRemember(cmd);
 
             const term = document.getElementById('termOutput');
-            if (termShellRun) { showToast('A command is still running. Wait for it to finish.', '⏳'); return; }
             clearFind(term);
             term.insertAdjacentHTML('beforeend', `<span style="color:var(--text-main);">$ ${escapeHtml(cmd).replace(/\n/g, '\n<span style="color:var(--text-muted);">&gt;</span> ')}</span>\n`);
 
@@ -11138,7 +11195,9 @@ Type any command below (e.g. pm list packages -d)
             if (wait) wait.remove();
             const res = String(out || '');
             term.appendChild(document.createTextNode(res));
-            showCommandResults('Shell Command Result', run.cmd, [{ name: run.cmd, pkg: 'shell', output: res, success: true }]);
+            // the report only where the command was typed: if the user moved to another tab meanwhile, a sheet would pop up over unrelated work
+            if (currentViewName() === 'terminal') showCommandResults('Shell Command Result', run.cmd, [{ name: run.cmd, pkg: 'shell', output: res, success: true }]);
+            else showToast('Command finished: see the ADB Console', '💻');
             term.scrollTop = term.scrollHeight;
             if (document.getElementById('termSearch').value) termFind(0);
         }
@@ -11175,6 +11234,9 @@ Type any command below (e.g. pm list packages -d)
         function termOpenModal(mode) {
             termModalMode = mode;
             haptic();
+            const body = document.getElementById('termModalBody');
+            body.innerHTML = '';                      // a fresh sheet: no filter text left from last time
+            body.dataset.rendered = '';
             termRenderModal();
             document.getElementById('termModal').classList.add('show');
         }
@@ -11197,17 +11259,26 @@ Type any command below (e.g. pm list packages -d)
                 sub.innerText = termHistory.length ? termHistory.length + ' recent command' + (termHistory.length === 1 ? '' : 's') + ' • tap to edit, ▶ to run' : '';
                 const q = (document.getElementById('termHistFilter') || {}).value || '';
                 const rows = termHistory.map((c, i) => ({ c, i })).filter(x => !q || x.c.toLowerCase().includes(q.toLowerCase()));
-                body.innerHTML = (termHistory.length > 6 ? `<input class="modal-text-input" id="termHistFilter" placeholder="Filter history…" value="${escapeHtml(q)}" oninput="termRenderModal()" autocomplete="off" autocapitalize="off" spellcheck="false" style="margin-bottom:6px;">` : '')
-                    + (rows.length ? rows.map(x => `<div class="term-row">
+                const wantFilter = termHistory.length > 6;
+                const listHtml = (rows.length ? rows.map(x => `<div class="term-row">
                             <div class="term-row-main" onclick="termHistPick(${x.i})"><div class="term-row-cmd" style="color:var(--text-main);margin:0;">${escapeHtml(x.c)}</div></div>
                             <button class="term-mini run" onclick="termHistRun(${x.i})" title="Run">▶</button>
                             <button class="term-mini" onclick="termHistSave(${x.i})" title="Save">⭐</button>
                             <button class="term-mini" onclick="termHistDelete(${x.i})" title="Remove">✕</button>
                         </div>`).join('') : `<div class="list-empty">${termHistory.length ? 'Nothing matches.' : 'Commands you run show up here.'}</div>`)
                     + (termHistory.length ? `<button class="mode-action-btn" style="width:100%; justify-content:center; margin-top:10px;" onclick="termHistClear()">🗑️ Clear history</button>` : '');
-                const f = document.getElementById('termHistFilter');
-                if (f && q) { f.focus(); f.setSelectionRange(q.length, q.length); }
+                const list = document.getElementById('termHistList');
+                if (body.dataset.rendered === 'history' && list && !!document.getElementById('termHistFilter') === wantFilter) {
+                    list.innerHTML = listHtml;          // typing only redraws the rows: the box keeps its caret and any half-typed (IME) text
+                } else {
+                    body.dataset.rendered = 'history';
+                    body.innerHTML = (wantFilter ? `<input class="modal-text-input" id="termHistFilter" placeholder="Filter history…" value="${escapeHtml(q)}" oninput="termRenderModal()" autocomplete="off" autocapitalize="off" spellcheck="false" style="margin-bottom:6px;">` : '')
+                        + `<div id="termHistList">${listHtml}</div>`;
+                    const f = document.getElementById('termHistFilter');
+                    if (f && q) { f.focus(); f.setSelectionRange(q.length, q.length); }
+                }
             } else if (termModalMode === 'saved') {
+                body.dataset.rendered = 'saved';
                 icon.innerText = '⭐'; title.innerText = 'Saved commands';
                 sub.innerText = 'Run in ' + (rishActive ? 'the Rish shell' : 'the current working mode');
                 body.innerHTML = `<button class="mode-action-btn primary" style="width:100%; justify-content:center; margin-bottom:6px;" onclick="termEditStart(-1)">＋ New saved command</button>`
@@ -11221,6 +11292,7 @@ Type any command below (e.g. pm list packages -d)
                             <button class="term-mini" onclick="termEditStart(${i})" title="Edit">✏️</button>
                         </div>`).join('') : `<div class="list-empty">Nothing saved yet. Save a command from the history (⭐), or tap “New saved command”. A script can have several lines.</div>`);
             } else {
+                body.dataset.rendered = 'edit';
                 const x = termEditIdx >= 0 ? termSaved[termEditIdx] : { name: '', cmd: termEditDraft };
                 icon.innerText = '✏️'; title.innerText = termEditIdx >= 0 ? 'Edit saved command' : 'New saved command';
                 sub.innerText = 'Several lines are fine: the whole text runs as one script';
