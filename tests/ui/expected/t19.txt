@@ -11,7 +11,7 @@ terminal next: 2 / 2 matches
 after new output (re-highlighted): 1 / 4 matches
 csv share: shareFile:app_list_2026-10-03.csv|text/csv|387
 copy pkgs: "copy:com.example.keep\ncom.sec.android.app.sbrowser" | share list: "shareText:Package list|com.example.keep\ncom.sec.android.app.sbrowser"
-profile saved: Lean 3 apps • 1 disabled • 1 suspended • 1 uninstalled • 10/3/2026 ▶ Apply 👁️ Watch 📤 Share 📋 Copy 🗑️ Delete
+profile saved: Lean 3 apps • 1 disabled • 1 suspended • 1 uninstalled • 10/3/2026 Apply Watch Share Copy Delete
 persisted: com.facebook.appmanager=disabled,com.example.gone=uninstalled,com.netflix.partner=suspended
 preview: Lean Will disable 1, suspend 1, uninstall 1 (3 apps). 0 already match, 0 are not on this phone and are skipped. Confirm apply (3) Cancel
 applied: ["freeze:com.facebook.appmanager","suspend:com.netflix.partner","uninstall:com.example.gone"]

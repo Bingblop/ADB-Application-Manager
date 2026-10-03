@@ -3,7 +3,7 @@ updated:   WhatsApp, "Messenger", Samsung Internet, F-Droid, DuckDuckGo, Bixby |
 installed: F-Droid, DuckDuckGo, WhatsApp, "Messenger", Samsung Internet, Bixby | • installed Sep 30, 2026 • installed Sep 3, 2026 • installed Aug 29, 2025 • installed Apr 16, 2024
 size:      Samsung Internet, WhatsApp, "Messenger", DuckDuckGo, F-Droid, Bixby | • 172 MB • 85.8 MB • 38.1 MB • 11.4 MB
 updates:   DuckDuckGo, Bixby, F-Droid, Samsung Internet, WhatsApp, "Messenger" |
-recent pill: 🆕 Updated 7d (3)
+recent pill: Updated 7d (3)
 recent apps: F-Droid, Samsung Internet, WhatsApp, "Messenger"
 export file: app_list_2026-10-03.csv | toast: Exported 5 apps to Download/ADB App Manager/app_list_2026-10-03.csv
 "WhatsApp, ""Messenger""",com.whatsapp,2.24.1,2025-08-29,2026-10-02,user,suspended,90000000,

@@ -28,7 +28,7 @@ const { chromium, PAGE } = require('./lib/pw');
 
   // 1) Sub-tabs: Komi is renamed to GitHub.
   const pills = await page.locator('.store-subtab').allInnerTexts();
-  console.log('1. sub-tabs ShizuStore/GitHub/F-Droid/Orion/Aurora (no Komi):', pills.length === 5 && /GitHub/.test(pills[1]) && !pills.some(t => /Komi/.test(t)), JSON.stringify(pills));
+  console.log('1. sub-tabs ShizuStore/GitHub/F-Droid/Orion (no Komi, no Aurora):', pills.length === 4 && /GitHub/.test(pills[1]) && !pills.some(t => /Komi|Aurora/.test(t)), JSON.stringify(pills));
 
   // 2) GitHub: opening requests the browse catalog; chunks arrive progressively.
   await page.evaluate(() => switchStoreTab('github')); await page.waitForTimeout(60);
@@ -85,7 +85,7 @@ const { chromium, PAGE } = require('./lib/pw');
 
   // 6) Card chips: stars, downloads, version.
   const chips = await page.locator('#githubList .store-row').first().locator('.sr-chip').allInnerTexts();
-  console.log('6. card chips (stars/downloads/version/category):', chips.some(c => /⭐ 10k/.test(c)) && chips.some(c => /⬇ 500k/.test(c)) && chips.some(c => /^v1\.0$/.test(c)) && chips.some(c => c === 'Video'), JSON.stringify(chips));
+  console.log('6. card chips (stars/downloads/version/category):', chips.some(c => /^10k stars$/.test(c)) && chips.some(c => /^500k downloads$/.test(c)) && chips.some(c => /^v1\.0$/.test(c)) && chips.some(c => c === 'Video'), JSON.stringify(chips));
 
   // 7) Install from a list card: sends the item, shows live progress, then done.
   await page.locator('#githubList .store-row').first().locator('.store-inst-btn').click(); await page.waitForTimeout(40);
@@ -96,7 +96,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.evaluate(() => onStoreInstallProgress(JSON.stringify({ pkg: 'own0/app0', stage: 'done', percent: 100, message: 'Installed App 000 v1.0.' })));
   const done = await page.locator('#githubList .store-row').first().locator('.sr-status').innerText();
   const reEnabled = await page.locator('#githubList .store-row').first().locator('.store-inst-btn').isEnabled();
-  console.log('   progress keyed by repo (no package name yet): downloading -> done, button re-enabled:', /40%/.test(prog) && /✅/.test(done) && reEnabled, JSON.stringify(prog), JSON.stringify(done));
+  console.log('   progress keyed by repo (no package name yet): downloading -> done, button re-enabled:', /40%/.test(prog) && /Installed App 000/.test(done) && reEnabled, JSON.stringify(prog), JSON.stringify(done));
 
   // 8) Live search + merge, even for results the local filter would hide.
   await page.fill('#githubSearch', 'zzqq'); await page.waitForTimeout(40);
@@ -235,9 +235,9 @@ const { chromium, PAGE } = require('./lib/pw');
   const sMore = await text('#storeMore');
   console.log('19. ShizuStore: category dropdown from slugs, show-more paging, filter:', sOpts.length === 3 && /System Tools \(65\)/.test(sOpts.join('|')) && sRows === 60 && sFiltered === 60 && /Show 5 more/.test(sMore), JSON.stringify(sOpts), sRows, sFiltered, JSON.stringify(sMore));
 
-  // ===== Aurora =====
-  await page.evaluate(() => switchStoreTab('aurora')); await page.waitForTimeout(40);
-  console.log('20. aurora hand-off still there:', /Open Aurora Store/.test(await text('#substore-aurora')));
+  // ===== Aurora: no sub-tab any more (the Play Store card of the Updates tab still opens it) =====
+  console.log('20. no Aurora sub-tab or pane in App Stores:', (await page.locator('.store-subtab[data-store="aurora"]').count()) === 0 && (await page.locator('#substore-aurora').count()) === 0);
+  console.log('    the Updates tab keeps its Play Store card with the Aurora button:', (await page.locator('#openAuroraBtn').count()) === 1);
 
   console.log('errors:', JSON.stringify(errors));
   await b.close();

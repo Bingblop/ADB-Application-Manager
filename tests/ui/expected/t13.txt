@@ -1,21 +1,21 @@
-tabs: 📱 Applications | 📋 Saved Lists | 🧹 Debloater | 📦 Installer | 📁 Files | ⬆️ Updates | 💻 ADB Console | 📄 Logcat | 🛠️ Hidden Settings | 🌈 Overlays | 🛍️ Store | ℹ️ About
-saved ui_state: {"appsFilter":"system","showVersions":true,"appSort":"name","filtersHintDone":true,"uad":{"removal":["Recommended","Advanced"],"list":"Oem","state":"enabled","brand":"Samsung"}}
+tabs: Application Manager | Saved App Lists | UAD-NG Debloater | APK Installer | File Manager | ADB Console | Hidden Settings | RRO/Monet Customization | App Updater | App Stores | Logcat Viewer | About
+saved ui_state: {"appsFilter":"system","showVersions":true,"appSort":"name","filtersHintDone":true,"search":{"names":true,"packages":true,"regex":true},"uad":{"removal":["Recommended","Advanced"],"list":"Oem","state":"enabled","brand":"Samsung"}}
 history entries: 1 | Uninstalled 2 packages
 after undo: Undo: Uninstalled 2 packages / Uninstalled 2 packages
 copied log first lines: [<iso time>] Undo: Uninstalled 2 packages |   OK   reinstall com.samsung.android.rubin.app (Recommended) |   OK   reinstall com.sec.android.app.aftersalecamera (Recommended)
 debloat calls: uninstall:com.sec.android.app.aftersalecamera, uninstall:com.samsung.android.rubin.app, reinstall:com.samsung.android.rubin.app, reinstall:com.sec.android.app.aftersalecamera
 auto-check status: Checking the Galaxy Store... 40/120 apps
 after check: 3 updates available • checked 120 Galaxy Store and 0 sideloaded apps • 1 couldn't be checked (timeout) • <clock>
-tab label: ⬆️ Updates (3) | update-all: ⬆️ Update All (3)
-calendar mid-progress: Calendar com.samsung.android.calendar GALAXY STORESYSTEM 12.5.01.4 → 12.6.00.11 ⬇️ 30% 12 MB
-calendar done: ✓ Updated | tab: ⬆️ Updates (2)
-queue started: ✓ Updated | ⬇️ 30% | ⏳ Queued
-after update all: ✓ Updated | ✓ Updated | ⬆️ Retry
+tab label: App Updater (3) | update-all: Update All (3)
+calendar mid-progress: Calendar com.samsung.android.calendar GALAXY STORESYSTEM 12.5.01.4 → 12.6.00.11 Downloading 30% 12 MB
+calendar done: ✓ Updated | tab: App Updater (2)
+queue started: ✓ Updated | Downloading 30% | Queued
+after update all: ✓ Updated | ✓ Updated | Retry
 notes error msg: Failure [INSTALL_FAILED_UPDATE_INCOMPATIBLE]
 install order: ["com.samsung.android.calendar","com.sec.android.app.sbrowser","com.samsung.android.app.notes"]
 self filtered from general list: true
-RELAUNCH apps filter: ⚙️ System (0)
-RELAUNCH uad chips: Recommended, Advanced, OEM, 📱 Samsung (49), Enabled
+RELAUNCH apps filter: System (0)
+RELAUNCH uad chips: Recommended, Advanced, OEM, Samsung (49), Enabled
 RELAUNCH history entries: 5
 calls (other): check
 errors: []

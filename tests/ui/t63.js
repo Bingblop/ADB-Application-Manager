@@ -35,17 +35,17 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   };
 
   // 1) placement
-  const tabs = await ev(() => Array.from(document.querySelectorAll('.tab-btn')).map(b => b.innerText.trim()));
-  const iSet = tabs.findIndex(t => /Settings/.test(t)), iOvl = tabs.findIndex(t => /Overlays/.test(t)), iStore = tabs.findIndex(t => /Store/.test(t));
-  check('1. the Overlays tab sits right of Hidden Settings and before Store', iOvl === iSet + 1 && iStore === iOvl + 1, JSON.stringify(tabs));
+  const tabs = await ev(() => Array.from(document.querySelectorAll('.tab-btn')).map(b => b.innerText.replace(/\s+/g, ' ').trim()));
+  const iSet = tabs.findIndex(t => /Hidden Settings/.test(t)), iOvl = tabs.findIndex(t => /RRO\/Monet/.test(t)), iUpd = tabs.findIndex(t => /App Updater/.test(t));
+  check('1. RRO/Monet Customization sits right of Hidden Settings and before App Updater', iOvl === iSet + 1 && iUpd === iOvl + 1, JSON.stringify(tabs));
   await ev(() => switchView('overlays')); await sleep(150);
-  check('   it activates its own button and view', (await ev(() => document.querySelector('.tab-btn.active').innerText.trim())) === '🌈 Overlays' && (await ev(() => currentViewName())) === 'overlays');
+  check('   it activates its own button and view', (await ev(() => document.querySelector('.tab-btn.active').innerText.replace(/\s+/g, ' ').trim())) === 'RRO/Monet Customization' && (await ev(() => currentViewName())) === 'overlays');
   await ev(() => switchView('settings')); await sleep(100);
-  check('   Hidden Settings is still itself', (await ev(() => document.querySelector('.tab-btn.active').innerText.trim())) === '🛠️ Hidden Settings');
+  check('   Hidden Settings is still itself', (await ev(() => document.querySelector('.tab-btn.active').innerText.replace(/\s+/g, ' ').trim())) === 'Hidden Settings');
   await ev(() => switchView('store')); await sleep(60);
-  check('   Store and About keep their buttons', (await ev(() => document.querySelector('.tab-btn.active').innerText.trim())) === '🛍️ Store');
+  check('   App Stores and About keep their buttons', (await ev(() => document.querySelector('.tab-btn.active').innerText.replace(/\s+/g, ' ').trim())) === 'App Stores');
   await ev(() => switchView('about')); await sleep(60);
-  check('   About', (await ev(() => document.querySelector('.tab-btn.active').innerText.trim())) === 'ℹ️ About');
+  check('   About', (await ev(() => document.querySelector('.tab-btn.active').innerText.replace(/\s+/g, ' ').trim())) === 'About');
 
   // 2) without a privileged mode: a gate, the colours still show, nothing is read or written
   await ev(() => { window.__calls.op.length = 0; window.__mode.priv = false; checkAllWorkingModes(false); switchView('overlays'); }); await sleep(250);
@@ -155,7 +155,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   const seedBefore = await ev(() => ovlPaletteSig(ovlPalette));
   await ev(() => { window.__delay = 400; window.__paletteDelay = 1500; });
   await page.locator('#ovlApplyBtn').click(); await sleep(60);
-  check('8. while it is being applied the button says so and is off', (await ev(() => document.getElementById('ovlApplyBtn').innerText)) === '⏳ Applying…' && (await ev(() => document.getElementById('ovlApplyBtn').disabled)) === true);
+  check('8. while it is being applied the button says so and is off', (await ev(() => document.getElementById('ovlApplyBtn').innerText)) === 'Applying…' && (await ev(() => document.getElementById('ovlApplyBtn').disabled)) === true);
   await ev(() => ovlApply()); await sleep(30);
   check('   a second tap meanwhile is refused', /Still applying/.test(await toast()) && (await calls()).apply.length === 1);
   await sleep(500);

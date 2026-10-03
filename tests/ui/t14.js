@@ -40,30 +40,30 @@ const { chromium, PAGE } = require('./lib/pw');
     };
   });
   await page.goto(PAGE); await page.waitForTimeout(300);
-  await page.click('.tab-btn:has-text("Updates")');
+  await page.click('.tab-btn[data-tab="updates"]');
   await page.waitForFunction(() => /6\/12/.test(document.getElementById('updStatus').innerText));          // the first check is held at its progress report
   console.log('progress:', await page.locator('#updStatus').innerText());
   await page.evaluate(() => window.__finishCheck());
   await page.waitForFunction(() => /6 updates available/.test(document.getElementById('updStatus').innerText));
   console.log('status:', await page.locator('#updStatus').innerText());
   console.log('rows:', (await page.locator('#updContainer .upd-row').evaluateAll(r => r.map(x => x.querySelector('.uad-name').innerText + ' [' + [...x.querySelectorAll('.uad-badge')].map(b => b.innerText).join('/') + '] ' + x.querySelector('.upd-head button').innerText))).join('\n      '));
-  console.log('update all:', await page.locator('#updAllBtn').innerText(), '| tab:', await page.locator('#updatesTabBtn').innerText());
+  console.log('update all:', await page.locator('#updAllBtn').innerText(), '| tab:', (await page.locator('#updatesTabBtn').innerText()).replace(/\s+/g, ' '));
   console.log('extras headers:', (await page.locator('#updExtraContainer .color-card-title').allInnerTexts()).join(' | '));
   await page.screenshot({ path: 'updates_os.png', fullPage: true });
   // Update all → F-Droid fails with signature message, others succeed; noApk excluded
   await page.click('#updAllBtn');
   // the installs run one after another (the Samsung Internet one last); wait until every row has its final state instead of a fixed time
-  await page.waitForFunction(() => { const t = [...document.querySelectorAll('#updContainer .upd-row .upd-head button')].map(b => b.innerText.trim()); return t.length > 0 && t.every(x => /^(✓ Updated|⬆️ Retry|↗ Release)$/.test(x)); }, null, { timeout: 30000 });
+  await page.waitForFunction(() => { const t = [...document.querySelectorAll('#updContainer .upd-row .upd-head button')].map(b => b.innerText.trim()); return t.length > 0 && t.every(x => /^(✓ Updated|Retry|Release)$/.test(x)); }, null, { timeout: 30000 });
   console.log('after update all:', (await page.locator('#updContainer .upd-row .upd-head button').allInnerTexts()).join(' | '));
   console.log('fdroid msg:', (await page.locator('.upd-row:has-text("F-Droid") .upd-msg').first().innerText()).slice(0, 90));
   // Extras actions
-  await page.click('#updExtraContainer >> text=Ⓞ Open in Obtainium');
-  await page.click('.upd-row:has-text("DuckDuckGo") >> text=Ⓞ Open in Obtainium');
+  await page.click('#updExtraContainer >> text=Open in Obtainium');
+  await page.click('.upd-row:has-text("DuckDuckGo") >> text=Open in Obtainium');
   await page.click('#updExtraContainer .upd-row:has-text("AntennaPod") >> text=＋ Set source'); await page.waitForTimeout(250);
-  await page.click('text=📥 Import Obtainium List'); await page.waitForTimeout(300);
+  await page.click('text=Import Obtainium List'); await page.waitForTimeout(300);
   await page.click('#ghTokenBtn');
   console.log('token button:', await page.locator('#ghTokenBtn').innerText());
-  await page.click('.upd-row:has-text("Desktop-only") >> text=↗ Release');
+  await page.click('.upd-row:has-text("Desktop-only") >> button:has-text("Release")');
   console.log('calls:', JSON.stringify(await page.evaluate(() => window.__st.calls)));
   console.log('errors:', JSON.stringify(errors));
   await b.close(); })();

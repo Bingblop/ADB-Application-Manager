@@ -4,7 +4,7 @@ target: Back up Samsung Internet com.sec.android.app.sbrowser • v26.0 Include 
 data checkbox enabled with root: true
 list rows: 2 | Mom's App v1.0
 progress shown: true | Saving the backup... | button disabled while running: true
-result: Saved Samsung Internet (173 MB, with data) to Download/ADB App Manager/Backups/x.adbbackup ⚠️ Some data changed while it was being read; the backup may be incomplete
+result: Saved Samsung Internet (173 MB, with data) to Download/ADB App Manager/Backups/x.adbbackup Some data changed while it was being read; the backup may be incomplete
 calls: ["backup:com.sec.android.app.sbrowser:true"]
 restore preview: Restore Mom's App 1.0? Installs the backed-up APK over the installed one, then re-applies its permissions and app ops. Also restor
 restore-data checkbox enabled (has data + root): true

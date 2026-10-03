@@ -1,9 +1,9 @@
 DARK
-  normal:      Samsung Internet |  | com.sec.android.app.sbrowser |  | Version 27.1.0.103 (2701000103) |  | 📋 Package | 📋 Version | 📋 Name | 📤 Share
-  uninstalled: Bixby |  | com.samsung.android.bixby.agent |  | Version 3.3.55.4 (333554000) |  | 📋 Package | 📋 Version | 📋 Name | 📤 Share
-  no name:     com.example.noname |  | com.example.noname |  | Version 7 |  | 📋 Package | 📋 Version | 📋 Name | 📤 Share
-  bad data:    com.broken.app |  | com.broken.app |  | Version unavailable |  | 📋 Package | 📋 Version | 📋 Name | 📤 Share
+  normal:      Samsung Internet |  | com.sec.android.app.sbrowser |  | Version 27.1.0.103 (2701000103) |  | Copy package | Copy version | Copy name | Share
+  uninstalled: Bixby |  | com.samsung.android.bixby.agent |  | Version 3.3.55.4 (333554000) |  | Copy package | Copy version | Copy name | Share
+  no name:     com.example.noname |  | com.example.noname |  | Version 7 |  | Copy package | Copy version | Copy name | Share
+  bad data:    com.broken.app |  | com.broken.app |  | Version unavailable |  | Copy package | Copy version | Copy name | Share
   errors: []
 LIGHT
-  normal:      Samsung Internet |  | com.sec.android.app.sbrowser |  | Version 27.1.0.103 (2701000103) |  | 📋 Package | 📋 Version | 📋 Name | 📤 Share
+  normal:      Samsung Internet |  | com.sec.android.app.sbrowser |  | Version 27.1.0.103 (2701000103) |  | Copy package | Copy version | Copy name | Share
   errors: []

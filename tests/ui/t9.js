@@ -21,7 +21,7 @@ const { chromium, PAGE } = require('./lib/pw');
   console.log('startup toast:', await page.locator('#toastMsg').innerText());
   const v = () => page.evaluate(() => { const c = getComputedStyle(document.documentElement); return ['--bg-base','--bg-card','--bg-sheet'].map(x => c.getPropertyValue(x).trim()).join(' ') + ' mode=' + document.documentElement.dataset.appearance + ' bar=' + window.__st.bar; });
   // Schedule
-  await page.evaluate(() => switchView('colors')); await page.waitForTimeout(200);
+  await page.evaluate(() => switchView('prefs')); await page.waitForTimeout(200);
   await page.click('.appearance-btn[data-appearance="schedule"]');
   console.log('schedule row visible:', await page.isVisible('#scheduleRow'), '|', await page.locator('#appearanceNote').innerText());
   const sm = await page.evaluate(() => [[6,59],[7,0],[12,0],[18,59],[19,0],[23,30]].map(([h,m]) => `${h}:${String(m).padStart(2,'0')}=${scheduledMode(new Date(2026,9,1,h,m))}`).join(' '));
@@ -49,7 +49,7 @@ const { chromium, PAGE } = require('./lib/pw');
   console.log('key fp:', await page.locator('#adbKeyFingerprint').innerText(), '| notice visible:', await page.isVisible('#adbKeyNotice'));
   await page.screenshot({ path: 'keycard.png' });
   await page.click('text=✓ Got it'); console.log('notice after dismiss:', await page.isVisible('#adbKeyNotice'));
-  await page.click('text=📋 Copy Fingerprint'); await page.click('text=♻️ Regenerate Key'); await page.waitForTimeout(200);
+  await page.click('#modesModal >> text=Copy Fingerprint'); await page.click('#modesModal >> text=Regenerate Key'); await page.waitForTimeout(200);
   console.log('after regen:', await page.locator('#adbKeyFingerprint').innerText());
   console.log('calls:', JSON.stringify(await page.evaluate(() => window.__st.calls)));
   // Reload with saved prefs: schedule+pureBlack restored

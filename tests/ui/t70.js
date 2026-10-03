@@ -1,4 +1,4 @@
-// v6.1 Applications tab top: the 🎨 theme button is bigger, the big stat buttons (Total installed, Running, ...) light up for the filter the list shows,
+// v6.1 Application Manager tab top: the header button (the colors palette in v6.1, the settings gear since v7.0) is bigger, the big stat buttons (Total installed, Running, ...) light up for the filter the list shows,
 // and a tip under Export / Share CSV says the filters scroll sideways (and goes once they have been).
 const { chromium, PAGE } = require('./lib/pw');
 const inst = require('./lib/inst_mock.js');
@@ -24,11 +24,11 @@ for (let i = 0; i < 40; i++) apps.push({ pkg: 'com.example.app' + i, name: 'App 
   // 1) the theme button
   let page = await open();
   const m = await ev(page, () => { const r = id => { const b = document.querySelector(id).getBoundingClientRect(); return { w: Math.round(b.width), h: Math.round(b.height) }; };
-    return { colors: r('#colorsHeaderBtn'), mode: r('#execModeBadge'), header: r('.app-header'), tabTop: Math.round(document.querySelector('.tab-bar').getBoundingClientRect().top), headerBottom: Math.round(document.querySelector('.app-header').getBoundingClientRect().bottom), fs: getComputedStyle(document.getElementById('colorsHeaderBtn')).fontSize }; });
-  check('1. the 🎨 button is a good tap target (at least 44 x 36, it was 40 x 25)', m.colors.w >= 44 && m.colors.h >= 36, JSON.stringify(m.colors));
+    return { colors: r('#prefsHeaderBtn'), mode: r('#execModeBadge'), header: r('.app-header'), tabTop: Math.round(document.querySelector('.tab-bar').getBoundingClientRect().top), headerBottom: Math.round(document.querySelector('.app-header').getBoundingClientRect().bottom), fs: getComputedStyle(document.getElementById('prefsHeaderBtn')).fontSize }; });
+  check('1. the settings button is a good tap target (at least 44 x 36, it was 40 x 25)', m.colors.w >= 44 && m.colors.h >= 36, JSON.stringify(m.colors));
   check('   its emoji is bigger (19px, it was 11px)', m.fs === '19px', m.fs);
   check('   it fits in the header (no taller than the header) and the tab bar still starts where the header ends', m.colors.h < m.header.h && m.tabTop === m.headerBottom, 'header ' + m.header.h + 'px, tab bar at ' + m.tabTop + ', header ends ' + m.headerBottom);
-  check('   it still opens Colors & Themes', await (async () => { await page.click('#colorsHeaderBtn'); return (await ev(page, () => currentViewName())) === 'colors'; })());
+  check('   it still opens Settings', await (async () => { await page.click('#prefsHeaderBtn'); return (await ev(page, () => currentViewName())) === 'prefs'; })());
   await ev(page, () => switchView('apps'));
 
   // 2) the stat buttons follow the filter
@@ -90,10 +90,10 @@ for (let i = 0; i < 40; i++) apps.push({ pkg: 'com.example.app' + i, name: 'App 
   await ev(page, () => document.querySelector('.filters-hint-x').focus());
   await page.keyboard.press('Enter');
   check('   …and Enter on it closes the tip', (await ev(page, () => getComputedStyle(document.getElementById('filtersHint')).display)) === 'none');
-  check('   the 🎨 button is a button too: focusable and named', await ev(page, () => { const c = document.getElementById('colorsHeaderBtn'); return c.getAttribute('role') === 'button' && c.tabIndex === 0 && /Colors/.test(c.getAttribute('aria-label')); }));
-  await ev(page, () => document.getElementById('colorsHeaderBtn').focus());
+  check('   the settings button is a button too: focusable and named', await ev(page, () => { const c = document.getElementById('prefsHeaderBtn'); return c.getAttribute('role') === 'button' && c.tabIndex === 0 && /Settings/.test(c.getAttribute('aria-label')); }));
+  await ev(page, () => document.getElementById('prefsHeaderBtn').focus());
   await page.keyboard.press('Enter');
-  check('   …and Enter on it opens Colors & Themes', (await ev(page, () => currentViewName())) === 'colors');
+  check('   …and Enter on it opens Settings', (await ev(page, () => currentViewName())) === 'prefs');
   await page.close();
   page = await open({ ui_state: JSON.stringify({ appsFilter: 'all', filtersHintDone: true }) });
   check('   on the next start it is not shown', await ev(page, () => getComputedStyle(document.getElementById('filtersHint')).display) === 'none');

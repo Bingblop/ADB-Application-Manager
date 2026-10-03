@@ -5,9 +5,10 @@ v1.21.0
 row uninstalled (no version): UNINSTALLED
 SYSTEM
 bridge getUpdateState calls for 124 rows: 1
-menu sbrowser: Samsung Internet | com.sec.android.app.sbrowser | Version 26.0.3.1 (260003100) | 📋 Package | 📋 Version | 📋 Name | 📤 Share | Installed Jan 15, 2024 • Updated Sep 20, 2026 | → 27.1.0.103 available on Galaxy Store | ⬆️ Update
-after Update tap → active tab: ⬆️ Updates | calls: ["install:com.sec.android.app.sbrowser"]
-menu ddg (no apk, same-day install): DuckDuckGo | com.duckduckgo.mobile.android | Version 5.210.0 (260003100) | 📋 Package | 📋 Version | 📋 Name | 📤 Share | Installed Jan 15, 2024 | → 5.212.1 available on GitHub | ↗ Release
+menu sbrowser: Samsung Internet | com.sec.android.app.sbrowser | Version 26.0.3.1 (260003100) | Copy package | Copy version | Copy name | Share | Installed Jan 15, 2024 • Updated Sep 20, 2026 | → 27.1.0.103 available on Galaxy Store | Update
+after Update tap → active tab: App
+Updater | calls: ["install:com.sec.android.app.sbrowser"]
+menu ddg (no apk, same-day install): DuckDuckGo | com.duckduckgo.mobile.android | Version 5.210.0 (260003100) | Copy package | Copy version | Copy name | Share | Installed Jan 15, 2024 | → 5.212.1 available on GitHub | Release
 hint shown for fdroid (no update): false
 toggle off → row: USER
 toggle still off after filter change: true

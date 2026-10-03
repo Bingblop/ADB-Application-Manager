@@ -1,4 +1,4 @@
-1. Store is the tab before the last (About is last): true
+1. App Stores comes right before Logcat Viewer and About: true
    catalog requested: true
    app cards rendered: 2
 2. default sort most-starred, Bravo first: true
@@ -6,5 +6,5 @@
 4. name sort, Alpha first: true
 5. detail modal shown: true | install enabled: true
    detail fetched: true
-6. install bridge called: true | progress: "✅ Installed 2.1. 100%"
+6. install bridge called: true | progress: "Installed 2.1. 100%"
 errors: []

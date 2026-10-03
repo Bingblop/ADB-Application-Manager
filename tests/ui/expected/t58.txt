@@ -1,16 +1,16 @@
-1. the New side of a comparison has no Edit text (it is the other archive): true ["⚖️ Show differences","👁 New","👁 Old","📥 Extract…"]
-   the Old side is this archive: Edit text is offered: true ["⚖️ Show differences","👁 New","👁 Old","✏️ Edit text","📥 Extract…"]
+1. the New side of a comparison has no Edit text (it is the other archive): true ["Show differences","New","Old","Extract…"]
+   the Old side is this archive: Edit text is offered: true ["Show differences","New","Old","Edit text","Extract…"]
    an ordinary entry of the open archive still can be edited: true
-2. 320 px: RUN stays 70 px wide, inside the screen, no sideways scroll: true {"run":70,"right":304,"input":106}
-2. 360 px: RUN stays 70 px wide, inside the screen, no sideways scroll: true {"run":70,"right":344,"input":146}
-2. 412 px: RUN stays 70 px wide, inside the screen, no sideways scroll: true {"run":70,"right":396,"input":198}
+2. 320 px: RUN stays 70 px wide, inside the screen, no sideways scroll: true {"run":70,"right":304,"input":210}
+2. 360 px: RUN stays 70 px wide, inside the screen, no sideways scroll: true {"run":70,"right":344,"input":250}
+2. 412 px: RUN stays 70 px wide, inside the screen, no sideways scroll: true {"run":70,"right":396,"input":302}
 3. with the entry sheet open, the failure report is the top sheet: true commandResultsModal
    closing it leaves the entry sheet for a retry: true
    a retry that worked: no stale FAILED sheet is left under or over it: true
    the sign sheet: its failure report is on top too: true
    and after the successful retry no report remains: true
-4. an empty list still shows "Search failed": true "No apps found.⚠️ Search failed: rate limit"
-   the note has one icon, not two: true
+4. an empty list still shows "Search failed": true "No apps found.Search failed: rate limit"
+   the note has no icon: true
    a catalog error while a search is pending ends the load and is shown as the error: true {"loading":false,"searching":false,"error":"boom"}
 5. pressing RUN while one runs keeps the typed text and the history: true {"val":"echo keep me","hist":["older"]}
    the answer arriving on another tab is a toast, not a sheet over that tab: true

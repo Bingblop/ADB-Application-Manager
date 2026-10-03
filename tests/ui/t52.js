@@ -45,7 +45,7 @@ const { chromium, PAGE } = require('./lib/pw');
   // 1) Select mode via the button.
   console.log('1. five rows listed, no checkboxes visible, no selection bar:', (await page.locator('#fmList .perm-row').count()) === 5 && !(await page.locator('#fmList .fm-chk').first().isVisible()) && !(await vis('#fmSelBar')));
   await page.locator('#fmSelectBtn').click(); await sleep(60);
-  console.log('   ☑ Select shows checkboxes and the bar, hides the ⋯ buttons, and the button reads Done:', await page.locator('#fmList .fm-chk').first().isVisible() && await vis('#fmSelBar') && !(await page.locator('#fmList .fm-more').first().isVisible()) && /Done/.test(await page.locator('#fmSelectBtn').innerText()));
+  console.log('   Select shows checkboxes and the bar, hides the ⋯ buttons, and the button reads Done:', await page.locator('#fmList .fm-chk').first().isVisible() && await vis('#fmSelBar') && !(await page.locator('#fmList .fm-more').first().isVisible()) && /Done/.test(await page.locator('#fmSelectBtn').innerText()));
   await page.locator('#fmList .perm-info', { hasText: 'a.txt' }).first().click(); await sleep(40);
   await page.locator('#fmList .perm-info', { hasText: 'b.apk' }).click(); await sleep(40);
   console.log('   tapping rows picks them (a folder is not opened):', JSON.stringify(await picked()) === '["a.txt","b.apk"]' && (await page.evaluate(() => fmPath)) === '/storage/emulated/0', JSON.stringify(await picked()));

@@ -1,6 +1,6 @@
-1. auto-scan started on first open: true | "🔎 Searching storage for APK, APKS, APKM and XAPK files…"
+1. auto-scan started on first open: true | "Searching storage for APK, APKS, APKM and XAPK files…"
 2. default-installer button removed: true | text kept at the bottom: true "To make this the default installer, open any APK, choose this app, and tap \"Always\"."
-   buttons: ["📂 Choose APK / APKS / APKM / XAPK","🎮 Install XAPK (APK + OBB data)","🔍 Find APKs on this device"]
+   buttons: ["Choose APK / APKS / APKM / XAPK","Install XAPK (APK + OBB data)","Find APKs on this device"]
 3. chooser mentions XAPK + XAPK button opens picker: true
 4. 4 rows with kind badges: true ["XAPK","APK","APKS","APKM"]
    row shows size, age, short folder: true "XAPK | Game.xapk | 700.0 MB · today | Internal storage › Download"

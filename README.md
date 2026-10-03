@@ -14,7 +14,7 @@ Debugging, Shizuku or Root**.
 
 ### [⬇️ Download the latest APK](https://github.com/Bingblop/ADB-Application-Manager/releases/latest)
 
-`com.bloatware.bingblop` · v6.1-Pro · signed APK, installs over every earlier version without uninstalling
+`com.bloatware.bingblop` · v7.0-Pro · signed APK, installs over every earlier version without uninstalling
 
 <table>
   <tr>
@@ -73,14 +73,14 @@ tell you when a new version is out (see [Updates](#updates)).
 | **Profiles** | Save which apps are disabled, suspended or uninstalled; re-apply on this phone or **share to another phone** · **👁️ Watch** a profile to be told when its apps come back after a system update |
 | **Backup &amp; restore** | **💾 Backup** an app's APK (with splits), permissions and app ops in any privileged mode, plus its **data with Root** · restore through ADB / Shizuku / Root · share backups or pick one from another phone |
 | **Quick actions** | **Quick Settings tiles** and a **home-screen widget** to switch the working mode and force-stop a list of apps without opening the app |
-| **What's new** | The changelog is inside the app: it opens once after an update, and from Color &amp; Themes → About |
+| **What's new** | The changelog is inside the app: it opens once after an update, and from About |
 | **Productivity** | Select and copy any text · copy buttons for package, version and name · **share sheet** for package lists, CSV, manifest, terminal output and backups · **search with highlight and next/previous** in the manifest viewer and terminal · remembered filters and sort |
 | **Terminal** | Run shell commands through the active mode (off the page's thread), with output search, copy and share · **🕘 history, ⭐ saved scripts and pinned chips** · **🐚 Rish mode**: a persistent Shizuku shell where `cd` and `export` stick, with a STOP that ends a command and its children · a searchable **📋 ADB cheat sheet** of ~90 commands you tap to drop into the input |
 | **Files** | Privileged file manager · **select many** and copy / move / delete together · open **.apk / .zip / .xapk / .jar … without extracting**, preview text, images and decoded Android XML, extract, rename, delete, add files and edit text in place · **install from inside an archive**, **open nested archives**, **compare two archives** · **sign an edited APK** on the device |
 | **Logcat** | Readable, **color-coded** log (one row per entry, tappable level key) · **limit it to one app** · save or share the filtered log as a bug-report text file |
 | **Hidden Settings** | Read and edit the phone's **Global**, **Secure** and **System** settings, one sub-tab per table · search names, values and descriptions · tap to edit, **press and hold to flip** a switch (1 / 0, true / false), **＋ to create** a setting · plain-English descriptions and ⚠️ warnings for the ones that bite · every change is read back to prove it, with **Undo** and a log of changes with **Revert** — see [Hidden settings](#hidden-settings) |
 | **Overlays** | **New in v6.0:** change Android's **Material You** theme from the phone — the **wallpaper** or **any color** (hex, sliders or 657 named presets) with one of six **styles** (Tonal Spot … Spritz), and the palette Android is really using shown afterwards · list every **overlay** (`cmd overlay list`) grouped by the app it restyles, search and filter it, **switch one on or off** with its switch or by **pressing and holding** its row · every change is read back to prove it, with **Undo** — see [Overlays and Material You](#overlays-and-material-you) |
-| **Store** | **🛍️ ShizuStore**, **🐙 GitHub** (up to 5,000 apps, live search), **🤖 F-Droid** (any known repository, streamed), **🪐 Orion** and an **🌌 Aurora** hand-off as sub-tabs, each with a category drop-down · every install comes from the app's own upstream (nothing is rehosted), through your active mode or the system installer |
+| **App Stores** | **ShizuStore**, **GitHub** (up to 5,000 apps, live search), **F-Droid** (any known repository, streamed) and **Orion** as sub-tabs, each with a category drop-down · every install comes from the app's own upstream (nothing is rehosted), through your active mode or the system installer |
 | **Modes** | ADB over TCP · Wireless Debugging (pairing, mDNS port detection, and **🔔 pairing from a notification** so the code can't expire while you switch apps) · Shizuku · Root · Automatic · Read-Only |
 | **Themes** | **Material 3** (default) · **Material You** (follows your wallpaper) · six more palettes · Light / Dark / System / Schedule · pure-black AMOLED option · per-mode color tuning |
 | **Security** | A **private ADB key is generated on each install** (nothing is bundled) · fingerprint shown in the app · signing-certificate comparison before every update |
@@ -90,22 +90,41 @@ tell you when a new version is out (see [Updates](#updates)).
 
 ## The tabs
 
-Left to right, with the 🎨 **Colors &amp; Themes** button in the header:
+Left to right, with the **settings gear** (it opens Settings: appearance, colors and the Feature List) in the header:
 
 | Tab | For |
 |---|---|
-| 📱 **Applications** | Every package on the phone: search, sort, filter, batch actions, profiles, backups, CSV export; **⋯** opens an app's menu |
-| 📋 **Saved Lists** | Named groups of apps to freeze, enable, stop or share together, and the **quick list** behind the tile and widget |
-| 🧹 **Debloater** | The UAD-NG list for your phone, a review step before anything runs, history with Undo |
-| 📦 **Installer** | Install `.apk` / `.apks` / `.apkm` / `.xapk` with full control of the options, plus the optional VirusTotal check |
-| 📁 **Files** | A privileged file manager that also opens packages and archives without extracting them, and can sign an edited APK |
-| ⬆️ **Updates** | This app, Galaxy Store apps and sideloaded open-source apps (GitHub, Codeberg, F-Droid, IzzyOnDroid, Obtainium) |
-| 💻 **ADB Console** | A shell through the active mode, with history, saved scripts, a cheat sheet and a persistent Rish shell |
-| 📄 **Logcat** | A color-coded device log you can limit to one app, save or share |
-| 🛠️ **Hidden Settings** | Read, flip, edit and create Android's own Global, Secure and System settings ([details](#hidden-settings)) |
-| 🌈 **Overlays** | Recolor Android (Material You: wallpaper or any color, six styles) and switch system overlays on or off ([details](#overlays-and-material-you)) |
-| 🛍️ **Store** | ShizuStore, GitHub, F-Droid, Orion and an Aurora hand-off |
-| ℹ️ **About** | Who made it, which build and key you have, debug info, the 🔐 Permissions sheet, and the coffee button |
+| **Application Manager** | Every package on the phone: search (with a menu for names, package names and regex), sort, filter, batch actions, profiles, backups, CSV export; **⋯** opens an app's menu, the gear next to it the app's Android settings |
+| **Saved App Lists** | Named groups of apps to freeze, enable, stop or share together, and the **quick list** behind the tile and widget |
+| **UAD-NG Debloater** | The UAD-NG list for your phone, a review step before anything runs, history with Undo |
+| **APK Installer** | Install `.apk` / `.apks` / `.apkm` / `.xapk` with full control of the options, plus the optional VirusTotal check |
+| **File Manager** | A privileged file manager that also opens packages and archives without extracting them, and can sign an edited APK |
+| **ADB Console** | A shell through the active mode, with history, saved scripts, a cheat sheet and a persistent Rish shell |
+| **Hidden Settings** | Read, flip, edit and create Android's own Global, Secure and System settings ([details](#hidden-settings)) |
+| **RRO/Monet Customization** | Recolor Android (Material You: wallpaper or any color, six styles) and switch system overlays on or off ([details](#overlays-and-material-you)) |
+| **App Updater** | This app, Galaxy Store apps and sideloaded open-source apps (GitHub, Codeberg, F-Droid, IzzyOnDroid, Obtainium) |
+| **App Stores** | ShizuStore, GitHub, F-Droid and Orion |
+| **Logcat Viewer** | A color-coded device log you can limit to one app, save or share |
+| **About** | Who made it, which build and key you have, debug info, the Permissions sheet, and the coffee button |
+
+Every tab except Application Manager and About can be switched off or moved in **Settings → Feature List**.
+
+## New in v7.0
+
+- **New tab names and order, on two lines.** Application Manager · Saved App Lists · UAD-NG Debloater · APK Installer · File
+  Manager · ADB Console · Hidden Settings · RRO/Monet Customization · App Updater · App Stores · Logcat Viewer · About. See
+  [The tabs](#the-tabs).
+- **A settings gear** replaces the colors button. It opens **Settings**: Appearance, the theme palettes and color pickers, and the
+  new **Feature List**.
+- **Feature List**: a switch and two arrows for every tab except Application Manager and About. Switch a tab off and it leaves
+  the tab bar; move it up or down and the bar follows; **Reset to Default** puts everything back. Kept between launches.
+- **No emoji.** Only the two settings gears are left (the header's and the one on every app). The text in tabs and filters is a
+  little larger, and buttons that were only a picture now have a word (Copy, Share, History, Saved, Run, Pin, Edit, Delete,
+  Refresh, Install).
+- **A search bar under the filters, with a menu.** Three dots at its right end open **Include application names**, **Include
+  package names** and **Use regex matching** (off means exact matches only). All on at the start, kept between launches,
+  and one of names and packages always stays on. A pattern that could freeze the list is searched as plain text.
+- **The Aurora sub-tab of App Stores is gone** (the Play Store card on the Updates tab still opens Aurora Store).
 
 ## New in v6.1
 
@@ -254,6 +273,22 @@ Left to right, with the 🎨 **Colors &amp; Themes** button in the header:
 <sub><b>Debloat in seven steps</b>: open → filter → select → review → run → history → undo</sub>
 
 </div>
+
+<table>
+  <tr>
+    <td><img src="docs/screenshots/search-menu.png" width="230" alt="Search bar under the filters, with its options menu"></td>
+    <td><img src="docs/screenshots/settings-features.png" width="230" alt="Settings: the Feature List"></td>
+    <td><img src="docs/screenshots/themes.png" width="230" alt="Settings: appearance and palettes"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>New in v7.0: the search bar under the filters, with its options menu</sub></td>
+    <td align="center"><sub>Settings → Feature List: switch tabs off, move them, Reset to Default</sub></td>
+    <td align="center"><sub>Settings (the gear in the header): appearance and palettes</sub></td>
+  </tr>
+</table>
+
+> The application list, the app menu and Settings are shown as they look in v7.0. The screenshots of the other tabs below date from
+> v6.x and still show the previous tab names and icons; they are refreshed once the v7 series is done.
 
 <table>
   <tr>
@@ -901,7 +936,7 @@ What is checked before each release, and what is not. The checks live in [`tests
 (`cd tests && npm install && npx playwright install chromium && node run.js && node java/run.js`; what each needs and how a
 script passes is in [tests/README.md](tests/README.md)).
 
-- **The UI** (`tests/run.js`, about four minutes): 75 headless-Chromium scripts drive the real `assets/index.html` against a mock Android bridge:
+- **The UI** (`tests/run.js`, about four minutes): 79 headless-Chromium scripts drive the real `assets/index.html` against a mock Android bridge:
   every tab, theme, filter, share / copy / find action, profiles and the drift banner, backups, the Installer, the
   Store, the file manager and archive browser, the terminal, About, the Back button, the height of the app menu and, for the Hidden Settings tab, the
   list, search, filters and sort, tap-to-edit, press-and-hold flipping (with touch events of any hold length), creating,
@@ -914,7 +949,11 @@ script passes is in [tests/README.md](tests/README.md)).
   carrying on once the access arrives, an old or declined request left alone, and a working mode that grants two of the three on the
   spot), the Installer's result-dialog buttons at three screen sizes, the search's progress bar, press-and-hold delete with Undo
   (touch included), the scroll to the package, the splits that fit the phone (CPU order, density rounding, language aliases and regions), both lists of common
-  installers and requesters, the lit counters and the tip under Export.
+  installers and requesters, the lit counters and the tip under Export. For v7.0: the tab bar built from one registry (names, two lines, order, the
+  update count on App Updater), the header gear and Settings, the Feature List (switches, arrows, Reset to Default, a saved choice from an older
+  version, a damaged one, a tab that is off reached by a link or by Back, the layout at 320, 360 and 412 px), the search bar and its menu
+  (placement, the three options, the swap rule, patterns and plain text, exact matches, kept between launches, closing by tap, Escape and Back, three
+  screen sizes) and a scan of the sources and of every tab and sheet for emoji.
 - **Native rules, off the device** (`tests/java/run.js`, 17 suites): the parts of the Java that need no Android classes are compiled
   and run as plain Java. For the Hidden Settings tab that is 311 checks of `SettingsDb`, including round trips through a real `sh` (and a fake
   `settings` that refuses on purpose) for hostile values (quotes, `;`, `$(...)`, backticks, `>`, newlines, Unicode), and a

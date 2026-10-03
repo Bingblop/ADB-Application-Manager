@@ -9,7 +9,7 @@
 7. six quick keystrokes on a long list: nothing is drawn until typing pauses: true 0
    then one render shows the result: true 1 renders, 10 cards
 8. a filter tap draws that filter from its first page: true 200
-9. logcat draws the latest 800 of 1500 entries and says how many are not shown: true 800 rows, "⬆ 700 earlier entries not shown · tap to show them"
+9. logcat draws the latest 800 of 1500 entries and says how many are not shown: true 800 rows, "700 earlier entries not shown · tap to show them"
    tapping the hint shows them all: true
 10. polling an unchanged log (live) redraws nothing: true 0
     a new line makes it draw once and shows it: true

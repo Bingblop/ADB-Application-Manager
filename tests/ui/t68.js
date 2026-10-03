@@ -1,4 +1,4 @@
-// v6.0.1: the Settings tab is now "Hidden Settings" (🛠️). The name, the card and the menu say so, the order of the tabs is the same,
+// v6.0.1: the Settings tab is now "Hidden Settings". The name, the card and the menu say so (v7.0: the tab bar shows it on two lines, after ADB Console),
 // and what an earlier version saved (the last table, filter and sort; the log of changes) is still used.
 const { chromium, PAGE } = require('./lib/pw');
 const sdb = require('./lib/sdb_mock.js');
@@ -16,13 +16,13 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   await page.addInitScript(sdb.initScript); await page.addInitScript(ovl.initScript);
   await page.goto(URL); await page.waitForTimeout(450);
   const ev = (fn, arg) => page.evaluate(fn, arg);
-  const tabs = await ev(() => Array.from(document.querySelectorAll('.tab-btn')).map(b => b.innerText.trim()));
-  check('1. the tab bar names it "🛠️ Hidden Settings"', tabs.includes('🛠️ Hidden Settings') && !tabs.some(t => /^⚙️\s*Settings$/.test(t) || /^Settings$/.test(t)), JSON.stringify(tabs));
-  const i = tabs.indexOf('🛠️ Hidden Settings');
-  check('   it is still between Logcat and Overlays', /Logcat/.test(tabs[i - 1]) && /Overlays/.test(tabs[i + 1]) && /Store/.test(tabs[i + 2]), JSON.stringify(tabs.slice(i - 1, i + 3)));
-  await ev(() => { window.__mode.priv = true; checkAllWorkingModes(false); document.querySelectorAll('.tab-btn')[Array.from(document.querySelectorAll('.tab-btn')).findIndex(b => /Hidden Settings/.test(b.innerText))].click(); }); await page.waitForTimeout(800);
-  check('2. the button opens it and becomes the active one', (await ev(() => document.querySelector('.tab-btn.active').innerText.trim())) === '🛠️ Hidden Settings' && (await ev(() => currentViewName())) === 'settings');
-  check('3. its card says what it is', (await ev(() => document.querySelector('#sdbTop .color-card-title').innerText.trim())) === '🛠️ Android’s hidden settings');
+  const tabs = await ev(() => Array.from(document.querySelectorAll('.tab-btn')).map(b => b.innerText.replace(/\s+/g, ' ').trim()));
+  check('1. the tab bar names it "Hidden Settings"', tabs.includes('Hidden Settings') && !tabs.some(t => /^Settings$/.test(t)), JSON.stringify(tabs));
+  const i = tabs.indexOf('Hidden Settings');
+  check('   it sits between ADB Console and RRO/Monet Customization', /ADB Console/.test(tabs[i - 1]) && /RRO\/Monet/.test(tabs[i + 1]) && /App Updater/.test(tabs[i + 2]), JSON.stringify(tabs.slice(i - 1, i + 3)));
+  await ev(() => { window.__mode.priv = true; checkAllWorkingModes(false); document.querySelectorAll('.tab-btn')[Array.from(document.querySelectorAll('.tab-btn')).findIndex(b => /Hidden\s+Settings/.test(b.innerText))].click(); }); await page.waitForTimeout(800);
+  check('2. the button opens it and becomes the active one', (await ev(() => document.querySelector('.tab-btn.active').innerText.replace(/\s+/g, ' ').trim())) === 'Hidden Settings' && (await ev(() => currentViewName())) === 'settings');
+  check('3. its card says what it is', (await ev(() => document.querySelector('#sdbTop .color-card-title').innerText.trim())) === 'Android’s hidden settings');
   await ev(() => sdbOpenMenu()); await page.waitForTimeout(200);
   check('4. the ⋯ menu is "Hidden settings tools"', (await ev(() => document.querySelector('#sdbMenuModal .sheet-title h3').innerText.trim())) === 'Hidden settings tools');
   await ev(() => sdbMenuClose());

@@ -1,24 +1,24 @@
-1. toybox entries: ["📁 Android","📁 DCIM","📁 Download","📄 app-release.apk","📄 my notes.txt","↪ sdcard"]
+1. toybox entries: ["Android/","DCIM/","Download/","app-release.apk","my notes.txt","sdcard"]
    has "my notes.txt" (name with space): true
    has symlink sdcard: true
    dirs first (Android before app-release): true
-2. busybox entries: ["📁 Android","📄 app-release.apk","↪ sdcard"]
+2. busybox entries: ["Android/","app-release.apk","sdcard"]
    busybox apk parsed with correct name: true
 3. denied -> shows error text: true
 4. apk size parsed: 24117248 (expect 24117248)
    symlink target parsed: /storage/self/primary
 5. logcat loaded on open: true
-   play btn label: ⏸ Pause
+   play btn label: Pause
 6. polling while playing (expect >=2): 4
 7. paused stops polling (counts equal): true ( 4 == 4 )
-   play btn back to Play: ▶ Play
+   play btn back to Play: Play
 8. leaving logcat tab stops polling: true
 9. logcat box height: 584.797px
 10. parseNameList fallback: ["Android/","Download/","app-release.apk"]
-11. fallback entries rendered: ["📁 Pictures","📄 foo.txt"]
+11. fallback entries rendered: ["Pictures/","foo.txt"]
 12. raw diagnostic shown when nothing parses: true
 13. logcat clear -> terminal text: "(cleared)"
-14. File-API entries rendered: ["📁 Download","📄 photo.jpg"]
+14. File-API entries rendered: ["Download/","photo.jpg"]
     access hint hidden (has access + entries): true
 15. access hint shown (no access, empty /sdcard): true
 16. grant request fired: true
@@ -26,7 +26,7 @@
 18. fmJoin normal: /sdcard/photo.jpg | leading-slash name: /sdcard/sdcard | trailing-slash cwd: /sdcard/Download
     no "//" in any join: true
     fmNormalizePath("/sdcard//sdcard"): /sdcard/sdcard | fmParent("/sdcard//x"): /sdcard
-19. lone-symlink listing entries: ["↪ sdcard"]
+19. lone-symlink listing entries: ["sdcard"]
 20. default storage path: /storage/emulated/0 | input: /storage/emulated/0
     uses /storage/emulated/0: true
 errors: []

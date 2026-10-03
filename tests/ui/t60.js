@@ -34,15 +34,15 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   const closeAll = () => ev(() => { document.querySelectorAll('.modal-overlay.show').forEach(m => m.classList.remove('show')); });
 
   // 1) placement
-  const tabs = await ev(() => Array.from(document.querySelectorAll('.tab-btn')).map(b => b.innerText.trim()));
-  const iLog = tabs.findIndex(t => /Logcat/.test(t)), iSet = tabs.findIndex(t => /Settings/.test(t)), iStore = tabs.findIndex(t => /Store/.test(t));
-  check('1. the Hidden Settings tab sits right after Logcat (the Overlays tab, added in v6.0, follows it before Store)', iSet === iLog + 1 && (iStore === iSet + 1 || (iStore === iSet + 2 && /Overlays/.test(tabs[iSet + 1]))), JSON.stringify(tabs));
+  const tabs = await ev(() => Array.from(document.querySelectorAll('.tab-btn')).map(b => b.innerText.replace(/\s+/g, ' ').trim()));
+  const iTerm = tabs.findIndex(t => /ADB Console/.test(t)), iSet = tabs.findIndex(t => /Hidden Settings/.test(t));
+  check('1. the Hidden Settings tab sits right after ADB Console (RRO/Monet Customization, added in v6.0, follows it)', iSet === iTerm + 1 && /RRO\/Monet/.test(tabs[iSet + 1]), JSON.stringify(tabs));
   await ev(() => switchView('settings')); await sleep(80);
-  check('   it activates its own button and view', (await ev(() => document.querySelector('.tab-btn.active').innerText.trim())) === '🛠️ Hidden Settings' && (await ev(() => currentViewName())) === 'settings');
+  check('   it activates its own button and view', (await ev(() => document.querySelector('.tab-btn.active').innerText.replace(/\s+/g, ' ').trim())) === 'Hidden Settings' && (await ev(() => currentViewName())) === 'settings');
   await ev(() => switchView('store')); await sleep(60);
-  check('   and the neighbours still work (Store, About)', (await ev(() => document.querySelector('.tab-btn.active').innerText.trim())) === '🛍️ Store');
+  check('   and the neighbours still work (App Stores, About)', (await ev(() => document.querySelector('.tab-btn.active').innerText.replace(/\s+/g, ' ').trim())) === 'App Stores');
   await ev(() => switchView('about')); await sleep(60);
-  check('   About keeps its button', (await ev(() => document.querySelector('.tab-btn.active').innerText.trim())) === 'ℹ️ About');
+  check('   About keeps its button', (await ev(() => document.querySelector('.tab-btn.active').innerText.replace(/\s+/g, ' ').trim())) === 'About');
 
   // 2) without a privileged mode there is a gate and nothing is read
   await ev(() => { window.__calls.list.length = 0; for (const n of ['global', 'secure', 'system']) sdbData[n] = null; window.__mode.priv = false; checkAllWorkingModes(false); switchView('settings'); }); await sleep(200);

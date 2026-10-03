@@ -65,7 +65,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.screenshot({ path: 'modes.png', fullPage: false });
   await page.evaluate(() => closeWorkingModesModal());
   // 4) Material 3 palettes
-  await page.evaluate(() => switchView('colors')); await page.waitForTimeout(200);
+  await page.evaluate(() => switchView('prefs')); await page.waitForTimeout(200);
   await page.click('.palette-preset-card[data-preset="material3"]'); await page.waitForTimeout(100);
   const m3 = await page.evaluate(() => [getComputedStyle(document.documentElement).getPropertyValue('--accent'), getComputedStyle(document.documentElement).getPropertyValue('--bg-base'), getComputedStyle(document.documentElement).getPropertyValue('--text-main'), window.__st.bar]);
   console.log('m3 vars:', m3.join(' '));

@@ -61,7 +61,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.locator('#termModalBody .term-row').nth(2).locator('.term-mini.run').click(); await sleep(150);
   await page.evaluate(() => { try { closeCommandResultsModal(); } catch (e) {} });
   const c3 = await calls();
-  console.log('   ▶ runs it right away (and moves it to the top):', c3.length === before + 1 && c3[c3.length - 1] === 'exec:pm list packages -d' && (await page.evaluate(() => termHistory[0])) === 'pm list packages -d', c3[c3.length - 1]);
+  console.log('   Run runs it right away (and moves it to the top):', c3.length === before + 1 && c3[c3.length - 1] === 'exec:pm list packages -d' && (await page.evaluate(() => termHistory[0])) === 'pm list packages -d', c3[c3.length - 1]);
   await page.click('.term-icon-btn[title="Command history"]'); await sleep(120);
   await page.locator('#termModalBody .term-row').nth(1).locator('.term-mini[title="Remove"]').click(); await sleep(60);
   console.log('   ✕ removes one entry:', (await page.evaluate(() => termHistory.length)) === 2 && JSON.parse(store.term_hist).length === 2);
@@ -110,7 +110,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.locator('#termModalBody .term-row').nth(0).locator('.term-mini[title="Pin as a chip"]').click(); await sleep(60);
   await page.evaluate(() => termCloseModal());
   const chip = await page.locator('#view-terminal .term-pin').allInnerTexts();
-  console.log('   pinning adds a one-tap chip to the terminal card:', JSON.stringify(chip) === JSON.stringify(['📌 Battery (short)']), JSON.stringify(chip));
+  console.log('   pinning adds a one-tap chip to the terminal card:', JSON.stringify(chip) === JSON.stringify(['Battery (short)']), JSON.stringify(chip));
   const n0 = (await calls()).length;
   await page.locator('#view-terminal .term-pin').click(); await sleep(150);
   await page.evaluate(() => { try { closeCommandResultsModal(); } catch (e) {} });
@@ -129,12 +129,12 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.click('.term-icon-btn[title="Command history"]'); await sleep(100);
   await page.locator('#termModalBody .term-row').first().locator('.term-mini[title="Save"]').click(); await sleep(80);
   const prefill = await page.evaluate(() => ({ name: document.getElementById('termEditName').value, cmd: document.getElementById('termEditCmd').value, input: document.getElementById('termCmd').value }));
-  console.log('   ⭐ on a history row opens the editor prefilled (input untouched):', prefill.cmd === 'settings get global airplane_mode_on' && prefill.name.startsWith('settings get') && prefill.input === '', JSON.stringify(prefill));
+  console.log('   Save on a history row opens the editor prefilled (input untouched):', prefill.cmd === 'settings get global airplane_mode_on' && prefill.name.startsWith('settings get') && prefill.input === '', JSON.stringify(prefill));
   await page.evaluate(() => termCloseModal());
   // delete
   await page.click('.term-icon-btn[title="Saved commands"]'); await sleep(80);
   await page.locator('#termModalBody .term-row').nth(1).locator('.term-mini[title="Edit"]').click(); await sleep(60);
-  await page.locator('#termModalBody button', { hasText: '🗑️' }).click(); await sleep(80);
+  await page.locator('#termModalBody button', { hasText: 'Delete' }).click(); await sleep(80);
   console.log('   delete asks first, then removes it (and its chip if pinned):', (await page.evaluate(() => termSaved.length)) === 1 && dialogs.slice(-1)[0].includes('Delete'));
   await page.evaluate(() => termCloseModal());
 
@@ -151,7 +151,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.reload(); await sleep(400);
   await page.evaluate(() => switchView('terminal')); await sleep(150);
   const back = await page.evaluate(() => ({ hist: termHistory.slice(0, 2), saved: termSaved.map(x => x.name), chips: [...document.querySelectorAll('#view-terminal .term-pin')].map(c => c.textContent) }));
-  console.log('6. history, saved commands and chips come back after a restart:', back.hist[0] === 'echo from history' && back.saved.join() === 'Keep me' && back.chips.join() === '📌 Keep me', JSON.stringify(back));
+  console.log('6. history, saved commands and chips come back after a restart:', back.hist[0] === 'echo from history' && back.saved.join() === 'Keep me' && back.chips.join() === 'Keep me', JSON.stringify(back));
 
   // 7) HTML in names / commands is text.
   await page.evaluate(() => { termSaved = [{ name: '<img src=x onerror="window.__p=1">', cmd: '<b>echo</b> "q"', pinned: true }]; kvSet('term_saved', termSaved); termRenderPins(); });

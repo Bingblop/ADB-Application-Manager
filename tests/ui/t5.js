@@ -4,7 +4,7 @@ const { chromium, PAGE } = require('./lib/pw');
   const b = await chromium.launch(); const page = await b.newPage({ viewport: { width: 400, height: 860 } });
   const errors = []; page.on('pageerror', e => errors.push(e.message));
   await page.goto(PAGE);
-  await page.evaluate(() => switchView('colors')); await page.waitForTimeout(300);
+  await page.evaluate(() => switchView('prefs')); await page.waitForTimeout(300);
   console.log(await page.locator('.palette-presets-grid .preset-name').allInnerTexts());
   console.log('cards inside grid:', await page.locator('.palette-presets-grid > .palette-preset-card').count());
   await page.click('.palette-preset-card[data-preset="material3"]');
