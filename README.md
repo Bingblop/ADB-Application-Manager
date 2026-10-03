@@ -13,7 +13,7 @@ through **ADB over TCP, Wireless Debugging, Shizuku or Root**.
 
 ### [⬇️ Download the latest APK](https://github.com/Bingblop/ADB-Application-Manager/releases/latest)
 
-`com.bloatware.bingblop` · v5.5-Pro · signed APK, installs over every earlier version without uninstalling
+`com.bloatware.bingblop` · v5.8-Pro · signed APK, installs over every earlier version without uninstalling
 
 <table>
   <tr>
@@ -81,7 +81,9 @@ tell you when a new version is out (see [Updates](#updates)).
 
 ## New in v5.8
 
-- **↩️ A smarter Back button** — Back closes the open sheet, clears a selection, steps up a folder or out of an archive, goes to the previous tab, and only then asks you to press it again to exit.
+- **↩️ A smarter Back button** — Back closes the open sheet, clears a selection, steps up a folder or out of an archive, goes to the previous tab, and only then warns. Leaving takes a deliberate second press (a double tap or a late one just warns again) and asks first while an install, update, file job or command is running.
+- **📁 Installs from Files always run privileged** — a file row, an APK inside an archive or a freshly signed copy installs through ADB, Wireless Debugging, Shizuku or Root, never the system installer, with this app's own signature gates off. Android still checks signatures itself: an APK it refuses is signed with this app's key and installed, and an app signed by someone else is replaced only after you agree to uninstall it.
+- **ℹ️ About tab** — the developer (Bingblop), the GitHub repo, this build's version / device / signing certificate (✅ for the official release key), copyable debug info, tips, privacy, credits, and **☕ Buy me a coffee**: $1 or any amount through PayPal.
 - **✍️ Sign the APKs you edit** — edit an APK in the archive browser, tap **Sign**, and it is signed on the device (APK Signature Scheme v2) with a key kept in the Android Keystore. Sign in place or save a `-signed` copy, see who signed what and whether it can update the installed app, and install it right away.
 - **📦 Archive browser: install, nest, compare** — install an APK from inside an archive, open archives inside archives, and **compare** two archives (or an archive and an installed app) with a line-by-line diff of changed text and compiled XML. Many archive-engine fixes: AES zips survive edits, ≥4 GB entries are refused instead of truncated, extraction is checksum-verified, CRX / self-extractors open, odd names are listed.
 - **🕘 Terminal history, saved scripts and pinned chips** — Up/Down and a history list, named commands and multi-line scripts, up to six pinned as one-tap buttons; works in normal and Rish mode. The terminal no longer freezes the page while a command runs.
@@ -554,7 +556,9 @@ AndroidManifest.xml            App manifest (Shizuku provider, share provider)
 src/                           MainActivity (+ JavaScript bridge), ManifestDecoder, AdbKeyManager,
                                UpdateManager, ShareProvider, BackupScripts, QuickActions,
                                QuickActionActivity, ModeTileService, StopListTileService,
-                               QuickWidgetProvider, BootReceiver
+                               QuickWidgetProvider, BootReceiver, ZipTool (archive engine),
+                               ApkSigner + SigningKey (on-device APK signing), RishShell,
+                               XapkInfo, InstallHints (reads what pm install answered)
 assets/index.html              The whole UI (HTML/CSS/JS, rendered in a WebView)
 assets/libadb.so               arm64 adb client for ADB TCP / Wireless Debugging
 assets/rish, rish_shizuku.dex  Shizuku shell fallback

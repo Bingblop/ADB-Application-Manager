@@ -4,7 +4,19 @@
 
 - **A Back button that does the sensible thing.** The system Back button / gesture now closes the sheet that is open,
   then clears a selection (apps, debloater, files), steps up a folder or out of an archive, returns to the previous
-  tab, and only then asks you to **press Back again to exit**. Nothing closes the app by accident any more.
+  tab, and only then warns **"Press back again to exit"**. Leaving takes a deliberate second press: a double tap
+  (under 0.7 s) or a late one (over 3.5 s) just warns again, and while an install, an update download, a file job,
+  a backup or a terminal command is running it asks before leaving. Nothing closes the app by accident any more.
+- **Installs from Files always use ADB, Wireless Debugging, Shizuku or Root.** Installing from a file row, from inside an
+  archive or right after signing never goes through the system installer: it runs on the privileged backend that is
+  ready (and offers Working Modes when none is), with this app's own signature gates off so an edited or re-signed
+  APK still opens. Android itself still verifies signatures - no app can switch that off - so an APK whose signature
+  Android refuses is signed with this app's key and installed, and an app signed by someone else is replaced only
+  after you agree to uninstall it (its data is deleted). Failures say why and what to turn on.
+- **ℹ️ An About tab.** The new last tab shows the developer (**Bingblop**) and the GitHub repo, this build's version,
+  package, device, WebView and **signing certificate** (✅ when it is the official release key), copy / share
+  **debug info** for bug reports, tips, privacy and credits, and **☕ Buy me a coffee**: one tap opens PayPal to
+  donate **$1**, or type any amount. Entirely optional; the app stays free.
 - **Sign APKs you edited — on the device.** Editing an APK in the archive browser breaks its signature, so there is now
   a **✍️ Sign** button (and an "edited — sign it now" banner): it signs with **APK Signature Scheme v2** using a key that
   is generated inside the **Android Keystore** (in secure hardware where the phone has it, never exported). Sign in place

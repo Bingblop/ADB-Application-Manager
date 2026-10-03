@@ -81,7 +81,13 @@ public class MainActivity extends Activity {
     private File adbBinFile;
     private File adbHomeDir;
 
-    private final ExecutorService executor = Executors.newCachedThreadPool();
+    // A cached pool (as Executors.newCachedThreadPool), except that a job handed in after shutdown runs on the caller instead
+    // of being refused: the jobs that set a process-wide "busy" mark before submitting always get to clear it.
+    private static int renderGoneCount;               // WebView renderer deaths within the last minute (process-wide: a re-created Activity must not forget them)
+    private static long renderGoneAt;
+
+    private final ExecutorService executor = new java.util.concurrent.ThreadPoolExecutor(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
+            new java.util.concurrent.SynchronousQueue<Runnable>(), new java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy());
 
     // Working modes: "auto", "adb_tcp", "adb_wireless", "shizuku", "root", "unprivileged".
     // The configured mode is only ever changed by an explicit user action (selecting a mode,
@@ -112,6 +118,7 @@ public class MainActivity extends Activity {
     private final Shizuku.OnBinderReceivedListener shizukuBinderListener = new Shizuku.OnBinderReceivedListener() {
         @Override
         public void onBinderReceived() {
+            invalidateModeCache();                  // Shizuku just came up: the page's next look must not read a probe from before it did
             notifyJs("window.checkAllWorkingModes && window.checkAllWorkingModes(false)");
         }
     };
@@ -199,14 +206,30 @@ public class MainActivity extends Activity {
                 return true;
             }
 
-            // If the WebView's renderer is killed (low memory), start over instead of crashing the app.
+            // If the WebView's renderer is killed (low memory), start over instead of crashing the app: the dead WebView
+            // is destroyed and the Activity re-created. A renderer that dies again and again (three times within a minute)
+            // is not retried for ever.
             @Override
-            public boolean onRenderProcessGone(WebView view, android.webkit.RenderProcessGoneDetail detail) {
-                Log.w(TAG, "WebView renderer gone (crashed=" + detail.didCrash() + "), recreating");
+            public boolean onRenderProcessGone(final WebView view, android.webkit.RenderProcessGoneDetail detail) {
+                Log.w(TAG, "WebView renderer gone (crashed=" + detail.didCrash() + ")");
+                long now = android.os.SystemClock.elapsedRealtime();
+                if (now - renderGoneAt > 60000) renderGoneCount = 0;
+                renderGoneAt = now;
+                final boolean giveUp = ++renderGoneCount >= 3;
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        recreate();
+                        try {
+                            android.view.ViewParent parent = view.getParent();
+                            if (parent instanceof android.view.ViewGroup) ((android.view.ViewGroup) parent).removeView(view);
+                            view.destroy();
+                        } catch (Throwable ignored) {}
+                        if (giveUp) {
+                            Toast.makeText(MainActivity.this, "The web view keeps crashing, so the app is closing. Restart the phone or update Android System WebView, then open it again.", Toast.LENGTH_LONG).show();
+                            finish();
+                        } else {
+                            recreate();
+                        }
                     }
                 });
                 return true;
@@ -223,8 +246,15 @@ public class MainActivity extends Activity {
         executor.submit(new Runnable() {
             @Override
             public void run() {
-                deleteContents(archiveNestedDir());
-                deleteContents(archiveStageDirLocal());
+                synchronized (archiveLock) {
+                    if (archiveBusy) return;          // this process (re-created Activity) still has a job using them
+                    deleteContents(archiveNestedDir());
+                    deleteContents(archiveStageDirLocal());
+                    // working files of a signing / edit job that a killed process never got to remove
+                    new File(getCacheDir(), "archive_sign_prep.apk").delete();
+                    new File(getCacheDir(), "archive_sign_out.apk").delete();
+                    new File(getCacheDir(), "archive_edit.tmp").delete();
+                }
             }
         });
         registerWallpaperListener();
@@ -439,6 +469,7 @@ public class MainActivity extends Activity {
     private static final Object modeCacheLock = new Object();
     private static String modeCacheJson;
     private static long modeCacheAt;
+    private static long modeCacheGen;          // bumped by every invalidation: a probe that was running meanwhile must not store its (older) answer
     private static final long MODE_CACHE_MS = 2500;
     private static boolean rootChecked;
     private static boolean rootCached;
@@ -447,6 +478,7 @@ public class MainActivity extends Activity {
     private static void invalidateModeCache() {
         synchronized (modeCacheLock) {
             modeCacheJson = null;
+            modeCacheGen++;
         }
     }
 
@@ -781,6 +813,7 @@ public class MainActivity extends Activity {
             setConfiguredMode(selectMode);
         }
         cachedAutoMode = null;
+        invalidateModeCache();                      // connected (or not) now: a probe that overlapped the connect must not keep the old picture
         if (output == null) output = "";
         if (!ready && !output.toLowerCase().contains("fail") && !output.toLowerCase().contains("error")) {
             output = output + (output.isEmpty() ? "" : "\n") + "Target " + target + " is not ready (check the authorization prompt on the device).";
@@ -918,7 +951,7 @@ public class MainActivity extends Activity {
     private static final int RISH_IDLE_CHARS_PER_SEC = 200000;     // background-job output the page is sent per second at most
 
     private final Object rishGate = new Object();
-    private static String rishLastCwd = "";       // where the shell was last, so the next one opens there
+    private static volatile String rishLastCwd = "";       // where the shell was last, so the next one opens there (read and written from different threads)
     private long rishIdleWindowAt;
     private int rishIdleChars;
     private boolean rishIdleDropped;
@@ -2438,21 +2471,14 @@ public class MainActivity extends Activity {
         return "rm".equals(op) ? "Deleting" : "cp".equals(op) ? "Copying" : "Moving";
     }
 
-    /** Places a batch delete / move must not touch: the root, any top-level folder, the user's whole storage, the system trees. */
+    /** True when a shell answer says the link to the device is gone, so trying item after item is pointless (see FileRules). */
+    private static boolean fmTransportLost(String msg) {
+        return FileRules.transportLost(msg);
+    }
+
+    /** Places a batch delete / move must not touch: the root, any top-level folder, the user's whole storage, the system trees (see FileRules). */
     private static boolean fmProtectedPath(String p) {
-        String c = p;
-        while (c.length() > 1 && c.endsWith("/")) c = c.substring(0, c.length() - 1);
-        if (c.isEmpty() || c.equals("/")) return true;
-        int depth = c.split("/").length - 1;                  // "/data" is 1
-        if (depth <= 1) return true;
-        if (c.equals("/storage/emulated") || c.equals("/storage/self") || c.equals("/storage/self/primary")) return true;
-        if (c.matches("/storage/emulated/[0-9]+") || c.matches("/storage/[^/]+") || c.matches("/mnt/[^/]+")) return true;      // a user's whole storage, an SD card or USB volume root
-        if (c.startsWith("/system/") || c.startsWith("/vendor/") || c.startsWith("/product/") || c.startsWith("/system_ext/")
-                || c.startsWith("/apex/") || c.startsWith("/odm/") || c.startsWith("/proc/") || c.startsWith("/sys/") || c.startsWith("/dev/")) {
-            return depth <= 2;
-        }
-        return c.equals("/data/data") || c.equals("/data/app") || c.equals("/data/user") || c.equals("/data/user_de") || c.equals("/data/media")
-                || c.equals("/data/misc") || c.equals("/data/system") || c.equals("/data/local") || c.equals("/data/local/tmp") || c.equals("/data/user/0");
+        return FileRules.isProtected(p);
     }
 
     private void clearInstallerWorkDir() {
@@ -2565,6 +2591,13 @@ public class MainActivity extends Activity {
         }
 
         PackageInfo archive = pm.getPackageArchiveInfo(base.getAbsolutePath(), sigFlags);
+        boolean sigUnreadable = false;
+        if (archive == null) {
+            // Asking for the signature made Android refuse the file (edited after signing, or unsigned). Read it
+            // without, so it can still be shown, and installed from Files, where Android gets the last word.
+            archive = pm.getPackageArchiveInfo(base.getAbsolutePath(), 0);
+            sigUnreadable = archive != null;
+        }
         if (archive == null || archive.packageName == null) throw new IllegalStateException("could not read the base APK of this package");
         final String pkg = archive.packageName;
 
@@ -2630,6 +2663,7 @@ public class MainActivity extends Activity {
         // Signer of the archive + comparison to an already-installed copy, for the two signature gates.
         java.util.Set<String> archiveSigners = signerDigests(archive, false);
         res.put("signed", !archiveSigners.isEmpty());
+        res.put("sigUnreadable", sigUnreadable);
         try {
             PackageInfo cur = pm.getPackageInfo(pkg, sigFlags);
             res.put("installed", true);
@@ -2658,6 +2692,68 @@ public class MainActivity extends Activity {
             return "adb_tcp";
         }
         return resolveExecMode();
+    }
+
+    /** ADB (TCP or Wireless Debugging), Shizuku or Root: a backend that runs `pm` with shell or root rights. */
+    private static boolean isPrivilegedMode(String mode) {
+        return "adb_tcp".equals(mode) || "adb_wireless".equals(mode) || "shizuku".equals(mode) || "root".equals(mode);
+    }
+
+    /** True when {@code pkg} is an installed, non-system app other than this one: the kind that can be removed to make room for a differently signed copy. */
+    private boolean canUninstallFirst(String pkg) {
+        if (pkg == null || !pkg.matches("[A-Za-z0-9._]+") || pkg.equals(getPackageName())) return false;
+        try {
+            ApplicationInfo ai = getPackageManager().getApplicationInfo(pkg, 0);
+            return (ai.flags & ApplicationInfo.FLAG_SYSTEM) == 0;
+        } catch (PackageManager.NameNotFoundException nf) {
+            return false;
+        }
+    }
+
+    /**
+     * Removes the installed copy of {@code pkg}, with all its data, so an APK signed with another key can take its place.
+     * Throws with the reason when that can't be done. The caller asked for this explicitly.
+     */
+    private void uninstallInstalledCopy(String mode, String pkg) throws Exception {
+        if (pkg == null || !pkg.matches("[A-Za-z0-9._]+")) throw new IllegalStateException("can't tell which app to uninstall first");
+        if (pkg.equals(getPackageName())) throw new IllegalStateException("this app can't uninstall itself first");
+        if (!canUninstallFirst(pkg)) {
+            try {
+                getPackageManager().getApplicationInfo(pkg, 0);
+            } catch (PackageManager.NameNotFoundException nf) {
+                return;                       // not installed (any more): nothing to remove
+            }
+            throw new IllegalStateException(pkg + " is a system app, so its signature can't be replaced this way");
+        }
+        String out = shellVia(mode, "pm uninstall " + pkg);
+        if (out == null || !out.contains("Success")) {
+            throw new IllegalStateException("could not uninstall the installed copy first: " + (out == null || out.trim().isEmpty() ? "no answer" : out.trim()));
+        }
+    }
+
+    /**
+     * Copies of the files, signed with this app's own key (APK Signature Scheme v2), written next to them in the installer
+     * cache. Every split gets the same key, which is what Android needs. The originals are left as they were.
+     */
+    private List<File> signedCopies(List<File> files) throws Exception {
+        long total = 0;
+        for (File f : files) total += f.length();
+        File dir = files.get(0).getParentFile();
+        if (dir.getUsableSpace() < 2 * total + (16L << 20)) throw new IOException("not enough free space in the app cache to sign a copy");
+        SigningKey k = SigningKey.getOrCreate();
+        List<File> out = new ArrayList<File>();
+        for (File f : files) {
+            File prepared = new File(f.getParentFile(), "prep_" + f.getName());
+            File signed = new File(f.getParentFile(), "signed_" + f.getName());
+            try {
+                ApkSigner.prepare(f, prepared);
+                ApkSigner.signV2(prepared, signed, k.key, k.cert);
+            } finally {
+                prepared.delete();
+            }
+            out.add(signed);
+        }
+        return out;
     }
 
     /** Installs the given files (base first) with a caller-built flag set, via a specific backend. */
@@ -3018,15 +3114,56 @@ public class MainActivity extends Activity {
                         } catch (PackageManager.NameNotFoundException ignored) {}
                     }
 
+                    // From the file manager an install always runs through a privileged backend (ADB, Wireless
+                    // Debugging, Shizuku or Root), never the system installer.
+                    boolean viaFiles = opts.optBoolean("fromFiles", false);
                     String mode = resolveAuthorizerMode(opts.optString("authorizer", ""));
+                    if (viaFiles && !isPrivilegedMode(mode)) {
+                        throw new IllegalStateException("installing from Files needs ADB, Wireless Debugging, Shizuku or Root - set one up in Working Modes and try again");
+                    }
                     if ("none".equals(mode)) {
                         installNoPrivilege(files, opts); // result arrives via the PackageInstaller receiver
                         return;
                     }
-                    String out = installApksOptions(files, opts.optString("createFlags", "-r"), mode);
-                    res.put("ok", out != null && out.contains("Success"));
+                    String flags = opts.optString("createFlags", "-r");
+                    // The app's name, read without its signature so it is known even when that is broken.
+                    PackageInfo named = pm.getPackageArchiveInfo(gateApk.getAbsolutePath(), 0);
+                    String pkgName = named != null ? named.packageName : null;
+                    res.put("pkg", pkgName == null ? "" : pkgName);
+                    StringBuilder notes = new StringBuilder();
+                    if (viaFiles && opts.optBoolean("uninstallFirst", false)) {
+                        notifyInstallProgress("Uninstalling the installed copy first...");
+                        uninstallInstalledCopy(mode, pkgName);
+                        notes.append("The installed copy was uninstalled first.\n");
+                    }
+                    String out = installApksOptions(files, flags, mode);
+                    if (viaFiles && !InstallHints.success(out) && InstallHints.brokenSignature(out)) {
+                        // Android won't take the signature as it is (edited after signing, or unsigned). Sign a copy
+                        // with this app's own key and try once more; the original file is not touched.
+                        notifyInstallProgress("Android couldn't verify the signature - signing a copy with this app's key...");
+                        String again = installApksOptions(signedCopies(files), flags, mode);
+                        if (InstallHints.success(again)) {
+                            notes.append("Android could not verify the APK's signature, so a copy was signed with this app's key and installed.\n");
+                            out = again;
+                        } else {
+                            out = out.trim() + "\n\nAfter signing a copy with this app's key:\n" + (again == null ? "" : again.trim());
+                        }
+                    }
+                    boolean ok = InstallHints.success(out);
+                    String advice = ok ? "" : InstallHints.advice(out);
+                    String text = notes + (out != null ? out.trim() : "") + (advice.isEmpty() ? "" : "\n\nNote: " + advice);
                     res.put("method", mode);
-                    res.put("output", out != null ? out.trim() : "");
+                    res.put("output", text);
+                    if (!ok && viaFiles && !opts.optBoolean("uninstallFirst", false)
+                            && InstallHints.updateIncompatible(out) && canUninstallFirst(pkgName)) {
+                        // The page may ask for the installed copy to be removed and this to run again, so the
+                        // staged files stay until it decides.
+                        res.put("ok", false);
+                        res.put("retry", "uninstall");
+                        notifyJs("window.onInstallResult && window.onInstallResult(" + JSONObject.quote(res.toString()) + ")");
+                        return;
+                    }
+                    res.put("ok", ok);
                     finishInstall(res, opts, mode);
                 } catch (Exception e) {
                     try {
@@ -3192,7 +3329,7 @@ public class MainActivity extends Activity {
         synchronized (archiveLock) {
             if (!stageSwept) {          // the first staging of this run: copies a killed earlier run left behind go first
                 stageSwept = true;
-                sweep = "rm -f " + ARCHIVE_STAGE_DIR + "/" + ARCHIVE_STAGE_PREFIX + "*.zip; ";
+                sweep = "rm -f " + ARCHIVE_STAGE_DIR + "/" + ARCHIVE_STAGE_PREFIX + "*.zip " + ARCHIVE_STAGE_DIR + "/fm_archive.zip; ";     // the second is v5.7's single fixed name
             }
         }
         String out = shellVia(mode, sweep + "cp " + BackupScripts.quote(p) + " " + stage + " && chmod 644 " + stage + " && stat -c %s:%Y " + BackupScripts.quote(p) + " && echo OK");
@@ -3257,8 +3394,12 @@ public class MainActivity extends Activity {
                 }
                 return null;
             }
-        } catch (IOException ignored) {
-            // fall through to the privileged route
+        } catch (IOException ioe) {
+            String why = ioe.getMessage() == null ? "" : ioe.getMessage();
+            if (why.contains("ENOSPC") || why.toLowerCase(java.util.Locale.US).contains("no space left")) {
+                return "There is not enough free space to write " + dest;       // not a permission problem: say so
+            }
+            // otherwise fall through to the privileged route
         }
         String mode = resolveExecMode();
         if ("standard".equals(mode)) {
@@ -3330,14 +3471,12 @@ public class MainActivity extends Activity {
     /** Where "save a signed copy" goes: next to the file, or Downloads when that folder is not one we may write to. */
     private static String signedCopyPath(String p) {
         File f = new File(p);
-        String base = f.getName();
-        if (base.toLowerCase(java.util.Locale.US).endsWith(".apk")) base = base.substring(0, base.length() - 4);
-        if (!base.endsWith("-signed")) base += "-signed";
+        String name = FileRules.signedName(f.getName());       // app.apk -> app-signed.apk; never the file it was made from
         String dir = f.getParent();
         boolean blocked = dir == null;
         for (String s : ARCHIVE_NO_EDIT) if (p.startsWith(s)) blocked = true;
         if (blocked) dir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS).getAbsolutePath();
-        return dir + "/" + base + ".apk";
+        return dir + "/" + name;
     }
 
     private static final long SIGN_CHECK_MAX = 1536L << 20;       // larger APKs skip the (slow) signature read-back
@@ -3593,24 +3732,18 @@ public class MainActivity extends Activity {
      * /storage/self/primary are symlinks, and the "self" view resolves differently for an ADB/Shizuku
      * shell (uid 2000) than for the app, so a shell often can't read through them. The concrete
      * /storage/emulated/0 path is readable the same way by both, so browsing storage works regardless
-     * of mode. Also collapses duplicate slashes and strips a trailing slash (except root).
+     * of mode. Also collapses duplicate slashes, strips a trailing slash (except root), makes the path absolute and
+     * folds "." and ".." (after the aliases, as the shell would follow them), so a typed or composed path such as
+     * /storage/emulated/0/../0 can neither reach nor hide a place the protection list names.
      */
     private String fmCanonicalPath(String path) {
-        if (path == null || path.isEmpty()) return "/";
-        String p = path.replaceAll("/{2,}", "/");
-        if (p.length() > 1 && p.endsWith("/")) p = p.substring(0, p.length() - 1);
         String primary = "/storage/emulated/0";
         try {
             File ext = android.os.Environment.getExternalStorageDirectory();
             if (ext != null && ext.getAbsolutePath() != null && !ext.getAbsolutePath().isEmpty())
                 primary = ext.getAbsolutePath();
         } catch (Exception ignored) {}
-        String[] aliases = { "/sdcard", "/storage/self/primary" };
-        for (String a : aliases) {
-            if (p.equals(a)) return primary;
-            if (p.startsWith(a + "/")) return primary + p.substring(a.length());
-        }
-        return p;
+        return FileRules.canonical(path, primary);
     }
 
     private boolean backupExists(String ref) {
@@ -4654,7 +4787,9 @@ public class MainActivity extends Activity {
             if (port <= 0 || code == null || code.trim().isEmpty()) {
                 return "Error: Invalid port or pairing code";
             }
-            return runProcessWithTimeout(buildAdbProcess("pair", host.trim() + ":" + port, code.trim()), 10000);
+            String out = runProcessWithTimeout(buildAdbProcess("pair", host.trim() + ":" + port, code.trim()), 10000);
+            invalidateModeCache();
+            return out;
         }
 
         @JavascriptInterface
@@ -4685,6 +4820,7 @@ public class MainActivity extends Activity {
                 setConfiguredMode("auto");
             }
             cachedAutoMode = null;
+            invalidateModeCache();                  // whatever the mode was: the connection list changed
             return output;
         }
 
@@ -4729,16 +4865,28 @@ public class MainActivity extends Activity {
             synchronized (modeCacheLock) {
                 if (modeCacheJson != null && System.nanoTime() / 1000000L - modeCacheAt < MODE_CACHE_MS) return modeCacheJson;
             }
-            return getWorkingModeFresh();
+            return probeAndCacheMode(false);
         }
 
-        /** Like getWorkingMode, but always probes (an explicit "check now" or right after something changed). */
+        /** Like getWorkingMode, but always probes, root included (an explicit "check now" or right after something changed). */
         @JavascriptInterface
         public String getWorkingModeFresh() {
+            return probeAndCacheMode(true);
+        }
+
+        /** Probes, and keeps the answer for a moment unless something invalidated the cache while the probe was running. */
+        private String probeAndCacheMode(boolean recheckRoot) {
+            long gen;
+            synchronized (modeCacheLock) {
+                gen = modeCacheGen;
+                if (recheckRoot) rootChecked = false;
+            }
             String json = probeWorkingMode();
             synchronized (modeCacheLock) {
-                modeCacheJson = json;
-                modeCacheAt = System.nanoTime() / 1000000L;
+                if (modeCacheGen == gen) {
+                    modeCacheJson = json;
+                    modeCacheAt = System.nanoTime() / 1000000L;
+                }
             }
             return json;
         }
@@ -5153,6 +5301,48 @@ public class MainActivity extends Activity {
             } catch (Exception e) {
                 return "{}";
             }
+        }
+
+        /** What the About tab shows: this build, the certificate it is signed with, the phone and its WebView. */
+        @JavascriptInterface
+        public String getAboutInfo() {
+            JSONObject o = new JSONObject();
+            try {
+                PackageManager pm = getPackageManager();
+                int sigFlags = Build.VERSION.SDK_INT >= 28 ? PackageManager.GET_SIGNING_CERTIFICATES : PackageManager.GET_SIGNATURES;
+                PackageInfo pi = pm.getPackageInfo(getPackageName(), sigFlags);
+                ApplicationInfo ai = getApplicationInfo();
+                o.put("versionName", pi.versionName == null ? "" : pi.versionName);
+                o.put("versionCode", versionCodeOf(pi));
+                o.put("pkg", getPackageName());
+                o.put("minSdk", ai.minSdkVersion);
+                o.put("targetSdk", ai.targetSdkVersion);
+                o.put("debuggable", (ai.flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0);
+                o.put("firstInstall", pi.firstInstallTime);
+                o.put("lastUpdate", pi.lastUpdateTime);
+                java.util.Set<String> signers = signerDigests(pi, false);
+                o.put("signerCount", signers.size());
+                o.put("signerSha256", signers.isEmpty() ? "" : signers.iterator().next());
+                String installer = null;
+                try {
+                    installer = Build.VERSION.SDK_INT >= 30 ? pm.getInstallSourceInfo(getPackageName()).getInstallingPackageName()
+                            : pm.getInstallerPackageName(getPackageName());
+                } catch (Throwable ignored) {}
+                o.put("installer", installer == null ? "" : installer);
+            } catch (Throwable ignored) {
+                // whatever could not be read is simply missing
+            }
+            try {
+                o.put("device", Build.MANUFACTURER + " " + Build.MODEL);
+                o.put("android", Build.VERSION.RELEASE);
+                o.put("sdk", Build.VERSION.SDK_INT);
+                o.put("abi", Build.SUPPORTED_ABIS != null && Build.SUPPORTED_ABIS.length > 0 ? Build.SUPPORTED_ABIS[0] : "");
+                PackageInfo wv = WebView.getCurrentWebViewPackage();
+                o.put("webview", wv == null ? "" : (wv.packageName + " " + (wv.versionName == null ? "" : wv.versionName)).trim());
+            } catch (Throwable ignored) {
+                // idem
+            }
+            return o.toString();
         }
 
         @JavascriptInterface
@@ -6176,12 +6366,17 @@ public class MainActivity extends Activity {
             }
         }
 
+        /** logcat refusing an option answers with an error or its usage text FIRST; an app's own log lines (which may say "invalid option") start with a timestamp. */
         private boolean isLogcatUsageError(String out) {
             if (out == null) return false;
-            String head = out.length() > 400 ? out.substring(0, 400) : out;
-            String low = head.toLowerCase(java.util.Locale.US);
-            return low.contains("unrecognized option") || low.contains("unknown option") || low.contains("invalid option")
-                    || low.contains("unknown argument") || low.startsWith("usage:") || low.contains("\nusage:");
+            String first = "";
+            for (String line : out.split("\n", 8)) {
+                if (!line.trim().isEmpty()) { first = line.trim().toLowerCase(java.util.Locale.US); break; }
+            }
+            if (first.isEmpty()) return false;
+            if (first.matches("^\\d\\d-\\d\\d\\s+\\d\\d:\\d\\d:\\d\\d.*") || first.startsWith("---------")) return false;     // a real log line / buffer header
+            return first.startsWith("usage:") || first.startsWith("logcat:") || first.contains("unrecognized option")
+                    || first.contains("unknown option") || first.contains("invalid option") || first.contains("unknown argument");
         }
 
         @JavascriptInterface
@@ -6324,6 +6519,8 @@ public class MainActivity extends Activity {
                 if (a == null || a.isEmpty()) { res.put("ok", false); res.put("output", "no path"); return res.toString(); }
                 a = fmCanonicalPath(a);
                 if (b != null && !b.isEmpty()) b = fmCanonicalPath(b);
+                // the same protection the batch operations have: removing or moving away a whole storage root, a top-level folder or a system tree
+                if (("rm".equals(op) || "mv".equals(op)) && fmProtectedPath(a)) { res.put("ok", false); res.put("output", "System location: not touched"); return res.toString(); }
                 String qa = BackupScripts.quote(a);
                 String cmd;
                 if ("mkdir".equals(op)) cmd = "mkdir -p " + qa + " && echo OK";
@@ -6339,6 +6536,38 @@ public class MainActivity extends Activity {
                 try { res.put("ok", false); res.put("output", "Error: " + e.getMessage()); } catch (Exception ignored) {}
             }
             return res.toString();
+        }
+
+        /**
+         * One command of a batch, through the active privileged backend with a long timeout (a big copy or move outlives
+         * executeShell's 8-10 seconds). No connection check per call: a dropped link is reconnected once, like runAdbShell.
+         */
+        private String batchShell(String cmd) {
+            String m = resolveExecMode();
+            if ("adb_tcp".equals(m) || "adb_wireless".equals(m)) {
+                boolean tcp = "adb_tcp".equals(m);
+                if (!tcp && adbWirelessPort <= 0) return "Error: Wireless Debugging is not configured. Connect it in Working Modes.";
+                String target = tcp ? tcpTarget() : wirelessTarget();
+                String out = runProcessWithTimeout(buildAdbProcess("-s", target, "shell", cmd), 600000);
+                if (out != null && out.contains("device '") && out.contains("' not found")) {
+                    runProcessWithTimeout(buildAdbProcess("connect", target), 5000);
+                    out = runProcessWithTimeout(buildAdbProcess("-s", target, "shell", cmd), 600000);
+                }
+                return out != null ? out : "";
+            }
+            if ("shizuku".equals(m)) {
+                try {
+                    return shizukuStream(cmd, null);
+                } catch (Exception e) {
+                    return executeShell(cmd);                  // the usual path, with its rish fallback
+                }
+            }
+            if ("root".equals(m)) {
+                ProcessBuilder pb = new ProcessBuilder("su", "-c", cmd);
+                pb.redirectErrorStream(true);
+                return runProcessWithTimeout(pb, 600000);
+            }
+            return executeShell(cmd);
         }
 
         /**
@@ -6390,21 +6619,37 @@ public class MainActivity extends Activity {
                             String cmd = "rm".equals(op) ? "rm -rf" + args
                                     : "cp".equals(op) ? "mkdir -p " + qd + " && cp -r" + args + " " + qd + "/"
                                     : "mkdir -p " + qd + " && mv" + args + " " + qd;
-                            String out = executeShell(cmd + " && echo FMOK");
+                            String out = batchShell(cmd + " && echo FMOK");
                             if (out != null && out.contains("FMOK")) {
                                 done += part.size();
                                 continue;
                             }
                             // something in the group failed: do them one at a time to say which
+                            int lost = 0;                                 // answers in a row that say the connection is gone
                             for (String q : part) {
-                                String one = "rm".equals(op) ? "rm -rf " + BackupScripts.quote(q)
-                                        : "cp".equals(op) ? "mkdir -p " + qd + " && cp -r " + BackupScripts.quote(q) + " " + qd + "/"
-                                        : "mkdir -p " + qd + " && mv " + BackupScripts.quote(q) + " " + qd;
-                                String o1 = executeShell(one + " && echo FMOK");
+                                if (lost >= 3) {
+                                    failed.put(new JSONObject().put("p", q).put("error", "The connection to the device was lost"));
+                                    continue;
+                                }
+                                String qq = BackupScripts.quote(q);
+                                String one;
+                                if ("rm".equals(op)) {
+                                    one = "rm -rf " + qq;
+                                } else if ("cp".equals(op)) {
+                                    one = "mkdir -p " + qd + " && cp -r " + qq + " " + qd + "/";
+                                } else {
+                                    // The group's mv may already have moved this one before another item stopped it: that counts as done.
+                                    String there = BackupScripts.quote(dest + "/" + q.substring(q.lastIndexOf('/') + 1));
+                                    one = "if [ -e " + qq + " ] || [ -L " + qq + " ]; then mkdir -p " + qd + " && mv " + qq + " " + qd
+                                            + "; elif [ -e " + there + " ] || [ -L " + there + " ]; then true; else echo 'No such file or directory'; false; fi";
+                                }
+                                String o1 = batchShell(one + " && echo FMOK");
                                 if (o1 != null && o1.contains("FMOK")) {
                                     done++;
+                                    lost = 0;
                                 } else {
                                     String msg = o1 == null ? "failed" : o1.replace("FMOK", "").trim();
+                                    lost = fmTransportLost(msg) ? lost + 1 : 0;
                                     failed.put(new JSONObject().put("p", q).put("error", msg.isEmpty() ? "failed" : (msg.length() > 200 ? msg.substring(0, 200) : msg)));
                                 }
                             }
@@ -6946,6 +7191,11 @@ public class MainActivity extends Activity {
         /** Throws the signing key away and makes a new one. The end arrives as window.onSigningKey(json). */
         @JavascriptInterface
         public String signingKeyRegenerate() {
+            // Not while a signing job runs: it holds the old key, and a new one under the same name must not reach it half way.
+            synchronized (archiveLock) {
+                if (archiveBusy) return "busy";
+                archiveBusy = true;
+            }
             executor.submit(new Runnable() {
                 @Override
                 public void run() {
@@ -6954,6 +7204,10 @@ public class MainActivity extends Activity {
                         json = signingKeyJson(SigningKey.regenerate()).toString();
                     } catch (Throwable t) {
                         json = archiveFail(t);
+                    } finally {
+                        synchronized (archiveLock) {
+                            archiveBusy = false;
+                        }
                     }
                     notifyJs("window.onSigningKey && window.onSigningKey(" + json + ")");
                 }
@@ -7410,27 +7664,52 @@ public class MainActivity extends Activity {
         }
     }
 
+    private static final long BACK_MIN_GAP_MS = 700;     // a press closer than this to the one before is a double tap, not a decision
+    private static final long BACK_WINDOW_MS = 3500;     // how long after the warning a deliberate second press still leaves
+    private long backArmedAt;                            // when "press back again" was shown (0 = not showing)
+    private long backLastAt;                             // the previous Back press
+
     /**
      * Back asks the page first (window.handleAndroidBack): it closes the top sheet, drops a selection, steps out
-     * of the archive browser or back to the previous tab, and only when it has nothing left to do (a second
-     * press at the first tab) does the app leave.
+     * of the archive browser or back to the previous tab, and only when it has nothing left to do does it warn;
+     * a deliberate second press (not a double tap, and never while something is still running) then leaves.
+     * The page answers 1 (handled), 0 (leave) or, if it can't answer, this method applies the same two-press rule itself.
      */
     @Override
     public void onBackPressed() {
         final WebView wv = webView;
         if (wv == null || !pageReady) {
-            super.onBackPressed();
+            backWithoutPage();
             return;
         }
-        wv.evaluateJavascript("(function(){try{return window.handleAndroidBack?!!window.handleAndroidBack():false;}catch(e){return false;}})()",
+        wv.evaluateJavascript("(function(){try{return window.handleAndroidBack?(window.handleAndroidBack()?1:0):-1;}catch(e){return -1;}})()",
                 new android.webkit.ValueCallback<String>() {
                     @Override
                     public void onReceiveValue(String handled) {
-                        if ("true".equals(handled)) return;
-                        if (wv.canGoBack()) wv.goBack();
-                        else MainActivity.super.onBackPressed();
+                        if ("1".equals(handled)) return;
+                        if ("0".equals(handled)) {
+                            backArmedAt = 0;
+                            if (wv.canGoBack()) wv.goBack();
+                            else MainActivity.super.onBackPressed();
+                            return;
+                        }
+                        backWithoutPage();
                     }
                 });
+    }
+
+    /** Leaving when the page can't help (it isn't ready yet, or its handler failed): the same deliberate two-press rule. */
+    private void backWithoutPage() {
+        long now = android.os.SystemClock.elapsedRealtime();
+        boolean deliberate = now - backLastAt >= BACK_MIN_GAP_MS;
+        backLastAt = now;
+        if (backArmedAt != 0 && deliberate && now - backArmedAt <= BACK_WINDOW_MS) {
+            backArmedAt = 0;
+            super.onBackPressed();
+            return;
+        }
+        backArmedAt = now;
+        android.widget.Toast.makeText(this, "Press back again to exit", android.widget.Toast.LENGTH_SHORT).show();
     }
 
     @Override

@@ -94,6 +94,11 @@ public final class ApkSigner {
             int alg = algorithmFor(key);
             byte[] signed = signedData(alg, digest, cert.getEncoded());
             byte[] signature = sign(alg, key, signed);
+            // The key and the certificate must still be a pair (on some Android versions a key replaced while signing is
+            // picked up by name): a signature the certificate can't verify would be an APK nobody can install.
+            if (!verifies(alg, cert.getPublicKey(), signed, signature)) {
+                throw new IOException("The signing key no longer matches its certificate (it was replaced while signing). Try again.");
+            }
             byte[] pub = cert.getPublicKey().getEncoded();
 
             byte[] signer = concat(lp(signed), lp(lp(concat(le32(alg), lp(signature)))), lp(pub));
@@ -145,6 +150,17 @@ public final class ApkSigner {
         s.initSign(key);
         s.update(data);
         return s.sign();
+    }
+
+    private static boolean verifies(int alg, PublicKey pub, byte[] data, byte[] signature) {
+        try {
+            Signature s = Signature.getInstance(alg == ALG_RSA_PKCS1_SHA256 ? "SHA256withRSA" : "SHA256withECDSA");
+            s.initVerify(pub);
+            s.update(data);
+            return s.verify(signature);
+        } catch (java.security.GeneralSecurityException e) {
+            return false;                          // e.g. a public key of another type than the private one
+        }
     }
 
     /** digests + certificates + (no) additional attributes, as the signature covers them. */

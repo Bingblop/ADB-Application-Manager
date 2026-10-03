@@ -2585,6 +2585,52 @@
             font-weight: 800;
             cursor: pointer;
         }
+
+        /* About tab */
+        .about-hero { text-align: center; }
+        .about-logo {
+            width: 64px; height: 64px; margin: 2px auto 10px; border-radius: 18px;
+            background: linear-gradient(135deg, var(--accent), var(--secondary));
+            display: flex; align-items: center; justify-content: center; font-size: 32px;
+            box-shadow: 0 0 22px var(--accent-glow);
+        }
+        .about-name { font-size: 18px; font-weight: 800; }
+        .about-ver { font-size: 12px; color: var(--text-muted); font-weight: 700; margin: 2px 0 8px; }
+        .about-blurb { font-size: 11.5px; color: var(--text-muted); line-height: 1.5; margin-bottom: 12px; }
+        .about-hero .mode-btn-row { justify-content: center; }
+        .about-coffee {
+            width: 100%; border: none; border-radius: var(--radius-lg); padding: 14px 16px;
+            font-size: 15px; font-weight: 800; cursor: pointer; color: #1b1200;
+            background: linear-gradient(135deg, #FFC107, #FF8A50);
+            box-shadow: 0 6px 18px rgba(255, 140, 0, 0.28);
+        }
+        .about-coffee:active { transform: scale(0.98); }
+        .about-or { text-align: center; font-size: 10.5px; color: var(--text-muted); margin: 12px 0 8px; }
+        .about-amount { display: flex; gap: 8px; align-items: stretch; }
+        .about-amount .amt {
+            flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px;
+            background: var(--bg-surface); border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md); padding: 0 12px;
+        }
+        .about-amount .amt:focus-within { border-color: var(--accent); }
+        .about-amount .amt.bad { border-color: var(--bloat, #F2B8B5); }
+        .about-amount .amt b { font-size: 15px; color: var(--text-muted); }
+        .about-amount input {
+            flex: 1; min-width: 0; background: none; border: none; outline: none;
+            color: var(--text-main); font-size: 15px; font-weight: 700; padding: 11px 0;
+        }
+        .about-kv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 12px; font-size: 11.5px; margin: 0; }
+        .about-kv dt { color: var(--text-muted); font-weight: 700; }
+        .about-kv dd { margin: 0; font-weight: 700; word-break: break-word; min-width: 0; }
+        .about-kv a, .about-tip a { color: var(--accent); font-weight: 800; text-decoration: none; }
+        .about-hash { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 10.5px; word-break: break-all; line-height: 1.5; color: var(--text-muted); margin-top: 4px; }
+        .about-sigline { font-size: 11.5px; font-weight: 800; margin-top: 10px; }
+        .about-ok { color: var(--running, #4ADE80); }
+        .about-warn { color: #F0C000; }
+        .about-list { margin: 8px 0 0; padding-left: 18px; font-size: 11.5px; line-height: 1.55; }
+        .about-list li { margin-bottom: 5px; }
+        .about-list code { background: rgba(var(--ov), 0.1); padding: 1px 5px; border-radius: 5px; font-size: 10.5px; }
+        .about-tip { font-size: 11.5px; line-height: 1.5; margin: 8px 0 0; }
     </style>
 </head>
 <body>
@@ -2618,6 +2664,7 @@
         <button class="tab-btn" onclick="switchView('terminal')">💻 ADB Console</button>
         <button class="tab-btn" onclick="switchView('logcat')">📄 Logcat</button>
         <button class="tab-btn" onclick="switchView('store')">🛍️ Store</button>
+        <button class="tab-btn" onclick="switchView('about')">ℹ️ About</button>
     </nav>
 
     <div class="container">
@@ -2873,6 +2920,7 @@
             <!-- Install options -->
             <div class="color-card" id="installOptionsCard" style="display:none;">
                 <div class="color-card-title">⚙️ Install options</div>
+                <div class="mode-tip-box" id="installFilesNote" style="display:none;"></div>
 
                 <label class="switch-row">
                     <div><div class="switch-title">Authorizer</div><div class="switch-sub">Which backend performs the install</div></div>
@@ -3529,15 +3577,82 @@
                     </label>
                 </div>
             </div>
-        
-            <div class="color-card" id="aboutCard">
-                <div class="color-card-title">ℹ️ About</div>
-                <div class="color-card-subtitle" id="aboutVersion">ADB Application Manager Pro</div>
-                <div class="mode-btn-row" style="margin-top:10px;">
+        </section>
+
+        <!-- VIEW: ABOUT -->
+        <section id="view-about" class="view-content">
+            <div class="color-card about-hero">
+                <div class="about-logo">⚡</div>
+                <div class="about-name">ADB Application Manager Pro</div>
+                <div class="about-ver" id="aboutVersion">Version …</div>
+                <div class="about-blurb">Freeze, debloat, install, back up and inspect every app on your phone, straight from the phone: through ADB, Wireless Debugging, Shizuku or Root. No computer, no account, no ads.</div>
+                <div class="mode-btn-row">
+                    <button class="mode-action-btn primary" onclick="aboutOpenRepo()">🐙 GitHub</button>
                     <button class="mode-action-btn" onclick="openWhatsNew({ max: 3 })">✨ What's new</button>
-                    <button class="mode-action-btn" onclick="openUrlExternal('https://github.com/Bingblop/ADB-Application-Manager/releases')">⬇️ Releases</button>
-                    <button class="mode-action-btn" onclick="openUrlExternal('https://github.com/Bingblop/ADB-Application-Manager/issues')">🐞 Report an issue</button>
+                    <button class="mode-action-btn" onclick="aboutCheckUpdate()">⬆️ Check for update</button>
                 </div>
+            </div>
+
+            <div class="color-card" id="aboutCoffeeCard">
+                <div class="color-card-title">☕ Buy me a coffee</div>
+                <div class="color-card-subtitle">The app is free, and it stays that way. If it saved you time, a coffee helps me keep improving it. Totally optional, and thank you!</div>
+                <button class="about-coffee" id="aboutCoffeeBtn" onclick="aboutDonate(1)">☕ Buy me a coffee · $1</button>
+                <div class="about-or">or choose your own amount</div>
+                <div class="about-amount">
+                    <label class="amt" id="aboutAmtBox"><b>$</b><input id="aboutAmount" type="text" inputmode="decimal" enterkeyhint="go" autocomplete="off" placeholder="5.00" aria-label="Donation amount in US dollars" oninput="aboutAmountInput()" onkeydown="if (event.key === 'Enter') { event.preventDefault(); aboutDonateCustom(); }"></label>
+                    <button class="mode-action-btn primary" id="aboutDonateBtn" onclick="aboutDonateCustom()">💙 Donate</button>
+                </div>
+                <div class="uad-credit" style="margin-top:12px;">Donations go to <b>bingblop@yahoo.com</b> on PayPal and open in your browser, in US dollars; PayPal lets you change the amount there. <a href="#" onclick="copyText('bingblop@yahoo.com'); return false;">Copy the PayPal address</a></div>
+            </div>
+
+            <div class="color-card">
+                <div class="color-card-title">👤 Developer &amp; project</div>
+                <dl class="about-kv" style="margin-top:8px;">
+                    <dt>Developer</dt><dd>Bingblop</dd>
+                    <dt>GitHub</dt><dd><a href="#" onclick="aboutOpenRepo(); return false;">github.com/Bingblop/ADB-Application-Manager</a></dd>
+                </dl>
+                <div class="mode-btn-row" style="margin-top:12px;">
+                    <button class="mode-action-btn" onclick="openUrlExternal(ABOUT_REPO + '/releases/latest')">⬇️ Releases</button>
+                    <button class="mode-action-btn" onclick="openUrlExternal(ABOUT_REPO + '/issues/new')">🐞 Report a bug or idea</button>
+                    <button class="mode-action-btn" onclick="openUrlExternal(ABOUT_REPO)">⭐ Star on GitHub</button>
+                    <button class="mode-action-btn" onclick="openUrlExternal('https://github.com/Bingblop')">👤 Bingblop on GitHub</button>
+                    <button class="mode-action-btn" onclick="aboutShare()">📤 Share the app</button>
+                </div>
+            </div>
+
+            <div class="color-card">
+                <div class="color-card-title">🔎 This build</div>
+                <div class="color-card-subtitle">Handy when you report a problem, or want to be sure the APK is the real one.</div>
+                <dl class="about-kv" id="aboutBuild"></dl>
+                <div class="about-sig" id="aboutSig"></div>
+                <div class="mode-btn-row" style="margin-top:12px;">
+                    <button class="mode-action-btn" onclick="aboutCopyDebug()">📋 Copy debug info</button>
+                    <button class="mode-action-btn" onclick="aboutShareDebug()">📤 Share it</button>
+                    <button class="mode-action-btn" onclick="aboutCopyFingerprint()">🔑 Copy fingerprint</button>
+                </div>
+            </div>
+
+            <div class="color-card">
+                <div class="color-card-title">💡 Handy to know</div>
+                <ul class="about-list">
+                    <li><b>Back</b> closes the open sheet, steps up a folder or out of an archive, then returns to the tab you came from. Leaving takes a second, deliberate press.</li>
+                    <li><b>Press and hold</b> an app or a file to select several, then act on them all at once.</li>
+                    <li><b>Files → View</b> opens an APK or ZIP without extracting it. Edit it, tap <b>✍️ Sign</b>, then install it.</li>
+                    <li>Installs started from <b>Files</b> always go through ADB, Wireless Debugging, Shizuku or Root, never the system installer.</li>
+                    <li><b>ADB Console → Rish</b> is a persistent Shizuku shell: <code>cd</code> and variables stay put between commands.</li>
+                    <li><b>Logcat</b> can show one app only. Tap Logs in an app's ⋯ menu.</li>
+                </ul>
+            </div>
+
+            <div class="color-card">
+                <div class="color-card-title">🔒 Privacy</div>
+                <div class="about-tip">No account, no ads, no analytics and no server of ours. Everything runs on your phone. The app only goes online when you ask it to: update checks, the Store tabs, the debloat list, and a VirusTotal lookup if you add your own key.</div>
+                <div class="about-tip">The ADB key and the APK-signing key are created on this phone and never leave it.</div>
+            </div>
+
+            <div class="color-card">
+                <div class="color-card-title">🙏 Credits</div>
+                <div class="about-tip">Debloat data from <a href="#" onclick="openUrlExternal('https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation'); return false;">UAD-NG</a> (GPL-3.0). Shell access through <a href="#" onclick="openUrlExternal('https://github.com/RikkaApps/Shizuku-API'); return false;">Shizuku</a>. Update sources: Galaxy Store, GitHub, Codeberg, F-Droid, IzzyOnDroid and the Obtainium community catalog.</div>
             </div>
         </section>
 
@@ -4646,7 +4761,7 @@ Type any command below (e.g. pm list packages -d)
 
         // Order must match the .tab-btn buttons above. 'colors' has no tab button (it opens from the
         // header 🎨 icon), so it sits last with no matching button index.
-        const tabKeys = ['apps', 'saved-lists', 'debloater', 'installer', 'files', 'updates', 'terminal', 'logcat', 'store', 'colors'];
+        const tabKeys = ['apps', 'saved-lists', 'debloater', 'installer', 'files', 'updates', 'terminal', 'logcat', 'store', 'about', 'colors'];
 
         // Tabs visited before this one (most recent last), so Back can retrace them
         let viewStack = [];
@@ -4691,6 +4806,7 @@ Type any command below (e.g. pm list packages -d)
             if (viewName === 'files') onFilesShown();
             if (viewName === 'logcat') onLogcatShown();
             if (viewName === 'store') onStoreShown();
+            if (viewName === 'about') onAboutShown();
             haptic();
         }
 
@@ -4719,9 +4835,26 @@ Type any command below (e.g. pm list packages -d)
         // ---------- Android Back ----------
         // The app asks the page first (see MainActivity.onBackPressed). Back closes the top-most sheet, then drops an open
         // batch panel or a selection, steps up (or out) of the archive browser, returns to the tab you came from, and
-        // only at the first tab asks for a second press before leaving. Returning false lets the app exit.
-        let backExitArmedAt = 0;
-        function handleAndroidBack() {
+        // only at the first tab warns before leaving. Returning false lets the app exit.
+        // Leaving is deliberate: the warning has to be answered by a second press that is neither a double tap (it must
+        // come BACK_EXIT_MIN_GAP after the press before it, however that one was handled) nor late (BACK_EXIT_WINDOW),
+        // and while something is still running it asks first.
+        const BACK_EXIT_MIN_GAP = 700, BACK_EXIT_WINDOW = 3500;
+        let backExitArmedAt = 0, backLastAt = 0;
+
+        // What is still working, in words ('' when nothing is): leaving now would cut it off.
+        function backBusyReason() {
+            if (typeof installRunning !== 'undefined' && installRunning) return 'an install is running';
+            if (typeof selfUpdBusy !== 'undefined' && selfUpdBusy) return 'the app update is downloading';
+            if (typeof updProgress !== 'undefined' && Object.keys(updProgress || {}).some(k => updProgress[k] && ['downloading', 'installing'].includes(updProgress[k].stage))) return 'an update is downloading';
+            if (typeof fmBatchRunning !== 'undefined' && fmBatchRunning) return 'a file operation is running';
+            if (typeof arcBusy !== 'undefined' && arcBusy) return 'an archive job is running';
+            if (typeof backupRunning !== 'undefined' && backupRunning) return 'a backup or restore is running';
+            if ((typeof termShellRun !== 'undefined' && termShellRun) || (typeof rishRunning !== 'undefined' && rishRunning)) return 'a terminal command is running';
+            return '';
+        }
+
+        function backNavigate() {
             const sheets = document.querySelectorAll('.modal-overlay.show');
             if (sheets.length) {
                 // the sheet on top is the one painted at the centre of the screen (later in the page wins a tie)
@@ -4749,10 +4882,25 @@ Type any command below (e.g. pm list packages -d)
                 try { switchView('apps'); } finally { navFromBack = false; }
                 return true;
             }
+            return false;
+        }
+
+        function handleAndroidBack() {
             const now = Date.now();
-            if (now - backExitArmedAt < 2200) return false;
-            backExitArmedAt = now;
-            showToast('Press back again to exit', '👋');
+            const gap = now - backLastAt;
+            backLastAt = now;
+            if (backNavigate()) { backExitArmedAt = 0; return true; }
+            // nothing left to close or step out of: this press is about leaving
+            const deliberate = gap >= BACK_EXIT_MIN_GAP;
+            if (backExitArmedAt && deliberate && now - backExitArmedAt <= BACK_EXIT_WINDOW) {
+                const busy = backBusyReason();
+                if (busy && !confirm('Leave now? ' + busy.charAt(0).toUpperCase() + busy.slice(1) + ' and would be cut off.')) { backExitArmedAt = 0; return true; }
+                backExitArmedAt = 0;
+                return false;
+            }
+            backExitArmedAt = now;                                    // first press, a double tap, or a late one: warn (again)
+            const busy = backBusyReason();
+            showToast(busy ? 'Press back again to leave (' + busy + ')' : 'Press back again to exit', '👋');
             return true;
         }
 
@@ -6053,6 +6201,7 @@ Type any command below (e.g. pm list packages -d)
         // ---------- Self-update: this application only ----------
         let selfUpd = null;        // last self-update check result
         let selfUpdChecked = false;
+        let selfUpdBusy = false;   // the app's own update is downloading / installing (Back asks before leaving)
         function selfUpdBridge() { return (window.AndroidBridge && window.AndroidBridge.checkSelfUpdate) ? window.AndroidBridge : null; }
 
         function checkSelfUpdateUI(silent) {
@@ -6104,6 +6253,7 @@ Type any command below (e.g. pm list packages -d)
             const bar = document.getElementById('selfUpdBar');
             bar.style.display = ''; bar.firstElementChild.style.width = '2%';
             document.getElementById('selfUpdStatus').innerText = 'Starting update…';
+            selfUpdBusy = true;
             b.installSelfUpdate();
         }
 
@@ -6112,6 +6262,7 @@ Type any command below (e.g. pm list packages -d)
             const status = document.getElementById('selfUpdStatus');
             const bar = document.getElementById('selfUpdBar');
             const installBtn = document.getElementById('selfUpdInstallBtn');
+            selfUpdBusy = p.stage === 'downloading' || p.stage === 'installing';
             if (p.stage === 'downloading') {
                 bar.style.display = ''; bar.firstElementChild.style.width = Math.max(2, p.percent >= 0 ? p.percent : 2) + '%';
                 status.innerText = 'Downloading… ' + (p.message || '');
@@ -7867,6 +8018,7 @@ Type any command below (e.g. pm list packages -d)
         }
 
         function onInstallFilePicked(ref) {
+            installFromFiles = installFilesPending; installFilesPending = false;       // only the file manager's hand-over sets this
             document.getElementById('installPickHint').innerText = 'Reading package...';
             const prog = document.getElementById('installProgress');
             if (prog) { prog.style.display = 'none'; prog.innerText = ''; }
@@ -8019,6 +8171,70 @@ Type any command below (e.g. pm list packages -d)
         }
         window.onInstallIntent = onInstallIntent;
 
+        // Installs started from the file manager (a file row, an APK inside an archive, a freshly signed copy) always run
+        // through ADB, Wireless Debugging, Shizuku or Root - never the system installer - and this app's own signature
+        // gates are off for them. Android still checks signatures itself (nothing can switch that off), so a broken or
+        // unknown signature is dealt with after its answer: see MainActivity.runInstallSelected.
+        let installFromFiles = false;          // the package now in the Installer was handed over by the file manager
+        let installFilesPending = false;       // set just before the file manager hands a package over
+        let installFilesGatesOff = false;      // this mode switched the two signature gates off (so leaving it switches them back on)
+        let installRunning = false;            // an install is in flight (Back asks before leaving)
+
+        // The backend a file-manager install runs on: the active working mode when it is privileged, else any other
+        // privileged backend that is ready. null when there is none.
+        function privilegedInstallBackend() {
+            const map = { adb_tcp: 'adb', adb_wireless: 'adb', shizuku: 'shizuku', root: 'root' };
+            if (isPrivilegedActive && map[currentWorkingMode]) return map[currentWorkingMode];
+            const d = lastModesData || {};
+            if (d.shizuku && d.shizuku.running && d.shizuku.authorized) return 'shizuku';
+            if ((d.adbWireless && d.adbWireless.connected) || (d.adbTcp && d.adbTcp.connected)) return 'adb';
+            if (d.rootAvailable) return 'root';
+            return null;
+        }
+
+        const INSTALL_BACKEND_NAMES = { adb: 'ADB / Wireless Debugging', shizuku: 'Shizuku', root: 'Root' };
+
+        // Checked before anything is copied: true when a privileged backend is ready, else says so and offers Working Modes.
+        function installFilesReady() {
+            if (privilegedInstallBackend()) return true;
+            haptic();
+            showToast('Needs ADB, Wireless Debugging or Shizuku', '⚠️');
+            if (confirm('Installing from Files runs through ADB, Wireless Debugging, Shizuku or Root, and none of them is connected right now.\n\nOpen Working Modes to set one up?')) openWorkingModesModal();
+            return false;
+        }
+
+        // Hands a package from the file manager to the Installer.
+        function installFromFilesStart(ref) {
+            if (!installFilesReady()) return false;
+            installFilesPending = true;
+            onInstallIntent(ref);
+            return true;
+        }
+
+        // Once the package is loaded: lock the authorizer to the privileged backend, switch this app's own signature gates
+        // off and say so; for any other install put the gates back and show every authorizer.
+        function applyFilesInstallMode() {
+            const sel = document.getElementById('optAuthorizer');
+            const none = sel && sel.querySelector('option[value="none"]');
+            const note = document.getElementById('installFilesNote');
+            const gates = ['optBlockMismatch', 'optBlockUnknown'].map(id => document.getElementById(id));
+            if (installFromFiles) {
+                const auth = privilegedInstallBackend();
+                if (sel && auth) sel.value = auth;
+                if (none) { none.disabled = true; none.hidden = true; }
+                if (!installFilesGatesOff) { gates.forEach(g => { if (g) g.checked = false; }); installFilesGatesOff = true; }
+                if (note) {
+                    note.style.display = '';
+                    note.innerText = '📁 From Files: installing through ' + (INSTALL_BACKEND_NAMES[auth] || 'a privileged backend')
+                        + ', with this app\'s signature checks off. Android still verifies signatures itself: an APK whose signature it can\'t verify is signed with this app\'s key and installed, and an app signed by someone else can only be replaced after uninstalling it (you are asked first).';
+                }
+            } else {
+                if (none) { none.disabled = false; none.hidden = false; }
+                if (installFilesGatesOff) { gates.forEach(g => { if (g) g.checked = true; }); installFilesGatesOff = false; }
+                if (note) note.style.display = 'none';
+            }
+        }
+
         function onInstallInspected(json) {
             let d;
             try { d = JSON.parse(json); } catch (e) { d = { error: 'could not read package' }; }
@@ -8048,6 +8264,7 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('installSplitsCard').style.display = (d.splits && d.splits.length > 1) ? '' : 'none';
             document.getElementById('installExtrasCard').style.display = extras.length ? '' : 'none';
             document.getElementById('installOptionsCard').style.display = '';
+            applyFilesInstallMode();
             installAuthorizerChanged();
         }
         window.onInstallInspected = onInstallInspected;
@@ -8156,7 +8373,11 @@ Type any command below (e.g. pm list packages -d)
             }
             document.getElementById('installInfoGrid').innerHTML = chips.join('');
             let sign = '';
-            if (!d.signed) sign = '⚠️ Unsigned or unreadable signature.';
+            if (!d.signed) {
+                sign = d.sigUnreadable
+                    ? '⚠️ Android can\'t verify this APK\'s signature (edited after signing, or unsigned).' + (installFromFiles ? ' It is tried as it is first; if Android refuses it, a copy signed with this app\'s key is installed.' : '')
+                    : '⚠️ Unsigned or unreadable signature.';
+            }
             else if (d.installed) sign = d.signerMatchesInstalled ? '🔑 Signature matches the installed app.' : '⚠️ Signed with a different key than the installed app — Android will reject this as an update.';
             else sign = '🔑 Signed. Not currently installed.';
             document.getElementById('installSignRow').innerText = sign;
@@ -8243,6 +8464,7 @@ Type any command below (e.g. pm list packages -d)
                     authorizer: val('optAuthorizer').value,
                     blockMismatch: val('optBlockMismatch').checked,
                     blockUnknown: val('optBlockUnknown').checked,
+                    fromFiles: installFromFiles,
                     dexopt: !none && val('optDexopt').checked,
                     dexoptMode: val('optDexMode').value,
                     dexForce: !none && val('optDexForce').checked,
@@ -8275,22 +8497,44 @@ Type any command below (e.g. pm list packages -d)
                 + (built.opts.dexopt ? '\npm compile -m ' + built.opts.dexoptMode + (built.opts.dexForce ? ' -f ' : ' ') + (built.opts.pkg || '<pkg>') : '');
         }
 
-        function runInstall() {
+        function installUninstallAsk(name) {
+            return name + ' is installed with a different signing key, so Android refuses to update it.\n\nUninstall the installed copy first and then install this one? The app\'s data is deleted, and if the new install then fails the app stays uninstalled.';
+        }
+
+        let installRunningTimer = null;
+        function runInstall(uninstallFirst) {
             if (!installData) { showToast('Pick a package first', '⚠️'); return; }
             const built = buildInstallOptions();
             if (!built.opts.splits.length) { showToast('No APK selected', '⚠️'); return; }
             haptic();
             if (!window.AndroidBridge || !window.AndroidBridge.installSelected) { showToast('Installer needs the app build', '⚠️'); return; }
-            showToast('Installing ' + (installData.label || installData.pkg) + '...', '📦');
+            const name = installData.label || installData.pkg;
+            if (installFromFiles && built.opts.authorizer === 'none') { showToast('Installs from Files need ADB, Wireless Debugging or Shizuku', '⚠️'); return; }
+            // Known before trying: an installed copy signed with another key can't be updated, only replaced.
+            if (installFromFiles && uninstallFirst !== true && installData.installed && installData.signed && installData.signerMatchesInstalled === false) {
+                if (!confirm(installUninstallAsk(name))) return;
+                uninstallFirst = true;
+            }
+            built.opts.uninstallFirst = installFromFiles && uninstallFirst === true;
+            installRunning = true;
+            clearTimeout(installRunningTimer);
+            installRunningTimer = setTimeout(() => { installRunning = false; }, 15 * 60 * 1000);       // never block leaving for ever
+            showToast('Installing ' + name + '...', '📦');
             window.AndroidBridge.installSelected(JSON.stringify(built.opts));
         }
 
         function onInstallResult(json) {
             let r;
             try { r = JSON.parse(json); } catch (e) { r = { ok: false, output: 'could not read result' }; }
-            showToast(r.ok ? 'Installed' : 'Install failed', r.ok ? '✅' : '⚠️');
+            installRunning = false;
+            clearTimeout(installRunningTimer);
             const prog = document.getElementById('installProgress');
             if (prog) { prog.style.display = 'none'; prog.innerText = ''; }
+            // From Files, an app signed with another key can only be replaced after uninstalling it: ask, then run again.
+            if (r.retry === 'uninstall' && installFromFiles && installData) {
+                if (confirm(installUninstallAsk(installData.label || installData.pkg))) { runInstall(true); return; }
+            }
+            showToast(r.ok ? 'Installed' : 'Install failed', r.ok ? '✅' : '⚠️');
             let out = r.output || '';
             if (r.extras) out += '\n\nGame data (OBB):\n' + r.extras;
             if (r.dexopt) out += '\n\nDex optimization:\n' + r.dexopt;
@@ -8753,9 +8997,10 @@ Type any command below (e.g. pm list packages -d)
         }
         function fmInstallFile() {
             if (!fmActionTarget) return;
+            if (!installFilesReady()) return;
             let r;
             try { r = JSON.parse(window.AndroidBridge.fmInstall(fmActionTarget.full)); } catch (e) { r = { ok: false, error: String(e && e.message || e) }; }
-            if (r.ok && r.ref) { closeFmAction(); onInstallIntent(r.ref); }
+            if (r.ok && r.ref) { closeFmAction(); installFromFilesStart(r.ref); }
             else { showToast('Could not stage APK', '⚠️'); showCommandResults('Install from files', fmActionTarget.name, [{ name: fmActionTarget.name, pkg: fmActionTarget.full, output: r.error || 'failed', success: false }]); }
         }
         function fmNewFolder() {
@@ -9261,6 +9506,7 @@ Type any command below (e.g. pm list packages -d)
         function arcStageEntry(kind) {
             if (!arc || !arcTarget || arcTarget.dir) return;
             if (arcBusy) { showToast('Another archive job is still running', '⏳'); return; }
+            if (kind === 'install' && !installFilesReady()) return;
             arcLastOp = { op: 'stage', kind };
             arcSetBusy(true, 'Preparing ' + arcTarget.name + '…');
             const src = arcSrcPath();
@@ -9273,7 +9519,7 @@ Type any command below (e.g. pm list packages -d)
         function onArchiveStaged(r) {
             arcSetBusy(false);
             if (!r || !r.ok) { showToast((r && r.error) || 'Could not copy the file out of the archive', '⚠️'); return; }
-            if (r.kind === 'install') { onInstallIntent(r.ref); return; }
+            if (r.kind === 'install') { installFromFilesStart(r.ref); return; }
             arcOpenNested(r);
         }
 
@@ -9609,9 +9855,10 @@ Type any command below (e.g. pm list packages -d)
         function signInstall() {
             const d = signTarget && signTarget.done;
             if (!d) return;
+            if (!installFilesReady()) return;
             let r;
             try { r = JSON.parse(window.AndroidBridge.fmInstall(d.path)); } catch (e) { r = { ok: false, error: String(e && e.message || e) }; }
-            if (r.ok && r.ref) { signClose(); onInstallIntent(r.ref); }
+            if (r.ok && r.ref) { signClose(); installFromFilesStart(r.ref); }
             else showToast((r && r.error) || 'Could not stage the APK', '⚠️');
         }
 
@@ -9623,7 +9870,12 @@ Type any command below (e.g. pm list packages -d)
                 t.busy = true;
                 t.status = 'Making a new key…';
                 signRender();
-                window.AndroidBridge.signingKeyRegenerate();
+                if (window.AndroidBridge.signingKeyRegenerate() === 'busy') {
+                    t.busy = false;
+                    t.status = '';
+                    signRender();
+                    showToast('Another archive job is still running', '⏳');
+                }
             }
         }
 
@@ -11782,8 +12034,6 @@ Type any command below (e.g. pm list packages -d)
         function maybeShowWhatsNew() {
             const cur = appVersionInfo();
             if (!cur.versionCode) return;
-            const about = document.getElementById('aboutVersion');
-            if (about) about.innerText = 'ADB Application Manager Pro ' + (cur.versionName || '') + ' (' + cur.versionCode + ')';
             const seen = loadStoreJson('seen_version', null);
             let since = null;
             if (seen && seen.code) {
@@ -11796,6 +12046,116 @@ Type any command below (e.g. pm list packages -d)
             }
             saveStoreJson('seen_version', { code: cur.versionCode });
             if (since !== null) openWhatsNew({ since, max: since === 0 ? 2 : 4 });
+        }
+
+        // ---------- About ----------
+        const ABOUT_REPO = 'https://github.com/Bingblop/ADB-Application-Manager';
+        const ABOUT_RELEASE_SHA256 = '9461870f7cd2406406a119f4d37533c23bb7d1ed850506bad7ea3e6b4bd26d17';   // the key every official release is signed with
+        const DONATE_EMAIL = 'bingblop@yahoo.com';
+        let aboutInfo = {};
+
+        // PayPal's Donate page (the URL form in PayPal's own donate-button docs), for an amount in US dollars, going to
+        // the developer's PayPal address; one-time only.
+        function paypalDonateUrl(amount) {
+            return 'https://www.paypal.com/donate?business=' + encodeURIComponent(DONATE_EMAIL)
+                + '&no_recurring=1'
+                + '&item_name=' + encodeURIComponent('Buy me a coffee - ADB Application Manager')
+                + '&amount=' + encodeURIComponent(Number(amount).toFixed(2))
+                + '&currency_code=USD';
+        }
+
+        // "5", "5.5", "5,50" or "$ 12.00" -> dollars; null when it is not an amount (or not a sensible one)
+        function parseDonationAmount(text) {
+            const t = String(text == null ? '' : text).trim().replace(/^\$\s*/, '');
+            if (!/^\d{1,6}([.,]\d{1,2})?$/.test(t)) return null;
+            const n = Number(t.replace(',', '.'));
+            return n >= 0.01 && n <= 100000 ? Math.round(n * 100) / 100 : null;
+        }
+
+        function aboutDonate(amount) {
+            const n = parseDonationAmount(amount);
+            if (n === null) { showToast('Enter an amount like 5 or 2.50', '⚠️'); return; }
+            haptic();
+            openUrlExternal(paypalDonateUrl(n));
+            showToast('Opening PayPal. Thank you! 💙', '☕');
+        }
+
+        function aboutDonateCustom() {
+            const box = document.getElementById('aboutAmtBox'), input = document.getElementById('aboutAmount');
+            const n = parseDonationAmount(input.value);
+            if (n === null) { box.classList.add('bad'); showToast('Enter an amount like 5 or 2.50', '⚠️'); input.focus(); return; }
+            box.classList.remove('bad');
+            aboutDonate(n);
+        }
+
+        function aboutAmountInput() { document.getElementById('aboutAmtBox').classList.remove('bad'); }
+
+        function aboutOpenRepo() { haptic(); openUrlExternal(ABOUT_REPO); }
+
+        function aboutCheckUpdate() {
+            haptic();
+            switchView('updates');                                       // the first visit checks by itself
+            if (selfUpdChecked) checkSelfUpdateUI(true);
+            const card = document.getElementById('selfUpdateCard');
+            if (card && card.scrollIntoView) card.scrollIntoView({ block: 'start' });
+        }
+
+        function aboutShare() {
+            shareText('ADB Application Manager Pro', 'ADB Application Manager Pro: freeze, debloat, install, back up and inspect Android apps through ADB, Wireless Debugging, Shizuku or Root.\n' + ABOUT_REPO + '/releases/latest');
+        }
+
+        function aboutDate(ms) {
+            return ms ? new Date(ms).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : '';
+        }
+
+        function onAboutShown() { renderAbout(); }
+
+        function renderAbout() {
+            let i = {};
+            try { i = JSON.parse((window.AndroidBridge && window.AndroidBridge.getAboutInfo && window.AndroidBridge.getAboutInfo()) || '{}') || {}; } catch (e) { i = {}; }
+            aboutInfo = i;
+            const ver = document.getElementById('aboutVersion');
+            if (ver) ver.innerText = i.versionName ? 'Version ' + i.versionName + ' · build ' + i.versionCode : 'Version shown in the app build';
+            const rows = [];
+            const row = (k, v) => { if (v !== undefined && v !== null && String(v) !== '') rows.push('<dt>' + escapeHtml(k) + '</dt><dd>' + escapeHtml(v) + '</dd>'); };
+            row('Version', i.versionName ? i.versionName + ' (' + i.versionCode + ')' : '');
+            row('Package', i.pkg);
+            row('Build type', i.pkg ? (i.debuggable ? 'debug' : 'release') : '');
+            row('Installed from', i.pkg ? (i.installer || 'sideloaded (no store)') : '');
+            row('Updated', aboutDate(i.lastUpdate));
+            row('Android', i.android ? i.android + ' (API ' + i.sdk + ')' : '');
+            row('Device', i.device);
+            row('CPU', i.abi);
+            row('WebView', i.webview);
+            row('Working mode', (document.getElementById('execModeText') || {}).innerText);
+            document.getElementById('aboutBuild').innerHTML = rows.join('');
+            const sig = document.getElementById('aboutSig');
+            if (!i.signerSha256) { sig.innerHTML = ''; return; }
+            const official = i.signerSha256.toLowerCase() === ABOUT_RELEASE_SHA256;
+            sig.innerHTML = '<div class="about-sigline ' + (official ? 'about-ok' : 'about-warn') + '">'
+                + (official ? '✅ Signed with the official release key' : '⚠️ Not signed with the official release key (a debug, fork or modified build)') + '</div>'
+                + '<div class="about-hash">SHA-256 ' + escapeHtml(signFp(i.signerSha256)) + '</div>';
+        }
+
+        function aboutDebugText() {
+            const i = aboutInfo || {};
+            const lines = ['ADB Application Manager Pro ' + (i.versionName || '?') + ' (build ' + (i.versionCode || '?') + ')'];
+            if (i.pkg) lines.push('Package: ' + i.pkg + (i.debuggable ? ' (debug build)' : ''));
+            if (i.android) lines.push('Android: ' + i.android + ' (API ' + i.sdk + ')');
+            if (i.device) lines.push('Device: ' + i.device + (i.abi ? ' · ' + i.abi : ''));
+            if (i.webview) lines.push('WebView: ' + i.webview);
+            const mode = (document.getElementById('execModeText') || {}).innerText;
+            if (mode) lines.push('Working mode: ' + mode);
+            if (i.signerSha256) lines.push('Signature SHA-256: ' + signFp(i.signerSha256) + (i.signerSha256.toLowerCase() === ABOUT_RELEASE_SHA256 ? ' (official release key)' : ' (not the official release key)'));
+            return lines.join('\n');
+        }
+
+        function aboutCopyDebug() { if (!aboutInfo || !aboutInfo.pkg) renderAbout(); copyText(aboutDebugText()); }
+        function aboutShareDebug() { if (!aboutInfo || !aboutInfo.pkg) renderAbout(); shareText('ADB Application Manager debug info', aboutDebugText()); }
+        function aboutCopyFingerprint() {
+            const h = aboutInfo && aboutInfo.signerSha256;
+            if (!h) { showToast('The fingerprint is shown in the app build', 'ℹ️'); return; }
+            copyText(signFp(h));
         }
 
         // ---------- App profiles ----------
