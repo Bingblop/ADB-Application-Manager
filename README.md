@@ -5,7 +5,8 @@
 **Manage, debloat, update and inspect every app on your Android phone — straight from the phone.**
 
 Freeze · Suspend · Uninstall · Debloat · Update · Install · Back up &amp; restore · Inspect manifests · Launch hidden
-activities · Edit Android's hidden settings through **ADB over TCP, Wireless Debugging, Shizuku or Root**.
+activities · Edit Android's hidden settings · Recolor Android and switch its overlays through **ADB over TCP, Wireless
+Debugging, Shizuku or Root**.
 
 [![Build APK](https://github.com/Bingblop/ADB-Application-Manager/actions/workflows/build.yml/badge.svg)](https://github.com/Bingblop/ADB-Application-Manager/actions/workflows/build.yml)
 [![Latest release](https://img.shields.io/github/v/release/Bingblop/ADB-Application-Manager?label=release)](https://github.com/Bingblop/ADB-Application-Manager/releases/latest)
@@ -13,7 +14,7 @@ activities · Edit Android's hidden settings through **ADB over TCP, Wireless De
 
 ### [⬇️ Download the latest APK](https://github.com/Bingblop/ADB-Application-Manager/releases/latest)
 
-`com.bloatware.bingblop` · v5.9-Pro · signed APK, installs over every earlier version without uninstalling
+`com.bloatware.bingblop` · v6.0-Pro · signed APK, installs over every earlier version without uninstalling
 
 <table>
   <tr>
@@ -36,7 +37,7 @@ activities · Edit Android's hidden settings through **ADB over TCP, Wireless De
 
 [Download](#download--install) · [Features](#features) · [The tabs](#the-tabs) · [Screenshots](#screenshots) ·
 [Working modes](#working-modes) · [Debloater](#debloater) · [Updates](#updates) · [Settings](#android-settings) ·
-[App menu](#app-menu) · [Profiles](#app-profiles) · [Backup &amp; restore](#backup-and-restore) ·
+[Overlays &amp; Material You](#overlays-and-material-you) · [App menu](#app-menu) · [Profiles](#app-profiles) · [Backup &amp; restore](#backup-and-restore) ·
 [Quick tiles &amp; widget](#quick-settings-tiles-and-widget) · [Copy, share &amp; search](#copy-share-and-search) ·
 [Themes](#themes) · [How it works](#how-it-works) · [Building](#building) · [Project layout](#project-layout) ·
 [Testing](#testing) · [Privacy &amp; security](#privacy--security)
@@ -77,7 +78,8 @@ tell you when a new version is out (see [Updates](#updates)).
 | **Terminal** | Run shell commands through the active mode (off the page's thread), with output search, copy and share · **🕘 history, ⭐ saved scripts and pinned chips** · **🐚 Rish mode**: a persistent Shizuku shell where `cd` and `export` stick, with a STOP that ends a command and its children · a searchable **📋 ADB cheat sheet** of ~90 commands you tap to drop into the input |
 | **Files** | Privileged file manager · **select many** and copy / move / delete together · open **.apk / .zip / .xapk / .jar … without extracting**, preview text, images and decoded Android XML, extract, rename, delete, add files and edit text in place · **install from inside an archive**, **open nested archives**, **compare two archives** · **sign an edited APK** on the device |
 | **Logcat** | Readable, **color-coded** log (one row per entry, tappable level key) · **limit it to one app** · save or share the filtered log as a bug-report text file |
-| **Settings** | **New in v5.9:** read and edit the phone's **Global**, **Secure** and **System** settings, one sub-tab per table · search names, values and descriptions · tap to edit, **press and hold to flip** a switch (1 / 0, true / false), **＋ to create** a setting · plain-English descriptions and ⚠️ warnings for the ones that bite · every change is read back to prove it, with **Undo** and a log of changes with **Revert** — see [Android settings](#android-settings) |
+| **Settings** | Read and edit the phone's **Global**, **Secure** and **System** settings, one sub-tab per table · search names, values and descriptions · tap to edit, **press and hold to flip** a switch (1 / 0, true / false), **＋ to create** a setting · plain-English descriptions and ⚠️ warnings for the ones that bite · every change is read back to prove it, with **Undo** and a log of changes with **Revert** — see [Android settings](#android-settings) |
+| **Overlays** | **New in v6.0:** change Android's **Material You** theme from the phone — the **wallpaper** or **any color** (hex, sliders or 657 named presets) with one of six **styles** (Tonal Spot … Spritz), and the palette Android is really using shown afterwards · list every **overlay** (`cmd overlay list`) grouped by the app it restyles, search and filter it, **switch one on or off** with its switch or by **pressing and holding** its row · every change is read back to prove it, with **Undo** — see [Overlays and Material You](#overlays-and-material-you) |
 | **Store** | **🛍️ ShizuStore**, **🐙 GitHub** (up to 5,000 apps, live search), **🤖 F-Droid** (any known repository, streamed), **🪐 Orion** and an **🌌 Aurora** hand-off as sub-tabs, each with a category drop-down · every install comes from the app's own upstream (nothing is rehosted), through your active mode or the system installer |
 | **Modes** | ADB over TCP · Wireless Debugging (pairing, mDNS port detection, and **🔔 pairing from a notification** so the code can't expire while you switch apps) · Shizuku · Root · Automatic · Read-Only |
 | **Themes** | **Material 3** (default) · **Material You** (follows your wallpaper) · six more palettes · Light / Dark / System / Schedule · pure-black AMOLED option · per-mode color tuning |
@@ -100,8 +102,24 @@ Left to right, with the 🎨 **Colors &amp; Themes** button in the header:
 | 💻 **ADB Console** | A shell through the active mode, with history, saved scripts, a cheat sheet and a persistent Rish shell |
 | 📄 **Logcat** | A color-coded device log you can limit to one app, save or share |
 | ⚙️ **Settings** | Read, flip, edit and create the Global, Secure and System settings ([details](#android-settings)) |
+| 🌈 **Overlays** | Recolor Android (Material You: wallpaper or any color, six styles) and switch system overlays on or off ([details](#overlays-and-material-you)) |
 | 🛍️ **Store** | ShizuStore, GitHub, F-Droid, Orion and an Aurora hand-off |
 | ℹ️ **About** | Who made it, which build and key you have, debug info, and the coffee button |
+
+## New in v6.0
+
+- **🌈 An Overlays tab** — right after Settings, with two halves. **Theme** changes the source color and style Android's
+  Material You engine builds every system color from: the wallpaper (Android's default) or **any color** you pick with
+  a hex box, hue / saturation / lightness sliders or **657 named presets**, in one of six styles (Tonal Spot, Vibrant,
+  Expressive, Fruit Salad, Rainbow, Spritz). **Overlays** lists every overlay `cmd overlay list` reports, grouped by the app it
+  restyles, with a switch on each row: **tap the switch or press and hold the row** to switch it on or off, or tap the row
+  for its sheet. See [Overlays and Material You](#overlays-and-material-you).
+- **🎨 Colors in use** — the five tonal palettes Android is using right now (Accent 1–3, Neutral 1–2) are read from the system
+  and drawn as swatches you can tap to copy; they redraw by themselves a moment after a change, once Android has repainted.
+- **↩️ Undo, everywhere** — a theme or overlay change reads itself back, offers **Undo**, and a theme change is also listed in
+  Settings → ⋯ → Changes with a **Revert**. Android restarts apps when the palette changes; the app picks up where it left
+  off and the Undo bar is still there.
+- **🔍 Checked before it shipped** — three independent review passes over the new tab (the native side, the page, and a second look at the logic the first fixes added: 26 findings, 25 fixed and one left on purpose, see Testing).
 
 ## New in v5.9
 
@@ -257,6 +275,16 @@ Left to right, with the 🎨 **Colors &amp; Themes** button in the header:
     <td align="center"><sub>Press and hold flips a switch, with Undo</sub></td>
   </tr>
   <tr>
+    <td><img src="docs/screenshots/overlays.png" width="230" alt="Overlays tab: Material You theme"></td>
+    <td><img src="docs/screenshots/overlays-color.png" width="230" alt="Choosing a color and a style"></td>
+    <td><img src="docs/screenshots/overlays-undo.png" width="230" alt="Overlays list with Undo"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Overlays → Theme: the colors Android uses now</sub></td>
+    <td align="center"><sub>Pick any color and one of six styles</sub></td>
+    <td align="center"><sub>Overlays list: press and hold flips one, with Undo</sub></td>
+  </tr>
+  <tr>
     <td><img src="docs/screenshots/about.png" width="230" alt="About tab"></td>
     <td><img src="docs/screenshots/about-light.png" width="230" alt="About tab, light"></td>
     <td></td>
@@ -293,13 +321,13 @@ Left to right, with the 🎨 **Colors &amp; Themes** button in the header:
   </tr>
   <tr>
     <td><img src="docs/screenshots/settings-edit-light.png" width="230" alt="Light: editing a setting"></td>
-    <td></td>
-    <td></td>
+    <td><img src="docs/screenshots/overlays-light.png" width="230" alt="Light: Overlays theme"></td>
+    <td><img src="docs/screenshots/overlays-list-light.png" width="230" alt="Light: Overlays list"></td>
   </tr>
   <tr>
     <td align="center"><sub>Settings editor</sub></td>
-    <td></td>
-    <td></td>
+    <td align="center"><sub>Overlays: theme</sub></td>
+    <td align="center"><sub>Overlays: list</sub></td>
   </tr>
 </table>
 
@@ -397,6 +425,76 @@ static String writeScript(String op, String ns, String key, String value) {
 > uses ends that connection, and a wrong value in `secure` can lock you out of the keyboard or the screen. The ⚠️ rows ask
 > before they change; everything else is on you, which is why every change is logged and undoable. Some phones (and some
 > keys) refuse changes from a shell whatever you do.
+
+## Overlays and Material You
+
+The **🌈 Overlays** tab (right after Settings) has two halves, chosen by the sub-tabs at its top. Changing anything needs ADB,
+Wireless Debugging, Shizuku or Root; with none of them ready the tab says so and opens Working Modes. The colors Android
+is using *now* are read without any of them.
+
+**Theme.** Android 12 and newer builds every system color from one *source color*. This half changes that source and the
+style the palette is worked out with:
+
+- **Colors in use** draws the five tonal palettes Android has right now (Accent 1–3 and Neutral 1–2, ten steps each), read from
+  the system itself, with a line saying what is set (*System default*, or *Custom color #7E57C2 · Expressive · 2 min ago*).
+  Tap a swatch to copy its color. After a change it redraws by itself once Android has repainted. On Android 11 and older
+  it says that Material You needs Android 12, switches **Apply theme** and **Default** off, and the tab opens on the overlay list.
+- **Color:** **Wallpaper** (what Android does by default) or **Custom color**. Pick one with a hex box (`6750A4`,
+  `#6750a4` and `#abc` all work), the **hue / saturation / lightness** sliders, or the **657 named presets** (searchable,
+  with family chips such as Blue or Green: the list the Tasker project this tab grew from carried). The last eight colors you used
+  are kept as chips.
+- **Style:** Tonal Spot (Android's default), Vibrant, Expressive, Fruit Salad, Rainbow or Spritz, each with a line saying what it does.
+- **Apply theme** reads what the setting holds, writes the choice, reads it back, and shows **Undo**; **Default** returns to
+  the wallpaper with Tonal Spot. The other choices stored in the same setting (a font, icon shape or icon pack on Pixel-like
+  phones) are kept: only the color keys are replaced. Every theme change is also kept in **Settings → ⋯ → Changes** with a
+  **Revert**. Android tends to restart apps (this one included) when the palette changes; the app notices that it was
+  restarted, whether that came before or after the answer, and comes back to this tab with the Undo bar waiting.
+
+**Overlays.** Everything `cmd overlay list` reports, grouped by the app each overlay restyles (`android`,
+`com.android.systemui` …), each group showing how many of its overlays are on:
+
+- A **switch** on every row. **Press and hold** a row to flip it without opening anything, or **tap** the row for its sheet:
+  state, target app, **Switch on / off**, and copies of the name, the target or the exact `cmd overlay` command.
+- **Search**, and chips for **On**, **Off** and **Theme** (names that look like theme, icon-pack, navigation-bar, font or
+  shape overlays). Long lists are drawn 120 rows at a time with **Show more**.
+- An overlay Android lists as **unavailable** (its target app is missing, or it is not approved) says so and cannot be switched.
+- After every change the whole list is read again, so a row shows what Android reports, not what was asked for. Some
+  overlays are fixed on or off by the system; when one refuses, the answer says so (Android 12 and newer often give no
+  reason at all, and the sheet says exactly that) instead of pretending. A bar offers **Undo**.
+
+What is written is small and fixed. An overlay change is `cmd overlay enable '<name>'` or `disable`, followed by the list
+again in the same line, which is how a change is told apart from a refusal
+([`OverlayRules`](src/com/bloatware/bingblop/OverlayRules.java)):
+
+```java
+static String changeScript(String op, String id) {
+    return changeCommand(op, id) + "; echo " + GET_MARK + "; " + listCommand() + "; echo " + END_MARK;
+}
+```
+
+and a theme is one `settings put secure theme_customization_overlay_packages '<json>'` whose color members are exactly this,
+the shape Android's own wallpaper picker writes (the `_applied_timestamp` is the time of the change), followed or preceded by
+whatever other choices the setting already held:
+
+```json
+{"android.theme.customization.system_palette":"7E57C2","android.theme.customization.color_source":"preset",
+ "android.theme.customization.theme_style":"EXPRESSIVE","_applied_timestamp":1767225600000}
+```
+
+Nothing else is ever written: the color must be six hex digits, the style one of the six names, and the source `preset`
+or `home_wallpaper`, whatever the page sends. The members that are kept are copied exactly as they were (only a flat JSON
+object is merged; anything else is replaced, as the Tasker project did). Overlay names are single-quoted for the shell (a name
+with a space, control character or leading `-` is refused, as are names over 300 characters), so nothing typed can run as a
+command. Phones with Samsung's "wallpaper colors" switch (`wallpapertheme_state`, in whichever settings table already holds a
+number for it) get it set to match, as the Tasker project did: off for a chosen color, on for the wallpaper. It is read
+back like everything else: **Undo** puts it back to what it was, a theme that Android refuses puts it back at once, and a
+switch that will not change is reported instead of hidden. **Default** leaves it alone.
+
+> Careful: overlays change how Android and its apps look, and a few belong to the navigation bar or the system UI.
+> Switching the wrong one can make the screen hard to use, and Android may restart apps when one changes. Every change is one
+> tap from **Undo**, and what the phone reports after a change is what is shown. Whether a given overlay can be switched
+> at all depends on the phone: many OEM overlays are fixed by the system, and some phones refuse changes from a shell.
+> Overlays are listed and switched for the user the phone's shell defaults to (the owner, on nearly every phone).
 
 ## App menu
 
@@ -606,7 +704,7 @@ Also in the sources: [`ManifestDecoder`](src/com/bloatware/bingblop/ManifestDeco
   they contain. Restoring data validates the archive first (see above).
 - Powerful actions (uninstall, disable, clear data, changing Android settings) always go through a privileged mode
   you set up yourself. Read-Only mode can inspect but not change anything. The Settings tab only talks to the phone's
-  own `settings` command; its log of changes stays on the phone.
+  own `settings` command, and the Overlays tab to `cmd overlay` and the one theme setting; the log of changes stays on the phone.
 - The release keystore is git-ignored. Never commit one to a public repository.
 
 ## Building
@@ -673,6 +771,7 @@ src/com/bloatware/bingblop/
                                Quick Settings tiles, the home-screen widget and the after-update reminder
   BackupScripts                Backup and restore shell scripts, and the package-name check every command goes through
   SettingsDb                   The Settings tab's rules: names, values, the commands and their read-back
+  OverlayRules                 The Overlays tab's rules: reading `cmd overlay list`, overlay names, the theme value, the read-back
   FileRules, InstallHints      File-manager path rules; reading what `pm install` answered
   ZipTool                      The archive engine behind the file manager's package browser
   ApkSigner, SigningKey        Signing edited APKs on the device (Android Keystore key)
@@ -702,28 +801,36 @@ CHANGELOG.md                   Release notes; the app shows them in What's new
 What was checked before each release, and what was not. The test scripts are not part of this repository, so none of
 this is something you can re-run from a clone.
 
-- **The UI**: more than 60 headless-Chromium scripts drive the real `assets/index.html` against a mock Android bridge:
+- **The UI**: 67 headless-Chromium scripts drive the real `assets/index.html` against a mock Android bridge:
   every tab, theme, filter, share / copy / find action, profiles and the drift banner, backups, the Installer, the
   Store, the file manager and archive browser, the terminal, About, the Back button and, for the Settings tab, the
   list, search, filters and sort, tap-to-edit, press-and-hold flipping (with touch events of any hold length), creating,
   deleting, Undo, the change log, refused, unanswered and late requests, a 720-row table, and the layout at 320 and 360 px in
-  light and dark.
+  light and dark. For the Overlays tab: the theme editor (hex, sliders, the 657 presets, styles), apply, reset and Undo, an
+  app restart in the middle of a change, the palette redrawing, the overlay list (131 sample overlays, awkward names,
+  search, filters, press and hold with a touch screen, a refused, fixed-on, unavailable, unanswered or late change), a
+  phone without Material You, and both halves at 320 and 360 px in light and dark.
 - **Native rules, off the device**: the parts of the Java that need no Android classes are compiled and run as plain
   Java. For the Settings tab that is 311 checks of `SettingsDb`, including round trips through a real `sh` (and a fake
   `settings` that refuses on purpose) for hostile values (quotes, `;`, `$(...)`, backticks, `>`, newlines, Unicode), and a
-  comparison of the name, value and size checks in Java and in the page over 1,284 cases. The same approach has been used for the backup scripts (against a fake `/data`
+  comparison of the name, value and size checks in Java and in the page over 1,322 cases (the color check of the Overlays tab
+  included). For the Overlays tab that is 551 checks of `OverlayRules`: `cmd overlay list` output in the shapes different Android
+  versions print, hostile overlay names and theme values run through a real `sh` (with a fake `cmd` and `settings`), every
+  verdict for a refused, fixed-on, vanished or unanswered change, the exact theme value and its merge into what the setting
+  holds, and every step of an Apply, Undo, Default and refusal against a fake phone (the Samsung switch included). The same approach has been used for the backup scripts (against a fake `/data`
   tree with real `tar`, hostile archives included), the file-manager path rules, the manifest decoder, the install-answer
   reader, the archive engine, the Rish shell (against a real `mksh`), the APK signer (cross-checked with `apksigner`)
   and the regex handling.
 - **The build**: `build.sh` compiles, signs and verifies every APK (zipalign, v2 / v3 signatures), and each published
   release is downloaded again and checked: SHA-256, signing certificate, version and alignment.
 - **Reviews**: each release's new code gets separate, independent review passes (automated ones, not a human), and
-  what they found was fixed and re-tested before shipping. The Settings tab had two (native side: 9 findings, page: 17);
-  each was checked against the code and all were fixed, except that the sheets still do not trap keyboard focus, like the
-  app's others.
+  what they found was fixed and re-tested before shipping. The Settings tab had two (native side: 9 findings, page: 17) and
+  so did the Overlays tab (native side: 7 findings, then 8 more in a second look at what the first fixes added; page: 11);
+  each finding was checked against the code and fixed, except that the sheets still do not trap keyboard focus, like the
+  app's others, and that overlays are switched for the phone's main user (`--user current` could not be tried on a real phone).
 - **Not tested on hardware**: the parts that only exist on a phone (the ADB, Shizuku and Root backends, the Quick
-  Settings tiles, the widget, the share sheet, the boot notification and the real `settings` command on your phone's
-  Android version and skin) are checked by compilation, review and these simulations, not on a device. If something
+  Settings tiles, the widget, the share sheet, the boot notification, the real `settings` and `cmd overlay` commands and the
+  Material You engine on your phone's Android version and skin) are checked by compilation, review and these simulations, not on a device. If something
   misbehaves on yours, please [open an issue](https://github.com/Bingblop/ADB-Application-Manager/issues).
 
 ## Credits

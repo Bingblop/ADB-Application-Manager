@@ -2670,6 +2670,7 @@
         <button class="tab-btn" onclick="switchView('terminal')">💻 ADB Console</button>
         <button class="tab-btn" onclick="switchView('logcat')">📄 Logcat</button>
         <button class="tab-btn" onclick="switchView('settings')">⚙️ Settings</button>
+        <button class="tab-btn" onclick="switchView('overlays')">🌈 Overlays</button>
         <button class="tab-btn" onclick="switchView('store')">🛍️ Store</button>
         <button class="tab-btn" onclick="switchView('about')">ℹ️ About</button>
     </nav>
@@ -3258,6 +3259,172 @@
 
             <div id="sdbList" class="sdb-list" role="list"></div>
             <div id="sdbMore" class="sdb-more"></div>
+        </section>
+
+        <!-- VIEW: OVERLAYS (the Material You theme, and the overlay manager) -->
+        <section id="view-overlays" class="view-content">
+            <style>
+                .ovl-nowtop { display:flex; align-items:center; gap:12px; }
+                .ovl-seed { width:44px; height:44px; border-radius:14px; border:1px solid var(--border-glass); flex:0 0 auto; background:linear-gradient(135deg,var(--accent),var(--secondary)); }
+                .ovl-nowtxt { min-width:0; flex:1 1 auto; }
+                .ovl-nowtitle { font-weight:800; font-size:14px; }
+                .ovl-nowsub { font-size:11.5px; color:var(--text-muted); font-family:ui-monospace,'SF Mono','Roboto Mono',monospace; overflow-wrap:anywhere; margin-top:2px; }
+                .ovl-pal { display:flex; align-items:center; gap:8px; margin-top:8px; }
+                .ovl-pal-name { flex:0 0 56px; font-size:10px; font-weight:800; color:var(--text-muted); }
+                .ovl-pal-row { display:flex; flex:1 1 auto; gap:2px; min-width:0; }
+                .ovl-chip { flex:1 1 0; min-width:0; height:26px; border:none; border-radius:4px; padding:0; cursor:pointer; box-shadow:inset 0 0 0 1px rgba(128,128,128,.28); }
+                .ovl-chip:active { transform:scale(0.9); }
+                #ovlPalette .sdb-note { margin-top:10px; }
+                .ovl-colorbox { display:flex; gap:12px; align-items:center; margin:12px 0 4px; }
+                .ovl-big { width:56px; height:56px; border-radius:16px; border:1px solid var(--border-glass); flex:0 0 auto; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:20px; }
+                .ovl-hexwrap { position:relative; flex:1 1 auto; min-width:0; }
+                .ovl-hexwrap > span { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-family:ui-monospace,monospace; pointer-events:none; }
+                .ovl-hexwrap input { padding-left:26px; text-transform:uppercase; letter-spacing:1px; }
+                .ovl-slider { display:flex; align-items:center; gap:10px; margin:8px 0; font-size:11px; color:var(--text-muted); }
+                .ovl-slider b { flex:0 0 66px; font-weight:800; }
+                .ovl-slider input[type=range] { -webkit-appearance:none; appearance:none; flex:1 1 auto; min-width:0; height:16px; border-radius:8px; outline:none; border:1px solid var(--border-glass); margin:0; }
+                .ovl-slider input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:24px; height:24px; border-radius:50%; background:#fff; border:2px solid rgba(0,0,0,.6); box-shadow:0 1px 4px rgba(0,0,0,.5); }
+                .ovl-slider input[type=range]:focus-visible { box-shadow:0 0 0 2px var(--accent); }
+                .ovl-slider input[type=range]:focus-visible::-webkit-slider-thumb { box-shadow:0 0 0 3px var(--accent); }
+                #ovlH { background:linear-gradient(90deg,#FF0000,#FFFF00,#00FF00,#00FFFF,#0000FF,#FF00FF,#FF0000); }
+                .ovl-recent { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:10px; font-size:11px; color:var(--text-muted); font-weight:700; }
+                .ovl-sw { width:30px; height:30px; border-radius:50%; border:2px solid transparent; box-shadow:inset 0 0 0 1px rgba(128,128,128,.4); padding:0; cursor:pointer; flex:0 0 auto; }
+                .ovl-sw.sel { border-color:var(--text-main); box-shadow:0 0 0 2px var(--accent); }
+                .ovl-preset-head { width:100%; display:flex; justify-content:space-between; align-items:center; margin-top:12px; padding:10px 12px; border:1px solid var(--border-glass); background:rgba(var(--ov),0.05); color:var(--text-main); border-radius:12px; font-size:12.5px; font-weight:800; cursor:pointer; font-family:inherit; }
+                .ovl-preset-head b { color:var(--accent); }
+                #ovlPresets { margin-top:8px; }
+                .ovl-grid { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+                .ovl-presetname { font-size:11px; color:var(--text-muted); margin-top:8px; font-family:ui-monospace,monospace; overflow-wrap:anywhere; }
+                .ovl-styles { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
+                .ovl-style { display:flex; gap:12px; align-items:flex-start; text-align:left; width:100%; padding:10px 12px; border:1px solid var(--border-glass); background:rgba(var(--ov),0.04); color:var(--text-main); border-radius:14px; cursor:pointer; font-family:inherit; }
+                .ovl-style.active { border-color:var(--accent); background:rgba(var(--ov),0.09); }
+                .ovl-radio { flex:0 0 auto; width:18px; height:18px; border-radius:50%; border:2px solid var(--text-muted); margin-top:1px; position:relative; }
+                .ovl-style.active .ovl-radio { border-color:var(--accent); }
+                .ovl-style.active .ovl-radio::after { content:''; position:absolute; inset:3px; border-radius:50%; background:var(--accent); }
+                .ovl-styletxt { min-width:0; flex:1 1 auto; font-size:11px; color:var(--text-muted); line-height:1.4; }
+                .ovl-styletxt b { font-size:13px; color:var(--text-main); font-weight:800; }
+                .ovl-styletxt i { font-style:normal; font-size:9.5px; font-weight:800; margin-left:8px; padding:1px 7px; border-radius:999px; background:rgba(var(--ov),0.1); color:var(--accent); }
+                .ovl-styletxt > span { display:block; margin-top:1px; }
+                .ovl-actions { display:flex; gap:10px; margin:0 0 6px; }
+                .ovl-actions .mode-action-btn { min-height:44px; justify-content:center; }
+                .ovl-actions .mode-action-btn:disabled, #ovlDetailModal .mode-action-btn:disabled { opacity:.4; cursor:not-allowed; }
+                .ovl-hint { font-size:11px; color:var(--text-muted); margin:0 2px 16px; min-height:14px; }
+                .ovl-group { display:flex; justify-content:space-between; gap:8px; margin:10px 2px 0; font-size:10.5px; color:var(--text-muted); font-family:ui-monospace,monospace; }
+                .ovl-group span { overflow-wrap:anywhere; font-weight:800; }
+                .ovl-group b { flex:0 0 auto; font-weight:700; }
+                .ovl-row.na { opacity:.6; }
+                .ovl-row.na .sdb-sw { opacity:.5; }
+            </style>
+
+            <div class="color-card" id="ovlTop">
+                <div class="color-card-title">🌈 Overlays</div>
+                <div class="color-card-subtitle">Recolor Android’s <b>Material You</b> theme with your own color and style, and switch system <b>overlays</b> on or off.</div>
+
+                <div class="mode-alert-card" id="ovlGate" style="display:none; margin:12px 0 0;">
+                    <div class="mode-alert-icon">🔒</div>
+                    <div class="mode-alert-body">
+                        <div class="mode-alert-title">Needs ADB, Wireless Debugging, Shizuku or Root</div>
+                        <div class="mode-alert-desc" id="ovlGateDesc">Changing the theme and the overlays goes through the shell. Connect one of them in Working Modes, then come back.</div>
+                    </div>
+                    <button class="mode-alert-btn" onclick="openWorkingModesModal()">Set Up ⚡</button>
+                </div>
+
+                <div class="sdb-tabs" id="ovlTabs" role="tablist" aria-label="Overlays">
+                    <button type="button" class="sdb-tab active" data-sub="theme" role="tab" onclick="ovlSetSub('theme')">🎨 Theme<b>Material You</b></button>
+                    <button type="button" class="sdb-tab" data-sub="list" role="tab" onclick="ovlSetSub('list')">🧩 Overlays<b id="ovlListCount">&nbsp;</b></button>
+                </div>
+            </div>
+
+            <div id="ovlThemePanel">
+                <div id="ovlThemeError" style="display:none;"></div>
+
+                <div class="color-card">
+                    <div class="color-card-title" style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                        <span>Colors in use</span>
+                        <button type="button" class="sdb-iconbtn" style="width:32px; height:32px; font-size:15px;" onclick="ovlRefreshTheme()" aria-label="Refresh" title="Refresh">↻</button>
+                    </div>
+                    <div id="ovlNow"></div>
+                    <div id="ovlPalette"></div>
+                </div>
+
+                <div class="color-card">
+                    <div class="color-card-title">Color</div>
+                    <div class="color-card-subtitle" style="margin-bottom:10px;">Where the whole palette comes from</div>
+                    <div class="sdb-seg" id="ovlSourceSeg" role="tablist" aria-label="Color source">
+                        <button type="button" data-src="home_wallpaper" role="tab">🖼️ Wallpaper</button>
+                        <button type="button" data-src="preset" role="tab">🎨 Custom color</button>
+                    </div>
+                    <div class="sdb-note" id="ovlSourceNote"></div>
+
+                    <div id="ovlColorEditor" style="display:none;">
+                        <div class="ovl-colorbox">
+                            <div class="ovl-big" id="ovlBig" style="background:#6750A4;"></div>
+                            <div class="ovl-hexwrap"><span>#</span><input type="text" class="sdb-field" id="ovlHex" value="6750A4" maxlength="12" oninput="ovlHexInput()" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" inputmode="text" aria-label="Color as hex"></div>
+                        </div>
+                        <div class="sdb-problem" id="ovlHexProblem"></div>
+                        <div class="ovl-slider"><b>Hue</b><input type="range" id="ovlH" min="0" max="359" step="1" value="260" oninput="ovlSliderInput()" aria-label="Hue"></div>
+                        <div class="ovl-slider"><b>Saturation</b><input type="range" id="ovlS" min="0" max="100" step="1" value="40" oninput="ovlSliderInput()" aria-label="Saturation"></div>
+                        <div class="ovl-slider"><b>Lightness</b><input type="range" id="ovlL" min="0" max="100" step="1" value="49" oninput="ovlSliderInput()" aria-label="Lightness"></div>
+                        <div class="ovl-recent" id="ovlRecent" style="display:none;"></div>
+
+                        <button type="button" class="ovl-preset-head" id="ovlPresetHead" onclick="ovlTogglePresets()" aria-expanded="false"></button>
+                        <div id="ovlPresets" style="display:none;">
+                            <div class="sdb-searchwrap" style="margin-top:4px;">
+                                <input type="text" class="list-search" id="ovlPresetSearch" placeholder="Search by name or hex…" oninput="ovlPresetSearchInput()" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" aria-label="Search the preset colors" style="width:100%; height:38px; font-size:13px;">
+                            </div>
+                            <div class="sdb-filters" id="ovlFamilies" style="margin-top:8px; margin-bottom:0;"></div>
+                            <div class="ovl-grid" id="ovlPresetGrid"></div>
+                            <div class="sdb-more" id="ovlPresetMore"></div>
+                            <div class="ovl-presetname" id="ovlPresetName"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="color-card">
+                    <div class="color-card-title">Style</div>
+                    <div class="color-card-subtitle" style="margin-bottom:0;">How the palette is worked out from that color</div>
+                    <div class="ovl-styles" id="ovlStyles" role="radiogroup" aria-label="Theme style"></div>
+                </div>
+
+                <div class="ovl-actions">
+                    <button type="button" class="mode-action-btn primary" id="ovlApplyBtn" style="flex:1;" onclick="ovlApply()">🎨 Apply theme</button>
+                    <button type="button" class="mode-action-btn" id="ovlResetBtn" onclick="ovlReset()">↩️ Default</button>
+                </div>
+                <div class="ovl-hint" id="ovlApplyHint"></div>
+
+                <div class="color-card">
+                    <div class="color-card-title">How this works</div>
+                    <div class="sdb-note" style="margin-top:6px;">
+                        Android 12 and newer build every system color from <b>one source color</b>: your wallpaper, or a color you set. The <b>style</b> decides how vibrant that palette is. This tab writes the secure setting <b>theme_customization_overlay_packages</b>, the same one Android’s own wallpaper picker uses, so Google apps and any app that uses Material You follow it. Some phone makers add their own palette on top.
+                    </div>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">
+                        <button type="button" class="batch-tool-link" onclick="ovlCopyRaw()">📋 Copy the setting</button>
+                        <button type="button" class="batch-tool-link" onclick="ovlRefreshTheme()">↻ Reload</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="ovlListPanel" style="display:none;">
+                <div class="color-card">
+                    <div class="sdb-bar">
+                        <div class="sdb-searchwrap">
+                            <input type="text" class="list-search" id="ovlSearch" placeholder="Search overlays…" oninput="ovlSearchInput()" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" aria-label="Search overlays">
+                            <span class="search-clear" id="ovlSearchClear" onclick="ovlClearSearch()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();ovlClearSearch();}" role="button" tabindex="0" aria-label="Clear search">✕</span>
+                        </div>
+                        <button type="button" class="sdb-iconbtn" onclick="ovlReadList()" aria-label="Reload the overlays" title="Reload">↻</button>
+                    </div>
+                    <div class="sdb-filters" id="ovlFilters">
+                        <button type="button" class="filter-chip active" data-f="all" onclick="ovlSetFilter('all')">All</button>
+                        <button type="button" class="filter-chip" data-f="on" onclick="ovlSetFilter('on')">On</button>
+                        <button type="button" class="filter-chip" data-f="off" onclick="ovlSetFilter('off')">Off</button>
+                        <button type="button" class="filter-chip" data-f="theme" onclick="ovlSetFilter('theme')">Theme</button>
+                    </div>
+                    <div class="sdb-status" id="ovlStatus"></div>
+                    <div class="sdb-note" style="margin-top:8px;"><b>Tap</b> a switch, or <b>press and hold</b> a row, to switch an overlay on or off; <b>tap</b> the row for details. System overlays change how Android looks and can restart apps. Every change can be undone here.</div>
+                </div>
+                <div id="ovlRows" class="sdb-list" role="list"></div>
+                <div id="ovlMore" class="sdb-more"></div>
+            </div>
         </section>
 
         <!-- VIEW: SHIZUSTORE -->
@@ -4484,6 +4651,32 @@ Type any command below (e.g. pm list packages -d)
     <!-- Android settings: undo after a change -->
     <div class="sdb-snack" id="sdbSnack" role="status" aria-live="polite"><span id="sdbSnackMsg"></span><button id="sdbSnackUndo" onclick="sdbSnackUndoNow()">Undo</button></div>
 
+    <!-- Overlays: one overlay -->
+    <div class="modal-overlay" id="ovlDetailModal" onclick="if(event.target===this) ovlCloseDetail()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-avatar" style="background:rgba(0,200,255,0.18); color:var(--accent);">🧩</div>
+                    <div class="sheet-title">
+                        <h3 id="ovlDetailId" style="word-break:break-all; font-family:ui-monospace,monospace; font-size:14px;"></h3>
+                        <p id="ovlDetailSub" style="word-break:break-all;"></p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="ovlCloseDetail()" role="button" aria-label="Close">✕</div>
+            </div>
+            <div class="sdb-note" id="ovlDetailNote" style="margin:0 0 12px;"></div>
+            <div style="display:flex; gap:10px;">
+                <button class="mode-action-btn primary" id="ovlDetailOn" style="flex:1; justify-content:center; min-height:42px;" onclick="ovlDetailDo('on')">✅ Switch on</button>
+                <button class="mode-action-btn" id="ovlDetailOff" style="flex:1; justify-content:center; min-height:42px;" onclick="ovlDetailDo('off')">⏻ Switch off</button>
+            </div>
+            <div class="batch-sheet-tools" style="margin-top:10px; gap:12px; flex-wrap:wrap;">
+                <button class="batch-tool-link" onclick="ovlDetailDo('name')">📋 Name</button>
+                <button class="batch-tool-link" onclick="ovlDetailDo('target')">📋 Target</button>
+                <button class="batch-tool-link" onclick="ovlDetailDo('cmd')">📋 Command</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="signModal" onclick="if(event.target===this) signClose()">
         <div class="modal-sheet">
             <div class="sheet-header">
@@ -4986,7 +5179,7 @@ Type any command below (e.g. pm list packages -d)
 
         // Order must match the .tab-btn buttons above. 'colors' has no tab button (it opens from the
         // header 🎨 icon), so it sits last with no matching button index.
-        const tabKeys = ['apps', 'saved-lists', 'debloater', 'installer', 'files', 'updates', 'terminal', 'logcat', 'settings', 'store', 'about', 'colors'];
+        const tabKeys = ['apps', 'saved-lists', 'debloater', 'installer', 'files', 'updates', 'terminal', 'logcat', 'settings', 'overlays', 'store', 'about', 'colors'];
 
         // Tabs visited before this one (most recent last), so Back can retrace them
         let viewStack = [];
@@ -5032,6 +5225,7 @@ Type any command below (e.g. pm list packages -d)
             if (viewName === 'logcat') onLogcatShown();
             if (viewName !== 'settings' && viewName !== 'overlays' && typeof sdbSnackHide === 'function') sdbSnackHide();      // its Undo only makes sense next to what it undoes
             if (viewName === 'settings') onSettingsShown();
+            if (viewName === 'overlays') onOverlaysShown();
             if (viewName === 'store') onStoreShown();
             if (viewName === 'about') onAboutShown();
             haptic();
@@ -5078,6 +5272,7 @@ Type any command below (e.g. pm list packages -d)
             if (typeof arcBusy !== 'undefined' && arcBusy) return 'an archive job is running';
             if (typeof backupRunning !== 'undefined' && backupRunning) return 'a backup or restore is running';
             if (typeof sdbBusy !== 'undefined' && sdbBusy.size) return 'a settings change is being applied';
+            if (typeof ovlBusy !== 'undefined' && (ovlBusy || ovlRowBusy.size)) return 'an overlay or theme change is being applied';
             if ((typeof termShellRun !== 'undefined' && termShellRun) || (typeof rishRunning !== 'undefined' && rishRunning)) return 'a terminal command is running';
             return '';
         }
@@ -5095,6 +5290,7 @@ Type any command below (e.g. pm list packages -d)
             if (selectedPkgs.size) { clearBatchSelection(); return true; }
             const cur = currentViewName();
             if (cur === 'settings' && typeof sdbBackHandled === 'function' && sdbBackHandled()) return true;
+            if (cur === 'overlays' && typeof ovlBackHandled === 'function' && ovlBackHandled()) return true;
             if (cur === 'debloater' && typeof uadSelected !== 'undefined' && uadSelected.size) { clearUadSelection(); return true; }
             if (cur === 'files' && typeof fmSelMode !== 'undefined' && fmSelMode) { fmSelExit(); return true; }
             if (cur === 'files' && typeof arc !== 'undefined' && arc) {
@@ -5581,6 +5777,7 @@ Type any command below (e.g. pm list packages -d)
 
                 if (typeof rishSyncUi === 'function') rishSyncUi();
                 try { if (typeof sdbOnModeChange === 'function') sdbOnModeChange(); } catch (e) { console.error('Settings tab: ' + e); }
+                try { if (typeof ovlOnModeChange === 'function') ovlOnModeChange(); } catch (e) { console.error('Overlays tab: ' + e); }
 
                 // Update Modal Content
                 document.getElementById('modalActiveModeDesc').innerText = `Selected: ${MODE_LABELS[configured] || configured} • Active: ${text.innerText}`;
@@ -13085,6 +13282,7 @@ Type any command below (e.g. pm list packages -d)
         // keeps the old and new value so a change can be put back later. f / v: null = the setting was absent / is gone;
         // lf / lv: that value was too long to keep, so its text is not stored (and the change can't be put back)
         function sdbRecord(ns, key, from, to) {
+            sdbInit();                         // the saved journal has to be loaded before it is added to and saved again (the Overlays tab can come first)
             const tooLong = s => s != null && s.length > 2000;
             sdbJournal.unshift({ n: ++sdbJournalSeq, t: Date.now(), ns, k: key, f: tooLong(from) ? null : from, lf: tooLong(from), v: tooLong(to) ? null : to, lv: tooLong(to) });
             if (sdbJournal.length > SDB_JOURNAL_MAX) sdbJournal.length = SDB_JOURNAL_MAX;
@@ -13395,6 +13593,943 @@ Type any command below (e.g. pm list packages -d)
             if (currentViewName() === 'settings' && sdbQuery) { sdbClearSearch(); return true; }
             return false;
         }
+
+        // ---------- Overlays: the Material You theme and the overlay manager ----------
+        // Two halves in one tab. "Theme" rewrites the secure setting Android's Monet engine reads its source colour and style from
+        // (the app writes it, reads it back to prove it, and sets Samsung's wallpaper-colours switch where the phone has one).
+        // "Overlays" lists what `cmd overlay list` reports and switches each overlay on or off. Both go through the active
+        // ADB / Wireless Debugging / Shizuku / Root mode; the colours in use now are read without any of them.
+
+        const OVL_STYLES = [
+            { id: 'TONAL_SPOT', name: 'Tonal Spot', tag: 'Default', desc: 'Complementary colors in a balanced blend' },
+            { id: 'VIBRANT', name: 'Vibrant', tag: '', desc: 'Vibrant complementary colors with a strong background tint' },
+            { id: 'EXPRESSIVE', name: 'Expressive', tag: '', desc: 'A colorful theme that pairs unexpected accent colors' },
+            { id: 'FRUIT_SALAD', name: 'Fruit Salad', tag: '', desc: 'A saturated theme that uses a wide range of colors' },
+            { id: 'RAINBOW', name: 'Rainbow', tag: '', desc: 'A strong accent that stands out against no background tint' },
+            { id: 'SPRITZ', name: 'Spritz', tag: 'Muted', desc: 'A muted theme with a blend of desaturated colors' }
+        ];
+        const OVL_STYLE_IDS = OVL_STYLES.map(s => s.id);
+        const OVL_PAL = [['accent1', 'Accent 1'], ['accent2', 'Accent 2'], ['accent3', 'Accent 3'], ['neutral1', 'Neutral 1'], ['neutral2', 'Neutral 2']];
+        const OVL_TONES = [0, 10, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000];      // the 13 steps of one tonal palette; the page shows 10 … 900
+        const OVL_FAMILIES = [['all', 'All'], ['neutral', 'Neutral'], ['red', 'Red'], ['orange', 'Orange'], ['yellow', 'Yellow'], ['green', 'Green'], ['teal', 'Teal'], ['blue', 'Blue'], ['purple', 'Purple'], ['pink', 'Pink']];
+        const OVL_PAGE = 120, OVL_PRESET_PAGE = 96, OVL_HOLD_MS = 480, OVL_RECENT_MAX = 8;
+        const OVL_RESUME_MS = 20000;                  // how long after a change a restart of the app still comes back to this tab with the Undo bar
+        const OVL_THEMEY = /theme|customization|monet|palette|accent|icon_?pack|navbar|font|shape/i;      // the "Theme" filter
+        const OVL_PRESETS = [["Metallic Silver","BCC6CC"],["Blue Gray","98AFC7"],["Roman Silver","838996"],["Light Slate Gray","778899"],["Slate Gray","708090"],["Rat Gray","6D7B8D"],["Slate Granite Gray","657383"],["Jet Gray","616D7E"],["Mist Blue","646D7E"],["Marble Blue","566D7E"],["Slate Blue Grey","737CA1"],["Light Purple Blue","728FCE"],["Azure Blue","4863A0"],["Blue Jay","2B547E"],["Charcoal Blue","36454F"],["Dark Blue Grey","29465B"],["Dark Slate","2B3856"],["Deep-Sea Blue","123456"],["Night Blue","151B54"],["Midnight Blue","191970"],["Navy","000080"],["Denim Dark Blue","151B8D"],["Dark Blue","00008B"],["Lapis Blue","15317E"],["New Midnight Blue","0000A0"],["Earth Blue","0000A5"],["Cobalt Blue","0020C2"],["Medium Blue","0000CD"],["Blueberry Blue","0041C2"],["Canary Blue","2916F5"],["Blue","0000FF"],["Samco Blue","0002FF"],["Bright Blue","0909FF"],["Blue Orchid","1F45FC"],["Sapphire Blue","2554C7"],["Blue Eyes","1569C7"],["Bright Navy Blue","1974D2"],["Balloon Blue","2B60DE"],["Royal Blue","4169E1"],["Ocean Blue","2B65EC"],["Blue Ribbon","306EFF"],["Blue Dress","157DEC"],["Neon Blue","1589FF"],["Dodger Blue","1E90FF"],["Glacial Blue Ice","368BC1"],["Steel Blue","4682B4"],["Silk Blue","488AC7"],["Windows Blue","357EC7"],["Blue Ivy","3090C7"],["Blue Koi","659EC7"],["Columbia Blue","87AFC7"],["Baby Blue","95B9C7"],["Cornflower Blue","6495ED"],["Sky Blue Dress","6698FF"],["Iceberg","56A5EC"],["Butterfly Blue","38ACEC"],["Deep Sky Blue","00BFFF"],["Midday Blue","3BB9FF"],["Crystal Blue","5CB3FF"],["Denim Blue","79BAEC"],["Day Sky Blue","82CAFF"],["Light Sky Blue","87CEFA"],["Sky Blue","87CEEB"],["Jeans Blue","A0CFEC"],["Blue Angel","B7CEEC"],["Pastel Blue","B4CFEC"],["Light Day Blue","ADDFFF"],["Sea Blue","C2DFFF"],["Heavenly Blue","C6DEFF"],["Robin Egg Blue","BDEDFF"],["Powder Blue","B0E0E6"],["Coral Blue","AFDCEC"],["Light Blue","ADD8E6"],["Light Steel Blue","B0CFDE"],["Gulf Blue","C9DFEC"],["Pastel Light Blue","D5D6EA"],["Lavender Blue","E3E4FA"],["White Blue","DBE9FA"],["Lavender","E6E6FA"],["Water","EBF4FA"],["Alice Blue","F0F8FF"],["Ghost White","F8F8FF"],["Azure","F0FFFF"],["Light Cyan","E0FFFF"],["Light Slate","CCFFFF"],["Electric Blue","9AFEFF"],["Tron Blue","7DFDFE"],["Blue Zircon","57FEFF"],["Aqua","00FFFF"],["Bright Cyan","0AFFFF"],["Celeste","50EBEC"],["Blue Diamond","4EE2EC"],["Bright Turquoise","16E2F5"],["Blue Lagoon","8EEBEC"],["Pale Turquoise","AFEEEE"],["Pale Blue Lily","CFECEC"],["Light Teal","B3D9D9"],["Tiffany Blue","81D8D0"],["Blue Hosta","77BFC7"],["Cyan Opaque","92C7C7"],["Northern Lights Blue","78C7C7"],["Blue Green","7BCCB5"],["Medium Aqua Marine","66CDAA"],["Magic Mint","AAF0D1"],["Light Aquamarine","93FFE8"],["Aquamarine","7FFFD4"],["Bright Teal","01F9C6"],["Turquoise","40E0D0"],["Medium Turquoise","48D1CC"],["Deep Turquoise","48CCCD"],["Jellyfish","46C7C7"],["Blue Turquoise","43C6DB"],["Dark Turquoise","00CED1"],["Macaw Blue Green","43BFC7"],["Light Sea Green","20B2AA"],["Seafoam Green","3EA99F"],["Cadet Blue","5F9EA0"],["Deep Sea","3B9C9C"],["Dark Cyan","008B8B"],["Teal Green","00827F"],["Teal","008080"],["Teal Blue","007C80"],["Medium Teal","045F5F"],["Dark Teal","045D5D"],["Deep Teal","033E3E"],["Dark Slate Gray","25383C"],["Gunmetal","2C3539"],["Blue Moss Green","3C565B"],["Beetle Green","4C787E"],["Grayish Turquoise","5E7D7E"],["Greenish Blue","307D7E"],["Aquamarine Stone","348781"],["Sea Turtle Green","438D80"],["Dull Sea Green","4E8975"],["Dark Green Blue","1F6357"],["Deep Sea Green","306754"],["Bottle Green","006A4E"],["Sea Green","2E8B57"],["Elf Green","1B8A6B"],["Dark Mint","31906E"],["Jade","00A36C"],["Earth Green","34A56F"],["Chrome Green","1AA260"],["Emerald","50C878"],["Mint","3EB489"],["Medium Sea Green","3CB371"],["Metallic Green","7C9D8E"],["Camouflage Green","78866B"],["Sage Green","848B79"],["Hazel Green","617C58"],["Venom Green","728C00"],["Olive Drab","6B8E23"],["Olive","808000"],["Dark Olive Green","556B2F"],["Military Green","4E5B31"],["Green Leaves","3A5F0B"],["Army Green","4B5320"],["Fern Green","667C26"],["Fall Forest Green","4E9258"],["Irish Green","08A04B"],["Pine Green","387C44"],["Medium Forest Green","347235"],["Jungle Green","347C2C"],["Cactus Green","227442"],["Forest Green","228B22"],["Green","008000"],["Dark Green","006400"],["Deep Green","056608"],["Deep Emerald Green","046307"],["Hunter Green","355E3B"],["Dark Forest Green","254117"],["Lotus Green","004225"],["Seaweed Green","437C17"],["Shamrock Green","347C17"],["Green Onion","6AA121"],["Moss Green","8A9A5B"],["Grass Green","3F9B0B"],["Green Pepper","4AA02C"],["Dark Lime Green","41A317"],["Parrot Green","12AD2B"],["Clover Green","3EA055"],["Dinosaur Green","73A16C"],["Green Snake","6CBB3C"],["Alien Green","6CC417"],["Green Apple","4CC417"],["Lime Green","32CD32"],["Pea Green","52D017"],["Kelly Green","4CC552"],["Zombie Green","54C571"],["Green Peas","89C35C"],["Dollar Bill Green","85BB65"],["Frog Green","99C68E"],["Turquoise Green","A0D6B4"],["Dark Sea Green","8FBC8F"],["Basil Green","829F82"],["Gray Green","A2AD9C"],["Iguana Green","9CB071"],["Citron Green","8FB31D"],["Acid Green","B0BF1A"],["Avocado Green","B2C248"],["Pistachio Green","9DC209"],["Salad Green","A1C935"],["Yellow Green","9ACD32"],["Pastel Green","77DD77"],["Hummingbird Green","7FE817"],["Nebula Green","59E817"],["Stoplight Go Green","57E964"],["Neon Green","16F529"],["Jade Green","5EFB6E"],["Lime Mint Green","36F57F"],["Spring Green","00FF7F"],["Medium Spring Green","00FA9A"],["Emerald Green","5FFB17"],["Lime","00FF00"],["Lawn Green","7CFC00"],["Bright Green","66FF00"],["Chartreuse","7FFF00"],["Yellow Lawn Green","87F717"],["Aloe Vera Green","98F516"],["Dull Green Yellow","B1FB17"],["Lemon Green","ADF802"],["Green Yellow","ADFF2F"],["Chameleon Green","BDF516"],["Neon Yellow Green","DAEE01"],["Yellow Green Grosbeak","E2F516"],["Tea Green","CCFB5D"],["Slime Green","BCE954"],["Algae Green","64E986"],["Light Green","90EE90"],["Dragon Green","6AFB92"],["Pale Green","98FB98"],["Mint Green","98FF98"],["Green Thumb","B5EAAA"],["Organic Brown","E3F9A6"],["Light Jade","C3FDB8"],["Light Mint Green","C2E5D3"],["Light Rose Green","DBF9DB"],["Chrome White","E8F1D4"],["Honeydew","F0FFF0"],["Mint Cream","F5FFFA"],["Lemon Chiffon","FFFACD"],["Parchment","FFFFC2"],["Cream","FFFFCC"],["Cream White","FFFDD0"],["Light Golden Rod Yellow","FAFAD2"],["Light Yellow","FFFFE0"],["Beige","F5F5DC"],["Cornsilk","FFF8DC"],["Blonde","FBF6D9"],["Champagne","F7E7CE"],["Antique White","FAEBD7"],["Papaya Whip","FFEFD5"],["Blanched Almond","FFEBCD"],["Bisque","FFE4C4"],["Wheat","F5DEB3"],["Moccasin","FFE4B5"],["Peach","FFE5B4"],["Light Orange","FED8B1"],["Peach Puff","FFDAB9"],["Coral Peach","FBD5AB"],["Navajo White","FFDEAD"],["Golden Blonde","FBE7A1"],["Golden Silk","F3E3C3"],["Dark Blonde","F0E2B6"],["Light Gold","F1E5AC"],["Vanilla","F3E5AB"],["Tan Brown","ECE5B6"],["Dirty White","E8E4C9"],["Pale Golden Rod","EEE8AA"],["Khaki","F0E68C"],["Cardboard Brown","EDDA74"],["Harvest Gold","EDE275"],["Sun Yellow","FFE87C"],["Corn Yellow","FFF380"],["Pastel Yellow","FAF884"],["Neon Yellow","FFFF33"],["Yellow","FFFF00"],["Canary Yellow","FFEF00"],["Banana Yellow","F5E216"],["Mustard Yellow","FFDB58"],["Golden Yellow","FFDF00"],["Bold Yellow","F9DB24"],["Rubber Ducky Yellow","FFD801"],["Gold","FFD700"],["Bright Gold","FDD017"],["Chrome Gold","FFCE44"],["Golden Brown","EAC117"],["Deep Yellow","F6BE00"],["Macaroni and Cheese","F2BB66"],["Saffron","FBB917"],["Neon Gold","FDBD01"],["Beer","FBB117"],["Yellow Orange","FFAE42"],["Cantaloupe","FFA62F"],["Cheese Orange","FFA600"],["Orange","FFA500"],["Brown Sand","EE9A4D"],["Sandy Brown","F4A460"],["Brown Sugar","E2A76F"],["Camel Brown","C19A6B"],["Deer Brown","E6BF83"],["Burly Wood","DEB887"],["Tan","D2B48C"],["Light French Beige","C8AD7F"],["Sand","C2B280"],["Sage","BCB88A"],["Fall Leaf Brown","C8B560"],["Ginger Brown","C9BE62"],["Bronze Gold","C9AE5D"],["Dark Khaki","BDB76B"],["Olive Green","BAB86C"],["Brass","B5A642"],["Cookie Brown","C7A317"],["Metallic Gold","D4AF37"],["Bee Yellow","E9AB17"],["School Bus Yellow","E8A317"],["Golden Rod","DAA520"],["Orange Gold","D4A017"],["Caramel","C68E17"],["Dark Golden Rod","B8860B"],["Cinnamon","C58917"],["Peru","CD853F"],["Bronze","CD7F32"],["Tiger Orange","C88141"],["Copper","B87333"],["Dark Gold","AA6C39"],["Metallic Bronze","A97142"],["Dark Almond","AB784E"],["Wood","966F33"],["Oak Brown","806517"],["Antique Bronze","665D1E"],["Hazel","8E7618"],["Dark Yellow","8B8000"],["Dark Moccasin","827839"],["Khaki Green","8A865D"],["Millennium Jade","93917C"],["Dark Beige","9F8C76"],["Bullet Shell","AF9B60"],["Army Brown","827B60"],["Sandstone","786D5F"],["Taupe","483C32"],["Mocha","493D26"],["Milk Chocolate","513B1C"],["Gray Brown","3D3635"],["Dark Coffee","3B2F2F"],["Old Burgundy","43302E"],["Western Charcoal","49413F"],["Bakers Brown","5C3317"],["Dark Brown","654321"],["Sepia Brown","704214"],["Dark Bronze","804A00"],["Coffee","6F4E37"],["Brown Bear","835C3B"],["Red Dirt","7F5217"],["Sepia","7F462C"],["Sienna","A0522D"],["Saddle Brown","8B4513"],["Dark Sienna","8A4117"],["Sangria","7E3817"],["Blood Red","7E3517"],["Chestnut","954535"],["Coral Brown","9E4638"],["Chestnut Red","C34A2C"],["Mahogany","C04000"],["Red Gold","EB5406"],["Red Fox","C35817"],["Dark Bisque","B86500"],["Light Brown","B5651D"],["Petra Gold","B76734"],["Rust","C36241"],["Copper Red","CB6D51"],["Orange Salmon","C47451"],["Chocolate","D2691E"],["Sedona","CC6600"],["Papaya Orange","E56717"],["Halloween Orange","E66C2C"],["Neon Orange","FF6700"],["Bright Orange","FF5F1F"],["Pumpkin Orange","F87217"],["Carrot Orange","F88017"],["Dark Orange","FF8C00"],["Construction Cone Orange","F87431"],["Indian Saffron","FF7722"],["Sunrise Orange","E67451"],["Mango Orange","FF8040"],["Coral","FF7F50"],["Basket Ball Orange","F88158"],["Light Salmon Rose","F9966B"],["Light Salmon","FFA07A"],["Dark Salmon","E9967A"],["Tangerine","E78A61"],["Light Copper","DA8A67"],["Salmon Pink","FF8674"],["Salmon","FA8072"],["Peach Pink","F98B88"],["Light Coral","F08080"],["Pastel Red","F67280"],["Pink Coral","E77471"],["Bean Red","F75D59"],["Valentine Red","E55451"],["Indian Red","CD5C5C"],["Tomato","FF6347"],["Shocking Orange","E55B3C"],["Orange Red","FF4500"],["Red","FF0000"],["Neon Red","FD1C03"],["Scarlet Red","FF2400"],["Ruby Red","F62217"],["Ferrari Red","F70D1A"],["Fire Engine Red","F62817"],["Lava Red","E42217"],["Love Red","E41B17"],["Grapefruit","DC381F"],["Cherry Red","C24641"],["Chilli Pepper","C11B17"],["Fire Brick","B22222"],["Tomato Sauce Red","B21807"],["Brown","A52A2A"],["Carbon Red","A70D2A"],["Cranberry","9F000F"],["Saffron Red","931314"],["Crimson Red","990000"],["Red Wine","990012"],["Dark Red","8B0000"],["Maroon","800000"],["Burgundy","8C001A"],["Vermilion","7E191B"],["Deep Red","800517"],["Red Blood","660000"],["Blood Night","551606"],["Dark Scarlet","560319"],["Black Bean","3D0C02"],["Chocolate Brown","3F000F"],["Midnight","2B1B17"],["Purple Lily","550A35"],["Purple Maroon","810541"],["Plum Pie","7D0541"],["Plum Velvet","7D0552"],["Dark Raspberry","872657"],["Velvet Maroon","7E354D"],["Rosy Finch","7F4E52"],["Dull Purple","7F525D"],["Puce","7F5A58"],["Rose Dust","997070"],["Pastel Brown","B1907F"],["Rosy Pink","B38481"],["Rosy Brown","BC8F8F"],["Khaki Rose","C5908E"],["Lipstick Pink","C48793"],["Pink Brown","C48189"],["Old Rose","C08081"],["Dusty Pink","D58A94"],["Pink Daisy","E799A3"],["Rose","E8ADAA"],["Dusty Rose","C9A9A6"],["Silver Pink","C4AEAD"],["Gold Pink","E6C7C2"],["Rose Gold","ECC5C0"],["Deep Peach","FFCBA4"],["Pastel Orange","F8B88B"],["Desert Sand","EDC9AF"],["Unbleached Silk","FFDDCA"],["Pig Pink","FDD7E4"],["Pale Pink","F2D4D7"],["Blush","FFE6E8"],["Misty Rose","FFE4E1"],["Pink Bubble Gum","FFDFDD"],["Light Rose","FBCFCD"],["Light Red","FFCCCB"],["Warm Pink","F6C6BD"],["Deep Rose","FBBBB9"],["Pink","FFC0CB"],["Light Pink","FFB6C1"],["Soft Pink","FFB8BF"],["Donut Pink","FAAFBE"],["Baby Pink","FAAFBA"],["Flamingo Pink","F9A7B0"],["Pastel Pink","FEA3AA"],["Rose Pink","E7A1B0"],["Cadillac Pink","E38AAE"],["Carnation Pink","F778A1"],["Pastel Rose","E5788F"],["Blush Red","E56E94"],["Pale Violet Red","DB7093"],["Purple Pink","D16587"],["Tulip Pink","C25A7C"],["Bashful Pink","C25283"],["Dark Pink","E75480"],["Dark Hot Pink","F660AB"],["Hot Pink","FF69B4"],["Watermelon Pink","FC6C85"],["Violet Red","F6358A"],["Hot Deep Pink","F52887"],["Bright Pink","FF007F"],["Deep Pink","FF1493"],["Neon Pink","F535AA"],["Chrome Pink","FF33AA"],["Neon Hot Pink","FD349C"],["Pink Cupcake","E45E9D"],["Royal Pink","E759AC"],["Dimorphotheca Magenta","E3319D"],["Pink Lemonade","E4287C"],["Red Pink","FA2A55"],["Raspberry","E30B5D"],["Crimson","DC143C"],["Bright Maroon","C32148"],["Rose Red","C21E56"],["Rogue Pink","C12869"],["Burnt Pink","C12267"],["Pink Violet","CA226B"],["Magenta Pink","CC338B"],["Medium Violet Red","C71585"],["Dark Carnation Pink","C12283"],["Raspberry Purple","B3446C"],["Pink Plum","B93B8F"],["Orchid","DA70D6"],["Deep Mauve","DF73D4"],["Violet","EE82EE"],["Fuchsia Pink","FF77FF"],["Bright Neon Pink","F433FF"],["Fuchsia","FF00FF"],["Crimson Purple","E238EC"],["Heliotrope Purple","D462FF"],["Tyrian Purple","C45AEC"],["Medium Orchid","BA55D3"],["Purple Flower","A74AC7"],["Orchid Purple","B048B5"],["Rich Lilac","B666D2"],["Pastel Violet","D291BC"],["Mauve Taupe","915F6D"],["Viola Purple","7E587E"],["Eggplant","614051"],["Plum Purple","583759"],["Grape","5E5A80"],["Purple Navy","4E5180"],["Slate Blue","6A5ACD"],["Blue Lotus","6960EC"],["Blurple","5865F2"],["Light Slate Blue","736AFF"],["Medium Slate Blue","7B68EE"],["Periwinkle Purple","7575CF"],["Very Peri","6667AB"],["Bright Grape","6F2DA8"],["Purple Amethyst","6C2DC7"],["Bright Purple","6A0DAD"],["Deep Periwinkle","5453A6"],["Dark Slate Blue","483D8B"],["Purple Haze","4E387E"],["Purple Iris","571B7E"],["Dark Purple","4B0150"],["Deep Purple","36013F"],["Midnight Purple","2E1A47"],["Purple Monster","461B7E"],["Indigo","4B0082"],["Blue Whale","342D7E"],["Rebecca Purple","663399"],["Purple Jam","6A287E"],["Dark Magenta","8B008B"],["Purple","800080"],["French Lilac","86608E"],["Dark Orchid","9932CC"],["Dark Violet","9400D3"],["Purple Violet","8D38C9"],["Jasmine Purple","A23BEC"],["Purple Daffodil","B041FF"],["Clematis Violet","842DCE"],["Blue Violet","8A2BE2"],["Purple Sage Bush","7A5DC7"],["Lovely Purple","7F38EC"],["Neon Purple","9D00FF"],["Purple Plum","8E35EF"],["Aztech Purple","893BFF"],["Medium Purple","9370DB"],["Light Purple","8467D7"],["Crocus Purple","9172EC"],["Purple Mimosa","9E7BFF"],["Periwinkle","CCCCFF"],["Pale Lilac","DCD0FF"],["Lavender Purple","967BB6"],["Rose Purple","B09FCA"],["Lilac","C8A2C8"],["Mauve","E0B0FF"],["Bright Lilac","D891EF"],["Purple Dragon","C38EC7"],["Plum","DDA0DD"],["Blush Pink","E6A9EC"],["Pastel Purple","F2A2E8"],["Blossom Pink","F9B7FF"],["Wisteria Purple","C6AEC7"],["Purple Thistle","D2B9D3"],["Thistle","D8BFD8"],["Purple White","DFD3E3"],["Periwinkle Pink","E9CFEC"],["Cotton Candy","FCDFFF"],["Lavender Pinocchio","EBDDE2"],["Dark White","E1D9D1"],["Ash White","E9E4D4"],["White Chocolate","EDE6D6"],["Soft Ivory","FAF0DD"],["Off White","F8F0E3"],["Pearl White","F8F6F0"],["Red White","F3E8EA"],["Lavender Blush","FFF0F5"],["Pearl","FDEEF4"],["Egg Shell","FFF9E3"],["Old Lace","FEF0E3"],["Linen","FAF0E6"],["Sea Shell","FFF5EE"],["Bone White","F9F6EE"],["Rice","FAF5EF"],["Floral White","FFFAF0"],["Ivory","FFFFF0"],["White Gold","FFFFF4"],["Light White","FFFFF7"],["White Smoke","F5F5F5"],["Cotton","FBFBF9"],["Snow","FFFAFA"],["Milk White","FEFCFF"],["Half White","FFFEFA"],["White","FFFFFF"],["Black","000000"],["Night","0C090A"],["Charcoal","34282C"],["Oil","3B3131"],["Dark Gray","3A3B3C"],["Light Black","454545"],["Black Cat","413839"],["Iridium","3D3C3A"],["Black Eel","463E3F"],["Black Cow","4C4646"],["Gray Wolf","504A4B"],["Vampire Gray","565051"],["Iron Gray","52595D"],["Gray Dolphin","5C5858"],["Carbon Gray","625D5D"],["Ash Gray","666362"],["Dim Gray","696969"],["Nardo Gray","686A6C"],["Cloudy Gray","6D6968"],["Smokey Gray","726E6D"],["Alien Gray","736F6E"],["Sonic Silver","757575"],["Platinum Gray","797979"],["Granite","837E7C"],["Gray","808080"],["Battleship Gray","848482"],["Gunmetal Gray","8D918D"],["Dark Gray","A9A9A9"],["Gray Cloud","B6B6B4"],["Silver","C0C0C0"],["Pale Silver","C9C0BB"],["Gray Goose","D1D0CE"],["Platinum Silver","CECECE"],["Light Gray","D3D3D3"],["Silver White","DADBDD"],["Gainsboro","DCDCDC"],["Platinum","E5E4E2"]];                                                                // [name, RRGGBB] — the colour list the Tasker project carried
+
+        let ovlReady = false, ovlSub = 'theme', ovlFilter = 'all', ovlQuery = '', ovlLimit = OVL_PAGE;
+        let ovlRaw = null, ovlTheme = null, ovlThemeError = null, ovlThemeLoading = false;      // the setting as the phone holds it
+        let ovlPalette = null, ovlPaletteTimer = null;
+        let ovlSource = 'home_wallpaper', ovlColor = '6750A4', ovlStyle = 'TONAL_SPOT', ovlSeeded = false;
+        let ovlBusy = false, ovlRecent = [], ovlTouched = false, ovlUiSaved = false, ovlPendingFinish = null;
+        let ovlList = null, ovlListAt = 0, ovlListLoading = false, ovlListError = null, ovlListMemo = null;
+        let ovlPresetOpen = false, ovlPresetQuery = '', ovlFamily = 'all', ovlPresetLimit = OVL_PRESET_PAGE, ovlFamilies = null;
+        let ovlDetailId = null, ovlSearchTimer = null, ovlPresetTimer = null;
+        const ovlRowBusy = new Set();
+        const ovlPress = { timer: null, fired: false, x: 0, y: 0 };
+
+        // ---- small helpers (also what the Java side of the page contract is tested against) ----
+
+        // "#6750a4", "6750A4", "FF6750A4" (the transparency is dropped) or "#abc" -> "6750A4"; null when it is not a colour.
+        // Java's OverlayRules.normalizeHex says exactly the same.
+        function ovlNormalizeHex(input) {
+            if (typeof input !== 'string') return null;
+            let t = input.replace(/^[\u0000- ]+/, '').replace(/[\u0000- ]+$/, '');
+            if (t.charAt(0) === '#') t = t.slice(1);
+            if (!t || !/^[0-9a-fA-F]+$/.test(t)) return null;
+            if (t.length === 3) t = t.charAt(0) + t.charAt(0) + t.charAt(1) + t.charAt(1) + t.charAt(2) + t.charAt(2);
+            else if (t.length === 8) t = t.slice(2);
+            else if (t.length !== 6) return null;
+            return t.toUpperCase();
+        }
+
+        function ovlHexToHsl(hex) {
+            const r = parseInt(hex.slice(0, 2), 16) / 255, g = parseInt(hex.slice(2, 4), 16) / 255, b = parseInt(hex.slice(4, 6), 16) / 255;
+            const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+            let h = 0;
+            const l = (max + min) / 2;
+            const s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
+            if (d !== 0) {
+                if (max === r) h = ((g - b) / d) % 6;
+                else if (max === g) h = (b - r) / d + 2;
+                else h = (r - g) / d + 4;
+                h *= 60;
+                if (h < 0) h += 360;
+            }
+            return { h: Math.round(h) % 360, s: Math.round(s * 100), l: Math.round(l * 100) };
+        }
+
+        function ovlHslToHex(h, s, l) {
+            s /= 100; l /= 100;
+            const c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs(((h / 60) % 2) - 1)), m = l - c / 2;
+            let r = 0, g = 0, b = 0;
+            if (h < 60) { r = c; g = x; } else if (h < 120) { r = x; g = c; } else if (h < 180) { g = c; b = x; }
+            else if (h < 240) { g = x; b = c; } else if (h < 300) { r = x; b = c; } else { r = c; b = x; }
+            const to = v => ('0' + Math.round((v + m) * 255).toString(16)).slice(-2);
+            return (to(r) + to(g) + to(b)).toUpperCase();
+        }
+
+        function ovlFamilyOf(hex) {
+            const c = ovlHexToHsl(hex);
+            if (c.s < 14 || c.l < 7 || c.l > 94) return 'neutral';
+            const h = c.h;
+            if (h < 15 || h >= 345) return 'red';
+            if (h < 45) return 'orange';
+            if (h < 70) return 'yellow';
+            if (h < 165) return 'green';
+            if (h < 200) return 'teal';
+            if (h < 255) return 'blue';
+            if (h < 295) return 'purple';
+            return 'pink';
+        }
+
+        // "6750A4" -> a readable text colour for it
+        function ovlInk(hex) {
+            const r = parseInt(hex.slice(0, 2), 16), g = parseInt(hex.slice(2, 4), 16), b = parseInt(hex.slice(4, 6), 16);
+            return (r * 299 + g * 587 + b * 114) / 1000 > 150 ? '#111111' : '#FFFFFF';
+        }
+
+        function ovlStyleName(id) {
+            const s = OVL_STYLES.find(x => x.id === id);
+            if (s) return s.name;
+            const t = String(id || '').replace(/_/g, ' ').toLowerCase();       // a style a newer Android knows (Monochromatic ...)
+            return t.charAt(0).toUpperCase() + t.slice(1);
+        }
+
+        // keyboard focus must survive a redraw: note which control had it (by its data-* attribute) and put it back afterwards
+        function ovlKeepFocus(box, draw) {
+            const ae = document.activeElement;
+            let key = null, sw = false;
+            if (box && ae && ae !== document.body && box.contains(ae)) {
+                const d = ae.closest('[data-style],[data-src],[data-f],[data-hex],[data-id]');
+                if (d) { key = d.dataset.style ? ['style', d.dataset.style] : d.dataset.src ? ['src', d.dataset.src] : d.dataset.f ? ['f', d.dataset.f] : d.dataset.hex ? ['hex', d.dataset.hex] : ['id', d.dataset.id]; sw = ae.classList.contains('sdb-sw'); }
+            }
+            draw();
+            if (key) {
+                let el = Array.from(box.querySelectorAll('[data-' + key[0] + ']')).find(e => e.dataset[key[0]] === key[1]);
+                if (el && sw) el = el.querySelector('.sdb-sw') || el;
+                if (el && el.focus) el.focus({ preventScroll: true });
+            }
+        }
+
+        function ovlBridgeOk() {
+            const b = window.AndroidBridge;
+            return !!(b && b.overlayList && b.overlayOp && b.themeApply && b.themeRestore && b.getSystemPalette && b.settingsOp);
+        }
+        function ovlUsable() { return ovlBridgeOk() && !!isPrivilegedActive; }
+
+        function ovlInit() {
+            if (ovlReady) return;
+            ovlReady = true;
+            const ui = kvGet('ovl_ui', {}) || {};
+            if (ui.sub === 'theme' || ui.sub === 'list') { ovlSub = ui.sub; ovlUiSaved = true; }
+            if (['all', 'on', 'off', 'theme'].includes(ui.filter)) ovlFilter = ui.filter;
+            const rec = kvGet('ovl_recent', []);
+            ovlRecent = Array.isArray(rec) ? rec.map(ovlNormalizeHex).filter(Boolean).slice(0, OVL_RECENT_MAX) : [];
+        }
+        function ovlSaveUi() { kvSet('ovl_ui', { sub: ovlSub, filter: ovlFilter }); }
+
+        // ---- opening the tab ----
+
+        // Material You (the Theme half) needs Android 12; the palette read says which Android this is
+        function ovlThemeSupported() {
+            const p = ovlPalette;
+            return !(p && typeof p.sdk === 'number' && p.sdk > 0 && p.sdk < 31);
+        }
+
+        function onOverlaysShown() {
+            ovlInit();
+            ovlReadPalette();
+            if (!ovlThemeSupported() && !ovlUiSaved && ovlSub === 'theme') ovlSub = 'list';        // nothing to do in the Theme half on this phone
+            if (ovlUsable()) {
+                ovlReadTheme();                                   // somebody else may have changed it since
+                if (ovlSub === 'list') { const stale = !ovlListAt || Date.now() - ovlListAt > 60000; if (!ovlList || ovlListError || stale) ovlReadList(); }
+            }
+            ovlRender();
+        }
+
+        // called when the working mode is re-checked
+        function ovlOnModeChange() {
+            if (currentViewName() !== 'overlays') return;
+            const gate = document.getElementById('ovlGate');
+            const wasGated = gate && gate.style.display !== 'none';
+            if (ovlUsable() && wasGated) onOverlaysShown(); else ovlRender();
+        }
+
+        function ovlSetSub(sub) {
+            if (sub !== 'theme' && sub !== 'list') return;
+            ovlSub = sub;
+            ovlSaveUi();
+            haptic();
+            if (sub === 'list' && ovlUsable()) { const stale = !ovlListAt || Date.now() - ovlListAt > 60000; if (!ovlList || ovlListError || stale) ovlReadList(); }
+            ovlRender();
+        }
+
+        // ---- the colours the system uses now ----
+
+        function ovlPaletteSig(p) { return p && p.ok ? OVL_PAL.map(k => (p[k[0]] || []).join('')).join('|') : ''; }
+
+        function ovlReadPalette() {
+            let p = null;
+            try { p = window.AndroidBridge && window.AndroidBridge.getSystemPalette ? JSON.parse(window.AndroidBridge.getSystemPalette()) : null; } catch (e) { p = null; }
+            if (!p) p = { ok: false, error: 'The system colors could not be read here.' };
+            const changed = ovlPaletteSig(p) !== ovlPaletteSig(ovlPalette);
+            ovlPalette = p;
+            ovlRenderNow();
+            return changed;
+        }
+
+        // After a theme change Android repaints within a second or two; look a few times until the colours have moved
+        function ovlWatchPalette() {
+            clearTimeout(ovlPaletteTimer);
+            const before = ovlPaletteSig(ovlPalette);
+            const delays = [900, 1400, 2200, 3500];
+            let i = 0;
+            const look = () => {
+                const changed = ovlReadPalette() && ovlPaletteSig(ovlPalette) !== before;
+                if (changed) { if (typeof onAppResume === 'function') { try { onAppResume(); } catch (e) {} } return; }
+                if (i < delays.length) ovlPaletteTimer = setTimeout(look, delays[i++]);
+            };
+            ovlPaletteTimer = setTimeout(look, delays[i++]);
+        }
+
+        // ---- the theme setting ----
+
+        // { source: 'default' | 'home_wallpaper' | 'lock_wallpaper' | 'preset' | 'other', color, style, at }
+        function ovlParseTheme(raw) {
+            const t = { source: 'default', color: '', style: '', at: null };
+            if (raw == null) return t;
+            const s = String(raw).trim();
+            if (!s || s === 'null') return t;
+            let o = null;
+            try { o = JSON.parse(s); } catch (e) { o = null; }
+            if (!o || typeof o !== 'object' || Array.isArray(o)) { t.source = 'other'; return t; }
+            const src = o['android.theme.customization.color_source'];
+            const pal = o['android.theme.customization.system_palette'];
+            const sty = o['android.theme.customization.theme_style'];
+            if (src === 'preset') t.source = 'preset';
+            else if (src === 'home_wallpaper' || src === 'lock_wallpaper') t.source = src;
+            else t.source = pal ? 'preset' : 'default';
+            if (typeof pal === 'string') { const h = ovlNormalizeHex(pal); if (h) t.color = h; }
+            if (typeof sty === 'string' && /^[A-Za-z0-9_ -]{1,40}$/.test(sty)) t.style = sty;
+            const ts = o._applied_timestamp;
+            if (typeof ts === 'number' && isFinite(ts) && ts > 0) t.at = ts;
+            return t;
+        }
+
+        function ovlReadTheme() {
+            if (ovlThemeLoading || !ovlUsable()) return;
+            ovlThemeLoading = true;
+            sdbRequest(id => window.AndroidBridge.settingsOp(id, 'get', 'secure', 'theme_customization_overlay_packages', ''), r => {
+                ovlThemeLoading = false;
+                if (r.ok) {
+                    ovlRaw = r.value == null ? 'null' : String(r.value);
+                    ovlTheme = ovlParseTheme(ovlRaw);
+                    ovlThemeError = null;
+                    if (!ovlSeeded) ovlSeedEditor();
+                } else {
+                    ovlThemeError = { text: r.error || 'Could not read the theme', advice: r.advice || '' };
+                }
+                ovlRender();
+                if (r.ok && ovlPendingFinish) { const rec = ovlPendingFinish; ovlPendingFinish = null; ovlFinishApply(rec); }
+            }, 60000);
+        }
+
+        // the editor starts from what the phone uses now
+        function ovlSeedEditor() {
+            ovlSeeded = true;
+            if (ovlTouched) return;                       // the user has already chosen something: the phone's value does not override it
+            const t = ovlTheme;
+            if (!t) return;
+            if (t.source === 'preset' && t.color) { ovlSource = 'preset'; ovlColor = t.color; }
+            else ovlSource = 'home_wallpaper';
+            if (t.style && OVL_STYLE_IDS.includes(t.style)) ovlStyle = t.style;
+        }
+
+        // ---- applying and resetting ----
+
+        // A restart of the app (Android repaints every app when the theme changes) must not lose the Undo. The record is made before the
+        // change goes out and kept after it is answered, because the restart may come before or after the answer; it expires on its own.
+        function ovlRemember(undo, more) { kvSet('ovl_resume', Object.assign({ t: Date.now(), sub: ovlSub, undo: undo || null, done: false, n: 0 }, more || {})); }
+        function ovlSettle(undo, more) { ovlRemember(undo, Object.assign({ done: true }, more || {})); }        // answered: kept, stamped again, marked finished
+        function ovlForget() { kvSet('ovl_resume', null); }
+
+        function ovlGuardWrite() {
+            if (ovlBusy) { showToast('Still applying the last change…', '⏳'); return false; }
+            if (!ovlUsable()) { showToast('Needs ADB, Wireless Debugging, Shizuku or Root', '🔒'); openWorkingModesModal(); return false; }
+            if (!ovlThemeSupported()) { showToast('Material You needs Android 12 or newer', 'ℹ️'); return false; }
+            return true;
+        }
+
+        function ovlFailure(title, sub, r) {
+            let text = r.error || 'It did not work';
+            if (r.answer && r.answer !== r.error) {
+                if (r.answer.indexOf(text) >= 0) text = r.answer;                      // Android's own text already holds the summary line
+                else if (text.indexOf(r.answer) < 0) text += '\n\n' + r.answer;
+            }
+            if (r.timedOut || r.unknown) text += '\n\nThe phone may still apply it. It is looked at again in a moment.';
+            if (r.advice) text += '\n\n' + r.advice;
+            if (r.warning) text += '\n\n' + r.warning;                    // e.g. a switch that could not be put back after the refusal
+            if (r.needsPrivilege) text = 'Needs ADB, Wireless Debugging, Shizuku or Root.\n\nConnect one in Working Modes, then try again.';
+            showCommandResults(title, sub, [{ name: title, pkg: sub, output: text, success: false }]);
+        }
+
+        function ovlApply() {
+            if (!ovlGuardWrite()) return;
+            let hex = '';
+            if (ovlSource === 'preset') {
+                hex = ovlNormalizeHex(document.getElementById('ovlHex').value) || '';
+                if (!hex) { showToast('Enter a color first (six hex digits)', '🎨'); document.getElementById('ovlHex').focus(); return; }
+            }
+            const before = ovlRaw;
+            const style = ovlStyle, source = ovlSource;
+            ovlBusy = true;
+            ovlRemember(before, { kind: 'apply', source, hex, style, from: before });
+            ovlRender();
+            sdbRequest(id => window.AndroidBridge.themeApply(id, source, hex, style), r => ovlThemeDone(r, before, 'apply', hex, { source, style }), 60000);
+        }
+
+        function ovlReset() {
+            if (!ovlGuardWrite()) return;
+            if (!confirm('Go back to the system default?\n\nAndroid will use your wallpaper’s colors with the Tonal Spot style again.')) return;
+            const before = ovlRaw;
+            ovlBusy = true;
+            ovlRemember(before, { kind: 'reset' });
+            ovlRender();
+            sdbRequest(id => window.AndroidBridge.themeRestore(id, '', false), r => ovlThemeDone(r, before, 'reset', ''), 60000);
+        }
+
+        function ovlUndoTheme(raw) {
+            if (!ovlGuardWrite()) return;
+            ovlBusy = true;
+            ovlRemember(null, { kind: 'undo' });                     // the Undo repaints and restarts apps too: come back to this tab (without another Undo)
+            ovlRender();
+            sdbRequest(id => window.AndroidBridge.themeRestore(id, raw === 'null' || raw == null ? '' : raw, true), r => ovlThemeDone(r, null, 'undo', ''), 60000);
+        }
+
+        function ovlThemeDone(r, before, kind, hex, chosen) {
+            ovlBusy = false;
+            chosen = chosen || {};
+            // what the phone itself read just before it wrote is the truer "before" (this page's copy may be old, or never have been read)
+            const was = kind === 'apply' && r.before != null ? String(r.before) : before;
+            if (r.ok) {
+                const now = r.value == null ? '' : String(r.value);
+                ovlRaw = now === '' ? 'null' : now;
+                ovlTheme = ovlParseTheme(ovlRaw);
+                ovlThemeError = null;
+                if (kind === 'apply' && hex) ovlAddRecent(hex);
+                if (typeof sdbRecord === 'function' && kind !== 'undo' && was != null) {
+                    try { sdbRecord('secure', 'theme_customization_overlay_packages', was === 'null' ? null : was, now === '' ? null : now); } catch (e) {}
+                }
+                ovlSettle(kind !== 'undo' ? was : null, { kind });
+                const msg = (kind === 'reset' ? 'Theme reset to the default' : kind === 'undo' ? 'Theme put back' : 'Theme applied') + (r.warning ? ', but a switch would not change' : '');
+                if (kind !== 'undo' && was != null) sdbSnack(msg, () => ovlUndoTheme(was));
+                else showToast(msg, '🎨');
+                if (r.warning) showToast(r.warning, '⚠️');
+                ovlWatchPalette();
+            } else {
+                if (r.value != null) { ovlRaw = String(r.value); ovlTheme = ovlParseTheme(ovlRaw); }
+                const unsure = !!(r.timedOut || r.unknown);
+                if (unsure) ovlRemember(kind !== 'undo' ? was : null, { kind, source: chosen.source, hex, style: chosen.style, from: was });       // the restart (or the answer) may still come
+                else ovlForget();
+                showToast(unsure ? 'No answer: the theme may still change' : 'The theme was not changed', '⚠️');
+                ovlFailure(kind === 'reset' ? 'Could not reset the theme' : 'Theme change refused', 'Monet · secure setting', r);
+                if (unsure) { ovlRefreshLater('theme'); ovlWatchPalette(); }
+            }
+            ovlRender();
+        }
+
+        function ovlAddRecent(hex) {
+            ovlRecent = [hex].concat(ovlRecent.filter(h => h !== hex)).slice(0, OVL_RECENT_MAX);
+            kvSet('ovl_recent', ovlRecent);
+        }
+
+        // ---- drawing the theme half ----
+
+        function ovlWhen(ms) {
+            if (!ms) return '';
+            const d = Date.now() - ms;
+            if (d < 0 || d > 3650 * 86400000) return '';
+            return typeof sdbAgo === 'function' ? sdbAgo(ms) : '';
+        }
+
+        function ovlRenderNow() {
+            const box = document.getElementById('ovlNow'), pal = document.getElementById('ovlPalette');
+            if (!box || !pal) return;
+            const t = ovlTheme;
+            let title, sub, swatch = '';
+            if (!ovlUsable()) {
+                title = 'Colors in use'; sub = 'Connect ADB, Shizuku or Root to see and change the theme setting.';
+            } else if (!t) {
+                title = ovlThemeError ? 'Could not read the theme' : 'Reading the theme…';
+                sub = ovlThemeError ? ovlThemeError.text : '';
+            } else if (t.source === 'preset' && t.color) {
+                title = 'Custom color'; swatch = t.color;
+                sub = '#' + t.color + ' · ' + ovlStyleName(t.style || 'TONAL_SPOT');
+            } else if (t.source === 'home_wallpaper' || t.source === 'lock_wallpaper' || t.source === 'default') {
+                title = t.source === 'default' ? 'System default' : 'From your wallpaper';
+                sub = (t.source === 'default' ? 'The wallpaper’s colors, Tonal Spot' : ovlStyleName(t.style || 'TONAL_SPOT') + ' style');
+            } else {
+                title = 'Another theme'; sub = 'Set by something else; applying here replaces it.';
+            }
+            const when = t && t.at ? ovlWhen(t.at) : '';
+            box.innerHTML = '<div class="ovl-nowtop"><div class="ovl-seed"' + (swatch ? ' style="background:#' + swatch + '"' : '') + '></div>'
+                + '<div class="ovl-nowtxt"><div class="ovl-nowtitle">' + escapeHtml(title) + '</div><div class="ovl-nowsub">' + escapeHtml(sub) + (when ? ' · ' + escapeHtml(when) : '') + '</div></div></div>';
+            const p = ovlPalette;
+            if (!p) { pal.innerHTML = ''; return; }
+            if (!p.ok) { pal.innerHTML = '<div class="sdb-note">' + escapeHtml(p.error || 'The system colors are not available on this phone.') + '</div>'; return; }
+            pal.innerHTML = OVL_PAL.map(k => {
+                const tones = p[k[0]] || [];
+                let chips = '';
+                for (let i = 1; i < OVL_TONES.length - 1; i++) {
+                    const hex = tones[i];
+                    if (!/^#[0-9A-Fa-f]{6}$/.test(hex || '')) continue;
+                    chips += '<button type="button" class="ovl-chip" style="background:' + hex + '" data-hex="' + hex.toUpperCase() + '" data-name="' + k[1] + ' ' + OVL_TONES[i] + '" title="' + k[1] + ' · ' + OVL_TONES[i] + ' · ' + hex.toUpperCase() + '" aria-label="' + k[1] + ' ' + OVL_TONES[i] + ' ' + hex.toUpperCase() + '"></button>';
+                }
+                return '<div class="ovl-pal"><div class="ovl-pal-name">' + k[1] + '</div><div class="ovl-pal-row">' + chips + '</div></div>';
+            }).join('') + '<div class="sdb-note">Tap a color to copy it. Android 12+ derives these from one source color.</div>';
+        }
+
+        function ovlPaletteTap(e) {
+            const b = e.target && e.target.closest ? e.target.closest('.ovl-chip') : null;
+            if (!b) return;
+            haptic();
+            copyText(b.dataset.hex);
+            showToast('Copied ' + b.dataset.hex + ' (' + b.dataset.name + ')', '📋');
+        }
+
+        function ovlRenderEditor() {
+            const seg = document.getElementById('ovlSourceSeg');
+            if (seg) seg.querySelectorAll('button').forEach(b => { const on = b.dataset.src === ovlSource; b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
+            const note = document.getElementById('ovlSourceNote');
+            if (note) note.innerText = ovlSource === 'preset'
+                ? 'Android builds the whole palette from the color below.'
+                : 'Android builds the palette from your home-screen wallpaper (what it does by default).';
+            const ed = document.getElementById('ovlColorEditor');
+            if (ed) ed.style.display = ovlSource === 'preset' ? '' : 'none';
+            ovlSyncColor('all');
+            const st = document.getElementById('ovlStyles');
+            if (st) ovlKeepFocus(st, () => { st.innerHTML = OVL_STYLES.map(s => '<button type="button" class="ovl-style' + (s.id === ovlStyle ? ' active' : '') + '" role="radio" aria-checked="' + (s.id === ovlStyle ? 'true' : 'false') + '" data-style="' + s.id + '">'
+                + '<span class="ovl-radio"></span><span class="ovl-styletxt"><b>' + escapeHtml(s.name) + '</b>' + (s.tag ? '<i>' + escapeHtml(s.tag) + '</i>' : '') + '<span>' + escapeHtml(s.desc) + '</span></span></button>').join(''); });
+            ovlRenderActions();
+            ovlRenderRecent();
+            ovlRenderPresets();
+        }
+
+        // keeps the swatch, the hex box, the three sliders and the preset ring in step. from: 'hex' | 'sliders' | 'all'
+        function ovlSyncColor(from) {
+            const hexBox = document.getElementById('ovlHex'), big = document.getElementById('ovlBig'), problem = document.getElementById('ovlHexProblem');
+            if (!hexBox || !big) return;
+            if (from !== 'hex' && document.activeElement !== hexBox) hexBox.value = ovlColor;        // not while it is being typed in
+            const typed = ovlNormalizeHex(hexBox.value);
+            const ok = !!typed;
+            if (ok) ovlColor = typed;
+            big.style.background = '#' + ovlColor;
+            big.style.color = ovlInk(ovlColor);
+            big.innerText = ok ? '' : '?';
+            if (problem) problem.innerText = ok || !hexBox.value.trim() ? '' : 'Use six hex digits, like 6750A4';
+            if (from !== 'sliders') {
+                const c = ovlHexToHsl(ovlColor);
+                document.getElementById('ovlH').value = c.h;
+                document.getElementById('ovlS').value = c.s;
+                document.getElementById('ovlL').value = c.l;
+            }
+            const h = +document.getElementById('ovlH').value, s = +document.getElementById('ovlS').value, l = +document.getElementById('ovlL').value;
+            document.getElementById('ovlS').style.background = 'linear-gradient(90deg,#' + ovlHslToHex(h, 0, l) + ',#' + ovlHslToHex(h, 100, l) + ')';
+            document.getElementById('ovlL').style.background = 'linear-gradient(90deg,#000000,#' + ovlHslToHex(h, s, 50) + ',#FFFFFF)';
+            document.querySelectorAll('#ovlPresetGrid .ovl-sw, #ovlRecent .ovl-sw').forEach(b => b.classList.toggle('sel', ok && b.dataset.hex === ovlColor));
+            ovlRenderActions();
+        }
+
+        function ovlHexInput() { ovlTouched = true; ovlSyncColor('hex'); }
+        function ovlSliderInput() {
+            ovlTouched = true;
+            const h = +document.getElementById('ovlH').value, s = +document.getElementById('ovlS').value, l = +document.getElementById('ovlL').value;
+            ovlColor = ovlHslToHex(h, s, l);
+            document.getElementById('ovlHex').value = ovlColor;
+            ovlSyncColor('sliders');
+        }
+
+        function ovlPickColor(hex) {
+            const h = ovlNormalizeHex(hex);
+            if (!h) return;
+            haptic();
+            ovlTouched = true;
+            ovlColor = h;
+            ovlSource = 'preset';
+            ovlRenderEditor();
+        }
+
+        function ovlSetSource(src) {
+            if (src !== 'preset' && src !== 'home_wallpaper') return;
+            haptic();
+            ovlTouched = true;
+            ovlSource = src;
+            if (src !== 'preset') ovlPresetOpen = false;               // the preset list is not on screen any more; Back must not "close" it unseen
+            ovlRenderEditor();
+        }
+
+        function ovlPickStyle(id) {
+            if (!OVL_STYLE_IDS.includes(id)) return;
+            haptic();
+            ovlTouched = true;
+            ovlStyle = id;
+            ovlRenderEditor();
+        }
+
+        function ovlRenderActions() {
+            const apply = document.getElementById('ovlApplyBtn'), reset = document.getElementById('ovlResetBtn'), hint = document.getElementById('ovlApplyHint');
+            if (!apply) return;
+            const colorOk = ovlSource !== 'preset' || !!ovlNormalizeHex(document.getElementById('ovlHex').value);
+            const supported = ovlThemeSupported();
+            apply.disabled = ovlBusy || !colorOk || !supported;
+            apply.innerText = ovlBusy ? '⏳ Applying…' : '🎨 Apply theme';
+            if (reset) reset.disabled = ovlBusy || !supported;
+            const t = ovlTheme;
+            const same = t && ((ovlSource === 'preset' && t.source === 'preset' && t.color === ovlColor) || (ovlSource === 'home_wallpaper' && (t.source === 'home_wallpaper' || t.source === 'default'))) && (t.style || 'TONAL_SPOT') === ovlStyle;
+            if (hint) hint.innerText = !ovlUsable() ? '' : !supported ? 'Material You needs Android 12 or newer.' : same ? 'This is already what the phone uses.' : 'Android repaints in a moment, and apps may restart.';
+        }
+
+        function ovlRenderRecent() {
+            const box = document.getElementById('ovlRecent');
+            if (!box) return;
+            box.style.display = ovlRecent.length ? '' : 'none';
+            ovlKeepFocus(box, () => { box.innerHTML = ovlRecent.length ? '<span>Recent</span>' + ovlRecent.map(h => '<button type="button" class="ovl-sw" style="background:#' + h + '" data-hex="' + h + '" title="#' + h + '" aria-label="Color ' + h + '"></button>').join('') : ''; });
+        }
+
+        // ---- the preset colours ----
+
+        function ovlPresetList() {
+            if (!ovlFamilies) ovlFamilies = OVL_PRESETS.map(p => ovlFamilyOf(p[1]));
+            const q = ovlPresetQuery.trim().toLowerCase().replace(/^#/, '');
+            const out = [];
+            for (let i = 0; i < OVL_PRESETS.length; i++) {
+                const p = OVL_PRESETS[i];
+                if (ovlFamily !== 'all' && ovlFamilies[i] !== ovlFamily) continue;
+                if (q && p[0].toLowerCase().indexOf(q) < 0 && p[1].toLowerCase().indexOf(q) < 0) continue;
+                out.push(p);
+            }
+            return out;
+        }
+
+        function ovlTogglePresets() {
+            ovlPresetOpen = !ovlPresetOpen;
+            haptic();
+            ovlRenderPresets();
+        }
+
+        function ovlRenderPresets() {
+            const box = document.getElementById('ovlPresets'), head = document.getElementById('ovlPresetHead');
+            if (!box || !head) return;
+            head.innerHTML = '<span>🎨 Preset colors <b>' + OVL_PRESETS.length + '</b></span><span>' + (ovlPresetOpen ? '▴' : '▾') + '</span>';
+            head.setAttribute('aria-expanded', ovlPresetOpen ? 'true' : 'false');
+            box.style.display = ovlPresetOpen ? '' : 'none';
+            if (!ovlPresetOpen) return;
+            const famBox = document.getElementById('ovlFamilies');
+            ovlKeepFocus(famBox, () => { famBox.innerHTML = OVL_FAMILIES.map(f => '<button type="button" class="filter-chip' + (f[0] === ovlFamily ? ' active' : '') + '" data-f="' + f[0] + '">' + f[1] + '</button>').join(''); });
+            const list = ovlPresetList();
+            const slice = list.slice(0, ovlPresetLimit);
+            const grid = document.getElementById('ovlPresetGrid');
+            ovlKeepFocus(box, () => {
+            grid.innerHTML = slice.length
+                ? slice.map(p => '<button type="button" class="ovl-sw' + (p[1] === ovlColor ? ' sel' : '') + '" style="background:#' + p[1] + '" data-hex="' + p[1] + '" data-name="' + escapeHtml(p[0]) + '" title="' + escapeHtml(p[0]) + ' · #' + p[1] + '" aria-label="' + escapeHtml(p[0]) + ' ' + p[1] + '"></button>').join('')
+                : '<div class="sdb-empty" style="width:100%;">No preset matches that.</div>';
+            document.getElementById('ovlPresetMore').innerHTML = list.length > slice.length
+                ? '<button type="button" class="mode-action-btn" onclick="ovlPresetShowMore()">Show ' + Math.min(OVL_PRESET_PAGE, list.length - slice.length) + ' more (' + (list.length - slice.length) + ' left)</button>' : '';
+            });
+            const cur = OVL_PRESETS.find(p => p[1] === ovlColor);
+            document.getElementById('ovlPresetName').innerText = cur ? cur[0] + ' · #' + cur[1] : '#' + ovlColor + ' is not one of the presets';
+        }
+        // "Show more" is drawn again by the same call: keep the keyboard where it was (on the next "Show more", or on the last colour once there is no more)
+        function ovlPresetShowMore() {
+            ovlPresetLimit += OVL_PRESET_PAGE;
+            ovlRenderPresets();
+            const el = document.querySelector('#ovlPresetMore button') || Array.from(document.querySelectorAll('#ovlPresetGrid .ovl-sw')).pop();
+            if (el) el.focus({ preventScroll: true });
+        }
+        function ovlPresetSearchInput() {
+            clearTimeout(ovlPresetTimer);
+            ovlPresetTimer = setTimeout(() => { ovlPresetQuery = document.getElementById('ovlPresetSearch').value; ovlPresetLimit = OVL_PRESET_PAGE; ovlRenderPresets(); }, 160);
+        }
+        function ovlSetFamily(f) { ovlFamily = f; ovlPresetLimit = OVL_PRESET_PAGE; haptic(); ovlRenderPresets(); }
+
+        // ---- the raw setting ----
+
+        function ovlCopyRaw() {
+            if (ovlRaw == null) { showToast('Nothing read yet', 'ℹ️'); return; }
+            copyText(ovlRaw === 'null' ? '' : ovlRaw);
+            showToast('Copied the setting', '📋');
+        }
+
+        // ---- the overlay list ----
+
+        function ovlReadList() {
+            if (ovlListLoading || !ovlUsable()) return;
+            ovlListLoading = true;
+            ovlListError = null;
+            ovlRender();
+            sdbRequest(id => window.AndroidBridge.overlayList(id), r => {
+                ovlListLoading = false;
+                if (r.ok) {
+                    ovlList = ovlFromWire(r.list);
+                    ovlListAt = Date.now();
+                    ovlListError = null;
+                } else {
+                    ovlListError = { text: r.error || 'Could not read the overlays', advice: r.advice || '', needsPrivilege: !!r.needsPrivilege };
+                    if (ovlList) showToast('Could not refresh the overlays: ' + sdbClip(r.error || 'no answer', 80), '⚠️');      // the old list stays, so say so
+                }
+                ovlListMemo = null;
+                ovlRender();
+            }, 60000);
+        }
+
+        function ovlFromWire(arr) {
+            const out = [];
+            (arr || []).forEach(e => { if (Array.isArray(e) && typeof e[0] === 'string') out.push({ id: e[0], target: String(e[1] || ''), state: e[2] === 1 ? 1 : e[2] === 0 ? 0 : -1 }); });
+            return out;
+        }
+
+        function ovlSetFilter(f) {
+            if (!['all', 'on', 'off', 'theme'].includes(f)) return;
+            ovlFilter = f; ovlLimit = OVL_PAGE; ovlListMemo = null; ovlSaveUi(); haptic(); ovlRender();
+        }
+
+        function ovlSearchInput() {
+            clearTimeout(ovlSearchTimer);
+            ovlSearchTimer = setTimeout(() => { ovlQuery = document.getElementById('ovlSearch').value; ovlLimit = OVL_PAGE; ovlListMemo = null; ovlRenderList(); ovlRenderChrome(); }, 160);
+        }
+        function ovlClearSearch() { document.getElementById('ovlSearch').value = ''; ovlQuery = ''; ovlLimit = OVL_PAGE; ovlListMemo = null; ovlRender(); }
+
+        function ovlFiltered() {
+            if (!ovlList) return null;
+            const key = ovlQuery + '|' + ovlFilter;
+            if (ovlListMemo && ovlListMemo.key === key) return ovlListMemo.rows;
+            const terms = ovlQuery.toLowerCase().split(/\s+/).filter(Boolean);
+            const rows = ovlList.filter(o => {
+                if (ovlFilter === 'on' && o.state !== 1) return false;
+                if (ovlFilter === 'off' && o.state !== 0) return false;
+                if (ovlFilter === 'theme' && !OVL_THEMEY.test(o.id + ' ' + o.target)) return false;
+                if (terms.length) {
+                    const hay = (o.id + '\n' + o.target).toLowerCase();
+                    for (let i = 0; i < terms.length; i++) if (hay.indexOf(terms[i]) < 0) return false;
+                }
+                return true;
+            });
+            ovlListMemo = { key, rows };
+            return rows;
+        }
+
+        function ovlStateText(o) { return o.state === 1 ? 'On' : o.state === 0 ? 'Off' : 'Unavailable'; }
+
+        function ovlRowHtml(o, withTarget) {
+            const busy = ovlRowBusy.has(o.id);
+            const sw = '<button type="button" class="sdb-sw' + (o.state === 1 ? ' on' : '') + '" role="switch" aria-checked="' + (o.state === 1 ? 'true' : 'false') + '" aria-label="' + escapeHtml(o.id) + '"' + (o.state < 0 ? ' disabled' : '') + '><span></span></button>';
+            return '<div class="sdb-row ovl-row' + (busy ? ' busy' : '') + (o.state < 0 ? ' na' : '') + '" role="listitem" tabindex="0" data-id="' + escapeHtml(o.id) + '">'
+                + '<div class="sdb-main"><div class="sdb-key">' + escapeHtml(o.id) + '</div>'
+                + '<div class="sdb-hint">' + ovlStateText(o) + (withTarget && o.target ? ' · ' + escapeHtml(o.target) : '') + '</div></div>' + sw + '</div>';
+        }
+
+        function ovlRenderList() {
+            const box = document.getElementById('ovlRows');
+            if (!box) return;
+            ovlKeepFocus(box, ovlRenderListInner);
+        }
+
+        function ovlRenderListInner() {
+            const box = document.getElementById('ovlRows'), more = document.getElementById('ovlMore');
+            if (!box || !more) return;
+            more.innerHTML = '';
+            if (!ovlUsable()) { box.innerHTML = ''; return; }
+            if (!ovlList) {
+                if (ovlListError) {
+                    const e = ovlListError;
+                    box.innerHTML = '<div class="sdb-err"><b>Could not read the overlays</b>' + escapeHtml(e.text) + (e.advice ? '<br><br>' + escapeHtml(e.advice) : '')
+                        + '<div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;"><button class="mode-action-btn primary" onclick="ovlReadList()">↻ Try again</button><button class="mode-action-btn" onclick="openWorkingModesModal()">⚡ Working modes</button></div></div>';
+                } else {
+                    box.innerHTML = '<div class="sdb-skel"></div><div class="sdb-skel"></div><div class="sdb-skel"></div><div class="sdb-skel"></div>';
+                }
+                return;
+            }
+            const rows = ovlFiltered();
+            if (!rows.length) {
+                const q = ovlQuery.trim();
+                box.innerHTML = '<div class="sdb-empty">' + (ovlList.length ? (q ? 'Nothing matches “' + escapeHtml(q) + '”.' : 'Nothing to show with this filter.') : 'This phone lists no overlays.')
+                    + (q || ovlFilter !== 'all' ? '<div><button class="mode-action-btn" onclick="ovlShowAll()">Show everything</button></div>' : '') + '</div>';
+                return;
+            }
+            const slice = rows.slice(0, ovlLimit);
+            let html = '', last = null;
+            const counts = new Map();                           // not a plain object: a target may be called "constructor" or "__proto__"
+            rows.forEach(o => { let c = counts.get(o.target); if (!c) { c = { on: 0, all: 0 }; counts.set(o.target, c); } c.all++; if (o.state === 1) c.on++; });
+            slice.forEach(o => {
+                if (o.target !== last) {
+                    last = o.target;
+                    const c = counts.get(o.target);
+                    html += '<div class="ovl-group"><span>' + (o.target ? escapeHtml(o.target) : 'Other') + '</span><b>' + c.on + ' / ' + c.all + ' on</b></div>';
+                }
+                html += ovlRowHtml(o, false);
+            });
+            box.innerHTML = html;
+            if (rows.length > slice.length) more.innerHTML = '<button class="mode-action-btn" onclick="ovlShowMore()">Show ' + Math.min(OVL_PAGE, rows.length - slice.length) + ' more (' + (rows.length - slice.length) + ' left)</button>';
+        }
+        function ovlShowMore() {
+            ovlLimit += OVL_PAGE;
+            ovlRenderList();
+            const el = document.querySelector('#ovlMore button') || Array.from(document.querySelectorAll('#ovlRows .ovl-row')).pop();
+            if (el) el.focus({ preventScroll: true });
+        }
+        function ovlShowAll() { ovlQuery = ''; ovlFilter = 'all'; ovlLimit = OVL_PAGE; ovlListMemo = null; const s = document.getElementById('ovlSearch'); if (s) s.value = ''; ovlSaveUi(); ovlRender(); }
+
+        // ---- switching an overlay ----
+
+        function ovlFind(id) { return ovlList ? ovlList.find(o => o.id === id) : null; }
+
+        function ovlToggle(id) {
+            const o = ovlFind(id);
+            if (!o) return;
+            if (o.state < 0) { showToast('Android lists this overlay as unavailable', 'ℹ️'); return; }
+            ovlSet(id, o.state === 1 ? 'disable' : 'enable');
+        }
+
+        // op: 'enable' | 'disable'. opts.quiet: this is an undo (no new undo bar)
+        function ovlSet(id, op, opts) {
+            opts = opts || {};
+            if (ovlRowBusy.has(id)) { showToast('Still applying the last change…', '⏳'); return; }
+            if (!ovlUsable()) { showToast('Needs ADB, Wireless Debugging, Shizuku or Root', '🔒'); openWorkingModesModal(); return; }
+            const o = ovlFind(id);
+            const was = o ? o.state : -2;
+            ovlRowBusy.add(id);
+            const undoRec = !opts.quiet && (was === 1 || was === 0) ? { overlay: id, op: was === 1 ? 'enable' : 'disable' } : null;
+            ovlRemember(undoRec, { kind: 'overlay' });
+            ovlRenderList();
+            sdbRequest(reqId => window.AndroidBridge.overlayOp(reqId, op, id), r => {
+                ovlRowBusy.delete(id);
+                if (Array.isArray(r.list) && r.list.length) { ovlList = ovlFromWire(r.list); ovlListAt = Date.now(); ovlListMemo = null; }
+                if (r.ok) {
+                    ovlSettle(undoRec, { kind: 'overlay' });
+                    if (opts.quiet) showToast((op === 'enable' ? 'Switched on: ' : 'Switched off: ') + sdbClip(id, 40), '↩️');
+                    else if (was === 1 || was === 0) sdbSnack((op === 'enable' ? 'On: ' : 'Off: ') + id, () => ovlSet(id, op === 'enable' ? 'disable' : 'enable', { quiet: true }));
+                    else showToast((op === 'enable' ? 'Switched on: ' : 'Switched off: ') + sdbClip(id, 40), '🧩');
+                    if (OVL_THEMEY.test(id)) ovlWatchPalette();
+                } else {
+                    const unsure = !!(r.timedOut || r.unknown);
+                    if (unsure) ovlRemember(undoRec, { kind: 'overlay' }); else ovlForget();            // an unsure answer may still be followed by a restart
+                    showToast('Could not ' + op + ' ' + sdbClip(id, 30), '⚠️');
+                    ovlFailure(op === 'enable' ? 'Could not switch it on' : 'Could not switch it off', id, r);
+                    if (unsure || r.state === -2) ovlRefreshLater('list');
+                }
+                ovlRender();
+                if (ovlDetailId === id) ovlRenderDetail();
+            }, 60000);
+        }
+
+        // ---- the overlay sheet ----
+
+        function ovlOpenDetail(id) {
+            const o = ovlFind(id);
+            if (!o) return;
+            ovlDetailId = id;
+            ovlRenderDetail();
+            document.getElementById('ovlDetailModal').classList.add('show');
+        }
+        function ovlCloseDetail() { document.getElementById('ovlDetailModal').classList.remove('show'); ovlDetailId = null; }
+
+        function ovlRenderDetail() {
+            const o = ovlFind(ovlDetailId);
+            if (!o) { ovlCloseDetail(); return; }
+            document.getElementById('ovlDetailId').innerText = o.id;
+            document.getElementById('ovlDetailSub').innerText = ovlStateText(o) + (o.target ? ' · ' + o.target : '');
+            const busy = ovlRowBusy.has(o.id);
+            const on = document.getElementById('ovlDetailOn'), off = document.getElementById('ovlDetailOff');
+            on.disabled = busy || o.state !== 0; off.disabled = busy || o.state !== 1;
+            on.style.display = o.state === 1 ? 'none' : ''; off.style.display = o.state === 1 ? '' : 'none';
+            document.getElementById('ovlDetailNote').innerText = o.state < 0 ? 'Android lists this overlay as unavailable (its target app is missing, or it is not approved), so it cannot be switched.' : o.state === 1 ? 'Switching it off puts the original look back for what it targets.' : 'Switching it on restyles what it targets; Android may restart apps.';
+        }
+
+        function ovlDetailDo(what) {
+            const o = ovlFind(ovlDetailId);
+            if (!o) return;
+            haptic();
+            if (what === 'on') ovlSet(o.id, 'enable');
+            else if (what === 'off') ovlSet(o.id, 'disable');
+            else if (what === 'name') { copyText(o.id); showToast('Copied the overlay name', '📋'); }
+            else if (what === 'target') { copyText(o.target); showToast('Copied the target', '📋'); }
+            else if (what === 'cmd') { copyText('cmd overlay ' + (o.state === 1 ? 'disable' : 'enable') + " '" + o.id.replace(/'/g, "'\\''") + "'"); showToast('Copied the command', '📋'); }
+        }
+
+        // ---- the rest of the page ----
+
+        function ovlRenderChrome() {
+            const gate = document.getElementById('ovlGate');
+            const usable = ovlUsable();
+            if (gate) {
+                gate.style.display = usable ? 'none' : '';
+                const d = document.getElementById('ovlGateDesc');
+                if (d && !usable) d.innerText = ovlBridgeOk()
+                    ? 'Changing the theme and the overlays goes through the shell. Connect one of them in Working Modes, then come back. The colors in use now are shown without it.'
+                    : 'This version of the app cannot reach the overlay manager.';
+            }
+            document.querySelectorAll('#ovlTabs .sdb-tab').forEach(b => { const on = b.dataset.sub === ovlSub; b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
+            const cnt = document.getElementById('ovlListCount');
+            if (cnt) cnt.innerText = ovlList ? String(ovlList.length) : '';
+            document.getElementById('ovlThemePanel').style.display = ovlSub === 'theme' ? '' : 'none';
+            document.getElementById('ovlListPanel').style.display = ovlSub === 'list' ? '' : 'none';
+            const clear = document.getElementById('ovlSearchClear');
+            if (clear) clear.style.display = ovlQuery ? 'block' : 'none';
+            document.querySelectorAll('#ovlFilters .filter-chip').forEach(c => c.classList.toggle('active', c.dataset.f === ovlFilter));
+            const st = document.getElementById('ovlStatus');
+            if (st) {
+                if (!usable) st.innerHTML = '';
+                else if (ovlListLoading) st.innerHTML = '<span class="sdb-spin"></span> Reading the overlays…';
+                else if (ovlList) {
+                    const rows = ovlFiltered() || [];
+                    const on = ovlList.filter(o => o.state === 1).length;
+                    st.innerHTML = (rows.length === ovlList.length ? ovlList.length + ' overlays · ' + on + ' on' : rows.length + ' of ' + ovlList.length + ' overlays') + ' · read ' + new Date(ovlListAt).toLocaleTimeString() + ' <a href="#" onclick="ovlReadList(); return false;" style="color:var(--accent); font-weight:800; text-decoration:none;">↻ Refresh</a>';
+                } else st.innerHTML = '';
+            }
+        }
+
+        function ovlRender() {
+            ovlRenderChrome();
+            if (ovlSub === 'theme') { ovlRenderNow(); ovlRenderEditor(); ovlRenderThemeError(); }
+            else ovlRenderList();
+        }
+
+        function ovlRenderThemeError() {
+            const box = document.getElementById('ovlThemeError');
+            if (!box) return;
+            if (ovlUsable() && ovlThemeError && !ovlTheme) {
+                box.style.display = '';
+                box.innerHTML = '<div class="sdb-err"><b>Could not read the theme</b>' + escapeHtml(ovlThemeError.text) + (ovlThemeError.advice ? '<br><br>' + escapeHtml(ovlThemeError.advice) : '')
+                    + '<div style="margin-top:10px;"><button class="mode-action-btn primary" onclick="ovlReadTheme()">↻ Try again</button></div></div>';
+            } else { box.style.display = 'none'; box.innerHTML = ''; }
+        }
+
+        function ovlRefreshTheme() { haptic(); ovlReadPalette(); if (ovlUsable()) ovlReadTheme(); }
+
+        // Back clears the search, then closes the preset list, before it leaves the tab
+        function ovlBackHandled() {
+            if (currentViewName() !== 'overlays') return false;
+            if (ovlSub === 'list' && ovlQuery) { ovlClearSearch(); return true; }
+            if (ovlSub === 'theme' && ovlPresetOpen) { ovlPresetOpen = false; ovlRenderPresets(); return true; }
+            return false;
+        }
+
+        // The theme change restarts apps (Android repaints them all), this one included. Come back to this tab, and bring the Undo.
+        // The record is not used up: the restart can come twice, and it expires on its own (OVL_RESUME_MS).
+        function ovlResume() {
+            const rec = kvGet('ovl_resume', null);
+            if (!rec || typeof rec !== 'object') return;
+            if (!rec.t || Date.now() - rec.t > OVL_RESUME_MS || Date.now() < rec.t) { kvSet('ovl_resume', null); return; }
+            rec.n = (rec.n || 0) + 1;
+            kvSet('ovl_resume', rec.n > 2 ? null : rec);
+            if (rec.n > 2) return;
+            ovlInit();
+            if (rec.sub === 'theme' || rec.sub === 'list') ovlSub = rec.sub;
+            switchView('overlays');
+            const u = rec.undo;
+            if (typeof u === 'string') setTimeout(() => { sdbSnack('Theme changed', () => ovlUndoTheme(u)); }, 700);
+            else if (u && typeof u === 'object' && u.overlay && ovlRemoteOp(u.op)) setTimeout(() => { sdbSnack('Overlay changed', () => { ovlReadListThen(() => ovlSet(u.overlay, u.op, { quiet: true })); }); }, 700);
+            // the answer may have gone to a page that was already gone: once the phone has been asked again, do what that answer would have done
+            if (rec.kind === 'apply' && !rec.done) ovlPendingFinish = rec;
+        }
+
+        // the theme as the phone holds it now is what was applied: the colour joins the recent ones and the change is logged in Settings
+        function ovlFinishApply(rec) {
+            if (!rec || rec.done || Date.now() - rec.t > 300000) return;
+            const t = ovlTheme;
+            if (!t || ovlRaw == null) return;
+            const same = rec.source === 'preset' ? (t.source === 'preset' && t.color === rec.hex) : (t.source === 'home_wallpaper');
+            if (!same || (rec.style && (t.style || 'TONAL_SPOT') !== rec.style)) return;
+            if (rec.hex) ovlAddRecent(rec.hex);
+            if (typeof sdbRecord === 'function') {
+                try { sdbRecord('secure', 'theme_customization_overlay_packages', rec.from == null || rec.from === 'null' ? null : rec.from, ovlRaw === 'null' ? null : ovlRaw); } catch (e) {}
+            }
+            const cur = kvGet('ovl_resume', null);
+            if (cur && cur.t === rec.t) kvSet('ovl_resume', Object.assign({}, cur, { done: true }));
+        }
+        function ovlRemoteOp(op) { return op === 'enable' || op === 'disable'; }
+        function ovlReadListThen(fn) {
+            if (ovlList) { fn(); return; }
+            sdbRequest(id => window.AndroidBridge.overlayList(id), r => { if (r.ok) { ovlList = ovlFromWire(r.list); ovlListAt = Date.now(); ovlListMemo = null; } fn(); }, 60000);
+        }
+
+        // An answer that comes after the page gave up on the request (it timed out) still means the phone may have changed: look again
+        function ovlOnReply(json) {
+            let r = null;
+            try { r = JSON.parse(json); } catch (e) { return; }
+            if (r && !sdbReqs.has(r.req) && !r.stale) { if (r.id) ovlRefreshLater('list'); else if (r.kind) ovlRefreshLater('theme'); return; }
+            sdbOnReply(json);
+        }
+        function ovlRefreshLater(what) {
+            setTimeout(() => {
+                if (!ovlUsable()) return;
+                if (what === 'theme') ovlReadTheme(); else if (!ovlListLoading) ovlReadList();
+            }, 2500);
+        }
+        window.onOverlayList = sdbOnReply;
+        window.onOverlayOp = ovlOnReply;
+        window.onThemeOp = ovlOnReply;
+
+        (function ovlInitEvents() {
+            const pal = document.getElementById('ovlPalette');
+            if (pal) pal.addEventListener('click', ovlPaletteTap);
+            const seg = document.getElementById('ovlSourceSeg');
+            if (seg) seg.addEventListener('click', e => { const b = e.target.closest('button[data-src]'); if (b) ovlSetSource(b.dataset.src); });
+            const st = document.getElementById('ovlStyles');
+            if (st) st.addEventListener('click', e => { const b = e.target.closest('button[data-style]'); if (b) ovlPickStyle(b.dataset.style); });
+            const grid = document.getElementById('ovlPresetGrid');
+            if (grid) grid.addEventListener('click', e => { const b = e.target.closest('.ovl-sw'); if (b) ovlPickColor(b.dataset.hex); });
+            const rec = document.getElementById('ovlRecent');
+            if (rec) rec.addEventListener('click', e => { const b = e.target.closest('.ovl-sw'); if (b) ovlPickColor(b.dataset.hex); });
+            const fam = document.getElementById('ovlFamilies');
+            if (fam) fam.addEventListener('click', e => { const b = e.target.closest('button[data-f]'); if (b) ovlSetFamily(b.dataset.f); });
+
+            const list = document.getElementById('ovlRows');
+            if (!list) return;
+            const rowOf = e => (e.target && e.target.closest) ? e.target.closest('.ovl-row[data-id]') : null;
+            let lastTouchAt = 0;
+            const fromTouch = () => Date.now() - lastTouchAt < 700;
+            const cancel = () => { if (ovlPress.timer) { clearTimeout(ovlPress.timer); ovlPress.timer = null; } };
+            const start = (row, x, y) => {
+                ovlPress.fired = false; ovlPress.x = x; ovlPress.y = y; cancel();
+                const id = row.dataset.id;
+                ovlPress.timer = setTimeout(() => { ovlPress.timer = null; ovlPress.fired = true; haptic(); ovlToggle(id); }, OVL_HOLD_MS);
+            };
+            list.addEventListener('click', e => {
+                if (ovlPress.fired) { ovlPress.fired = false; return; }
+                const row = rowOf(e);
+                if (!row) return;
+                if (e.target.closest('.sdb-sw')) ovlToggle(row.dataset.id); else ovlOpenDetail(row.dataset.id);
+            });
+            list.addEventListener('keydown', e => {
+                if (e.key !== 'Enter' && e.key !== ' ') return;
+                const row = rowOf(e);
+                if (!row || e.target.closest('.sdb-sw')) return;
+                e.preventDefault();
+                ovlOpenDetail(row.dataset.id);
+            });
+            const endTouch = e => { lastTouchAt = Date.now(); cancel(); if (ovlPress.fired && e.cancelable) e.preventDefault(); };
+            list.addEventListener('touchstart', e => {
+                lastTouchAt = Date.now(); ovlPress.fired = false;
+                const row = rowOf(e); const t = e.touches[0];
+                if (row && t) start(row, t.clientX, t.clientY);
+                // Switching redraws the row while the finger is still down, and a removed element no longer passes its touch events up to the
+                // list: the end of the touch is listened for on the element itself (or a long hold ends in a second flip or the sheet)
+                const target = e.target;
+                const done = ev => { target.removeEventListener('touchend', done); target.removeEventListener('touchcancel', done); endTouch(ev); };
+                target.addEventListener('touchend', done);
+                target.addEventListener('touchcancel', done);
+            }, { passive: true });
+            list.addEventListener('touchmove', e => { const t = e.touches[0]; if (t && (Math.abs(t.clientX - ovlPress.x) > 12 || Math.abs(t.clientY - ovlPress.y) > 12)) cancel(); }, { passive: true });
+            list.addEventListener('touchend', endTouch);
+            list.addEventListener('touchcancel', cancel);
+            list.addEventListener('mousedown', e => { if (fromTouch()) return; ovlPress.fired = false; const row = rowOf(e); if (row && e.button === 0) start(row, e.clientX, e.clientY); });
+            list.addEventListener('mouseup', cancel);
+            list.addEventListener('mouseleave', cancel);
+            window.addEventListener('scroll', cancel, { passive: true });
+            list.addEventListener('contextmenu', e => { if (rowOf(e)) e.preventDefault(); });
+        })();
 
         // ---------- About ----------
         const ABOUT_REPO = 'https://github.com/Bingblop/ADB-Application-Manager';
@@ -13789,6 +14924,7 @@ Type any command below (e.g. pm list packages -d)
             loadSavedLists();
             loadQuickList();
             renderSavedLists();
+            setTimeout(ovlResume, 400);
         });
     </script>
 </body>

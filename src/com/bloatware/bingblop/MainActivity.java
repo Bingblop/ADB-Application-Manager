@@ -3011,6 +3011,225 @@ public class MainActivity extends Activity {
         settingsReply("onSettingsOp", res);
     }
 
+    // ---------------------------------------------------------------------------------------------
+    // Overlays tab: `cmd overlay list|enable|disable`, the Material You theme setting, and the colours the system uses now. What may
+    // be touched and how a command is built is OverlayRules' job (tested off the device). They share the Settings tab's single
+    // thread, so a theme change and a settings change reach the phone in the order they were made.
+    // ---------------------------------------------------------------------------------------------
+
+    private static JSONArray overlaysToJson(List<OverlayRules.Overlay> all) {
+        JSONArray arr = new JSONArray();
+        for (OverlayRules.Overlay o : all) arr.put(new JSONArray().put(o.id).put(o.target).put(o.state));
+        return arr;
+    }
+
+    private static String clipAnswer(String text) {
+        return text.length() > 600 ? text.substring(0, 600) + "…" : text;
+    }
+
+    /** Reads the overlays and reports them as window.onOverlayList(json): req, ok, list [[id, target, state], ...], error, advice, needsPrivilege, mode, ms. */
+    private void overlayListJob(int req, long queuedAt) {
+        JSONObject res = new JSONObject();
+        long t0 = System.currentTimeMillis();
+        try {
+            res.put("req", req);
+            if (settingsJobStale(queuedAt)) {
+                res.put("ok", false);
+                res.put("stale", true);
+                res.put("error", "Skipped: it waited too long behind other requests");
+                settingsReply("onOverlayList", res);
+                return;
+            }
+            String mode = resolveExecMode();
+            res.put("mode", mode);
+            if ("standard".equals(mode)) {
+                res.put("ok", false);
+                res.put("needsPrivilege", true);
+                res.put("error", "Needs ADB, Wireless Debugging, Shizuku or Root");
+            } else {
+                String out = runPrivilegedShell(mode, OverlayRules.listScript(), 25000);
+                OverlayRules.ListResult lr = OverlayRules.readList(out);
+                String text = lr.text == null ? "" : lr.text.trim();
+                if (!lr.complete) {
+                    res.put("ok", false);
+                    res.put("error", text.isEmpty() ? "Android returned no overlays"
+                            : text.contains("[Process timed out") ? "Android took too long to answer, so the list is incomplete"
+                            : OverlayRules.looksLikeFailure(text) ? OverlayRules.summary(text)
+                            : "The list was cut short on the way (the connection may have dropped)");
+                    res.put("advice", OverlayRules.advice(text));
+                } else if (lr.overlays.isEmpty() && OverlayRules.looksLikeFailure(text)) {
+                    res.put("ok", false);
+                    res.put("error", OverlayRules.summary(text));
+                    res.put("advice", OverlayRules.advice(text));
+                } else {
+                    res.put("ok", true);
+                    res.put("list", overlaysToJson(lr.overlays));
+                }
+            }
+        } catch (Throwable t) {
+            try {
+                res.put("ok", false);
+                res.put("error", errMsg(t));
+            } catch (Exception ignored) {}
+        }
+        try { res.put("ms", System.currentTimeMillis() - t0); } catch (Exception ignored) {}
+        settingsReply("onOverlayList", res);
+    }
+
+    /**
+     * Switches one overlay on or off and reports it as window.onOverlayOp(json): req, op, id, ok, state (1 on, 0 off, -1 cannot be
+     * switched, -2 not listed), list (every overlay as it is now), answer, error, advice, needsPrivilege, unknown, mode.
+     * Whether it worked is decided by the list that follows the change, not by the command's silence.
+     */
+    private void overlayOpJob(int req, String op, String id, long queuedAt) {
+        JSONObject res = new JSONObject();
+        try {
+            res.put("req", req);
+            res.put("op", op);
+            res.put("id", id);
+            if (settingsJobStale(queuedAt)) {
+                res.put("ok", false);
+                res.put("stale", true);
+                res.put("error", "Skipped: it waited too long behind other requests");
+                settingsReply("onOverlayOp", res);
+                return;
+            }
+            String mode = resolveExecMode();
+            res.put("mode", mode);
+            if ("standard".equals(mode)) {
+                res.put("ok", false);
+                res.put("needsPrivilege", true);
+                res.put("error", "Needs ADB, Wireless Debugging, Shizuku or Root");
+            } else {
+                String out = runPrivilegedShell(mode, OverlayRules.changeScript(op, id), 30000);
+                OverlayRules.ChangeResult cr = OverlayRules.parseChange(out);
+                OverlayRules.Verdict v = OverlayRules.judge(op, id, cr);
+                res.put("ok", v.ok);
+                res.put("state", v.state);
+                if (v.unknown) res.put("unknown", true);
+                // an empty list after a change is not "this phone has no overlays": the page keeps the list it has and looks again
+                if (cr.all != null && !cr.all.isEmpty()) res.put("list", overlaysToJson(cr.all));
+                if (!cr.answer.isEmpty()) res.put("answer", clipAnswer(cr.answer));
+                if (!v.ok) {
+                    res.put("error", v.error);
+                    res.put("advice", OverlayRules.advice(cr.answer + "\n" + cr.listError));
+                }
+            }
+        } catch (Throwable t) {
+            try {
+                res.put("ok", false);
+                res.put("error", errMsg(t));
+            } catch (Exception ignored) {}
+        }
+        settingsReply("onOverlayOp", res);
+    }
+
+    private void saveFlagSnapshot(String snapshot) {
+        if (snapshot == null || snapshot.isEmpty()) prefs.edit().remove("ovl_flag_snap").apply();
+        else prefs.edit().putString("ovl_flag_snap", snapshot).apply();
+    }
+
+    /**
+     * Writes the Material You theme setting (and Samsung's wallpaper-colours switch where the phone has one) and reports it as
+     * window.onThemeOp(json): req, kind, ok, value (what the setting holds now, "null" when it is not there), before (what it held
+     * when this change began; apply only), flags (the settings tables whose switch now holds what was wanted), warning (a switch
+     * that would not change), flagsRestored, answer, error, advice, needsPrivilege, unknown, mode.
+     * What a change does, step by step, is OverlayRules.runTheme's job (tested off the device).
+     */
+    private void themeJob(int req, String kind, String source, String hex, String style, String raw, long queuedAt) {
+        JSONObject res = new JSONObject();
+        try {
+            res.put("req", req);
+            res.put("kind", kind);
+            if (settingsJobStale(queuedAt)) {
+                res.put("ok", false);
+                res.put("stale", true);
+                res.put("error", "Skipped: it waited too long behind other requests");
+                settingsReply("onThemeOp", res);
+                return;
+            }
+            final String mode = resolveExecMode();
+            res.put("mode", mode);
+            if ("standard".equals(mode)) {
+                res.put("ok", false);
+                res.put("needsPrivilege", true);
+                res.put("error", "Needs ADB, Wireless Debugging, Shizuku or Root");
+            } else {
+                OverlayRules.ThemeOutcome oc = OverlayRules.runTheme(new OverlayRules.ThemeEnv() {
+                    @Override
+                    public String run(String script, int timeoutMs) {
+                        return runPrivilegedShell(mode, script, timeoutMs);
+                    }
+
+                    @Override
+                    public String snapshot() {
+                        return prefs.getString("ovl_flag_snap", "");
+                    }
+
+                    @Override
+                    public void saveSnapshot(String snapshot) {
+                        saveFlagSnapshot(snapshot);
+                    }
+
+                    @Override
+                    public long now() {
+                        return System.currentTimeMillis();
+                    }
+                }, kind, source, hex, style, raw);
+                res.put("ok", oc.ok);
+                if (oc.unknown) res.put("unknown", true);
+                if (oc.value != null) res.put("value", oc.value);
+                if (oc.before != null) res.put("before", oc.before);
+                JSONArray flags = new JSONArray();
+                for (String f : oc.flags) flags.put(f);
+                res.put("flags", flags);
+                if (oc.flagsRestored) res.put("flagsRestored", true);
+                if (!oc.answer.isEmpty()) res.put("answer", clipAnswer(oc.answer));
+                if (!oc.warning.isEmpty()) res.put("warning", oc.warning);
+                if (!oc.ok) {
+                    res.put("error", oc.error);
+                    res.put("advice", oc.advice);
+                }
+            }
+        } catch (Throwable t) {
+            try {
+                res.put("ok", false);
+                res.put("error", errMsg(t));
+            } catch (Exception ignored) {}
+        }
+        settingsReply("onThemeOp", res);
+    }
+
+    /** The five tonal palettes the system builds from its theme colour (Android 12+): 13 steps each, light to dark. */
+    private String systemPaletteJson() {
+        JSONObject o = new JSONObject();
+        try {
+            o.put("sdk", Build.VERSION.SDK_INT);
+            if (Build.VERSION.SDK_INT < 31) {
+                o.put("ok", false);
+                o.put("error", "Material You colors need Android 12 or newer (this phone runs Android " + Build.VERSION.RELEASE + ").");
+                return o.toString();
+            }
+            int[] tones = {0, 10, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000};
+            String[] names = {"accent1", "accent2", "accent3", "neutral1", "neutral2"};
+            JSONArray t = new JSONArray();
+            for (int tone : tones) t.put(tone);
+            o.put("tones", t);
+            for (String n : names) {
+                JSONArray a = new JSONArray();
+                for (int tone : tones) a.put(colorHex(systemColor("system_" + n + "_" + tone)));
+                o.put(n, a);
+            }
+            o.put("ok", true);
+        } catch (Throwable t) {
+            try {
+                o.put("ok", false);
+                o.put("error", "The system colors could not be read: " + errMsg(t));
+            } catch (Exception ignored) {}
+        }
+        return o.toString();
+    }
+
     /** Runs a short pm command through a specific backend (for post-install dexopt). */
     private String shellVia(String mode, String cmd) throws Exception {
         if ("adb_tcp".equals(mode) || "adb_wireless".equals(mode)) {
@@ -5297,6 +5516,83 @@ public class MainActivity extends Activity {
                 }
             })) return "error: the app is closing";
             return "started";
+        }
+
+        /**
+         * Reads the overlays (`cmd overlay list`) off the page's thread. Returns "started". The answer arrives as window.onOverlayList(json).
+         */
+        @JavascriptInterface
+        public String overlayList(final int req) {
+            final long queuedAt = android.os.SystemClock.elapsedRealtime();
+            if (!submitSettingsJob(new Runnable() {
+                @Override
+                public void run() {
+                    overlayListJob(req, queuedAt);
+                }
+            })) return "error: the app is closing";
+            return "started";
+        }
+
+        /**
+         * Switches one overlay "enable" or "disable". Returns "started", or "error: ..." when the request itself is not acceptable.
+         * The answer arrives as window.onOverlayOp(json).
+         */
+        @JavascriptInterface
+        public String overlayOp(final int req, final String op, final String id) {
+            if (!OverlayRules.isOp(op)) return "error: unknown operation";
+            String bad = OverlayRules.idProblem(id);
+            if (bad != null) return "error: " + bad;
+            final long queuedAt = android.os.SystemClock.elapsedRealtime();
+            if (!submitSettingsJob(new Runnable() {
+                @Override
+                public void run() {
+                    overlayOpJob(req, op, id, queuedAt);
+                }
+            })) return "error: the app is closing";
+            return "started";
+        }
+
+        /**
+         * Sets the Material You theme: source "preset" (with a colour, six hex digits) or "home_wallpaper", and a style (TONAL_SPOT,
+         * VIBRANT, EXPRESSIVE, FRUIT_SALAD, RAINBOW or SPRITZ). Returns "started", or "error: ...". The answer arrives as window.onThemeOp(json).
+         */
+        @JavascriptInterface
+        public String themeApply(final int req, final String source, final String hex, final String style) {
+            try {
+                OverlayRules.themeValue(source, hex, style, System.currentTimeMillis());       // the checks, so a bad request is refused here
+            } catch (IllegalArgumentException bad) {
+                return "error: " + bad.getMessage();
+            }
+            return submitTheme(req, "apply", source, hex, style, "");
+        }
+
+        /**
+         * Writes an earlier theme value back, or an empty one to go back to the system default. {@code undo} says this takes back the
+         * last change, so Samsung's wallpaper-colours switch goes back to what that change found too. Returns "started", or
+         * "error: ...". The answer arrives as window.onThemeOp(json).
+         */
+        @JavascriptInterface
+        public String themeRestore(final int req, final String raw, final boolean undo) {
+            String bad = OverlayRules.themeValueProblem(raw);
+            if (bad != null) return "error: " + bad;
+            return submitTheme(req, undo ? "undo" : raw.isEmpty() ? "reset" : "restore", "", "", "", raw);
+        }
+
+        private String submitTheme(final int req, final String kind, final String source, final String hex, final String style, final String raw) {
+            final long queuedAt = android.os.SystemClock.elapsedRealtime();
+            if (!submitSettingsJob(new Runnable() {
+                @Override
+                public void run() {
+                    themeJob(req, kind, source, hex, style, raw, queuedAt);
+                }
+            })) return "error: the app is closing";
+            return "started";
+        }
+
+        /** The colours the system uses now (JSON: ok, sdk, tones, accent1..3, neutral1..2), read without any privileged mode. */
+        @JavascriptInterface
+        public String getSystemPalette() {
+            return systemPaletteJson();
         }
 
         /** The log, fetched off the page's thread. The answer arrives as window.onLogcatData(id, text). */
