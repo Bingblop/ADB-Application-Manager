@@ -4221,9 +4221,6 @@ Type any command below (e.g. pm list packages -d)
                 <button class="sheet-btn" onclick="extractApkUI()" id="sheetBtnExtract">
                     <span>📦</span><span>Extract APK</span>
                 </button>
-                <button class="sheet-btn" onclick="extractApkUI(true)" id="sheetBtnShareApk">
-                    <span>📤</span><span>Share APK</span>
-                </button>
                 <button class="sheet-btn" onclick="openBackups(inspectedPkg)" id="sheetBtnBackup">
                     <span>💾</span><span>Backup</span>
                 </button>
@@ -7000,29 +6997,22 @@ Type any command below (e.g. pm list packages -d)
             }
         }
 
-        // One extraction at a time: the result carries the package, and the request remembers whether to share it
+        // One extraction at a time: the result carries no request id, so a second one would be mixed up with the first
         let extractPending = null;
-        function extractApkUI(share) {
+        function extractApkUI() {
             if (!inspectedPkg || !window.AndroidBridge || !window.AndroidBridge.extractApk) return;
             if (extractPending) { showToast('An APK is still being extracted. Try again in a moment.', 'ℹ️'); return; }
             haptic();
-            const req = extractPending = { pkg: inspectedPkg, share: share === true };
+            const req = extractPending = {};
             setTimeout(() => { if (extractPending === req) extractPending = null; }, 300000);   // never block forever
-            showToast(req.share ? 'Extracting APK to share...' : 'Extracting APK...', '📦');
+            showToast('Extracting APK...', '📦');
             window.AndroidBridge.extractApk(inspectedPkg);
         }
 
         // Called by MainActivity when the APK copy finishes
         function onApkExtracted(json) {
             const r = JSON.parse(json || '{}');
-            const req = extractPending;
             extractPending = null;
-            if (r.ok && req && req.share && (!r.pkg || r.pkg === req.pkg)) {
-                const nm = String(r.path || '').split('/').pop();
-                const err = window.AndroidBridge && window.AndroidBridge.shareStoredFile ? window.AndroidBridge.shareStoredFile(r.ref || r.path, r.mime || 'application/octet-stream', nm) : 'Error: sharing unavailable';
-                if (err) showToast(err, '⚠️');
-                return;
-            }
             if (r.ok) {
                 showToast(`Saved ${formatBytes(r.bytes)} to ${r.path}${r.splits > 1 ? ' (split app: install the .apks with a split-APK installer such as SAI)' : ''}`, '📦');
             } else {

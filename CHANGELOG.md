@@ -1,5 +1,11 @@
 # Changelog
 
+## v6.0.2-Pro (versionCode 602)
+
+- **📤 The Share APK button is gone from the app menu.** Tap ⋯ on an app and the action grid no longer has it. **Extract APK**
+  is still there and still saves the app's `.apk` (or an `.apks` bundle for a split app) to Downloads and tells you where.
+  Nothing else in the menu changed.
+
 ## v6.0.1-Pro (versionCode 601)
 
 - **🛠️ The Settings tab is now called Hidden Settings.** "Settings" sounded like this app's own settings, but the tab reads
