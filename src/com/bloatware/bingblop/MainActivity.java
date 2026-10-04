@@ -317,6 +317,12 @@ public class MainActivity extends Activity {
                 }
             }
         } catch (Exception ignored) {}
+        if (requestCode == REQ_TERMUX_PERM) {
+            boolean granted = checkSelfPermission(TermuxBridge.PERMISSION) == PackageManager.PERMISSION_GRANTED;
+            boolean canAsk = !granted && shouldShowRequestPermissionRationale(TermuxBridge.PERMISSION);
+            notifyJs("window.onTermuxPermission && window.onTermuxPermission(" + granted + "," + canAsk + ")");
+            return;
+        }
         notifyJs("window.onPermissionsChanged && window.onPermissionsChanged()");
     }
 
@@ -1153,6 +1159,290 @@ public class MainActivity extends Activity {
                 }
             });
         }
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Terminal tab (v7.8): the Terminal sub-tab's persistent shells, one per backend, and the coding agents'
+    // HTTPS calls. Backends: "app" (this app's own sandbox, always there), "priv" (the working mode: Shizuku,
+    // Root or ADB) and "termux" (the user's own Termux: bash and everything installed with pkg, through
+    // TermuxBridge + TermuxLink). Each one is a RishShell, so cd and exports persist between commands.
+    // ---------------------------------------------------------------------------------------------
+
+    private static final long TERM_COMMAND_TIMEOUT_MS = 30 * 60 * 1000;      // a package install or a build can take a while
+    private static final int TERM_OUTPUT_CAP = 2000000;                        // characters shown per command
+    private static final int TERM_QUIET_CAP = 4 * 1024 * 1024;                // what a quiet command (the agents' file reads) may return
+    private static final int TERM_IDLE_CHARS_PER_SEC = 200000;
+    private static final int REQ_TERMUX_PERM = 9302;
+
+    /** Batches text for one page callback, window.fn(args..., text): a few calls a second instead of one per read, in order. */
+    private final class JsStream {
+        private final String fn;
+        private final StringBuilder buf = new StringBuilder();
+        private String args = "";
+        private boolean scheduled;
+        private final Runnable flusher = new Runnable() {
+            @Override
+            public void run() {
+                flush();
+            }
+        };
+
+        JsStream(String fn) {
+            this.fn = fn;
+        }
+
+        /** {@code argsJs}: the callback's leading arguments as JavaScript (already quoted). Text for different arguments never mixes. */
+        void add(String argsJs, String text) {
+            if (text == null || text.isEmpty()) return;
+            synchronized (buf) {
+                if (buf.length() > 0 && !argsJs.equals(args)) flushLocked();
+                args = argsJs;
+                buf.append(text);
+                if (buf.length() >= 24000) {
+                    flushLocked();
+                } else if (!scheduled) {
+                    scheduled = true;
+                    rishHandler.postDelayed(flusher, 40);
+                }
+            }
+        }
+
+        void flush() {
+            synchronized (buf) {
+                flushLocked();
+            }
+        }
+
+        private void flushLocked() {
+            scheduled = false;
+            rishHandler.removeCallbacks(flusher);
+            if (buf.length() == 0) return;
+            final String a = args;
+            final String text = buf.toString();
+            buf.setLength(0);
+            rishHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    if (webView == null) return;
+                    int i = 0;
+                    while (i < text.length()) {
+                        int end = Math.min(text.length(), i + 32000);
+                        if (end < text.length() && Character.isHighSurrogate(text.charAt(end - 1))) end++;
+                        webView.evaluateJavascript("window." + fn + " && window." + fn + "(" + a + "," + JSONObject.quote(text.substring(i, end)) + ")", null);
+                        i = end;
+                    }
+                }
+            });
+        }
+    }
+
+    private final class TermSlot {
+        final String backend;
+        RishShell shell;
+        String kind = "";            // what it runs on: app, shizuku, root, adb, termux
+        boolean starting;
+        boolean running;
+        long idleWindowAt;
+        int idleChars;
+        boolean idleDropped;
+        final JsStream out = new JsStream("onTermOutput");
+
+        TermSlot(String backend) {
+            this.backend = backend;
+        }
+
+        /** Output while no command runs (a background job). A runaway one gets a bounded share and one note. */
+        void idle(String text) {
+            boolean notice = false;
+            synchronized (this) {
+                long now = System.nanoTime() / 1000000L;
+                if (now - idleWindowAt >= 1000) {
+                    idleWindowAt = now;
+                    idleChars = 0;
+                    idleDropped = false;
+                }
+                if (idleChars >= TERM_IDLE_CHARS_PER_SEC) {
+                    if (idleDropped) return;
+                    idleDropped = true;
+                    notice = true;
+                } else {
+                    idleChars += text.length();
+                }
+            }
+            out.add(JSONObject.quote(backend) + ",\"\"", notice ? "\n[a background job is printing faster than this screen can show: output is being dropped]\n" : text);
+        }
+    }
+
+    private final Object termGate = new Object();
+    private final Map<String, TermSlot> termSlots = new java.util.HashMap<String, TermSlot>();     // guarded by termGate
+
+    /** What the "priv" backend runs on right now: shizuku, root, adb, or null with no privileged working mode. */
+    private String termPrivKind() {
+        String mode = resolveExecMode();
+        if ("shizuku".equals(mode)) return isShizukuAuthorized() ? "shizuku" : null;
+        if ("root".equals(mode)) return "root";
+        if ("adb_tcp".equals(mode) || "adb_wireless".equals(mode)) return "adb";
+        return null;
+    }
+
+    private RishShell.Spawner termSpawner(String kind, JSONObject opts) {
+        if ("shizuku".equals(kind)) {
+            return new RishShell.Spawner() {
+                @Override
+                public Process spawn(String[] argv) throws Exception {
+                    return rishSpawn(argv);
+                }
+            };
+        }
+        if ("root".equals(kind)) {
+            return new RishShell.Spawner() {
+                @Override
+                public Process spawn(String[] argv) throws Exception {
+                    return (argv.length >= 3 && "-c".equals(argv[1]) ? new ProcessBuilder("su", "-c", argv[2]) : new ProcessBuilder("su")).start();
+                }
+            };
+        }
+        if ("adb".equals(kind)) {
+            final String target = "adb_wireless".equals(resolveExecMode()) ? wirelessTarget() : tcpTarget();
+            return new RishShell.Spawner() {
+                @Override
+                public Process spawn(String[] argv) throws Exception {
+                    // -T: no terminal on the phone's side; the shell reads the commands this app writes
+                    return (argv.length >= 3 && "-c".equals(argv[1]) ? buildAdbProcess("-s", target, "shell", argv[2])
+                            : buildAdbProcess("-s", target, "shell", "-T")).start();
+                }
+            };
+        }
+        if ("termux".equals(kind)) {
+            boolean login = opts == null || opts.optBoolean("profile", true);
+            String cwd = opts == null ? "" : opts.optString("cwd", "");
+            return TermuxLink.spawner(TermuxBridge.launcher(this), TermuxBridge.BASH, cwd, login, 25000);
+        }
+        // this app's own sandbox: always there, no privileges (toybox, and files under the app's home folder)
+        final File home = new File(getFilesDir(), "home");
+        if (!home.isDirectory()) home.mkdirs();
+        return new RishShell.Spawner() {
+            @Override
+            public Process spawn(String[] argv) throws Exception {
+                ProcessBuilder pb = argv.length >= 3 && "-c".equals(argv[1]) ? new ProcessBuilder("/system/bin/sh", "-c", argv[2])
+                        : new ProcessBuilder("/system/bin/sh");
+                pb.directory(home);
+                Map<String, String> env = pb.environment();
+                env.put("HOME", home.getAbsolutePath());
+                env.put("TMPDIR", getCacheDir().getAbsolutePath());
+                return pb.start();
+            }
+        };
+    }
+
+    /** Set up once per new shell: no pagers or terminal tricks (there is no keyboard input to running programs). */
+    private static String termInitScript(String kind) {
+        StringBuilder s = new StringBuilder("export PAGER=cat GIT_PAGER=cat MANPAGER=cat TERM=dumb GIT_TERMINAL_PROMPT=0 2>/dev/null; ");
+        if ("termux".equals(kind)) {
+            s.append("export DEBIAN_FRONTEND=noninteractive PATH=\"$HOME/.local/bin:$HOME/bin:$PATH\"; ")
+                    // pkg / apt would stop at "Do you want to continue? [Y/n]" with no way to answer: they answer yes here
+                    .append("pkg() { case \"$1\" in install|reinstall|upgrade|update|uninstall|remove|autoremove|full-upgrade) ")
+                    .append("local c=\"$1\"; shift; command pkg \"$c\" -y \"$@\";; *) command pkg \"$@\";; esac; }; ")
+                    .append("apt() { case \"$1\" in install|reinstall|upgrade|remove|purge|autoremove|full-upgrade|dist-upgrade) ")
+                    .append("local c=\"$1\"; shift; command apt \"$c\" -y \"$@\";; *) command apt \"$@\";; esac; }; ");
+        }
+        s.append("true");
+        return s.toString();
+    }
+
+    private void closeTermSessions() {
+        final List<RishShell> shells = new ArrayList<RishShell>();
+        synchronized (termGate) {
+            for (TermSlot s : termSlots.values()) {
+                if (s.shell != null) shells.add(s.shell);
+                s.shell = null;
+            }
+            termSlots.clear();
+        }
+        if (shells.isEmpty()) return;
+        Thread closer = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                for (RishShell sh : shells) {
+                    try {
+                        sh.close();
+                    } catch (Throwable ignored) {
+                    }
+                }
+            }
+        }, "term-close");
+        closer.setDaemon(true);
+        closer.start();
+    }
+
+    /** Termux is there and this app may run commands in it; otherwise an error whose prefix tells the page what to show. */
+    private void checkTermuxReady() throws IOException {
+        JSONObject st = TermuxBridge.status(this);
+        if (!st.optBoolean("installed", false)) throw new IOException("termux_missing: Termux is not installed");
+        if (!st.optBoolean("permission", false)) throw new IOException("termux_permission: this app may not run commands in Termux yet");
+    }
+
+    /** export lines for an official command-line tool: each provider's own variable only, filled from the vault. */
+    private String termSecretEnv(String envJson) {
+        if (envJson == null || envJson.trim().isEmpty()) return "";
+        StringBuilder sb = new StringBuilder();
+        try {
+            JSONObject o = new JSONObject(envJson);
+            java.util.Iterator<String> it = o.keys();
+            while (it.hasNext()) {
+                String name = it.next();
+                AgentRules.Provider p = AgentRules.find(o.optString(name, ""));
+                if (p == null || p.env == null || !p.env.equals(name)) continue;
+                String key = vault().get(p.id);
+                if (key == null || key.isEmpty()) continue;
+                sb.append("export ").append(name).append('=').append(RishShell.quote(key)).append('\n');
+            }
+        } catch (Exception ignored) {
+        }
+        return sb.toString();
+    }
+
+    // ---- coding agents: keys and HTTPS ----
+
+    private AgentVault agentVault;
+    private final ExecutorService aiExecutor = Executors.newCachedThreadPool();
+    private final Map<String, AiHttp> aiCalls = new java.util.concurrent.ConcurrentHashMap<String, AiHttp>();
+
+    private synchronized AgentVault vault() {
+        if (agentVault == null) agentVault = new AgentVault(this);
+        return agentVault;
+    }
+
+    /** Adds provider {@code auth}'s key to a request, but only if the request goes to that provider's own address. */
+    private String aiAuthorize(AiHttp.Request req, String auth) {
+        if (auth == null || auth.isEmpty()) return null;
+        AgentRules.Provider p = AgentRules.find(auth);
+        if (p == null) return "unknown provider " + auth;
+        String base = vault().base(auth);
+        if (!AgentRules.allowed(p, base, req.url)) {
+            return p.ownServer() ? "blocked: that address is not the " + auth + " server saved in Terminal settings"
+                    : "blocked: " + auth + " keys are only sent to " + p.host;
+        }
+        for (String[] h : p.extra) if (!req.headers.containsKey(h[0])) req.headers.put(h[0], h[1]);
+        String key = vault().get(auth);
+        if (key != null && !key.isEmpty()) req.headers.put(p.header, p.prefix + key);
+        else if (!p.ownServer()) return "no " + auth + " key is saved: add it in Terminal settings";
+        return null;
+    }
+
+    private void aiFinish(String reqId, AiHttp.Response r) {
+        JSONObject o = new JSONObject();
+        try {
+            o.put("status", r.status);
+            o.put("body", r.body == null ? "" : r.body);
+            o.put("error", r.error == null ? "" : r.error);
+            o.put("cancelled", r.cancelled);
+            JSONObject h = new JSONObject();
+            for (Map.Entry<String, String> e : r.headers.entrySet()) h.put(e.getKey(), e.getValue());
+            o.put("headers", h);
+        } catch (Exception ignored) {
+        }
+        notifyJs("window.onAiDone && window.onAiDone(" + JSONObject.quote(reqId) + "," + o.toString() + ")");
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -6348,6 +6638,487 @@ public class MainActivity extends Activity {
             closeRishShell();
         }
 
+        // ---------------- Terminal tab (v7.8): shells per backend, Termux, coding agents ----------------
+
+        /**
+         * Starts (or reuses) the Terminal's shell for {@code backend}: "app", "priv" or "termux". Returns "starting" (or "error: ...");
+         * the outcome arrives as window.onTermStarted(backend, json) with ok, kind, uid, host, cwd, prompt, reused, or message.
+         * {@code optsJson}: {cwd, profile} (profile: Termux reads the user's login profile).
+         */
+        @JavascriptInterface
+        public String termStart(final String backend, final String optsJson) {
+            final String b = backend == null ? "" : backend;
+            if (!b.equals("app") && !b.equals("priv") && !b.equals("termux")) return "error: unknown shell " + b;
+            JSONObject o;
+            try {
+                o = new JSONObject(optsJson == null || optsJson.trim().isEmpty() ? "{}" : optsJson);
+            } catch (Exception e) {
+                o = new JSONObject();
+            }
+            final JSONObject opts = o;
+            final TermSlot slot;
+            synchronized (termGate) {
+                TermSlot s = termSlots.get(b);
+                if (s == null) {
+                    s = new TermSlot(b);
+                    termSlots.put(b, s);
+                }
+                if (s.starting) return "starting";
+                s.starting = true;
+                slot = s;
+            }
+            executor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject res = new JSONObject();
+                    try {
+                        RishShell sh;
+                        String had;
+                        synchronized (termGate) {
+                            sh = slot.shell;
+                            had = slot.kind;
+                        }
+                        String kind = "app".equals(b) ? "app" : "termux".equals(b) ? "termux" : termPrivKind();
+                        if (kind == null) throw new IOException("no privileged working mode is active: connect ADB, Shizuku or Root in Working Modes first");
+                        boolean reused = sh != null && sh.isAlive() && kind.equals(had);
+                        if (!reused) {
+                            if (sh != null) sh.close();          // the working mode changed (Shizuku -> Root, say): a new shell on the new one
+                            if ("termux".equals(kind)) checkTermuxReady();
+                            final boolean bash = "termux".equals(kind);
+                            sh = new RishShell(termSpawner(kind, opts), bash ? 30000 : 15000, bash ? "bash" : "sh");
+                            sh.setIdleSink(new RishShell.Sink() {
+                                @Override
+                                public void onOutput(String text) {
+                                    slot.idle(text);
+                                }
+                            });
+                            synchronized (termGate) {
+                                slot.shell = sh;
+                                slot.kind = kind;
+                            }
+                            try {
+                                String cwd = opts.optString("cwd", "");
+                                sh.start(cwd.isEmpty() ? null : cwd);
+                                sh.run(termInitScript(kind), 15000, null);
+                            } catch (Throwable failed) {
+                                synchronized (termGate) {
+                                    if (slot.shell == sh) slot.shell = null;
+                                }
+                                sh.close();
+                                throw failed;
+                            }
+                        }
+                        res.put("ok", true);
+                        res.put("reused", reused);
+                        res.put("kind", kind);
+                        res.put("uid", sh.uid());
+                        res.put("host", sh.host());
+                        res.put("cwd", sh.cwd());
+                        res.put("prompt", sh.prompt());
+                    } catch (Throwable t) {
+                        try {
+                            res.put("ok", false);
+                            res.put("message", errMsg(t));
+                        } catch (Exception ignored) {}
+                    } finally {
+                        synchronized (termGate) {
+                            slot.starting = false;
+                        }
+                    }
+                    notifyJs("window.onTermStarted && window.onTermStarted(" + JSONObject.quote(b) + "," + res.toString() + ")");
+                }
+            });
+            return "starting";
+        }
+
+        /**
+         * Runs one command in the Terminal's {@code backend} shell. Returns "ok", "busy" or "no_shell". Output streams to
+         * window.onTermOutput(backend, runId, text) - or, with {@code quiet}, comes back whole in the end report instead -, and the
+         * end arrives as window.onTermDone(backend, runId, json) with exit, cwd, prompt, exited, stopped, timedOut, restarted,
+         * revived, output (quiet only) or error. {@code envJson} {"ANTHROPIC_API_KEY":"claude"}: a saved key handed to an official
+         * command-line tool for this one command only (each provider's own variable, nothing else).
+         */
+        @JavascriptInterface
+        public String termRun(final String backend, final String runId, final String cmd, final boolean quiet, final String envJson) {
+            final TermSlot slot;
+            final RishShell sh;
+            synchronized (termGate) {
+                slot = termSlots.get(backend == null ? "" : backend);
+                sh = slot == null ? null : slot.shell;
+                if (sh == null || !sh.isAlive()) return "no_shell";
+                if (slot.running) return "busy";
+                slot.running = true;
+            }
+            final String rid = runId == null ? "" : runId;
+            final String argsJs = JSONObject.quote(slot.backend) + "," + JSONObject.quote(rid);
+            String command = cmd == null ? "" : cmd;
+            String env = termSecretEnv(envJson);
+            if (!env.isEmpty()) command = "(\n" + env + command + "\n)";       // a subshell: the keys don't stay in the session
+            final String full = command;
+            executor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject done = new JSONObject();
+                    final StringBuilder captured = quiet ? new StringBuilder() : null;
+                    final int[] shown = {0};
+                    try {
+                        RishShell.Result r = sh.run(full, TERM_COMMAND_TIMEOUT_MS, new RishShell.Sink() {
+                            @Override
+                            public void onOutput(String text) {
+                                if (captured != null) {
+                                    int room = TERM_QUIET_CAP - captured.length();
+                                    if (room > 0) captured.append(text.length() > room ? text.substring(0, room) : text);
+                                    return;
+                                }
+                                if (shown[0] > TERM_OUTPUT_CAP) return;
+                                int room = TERM_OUTPUT_CAP - shown[0];
+                                if (text.length() > room) {
+                                    text = text.substring(0, room) + "\n... output cut off here (the command keeps running; tap STOP to end it)\n";
+                                    shown[0] = TERM_OUTPUT_CAP + 1;
+                                } else {
+                                    shown[0] += text.length();
+                                }
+                                slot.out.add(argsJs, text);
+                            }
+                        });
+                        done.put("exit", r.exit);
+                        done.put("cwd", r.cwd);
+                        done.put("prompt", sh.prompt());
+                        done.put("exited", r.exited);
+                        done.put("stopped", r.stopped);
+                        done.put("timedOut", r.timedOut);
+                        done.put("restarted", r.restarted);
+                        done.put("revived", r.revived);
+                        if (captured != null) done.put("output", captured.toString());
+                    } catch (Throwable t) {
+                        try {
+                            done.put("error", errMsg(t));
+                            done.put("exited", !sh.isAlive());
+                            done.put("exit", -1);
+                        } catch (Exception ignored) {}
+                    }
+                    slot.out.flush();
+                    synchronized (termGate) {
+                        slot.running = false;
+                    }
+                    notifyJs("window.onTermDone && window.onTermDone(" + argsJs + "," + done.toString() + ")");
+                }
+            });
+            return "ok";
+        }
+
+        /** Ends the command running in {@code backend}'s shell (SIGINT, then TERM, then KILL if it ignores that). */
+        @JavascriptInterface
+        public void termStop(String backend) {
+            RishShell sh;
+            synchronized (termGate) {
+                TermSlot s = termSlots.get(backend == null ? "" : backend);
+                sh = s == null ? null : s.shell;
+            }
+            if (sh != null) sh.stop();
+        }
+
+        /** Closes {@code backend}'s shell (the next termStart opens a new one). */
+        @JavascriptInterface
+        public void termClose(String backend) {
+            final RishShell sh;
+            synchronized (termGate) {
+                TermSlot s = termSlots.get(backend == null ? "" : backend);
+                sh = s == null ? null : s.shell;
+                if (s != null) s.shell = null;
+            }
+            if (sh != null) {
+                executor.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        sh.close();
+                    }
+                });
+            }
+        }
+
+        /** Termux's state, the open shells and the phone, for the Terminal (quick: no process is started). */
+        @JavascriptInterface
+        public String termInfo() {
+            JSONObject o = new JSONObject();
+            try {
+                o.put("termux", TermuxBridge.status(MainActivity.this));
+                JSONObject sessions = new JSONObject();
+                synchronized (termGate) {
+                    for (TermSlot s : termSlots.values()) {
+                        JSONObject j = new JSONObject();
+                        boolean alive = s.shell != null && s.shell.isAlive();
+                        j.put("alive", alive);
+                        j.put("kind", s.kind);
+                        j.put("running", s.running);
+                        if (alive) {
+                            j.put("cwd", s.shell.cwd());
+                            j.put("prompt", s.shell.prompt());
+                            j.put("uid", s.shell.uid());
+                        }
+                        sessions.put(s.backend, j);
+                    }
+                }
+                o.put("sessions", sessions);
+                o.put("home", new File(getFilesDir(), "home").getAbsolutePath());
+                o.put("sdk", Build.VERSION.SDK_INT);
+                o.put("release", Build.VERSION.RELEASE);
+                o.put("model", Build.MODEL);
+                o.put("manufacturer", Build.MANUFACTURER);
+                o.put("abi", Build.SUPPORTED_ABIS != null && Build.SUPPORTED_ABIS.length > 0 ? Build.SUPPORTED_ABIS[0] : "");
+            } catch (Exception ignored) {}
+            return o.toString();
+        }
+
+        /** Asks for Termux's "Run commands in Termux environment" permission. "granted", "not_installed" or "asked" (answer: window.onTermuxPermission). */
+        @JavascriptInterface
+        public String termuxRequestPermission() {
+            JSONObject st = TermuxBridge.status(MainActivity.this);
+            if (!st.optBoolean("installed", false)) return "not_installed";
+            if (st.optBoolean("permission", false)) return "granted";
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        requestPermissions(new String[]{TermuxBridge.PERMISSION}, REQ_TERMUX_PERM);
+                    } catch (Exception e) {
+                        notifyJs("window.onTermuxPermission && window.onTermuxPermission(false,false)");
+                    }
+                }
+            });
+            return "asked";
+        }
+
+        /**
+         * Checks that Termux accepts commands from this app (permission granted AND allow-external-apps=true in Termux). Returns
+         * "started" or "error: ..."; the answer is window.onTermuxProbe(reqId, json{ok, message, errmsg}).
+         */
+        @JavascriptInterface
+        public String termuxProbe(final String reqId) {
+            final String id = reqId == null ? "" : reqId;
+            final java.util.concurrent.atomic.AtomicBoolean answered = new java.util.concurrent.atomic.AtomicBoolean(false);
+            final Runnable timeout = new Runnable() {
+                @Override
+                public void run() {
+                    if (!answered.compareAndSet(false, true)) return;
+                    JSONObject o = new JSONObject();
+                    try {
+                        o.put("ok", false);
+                        o.put("timedOut", true);
+                        o.put("message", "Termux did not answer. Open Termux once (it finishes installing on first start), then try again.");
+                    } catch (Exception ignored) {}
+                    notifyJs("window.onTermuxProbe && window.onTermuxProbe(" + JSONObject.quote(id) + "," + o.toString() + ")");
+                }
+            };
+            try {
+                checkTermuxReady();
+                TermuxBridge.run(MainActivity.this, "echo adbmgr-ok", true, "ADB App Manager check", new TermuxLink.Callback() {
+                    @Override
+                    public void onResult(TermuxLink.Result r) {
+                        if (!answered.compareAndSet(false, true)) return;
+                        rishHandler.removeCallbacks(timeout);
+                        JSONObject o = new JSONObject();
+                        try {
+                            boolean ok = r.ran() && r.stdout.contains("adbmgr-ok");
+                            o.put("ok", ok);
+                            o.put("message", ok ? "" : TermuxLink.failureText(r));
+                            o.put("errmsg", r.errmsg);
+                            o.put("needsExternalApps", r.errmsg.contains("allow-external-apps"));
+                        } catch (Exception ignored) {}
+                        notifyJs("window.onTermuxProbe && window.onTermuxProbe(" + JSONObject.quote(id) + "," + o.toString() + ")");
+                    }
+                });
+                rishHandler.postDelayed(timeout, 12000);
+            } catch (IOException e) {
+                return "error: " + e.getMessage();
+            }
+            return "started";
+        }
+
+        /** Opens a command (or, when empty, a plain shell) in a real Termux window: for full-screen programs and sign-in flows. */
+        @JavascriptInterface
+        public String termuxOpen(final String cmd) {
+            try {
+                checkTermuxReady();
+            } catch (IOException e) {
+                return "error: " + e.getMessage();
+            }
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        TermuxBridge.openInTermux(MainActivity.this, cmd);
+                    } catch (Exception e) {
+                        notifyJs("window.onTermuxOpenFailed && window.onTermuxOpenFailed(" + JSONObject.quote(errMsg(e)) + ")");
+                    }
+                }
+            });
+            return "ok";
+        }
+
+        /**
+         * One HTTPS call for a coding agent. {@code specJson}: {url, method, headers, body, stream, auth}; with {@code auth} (a
+         * provider id) the saved key is added, and only if the URL is that provider's own. Returns "started" or "error: ...".
+         * Streamed text arrives as window.onAiChunk(reqId, text); the end as window.onAiDone(reqId, json{status, body, error,
+         * cancelled, headers}).
+         */
+        @JavascriptInterface
+        public String aiRequest(final String reqId, final String specJson) {
+            final String id = reqId == null ? "" : reqId;
+            final AiHttp.Request req = new AiHttp.Request();
+            try {
+                JSONObject spec = new JSONObject(specJson == null ? "{}" : specJson);
+                req.url = spec.getString("url");
+                if (!req.url.startsWith("https://") && !req.url.startsWith("http://")) return "error: not a web address";
+                req.method = spec.optString("method", "POST");
+                req.stream = spec.optBoolean("stream", false);
+                if (spec.has("body") && !spec.isNull("body")) {
+                    Object body = spec.get("body");
+                    req.body = body instanceof String ? (String) body : body.toString();
+                }
+                if (spec.has("readTimeoutMs")) req.readTimeoutMs = Math.max(5000, Math.min(900000, spec.optInt("readTimeoutMs", 300000)));
+                JSONObject h = spec.optJSONObject("headers");
+                if (h != null) {
+                    java.util.Iterator<String> it = h.keys();
+                    while (it.hasNext()) {
+                        String k = it.next();
+                        if (!AgentRules.reservedHeader(k)) req.headers.put(k, h.optString(k));
+                    }
+                }
+                String refused = aiAuthorize(req, spec.optString("auth", ""));
+                if (refused != null) return "error: " + refused;
+            } catch (Exception e) {
+                return "error: " + errMsg(e);
+            }
+            final AiHttp call = new AiHttp();
+            aiCalls.put(id, call);
+            final JsStream stream = new JsStream("onAiChunk");
+            final String argsJs = JSONObject.quote(id);
+            aiExecutor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    AiHttp.Response r = call.execute(req, new AiHttp.Sink() {
+                        @Override
+                        public void onChunk(String text) {
+                            stream.add(argsJs, text);
+                        }
+                    });
+                    stream.flush();
+                    aiCalls.remove(id);
+                    aiFinish(id, r);
+                }
+            });
+            return "started";
+        }
+
+        /** Ends an agent's HTTPS call (window.onAiDone then reports it cancelled). */
+        @JavascriptInterface
+        public void aiCancel(String reqId) {
+            AiHttp c = aiCalls.get(reqId == null ? "" : reqId);
+            if (c != null) c.cancel();
+        }
+
+        /**
+         * Tests a key with the provider's own cheap call (the model list, or who-am-i) and saves it when it works. {@code base}: the
+         * address of the user's own server (Jan, AnythingLLM, Ollama). Returns "started" or "error: ..."; the answer is
+         * window.onAiKeyTest(reqId, json{ok, status, body, error, saved, hint, base}).
+         */
+        @JavascriptInterface
+        public String aiTestKey(final String reqId, final String provider, final String key, final String base) {
+            final AgentRules.Provider p = AgentRules.find(provider);
+            if (p == null) return "error: unknown provider";
+            final String k = key == null ? "" : key.trim();
+            if (k.length() > 4096 || k.indexOf('\n') >= 0 || k.indexOf('\r') >= 0 || k.indexOf(' ') >= 0) return "error: that does not look like a key";
+            String b = "";
+            if (p.ownServer()) {
+                try {
+                    b = AgentRules.normalizeBase(base);
+                } catch (IllegalArgumentException e) {
+                    return "error: " + e.getMessage();
+                }
+            } else if (k.isEmpty()) {
+                return "error: enter the key first";
+            }
+            final String fb = b;
+            final String id = reqId == null ? "" : reqId;
+            final AiHttp call = new AiHttp();
+            aiCalls.put(id, call);
+            aiExecutor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject o = new JSONObject();
+                    try {
+                        AiHttp.Request req = new AiHttp.Request();
+                        req.method = "GET";
+                        req.url = AgentRules.testUrl(p, fb);
+                        req.readTimeoutMs = 30000;
+                        for (String[] h : p.extra) req.headers.put(h[0], h[1]);
+                        if (!k.isEmpty()) req.headers.put(p.header, p.prefix + k);
+                        AiHttp.Response r = call.execute(req, null);
+                        boolean ok = r.status >= 200 && r.status < 300;
+                        o.put("ok", ok);
+                        o.put("status", r.status);
+                        o.put("body", r.body.length() > 1000000 ? r.body.substring(0, 1000000) : r.body);
+                        o.put("error", r.error);
+                        o.put("cancelled", r.cancelled);
+                        o.put("base", fb);
+                        o.put("hint", AgentRules.hint(k));
+                        JSONObject hh = new JSONObject();
+                        for (Map.Entry<String, String> e : r.headers.entrySet()) hh.put(e.getKey(), e.getValue());
+                        o.put("headers", hh);
+                        if (ok) {
+                            try {
+                                vault().put(p.id, k);
+                                if (p.ownServer()) vault().setBase(p.id, fb);
+                                o.put("saved", true);
+                            } catch (Throwable t) {
+                                o.put("saved", false);
+                                o.put("saveError", errMsg(t));
+                            }
+                        }
+                    } catch (Throwable t) {
+                        try {
+                            o.put("ok", false);
+                            o.put("error", errMsg(t));
+                        } catch (Exception ignored) {}
+                    }
+                    aiCalls.remove(id);
+                    notifyJs("window.onAiKeyTest && window.onAiKeyTest(" + JSONObject.quote(id) + "," + o.toString() + ")");
+                }
+            });
+            return "started";
+        }
+
+        /** Saves a key (and server address) without testing it ("Save anyway"). Returns "ok" or "error: ...". */
+        @JavascriptInterface
+        public String aiSaveKey(String provider, String key, String base) {
+            AgentRules.Provider p = AgentRules.find(provider);
+            if (p == null) return "error: unknown provider";
+            String k = key == null ? "" : key.trim();
+            if (k.length() > 4096 || k.indexOf('\n') >= 0 || k.indexOf('\r') >= 0 || k.indexOf(' ') >= 0) return "error: that does not look like a key";
+            try {
+                if (p.ownServer()) vault().setBase(p.id, AgentRules.normalizeBase(base));
+                else if (k.isEmpty()) return "error: enter the key first";
+                vault().put(p.id, k);
+                return "ok";
+            } catch (Throwable t) {
+                return "error: " + errMsg(t);
+            }
+        }
+
+        /** Forgets a provider's key and server address. */
+        @JavascriptInterface
+        public void aiForgetKey(String provider) {
+            if (AgentRules.find(provider) != null) vault().remove(provider);
+        }
+
+        /** Which providers have a key / server saved: hints only, never the keys. */
+        @JavascriptInterface
+        public String aiVaultStatus() {
+            return vault().status().toString();
+        }
+
+
         /** The profile whose apps the user wants to be told about when they come back ("" = none). */
         @JavascriptInterface
         public void setWatchedProfile(final String name) {
@@ -10449,6 +11220,11 @@ public class MainActivity extends Activity {
                 closer.setDaemon(true);
                 closer.start();
             }
+        } catch (Throwable ignored) {}
+        try {
+            closeTermSessions();
+            for (AiHttp c : aiCalls.values()) c.cancel();
+            aiExecutor.shutdown();
         } catch (Throwable ignored) {}
         try {
             executor.shutdown();

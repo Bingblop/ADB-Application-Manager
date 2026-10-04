@@ -1,0 +1,132 @@
+package com.bloatware.bingblop;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+
+/**
+ * Coding agents' key rules: which address a provider's key may go to (and every way a URL could pretend to be that address),
+ * the user's own server addresses, key hints and redaction, the headers the page may not set, and the sealing of keys
+ * (AES-256-GCM with the provider bound in), here with a software key in place of the Android Keystore one.
+ */
+public class AgentRulesTest {
+  static int fails = 0;
+  static void check(String name, boolean ok) { System.out.println((ok ? "PASS " : "FAIL ") + name); if (!ok) fails++; }
+
+  static boolean throwsIAE(String base) {
+    try { AgentRules.normalizeBase(base); return false; } catch (IllegalArgumentException e) { return e.getMessage() != null && !e.getMessage().isEmpty(); }
+  }
+
+  public static void main(String[] args) throws Exception {
+    AgentRules.Provider claude = AgentRules.find("claude");
+    AgentRules.Provider openai = AgentRules.find("chatgpt");
+    AgentRules.Provider gemini = AgentRules.find("gemini");
+    AgentRules.Provider cursor = AgentRules.find("cursor");
+    AgentRules.Provider copilot = AgentRules.find("copilot");
+    AgentRules.Provider jan = AgentRules.find("jan");
+
+    // ---------------------------------------------------------------- the provider table
+    check("every key provider is known, with its host", "api.anthropic.com".equals(claude.host) && "api.openai.com".equals(openai.host)
+        && "generativelanguage.googleapis.com".equals(gemini.host) && "api.cursor.com".equals(cursor.host) && "api.github.com".equals(copilot.host));
+    check("unknown providers are not", AgentRules.find("evil") == null && AgentRules.find(null) == null);
+    check("Claude: x-api-key plus the API version header", "x-api-key".equals(claude.header) && "".equals(claude.prefix)
+        && claude.extra.length == 1 && "anthropic-version".equals(claude.extra[0][0]) && "2023-06-01".equals(claude.extra[0][1]));
+    check("OpenAI, Cursor, GitHub: Bearer tokens", "Authorization".equals(openai.header) && "Bearer ".equals(openai.prefix)
+        && "Bearer ".equals(cursor.prefix) && "Bearer ".equals(copilot.prefix));
+    check("Gemini: x-goog-api-key (not a URL parameter, so it never lands in logs)", "x-goog-api-key".equals(gemini.header));
+    check("tests are the cheap read calls", claude.test.equals("https://api.anthropic.com/v1/models?limit=100") && openai.test.equals("https://api.openai.com/v1/models")
+        && gemini.test.startsWith("https://generativelanguage.googleapis.com/v1beta/models") && cursor.test.equals("https://api.cursor.com/v1/me")
+        && copilot.test.equals("https://api.github.com/user"));
+    check("each command-line tool's own variable", "ANTHROPIC_API_KEY".equals(claude.env) && "OPENAI_API_KEY".equals(openai.env) && "GEMINI_API_KEY".equals(gemini.env)
+        && "CURSOR_API_KEY".equals(cursor.env) && "COPILOT_GITHUB_TOKEN".equals(copilot.env) && jan.env == null);
+    check("own-server providers have no fixed host", jan.ownServer() && AgentRules.find("anythingllm").ownServer() && AgentRules.find("ollama").ownServer() && !claude.ownServer());
+
+    // ---------------------------------------------------------------- where a key may go
+    check("Claude key: to api.anthropic.com over https", AgentRules.allowed(claude, "", "https://api.anthropic.com/v1/messages"));
+    check("... with the port spelled out too", AgentRules.allowed(claude, "", "https://api.anthropic.com:443/v1/messages"));
+    check("... host case does not matter", AgentRules.allowed(claude, "", "https://API.Anthropic.com/v1/models"));
+    check("not over plain http", !AgentRules.allowed(claude, "", "http://api.anthropic.com/v1/messages"));
+    check("not to a look-alike host", !AgentRules.allowed(claude, "", "https://api.anthropic.com.evil.example/v1/messages"));
+    check("not to a sub-domain", !AgentRules.allowed(claude, "", "https://x.api.anthropic.com/v1/messages"));
+    check("not when the host only appears in the query", !AgentRules.allowed(claude, "", "https://evil.example/?u=https://api.anthropic.com"));
+    check("not with user info pointing elsewhere", !AgentRules.allowed(claude, "", "https://api.anthropic.com@evil.example/v1"));
+    check("not on another port", !AgentRules.allowed(claude, "", "https://api.anthropic.com:8443/v1/messages"));
+    check("not another provider's host", !AgentRules.allowed(claude, "", "https://api.openai.com/v1/chat/completions"));
+    check("not a non-web scheme", !AgentRules.allowed(claude, "", "file:///etc/passwd") && !AgentRules.allowed(claude, "", "javascript:alert(1)"));
+    check("not garbage", !AgentRules.allowed(claude, "", "::::") && !AgentRules.allowed(claude, "", null) && !AgentRules.allowed(null, "", "https://api.anthropic.com/"));
+    check("Gemini key: only Google's API host", AgentRules.allowed(gemini, "", "https://generativelanguage.googleapis.com/v1beta/models/x:generateContent")
+        && !AgentRules.allowed(gemini, "", "https://googleapis.com/"));
+
+    String base = "http://192.168.1.20:1337/v1";
+    check("own server: the saved address", AgentRules.allowed(jan, base, "http://192.168.1.20:1337/v1/chat/completions"));
+    check("own server: the same origin, any path", AgentRules.allowed(jan, base, "http://192.168.1.20:1337/api/other"));
+    check("own server: not another port", !AgentRules.allowed(jan, base, "http://192.168.1.20:1338/v1/chat/completions"));
+    check("own server: not another scheme", !AgentRules.allowed(jan, base, "https://192.168.1.20:1337/v1/chat/completions"));
+    check("own server: not another host", !AgentRules.allowed(jan, base, "http://192.168.1.21:1337/v1/chat/completions"));
+    check("own server: nothing before an address was saved", !AgentRules.allowed(jan, "", "http://192.168.1.20:1337/v1/models") && !AgentRules.allowed(jan, null, "http://127.0.0.1:1337/v1/models"));
+    check("origin fills default ports", AgentRules.origin("https://a.example/x").equals("https://a.example:443") && AgentRules.origin("http://a.example").equals("http://a.example:80"));
+
+    // ---------------------------------------------------------------- the user's server address
+    check("a bare host:port gets http:// and loses the trailing slash", "http://192.168.1.20:1337/v1".equals(AgentRules.normalizeBase(" 192.168.1.20:1337/v1/ ")));
+    check("scheme and host are lower-cased, the path kept", "http://example.com:3001/api/v1/openai".equals(AgentRules.normalizeBase("HTTP://Example.COM:3001/api/v1/openai")));
+    check("https stays https", "https://jan.example".equals(AgentRules.normalizeBase("https://jan.example/")));
+    check("empty is refused with a hint", throwsIAE("") && throwsIAE("   ") && throwsIAE(null));
+    check("ftp is refused", throwsIAE("ftp://example.com"));
+    check("a user name / password is refused", throwsIAE("http://user:pw@example.com:1337"));
+    check("query and fragment are refused", throwsIAE("http://example.com/v1?key=1") && throwsIAE("http://example.com/v1#x"));
+    check("no host is refused", throwsIAE("http:///v1"));
+    check("the test URL of an own server is its models list", "http://h:1337/v1/models".equals(AgentRules.testUrl(jan, "h:1337/v1/")));
+    check("the test URL of a fixed provider ignores any base", claude.test.equals(AgentRules.testUrl(claude, "http://evil.example")));
+
+    // ---------------------------------------------------------------- hints and redaction
+    check("hint keeps the kind and the last four", "sk-ant-…WXYZ".equals(AgentRules.hint("sk-ant-api03-ABCDEFGHIJKLMNOPQRSTUVWXYZ")));
+    check("hint for an OpenAI project key", "sk-proj-…7890".equals(AgentRules.hint("sk-proj-abcdefghijklmnopqrstuv1234567890")));
+    check("hint for a Google key", "AIza…XYZ9".equals(AgentRules.hint("AIzaSyD1234567890abcdefghXYZ9")));
+    check("hint for a GitHub token", "github_pat_…abcd".equals(AgentRules.hint("github_pat_11AAAAAAA0123456789_zzzzzzzzzzzzabcd")));
+    check("hint for an unknown kind shows only the end", "…6789".equals(AgentRules.hint("abcdefghijklmnop0123456789")));
+    check("short or empty: nothing useful leaks", "••••".equals(AgentRules.hint("abc123")) && "".equals(AgentRules.hint("")) && "".equals(AgentRules.hint(null)));
+    String leak = "ANTHROPIC_API_KEY=sk-ant-api03-ABCDEFGHIJKLMNOPQRSTUVWXYZ012345 and AIzaSyD1234567890abcdefghijklmnopq and ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 and github_pat_11AAAAAAA0123456789_zzzzzzzzzzzzzzzzzzz and sk-proj-abcdefghijklmnopqrstuvwxyz123456 crsr_abcdefghijklmnopqrstuvwxyz";
+    String red = AgentRules.redact(leak);
+    check("redact masks every kind of key", !red.contains("UVWXYZ012345") && !red.contains("ijklmnopq ") && !red.contains("6789 ") && !red.contains("zzzzzzzzzzzzzzzzzzz")
+        && !red.contains("qrstuvwxyz123456") && !red.contains("opqrstuvwxyz") && red.contains("sk-ant-api03-…") && red.contains("AIzaSyD1…"));
+    check("redact leaves ordinary text alone", "ls -la /sdcard && echo sk- done".equals(AgentRules.redact("ls -la /sdcard && echo sk- done")) && AgentRules.redact(null) == null);
+
+    // ---------------------------------------------------------------- headers the page may not set
+    check("credential headers are the app's alone (any case)", AgentRules.reservedHeader("Authorization") && AgentRules.reservedHeader("x-api-key")
+        && AgentRules.reservedHeader("X-Goog-Api-Key") && AgentRules.reservedHeader("COOKIE") && AgentRules.reservedHeader("Host") && AgentRules.reservedHeader("Proxy-Authorization"));
+    check("header injection and empty names are refused", AgentRules.reservedHeader("x\nevil") && AgentRules.reservedHeader("") && AgentRules.reservedHeader(null) && AgentRules.reservedHeader("sec-fetch-mode"));
+    check("ordinary headers are fine", !AgentRules.reservedHeader("Content-Type") && !AgentRules.reservedHeader("anthropic-version") && !AgentRules.reservedHeader("Accept"));
+
+    // ---------------------------------------------------------------- sealing
+    KeyGenerator g = KeyGenerator.getInstance("AES");
+    g.init(256);
+    SecretKey k = g.generateKey();
+    String secret = "sk-ant-api03-secret-ünïcode-✓";
+    String sealed = AgentRules.seal(k, "claude", secret);
+    check("sealed form is v1:iv:ciphertext and does not contain the key", sealed.startsWith("v1:") && sealed.split(":").length == 3 && !sealed.contains("secret"));
+    check("opens again with the same provider", secret.equals(AgentRules.open(k, "claude", sealed)));
+    check("the IV is 12 bytes, fresh each time", Base64.getDecoder().decode(sealed.split(":")[1]).length == 12 && !sealed.equals(AgentRules.seal(k, "claude", secret)));
+    boolean wrongSlot = false;
+    try { AgentRules.open(k, "chatgpt", sealed); } catch (java.security.GeneralSecurityException e) { wrongSlot = true; }
+    check("a Claude key copied into the OpenAI slot does not open", wrongSlot);
+    String[] f = sealed.split(":");
+    byte[] ct = Base64.getDecoder().decode(f[2]);
+    ct[0] ^= 1;
+    boolean tampered = false;
+    try { AgentRules.open(k, "claude", f[0] + ":" + f[1] + ":" + Base64.getEncoder().encodeToString(ct)); } catch (java.security.GeneralSecurityException e) { tampered = true; }
+    check("a changed byte is detected", tampered);
+    SecretKey other = g.generateKey();
+    boolean otherKey = false;
+    try { AgentRules.open(other, "claude", sealed); } catch (java.security.GeneralSecurityException e) { otherKey = true; }
+    check("another key does not open it (a reset Keystore)", otherKey);
+    boolean junk = true;
+    for (String bad : new String[]{null, "", "plain", "v2:a:b", "v1:only", "v1:!!!:###"}) {
+      try { AgentRules.open(k, "claude", bad); junk = false; } catch (java.security.GeneralSecurityException e) { /* expected */ }
+    }
+    check("junk is refused, never decoded as a key", junk);
+
+    System.out.println(fails == 0 ? "ALL PASS" : "FAILURES: " + fails);
+    System.exit(fails == 0 ? 0 : 1);
+  }
+}

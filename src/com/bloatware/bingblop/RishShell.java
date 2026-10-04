@@ -88,6 +88,7 @@ public final class RishShell {
 
     private final Spawner spawner;
     private final long probeTimeoutMs;
+    private final String syntaxShell;     // what checks a command's syntax before it runs: the session's own kind of shell
     private final String nonce;
     private final String marker;          // RS + "@@RISH:" + nonce + ":" - what a command's trailer starts with
     private final Object lock = new Object();     // guards everything below
@@ -126,8 +127,18 @@ public final class RishShell {
 
     /** {@code probeTimeoutMs}: how long a freshly started shell gets to answer before start() gives up. */
     public RishShell(Spawner spawner, long probeTimeoutMs) {
+        this(spawner, probeTimeoutMs, "sh");
+    }
+
+    /**
+     * {@code syntaxShell}: the shell that syntax-checks each command first ({@code <syntaxShell> -n -c '<command>'}). It has to
+     * be the same kind of shell as the session: a bash session (Termux) checked by a plain sh would refuse bash syntax such as
+     * arrays or {@code [[ ]]}.
+     */
+    public RishShell(Spawner spawner, long probeTimeoutMs, String syntaxShell) {
         this.spawner = spawner;
         this.probeTimeoutMs = probeTimeoutMs;
+        this.syntaxShell = syntaxShell == null || !syntaxShell.matches("[A-Za-z0-9_./+-]+") ? "sh" : syntaxShell;
         byte[] raw = new byte[8];
         new SecureRandom().nextBytes(raw);
         StringBuilder hex = new StringBuilder();
@@ -353,7 +364,7 @@ public final class RishShell {
             // `sh -n` rejects bad syntax first and `command eval` keeps the shell alive even if some shell
             // treats an eval error as fatal (eval is a POSIX special builtin, `command` lifts that).
             String q = quote(cmd);
-            write("{ sh -n -c " + q + " && command eval " + q + "; } </dev/null 2>&1; " + pf + " '\\036@@RISH:" + nonce
+            write("{ " + syntaxShell + " -n -c " + q + " && command eval " + q + "; } </dev/null 2>&1; " + pf + " '\\036@@RISH:" + nonce
                     + ":%s|%s\\036' \"$?\" \"${PWD:-$(pwd)}\" >&3\n");
         } catch (IOException e) {
             synchronized (lock) {

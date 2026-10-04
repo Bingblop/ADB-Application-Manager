@@ -65,6 +65,9 @@ const SUITES = [
   { name: 'ziptool', title: 'Archive engine: read, edit and rewrite zips (bad, truncated, encrypted, huge, zip64, streamed), alignment, diff', tests: ['ZipToolTest'], main: 'ZipToolTest', needs: ['zipfix1', 'apk?'] },
   { name: 'zipreview', title: 'Archive engine, review findings: odd names, duplicates, prepended data, extra fields, AES, symlinks', tests: ['ZipReviewTest'], main: 'ZipReviewTest', needs: ['zipfix2'] },
   { name: 'rish', title: 'Rish shell: persistent shell, cd / export, output, STOP, restart (against this machine\'s sh)', tests: ['RishTest'], main: 'RishTest' },
+  { name: 'termuxlink', title: 'Terminal sessions in Termux: the bridge script, the token check (impostors refused), a live bash over the loopback connection (bash syntax, cd / export, big output, UTF-8, STOP through helper commands, exit), and every way Termux can refuse or stay silent - with a local bash standing in for Termux', tests: ['TermuxLinkTest'], main: 'com.bloatware.bingblop.TermuxLinkTest', needs: ['bash'] },
+  { name: 'agentrules', title: 'Coding agents\' keys: which address each provider\'s key may go to (look-alike hosts, ports, schemes, user info), own-server addresses, hints, redaction, reserved headers, AES-GCM sealing bound to the provider', tests: ['AgentRulesTest'], main: 'com.bloatware.bingblop.AgentRulesTest', utf8: true },
+  { name: 'aihttp', title: 'Coding agents\' HTTPS calls against a local server: whole and error answers, streaming piece by piece, Cancel mid-stream, no redirects, UTF-8, kept headers, network failures in words', tests: ['AiHttpTest'], main: 'com.bloatware.bingblop.AiHttpTest', utf8: true },
   { name: 'rishreview', title: 'Rish shell, review findings, against a real mksh with toybox applets (Android\'s shell)', tests: ['RishReviewTest'], main: 'RishReviewTest', needs: ['rish'] },
   { name: 'signer', title: 'In-app APK signer: v2 signatures checked with apksigner, RSA and EC keys, re-sign, edited and big APKs, tampering', tests: ['SignerTest'], main: 'SignerTest', needs: ['apk', 'apksigner', 'keys'] },
   { name: 'signmismatch', title: 'APK signer refuses a key that does not match its certificate', tests: ['SignMismatchTest'], main: 'SignMismatchTest', needs: ['apk', 'keys'] },
@@ -126,6 +129,7 @@ const NEEDS = {
     const err = mk('rsa.p12', ['-alias', 'rsa', '-keyalg', 'RSA', '-keysize', '2048', '-dname', 'CN=test rsa']) || mk('ec.p12', ['-alias', 'ec', '-keyalg', 'EC', '-groupname', 'secp256r1', '-dname', 'CN=test ec']);
     return err ? { skip: err } : { props: { keys: dir } };
   },
+  bash: () => (which('bash') ? {} : { skip: 'needs bash' }),
   rish: () => {
     const mksh = which('mksh'), toybox = which('toybox');
     if (!mksh || !toybox) return { skip: 'needs mksh and toybox (apt install mksh toybox)' };

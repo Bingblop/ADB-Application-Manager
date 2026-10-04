@@ -28,11 +28,14 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <!-- Terminal tab: run commands in the user's own Termux (granted by the user; Termux also needs allow-external-apps=true) -->
+    <uses-permission android:name="com.termux.permission.RUN_COMMAND" />
 
     <!-- Package Visibility for Android 11+ (API 30+) -->
     <queries>
         <package android:name="moe.shizuku.privileged.api" />
         <package android:name="af.shizuku.plus.api" />
+        <package android:name="com.termux" />
         <intent>
             <action android:name="android.intent.action.MAIN" />
         </intent>
@@ -148,6 +151,11 @@
              `adb pair` in the background, so the user can pair without leaving the pairing screen -->
         <receiver
             android:name=".PairReceiver"
+            android:exported="false" />
+
+        <!-- Termux hands the result of a command back here, through the PendingIntent this app gave it (not exported) -->
+        <receiver
+            android:name=".TermuxBridge$ResultReceiver"
             android:exported="false" />
 
         <!-- Lets the share sheet read exported lists/APKs from this app's cache (one-off URI grants only) -->
