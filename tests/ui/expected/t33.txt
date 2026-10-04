@@ -1,6 +1,6 @@
-1. tab order: ["Application\nManager","Saved\nApplications","UAD-NG\nDebloater","APK\nInstaller","File\nManager","ADB Console","Hidden\nSettings","RRO/Monet\nCustomization","App\nUpdater","App\nStores","Logcat\nViewer","About"]
+1. tab order: ["Application\nManager","Saved\nApplications","UAD-NG\nDebloater","APK\nInstaller","File\nManager","ADB Console","Hidden\nSettings","RRO/Monet\nCustomization","App\nUpdater","App\nStores","Logcat\nViewer","Task\nManager","About"]
    Saved Applications right after Application Manager: true
-   About is the last tab, Logcat Viewer right before it: true
+   About is the last tab, Task Manager right before it (Logcat Viewer right before that): true
    no "Color" tab button: true
 2. header settings icon present: true
    opens the Settings view: true

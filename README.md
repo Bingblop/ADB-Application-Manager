@@ -14,7 +14,7 @@ Debugging, Shizuku or Root**.
 
 ### [⬇️ Download the latest APK](https://github.com/Bingblop/ADB-Application-Manager/releases/latest)
 
-`com.bloatware.bingblop` · v7.1-Pro · signed APK, installs over every earlier version without uninstalling
+`com.bloatware.bingblop` · v7.5-Pro · signed APK, installs over every earlier version without uninstalling
 
 <table>
   <tr>
@@ -105,9 +105,18 @@ Left to right, with the **settings gear** (it opens Settings: language, appearan
 | **App Updater** | This app, Galaxy Store apps and sideloaded open-source apps (GitHub, Codeberg, F-Droid, IzzyOnDroid, Obtainium) |
 | **App Stores** | ShizuStore, GitHub, F-Droid and Orion |
 | **Logcat Viewer** | A color-coded device log you can limit to one app, save or share |
+| **Task Manager** | Processes, CPU, RAM, GPU, battery and network, live, each with a graph ([details](#new-in-v75)) |
 | **About** | Who made it, which build and key you have, debug info, the Permissions sheet, and the coffee button |
 
 Every tab except Application Manager and About can be switched off or moved in **Settings → Feature List**.
+
+## New in v7.5
+
+- **A Task Manager tab**, after Logcat Viewer: **Processes** (sortable by CPU or memory, **✕** force-stops with no confirmation),
+  **CPU**, **RAM**, **GPU**, **Battery** and **Network**, each with a live graph. CPU, RAM, Network and Battery work with **no
+  working mode at all** (world-readable `/proc` files and `BatteryManager`); Processes and GPU need one. **Auto-refresh** (how
+  often a fresh reading is fetched) and **Graph speed** (how smoothly it is redrawn) are independent settings, remembered
+  between visits, along with the chosen units and sort.
 
 ## New in v7.4
 
@@ -1005,7 +1014,7 @@ script passes is in [tests/README.md](tests/README.md)).
   version, a damaged one, a tab that is off reached by a link or by Back, the layout at 320, 360 and 412 px), the search bar and its menu
   (placement, the three options, the swap rule, patterns and plain text, exact matches, kept between launches, closing by tap, Escape and Back, three
   screen sizes) and a scan of the sources and of every tab and sheet for emoji.
-- **Native rules, off the device** (`tests/java/run.js`, 27 suites): the parts of the Java that need no Android classes are compiled
+- **Native rules, off the device** (`tests/java/run.js`, 32 suites): the parts of the Java that need no Android classes are compiled
   and run as plain Java. For the Hidden Settings tab that is 311 checks of `SettingsDb`, including round trips through a real `sh` (and a fake
   `settings` that refuses on purpose) for hostile values (quotes, `;`, `$(...)`, backticks, `>`, newlines, Unicode), and a
   comparison of the name, value and size checks in Java and in the page over 1,322 cases (the color check of the Overlays tab
@@ -1018,7 +1027,10 @@ script passes is in [tests/README.md](tests/README.md)).
   the zip engine (two suites, with generated bad, truncated, encrypted and 4 GB archives), the 7z / tar family and rar engines
   (checked against 7-Zip, py7zr, the system archive tools, and real RAR4/RAR5 archives from two upstream projects' own test
   suites), the Rish shell (one suite against
-  a real `mksh` with `toybox`) and the APK signer (v2 signatures cross-checked with `apksigner`). For v6.1, 133 checks of `ApkTrash` (which
+  a real `mksh` with `toybox`) and the APK signer (v2 signatures cross-checked with `apksigner`). For v7.5, `CpuStats`, `MemStats`,
+  `NetStats`, `ProcStats` and `GpuStats` (293 checks across five suites) parse real `/proc/stat`, `/proc/meminfo`, `/proc/net/dev` and
+  `ps` output (toybox and busybox shapes, and the kernel/native rows a package name cannot be read from), and every vendor sysfs path
+  the GPU reading tries. For v6.1, 133 checks of `ApkTrash` (which
   paths may be deleted, where a file waits and how it comes back, and the search's progress against a real folder tree) and 17 of
   `SplitInfo` (what a split's manifest says about it). The backup scripts and the regex handling of the update checks have no suite of
   their own yet.

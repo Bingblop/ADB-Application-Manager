@@ -54,6 +54,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import rikka.shizuku.Shizuku;
@@ -3741,6 +3744,18 @@ public class MainActivity extends Activity {
     private static final Object archiveLock = new Object();
     private static boolean archiveBusy;        // an extract / edit / stage / compare / sign job is running (process-wide, so a re-created Activity can't start a second one)
     private static boolean stageSwept;         // leftover shell-staged copies from an earlier run were removed
+
+    // ---- Task Manager: a lightweight native poll, separate from JobService (which is for long file jobs with their own notification).
+    // Runs only while the tab is open (started/stopped by the page); each tick is one shell round trip for CPU/RAM/network/processes/GPU,
+    // marker-delimited so a slow or truncated read of one piece never corrupts another, plus a synchronous (no shell) battery read.
+    private static final Object tmLock = new Object();
+    private ScheduledExecutorService tmExec;
+    private ScheduledFuture<?> tmTask;
+    private CpuStats.Reading tmLastCpu;
+    private NetStats.Reading tmLastNet;
+    private long tmLastSampleAt;
+    private static final String TM_M1 = "@@TM1-CPU@@", TM_M2 = "@@TM2-MEM@@", TM_M3 = "@@TM3-NET@@", TM_M4 = "@@TM4-PS@@",
+            TM_M5 = "@@TM5-GPUBUSY@@", TM_M6 = "@@TM6-GPUPCT@@", TM_M7 = "@@TM7-MALI@@", TM_M8 = "@@TM8-FREQCUR@@", TM_M9 = "@@TM9-FREQMAX@@";
 
     private static final class ArcSlot {
         final ZipTool.Archive archive;
@@ -7700,6 +7715,255 @@ public class MainActivity extends Activity {
                 executeShell("logcat -c");
                 return "cleared";
             } catch (Exception e) { return "Error: " + e.getMessage(); }
+        }
+
+        // ---- Task Manager ----
+
+        /** Starts (or restarts, at a new period) the native poll. Each tick runs {@link #tmTick()} on the shared executor. */
+        @JavascriptInterface
+        public String tmStart(int intervalMs) {
+            if (intervalMs < 1000) intervalMs = 1000;
+            if (intervalMs > 10000) intervalMs = 10000;
+            synchronized (tmLock) {
+                if (tmTask != null) tmTask.cancel(false);
+                if (tmExec == null) {
+                    tmExec = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
+                        @Override
+                        public Thread newThread(Runnable r) {
+                            Thread t = new Thread(r, "taskmgr-poll");
+                            t.setDaemon(true);
+                            return t;
+                        }
+                    });
+                }
+                final int period = intervalMs;
+                tmTask = tmExec.scheduleWithFixedDelay(new Runnable() { @Override public void run() { tmTick(); } }, 0, period, TimeUnit.MILLISECONDS);
+            }
+            return "started";
+        }
+
+        /** Stops the native poll (called when the tab is left, or auto-refresh is turned off). */
+        @JavascriptInterface
+        public void tmStop() {
+            synchronized (tmLock) {
+                if (tmTask != null) { tmTask.cancel(false); tmTask = null; }
+                if (tmExec != null) { tmExec.shutdownNow(); tmExec = null; }
+                tmLastCpu = null;
+                tmLastNet = null;
+                tmLastSampleAt = 0;
+            }
+        }
+
+        /** One sample right away, outside the schedule (the "Refresh now" button, and used when auto-refresh is off). */
+        @JavascriptInterface
+        public String tmRefreshNow() {
+            if (!submitJob(new Runnable() { @Override public void run() { tmTick(); } })) return "error";
+            return "started";
+        }
+
+        /** One poll: a single shell round trip for CPU / RAM / network / processes / GPU (marker-delimited, so a slow or
+         *  missing piece never corrupts another), plus a synchronous battery read (no shell, no permission needed).
+         *  Pushes window.onTaskMgrData(json); never throws (a failure is reported in the JSON, not as a crash). */
+        private void tmTick() {
+            JSONObject res = new JSONObject();
+            try {
+                res.put("ts", System.currentTimeMillis());
+                boolean havePriv = !"standard".equals(resolveExecMode());
+                res.put("privileged", havePriv);
+                String blob = null;
+                if (havePriv) {
+                    try {
+                        blob = executeShell(
+                                "cat /proc/stat 2>/dev/null; echo " + TM_M1 + "; "
+                                        + "cat /proc/meminfo 2>/dev/null; echo " + TM_M2 + "; "
+                                        + "cat /proc/net/dev 2>/dev/null; echo " + TM_M3 + "; "
+                                        + "ps -A -o PID,PPID,USER,RSS,%CPU,NAME 2>/dev/null; echo " + TM_M4 + "; "
+                                        + "cat /sys/class/kgsl/kgsl-3d0/gpubusy 2>/dev/null; echo " + TM_M5 + "; "
+                                        + "cat /sys/class/kgsl/kgsl-3d0/gpu_busy_percentage 2>/dev/null; echo " + TM_M6 + "; "
+                                        + "cat /sys/class/misc/mali0/device/utilization 2>/dev/null; echo " + TM_M7 + "; "
+                                        + "cat /sys/class/kgsl/kgsl-3d0/gpuclk 2>/dev/null; echo " + TM_M8 + "; "
+                                        + "cat /sys/class/devfreq/*/max_freq 2>/dev/null | head -1; echo " + TM_M9);
+                    } catch (Throwable t) {
+                        blob = null;
+                    }
+                } else {
+                    // no privileged backend: /proc/stat, /proc/meminfo and /proc/net/dev are world-readable, so this app can read
+                    // them itself with no shell at all; only the process list and GPU need a privileged shell and stay empty.
+                    try {
+                        blob = readWorldReadable("/proc/stat") + TM_M1 + readWorldReadable("/proc/meminfo") + TM_M2
+                                + readWorldReadable("/proc/net/dev") + TM_M3 + TM_M4 + TM_M5 + TM_M6 + TM_M7 + TM_M8 + TM_M9;
+                    } catch (Throwable t) {
+                        blob = null;
+                    }
+                }
+                String[] parts = blob == null ? new String[0] : splitTm(blob);
+                long now = System.currentTimeMillis();
+
+                // CPU
+                CpuStats.Reading cpu = CpuStats.parse(parts.length > 0 ? parts[0] : "");
+                JSONObject cpuJson = new JSONObject();
+                synchronized (tmLock) {
+                    if (tmLastCpu != null) {
+                        cpuJson.put("overall", CpuStats.percentBusy(tmLastCpu.aggregate, cpu.aggregate));
+                        double[] perCore = CpuStats.percentBusyPerCore(tmLastCpu, cpu);
+                        JSONArray coreArr = new JSONArray();
+                        for (double v : perCore) coreArr.put(v);
+                        cpuJson.put("perCore", coreArr);
+                    } else {
+                        cpuJson.put("overall", 0.0);
+                        cpuJson.put("perCore", new JSONArray());
+                    }
+                    tmLastCpu = cpu;
+                }
+                cpuJson.put("cores", CpuStats.coreCount(cpu));
+                res.put("cpu", cpuJson);
+
+                // RAM
+                MemStats.Reading mem = MemStats.parse(parts.length > 1 ? parts[1] : "");
+                JSONObject memJson = new JSONObject();
+                memJson.put("totalKb", mem.totalKb);
+                memJson.put("usedKb", MemStats.usedKb(mem));
+                memJson.put("availableKb", mem.availableKb);
+                memJson.put("swapTotalKb", mem.swapTotalKb);
+                memJson.put("swapUsedKb", MemStats.swapUsedKb(mem));
+                res.put("mem", memJson);
+
+                // Network
+                NetStats.Reading net = NetStats.parse(parts.length > 2 ? parts[2] : "");
+                JSONObject netJson = new JSONObject();
+                JSONArray ifaceArr = new JSONArray();
+                synchronized (tmLock) {
+                    long elapsed = tmLastSampleAt > 0 ? now - tmLastSampleAt : 0;
+                    double totalRx = 0, totalTx = 0;
+                    if (tmLastNet != null && elapsed > 0) {
+                        for (NetStats.Iface cur : net.ifaces) {
+                            NetStats.Iface prev = NetStats.find(tmLastNet, cur.name);
+                            if (prev == null) continue;
+                            NetStats.Rates r = NetStats.rate(prev, cur, elapsed);
+                            if ("lo".equals(cur.name)) continue;
+                            JSONObject ij = new JSONObject();
+                            ij.put("name", cur.name);
+                            ij.put("rxBytesPerSec", r.rxBytesPerSec);
+                            ij.put("txBytesPerSec", r.txBytesPerSec);
+                            ifaceArr.put(ij);
+                            totalRx += r.rxBytesPerSec;
+                            totalTx += r.txBytesPerSec;
+                        }
+                    }
+                    netJson.put("totalRxBytesPerSec", totalRx);
+                    netJson.put("totalTxBytesPerSec", totalTx);
+                    tmLastNet = net;
+                    tmLastSampleAt = now;
+                }
+                netJson.put("ifaces", ifaceArr);
+                res.put("net", netJson);
+
+                // Processes
+                ProcStats.Result ps = ProcStats.parse(parts.length > 3 ? parts[3] : "");
+                JSONArray procArr = new JSONArray();
+                for (ProcStats.Proc p : ps.procs) {
+                    if (p.pid <= 0) continue;
+                    JSONObject pj = new JSONObject();
+                    pj.put("pid", p.pid);
+                    pj.put("rssKb", p.rssKb);
+                    pj.put("cpuPercent", p.cpuPercent);
+                    pj.put("name", p.name);
+                    String pkg = ProcStats.packageOf(p.name);
+                    pj.put("pkg", pkg == null ? "" : pkg);
+                    procArr.put(pj);
+                }
+                res.put("procs", procArr);
+                res.put("procsFullFormat", ps.fullFormat);
+
+                // GPU: the first known-good reading wins (real busy-time readings before the clock-speed proxy).
+                java.util.List<GpuStats.Reading> attempts = new ArrayList<GpuStats.Reading>();
+                attempts.add(GpuStats.parseBusyRatio(parts.length > 4 ? parts[4] : ""));
+                attempts.add(GpuStats.parseUtilizationPercent(parts.length > 6 ? parts[6] : ""));
+                attempts.add(GpuStats.parseBusyRatio(parts.length > 5 ? parts[5] : ""));
+                Long curFreq = GpuStats.parseFreqHz(parts.length > 7 ? parts[7] : "");
+                Long maxFreq = GpuStats.parseFreqHz(parts.length > 8 ? parts[8] : "");
+                attempts.add(GpuStats.freqRatio(curFreq, maxFreq));
+                GpuStats.Reading gpu = GpuStats.combine(attempts);
+                JSONObject gpuJson = new JSONObject();
+                gpuJson.put("available", gpu.available);
+                if (gpu.percent != null) gpuJson.put("percent", gpu.percent.doubleValue());
+                gpuJson.put("approx", gpu.approx != null && gpu.approx);
+                gpuJson.put("label", GpuStats.label(gpu));
+                res.put("gpu", gpuJson);
+
+                // Battery: a plain sticky-broadcast + BatteryManager read, no shell, no permission.
+                res.put("battery", tmBatteryJson());
+
+                res.put("ok", true);
+            } catch (Throwable t) {
+                try { res.put("ok", false); res.put("error", errMsg(t)); } catch (Exception ignored) {}
+            }
+            notifyJs("window.onTaskMgrData && window.onTaskMgrData(" + res.toString() + ")");
+        }
+
+        /** The content of a world-readable /proc file, without any shell (works even with no working mode connected). "" if it can't be read. */
+        private String readWorldReadable(String path) {
+            try {
+                byte[] b = java.nio.file.Files.readAllBytes(new File(path).toPath());
+                return new String(b, "UTF-8");
+            } catch (Exception e) {
+                return "";
+            }
+        }
+
+        private String[] splitTm(String blob) {
+            String[] markers = {TM_M1, TM_M2, TM_M3, TM_M4, TM_M5, TM_M6, TM_M7, TM_M8, TM_M9};
+            String[] out = new String[markers.length];
+            int from = 0;
+            for (int i = 0; i < markers.length; i++) {
+                int at = blob.indexOf(markers[i], from);
+                if (at < 0) { out[i] = ""; continue; }
+                out[i] = blob.substring(from, at);
+                from = at + markers[i].length();
+            }
+            return out;
+        }
+
+        /** Battery level, temperature, voltage, current, charge state and health: the public BatteryManager API and the
+         *  sticky ACTION_BATTERY_CHANGED broadcast, no shell and no special permission. Units stay raw (tenths of a degree
+         *  C, millivolts, microamps); the page converts to the units the person chose. */
+        private JSONObject tmBatteryJson() {
+            JSONObject b = new JSONObject();
+            try {
+                Intent batt = registerReceiver(null, new android.content.IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+                if (batt != null) {
+                    int level = batt.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1);
+                    int scale = batt.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, -1);
+                    b.put("percent", level >= 0 && scale > 0 ? (100.0 * level / scale) : -1);
+                    b.put("tempTenthsC", batt.getIntExtra(android.os.BatteryManager.EXTRA_TEMPERATURE, Integer.MIN_VALUE));
+                    b.put("voltageMv", batt.getIntExtra(android.os.BatteryManager.EXTRA_VOLTAGE, Integer.MIN_VALUE));
+                    b.put("plugged", batt.getIntExtra(android.os.BatteryManager.EXTRA_PLUGGED, -1));
+                    b.put("health", batt.getIntExtra(android.os.BatteryManager.EXTRA_HEALTH, -1));
+                    b.put("status", batt.getIntExtra(android.os.BatteryManager.EXTRA_STATUS, -1));
+                    b.put("technology", batt.getStringExtra(android.os.BatteryManager.EXTRA_TECHNOLOGY));
+                    b.put("present", batt.getBooleanExtra(android.os.BatteryManager.EXTRA_PRESENT, true));
+                } else {
+                    b.put("percent", -1);
+                }
+                try {
+                    android.os.BatteryManager bm = (android.os.BatteryManager) getSystemService(BATTERY_SERVICE);
+                    if (bm != null) {
+                        int cur = bm.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CURRENT_NOW);
+                        b.put("currentMicroA", cur);     // Integer.MIN_VALUE on a phone that doesn't expose this
+                    }
+                } catch (Throwable ignored) {}
+            } catch (Throwable t) {
+                try { b.put("error", errMsg(t)); } catch (Exception ignored) {}
+            }
+            return b;
+        }
+
+        /** Kills a running process (force-stop; a reinstall-free app only ever exposes this per package, not per PID,
+         *  so the Processes list's Kill button resolves PID → package through {@link ProcStats#packageOf}). No confirmation:
+         *  this matches force_stop everywhere else in the app (see executeAppAction). */
+        @JavascriptInterface
+        public String tmKill(String pkg) {
+            return executeAppAction("force_stop", pkg);
         }
 
         // ---- Privileged file manager ----

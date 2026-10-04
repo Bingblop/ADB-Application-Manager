@@ -1,5 +1,30 @@
 # Changelog
 
+## v7.5-Pro (versionCode 750)
+
+A new **Task Manager** tab, after Logcat Viewer: processes, CPU, RAM, GPU, battery and network, live, with a graph for each.
+
+- **Processes.** A sortable list (by CPU or memory) of what is running, each row with its RSS and CPU%; a resolved app shows its real name.
+  **✕** force-stops it right away, with no confirmation — the same one-tap `force_stop` already used everywhere else in the app. Needs a
+  working mode (ADB / Wireless Debugging / Shizuku / Root): listing processes is a shell `ps`.
+- **CPU, RAM and Network work with no working mode at all.** They read `/proc/stat`, `/proc/meminfo` and `/proc/net/dev` directly — those
+  are world-readable — so the graphs, the per-core breakdown, and the used/available/swap and ↓/↑ figures all show up even on a phone with
+  no ADB, Shizuku or Root connected.
+- **Battery needs nothing either.** Percent, temperature, voltage, current, charge state and health come straight from `BatteryManager` and
+  the system's own battery broadcast — no shell, no special permission. Temperature and current have a unit switch (°F/°C, mA/µA).
+- **GPU is best-effort.** Busy-time and utilization sysfs paths are tried first (Adreno, Mali-style); failing those, a clock-speed ratio is
+  shown as an approximation, labelled as such. Needs a working mode; on a phone that exposes none of these paths, it says so plainly instead
+  of guessing.
+- **Two independent settings.** **Auto-refresh** (off, 1–10 s) is how often a fresh reading is fetched — the expensive part, a shell round
+  trip when privileged. **Graph speed** (150–1000 ms) is only how smoothly the already-fetched readings are redrawn from a small in-memory
+  buffer — cheap, no extra reading. **Refresh now** asks for one reading right away. All of this, plus the chosen units and process sort,
+  is remembered between visits to the tab.
+- **For developers:** five small, pure-Java engines with no `android.*` imports (`CpuStats`, `MemStats`, `NetStats`, `ProcStats`, `GpuStats`),
+  each with its own suite (`cpustats`, `memstats`, `netstats`, `procstats`, `gpustats`) run on a desktop JVM. The page side has
+  `tests/ui/t87.js`.
+- **Not in this release:** the tab only reads while it is open — there is no background monitoring, no alerts (high CPU, low battery, …),
+  and the graphs start over empty each time the tab is reopened (nothing is kept across visits or an app restart).
+
 ## v7.4-Pro (versionCode 740)
 
 Archive formats: 7z, rar and the tar family join zip, with passwords, and a Compress dialog to make new archives. The file manager's

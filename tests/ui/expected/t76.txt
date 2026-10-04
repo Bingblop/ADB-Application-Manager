@@ -1,7 +1,7 @@
-1. twelve tabs in the new order: true ["apps","saved-lists","debloater","installer","files","terminal","settings","overlays","updates","store","logcat","about"]
-   named as asked, two lines where it reads better: true ["Application\nManager","Saved\nApplications","UAD-NG\nDebloater","APK\nInstaller","File\nManager","ADB Console","Hidden\nSettings","RRO/Monet\nCustomization","App\nUpdater","App\nStores","Logcat\nViewer","About"]
+1. thirteen tabs in the new order: true ["apps","saved-lists","debloater","installer","files","terminal","settings","overlays","updates","store","logcat","taskmgr","about"]
+   named as asked, two lines where it reads better: true ["Application\nManager","Saved\nApplications","UAD-NG\nDebloater","APK\nInstaller","File\nManager","ADB Console","Hidden\nSettings","RRO/Monet\nCustomization","App\nUpdater","App\nStores","Logcat\nViewer","Task\nManager","About"]
    Application Manager is active at the start: true
-   every tab is at least 44 px tall and no label is cut off: true ["44","44","44","44","44","44","44","44","44","44","44","44"]
+   every tab is at least 44 px tall and no label is cut off: true ["44","44","44","44","44","44","44","44","44","44","44","44","44"]
    the text is a little larger than before (13.5 px, it was 12 px): true 13.5px
    the page itself does not scroll sideways: true
    switching marks the matching tab and only that one: true
@@ -10,7 +10,7 @@
    it opens Settings, no tab is lit and the gear shows that you are there: true {"view":"prefs","anyTab":false,"gearOn":true}
    the gear goes dark again on a tab: true
 3. Settings: the language at the very top, then Appearance and the colour cards, the Feature List after them: true ["Language","Appearance","Curated Theme Palettes","Font","Feature List"]
-   ten rows, every tab except Application Manager and About, in the tab bar order, all on: true ["Saved Applications","UAD-NG Debloater","APK Installer","File Manager","ADB Console","Hidden Settings","RRO/Monet Customization","App Updater","App Stores","Logcat Viewer"]
+   eleven rows, every tab except Application Manager and About, in the tab bar order, all on: true ["Saved Applications","UAD-NG Debloater","APK Installer","File Manager","ADB Console","Hidden Settings","RRO/Monet Customization","App Updater","App Stores","Logcat Viewer","Task Manager"]
    the first row cannot move up and the last cannot move down: true
    the names are the full names: true
    every switch and arrow has a name for a screen reader: true {"switches":true,"moves":true}
@@ -18,25 +18,25 @@
    nothing is saved before the person changes something: true
 4. turning File Manager off: it leaves the bar, the row stays (dimmed) so it can be turned on again: true
    Application Manager and About are still first and last: true
-   the choice is saved: true {"order":["saved-lists","debloater","installer","files","terminal","settings","overlays","updates","store","logcat"],"off":["files"]}
+   the choice is saved: true {"order":["saved-lists","debloater","installer","files","terminal","settings","overlays","updates","store","logcat","taskmgr"],"off":["files"]}
    two off at once: true
    File Manager back on: it returns to its place in the bar: true
 5. switchView on a tab that is off stays where it is and says why: true {"view":"prefs","toast":"Logcat Viewer is turned off. Turn it on in Settings, Feature List."}
    Back never lands on a tab that is off: true
    and when it is on again the link works: true
-6. ADB Console up one: Feature List and tab bar agree: true saved-lists,debloater,installer,terminal,files,settings,overlays,updates,store,logcat
-   the tab bar follows (same order, same tabs): true saved-lists,debloater,installer,terminal,files,settings,overlays,updates,store,logcat
+6. ADB Console up one: Feature List and tab bar agree: true saved-lists,debloater,installer,terminal,files,settings,overlays,updates,store,logcat,taskmgr
+   the tab bar follows (same order, same tabs): true saved-lists,debloater,installer,terminal,files,settings,overlays,updates,store,logcat,taskmgr
    the arrow that was pressed keeps focus, so it can be pressed again: true {"key":"terminal","cls":"fl-move"}
    several steps in a row: true
    down works too, and the first row then can move up: true
-   the order is saved: true {"order":["debloater","saved-lists","installer","terminal","files","settings","overlays","logcat","updates","store"],"off":[]}
-7. after a restart the same tabs show in the same order: true apps,debloater,saved-lists,terminal,files,settings,overlays,logcat,updates,store,about
+   the order is saved: true {"order":["debloater","saved-lists","installer","terminal","files","settings","overlays","logcat","updates","store","taskmgr"],"off":[]}
+7. after a restart the same tabs show in the same order: true apps,debloater,saved-lists,terminal,files,settings,overlays,logcat,updates,store,taskmgr,about
    and the Feature List shows the same switches: true
-   Reset to Default: every tab on and in the first order again: true apps,saved-lists,debloater,installer,files,terminal,settings,overlays,updates,store,logcat,about
+   Reset to Default: every tab on and in the first order again: true apps,saved-lists,debloater,installer,files,terminal,settings,overlays,updates,store,logcat,taskmgr,about
    and says so: true
    the saved choice is the default one: true
-8. unknown tabs, repeats and the two fixed tabs in a saved choice are ignored: true apps,saved-lists,files,terminal,settings,overlays,updates,store,logcat,debloater,about
-   the tabs it does not know are placed after their default neighbour, the saved ones keep their order: true apps,saved-lists,files,terminal,settings,overlays,updates,store,logcat,debloater,about
+8. unknown tabs, repeats and the two fixed tabs in a saved choice are ignored: true apps,saved-lists,files,terminal,settings,overlays,updates,store,logcat,taskmgr,debloater,about
+   the tabs it does not know are placed after their default neighbour, the saved ones keep their order: true apps,saved-lists,files,terminal,settings,overlays,updates,store,logcat,taskmgr,debloater,about
    the one it turned off stays off, once: true ["installer"]
    a damaged choice falls back to the default: true
 9. App Updater shows how many updates wait: true

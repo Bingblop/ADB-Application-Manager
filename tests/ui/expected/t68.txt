@@ -1,4 +1,4 @@
-1. the tab bar names it "Hidden Settings": true ["Application Manager","Saved Applications","UAD-NG Debloater","APK Installer","File Manager","ADB Console","Hidden Settings","RRO/Monet Customization","App Updater","App Stores","Logcat Viewer","About"]
+1. the tab bar names it "Hidden Settings": true ["Application Manager","Saved Applications","UAD-NG Debloater","APK Installer","File Manager","ADB Console","Hidden Settings","RRO/Monet Customization","App Updater","App Stores","Logcat Viewer","Task Manager","About"]
    it sits between ADB Console and RRO/Monet Customization: true ["ADB Console","Hidden Settings","RRO/Monet Customization","App Updater"]
 2. the button opens it and becomes the active one: true
 3. its card says what it is: true
