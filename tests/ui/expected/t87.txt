@@ -14,6 +14,13 @@
    and a plain explanation instead of a (misleadingly empty) process list: true
 8. GPU shows the gate too, and explains the reading needs a working mode (not just "unsupported hardware"): true
    with a real (non-approximate) reading, the "may not be available" note is hidden: true
+12. switching to GPU loads the renderer dropdown: Default plus both backends, since this sample supports Vulkan: true
+    picking Vulkan runs setprop skiavk then crashes System UI, in that order (then re-reads the property, a 3rd call): true
+    the dropdown re-reads the property right after and reflects it (no "Default" option once it is actually set): true
+    picking OpenGL does the same with skiagl: true
+    an ordinary auto-refresh tick while sitting on GPU does not rebuild the dropdown (would interrupt an open selection) or re-run getprop: true
+    without a working mode the dropdown disables itself and explains why instead of offering a broken control: true
+    a device without Vulkan hardware support is never offered the Vulkan option: true
 9. Battery has no gate (BatteryManager needs no shell), shows percent, and its units row only appears here: true
    switching the temperature unit re-renders the same reading in Celsius: true
    the units row is hidden again on another sub-tab: true

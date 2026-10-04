@@ -1,5 +1,15 @@
 # Changelog
 
+## v7.7-Pro (versionCode 770)
+
+- **Task Manager → GPU: a Renderer switch.** A dropdown showing the HWUI backend currently in use (Vulkan, OpenGL, or
+  "Default" when nothing has overridden it) - only offering Vulkan when the device actually supports it. Picking a
+  different one runs `setprop debug.hwui.renderer skiavk`/`skiagl` and then restarts System UI (`am crash
+  com.android.systemui`, which Android relaunches immediately) so the new renderer actually takes effect - a quick
+  flicker of the status and navigation bars is expected and not a bug. Needs a working mode; reads and writes the
+  property only on request (opening the tab, switching to it, or picking a value), never on the auto-refresh tick, so
+  it can't rebuild itself out from under an open selection.
+
 ## v7.6-Pro (versionCode 760)
 
 - **Uninstall (System).** A second button next to Uninstall on the app sheet, for a system app that needs root the direct

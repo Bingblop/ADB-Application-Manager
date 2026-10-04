@@ -3740,6 +3740,13 @@
                     <div class="tm-canvas-wrap"><canvas id="tmGpuCanvas"></canvas><div class="tm-canvas-label" id="tmGpuNow">—</div><div class="tm-canvas-sub" id="tmGpuSub">&nbsp;</div></div>
                     <div class="switch-sub" id="tmGpuNote" style="margin-top:4px;">GPU load is not exposed the same way on every phone, so this may say "Not available" on yours.</div>
                     <div id="tmGpuInfo"></div>
+                    <div class="tm-info-title">Renderer</div>
+                    <div class="tm-settings-row">
+                        <select class="op-select" id="tmRendererSelect" onchange="tmSetRenderer()" aria-label="Renderer" disabled>
+                            <option value="">—</option>
+                        </select>
+                    </div>
+                    <div class="switch-sub" id="tmRendererNote" style="margin-top:4px;">Switches the system's HWUI renderer and restarts System UI to apply it - a visible flicker of the status and navigation bars is normal.</div>
                 </div>
 
                 <!-- BATTERY -->
@@ -13600,7 +13607,12 @@ Type any command below (e.g. pm list packages -d)
             if (currentViewName() !== 'taskmgr') return;
             tmRenderGate();
             tmRenderCurrent();
+            tmMaybeLoadRenderer();
         }
+        // Loads the renderer dropdown only when the GPU sub-tab is the one showing - never on the auto-refresh
+        // tick (see tmLoadRenderer), only on a one-off event: opening Task Manager, switching to GPU, or the
+        // working mode changing under the person while they're already on it.
+        function tmMaybeLoadRenderer() { if (tmSub === 'gpu') tmLoadRenderer(); }
 
         function tmShowPanels() {
             Object.keys(TM_PANELS).forEach(k => { const el = document.getElementById(TM_PANELS[k]); if (el) el.style.display = (k === tmSub) ? '' : 'none'; });
@@ -13615,6 +13627,7 @@ Type any command below (e.g. pm list packages -d)
             haptic();
             tmShowPanels();
             tmRenderCurrent();
+            tmMaybeLoadRenderer();
             tmRedrawNow();
         }
 
@@ -13623,6 +13636,7 @@ Type any command below (e.g. pm list packages -d)
             tmInit();
             tmRenderGate();
             tmRenderCurrent();
+            tmMaybeLoadRenderer();
             tmRedrawNow();
             if (tmRedrawTimer) clearInterval(tmRedrawTimer);
             tmRedrawTimer = setInterval(function () { if (!document.hidden) tmRedrawNow(); }, tmGraphMs);
@@ -13879,6 +13893,54 @@ Type any command below (e.g. pm list packages -d)
                 if (gpu.glesVersion) infoRows.push(['OpenGL ES', gpu.glesVersion]);
             }
             infoEl.innerHTML = tmInfoGrid('GPU Information', infoRows);
+        }
+
+        // ---- GPU renderer switch ----
+        // debug.hwui.renderer picks HWUI's Skia backend (skiagl = OpenGL, skiavk = Vulkan); a running process only
+        // reads it at startup, so the property alone does nothing until that process restarts. System UI is crashed
+        // on purpose to force that restart - Android relaunches it immediately, so this is a visible flicker of the
+        // status/navigation bars, not data loss. Read and set only on request, never on the auto-refresh tick: this
+        // control is a dropdown the person is actively using, and rebuilding it every poll could close it under them.
+        function tmRendererLabel(raw) {
+            if (raw === 'skiavk') return 'Vulkan';
+            if (raw === 'skiagl') return 'OpenGL';
+            return 'Default';
+        }
+        function tmLoadRenderer() {
+            const sel = document.getElementById('tmRendererSelect');
+            const note = document.getElementById('tmRendererNote');
+            if (!sel) return;
+            if (!isPrivilegedActive || !window.AndroidBridge || !window.AndroidBridge.executeShell) {
+                sel.innerHTML = '<option value="">—</option>';
+                sel.disabled = true;
+                if (note) note.innerText = 'Needs a working mode';
+                return;
+            }
+            let raw = '';
+            try { raw = (window.AndroidBridge.executeShell('getprop debug.hwui.renderer') || '').trim(); } catch (e) {}
+            const gpu = (tmLastData && tmLastData.gpu) || {};
+            const opts = [];
+            if (raw !== 'skiagl' && raw !== 'skiavk') opts.push('<option value="" selected>Default</option>');
+            opts.push(`<option value="skiagl"${raw === 'skiagl' ? ' selected' : ''}>OpenGL</option>`);
+            if (gpu.vulkanSupported) opts.push(`<option value="skiavk"${raw === 'skiavk' ? ' selected' : ''}>Vulkan</option>`);
+            sel.innerHTML = opts.join('');
+            sel.disabled = false;
+            const label = tmRendererLabel(raw);
+            if (note) note.innerText = `Currently using ${label}. Switching restarts System UI to apply it.`;
+        }
+        function tmSetRenderer() {
+            const sel = document.getElementById('tmRendererSelect');
+            const note = document.getElementById('tmRendererNote');
+            const v = sel.value;
+            if (!v || !window.AndroidBridge || !window.AndroidBridge.executeShell) return;
+            if (!guardPrivilege('Switch renderer')) { tmLoadRenderer(); return; }
+            haptic();
+            const label = tmRendererLabel(v);
+            if (note) note.innerText = `Switching to ${label}…`;
+            window.AndroidBridge.executeShell('setprop debug.hwui.renderer ' + v);
+            window.AndroidBridge.executeShell('am crash com.android.systemui');
+            showToast(`${label} set - System UI restarted to apply it`);
+            tmLoadRenderer();
         }
 
         // ---- Battery ----
