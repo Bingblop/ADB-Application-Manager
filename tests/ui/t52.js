@@ -45,7 +45,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.evaluate(() => fmGo('/storage/emulated/0')); await sleep(150);
 
   // 1) Select mode via the button.
-  console.log('1. five rows listed, no checkboxes visible, no selection bar:', (await page.locator('#fmList .perm-row').count()) === 5 && !(await page.locator('#fmList .fm-chk').first().isVisible()) && !(await vis('#fmSelBar')));
+  console.log('1. five rows listed, no checkboxes visible, no selection bar:', (await page.locator('#fmList .perm-row[data-i]').count()) === 5 && !(await page.locator('#fmList .fm-chk').first().isVisible()) && !(await vis('#fmSelBar')));
   await page.locator('#fmSelectBtn').click(); await sleep(60);
   console.log('   Select shows checkboxes and the bar, hides the ⋯ buttons, and the button reads Done:', await page.locator('#fmList .fm-chk').first().isVisible() && await vis('#fmSelBar') && !(await page.locator('#fmList .fm-more').first().isVisible()) && /Done/.test(await page.locator('#fmSelectBtn').innerText()));
   await page.locator('#fmList .perm-info', { hasText: 'a.txt' }).first().click(); await sleep(40);
@@ -102,7 +102,7 @@ const { chromium, PAGE } = require('./lib/pw');
   console.log('   the clipboard survives opening another folder:', await vis('#fmClipBar'));
   dialogs.length = 0;
   await page.locator('#fmPasteBtn').click(); await sleep(150);
-  const askShown = await vis('#fmConflictModal'), askText = await page.locator('#fmConflictSub').innerText();
+  const askShown = await vis('#fmConflictModal'), askText = (await page.locator('#fmConflictCnt').innerText()) + ' ' + (await page.locator('#fmConflictNames').innerText());
   await page.locator('#fmConflictModal .batch-grid-btn.danger').click(); await sleep(250);
   const call2 = await page.evaluate(() => window.__calls.batch.slice(-1)[0]);
   console.log('   Paste here: a.txt already exists there, so a sheet asks (Replace / Skip / Keep both), then sends cp with the folder and the choice:', askShown && /1 of 2/.test(askText) && /a\.txt/.test(askText) && call2.policy === 'replace' && call2.op === 'cp' && call2.dest === '/storage/emulated/0/Download' && call2.paths.length === 2, JSON.stringify(call2) + ' ' + JSON.stringify(dialogs));
