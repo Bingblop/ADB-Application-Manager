@@ -684,7 +684,7 @@ public final class ZipTool {
                 out.close();
             }
             if (e.size >= 0 && total != e.size) throw new IOException("\"" + e.name + "\" is damaged (its size doesn't match)");
-            if (!e.foreign && crc.getValue() != e.crc) throw new IOException("\"" + e.name + "\" is damaged (its checksum doesn't match)");
+            if (!e.foreign && !isAe2(e) && crc.getValue() != e.crc) throw new IOException("\"" + e.name + "\" is damaged (its checksum doesn't match)");
             if (!part.renameTo(dest)) {
                 dest.delete();
                 if (!part.renameTo(dest)) throw new IOException("Couldn't write " + dest);
@@ -848,6 +848,13 @@ public final class ZipTool {
             raf.close();
             throw ex;
         }
+    }
+
+    /** A WinZip AE-2 entry carries no CRC-32 (the authentication code checks the data instead). */
+    private static boolean isAe2(Entry e) {
+        if (e.method != ZipCrypt.METHOD_AES) return false;
+        int[] ax = ZipCrypt.parseAesExtra(e.extra);
+        return ax != null && ax[0] == 2;
     }
 
     private static InputStream decompress(InputStream in, int method) throws IOException {

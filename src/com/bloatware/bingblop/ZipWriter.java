@@ -302,6 +302,7 @@ public final class ZipWriter {
         r.internal = 0;
         r.extra = aesExtra;
         if (zip64) r.needed = Math.max(r.needed, 45);
+        cd.add(r);
         return new long[]{size};
     }
 

@@ -312,7 +312,7 @@ public final class ZipCrypt {
   }
 
   private static final class AesIn extends InputStream {
-    private final InputStream in; private final AesKeys k; private long remaining; private boolean closed, failed;
+    private final InputStream in; private final AesKeys k; private long remaining; private boolean closed, failed, checked;
     private final byte[] one = new byte[1];
     AesIn(InputStream in, long cipherLength, AesKeys k) { this.in = in; this.k = k; this.remaining = cipherLength; }
     @Override public int read() throws IOException { int n = read(one, 0, 1); return n < 0 ? -1 : one[0] & 0xFF; }
@@ -321,7 +321,10 @@ public final class ZipCrypt {
       if (closed) throw new IOException("stream closed");
       if (failed) throw new IOException("authentication failed");
       if (len == 0) return 0;
-      if (remaining == 0) return -1;                               // the code was checked when the last ciphertext byte was read
+      if (remaining == 0) {                                        // the code was checked when the last ciphertext byte was read; an empty entry's now
+        if (!checked) verify();
+        return -1;
+      }
       int want = (int) Math.min(len, remaining);
       int n = in.read(b, off, want);
       if (n < 0) throw new EOFException("encrypted data is truncated");
@@ -332,6 +335,7 @@ public final class ZipCrypt {
       return n;
     }
     private void verify() throws IOException {
+      checked = true;
       byte[] stored = new byte[MAC_LEN];
       readFully(in, stored, 0, MAC_LEN);
       byte[] calc = k.mac.doFinal();

@@ -25,7 +25,7 @@
    the new file is in the list: true
    a file whose ending is not text is created but the editor does not open on it: true
    when the app cannot create it the toast says why: true
-4. a text file offers View, Edit, Open with…, Share, Open as archive, Rename, Copy, Move, Delete: true View|Edit|Open with…|Share|Open as archive|Rename|Copy|Move|Delete
+4. a text file offers View, Edit, Open with…, Share, Open as archive, Compress…, Rename, Copy, Move, Delete: true View|Edit|Open with…|Share|Open as archive|Compress…|Rename|Copy|Move|Delete
    Edit opens the file in the editor: name, whole text, Save off until something changes, a status line: true {"open":true,"name":"a.txt","text":"A at root","save":true,"status":"Saved · 9 characters","pos":"Line 1, column 1"}
    typing turns Save on and says there are unsaved changes: true
    closing with unsaved changes asks first; saying no keeps the editor open: true
@@ -36,7 +36,8 @@
    a file that is not text is not opened for editing (a hint says what to use): true
    a file over 2 MB is refused with the reason: true
    a file the app cannot write opens read only: the box cannot be typed in and Save stays off: true
-   "Wrap lines" switches the box between long lines and wrapped ones: true
+   lines wrap by default (long lines do not run off to the side): true
+   "Wrap lines" switches the box between wrapped lines and long ones, and the choice is remembered: true
    a failed save says why and keeps the text and the editor: true
 5. pasting into a folder where no name is taken starts at once, without asking, and never overwrites (rule keep): true
    a taken name opens a sheet: what is taken, and Replace / Skip / Keep both; nothing is sent yet: true {"open":true,"title":"A name is already taken","sub":"1 of 2 in this folder: a.txt","btns":["Replace","Skip","Keep both"]}
@@ -51,7 +52,7 @@
    a move into its own folder is refused: true
    a running job shows its progress and a Cancel button: true
    Cancel tells the app to stop; the toast says it was stopped: true
-6. every file has "Open with…" and "Share" (a video: View hands it to another app): true View|Open with…|Share|Open as archive|Rename|Copy|Move|Delete
+6. every file has "Open with…" and "Share" (a video: View hands it to another app): true View|Open with…|Share|Open as archive|Compress…|Rename|Copy|Move|Delete
    Open with… asks the app to hand over that file, with the chooser: true {"path":"/storage/emulated/0/Pictures/clip.mp4","mime":"","chooser":true}
    when no app can open it the toast says so: true
    View on a video or sound opens the chooser: true

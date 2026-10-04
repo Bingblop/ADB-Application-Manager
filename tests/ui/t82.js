@@ -115,7 +115,7 @@ const FILES = {
   page = await open();
   await ev(page, () => fmActions('/storage/emulated/0/a.txt', false, 'a.txt'));
   const btns = await ev(page, () => Array.from(document.querySelectorAll('#fmActionBtns button')).map(x => x.innerText));
-  check('4. a text file offers View, Edit, Open with…, Share, Open as archive, Rename, Copy, Move, Delete', btns.join('|') === 'View|Edit|Open with…|Share|Open as archive|Rename|Copy|Move|Delete', btns.join('|'));
+  check('4. a text file offers View, Edit, Open with…, Share, Open as archive, Compress…, Rename, Copy, Move, Delete', btns.join('|') === 'View|Edit|Open with…|Share|Open as archive|Compress…|Rename|Copy|Move|Delete', btns.join('|'));
   await ev(page, () => fmEditOpen()); await sleep(40);
   const ed = await ev(page, () => ({ open: document.getElementById('fmEditModal').classList.contains('show'), name: document.getElementById('fmEditName').innerText, text: document.getElementById('fmEditArea').value, save: document.getElementById('fmEditSave').disabled, status: document.getElementById('fmEditStatus').innerText, pos: document.getElementById('fmEditPos').innerText }));
   check('   Edit opens the file in the editor: name, whole text, Save off until something changes, a status line', ed.open && ed.name === 'a.txt' && ed.text === 'A at root' && ed.save === true && /Saved · 9 characters/.test(ed.status) && /Line 1, column 1/.test(ed.pos), JSON.stringify(ed));
@@ -148,8 +148,11 @@ const FILES = {
   await ev(page, () => fmActions('/storage/emulated/0/a.txt', false, 'a.txt')); await ev(page, () => fmEditOpen()); await sleep(30);
   check('   a file the app cannot write opens read only: the box cannot be typed in and Save stays off', await ev(page, () => document.getElementById('fmEditArea').readOnly && document.getElementById('fmEditSave').disabled && /Read only/.test(document.getElementById('fmEditStatus').innerText)));
   await ev(page, () => fmEditClose());
-  await ev(page, () => { fmActions('/storage/emulated/0/Download/hello.txt', false, 'hello.txt'); fmEditOpen(); document.getElementById('fmEditWrap').click(); });
-  check('   "Wrap lines" switches the box between long lines and wrapped ones', await ev(page, () => document.getElementById('fmEditArea').classList.contains('wrap')));
+  await ev(page, () => { fmActions('/storage/emulated/0/Download/hello.txt', false, 'hello.txt'); fmEditOpen(); });
+  check('   lines wrap by default (long lines do not run off to the side)', await ev(page, () => document.getElementById('fmEditArea').classList.contains('wrap') && document.getElementById('fmEditWrap').checked));
+  await ev(page, () => document.getElementById('fmEditWrap').click());
+  check('   "Wrap lines" switches the box between wrapped lines and long ones, and the choice is remembered', await ev(page, () => !document.getElementById('fmEditArea').classList.contains('wrap') && kvGet('fm_wrap', true) === false));
+  await ev(page, () => document.getElementById('fmEditWrap').click());
   await page.close();
   page = await open({ writeError: 'No space left on device' });
   await ev(page, () => { fmActions('/storage/emulated/0/a.txt', false, 'a.txt'); fmEditOpen(); const t = document.getElementById('fmEditArea'); t.value = 'x'; t.dispatchEvent(new Event('input')); fmEditSave(); }); await sleep(40);
