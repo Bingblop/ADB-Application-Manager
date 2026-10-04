@@ -783,7 +783,6 @@ x: {
 "Gemini": "Gemini",
 "Gemini (Google)": "Gemini (Google)",
 "Gemini CLI": "Gemini CLI",
-"Gemini, Claude, ChatGPT and Cursor connect with an API key from the provider's website (links below). Usage is billed by the provider to that key's account; Google's Gemini API also has a free tier, where Google may use what you send to improve its products.": "Gemini, Claude, ChatGPT e Cursor si connettono con una chiave API presa dal sito del provider (link qui sotto). L’utilizzo viene addebitato dal provider all’account di quella chiave; l’API Gemini di Google ha anche un livello gratuito, in cui Google può usare ciò che invii per migliorare i suoi prodotti.",
 "Generated on this phone and never leaves it. When Android asks \"Allow debugging?\", the fingerprint it shows should match:": "Generata su questo telefono e non lo lascia mai. Quando Android chiede “Consentire il debug?”, l’impronta digitale mostrata deve corrispondere:",
 "Generating a new key...": "Generazione di una nuova chiave...",
 "Get a key": "Ottieni una chiave",

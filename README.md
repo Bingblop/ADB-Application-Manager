@@ -75,7 +75,7 @@ tell you when a new version is out (see [Updates](#updates)).
 | **Quick actions** | **Quick Settings tiles** and a **home-screen widget** to switch the working mode and force-stop a list of apps without opening the app |
 | **What's new** | The changelog is inside the app: it opens once after an update, and from About |
 | **Productivity** | Select and copy any text · copy buttons for package, version and name · **share sheet** for package lists, CSV, manifest, terminal output and backups · **search with highlight and next/previous** in the manifest viewer and terminal · remembered filters and sort |
-| **Terminal** | **New in v7.8:** a **Termux-style terminal** with three persistent shells (this app's sandbox, the working mode, or **your own Termux** with bash and pkg packages), Termux's extra keys, colours, history and TAB completion · **Coding Agents**: Gemini, Claude, ChatGPT, Cursor and Copilot (API key, or your subscription through the providers' own CLIs in Termux) and free options (Jan.ai, AnythingLLM, Ollama on the phone, OpenCode) that **run commands and edit files with your OK at each step** · keys encrypted and sent only to their own provider — see [Terminal and coding agents](#terminal-and-coding-agents) |
+| **Terminal** | **New in v7.8:** a **Termux-style terminal** with three persistent shells (this app's sandbox, the working mode, or **your own Termux** with bash and pkg packages), Termux's extra keys, colours, history and TAB completion · **Coding Agents**: Gemini, Claude, ChatGPT, Cursor, Copilot and Perplexity (API key, or your subscription through the providers' own CLIs in Termux) and free options (Jan.ai, AnythingLLM, Ollama on the phone, OpenCode) that **run commands and edit files with your OK at each step** · keys encrypted and sent only to their own provider — see [Terminal and coding agents](#terminal-and-coding-agents) |
 | **ADB Console** | Run shell commands through the active mode (off the page's thread), with output search, copy and share · **🕘 history, ⭐ saved scripts and pinned chips** · **🐚 Rish mode**: a persistent Shizuku shell where `cd` and `export` stick, with a STOP that ends a command and its children · a searchable **📋 ADB cheat sheet** of ~90 commands you tap to drop into the input |
 | **Files** | Privileged file manager · **select many** and copy / move / delete together · open **.apk / .zip / .xapk / .jar … without extracting**, preview text, images and decoded Android XML, extract, rename, delete, add files and edit text in place · **install from inside an archive**, **open nested archives**, **compare two archives** · **sign an edited APK** on the device |
 | **Logcat** | Readable, **color-coded** log (one row per entry, tappable level key) · **limit it to one app** · save or share the filtered log as a bug-report text file |
@@ -116,8 +116,8 @@ Every tab except Application Manager and About can be switched off or moved in *
 - **Terminal / ADB Console.** The ADB Console tab now opens on a **Termux-style Terminal** (a big switch at the top goes back to
   the classic ADB Console; the tab remembers your choice). Three persistent shells, each on its own screen: **this app's
   sandbox**, the **working mode** (shell user or root) and **your own Termux** (bash and every pkg package).
-- **Coding Agents** in the Terminal: **None**, then Gemini, Claude, ChatGPT, Cursor and Copilot (API key, or your subscription
-  through each provider's official command-line tool in Termux), and free / open-source options (Jan.ai, AnythingLLM,
+- **Coding Agents** in the Terminal: **None**, then Gemini, Claude, ChatGPT, Cursor, Copilot and Perplexity (API key, or your
+  subscription through each provider's official command-line tool in Termux, where one exists), and free / open-source options (Jan.ai, AnythingLLM,
   **Ollama on the phone**, OpenCode, plus DroidMind and Leon.ai explained). Keys are **tested before use**, kept **encrypted**,
   and only ever sent to their own provider. The agent runs commands, reads, writes and edits files **with your OK at each
   step**; switch agent or model mid-chat and the conversation carries on. Details: [Terminal and coding agents](#terminal-and-coding-agents).
@@ -537,6 +537,7 @@ and switching agent or model keeps the conversation.
 | Gemini (Google), Claude (Anthropic), ChatGPT (OpenAI) | an API key from the provider (tested first), or your subscription through Gemini CLI, Claude Code or Codex in Termux |
 | Cursor (SpaceX) | an API key for Cursor's Cloud Agents (they work in Cursor's cloud, optionally on a Git repository you name), or Cursor CLI in Termux |
 | Copilot (GitHub) | GitHub's Copilot CLI in Termux, signed in with GitHub or with a fine-grained token (GitHub Models was retired in July 2026) |
+| Perplexity | an API key from Perplexity's website (tested first); no official sign-in tool, so no subscription option |
 | Jan.ai, AnythingLLM | the address of the computer that runs it (found by itself when it runs on the phone); AnythingLLM also needs its key |
 | Ollama (on-device) | Ollama in Termux with a small coding model, installed from the agent's sheet: free and offline |
 | OpenCode | the OpenCode CLI, installed in Termux |
@@ -1061,7 +1062,7 @@ What is checked before each release, and what is not. The checks live in [`tests
 (`cd tests && npm install && npx playwright install chromium && node run.js && node java/run.js`; what each needs and how a
 script passes is in [tests/README.md](tests/README.md)).
 
-- **The UI** (`tests/run.js`, about four minutes): 91 headless-Chromium scripts drive the real `assets/index.html` against a mock Android bridge:
+- **The UI** (`tests/run.js`, about four minutes): 93 headless-Chromium scripts drive the real `assets/index.html` against a mock Android bridge:
   every tab, theme, filter, share / copy / find action, profiles and the drift banner, backups, the Installer, the
   Store, the file manager and archive browser, the terminal, About, the Back button, the height of the app menu and, for the Hidden Settings tab, the
   list, search, filters and sort, tap-to-edit, press-and-hold flipping (with touch events of any hold length), creating,

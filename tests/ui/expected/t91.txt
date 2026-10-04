@@ -1,8 +1,8 @@
 1. Help opens with its sections: true ["Overview","The three shells","Typing commands","Coding Agents","Chat commands","API keys","Subscriptions and website sign-in","Termux","Free and open-source","Limits","Agent websites"]
-   a link to every agent's website (and Termux): ["Gemini (Google)","Claude (Anthropic)","ChatGPT (OpenAI)","Cursor (SpaceX)","Copilot (GitHub)","DroidMind","OpenCode","Leon.ai","Jan.ai","AnythingLLM","Ollama","Termux"]
+   a link to every agent's website (and Termux): ["Gemini (Google)","Claude (Anthropic)","ChatGPT (OpenAI)","Cursor (SpaceX)","Copilot (GitHub)","Perplexity","DroidMind","OpenCode","Leon.ai","Jan.ai","AnythingLLM","Ollama","Termux"]
    a link opens in the browser: ["url:https://opencode.ai/"]
 2. Settings: the sections: true ["Keys and servers","Default agent and models","Shell","What agents may do","Sign-in tools in Termux","Chat"]
-   keys by their hint only: ["Gemini (Google): no key [Connect]","Claude (Anthropic): key sk-ant-…aaaa [Change]","ChatGPT (OpenAI): no key [Connect]","Cursor (SpaceX): key key_…dddd [Change]","Copilot (GitHub): no key [Connect]","Jan.ai: not connected [Connect]","AnythingLLM: not connected [Connect]","Ollama (on-device): not connected [Connect]"]
+   keys by their hint only: ["Gemini (Google): no key [Connect]","Claude (Anthropic): key sk-ant-…aaaa [Change]","ChatGPT (OpenAI): no key [Connect]","Cursor (SpaceX): key key_…dddd [Change]","Copilot (GitHub): no key [Connect]","Perplexity: no key [Connect]","Jan.ai: not connected [Connect]","AnythingLLM: not connected [Connect]"]
    the default agent is stored: claude
    a default model can be set for each connected agent: true
    ... stored, and in use now: claude-opus-5-5 claude-opus-5-5

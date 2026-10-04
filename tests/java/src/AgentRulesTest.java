@@ -25,10 +25,19 @@ public class AgentRulesTest {
     AgentRules.Provider cursor = AgentRules.find("cursor");
     AgentRules.Provider copilot = AgentRules.find("copilot");
     AgentRules.Provider jan = AgentRules.find("jan");
+    AgentRules.Provider perplexity = AgentRules.find("perplexity");
 
     // ---------------------------------------------------------------- the provider table
     check("every key provider is known, with its host", "api.anthropic.com".equals(claude.host) && "api.openai.com".equals(openai.host)
-        && "generativelanguage.googleapis.com".equals(gemini.host) && "api.cursor.com".equals(cursor.host) && "api.github.com".equals(copilot.host));
+        && "generativelanguage.googleapis.com".equals(gemini.host) && "api.cursor.com".equals(cursor.host) && "api.github.com".equals(copilot.host)
+        && "api.perplexity.ai".equals(perplexity.host));
+    check("Perplexity: Bearer token, its own models endpoint as the test, and its key never leaves that host",
+        "Authorization".equals(perplexity.header) && "Bearer ".equals(perplexity.prefix) && "PERPLEXITY_API_KEY".equals(perplexity.env)
+        && perplexity.test.equals("https://api.perplexity.ai/v1/models")
+        && AgentRules.allowed(perplexity, null, "https://api.perplexity.ai/v1/chat/completions")
+        && !AgentRules.allowed(perplexity, null, "https://evil.example/v1/chat/completions"));
+    check("a pplx- key's hint shows only the prefix and the last four", AgentRules.hint("pplx-0123456789abcdef0123456789abcdef").equals("pplx-…cdef"));
+    check("redact masks a pplx- key in output", AgentRules.redact("Authorization: Bearer pplx-0123456789abcdef0123456789abcdef").equals("Authorization: Bearer pplx-0123…"));
     check("unknown providers are not", AgentRules.find("evil") == null && AgentRules.find(null) == null);
     check("Claude: x-api-key plus the API version header", "x-api-key".equals(claude.header) && "".equals(claude.prefix)
         && claude.extra.length == 1 && "anthropic-version".equals(claude.extra[0][0]) && "2023-06-01".equals(claude.extra[0][1]));

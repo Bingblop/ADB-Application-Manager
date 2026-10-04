@@ -107,9 +107,10 @@ Tick the box when it works; write what you saw when it does not.
 - [ ] Deny the Termux permission twice: the sheet explains how to allow it in App info. A Google Play copy of Termux: the sheet warns about it.
 - [ ] `nano test.txt` (or vim, top, a bare `python`) in the Termux shell: the Terminal offers to open it in Termux, and **Open in Termux** opens a real
       Termux window that runs it.
-- [ ] **Coding Agents: Claude**, **ChatGPT**, **Gemini** with a real API key each: a wrong key is refused with the provider's message and nothing is
-      saved; the right one is tested and saved, and the Model list fills in. Ask "list the files here and make hello.py print hi": every command and
-      file change is shown first; **Run** / **Apply** works, **Skip** stops it, `/undo` takes the file change back.
+- [ ] **Coding Agents: Claude**, **ChatGPT**, **Gemini**, **Perplexity** with a real API key each: a wrong key is refused with the provider's message
+      and nothing is saved; the right one is tested and saved, and the Model list fills in. Ask "list the files here and make hello.py print hi":
+      every command and file change is shown first; **Run** / **Apply** works, **Skip** stops it, `/undo` takes the file change back. Perplexity's
+      Connect sheet has no "Sign in with subscription" tab (there is no official sign-in tool for it) — just the key field.
 - [ ] Switch from Claude to Gemini (or to another model) in the middle of a chat: the new one knows what was said before. **STOP** during a long
       answer ends it at once; **New chat** starts over.
 - [ ] **Cursor** with a Cursor API key (optionally a GitHub repository in its sheet): a cloud agent starts and its answer streams in. **Copilot**: install

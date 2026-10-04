@@ -783,7 +783,6 @@ x: {
 "Gemini": "Gemini",
 "Gemini (Google)": "Gemini (Google)",
 "Gemini CLI": "Gemini CLI",
-"Gemini, Claude, ChatGPT and Cursor connect with an API key from the provider's website (links below). Usage is billed by the provider to that key's account; Google's Gemini API also has a free tier, where Google may use what you send to improve its products.": "Gemini, Claude, ChatGPT, Cursor는 제공업체 웹사이트(아래 링크)에서 받은 API 키로 연결합니다. 사용 요금은 제공업체가 해당 키의 계정에 청구하며, Google의 Gemini API에는 무료 등급도 있지만 무료 등급에서는 Google이 사용자가 보낸 내용을 제품 개선에 사용할 수 있습니다.",
 "Generated on this phone and never leaves it. When Android asks \"Allow debugging?\", the fingerprint it shows should match:": "이 휴대전화에서 생성되며 밖으로 나가지 않습니다. Android에서 \"디버깅을 허용하시겠습니까?\"라고 물으면 표시되는 핑거프린트가 다음과 일치해야 합니다.",
 "Generating a new key...": "새 키 생성 중...",
 "Get a key": "키 받기",

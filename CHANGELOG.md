@@ -13,8 +13,9 @@
   - **Termux**: your own Termux, with bash and everything installed with pkg. A **Termux setup** checklist walks you through
     the one-time steps (install from F-Droid or GitHub, `allow-external-apps=true`, the "Run commands in Termux environment"
     permission, a connection test). Full-screen programs (nano, vim, top, a Python prompt) open in a real Termux window.
-- **Coding Agents.** A drop-down with **None** first, then **API Key Required** (Gemini, Claude, ChatGPT, Cursor, Copilot) and
-  **Free Open-Source** (DroidMind, OpenCode, Leon.ai, Jan.ai, AnythingLLM, and Ollama on the phone itself), plus a **Model**
+- **Coding Agents.** A drop-down with **None** first, then **API Key Required** (Gemini, Claude, ChatGPT, Cursor, Copilot,
+  Perplexity) and **Free Open-Source** (DroidMind, OpenCode, Leon.ai, Jan.ai, AnythingLLM, and Ollama on the phone itself),
+  plus a **Model**
   drop-down. Choosing an agent asks for what it needs and **tests it first**: a refused key is explained in plain words with
   the provider's own message. Chat in the Terminal: the agent answers as it types, and it can **run commands, read files,
   write files and edit parts of files** in the current shell, **each step shown first** with Run / Apply, Skip, or Always
@@ -29,6 +30,8 @@
   opens its own sign-in in Termux, and the Terminal then chats through it.
 - **Cursor** connects to Cursor's Cloud Agents with an API key (they work in Cursor's cloud, optionally on a Git repository
   you name); **Copilot** runs through GitHub's Copilot CLI, since GitHub retired GitHub Models in July 2026.
+- **Perplexity** connects with an API key from its own website (its Sonar models; no official sign-in tool, so it is an
+  API key only, with no "Sign in with subscription" tab).
 - **Free options**: **Jan.ai** and **Ollama** are found on the phone by themselves when they run there (or enter a computer's
   address); **AnythingLLM** asks for its server's key; **Ollama** can be installed into Termux with a small coding model in
   one go; **OpenCode** is installed in Termux. **DroidMind** and **Leon.ai** are explained (tools for other agents and a

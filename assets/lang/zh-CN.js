@@ -783,7 +783,6 @@ x: {
 "Gemini": "Gemini",
 "Gemini (Google)": "Gemini (Google)",
 "Gemini CLI": "Gemini CLI",
-"Gemini, Claude, ChatGPT and Cursor connect with an API key from the provider's website (links below). Usage is billed by the provider to that key's account; Google's Gemini API also has a free tier, where Google may use what you send to improve its products.": "Gemini、Claude、ChatGPT 和 Cursor 使用从提供商网站获取的 API 密钥进行连接（链接见下方）。用量费用由提供商计入该密钥所属的账户；Google 的 Gemini API 还提供免费层级，在免费层级下，Google 可能会使用你发送的内容来改进其产品。",
 "Generated on this phone and never leaves it. When Android asks \"Allow debugging?\", the fingerprint it shows should match:": "在这部手机上生成，绝不会离开手机。当 Android 询问“要允许调试吗？”时，显示的指纹应与下面一致：",
 "Generating a new key...": "正在生成新密钥…",
 "Get a key": "获取密钥",

@@ -4944,7 +4944,7 @@ Type any command below (e.g. pm list packages -d)
                 <div style="font-size:20px; cursor:pointer;" onclick="txCloseAlert()" role="button" aria-label="Close">✕</div>
             </div>
             <div id="txAlertBody" class="tx-err-body"></div>
-            <div id="txAlertDetail" class="tx-err-detail" style="display:none;"></div>
+            <div id="txAlertDetail" class="tx-err-detail" translate="no" style="display:none;"></div>
             <div class="mode-btn-row" id="txAlertBtns" style="margin-top:12px;"></div>
         </div>
     </div>
@@ -5001,7 +5001,7 @@ Type any command below (e.g. pm list packages -d)
                 </ul>
 
                 <h4>API keys</h4>
-                <p>Gemini, Claude, ChatGPT and Cursor connect with an API key from the provider's website (links below). Usage is billed by the provider to that key's account; Google's Gemini API also has a free tier, where Google may use what you send to improve its products.</p>
+                <p>Gemini, Claude, ChatGPT, Cursor and Perplexity connect with an API key from the provider's website (links below). Usage is billed by the provider to that key's account; Google's Gemini API also has a free tier, where Google may use what you send to improve its products.</p>
                 <p>Keys are encrypted with a key that stays in the phone's secure hardware, and they are only ever sent to their own provider's address. The page never sees them again after you type them; only the last four characters are shown.</p>
 
                 <h4>Subscriptions and website sign-in</h4>
@@ -5046,6 +5046,7 @@ Type any command below (e.g. pm list packages -d)
                     <button class="mode-action-btn" onclick="openUrlExternal('https://platform.openai.com')">ChatGPT (OpenAI)</button>
                     <button class="mode-action-btn" onclick="openUrlExternal('https://cursor.com')">Cursor (SpaceX)</button>
                     <button class="mode-action-btn" onclick="openUrlExternal('https://github.com/features/copilot/cli')">Copilot (GitHub)</button>
+                    <button class="mode-action-btn" onclick="openUrlExternal('https://www.perplexity.ai/')">Perplexity</button>
                     <button class="mode-action-btn" onclick="openUrlExternal('https://www.mdskills.ai/skills/droidmind')">DroidMind</button>
                     <button class="mode-action-btn" onclick="openUrlExternal('https://opencode.ai/')">OpenCode</button>
                     <button class="mode-action-btn" onclick="openUrlExternal('https://getleon.ai/')">Leon.ai</button>
@@ -16519,6 +16520,7 @@ Type any command below (e.g. pm list packages -d)
             { id: 'chatgpt', name: 'ChatGPT (OpenAI)', group: 'key', api: 'openai', provider: 'chatgpt', cli: 'codex', color: '#10a37f', keyUrl: 'https://platform.openai.com/api-keys', keyLook: 'sk-…' },
             { id: 'cursor', name: 'Cursor (SpaceX)', group: 'key', api: 'cursor', provider: 'cursor', cli: 'cursor', color: '#f2f2f2', keyUrl: 'https://cursor.com/dashboard', keyLook: 'key_…' },
             { id: 'copilot', name: 'Copilot (GitHub)', group: 'key', api: 'cli', provider: 'copilot', cli: 'copilot', color: '#c9d1d9', keyUrl: 'https://github.com/settings/personal-access-tokens/new', keyLook: 'github_pat_…' },
+            { id: 'perplexity', name: 'Perplexity', group: 'key', api: 'perplexity', provider: 'perplexity', color: '#20808d', keyUrl: 'https://www.perplexity.ai/settings/api', keyLook: 'pplx-…' },
             { id: 'droidmind', name: 'DroidMind', group: 'oss', api: 'info', color: '#a5d6a7', site: 'https://www.mdskills.ai/skills/droidmind' },
             { id: 'opencode', name: 'OpenCode', group: 'oss', api: 'cli', cli: 'opencode', color: '#f5f543', site: 'https://opencode.ai/' },
             { id: 'leon', name: 'Leon.ai', group: 'oss', api: 'info', color: '#ffb74d', site: 'https://getleon.ai/' },
@@ -16532,6 +16534,7 @@ Type any command below (e.g. pm list packages -d)
             gemini: ['gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-pro-preview'],
             cursor: ['default'],
             copilot: ['default'],
+            perplexity: ['sonar', 'sonar-pro', 'sonar-reasoning-pro', 'sonar-deep-research'],
             opencode: ['default'],
             ollama: ['qwen2.5-coder:1.5b']
         };
@@ -16704,6 +16707,7 @@ Type any command below (e.g. pm list packages -d)
             if (ag.api === 'anthropic') out = (j.data || []).map(m => ({ id: m.id, name: m.display_name || m.id }));
             else if (ag.api === 'openai') out = (j.data || []).filter(m => /^(gpt-|o\d|chatgpt-)/.test(m.id) && !/(embedding|tts|whisper|transcribe|moderation|image|realtime|audio|search|computer-use|deep-research|instruct)/.test(m.id) && !m.shutdown_date).map(m => ({ id: m.id, name: m.id }));
             else if (ag.api === 'gemini') out = (j.models || []).filter(m => (m.supportedGenerationMethods || []).indexOf('generateContent') >= 0 && !/(tts|image|live|embedding|transcribe|robotics|veo|lyria|aqa|imagen|native-audio)/.test(m.name)).map(m => ({ id: String(m.name).replace(/^models\//, ''), name: m.displayName || String(m.name).replace(/^models\//, '') }));
+            else if (ag.api === 'perplexity') out = (j.data || []).map(m => ({ id: m.id, name: m.id })).filter(m => m.id);
             else if (ag.api === 'openai-compat') out = (j.data || j.models || []).map(m => ({ id: m.id || m.name || m.model, name: m.name || m.id || m.model })).filter(m => m.id);
             else if (ag.api === 'cursor') out = (j.items || j.models || j.data || []).map(m => ({ id: m.id, name: m.displayName || m.name || m.id })).filter(m => m.id);
             const seen = new Set();
@@ -16728,6 +16732,7 @@ Type any command below (e.g. pm list packages -d)
             else if (ag.api === 'openai') spec = { url: 'https://api.openai.com/v1/models', method: 'GET', auth: 'chatgpt' };
             else if (ag.api === 'gemini') spec = { url: 'https://generativelanguage.googleapis.com/v1beta/models?pageSize=200', method: 'GET', auth: 'gemini' };
             else if (ag.api === 'cursor') spec = { url: 'https://api.cursor.com/v1/models', method: 'GET', auth: 'cursor' };
+            else if (ag.api === 'perplexity') spec = { url: 'https://api.perplexity.ai/v1/models', method: 'GET', auth: 'perplexity' };
             else if (ag.api === 'openai-compat' && txBase(ag)) spec = { url: txBase(ag) + '/models', method: 'GET', auth: ag.provider };
             if (!spec) return;
             try {
@@ -16960,12 +16965,12 @@ Type any command below (e.g. pm list packages -d)
                     else if (d.type === 'message_delta' && d.usage) usage.out += d.usage.output_tokens || 0;
                     else if (d.type === 'error') throw txMkErr(d.error && d.error.type === 'overloaded_error' ? 529 : 500, '', JSON.stringify(d), {});
                 });
-            } else if (ag.api === 'openai' || ag.api === 'openai-compat') {
+            } else if (ag.api === 'openai' || ag.api === 'openai-compat' || ag.api === 'perplexity') {
                 const compat = ag.api === 'openai-compat';
-                const base = compat ? txBase(ag) : 'https://api.openai.com/v1';
+                const base = ag.api === 'openai' ? 'https://api.openai.com/v1' : ag.api === 'perplexity' ? 'https://api.perplexity.ai' : txBase(ag);
                 if (!base) throw { local: true, msg: 'No server address is saved for ' + ag.name + '.' };
-                const body = { model, stream: true, messages: [{ role: compat ? 'system' : 'developer', content: system }].concat(msgs.map(m => ({ role: m.role, content: m.text }))) };
-                if (!compat) body.stream_options = { include_usage: true };
+                const body = { model, stream: true, messages: [{ role: ag.api === 'openai' ? 'developer' : 'system', content: system }].concat(msgs.map(m => ({ role: m.role, content: m.text }))) };
+                if (ag.api === 'openai') body.stream_options = { include_usage: true };
                 await txAiCall({ url: base + '/chat/completions', method: 'POST', auth: ag.provider, stream: true, headers: json, body: JSON.stringify(body) }, ev => {
                     if (!ev.data || ev.data === '[DONE]') return;
                     const d = JSON.parse(ev.data);
@@ -17718,12 +17723,12 @@ Type any command below (e.g. pm list packages -d)
             }
             const hasCli = !!(ag.cli && TX_CLI[ag.cli]);
             const onlyCli = ag.api === 'cli';
-            if (!onlyCli) {
+            if (!onlyCli && hasCli) {
                 h += '<div class="tx-tabs" role="tablist"><button class="sdb-tab' + (txConnectTab === 'key' ? ' active' : '') + '" role="tab" onclick="txConnectSet(\'key\')">API key</button>'
                     + '<button class="sdb-tab' + (txConnectTab === 'cli' ? ' active' : '') + '" role="tab" onclick="txConnectSet(\'cli\')">Sign in with subscription</button></div>';
             }
             if (!onlyCli && txConnectTab === 'key') {
-                const host = { claude: 'api.anthropic.com', chatgpt: 'api.openai.com', gemini: 'generativelanguage.googleapis.com', cursor: 'api.cursor.com' }[ag.provider] || '';
+                const host = { claude: 'api.anthropic.com', chatgpt: 'api.openai.com', gemini: 'generativelanguage.googleapis.com', cursor: 'api.cursor.com', perplexity: 'api.perplexity.ai' }[ag.provider] || '';
                 h += '<p class="tx-sheet-p">Paste your ' + escapeHtml(ag.name.replace(/\s*\(.*\)$/, '')) + ' API key. It is tested right away, then kept encrypted on this phone and only ever sent to <span translate="no">' + escapeHtml(host) + '</span>.</p>' + saved
                     + '<input id="txKeyInput" type="password" class="modal-text-input tx-key-input" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="' + escapeHtml(ag.keyLook || '') + '">'
                     + (ag.id === 'cursor' ? '<div class="tx-sheet-sec">Repository (optional)</div><input id="txCursorRepo" class="modal-text-input tx-key-input" translate="no" placeholder="https://github.com/you/project" value="' + escapeHtml(txSettings.cursorRepo || '') + '" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="url">' : '')
