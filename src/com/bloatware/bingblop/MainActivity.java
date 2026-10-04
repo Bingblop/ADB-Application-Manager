@@ -7987,11 +7987,11 @@ public class MainActivity extends Activity {
                             java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
                             bm.compress(android.graphics.Bitmap.CompressFormat.JPEG, 85, bo);
                             bm.recycle();
-                            res.put("ok", true); res.put("pages", n); res.put("page", pg);
+                            res.put("ok", true); res.put("pages", n); res.put("page", pg); res.put("path", path);
                             res.put("data", "data:image/jpeg;base64," + android.util.Base64.encodeToString(bo.toByteArray(), android.util.Base64.NO_WRAP));
                         } finally { pp.close(); }
                     } catch (Throwable t) {
-                        try { res = new JSONObject(); res.put("ok", false); res.put("error", t instanceof SecurityException ? "This PDF is protected or could not be opened." : (t.getMessage() != null ? t.getMessage() : "The PDF could not be shown.")); } catch (Exception ignored) {}
+                        try { res = new JSONObject(); res.put("ok", false); res.put("path", path); res.put("error", t instanceof SecurityException ? "This PDF is protected or could not be opened." : (t.getMessage() != null ? t.getMessage() : "The PDF could not be shown.")); } catch (Exception ignored) {}
                     } finally {
                         try { if (pr != null) pr.close(); } catch (Exception ignored) {}
                         try { if (pfd != null) pfd.close(); } catch (Exception ignored) {}

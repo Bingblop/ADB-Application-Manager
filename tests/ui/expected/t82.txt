@@ -70,7 +70,7 @@
    a font the app cannot read says so, with no empty viewer: true
 8. a folder of pictures asks the app for the small pictures of its images and videos only (96 px), and shows them in place of the page drawing: true {"reqs":["/storage/emulated/0/Pictures/cat.jpg","/storage/emulated/0/Pictures/clip.mp4"],"imgs":2,"px":96}
    a text file keeps its drawn page: true
-   an answer that is not a plain picture address is ignored (no script from a thumbnail): true
+   an answer that is not a plain picture address is ignored (a quote that would break out of the tag, a script address): no script, no extra picture, the good ones untouched: true
    "Show thumbnails" off: the drawn pages come back and the app is not asked: true
    ... also for the next folder you open: true
    switched on again, the pictures come back: true
@@ -78,4 +78,22 @@
 9. with the All-files access and no working mode, Delete is asked (no "working mode required" sheet): true
    ＋ Folder works the same way: true
    with neither, the sheet that explains what is needed opens: true
+10. a file with CRLF line ends opens as it is: not changed, Save off, closing asks nothing: true
+   after a change the file is saved with its own line ends (CRLF), not LF: true
+   and an old Mac file with CR only keeps CR: true
+   the count says "1 character", not "1 characters": true
+   hiding the hidden files drops them from the selection (what Delete, Copy and Move act on is what is listed): true {"n":12,"shown":12,"hiddenPicked":false,"text":"12 selected"}
+   the ".." row is ignored while selecting (the selection and the folder stay): true
+   rows can be reached from a keyboard: the ".." row and each row are buttons with tabindex, the ⋯ button has a name: true
+   Enter on the ".." row goes up: true
+   a rename to "../x" is refused (no slash in a name): true
+   "A.TXT" next to a.txt is refused as taken: true
+   Enter in the name box creates the file: true
+   the answer goes to the folder where the paste was asked, not the one shown now: true
+   a PDF page that arrives after another PDF was opened is ignored: true [{"name":"other.pdf","pos":"1 / 3","path":"/storage/emulated/0/Download/other.pdf"},{"name":"other.pdf","pos":"1 / 3","path":"/storage/emulated/0/Download/other.pdf"}]
+   two quick Next taps go to page 3, not twice to page 2: true
+   a picture answer for another file does not show up in a PDF viewer: true
+   Show hidden files and Show thumbnails are restored from the saved choice: true
+   at 320 px the editor's close button stays on screen: true {"right":301,"w":320,"over":0}
+   a fast scroll through 600 pictures asks for far fewer than 600 (12 at first, 66 after), and never twice for one: true
 ALL PASSED

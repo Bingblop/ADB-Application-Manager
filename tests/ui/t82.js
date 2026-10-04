@@ -174,7 +174,7 @@ const FILES = {
   await go(page, ROOT + '/Copy1');
   await ev(page, () => { fmClip = { op: 'cp', paths: ['/storage/emulated/0/a.txt', '/storage/emulated/0/Pictures/notes.txt'] }; fmClipRender(); });
   await page.click('#fmPasteBtn'); await sleep(60);
-  const ask = await ev(page, () => ({ open: document.getElementById('fmConflictModal').classList.contains('show'), title: document.getElementById('fmConflictTitle').innerText, sub: document.getElementById('fmConflictSub').innerText, btns: Array.from(document.querySelectorAll('#fmConflictModal .batch-grid-btn')).map(x => x.innerText) }));
+  const ask = await ev(page, () => ({ open: document.getElementById('fmConflictModal').classList.contains('show'), title: document.getElementById('fmConflictTitle').innerText, sub: document.getElementById('fmConflictCnt').innerText + ' ' + document.getElementById('fmConflictNames').innerText, btns: Array.from(document.querySelectorAll('#fmConflictModal .batch-grid-btn')).map(x => x.innerText) }));
   check('   a taken name opens a sheet: what is taken, and Replace / Skip / Keep both; nothing is sent yet', ask.open && ask.btns.join() === 'Replace,Skip,Keep both' && /1 of 2/.test(ask.sub) && /a\.txt/.test(ask.sub) && (await ev(page, () => !window.__fm.batch || window.__fm.batch.dest !== '/storage/emulated/0/Copy1')), JSON.stringify(ask));
   await ev(page, () => fmConflictCancel()); await sleep(30);
   check('   closing the sheet cancels the paste and keeps the clipboard', !(await modalOpen(page, 'fmConflictModal')) && (await ev(page, () => !!fmClip)));
@@ -281,15 +281,16 @@ const FILES = {
   const th = await ev(page, () => ({ reqs: window.__fm.thumbReqs.map(r => r.paths).flat(), imgs: Array.from(document.querySelectorAll('#fmList .fm-ico img')).length, px: window.__fm.thumbReqs[0] && window.__fm.thumbReqs[0].px }));
   check('8. a folder of pictures asks the app for the small pictures of its images and videos only (96 px), and shows them in place of the page drawing', th.reqs.sort().join() === [ROOT + '/Pictures/cat.jpg', ROOT + '/Pictures/clip.mp4'].join() && th.imgs === 2 && th.px === 96, JSON.stringify(th));
   check('   a text file keeps its drawn page', await ev(page, () => { const r = Array.from(document.querySelectorAll('#fmList .perm-row[data-i]')).find(x => x.innerText.indexOf('notes.txt') >= 0); return !!r.querySelector('.fm-page') && !r.querySelector('img'); }));
-  await ev(page, () => { window.onFmThumb('/storage/emulated/0/Pictures/cat.jpg', 'javascript:alert(1)'); window.onFmThumb('/storage/emulated/0/Pictures/notes.txt', 'data:image/jpeg;base64,AAAA'); });
-  check('   an answer that is not a plain picture address is ignored (no script from a thumbnail)', await ev(page, () => window.__pwned === undefined) && (await ev(page, () => document.querySelectorAll('#fmList .fm-ico img').length)) >= 2);
+  await ev(page, () => { window.onFmThumb('/storage/emulated/0/Pictures/clip.mp4', 'data:image/jpeg;base64,AAAA" onerror="window.__pwned=1" x="'); window.onFmThumb('/storage/emulated/0/Pictures/cat.jpg', 'javascript:alert(1)'); window.onFmThumb('/storage/emulated/0/Pictures/notes.txt', 'data:image/jpeg;base64,AAAA'); });
+  await sleep(60);
+  check('   an answer that is not a plain picture address is ignored (a quote that would break out of the tag, a script address): no script, no extra picture, the good ones untouched', (await ev(page, () => window.__pwned === undefined)) && (await ev(page, () => document.querySelectorAll('#fmList .fm-ico img').length)) === 3 && (await ev(page, () => document.querySelectorAll('#fmList .fm-ico img[onerror]').length)) === 0);
   await page.click('#fmThumbChk'); await sleep(100);
   const before = await ev(page, () => window.__fm.thumbReqs.length);
   check('   "Show thumbnails" off: the drawn pages come back and the app is not asked', (await ev(page, () => document.querySelectorAll('#fmList .fm-ico img').length)) === 0 && (await ev(page, () => window.__fm.thumbReqs.length)) === before);
   await go(page, ROOT + '/Pictures'); await sleep(200);
   check('   ... also for the next folder you open', (await ev(page, () => window.__fm.thumbReqs.length)) === before);
   await page.click('#fmThumbChk'); await sleep(250);
-  check('   switched on again, the pictures come back', (await ev(page, () => window.__fm.thumbReqs.length)) > before && (await ev(page, () => document.querySelectorAll('#fmList .fm-ico img').length)) === 2);
+  check('   switched on again, the pictures come back', (await ev(page, () => window.__fm.thumbReqs.length)) > before && (await ev(page, () => document.querySelectorAll('#fmList .fm-ico img').length)) >= 2);
   await ev(page, () => fmThumbClear()); await sleep(40);
   check('   "Clear thumbnail cache" empties the cache and says how much was freed', /Thumbnail cache cleared \(3\.0 MB\)/.test(await toast(page)) && (await ev(page, () => window.__fm.calls.includes('fmThumbCache:clear'))));
   await page.close();
@@ -305,6 +306,101 @@ const FILES = {
   page = await open({ priv: false, access: false });
   await ev(page, () => fmNewFolder()); await sleep(30);
   check('   with neither, the sheet that explains what is needed opens', await modalOpen(page, 'privilegeModal'));
+  await page.close();
+
+
+  // ---------------------------------------------------------------- 10) what the reviews found
+  // a file with Windows line ends opens clean, and is saved with the same line ends
+  page = await open({ files: Object.assign({}, FILES, { [ROOT + '/win.ini']: 'a=1\r\nb=2\r\n', [ROOT + '/Mac.txt']: 'x\ry' }) });
+  await ev(page, () => { fmActions('/storage/emulated/0/win.ini', false, 'win.ini'); fmEditOpen(); }); await sleep(40);
+  check('10. a file with CRLF line ends opens as it is: not changed, Save off, closing asks nothing', (await ev(page, () => document.getElementById('fmEditSave').disabled)) && /Saved/.test(await ev(page, () => document.getElementById('fmEditStatus').innerText)) && (await ev(page, () => { fmEditClose(); return !document.getElementById('fmEditModal').classList.contains('show'); })) && page.__dialogs.length === 0);
+  await ev(page, () => { fmActions('/storage/emulated/0/win.ini', false, 'win.ini'); fmEditOpen(); const t = document.getElementById('fmEditArea'); t.value += 'c=3\n'; t.dispatchEvent(new Event('input')); fmEditSave(); }); await sleep(40);
+  check('   after a change the file is saved with its own line ends (CRLF), not LF', (await ev(page, () => window.__fm.writes.slice(-1)[0].text)) === 'a=1\r\nb=2\r\nc=3\r\n');
+  await ev(page, () => fmEditClose());
+  await ev(page, () => { fmActions('/storage/emulated/0/Mac.txt', false, 'Mac.txt'); fmEditOpen(); const t = document.getElementById('fmEditArea'); t.value += '!'; t.dispatchEvent(new Event('input')); fmEditSave(); }); await sleep(40);
+  check('   and an old Mac file with CR only keeps CR', (await ev(page, () => window.__fm.writes.slice(-1)[0].text)) === 'x\ry!');
+  await ev(page, () => fmEditClose());
+  // the editor status says "1 character"
+  await ev(page, () => { fmActions('/storage/emulated/0/Pictures/notes.txt', false, 'notes.txt'); fmEditOpen(); const t = document.getElementById('fmEditArea'); t.value = 'x'; t.dispatchEvent(new Event('input')); });
+  check('   the count says "1 character", not "1 characters"', /Unsaved changes · 1 character$/.test(await ev(page, () => document.getElementById('fmEditStatus').innerText)));
+  await ev(page, () => { fmEd.orig = document.getElementById('fmEditArea').value; fmEditClose(); });
+
+  // a selection does not keep what is no longer shown
+  await ev(page, () => { fmGo('/storage/emulated/0'); document.getElementById('fmHiddenChk').click(); }); await sleep(60);
+  await ev(page, () => { fmSelEnter(null); fmSelectAll(); });
+  const picked1 = await ev(page, () => fmSel.size);
+  await page.click('#fmHiddenChk'); await sleep(60);
+  const after = await ev(page, () => ({ n: fmSel.size, shown: fmRows.length, hiddenPicked: Array.from(fmSel).some(p => p.split('/').pop().charAt(0) === '.'), text: document.getElementById('fmSelCount').innerText }));
+  check('   hiding the hidden files drops them from the selection (what Delete, Copy and Move act on is what is listed)', picked1 > after.n && after.n === after.shown && !after.hiddenPicked && after.text === after.n + ' selected', JSON.stringify(after));
+  await ev(page, () => fmSelExit());
+
+  // tapping ".." while selecting does not throw the selection away; a keyboard can use the rows
+  await ev(page, () => { fmGo('/storage/emulated/0/Pictures'); fmSelEnter(null); });
+  await page.click('#fmUpRow'); await sleep(40);
+  check('   the ".." row is ignored while selecting (the selection and the folder stay)', (await ev(page, () => fmSelMode && fmPath)) === ROOT + '/Pictures');
+  await ev(page, () => fmSelExit());
+  check('   rows can be reached from a keyboard: the ".." row and each row are buttons with tabindex, the ⋯ button has a name', await ev(page, () => { const u = document.getElementById('fmUpRow'), r = document.querySelector('#fmList .perm-info[data-i]'), m = document.querySelector('#fmList .fm-more'); return u.tabIndex === 0 && u.getAttribute('role') === 'button' && r.tabIndex === 0 && r.getAttribute('role') === 'button' && !!m.getAttribute('aria-label'); }));
+  await page.focus('#fmUpRow'); await page.keyboard.press('Enter'); await sleep(60);
+  check('   Enter on the ".." row goes up', (await ev(page, () => fmPath)) === ROOT);
+
+  // names: rename uses the same rules; a name that differs only by case is taken (storage ignores case)
+  await ev(page, () => { fmActions('/storage/emulated/0/a.txt', false, 'a.txt'); fmStartDest('rename'); document.getElementById('fmDestInput').value = '../x'; fmDestConfirm(); }); await sleep(40);
+  check('   a rename to "../x" is refused (no slash in a name)', /slash/.test(await toast(page)) && !(await ev(page, () => window.__fm.calls.some(c => c.startsWith('fmOp:mv')))));
+  await ev(page, () => { fmNewFile(); document.getElementById('fmDestInput').value = 'A.TXT'; fmDestConfirm(); }); await sleep(40);
+  check('   "A.TXT" next to a.txt is refused as taken', /already used/.test(await toast(page)) && !(await ev(page, () => window.__fm.calls.some(c => c.startsWith('fmOp:touch')))));
+  await ev(page, () => { fmNewFile(); const i = document.getElementById('fmDestInput'); i.value = 'enter.txt'; i.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' })); }); await sleep(100);
+  check('   Enter in the name box creates the file', await ev(page, () => !!window.__fm.fs['/storage/emulated/0/enter.txt']));
+  await ev(page, () => fmEditClose());
+  await page.close();
+
+  // the conflict sheet uses the folder it was asked in, even if the list changes before the answer
+  page = await prep();
+  await go(page, ROOT + '/Copy1');
+  await ev(page, () => { fmClip = { op: 'cp', paths: ['/storage/emulated/0/a.txt'] }; fmClipRender(); fmPaste(); }); await sleep(40);
+  await ev(page, () => fmGo('/storage/emulated/0/Pictures')); await sleep(40);
+  await ev(page, () => fmConflictChoose('keep')); await sleep(200);
+  check('   the answer goes to the folder where the paste was asked, not the one shown now', (await text(page, ROOT + '/Copy1/a (1).txt')) === 'A at root' && (await text(page, ROOT + '/Pictures/a.txt')) === null);
+  await page.close();
+
+  // answers that arrive late
+  page = await open({ pdfLag: { [ROOT + '/Download/report.pdf']: 220 }, files: Object.assign({}, FILES, { [ROOT + '/Download/other.pdf']: { size: 100, bin: true } }) });
+  await ev(page, () => { fmActions('/storage/emulated/0/Download/report.pdf', false, 'report.pdf'); fmViewFile(); }); await sleep(30);
+  await ev(page, () => { fmMediaClose(); fmActions('/storage/emulated/0/Download/other.pdf', false, 'other.pdf'); fmViewFile(); }); await sleep(100);
+  const shownName = await ev(page, () => ({ name: document.getElementById('fmMediaName').innerText, pos: document.getElementById('fmPdfPos').innerText, path: fmMedia.path }));
+  await sleep(250);
+  const later = await ev(page, () => ({ name: document.getElementById('fmMediaName').innerText, pos: document.getElementById('fmPdfPos').innerText, path: fmMedia.path }));
+  check('   a PDF page that arrives after another PDF was opened is ignored', shownName.path.endsWith('other.pdf') && later.path.endsWith('other.pdf') && later.name === 'other.pdf' && later.pos === '1 / 3', JSON.stringify([shownName, later]));
+  await ev(page, () => { fmPdfGo(1); fmPdfGo(1); }); await sleep(120);
+  check('   two quick Next taps go to page 3, not twice to page 2', (await ev(page, () => document.getElementById('fmPdfPos').innerText)) === '3 / 3');
+  await ev(page, () => { window.onFmImage('/storage/emulated/0/other.png', 'data:image/png;base64,AAAA', 1, 1); });
+  check('   a picture answer for another file does not show up in a PDF viewer', !(await ev(page, () => /other\.png/.test(document.getElementById('fmMediaStage').innerHTML))));
+  await page.close();
+
+  // the choice of the two boxes comes back at the next start
+  page = await open({ kv: { fm_opts: JSON.stringify({ hidden: true, thumbs: false }) } });
+  check('   Show hidden files and Show thumbnails are restored from the saved choice', (await ev(page, () => document.getElementById('fmHiddenChk').checked)) === true && (await ev(page, () => document.getElementById('fmThumbChk').checked)) === false && (await names(page)).includes('.nomedia'));
+  await page.close();
+
+  // a long file name with nothing to break at must not push the close button off a 320 px screen
+  page = await open({ files: Object.assign({}, FILES, { [ROOT + '/' + 'A_very_long_file_name_without_any_spaces_'.repeat(4) + '.txt']: 'x' }) });
+  await page.setViewportSize({ width: 320, height: 700 });
+  const longName = 'A_very_long_file_name_without_any_spaces_'.repeat(4) + '.txt';
+  await ev(page, n => { fmActions('/storage/emulated/0/' + n, false, n); fmEditOpen(); }, longName); await sleep(60);
+  const sh = await ev(page, () => { const x = document.querySelector('#fmEditModal .sheet-header > div:last-child').getBoundingClientRect(); return { right: Math.round(x.right), w: window.innerWidth, over: document.documentElement.scrollWidth - document.documentElement.clientWidth }; });
+  check('   at 320 px the editor\'s close button stays on screen', sh.right <= sh.w && sh.over <= 0, JSON.stringify(sh));
+  await ev(page, () => fmEditClose());
+  await page.close();
+
+  // many pictures: scrolling past them does not ask for all
+  const many = {}; for (let i = 0; i < 600; i++) many[ROOT + '/Many/img' + String(i).padStart(4, '0') + '.jpg'] = { size: 100, bin: true };
+  page = await open({ files: Object.assign({}, FILES, many) });
+  await go(page, ROOT + '/Many'); await sleep(300);
+  const first = await ev(page, () => window.__fm.thumbReqs.map(r => r.paths).flat().length);
+  await ev(page, () => { const l = document.getElementById('fmList'); window.scrollTo(0, 0); });
+  for (let y = 0; y < 30000; y += 3000) { await page.mouse.wheel(0, 3000); await sleep(10); }
+  await sleep(500);
+  const asked = await ev(page, () => window.__fm.thumbReqs.map(r => r.paths).flat().length);
+  check('   a fast scroll through 600 pictures asks for far fewer than 600 (' + first + ' at first, ' + asked + ' after), and never twice for one', first > 0 && first <= 40 && asked < 300 && (await ev(page, () => { const a = window.__fm.thumbReqs.map(r => r.paths).flat(); return new Set(a).size === a.length; })));
   await page.close();
 
   await b.close();

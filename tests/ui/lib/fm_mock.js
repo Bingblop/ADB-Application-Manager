@@ -128,7 +128,8 @@ exports.initScript = function (opts) {
     fmPdf(path, page, w) {
       fm.calls.push('fmPdf:' + path + ':' + page);
       const pages = opts.pdfPages || 3;
-      setTimeout(() => window.onFmPdf(JSON.stringify(opts.pdfError ? { ok: false, error: opts.pdfError } : { ok: true, pages, page: Math.max(0, Math.min(pages - 1, page)), data: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQ' })), 15);
+      const lag = (opts.pdfLag && opts.pdfLag[path]) || 15;
+      setTimeout(() => window.onFmPdf(JSON.stringify(opts.pdfError ? { ok: false, path, error: opts.pdfError } : { ok: true, path, pages, page: Math.max(0, Math.min(pages - 1, page)), data: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQ' })), lag);
     },
     fmOpenWith(path, mime, chooser) {
       fm.opened.push({ path, mime, chooser });

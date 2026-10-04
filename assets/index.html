@@ -1227,7 +1227,7 @@
         .font-sample .fs-line { font-size: 15px; line-height: 1.5; margin-top: 6px; }
         .font-sample .fs-bold { font-weight: 700; }
         /* right to left (Arabic): names, paths, commands and what the user types keep the direction of their own text */
-        html[dir="rtl"] [translate="no"], html[dir="rtl"] .list-search, html[dir="rtl"] .modal-text-input, html[dir="rtl"] pre, html[dir="rtl"] code { unicode-bidi: plaintext; }
+        html[dir="rtl"] .fm-edit-area, html[dir="rtl"] [translate="no"], html[dir="rtl"] .list-search, html[dir="rtl"] .modal-text-input, html[dir="rtl"] pre, html[dir="rtl"] code { unicode-bidi: plaintext; }
         .lang-select { width: 100%; font-size: 15px; font-weight: 700; padding: 11px 12px; margin-top: 4px; }
 
         .manifest-view {
@@ -1923,7 +1923,7 @@
         /* file manager: select several, then copy / move / delete together */
         .fm-selbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 8px 10px; margin-bottom: 8px; border: 1px solid var(--accent); border-radius: 12px; background: rgba(var(--ov), 0.06); position: sticky; top: 0; z-index: 4; backdrop-filter: blur(6px); }
         .fm-selbar .fm-count { font-size: 12px; font-weight: 800; margin-right: auto; }
-        #fmList .fm-chk { display: none; width: 22px; height: 22px; flex-shrink: 0; margin-right: 10px; border: 2px solid var(--text-muted); border-radius: 6px; align-items: center; justify-content: center; font-size: 13px; font-weight: 900; color: transparent; }
+        #fmList .fm-chk { display: none; width: 22px; height: 22px; flex-shrink: 0; margin-inline-end: 10px; border: 2px solid var(--text-muted); border-radius: 6px; align-items: center; justify-content: center; font-size: 13px; font-weight: 900; color: transparent; }
         #fmList.fm-selecting .fm-chk { display: flex; }
         #fmList.fm-selecting .fm-more { display: none; }
         #fmList .perm-row { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
@@ -1932,7 +1932,7 @@
         .fm-opt { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; cursor: pointer; }
         .fm-opt input { width: 18px; height: 18px; accent-color: var(--accent); }
         /* the pictures of the list: a folder and a page drawn with CSS, or the small picture of an image or video */
-        .fm-ico { position: relative; flex: 0 0 34px; width: 34px; height: 34px; margin-right: 10px; display: flex; align-items: center; justify-content: center; border-radius: 8px; overflow: hidden; }
+        .fm-ico { position: relative; flex: 0 0 34px; width: 34px; height: 34px; margin-inline-end: 10px; display: flex; align-items: center; justify-content: center; border-radius: 8px; overflow: hidden; }
         .fm-ico img { width: 100%; height: 100%; object-fit: cover; }
         .fm-folder { position: relative; width: 24px; height: 17px; background: var(--accent); border-radius: 2px 3px 3px 3px; margin-top: 3px; }
         .fm-folder::before { content: ""; position: absolute; left: 0; top: -4px; width: 11px; height: 5px; background: var(--accent); border-radius: 2px 2px 0 0; }
@@ -1942,6 +1942,8 @@
         #fmList .fm-up-row { cursor: pointer; }
         #fmList .fm-up-row .perm-name { font-size: 15px; letter-spacing: 1px; }
         .fm-hidden-row .perm-name { opacity: 0.7; }
+        .modal-sheet .sheet-title, .modal-sheet .sheet-app-hero { min-width: 0; flex: 1; }
+        .modal-sheet .sheet-title h3, .modal-sheet .sheet-title p { overflow-wrap: anywhere; min-width: 0; }
         .fm-edit-sheet { width: 100%; max-width: 640px; height: min(88vh, 760px); display: flex; flex-direction: column; }
         .fm-edit-area { flex: 1; width: 100%; min-height: 160px; resize: none; font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; font-size: 13px; line-height: 1.45; padding: 10px; border-radius: 10px; border: 1px solid var(--border-glass); background: var(--input-bg); color: var(--text-main); tab-size: 4; white-space: pre; overflow: auto; }
         .fm-edit-area.wrap { white-space: pre-wrap; overflow-wrap: anywhere; }
@@ -4932,14 +4934,14 @@ Type any command below (e.g. pm list packages -d)
             </div>
             <div class="batch-actions-grid" id="fmActionBtns"></div>
             <div id="fmDestRow" style="display:none; margin-top:10px;">
-                <input class="modal-text-input" id="fmDestInput" placeholder="Destination path" autocomplete="off" autocapitalize="off" spellcheck="false">
+                <input class="modal-text-input" id="fmDestInput" placeholder="Destination path" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if (event.key === 'Enter') fmDestConfirm()">
                 <button class="mode-action-btn primary" style="width:100%; justify-content:center; margin-top:8px;" id="fmDestConfirm" onclick="fmDestConfirm()">Confirm</button>
             </div>
             <div id="fmViewer" class="terminal-box" style="display:none; max-height:50vh; overflow:auto; margin-top:10px;"></div>
         </div>
     </div>
 
-    <div class="modal-overlay" id="fmEditModal" onclick="if(event.target===this) fmEditClose()">
+    <div class="modal-overlay" id="fmEditModal" onpointerdown="window.__fmDown = event.target === this" onclick="const ok = event.target === this && window.__fmDown !== false; window.__fmDown = undefined; if (ok) fmEditClose()">
         <div class="modal-sheet fm-edit-sheet">
             <div class="sheet-header">
                 <div class="sheet-app-hero">
@@ -4982,7 +4984,7 @@ Type any command below (e.g. pm list packages -d)
                 <div class="sheet-app-hero">
                     <div class="sheet-title">
                         <h3 id="fmConflictTitle">Names already taken</h3>
-                        <p id="fmConflictSub"></p>
+                        <p><span id="fmConflictCnt"></span> <span id="fmConflictNames" translate="no"></span></p>
                     </div>
                 </div>
                 <div style="font-size:20px; cursor:pointer;" onclick="fmConflictCancel()">✕</div>
@@ -5823,7 +5825,7 @@ Type any command below (e.g. pm list packages -d)
             '.app-name', '.app-pkg', '.app-version', '#sheetTitle', '#sheetPkg', '#deviceInfoSubtitle', '#aboutBuild dd', '#aboutVersion',
             '.sdb-key', '.sdb-val', '.sdb-change em', '.sdb-sw', '#sdbEditKey',
             '.ovl-group span', '#ovlDetailId', '.ovl-sw', '.bubble-hex',
-            '.perm-name', '.perm-sub', '.apk-scan-name', '#fmCurrentPath', '#fmPathInput', '#fmActionName', '#fmActionPath', '#fmViewer',
+            '.perm-name', '.perm-sub', '.apk-scan-name', '#fmCurrentPath', '#fmPathInput', '#fmActionName', '#fmActionPath', '#fmViewer', '#fmEditName', '#fmEditPath', '#fmMediaName', '#fmConflictNames',
             '#arcTitle', '#arcMeta', '.arc-crumb', '.arc-sep', '#arcModalName', '#arcModalPath', '#arcViewText', '#arcViewMeta', '.arc-meta b', '.dif-ctx',
             '.uad-name', '.uad-pkg', '.uad-desc', '.uad-tag',
             '#installPkgLabel', '#installPkgName', '#installSplitsCard .switch-title', '#installExtrasCard .switch-title',
@@ -10402,6 +10404,7 @@ Type any command below (e.g. pm list packages -d)
             fmOpts[key] = !!val;
             kvSet('fm_opts', fmOpts);
             renderFm(fmLast);
+            if (key === 'hidden') { const here = new Set(fmRows.map(r => r.full)); Array.from(fmSel).forEach(p => { if (!here.has(p)) fmSel.delete(p); }); }     // what is no longer listed is no longer picked
             fmSelRender();
         }
         function onFilesShown() { fmOptsLoad(); fmGo(fmPath, true); }
@@ -10535,7 +10538,7 @@ Type any command below (e.g. pm list packages -d)
         }
         function fmUpRowHtml() {
             if (fmPath === '/') return '';
-            return '<div class="perm-row fm-up-row" id="fmUpRow" role="button" aria-label="Up one folder" onclick="fmUp()">'
+            return '<div class="perm-row fm-up-row" id="fmUpRow" role="button" tabindex="0" aria-label="Up one folder" onclick="if (!fmSelMode) fmUp()" onkeydown="if (event.key === \'Enter\' || event.key === \' \') { event.preventDefault(); if (!fmSelMode) fmUp(); }">'
                 + '<div class="fm-ico"><div class="fm-folder"></div></div>'
                 + '<div class="perm-info"><div class="perm-name fm-dir">..</div><div class="perm-sub">Up one folder</div></div></div>';
         }
@@ -10568,11 +10571,11 @@ Type any command below (e.g. pm list packages -d)
                 return `<div class="perm-row${fmSel.has(fmRows[i].full) ? ' fm-picked' : ''}${e.name.charAt(0) === '.' ? ' fm-hidden-row' : ''}" data-i="${i}">
                     <div class="fm-chk" aria-hidden="true" onclick="fmRowTap(${i})">✓</div>
                     <div class="fm-ico" data-ii="${i}"${thumb} onclick="fmRowTap(${i})">${ico}</div>
-                    <div class="perm-info" style="cursor:pointer;" onclick="fmRowTap(${i})" data-i="${i}">
+                    <div class="perm-info" style="cursor:pointer;" role="button" tabindex="0" onclick="fmRowTap(${i})" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); fmRowTap(${i}); }" data-i="${i}">
                         <div class="perm-name${e.isDir ? ' fm-dir' : ''}">${escapeHtml(e.name)}${e.isDir ? '/' : ''}</div>
                         <div class="perm-sub">${sub}</div>
                     </div>
-                    <button class="perm-toggle-btn locked fm-more" onclick="fmActionsIdx(${i})">⋯</button>
+                    <button class="perm-toggle-btn locked fm-more" aria-label="More actions" onclick="fmActionsIdx(${i})">⋯</button>
                 </div>`;
             }).join('') + (hiddenN ? '<div class="list-empty" style="padding:10px 0;">' + hiddenN + ' hidden item' + (hiddenN === 1 ? '' : 's') + ' not shown</div>' : '');
             el.classList.toggle('fm-selecting', fmSelMode);
@@ -10580,31 +10583,38 @@ Type any command below (e.g. pm list packages -d)
         }
 
         // ---- small pictures of images and videos (the app keeps them in a cache and serves them from there) ----
-        let fmThumbGen = 0, fmThumbIO = null, fmThumbQueue = [], fmThumbTimer = null;
+        let fmThumbGen = 0, fmThumbIO = null, fmThumbWait = new Map(), fmThumbDone = new Set(), fmThumbTimer = null;
         function fmThumbSetup() {
             fmThumbGen++;
-            fmThumbQueue = [];
+            fmThumbWait = new Map(); fmThumbDone = new Set();
+            if (fmThumbTimer) { clearTimeout(fmThumbTimer); fmThumbTimer = null; }
             if (fmThumbIO) { try { fmThumbIO.disconnect(); } catch (e) {} fmThumbIO = null; }
             if (!fmOpts.thumbs || !window.AndroidBridge || !window.AndroidBridge.fmThumbs) return;
             const icons = Array.from(document.querySelectorAll('#fmList .fm-ico[data-thumb]'));
             if (!icons.length) return;
-            const want = ico => { const r = fmRows[+ico.dataset.ii]; if (r) fmThumbQueue.push(r.full); };
+            const pathOf = ico => { const r = fmRows[+ico.dataset.ii]; return r ? r.full : null; };
             if ('IntersectionObserver' in window) {
+                // a row is asked for when it comes into view and forgotten if it leaves before the answer is asked for (a fling past 2,000 pictures asks for the few that stay)
                 fmThumbIO = new IntersectionObserver(list => {
-                    list.forEach(en => { if (en.isIntersecting) { fmThumbIO.unobserve(en.target); want(en.target); } });
-                    if (fmThumbQueue.length && !fmThumbTimer) fmThumbTimer = setTimeout(fmThumbFlush, 60);
+                    list.forEach(en => {
+                        const p = pathOf(en.target);
+                        if (!p || fmThumbDone.has(p)) return;
+                        if (en.isIntersecting) fmThumbWait.set(p, true); else fmThumbWait.delete(p);
+                    });
+                    if (fmThumbWait.size && !fmThumbTimer) fmThumbTimer = setTimeout(fmThumbFlush, 150);
                 }, { rootMargin: '240px' });
                 icons.forEach(i => fmThumbIO.observe(i));
             } else {
-                icons.slice(0, 60).forEach(want);
+                icons.slice(0, 60).forEach(i => { const p = pathOf(i); if (p) fmThumbWait.set(p, true); });
                 fmThumbFlush();
             }
         }
         function fmThumbFlush() {
             fmThumbTimer = null;
-            const batch = fmThumbQueue.splice(0, 40);
+            const batch = Array.from(fmThumbWait.keys()).slice(0, 40);
+            batch.forEach(p => { fmThumbWait.delete(p); fmThumbDone.add(p); });
             if (batch.length) { try { window.AndroidBridge.fmThumbs(JSON.stringify(batch), 96); } catch (e) {} }
-            if (fmThumbQueue.length) fmThumbTimer = setTimeout(fmThumbFlush, 120);
+            if (fmThumbWait.size) fmThumbTimer = setTimeout(fmThumbFlush, 150);
         }
         window.onFmThumb = function (path, url) {
             if (!fmOpts.thumbs || !/^data:image\/jpeg;base64,[A-Za-z0-9+\/=]+$/.test(url || '')) return;
@@ -10792,7 +10802,8 @@ Type any command below (e.g. pm list packages -d)
         function fmConflictAsk(op, paths, dest, clash) {
             fmConflict = { op, paths, dest };
             document.getElementById('fmConflictTitle').innerText = clash.length === 1 ? 'A name is already taken' : 'Names already taken';
-            document.getElementById('fmConflictSub').innerText = clash.length + ' of ' + paths.length + ' in this folder: ' + clash.slice(0, 3).map(fmBase).join(', ') + (clash.length > 3 ? ', …' : '');
+            document.getElementById('fmConflictCnt').innerText = clash.length + ' of ' + paths.length + ' in this folder:';
+            document.getElementById('fmConflictNames').innerText = clash.slice(0, 3).map(fmBase).join(', ') + (clash.length > 3 ? ', …' : '');
             document.getElementById('fmConflictModal').classList.add('show');
         }
         function fmConflictChoose(policy) {
@@ -10908,7 +10919,7 @@ Type any command below (e.g. pm list packages -d)
                 const bad = fmBadName(val);
                 if (bad) { showToast(bad); return; }
                 const target = fmJoin(val);
-                if (fmListedNames().indexOf(val) >= 0) { showToast('That name is already used here'); return; }
+                if (fmListedNames().some(n => n.toLowerCase() === val.toLowerCase())) { showToast('That name is already used here'); return; }     // storage is case-insensitive: Todo.txt is todo.txt
                 const isFile = fmPendingOp === 'mkfile';
                 let rk;
                 try { rk = JSON.parse(window.AndroidBridge.fmOp(isFile ? 'touch' : 'mkdir', target, null)); } catch (e) { rk = { ok: false, output: String(e && e.message || e) }; }
@@ -10921,7 +10932,8 @@ Type any command below (e.g. pm list packages -d)
             }
             let op = fmPendingOp, a = src, b = null;
             if (op === 'rename') {
-                if (!val) { showToast('Enter a name'); return; }
+                const badR = fmBadName(val);
+                if (badR) { showToast(badR); return; }
                 op = 'mv'; b = fmParent(src) + '/' + val;
             } else if (op === 'cp' || op === 'mv') {
                 if (!val) { showToast('Enter a destination'); return; }
@@ -11065,11 +11077,14 @@ Type any command below (e.g. pm list packages -d)
             if (!d.ok) { showToast(d.error || 'Could not read the file'); return; }
             if (d.binary) { showToast('This is not a text file. Use View, or Open with…'); return; }
             closeFmAction();
-            fmEd = { path: t.full, name: t.name, mtime: d.mtime || 0, orig: d.text || '', writable: d.writable !== false, busy: false };
+            const raw = d.text || '';
+            const eol = raw.indexOf('\r\n') >= 0 ? '\r\n' : (raw.indexOf('\r') >= 0 ? '\r' : '\n');      // a text box turns every line end into \n; saving puts the file's own back
+            fmEd = { path: t.full, name: t.name, mtime: d.mtime || 0, orig: raw, eol, writable: d.writable !== false, busy: false };
             document.getElementById('fmEditName').innerText = t.name;
             document.getElementById('fmEditPath').innerText = t.full;
             const ta = document.getElementById('fmEditArea');
             ta.value = fmEd.orig;
+            fmEd.orig = ta.value;                                  // what the box holds, so "changed" means the person changed something
             ta.readOnly = !fmEd.writable;
             document.getElementById('fmEditWrap').checked = ta.classList.contains('wrap');
             fmEditInput();
@@ -11084,22 +11099,29 @@ Type any command below (e.g. pm list packages -d)
             const dirty = fmEditDirty();
             document.getElementById('fmEditSave').disabled = !dirty || !fmEd.writable || fmEd.busy;
             const ta = document.getElementById('fmEditArea');
-            document.getElementById('fmEditStatus').innerText = (fmEd.writable ? (dirty ? 'Unsaved changes' : 'Saved') : 'Read only') + ' · ' + ta.value.length + ' characters';
+            const n = ta.value.length;
+            document.getElementById('fmEditStatus').innerText = (fmEd.writable ? (dirty ? 'Unsaved changes' : 'Saved') : 'Read only') + ' · ' + n + (n === 1 ? ' character' : ' characters');
             fmEditPos();
         }
+        let fmEditPosTimer = 0;
         function fmEditPos() {
-            const ta = document.getElementById('fmEditArea');
-            const pre = ta.value.slice(0, ta.selectionStart);
-            const line = pre.split('\n').length, col = pre.length - pre.lastIndexOf('\n');
-            document.getElementById('fmEditPos').innerText = 'Line ' + line + ', column ' + col;
+            if (fmEditPosTimer) return;
+            fmEditPosTimer = requestAnimationFrame(() => {               // once per frame: a big file would cost a scan of the whole text at every key
+                fmEditPosTimer = 0;
+                const ta = document.getElementById('fmEditArea'), v = ta.value, end = ta.selectionStart;
+                let line = 1, last = -1;
+                for (let i = v.indexOf('\n'); i >= 0 && i < end; i = v.indexOf('\n', i + 1)) { line++; last = i; }
+                document.getElementById('fmEditPos').innerText = 'Line ' + line + ', column ' + (end - last);
+            });
         }
         function fmEditWrap(on) { document.getElementById('fmEditArea').classList.toggle('wrap', !!on); }
         function fmEditSave(force) {
             if (!fmEd || fmEd.busy || !fmEditDirty()) return;
             const text = document.getElementById('fmEditArea').value;
+            const out = fmEd.eol === '\n' ? text : text.replace(/\n/g, fmEd.eol);
             fmEd.busy = true; fmEditInput();
             let d;
-            try { d = JSON.parse(window.AndroidBridge.fmWriteText(fmEd.path, text, force ? 0 : fmEd.mtime)); } catch (e) { d = { ok: false, error: String(e && e.message || e) }; }
+            try { d = JSON.parse(window.AndroidBridge.fmWriteText(fmEd.path, out, force ? 0 : fmEd.mtime)); } catch (e) { d = { ok: false, error: String(e && e.message || e) }; }
             fmEd.busy = false;
             if (d.ok) {
                 fmEd.orig = text; fmEd.mtime = d.mtime || 0;
@@ -11179,10 +11201,11 @@ Type any command below (e.g. pm list packages -d)
             const w = Math.max(400, Math.min(1400, Math.round((window.innerWidth || 400) * (window.devicePixelRatio || 1))));
             window.AndroidBridge.fmPdf(fmMedia.path, n, w);
         }
-        function fmPdfGo(d) { if (fmMedia && fmMedia.kind === 'pdf') { const n = Math.max(0, Math.min(fmMedia.pages - 1, fmMedia.page + d)); if (n !== fmMedia.page) fmPdfLoad(n); } }
+        function fmPdfGo(d) { if (fmMedia && fmMedia.kind === 'pdf') { const from = fmMedia.want !== undefined ? fmMedia.want : fmMedia.page; const n = Math.max(0, Math.min(fmMedia.pages - 1, from + d)); if (n !== from) fmPdfLoad(n); } }
         window.onFmPdf = function (json) {
             if (!fmMedia || fmMedia.kind !== 'pdf') return;
             let d; try { d = JSON.parse(json); } catch (e) { d = { ok: false, error: 'unreadable answer' }; }
+            if (d.path !== undefined && (d.path !== fmMedia.path || (d.ok && d.page !== Math.max(0, Math.min((fmMedia.pages || 1e9) - 1, fmMedia.want))))) return;     // an answer for another file or an older page
             const st = document.getElementById('fmMediaStage');
             if (!d.ok || !FM_DATA_IMG.test(d.data || '')) { st.innerHTML = '<div class="list-empty">' + escapeHtml(d.error || 'The PDF could not be shown.') + '</div>'; return; }
             fmMedia.page = d.page; fmMedia.pages = d.pages;
@@ -11197,15 +11220,18 @@ Type any command below (e.g. pm list packages -d)
             if (!fmActionTarget) return;
             const t = fmActionTarget;
             if (!window.AndroidBridge || !window.AndroidBridge.fmReadB64) { showToast('Needs the app build'); return; }
-            const b64 = window.AndroidBridge.fmReadB64(t.full, 12288);
-            if (!b64) { showToast('This font could not be read (it may be over 12 MB, or out of reach)'); return; }
+            const b64 = window.AndroidBridge.fmReadB64(t.full, 6144);
+            if (!b64) { showToast('This font could not be read (it may be over 6 MB, or out of reach)'); return; }
             fmMediaOpen('font', t, '<button class="batch-tool-link" onclick="fmMediaWith()">Open with…</button>', '');
             const st = document.getElementById('fmMediaStage');
+            const mine = fmMedia;                                    // a face that arrives after the viewer was closed or reopened is dropped
             fetch('data:application/octet-stream;base64,' + b64).then(r => r.arrayBuffer()).then(buf => {
                 const face = new FontFace('FmSample', buf);
-                return face.load().then(() => { document.fonts.add(face); return face; });
+                return face.load().then(() => face);
             }).then(face => {
-                if (!fmMedia || fmMedia.kind !== 'font') { try { document.fonts.delete(face); } catch (e) {} return; }
+                if (!fmMedia || fmMedia !== mine) return;
+                if (fmMediaFace) { try { document.fonts.delete(fmMediaFace); } catch (e) {} }
+                document.fonts.add(face);
                 fmMediaFace = face;
                 st.style.textAlign = 'left';
                 st.innerHTML = '<div class="font-sample" style="font-family:\'FmSample\'" translate="no"><div class="fs-big">Aa Bb Cc 123</div><div class="fs-line">The quick brown fox jumps over the lazy dog.</div><div class="fs-line fs-bold">The quick brown fox jumps over the lazy dog.</div><div class="fs-line">ABCDEFGHIJKLMNOPQRSTUVWXYZ</div><div class="fs-line">abcdefghijklmnopqrstuvwxyz 0123456789</div></div>';
