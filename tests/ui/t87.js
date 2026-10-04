@@ -8,8 +8,16 @@ const { chromium, PAGE } = require('./lib/pw');
   const errors = []; page.on('pageerror', e => errors.push(e.message));
   await page.addInitScript(() => {
     window.__kv = {};
-    window.__calls = { tmStart: [], tmStop: 0, tmRefreshNow: 0, tmKill: [] };
+    window.__calls = { tmStart: [], tmStop: 0, tmRefreshNow: 0, tmKill: [], executeShell: [] };
+    window.__rendererProp = '';
     window.AndroidBridge = {
+      executeShell(cmd) {
+        window.__calls.executeShell.push(cmd);
+        const m = /^setprop debug\.hwui\.renderer (\S+)$/.exec(cmd);
+        if (m) { window.__rendererProp = m[1]; return ''; }
+        if (cmd === 'getprop debug.hwui.renderer') return window.__rendererProp || '';
+        return '';
+      },
       vibrate() {}, loadPreferences() { return '{}'; }, loadCustomLists() { return '[]'; }, getSystemInfo() { return '{}'; },
       isSystemDarkMode() { return true; }, setSystemBarColor() {}, getMaterialYouColors() { return '{}'; }, hasAllFilesAccess() { return true; },
       loadSetting(k) { return window.__kv[k] !== undefined ? window.__kv[k] : ''; },
@@ -36,7 +44,7 @@ const { chromium, PAGE } = require('./lib/pw');
       { pid: 2, ppid: 0, rssKb: 100, cpuPercent: 0.1, name: 'kworker/0:1', pkg: '' },
     ],
     procsFullFormat: true,
-    gpu: { available: true, percent: 33.3, approx: false, label: 'Adreno gpubusy' },
+    gpu: { available: true, percent: 33.3, approx: false, label: 'Adreno gpubusy', vulkanSupported: true, vulkanApi: '1.3.0', glesVersion: '3.2' },
     battery: { percent: 78, tempTenthsC: 320, voltageMv: 4100, plugged: 2, health: 2, status: 2, technology: 'Li-ion', present: true, currentMicroA: 850000 },
   };
 
@@ -84,6 +92,33 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.evaluate(() => { isPrivilegedActive = true; });
   await page.evaluate((s) => window.onTaskMgrData(s), sample); await sleep(30);
   console.log('   with a real (non-approximate) reading, the "may not be available" note is hidden:', (await disp('#tmGpuNote')) === 'none' && (await text('#tmGpuNow')) === '33%');
+  await page.evaluate(() => tmOnModeChange()); await sleep(30);   // the real trigger for a privilege change while already sitting on this sub-tab
+
+  // ---------------------------------------------------------------- GPU renderer switch (debug.hwui.renderer)
+  const optionValues = () => page.evaluate(() => [...document.querySelectorAll('#tmRendererSelect option')].map(o => o.value));
+  console.log('12. switching to GPU loads the renderer dropdown: Default plus both backends, since this sample supports Vulkan:', JSON.stringify(await optionValues()) === JSON.stringify(['', 'skiagl', 'skiavk']) && !(await page.evaluate(() => document.getElementById('tmRendererSelect').disabled)));
+  let before = await page.evaluate(() => window.__calls.executeShell.length);
+  await page.selectOption('#tmRendererSelect', 'skiavk'); await sleep(30);
+  console.log('    picking Vulkan runs setprop skiavk then crashes System UI, in that order (then re-reads the property, a 3rd call):', JSON.stringify(await page.evaluate(n => window.__calls.executeShell.slice(n, n + 2), before)) === JSON.stringify(['setprop debug.hwui.renderer skiavk', 'am crash com.android.systemui']));
+  console.log('    the dropdown re-reads the property right after and reflects it (no "Default" option once it is actually set):', (await page.evaluate(() => document.getElementById('tmRendererSelect').value)) === 'skiavk' && JSON.stringify(await optionValues()) === JSON.stringify(['skiagl', 'skiavk']));
+  before = await page.evaluate(() => window.__calls.executeShell.length);
+  await page.selectOption('#tmRendererSelect', 'skiagl'); await sleep(30);
+  console.log('    picking OpenGL does the same with skiagl:', JSON.stringify(await page.evaluate(n => window.__calls.executeShell.slice(n, n + 2), before)) === JSON.stringify(['setprop debug.hwui.renderer skiagl', 'am crash com.android.systemui']) && (await page.evaluate(() => document.getElementById('tmRendererSelect').value)) === 'skiagl');
+
+  const beforeTick = await page.evaluate(() => document.getElementById('tmRendererSelect').outerHTML);
+  const shellCallsBeforeTick = await page.evaluate(() => window.__calls.executeShell.length);
+  await page.evaluate((s) => window.onTaskMgrData(s), sample); await sleep(30);
+  console.log('    an ordinary auto-refresh tick while sitting on GPU does not rebuild the dropdown (would interrupt an open selection) or re-run getprop:', beforeTick === (await page.evaluate(() => document.getElementById('tmRendererSelect').outerHTML)) && (await page.evaluate(() => window.__calls.executeShell.length)) === shellCallsBeforeTick);
+
+  await page.evaluate(() => { isPrivilegedActive = false; });
+  await page.evaluate(() => tmLoadRenderer()); await sleep(30);
+  console.log('    without a working mode the dropdown disables itself and explains why instead of offering a broken control:', (await page.evaluate(() => document.getElementById('tmRendererSelect').disabled)) && /Needs a working mode/.test(await text('#tmRendererNote')));
+  await page.evaluate(() => { isPrivilegedActive = true; });
+
+  await page.evaluate((s) => window.onTaskMgrData(Object.assign({}, s, { gpu: Object.assign({}, s.gpu, { vulkanSupported: false }) })), sample); await sleep(20);
+  await page.evaluate(() => tmLoadRenderer()); await sleep(30);
+  console.log('    a device without Vulkan hardware support is never offered the Vulkan option:', JSON.stringify(await optionValues()) === JSON.stringify(['skiagl']));
+  await page.evaluate((s) => window.onTaskMgrData(s), sample); await sleep(20);
 
   // ---------------------------------------------------------------- Battery: units, and the units row only shows on this sub-tab
   await page.evaluate(() => tmSetSub('battery')); await sleep(30);
