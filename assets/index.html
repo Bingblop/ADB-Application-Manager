@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <script src="i18n.js"></script>
     <title>ADB Application Manager Pro</title>
     <style>
         :root {
@@ -41,7 +42,7 @@
             padding: 0;
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-family: var(--ui-font, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
         }
 
         html {
@@ -1214,6 +1215,20 @@
             font-size: 11px;
             padding: 7px 6px;
         }
+        .font-cur { font-size: 13px; margin: 10px 0 8px; line-height: 1.5; }
+        .font-cur b { font-weight: 800; }
+        .font-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+        .font-row { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; text-align: left; background: var(--bg-surface); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 9px 12px; color: var(--text-main); cursor: pointer; }
+        .font-row .fr-name { font-size: 14px; font-weight: 700; overflow-wrap: anywhere; }
+        .font-row .fr-meta { font-size: 11px; color: var(--text-muted); overflow-wrap: anywhere; }
+        .font-sample { background: var(--input-bg); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 12px; margin: 10px 0; overflow-wrap: anywhere; }
+        .font-sample * { font-family: inherit; }
+        .font-sample .fs-big { font-size: 34px; line-height: 1.2; }
+        .font-sample .fs-line { font-size: 15px; line-height: 1.5; margin-top: 6px; }
+        .font-sample .fs-bold { font-weight: 700; }
+        /* right to left (Arabic): names, paths, commands and what the user types keep the direction of their own text */
+        html[dir="rtl"] [translate="no"], html[dir="rtl"] .list-search, html[dir="rtl"] .modal-text-input, html[dir="rtl"] pre, html[dir="rtl"] code { unicode-bidi: plaintext; }
+        .lang-select { width: 100%; font-size: 15px; font-weight: 700; padding: 11px 12px; margin-top: 4px; }
 
         .manifest-view {
             font-family: monospace;
@@ -3977,7 +3992,7 @@
             </div>
 
             <div style="margin-bottom:14px;">
-                <h3 style="font-size:15px; font-weight:800; margin-bottom:4px;">Saved App Lists</h3>
+                <h3 style="font-size:15px; font-weight:800; margin-bottom:4px;">Saved Applications</h3>
                 <p style="font-size:11px; color:var(--text-muted);">Create reusable named app selections, recall them instantly, edit packages, or delete old lists.</p>
             </div>
 
@@ -3996,6 +4011,12 @@
 
         <!-- VIEW 3: SETTINGS (appearance, colors, the Feature List) -->
         <section id="view-prefs" class="view-content">
+            <div class="color-card" id="languageCard">
+                <div class="color-card-title">Language</div>
+                <div class="color-card-subtitle">The text of this app. Names of apps, files and commands are not translated.</div>
+                <select class="op-select lang-select" id="langSelect" translate="no" aria-label="Language" onchange="chooseLanguage(this.value)"></select>
+            </div>
+
             <div class="color-card">
                 <div class="color-card-title">Appearance</div>
                 <div class="color-card-subtitle">Light, dark, or follow your phone's dark mode setting</div>
@@ -4194,6 +4215,23 @@
                         <span class="bubble-hex" id="hexBloat">#FF5252</span>
                         <input type="color" value="#FF5252" onchange="updateCustomColor('bloat', this.value)">
                     </label>
+                </div>
+            </div>
+
+            <div class="color-card" id="fontCard">
+                <div class="color-card-title">Font</div>
+                <div class="color-card-subtitle">The font of the text in this app. It does not change the font of the rest of your phone.</div>
+                <div class="font-cur" id="fontCurrent">System font</div>
+                <div class="mode-btn-row">
+                    <button class="mode-action-btn" id="fontSystemBtn" onclick="fontUseSystem()">Use system font</button>
+                    <button class="mode-action-btn primary" id="fontScanBtn" onclick="fontScanStart()">Find fonts on this phone</button>
+                    <button class="mode-action-btn" onclick="fontPick()">Choose a file…</button>
+                </div>
+                <div id="fontScanBox" style="display:none;">
+                    <div id="fontScanStatus" class="uad-status" style="margin:8px 0 0;"></div>
+                    <div id="fontScanBar" class="apk-scan-bar" role="progressbar" aria-label="Searching storage for fonts" aria-valuemin="0" aria-valuemax="100" style="display:none;"><div id="fontScanBarFill"></div></div>
+                    <input type="text" class="list-search" id="fontScanSearch" placeholder="Filter found fonts…" style="display:none; margin-top:8px;" oninput="fontScanRender()" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false">
+                    <div id="fontScanList" class="font-list"></div>
                 </div>
             </div>
 
@@ -4830,6 +4868,30 @@ Type any command below (e.g. pm list packages -d)
         </div>
     </div>
 
+    <div class="modal-overlay" id="fontPreviewModal" onclick="if(event.target===this) fontPreviewClose()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-title">
+                        <h3 id="fontPvName" translate="no">Font</h3>
+                        <p id="fontPvFile" translate="no" style="font-family:monospace; word-break:break-all;"></p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="fontPreviewClose()">✕</div>
+            </div>
+            <div class="font-sample" id="fontPvSample" translate="no" aria-label="Sample text in this font">
+                <div class="fs-big">Aa Bb 123</div>
+                <div class="fs-line">The quick brown fox jumps over the lazy dog.</div>
+                <div class="fs-line fs-bold">ADB Application Manager</div>
+            </div>
+            <div class="color-card-subtitle" id="fontPvNote"></div>
+            <div class="mode-btn-row" style="margin-top:10px;">
+                <button class="mode-action-btn primary" onclick="fontPreviewUse()">Use this font</button>
+                <button class="mode-action-btn" onclick="fontPreviewClose()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="fmActionModal" onclick="if(event.target===this) closeFmAction()">
         <div class="modal-sheet">
             <div class="sheet-header">
@@ -5149,7 +5211,7 @@ Type any command below (e.g. pm list packages -d)
                 </div>
                 <div class="mode-btn-row">
                     <button class="mode-action-btn mode-use-btn" data-mode="auto" onclick="selectModeUI('auto')">
-                        <span>✓</span> <span class="mode-use-label">Use Automatic</span>
+                        <span>✓</span> <span class="mode-use-label" data-default-label="Use Automatic">Use Automatic</span>
                     </button>
                 </div>
             </div>
@@ -5175,7 +5237,7 @@ Type any command below (e.g. pm list packages -d)
                         Connect
                     </button>
                     <button class="mode-action-btn mode-use-btn" data-mode="adb_tcp" onclick="selectModeUI('adb_tcp')">
-                        <span>✓</span> <span class="mode-use-label">Use This Mode</span>
+                        <span>✓</span> <span class="mode-use-label" data-default-label="Use This Mode">Use This Mode</span>
                     </button>
                     <button class="mode-action-btn" onclick="restartAdbTcpipUI()">
                         Switch to 5555 (tcpip)
@@ -5243,7 +5305,7 @@ Type any command below (e.g. pm list packages -d)
                         Use My Wi‑Fi IP
                     </button>
                     <button class="mode-action-btn mode-use-btn" data-mode="adb_wireless" onclick="selectModeUI('adb_wireless')">
-                        <span>✓</span> <span class="mode-use-label">Use This Mode</span>
+                        <span>✓</span> <span class="mode-use-label" data-default-label="Use This Mode">Use This Mode</span>
                     </button>
                 </div>
             </div>
@@ -5285,7 +5347,7 @@ Type any command below (e.g. pm list packages -d)
                 </div>
                 <div class="mode-btn-row">
                     <button class="mode-action-btn mode-use-btn" data-mode="root" onclick="requestRootUI()">
-                        <span class="mode-use-label">Request Root Access</span>
+                        <span class="mode-use-label" data-default-label="Request Root Access">Request Root Access</span>
                     </button>
                 </div>
             </div>
@@ -5303,7 +5365,7 @@ Type any command below (e.g. pm list packages -d)
                 </div>
                 <div class="mode-btn-row">
                     <button class="mode-action-btn mode-use-btn" data-mode="unprivileged" onclick="selectUnprivilegedMode()">
-                        <span class="mode-use-label">Continue in Read-Only</span>
+                        <span class="mode-use-label" data-default-label="Continue in Read-Only">Continue in Read-Only</span>
                     </button>
                 </div>
             </div>
@@ -5549,7 +5611,7 @@ Type any command below (e.g. pm list packages -d)
         // 'prefs' (Settings) has no tab: the gear in the header opens it.
         const TAB_DEFS = [
             { key: 'apps', label: 'Application\nManager', name: 'Application Manager', fixed: true },
-            { key: 'saved-lists', label: 'Saved App\nLists', name: 'Saved App Lists' },
+            { key: 'saved-lists', label: 'Saved\nApplications', name: 'Saved Applications' },
             { key: 'debloater', label: 'UAD-NG\nDebloater', name: 'UAD-NG Debloater' },
             { key: 'installer', label: 'APK\nInstaller', name: 'APK Installer' },
             { key: 'files', label: 'File\nManager', name: 'File Manager' },
@@ -5665,6 +5727,217 @@ Type any command below (e.g. pm list packages -d)
             if (window.AndroidBridge && window.AndroidBridge.vibrate) {
                 window.AndroidBridge.vibrate();
             }
+        }
+
+        // ---------- Language: assets/i18n.js translates the page; the choice is kept as "lang" ----------
+        const LANG_ENGINE = window.I18N || { langs: [{ code: 'en', name: 'English' }], code: 'en', name: 'English', set: () => Promise.resolve(false) };
+        // The language of dates and numbers: the app's own, and with English the phone's (undefined) as before
+        function langLocale() { return LANG_ENGINE.locale; }
+        // What is data and not the app's own text stays as it is in every language: names of apps, files, settings and packages, paths, colors, command and log output,
+        // what Android or the lists of other people say. (A name that is also a word of the dictionary, like an app called Settings, would be translated otherwise.)
+        if (LANG_ENGINE.skip) LANG_ENGINE.skip([
+            '.app-name', '.app-pkg', '.app-version', '#sheetTitle', '#sheetPkg', '#deviceInfoSubtitle', '#aboutBuild dd', '#aboutVersion',
+            '.sdb-key', '.sdb-val', '.sdb-change em', '.sdb-sw', '#sdbEditKey',
+            '.ovl-group span', '#ovlDetailId', '.ovl-sw', '.bubble-hex',
+            '.perm-name', '.perm-sub', '.apk-scan-name', '#fmCurrentPath', '#fmPathInput', '#fmActionName', '#fmActionPath', '#fmViewer',
+            '#arcTitle', '#arcMeta', '.arc-crumb', '.arc-sep', '#arcModalName', '#arcModalPath', '#arcViewText', '#arcViewMeta', '.arc-meta b', '.dif-ctx',
+            '.uad-name', '.uad-pkg', '.uad-desc', '.uad-tag',
+            '#installPkgLabel', '#installPkgName', '#installSplitsCard .switch-title', '#installExtrasCard .switch-title',
+            '.result-item-name', '.result-item-pkg', '.result-item-output', '#commandResultsTitle', '#commandResultsSubtitle', '#signName', '.sign-v', '.sign-fp',
+            '.saved-list-title', '.profile-item h4', '.backup-item h4', '.hist-title',
+            '#termOutput', '.term-row-cmd', '.cheat-cmd', '#logcatOutput', '.lc-msg', '#storeDetailName'
+        ].join(', '));
+        function initLanguageUi() {
+            const sel = document.getElementById('langSelect');
+            if (!sel) return;
+            sel.innerHTML = LANG_ENGINE.langs.map(l => '<option value="' + l.code + '">' + escapeHtml(l.name) + '</option>').join('');
+            sel.value = LANG_ENGINE.code;
+        }
+        function chooseLanguage(code) {
+            const sel = document.getElementById('langSelect');
+            haptic();
+            LANG_ENGINE.set(code).then(ok => {
+                if (!ok) {
+                    if (sel) sel.value = LANG_ENGINE.code;
+                    showToast('That language could not be loaded. The text stays in ' + LANG_ENGINE.name + '.');
+                    return;
+                }
+                kvSet('lang', code);
+                if (sel) sel.value = code;
+                showToast('Language: ' + LANG_ENGINE.name);
+            });
+        }
+
+        // ---------- Font: the system font, or a .ttf / .otf of the user's, for the text of this app only ----------
+        // The file is kept by the app (fontApply) and handed to the page as bytes: a page loaded from the app's assets may not read a font by address.
+        const FONT_STACK = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+        let appFont = { mode: 'system' };               // { mode: 'custom', family, style, name, kind, variable, size }
+        let fontFound = [];                              // what the search found
+        let fontScanning = false;
+        let fontPreviewMeta = null;                      // the font on the sheet
+        const fontFaces = {};                            // the loaded face of each name (AppFont, PreviewFont)
+        function fontDrop(name) { if (fontFaces[name]) { try { document.fonts.delete(fontFaces[name]); } catch (e) {} delete fontFaces[name]; } }
+
+        function fontFace(name, which, meta) {
+            const b64 = window.AndroidBridge && window.AndroidBridge.fontData ? window.AndroidBridge.fontData(which) : '';
+            if (!b64) return Promise.reject(new Error('The font file is missing.'));
+            // decoded by the browser (not byte by byte in script); an older face of the same name is removed so it cannot keep winning or hold memory
+            return fetch('data:application/octet-stream;base64,' + b64).then(r => r.arrayBuffer()).then(buf => {
+                const face = new FontFace(name, buf, meta && meta.variable ? { weight: '1 1000' } : {});
+                return face.load().then(() => {
+                    if (fontFaces[name]) { try { document.fonts.delete(fontFaces[name]); } catch (e) {} }
+                    document.fonts.add(face);
+                    fontFaces[name] = face;
+                    return face;
+                });
+            });
+        }
+        function fontSetCss(on) {
+            const st = document.documentElement.style;
+            if (on) st.setProperty('--ui-font', "'AppFont', " + FONT_STACK); else st.removeProperty('--ui-font');
+        }
+        function fontKb(n) { return n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB'; }
+        function fontLabel(f) { return f.family + (f.style && f.style !== 'Regular' ? ' ' + f.style : ''); }
+        function fontRender() {
+            const cur = document.getElementById('fontCurrent'), sys = document.getElementById('fontSystemBtn');
+            if (!cur) return;
+            if (appFont.mode === 'custom') {
+                cur.innerHTML = 'In use: <b translate="no">' + escapeHtml(fontLabel(appFont)) + '</b> <span translate="no">(' + escapeHtml(appFont.name || '') + ', ' + fontKb(appFont.size || 0) + ')</span>';
+                if (sys) sys.style.display = '';
+            } else {
+                cur.innerText = 'In use: the system font';
+                if (sys) sys.style.display = 'none';
+            }
+        }
+        // at the start: the chosen font is loaded; if it cannot be, the system font stays and the choice is dropped
+        function initAppFont() {
+            let v = kvGet('ui_font', null);
+            appFont = v && v.mode === 'custom' ? v : { mode: 'system' };
+            fontRender();
+            if (appFont.mode !== 'custom') return;
+            fontFace('AppFont', 'current', appFont).then(() => fontSetCss(true), e => {
+                appFont = { mode: 'system' };
+                kvSet('ui_font', appFont);
+                fontRender();
+                showToast('The font could not be loaded, so the system font is used.');
+            });
+        }
+        function fontUseSystem() {
+            haptic();
+            try { window.AndroidBridge && window.AndroidBridge.fontClear && window.AndroidBridge.fontClear(); } catch (e) {}
+            appFont = { mode: 'system' };
+            kvSet('ui_font', appFont);
+            fontSetCss(false);
+            fontDrop('AppFont');
+            fontRender();
+            showToast('The system font is back.');
+        }
+
+        // the search
+        function fontScanBarSet(pct, msg, found) {
+            const bar = document.getElementById('fontScanBar'), fill = document.getElementById('fontScanBarFill'), st = document.getElementById('fontScanStatus');
+            bar.style.display = '';
+            const v = Math.max(2, Math.min(100, Math.round(pct)));
+            fill.style.width = v + '%'; bar.setAttribute('aria-valuenow', String(v));
+            if (msg) { st.style.display = ''; st.innerText = msg + (found ? ' · ' + found + ' found' : ''); }
+        }
+        function fontScanStart() {
+            if (fontScanning) return;
+            if (!window.AndroidBridge || !window.AndroidBridge.scanFonts) { showToast('The font search needs the app build'); return; }
+            haptic();
+            fontScanning = true;
+            document.getElementById('fontScanBtn').disabled = true;
+            document.getElementById('fontScanBox').style.display = '';
+            document.getElementById('fontScanList').innerHTML = '';
+            document.getElementById('fontScanSearch').style.display = 'none';
+            fontScanBarSet(0, 'Looking through storage for fonts…', 0);
+            try { window.AndroidBridge.scanFonts(); } catch (e) { fontScanEnd(); fontScanNote('The search failed: ' + String(e && e.message || e), true); }
+        }
+        function fontScanEnd() {
+            fontScanning = false;
+            const btn = document.getElementById('fontScanBtn'); if (btn) btn.disabled = false;
+            const bar = document.getElementById('fontScanBar'); if (bar) bar.style.display = 'none';
+        }
+        function fontScanNote(text, isErr) {
+            const st = document.getElementById('fontScanStatus');
+            document.getElementById('fontScanBox').style.display = '';
+            st.style.display = '';
+            if (isErr) errNote(st, text); else st.innerText = text;
+        }
+        window.onFontScanProgress = function (json) {
+            if (!fontScanning) return;
+            let d; try { d = JSON.parse(json); } catch (e) { return; }
+            fontScanBarSet(typeof d.pct === 'number' ? d.pct : 0, String(d.msg || ''), d.found | 0);
+        };
+        window.onFontScan = function (json) {
+            fontScanEnd();
+            let d; try { d = JSON.parse(json); } catch (e) { d = { status: 'error', error: 'unreadable answer' }; }
+            if (d.status === 'noaccess') {
+                fontScanNote('This app cannot read storage. Grant All-files access, or choose a font file by hand (that needs no access).', true);
+                promptFileAccess('To search storage for fonts, this app needs All-files access. You can also choose a font file by hand, which needs no access.', fontScanStart, true);
+                return;
+            }
+            if (d.status !== 'ok') { fontScanNote('The search failed: ' + (d.error || 'unknown error'), true); return; }
+            fontFound = d.fonts || [];
+            if (!fontFound.length) { fontScanNote('No .ttf or .otf files were found on storage. You can still choose a font file by hand.', false); document.getElementById('fontScanList').innerHTML = ''; return; }
+            fontScanNote(fontFound.length + (fontFound.length === 1 ? ' font found' : ' fonts found') + (d.truncated ? ' (the search stopped at its limit)' : '') + '. Tap one to see it before you use it.', false);
+            document.getElementById('fontScanSearch').style.display = fontFound.length > 8 ? '' : 'none';
+            fontScanRender();
+        };
+        function fontScanRender() {
+            const q = (document.getElementById('fontScanSearch').value || '').trim().toLowerCase();
+            const list = document.getElementById('fontScanList');
+            const rows = [];
+            fontFound.forEach((f, i) => {
+                if (q && (fontLabel(f) + ' ' + f.name + ' ' + f.path).toLowerCase().indexOf(q) < 0) return;
+                rows.push('<button class="font-row" onclick="fontOpen(' + i + ')"><span class="fr-name" translate="no">' + escapeHtml(fontLabel(f)) + '</span>'
+                    + '<span class="fr-meta" translate="no">' + escapeHtml(f.name) + ' · ' + fontKb(f.size) + (f.variable ? ' · variable' : '') + '</span></button>');
+            });
+            list.innerHTML = rows.join('') || '<div class="list-empty">No font matches that.</div>';
+        }
+
+        // a font to look at: from the list, or from the file chooser
+        function fontOpen(i) { const f = fontFound[i]; if (f) fontPreviewAsk(f.path); }
+        function fontPick() {
+            if (!window.AndroidBridge || !window.AndroidBridge.pickFontFile) { showToast('The file chooser needs the app build'); return; }
+            haptic();
+            window.AndroidBridge.pickFontFile();
+        }
+        window.onFontPicked = function (ref) { fontPreviewAsk(ref); };
+        function fontPreviewAsk(ref) {
+            if (!window.AndroidBridge || !window.AndroidBridge.fontPreview) return;
+            haptic();
+            showToast('Reading the font…');
+            window.AndroidBridge.fontPreview(ref);
+        }
+        window.onFontPreview = function (json) {
+            let d; try { d = JSON.parse(json); } catch (e) { d = { ok: false, error: 'unreadable answer' }; }
+            if (!d.ok) { showToast('Could not use that file: ' + (d.error || 'unknown error')); return; }
+            fontPreviewMeta = d;
+            document.getElementById('fontPvName').innerText = fontLabel(d);
+            document.getElementById('fontPvFile').innerText = d.name + ' · ' + fontKb(d.size || 0);
+            document.getElementById('fontPvNote').innerText = 'Only the text of this app changes; names, paths and commands in code-style boxes keep their own font.';
+            const sample = document.getElementById('fontPvSample');
+            sample.style.fontFamily = '';
+            fontFace('PreviewFont', 'preview', d).then(face => {
+                sample.style.fontFamily = "'PreviewFont', " + FONT_STACK;
+            }, e => { document.getElementById('fontPvNote').innerText = 'This font could not be shown: ' + (e && e.message || e); });
+            document.getElementById('fontPreviewModal').classList.add('show');
+        };
+        function fontPreviewClose() { haptic(); document.getElementById('fontPreviewModal').classList.remove('show'); fontDrop('PreviewFont'); }
+        function fontPreviewUse() {
+            if (!fontPreviewMeta || !window.AndroidBridge || !window.AndroidBridge.fontApply) return;
+            haptic();
+            let d; try { d = JSON.parse(window.AndroidBridge.fontApply()); } catch (e) { d = { ok: false, error: String(e && e.message || e) }; }
+            if (d.ok === false) { showToast('Could not use that font: ' + (d.error || 'unknown error')); return; }
+            document.getElementById('fontPreviewModal').classList.remove('show');
+            fontFace('AppFont', 'current', d).then(() => {
+                appFont = { mode: 'custom', family: d.family, style: d.style, name: d.name, kind: d.kind, variable: !!d.variable, size: d.size };
+                kvSet('ui_font', appFont);
+                fontSetCss(true);
+                fontRender();
+                showToast('Font: ' + fontLabel(d));
+            }, e => showToast('Could not use that font: ' + (e && e.message || e)));
         }
 
         // A line that says something went wrong: the words say it, and so does the colour. Whatever is written there next replaces all of it.
@@ -6249,7 +6522,6 @@ Type any command below (e.g. pm list packages -d)
                     btn.classList.toggle('in-use', selected);
                     const lbl = btn.querySelector('.mode-use-label');
                     if (!lbl) return;
-                    if (!lbl.dataset.defaultLabel) lbl.dataset.defaultLabel = lbl.innerText;
                     lbl.innerText = selected ? 'Selected' : lbl.dataset.defaultLabel;
                 });
 
@@ -6445,7 +6717,7 @@ Type any command below (e.g. pm list packages -d)
             } else if (!st.cached) {
                 el.innerText = 'The UAD-NG list has not been downloaded yet.';
             } else {
-                el.innerText = `${(st.count || 0).toLocaleString()} known packages • updated ${formatAge(st.updatedAt)} • ${uadPackages.length} found on this phone`;
+                el.innerText = `${(st.count || 0).toLocaleString(langLocale())} known packages • updated ${formatAge(st.updatedAt)} • ${uadPackages.length} found on this phone`;
             }
             if (btn) btn.disabled = !!st.downloading;
         }
@@ -6486,7 +6758,7 @@ Type any command below (e.g. pm list packages -d)
             if (st.error) {
                 showToast('UAD-NG list update failed: ' + st.error + (st.cached ? ' (using cached list)' : ''));
             } else {
-                showToast('UAD-NG list updated: ' + (st.count || 0).toLocaleString() + ' packages');
+                showToast('UAD-NG list updated: ' + (st.count || 0).toLocaleString(langLocale()) + ' packages');
             }
             if (st.cached) loadUadMatches(); else renderUadList();
             renderUadStatus(st);
@@ -6630,7 +6902,7 @@ Type any command below (e.g. pm list packages -d)
 
         function saveUadSelectionToList() {
             if (!uadSelected.size) { showToast('Select packages first'); return; }
-            const name = prompt('Name for this list:', 'Debloat ' + new Date().toLocaleDateString());
+            const name = prompt('Name for this list:', 'Debloat ' + new Date().toLocaleDateString(langLocale()));
             if (!name || !name.trim()) return;
             customLists.unshift({ id: 'list_' + Date.now(), name: name.trim(), description: 'From the UAD-NG debloater', packages: Array.from(uadSelected), updatedAt: Date.now() });
             persistSavedLists();
@@ -6812,7 +7084,7 @@ Type any command below (e.g. pm list packages -d)
             list.innerHTML = h.map(e => {
                 const ok = e.items.filter(i => i.success).length;
                 const undoable = e.items.some(i => i.success && UNDO_ACTION[i.action]);
-                const when = new Date(e.at).toLocaleString();
+                const when = new Date(e.at).toLocaleString(langLocale());
                 const pkgs = e.items.map(i => `<span class="${i.success ? 'ok' : 'bad'}">${i.success ? '✓' : '✕'}</span> ${escapeHtml(ACTION_LABELS[i.action] || i.action)} ${escapeHtml(i.name)}${i.name !== i.pkg ? ' <span style="opacity:.7">(' + escapeHtml(i.pkg) + ')</span>' : ''}`).join('<br>');
                 return `
                     <div class="hist-entry">
@@ -6932,7 +7204,7 @@ Type any command below (e.g. pm list packages -d)
                 `checked ${r.checked || 0} Galaxy Store and ${r.openSourceChecked || 0} sideloaded apps`];
             const errs = (r.errors || 0) + (r.openSourceErrors || 0);
             if (errs) parts.push(`${errs} couldn't be checked${r.lastError ? ' (' + r.lastError + ')' : ''}`);
-            document.getElementById('updStatus').innerText = parts.join(' • ') + ' • ' + new Date(r.checkedAt || Date.now()).toLocaleTimeString();
+            document.getElementById('updStatus').innerText = parts.join(' • ') + ' • ' + new Date(r.checkedAt || Date.now()).toLocaleTimeString(langLocale());
             renderUpdates();
             updateUpdatesTabBadge();
             if (allApps.length) renderApps();
@@ -6953,7 +7225,7 @@ Type any command below (e.g. pm list packages -d)
             allBtn.style.display = pending.length > 1 ? 'inline-flex' : 'none';
             allBtn.innerText = `Update All (${pending.length})`;
             if (st && st.checkedAt) {
-                document.getElementById('updStatus').innerText = `${updList.length} update${updList.length === 1 ? '' : 's'} available • last checked ${new Date(st.checkedAt).toLocaleTimeString()}`;
+                document.getElementById('updStatus').innerText = `${updList.length} update${updList.length === 1 ? '' : 's'} available • last checked ${new Date(st.checkedAt).toLocaleTimeString(langLocale())}`;
             }
             if (!updList.length) {
                 container.innerHTML = updChecked || (st && st.checkedAt) ? '<div class="list-empty">Everything is up to date.</div>' : '<div class="list-empty">Tap Check for Updates.</div>';
@@ -7291,7 +7563,7 @@ Type any command below (e.g. pm list packages -d)
         function formatDate(ms) {
             if (!ms) return '';
             try {
-                return new Date(ms).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+                return new Date(ms).toLocaleDateString(langLocale(), { year: 'numeric', month: 'short', day: 'numeric' });
             } catch (e) {
                 return new Date(ms).toDateString();
             }
@@ -9118,7 +9390,7 @@ Type any command below (e.g. pm list packages -d)
             if (d <= 0) return 'today';
             if (d === 1) return 'yesterday';
             if (d < 30) return d + ' days ago';
-            return new Date(ms).toLocaleDateString();
+            return new Date(ms).toLocaleDateString(langLocale());
         }
 
         function scanApkFiles(auto) {
@@ -13597,7 +13869,7 @@ Type any command below (e.g. pm list packages -d)
             const el = document.getElementById('backupsList');
             if (!list.length) { el.innerHTML = '<p style="font-size:12px; color:var(--text-muted);">No backups yet. Open an app\'s ⋯ menu and tap Backup, or choose a backup file from another phone.</p>'; return; }
             el.innerHTML = list.map(r => `<div class="backup-item"><h4>${escapeHtml(r.label || r.pkg)} <span style="font-weight:600; color:var(--text-muted);">v${escapeHtml(r.versionName || '')}</span></h4>
-                <p>${new Date(r.createdAt).toLocaleString()} • ${formatBytes(r.bytes)} • ${r.hasData ? 'with data' : 'APK + settings'}</p>
+                <p>${new Date(r.createdAt).toLocaleString(langLocale())} • ${formatBytes(r.bytes)} • ${r.hasData ? 'with data' : 'APK + settings'}</p>
                 <button class="profile-btn accent" data-ref="${escapeHtml(r.ref)}" onclick="previewRestore(this.dataset.ref)">Restore</button>
                 <button class="profile-btn" data-ref="${escapeHtml(r.ref)}" data-name="${escapeHtml(r.name || 'backup.adbbackup')}" onclick="shareBackupUI(this.dataset.ref, this.dataset.name)">Share</button>
                 <button class="profile-btn danger" data-ref="${escapeHtml(r.ref)}" onclick="deleteBackupUI(this.dataset.ref)">Delete</button></div>`).join('');
@@ -14213,7 +14485,7 @@ Type any command below (e.g. pm list packages -d)
             else if (data) {
                 const shown = sdbFiltered(sdbNs).length;
                 html = filtering ? shown + ' of ' + data.size + ' ' + SDB_TITLES[sdbNs].toLowerCase() + ' settings' : data.size + ' ' + SDB_TITLES[sdbNs].toLowerCase() + ' settings';
-                if (sdbLoadedAt[sdbNs]) html += ' · read ' + new Date(sdbLoadedAt[sdbNs]).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                if (sdbLoadedAt[sdbNs]) html += ' · read ' + new Date(sdbLoadedAt[sdbNs]).toLocaleTimeString(langLocale(), { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                 html += ' <button class="batch-tool-link" onclick="sdbReadTable(sdbNs)" style="padding:0 2px;">Refresh</button>';
             }
             st.innerHTML = html;
@@ -15635,7 +15907,7 @@ Type any command below (e.g. pm list packages -d)
                 else if (ovlList) {
                     const rows = ovlFiltered() || [];
                     const on = ovlList.filter(o => o.state === 1).length;
-                    st.innerHTML = (rows.length === ovlList.length ? ovlList.length + ' overlays · ' + on + ' on' : rows.length + ' of ' + ovlList.length + ' overlays') + ' · read ' + new Date(ovlListAt).toLocaleTimeString() + ' <a href="#" onclick="ovlReadList(); return false;" style="color:var(--accent); font-weight:800; text-decoration:none;">Refresh</a>';
+                    st.innerHTML = (rows.length === ovlList.length ? ovlList.length + ' overlays · ' + on + ' on' : rows.length + ' of ' + ovlList.length + ' overlays') + ' · read ' + new Date(ovlListAt).toLocaleTimeString(langLocale()) + ' <a href="#" onclick="ovlReadList(); return false;" style="color:var(--accent); font-weight:800; text-decoration:none;">Refresh</a>';
                 } else st.innerHTML = '';
             }
         }
@@ -15841,7 +16113,7 @@ Type any command below (e.g. pm list packages -d)
         }
 
         function aboutDate(ms) {
-            return ms ? new Date(ms).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : '';
+            return ms ? new Date(ms).toLocaleDateString(langLocale(), { year: 'numeric', month: 'short', day: 'numeric' }) : '';
         }
 
         function onAboutShown() { renderAbout(); }
@@ -15946,7 +16218,7 @@ Type any command below (e.g. pm list packages -d)
                 const c = { disabled: 0, suspended: 0, uninstalled: 0 };
                 pr.apps.forEach(a => { if (c[a.state] !== undefined) c[a.state]++; });
                 return `<div class="profile-item"><h4>${escapeHtml(pr.name)}</h4>
-                    <p>${pr.apps.length} apps • ${c.disabled} disabled • ${c.suspended} suspended • ${c.uninstalled} uninstalled • ${new Date(pr.created).toLocaleDateString()}</p>
+                    <p>${pr.apps.length} apps • ${c.disabled} disabled • ${c.suspended} suspended • ${c.uninstalled} uninstalled • ${new Date(pr.created).toLocaleDateString(langLocale())}</p>
                     <button class="profile-btn accent" onclick="previewProfile('${pr.id}')">Apply</button>
                     <button class="profile-btn${pr.watch ? ' accent' : ''}" onclick="toggleWatchProfile('${pr.id}')" title="Alert me when these apps come back, for example after a system update">${pr.watch ? 'Watching' : 'Watch'}</button>
                     <button class="profile-btn" onclick="shareProfile('${pr.id}')">Share</button>
@@ -16180,6 +16452,8 @@ Type any command below (e.g. pm list packages -d)
         window.addEventListener('DOMContentLoaded', () => {
             tabLoadConfig();
             tabsApplyConfig();
+            initLanguageUi();
+            initAppFont();
             syncChromeVars();
             if (window.ResizeObserver) { const ro = new ResizeObserver(syncChromeVars); ro.observe(document.querySelector('.app-header')); ro.observe(document.getElementById('tabBar')); }
             else setInterval(syncChromeVars, 1000);                      // an old web view: look again every second

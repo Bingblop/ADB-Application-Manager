@@ -5,7 +5,7 @@ import android.os.Build;
 import android.service.quicksettings.Tile;
 import android.service.quicksettings.TileService;
 
-/** Quick Settings tile: force-stops every app in the quick list (chosen under Saved Lists). */
+/** Quick Settings tile: force-stops every app in the quick list (chosen under Saved Applications). */
 public class StopListTileService extends TileService {
 
     @Override

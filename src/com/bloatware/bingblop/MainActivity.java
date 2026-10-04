@@ -614,7 +614,7 @@ public class MainActivity extends Activity {
     /** Force-stops every app in the quick list. */
     private String quickStopList() throws Exception {
         JSONObject list = QuickActions.quickList(this);
-        if (list == null) return "No quick list set. Open Saved App Lists in the app and tap Quick list.";
+        if (list == null) return "No quick list set. Open Saved Applications in the app and tap Quick list.";
         if ("standard".equals(resolveExecMode())) return "Needs ADB, Shizuku or Root. Set up a working mode first.";
         org.json.JSONArray pkgs = list.optJSONArray("packages");
         AndroidBridge bridge = new AndroidBridge();
@@ -4328,6 +4328,166 @@ public class MainActivity extends Activity {
     }
 
     // ---------------------------------------------------------------------------------------------
+    // The app's own font: found on storage or chosen with the file chooser, kept in the app's files, handed to the page as base64
+    // ---------------------------------------------------------------------------------------------
+
+    private static final int REQ_PICK_FONT = 4204;
+    private volatile long fontScanProgressAt = 0;
+    // numbers the searches, like the one for packages: an older search's progress and answer are dropped
+    private final java.util.concurrent.atomic.AtomicInteger fontScanSeq = new java.util.concurrent.atomic.AtomicInteger();
+
+    private final Object fontLock = new Object();       // one preview / apply / clear at a time: they share preview.bin, preview.json and current.*
+
+    private File fontDir() {
+        File d = new File(getFilesDir(), "ui_font");
+        if (!d.isDirectory()) d.mkdirs();
+        return d;
+    }
+
+    /** Tells the page how far the font search has got: window.onFontScanProgress({pct, msg, found}). At most a few times a second unless forced. */
+    private void sendFontScanProgress(int scanId, int pct, String msg, int found, boolean force) {
+        if (scanId != fontScanSeq.get()) return;
+        long now = android.os.SystemClock.elapsedRealtime();
+        if (!force && now - fontScanProgressAt < 120) return;
+        fontScanProgressAt = now;
+        try {
+            JSONObject o = new JSONObject();
+            o.put("pct", pct);
+            o.put("msg", msg);
+            o.put("found", found);
+            notifyJs("window.onFontScanProgress && window.onFontScanProgress(" + JSONObject.quote(o.toString()) + ")");
+        } catch (Exception ignored) {}
+    }
+
+    /** Searches the folders this app can read for .ttf / .otf files and reports to window.onFontScan({status, fonts[], truncated, ms}). */
+    private void runFontScan() {
+        final int scanId = fontScanSeq.incrementAndGet();
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                JSONObject res = new JSONObject();
+                long t0 = System.currentTimeMillis();
+                try {
+                    if (!hasStorageAccess()) {
+                        res.put("status", "noaccess");
+                    } else {
+                        final FontScan.Limits lim = new FontScan.Limits();
+                        lim.deadlineMs = t0 + 25000;
+                        List<File> roots = new ArrayList<File>();
+                        roots.add(new File(fmCanonicalPath("/sdcard")));
+                        File[] vols = new File("/storage").listFiles();   // SD cards / USB drives
+                        if (vols != null) {
+                            for (File v : vols) if (v.getName().matches("[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}")) roots.add(v);
+                        }
+                        fontScanProgressAt = 0;
+                        sendFontScanProgress(scanId, 0, "Looking through storage…", 0, true);
+                        List<FontScan.Entry> found = new ArrayList<FontScan.Entry>();
+                        Set<String> seen = new HashSet<String>();
+                        final int totalTop = FontScan.countTopFolders(roots);
+                        int doneBefore = 0;
+                        for (File r : roots) {
+                            doneBefore += FontScan.walkRoot(r, found, seen, lim, doneBefore, totalTop, new FontScan.Progress() {
+                                @Override
+                                public void onProgress(int done, int total, String folder, int foundNow) {
+                                    if (scanId != fontScanSeq.get()) { lim.hitLimit = true; return; }     // a newer search started: stop this walk
+                                    int pct = total > 0 ? Math.min(99, done * 99 / total) : 99;
+                                    sendFontScanProgress(scanId, pct, "Searched " + folder + " (" + done + " of " + total + " folders)", foundNow, done >= total);
+                                }
+                            });
+                        }
+                        FontScan.sort(found);
+                        JSONArray fonts = new JSONArray();
+                        for (FontScan.Entry e : found) fonts.put(FontScan.toJson(e));
+                        res.put("status", "ok");
+                        res.put("fonts", fonts);
+                        res.put("truncated", lim.hitLimit);
+                        res.put("ms", System.currentTimeMillis() - t0);
+                    }
+                } catch (Exception e) {
+                    try { res.put("status", "error"); res.put("error", e.getMessage() != null ? e.getMessage() : "search failed"); } catch (Exception ignored) {}
+                }
+                if (scanId == fontScanSeq.get()) notifyJs("window.onFontScan && window.onFontScan(" + JSONObject.quote(res.toString()) + ")");
+            }
+        });
+    }
+
+    /** The name a content:// address is shown with (its last part when the provider does not say). */
+    private String contentName(Uri u) {
+        android.database.Cursor c = null;
+        try {
+            c = getContentResolver().query(u, new String[]{android.provider.OpenableColumns.DISPLAY_NAME}, null, null, null);
+            if (c != null && c.moveToFirst()) { String n = c.getString(0); if (n != null && !n.isEmpty()) return n; }
+        } catch (Exception ignored) {
+        } finally {
+            if (c != null) try { c.close(); } catch (Exception ignored) {}
+        }
+        String last = u.getLastPathSegment();
+        return last == null ? "font" : last.substring(last.lastIndexOf('/') + 1);
+    }
+
+    /** Copies the font in ref (a path, or the content:// address the file chooser gave) to the preview slot after checking it. Answer: {ok, family, style, name, kind, variable, size} or {ok:false, error}. */
+    private JSONObject stageFont(String ref) {
+        synchronized (fontLock) { return stageFontLocked(ref); }
+    }
+
+    private JSONObject stageFontLocked(String ref) {
+        JSONObject res = new JSONObject();
+        try {
+            File dir = fontDir();
+            new File(dir, "preview.bin").delete();     // a failed pick must not leave the earlier preview to be applied
+            new File(dir, "preview.json").delete();
+            if (ref == null || ref.isEmpty()) throw new IllegalStateException("No file was chosen.");
+            InputStream in;
+            String name;
+            if (ref.startsWith("content:")) {
+                Uri u = Uri.parse(ref);
+                name = contentName(u);
+                in = getContentResolver().openInputStream(u);
+                if (in == null) throw new IllegalStateException("The file could not be opened.");
+            } else {
+                File f = new File(fmCanonicalPath(ref));
+                if (!f.isFile() || !f.canRead()) throw new IllegalStateException("The app cannot read that file. Grant All-files access, or choose the file with the file chooser.");
+                name = f.getName();
+                in = new java.io.FileInputStream(f);
+            }
+            File dest = new File(fontDir(), "preview.bin");
+            FontScan.Names n;
+            try { n = FontScan.copyChecked(in, dest); } finally { try { in.close(); } catch (Exception ignored) {} }
+            String kind = n.kind;
+            res.put("ok", true);
+            res.put("family", n.family.isEmpty() ? (name.lastIndexOf('.') > 0 ? name.substring(0, name.lastIndexOf('.')) : name) : n.family);
+            res.put("style", n.style);
+            res.put("name", name);
+            res.put("kind", kind);
+            res.put("variable", n.variable);
+            res.put("size", dest.length());
+            File pj = new File(dir, "preview.json"), pjTmp = new File(dir, "preview.json.part");
+            writeTextFile(pjTmp, res.toString());
+            if (!pjTmp.renameTo(pj)) throw new IllegalStateException("The font could not be stored.");
+        } catch (Exception e) {
+            new File(fontDir(), "preview.bin").delete();
+            try { res = new JSONObject(); res.put("ok", false); res.put("error", e.getMessage() != null ? e.getMessage() : "The font could not be read."); } catch (Exception ignored) {}
+        }
+        return res;
+    }
+
+    private String readTextFile(File f) throws IOException {
+        InputStream in = new java.io.FileInputStream(f);
+        try {
+            java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
+            byte[] buf = new byte[8192];
+            int n;
+            while ((n = in.read(buf)) > 0) bo.write(buf, 0, n);
+            return bo.toString("UTF-8");
+        } finally { in.close(); }
+    }
+
+    private void writeTextFile(File f, String text) throws IOException {
+        FileOutputStream o = new FileOutputStream(f);
+        try { o.write(text.getBytes("UTF-8")); } finally { o.close(); }
+    }
+
+    // ---------------------------------------------------------------------------------------------
     // Backup and restore
     //
     // A backup is one .adbbackup file (a zip): backup.json, apk/<each APK>, and data.tar when the data
@@ -5144,6 +5304,12 @@ public class MainActivity extends Activity {
             final Uri picked = (resultCode == RESULT_OK && data != null) ? data.getData() : null;
             if (picked == null) return;
             notifyJs("window.onInstallFilePicked && window.onInstallFilePicked(" + JSONObject.quote(picked.toString()) + ")");
+            return;
+        }
+        if (requestCode == REQ_PICK_FONT) {
+            final Uri picked = (resultCode == RESULT_OK && data != null) ? data.getData() : null;
+            if (picked == null) return;
+            notifyJs("window.onFontPicked && window.onFontPicked(" + JSONObject.quote(picked.toString()) + ")");
             return;
         }
         if (requestCode != REQ_IMPORT_OBTAINIUM) return;
@@ -6911,6 +7077,87 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void scanApkFiles() {
             runApkScan();
+        }
+
+        /** Searches storage for .ttf / .otf files for the font setting. Answer: window.onFontScan(json); progress: window.onFontScanProgress(json). */
+        @JavascriptInterface
+        public void scanFonts() {
+            runFontScan();
+        }
+
+        /** Lets the user choose a font file with Android's file chooser. Answer: window.onFontPicked(ref). */
+        @JavascriptInterface
+        public void pickFontFile() {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                    i.addCategory(Intent.CATEGORY_OPENABLE);
+                    i.setType("*/*");
+                    startActivityForResult(i, REQ_PICK_FONT);
+                }
+            });
+        }
+
+        /** Checks the font in ref (a path, or what the file chooser gave) and keeps a copy to look at. Answer: window.onFontPreview(json). */
+        @JavascriptInterface
+        public void fontPreview(final String ref) {
+            submitJob(new Runnable() {
+                @Override
+                public void run() {
+                    notifyJs("window.onFontPreview && window.onFontPreview(" + JSONObject.quote(stageFont(ref).toString()) + ")");
+                }
+            });
+        }
+
+        /** The font as base64: which is "preview" (the one being looked at) or "current" (the one in use). Empty when there is none. */
+        @JavascriptInterface
+        public String fontData(String which) {
+            try {
+                File f = new File(fontDir(), "current".equals(which) ? "current.bin" : "preview.bin");
+                long len = f.length();
+                if (!f.isFile() || len <= 0 || len > FontScan.MAX_FONT_BYTES) return "";
+                byte[] data = new byte[(int) len];
+                java.io.DataInputStream in = new java.io.DataInputStream(new java.io.FileInputStream(f));
+                try { in.readFully(data); } finally { in.close(); }
+                return android.util.Base64.encodeToString(data, android.util.Base64.NO_WRAP);
+            } catch (Throwable e) {                                         // includes OutOfMemoryError on a small phone: the page then keeps the system font
+                return "";
+            }
+        }
+
+        /** Makes the font that was looked at the one in use. Answer: the font's details {ok, family, style, name, kind, variable, size}, or {ok:false, error}. */
+        @JavascriptInterface
+        public String fontApply() {
+            JSONObject res = new JSONObject();
+            try {
+                synchronized (fontLock) {
+                    File dir = fontDir();
+                    File p = new File(dir, "preview.bin"), pm = new File(dir, "preview.json"), c = new File(dir, "current.bin"), cm = new File(dir, "current.json");
+                    if (!p.isFile() || !pm.isFile()) throw new IllegalStateException("There is no font to use.");
+                    if (!p.renameTo(c) || !pm.renameTo(cm)) throw new IllegalStateException("The font could not be stored.");
+                    res = new JSONObject(readTextFile(cm));
+                }
+            } catch (Exception e) {
+                try { res = new JSONObject(); res.put("ok", false); res.put("error", e.getMessage() != null ? e.getMessage() : "failed"); } catch (Exception ignored) {}
+            }
+            return res.toString();
+        }
+
+        /** Back to the system font: removes the stored font (and the one that was being looked at). */
+        @JavascriptInterface
+        public String fontClear() {
+            JSONObject res = new JSONObject();
+            try {
+                synchronized (fontLock) {
+                    File dir = fontDir();
+                    for (String n : new String[]{"preview.bin", "preview.json", "preview.bin.part", "preview.json.part", "current.bin", "current.json"}) new File(dir, n).delete();
+                }
+                res.put("ok", true);
+            } catch (Exception e) {
+                try { res.put("ok", false); res.put("error", String.valueOf(e.getMessage())); } catch (Exception ignored) {}
+            }
+            return res.toString();
         }
 
         /**
