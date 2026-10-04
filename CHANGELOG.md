@@ -1,5 +1,16 @@
 # Changelog
 
+## v7.5.1-Pro (versionCode 751)
+
+- **A plain-language note on a failed Uninstall / Uninstall (keep data).** Removing a system app for one user has always
+  needed actual **root** — plain ADB or Shizuku run without root were never enough, on any Android version or phone
+  brand, regardless of what the raw `pm` output says. When that is why it failed, the result now says so plainly and
+  points at **Freeze** as a no-root alternative (the app disappears from the launcher and stops running; its file stays
+  on the device either way, since `/system` is read-only regardless of which one is used). A device policy or a user
+  restriction blocking removal is also explained instead of shown as a raw `DELETE_FAILED_...` line.
+- **Fixed:** a failed Freeze / Suspend / Uninstall / Clear Data / Force Stop could show its result as "Success" when the
+  raw `pm` answer was `Failure [...]` — the check only looked for the word "failed", not "failure".
+
 ## v7.5-Pro (versionCode 750)
 
 A new **Task Manager** tab, after Logcat Viewer: processes, CPU, RAM, GPU, battery and network, live, with a graph for each.

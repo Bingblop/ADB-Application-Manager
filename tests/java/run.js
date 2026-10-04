@@ -58,6 +58,7 @@ const SUITES = [
   { name: 'fontscan', title: 'Font search for the app font: which files are fonts, what a font calls itself (the name table in every encoding and shape), the bounded walk and its progress', tests: ['FontScanTest'], main: 'FontScanTest', needs: ['json'] },
   { name: 'splitinfo', title: 'What a split APK\'s manifest says about it (split name, the feature module it configures, feature flag)', tests: ['SplitInfoTest'], main: 'com.bloatware.bingblop.SplitInfoTest' },
   { name: 'installhints', title: 'What an install failure means (adb / pm install answers)', tests: ['InstallHintsTest'], main: 'com.bloatware.bingblop.InstallHintsTest' },
+  { name: 'uninstallhints', title: 'What an uninstall failure means (pm uninstall answers: needs root, device policy, user restriction)', tests: ['UninstallHintsTest'], main: 'com.bloatware.bingblop.UninstallHintsTest' },
   { name: 'pure', title: 'Package-file scan output and XAPK data paths', tests: ['PureTest'], main: 'PureTest', needs: ['json'] },
   { name: 'fdroid', title: 'F-Droid index v1 / v2 parsing (real Seeker and WG Tunnel indexes)', tests: ['FdroidTest'], main: 'com.bloatware.bingblop.FdroidTest', needs: ['androidall', 'fixtures'] },
   { name: 'komi', title: 'GitHub catalog (Komi) feeds: mapping, de-duplication, dates', tests: ['KomiTest'], main: 'KomiTest', needs: ['json', 'fixtures'] },

@@ -1014,7 +1014,7 @@ script passes is in [tests/README.md](tests/README.md)).
   version, a damaged one, a tab that is off reached by a link or by Back, the layout at 320, 360 and 412 px), the search bar and its menu
   (placement, the three options, the swap rule, patterns and plain text, exact matches, kept between launches, closing by tap, Escape and Back, three
   screen sizes) and a scan of the sources and of every tab and sheet for emoji.
-- **Native rules, off the device** (`tests/java/run.js`, 32 suites): the parts of the Java that need no Android classes are compiled
+- **Native rules, off the device** (`tests/java/run.js`, 33 suites): the parts of the Java that need no Android classes are compiled
   and run as plain Java. For the Hidden Settings tab that is 311 checks of `SettingsDb`, including round trips through a real `sh` (and a fake
   `settings` that refuses on purpose) for hostile values (quotes, `;`, `$(...)`, backticks, `>`, newlines, Unicode), and a
   comparison of the name, value and size checks in Java and in the page over 1,322 cases (the color check of the Overlays tab

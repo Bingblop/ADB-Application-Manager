@@ -6730,7 +6730,7 @@ Type any command below (e.g. pm list packages -d)
                 const app = allApps.find(a => a.pkg === pkg) || { name: pkg, pkg: pkg };
                 const output = window.AndroidBridge ? window.AndroidBridge.executeAppAction(action, pkg) : '';
                 const lowered = String(output || '').toLowerCase();
-                const ok = !(lowered.includes('error') || lowered.includes('failed') || lowered.includes('exception'));
+                const ok = !(lowered.includes('error') || lowered.includes('failed') || lowered.includes('failure') || lowered.includes('exception'));
                 if (ok) success++; else failed++;
                 rows.push({ name: app.name, pkg: pkg, output: output, success: ok });
             });
@@ -9616,7 +9616,7 @@ Type any command below (e.g. pm list packages -d)
                 const app = allApps.find(a => a.pkg === pkg) || { name: pkg, pkg: pkg };
                 const output = window.AndroidBridge.executeAppAction(action, pkg);
                 const lowered = String(output || '').toLowerCase();
-                const ok = !(lowered.includes('error') || lowered.includes('failed') || lowered.includes('exception'));
+                const ok = !(lowered.includes('error') || lowered.includes('failed') || lowered.includes('failure') || lowered.includes('exception'));
                 showToast(ok ? 'Action executed' : 'Action reported a problem');
                 showCommandResults('Command Result', action.toUpperCase(), [{ name: app.name, pkg: pkg, output: output, success: ok }]);
                 if (UNDO_ACTION[action]) recordHistory('apps', `${ACTION_LABELS[action] || action} ${app.name}`, [{ pkg: pkg, name: app.name, action: action, success: ok }]);
