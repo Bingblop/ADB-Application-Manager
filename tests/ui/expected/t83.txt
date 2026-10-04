@@ -1,0 +1,44 @@
+1. a search bar with a drop-down of where to search, and two boxes: subfolders (on) and inside archives (off): true {"ph":"Search: name, ext:jpg, size:>5mb, date:7d, content:word, archive:name","scope":["This folder","Internal storage","Downloads","SD card or drive 1234-ABCD","Whole phone"],"nested":true,"arc":false,"help":"none"}
+   the help is folded away until "Search help" is tapped: true
+   an empty query asks for something to search for and sends nothing: true
+2. a search sends the query, the folder on screen, subfolders on, archives off, hidden off: true {"q":"notes","roots":["/storage/emulated/0"],"nested":true,"archives":false,"hidden":false}
+   the results take the place of the folder list: names found (hidden ones left out): true ["notes.txt","notes backup.txt"]
+   a line says how many were found and how long it took: true 2 found · 0.1 s
+   each result shows its name, the folder it is in, size and date, and a button to show it in its folder: true {"name":"notes.txt","subs":["/storage/emulated/0/Download","43 B · 11/14/2023"],"role":"button","tab":0,"btn":"Show in the folder"}
+   "Back to the folder" brings the folder list back: true
+   the boxes go with the search: subfolders off, archives on: true
+   with subfolders off only what is directly in the folder is found: true
+   the two boxes are kept between launches: true
+   "Downloads" in the drop-down searches that folder, not the one on screen: true
+   "Whole phone" searches /: true
+   Show hidden files also applies to the search: true
+3. content: shows the line that matched, with its number: true {"name":"notes.txt","line":"3: Call Dr. Smith"}
+   archive: shows the entry, and the archive it is in: true {"name":"readme.txt","where":"/storage/emulated/0/pack.zip › readme.txt"}
+   tapping an entry opens that archive (and leaves the search): true
+   what could not be understood is said, the rest of the query still works: true
+4. tapping a file opens its action sheet (View, Edit, Open with ...): true
+   the arrow button shows it in its own folder and leaves the search: true
+   type:folder lists the folders; tapping one opens it: true
+   going up a folder while looking at results leaves the results: true
+   the Back button leaves the results first: true
+   a file named like markup is shown as text: true
+5. while it runs: the button says Stop, a line shows the folder, how many were looked at and found: true {"btn":"Stop","status":"Searching /storage/emulated/0 · 7 looked at · 1 found","running":true}
+   Stop asks the app to stop; the answer says it was stopped; the button is Search again: true
+   a search that hit its limit says so: true
+6. a zip in the file manager offers Extract… (a text file does not): true
+   the dialog names the archive, offers its folder and a new folder named after it (the ending dropped); a new folder and Keep both are chosen at first: true {"open":true,"sub":"pack.zip","here":"/storage/emulated/0","named":"/storage/emulated/0/pack","where":"named","policy":"keep","del":"inline-flex","other":"none"}
+   Extract sends the archive, the whole of it, the new folder, the rule, no delete: true {"path":"/storage/emulated/0/pack.zip","entry":"","dest":"/storage/emulated/0/pack","policy":"keep","del":false}
+   the files are there and the toast says how many: true Extracted 3 files (30 B) to /storage/emulated/0/pack
+   a second time with Keep both: "one (1).txt" next to "one.txt": true
+   with Skip nothing is written and the toast says they were left as they were: true Extracted 0 files (0 B) to /storage/emulated/0/pack • 3 left as they were
+   "This folder" with Replace: the archive's own folder and the rule: true
+   "Another folder" shows a box; a path that is not full is refused: true
+   a full path is used (the end slash dropped) and remembered for the next time: true
+   the choices of last time are there again: true
+   a .tar.gz is named without its whole ending: true
+   "Delete the archive afterwards" asks first; saying no sends nothing and keeps the dialog open: true
+   yes: extracted, the archive is deleted, the toast says so and the list no longer has it: true Extracted 1 file (10 B) to /storage/emulated/0/Download/data • archive deleted
+   from the archive browser a folder of the archive: the dialog says which, and there is no "delete the archive": true {"sub":"The folder docs · pack.zip","del":"none"}
+   while it runs: a line with the file, percent, speed and time left, and a Cancel button: true {"shown":true,"text":"Extracting 1 of 3: a.txt — 33% · 1.2 MB/s · 4 s left","cancel":true}
+   Cancel tells the app to stop and the line goes away: true
+ALL PASSED
