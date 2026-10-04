@@ -91,3 +91,35 @@ Tick the box when it works; write what you saw when it does not.
       graph starts collecting again (it does not pick up where it left off — v7.5 does not keep readings across a visit).
 - [ ] Leaving the tab stops the readings (check battery/data use does not creep up while on another tab for a while), and switching Working Modes
       while the tab is open (e.g. turning off Shizuku) is reflected without restarting the app.
+
+## v7.8: Terminal and Coding Agents
+
+- [ ] The tab bar shows **Terminal / ADB Console** on two lines. It opens on **Terminal**; switch to **ADB Console**, close the app (swipe it away),
+      open it again: the tab opens on ADB Console. The ADB Console works exactly as before (Rish mode, cheat sheet, saved commands).
+- [ ] **Shell: This app**: `ls`, `cd /sdcard` (may be refused: that is Android, not the app), `export X=1` then `echo $X` in a second command,
+      a long `ping -c 5 1.1.1.1`, then CTRL-C on one: it stops and the prompt comes back. The extra keys (ESC, TAB, arrows, HOME, END) do what they say
+      with the phone's keyboard open.
+- [ ] **Shell: Working mode** with Shizuku, then with Root (and over Wireless ADB if you use it): `id` shows uid 2000 (shell) or 0 (root); `pm list
+      packages | head` works; leave the tab and come back: the same shell is still there (same folder, same variables).
+- [ ] **Termux setup** (gear, Termux setup) on a phone without Termux: it says so and links to F-Droid/GitHub. Install Termux from F-Droid, open it
+      once, paste the `allow-external-apps=true` line from step 3 into Termux, tap **Allow** (Android asks "Run commands in Termux environment"), then
+      **Test**: it says Termux answered. **Use Termux as the shell**: `bash --version`, `pkg install python -y`, `python -c 'print(1+1)'`.
+- [ ] Deny the Termux permission twice: the sheet explains how to allow it in App info. A Google Play copy of Termux: the sheet warns about it.
+- [ ] `nano test.txt` (or vim, top, a bare `python`) in the Termux shell: the Terminal offers to open it in Termux, and **Open in Termux** opens a real
+      Termux window that runs it.
+- [ ] **Coding Agents: Claude**, **ChatGPT**, **Gemini** with a real API key each: a wrong key is refused with the provider's message and nothing is
+      saved; the right one is tested and saved, and the Model list fills in. Ask "list the files here and make hello.py print hi": every command and
+      file change is shown first; **Run** / **Apply** works, **Skip** stops it, `/undo` takes the file change back.
+- [ ] Switch from Claude to Gemini (or to another model) in the middle of a chat: the new one knows what was said before. **STOP** during a long
+      answer ends it at once; **New chat** starts over.
+- [ ] **Cursor** with a Cursor API key (optionally a GitHub repository in its sheet): a cloud agent starts and its answer streams in. **Copilot**: install
+      the Copilot CLI from its sheet (Termux needed), sign in with **Sign in**, then chat.
+- [ ] **Sign in with subscription** for Claude (Claude Code), Gemini (Gemini CLI) or ChatGPT (Codex): the install steps run in the Termux shell (the first
+      time installs Debian, several minutes); **Sign in** opens Termux with the tool's own website sign-in; afterwards the chat goes through it.
+- [ ] **Ollama (on-device)**: **Install on this phone** installs Ollama in Termux and a small model; chatting works offline afterwards. **Jan.ai** /
+      **AnythingLLM** on a computer on the same Wi-Fi: enter its address, **Connect**, chat.
+- [ ] **Settings** (the gear in the Terminal): saved keys show only by their hint (never the whole key); **Forget** removes one; the default agent,
+      models and shell are used after restarting the app; with "Ask before running commands" off, commands run without asking.
+- [ ] Reboot the phone: the saved keys still work (they are sealed by the phone's keystore). Clear the app's data: they are gone.
+- [ ] Switch the app's language (Settings, Language): the Terminal's buttons, sheets, Help and its [notes] are translated; commands, output, file
+      names and model names stay as they are.
