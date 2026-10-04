@@ -17,4 +17,5 @@
    back to English: dir="ltr" again: true
 8. a dictionary that is missing: the text stays English, the drop-down goes back, a toast says why, nothing is saved: true {"sel":"en","toast":"That language could not be loaded. The text stays in English.","lang":"en"}
 9. a saved language with no dictionary: English, no error, the drop-down on English: true
+10. a text area's placeholder and label are translated, and of two quick language picks the last one wins: true
 ALL PASSED

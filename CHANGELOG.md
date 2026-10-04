@@ -14,9 +14,10 @@
   app (the rest of the phone is not touched). **Find fonts on this phone** searches storage for .ttf and .otf files with a progress
   bar and lists them with their real names (read from the font file, also for a variable font); **Choose a file…** opens Android's
   file chooser instead and needs no access to storage. Tap a font to see it on a sheet (a sample set in it) and then **Use this
-  font**. A refused file says why (not a font, a collection, over 24 MB). The font is kept by the app and loaded again at each
+  font**. A refused file says why (not a font, a collection, over 12 MB). The font is kept by the app and loaded again at each
   start; if it cannot be loaded the system font stays and the choice is dropped. Names, paths and commands in code-style boxes keep
-  their own monospace font.
+  their own monospace font. Variable fonts need a WebView of Chrome 62 or newer. Known limits: a very large list can take a
+  moment to translate, and the saved font is read at start-up.
 - **Saved App Lists is now Saved Applications** (the tab, its first card and the quick-list tile text).
 - **A new app icon:** the lightning bolt of the header on the same cyan-to-violet tile, as an adaptive icon.
 - **For people who translate:** `tests/i18n/` holds the list of every string of the page (`keys.json`), the translator's brief,

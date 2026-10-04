@@ -4,7 +4,7 @@
    at the end: the bar is gone, three fonts are listed with their file and size, and the note says so: true {"bar":"none","rows":["Fixture Boxes Fixture-Boxes-Regular.ttf · 3 KB","Fixture Boxes Bold Fixture-Boxes-Bold.ttf · 3 KB","Inter Inter.ttf · 856 KB · variable"],"note":"3 fonts found. Tap one to see it before you use it.","filter":"none","btn":false}
    the list says Bold for the bold file and leaves Regular out of the name: true ["Fixture Boxes Fixture-Boxes-Regular.ttf · 3 KB","Fixture Boxes Bold Fixture-Boxes-Bold.ttf · 3 KB","Inter Inter.ttf · 856 KB · variable"]
    a short list has no filter box: true
-3. tapping a font opens a sheet with its name and file, and a sample set in that font: true {"open":true,"name":"Fixture Boxes","file":"Fixture-Boxes-Regular.ttf · 3 KB","fam":"PreviewFont, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif","w":48}
+3. tapping a font opens a sheet with its name and file, and a sample set in that font: true {"open":true,"name":"Fixture Boxes","file":"Fixture-Boxes-Regular.ttf · 3 KB","fam":"PreviewFont, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif","big":"PreviewFont, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif","w":48}
    the app was asked for exactly that file: true
    Cancel closes the sheet and the page keeps the system font: true
 4. a file that is not a font gives the reason in a toast and opens no sheet: true Could not use that file: That file is not a TrueType or OpenType font.
