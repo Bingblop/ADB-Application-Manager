@@ -3755,7 +3755,8 @@ public class MainActivity extends Activity {
     private NetStats.Reading tmLastNet;
     private long tmLastSampleAt;
     private static final String TM_M1 = "@@TM1-CPU@@", TM_M2 = "@@TM2-MEM@@", TM_M3 = "@@TM3-NET@@", TM_M4 = "@@TM4-PS@@",
-            TM_M5 = "@@TM5-GPUBUSY@@", TM_M6 = "@@TM6-GPUPCT@@", TM_M7 = "@@TM7-MALI@@", TM_M8 = "@@TM8-FREQCUR@@", TM_M9 = "@@TM9-FREQMAX@@";
+            TM_M5 = "@@TM5-GPUBUSY@@", TM_M6 = "@@TM6-GPUPCT@@", TM_M7 = "@@TM7-MALI@@", TM_M8 = "@@TM8-FREQCUR@@", TM_M9 = "@@TM9-FREQMAX@@",
+            TM_M10 = "@@TM10-THREADS@@";
 
     private static final class ArcSlot {
         final ZipTool.Archive archive;
@@ -6565,7 +6566,7 @@ public class MainActivity extends Activity {
                 for (String pkg : uninstalledPkgs) {
                     JSONObject o = new JSONObject();
                     o.put("pkg", pkg);
-                    o.put("name", pkg);
+                    o.put("name", uninstalledLabel(pm, pkg));
                     o.put("isSystem", true);
                     o.put("isRunning", false);
                     o.put("isFrozen", true);
@@ -6578,6 +6579,19 @@ public class MainActivity extends Activity {
             } catch (Exception e) {
                 return "[]";
             }
+        }
+
+        /** The real app name for a package that's uninstalled-for-this-user but still has a stub on this system
+         *  partition - the common case for a system app removed for one user, not all of them. MATCH_UNINSTALLED_PACKAGES
+         *  can still resolve a label from that stub; falls back to the bare package name when there is nothing left
+         *  to read a label from (a non-system package, or one genuinely gone with no stub at all). */
+        private String uninstalledLabel(PackageManager pm, String pkg) {
+            try {
+                ApplicationInfo info = pm.getApplicationInfo(pkg, PackageManager.MATCH_UNINSTALLED_PACKAGES);
+                CharSequence label = pm.getApplicationLabel(info);
+                if (label != null && label.length() > 0) return label.toString();
+            } catch (Exception ignored) {}
+            return pkg;
         }
 
         @JavascriptInterface
@@ -6615,6 +6629,19 @@ public class MainActivity extends Activity {
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     startActivity(intent);
                     return "Settings opened";
+                }
+                // Hands the removal to Android's own system uninstaller UI instead of a shell `pm uninstall`: any
+                // app can fire this, no permission and no working mode needed, and it runs with the system's own
+                // privilege rather than shell's - for a preloaded system app without root, that can go through via
+                // Android's own DISABLED_UNTIL_USED soft-removal (the app vanishes, shows "Not installed" in
+                // Settings) even where a raw `pm uninstall --user 0` from this app hits the hard "only root" wall.
+                // The actual result happens after the person answers the system's own dialog, outside this call.
+                if ("uninstall_system_dialog".equals(action)) {
+                    Intent intent = new Intent(Intent.ACTION_DELETE);
+                    intent.setData(Uri.parse("package:" + pkg));
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(intent);
+                    return "Opened the system uninstall dialog";
                 }
                 return "";
             } catch (Exception e) {
@@ -7789,7 +7816,8 @@ public class MainActivity extends Activity {
                                         + "cat /sys/class/kgsl/kgsl-3d0/gpu_busy_percentage 2>/dev/null; echo " + TM_M6 + "; "
                                         + "cat /sys/class/misc/mali0/device/utilization 2>/dev/null; echo " + TM_M7 + "; "
                                         + "cat /sys/class/kgsl/kgsl-3d0/gpuclk 2>/dev/null; echo " + TM_M8 + "; "
-                                        + "cat /sys/class/devfreq/*/max_freq 2>/dev/null | head -1; echo " + TM_M9);
+                                        + "cat /sys/class/devfreq/*/max_freq 2>/dev/null | head -1; echo " + TM_M9 + "; "
+                                        + "grep -H '^Threads:' /proc/[0-9]*/status 2>/dev/null; echo " + TM_M10);
                     } catch (Throwable t) {
                         blob = null;
                     }
@@ -7798,7 +7826,7 @@ public class MainActivity extends Activity {
                     // them itself with no shell at all; only the process list and GPU need a privileged shell and stay empty.
                     try {
                         blob = readWorldReadable("/proc/stat") + TM_M1 + readWorldReadable("/proc/meminfo") + TM_M2
-                                + readWorldReadable("/proc/net/dev") + TM_M3 + TM_M4 + TM_M5 + TM_M6 + TM_M7 + TM_M8 + TM_M9;
+                                + readWorldReadable("/proc/net/dev") + TM_M3 + TM_M4 + TM_M5 + TM_M6 + TM_M7 + TM_M8 + TM_M9 + TM_M10;
                     } catch (Throwable t) {
                         blob = null;
                     }
@@ -7823,6 +7851,7 @@ public class MainActivity extends Activity {
                     tmLastCpu = cpu;
                 }
                 cpuJson.put("cores", CpuStats.coreCount(cpu));
+                mergeInto(cpuJson, cpuInfoJson());
                 res.put("cpu", cpuJson);
 
                 // RAM
@@ -7833,6 +7862,13 @@ public class MainActivity extends Activity {
                 memJson.put("availableKb", mem.availableKb);
                 memJson.put("swapTotalKb", mem.swapTotalKb);
                 memJson.put("swapUsedKb", MemStats.swapUsedKb(mem));
+                memJson.put("freeKb", mem.freeKb);
+                memJson.put("buffersKb", mem.buffersKb);
+                memJson.put("cachedKb", mem.cachedKb);
+                memJson.put("swapFreeKb", mem.swapFreeKb);
+                memJson.put("swapCachedKb", mem.swapCachedKb);
+                long pageSize = pageSizeBytes();
+                if (pageSize > 0) memJson.put("pageSizeBytes", pageSize);
                 res.put("mem", memJson);
 
                 // Network
@@ -7863,6 +7899,8 @@ public class MainActivity extends Activity {
                     tmLastSampleAt = now;
                 }
                 netJson.put("ifaces", ifaceArr);
+                netJson.put("totalRxBytes", NetStats.totalRxBytes(net, false));
+                netJson.put("totalTxBytes", NetStats.totalTxBytes(net, false));
                 res.put("net", netJson);
 
                 // Processes
@@ -7881,6 +7919,11 @@ public class MainActivity extends Activity {
                 }
                 res.put("procs", procArr);
                 res.put("procsFullFormat", ps.fullFormat);
+                cpuJson.put("uptimeMs", android.os.SystemClock.elapsedRealtime());
+                if (havePriv) {
+                    cpuJson.put("processes", ps.procs.size());
+                    cpuJson.put("threads", ProcStats.sumThreads(parts.length > 9 ? parts[9] : ""));
+                }
 
                 // GPU: the first known-good reading wins (real busy-time readings before the clock-speed proxy).
                 java.util.List<GpuStats.Reading> attempts = new ArrayList<GpuStats.Reading>();
@@ -7896,6 +7939,7 @@ public class MainActivity extends Activity {
                 if (gpu.percent != null) gpuJson.put("percent", gpu.percent.doubleValue());
                 gpuJson.put("approx", gpu.approx != null && gpu.approx);
                 gpuJson.put("label", GpuStats.label(gpu));
+                mergeInto(gpuJson, gpuInfoJson());
                 res.put("gpu", gpuJson);
 
                 // Battery: a plain sticky-broadcast + BatteryManager read, no shell, no permission.
@@ -7919,7 +7963,7 @@ public class MainActivity extends Activity {
         }
 
         private String[] splitTm(String blob) {
-            String[] markers = {TM_M1, TM_M2, TM_M3, TM_M4, TM_M5, TM_M6, TM_M7, TM_M8, TM_M9};
+            String[] markers = {TM_M1, TM_M2, TM_M3, TM_M4, TM_M5, TM_M6, TM_M7, TM_M8, TM_M9, TM_M10};
             String[] out = new String[markers.length];
             int from = 0;
             for (int i = 0; i < markers.length; i++) {
@@ -7962,7 +8006,177 @@ public class MainActivity extends Activity {
             } catch (Throwable t) {
                 try { b.put("error", errMsg(t)); } catch (Exception ignored) {}
             }
+            try {
+                android.os.BatteryManager bm = (android.os.BatteryManager) getSystemService(BATTERY_SERVICE);
+                if (bm != null) {
+                    int cc = bm.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CHARGE_COUNTER);
+                    b.put("chargeCounterMicroAh", cc);   // Integer.MIN_VALUE when not exposed
+                }
+            } catch (Throwable ignored) {}
+            if (Build.VERSION.SDK_INT >= 34) {
+                try {
+                    Intent batt = registerReceiver(null, new android.content.IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+                    if (batt != null) {
+                        int cyc = batt.getIntExtra(android.os.BatteryManager.EXTRA_CYCLE_COUNT, -1);
+                        if (cyc >= 0) b.put("cycleCount", cyc);
+                    }
+                } catch (Throwable ignored) {}
+            }
             return b;
+        }
+
+        /** Processor identity and clock info that doesn't change between polls: architecture, ABI, SoC, scaling
+         *  governor, per-cluster frequency range and a best-effort thermal-zone temperature. All direct Java/sysfs
+         *  reads, no shell and no special permission - these /sys nodes are world-readable on stock Android. Any
+         *  piece that can't be read on this phone is simply left out of the result rather than failing the whole poll. */
+        private JSONObject cpuInfoJson() {
+            JSONObject o = new JSONObject();
+            try {
+                String arch = System.getProperty("os.arch");
+                if (arch != null) o.put("arch", arch);
+                if (Build.SUPPORTED_ABIS != null && Build.SUPPORTED_ABIS.length > 0) o.put("abi", Build.SUPPORTED_ABIS[0]);
+
+                String soc = "";
+                if (Build.VERSION.SDK_INT >= 31) {
+                    try {
+                        String man = Build.SOC_MANUFACTURER, mod = Build.SOC_MODEL;
+                        boolean haveMan = man != null && !"unknown".equalsIgnoreCase(man);
+                        boolean haveMod = mod != null && !"unknown".equalsIgnoreCase(mod);
+                        if (haveMan) soc = man + (haveMod ? " " + mod : "");
+                    } catch (Throwable ignored) {}
+                }
+                if (soc.isEmpty() && Build.HARDWARE != null) soc = Build.HARDWARE;
+                if (!soc.isEmpty()) o.put("soc", soc);
+
+                String governor = readWorldReadable("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor").trim();
+                if (!governor.isEmpty()) o.put("governor", governor);
+
+                Double tempC = cpuThermalC();
+                if (tempC != null) o.put("tempC", tempC.doubleValue());
+
+                int cores = Runtime.getRuntime().availableProcessors();
+                long[] minHz = new long[cores], curHz = new long[cores], maxHz = new long[cores];
+                boolean anyFreq = false;
+                for (int i = 0; i < cores; i++) {
+                    String base = "/sys/devices/system/cpu/cpu" + i + "/cpufreq/";
+                    // cpufreq reports in kHz (a long-standing Linux kernel convention), not Hz - scale up so these
+                    // fields are genuinely in Hz, matching their name, for a plain JS-side Hz formatter.
+                    minHz[i] = 1000L * parseLongOr(readWorldReadable(base + "cpuinfo_min_freq"), 0);
+                    curHz[i] = 1000L * parseLongOr(readWorldReadable(base + "scaling_cur_freq"), 0);
+                    maxHz[i] = 1000L * parseLongOr(readWorldReadable(base + "cpuinfo_max_freq"), 0);
+                    if (maxHz[i] > 0) anyFreq = true;
+                }
+                if (anyFreq) {
+                    JSONArray clusters = new JSONArray();
+                    for (CpuStats.Cluster c : CpuStats.groupClusters(minHz, curHz, maxHz)) {
+                        JSONObject cj = new JSONObject();
+                        cj.put("cores", c.cores);
+                        cj.put("minHz", c.minHz);
+                        cj.put("curHz", c.curHz);
+                        cj.put("maxHz", c.maxHz);
+                        clusters.put(cj);
+                    }
+                    o.put("clusters", clusters);
+                }
+            } catch (Throwable ignored) {}
+            return o;
+        }
+
+        /** A best-effort CPU temperature in Celsius from whichever /sys/class/thermal/thermal_zoneN looks like the
+         *  CPU (its "type" file mentions "cpu"), falling back to zone 0; null when no thermal zone is readable at
+         *  all. Shown as "estimated" in the UI: zone numbering and the raw unit (millidegrees on most kernels, tenths
+         *  of a degree on some) are not standardized across devices. */
+        private Double cpuThermalC() {
+            try {
+                File[] zones = new File("/sys/class/thermal").listFiles();
+                if (zones == null) return null;
+                String fallback = null;
+                for (File z : zones) {
+                    if (!z.getName().startsWith("thermal_zone")) continue;
+                    String raw = readWorldReadable(z.getPath() + "/temp").trim();
+                    if (raw.isEmpty()) continue;
+                    if (fallback == null) fallback = raw;
+                    String type = readWorldReadable(z.getPath() + "/type").trim();
+                    if (type.toLowerCase(java.util.Locale.US).contains("cpu")) return millidegreesToC(raw);
+                }
+                return fallback == null ? null : millidegreesToC(fallback);
+            } catch (Throwable t) {
+                return null;
+            }
+        }
+
+        private Double millidegreesToC(String raw) {
+            try {
+                long v = Long.parseLong(raw.trim());
+                double c = v / 1000.0;
+                // A handful of devices report tenths of a degree instead of millidegrees; a "temperature" past
+                // 200C is never real on a phone, so treat that reading as the tenths convention instead.
+                if (c > 200.0) c = v / 10.0;
+                return c;
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+
+        private long parseLongOr(String s, long fallback) {
+            if (s == null) return fallback;
+            try { return Long.parseLong(s.trim()); } catch (NumberFormatException e) { return fallback; }
+        }
+
+        /** Vulkan support/API level and the OpenGL ES version this phone advertises, from public, context-free
+         *  PackageManager/ActivityManager queries. No GL/EGL context is created here - safe to call from a background
+         *  poll, with no risk of GPU driver instability. Android has no public API for a GPU vendor/model string at
+         *  all (see GpuStats's own class doc), so this does not attempt to guess one. */
+        private JSONObject gpuInfoJson() {
+            JSONObject o = new JSONObject();
+            try {
+                android.content.pm.PackageManager pm = getPackageManager();
+                boolean vulkan = pm.hasSystemFeature(android.content.pm.PackageManager.FEATURE_VULKAN_HARDWARE_VERSION);
+                o.put("vulkanSupported", vulkan);
+                if (vulkan) {
+                    android.content.pm.FeatureInfo[] feats = pm.getSystemAvailableFeatures();
+                    if (feats != null) {
+                        for (android.content.pm.FeatureInfo f : feats) {
+                            if (f != null && android.content.pm.PackageManager.FEATURE_VULKAN_HARDWARE_VERSION.equals(f.name)) {
+                                int v = f.version;
+                                o.put("vulkanApi", (v >>> 22) + "." + ((v >>> 12) & 0x3ff) + "." + (v & 0xfff));
+                                break;
+                            }
+                        }
+                    }
+                }
+                android.app.ActivityManager am = (android.app.ActivityManager) getSystemService(ACTIVITY_SERVICE);
+                if (am != null) {
+                    android.content.pm.ConfigurationInfo ci = am.getDeviceConfigurationInfo();
+                    if (ci != null && ci.reqGlEsVersion != 0) {
+                        int v = ci.reqGlEsVersion;
+                        o.put("glesVersion", ((v & 0xffff0000) >> 16) + "." + (v & 0x0000ffff));
+                    }
+                }
+            } catch (Throwable ignored) {}
+            return o;
+        }
+
+        /** Copies every key from {@code src} into {@code dst} (a shallow merge). Callers only ever merge key sets
+         *  that don't overlap, so which side would win a collision is not a concern in practice. */
+        private void mergeInto(JSONObject dst, JSONObject src) {
+            if (dst == null || src == null) return;
+            java.util.Iterator<String> it = src.keys();
+            while (it.hasNext()) {
+                String k = it.next();
+                try { dst.put(k, src.get(k)); } catch (Exception ignored) {}
+            }
+        }
+
+        /** The kernel's memory page size in bytes (4096 on almost every phone shipped so far; 16384 on a 16KB-page
+         *  device) via the public POSIX sysconf wrapper - no shell, no file to read, no permission. 0 if it can't
+         *  be read, which is left out of the result rather than shown as 0 bytes. */
+        private long pageSizeBytes() {
+            try {
+                return android.system.Os.sysconf(android.system.OsConstants._SC_PAGESIZE);
+            } catch (Throwable t) {
+                return 0;
+            }
         }
 
         /** Kills a running process (force-stop; a reinstall-free app only ever exposes this per package, not per PID,

@@ -1,5 +1,31 @@
 # Changelog
 
+## v7.6-Pro (versionCode 760)
+
+- **Uninstall (System).** A second button next to Uninstall on the app sheet, for a system app that needs root the direct
+  way: it hands the removal to Android's own uninstall screen instead of a shell command. That runs with the system's
+  own privilege rather than shell's, so it can go through Android's standard no-root soft-removal for a preloaded app
+  (shows as **Not installed** in Settings afterward) in cases where the direct Uninstall button's `pm uninstall --user 0`
+  hits the hard "only root" wall. No working mode needed to open it; the system's own confirmation dialog decides the
+  rest. The failed-uninstall note now points at this button by name.
+- **Fixed:** an app that's uninstalled-for-this-user (shows under the Uninstalled filter) was listed by its bare package
+  name instead of its real name. It now reads the name off the system-app stub that's still on the device, the same way
+  Android itself would, falling back to the package name only when nothing more is left to read.
+- **Task Manager: a Information section on every tab**, reusing data the phone already exposes, no new permission on any
+  of it:
+  - **CPU** — Processor Information (SoC, architecture, ABI, scaling governor, an estimated temperature) and System
+    Statistics (process and thread counts, uptime), plus a card per CPU cluster with its core count and min/current/max
+    clock speed. Thread counts and process counts need a working mode, same as the Processes list; everything else reads
+    straight from `/sys` and needs nothing.
+  - **RAM** — Free, Buffers, Cached, Swap free, Swap cached and the kernel's page size, alongside the existing Used /
+    Available / Swap figures.
+  - **GPU** — Vulkan support and API version, and the OpenGL ES version, from plain `PackageManager` /
+    `ActivityManager` queries (no GL context is created, so this never touches the GPU driver).
+  - **Battery** — Technology, current power source, charge in mAh, an estimated capacity and an estimated time left
+    while discharging, charge cycle count (Android 14+, else "N/A"), and the actual wattage (voltage × current,
+    correctly converted from the raw µA/mV the phone reports).
+  - **Network** — total bytes received and sent since boot, alongside the existing live ↓/↑ rates.
+
 ## v7.5.1-Pro (versionCode 751)
 
 - **A plain-language note on a failed Uninstall / Uninstall (keep data).** Removing a system app for one user has always

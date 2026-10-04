@@ -180,6 +180,19 @@ public class ProcStatsTest {
         eq("totalRssKb: empty", ProcStats.totalRssKb(new ArrayList<ProcStats.Proc>()), 0L);
         is("the original list passed to topByCpu/topByMem is left untouched", all.get(0) == p1 && all.get(1) == p2 && all.get(2) == p3 && all.get(3) == p4);
 
+        // ================= sumThreads =================
+        String grepOut = "/proc/1/status:Threads:\t1\n"
+            + "/proc/2345/status:Threads:\t7\n"
+            + "/proc/9999/status:Threads:\t12\n";
+        eq("sumThreads: adds the trailing number on every matching line", ProcStats.sumThreads(grepOut), 20L);
+        eq("sumThreads: a single process", ProcStats.sumThreads("/proc/1/status:Threads:\t3\n"), 3L);
+        eq("sumThreads: tolerates extra spaces around the number", ProcStats.sumThreads("/proc/1/status:Threads:   4  \n"), 4L);
+        eq("sumThreads: a line with no Threads: match at all is ignored, not a crash", ProcStats.sumThreads("/proc/1/status:PPid:\t0\n"), 0L);
+        eq("sumThreads: empty input", ProcStats.sumThreads(""), 0L);
+        eq("sumThreads: null input", ProcStats.sumThreads(null), 0L);
+        eq("sumThreads: a race where a process exited mid-grep (empty/partial line) is skipped, not fatal",
+            ProcStats.sumThreads("/proc/1/status:Threads:\t2\n\n/proc/2/status:Threads:\t5\n"), 7L);
+
         System.out.println(n + " checks, " + fails + " failed");
         if (fails != 0) System.exit(1);
     }

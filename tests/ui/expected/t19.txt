@@ -1,5 +1,5 @@
 menu copy/share: ["copy:com.sec.android.app.sbrowser","copy:26.0.3.1","shareText:Samsung Internet|Samsung Internet\ncom.sec.android.app.sbrowser\nVersion 26.0.3.1"]
-share apk button: 0 | any menu button saying Share APK: 0 | visible menu buttons: 12
+share apk button: 0 | any menu button saying Share APK: 0 | visible menu buttons: 13
 extract toast: Saved 10 B to Download/ADB App Manager/APKs/x.apk | shared: (nothing)
 manifest matches-only meta: 1 / 2 matches | marks: 2
 full view meta: 1 / 2 matches | lines shown: 5

@@ -114,4 +114,41 @@ final class CpuStats {
 
     /** How many per-core lines a reading has; 0 for a null reading or one with no per-core lines at all. */
     static int coreCount(Reading r) { return r == null || r.perCore == null ? 0 : r.perCore.size(); }
+
+    /** One run of adjacent cores that share a clock domain (a big.LITTLE/tri-cluster "cluster"): how many cores,
+     *  and that shared domain's lowest, current and highest frequency in Hz. {@code curHz} is core 0 of the run's
+     *  reading, the others in the same cluster almost always matching it, since they share one clock. */
+    static final class Cluster {
+        public int cores;
+        public long minHz, curHz, maxHz;
+    }
+
+    /**
+     * Groups {@code cpuN}'s {@code cpuinfo_min_freq}/{@code scaling_cur_freq}/{@code cpuinfo_max_freq} (one entry per
+     * core, core order, Hz) into clusters: a new cluster starts whenever a core's (min, max) pair differs from the
+     * previous core's, so a device with uniform cores comes back as a single cluster and one with a dead/offline core
+     * reading 0 still groups sensibly rather than throwing. The three arrays must be the same length (one entry per
+     * core); a short or empty input comes back as an empty list rather than throwing.
+     */
+    static List<Cluster> groupClusters(long[] minHz, long[] curHz, long[] maxHz) {
+        List<Cluster> out = new ArrayList<Cluster>();
+        if (minHz == null || curHz == null || maxHz == null) return out;
+        int n = Math.min(minHz.length, Math.min(curHz.length, maxHz.length));
+        for (int i = 0; i < n; i++) {
+            if (!out.isEmpty()) {
+                Cluster last = out.get(out.size() - 1);
+                if (last.minHz == minHz[i] && last.maxHz == maxHz[i]) {
+                    last.cores++;
+                    continue;
+                }
+            }
+            Cluster c = new Cluster();
+            c.cores = 1;
+            c.minHz = minHz[i];
+            c.curHz = curHz[i];
+            c.maxHz = maxHz[i];
+            out.add(c);
+        }
+        return out;
+    }
 }

@@ -121,6 +121,42 @@ public class CpuStatsTest {
         eq("percentBusyPerCore(x, null) length", CpuStats.percentBusyPerCore(beforeR, null).length, 0);
         eq("coreCount(null)", CpuStats.coreCount(null), 0);
 
+        // ---- groupClusters: a uniform (single-cluster) device ----
+        java.util.List<CpuStats.Cluster> uniform = CpuStats.groupClusters(
+            new long[]{300000, 300000, 300000, 300000}, new long[]{1200000, 1100000, 1300000, 1000000}, new long[]{2400000, 2400000, 2400000, 2400000});
+        eq("uniform: one cluster", uniform.size(), 1);
+        eq("uniform: all 4 cores in it", uniform.get(0).cores, 4);
+        eq("uniform: min/max from the (identical) per-core values", uniform.get(0).minHz, 300000L);
+        eq("uniform: current is core 0's own reading", uniform.get(0).curHz, 1200000L);
+
+        // ---- groupClusters: a big.LITTLE split (4 little + 4 big, contiguous as every real device numbers them) ----
+        java.util.List<CpuStats.Cluster> bigLittle = CpuStats.groupClusters(
+            new long[]{300000, 300000, 300000, 300000, 700000, 700000, 700000, 700000},
+            new long[]{800000, 800000, 800000, 800000, 2100000, 2100000, 2100000, 2100000},
+            new long[]{1900000, 1900000, 1900000, 1900000, 2900000, 2900000, 2900000, 2900000});
+        eq("big.LITTLE: two clusters", bigLittle.size(), 2);
+        eq("big.LITTLE: 4 little cores", bigLittle.get(0).cores, 4);
+        eq("big.LITTLE: little max", bigLittle.get(0).maxHz, 1900000L);
+        eq("big.LITTLE: 4 big cores", bigLittle.get(1).cores, 4);
+        eq("big.LITTLE: big max", bigLittle.get(1).maxHz, 2900000L);
+
+        // ---- groupClusters: a tri-cluster device (prime + big + little), 1+3+4 ----
+        java.util.List<CpuStats.Cluster> tri = CpuStats.groupClusters(
+            new long[]{800000, 700000, 700000, 700000, 300000, 300000, 300000, 300000},
+            new long[]{3200000, 2600000, 2600000, 2600000, 1000000, 1000000, 1000000, 1000000},
+            new long[]{3400000, 3000000, 3000000, 3000000, 2000000, 2000000, 2000000, 2000000});
+        eq("tri-cluster: three clusters", tri.size(), 3);
+        eq("tri-cluster: prime core count", tri.get(0).cores, 1);
+        eq("tri-cluster: big core count", tri.get(1).cores, 3);
+        eq("tri-cluster: little core count", tri.get(2).cores, 4);
+
+        // ---- groupClusters: defensive ----
+        eq("groupClusters(null, ...) is empty, not a throw", CpuStats.groupClusters(null, new long[0], new long[0]).size(), 0);
+        eq("groupClusters: empty arrays is empty", CpuStats.groupClusters(new long[0], new long[0], new long[0]).size(), 0);
+        java.util.List<CpuStats.Cluster> mismatched = CpuStats.groupClusters(new long[]{1, 1}, new long[]{1}, new long[]{1, 1, 1});
+        eq("groupClusters: mismatched lengths use the shortest (1 core, not 2 or 3)", mismatched.size(), 1);
+        eq("groupClusters: mismatched lengths - that one core's count", mismatched.get(0).cores, 1);
+
         System.out.println(n + " checks, " + fails + " failed");
         if (fails != 0) System.exit(1);
     }

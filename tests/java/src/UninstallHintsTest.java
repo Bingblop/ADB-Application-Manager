@@ -15,6 +15,7 @@ public class UninstallHintsTest {
         check("root required recognized", UninstallHints.rootRequired(rootRequired) && !UninstallHints.success(rootRequired));
         check("root required advice mentions Root", UninstallHints.advice(rootRequired).contains("Root"));
         check("root required advice mentions Freeze", UninstallHints.advice(rootRequired).contains("Freeze"));
+        check("root required advice points at the system-uninstall button", UninstallHints.advice(rootRequired).contains("Uninstall (System)"));
         check("root required is case-insensitive", UninstallHints.rootRequired("failure [ONLY ROOT CAN DELETE SYSTEM APP FOR A PARTICULAR USER]"));
 
         check("policy blocked recognized", UninstallHints.policyBlocked(policy) && !UninstallHints.success(policy));
