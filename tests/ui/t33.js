@@ -16,7 +16,7 @@ const { chromium, PAGE } = require('./lib/pw');
   const tabs = (await page.locator('.tab-btn').allInnerTexts()).map(t => t.trim());
   console.log('1. tab order:', JSON.stringify(tabs));
   console.log('   Saved Applications right after Application Manager:', tabs[0].includes('Application') && tabs[1].includes('Saved'));
-  console.log('   About is the last tab, Logcat Viewer right before it:', tabs[tabs.length - 1].includes('About') && tabs[tabs.length - 2].includes('Logcat'));
+  console.log('   About is the last tab, Task Manager right before it (Logcat Viewer right before that):', tabs[tabs.length - 1].includes('About') && tabs[tabs.length - 2].includes('Task') && tabs[tabs.length - 3].includes('Logcat'));
   console.log('   no "Color" tab button:', !tabs.some(t => t.includes('Color')));
 
   // ---- the header gear opens Settings ----

@@ -1,0 +1,24 @@
+1. the tab is in the registry and opens to the Processes sub-tab: true
+   opening it starts the native poll at the default interval (3s) with no gate (privileged): true
+2. processes render sorted by CPU by default, with the resolved app name for an installed package: true
+   highest CPU% first: true ["Samsung Internet","com.unknown.app","kworker/0:1"]
+   "Sort by memory" re-sorts by RSS instead (and is remembered as the active sort): true
+   a kernel thread with no resolvable package has no kill button: true
+3. the kill button force-stops immediately through tmKill, with no confirmation dialog anywhere: true
+   it also asks for a fresh sample right away, instead of waiting for the next tick: true
+4. CPU has no gate when unprivileged (it reads /proc/stat itself, no shell needed): true
+   all 4 per-core readings show: true
+5. RAM has no gate either, and shows used/available/swap: true
+6. Network has no gate, shows total throughput and each interface: true
+7. Processes shows the gate once there is no working mode: true
+   and a plain explanation instead of a (misleadingly empty) process list: true
+8. GPU shows the gate too, and explains the reading needs a working mode (not just "unsupported hardware"): true
+   with a real (non-approximate) reading, the "may not be available" note is hidden: true
+9. Battery has no gate (BatteryManager needs no shell), shows percent, and its units row only appears here: true
+   switching the temperature unit re-renders the same reading in Celsius: true
+   the units row is hidden again on another sub-tab: true
+10. leaving the tab stops the native poll (both timers: the gone redraw interval and the native side): true
+    reopening it restores the sub-tab, auto-refresh and graph speed exactly as left: true {"sub":"ram","auto":"10","delay":"800"}
+    and restarts the native poll at the restored interval: true
+11. a single reading draws a visible point rather than nothing: true
+no page errors

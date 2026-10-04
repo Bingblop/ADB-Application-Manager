@@ -3626,6 +3626,129 @@
             <div class="logcat-box" id="logcatOutput"><div class="lc-meta">Open this tab to read the log.</div></div>
         </section>
 
+        <!-- VIEW: TASK MANAGER (processes, CPU, RAM, GPU, battery, network - a live look with no root needed, best with ADB / Shizuku / Root) -->
+        <section id="view-taskmgr" class="view-content">
+            <style>
+                .tm-tabs { display: flex; gap: 6px; margin: 12px 0 10px; flex-wrap: wrap; }
+                .tm-tabs .sdb-tab { flex: 1 1 auto; min-width: 72px; padding: 7px 4px 6px; }
+                .tm-settings { display: flex; flex-direction: column; gap: 8px; margin: 2px 0 12px; padding: 10px 12px; border: 1px solid var(--border-glass); background: rgba(var(--ov), 0.04); border-radius: var(--radius-md); }
+                .tm-settings-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+                .tm-settings-row > span:first-child { flex: 0 0 104px; font-size: 11px; color: var(--text-muted); font-weight: 700; }
+                .tm-canvas-wrap { position: relative; width: 100%; height: 150px; border: 1px solid var(--border-glass); border-radius: var(--radius-md); background: var(--input-bg); overflow: hidden; margin: 6px 0 4px; }
+                .tm-canvas-wrap canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+                .tm-canvas-label { position: absolute; left: 8px; top: 6px; font-size: 20px; font-weight: 800; color: var(--text-main); text-shadow: 0 1px 3px rgba(0,0,0,0.5); }
+                .tm-canvas-sub { position: absolute; left: 8px; bottom: 6px; font-size: 10.5px; color: var(--text-muted); text-shadow: 0 1px 3px rgba(0,0,0,0.5); }
+                .tm-cores { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+                .tm-core { flex: 1 1 60px; min-width: 50px; padding: 5px 6px; border: 1px solid var(--border-glass); border-radius: 8px; background: rgba(var(--ov), 0.04); text-align: center; }
+                .tm-core b { display: block; font-size: 13px; }
+                .tm-core span { font-size: 9px; color: var(--text-muted); }
+                .tm-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+                .tm-stat { padding: 8px 10px; border: 1px solid var(--border-glass); border-radius: 10px; background: rgba(var(--ov), 0.04); }
+                .tm-stat b { display: block; font-size: 15px; }
+                .tm-stat span { font-size: 10px; color: var(--text-muted); }
+                .tm-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(var(--ov), 0.05); }
+                .tm-row-info { min-width: 0; flex: 1; }
+                .tm-row-name { font-size: 12px; font-weight: 700; word-break: break-word; }
+                .tm-row-sub { font-size: 9.5px; color: var(--text-muted); margin-top: 2px; }
+                .tm-kill-btn { flex: 0 0 auto; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border-glass); background: rgba(255, 82, 82, 0.12); color: var(--status-bloat); font-size: 15px; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+                .tm-kill-btn:active { transform: scale(0.92); background: rgba(255, 82, 82, 0.28); }
+                .tm-sort-bar { display: flex; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
+                .tm-sort-bar button.on { color: var(--accent); }
+                .tm-net-ifaces { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+                .tm-net-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 10px; border: 1px solid var(--border-glass); border-radius: 10px; background: rgba(var(--ov), 0.04); font-size: 11.5px; }
+                .tm-net-row b { font-weight: 800; }
+                .tm-net-row span { color: var(--text-muted); font-size: 10.5px; }
+            </style>
+
+            <div class="color-card" id="tmTop">
+                <div class="color-card-title">Task Manager</div>
+                <div class="color-card-subtitle">Processes, CPU, RAM, GPU, battery and network, live.</div>
+
+                <div class="mode-alert-card" id="tmGate" style="display:none; margin:12px 0 0;">
+                    <div class="mode-alert-body">
+                        <div class="mode-alert-title">Needs ADB, Wireless Debugging, Shizuku or Root</div>
+                        <div class="mode-alert-desc">Processes, CPU and network read from the shell. Battery works without one; connect a mode in Working Modes for the rest.</div>
+                    </div>
+                    <button class="mode-alert-btn" onclick="openWorkingModesModal()">Set Up</button>
+                </div>
+
+                <div class="tm-tabs sdb-tabs" id="tmTabs" role="tablist" aria-label="Task Manager">
+                    <button type="button" class="sdb-tab" data-sub="processes" role="tab" onclick="tmSetSub('processes')">Processes</button>
+                    <button type="button" class="sdb-tab" data-sub="cpu" role="tab" onclick="tmSetSub('cpu')">CPU</button>
+                    <button type="button" class="sdb-tab" data-sub="ram" role="tab" onclick="tmSetSub('ram')">RAM</button>
+                    <button type="button" class="sdb-tab" data-sub="gpu" role="tab" onclick="tmSetSub('gpu')">GPU</button>
+                    <button type="button" class="sdb-tab" data-sub="battery" role="tab" onclick="tmSetSub('battery')">Battery</button>
+                    <button type="button" class="sdb-tab" data-sub="network" role="tab" onclick="tmSetSub('network')">Network</button>
+                </div>
+
+                <div class="tm-settings">
+                    <div class="tm-settings-row">
+                        <span>Auto-refresh</span>
+                        <select class="op-select" id="tmAutoRefresh" onchange="tmAutoRefreshChange()" aria-label="Auto-refresh">
+                            <option value="0">Off</option>
+                            <option value="1">1 s</option><option value="2">2 s</option><option value="3" selected>3 s</option>
+                            <option value="5">5 s</option><option value="10">10 s</option>
+                        </select>
+                        <button class="batch-tool-link" onclick="tmRefreshNow()">Refresh now</button>
+                    </div>
+                    <div class="tm-settings-row ovl-slider" style="margin:0;">
+                        <b style="flex:0 0 104px; color:var(--text-muted); font-weight:700; font-size:11px;">Graph speed</b>
+                        <input type="range" id="tmGraphDelay" min="150" max="1000" step="10" value="300" oninput="tmGraphDelayInput()" aria-label="Graph speed">
+                        <span id="tmGraphDelayVal" style="font-size:10.5px; color:var(--text-muted); flex:0 0 52px; text-align:right;">300 ms</span>
+                    </div>
+                    <div class="tm-settings-row" id="tmBattUnitsRow" style="display:none;">
+                        <span>Units</span>
+                        <select class="op-select" id="tmTempUnit" onchange="tmSaveUi(); tmRenderBattery();" aria-label="Temperature unit">
+                            <option value="f" selected>°F</option><option value="c">°C</option>
+                        </select>
+                        <select class="op-select" id="tmCurrentUnit" onchange="tmSaveUi(); tmRenderBattery();" aria-label="Current unit">
+                            <option value="ma" selected>mA</option><option value="ua">µA</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Processes -->
+                <div id="tmProcessesPanel">
+                    <div class="tm-sort-bar">
+                        <button class="batch-tool-link on" id="tmSortCpu" onclick="tmSetSort('cpu')">Sort by CPU</button>
+                        <button class="batch-tool-link" id="tmSortMem" onclick="tmSetSort('mem')">Sort by memory</button>
+                    </div>
+                    <div class="tm-status" id="tmProcStatus" style="font-size:11px; color:var(--text-muted); margin-bottom:6px;"></div>
+                    <div id="tmProcList"><div class="list-empty">Open this tab to see what is running.</div></div>
+                </div>
+
+                <!-- CPU -->
+                <div id="tmCpuPanel" style="display:none;">
+                    <div class="tm-canvas-wrap"><canvas id="tmCpuCanvas"></canvas><div class="tm-canvas-label" id="tmCpuNow">—</div><div class="tm-canvas-sub" id="tmCpuSub">&nbsp;</div></div>
+                    <div class="tm-cores" id="tmCpuCores"></div>
+                </div>
+
+                <!-- RAM -->
+                <div id="tmRamPanel" style="display:none;">
+                    <div class="tm-canvas-wrap"><canvas id="tmRamCanvas"></canvas><div class="tm-canvas-label" id="tmRamNow">—</div><div class="tm-canvas-sub" id="tmRamSub">&nbsp;</div></div>
+                    <div class="tm-stat-grid" id="tmRamStats"></div>
+                </div>
+
+                <!-- GPU -->
+                <div id="tmGpuPanel" style="display:none;">
+                    <div class="tm-canvas-wrap"><canvas id="tmGpuCanvas"></canvas><div class="tm-canvas-label" id="tmGpuNow">—</div><div class="tm-canvas-sub" id="tmGpuSub">&nbsp;</div></div>
+                    <div class="switch-sub" id="tmGpuNote" style="margin-top:4px;">GPU load is not exposed the same way on every phone, so this may say "Not available" on yours.</div>
+                </div>
+
+                <!-- BATTERY -->
+                <div id="tmBatteryPanel" style="display:none;">
+                    <div class="tm-canvas-wrap"><canvas id="tmBattCanvas"></canvas><div class="tm-canvas-label" id="tmBattNow">—</div><div class="tm-canvas-sub" id="tmBattSub">&nbsp;</div></div>
+                    <div class="tm-stat-grid" id="tmBattStats"></div>
+                </div>
+
+                <!-- NETWORK -->
+                <div id="tmNetworkPanel" style="display:none;">
+                    <div class="tm-canvas-wrap"><canvas id="tmNetCanvas"></canvas><div class="tm-canvas-label" id="tmNetNow">—</div><div class="tm-canvas-sub" id="tmNetSub">&nbsp;</div></div>
+                    <div class="tm-net-ifaces" id="tmNetIfaces"></div>
+                </div>
+            </div>
+        </section>
+
         <!-- VIEW: ANDROID SETTINGS (the global, secure and system tables) -->
         <section id="view-settings" class="view-content">
             <style>
@@ -5887,6 +6010,7 @@ Type any command below (e.g. pm list packages -d)
             { key: 'updates', label: 'App\nUpdater', name: 'App Updater' },
             { key: 'store', label: 'App\nStores', name: 'App Stores' },
             { key: 'logcat', label: 'Logcat\nViewer', name: 'Logcat Viewer' },
+            { key: 'taskmgr', label: 'Task\nManager', name: 'Task Manager' },
             { key: 'about', label: 'About', name: 'About', fixed: true }
         ];
         const TAB_MOVABLE = TAB_DEFS.filter(t => !t.fixed).map(t => t.key);          // the default order of the tabs that can move
@@ -5975,11 +6099,13 @@ Type any command below (e.g. pm list packages -d)
                 activeView.classList.add('active');
             }
             if (viewName !== 'logcat' && typeof logcatStop === 'function') logcatStop();
+            if (viewName !== 'taskmgr' && typeof tmStop === 'function') tmStop();
             if (viewName === 'debloater') onDebloaterShown();
             if (viewName === 'updates') { onUpdatesShown(); refreshStoreStatus(); }
             if (viewName === 'installer') onInstallerShown();
             if (viewName === 'files') onFilesShown();
             if (viewName === 'logcat') onLogcatShown();
+            if (viewName === 'taskmgr') onTaskMgrShown();
             if (typeof sdbSnackHide === 'function' && !(sdbSnackView ? viewName === sdbSnackView : (viewName === 'settings' || viewName === 'overlays'))) sdbSnackHide();      // its Undo only makes sense next to what it undoes
             if (viewName === 'settings') onSettingsShown();
             if (viewName === 'overlays') onOverlaysShown();
@@ -6011,7 +6137,8 @@ Type any command below (e.g. pm list packages -d)
             '#installPkgLabel', '#installPkgName', '#installSplitsCard .switch-title', '#installExtrasCard .switch-title',
             '.result-item-name', '.result-item-pkg', '.result-item-output', '#commandResultsTitle', '#commandResultsSubtitle', '#signName', '.sign-v', '.sign-fp',
             '.saved-list-title', '.profile-item h4', '.backup-item h4', '.hist-title',
-            '#termOutput', '.term-row-cmd', '.cheat-cmd', '#logcatOutput', '.lc-msg', '#storeDetailName'
+            '#termOutput', '.term-row-cmd', '.cheat-cmd', '#logcatOutput', '.lc-msg', '#storeDetailName',
+            '.tm-row-name', '.tm-row-sub'
         ].join(', '));
         function initLanguageUi() {
             const sel = document.getElementById('langSelect');
@@ -6771,6 +6898,7 @@ Type any command below (e.g. pm list packages -d)
                 if (typeof rishSyncUi === 'function') rishSyncUi();
                 try { if (typeof sdbOnModeChange === 'function') sdbOnModeChange(); } catch (e) { console.error('Settings tab: ' + e); }
                 try { if (typeof ovlOnModeChange === 'function') ovlOnModeChange(); } catch (e) { console.error('Overlays tab: ' + e); }
+                try { if (typeof tmOnModeChange === 'function') tmOnModeChange(); } catch (e) { console.error('Task Manager tab: ' + e); }
 
                 // Update Modal Content
                 document.getElementById('modalActiveModeDesc').innerText = `Selected: ${MODE_LABELS[configured] || configured} • Active: ${text.innerText}`;
@@ -13397,6 +13525,307 @@ Type any command below (e.g. pm list packages -d)
             logcatSetApp(app);
         }
         logcatRenderKey();
+
+        // ---- Task Manager: processes, CPU, RAM, GPU, battery, network. Two independent timers by design: tmGraphMs
+        // redraws the canvas from an in-memory buffer (cheap), tmAutoMs is how often the native side is asked for a
+        // fresh sample (a shell round trip when privileged). Battery and, unprivileged, CPU/RAM/network still work -
+        // only the process list and GPU need a working mode. ----
+        let tmReady = false;
+        let tmSub = 'processes';
+        let tmAutoMs = 3000;
+        let tmGraphMs = 300;
+        let tmTempUnit = 'f';
+        let tmCurrentUnit = 'ma';
+        let tmSort = 'cpu';
+        let tmRedrawTimer = null;
+        let tmLastData = null;
+        const TM_BUF_MAX = 120;
+        const tmBuf = { cpu: [], ram: [], gpu: [], batt: [], net: [] };
+        const TM_PANELS = { processes: 'tmProcessesPanel', cpu: 'tmCpuPanel', ram: 'tmRamPanel', gpu: 'tmGpuPanel', battery: 'tmBatteryPanel', network: 'tmNetworkPanel' };
+
+        function tmInit() {
+            if (tmReady) return;
+            tmReady = true;
+            const ui = kvGet('taskmgr_ui', {}) || {};
+            if (Object.prototype.hasOwnProperty.call(TM_PANELS, ui.sub)) tmSub = ui.sub;
+            if ([0, 1000, 2000, 3000, 5000, 10000].includes(ui.autoMs)) tmAutoMs = ui.autoMs;
+            if (typeof ui.graphMs === 'number' && ui.graphMs >= 150 && ui.graphMs <= 1000) tmGraphMs = ui.graphMs;
+            if (ui.tempUnit === 'c' || ui.tempUnit === 'f') tmTempUnit = ui.tempUnit;
+            if (ui.currentUnit === 'ua' || ui.currentUnit === 'ma') tmCurrentUnit = ui.currentUnit;
+            if (ui.sort === 'mem' || ui.sort === 'cpu') tmSort = ui.sort;
+
+            document.querySelectorAll('#tmTabs .sdb-tab').forEach(b => b.classList.toggle('active', b.dataset.sub === tmSub));
+            const auto = document.getElementById('tmAutoRefresh'); if (auto) auto.value = String(tmAutoMs / 1000);
+            const slider = document.getElementById('tmGraphDelay'); if (slider) slider.value = String(tmGraphMs);
+            const sliderVal = document.getElementById('tmGraphDelayVal'); if (sliderVal) sliderVal.innerText = tmGraphMs + ' ms';
+            const tempSel = document.getElementById('tmTempUnit'); if (tempSel) tempSel.value = tmTempUnit;
+            const curSel = document.getElementById('tmCurrentUnit'); if (curSel) curSel.value = tmCurrentUnit;
+            const sc = document.getElementById('tmSortCpu'); if (sc) sc.classList.toggle('on', tmSort === 'cpu');
+            const sm = document.getElementById('tmSortMem'); if (sm) sm.classList.toggle('on', tmSort === 'mem');
+            tmShowPanels();
+        }
+        function tmSaveUi() { kvSet('taskmgr_ui', { sub: tmSub, autoMs: tmAutoMs, graphMs: tmGraphMs, tempUnit: tmTempUnit, currentUnit: tmCurrentUnit, sort: tmSort }); }
+
+        function tmNeedsPriv() { return tmSub === 'processes' || tmSub === 'gpu'; }
+        function tmRenderGate() {
+            const gate = document.getElementById('tmGate');
+            if (gate) gate.style.display = (tmNeedsPriv() && !isPrivilegedActive) ? '' : 'none';
+        }
+        function tmOnModeChange() {
+            if (currentViewName() !== 'taskmgr') return;
+            tmRenderGate();
+            tmRenderCurrent();
+        }
+
+        function tmShowPanels() {
+            Object.keys(TM_PANELS).forEach(k => { const el = document.getElementById(TM_PANELS[k]); if (el) el.style.display = (k === tmSub) ? '' : 'none'; });
+            const battRow = document.getElementById('tmBattUnitsRow'); if (battRow) battRow.style.display = (tmSub === 'battery') ? '' : 'none';
+            tmRenderGate();
+        }
+        function tmSetSub(sub) {
+            if (!Object.prototype.hasOwnProperty.call(TM_PANELS, sub)) return;
+            tmSub = sub;
+            document.querySelectorAll('#tmTabs .sdb-tab').forEach(b => b.classList.toggle('active', b.dataset.sub === sub));
+            tmSaveUi();
+            haptic();
+            tmShowPanels();
+            tmRenderCurrent();
+            tmRedrawNow();
+        }
+
+        // ---- opening / leaving the tab ----
+        function onTaskMgrShown() {
+            tmInit();
+            tmRenderGate();
+            tmRenderCurrent();
+            tmRedrawNow();
+            if (tmRedrawTimer) clearInterval(tmRedrawTimer);
+            tmRedrawTimer = setInterval(function () { if (!document.hidden) tmRedrawNow(); }, tmGraphMs);
+            if (!window.AndroidBridge || !window.AndroidBridge.tmStart) return;
+            if (tmAutoMs > 0) window.AndroidBridge.tmStart(tmAutoMs); else if (window.AndroidBridge.tmRefreshNow) window.AndroidBridge.tmRefreshNow();
+        }
+        function tmStop() {
+            if (tmRedrawTimer) { clearInterval(tmRedrawTimer); tmRedrawTimer = null; }
+            if (window.AndroidBridge && window.AndroidBridge.tmStop) window.AndroidBridge.tmStop();
+        }
+
+        // ---- settings controls ----
+        function tmAutoRefreshChange() {
+            const sel = document.getElementById('tmAutoRefresh');
+            tmAutoMs = (parseInt(sel.value, 10) || 0) * 1000;
+            tmSaveUi();
+            haptic();
+            if (!window.AndroidBridge) return;
+            if (tmAutoMs > 0) { if (window.AndroidBridge.tmStart) window.AndroidBridge.tmStart(tmAutoMs); }
+            else if (window.AndroidBridge.tmStop) window.AndroidBridge.tmStop();
+        }
+        function tmRefreshNow() {
+            haptic();
+            if (window.AndroidBridge && window.AndroidBridge.tmRefreshNow) window.AndroidBridge.tmRefreshNow();
+        }
+        function tmGraphDelayInput() {
+            const slider = document.getElementById('tmGraphDelay');
+            tmGraphMs = parseInt(slider.value, 10) || 300;
+            const sliderVal = document.getElementById('tmGraphDelayVal'); if (sliderVal) sliderVal.innerText = tmGraphMs + ' ms';
+            tmSaveUi();
+            if (tmRedrawTimer) { clearInterval(tmRedrawTimer); tmRedrawTimer = setInterval(function () { if (!document.hidden) tmRedrawNow(); }, tmGraphMs); }
+        }
+        function tmSetSort(sort) {
+            if (sort !== 'cpu' && sort !== 'mem') return;
+            tmSort = sort;
+            const sc = document.getElementById('tmSortCpu'); if (sc) sc.classList.toggle('on', sort === 'cpu');
+            const sm = document.getElementById('tmSortMem'); if (sm) sm.classList.toggle('on', sort === 'mem');
+            tmSaveUi();
+            haptic();
+            tmRenderProcesses();
+        }
+        function tmKillProc(pkg) {
+            haptic();
+            if (!window.AndroidBridge || !window.AndroidBridge.tmKill) return;
+            window.AndroidBridge.tmKill(pkg);
+            showToast('Stopped ' + pkg);
+            if (window.AndroidBridge.tmRefreshNow) window.AndroidBridge.tmRefreshNow();
+        }
+
+        // ---- data arrival: a cheap push into the buffer; the redraw timer paints it on its own schedule ----
+        function tmPush(buf, v) { buf.push(v); if (buf.length > TM_BUF_MAX) buf.shift(); }
+        function onTaskMgrData(data) {
+            tmLastData = data;
+            if (!data || !data.ok) return;
+            tmPush(tmBuf.cpu, data.cpu ? data.cpu.overall : 0);
+            const mem = data.mem;
+            tmPush(tmBuf.ram, mem && mem.totalKb ? (100 * mem.usedKb / mem.totalKb) : 0);
+            tmPush(tmBuf.gpu, data.gpu && data.gpu.available && data.gpu.percent != null ? data.gpu.percent : 0);
+            tmPush(tmBuf.batt, data.battery && data.battery.percent >= 0 ? data.battery.percent : 0);
+            const net = data.net;
+            tmPush(tmBuf.net, net ? ((net.totalRxBytesPerSec || 0) + (net.totalTxBytesPerSec || 0)) : 0);
+            if (currentViewName() === 'taskmgr') { tmRenderGate(); tmRenderCurrent(); }
+        }
+        window.onTaskMgrData = onTaskMgrData;
+
+        function tmRenderCurrent() {
+            if (tmSub === 'processes') tmRenderProcesses();
+            else if (tmSub === 'cpu') tmRenderCpu();
+            else if (tmSub === 'ram') tmRenderRam();
+            else if (tmSub === 'gpu') tmRenderGpu();
+            else if (tmSub === 'battery') tmRenderBattery();
+            else if (tmSub === 'network') tmRenderNetwork();
+        }
+
+        // ---- a generic canvas line-graph, themed from the app's own CSS custom properties ----
+        function tmCssVar(name) { return (getComputedStyle(document.documentElement).getPropertyValue(name) || '').trim() || '#4ADE80'; }
+        function tmDrawGraph(canvasId, buf, color, scaleMax) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+            const wrap = canvas.parentElement;
+            const w = wrap.clientWidth, h = wrap.clientHeight;
+            if (!w || !h) return;
+            const dpr = window.devicePixelRatio || 1;
+            const pw = Math.round(w * dpr), ph = Math.round(h * dpr);
+            if (canvas.width !== pw) canvas.width = pw;
+            if (canvas.height !== ph) canvas.height = ph;
+            const ctx = canvas.getContext('2d');
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.clearRect(0, 0, w, h);
+            if (!buf.length) return;
+            const max = scaleMax != null ? scaleMax : Math.max(1, ...buf);
+            const n = buf.length;
+            const stepX = TM_BUF_MAX > 1 ? w / (TM_BUF_MAX - 1) : w;
+            const x0 = w - (n - 1) * stepX;
+            const y = v => h - Math.max(0, Math.min(1, v / max)) * (h - 4) - 2;
+            if (n === 1) {       // a bare line/fill path needs two points; show the first reading as a dot instead of nothing
+                ctx.beginPath(); ctx.arc(w - 3, y(buf[0]), 2.5, 0, Math.PI * 2);
+                ctx.fillStyle = color; ctx.fill();
+                return;
+            }
+            const pts = buf.map((v, i) => [x0 + i * stepX, y(v)]);
+            ctx.beginPath();
+            ctx.moveTo(pts[0][0], h);
+            pts.forEach(p => ctx.lineTo(p[0], p[1]));
+            ctx.lineTo(pts[n - 1][0], h);
+            ctx.closePath();
+            ctx.save(); ctx.globalAlpha = 0.16; ctx.fillStyle = color; ctx.fill(); ctx.restore();
+            ctx.beginPath();
+            pts.forEach((p, i) => i === 0 ? ctx.moveTo(p[0], p[1]) : ctx.lineTo(p[0], p[1]));
+            ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.stroke();
+        }
+        function tmRedrawNow() {
+            const accent = tmCssVar('--accent');
+            if (tmSub === 'cpu') tmDrawGraph('tmCpuCanvas', tmBuf.cpu, accent, 100);
+            else if (tmSub === 'ram') tmDrawGraph('tmRamCanvas', tmBuf.ram, accent, 100);
+            else if (tmSub === 'gpu') tmDrawGraph('tmGpuCanvas', tmBuf.gpu, accent, 100);
+            else if (tmSub === 'battery') tmDrawGraph('tmBattCanvas', tmBuf.batt, accent, 100);
+            else if (tmSub === 'network') tmDrawGraph('tmNetCanvas', tmBuf.net, tmCssVar('--secondary'), null);
+        }
+
+        // ---- Processes ----
+        function tmRenderProcesses() {
+            const el = document.getElementById('tmProcList');
+            const statusEl = document.getElementById('tmProcStatus');
+            const d = tmLastData;
+            if (!d) { el.innerHTML = '<div class="list-empty">Open this tab to see what is running.</div>'; statusEl.innerText = ''; return; }
+            if (d.privileged === false) {
+                statusEl.innerText = '';
+                el.innerHTML = '<div class="list-empty">Needs ADB, Wireless Debugging, Shizuku or Root to list processes.</div>';
+                return;
+            }
+            const procs = (d.procs || []).slice().sort(tmSort === 'mem' ? (a, b) => b.rssKb - a.rssKb : (a, b) => b.cpuPercent - a.cpuPercent);
+            statusEl.innerText = procs.length + ' process' + (procs.length === 1 ? '' : 'es') + (d.procsFullFormat === false ? ' (reduced ps output on this device)' : '');
+            if (!procs.length) { el.innerHTML = '<div class="list-empty">No processes read.</div>'; return; }
+            el.innerHTML = procs.slice(0, 200).map(p => {
+                const app = p.pkg ? allApps.find(a => a.pkg === p.pkg) : null;
+                const title = app ? app.name : p.name;
+                const parts = [];
+                if (p.pkg) parts.push(p.pkg);
+                parts.push('PID ' + p.pid, formatBytes(p.rssKb * 1024), p.cpuPercent.toFixed(1) + '% CPU');
+                const killBtn = p.pkg ? `<button class="tm-kill-btn" onclick="tmKillProc('${p.pkg.replace(/'/g, "\\'")}')" aria-label="Force Stop">✕</button>` : '';
+                return `<div class="tm-row"><div class="tm-row-info"><div class="tm-row-name">${escapeHtml(title)}</div><div class="tm-row-sub">${escapeHtml(parts.join(' • '))}</div></div>${killBtn}</div>`;
+            }).join('');
+        }
+
+        // ---- CPU ----
+        function tmRenderCpu() {
+            const d = tmLastData;
+            const nowEl = document.getElementById('tmCpuNow');
+            const subEl = document.getElementById('tmCpuSub');
+            const coresEl = document.getElementById('tmCpuCores');
+            if (!d || !d.ok || !d.cpu) { nowEl.innerText = '—'; subEl.innerText = 'Waiting for data…'; coresEl.innerHTML = ''; return; }
+            nowEl.innerText = Math.round(d.cpu.overall) + '%';
+            subEl.innerText = d.cpu.cores + ' core' + (d.cpu.cores === 1 ? '' : 's');
+            const per = d.cpu.perCore || [];
+            coresEl.innerHTML = per.length ? per.map((v, i) => `<div class="tm-core"><b>${Math.round(v)}%</b><span>Core ${i}</span></div>`).join('') : '<div class="tm-core"><b>—</b><span>No per-core data yet</span></div>';
+        }
+
+        // ---- RAM ----
+        function tmRenderRam() {
+            const d = tmLastData;
+            const nowEl = document.getElementById('tmRamNow');
+            const subEl = document.getElementById('tmRamSub');
+            const statsEl = document.getElementById('tmRamStats');
+            if (!d || !d.ok || !d.mem || !d.mem.totalKb) { nowEl.innerText = '—'; subEl.innerText = 'Waiting for data…'; statsEl.innerHTML = ''; return; }
+            const m = d.mem;
+            nowEl.innerText = Math.round(100 * m.usedKb / m.totalKb) + '%';
+            subEl.innerText = `Using ${formatBytes(m.usedKb * 1024)} of ${formatBytes(m.totalKb * 1024)}`;
+            const rows = [['Used', formatBytes(m.usedKb * 1024)], ['Available', formatBytes(m.availableKb * 1024)], ['Swap used', formatBytes(m.swapUsedKb * 1024)], ['Swap total', formatBytes(m.swapTotalKb * 1024)]];
+            statsEl.innerHTML = rows.map(r => `<div class="tm-stat"><b>${r[1]}</b><span>${r[0]}</span></div>`).join('');
+        }
+
+        // ---- GPU ----
+        function tmRenderGpu() {
+            const d = tmLastData;
+            const nowEl = document.getElementById('tmGpuNow');
+            const subEl = document.getElementById('tmGpuSub');
+            const noteEl = document.getElementById('tmGpuNote');
+            if (!d || !d.ok || !d.gpu || !d.gpu.available) {
+                nowEl.innerText = '—';
+                subEl.innerText = (d && d.privileged === false) ? 'Needs a working mode' : 'Not available on this phone';
+                if (noteEl) noteEl.style.display = '';
+                return;
+            }
+            if (noteEl) noteEl.style.display = d.gpu.approx ? '' : 'none';
+            nowEl.innerText = d.gpu.percent != null ? Math.round(d.gpu.percent) + '%' : '—';
+            subEl.innerText = d.gpu.label || (d.gpu.approx ? 'Approximate (clock-speed based)' : '');
+        }
+
+        // ---- Battery ----
+        function tmRenderBattery() {
+            const tempSel = document.getElementById('tmTempUnit'); if (tempSel) tmTempUnit = tempSel.value;
+            const curSel = document.getElementById('tmCurrentUnit'); if (curSel) tmCurrentUnit = curSel.value;
+            const d = tmLastData;
+            const nowEl = document.getElementById('tmBattNow');
+            const subEl = document.getElementById('tmBattSub');
+            const statsEl = document.getElementById('tmBattStats');
+            const b = d && d.battery;
+            if (!b || b.percent == null || b.percent < 0) { nowEl.innerText = '—'; subEl.innerText = 'Waiting for data…'; statsEl.innerHTML = ''; return; }
+            nowEl.innerText = Math.round(b.percent) + '%';
+            const PLUG = { 1: 'AC', 2: 'USB', 4: 'Wireless' };
+            const STATUS = { 2: 'Charging', 3: 'Discharging', 4: 'Not charging', 5: 'Full' };
+            const statusText = STATUS[b.status] || '', plugText = b.plugged ? (PLUG[b.plugged] || 'Plugged in') : '';
+            subEl.innerHTML = `<span>${escapeHtml(statusText)}</span>` + (plugText ? ` • <span>${escapeHtml(plugText)}</span>` : '');
+            const tempC = (b.tempTenthsC != null && b.tempTenthsC > -2000) ? b.tempTenthsC / 10 : null;
+            const tempStr = tempC == null ? '—' : (tmTempUnit === 'f' ? Math.round(tempC * 9 / 5 + 32) + '°F' : Math.round(tempC) + '°C');
+            const curMicro = (b.currentMicroA != null && b.currentMicroA > -2000000000) ? b.currentMicroA : null;
+            const curStr = curMicro == null ? '—' : (tmCurrentUnit === 'ua' ? Math.round(curMicro) + ' µA' : Math.round(curMicro / 1000) + ' mA');
+            const voltStr = (b.voltageMv != null && b.voltageMv > 0) ? (b.voltageMv / 1000).toFixed(2) + ' V' : '—';
+            const HEALTH = { 2: 'Good', 3: 'Overheat', 4: 'Dead', 5: 'Over voltage', 6: 'Failure', 7: 'Cold' };
+            const rows = [['Temperature', tempStr], ['Current', curStr], ['Voltage', voltStr], ['Health', HEALTH[b.health] || 'Unknown']];
+            statsEl.innerHTML = rows.map(r => `<div class="tm-stat"><b>${r[1]}</b><span>${r[0]}</span></div>`).join('');
+        }
+
+        // ---- Network ----
+        function tmRenderNetwork() {
+            const d = tmLastData;
+            const nowEl = document.getElementById('tmNetNow');
+            const subEl = document.getElementById('tmNetSub');
+            const ifacesEl = document.getElementById('tmNetIfaces');
+            const net = d && d.net;
+            if (!net) { nowEl.innerText = '—'; subEl.innerText = 'Waiting for data…'; ifacesEl.innerHTML = ''; return; }
+            const total = (net.totalRxBytesPerSec || 0) + (net.totalTxBytesPerSec || 0);
+            nowEl.innerText = formatBytes(total) + '/s';
+            subEl.innerText = '↓ ' + formatBytes(net.totalRxBytesPerSec || 0) + '/s  ↑ ' + formatBytes(net.totalTxBytesPerSec || 0) + '/s';
+            const ifaces = (net.ifaces || []).slice().sort((a, b) => (b.rxBytesPerSec + b.txBytesPerSec) - (a.rxBytesPerSec + a.txBytesPerSec));
+            ifacesEl.innerHTML = ifaces.length ? ifaces.map(i => `<div class="tm-net-row"><b>${escapeHtml(i.name)}</b><span>↓ ${formatBytes(i.rxBytesPerSec)}/s  ↑ ${formatBytes(i.txBytesPerSec)}/s</span></div>`).join('') : '<div class="list-empty">No active network interface.</div>';
+        }
 
         // ---- Play Store / Aurora update routing (lightweight) ----
         function refreshStoreStatus() {

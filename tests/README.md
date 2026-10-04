@@ -109,6 +109,11 @@ Two things made scripts fail only on a busy machine, and what to do instead:
 | `rarreader` | RAR archives (RAR 1.5–4.x via junrar, RAR5 hand-written): list, one-pass walk, open, solid archives, filters (E8/E8E9/ARM/delta), AES-256 data and `-hp` encrypted headers, against real RAR4/RAR5 fixtures from the `rarfile` and `libarchive` projects (`fixtures/rar/fetch.sh`; a fixture-less run SKIPs) | |
 | `zipwriter` | Making a new zip: stored / deflated, folders, unicode names, the ZIP64 end record, and AES-256 / AES-128 / ZipCrypto passwords, read back through the zip engine, Info-ZIP and pyzipper | Python 3 with `pyzipper` (optional); `unzip` |
 | `zipcrypt` | Zip passwords at the raw-entry level: traditional ZipCrypto and WinZip AES (128/192/256), checked against Info-ZIP `zip`/`unzip` and pyzipper, wrong password, tampering, empty and large entries, unicode | Python 3 with `pyzipper` (optional); `zip`, `unzip` |
+| `cpustats` | `/proc/stat`: aggregate and per-core snapshots, busy-percent from two readings (clamped), core count | |
+| `memstats` | `/proc/meminfo`: totals, the used-memory fallback when `MemAvailable` is missing, swap used | |
+| `netstats` | `/proc/net/dev`: the one-colon data-line rule (header and junk lines ignored), per-interface and total rx/tx, rates from two readings (clamped, independent per direction) | |
+| `procstats` | `ps -A -o PID,PPID,USER,RSS,%CPU,NAME` output (toybox, busybox and a reduced fallback, told apart by column-label matching), the package name a process name resolves to (or not, for a kernel/native one), top-by-CPU / top-by-memory | |
+| `gpustats` | Vendor-specific sysfs readings (Adreno `gpubusy` / `gpu_busy_percentage`, Mali-style utilization, a devfreq clock-speed ratio as a last-resort approximation), the first available one wins | |
 
 - `org.json`: Android's copy is only stubs, so pass a real one: `ORG_JSON_JAR=/path/json-20240303.jar`
   (`curl -L -o .cache/org-json.jar https://repo1.maven.org/maven2/org/json/json/20240303/json-20240303.jar` is found by itself),
@@ -131,7 +136,7 @@ checked by compilation, review and these simulations, not on a device.
 
 ## The UI scripts, one by one
 
-<details><summary>86 scripts</summary>
+<details><summary>87 scripts</summary>
 
 | Script | Covers |
 |---|---|
@@ -220,6 +225,7 @@ checked by compilation, review and these simulations, not on a device.
 | `t84` | v7.3 Installer, what the search found: Duplicate / Older version flags, Select and the cleanup pick, Delete selected with one Undo (and the files going for good when the bar goes), and the offer to delete the installer file after an install | `lib/inst_mock.js` |
 | `t85` | v7.4 Code and markup shown in colour by default (editor, plain viewer, archive preview): tags / attributes / strings / comments told apart, typing updates it live, the Colors switch and its own choice remembered, nested `<script>`/`<style>`, a plain text file left alone, hostile HTML in a file never runs (the colour layer is built from escaped text), a size cap, odd/unfinished input never throws, word wrap on by default and remembered, the colours follow light/dark | `lib/fm_mock.js` |
 | `t86` | v7.4 The password dialog (asked on open, mid-browse and on extract; wrong password tried again, never saved) and the Compress dialog (zip / 7z / tar family / a single compressed file, packing level, an optional password with the right protection choices per format, where to save, name-taken policy, Select-mode and single-file sheet entry points) | |
+| `t87` | v7.5 Task Manager tab: Processes (sort by CPU/memory, app-name resolution, the kill button with no confirmation, the gate when there is no working mode), CPU/RAM/Network with no gate (world-readable `/proc`), Battery units, GPU's approximate-reading note, settings persisted across leaving and reopening the tab, a single reading still drawing a point on the graph | |
 | `test` | Working Modes (switching, Shizuku, IP:port entry, auto-detect) and Material 3 / Material You color presets |
 
 </details>

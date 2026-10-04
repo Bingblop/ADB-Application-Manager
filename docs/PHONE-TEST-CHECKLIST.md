@@ -66,3 +66,28 @@ Tick the box when it works; write what you saw when it does not.
       `.txt` stays plain. The **Colors** and **Wrap lines** switches in the editor do what they say and are remembered after closing and reopening.
 - [ ] A very large source file (several MB): colouring does not noticeably slow down opening or scrolling (it should give up and show it plain past a size
       the app considers too big).
+
+## v7.5: Task Manager
+
+- [ ] Open **Task Manager** (after Logcat Viewer) with no working mode connected: **Processes** and **GPU** show the "needs a working mode" card;
+      **CPU**, **RAM**, **Battery** and **Network** work anyway, with live numbers and a moving graph.
+- [ ] Connect a working mode: the gate on Processes and GPU goes away without leaving the tab; the process list fills in, sorted by CPU, and
+      **Sort by memory** re-sorts it live as new readings arrive.
+- [ ] Press the **✕** on a running app's row: it force-stops immediately, with **no confirmation dialog**, and the list refreshes right away.
+- [ ] CPU: the per-core row count matches the phone's real core count; load a core (anything that keeps the CPU busy) and watch the graph and the
+      per-core numbers respond within a couple of auto-refresh ticks.
+- [ ] RAM: the used/available/swap figures roughly match another tool (`dumpsys meminfo`, a system monitor app).
+- [ ] GPU: on a phone with an Adreno or Mali GPU, scrolling something heavy (a game, a long list) moves the number; on anything else it says
+      "Not available on this phone" instead of showing a wrong reading. If it falls back to the clock-speed approximation, the note under the graph
+      says so.
+- [ ] Battery: unplug and plug the charger (AC, then USB if you have both) and watch the status line follow in a few seconds; the **°F/°C** and
+      **mA/µA** switches change the shown numbers immediately, with no new reading needed.
+- [ ] Network: start a download or a video call and watch the ↓/↑ numbers and the graph move; switch Wi-Fi off and on and confirm the interface
+      list updates.
+- [ ] **Auto-refresh** off vs a short interval: with it off, numbers only move after **Refresh now**; with a short interval, they move on their own.
+      **Graph speed** at its fastest vs slowest: the line on the graph visibly redraws more or less often (this does not change how often a fresh
+      reading is fetched).
+- [ ] Leave the tab (switch to another one) and come back: the chosen sub-tab, units, sort and both sliders are exactly as you left them, and the
+      graph starts collecting again (it does not pick up where it left off — v7.5 does not keep readings across a visit).
+- [ ] Leaving the tab stops the readings (check battery/data use does not creep up while on another tab for a while), and switching Working Modes
+      while the tab is open (e.g. turning off Shizuku) is reflected without restarting the app.
