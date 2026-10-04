@@ -196,6 +196,65 @@ public class FileOpsTest {
     o = sh(FileOps.shellScript("cp -r", new File(ss, "dir").getPath(), new File(sd, "fresh/er").getPath(), FileOps.SKIP));
     check("shell skip into a folder that does not exist makes it: " + o, o.contains("FMOK") && new File(sd, "fresh/er/dir/k.txt").isFile());
 
+    // ---------- the review's findings ----------
+    File rv = tmp("fo-rev"), rs = tmp("fo-revs");
+    // a link inside a copied folder must not replace a real folder at the target (and take its content with it)
+    write(new File(rs, "p/real.txt"), "R"); Files.createSymbolicLink(new File(rs, "p/foo").toPath(), new File("real.txt").toPath());
+    write(new File(rv, "p/foo/precious.txt"), "KEEP");
+    r = FileOps.copy(l(new File(rs, "p")), rv, FileOps.REPLACE, null);
+    check("a link meeting a real folder at the target fails with a reason and the folder keeps its content", r.failed.size() == 1 && r.failed.get(0)[1].contains("in the way") && read(new File(rv, "p/foo/precious.txt")).equals("KEEP"));
+    r = FileOps.move(l(new File(rs, "p")), rv, FileOps.REPLACE, null);
+    check("... also for a move: the link stays in the source, the real folder keeps its content", Files.isSymbolicLink(new File(rs, "p/foo").toPath()) && read(new File(rv, "p/foo/precious.txt")).equals("KEEP"));
+    // a link replacing a file keeps the file when the link cannot be made (here: it can, so it is replaced in one step)
+    write(new File(rs, "q/x"), "X"); Files.createSymbolicLink(new File(rs, "q/lnk").toPath(), new File("x").toPath());
+    write(new File(rv, "q/lnk"), "OLD FILE");
+    r = FileOps.copy(l(new File(rs, "q")), rv, FileOps.REPLACE, null);
+    check("a link over a file replaces it with the link, leaving no temporary name", Files.isSymbolicLink(new File(rv, "q/lnk").toPath()) && names(new File(rv, "q")).equals(Arrays.asList("lnk", "x")));
+    // a pipe inside a folder is left out instead of hanging the copy
+    File fifoDir = new File(rs, "f"); fifoDir.mkdirs(); write(new File(fifoDir, "ok.txt"), "OK");
+    boolean madeFifo = new ProcessBuilder("mkfifo", new File(fifoDir, "pipe").getPath()).start().waitFor() == 0;
+    if (madeFifo) {
+      final FileOps.Result[] rr = new FileOps.Result[1];
+      Thread th = new Thread(new Runnable() { public void run() { rr[0] = FileOps.copy(l(new File(rs, "f")), rv, FileOps.REPLACE, null); } });
+      th.setDaemon(true); th.start(); th.join(5000);
+      check("a pipe in a folder does not hang the copy: it is left out and counted as skipped", rr[0] != null && rr[0].skipped == 1 && read(new File(rv, "f/ok.txt")).equals("OK") && !new File(rv, "f/pipe").exists());
+    }
+    // a hidden file that looks like the old temporary name is not touched
+    write(new File(rs, "a"), "NEW"); write(new File(rs, ".a.fmtmp"), "HIDDEN");
+    r = FileOps.copy(l(new File(rs, "a"), new File(rs, ".a.fmtmp")), rv, FileOps.REPLACE, null);
+    check("a file named like a temporary file is copied as itself", read(new File(rv, "a")).equals("NEW") && read(new File(rv, ".a.fmtmp")).equals("HIDDEN"));
+    // a folder and a file in it, both picked
+    write(new File(rs, "n/in/deep.txt"), "D");
+    r = FileOps.delete(l(new File(rs, "n"), new File(rs, "n/in/deep.txt"), new File(rs, "n")), null);
+    check("delete: a folder and what is inside it, both picked (and one twice), is one item without a failure", r.failed.isEmpty() && r.done == 1 && !new File(rs, "n").exists());
+    // writeAtomic
+    write(new File(rs, "tgt.txt"), "T"); Files.createSymbolicLink(new File(rs, "lk.txt").toPath(), new File("tgt.txt").toPath());
+    FileOps.writeAtomic(new File(rs, "lk.txt"), "via link".getBytes(StandardCharsets.UTF_8));
+    check("writeAtomic through a link writes the file it points at and keeps the link", Files.isSymbolicLink(new File(rs, "lk.txt").toPath()) && read(new File(rs, "tgt.txt")).equals("via link"));
+    new File(rs, "adir").mkdir();
+    threw = false; try { FileOps.writeAtomic(new File(rs, "adir"), new byte[]{1}); } catch (IOException e) { threw = true; }
+    check("writeAtomic onto a folder is refused and the folder stays", threw && new File(rs, "adir").isDirectory());
+    // names: bytes, not characters
+    StringBuilder cjk = new StringBuilder(); for (int i = 0; i < 100; i++) cjk.append('日');
+    check("a name over 240 bytes is refused (100 CJK letters are 300 bytes), 70 are fine", FileOps.badName(cjk.toString()) != null && FileOps.badName(cjk.substring(0, 70)) == null && FileOps.badName(new String(new char[241]).replace('\0', 'a')) != null);
+    // a move onto an existing file of the same volume replaces it and counts as done
+    write(new File(rs, "mv1.txt"), "NEWER"); write(new File(rv, "mv1.txt"), "OLDER");
+    r = FileOps.move(l(new File(rs, "mv1.txt")), rv, FileOps.REPLACE, null);
+    check("a move onto a file replaces it in one step", r.done == 1 && read(new File(rv, "mv1.txt")).equals("NEWER") && !new File(rs, "mv1.txt").exists() && r.bytes == 0);
+    // a move into a merged folder where something is skipped does not count the folder as done
+    write(new File(rs, "mm/keep.txt"), "S"); write(new File(rv, "mm/keep.txt"), "D");
+    r = FileOps.move(l(new File(rs, "mm")), rv, FileOps.SKIP, null);
+    check("a merge move that leaves something behind is not counted as done", r.done == 0 && r.skipped == 1 && new File(rs, "mm/keep.txt").isFile());
+    // Cancel: after the first of two items the second is not started; a Cancel during the only item stops it and leaves nothing
+    write(new File(rs, "c1"), "1"); write(new File(rs, "c2"), "2");
+    File cd = tmp("fo-last");
+    r = FileOps.copy(l(new File(rs, "c1"), new File(rs, "c2")), cd, FileOps.REPLACE, new FileOps.Progress() { public boolean onProgress(String n2, long b2, int i2) { return i2 < 1; } });
+    check("Cancel after the first item: it is done, the second is not started, the result says cancelled", r.cancelled && r.done == 1 && names(cd).equals(Arrays.asList("c1")));
+    File cd2 = tmp("fo-last2");
+    r = FileOps.copy(l(new File(rs, "c1")), cd2, FileOps.REPLACE, new FileOps.Progress() { public boolean onProgress(String n2, long b2, int i2) { return false; } });
+    check("Cancel during the only item stops it and leaves nothing behind", r.cancelled && r.done == 0 && names(cd2).isEmpty());
+    rm(rv); rm(rs);
+
     // ---------- picture cache ----------
     File tc = tmp("fo-thumbs");
     String k1 = ThumbCache.key("/a/b.jpg", 1000, 2000, 96), k2 = ThumbCache.key("/a/b.jpg", 1001, 2000, 96), k3 = ThumbCache.key("/a/b.jpg", 1000, 2000, 128);

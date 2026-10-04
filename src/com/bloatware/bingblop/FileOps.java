@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,7 +25,7 @@ public final class FileOps {
 
     public static final int REPLACE = 0, SKIP = 1, KEEP_BOTH = 2;
 
-    /** Called now and then while a job runs; return false to stop it. */
+    /** Called after each item and now and then inside a big file; return false to stop the job. The caller decides how often to show anything. */
     public interface Progress {
         boolean onProgress(String name, long bytesDone, int itemsDone);
     }
@@ -86,7 +88,7 @@ public final class FileOps {
             s.append("if [ -e \"$t\" ] || [ -L \"$t\" ]; then echo FMSKIP; else mkdir -p \"$d\" && ").append(verb).append(" \"$s\" \"$t\" && echo FMOK; fi");
         } else if (policy == KEEP_BOTH) {
             s.append("case \"$b\" in ")
-                    .append("*.tar.gz|*.tar.bz2|*.tar.xz|*.tar.zst|*.tar.lz4) x=\".tar.${b##*.tar.}\"; n=\"${b%$x}\";; ")
+                    .append("*.tar.gz|*.tar.bz2|*.tar.xz|*.tar.zst|*.tar.lz4|*.tar.z|*.tar.lz|*.tar.lzma) x=\".tar.${b##*.tar.}\"; n=\"${b%$x}\";; ")
                     .append("?*.*) x=\".${b##*.}\"; n=\"${b%.*}\";; ")
                     .append("*) x=\"\"; n=\"$b\";; esac; ")
                     .append("i=1; while [ -e \"$t\" ] || [ -L \"$t\" ]; do t=\"$d/$n ($i)$x\"; i=$((i+1)); done; ")
@@ -131,20 +133,43 @@ public final class FileOps {
     private static Result run(List<File> sources, File destDir, int policy, Progress progress, boolean move) {
         Result r = new Result();
         Ctx c = new Ctx(policy, progress, r);
+        sources = dropNested(sources);
         if (!destDir.isDirectory() && !destDir.mkdirs()) {
             for (File s : sources) r.failed.add(new String[]{s.getPath(), "The destination folder could not be created"});
             return r;
         }
-        for (File s : sources) {
+        for (int i = 0; i < sources.size(); i++) {
+            File s = sources.get(i);
             if (r.cancelled) break;
             try {
                 if (transfer(s, destDir, c, move)) r.done++;
             } catch (IOException e) {
                 r.failed.add(new String[]{s.getPath(), msg(e)});
             }
-            c.tick(s.getName(), true);
+            if (i < sources.size() - 1) c.tick(s.getName(), true);          // a Cancel that comes after the last item changes nothing
         }
         return r;
+    }
+
+    /** Without the paths that lie inside another path of the list (a folder and a file in it were both picked: the folder takes the file along). */
+    static List<File> dropNested(List<File> in) {
+        List<String> canon = new ArrayList<String>();
+        for (File f : in) {
+            String c;
+            try { c = f.getParentFile() == null ? f.getPath() : new File(f.getParentFile().getCanonicalFile(), f.getName()).getPath(); } catch (IOException e) { c = f.getAbsolutePath(); }
+            canon.add(c);
+        }
+        List<File> out = new ArrayList<File>();
+        for (int i = 0; i < in.size(); i++) {
+            boolean nested = false;
+            for (int j = 0; j < in.size() && !nested; j++) {
+                if (i == j) continue;
+                String a = canon.get(i), b = canon.get(j);
+                if (a.equals(b) ? j < i : a.startsWith(b.endsWith("/") ? b : b + "/")) nested = true;      // a duplicate counts once
+            }
+            if (!nested) out.add(in.get(i));
+        }
+        return out;
     }
 
     private static String msg(Exception e) {
@@ -185,6 +210,9 @@ public final class FileOps {
             throw new IOException(srcDir ? "A file with that name is in the way" : "A folder with that name is in the way");
         if (move && !there) {
             if (src.renameTo(target)) return true;                              // the quick way: same volume
+        } else if (move && there && !srcDir && !isLink(target) && !target.isDirectory()) {
+            try { Files.move(src.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE); return true; }   // onto a file of the same volume: a rename over it
+            catch (IOException | UnsupportedOperationException e) { /* another volume: copy below */ }
         }
         if (move && there && srcDir) {                                          // a folder moved onto a folder: item by item, so what is left alone stays in the source
             File[] kids = src.listFiles();
@@ -195,12 +223,14 @@ public final class FileOps {
                 try { transfer(k, target, c, true); } catch (IOException e) { if (first == null) first = new IOException(k.getName() + ": " + msg(e)); }
             }
             if (first != null) throw first;
-            src.delete();                                                        // only goes when nothing was left behind
-            return true;
+            return src.delete();                                                 // only goes when nothing was left behind; else the folder is not counted as done
         }
         copyTree(src, target, c, there);
         if (c.r.cancelled) return false;
-        if (move) deleteTree(src, c.r, true);
+        if (move) {
+            deleteTree(src, c.r, true);
+            if (exists(src)) throw new IOException("Copied, but the original could not be removed");
+        }
         return true;
     }
 
@@ -208,16 +238,18 @@ public final class FileOps {
     private static void copyTree(File src, File target, Ctx c, boolean merge) throws IOException {
         if (c.r.cancelled) return;
         if (isLink(src)) {
-            File dir = target.getParentFile();
-            if (exists(target)) deleteTree(target, c.r, false);
+            if (exists(target) && !isLink(target) && target.isDirectory()) throw new IOException("A folder with that name is in the way");
+            File tmp = tmpFor(target.getParentFile());
             try {
-                Files.createSymbolicLink(target.toPath(), Files.readSymbolicLink(src.toPath()));
+                Files.createSymbolicLink(tmp.toPath(), Files.readSymbolicLink(src.toPath()));      // made under another name and renamed over the target, so a failure keeps what is there
+                Files.move(tmp.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
             } catch (IOException | UnsupportedOperationException e) {
+                tmp.delete();
                 throw new IOException("The link could not be copied");
             }
-            if (dir != null) dir.setLastModified(dir.lastModified());
             return;
         }
+        if (!src.isDirectory() && !Files.isRegularFile(src.toPath(), LinkOption.NOFOLLOW_LINKS)) throw new IOException("Not an ordinary file (a pipe, socket or device)");
         if (src.isDirectory()) {
             if (!target.isDirectory() && !target.mkdirs()) throw new IOException("The folder could not be created");
             File[] kids = src.listFiles();
@@ -230,8 +262,10 @@ public final class FileOps {
                     boolean exists = exists(t);
                     if (exists && c.policy == SKIP) { c.r.skipped++; continue; }
                     if (exists && c.policy == KEEP_BOTH) { t = new File(target, uniqueName(target, k.getName())); exists = false; }
-                    if (exists && !isLink(k) && k.isDirectory() != (!isLink(t) && t.isDirectory()))
-                        throw new IOException(k.isDirectory() ? "A file with that name is in the way" : "A folder with that name is in the way");
+                    if (!isLink(k) && !k.isDirectory() && !Files.isRegularFile(k.toPath(), LinkOption.NOFOLLOW_LINKS)) { c.r.skipped++; continue; }     // a pipe, socket or device is left out
+                    boolean kDir = !isLink(k) && k.isDirectory();
+                    if (exists && kDir != (!isLink(t) && t.isDirectory()))
+                        throw new IOException(kDir ? "A file with that name is in the way" : "A folder with that name is in the way");
                     copyTree(k, t, c, exists && !isLink(k) && k.isDirectory());
                 } catch (IOException e) {
                     if (first == null) first = new IOException(k.getName() + ": " + msg(e));
@@ -244,9 +278,30 @@ public final class FileOps {
         copyFile(src, target, c);
     }
 
+    private static final java.security.SecureRandom RND = new java.security.SecureRandom();
+
+    /** A free temporary name in {@code dir}: short (a long file name plus a suffix would not fit), random, and never the name of a real file. */
+    static File tmpFor(File dir) {
+        for (int i = 0; i < 20; i++) {
+            File f = new File(dir, ".fo" + Long.toHexString(RND.nextLong() & 0xFFFFFFFFFFL) + ".tmp");
+            if (!exists(f)) return f;
+        }
+        return new File(dir, ".fo" + System.nanoTime() + ".tmp");
+    }
+
+    /** Puts tmp in place of target in one step: the old file is never removed before the new one is there. */
+    private static void replaceWith(File tmp, File target) throws IOException {
+        if (exists(target) && !isLink(target) && target.isDirectory()) throw new IOException("A folder with that name is in the way");
+        try {
+            Files.move(tmp.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+        } catch (IOException | UnsupportedOperationException e) {
+            try { Files.move(tmp.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING); }
+            catch (IOException e2) { throw new IOException("The file could not be stored"); }
+        }
+    }
+
     private static void copyFile(File src, File target, Ctx c) throws IOException {
-        File dir = target.getParentFile();
-        File tmp = new File(dir, "." + target.getName() + ".fmtmp");
+        File tmp = tmpFor(target.getParentFile());
         boolean ok = false;
         InputStream in = new FileInputStream(src);
         try {
@@ -261,11 +316,7 @@ public final class FileOps {
                 }
             } finally { out.close(); }
             tmp.setLastModified(src.lastModified());
-            if (exists(target) && !isLink(target) && target.isDirectory()) throw new IOException("A folder with that name is in the way");
-            if (!tmp.renameTo(target)) {                                        // a file system that will not rename onto an existing file
-                if (exists(target) && !target.delete()) throw new IOException("The existing file could not be replaced");
-                if (!tmp.renameTo(target)) throw new IOException("The file could not be stored");
-            }
+            replaceWith(tmp, target);
             ok = true;
         } finally {
             try { in.close(); } catch (IOException ignored) {}
@@ -277,13 +328,14 @@ public final class FileOps {
     public static Result delete(List<File> paths, Progress progress) {
         Result r = new Result();
         Ctx c = new Ctx(REPLACE, progress, r);
+        paths = dropNested(paths);
         for (File f : paths) {
             if (r.cancelled) break;
             if (!exists(f)) { r.failed.add(new String[]{f.getPath(), "No such file or folder"}); continue; }
             int before = r.failed.size();
             deleteTree(f, r, false);
             if (r.failed.size() == before) r.done++;
-            c.tick(f.getName(), true);
+            if (f != paths.get(paths.size() - 1)) c.tick(f.getName(), true);
         }
         return r;
     }
@@ -305,7 +357,8 @@ public final class FileOps {
         if (name == null || name.trim().isEmpty()) return "Enter a name";
         if (name.equals(".") || name.equals("..")) return "That name is not allowed";
         if (name.indexOf('/') >= 0) return "A name cannot contain a slash";
-        if (name.indexOf('\u0000') >= 0 || name.length() > 255) return "That name is not allowed";
+        if (name.indexOf('\u0000') >= 0) return "That name is not allowed";
+        if (name.getBytes(java.nio.charset.StandardCharsets.UTF_8).length > 240) return "That name is too long";
         for (int i = 0; i < name.length(); i++) if (name.charAt(i) < 32) return "That name is not allowed";
         return null;
     }
@@ -330,18 +383,16 @@ public final class FileOps {
         return true;
     }
 
-    /** Writes {@code data} to {@code f} through a temporary file, so a failed write keeps the old content. */
+    /** Writes {@code data} to {@code f} through a temporary file, so a failed write keeps the old content. A link is written through to what it points at. */
     public static void writeAtomic(File f, byte[] data) throws IOException {
-        File dir = f.getParentFile();
-        File tmp = new File(dir, "." + f.getName() + ".fmtmp");
+        if (isLink(f)) f = f.getCanonicalFile();
+        if (f.isDirectory()) throw new IOException("That is a folder, not a file");
+        File tmp = tmpFor(f.getParentFile());
         boolean ok = false;
         try {
             OutputStream out = new FileOutputStream(tmp);
             try { out.write(data); } finally { out.close(); }
-            if (!tmp.renameTo(f)) {
-                if (f.exists() && !f.delete()) throw new IOException("The file could not be replaced");
-                if (!tmp.renameTo(f)) throw new IOException("The file could not be stored");
-            }
+            replaceWith(tmp, f);
             ok = true;
         } finally {
             if (!ok) tmp.delete();

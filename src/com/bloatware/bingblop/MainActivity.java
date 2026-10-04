@@ -2592,7 +2592,9 @@ public class MainActivity extends Activity {
                     if (fb.isDirectory()) { if (!fmDirectOk("mv", a, b)) return null; FileOps.Result r = FileOps.move(java.util.Collections.singletonList(fa), fb, FileOps.REPLACE, null); return r.failed.isEmpty() ? "" : r.failed.get(0)[1]; }
                     File pa = fa.getParentFile(), pb = fb.getParentFile();
                     if (pa == null || pb == null || !pa.canWrite() || !pb.isDirectory() || !pb.canWrite() || !fa.exists()) return null;
-                    if (fb.exists()) return "A file or folder with that name is already there";
+                    boolean same = false;
+                    try { same = fb.exists() && java.nio.file.Files.isSameFile(fa.toPath(), fb.toPath()); } catch (Exception ignored) {}      // only the case of the name changes
+                    if (fb.exists() && !same) return "A file or folder with that name is already there";
                     return fa.renameTo(fb) ? "" : "?";
                 }
                 if (fb.isDirectory()) { if (!fmDirectOk("cp", a, b)) return null; FileOps.Result r = FileOps.copy(java.util.Collections.singletonList(fa), fb, FileOps.REPLACE, null); return r.failed.isEmpty() ? "" : r.failed.get(0)[1]; }
@@ -7754,9 +7756,16 @@ public class MainActivity extends Activity {
                     res.put("writable", f.canWrite() || (f.getParentFile() != null && f.getParentFile().canWrite()));
                 } else {
                     if ("standard".equals(resolveExecMode())) { needFileAccess("To read this file", path); res.put("ok", false); res.put("error", "The app cannot read this file. Grant All-files access for storage, or set up ADB, Shizuku or Root."); return res.toString(); }
-                    String out = executeShell("toybox head -c " + (FM_EDIT_MAX + 1) + " " + BackupScripts.quote(path) + " 2>&1 || head -c " + (FM_EDIT_MAX + 1) + " " + BackupScripts.quote(path));
-                    data = (out == null ? "" : out).getBytes(java.nio.charset.StandardCharsets.UTF_8);
-                    if (data.length > FM_EDIT_MAX) { res.put("ok", false); res.put("tooBig", true); res.put("error", "This file is over 2 MB: too big to edit here."); return res.toString(); }
+                    // the exact bytes (base64 keeps line ends, a missing last newline and odd bytes), and an error is never mistaken for the file
+                    String qp = BackupScripts.quote(path);
+                    String out = executeShell("p=" + qp + "; if [ ! -f \"$p\" ] || [ ! -r \"$p\" ]; then echo FMERR_UNREADABLE; "
+                            + "elif [ \"$(wc -c < \"$p\")\" -gt " + FM_EDIT_MAX + " ]; then echo FMERR_BIG; "
+                            + "else (toybox base64 -w0 \"$p\" || base64 -w0 \"$p\") 2>/dev/null; fi");
+                    String t = out == null ? "" : out.trim();
+                    if (t.startsWith("FMERR_BIG")) { res.put("ok", false); res.put("tooBig", true); res.put("error", "This file is over 2 MB: too big to edit here."); return res.toString(); }
+                    if (t.startsWith("FMERR")) { res.put("ok", false); res.put("error", "The file could not be read, even with the working mode."); return res.toString(); }
+                    try { data = android.util.Base64.decode(t, android.util.Base64.DEFAULT); }
+                    catch (IllegalArgumentException e) { res.put("ok", false); res.put("error", "The file could not be read, even with the working mode."); return res.toString(); }
                     res.put("mtime", 0);
                     res.put("writable", true);
                 }
@@ -7783,6 +7792,8 @@ public class MainActivity extends Activity {
                 byte[] data = (text == null ? "" : text).getBytes(java.nio.charset.StandardCharsets.UTF_8);
                 if (data.length > FM_EDIT_MAX * 2) { res.put("ok", false); res.put("error", "Too much text to save here."); return res.toString(); }
                 File f = new File(path);
+                if (f.isDirectory()) { res.put("ok", false); res.put("error", "That is a folder, not a file."); return res.toString(); }
+                if (java.nio.file.Files.isSymbolicLink(f.toPath())) { try { f = f.getCanonicalFile(); } catch (IOException ignored) {} }
                 File dir = f.getParentFile();
                 if (f.exists() && expectMtime > 0 && Math.abs(f.lastModified() - (long) expectMtime) > 1) { res.put("ok", false); res.put("changed", true); res.put("error", "The file changed since it was opened."); return res.toString(); }
                 if (dir != null && dir.isDirectory() && dir.canWrite() && (!f.exists() || f.canWrite())) {
@@ -7791,12 +7802,13 @@ public class MainActivity extends Activity {
                     return res.toString();
                 }
                 if ("standard".equals(resolveExecMode())) { needFileAccess("To save this file", path); res.put("ok", false); res.put("error", "The app cannot write here. Grant All-files access for storage, or set up ADB, Shizuku or Root."); return res.toString(); }
+                // through the same helper the other privileged writes use: a pipe, a push or a copy to a temporary name and a rename, never a
+                // redirection that empties the file before it is known that the new text can be read
                 File stage = new File(getCacheDir(), "fm_edit.tmp");
                 FileOps.writeAtomic(stage, data);
-                stage.setReadable(true, false);
-                String out = executeShell("cat " + BackupScripts.quote(stage.getPath()) + " > " + BackupScripts.quote(path) + " && echo FMOK");
-                stage.delete();
-                if (out == null || !out.contains("FMOK")) { res.put("ok", false); res.put("error", out == null || out.trim().isEmpty() ? "The file could not be written." : out.trim()); return res.toString(); }
+                String err;
+                try { err = writeFileViaMode(resolveExecMode(), stage, f.getPath()); } finally { stage.delete(); }
+                if (err != null) { res.put("ok", false); res.put("error", err.length() > 200 ? err.substring(0, 200) : err); return res.toString(); }
                 res.put("ok", true); res.put("size", data.length); res.put("mtime", 0);
             } catch (Exception e) {
                 try { res.put("ok", false); res.put("error", e.getMessage() != null ? e.getMessage() : "failed"); } catch (Exception ignored) {}
@@ -7810,7 +7822,7 @@ public class MainActivity extends Activity {
             try {
                 File f = new File(fmCanonicalPath(path));
                 long len = f.length();
-                if (!f.isFile() || !f.canRead() || len <= 0 || len > Math.min(16384, Math.max(1, maxKb)) * 1024L) return "";
+                if (!f.isFile() || !f.canRead() || len <= 0 || len > Math.min(12288, Math.max(1, maxKb)) * 1024L) return "";
                 byte[] data = new byte[(int) len];
                 java.io.DataInputStream in = new java.io.DataInputStream(new java.io.FileInputStream(f));
                 try { in.readFully(data); } finally { in.close(); }
@@ -7818,12 +7830,14 @@ public class MainActivity extends Activity {
             } catch (Throwable t) { return ""; }
         }
 
+        private final java.util.concurrent.ExecutorService thumbExec = java.util.concurrent.Executors.newSingleThreadExecutor();      // one picture at a time: a long list must not decode ten at once
+
         private File thumbDir() { File d = new File(getCacheDir(), "fm_thumbs"); if (!d.isDirectory()) d.mkdirs(); return d; }
 
         /** Small pictures of images and videos (px wide at most), from the cache when there. Each one arrives as window.onFmThumb(path, dataUrl). */
         @JavascriptInterface
         public void fmThumbs(final String pathsJson, final int px) {
-            submitJob(new Runnable() {
+            thumbExec.submit(new Runnable() {
                 @Override
                 public void run() {
                     try {
@@ -7840,6 +7854,45 @@ public class MainActivity extends Activity {
             });
         }
 
+        /** An image decoded no larger than lim on its long side, turned upright by its EXIF orientation, on a white ground (JPEG has no transparency). */
+        private android.graphics.Bitmap fmDecodeImage(String path, int lim) {
+            android.graphics.BitmapFactory.Options o = new android.graphics.BitmapFactory.Options();
+            o.inJustDecodeBounds = true;
+            android.graphics.BitmapFactory.decodeFile(path, o);
+            if (o.outWidth <= 0 || o.outHeight <= 0) return null;
+            int ss = 1;
+            while (Math.max(o.outWidth, o.outHeight) / (ss * 2) >= lim) ss *= 2;
+            o.inJustDecodeBounds = false;
+            o.inSampleSize = ss;
+            android.graphics.Bitmap bm = android.graphics.BitmapFactory.decodeFile(path, o);
+            if (bm == null) return null;
+            int rot = 0; boolean flip = false;
+            try {
+                int ori = new android.media.ExifInterface(path).getAttributeInt(android.media.ExifInterface.TAG_ORIENTATION, 1);
+                switch (ori) {
+                    case 3: rot = 180; break; case 6: rot = 90; break; case 8: rot = 270; break;
+                    case 2: flip = true; break; case 4: rot = 180; flip = true; break; case 5: rot = 90; flip = true; break; case 7: rot = 270; flip = true; break;
+                    default: break;
+                }
+            } catch (Throwable ignored) {}
+            float sc = Math.min(1f, (float) lim / Math.max(bm.getWidth(), bm.getHeight()));
+            android.graphics.Matrix m = new android.graphics.Matrix();
+            if (flip) m.postScale(-1f, 1f);
+            if (rot != 0) m.postRotate(rot);
+            if (sc < 1f) m.postScale(sc, sc);
+            android.graphics.Bitmap out = android.graphics.Bitmap.createBitmap(bm, 0, 0, bm.getWidth(), bm.getHeight(), m, true);
+            if (out != bm) bm.recycle();
+            if (out.hasAlpha()) {
+                android.graphics.Bitmap flat = android.graphics.Bitmap.createBitmap(out.getWidth(), out.getHeight(), android.graphics.Bitmap.Config.ARGB_8888);
+                android.graphics.Canvas cv = new android.graphics.Canvas(flat);
+                cv.drawColor(android.graphics.Color.WHITE);
+                cv.drawBitmap(out, 0, 0, null);
+                out.recycle();
+                out = flat;
+            }
+            return out;
+        }
+
         private String fmThumbFor(String path, int px) {
             try {
                 File f = new File(path);
@@ -7849,22 +7902,14 @@ public class MainActivity extends Activity {
                 if (!cached.isFile()) {
                     android.graphics.Bitmap bm = null;
                     if (kind.equals("image")) {
-                        android.graphics.BitmapFactory.Options o = new android.graphics.BitmapFactory.Options();
-                        o.inJustDecodeBounds = true;
-                        android.graphics.BitmapFactory.decodeFile(path, o);
-                        if (o.outWidth <= 0 || o.outHeight <= 0) return null;
-                        int ss = 1;
-                        while (o.outWidth / (ss * 2) >= px && o.outHeight / (ss * 2) >= px) ss *= 2;
-                        o.inJustDecodeBounds = false;
-                        o.inSampleSize = ss;
-                        bm = android.graphics.BitmapFactory.decodeFile(path, o);
+                        bm = fmDecodeImage(path, px);
                     } else {
                         android.media.MediaMetadataRetriever mr = new android.media.MediaMetadataRetriever();
                         try { mr.setDataSource(path); bm = mr.getFrameAtTime(-1); } finally { try { mr.release(); } catch (Exception ignored) {} }
                     }
                     if (bm == null) return null;
                     float sc = Math.min(1f, (float) px / Math.max(bm.getWidth(), bm.getHeight()));
-                    if (sc < 1f) { android.graphics.Bitmap sm = android.graphics.Bitmap.createScaledBitmap(bm, Math.max(1, Math.round(bm.getWidth() * sc)), Math.max(1, Math.round(bm.getHeight() * sc)), true); if (sm != bm) { bm.recycle(); bm = sm; } }
+                    if (sc < 1f && !kind.equals("image")) { android.graphics.Bitmap sm = android.graphics.Bitmap.createScaledBitmap(bm, Math.max(1, Math.round(bm.getWidth() * sc)), Math.max(1, Math.round(bm.getHeight() * sc)), true); if (sm != bm) { bm.recycle(); bm = sm; } }
                     java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
                     bm.compress(android.graphics.Bitmap.CompressFormat.JPEG, 80, bo);
                     bm.recycle();
@@ -7900,26 +7945,16 @@ public class MainActivity extends Activity {
                         File f = new File(p);
                         if (f.isFile() && f.canRead() && f.length() < 120L * 1024 * 1024) {
                             int lim = Math.max(256, Math.min(2048, maxPx));
-                            android.graphics.BitmapFactory.Options o = new android.graphics.BitmapFactory.Options();
-                            o.inJustDecodeBounds = true;
-                            android.graphics.BitmapFactory.decodeFile(p, o);
-                            if (o.outWidth > 0 && o.outHeight > 0) {
-                                int ss = 1;
-                                while (o.outWidth / (ss * 2) >= lim || o.outHeight / (ss * 2) >= lim) ss *= 2;
-                                o.inJustDecodeBounds = false;
-                                o.inSampleSize = ss;
-                                android.graphics.Bitmap bm = android.graphics.BitmapFactory.decodeFile(p, o);
-                                if (bm != null) {
-                                    w = bm.getWidth(); h = bm.getHeight();
-                                    java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
-                                    boolean png = p.toLowerCase(java.util.Locale.US).endsWith(".png") && w * h <= 1500000;
-                                    bm.compress(png ? android.graphics.Bitmap.CompressFormat.PNG : android.graphics.Bitmap.CompressFormat.JPEG, 88, bo);
-                                    bm.recycle();
-                                    url = "data:" + (png ? "image/png" : "image/jpeg") + ";base64," + android.util.Base64.encodeToString(bo.toByteArray(), android.util.Base64.NO_WRAP);
-                                }
+                            android.graphics.Bitmap bm = fmDecodeImage(p, lim);
+                            if (bm != null) {
+                                w = bm.getWidth(); h = bm.getHeight();
+                                java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
+                                bm.compress(android.graphics.Bitmap.CompressFormat.JPEG, 88, bo);
+                                bm.recycle();
+                                url = "data:image/jpeg;base64," + android.util.Base64.encodeToString(bo.toByteArray(), android.util.Base64.NO_WRAP);
                             }
                         }
-                    } catch (Throwable ignored) {}
+                                    } catch (Throwable ignored) {}
                     notifyJs("window.onFmImage && window.onFmImage(" + JSONObject.quote(path) + "," + JSONObject.quote(url) + "," + w + "," + h + ")");
                 }
             });
@@ -7945,6 +7980,7 @@ public class MainActivity extends Activity {
                         try {
                             int w = Math.max(200, Math.min(1400, widthPx));
                             int h = Math.max(1, Math.round(w * (float) pp.getHeight() / Math.max(1, pp.getWidth())));
+                            if (h > 4000) { w = Math.max(100, Math.round(w * 4000f / h)); h = 4000; }            // a very tall page is drawn smaller, not at 70000 pixels
                             android.graphics.Bitmap bm = android.graphics.Bitmap.createBitmap(w, h, android.graphics.Bitmap.Config.ARGB_8888);
                             bm.eraseColor(android.graphics.Color.WHITE);
                             pp.render(bm, null, null, android.graphics.pdf.PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
@@ -8042,7 +8078,7 @@ public class MainActivity extends Activity {
                 else if ("touch".equals(op)) cmd = "touch " + qa + " && echo OK";
                 else if ("rm".equals(op)) cmd = "rm -rf " + qa + " && echo OK";
                 else if ("cp".equals(op)) cmd = "cp -r " + qa + " " + BackupScripts.quote(b) + " && echo OK";
-                else if ("mv".equals(op)) cmd = "mv " + qa + " " + BackupScripts.quote(b) + " && echo OK";
+                else if ("mv".equals(op)) cmd = "if [ -e " + BackupScripts.quote(b) + " ] && [ ! -d " + BackupScripts.quote(b) + " ]; then echo 'A file or folder with that name is already there'; else mv " + qa + " " + BackupScripts.quote(b) + " && echo OK; fi";
                 else { res.put("ok", false); res.put("output", "unknown op"); return res.toString(); }
                 String out = executeShell(cmd);
                 res.put("ok", out != null && out.contains("OK"));
@@ -8146,8 +8182,12 @@ public class MainActivity extends Activity {
                         for (String q : todo) { if (fmDirectOk(op, q, dest)) direct.add(new File(q)); else viaShell.add(q); }
                         if (!direct.isEmpty()) {
                             FileOps.Progress prog = new FileOps.Progress() {
+                                long shownAt;
                                 @Override
                                 public boolean onProgress(String name, long bytes, int items) {
+                                    long now = android.os.SystemClock.elapsedRealtime();
+                                    if (now - shownAt < 120) return !fmBatchCancel;                   // the page is told a few times a second, Cancel is looked at every time
+                                    shownAt = now;
                                     notifyJs("window.onFmBatchProgress && window.onFmBatchProgress(" + JSONObject.quote(fmBatchLabel(op) + " " + name + (bytes > 0 ? " (" + fmSizeText(bytes) + ")" : "") + "…") + ")");
                                     return !fmBatchCancel;
                                 }

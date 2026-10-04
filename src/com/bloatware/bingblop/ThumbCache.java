@@ -42,8 +42,10 @@ public final class ThumbCache {
         long total = 0;
         for (File x : f) if (x.isFile()) total += x.length();
         if (total <= limit) return 0;
+        final java.util.Map<File, Long> when = new java.util.HashMap<File, Long>();      // the times as they are now: a file used meanwhile must not change the order mid-sort
+        for (File x : f) when.put(x, x.lastModified());
         Arrays.sort(f, new Comparator<File>() {
-            @Override public int compare(File a, File b) { return Long.compare(a.lastModified(), b.lastModified()); }
+            @Override public int compare(File a, File b) { return Long.compare(when.get(a), when.get(b)); }
         });
         long freed = 0;
         for (File x : f) {
