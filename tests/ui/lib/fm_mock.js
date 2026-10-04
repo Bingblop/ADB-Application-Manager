@@ -138,5 +138,67 @@ exports.initScript = function (opts) {
     fmReadB64(path, maxKb) { fm.calls.push('fmReadB64:' + path); return opts.fontB64 || ''; },
     shareStoredFile(path, mime, name) { fm.calls.push('share:' + path); return ''; },
     fmInstall(path) { return JSON.stringify({ ok: true, ref: path }); },
+    // search: a small stand-in for FileSearch (name words, ext:, content:, archive: against opts.archives[path] = [entry names]); the real rules are in the Java suite
+    fmSearchPlaces() { return JSON.stringify([{ id: 'storage', label: 'Internal storage', path: '/storage/emulated/0' }, { id: 'download', label: 'Downloads', path: '/storage/emulated/0/Download' }, { id: 'vol-1234-ABCD', label: 'SD card or drive 1234-ABCD', path: '/storage/1234-ABCD' }, { id: 'phone', label: 'Whole phone', path: '/' }]); },
+    fmSearch(q, rootsJson, nested, archives, hidden) {
+      const roots = JSON.parse(rootsJson).map(norm);
+      fm.searches = fm.searches || [];
+      fm.searches.push({ q, roots, nested, archives, hidden });
+      if (fm.searching) return 'busy';
+      fm.searching = true; fm.searchCancelled = false;
+      const words = []; let ext = null, content = null, archive = null, kind = null, bad = [];
+      (q.match(/"[^"]*"|\S+/g) || []).forEach(t => { t = t.replace(/"/g, ''); if (/^ext:/i.test(t)) ext = t.slice(4).toLowerCase().split(','); else if (/^content:/i.test(t)) content = t.slice(8).toLowerCase(); else if (/^archive:/i.test(t)) archive = t.slice(8).toLowerCase(); else if (/^type:/i.test(t)) { if (!/^type:(image|video|audio|text|doc|archive|apk|font|folder|file)$/i.test(t)) bad.push(t.slice(5) + ' is not a kind I know'); else kind = t.slice(5).toLowerCase(); } else words.push(t.toLowerCase()); });
+      const finish = () => {
+        fm.searching = false;
+        const hits = [];
+        if (fm.searchCancelled) { window.onFmSearchDone({ ok: true, hits, cancelled: true, truncated: false, visited: 3, ms: 50, problems: bad }); return; }
+        if (!words.length && !ext && !content && !archive && !kind) { window.onFmSearchDone({ ok: true, hits: [], empty: true, problems: bad, ms: 1 }); return; }
+        Object.keys(fm.fs).sort().forEach(p => {
+          const n = fm.fs[p];
+          const under = roots.some(r => (nested ? (p === r || p.startsWith(r === '/' ? '/' : r + '/')) : parentOf(p) === r));
+          if (!under || p === roots[0]) return;
+          if (!hidden && p.slice(roots[0].length).split('/').some(seg => seg.startsWith('.'))) return;              // a hidden name or a hidden folder on the way
+          const name = baseOf(p).toLowerCase();
+          if (archive) { (opts.archives && opts.archives[p] || []).forEach(en => { if (en.toLowerCase().includes(archive)) hits.push({ path: p, entry: en, dir: /\/$/.test(en), size: 10, mtime: 1_700_000_000_000, why: 'archive' }); }); return; }
+          if (words.some(w => !name.includes(w))) return;
+          if (kind === 'folder' && !n.dir) return;
+          if (ext && (n.dir || !ext.includes((name.split('.').pop()) || ''))) return;
+          if (content) { if (n.dir || n.bin || !n.text || !n.text.toLowerCase().includes(content)) return; const ln = n.text.split('\n').findIndex(l => l.toLowerCase().includes(content)); hits.push({ path: p, dir: false, size: n.size || 0, mtime: 1_700_000_000_000 + n.mtime, line: n.text.split('\n')[ln], lineNo: ln + 1, why: 'content' }); return; }
+          hits.push({ path: p, dir: !!n.dir, size: n.dir ? 0 : (n.size || 0), mtime: 1_700_000_000_000 + (n.mtime || 0), why: 'name' });
+        });
+        window.onFmSearchDone({ ok: true, hits, truncated: !!opts.searchTruncated, cancelled: false, visited: 42, ms: 120, problems: bad });
+      };
+      setTimeout(() => window.onFmSearchProgress && window.onFmSearchProgress({ folder: roots[0], visited: 7, found: 1 }), 10);
+      if (opts.holdSearch) fm.releaseSearch = finish; else setTimeout(finish, 40);
+      return 'started';
+    },
+    fmSearchCancel() { fm.searchCancels = (fm.searchCancels || 0) + 1; fm.searchCancelled = true; if (fm.releaseSearch) { const r = fm.releaseSearch; fm.releaseSearch = null; setTimeout(r, 10); } },
+    // extraction: records the call and answers like the app (counts from opts.zipFiles[path] = [{ name, text }]; taken names follow the rule)
+    archiveExtract2(path, entry, dest, policy, del) {
+      fm.extracts = fm.extracts || [];
+      fm.extracts.push({ path, entry, dest: norm(dest), policy, del });
+      if (fm.extracting) return 'busy';
+      fm.extracting = true;
+      setTimeout(() => window.onArchiveProgress && window.onArchiveProgress('Extracting 1 of 3: a.txt — 33% · 1.2 MB/s · 4 s left'), 10);
+      const finish = () => {
+        fm.extracting = false;
+        if (fm.extractCancelled) { fm.extractCancelled = false; window.onArchiveResult({ op: 'extract', ok: false, error: 'Cancelled' }); return; }
+        const list = (opts.zipFiles && opts.zipFiles[path]) || [];
+        let files = 0, kept = 0;
+        const d = norm(dest);
+        list.forEach(f => {
+          let t = d + '/' + f.name; const there = !!fm.fs[t];
+          if (there && policy === 'skip') { kept++; return; }
+          if (there && policy === 'keep') t = d + '/' + unique(d, f.name);
+          put(t, f.text); files++;
+        });
+        const res = { op: 'extract', ok: true, files, bytes: files * 10, skipped: 0, kept, dest: d, problems: [] };
+        if (del && !kept && files > 0) { delete fm.fs[norm(path)]; res.deletedArchive = true; }
+        window.onArchiveResult(res);
+      };
+      if (opts.holdExtract) fm.releaseExtract = finish; else setTimeout(finish, 60);
+      return 'started';
+    },
+    archiveCancel() { fm.extractCancels = (fm.extractCancels || 0) + 1; fm.extractCancelled = true; if (fm.releaseExtract) { const r = fm.releaseExtract; fm.releaseExtract = null; setTimeout(r, 10); } },
   });
 };

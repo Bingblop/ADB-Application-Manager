@@ -1945,6 +1945,16 @@
         .fm-edit-sheet .sheet-title, .fm-edit-sheet .sheet-app-hero, #fmActionModal .sheet-title, #fmActionModal .sheet-app-hero, #fmConflictModal .sheet-title, #fmConflictModal .sheet-app-hero { min-width: 0; flex: 1; }
         .fm-edit-sheet .sheet-title h3, .fm-edit-sheet .sheet-title p, #fmActionModal .sheet-title h3, #fmActionModal .sheet-title p, #fmConflictModal .sheet-title h3, #fmConflictModal .sheet-title p { overflow-wrap: anywhere; min-width: 0; }
         .fm-edit-sheet { width: 100%; max-width: 640px; height: min(88vh, 760px); display: flex; flex-direction: column; }
+        .apk-flag { display: inline-block; font-size: 9.5px; font-weight: 800; padding: 1px 6px; border-radius: 6px; margin-inline-end: 6px; background: rgba(255, 145, 0, 0.16); color: #FF9100; }
+        .apk-scan-row .apk-sel-chk { display: none; width: 22px; height: 22px; flex-shrink: 0; margin-inline-end: 10px; border: 2px solid var(--text-muted); border-radius: 6px; align-items: center; justify-content: center; font-size: 13px; font-weight: 900; color: transparent; }
+        #apkScanList.apk-selecting .apk-sel-chk { display: flex; }
+        .apk-scan-row.apk-picked { background: var(--accent-glow); border-radius: 10px; }
+        .apk-scan-row.apk-picked .apk-sel-chk { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+        .ex-opt { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; font-size: 13px; font-weight: 700; cursor: pointer; }
+        .ex-opt input { margin-top: 2px; width: 18px; height: 18px; accent-color: var(--accent); flex: 0 0 auto; }
+        .ex-opt small { display: block; font-size: 11px; font-weight: 400; color: var(--text-muted); word-break: break-all; margin-top: 2px; }
+        .fm-hit-line { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 11px; color: var(--text-muted); margin-top: 2px; overflow-wrap: anywhere; }
+        #fmSearchList .perm-row { cursor: pointer; }
         .fm-edit-area { flex: 1; width: 100%; min-height: 160px; resize: none; font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; font-size: 13px; line-height: 1.45; padding: 10px; border-radius: 10px; border: 1px solid var(--border-glass); background: var(--input-bg); color: var(--text-main); tab-size: 4; white-space: pre; overflow: auto; }
         .fm-edit-area.wrap { white-space: pre-wrap; overflow-wrap: anywhere; }
         .fm-edit-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin-top: 8px; font-size: 11px; color: var(--text-muted); }
@@ -3260,6 +3270,12 @@
                             <option value="xapk">XAPK</option>
                         </select>
                     </div>
+                    <div class="batch-sheet-tools" id="apkSelTools" style="gap:12px;flex-wrap:wrap;align-items:center;margin-top:6px;">
+                        <button class="batch-tool-link" id="apkSelBtn" onclick="apkSelToggle()">Select</button>
+                        <button class="batch-tool-link" id="apkSelCleanBtn" style="display:none;" onclick="apkSelCleanup()">Select duplicates and older versions</button>
+                        <button class="batch-tool-link" id="apkSelAllBtn" style="display:none;" onclick="apkSelAll()">All</button>
+                        <button class="batch-tool-link" id="apkSelDelBtn" style="display:none; color:#FF5252;" onclick="apkSelDelete()">Delete selected</button>
+                    </div>
                     <div id="apkScanStatus" class="uad-status" style="margin:8px 0 0;"></div>
                     <div id="apkScanBar" class="apk-scan-bar" role="progressbar" aria-label="Searching storage" aria-valuemin="0" aria-valuemax="100" style="display:none;"><div id="apkScanBarFill"></div></div>
                     <div id="apkScanTip" class="apk-scan-tip" style="display:none;">Press and hold a file to delete it from this device. You get an Undo right after.</div>
@@ -3425,6 +3441,10 @@
                     <div><div class="switch-title">Auto-delete package after install</div><div class="switch-sub">Delete the chosen file once it installs successfully</div></div>
                     <input type="checkbox" class="switch-input" id="optAutoDelete" onchange="updateInstallPreview()"><span class="switch-track"></span>
                 </label>
+                <label class="switch-row">
+                    <div><div class="switch-title">Offer to delete the file afterwards</div><div class="switch-sub">After a successful install, ask whether to delete the installer file (it goes to a hidden folder first, with an Undo)</div></div>
+                    <input type="checkbox" class="switch-input" id="optOfferDelete" checked><span class="switch-track"></span>
+                </label>
 
                 <label class="switch-row">
                     <div><div class="switch-title">Display SDK information</div><div class="switch-sub">Show min / target SDK above</div></div>
@@ -3462,6 +3482,21 @@
                     <input type="text" class="list-search" id="fmPathInput" placeholder="/storage/emulated/0" value="/storage/emulated/0" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter') fmGo(this.value)">
                     <button class="term-run-btn" onclick="fmGo(document.getElementById('fmPathInput').value)">Go</button>
                 </div>
+                <div class="list-toolbar" style="margin-top:8px;">
+                    <input type="text" class="list-search" id="fmSearchInput" placeholder="Search files and folders" aria-label="Search files" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter') fmSearchGo()">
+                    <button class="term-run-btn" id="fmSearchBtn" onclick="fmSearchGo()">Search</button>
+                </div>
+                <div class="fm-opts">
+                    <select class="lang-select" id="fmSearchScope" style="width:auto; max-width:100%; margin-top:0; font-size:13px;" aria-label="Where to search"></select>
+                    <label class="fm-opt"><input type="checkbox" id="fmSearchNested" checked onchange="fmSearchOpt()"> Include subfolders</label>
+                    <label class="fm-opt"><input type="checkbox" id="fmSearchArc" onchange="fmSearchOpt()"> Search inside archives</label>
+                    <button class="batch-tool-link" onclick="fmSearchHelpToggle()">Search help</button>
+                </div>
+                <div id="fmSearchHelp" class="switch-sub" style="display:none; margin-top:6px; line-height:1.55;">
+                    Words in a name: <b>photo</b> (all must match; <b>*</b> and <b>?</b> are wildcards; <b>-word</b> leaves a name out; "two words" in quotes).<br>
+                    <b>ext:jpg,png</b> or <b>.pdf</b> · <b>type:image</b> (image, video, audio, text, doc, archive, apk, font, folder, file) · <b>size:&gt;10mb</b>, <b>size:1k..5m</b> · <b>date:today</b>, <b>date:7d</b>, <b>date:2025-03-01..2025-03-31</b>, <b>date:&lt;2024-01-01</b><br>
+                    <b>content:word</b> looks inside text files (up to 4 MB). <b>archive:name</b> looks at the names of the entries inside zip, apk, jar and similar archives.
+                </div>
                 <div class="fm-opts">
                     <label class="fm-opt"><input type="checkbox" id="fmHiddenChk" onchange="fmSetOpt('hidden', this.checked)"> Show hidden files</label>
                     <label class="fm-opt"><input type="checkbox" id="fmThumbChk" onchange="fmSetOpt('thumbs', this.checked)"> Show thumbnails</label>
@@ -3493,6 +3528,12 @@
                     <button class="batch-tool-link" onclick="fmClipClear()">✕</button>
                 </div>
                 <div id="fmBatchStatus" class="uad-status" style="display:none; margin-bottom:8px;"></div>
+                <div id="fmSearchStatus" class="uad-status" style="display:none; margin-bottom:8px;"></div>
+                <div class="fm-selbar" id="fmSearchBar" style="display:none;">
+                    <span class="fm-count" id="fmSearchCount"></span>
+                    <button class="batch-tool-link" onclick="fmSearchExit()">Back to the folder</button>
+                </div>
+                <div id="fmSearchList" style="display:none;"></div>
                 <div id="fmCurrentPath" class="color-card-subtitle" style="font-family:monospace; word-break:break-all; margin-bottom:6px;">/storage/emulated/0</div>
                 <div id="fmList"><div class="list-empty">Open this tab to browse files.</div></div>
             </div>
@@ -4978,6 +5019,32 @@ Type any command below (e.g. pm list packages -d)
         </div>
     </div>
 
+    <div class="modal-overlay" id="exModal" onclick="if(event.target===this) exClose()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-title">
+                        <h3 id="exTitle">Extract</h3>
+                        <p><span id="exWhat"></span><span id="exNames" translate="no"></span></p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="exClose()">✕</div>
+            </div>
+            <div class="switch-sub" style="margin-bottom:4px;">Extract into</div>
+            <label class="ex-opt"><input type="radio" name="exWhere" value="here" onchange="exWhereChange()"><span>This folder<small id="exHerePath" translate="no"></small></span></label>
+            <label class="ex-opt"><input type="radio" name="exWhere" value="named" onchange="exWhereChange()"><span>A new folder named after the archive<small id="exNamedPath" translate="no"></small></span></label>
+            <label class="ex-opt"><input type="radio" name="exWhere" value="other" onchange="exWhereChange()"><span>Another folder</span></label>
+            <input class="modal-text-input" id="exOtherInput" style="display:none; margin-bottom:6px;" placeholder="/storage/emulated/0/Download/…" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Folder to extract into" onkeydown="if(event.key==='Enter') exGo()">
+            <div class="switch-sub" style="margin:10px 0 4px;">If a file is already there</div>
+            <label class="ex-opt"><input type="radio" name="exPolicy" value="replace"><span>Replace it</span></label>
+            <label class="ex-opt"><input type="radio" name="exPolicy" value="skip"><span>Skip it</span></label>
+            <label class="ex-opt"><input type="radio" name="exPolicy" value="keep"><span>Keep both (the new one becomes name (1).ext)</span></label>
+            <label class="fm-opt" id="exDelRow" style="margin-top:10px;"><input type="checkbox" id="exDel"> Delete the archive afterwards</label>
+            <div class="switch-sub" id="exDelNote" style="display:none;">The archive is deleted only when every file of it was extracted, with nothing skipped.</div>
+            <button class="mode-action-btn primary" style="width:100%; justify-content:center; margin-top:12px;" id="exGoBtn" onclick="exGo()">Extract</button>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="fmConflictModal" onclick="if(event.target===this) fmConflictCancel()">
         <div class="modal-sheet">
             <div class="sheet-header">
@@ -5825,7 +5892,7 @@ Type any command below (e.g. pm list packages -d)
             '.app-name', '.app-pkg', '.app-version', '#sheetTitle', '#sheetPkg', '#deviceInfoSubtitle', '#aboutBuild dd', '#aboutVersion',
             '.sdb-key', '.sdb-val', '.sdb-change em', '.sdb-sw', '#sdbEditKey',
             '.ovl-group span', '#ovlDetailId', '.ovl-sw', '.bubble-hex',
-            '.perm-name', '.perm-sub', '.apk-scan-name', '#fmCurrentPath', '#fmPathInput', '#fmActionName', '#fmActionPath', '#fmViewer', '#fmEditName', '#fmEditPath', '#fmMediaName', '#fmConflictNames',
+            '.perm-name', '.perm-sub', '.apk-scan-name', '.apk-scan-pkg', '#fmCurrentPath', '#fmPathInput', '#fmActionName', '#fmActionPath', '#fmViewer', '#fmEditName', '#fmEditPath', '#fmMediaName', '#fmConflictNames', '.fm-hit-line',
             '#arcTitle', '#arcMeta', '.arc-crumb', '.arc-sep', '#arcModalName', '#arcModalPath', '#arcViewText', '#arcViewMeta', '.arc-meta b', '.dif-ctx',
             '.uad-name', '.uad-pkg', '.uad-desc', '.uad-tag',
             '#installPkgLabel', '#installPkgName', '#installSplitsCard .switch-title', '#installExtrasCard .switch-title',
@@ -6088,6 +6155,7 @@ Type any command below (e.g. pm list packages -d)
             if (cur === 'settings' && typeof sdbBackHandled === 'function' && sdbBackHandled()) return true;
             if (cur === 'overlays' && typeof ovlBackHandled === 'function' && ovlBackHandled()) return true;
             if (cur === 'debloater' && typeof uadSelected !== 'undefined' && uadSelected.size) { clearUadSelection(); return true; }
+            if (cur === 'files' && typeof fmSearchMode !== 'undefined' && fmSearchMode) { fmSearchExit(); return true; }
             if (cur === 'files' && typeof fmSelMode !== 'undefined' && fmSelMode) { fmSelExit(); return true; }
             if (cur === 'files' && typeof arc !== 'undefined' && arc) {
                 if (arcQuery || arcDir) arcUp(); else arcClose();
@@ -9533,7 +9601,10 @@ Type any command below (e.g. pm list packages -d)
             apkScanDone = true;
             apkScanFiles = Array.isArray(d.files) ? d.files : [];
             apkScanFiles.forEach(f => { f._trunc = !!d.truncated; });
+            apkSel.clear();
             renderApkScan();
+            apkSelRender();
+            apkAnalyzeStart();
         }
         window.onApkScan = onApkScan;
 
@@ -9561,18 +9632,29 @@ Type any command below (e.g. pm list packages -d)
             const trunc = apkScanFiles[0]._trunc ? ' (search stopped early — narrow it with the filter)' : '';
             st.style.display = ''; st.innerText = shown.length + ' of ' + apkScanFiles.length + ' file' + (apkScanFiles.length === 1 ? '' : 's') + ' found' + trunc + ' · tap one to load it';
             document.getElementById('apkScanTip').style.display = '';
+            if (apkSel.size) { const vis = new Set(shown.map(x => x.f.path)); Array.from(apkSel).forEach(pp => { if (!vis.has(pp)) apkSel.delete(pp); }); }      // a filter that hides a picked file un-picks it
+            list.classList.toggle('apk-selecting', apkSelMode);
             list.innerHTML = shown.slice(0, apkScanShown).map(x => {
                 const f = x.f;
                 const meta = [f.size ? fmtInstallSize(f.size) : '', apkScanAge(f.mtime)].filter(Boolean).join(' · ');
-                return `<div class="apk-scan-row" data-i="${x.i}" role="button" tabindex="0" title="Tap to load it · press and hold (or press Delete) to delete it" onclick="installFromScan(${x.i})" onkeydown="apkScanRowKey(event, ${x.i})">
+                const flags = (f.dupOf || f.older) ? '<div class="apk-scan-flags">' + (f.dupOf ? '<span class="apk-flag">Duplicate</span>' : '') + (f.older ? '<span class="apk-flag">Older version</span>' : '') + '</div>' : '';
+                const base = p => p.slice(p.lastIndexOf('/') + 1);
+                const pkgLine = f.pkg ? '<div class="apk-scan-meta"><span class="apk-scan-pkg">' + escapeHtml(f.pkg + (f.vn ? ' · ' + f.vn : '')) + '</span>'
+                    + (f.dupOf ? ' <span>· same as</span> <span class="apk-scan-pkg">' + escapeHtml(base(f.dupOf)) + '</span>' : '')
+                    + (f.older && f.newestPath ? ' <span>· newer:</span> <span class="apk-scan-pkg">' + escapeHtml(base(f.newestPath)) + '</span>' : '') + '</div>' : '';
+                return `<div class="apk-scan-row${apkSel.has(f.path) ? ' apk-picked' : ''}" data-i="${x.i}" role="button" tabindex="0" title="Tap to load it · press and hold (or press Delete) to delete it" onclick="installFromScan(${x.i})" onkeydown="apkScanRowKey(event, ${x.i})">
+                    <div class="apk-sel-chk" aria-hidden="true">✓</div>
                     <div class="apk-kind k-${escapeHtml(f.kind)}">${escapeHtml(String(f.kind || '').toUpperCase())}</div>
                     <div style="flex:1;min-width:0;">
+                        ${flags}
                         <div class="apk-scan-name">${escapeHtml(f.name)}</div>
                         <div class="apk-scan-meta">${escapeHtml(meta)}</div>
                         <div class="apk-scan-meta">${escapeHtml(apkScanShort(f.path.slice(0, f.path.lastIndexOf('/'))))}</div>
+                        ${pkgLine}
                     </div>
                 </div>`;
             }).join('') || '<div class="uad-status">Nothing matches that filter.</div>';
+            apkSelRender();
             if (shown.length > apkScanShown) {
                 list.insertAdjacentHTML('beforeend', `<button class="batch-tool-link" style="display:block;margin:8px auto;" onclick="apkScanShown += 300; renderApkScan()">Show ${Math.min(300, shown.length - apkScanShown)} more · ${shown.length - apkScanShown} left</button>`);
             }
@@ -9583,6 +9665,8 @@ Type any command below (e.g. pm list packages -d)
             if (apkPress.fired) { apkPress.fired = false; return; }          // the press that opened the delete sheet is not also a tap
             const f = apkScanFiles[i];
             if (!f) return;
+            if (apkBatchBusy) return;
+            if (apkSelMode) { if (apkSel.has(f.path)) apkSel.delete(f.path); else apkSel.add(f.path); apkSelRender(); return; }
             haptic();
             if (f.shell && window.AndroidBridge && window.AndroidBridge.fmInstall) {
                 let r;
@@ -9651,9 +9735,145 @@ Type any command below (e.g. pm list packages -d)
             list.addEventListener('contextmenu', e => { if (rowOf(e)) e.preventDefault(); });
         })();
 
+        // ---- what the search found: duplicates and older versions, several files at once ----
+        let apkSelMode = false, apkBatchBusy = false;
+        const apkSel = new Set();                       // paths picked
+        let apkAnalyzed = false;
+        function apkAnalyzeStart() {
+            apkAnalyzed = false;
+            if (!window.AndroidBridge || !window.AndroidBridge.apkAnalyze) return;
+            const paths = apkScanFiles.filter(f => !f.shell).map(f => f.path);
+            if (paths.length < 1) return;
+            try { window.AndroidBridge.apkAnalyze(JSON.stringify(paths)); } catch (e) {}
+        }
+        window.onApkAnalyze = function (r) {
+            apkAnalyzed = true;
+            const by = new Map((r && r.files || []).map(x => [x.path, x]));
+            apkScanFiles.forEach(f => {
+                const x = by.get(f.path);
+                if (!x) return;
+                f.pkg = x.pkg || ''; f.vn = x.vn || ''; f.vc = x.vc;
+                f.dupOf = x.dupOf || null; f.older = !!x.older; f.newestPath = x.newestPath || null;
+            });
+            if (!apkScanning) renderApkScan();
+        };
+        function apkSelToggle() {
+            haptic();
+            apkSelMode = !apkSelMode;
+            if (!apkSelMode) apkSel.clear();
+            apkSelRender();
+            renderApkScan();
+        }
+        // the files the list shows now (the kind and text filters applied): what Select all, the cleanup pick and Delete selected work on
+        function apkShownFiles() {
+            const q = (document.getElementById('apkScanSearch').value || '').trim().toLowerCase();
+            const kind = document.getElementById('apkScanKind').value;
+            return apkScanFiles.filter(f => (!kind || f.kind === kind) && (!q || (f.name + ' ' + f.path).toLowerCase().includes(q)));
+        }
+        function apkSelRender() {
+            const list = document.getElementById('apkScanList');
+            if (list) {
+                list.classList.toggle('apk-selecting', apkSelMode);
+                list.querySelectorAll('.apk-scan-row[data-i]').forEach(r => { const f = apkScanFiles[+r.dataset.i]; r.classList.toggle('apk-picked', !!f && apkSel.has(f.path)); });
+            }
+            document.getElementById('apkSelBtn').innerText = apkSelMode ? 'Done' : 'Select';
+            document.getElementById('apkSelCleanBtn').style.display = apkSelMode ? '' : 'none';
+            document.getElementById('apkSelAllBtn').style.display = apkSelMode ? '' : 'none';
+            const del = document.getElementById('apkSelDelBtn');
+            del.style.display = apkSelMode ? '' : 'none';
+            del.innerText = apkSel.size ? 'Delete selected (' + apkSel.size + ')' : 'Delete selected';
+            del.disabled = !apkSel.size;
+        }
+        function apkSelAll() {
+            haptic();
+            const shown = apkShownFiles();
+            const all = shown.length > 0 && shown.every(f => apkSel.has(f.path));
+            shown.forEach(f => { if (all) apkSel.delete(f.path); else apkSel.add(f.path); });
+            apkSelRender();
+        }
+        // picks every file that is a second copy of another one, or an older version of a package that is there in a newer one
+        function apkSelCleanup() {
+            haptic();
+            if (!apkAnalyzed) { showToast('Still checking the files. Try again in a moment.'); return; }
+            apkSel.clear();
+            let dups = 0, olds = 0;
+            const here = new Set(apkScanFiles.map(f => f.path));
+            // only what is shown, and only a file whose kept copy / newer version is still there (a deleted keeper would make the last copy look like a duplicate)
+            apkShownFiles().forEach(f => {
+                if (f.dupOf && here.has(f.dupOf)) { apkSel.add(f.path); dups++; }
+                else if (f.older && f.newestPath && here.has(f.newestPath)) { apkSel.add(f.path); olds++; }
+            });
+            apkSelRender();
+            showToast(apkSel.size ? apkSel.size + ' selected: ' + dups + ' duplicate' + (dups === 1 ? '' : 's') + ', ' + olds + ' older version' + (olds === 1 ? '' : 's') : 'No duplicates or older versions found');
+        }
+        function apkSelDelete() {
+            if (apkBatchBusy) return;
+            const files = apkShownFiles().filter(f => apkSel.has(f.path));
+            if (!files.length) { showToast('Select something first'); return; }
+            const bytes = files.reduce((a, f) => a + (f.size || 0), 0);
+            if (!confirm('Delete ' + files.length + ' file' + (files.length === 1 ? '' : 's') + (bytes ? ' (' + fmtInstallSize(bytes) + ')' : '') + ' from this phone? They go to a hidden folder first, with one Undo for all of them.')) return;
+            haptic();
+            apkTrashMany(files);
+        }
+        // moves the files to the hidden trash one after the other, then offers ONE Undo for the whole batch
+        function apkTrashMany(files) {
+            const recs = [];
+            let i = 0, failed = 0;
+            apkBatchBusy = true;                                // taps and a second Delete wait until the batch is over: the rows are redrawn after every file
+            const purgeAll = () => recs.forEach(rec => apkFileOp('purge', rec.trash, '', () => {}));
+            const finish = () => {
+                apkBatchBusy = false;
+                files.forEach(f => apkSel.delete(f.path));
+                apkClearStaleFlags(recs.map(r => r.file.path));
+                if (!apkScanning) renderApkScan();
+                apkSelRender();
+                apkAnalyzeStart();
+                if (!recs.length) { showToast("Couldn't delete the files"); return; }
+                if (currentViewName() !== 'installer') { purgeAll(); return; }
+                const msg = 'Deleted ' + recs.length + ' file' + (recs.length === 1 ? '' : 's') + (failed ? ' · ' + failed + ' failed' : '');
+                sdbSnack(msg, () => apkUndoMany(recs), { view: 'installer', ms: 10000, onExpire: purgeAll });
+            };
+            const next = () => {
+                if (i >= files.length) { finish(); return; }
+                const f = files[i++];
+                apkFileOp('trash', f.path, '', r => {
+                    if (r.ok) {
+                        const at = apkScanFiles.findIndex(x => x === f || x.path === f.path);
+                        if (at >= 0) apkScanFiles.splice(at, 1);
+                        recs.push({ trash: r.trash, file: f, at });
+                        if (!apkScanning) renderApkScan();
+                    } else failed++;
+                    next();
+                });
+            };
+            next();
+        }
+        // a deleted file can no longer be the kept copy / the newer version of another: those flags are forgotten here and worked out again by the app
+        function apkClearStaleFlags(gone) {
+            const g = new Set(gone);
+            apkScanFiles.forEach(f => { if (f.dupOf && g.has(f.dupOf)) f.dupOf = null; if (f.older && f.newestPath && g.has(f.newestPath)) { f.older = false; f.newestPath = null; } });
+        }
+        function apkUndoMany(recs) {
+            let back = 0, left = 0, i = recs.length;
+            const done = () => { apkAnalyzeStart(); if (!apkScanning) renderApkScan(); showToast('Restored ' + back + ' file' + (back === 1 ? '' : 's') + (left ? ' · ' + left + ' could not be restored' : '')); };
+            const step = () => {
+                if (i <= 0) { done(); return; }
+                const rec = recs[--i];                      // last deleted first: the list gets its places back in order
+                apkFileOp('untrash', rec.trash, rec.file.path, r => {
+                    if (r.ok) {
+                        back++;
+                        if (r.path && r.path !== rec.file.path) { rec.file.path = r.path; rec.file.name = r.path.slice(r.path.lastIndexOf('/') + 1); }
+                        if (!apkScanFiles.some(x => x === rec.file || x.path === rec.file.path)) apkScanFiles.splice(Math.min(Math.max(rec.at, 0), apkScanFiles.length), 0, rec.file);
+                    } else { left++; apkFileOp('purge', rec.trash, '', () => {}); }
+                    step();
+                });
+            };
+            step();
+        }
+
         function openApkDelete(i) {
             const f = apkScanFiles[i];
-            if (!f) return;
+            if (!f || apkBatchBusy) return;
             apkDeleteFile = f;
             document.getElementById('apkDeleteTitle').innerText = 'Delete ' + f.name + '?';
             document.getElementById('apkDeleteSub').innerText = [f.size ? fmtInstallSize(f.size) : '', apkScanAge(f.mtime)].filter(Boolean).join(' · ') || 'Package file';
@@ -9691,10 +9911,17 @@ Type any command below (e.g. pm list packages -d)
             closeApkDelete();
             if (!f) return;
             haptic();
+            apkTrashFile(f);
+        }
+
+        function apkTrashFile(f) {
             apkFileOp('trash', f.path, '', r => {
                 if (!r.ok) { showToast("Couldn't delete " + f.name + (r.error ? ': ' + String(r.error).slice(0, 80) : '')); return; }
                 const at = apkScanFiles.findIndex(x => x === f || x.path === f.path);
                 if (at >= 0) apkScanFiles.splice(at, 1);
+                apkSel.delete(f.path);
+                apkClearStaleFlags([f.path]);
+                apkSelRender();
                 if (!apkScanning) renderApkScan();                  // a search that is running draws its own list when it ends
                 const rec = { trash: r.trash, file: f, at: at };
                 const purge = () => apkFileOp('purge', rec.trash, '', () => {});
@@ -10331,7 +10558,7 @@ Type any command below (e.g. pm list packages -d)
                 uninstallFirst = true;
             }
             built.opts.uninstallFirst = installFromFiles && uninstallFirst === true;
-            installRunInfo = { pkg: installData.pkg || '', name: name };          // what was started: the result may come after another package was opened
+            installRunInfo = { pkg: installData.pkg || '', name: name, src: installData.ref || '', offer: !!(document.getElementById('optOfferDelete') && document.getElementById('optOfferDelete').checked) };          // what was started: the result may come after another package was opened
             installRunning = true;
             clearTimeout(installRunningTimer);
             installRunningTimer = setTimeout(() => { installRunning = false; }, 15 * 60 * 1000);       // never block leaving for ever
@@ -10358,12 +10585,15 @@ Type any command below (e.g. pm list packages -d)
             const started = installRunInfo; installRunInfo = null;
             const instPkg = started ? started.pkg : (r.pkg || (installData ? (installData.pkg || '') : ''));
             const instName = started ? started.name : (installData ? (installData.label || installData.pkg) : 'Package');
+            // The installer file is still on the phone: offer to put it in the trash (with an Undo), unless it was already deleted or is not a file of the person's storage
+            const src = started && started.src;
+            const offerFile = r.ok && started && started.offer && !r.sourceDeleted && src && /^\/(storage|sdcard)\//.test(src) ? (apkScanFiles.find(x => x.path === src) || { name: src.slice(src.lastIndexOf('/') + 1), path: src, size: 0, mtime: 0, kind: 'apk' }) : null;
             showCommandResults('Install ' + instPkg, 'via ' + (r.method || 'install'),
                 [{ name: instName, pkg: instPkg, output: out, success: !!r.ok }],
                 r.ok && instPkg ? [
                     { label: 'Launch Application', onClick: () => installLaunchApp(instPkg, instName) },
                     { label: 'Application Settings', onClick: () => openAppSettings(instPkg) }
-                ] : null);
+                ].concat(offerFile ? [{ label: 'Delete the installer file', onClick: () => { closeCommandResultsModal(); apkTrashFile(offerFile); } }] : []) : null);
             if (r.ok) {
                 // A fresh install changes the device's app list; refresh it in the background.
                 setTimeout(loadPackageData, 600);
@@ -10407,10 +10637,11 @@ Type any command below (e.g. pm list packages -d)
             if (key === 'hidden') { const here = new Set(fmRows.map(r => r.full)); Array.from(fmSel).forEach(p => { if (!here.has(p)) fmSel.delete(p); }); }     // what is no longer listed is no longer picked
             fmSelRender();
         }
-        function onFilesShown() { fmOptsLoad(); fmGo(fmPath, true); }
+        function onFilesShown() { fmOptsLoad(); fmSearchInit(); fmGo(fmPath, true, true); }
         // auto: the tab opening by itself (the inline hint is enough then); a folder the user chose asks for the access when it is what is missing
-        function fmGo(path, auto) {
+        function fmGo(path, auto, keepSearch) {
             path = (path || '/').trim() || '/';
+            if (!keepSearch && typeof fmSearchMode !== 'undefined' && fmSearchMode) fmSearchExit();
             if (!window.AndroidBridge || !window.AndroidBridge.fmList) { showToast('Needs the app build'); return; }
             if (fmSelMode || fmSel.size) { fmSelMode = false; fmSel.clear(); }
             let d;
@@ -10504,7 +10735,10 @@ Type any command below (e.g. pm list packages -d)
             if (!name || name === '.' || name === '..') return null;
             return { name, isDir: type === 'd', isLink: type === 'l', perms, size, link };
         }
-        function fmRefresh() { fmGo(fmPath); }
+        function fmRefresh() {
+            fmGo(fmPath, false, true);
+            if (fmSearchMode && !fmSearchRunning && fmSearchQuery) { document.getElementById('fmSearchInput').value = fmSearchQuery; fmSearchGo(); }       // something was renamed, deleted or extracted: the results are made again
+        }
         function fmUp() {
             const i = fmPath.lastIndexOf('/');
             fmGo(i <= 0 ? '/' : fmPath.substring(0, i));
@@ -10749,7 +10983,7 @@ Type any command below (e.g. pm list packages -d)
         function fmClipRender() {
             const bar = document.getElementById('fmClipBar');
             if (!bar) return;
-            bar.style.display = fmClip ? '' : 'none';
+            bar.style.display = fmClip && !fmSearchMode ? '' : 'none';           // Paste goes to the folder, which is not on screen under the results
             if (!fmClip) return;
             const n = fmClip.paths.length;
             document.getElementById('fmClipText').innerText = n + ' item' + (n === 1 ? '' : 's') + ' to ' + (fmClip.op === 'mv' ? 'move' : 'copy') + ': open the target folder, then tap Paste';
@@ -10878,6 +11112,7 @@ Type any command below (e.g. pm list packages -d)
             if (!isDir && (kind === 'text' || kind === 'other')) btns.push(`<button class="batch-grid-btn accent" onclick="fmEditOpen()">Edit</button>`);
             if (!isDir) btns.push(`<button class="batch-grid-btn" onclick="fmOpenWith()">Open with…</button>`);
             if (!isDir) btns.push(`<button class="batch-grid-btn" onclick="fmShareFile()">Share</button>`);
+            if (!isDir && ARC_EXT.test(name)) btns.push(`<button class="batch-grid-btn" onclick="fmExtractFile()">Extract…</button>`);
             if (!isDir && !ARC_EXT.test(name)) btns.push(`<button class="batch-grid-btn" onclick="fmOpenAsArchive()">Open as archive</button>`);
             btns.push(`<button class="batch-grid-btn" onclick="fmStartDest('rename')">Rename</button>`);
             btns.push(`<button class="batch-grid-btn" onclick="fmStartDest('cp')">Copy</button>`);
@@ -11044,6 +11279,191 @@ Type any command below (e.g. pm list packages -d)
             confirm.innerText = 'Create';
             haptic();
             document.getElementById('fmActionModal').classList.add('show');
+        }
+
+        // ---- File manager: search ----
+        // The query is understood by the app (name, ext:, type:, size:, date:, content:, archive:); here are the bar, where to look, the two boxes and the results.
+        let fmSearchMode = false, fmSearchRunning = false, fmSearchPlaces = [], fmSearchHits = [], fmSearchQuery = '';
+        const FM_PLACE_LABEL = { storage: 'Internal storage', download: 'Downloads', dcim: 'Camera and photos', pictures: 'Pictures', documents: 'Documents', music: 'Music', movies: 'Movies', phone: 'Whole phone' };
+        function fmSearchInit() {
+            const sel = document.getElementById('fmSearchScope');
+            if (!sel) return;
+            const keep = sel.value;
+            try { fmSearchPlaces = JSON.parse(window.AndroidBridge && window.AndroidBridge.fmSearchPlaces ? window.AndroidBridge.fmSearchPlaces() : '[]'); } catch (e) { fmSearchPlaces = []; }       // read again each time: a card may have been put in
+            const label = p => FM_PLACE_LABEL[p.id] || (/^vol-/.test(p.id) ? 'SD card or drive (' + p.id.slice(4) + ')' : p.label);
+            sel.innerHTML = '<option value="here">This folder</option>' + fmSearchPlaces.map((p, i) => '<option value="' + i + '">' + escapeHtml(label(p)) + '</option>').join('');
+            sel.value = Array.from(sel.options).some(o => o.value === keep) ? keep : 'here';
+            if (!sel.dataset.ready) {
+                sel.dataset.ready = '1';
+                const o = kvGet('fm_search', null);
+                if (o && typeof o === 'object') {
+                    document.getElementById('fmSearchNested').checked = o.nested !== false;
+                    document.getElementById('fmSearchArc').checked = !!o.arc;
+                }
+            }
+        }
+        function fmSearchOpt() { kvSet('fm_search', { nested: document.getElementById('fmSearchNested').checked, arc: document.getElementById('fmSearchArc').checked }); }
+        function fmSearchHelpToggle() { const h = document.getElementById('fmSearchHelp'); h.style.display = h.style.display === 'none' ? '' : 'none'; }
+        function fmSearchRoot() {
+            const v = document.getElementById('fmSearchScope').value;
+            if (v === 'here') return fmPath;
+            const p = fmSearchPlaces[+v];
+            return p ? p.path : fmPath;
+        }
+        function fmSearchGo() {
+            if (fmSearchRunning) { fmSearchCancelTap(); return; }
+            const q = (document.getElementById('fmSearchInput').value || '').trim();
+            if (!q) { showToast('Type what to search for'); return; }
+            if (!window.AndroidBridge || !window.AndroidBridge.fmSearch) { showToast('Needs the app build'); return; }
+            if (!fileAccessGranted() && !isPrivilegedActive) { promptFileAccess('To search the files on this phone, this app needs All-files access.', () => fmSearchGo(), true); return; }
+            haptic();
+            fmSelExit();
+            fmSearchQuery = q;
+            const st = window.AndroidBridge.fmSearch(q, JSON.stringify([fmSearchRoot()]), document.getElementById('fmSearchNested').checked, document.getElementById('fmSearchArc').checked, fmOpts.hidden);
+            if (st !== 'started') { showToast(st === 'busy' ? 'A search is still running' : 'The search could not start'); return; }
+            fmSearchRunning = true;
+            fmSearchShow(true);
+            const el = document.getElementById('fmSearchStatus');
+            el.style.display = '';
+            el.innerHTML = '<span id="fmSearchText">Searching…</span> <button class="batch-tool-link" onclick="fmSearchCancelTap()">Cancel</button>';
+            document.getElementById('fmSearchBtn').innerText = 'Stop';
+            document.getElementById('fmSearchCount').innerText = '';
+            document.getElementById('fmSearchList').innerHTML = '';
+        }
+        function fmSearchCancelTap() { haptic(); try { window.AndroidBridge.fmSearchCancel(); } catch (e) {} const t = document.getElementById('fmSearchText'); if (t) t.innerText = 'Stopping…'; }
+        // the results take the place of the folder list until "Back to the folder"
+        function fmSearchShow(on) {
+            fmSearchMode = on;
+            document.getElementById('fmList').style.display = on ? 'none' : '';
+            document.getElementById('fmCurrentPath').style.display = on ? 'none' : '';
+            document.getElementById('fmSearchList').style.display = on ? '' : 'none';
+            document.getElementById('fmSearchBar').style.display = on ? '' : 'none';
+            if (!on) document.getElementById('fmSearchStatus').style.display = 'none';
+            fmClipRender();
+        }
+        function fmSearchExit() {
+            haptic();
+            if (fmSearchRunning) { try { window.AndroidBridge.fmSearchCancel(); } catch (e) {} fmSearchRunning = false; document.getElementById('fmSearchBtn').innerText = 'Search'; }       // its late answer is dropped (the results are not on screen)
+            fmSearchShow(false);
+            fmSearchHits = [];
+        }
+        window.onFmSearchProgress = function (o) {
+            const t = document.getElementById('fmSearchText');
+            if (!t || !fmSearchRunning) return;
+            t.innerText = 'Searching ' + (o.folder || '') + ' · ' + o.visited + ' looked at · ' + o.found + ' found';
+        };
+        function fmWhen(ms) { try { return new Date(ms).toLocaleDateString(langLocale()); } catch (e) { return ''; } }
+        window.onFmSearchDone = function (r) {
+            fmSearchRunning = false;
+            document.getElementById('fmSearchBtn').innerText = 'Search';
+            const st = document.getElementById('fmSearchStatus');
+            st.style.display = 'none';
+            if (!fmSearchMode) return;
+            if (!r || !r.ok) { document.getElementById('fmSearchList').innerHTML = '<div class="list-empty">' + escapeHtml((r && r.error) || 'The search failed') + '</div>'; return; }
+            fmSearchHits = r.hits || [];
+            const n = fmSearchHits.length;
+            // each piece is its own element: the count and the notes are text of the app, the time is a number
+            document.getElementById('fmSearchCount').innerHTML = '<span>' + n + ' found</span>' + (r.truncated ? ' · <span>stopped at the limit</span>' : '') + (r.cancelled ? ' · <span>stopped</span>' : '')
+                + ' · <span translate="no">' + ((r.ms || 0) / 1000).toFixed(1) + ' s</span>';
+            const notes = (r.problems && r.problems.length) ? '<div class="list-empty" style="padding:6px 0;">' + escapeHtml(r.problems.join('; ')) + '</div>' : '';
+            if (!n) { document.getElementById('fmSearchList').innerHTML = notes + '<div class="list-empty">' + (r.empty ? 'Type something to search for.' : 'Nothing found.') + '</div>'; return; }
+            document.getElementById('fmSearchList').innerHTML = notes + fmSearchHits.map((h, i) => {
+                const entry = h.entry ? h.entry.replace(/\/$/, '') : '';
+                const name = entry ? entry.split('/').pop() : h.path.split('/').pop();
+                const where = h.entry ? h.path + ' › ' + h.entry : h.path.slice(0, h.path.lastIndexOf('/')) || '/';
+                const meta = [h.dir ? '' : fmtInstallSize(h.size), fmWhen(h.mtime)].filter(Boolean).join(' · ');
+                const line = h.line ? '<div class="fm-hit-line">' + (h.lineNo ? escapeHtml(String(h.lineNo)) + ': ' : '') + escapeHtml(h.line) + '</div>' : '';
+                const ico = (h.dir || (h.entry && /\/$/.test(h.entry))) ? '<div class="fm-folder"></div>' : '<div class="fm-page"></div>';
+                return '<div class="perm-row" data-h="' + i + '" role="button" tabindex="0" onclick="fmSearchOpen(' + i + ')" onkeydown="if (event.target === event.currentTarget && (event.key === \'Enter\' || event.key === \' \')) { event.preventDefault(); fmSearchOpen(' + i + '); }">'
+                    + '<div class="fm-ico">' + ico + '</div>'
+                    + '<div class="perm-info"><div class="perm-name' + (h.dir ? ' fm-dir' : '') + '">' + escapeHtml(name) + (h.dir ? '/' : '') + '</div>'
+                    + '<div class="perm-sub">' + escapeHtml(where) + '</div><div class="perm-sub">' + escapeHtml(meta) + '</div>' + line + '</div>'
+                    + '<button class="perm-toggle-btn locked fm-more" style="width:auto; padding:0 10px;" aria-label="Show in the folder" onclick="event.stopPropagation(); fmSearchReveal(' + i + ')">In folder</button></div>';
+            }).join('');
+        };
+        function fmSearchOpen(i) {
+            const h = fmSearchHits[i];
+            if (!h) return;
+            if (h.entry) { fmSearchExit(); arcOpen(h.path, r => showToast((r && r.error) || 'Not a readable archive')); const base = h.entry.replace(/\/$/, '').split('/').pop(); setTimeout(() => { const a = document.getElementById('arcSearch'); if (a) { a.value = base; arcSearchInput(); } }, 400); return; }
+            if (h.dir) { fmSearchExit(); fmGo(h.path); return; }
+            fmActions(h.path, false, h.path.split('/').pop());
+        }
+        function fmSearchReveal(i) {
+            const h = fmSearchHits[i];
+            if (!h) return;
+            const parent = h.dir ? h.path : h.path.slice(0, h.path.lastIndexOf('/')) || '/';
+            fmSearchExit();
+            fmGo(h.dir ? h.path.slice(0, h.path.lastIndexOf('/')) || '/' : parent);
+        }
+
+        // ---- the extract dialog: where to, what to do with a name that is taken, and whether the archive goes afterwards ----
+        let ex = null;                                  // { src, entry, name, whole, parent, base, fromArc }
+        let exRunning = false, exLast = null;
+        function fmDirOf(p) { const i = p.lastIndexOf('/'); return i <= 0 ? '/' : p.slice(0, i); }
+        function extractOpen(o) {
+            let base = o.name.replace(/\.(tar\.(gz|bz2|xz|zst|lz4)|[^.]+)$/i, '');
+            if (!base || base === o.name) base = (base || o.name.replace(/^\.+/, '') || 'archive') + ' (extracted)';       // ".zip" has no name before the ending, "README" no ending: a folder of its own that is not the file
+            ex = { src: o.src, entry: o.entry || '', name: o.name, whole: !!o.whole, parent: o.parent || fmDirOf(o.src), base, fromArc: !!o.fromArc, deletable: !!o.deletable };
+            const isDir = /\/$/.test(ex.entry);
+            document.getElementById('exTitle').innerText = 'Extract';
+            document.getElementById('exWhat').innerText = ex.whole ? '' : (isDir ? 'The folder' : 'The file');
+            document.getElementById('exNames').innerText = (ex.whole ? '' : ' ' + ex.entry.replace(/\/$/, '').split('/').pop() + ' · ') + ex.name;
+            const join = (a, b) => (a === '/' ? '' : a) + '/' + b;
+            document.getElementById('exHerePath').innerText = ex.parent;
+            document.getElementById('exNamedPath').innerText = join(ex.parent, base);
+            const saved = kvGet('ex_opts', null) || {};
+            const where = saved.where === 'here' || saved.where === 'other' ? saved.where : 'named';
+            document.querySelector('input[name="exWhere"][value="' + where + '"]').checked = true;
+            document.querySelector('input[name="exPolicy"][value="' + (['replace', 'skip', 'keep'].includes(saved.policy) ? saved.policy : 'keep') + '"]').checked = true;
+            document.getElementById('exOtherInput').value = saved.other || (ex.parent + '/');
+            document.getElementById('exDel').checked = false;
+            const canDel = ex.whole && ex.deletable;
+            document.getElementById('exDelRow').style.display = canDel ? '' : 'none';
+            document.getElementById('exDelNote').style.display = canDel ? '' : 'none';
+            exWhereChange();
+            document.getElementById('exModal').classList.add('show');
+            haptic();
+        }
+        function exWhereChange() { const v = document.querySelector('input[name="exWhere"]:checked').value; document.getElementById('exOtherInput').style.display = v === 'other' ? '' : 'none'; }
+        function exClose() { document.getElementById('exModal').classList.remove('show'); ex = null; }
+        function exDest() {
+            const v = document.querySelector('input[name="exWhere"]:checked').value;
+            if (v === 'here') return ex.parent;
+            if (v === 'named') return (ex.parent === '/' ? '' : ex.parent) + '/' + ex.base;
+            return (document.getElementById('exOtherInput').value || '').trim().replace(/\/+$/, '');
+        }
+        function exGo() {
+            if (!ex) return;
+            const dest = exDest();
+            if (!dest || dest.charAt(0) !== '/') { showToast('Enter the full path of a folder'); return; }
+            const policy = document.querySelector('input[name="exPolicy"]:checked').value;
+            const del = ex.whole && ex.deletable && document.getElementById('exDel').checked;
+            kvSet('ex_opts', { where: document.querySelector('input[name="exWhere"]:checked').value, policy, other: document.getElementById('exOtherInput').value });
+            if (del && !confirm('Delete ' + ex.name + ' after it was extracted?')) return;
+            const o = ex;
+            exClose();
+            exStart(o, dest, policy, del);
+        }
+        function exStart(o, dest, policy, del) {
+            if (!window.AndroidBridge || !window.AndroidBridge.archiveExtract2) { showToast('Needs the app build'); return; }
+            if ((typeof arcBusy !== 'undefined' && arcBusy) || exRunning) { showToast('Another archive job is still running'); return; }
+            if (fmBatchRunning) { showToast('A file job is still running'); return; }
+            kvSet('arc_last_dest', dest);
+            exRunning = true;
+            arcLastOp = { op: 'extract' };
+            if (o.fromArc) arcSetBusy(true, 'Extracting…');
+            else { const el = document.getElementById('fmBatchStatus'); el.style.display = ''; el.innerHTML = '<span id="fmBatchText">Extracting…</span> <button class="batch-tool-link" onclick="fmArchiveCancelTap()">Cancel</button>'; }
+            const st = window.AndroidBridge.archiveExtract2(o.src, o.entry, dest, policy, !!del);
+            exLast = { name: o.name, src: o.src, del: !!del };
+            if (st !== 'started') { exRunning = false; arcSetBusy(false); if (!fmBatchRunning) document.getElementById('fmBatchStatus').style.display = 'none'; showToast(st === 'busy' ? 'Another archive job is still running' : st === 'error' ? 'The extraction could not start' : 'Needs the app build'); }
+        }
+        function fmArchiveCancelTap() { haptic(); try { window.AndroidBridge.archiveCancel(); } catch (e) {} const t = document.getElementById('fmBatchText'); if (t) t.innerText = 'Stopping…'; }
+        // Extract… on a zip-format file in the file manager: the whole archive, without opening it first
+        function fmExtractFile() {
+            if (!fmActionTarget || fmActionTarget.isDir) return;
+            const t = fmActionTarget;
+            closeFmAction();
+            extractOpen({ src: t.full, entry: '', name: t.name, whole: true, deletable: /^\/(storage|sdcard)\//.test(t.full) });
         }
 
         // ---- File manager: Open with, Share, the text editor, and viewers for pictures, PDF and fonts ----
@@ -11587,8 +12007,11 @@ Type any command below (e.g. pm list packages -d)
         }
 
         function arcExtractStart() {
-            if (!arcTarget) return;
-            arcInputSetup('extract', arcTarget.dir ? 'Extract this folder into (its own folder is created inside)' : 'Extract this file into folder', arcDefaultDest(), 'Extract');
+            if (!arcTarget || !arc) return;
+            const whole = arcTarget.dir && !arcTarget.path;
+            const real = !arc.nested && !arc.staged && /^\/(storage|sdcard|data\/local\/tmp)\//.test(arc.path);
+            arcCloseModal();
+            extractOpen({ src: arcSrcPath(), entry: arcTarget.path, name: arc.name, whole, parent: real ? fmDirOf(arc.path) : '/storage/emulated/0/Download', fromArc: true, deletable: real });
         }
 
         function arcExtractHere() {
@@ -11599,9 +12022,7 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('arcModalName').innerText = arcDir ? name : 'Whole archive';
             document.getElementById('arcModalPath').innerText = arcDir || arc.path;
             document.getElementById('arcModalBtns').innerHTML = '';
-            arcExtractStart();
-            document.getElementById('arcModal').classList.add('show');
-            haptic();
+            arcExtractStart();                               // the dialog of its own; the archive sheet is not needed behind it
         }
 
         function arcRenameStart() {
@@ -11907,6 +12328,7 @@ Type any command below (e.g. pm list packages -d)
                 if (el) { el.style.display = ''; el.innerText = msg; }
                 return;
             }
+            if (exRunning && !arcBusy) { const t = document.getElementById('fmBatchText'); if (t) t.innerText = msg; return; }
             if (!arcBusy) return;
             const st = document.getElementById('arcStatus');
             st.style.display = '';
@@ -11915,7 +12337,9 @@ Type any command below (e.g. pm list packages -d)
 
         function onArchiveResult(r) {
             arcSetBusy(false);
+            if (exRunning && (!r || !r.op || r.op === 'extract')) exRunning = false;
             if (!r) return;
+            if (r.op === 'extract') { exRunning = false; const bs = document.getElementById('fmBatchStatus'); if (bs && !fmBatchRunning) bs.style.display = 'none'; }
             if (!r.ok) {
                 const wasAdd = arcLastOp && arcLastOp.op === 'add';
                 if (wasAdd && /already in the archive/.test(r.error || '') && confirm('“' + arcLastOp.to + '” is already in the archive. Replace it?')) {
@@ -11923,13 +12347,17 @@ Type any command below (e.g. pm list packages -d)
                     return;
                 }
                 showToast(r.error || 'The archive job failed');
-                showCommandResults('Archive', (arcLastOp && arcLastOp.op) || '', [{ name: arc ? arc.name : '', pkg: arc ? arc.path : '', output: r.error || 'failed', success: false }]);
+                showCommandResults('Archive', (arcLastOp && arcLastOp.op) || '', [{ name: arc ? arc.name : (exLast ? exLast.name : ''), pkg: arc ? arc.path : (exLast ? exLast.src : ''), output: r.error || 'failed', success: false }]);
                 archiveReportShown = true;
                 return;
             }
             dropArchiveReport();
             if (r.op === 'extract') {
-                showToast('Extracted ' + r.files + ' file' + (r.files === 1 ? '' : 's') + ' (' + arcSize(r.bytes) + ') to ' + r.dest + (r.skipped ? ' • ' + r.skipped + ' skipped' : ''));
+                exRunning = false;
+                const bs = document.getElementById('fmBatchStatus'); if (bs && !fmBatchRunning) bs.style.display = 'none';
+                showToast('Extracted ' + r.files + ' file' + (r.files === 1 ? '' : 's') + ' (' + arcSize(r.bytes) + ') to ' + r.dest + (r.skipped ? ' • ' + r.skipped + ' skipped' : '') + (r.kept ? ' • ' + r.kept + ' left as they were' : '') + (r.deletedArchive ? ' • archive deleted' : (exLast && exLast.del ? ' • the archive was kept' : '')));
+                if (r.deletedArchive) { try { if (typeof arc !== 'undefined' && arc) arcClose(); } catch (e) {} }
+                if (currentViewName() === 'files') fmRefresh();
                 if (r.problems && r.problems.length) showCommandResults('Archive', 'extract', [{ name: arc ? arc.name : '', pkg: arc ? arc.path : '', output: r.skipped + ' not extracted:\n' + r.problems.join('\n'), success: false }]);
                 return;
             }
@@ -15239,6 +15667,7 @@ Type any command below (e.g. pm list packages -d)
             sdbSnackExpire = (opts && opts.onExpire) || null;
             sdbSnackView = (opts && opts.view) || null;
             document.getElementById('sdbSnackUndo').style.display = undo ? '' : 'none';
+            document.getElementById('sdbSnackUndo').innerText = (opts && opts.label) || 'Undo';
             el.classList.add('show');
             clearTimeout(sdbSnackTimer);
             sdbSnackTimer = setTimeout(sdbSnackHide, (opts && opts.ms) || 7000);

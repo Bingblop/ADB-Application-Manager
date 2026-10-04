@@ -84,6 +84,7 @@ const { chromium, PAGE } = require('./lib/pw');
         return 'started';
       },
       archiveExtract(path, entry, dest) { window.__calls.extract.push([path, entry, dest]); return 'started'; },
+      archiveExtract2(path, entry, dest, policy, del) { window.__calls.extract.push([path, entry, dest, policy, del]); return 'started'; },
       // the installer hand-off
       inspectInstallSource(ref) { window.__calls.intent.push(ref); },
       pickInstallerFile() {},
@@ -184,7 +185,7 @@ const { chromium, PAGE } = require('./lib/pw');
   // a removed file reads from A, an added file from B; extract goes to the same side
   await tapRow('config.arm64.apk');
   await page.locator('#arcModalBtns button', { hasText: 'Extract' }).click(); await sleep(60);
-  await page.locator('#arcInputConfirm').click(); await sleep(100);
+  await page.locator('#exGoBtn').click(); await sleep(100);
   const ex = await page.evaluate(() => window.__calls.extract.slice(-1)[0]);
   console.log('   extracting a removed file reads it from the first archive:', ex[0] === '/sd/bundle.xapk' && ex[1] === 'config.arm64.apk', JSON.stringify(ex));
   await page.evaluate(() => onArchiveResult({ ok: true, op: 'extract', files: 1, bytes: 1000, skipped: 0, dest: '/x' })); await sleep(60);
@@ -211,14 +212,15 @@ const { chromium, PAGE } = require('./lib/pw');
   // 5) The extract folder is remembered.
   await page.evaluate(() => arcGo('data/')); await sleep(60);
   await tapRow('readme.txt'); await page.locator('#arcModalBtns button', { hasText: 'Extract' }).click(); await sleep(60);
-  const firstDefault = await page.inputValue('#arcInput');
-  await page.fill('#arcInput', '/storage/emulated/0/Documents/out');
-  await page.locator('#arcInputConfirm').click(); await sleep(100);
+  const firstDefault = await page.evaluate(() => document.getElementById('exNamedPath').innerText);
+  await page.check('input[name=exWhere][value=other]');
+  await page.fill('#exOtherInput', '/storage/emulated/0/Documents/out');
+  await page.locator('#exGoBtn').click(); await sleep(100);
   await page.evaluate(() => onArchiveResult({ ok: true, op: 'extract', files: 1, bytes: 10, skipped: 0, dest: '/x' })); await sleep(60);
   await page.evaluate(() => arcGo('')); await sleep(60);
   await tapRow('manifest.json'); await page.locator('#arcModalBtns button', { hasText: 'Extract' }).click(); await sleep(60);
-  const secondDefault = await page.inputValue('#arcInput');
-  console.log('5. extract defaults to the folder used last time:', firstDefault === '/storage/emulated/0/Download/bundle' && secondDefault === '/storage/emulated/0/Documents/out', JSON.stringify([firstDefault, secondDefault]));
+  const secondDefault = await page.evaluate(() => document.querySelector('input[name=exWhere]:checked').value === 'other' ? document.getElementById('exOtherInput').value : 'not remembered');
+  console.log('5. extract offers the new folder at first and remembers the folder used last time:', firstDefault === '/storage/emulated/0/Download/bundle' && secondDefault === '/storage/emulated/0/Documents/out', JSON.stringify([firstDefault, secondDefault]));
   await page.evaluate(() => arcCloseModal());
   console.log('errors:', JSON.stringify(errors));
   await b.close();

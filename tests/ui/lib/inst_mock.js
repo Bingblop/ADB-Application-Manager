@@ -37,6 +37,7 @@ exports.initScript = function (opts) {
   };
   window.__opsFlush = () => { const q = window.__opQueue.splice(0); q.forEach(f => f()); return q.length; };
   const entryOf = path => Object.assign({ path, name: path.slice(path.lastIndexOf('/') + 1), kind: (path.split('.').pop() || 'apk').toLowerCase(), size: 12345678, mtime: Date.now() - 3 * 864e5, shell: false }, window.__fileMeta[path] || {});
+  window.__analyzeFinish = (files) => window.onApkAnalyze({ files: files || [], ms: 30 });
   window.__scanStep = (pct, msg, found) => window.onApkScanProgress(JSON.stringify({ pct, msg, found: found || 0 }));
   window.__scanFinish = (extra) => {
     window.__scanPending = false;
@@ -90,6 +91,8 @@ exports.initScript = function (opts) {
       window.__scanPending = true;
       if (!window.__scanHold) setTimeout(() => window.__scanFinish(), 0);
     },
+    // ---- what the search found: package names, versions, copies and older versions (answers when the script says so: window.__analyzeFinish(files)) ----
+    apkAnalyze(json) { calls.analyze = (calls.analyze || []).concat([JSON.parse(json)]); },
     // ---- deleting one of them, with Undo ----
     apkFileOp(id, op, a, b) {
       calls.ops.push(op + ':' + a + (b ? '>' + b : ''));

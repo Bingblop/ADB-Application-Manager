@@ -1,0 +1,93 @@
+name: Tests
+
+# Runs the UI scripts (headless Chromium against the real assets/index.html with a mock Android bridge) and the Java suites (the parts of the app that
+# need no Android classes) on every pull request. See tests/README.md. A suite whose prerequisite is missing is skipped, not failed.
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ui:
+    name: UI scripts
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Playwright and Chromium
+        working-directory: tests
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
+      - name: Run the UI scripts
+        working-directory: tests
+        run: node run.js --jobs 3
+
+      - name: Keep the output of a failed run
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-test-output
+          path: tests/out
+          if-no-files-found: ignore
+          retention-days: 7
+
+  java:
+    name: Java suites
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Locate Android SDK tools
+        run: |
+          SDK="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
+          PLATFORM=$(ls -d "$SDK"/platforms/android-* | sort -V | tail -1)
+          BUILD_TOOLS=$(ls -d "$SDK"/build-tools/* | sort -V | tail -1)
+          echo "Using $PLATFORM and $BUILD_TOOLS"
+          echo "ANDROID_JAR=$PLATFORM/android.jar" >> "$GITHUB_ENV"
+          echo "APKSIGNER=$BUILD_TOOLS/apksigner" >> "$GITHUB_ENV"
+          echo "$BUILD_TOOLS" >> "$GITHUB_PATH"
+
+      - name: Tools the suites use (a real Android shell and zip)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends mksh toybox zip
+
+      - name: Real org.json and Android framework classes for the parsers
+        run: |
+          mkdir -p tests/.cache
+          curl -fsSL -o tests/.cache/org-json.jar https://repo1.maven.org/maven2/org/json/json/20240303/json-20240303.jar
+          curl -fsSL -o tests/.cache/android-all.jar https://repo1.maven.org/maven2/org/robolectric/android-all/14-robolectric-10818077/android-all-14-robolectric-10818077.jar
+          echo "ANDROID_ALL_JAR=$PWD/tests/.cache/android-all.jar" >> "$GITHUB_ENV"
+
+      - name: Build an APK for the signer suites
+        run: |
+          echo "KEYSTORE=$RUNNER_TEMP/throwaway.keystore" >> "$GITHUB_ENV"
+          ./build.sh
+
+      - name: Run the Java suites
+        working-directory: tests
+        run: node java/run.js

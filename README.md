@@ -109,6 +109,20 @@ Left to right, with the **settings gear** (it opens Settings: language, appearan
 
 Every tab except Application Manager and About can be switched off or moved in **Settings → Feature List**.
 
+## New in v7.3
+
+- **Search in the file manager:** a bar with a **where to search** drop-down (this folder, storage, Downloads, photos, an SD card, the whole phone)
+  and two boxes, **Include subfolders** and **Search inside archives**. It understands names with wildcards, `ext:`, `type:`, `size:`, `date:`,
+  `content:` (inside text files) and `archive:` (the names of entries inside zip-family archives). Progress, Stop, and a result list you can open
+  from or show in the folder.
+- **An extract dialog:** into this folder, a new folder named after the archive, or another folder; **Replace / Skip / Keep both** for a name that is
+  already there; and **Delete the archive afterwards** (only when every file was written).
+- **Long jobs keep going:** copy, move, delete and extract show percent, speed and time left, run in a foreground service (they continue when you leave
+  the app, with a notification and **Cancel**), and say so when nothing has moved for 20 seconds.
+- **Find APKs:** files that are a second copy of another, or an older version of a package that is there in a newer one, are flagged; **Select**, then
+  **Delete selected** with **one Undo** for the whole batch; and after a successful install the result sheet offers to delete the installer file.
+- **Tests on every pull request** (`.github/workflows/tests.yml`). 7z / rar / tar formats and passwords follow in the next release.
+
 ## New in v7.2
 
 - **File manager:** a **".." row** at the top of every list (go up one folder), **＋ File**, **Show hidden files**, cached
@@ -974,7 +988,7 @@ script passes is in [tests/README.md](tests/README.md)).
   version, a damaged one, a tab that is off reached by a link or by Back, the layout at 320, 360 and 412 px), the search bar and its menu
   (placement, the three options, the swap rule, patterns and plain text, exact matches, kept between launches, closing by tap, Escape and Back, three
   screen sizes) and a scan of the sources and of every tab and sheet for emoji.
-- **Native rules, off the device** (`tests/java/run.js`, 19 suites): the parts of the Java that need no Android classes are compiled
+- **Native rules, off the device** (`tests/java/run.js`, 23 suites): the parts of the Java that need no Android classes are compiled
   and run as plain Java. For the Hidden Settings tab that is 311 checks of `SettingsDb`, including round trips through a real `sh` (and a fake
   `settings` that refuses on purpose) for hostile values (quotes, `;`, `$(...)`, backticks, `>`, newlines, Unicode), and a
   comparison of the name, value and size checks in Java and in the page over 1,322 cases (the color check of the Overlays tab

@@ -25,6 +25,24 @@ public final class FileOps {
 
     public static final int REPLACE = 0, SKIP = 1, KEEP_BOTH = 2;
 
+    /** The bytes of the regular files in these paths (folders walked, links not followed); 0 when there are more than {@code maxEntries} entries (not worth counting). */
+    public static long sizeOf(List<File> paths, int maxEntries) {
+        long[] total = {0};
+        int[] seen = {0};
+        for (File f : paths) if (!sizeWalk(f, total, seen, maxEntries)) return 0;
+        return total[0];
+    }
+
+    private static boolean sizeWalk(File f, long[] total, int[] seen, int max) {
+        if (++seen[0] > max) return false;
+        if (isLink(f)) return true;
+        if (f.isDirectory()) {
+            File[] kids = f.listFiles();
+            if (kids != null) for (File k : kids) if (!sizeWalk(k, total, seen, max)) return false;
+        } else if (f.isFile()) total[0] += f.length();
+        return true;
+    }
+
     /** Called after each item and now and then inside a big file; return false to stop the job. The caller decides how often to show anything. */
     public interface Progress {
         boolean onProgress(String name, long bytesDone, int itemsDone);
@@ -72,7 +90,8 @@ public final class FileOps {
 
     /** exists() says false for a link whose target is gone; such a link still holds the name. */
     static boolean exists(File f) {
-        return f.exists() || Files.isSymbolicLink(f.toPath());
+        if (f.exists()) return true;
+        try { return Files.isSymbolicLink(f.toPath()); } catch (java.nio.file.InvalidPathException e) { return false; }     // a name this JVM cannot map: it is not there as a link either
     }
 
     /**
@@ -177,7 +196,9 @@ public final class FileOps {
         return m == null || m.isEmpty() ? e.getClass().getSimpleName() : (m.length() > 200 ? m.substring(0, 200) : m);
     }
 
-    private static boolean isLink(File f) { return Files.isSymbolicLink(f.toPath()); }
+    private static boolean isLink(File f) {
+        try { return Files.isSymbolicLink(f.toPath()); } catch (java.nio.file.InvalidPathException e) { return false; }
+    }
 
     private static boolean sameFile(File a, File b) {
         try { return a.getCanonicalPath().equals(b.getCanonicalPath()); } catch (IOException e) { return false; }

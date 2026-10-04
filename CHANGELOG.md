@@ -1,5 +1,61 @@
 # Changelog
 
+## v7.3-Pro (versionCode 730)
+
+File manager, part two: search, the extract dialog and long jobs that keep going; and a cleanup for the package files the Installer finds.
+
+- **Search in the file manager.** A search bar under the path: type a name, or use the filters. **Where to search** is a drop-down: this folder,
+  Internal storage, Downloads, Camera and photos, Pictures, Documents, Music, Movies, an SD card or USB drive, or the whole phone. Two boxes
+  next to it: **Include subfolders** (off: only what is directly in the place chosen) and **Search inside archives** (zip, apk, jar, docx and
+  the like). The answer is a list that takes the place of the folder until **Back to the folder**: the name, the folder it is in, size and
+  date, the line that matched for `content:`, and for an archive entry the archive and the entry. Tap a result to open it (a file gets its
+  usual sheet, a folder opens, an archive entry opens the archive and filters it to that name); the arrow button shows it in its folder.
+  While it runs a line shows the folder, how many files were looked at and how many were found, and the button says **Stop**. Search help
+  folds out under the bar. **Show hidden files** applies to the search too.
+  - words in a name (all must match; `*` and `?` are wildcards; `-word` leaves a name out; `"two words"` in quotes);
+  - `ext:jpg,png` or `.pdf`; `type:image|video|audio|text|doc|archive|apk|font|folder|file`;
+  - `size:>10mb`, `size:<1k`, `size:1k..5m` (b, k, m, g, t); `date:today|yesterday|week|month|year|7d|2w|3m`, `date:2025-03-01`,
+    `date:2025-03-01..2025-03-31`, `date:<2024-01-01`, `date:>=2025-06-01` (the phone's own time zone);
+  - `content:word` looks inside text files up to 4 MB (every word given must be in the file; the first matching line is shown);
+  - `archive:name` looks at the names of the entries inside archives (the whole path in the archive, wildcards allowed).
+  What could not be understood is said, and the rest of the query still works. The walk stops at 1,000 results, 400,000 files or 90 seconds,
+  never follows a link to a folder, and skips pipes and devices; the result line says when a limit stopped it. It reads what the app can read
+  (All-files access); folders only a working mode reaches are not searched.
+- **An extract dialog.** **Extract…** on a zip-format file in the file manager (and **Extract** inside the archive browser, for the whole
+  archive, a folder or a file) opens a dialog: **Extract into** this folder, a new folder named after the archive (`data.tar.gz` gives
+  `data`), or another folder you type; **If a file is already there**: Replace, Skip or Keep both (`name (1).ext`; the old extraction
+  simply overwrote); and, for a whole archive on storage, **Delete the archive afterwards** (asked again before it starts; the archive
+  goes only when every file was written, with nothing skipped or left alone). The choices are remembered. The result says how many files,
+  how many were left as they were, and that the archive was deleted.
+- **Long jobs keep going and say how they are doing.** A copy, move, delete or extraction shows **percent, speed and time left** (the speed
+  is smoothed, so the time does not jump about), on the page and in a notification of its own; the job runs in a foreground service, so it
+  continues when you leave the app, and the notification has **Cancel**. If nothing has moved for 20 seconds (a slow cloud file, a drive
+  that stopped answering) the line and the notification say so and that Cancel stops it. Cancel also works from the page: copy, move,
+  delete and extraction have a Cancel button.
+- **Find APKs: duplicates and older versions.** After a search the app reads the package name and version of each `.apk` and compares the
+  contents of files of the same size: a second copy is flagged **Duplicate** (and says which file it is the same as; the newest is kept,
+  then the one with the shorter path), and a version below another one of the same package is flagged **Older version** (and says which
+  file is newer). The package and version are shown on each row.
+- **Delete several at once, with one Undo.** **Select** in the Find APKs list shows boxes; **All**, or **Select duplicates and older
+  versions** to pick exactly the flagged files; **Delete selected (N)** asks once (count and size), moves every file to the hidden trash
+  folder and gives **one Undo bar for the whole batch** (the files go for good when the bar does).
+- **After an install**, the result sheet offers **Delete the installer file** (a file on the phone's storage; not one picked through
+  Android's chooser, not after a failed install, not when "Auto-delete package after install" already did it). It goes to the trash with an
+  Undo. A new switch in the install options, **Offer to delete the file afterwards**, turns the offer off.
+- **A workflow that runs the tests on every pull request** (`.github/workflows/tests.yml`): the UI scripts in headless Chromium and the
+  Java suites (with a real Android shell and the framework classes) as two jobs; the output of a failed UI run is kept as an artifact.
+- **For developers:** `FileSearch`, `ProgressMeter`, `JobTicker` and `ApkFlags` are plain Java with their own suites (`filesearch`,
+  `progressmeter`, `jobticker`, `apkflags`), `fileops` also covers extraction with the three rules; the page side has `tests/ui/t83.js`
+  (search and extract dialog) and `t84.js` (Find APKs cleanup and the offer after an install).
+- **Not in this release:** archive formats other than zip-family (7z, rar, tar and its family, with passwords) are the next release.
+  Search reads only folders the app itself can read.
+- **Behaviour worth knowing.** In Find APKs the selection follows the filter (files hidden by a filter are un-picked and the count and the
+  button follow what is shown), flags are recomputed after deletes and Undo, and an older version is compared only against the same app
+  with the same signer and ABIs. Several long jobs at once share one notification.
+- **Known limits.** A single-file extraction cannot be cancelled mid-file; **Delete the archive afterwards** deletes permanently (not to the
+  trash) and ignores empty-folder entries; replacing a folder through a working mode (shell) can differ slightly from the direct route;
+  a few place names and native problem messages are still English.
+
 ## v7.2-Pro (versionCode 720)
 
 File manager, the first part of its overhaul.
