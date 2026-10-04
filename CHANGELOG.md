@@ -1,5 +1,30 @@
 # Changelog
 
+## v7.9.2-Pro (versionCode 792)
+
+- **Systemless uninstall for system apps.** When `pm uninstall --user 0` is refused with Android's own "only root
+  can delete system app for a particular user" line, the app now automatically retries through a direct Binder
+  call to `IPackageManager.deletePackageAsUser` - run as a standalone `app_process` under whichever privileged
+  shell (ADB or Shizuku) is already active - the same technique App Manager and Canta use for the same refusal.
+  This removes the app for the current user; it stays in the system partition, the same result a normal
+  uninstall gives for a non-system app, and only runs when the active mode isn't already Root (which removes it
+  directly, no fallback needed).
+- **Removed the "Uninstall (System)" button.** It handed the removal to Android's own uninstall dialog, which on
+  many phones did nothing useful for a preloaded system app - the automatic fallback above actually works instead,
+  so the button (and the single-app sheet's own line it used to take up) is gone.
+- **Several command results that said "Success" had actually failed.** Freeze/Enable, Suspend/Unsuspend, Force
+  Stop, Clear Data, Uninstall and Remove Updates (single app, batch, Debloater, Undo and Profiles alike) used to
+  decide success by scanning the command's own output for words like "error" or "failed" - an empty answer, or an
+  OEM shell's own reworded refusal, read as success either way. They now read the shell's real exit status instead,
+  which no amount of rewording or silence can hide.
+- **Three more permissions on first launch, once a working mode is active**: Read/Write External Storage, Write
+  Secure Settings and Access Restricted Settings (AppOps) - granted straight through the privileged shell, since
+  none of them has an Android settings screen of its own. They join the existing All files access / Usage access /
+  Display over other apps sheet, and (like those three) are also under About → Permissions.
+- **The single-app sheet stays open behind its result dialog.** Running an action from the app menu (⋯) used to
+  close the sheet outright; it now stays open underneath the result dialog, the same way the Installer and Signer
+  sheets already behave, and its Freeze/Suspend/Uninstall buttons catch up once the result is dismissed.
+
 ## v7.9.1-Pro (versionCode 791)
 
 - **App Stores: a successful install now offers Launch Application and Application Settings**, the same result sheet

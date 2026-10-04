@@ -5198,9 +5198,6 @@ Type any command below (e.g. pm list packages -d)
                 <button class="sheet-btn" onclick="singleAction('uninstall')" id="sheetBtnUninstall">
                     <span>Uninstall</span>
                 </button>
-                <button class="sheet-btn" onclick="singleAction('uninstall_system_dialog')" id="sheetBtnUninstallSystem" title="Opens Android's own uninstall screen for this app - can remove a system app without root, where the direct Uninstall button above needs it">
-                    <span>Uninstall (System)</span>
-                </button>
                 <button class="sheet-btn" onclick="singleAction('reinstall')" id="sheetBtnReinstall" style="display:none;">
                     <span>Reinstall</span>
                 </button>
@@ -7122,9 +7119,8 @@ Type any command below (e.g. pm list packages -d)
             let failed = 0;
             pkgs.forEach(pkg => {
                 const app = allApps.find(a => a.pkg === pkg) || { name: pkg, pkg: pkg };
-                const output = window.AndroidBridge ? window.AndroidBridge.executeAppAction(action, pkg) : '';
-                const lowered = String(output || '').toLowerCase();
-                const ok = !(lowered.includes('error') || lowered.includes('failed') || lowered.includes('failure') || lowered.includes('exception'));
+                const raw = window.AndroidBridge ? window.AndroidBridge.executeAppAction(action, pkg) : '';
+                const { ok, output } = parseActionResult(raw);
                 if (ok) success++; else failed++;
                 rows.push({ name: app.name, pkg: pkg, output: output, success: ok });
             });
@@ -9585,6 +9581,11 @@ Type any command below (e.g. pm list packages -d)
                 allApps.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
                 renderApps();
                 checkProfileDrift();
+                // The single-app sheet is left open behind an action's result dialog rather than closed (see
+                // singleAction) - once this refresh lands its Freeze/Suspend/Uninstall buttons need to catch up.
+                if (inspectedPkg && document.getElementById('inspectorModal').classList.contains('show')) {
+                    refreshInspectorButtons(inspectedPkg);
+                }
                 // A remembered "Size" sort needs full sizes, which are measured on demand
                 if (appSort === 'size' && !allSizes && window.AndroidBridge.getAllAppSizes) {
                     setTimeout(() => {
@@ -10014,17 +10015,18 @@ Type any command below (e.g. pm list packages -d)
             }
         }
 
-        // Hands uninstalling off to Android's own system dialog instead of a shell command - no working mode
-        // needed, and for a system app this can succeed without root where the direct Uninstall button cannot.
-        // The actual result happens after the system dialog is answered, outside this call, so this only
-        // confirms the dialog opened and nudges the person to check back once they've answered it.
-        function openSystemUninstallDialog(pkg) {
-            haptic();
-            closeInspector();
-            if (window.AndroidBridge && window.AndroidBridge.executeAppAction) {
-                window.AndroidBridge.executeAppAction('uninstall_system_dialog', pkg);
-                showToast('Opened the system uninstall dialog - confirm there, then come back and refresh');
-            }
+        // Native shell-backed actions (freeze/suspend/force-stop/clear/uninstall/etc.) mark their real result
+        // with a leading '\u0001' + ('1'|'0') flag read from the shell command's own exit status, not guessed
+        // from its wording - an OEM shell (Samsung among them) can reword or silence what these print in ways
+        // no fixed keyword list keeps up with. An action with no flag (launch, app_settings) never runs a pm/am
+        // command directly, so it only ever comes back as a fixed success string or an exception-caught
+        // "Error: " one - the old keyword scan is kept for just that case.
+        function parseActionResult(raw) {
+            const s = String(raw || '');
+            if (s.charCodeAt(0) === 1) return { ok: s.charAt(1) === '1', output: s.slice(2) };
+            const lowered = s.toLowerCase();
+            const ok = !(lowered.includes('error') || lowered.includes('failed') || lowered.includes('failure') || lowered.includes('exception'));
+            return { ok, output: s };
         }
 
         function quickAction(action, pkg) {
@@ -10032,9 +10034,7 @@ Type any command below (e.g. pm list packages -d)
             haptic();
             if (window.AndroidBridge) {
                 const app = allApps.find(a => a.pkg === pkg) || { name: pkg, pkg: pkg };
-                const output = window.AndroidBridge.executeAppAction(action, pkg);
-                const lowered = String(output || '').toLowerCase();
-                const ok = !(lowered.includes('error') || lowered.includes('failed') || lowered.includes('failure') || lowered.includes('exception'));
+                const { ok, output } = parseActionResult(window.AndroidBridge.executeAppAction(action, pkg));
                 showToast(ok ? 'Action executed' : 'Action reported a problem');
                 showCommandResults('Command Result', action.toUpperCase(), [{ name: app.name, pkg: pkg, output: output, success: ok }]);
                 if (UNDO_ACTION[action]) recordHistory('apps', `${ACTION_LABELS[action] || action} ${app.name}`, [{ pkg: pkg, name: app.name, action: action, success: ok }]);
@@ -14428,6 +14428,22 @@ Type any command below (e.g. pm list packages -d)
         let manifestText = '';
         let manifestPkg = null;
 
+        // Shows/hides the single-app sheet's state-dependent buttons (Freeze<->Enable, Suspend<->Unsuspend,
+        // Uninstall<->Reinstall) from the current allApps snapshot for one package. Called at open time, and
+        // again once loadPackageData's post-action refresh lands - the sheet is no longer closed after running
+        // an action (see singleAction), so without this re-check it would keep showing stale buttons.
+        function refreshInspectorButtons(pkg) {
+            const app = allApps.find(a => a.pkg === pkg) || { isFrozen: false, isUninstalled: false, isSuspended: false };
+            document.getElementById('sheetBtnReinstall').style.display = app.isUninstalled ? 'flex' : 'none';
+            document.getElementById('sheetBtnUninstall').style.display = app.isUninstalled ? 'none' : 'flex';
+            // The menu shows Freeze for enabled apps and Enable for frozen ones
+            document.getElementById('sheetBtnFreeze').style.display = app.isFrozen ? 'none' : 'flex';
+            document.getElementById('sheetBtnUnfreeze').style.display = app.isFrozen ? 'flex' : 'none';
+            // Suspend for active apps, Unsuspend for suspended ones (uninstalled apps can't be suspended)
+            document.getElementById('sheetBtnSuspend').style.display = (app.isSuspended || app.isUninstalled) ? 'none' : 'flex';
+            document.getElementById('sheetBtnUnsuspend').style.display = app.isSuspended ? 'flex' : 'none';
+        }
+
         function openInspector(pkg) {
             inspectedPkg = pkg;
             haptic();
@@ -14443,15 +14459,7 @@ Type any command below (e.g. pm list packages -d)
             renderInspectorSizes(pkg);
             document.getElementById('sheetAvatar').innerText = app.name.charAt(0).toUpperCase();
 
-            document.getElementById('sheetBtnReinstall').style.display = app.isUninstalled ? 'flex' : 'none';
-            document.getElementById('sheetBtnUninstall').style.display = app.isUninstalled ? 'none' : 'flex';
-            document.getElementById('sheetBtnUninstallSystem').style.display = app.isUninstalled ? 'none' : 'flex';
-            // The menu shows Freeze for enabled apps and Enable for frozen ones
-            document.getElementById('sheetBtnFreeze').style.display = app.isFrozen ? 'none' : 'flex';
-            document.getElementById('sheetBtnUnfreeze').style.display = app.isFrozen ? 'flex' : 'none';
-            // Suspend for active apps, Unsuspend for suspended ones (uninstalled apps can't be suspended)
-            document.getElementById('sheetBtnSuspend').style.display = (app.isSuspended || app.isUninstalled) ? 'none' : 'flex';
-            document.getElementById('sheetBtnUnsuspend').style.display = app.isSuspended ? 'flex' : 'none';
+            refreshInspectorButtons(pkg);
 
             // Reset per-app state
             inspectorData = null;
@@ -15022,10 +15030,8 @@ Type any command below (e.g. pm list packages -d)
         function singleAction(action) {
             if (!inspectedPkg) return;
             if (action === 'app_settings') { openAppSettings(inspectedPkg); return; }
-            if (action === 'uninstall_system_dialog') { openSystemUninstallDialog(inspectedPkg); return; }
             if (!guardPrivilege(action)) return;
             quickAction(action, inspectedPkg);
-            closeInspector();
         }
 
         // Whenever a working mode (ADB / Shizuku / Root) is active, every launch goes through `am start -W`
@@ -15337,9 +15343,16 @@ Type any command below (e.g. pm list packages -d)
         const PERM_DEFS = [
             { key: 'files', name: 'All files access', why: 'Browse storage, find packages on it and install from it.' },
             { key: 'usage', name: 'Usage access', why: 'Show how big each app is and when it was last used.' },
-            { key: 'overlay', name: 'Display over other apps', why: "Lets this app open another app's screen from the background, such as an app you have just installed." }
+            { key: 'overlay', name: 'Display over other apps', why: "Lets this app open another app's screen from the background, such as an app you have just installed." },
+            // The three below only have anything to grant while a working mode (ADB/Shizuku/root) is active - there is no
+            // Settings switch for most of them, so they stay out of the sheet entirely until there is a privileged shell to grant them through.
+            { key: 'storage_legacy', name: 'Read/Write External Storage', why: 'The older storage permission some apps still check for.', privOnly: true },
+            { key: 'secure_settings', name: 'Write Secure Settings', why: 'Lets this app change a few protected system settings used by some advanced features.', privOnly: true },
+            { key: 'restricted_settings', name: 'Access Restricted Settings', why: "Lifts Android's sideload block on a few sensitive toggles for this app.", privOnly: true }
         ];
-        let permStatus = {};              // { files, usage, overlay }: true when allowed
+        // A privOnly entry is only ever offered once isPrivilegedActive is true.
+        function visiblePermDefs() { return PERM_DEFS.filter(d => !d.privOnly || isPrivilegedActive); }
+        let permStatus = {};              // { files, usage, overlay, storage_legacy, secure_settings, restricted_settings }: true when allowed
         let permMode = 'manual';          // 'intro' (first launch) | 'manual' (from About) | 'files' (an action needs file access)
         let permWalk = [];                // what "Allow all" still has to open, one Android screen after the other
         let permWaiting = '';             // the access whose Android screen was just opened
@@ -15377,7 +15390,7 @@ Type any command below (e.g. pm list packages -d)
 
         function permRender() {
             const files = permMode === 'files';
-            const defs = files ? PERM_DEFS.filter(d => d.key === 'files') : PERM_DEFS;
+            const defs = files ? PERM_DEFS.filter(d => d.key === 'files') : visiblePermDefs();
             document.getElementById('permRows').innerHTML = defs.map(d => {
                 const on = !!permStatus[d.key];
                 return '<div class="pm-row"><div class="pm-txt"><div class="pm-name">' + escapeHtml(d.name) + '</div><div class="pm-why">' + escapeHtml(d.why) + '</div></div>'
@@ -15402,6 +15415,9 @@ Type any command below (e.g. pm list packages -d)
                 if (key === 'files') { if (b.requestAllFilesAccess) b.requestAllFilesAccess(); }
                 else if (key === 'usage') { if (b.requestUsageAccess) answer = String(b.requestUsageAccess()); }
                 else if (key === 'overlay') { if (b.requestOverlayAccess) answer = String(b.requestOverlayAccess()); }
+                else if (key === 'storage_legacy') { if (b.requestLegacyStorageAccess) answer = String(b.requestLegacyStorageAccess()); }
+                else if (key === 'secure_settings') { if (b.requestWriteSecureSettings) answer = String(b.requestWriteSecureSettings()); }
+                else if (key === 'restricted_settings') { if (b.requestRestrictedSettingsAccess) answer = String(b.requestRestrictedSettingsAccess()); }
             } catch (e) {}
             if (answer === 'granted') { permWaiting = ''; permOnChange(); permWaiting = ''; if (permWalk.length) setTimeout(permNext, 200); }
         }
@@ -15413,7 +15429,7 @@ Type any command below (e.g. pm list packages -d)
 
         function permAllowAll() {
             permRefresh();
-            permWalk = PERM_DEFS.filter(d => !permStatus[d.key]).map(d => d.key);
+            permWalk = visiblePermDefs().filter(d => !permStatus[d.key]).map(d => d.key);
             permNext();
         }
 
@@ -15444,7 +15460,7 @@ Type any command below (e.g. pm list packages -d)
             if (!modal || !modal.classList.contains('show')) return;
             modal.classList.remove('show');
             permWalk = [];
-            if (permMode === 'intro') { try { if (window.AndroidBridge && window.AndroidBridge.saveSetting) window.AndroidBridge.saveSetting('perm_intro_v61', '1'); } catch (e) {} }
+            if (permMode === 'intro') { try { if (window.AndroidBridge && window.AndroidBridge.saveSetting) window.AndroidBridge.saveSetting('perm_intro_v62', '1'); } catch (e) {} }
             if (permMode === 'files' && byUser !== false && !fileAccessGranted()) { permClosedAt = Date.now(); setPermRetry(null); }
         }
 
@@ -15473,7 +15489,7 @@ Type any command below (e.g. pm list packages -d)
             const up = document.getElementById('permModal');
             if (up && up.classList.contains('show')) return;
             let seen = '';
-            try { seen = b.loadSetting('perm_intro_v61'); } catch (e) {}
+            try { seen = b.loadSetting('perm_intro_v62'); } catch (e) {}
             if (seen) return;
             if (document.querySelector('.modal-overlay.show')) {              // after the sheet that is open (What's new, a menu): look again soon
                 permIntroWaiting = true;
@@ -15481,7 +15497,7 @@ Type any command below (e.g. pm list packages -d)
                 return;
             }
             permRefresh();
-            if (PERM_DEFS.every(d => permStatus[d.key])) { try { b.saveSetting('perm_intro_v61', '1'); } catch (e) {} return; }
+            if (visiblePermDefs().every(d => permStatus[d.key])) { try { b.saveSetting('perm_intro_v62', '1'); } catch (e) {} return; }
             permIntroWaiting = false;
             openPermSheet('intro');
         }

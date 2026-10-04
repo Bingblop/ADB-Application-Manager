@@ -629,8 +629,11 @@ public class MainActivity extends Activity {
         AndroidBridge bridge = new AndroidBridge();
         int ok = 0, failed = 0;
         for (int i = 0; pkgs != null && i < pkgs.length(); i++) {
-            String out = bridge.executeAppAction("force_stop", pkgs.optString(i)).toLowerCase();
-            if (out.contains("error") || out.contains("exception") || out.contains("denied")) failed++;
+            String out = bridge.executeAppAction("force_stop", pkgs.optString(i));
+            // force_stop is flagged by its own real exit status (see AndroidBridge.runShellAction) - read that
+            // rather than guessing from the text, same reasoning as the rest of executeAppAction's callers.
+            if (out != null && out.length() >= 2 && out.charAt(0) == '\u0001') { if (out.charAt(1) == '1') ok++; else failed++; }
+            else if (out != null && (out.toLowerCase().contains("error") || out.toLowerCase().contains("exception") || out.toLowerCase().contains("denied"))) failed++;
             else ok++;
         }
         return "Force-stopped " + ok + " app" + (ok == 1 ? "" : "s") + (failed > 0 ? ", " + failed + " failed" : "");
@@ -5836,6 +5839,35 @@ public class MainActivity extends Activity {
         }
     }
 
+    private boolean hasLegacyStorageAccess() {
+        try {
+            return checkSelfPermission(android.Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+                    && checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private boolean hasWriteSecureSettingsAccess() {
+        try {
+            return checkSelfPermission(android.Manifest.permission.WRITE_SECURE_SETTINGS) == PackageManager.PERMISSION_GRANTED;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /** "Allow restricted settings" - an app-op (android:read_write_restricted_settings), not a manifest
+     *  permission, so there is nothing to declare in AndroidManifest.xml for this one. */
+    private boolean hasRestrictedSettingsAccess() {
+        try {
+            android.app.AppOpsManager ops = (android.app.AppOpsManager) getSystemService(Context.APP_OPS_SERVICE);
+            int mode = ops.checkOpNoThrow("android:read_write_restricted_settings", android.os.Process.myUid(), getPackageName());
+            return mode == android.app.AppOpsManager.MODE_ALLOWED;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     /** {"app":..,"data":..,"cache":..} bytes from StorageStatsManager (needs usage access), or null */
     private JSONObject storageStats(String pkg) {
         if (!hasUsageAccess()) return null;
@@ -7384,19 +7416,22 @@ public class MainActivity extends Activity {
                 // text the user typed; everything below concatenates pkg into a shell command (or a monkey
                 // fallback), so refuse anything that isn't a well-formed package name before it gets there.
                 if (!BackupScripts.isPackageName(pkg)) return "Error: \"" + pkg + "\" is not a valid package name";
-                if ("freeze".equals(action)) return executeShell("pm disable-user " + pkg);
+                if ("freeze".equals(action)) return runShellAction("pm disable-user " + pkg);
                 if ("unfreeze".equals(action)) {
-                    executeShell("pm enable " + pkg);
-                    return executeShell("pm unsuspend " + pkg);
+                    String r1 = runShellAction("pm enable " + pkg);
+                    String r2 = runShellAction("pm unsuspend " + pkg);
+                    String t1 = flagText(r1), t2 = flagText(r2);
+                    String combined = t1 + (t1.isEmpty() || t2.isEmpty() ? "" : "\n") + t2;
+                    return flagged(flagOk(r1) && flagOk(r2), combined);
                 }
-                if ("suspend".equals(action)) return executeShell("pm suspend " + pkg);
-                if ("unsuspend".equals(action)) return executeShell("pm unsuspend " + pkg);
-                if ("force_stop".equals(action)) return executeShell("am force-stop " + pkg);
-                if ("clear_data".equals(action)) return executeShell("pm clear " + pkg);
-                if ("uninstall".equals(action)) return withUninstallHint(executeShell("pm uninstall --user 0 " + pkg));
-                if ("uninstall_keep_data".equals(action)) return withUninstallHint(executeShell("pm uninstall -k --user 0 " + pkg));
-                if ("uninstall_updates".equals(action)) return executeShell("pm uninstall-system-updates " + pkg);
-                if ("reinstall".equals(action)) return executeShell("pm install-existing " + pkg);
+                if ("suspend".equals(action)) return runShellAction("pm suspend " + pkg);
+                if ("unsuspend".equals(action)) return runShellAction("pm unsuspend " + pkg);
+                if ("force_stop".equals(action)) return runShellAction("am force-stop " + pkg);
+                if ("clear_data".equals(action)) return runShellAction("pm clear " + pkg);
+                if ("uninstall".equals(action)) return uninstallForUser(pkg, false);
+                if ("uninstall_keep_data".equals(action)) return uninstallForUser(pkg, true);
+                if ("uninstall_updates".equals(action)) return runShellAction("pm uninstall-system-updates " + pkg);
+                if ("reinstall".equals(action)) return runShellAction("pm install-existing " + pkg);
                 if ("launch".equals(action)) {
                     Intent launch = getPackageManager().getLaunchIntentForPackage(pkg);
                     if (launch != null) {
@@ -7413,30 +7448,101 @@ public class MainActivity extends Activity {
                     startActivity(intent);
                     return "Settings opened";
                 }
-                // Hands the removal to Android's own system uninstaller UI instead of a shell `pm uninstall`: any
-                // app can fire this, no permission and no working mode needed, and it runs with the system's own
-                // privilege rather than shell's - for a preloaded system app without root, that can go through via
-                // Android's own DISABLED_UNTIL_USED soft-removal (the app vanishes, shows "Not installed" in
-                // Settings) even where a raw `pm uninstall --user 0` from this app hits the hard "only root" wall.
-                // The actual result happens after the person answers the system's own dialog, outside this call.
-                if ("uninstall_system_dialog".equals(action)) {
-                    Intent intent = new Intent(Intent.ACTION_DELETE);
-                    intent.setData(Uri.parse("package:" + pkg));
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    startActivity(intent);
-                    return "Opened the system uninstall dialog";
-                }
                 return "";
             } catch (Exception e) {
                 return "Error: " + e.getMessage();
             }
         }
 
+        // A single '\u0001' + ('1'|'0') flag glued onto the front of a pm/am result, read from the command's
+        // own exit status rather than guessed from its wording - an OEM shell (Samsung among them) can reword
+        // or silence what these commands print in ways no fixed keyword list keeps up with, but it can't touch
+        // the exit code the command itself sets. Every caller that only ever displays this text (the Terminal,
+        // UninstallHints' string matching, etc.) must read it from flagText(...), never the raw return value.
+        private static final char RC_FLAG = '\u0001';
+
+        private String flagged(boolean ok, String text) {
+            return RC_FLAG + (ok ? "1" : "0") + (text == null ? "" : text);
+        }
+
+        private boolean flagOk(String s) {
+            return s != null && s.length() >= 2 && s.charAt(0) == RC_FLAG && s.charAt(1) == '1';
+        }
+
+        private String flagText(String s) {
+            return (s != null && s.length() >= 2 && s.charAt(0) == RC_FLAG) ? s.substring(2) : (s == null ? "" : s);
+        }
+
+        /** Runs one pm/am command through the active privileged shell and reports success from its own exit
+         *  status (see {@link #RC_FLAG}), not from sniffing what it printed. */
+        private String runShellAction(String cmd) {
+            String marker = "__RC" + System.nanoTime() + "__";
+            String raw = executeShell(cmd + "; echo \"" + marker + ":$?\"");
+            if (raw == null) raw = "";
+            int idx = raw.lastIndexOf(marker + ":");
+            if (idx < 0) return flagged(true, raw); // the backend didn't run a real shell - nothing to parse, assume ok
+            String text = raw.substring(0, idx);
+            while (text.endsWith("\n")) text = text.substring(0, text.length() - 1);
+            int rc;
+            try { rc = Integer.parseInt(raw.substring(idx + marker.length() + 1).trim()); }
+            catch (NumberFormatException e) { rc = 0; }
+            return flagged(rc == 0, text);
+        }
+
         /** A failed {@code pm uninstall} line, with a plain-language note appended when it is one of the common,
          *  cryptic refusals {@link UninstallHints} recognizes (most often: this needs actual root). */
-        private String withUninstallHint(String out) {
+        private String withUninstallHint(String flaggedOut) {
+            String out = flagText(flaggedOut);
             String advice = UninstallHints.advice(out);
-            return advice.isEmpty() ? out : (out == null ? "" : out.trim()) + "\n\nNote: " + advice;
+            String text = advice.isEmpty() ? out : out.trim() + "\n\nNote: " + advice;
+            return flagged(flagOk(flaggedOut), text);
+        }
+
+        /** {@code pm uninstall [-k] --user 0 <pkg>}, with one automatic fallback: when that is refused with
+         *  Android's own "only root can delete system app for a particular user" line and this isn't already
+         *  root mode, it retries through {@link #attemptSystemlessUninstall} - the direct Binder call
+         *  (IPackageManager.deletePackageAsUser) App Manager and Canta use for the same refusal, run as a
+         *  standalone app_process under whatever privileged shell (ADB or Shizuku) is already active. That
+         *  fallback only applies to a full removal, not the keep-data variant. */
+        private String uninstallForUser(String pkg, boolean keepData) {
+            String cmd = keepData ? ("pm uninstall -k --user 0 " + pkg) : ("pm uninstall --user 0 " + pkg);
+            String result = runShellAction(cmd);
+            if (flagOk(result)) return result;
+            if (!keepData && UninstallHints.rootRequired(flagText(result)) && !"root".equals(resolveExecMode())) {
+                String binder = attemptSystemlessUninstall(pkg);
+                if (binder != null) return binder;
+            }
+            return withUninstallHint(result);
+        }
+
+        /** The systemless-uninstall workaround: spawns {@code app_process} on this app's own already-installed
+         *  APK (so the call lands on {@link SystemlessUninstallRunner} with zero extra build/dex steps) under
+         *  whichever privileged shell {@link #executeShell} is already using, and has it call
+         *  IPackageManager.deletePackageAsUser directly over Binder with the DELETE_SYSTEM_APP flag - the one
+         *  bit the `pm uninstall` command line never exposes. Removes the app for this user only; it stays in
+         *  the system partition, same as a normal `pm uninstall --user 0` does for a non-system app. Returns
+         *  null (never a failure string) when this device/mode can't even attempt it, so the caller falls back
+         *  to the plain pm-uninstall refusal it already has. */
+        private String attemptSystemlessUninstall(String pkg) {
+            String apkPath;
+            try {
+                apkPath = getPackageManager().getApplicationInfo(getPackageName(), 0).sourceDir;
+            } catch (Exception e) {
+                return null;
+            }
+            if (apkPath == null || apkPath.isEmpty()) return null;
+            String out = flagText(runShellAction("CLASSPATH=\"" + apkPath + "\" app_process /system/bin "
+                    + SystemlessUninstallRunner.class.getName() + " " + pkg + " 0"));
+            if (out.contains("RESULT:OK")) {
+                return flagged(true, "Success\n\nRemoved via a direct Binder call (IPackageManager.deletePackageAsUser) "
+                        + "since the shell-level `pm uninstall` needs actual root for a system app - it stays in the "
+                        + "system partition but is gone for this user, the same result a normal uninstall gives for "
+                        + "any other app.");
+            }
+            if (out.contains("RESULT:FAIL:") || out.contains("RESULT:ERROR:")) {
+                return flagged(false, out.trim());
+            }
+            return null;
         }
 
         @JavascriptInterface
@@ -9048,6 +9154,9 @@ public class MainActivity extends Activity {
                 o.put("files", hasStorageAccess());
                 o.put("usage", hasUsageAccess());
                 o.put("overlay", hasOverlayAccess());
+                o.put("storage_legacy", hasLegacyStorageAccess());
+                o.put("secure_settings", hasWriteSecureSettingsAccess());
+                o.put("restricted_settings", hasRestrictedSettingsAccess());
                 o.put("sdk", Build.VERSION.SDK_INT);
             } catch (Exception ignored) {}
             return o.toString();
@@ -9079,6 +9188,60 @@ public class MainActivity extends Activity {
                 }
             });
             return "settings";
+        }
+
+        /** The older Read/Write External Storage permissions some apps still check for, granted straight
+         *  through the privileged shell - only ever offered once a working mode is active, so there is no
+         *  meaningful unprivileged fallback beyond this app's own permission screen. */
+        @JavascriptInterface
+        public String requestLegacyStorageAccess() {
+            if (hasLegacyStorageAccess()) return "granted";
+            if (!"standard".equals(resolveExecMode())) {
+                executeShell("pm grant " + getPackageName() + " android.permission.READ_EXTERNAL_STORAGE");
+                executeShell("pm grant " + getPackageName() + " android.permission.WRITE_EXTERNAL_STORAGE");
+                if (hasLegacyStorageAccess()) return "granted";
+            }
+            openOwnAppInfo();
+            return "settings";
+        }
+
+        /** WRITE_SECURE_SETTINGS - a signature/privileged permission with no Settings UI toggle of its own,
+         *  grantable only through a privileged shell (ADB, Shizuku, or root). */
+        @JavascriptInterface
+        public String requestWriteSecureSettings() {
+            if (hasWriteSecureSettingsAccess()) return "granted";
+            if (!"standard".equals(resolveExecMode())) {
+                executeShell("pm grant " + getPackageName() + " android.permission.WRITE_SECURE_SETTINGS");
+                if (hasWriteSecureSettingsAccess()) return "granted";
+            }
+            return "settings"; // nothing to open - this one has no Settings screen at all without a shell
+        }
+
+        /** The "Allow restricted settings" app-op Android 13+ blocks for a sideloaded app by default,
+         *  covering a handful of other sensitive toggles (accessibility, notification access, usage access
+         *  on some OEM builds) - granted straight through the privileged shell. */
+        @JavascriptInterface
+        public String requestRestrictedSettingsAccess() {
+            if (hasRestrictedSettingsAccess()) return "granted";
+            if (!"standard".equals(resolveExecMode())) {
+                executeShell("appops set " + getPackageName() + " android:read_write_restricted_settings allow");
+                if (hasRestrictedSettingsAccess()) return "granted";
+            }
+            openOwnAppInfo();
+            return "settings";
+        }
+
+        private void openOwnAppInfo() {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Intent i = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + getPackageName()));
+                        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(i);
+                    } catch (Exception ignored) {}
+                }
+            });
         }
 
         /** Opens the system screen to grant this app All-files access (for browsing /sdcard without a shell). */

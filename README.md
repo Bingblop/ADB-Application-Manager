@@ -65,7 +65,7 @@ tell you when a new version is out (see [Updates](#updates)).
 | | |
 |---|---|
 | **Apps** | Browse every package, including ones uninstalled for your user · search · sort by name, update date, install date, size or "updates first" · filters for running, 3rd party, system, frozen, suspended, uninstalled, **updated in the last 7 days** and **🧩 patched** (ReVanced, Morphe, Xposed / LSPosed modules, LSPatch / NPatch, debug-signed repackages) · **the big counters at the top light up for the filter you are looking at** · versions and update hints in the list · select many and run batch actions · save selections as named lists · export everything to CSV |
-| **Actions** | **App menu (one app):** Launch · Force Stop · Freeze / Enable · **Suspend / Unsuspend** · Clear Data · Uninstall for user 0 · Reinstall removed system apps · Remove Updates · App Info · **Extract APK** · **Backup**. **Batch (selected apps):** Freeze · Enable · Force Stop · Suspend · Unsuspend · Clear Data · Uninstall · Reinstall · Save to List · Copy Packages · Share List |
+| **Actions** | **App menu (one app):** Launch · Force Stop · Freeze / Enable · **Suspend / Unsuspend** · Clear Data · Uninstall for user 0 (a system app that needs root falls back automatically to a direct Binder call, the same workaround App Manager and Canta use - see below) · Reinstall removed system apps · Remove Updates · App Info · **Extract APK** · **Backup**. **Batch (selected apps):** Freeze · Enable · Force Stop · Suspend · Unsuspend · Clear Data · Uninstall · Reinstall · Save to List · Copy Packages · Share List |
 | **Debloater** | The [UAD-NG](https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation) community list (5,000+ packages) with descriptions and dependency warnings · filter by removal level, vendor list, state and **phone brand** · review step before anything runs · **history log with one-tap Undo** |
 | **Installer** | All-in-one installer for `.apk`, `.apks` (bundletool), `.apkm` (APKMirror) and `.xapk` (with OBB / game data) · reads the package name, version, SDK range, size and signing certificate first · pick the authorizer (ADB / Shizuku / Root / none) and every `pm install` flag (grant all permissions, downgrade, test, all users, update ownership …) · signature-mismatch and unknown-signature gates · optional dex optimization and auto-delete · **storage search** with a progress bar that lists every package file on the phone, where **press and hold deletes a file with Undo** · **the splits that fit the phone are ticked** (CPU, screen density, language) · **▾ lists of common installers and requesters** for the `-i` and `--originating-uri` boxes · **Launch Application / Application Settings** buttons once an install worked · optional **VirusTotal** check with your own API key (a SHA-256 lookup; nothing is uploaded unless you say so) · the app can be Android's handler for APK files |
 | **Updates** | **Update the app itself** from its own GitHub releases (dedicated card, signed-key check, seamless with a privileged mode or the system installer without one) · **Galaxy Store** (Samsung system apps) · **GitHub, Codeberg, F-Droid, IzzyOnDroid and the Obtainium catalog** for sideloaded open-source apps · import your **Obtainium** export · Update one or **Update All** · signing-key check before installing · Google Play apps hand off to Aurora Store or the Play Store page |
@@ -86,7 +86,7 @@ tell you when a new version is out (see [Updates](#updates)).
 | **Themes** | **Material 3** (default) · **Material You** (follows your wallpaper) · six more palettes · Light / Dark / System / Schedule · pure-black AMOLED option · per-mode color tuning |
 | **Security** | A **private ADB key is generated on each install** (nothing is bundled) · fingerprint shown in the app · signing-certificate comparison before every update |
 | **Navigation** | A Back button that closes the open sheet, clears a selection, steps up a folder or out of an archive, returns to the previous tab, and only then asks for a deliberate second press to leave (it also asks first while an install, update, file job or command is running) |
-| **Permissions** | **New in v6.1:** a first-launch sheet offers **All files access**, **Usage access** and **Display over other apps** (each optional, also under About), and an action that fails for want of file access asks for it on the spot and carries on once it is allowed — see [Permissions](#permissions) |
+| **Permissions** | A first-launch sheet offers **All files access**, **Usage access** and **Display over other apps** (each optional, also under About); with a working mode it also offers **Read/Write External Storage**, **Write Secure Settings** and **Access Restricted Settings**, granted straight through the shell. An action that fails for want of file access asks for it on the spot and carries on once it is allowed — see [Permissions](#permissions) |
 | **About** | The developer and the GitHub repo, this build's version, device and **signing certificate** (✅ for the official release key), copyable debug info for bug reports, the **🔐 Permissions** sheet, and an optional **☕ Buy me a coffee** (PayPal, $1 or any amount) |
 
 ## The tabs
@@ -754,6 +754,13 @@ cache; data and cache need *usage access*, which the app can grant through ADB/S
 Launch, Force Stop, Freeze/Enable, Suspend/Unsuspend, Clear Data, Uninstall, Reinstall, Remove Updates, App
 Info and **Extract APK** (a `.apk`, or an `.apks` bundle for split apps, saved to Downloads). Five tabs follow:
 
+**Uninstalling a system app for one user without root** (`pm uninstall --user 0` answering "only root can delete
+system app for a particular user"): the app automatically retries through a direct Binder call to
+`IPackageManager.deletePackageAsUser`, run as a standalone `app_process` under whichever privileged shell (ADB or
+Shizuku) is already active - the same technique App Manager and Canta use for the same refusal. This removes the
+app for the current user; it stays in the system partition (the same result a normal uninstall gives for a
+non-system app), and needs a working mode that isn't already Root (Root removes it directly, no fallback needed).
+
 - **Permissions**: searchable, filterable; toggle runtime and development permissions
 - **App Ops**: Allow / Foreground / Ignore / Deny / Reset per op, plus setting any op by name
 - **Components**: all activities (exported and unexported) with **Launch**, plus services. Unexported
@@ -871,12 +878,22 @@ Three accesses have no pop-up of their own: Android keeps each one on a screen o
 | 📊 **Usage access** | Showing how big each app is and when it was last used |
 | 🪟 **Display over other apps** | Opening another app's screen from the background, such as an app you have just installed |
 
-**Allow** opens the Android screen for that access. **Allow all** walks through the ones still missing, one screen after the
-other (leaving a screen without allowing does not stop the walk, and closing the sheet cancels the rest); with ADB, Shizuku or
-Root the app switches the last two on itself, so only All files access needs its screen. **Not now** skips them all: the same
-sheet is under **About → 🔐 Permissions** and shows what is allowed. On Android 10 and older there is no All-files switch, so
-**Allow** shows Android's own storage dialog (and, after "don't ask again", the app's settings page); the app asks Android 10 for
-its legacy file access so that permission is enough there.
+**With a working mode (ADB, Shizuku or Root) active**, the same sheet also offers three more, privileged-only accesses -
+there is no Android screen for any of them, so they only ever show up once there is a shell to grant them through:
+
+| Access | What the app uses it for |
+|---|---|
+| 💾 **Read/Write External Storage** | The older storage permission some apps still check for |
+| 🔐 **Write Secure Settings** | Changing a few protected system settings used by some advanced features |
+| 🚫 **Access Restricted Settings** | Lifting Android's sideload block on a few sensitive toggles for this app |
+
+**Allow** opens the Android screen for that access, or - for the three privileged-only ones - grants it straight through the
+shell with nothing to open. **Allow all** walks through the ones still missing, one after the other (leaving a screen without
+allowing does not stop the walk, and closing the sheet cancels the rest); with ADB, Shizuku or Root the app switches Usage
+access, Display over other apps and the three privileged-only accesses on for itself, so only All files access ever needs its
+own screen. **Not now** skips them all: the same sheet is under **About → 🔐 Permissions** and shows what is allowed. On Android
+10 and older there is no All-files switch, so **Allow** shows Android's own storage dialog (and, after "don't ask again", the
+app's settings page); the app asks Android 10 for its legacy file access so that permission is enough there.
 
 **When an action needs file access** and the app has neither it nor a working mode, the action says so and the app opens the
 same sheet with just that access, naming what was being done. This covers opening, editing, saving or adding a file, reading
@@ -981,8 +998,10 @@ Also in the sources: [`ManifestDecoder`](src/com/bloatware/bingblop/ManifestDeco
 - **Coding agents** only talk to the provider you pick, with the key you saved (encrypted with an Android Keystore key, sent
   only to that provider's own address). What you type, and the output of the steps you allow, goes to that provider; keys
   in output are masked first. Nothing runs or changes without your OK unless you turn that off in the Terminal settings.
-- The three special accesses are yours to give: the sheet only opens Android's own screens. With a working mode the app can switch
-  Usage access and Display over other apps on for itself (the same shell could do it anyway); All files access is only ever given on
+- The special accesses are yours to give: the sheet only opens Android's own screens, or - for the three privileged-only
+  ones (Read/Write External Storage, Write Secure Settings, Access Restricted Settings) - grants them through the shell
+  directly, since none of them has a screen of its own. With a working mode the app can also switch Usage access and
+  Display over other apps on for itself (the same shell could do it anyway); All files access is only ever given on
   Android's screen. Every one can be taken back there.
 - Updates are installed only after the package name, version and **signing certificate** match.
 - The reboot receiver only compares the build fingerprint and posts a reminder. It changes nothing.

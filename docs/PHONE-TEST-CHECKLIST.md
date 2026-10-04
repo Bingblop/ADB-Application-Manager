@@ -161,3 +161,36 @@ Tick the box when it works; write what you saw when it does not.
       (it is not sent to the agent as a question).
 - [ ] Switch the app's language again: the new agent names, Effort's Low/Balanced/High and the console's AI note are still
       English (to translate later); everything already translated in v7.8 is unaffected.
+
+## v7.9.2: systemless uninstall, real success/failure, three new permissions, sheet stays open
+
+This release's two biggest changes - the Binder-based systemless uninstall and the real-exit-code success/failure fix -
+cannot be exercised by the desktop test suite at all (no real `IPackageManager`, no real `pm`/`am` exit status): **this
+section is the only place either one is actually verified.**
+
+- [ ] With ADB or Shizuku (not root) on a phone with a removable preloaded system app: **⋯ > Uninstall** on it. It
+      disappears from the list (as uninstalled) and the result sheet says it was removed via a direct Binder call -
+      confirm with `adb shell pm list packages | grep <pkg>` that it is gone for the current user (still present with
+      `pm list packages -u`, i.e. still in the system partition). Reinstalling it afterward (**⋯ > Reinstall**) works.
+- [ ] The same uninstall in **Root** mode still goes straight through the plain `pm uninstall --user 0` path (no Binder
+      fallback needed - it already has root).
+- [ ] Freeze, Suspend, Force Stop and Clear Data on an ordinary (non-system) app each still show **Success** on the
+      result sheet, and actually do what they say (frozen apps leave the launcher, a force-stopped app's recents entry
+      is gone, Clear Data empties its storage - check in **⋯ > sizes** or Android's own App Info).
+- [ ] Try to Freeze or Suspend a protected system app your phone's OEM blocks (Knox/MDM, or a core system package):
+      the result sheet now says **it failed**, not Success - this is the bug being fixed; a false Success here is a
+      regression.
+- [ ] **⋯ > Uninstall (System)** is gone from the app menu entirely (the sheet has one fewer button; nothing to tap
+      instead of it except Uninstall, which now handles the system-app case itself).
+- [ ] With a working mode active, **About > Permissions** (or the first-launch sheet on a fresh install) now also
+      offers **Read/Write External Storage**, **Write Secure Settings** and **Access Restricted Settings**: tapping
+      **Allow** on each grants it immediately with no Android screen, and it shows **✓ Allowed** right after. Confirm
+      with `adb shell dumpsys package <pkg> | grep -A2 "runtime permissions"` (storage) and `adb shell appops get <pkg>`
+      (Access Restricted Settings: `android:read_write_restricted_settings`) that they are actually granted on the phone,
+      not just in the app's own display.
+- [ ] Without any working mode, those three permissions do not appear in the sheet at all (there is no Android screen
+      for them, so there is nothing useful to offer).
+- [ ] After **⋯ > Freeze** (or any other single-app action) and dismissing the result sheet, the app's own **⋯** sheet
+      is still open underneath it (not kicked back to the list) - its Freeze/Enable, Suspend/Unsuspend and
+      Uninstall/Reinstall buttons reflect the app's new state once the sheet's own background refresh lands a moment
+      later. The **✕** at the top of that sheet (or Back) closes it as before.

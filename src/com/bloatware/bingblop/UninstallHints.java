@@ -41,7 +41,7 @@ final class UninstallHints {
     static String advice(String out) {
         if (out == null || success(out)) return "";
         if (rootRequired(out)) {
-            return "Shell-level ADB or Shizuku cannot remove a system app for one user this way, even though it can do most other things here. If this phone is rooted, switch to Root mode in Working Modes and try again. Without root, try the \"Uninstall (System)\" button instead: it hands the removal to Android's own uninstall screen, which can succeed where this direct method needs root. Freeze is the fallback if even that is refused: the app disappears from the launcher and stops running, but stays installed (just disabled) rather than showing as uninstalled.";
+            return "Shell-level ADB or Shizuku cannot remove a system app for one user this way, and the direct Binder call this app automatically tries as a fallback for exactly this case was not able to either (the reason is in the text above). If this phone is rooted, switch to Root mode in Working Modes and try again. Freeze is the next best option: the app disappears from the launcher and stops running, but stays installed (just disabled) rather than showing as uninstalled.";
         }
         if (policyBlocked(out)) {
             return "A device policy (an enterprise / work profile, or this phone's device owner) requires this app and is blocking its removal. That can't be bypassed from here while the policy applies.";

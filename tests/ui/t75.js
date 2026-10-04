@@ -7,7 +7,7 @@ let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL ') + label + ':', ok, extra === undefined ? '' : extra); }
 const NONE = { files: false, usage: false, overlay: false };
 const ALL = { files: true, usage: true, overlay: true };
-const FLAG = { perm_intro_v61: '1' };          // the first-launch sheet has been dealt with
+const FLAG = { perm_intro_v62: '1' };          // the first-launch sheet has been dealt with
 const NAMES = ['All files access', 'Usage access', 'Display over other apps'];
 const PKG = { type: 'apk', pkg: 'com.example.app', label: 'Example App', versionName: '2.0', versionCode: 200, minSdk: 26, targetSdk: 34, totalSize: 9e6,
   splits: [{ path: '/cache/base.apk', name: 'base.apk', size: 9e6, isBase: true, split: '' }], signed: true, installed: false };
@@ -48,7 +48,7 @@ const PKG = { type: 'apk', pkg: 'com.example.app', label: 'Example App', version
   });
   const rowsOf = s => s.rows.map(r => (r.ok ? '✓' : '—')).join(' ');           // ✓ allowed, — still to allow
   const perms = page => ev(page, () => window.__calls.perms.join(','));
-  const saved = page => ev(page, () => window.__calls.kv.filter(k => /^perm_intro_v61=/.test(k)).length);
+  const saved = page => ev(page, () => window.__calls.kv.filter(k => /^perm_intro_v62=/.test(k)).length);
   const toasts = page => ev(page, () => window.__toasts.slice());
   const wasToast = async (page, re) => (await toasts(page)).some(t => re.test(t));
   // the person is back from an Android screen where `now` was switched on (or not: {})
@@ -96,7 +96,7 @@ const PKG = { type: 'apk', pkg: 'com.example.app', label: 'Example App', version
   s = await sheet(A);
   check('   with all three allowed the closing button reads "Done"', (await perms(A)) === 'files,usage,overlay' && rowsOf(s) === '✓ ✓ ✓' && s.rows.every(r => !r.btn) && !s.all && s.close === 'Done', rowsOf(s));
   await A.click('#permCloseBtn');
-  check('   Done closes it and the app remembers it was shown (it does not come back)', (await closed(A)) && (await saved(A)) === 1 && (await ev(A, () => window.__kv.perm_intro_v61)) === '1');
+  check('   Done closes it and the app remembers it was shown (it does not come back)', (await closed(A)) && (await saved(A)) === 1 && (await ev(A, () => window.__kv.perm_intro_v62)) === '1');
   check('   no "file access allowed" toast for something nobody was waiting on', !(await wasToast(A, /File access allowed/)));
   await A.close();
 
@@ -152,25 +152,27 @@ const PKG = { type: 'apk', pkg: 'com.example.app', label: 'Example App', version
     await settle(page);
     check('5. closing the sheet in the middle of "Allow all" cancels the rest (no Android screen opens behind the person\'s back)', (await perms(page)) === 'files' && (await closed(page)));
   });
-  // a working mode (ADB / Shizuku / Root) can switch two of them on itself
+  // a working mode (ADB / Shizuku / Root) can switch two of them on itself; it also makes the three privileged-only
+  // entries (storage_legacy/secure_settings/restricted_settings) join the sheet, already "✓ Allowed" by default in
+  // this mock - that never changes what these two scenarios are actually about (files/usage/overlay), just the count.
   await scenario({ kv: {}, mode: { priv: true }, grantUsageByShell: true, grantOverlayByShell: true }, async page => {
     await intro(page);
     await allow(page, 2);
     let s = await sheet(page);
-    check('6. with a working mode, Usage access is allowed on the spot (no Android screen, no coming back)', (await perms(page)) === 'usage' && rowsOf(s) === '— ✓ —', rowsOf(s));
+    check('6. with a working mode, Usage access is allowed on the spot (no Android screen, no coming back)', (await perms(page)) === 'usage' && rowsOf(s) === '— ✓ — ✓ ✓ ✓', rowsOf(s));
     await page.click('#permAllBtn');
     check('   "Allow all" then goes to the one that needs the screen (All files access)', (await perms(page)) === 'usage,files');
     await back(page, { files: true });
     await waitPerms(page, 3);
-    await page.waitForFunction(() => document.querySelectorAll('#permRows .pm-ok').length === 3);
+    await page.waitForFunction(() => document.querySelectorAll('#permRows .pm-ok').length === 6);
     s = await sheet(page);
-    check('   and Display over other apps follows by itself: all three ✓ and "Done"', (await perms(page)) === 'usage,files,overlay' && rowsOf(s) === '✓ ✓ ✓' && s.close === 'Done', rowsOf(s));
+    check('   and Display over other apps follows by itself: all three ✓ and "Done"', (await perms(page)) === 'usage,files,overlay' && rowsOf(s) === '✓ ✓ ✓ ✓ ✓ ✓' && s.close === 'Done', rowsOf(s));
   });
   await scenario({ kv: {}, mode: { priv: true }, grantUsageByShell: true, grantOverlayByShell: true }, async page => {
     await intro(page);
     await page.click('#permAllBtn');
     await back(page, { files: true });
-    await page.waitForFunction(() => document.querySelectorAll('#permRows .pm-ok').length === 3);
+    await page.waitForFunction(() => document.querySelectorAll('#permRows .pm-ok').length === 6);
     check('   from nothing, "Allow all" needs just the one screen: the other two are allowed by the mode in between', (await perms(page)) === 'files,usage,overlay' && (await sheet(page)).close === 'Done');
   });
 
