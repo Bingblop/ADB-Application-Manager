@@ -96,6 +96,7 @@ walk.ancestor(ast, {
     const p = anc[anc.length - 2];
     if (isCmp(p, node)) return;
     if (anc.some(a => a.type === 'VariableDeclarator' && a.id && a.id.name === 'OVL_PRESETS')) return;       // the list of 700 color names: they stay as they are
+    if (anc.some(a => a.type === 'VariableDeclarator' && a.id && a.id.name === 'SYN_WORDS')) return;          // per-language keyword lists for the code-colour tokenizer: not sentences
     // a piece of a longer text ('Could not load: ' + error) is part of the template made from the whole expression
     if (p && p.type === 'BinaryExpression' && p.operator === '+' && /\{|\}/.test('') === false && !(p.left.type === 'Literal' && p.right.type === 'Literal')) return;
     const ctx = 'js ' + fnName(anc);

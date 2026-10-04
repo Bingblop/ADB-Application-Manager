@@ -1,5 +1,44 @@
 # Changelog
 
+## v7.4-Pro (versionCode 740)
+
+Archive formats: 7z, rar and the tar family join zip, with passwords, and a Compress dialog to make new archives. The file manager's
+editor, viewer and archive preview now show code in colour.
+
+- **7z, rar and the tar family open, browse and extract like a zip.** The archive browser, **Extract…**, search's `archive:` and Find
+  APKs' duplicate check now work on `.7z`, `.rar`, `.tar`, `.tar.gz`, `.tar.bz2`, `.tar.xz`, `.tar.zst`, `.tar.lz4`, and on a bare `.gz`,
+  `.bz2`, `.xz`, `.zst` or `.lz4` (shown as the one file inside). A solid 7z or rar, and a compressed tar, say so in the header; extracting
+  one unpacks it in a single pass instead of reopening the file per entry. RAR is read only (browse, preview, extract); 7z and the tar
+  family can also be edited in place (delete, rename, replace, add, new folder) the same way a zip can.
+- **Passwords.** Opening a 7z or rar whose names themselves are encrypted, or reading an entry that is encrypted while its name is not
+  (a zip, or a 7z with content-only encryption), asks for a password in a dialog of its own; a wrong one says so and asks again. The
+  password is kept only for that open archive, only in memory, and is asked again next time. Zip supports the traditional ZipCrypto and
+  WinZip AES (128/192/256); 7z supports its own AES-256 (and encrypts the file names too, not only the data); rar's passwords are for
+  reading only, since rar cannot be created here.
+- **A Compress dialog.** **Compress…** on a file's sheet, or **Compress** on a selection, makes a new archive: zip, 7z, a tar format, or
+  (one file only) a bare gz/bz2/xz/zst/lz4. A name, a packing level where the format has one, where to save, and what to do if that name
+  is already there (keep both or replace). **A password is optional** — leave it empty for none. Zip offers AES-256 (default), AES-128 or
+  the weaker-but-everywhere ZipCrypto; 7z is always AES-256 (and hides the file names); tar and the single-file formats have no password
+  of their own.
+- **Code and markup shown in colour.** The file manager's text editor, the plain file viewer, and an archive's text/XML preview now colour
+  comments, strings, numbers, keywords and tags by default, for the usual languages (C-family, Java/Kotlin, JavaScript/TypeScript, Python,
+  shell, PHP, Ruby, Perl, Go, Rust, Swift, Dart, Lua, R, SQL, batch, Gradle, smali) and markup (XML/HTML with nested `<script>`/`<style>`,
+  JSON, YAML, TOML, INI, Markdown, diff); a file it does not recognise, or one over 250,000 characters, is shown plain. **Word wrap is on
+  by default** in the editor; a **Colors** switch sits next to **Wrap lines**, and both choices are remembered for next time.
+- **For developers:** `ArchiveIo` (7z and the tar family, plain Java, no Android classes) and `RarReader` (rar, read only) are the new
+  engines, each with its own suite (`archiveio`, `rarreader`, checked against 7-Zip, py7zr, tar/gzip/bzip2/xz/zstd/lz4, and real RAR4/RAR5
+  archives from the `rarfile` and `libarchive` projects' own test suites); `ZipCrypt` (zip's own passwords) and `ZipWriter` (new zips) have
+  theirs too (`zipcrypt`, checked against Info-ZIP and pyzipper; `zipwriter`). The page side has `tests/ui/t85.js` (syntax colours and word
+  wrap) and `t86.js` (the password and Compress dialogs).
+- **Not in this release:** rar cannot be created or edited (no free, well-tested way to write it); multi-volume rar is not supported, nor
+  is strong (PKWARE) zip encryption; the Hidden Settings backup/restore and the Task Manager tab are still ahead.
+- **Known limits.** A `.gz`'s exact size is known only below 4 GB (bzip2 never gives one; zstd/lz4 only when the file itself carries it).
+  Zstd decoding uses a third-party pure-Java decoder; if it cannot run on a given device (an unusual JVM that refuses `sun.misc.Unsafe`),
+  `.zst`/`.tar.zst` are reported as unsupported there rather than failing partway through — nothing else is affected. 7z's own key
+  stretching, and reading a very large archive's list, can take a noticeable moment. A password is asked for only once reading reaches an
+  entry that needs it (not up front for the whole archive), so on a mixed archive a retry after the password re-starts the job; files
+  already written by then are handled by the conflict choice (Replace, Skip or Keep both) like any other extraction.
+
 ## v7.3-Pro (versionCode 730)
 
 File manager, part two: search, the extract dialog and long jobs that keep going; and a cleanup for the package files the Installer finds.

@@ -1957,6 +1957,27 @@
         #fmSearchList .perm-row { cursor: pointer; }
         .fm-edit-area { flex: 1; width: 100%; min-height: 160px; resize: none; font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; font-size: 13px; line-height: 1.45; padding: 10px; border-radius: 10px; border: 1px solid var(--border-glass); background: var(--input-bg); color: var(--text-main); tab-size: 4; white-space: pre; overflow: auto; }
         .fm-edit-area.wrap { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+        /* syntax colours for code and markup in the file manager viewer, editor and archive preview */
+        :root { --syn-c: #6A9955; --syn-s: #CE9178; --syn-n: #B5CEA8; --syn-k: #C586C0; --syn-t: #4FC1FF; --syn-a: #9CDCFE; --syn-v: #DCDCAA; --syn-m: #D7BA7D; --syn-add: #4EC9B0; --syn-del: #F48771; }
+        html[data-appearance="light"] { --syn-c: #008000; --syn-s: #A31515; --syn-n: #098658; --syn-k: #AF00DB; --syn-t: #800000; --syn-a: #C50000; --syn-v: #795E26; --syn-m: #7A5A00; --syn-add: #067D17; --syn-del: #C62828; }
+        .syn-c { color: var(--syn-c); font-style: italic; }
+        .syn-s { color: var(--syn-s); }
+        .syn-n { color: var(--syn-n); }
+        .syn-k { color: var(--syn-k); }
+        .syn-t { color: var(--syn-t); }
+        .syn-a { color: var(--syn-a); }
+        .syn-v { color: var(--syn-v); }
+        .syn-m { color: var(--syn-m); }
+        .syn-add { color: var(--syn-add); }
+        .syn-del { color: var(--syn-del); }
+        .fm-edit-wrap { position: relative; flex: 1; min-height: 160px; display: flex; }
+        .fm-edit-wrap .fm-edit-area { position: relative; z-index: 1; min-height: 0; }
+        .fm-edit-hl { display: none; position: absolute; inset: 0; margin: 0; z-index: 0; box-sizing: border-box; overflow: hidden; pointer-events: none; border: 1px solid transparent; border-radius: 10px; padding: 10px; font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; font-size: 13px; line-height: 1.45; tab-size: 4; white-space: pre; background: var(--input-bg); color: var(--text-main); }
+        .fm-edit-hl.wrap { white-space: pre-wrap; overflow-wrap: anywhere; }
+        .fm-edit-wrap.hl .fm-edit-hl { display: block; }
+        .fm-edit-wrap.hl .fm-edit-area { background: transparent; color: transparent; caret-color: var(--text-main); }
+        .fm-edit-wrap.hl .fm-edit-area::selection { background: rgba(var(--ov), 0.25); color: transparent; }
         .fm-edit-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin-top: 8px; font-size: 11px; color: var(--text-muted); }
         .fm-media-stage { flex: 1; min-height: 160px; overflow: auto; text-align: center; border-radius: 10px; background: rgba(var(--ov), 0.05); }
         .fm-media-stage img { max-width: 100%; height: auto; }
@@ -3519,6 +3540,7 @@
                     <button class="batch-tool-link" onclick="fmSelectAll()">All</button>
                     <button class="batch-tool-link" onclick="fmClipSet('cp')">Copy</button>
                     <button class="batch-tool-link" onclick="fmClipSet('mv')">Move</button>
+                    <button class="batch-tool-link" onclick="czOpenSelected()">Compress</button>
                     <button class="batch-tool-link" style="color:#FF5252;" onclick="fmDeleteSelected()">Delete</button>
                     <button class="batch-tool-link" onclick="fmSelExit()">✕</button>
                 </div>
@@ -4996,9 +5018,13 @@ Type any command below (e.g. pm list packages -d)
             <div class="fm-opts" style="margin:0 0 8px;">
                 <button class="batch-tool-link" id="fmEditSave" onclick="fmEditSave()">Save</button>
                 <label class="fm-opt"><input type="checkbox" id="fmEditWrap" onchange="fmEditWrap(this.checked)"> Wrap lines</label>
+                <label class="fm-opt"><input type="checkbox" id="fmEditColors" onchange="fmEditColors(this.checked)"> Colors</label>
                 <button class="batch-tool-link" onclick="fmEditClose()">Close</button>
             </div>
-            <textarea class="fm-edit-area" id="fmEditArea" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="File text" oninput="fmEditInput()" onkeyup="fmEditPos()" onclick="fmEditPos()"></textarea>
+            <div class="fm-edit-wrap" id="fmEditBox">
+                <pre class="fm-edit-hl" id="fmEditHl" aria-hidden="true" translate="no"></pre>
+                <textarea class="fm-edit-area" id="fmEditArea" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="File text" oninput="fmEditInput()" onkeyup="fmEditPos()" onclick="fmEditPos()" onscroll="fmEditSync()"></textarea>
+            </div>
             <div class="fm-edit-foot"><span id="fmEditStatus"></span><span id="fmEditPos"></span></div>
         </div>
     </div>
@@ -5034,7 +5060,7 @@ Type any command below (e.g. pm list packages -d)
             <label class="ex-opt"><input type="radio" name="exWhere" value="here" onchange="exWhereChange()"><span>This folder<small id="exHerePath" translate="no"></small></span></label>
             <label class="ex-opt"><input type="radio" name="exWhere" value="named" onchange="exWhereChange()"><span>A new folder named after the archive<small id="exNamedPath" translate="no"></small></span></label>
             <label class="ex-opt"><input type="radio" name="exWhere" value="other" onchange="exWhereChange()"><span>Another folder</span></label>
-            <input class="modal-text-input" id="exOtherInput" style="display:none; margin-bottom:6px;" placeholder="/storage/emulated/0/Download/…" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Folder to extract into" onkeydown="if(event.key==='Enter') exGo()">
+            <input class="modal-text-input" id="exOtherInput" style="display:none; margin-bottom:6px;" placeholder="Full path to a folder" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Folder to extract into" onkeydown="if(event.key==='Enter') exGo()">
             <div class="switch-sub" style="margin:10px 0 4px;">If a file is already there</div>
             <label class="ex-opt"><input type="radio" name="exPolicy" value="replace"><span>Replace it</span></label>
             <label class="ex-opt"><input type="radio" name="exPolicy" value="skip"><span>Skip it</span></label>
@@ -5042,6 +5068,93 @@ Type any command below (e.g. pm list packages -d)
             <label class="fm-opt" id="exDelRow" style="margin-top:10px;"><input type="checkbox" id="exDel"> Delete the archive afterwards</label>
             <div class="switch-sub" id="exDelNote" style="display:none;">The archive is deleted only when every file of it was extracted, with nothing skipped.</div>
             <button class="mode-action-btn primary" style="width:100%; justify-content:center; margin-top:12px;" id="exGoBtn" onclick="exGo()">Extract</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="pwModal" onclick="if(event.target===this) pwCancel()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-title">
+                        <h3 id="pwTitle">Password needed</h3>
+                        <p id="pwName" translate="no" style="word-break:break-all;"></p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="pwCancel()" role="button" aria-label="Close">✕</div>
+            </div>
+            <div class="sdb-problem" id="pwWrong" style="display:none;">That password did not work. Try again.</div>
+            <input class="modal-text-input" id="pwInput" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Password" aria-label="Password" onkeydown="if(event.key==='Enter') pwOk()">
+            <label class="fm-opt" style="margin-top:8px;"><input type="checkbox" id="pwShow" onchange="pwShowToggle()"> Show the password</label>
+            <div class="switch-sub" style="margin-top:6px;">The password is used only for this archive, only while it is open. It is never saved.</div>
+            <button class="mode-action-btn primary" style="width:100%; justify-content:center; margin-top:12px;" id="pwOk" onclick="pwOk()">Open</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="czModal" onclick="if(event.target===this) czClose()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-title">
+                        <h3>Compress</h3>
+                        <p><span id="czWhat"></span><span id="czNames" translate="no"></span></p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="czClose()" role="button" aria-label="Close">✕</div>
+            </div>
+            <div class="switch-sub" style="margin-bottom:4px;">Name of the archive</div>
+            <div style="display:flex; gap:6px; align-items:center;">
+                <input class="modal-text-input" id="czName" style="flex:1; margin:0;" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Name of the archive" onkeydown="if(event.key==='Enter') czGo()">
+                <span id="czExt" translate="no" style="font-family:monospace;"></span>
+            </div>
+            <div class="switch-sub" style="margin:10px 0 4px;">Format</div>
+            <select class="modal-text-input" id="czFormat" onchange="czFormatChange()" aria-label="Format">
+                <option value="zip">Zip (.zip) — opens everywhere</option>
+                <option value="7z">7z (.7z) — packs smallest</option>
+                <option value="tar.gz">tar.gz (.tar.gz)</option>
+                <option value="tar.bz2">tar.bz2 (.tar.bz2)</option>
+                <option value="tar.xz">tar.xz (.tar.xz)</option>
+                <option value="tar.zst">tar.zst (.tar.zst)</option>
+                <option value="tar.lz4">tar.lz4 (.tar.lz4)</option>
+                <option value="tar">tar (.tar) — no packing</option>
+                <optgroup label="One file only" id="czSingles">
+                    <option value="gz">gz (.gz)</option>
+                    <option value="bz2">bz2 (.bz2)</option>
+                    <option value="xz">xz (.xz)</option>
+                    <option value="zst">zst (.zst)</option>
+                    <option value="lz4">lz4 (.lz4)</option>
+                </optgroup>
+            </select>
+            <div id="czLevelRow">
+                <div class="switch-sub" style="margin:10px 0 4px;">Packing</div>
+                <select class="modal-text-input" id="czLevel" aria-label="Packing">
+                    <option value="0">Store (no packing, fastest)</option>
+                    <option value="1">Fast</option>
+                    <option value="6">Normal</option>
+                    <option value="9">Maximum (slowest)</option>
+                </select>
+            </div>
+            <div id="czPwRow">
+                <div class="switch-sub" style="margin:10px 0 4px;">Password (optional)</div>
+                <input class="modal-text-input" id="czPw" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Leave empty for none" aria-label="Password" style="margin-bottom:4px;">
+                <label class="fm-opt"><input type="checkbox" id="czPwShow" onchange="document.getElementById('czPw').type = this.checked ? 'text' : 'password'"> Show the password</label>
+                <div id="czEncRow">
+                    <div class="switch-sub" style="margin:8px 0 4px;">Protection</div>
+                    <select class="modal-text-input" id="czEnc" aria-label="Protection">
+                        <option value="aes256">AES-256 (strong; 7-Zip, WinZip and most phone apps)</option>
+                        <option value="aes128">AES-128</option>
+                        <option value="zipcrypto">ZipCrypto (weak, but opens in everything)</option>
+                    </select>
+                </div>
+                <div class="switch-sub" id="czPwNote" style="margin-top:6px;"></div>
+            </div>
+            <div class="switch-sub" style="margin:10px 0 4px;">Save into</div>
+            <label class="ex-opt"><input type="radio" name="czWhere" value="here" onchange="czWhereChange()"><span>This folder<small id="czHerePath" translate="no"></small></span></label>
+            <label class="ex-opt"><input type="radio" name="czWhere" value="other" onchange="czWhereChange()"><span>Another folder</span></label>
+            <input class="modal-text-input" id="czOtherInput" style="display:none; margin-bottom:6px;" placeholder="Full path to a folder" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Folder to save into">
+            <div class="switch-sub" style="margin:10px 0 4px;">If the archive name is taken</div>
+            <label class="ex-opt"><input type="radio" name="czPolicy" value="keep"><span>Keep both (the new one becomes name (1))</span></label>
+            <label class="ex-opt"><input type="radio" name="czPolicy" value="replace"><span>Replace it</span></label>
+            <button class="mode-action-btn primary" style="width:100%; justify-content:center; margin-top:12px;" id="czGoBtn" onclick="czGo()">Compress</button>
         </div>
     </div>
 
@@ -11114,6 +11227,7 @@ Type any command below (e.g. pm list packages -d)
             if (!isDir) btns.push(`<button class="batch-grid-btn" onclick="fmShareFile()">Share</button>`);
             if (!isDir && ARC_EXT.test(name)) btns.push(`<button class="batch-grid-btn" onclick="fmExtractFile()">Extract…</button>`);
             if (!isDir && !ARC_EXT.test(name)) btns.push(`<button class="batch-grid-btn" onclick="fmOpenAsArchive()">Open as archive</button>`);
+            btns.push(`<button class="batch-grid-btn" onclick="czOpenOne()">Compress…</button>`);
             btns.push(`<button class="batch-grid-btn" onclick="fmStartDest('rename')">Rename</button>`);
             btns.push(`<button class="batch-grid-btn" onclick="fmStartDest('cp')">Copy</button>`);
             btns.push(`<button class="batch-grid-btn" onclick="fmStartDest('mv')">Move</button>`);
@@ -11213,7 +11327,10 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('fmDestRow').style.display = 'none';
             let txt;
             try { txt = window.AndroidBridge.fmRead(fmActionTarget.full); } catch (e) { txt = 'Error: ' + (e && e.message || e); }
-            v.innerText = txt || '(empty)';
+            const html = /^Error:/.test(txt || '') ? null : synFor(fmActionTarget.name, txt);
+            v.style.whiteSpace = 'pre-wrap';                                // long lines wrap
+            v.style.overflowWrap = 'anywhere';
+            if (html !== null) v.innerHTML = html; else v.innerText = txt || '(empty)';
             v.style.display = '';
         }
         function fmSignFile() {
@@ -11396,6 +11513,124 @@ Type any command below (e.g. pm list packages -d)
             fmGo(h.dir ? h.path.slice(0, h.path.lastIndexOf('/')) || '/' : parent);
         }
 
+        // ---- the password dialog: asked when an archive or an entry needs one; never stored ----
+        let pwResolve = null;
+        function pwAsk(name, wrong, okText, title) {
+            return new Promise(res => {
+                if (pwResolve) { const old = pwResolve; pwResolve = null; old(null); }
+                pwResolve = res;
+                document.getElementById('pwTitle').innerText = title || 'Password needed';
+                document.getElementById('pwName').innerText = name || '';
+                document.getElementById('pwWrong').style.display = wrong ? '' : 'none';
+                document.getElementById('pwOk').innerText = okText || 'Open';
+                const inp = document.getElementById('pwInput');
+                inp.value = ''; inp.type = 'password';
+                document.getElementById('pwShow').checked = false;
+                document.getElementById('pwModal').classList.add('show');
+                setTimeout(() => { try { inp.focus(); } catch (e) {} }, 60);
+            });
+        }
+        function pwDone(v) {
+            const r = pwResolve;
+            pwResolve = null;
+            const inp = document.getElementById('pwInput');
+            if (inp) inp.value = '';
+            document.getElementById('pwModal').classList.remove('show');
+            if (r) r(v);
+        }
+        function pwOk() {
+            const v = document.getElementById('pwInput').value;
+            if (!v) { showToast('Enter the password'); return; }
+            pwDone(v);
+        }
+        function pwCancel() { haptic(); pwDone(null); }
+        function pwShowToggle() { document.getElementById('pwInput').type = document.getElementById('pwShow').checked ? 'text' : 'password'; }
+
+        // ---- the compress dialog: make a zip, 7z or tar archive from the picked files and folders ----
+        let cz = null;                                  // { items: [{ full, isDir, name }], parent }
+        let czRunning = false;
+        const CZ_EXT = { zip: '.zip', '7z': '.7z', 'tar.gz': '.tar.gz', 'tar.bz2': '.tar.bz2', 'tar.xz': '.tar.xz', 'tar.zst': '.tar.zst', 'tar.lz4': '.tar.lz4', tar: '.tar', gz: '.gz', bz2: '.bz2', xz: '.xz', zst: '.zst', lz4: '.lz4' };
+        function czOpenSelected() {
+            if (!fmSel.size) { showToast('Select something first'); return; }
+            const items = Array.from(fmSel).map(full => { const r = fmRows.find(x => x.full === full); return { full, isDir: !!(r && r.isDir), name: fmBase(full) }; });
+            czOpen(items);
+        }
+        function czOpenOne() {
+            if (!fmActionTarget) return;
+            const t = fmActionTarget;
+            closeFmAction();
+            czOpen([{ full: t.full, isDir: !!t.isDir, name: t.name }]);
+        }
+        function czOpen(items) {
+            if (!window.AndroidBridge || !window.AndroidBridge.archiveCreate) { showToast('Needs the app build'); return; }
+            const parent = fmDirOf(items[0].full);
+            cz = { items, parent };
+            document.getElementById('czWhat').innerText = items.length === 1 ? (items[0].isDir ? 'The folder ' : 'The file ') : items.length + ' items: ';
+            document.getElementById('czNames').innerText = items.slice(0, 3).map(i => i.name).join(', ') + (items.length > 3 ? ', …' : '');
+            const one = items.length === 1 && !items[0].isDir;
+            document.getElementById('czSingles').style.display = one ? '' : 'none';
+            Array.from(document.getElementById('czSingles').children).forEach(o => { o.disabled = !one; });
+            const saved = kvGet('cz_opts', null) || {};
+            const fmtSel = document.getElementById('czFormat');
+            let fmt = CZ_EXT[saved.format] ? saved.format : 'zip';
+            if (!one && /^(gz|bz2|xz|zst|lz4)$/.test(fmt)) fmt = 'zip';
+            fmtSel.value = fmt;
+            document.getElementById('czLevel').value = ['0', '1', '6', '9'].includes(String(saved.level)) ? String(saved.level) : '6';
+            document.getElementById('czEnc').value = ['aes256', 'aes128', 'zipcrypto'].includes(saved.enc) ? saved.enc : 'aes256';
+            document.getElementById('czPw').value = '';
+            document.getElementById('czPw').type = 'password';
+            document.getElementById('czPwShow').checked = false;
+            const baseName = items.length === 1 ? items[0].name.replace(/\.[^.]+$/, '') || items[0].name : (fmBase(parent) || 'Archive');
+            document.getElementById('czName').value = baseName;
+            document.getElementById('czHerePath').innerText = parent;
+            document.querySelector('input[name="czWhere"][value="' + (saved.where === 'other' ? 'other' : 'here') + '"]').checked = true;
+            document.getElementById('czOtherInput').value = saved.other || (parent + '/');
+            document.querySelector('input[name="czPolicy"][value="' + (saved.policy === 'replace' ? 'replace' : 'keep') + '"]').checked = true;
+            czFormatChange();
+            czWhereChange();
+            document.getElementById('czModal').classList.add('show');
+            haptic();
+        }
+        function czWhereChange() { document.getElementById('czOtherInput').style.display = document.querySelector('input[name="czWhere"]:checked').value === 'other' ? '' : 'none'; }
+        function czFormatChange() {
+            const f = document.getElementById('czFormat').value;
+            document.getElementById('czExt').innerText = CZ_EXT[f] || '';
+            document.getElementById('czLevelRow').style.display = f === 'tar' ? 'none' : '';
+            const canPw = f === 'zip' || f === '7z';
+            document.getElementById('czPwRow').style.display = canPw ? '' : 'none';
+            document.getElementById('czEncRow').style.display = f === 'zip' ? '' : 'none';
+            document.getElementById('czPwNote').innerText = f === '7z' ? '7z protects the contents with AES-256 and hides the file names too.' : 'Anyone who has the password can open it. If it is lost, the files can not be recovered.';
+        }
+        function czClose() { document.getElementById('czModal').classList.remove('show'); const p = document.getElementById('czPw'); if (p) p.value = ''; cz = null; }
+        function czGo() {
+            if (!cz) return;
+            const f = document.getElementById('czFormat').value;
+            let name = (document.getElementById('czName').value || '').trim();
+            if (!name || /[\/\u0000]/.test(name)) { showToast('Enter a name without slashes'); return; }
+            const ext = CZ_EXT[f];
+            if (name.toLowerCase().endsWith(ext)) name = name.slice(0, -ext.length) || name;
+            const where = document.querySelector('input[name="czWhere"]:checked').value;
+            let dir = where === 'here' ? cz.parent : (document.getElementById('czOtherInput').value || '').trim().replace(/\/+$/, '');
+            if (!dir || dir.charAt(0) !== '/') { showToast('Enter the full path of a folder'); return; }
+            const policy = document.querySelector('input[name="czPolicy"]:checked').value;
+            const level = parseInt(document.getElementById('czLevel').value, 10);
+            const enc = document.getElementById('czEnc').value;
+            const pw = (f === 'zip' || f === '7z') ? document.getElementById('czPw').value : '';
+            kvSet('cz_opts', { format: f, level, enc, where, other: document.getElementById('czOtherInput').value, policy });
+            if ((typeof arcBusy !== 'undefined' && arcBusy) || exRunning || czRunning) { showToast('Another archive job is still running'); return; }
+            if (fmBatchRunning) { showToast('A file job is still running'); return; }
+            const opts = { format: f, name: name + ext, dir, level, policy, password: pw, enc };
+            const items = cz.items.map(i => ({ p: i.full, d: !!i.isDir }));
+            const wasSel = fmSelMode;
+            czClose();
+            czRunning = true;
+            const el = document.getElementById('fmBatchStatus'); el.style.display = ''; el.innerHTML = '<span id="fmBatchText">Compressing…</span> <button class="batch-tool-link" onclick="fmArchiveCancelTap()">Cancel</button>';
+            let st = 'unavailable';
+            try { st = window.AndroidBridge.archiveCreate(JSON.stringify(opts), JSON.stringify(items)); } catch (e) { st = 'error'; }
+            if (st !== 'started') { czRunning = false; if (!fmBatchRunning) el.style.display = 'none'; showToast(st === 'busy' ? 'Another archive job is still running' : st === 'error' ? 'The compression could not start' : 'Needs the app build'); return; }
+            if (wasSel) fmSelExit();
+        }
+
         // ---- the extract dialog: where to, what to do with a name that is taken, and whether the archive goes afterwards ----
         let ex = null;                                  // { src, entry, name, whole, parent, base, fromArc }
         let exRunning = false, exLast = null;
@@ -11454,8 +11689,21 @@ Type any command below (e.g. pm list packages -d)
             if (o.fromArc) arcSetBusy(true, 'Extracting…');
             else { const el = document.getElementById('fmBatchStatus'); el.style.display = ''; el.innerHTML = '<span id="fmBatchText">Extracting…</span> <button class="batch-tool-link" onclick="fmArchiveCancelTap()">Cancel</button>'; }
             const st = window.AndroidBridge.archiveExtract2(o.src, o.entry, dest, policy, !!del);
-            exLast = { name: o.name, src: o.src, del: !!del };
+            exLast = { name: o.name, src: o.src, del: !!del, args: { o, dest, policy, del: !!del } };
             if (st !== 'started') { exRunning = false; arcSetBusy(false); if (!fmBatchRunning) document.getElementById('fmBatchStatus').style.display = 'none'; showToast(st === 'busy' ? 'Another archive job is still running' : st === 'error' ? 'The extraction could not start' : 'Needs the app build'); }
+        }
+        async function exAskPassword(wrong) {
+            const a = exLast && exLast.args;
+            if (!a) return;
+            const pw = await pwAsk(a.o.name, wrong, 'Extract');
+            if (pw === null) return;
+            const s = arcBridge('archiveSetPassword', a.o.src, pw);
+            if (!s.ok) {
+                if (s.wrong || s.needPassword) { exAskPassword(true); return; }
+                showToast(s.error || 'Could not use that password');
+                return;
+            }
+            exStart(a.o, a.dest, a.policy, a.del);
         }
         function fmArchiveCancelTap() { haptic(); try { window.AndroidBridge.archiveCancel(); } catch (e) {} const t = document.getElementById('fmBatchText'); if (t) t.innerText = 'Stopping…'; }
         // Extract… on a zip-format file in the file manager: the whole archive, without opening it first
@@ -11486,6 +11734,219 @@ Type any command below (e.g. pm list packages -d)
             if (r) showToast(String(r).replace(/^Error:\s*/, '') || 'Could not share the file');
         }
 
+
+        // ---- syntax colours: a small tokenizer for the usual code and markup languages (no library; the text is escaped before it is shown) ----
+        const SYN_MAX = 250000;
+        const SYN_WORDS = {
+            c: 'auto break case char const continue default do double else enum extern float for goto if inline int long register restrict return short signed sizeof static struct switch typedef union unsigned void volatile while bool true false NULL nullptr class namespace template typename public private protected virtual override new delete this using try catch throw operator final explicit constexpr noexcept',
+            java: 'abstract assert boolean break byte case catch char class const continue default do double else enum extends final finally float for goto if implements import instanceof int interface long native new package private protected public return short static strictfp super switch synchronized this throw throws transient try void volatile while true false null var record sealed permits fun val object when is in as companion data override open lateinit by init suspend internal typealias',
+            js: 'async await break case catch class const continue debugger default delete do else export extends finally for from function if import in instanceof let new of return static super switch this throw try typeof var void while with yield true false null undefined interface type enum implements namespace declare readonly abstract public private protected as is keyof',
+            cs: 'abstract as base bool break byte case catch char checked class const continue decimal default delegate do double else enum event explicit extern false finally fixed float for foreach goto if implicit in int interface internal is lock long namespace new null object operator out override params private protected public readonly ref return sbyte sealed short sizeof stackalloc static string struct switch this throw true try typeof uint ulong unchecked unsafe ushort using var virtual void volatile while async await',
+            go: 'break case chan const continue default defer else fallthrough for func go goto if import interface map package range return select struct switch type var true false nil',
+            rust: 'as async await break const continue crate dyn else enum extern false fn for if impl in let loop match mod move mut pub ref return self Self static struct super trait true type unsafe use where while',
+            swift: 'class deinit enum extension func import init let protocol return self struct subscript super switch case default var if else for while do in break continue guard defer try catch throw throws true false nil public private internal static',
+            dart: 'abstract as assert async await break case catch class const continue default do dynamic else enum extends false final finally for if implements import in is late new null on part required rethrow return static super switch this throw true try var void while with yield',
+            php: 'abstract and array as break callable case catch class clone const continue declare default do echo else elseif empty enddeclare endfor endforeach endif endswitch endwhile extends final finally fn for foreach function global if implements include include_once instanceof interface isset list namespace new or print private protected public require require_once return static switch throw trait try unset use var while xor yield true false null',
+            py: 'False None True and as assert async await break class continue def del elif else except finally for from global if import in is lambda nonlocal not or pass raise return try while with yield self cls match case',
+            sh: 'if then else elif fi case esac for select while until do done in function time coproc break continue return exit export local readonly declare typeset unset shift source alias echo cd set eval exec trap true false test',
+            lua: 'and break do else elseif end false for function goto if in local nil not or repeat return then true until while',
+            rb: 'alias and begin BEGIN break case class def defined? do else elsif end END ensure false for if in module next nil not or redo rescue retry return self super then true undef unless until when while yield require include extend attr_accessor attr_reader attr_writer puts',
+            pl: 'my our local sub if elsif else unless while until for foreach do last next redo return use no package require print push pop shift unshift defined undef eq ne lt gt le ge and or not',
+            sql: 'select from where and or not in is null like between join inner outer left right full cross on as group by order having limit offset insert into values update set delete create alter drop table index view database primary key foreign references default unique check constraint distinct union all case when then else end exists asc desc count sum avg min max begin commit rollback pragma if with replace trigger',
+            bat: 'echo off on set if else exist not goto call for in do rem pause exit start cd copy move del errorlevel setlocal endlocal shift defined equ neq lss leq gtr geq',
+            gradle: 'apply plugin id dependencies implementation api compileOnly testImplementation repositories mavenCentral google buildscript android defaultConfig buildTypes release debug versionCode versionName minSdk targetSdk compileSdk task def val var if else for while return new class true false null',
+            smali: 'public private protected static final abstract synthetic constructor native interface enum annotation',
+            bool: 'true false null yes no on off True False Null',
+            r: 'if else for while repeat function return break next TRUE FALSE NULL NA NA_integer_ NA_real_ Inf NaN in library require',
+        };
+        const SYN_SET = {};
+        function synSet(k) { if (!SYN_SET[k]) { const o = Object.create(null); (SYN_WORDS[k] || '').split(/\s+/).forEach(w => { if (w) o[w] = 1; }); SYN_SET[k] = o; } return SYN_SET[k]; }
+        const SYN_EXT = {
+            xml: 'xml html htm xhtml svg plist xaml xsl xslt xsd rss atom kml gpx fxml vue jsp aspx resx csproj vcxproj axml wsdl mathml storyboard xib',
+            json: 'json jsonc json5 geojson map webmanifest ipynb',
+            css: 'css scss less sass',
+            js: 'js mjs cjs jsx ts tsx',
+            java: 'java kt kts scala groovy aidl',
+            c: 'c h cc cpp cxx hpp hh hxx m mm ino cl glsl vert frag',
+            cs: 'cs',
+            go: 'go', rust: 'rs', swift: 'swift', dart: 'dart', php: 'php php5 phtml',
+            py: 'py pyw pyi', sh: 'sh bash zsh ksh fish rc profile bashrc zshrc env',
+            lua: 'lua', rb: 'rb rake gemspec', pl: 'pl pm', r: 'r',
+            sql: 'sql', bat: 'bat cmd', gradle: 'gradle',
+            smali: 'smali', yaml: 'yml yaml', toml: 'toml', ini: 'ini cfg conf properties prop rc desktop service mk', md: 'md markdown rst', diff: 'diff patch', log: 'log',
+        };
+        const SYN_BYEXT = {};
+        Object.keys(SYN_EXT).forEach(k => SYN_EXT[k].split(' ').forEach(e => { SYN_BYEXT[e] = k; }));
+        const SYN_BYNAME = { 'build.prop': 'ini', 'androidmanifest.xml': 'xml', 'makefile': 'ini', 'dockerfile': 'sh', 'cmakelists.txt': 'sh', '.gitignore': 'ini', '.bashrc': 'sh', '.profile': 'sh', 'init.rc': 'ini' };
+        function synKind(name, text) {
+            const n = String(name || '').toLowerCase();
+            const base = n.split('/').pop();
+            if (SYN_BYNAME[base]) return SYN_BYNAME[base];
+            const dot = base.lastIndexOf('.');
+            if (dot > 0 || (dot === 0 && base.length > 1)) { const e = base.slice(dot + 1); if (SYN_BYEXT[e]) return SYN_BYEXT[e]; }
+            const head = String(text || '').slice(0, 400).replace(/^\uFEFF/, '').trimStart();
+            if (/^<\?xml|^<!DOCTYPE\s+html|^<html\b|^<[A-Za-z][\w:-]*[\s>]/i.test(head)) return 'xml';
+            if (/^#!.*\b(ba|z|k|da|a)?sh\b/.test(head)) return 'sh';
+            if (/^#!.*\bpython/.test(head)) return 'py';
+            if (/^#!.*\b(node|deno)\b/.test(head)) return 'js';
+            if (/^[{\[]\s*["\[{\d\]}]/.test(head) && /[}\]]\s*$/.test(String(text || '').slice(-200))) return 'json';
+            return '';
+        }
+        function synEsc(t) { return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+        function synSpan(cls, t) { return '<span class="syn-' + cls + '">' + synEsc(t) + '</span>'; }
+        const SYN_RE = {};
+        function synGenericRe(key, o) {
+            if (SYN_RE[key]) return SYN_RE[key];
+            const parts = [];
+            if (o.block) parts.push('(' + o.block + ')'); else parts.push('(?!)()'.replace('()', '()'));
+            // groups: 1 block comment, 2 line comment, 3 string, 4 meta, 5 number, 6 word
+            parts[0] = o.block ? '(' + o.block + ')' : '((?!))';
+            parts.push(o.line ? '(' + o.line + ')' : '((?!))');
+            parts.push('(' + (o.str || '"(?:[^"\\\\\\n]|\\\\.)*"?|\'(?:[^\'\\\\\\n]|\\\\.)*\'?') + ')');
+            parts.push(o.meta ? '(' + o.meta + ')' : '((?!))');
+            parts.push('(0[xX][0-9a-fA-F_]+[uUlLfF]*|\\b\\d[\\d_]*(?:\\.\\d+)?(?:[eE][+-]?\\d+)?[a-zA-Z]{0,2}\\b)');
+            parts.push('([A-Za-z_$][\\w$]*' + (o.wordExtra || '') + ')');
+            return (SYN_RE[key] = new RegExp(parts.join('|'), o.flags || 'g'));
+        }
+        const SYN_CFG = {
+            c: { kw: 'c', block: '\\/\\*[\\s\\S]*?(?:\\*\\/|$)', line: '\\/\\/[^\\n]*', meta: '^[ \\t]*#[ \\t]*\\w+|@\\w+', flags: 'gm' },
+            java: { kw: 'java', block: '\\/\\*[\\s\\S]*?(?:\\*\\/|$)', line: '\\/\\/[^\\n]*', meta: '@\\w+(?:\\.\\w+)*', str: '"""[\\s\\S]*?(?:"""|$)|"(?:[^"\\\\\\n]|\\\\.)*"?|\'(?:[^\'\\\\\\n]|\\\\.)*\'?' },
+            js: { kw: 'js', block: '\\/\\*[\\s\\S]*?(?:\\*\\/|$)', line: '\\/\\/[^\\n]*', str: '`(?:[^`\\\\]|\\\\[\\s\\S])*`?|"(?:[^"\\\\\\n]|\\\\.)*"?|\'(?:[^\'\\\\\\n]|\\\\.)*\'?' },
+            cs: { kw: 'cs', block: '\\/\\*[\\s\\S]*?(?:\\*\\/|$)', line: '\\/\\/[^\\n]*', meta: '^[ \\t]*#[ \\t]*\\w+', flags: 'gm', str: '@"(?:[^"]|"")*"?|"(?:[^"\\\\\\n]|\\\\.)*"?|\'(?:[^\'\\\\\\n]|\\\\.)*\'?' },
+            go: { kw: 'go', block: '\\/\\*[\\s\\S]*?(?:\\*\\/|$)', line: '\\/\\/[^\\n]*', str: '`[^`]*`?|"(?:[^"\\\\\\n]|\\\\.)*"?|\'(?:[^\'\\\\\\n]|\\\\.)*\'?' },
+            rust: { kw: 'rust', block: '\\/\\*[\\s\\S]*?(?:\\*\\/|$)', line: '\\/\\/[^\\n]*', meta: '#!?\\[[^\\]\\n]*\\]' },
+            swift: { kw: 'swift', block: '\\/\\*[\\s\\S]*?(?:\\*\\/|$)', line: '\\/\\/[^\\n]*', meta: '@\\w+|#\\w+' },
+            dart: { kw: 'dart', block: '\\/\\*[\\s\\S]*?(?:\\*\\/|$)', line: '\\/\\/[^\\n]*', meta: '@\\w+' },
+            php: { kw: 'php', block: '\\/\\*[\\s\\S]*?(?:\\*\\/|$)', line: '\\/\\/[^\\n]*|#[^\\n]*', meta: '<\\?(?:php)?|\\?>|\\$\\w+' },
+            py: { kw: 'py', line: '#[^\\n]*', meta: '@[\\w.]+', str: '"""[\\s\\S]*?(?:"""|$)|\'\'\'[\\s\\S]*?(?:\'\'\'|$)|"(?:[^"\\\\\\n]|\\\\.)*"?|\'(?:[^\'\\\\\\n]|\\\\.)*\'?' },
+            sh: { kw: 'sh', line: '#[^\\n]*', meta: '\\$\\{[^}\\n]*\\}|\\$[A-Za-z_@#?*!$0-9][\\w]*|\\$[@#?*!$]', str: '"(?:[^"\\\\]|\\\\[\\s\\S])*"?|\'[^\']*\'?' },
+            lua: { kw: 'lua', block: '--\\[=*\\[[\\s\\S]*?(?:\\]=*\\]|$)', line: '--[^\\n]*', str: '"(?:[^"\\\\\\n]|\\\\.)*"?|\'(?:[^\'\\\\\\n]|\\\\.)*\'?|\\[=*\\[[\\s\\S]*?(?:\\]=*\\]|$)' },
+            rb: { kw: 'rb', block: '^=begin[\\s\\S]*?(?:^=end|$)', line: '#[^\\n]*', meta: ':[A-Za-z_]\\w*|@@?\\w+|\\$\\w+', flags: 'gm' },
+            pl: { kw: 'pl', line: '#[^\\n]*', meta: '[$@%][A-Za-z_]\\w*' },
+            r: { kw: 'r', line: '#[^\\n]*', wordExtra: '(?:\\.[\\w.]+)*' },
+            sql: { kw: 'sql', block: '\\/\\*[\\s\\S]*?(?:\\*\\/|$)', line: '--[^\\n]*|#[^\\n]*', str: '\'(?:[^\']|\'\')*\'?|"(?:[^"]|"")*"?|`[^`]*`?', flags: 'gi' },
+            bat: { kw: 'bat', line: '(?:^|\\s)(?:rem|::)[^\\n]*', meta: '%[\\w~]+%|%%?\\w|!\\w+!', flags: 'gim' },
+            gradle: { kw: 'gradle', block: '\\/\\*[\\s\\S]*?(?:\\*\\/|$)', line: '\\/\\/[^\\n]*', str: '"""[\\s\\S]*?(?:"""|$)|"(?:[^"\\\\\\n]|\\\\.)*"?|\'(?:[^\'\\\\\\n]|\\\\.)*\'?' },
+            smali: { kw: 'smali', line: '#[^\\n]*', meta: '^[ \\t]*\\.[a-z-]+|:[\\w$]+|\\b[vp]\\d+\\b|L[\\w$/]+;', flags: 'gm', wordExtra: '(?:-[\\w-]+)*' },
+            json: { kw: 'bool', str: '"(?:[^"\\\\\\n]|\\\\.)*"?' },
+            yaml: { kw: 'bool', line: '#[^\\n]*', meta: '^[ \\t]*-?[ \\t]*[\\w.\\/"\' -]+(?=[ \\t]*:(?:[ \\t]|$))|[&*]\\w+|^---|^\\.\\.\\.', flags: 'gm', wordExtra: '(?:-\\w+)*' },
+            toml: { kw: 'bool', line: '#[^\\n]*', meta: '^[ \\t]*\\[[^\\]\\n]*\\]|^[ \\t]*[\\w."-]+(?=[ \\t]*=)', flags: 'gm', str: '"""[\\s\\S]*?(?:"""|$)|\'\'\'[\\s\\S]*?(?:\'\'\'|$)|"(?:[^"\\\\\\n]|\\\\.)*"?|\'[^\'\\n]*\'?' },
+            ini: { kw: 'bool', line: '^[ \\t]*[#;][^\\n]*', meta: '^[ \\t]*\\[[^\\]\\n]*\\]|^[ \\t]*[\\w.\\-/\\[\\]]+(?=[ \\t]*[=:])|\\$\\{?\\w+\\}?', flags: 'gm', str: '"(?:[^"\\\\\\n]|\\\\.)*"?|\'[^\'\\n]*\'?' },
+            log: { kw: 'bool', line: '(?!)', meta: '\\b(?:E|F)\\/[^\\n]*|\\b(?:ERROR|FATAL|Exception)\\b', str: '"(?:[^"\\\\\\n]|\\\\.)*"?' },
+        };
+        // JSON: a string followed by a colon is a key; mark it like an attribute
+        function synJson(t) {
+            const re = /("(?:[^"\\\n]|\\.)*"?)(\s*:)?|(-?\d[\d.eE+\-]*)|\b(true|false|null)\b/g;
+            let out = '', last = 0, m;
+            while ((m = re.exec(t))) {
+                out += synEsc(t.slice(last, m.index));
+                if (m[1] !== undefined) out += synSpan(m[2] ? 'a' : 's', m[1]) + (m[2] ? synEsc(m[2]) : '');
+                else if (m[3] !== undefined) out += synSpan('n', m[3]);
+                else out += synSpan('k', m[4]);
+                last = re.lastIndex;
+            }
+            return out + synEsc(t.slice(last));
+        }
+        function synMarkup(t, depth) {
+            let out = '', i = 0;
+            const n = t.length;
+            while (i < n) {
+                const lt = t.indexOf('<', i);
+                if (lt < 0) { out += synEsc(t.slice(i)); break; }
+                out += synEsc(t.slice(i, lt));
+                if (t.startsWith('<!--', lt)) { let e = t.indexOf('-->', lt + 4); e = e < 0 ? n : e + 3; out += synSpan('c', t.slice(lt, e)); i = e; continue; }
+                if (t.startsWith('<![CDATA[', lt)) { let e = t.indexOf(']]>', lt); e = e < 0 ? n : e + 3; out += synSpan('s', t.slice(lt, e)); i = e; continue; }
+                if (t[lt + 1] === '!' || t[lt + 1] === '?') { let e = t.indexOf('>', lt); e = e < 0 ? n : e + 1; out += synSpan('m', t.slice(lt, e)); i = e; continue; }
+                const nm = /^<\/?[A-Za-z_][\w:.\-]*/.exec(t.slice(lt, lt + 80));
+                if (!nm) { out += '&lt;'; i = lt + 1; continue; }
+                out += '<span class="syn-t">' + synEsc(nm[0]) + '</span>';
+                let p = lt + nm[0].length;
+                // attributes up to the closing '>'
+                while (p < n) {
+                    const ch = t[p];
+                    if (ch === '>') { out += '<span class="syn-t">&gt;</span>'; p++; break; }
+                    if (ch === '/' && t[p + 1] === '>') { out += '<span class="syn-t">/&gt;</span>'; p += 2; break; }
+                    if (/\s/.test(ch)) { const m = /^\s+/.exec(t.slice(p, p + 200)); out += synEsc(m[0]); p += m[0].length; continue; }
+                    if (ch === '"' || ch === "'") { let e = t.indexOf(ch, p + 1); e = e < 0 ? n : e + 1; out += synSpan('s', t.slice(p, e)); p = e; continue; }
+                    if (ch === '=') { out += '='; p++; continue; }
+                    const am = /^[^\s=>\/"']+/.exec(t.slice(p, p + 200));
+                    if (am) { out += synSpan('a', am[0]); p += am[0].length; continue; }
+                    out += synEsc(ch); p++;
+                }
+                i = p;
+                const tagName = nm[0].replace(/^<\/?/, '').toLowerCase();
+                if (depth < 1 && nm[0][1] !== '/' && (tagName === 'script' || tagName === 'style') && !/\/>$/.test(t.slice(lt, p))) {
+                    const close = t.toLowerCase().indexOf('</' + tagName, p);
+                    const end = close < 0 ? n : close;
+                    out += synHighlight(t.slice(p, end), tagName === 'script' ? 'js' : 'css', depth + 1);
+                    i = end;
+                }
+            }
+            return out;
+        }
+        function synCss(t) {
+            const re = /(\/\*[\s\S]*?(?:\*\/|$))|("(?:[^"\\\n]|\\.)*"?|'(?:[^'\\\n]|\\.)*'?)|(@[\w-]+)|(#[0-9a-fA-F]{3,8}\b)|(-?\d*\.?\d+(?:px|em|rem|%|vh|vw|s|ms|deg|pt|fr|ch|ex)?\b)|([\w-]+)(?=\s*:(?!:))|(!important)/g;
+            let out = '', last = 0, m;
+            while ((m = re.exec(t))) {
+                out += synEsc(t.slice(last, m.index));
+                const cls = m[1] !== undefined ? 'c' : m[2] !== undefined ? 's' : m[3] !== undefined ? 'k' : m[4] !== undefined ? 'n' : m[5] !== undefined ? 'n' : m[6] !== undefined ? 'a' : 'k';
+                out += synSpan(cls, m[0]);
+                last = re.lastIndex;
+            }
+            return out + synEsc(t.slice(last));
+        }
+        function synMarkdown(t) {
+            return t.split('\n').map(line => {
+                if (/^\s{0,3}#{1,6}\s/.test(line)) return synSpan('k', line);
+                if (/^\s*(```|~~~)/.test(line)) return synSpan('s', line);
+                if (/^\s*>/.test(line)) return synSpan('c', line);
+                if (/^\s*([-*+]|\d+\.)\s/.test(line)) { const m = /^(\s*([-*+]|\d+\.)\s)(.*)$/.exec(line); return synSpan('m', m[1]) + synMdInline(m[3]); }
+                return synMdInline(line);
+            }).join('\n');
+        }
+        function synMdInline(l) {
+            return synEsc(l).replace(/`[^`]+`/g, m => '<span class="syn-s">' + m + '</span>').replace(/\[[^\]]*\]\([^)]*\)/g, m => '<span class="syn-t">' + m + '</span>').replace(/(\*\*|__)[^*_]+\1/g, m => '<span class="syn-v">' + m + '</span>');
+        }
+        function synDiff(t) {
+            return t.split('\n').map(l => /^(\+\+\+|---|diff |index )/.test(l) ? synSpan('m', l) : /^@@/.test(l) ? synSpan('k', l) : /^\+/.test(l) ? synSpan('add', l) : /^-/.test(l) ? synSpan('del', l) : synEsc(l)).join('\n');
+        }
+        function synHighlight(text, lang, depth) {
+            depth = depth || 0;
+            if (!lang) return synEsc(text);
+            if (lang === 'xml') return synMarkup(text, depth);
+            if (lang === 'json') return synJson(text);
+            if (lang === 'css') return synCss(text);
+            if (lang === 'md') return synMarkdown(text);
+            if (lang === 'diff') return synDiff(text);
+            const cfg = SYN_CFG[lang];
+            if (!cfg) return synEsc(text);
+            const re = synGenericRe(lang, cfg);
+            const kws = synSet(cfg.kw);
+            const ci = lang === 'sql' || lang === 'bat';
+            re.lastIndex = 0;
+            let out = '', last = 0, m;
+            while ((m = re.exec(text))) {
+                if (m[0] === '') { re.lastIndex++; continue; }
+                out += synEsc(text.slice(last, m.index));
+                if (m[1] !== undefined && m[1] !== '') out += synSpan('c', m[0]);
+                else if (m[2] !== undefined && m[2] !== '') out += synSpan('c', m[0]);
+                else if (m[3] !== undefined && m[3] !== '') out += synSpan('s', m[0]);
+                else if (m[4] !== undefined && m[4] !== '') out += synSpan(lang === 'smali' || lang === 'sh' || lang === 'php' || lang === 'pl' || lang === 'ini' || lang === 'yaml' || lang === 'toml' ? 'v' : 'm', m[0]);
+                else if (m[5] !== undefined && m[5] !== '') out += synSpan('n', m[0]);
+                else if (m[6] !== undefined && m[6] !== '') out += kws[ci ? m[0].toLowerCase() : m[0]] ? synSpan('k', m[0]) : synEsc(m[0]);
+                else out += synEsc(m[0]);
+                last = re.lastIndex;
+            }
+            return out + synEsc(text.slice(last));
+        }
+        // the colored HTML of a text, or null when it is not code, too big, or the tokenizer failed (the caller then shows plain text)
+        function synFor(name, text) {
+            if (!text || text.length > SYN_MAX) return null;
+            const lang = synKind(name, text);
+            if (!lang) return null;
+            try { return synHighlight(text, lang, 0); } catch (e) { return null; }
+        }
+
         // the editor: the whole file as text (up to 2 MB), saved through a temporary file so a failure keeps the old content
         let fmEd = null;                                // { path, name, mtime, orig, writable, busy }
         function fmEditOpen() {
@@ -11506,8 +11967,14 @@ Type any command below (e.g. pm list packages -d)
             ta.value = fmEd.orig;
             fmEd.orig = ta.value;                                  // what the box holds, so "changed" means the person changed something
             ta.readOnly = !fmEd.writable;
-            document.getElementById('fmEditWrap').checked = ta.classList.contains('wrap');
+            const wrapOn = kvGet('fm_wrap', true) !== false;                // word wrap is on unless it was switched off
+            document.getElementById('fmEditWrap').checked = wrapOn;
+            fmEditWrap(wrapOn);
+            const colorsOn = kvGet('fm_colors', true) !== false;           // syntax colours are on unless switched off
+            document.getElementById('fmEditColors').checked = colorsOn;
+            fmEd.colors = colorsOn;
             fmEditInput();
+            fmEditPaint();
             document.getElementById('fmEditModal').classList.add('show');
             ta.scrollTop = 0;
             try { ta.setSelectionRange(0, 0); } catch (e) {}
@@ -11517,6 +11984,7 @@ Type any command below (e.g. pm list packages -d)
         function fmEditInput() {
             if (!fmEd) return;
             const dirty = fmEditDirty();
+            fmEditPaint();
             document.getElementById('fmEditSave').disabled = !dirty || !fmEd.writable || fmEd.busy;
             const ta = document.getElementById('fmEditArea');
             const n = ta.value.length;
@@ -11534,7 +12002,33 @@ Type any command below (e.g. pm list packages -d)
                 document.getElementById('fmEditPos').innerText = 'Line ' + line + ', column ' + (end - last);
             });
         }
-        function fmEditWrap(on) { document.getElementById('fmEditArea').classList.toggle('wrap', !!on); }
+        function fmEditWrap(on) {
+            document.getElementById('fmEditArea').classList.toggle('wrap', !!on);
+            document.getElementById('fmEditHl').classList.toggle('wrap', !!on);
+            kvSet('fm_wrap', !!on);
+            fmEditSync();
+        }
+        function fmEditColors(on) { if (fmEd) fmEd.colors = !!on; kvSet('fm_colors', !!on); fmEditPaint(); }
+        function fmEditSync() {
+            const ta = document.getElementById('fmEditArea'), hl = document.getElementById('fmEditHl');
+            if (!ta || !hl) return;
+            hl.scrollTop = ta.scrollTop;
+            hl.scrollLeft = ta.scrollLeft;
+        }
+        let fmEditPaintTimer = 0;
+        function fmEditPaint() {
+            if (fmEditPaintTimer) return;
+            fmEditPaintTimer = requestAnimationFrame(() => {
+                fmEditPaintTimer = 0;
+                const box = document.getElementById('fmEditBox'), hl = document.getElementById('fmEditHl'), ta = document.getElementById('fmEditArea');
+                if (!box || !hl || !ta) return;
+                const html = fmEd && fmEd.colors ? synFor(fmEd.name, ta.value) : null;
+                if (html === null) { box.classList.remove('hl'); hl.innerHTML = ''; return; }
+                hl.innerHTML = html + '\n ';                           // the extra line keeps the last line of the text and its colours the same height
+                box.classList.add('hl');
+                fmEditSync();
+            });
+        }
         function fmEditSave(force) {
             if (!fmEd || fmEd.busy || !fmEditDirty()) return;
             const text = document.getElementById('fmEditArea').value;
@@ -11662,7 +12156,7 @@ Type any command below (e.g. pm list packages -d)
         // View on an .apk / .zip / package file opens its contents as folders without extracting anything. Entries
         // can be previewed (text, images, compiled XML decoded back to XML, hex), extracted, renamed, deleted or
         // edited in place: the archive is rewritten next to the original and swapped in only once that worked.
-        const ARC_EXT = /\.(apk|apks|apkm|xapk|zip|jar|aar|aab|war|epub|docx|xlsx|pptx|odt|ods|odp|ipa|xpi|crx|kmz|cbz|whl|nupkg|vsix|mrpack|3mf|mcpack|mcworld)$/i;
+        const ARC_EXT = /\.(apk|apks|apkm|xapk|zip|jar|aar|aab|war|epub|docx|xlsx|pptx|odt|ods|odp|ipa|xpi|crx|kmz|cbz|whl|nupkg|vsix|mrpack|3mf|mcpack|mcworld|7z|cb7|rar|cbr|tar|tgz|tbz|tbz2|txz|tzst|tlz4|gz|bz2|xz|zst|lz4)$/i;
         const ARC_PAGE = 400;
         let arc = null;                 // the open archive: { path, name, count, files, size, editable, whyNot, apk, staged, zip64 }
         let arcDir = '';                // folder shown: "" or "res/layout/"
@@ -11706,26 +12200,41 @@ Type any command below (e.g. pm list packages -d)
             // let the toast paint first: the bridge call is synchronous
             setTimeout(() => {
                 const r = arcBridge('archiveOpen', path);
+                if (!r.ok && r.needPassword) { arcOpenLocked(path, name, !!r.wrong, onFail); return; }
                 if (!r.ok) { if (onFail) onFail(r); else showToast(r.error || 'Not a readable archive'); return; }
-                closeFmAction();
-                arc = r;
-                arcStack = [];
-                arcDiff = null;
-                document.getElementById('arcDiffHead').style.display = 'none';
-                document.getElementById('arcCrumbs').style.display = '';
-                arcDir = '';
-                arcQuery = '';
-                arcApkAcked = false;
-                arcNeedsSign = false;
-                document.getElementById('arcSearch').value = '';
-                document.getElementById('fmTopCard').style.display = 'none';
-                document.getElementById('fmListCard').style.display = 'none';
-                document.getElementById('arcCard').style.display = '';
-                arcHeader();
-                arcLoad(true);
-                const card = document.getElementById('arcCard');
-                if (card && card.scrollIntoView) card.scrollIntoView({ block: 'start' });
+                arcShow(r);
             }, 40);
+        }
+
+        // an archive that can't even be listed without its password (7z with encrypted names, rar -hp): ask, then open it with the answer
+        async function arcOpenLocked(path, name, wrong, onFail) {
+            const pw = await pwAsk(name, wrong, 'Open');
+            if (pw === null) return;
+            const r = arcBridge('archiveOpen2', path, pw);
+            if (!r.ok && r.needPassword) { arcOpenLocked(path, name, true, onFail); return; }
+            if (!r.ok) { if (onFail) onFail(r); else showToast(r.error || 'Not a readable archive'); return; }
+            arcShow(r);
+        }
+
+        function arcShow(r) {
+            closeFmAction();
+            arc = r;
+            arcStack = [];
+            arcDiff = null;
+            document.getElementById('arcDiffHead').style.display = 'none';
+            document.getElementById('arcCrumbs').style.display = '';
+            arcDir = '';
+            arcQuery = '';
+            arcApkAcked = false;
+            arcNeedsSign = false;
+            document.getElementById('arcSearch').value = '';
+            document.getElementById('fmTopCard').style.display = 'none';
+            document.getElementById('fmListCard').style.display = 'none';
+            document.getElementById('arcCard').style.display = '';
+            arcHeader();
+            arcLoad(true);
+            const card = document.getElementById('arcCard');
+            if (card && card.scrollIntoView) card.scrollIntoView({ block: 'start' });
         }
 
         function arcClose() {
@@ -11757,8 +12266,16 @@ Type any command below (e.g. pm list packages -d)
         function arcHeader() {
             if (!arc) return;
             document.getElementById('arcTitle').innerText = (arc.chain ? arc.chain.join(' › ') : arc.name);
-            document.getElementById('arcMeta').innerText = arc.files + ' file' + (arc.files === 1 ? '' : 's') + ' • ' + arcSize(arc.size)
-                + (arc.zip64 ? ' • ZIP64' : '') + (arc.staged ? ' • opened from a temporary copy' : '') + '\n' + (arc.nested ? 'inside ' + (arc.chain.slice(0, -1).join(' › ')) : arc.path);
+            let meta = arc.files + ' file' + (arc.files === 1 ? '' : 's') + ' • ' + arcSize(arc.size);
+            if (arc.zip64) meta += ' • ZIP64';
+            if (arc.format && arc.format !== 'zip') {
+                meta += ' • ' + arc.format.toUpperCase();
+                if (arc.solid) meta += ' (solid: files are packed together)';
+            }
+            if (arc.encrypted) meta += ' • password-protected';
+            if (arc.staged) meta += ' • opened from a temporary copy';
+            meta += '\n' + (arc.nested ? 'inside ' + (arc.chain.slice(0, -1).join(' › ')) : arc.path);
+            document.getElementById('arcMeta').innerText = meta;
             const note = document.getElementById('arcNote');
             let msg = '';
             if (!arc.editable) msg = 'View only: ' + (arc.whyNot || 'this archive can not be edited here.');
@@ -11923,6 +12440,7 @@ Type any command below (e.g. pm list packages -d)
         function arcViewEntry() {
             if (!arc || !arcTarget || arcTarget.dir) return;
             const r = arcBridge('archiveRead', arcSrcPath(), arcTarget.path);
+            if (!r.ok && r.needPassword) { arcAskEntryPassword(!!r.wrong); return; }
             if (!r.ok) { showToast(r.error || 'Could not read the entry'); return; }
             arcPreview = r;
             arcResetSheet();
@@ -11945,7 +12463,8 @@ Type any command below (e.g. pm list packages -d)
                 } else {
                     box.style.whiteSpace = 'pre-wrap';
                     box.style.wordBreak = 'break-word';
-                    box.textContent = r.text || '(empty)';
+                    const synHtml = r.kind === 'text' || r.kind === 'axml' ? synFor(r.kind === 'axml' ? 'x.xml' : (arcTarget ? arcTarget.name : ''), r.text) : null;
+                    if (synHtml !== null) box.innerHTML = synHtml; else box.textContent = r.text || '(empty)';
                     if (r.kind === 'axml') meta += ' • compiled XML shown as text (read-only)';
                     if (r.truncated) meta += ' • showing the first ' + arcSize(262144);
                     if (r.kind === 'text' && !r.editable && r.editNote) meta += ' • ' + r.editNote;
@@ -11953,6 +12472,18 @@ Type any command below (e.g. pm list packages -d)
             }
             document.getElementById('arcViewMeta').innerText = meta;
             arcSheetButtons(true);
+        }
+
+        async function arcAskEntryPassword(wrong) {
+            const pw = await pwAsk(arc ? arc.name : '', wrong, 'Unlock');
+            if (pw === null) return;
+            const s = arcBridge('archiveSetPassword', arcSrcPath(), pw);
+            if (!s.ok) {
+                if (s.wrong || s.needPassword) { arcAskEntryPassword(true); return; }
+                showToast(s.error || 'Could not use that password');
+                return;
+            }
+            arcViewEntry();
         }
 
         function arcEditStart() {
@@ -12328,7 +12859,7 @@ Type any command below (e.g. pm list packages -d)
                 if (el) { el.style.display = ''; el.innerText = msg; }
                 return;
             }
-            if (exRunning && !arcBusy) { const t = document.getElementById('fmBatchText'); if (t) t.innerText = msg; return; }
+            if ((exRunning || czRunning) && !arcBusy) { const t = document.getElementById('fmBatchText'); if (t) t.innerText = msg; return; }
             if (!arcBusy) return;
             const st = document.getElementById('arcStatus');
             st.style.display = '';
@@ -12338,8 +12869,10 @@ Type any command below (e.g. pm list packages -d)
         function onArchiveResult(r) {
             arcSetBusy(false);
             if (exRunning && (!r || !r.op || r.op === 'extract')) exRunning = false;
+            if (czRunning && (!r || r.op === 'create' || !r.op)) { czRunning = false; const bs0 = document.getElementById('fmBatchStatus'); if (bs0 && !fmBatchRunning) bs0.style.display = 'none'; }
             if (!r) return;
             if (r.op === 'extract') { exRunning = false; const bs = document.getElementById('fmBatchStatus'); if (bs && !fmBatchRunning) bs.style.display = 'none'; }
+            if (!r.ok && r.needPassword && r.op === 'extract' && exLast && exLast.args) { exAskPassword(!!r.wrong); return; }
             if (!r.ok) {
                 const wasAdd = arcLastOp && arcLastOp.op === 'add';
                 if (wasAdd && /already in the archive/.test(r.error || '') && confirm('“' + arcLastOp.to + '” is already in the archive. Replace it?')) {
@@ -12352,6 +12885,13 @@ Type any command below (e.g. pm list packages -d)
                 return;
             }
             dropArchiveReport();
+            if (r.op === 'create') {
+                czRunning = false;
+                const bs = document.getElementById('fmBatchStatus'); if (bs && !fmBatchRunning) bs.style.display = 'none';
+                showToast('Created ' + String(r.dest || '').split('/').pop() + ' (' + r.files + ' file' + (r.files === 1 ? '' : 's') + ', ' + arcSize(r.bytes) + ' → ' + arcSize(r.csize) + (r.encrypted ? ', password-protected' : '') + ')');
+                if (currentViewName() === 'files') fmRefresh();
+                return;
+            }
             if (r.op === 'extract') {
                 exRunning = false;
                 const bs = document.getElementById('fmBatchStatus'); if (bs && !fmBatchRunning) bs.style.display = 'none';

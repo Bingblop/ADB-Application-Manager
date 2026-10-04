@@ -93,8 +93,14 @@ public class ZipToolTest {
     check("data-descriptor archive reads (flag 8 set: " + ((st.find("a.txt").flags & 8) != 0) + ")", (st.find("a.txt").flags & 8) != 0 && allCrcOk(st) && text(st, "a.txt").startsWith("streamed streamed"));
 
     Archive enc = ZipTool.open(new File(FIX + "enc.zip"));
-    boolean threw = false; try { enc.open(enc.find("secret.txt")); } catch (IOException e) { threw = e.getMessage().contains("encrypted"); }
-    check("encrypted entry is flagged and refuses to open", enc.find("secret.txt").encrypted() && threw);
+    boolean needPw = false; try { enc.open(enc.find("secret.txt")); } catch (ZipTool.NeedPassword e) { needPw = !e.wrong; }
+    check("encrypted entry is flagged and asks for a password (not wrong, since none was given)", enc.find("secret.txt").encrypted() && needPw);
+    enc.setPassword("wrong".toCharArray());
+    boolean wrongRejected = false;
+    try { String got = text(enc, "secret.txt"); wrongRejected = !got.startsWith("top secret"); } catch (ZipTool.NeedPassword e) { wrongRejected = e.wrong; } catch (IOException ignored) { wrongRejected = true; }
+    check("a wrong password never yields the real text (refused up front, or the CRC catches it)", wrongRejected);
+    enc.setPassword("pw123".toCharArray());
+    check("the right password decrypts it", text(enc, "secret.txt").startsWith("top secret\ntop secret\n"));
 
     long t0 = System.currentTimeMillis();
     Archive many = ZipTool.open(new File(FIX + "many.zip"));

@@ -3792,6 +3792,12 @@ public class MainActivity extends Activity {
 
     /** The archive the page named: the file itself when this app can read it, else a copy staged through the shell. */
     private ZipTool.Archive archiveFor(String path, boolean fresh) throws Exception {
+        return archiveFor(path, fresh, null);
+    }
+
+    /** As {@link #archiveFor(String, boolean)}; {@code password} is tried only for a fresh open of a format whose listing itself needs one
+     *  (7z with encrypted names, rar -hp) — a zip's directory is never encrypted, so a zip never needs it here. */
+    private ZipTool.Archive archiveFor(String path, boolean fresh, char[] password) throws Exception {
         String p = fmCanonicalPath(path);
         synchronized (archiveLock) {
             ArcSlot hit = fresh ? null : archiveSlots.get(p);
@@ -3808,7 +3814,7 @@ public class MainActivity extends Activity {
             }
             ZipTool.Archive a;
             try {
-                a = ZipTool.open(use);
+                a = openAnyArchive(use, password);
             } catch (IOException | RuntimeException bad) {
                 if (stagedPath != null) deleteStagedFiles(java.util.Collections.singletonList(stagedPath));
                 throw bad;
@@ -3820,6 +3826,21 @@ public class MainActivity extends Activity {
             if (!gone.isEmpty()) deleteStagedFiles(gone);
             return a;
         }
+    }
+
+    /** Opens a zip first (a bounded scan for its end record, cheap even to rule a huge non-zip file out); a file that isn't one is tried
+     *  as a RAR, then as whatever {@link ArchiveIo} recognises (7z, the tar family, or a single compressed file). */
+    private ZipTool.Archive openAnyArchive(File use, char[] password) throws IOException {
+        IOException zipErr;
+        try {
+            return ZipTool.open(use);
+        } catch (IOException e) {
+            zipErr = e;
+        }
+        if (RarReader.isRar(use)) return RarSource.open(use, password);
+        String fmt = ArchiveIo.detect(use);
+        if (fmt != null && ArchiveIo.supportsRead(fmt)) return ArchiveIoSource.open(use, fmt, password);
+        throw zipErr;
     }
 
     /** Forgets an archive that changed on disk, and removes the shell-staged copy it was read from. */
@@ -3911,7 +3932,30 @@ public class MainActivity extends Activity {
     }
 
     private static String archiveFail(Throwable t) {
+        if (t instanceof ZipTool.NeedPassword) {
+            ZipTool.NeedPassword np = (ZipTool.NeedPassword) t;
+            try {
+                return new JSONObject().put("ok", false).put("error", np.getMessage()).put("needPassword", true).put("wrong", np.wrong).toString();
+            } catch (Exception e) {
+                return "{\"ok\":false,\"needPassword\":true}";
+            }
+        }
         return archiveFail(errMsg(t));
+    }
+
+    /** Puts ok:false, error and (for a NeedPassword) needPassword/wrong into a result JSON built by an async job. */
+    private static void putArchiveError(JSONObject res, Throwable t) {
+        try {
+            res.put("ok", false);
+            if (t instanceof ZipTool.NeedPassword) {
+                ZipTool.NeedPassword np = (ZipTool.NeedPassword) t;
+                res.put("error", np.getMessage());
+                res.put("needPassword", true);
+                res.put("wrong", np.wrong);
+            } else {
+                res.put("error", errMsg(t));
+            }
+        } catch (Exception ignored) {}
     }
 
     private static String archiveFail(String message) {
@@ -8544,27 +8588,85 @@ public class MainActivity extends Activity {
         public String archiveOpen(String path) {
             try {
                 ZipTool.Archive a = archiveFor(path, true);
-                String p = fmCanonicalPath(path);
-                int files = 0;
-                for (ZipTool.Entry e : a.entries) if (!e.dir) files++;
-                String block = archiveEditBlock(p);
-                if (block == null && a.prefix > 0) block = "This file has data in front of the archive (a self-extracting or signed package), so it can be viewed but not edited.";
-                JSONObject r = new JSONObject();
-                r.put("ok", true);
-                r.put("path", p);
-                r.put("name", new File(p).getName());
-                r.put("count", a.entries.size());
-                r.put("files", files);
-                r.put("size", a.length);
-                r.put("zip64", a.zip64);
-                r.put("staged", archiveStaged(p));
-                r.put("apk", p.toLowerCase(java.util.Locale.US).endsWith(".apk"));
-                r.put("editable", block == null);
-                r.put("whyNot", block == null ? "" : block);
-                return r.toString();
+                return archiveOpenJson(a, fmCanonicalPath(path)).toString();
             } catch (Throwable t) {
                 return archiveFail(t);
             }
+        }
+
+        /** As {@link #archiveOpen(String)}, with a password to try for a format whose listing itself needs one (not zip: a zip's directory is
+         *  never encrypted, so this is the same as archiveOpen for one). {ok,...}|{ok:false,error,needPassword,wrong}. */
+        @JavascriptInterface
+        public String archiveOpen2(String path, String password) {
+            try {
+                String p = fmCanonicalPath(path);
+                char[] pw = password == null || password.isEmpty() ? null : password.toCharArray();
+                ZipTool.Archive a = archiveFor(path, true, pw);
+                return archiveOpenJson(a, p).toString();
+            } catch (Throwable t) {
+                return archiveFail(t);
+            }
+        }
+
+        /** Sets (or, with an empty string, clears) the password used to read this archive's entries, and checks it against one encrypted
+         *  entry so a wrong password is reported right away rather than on the first read that happens to need it. {ok:true}|{ok:false,error,needPassword,wrong}. */
+        @JavascriptInterface
+        public String archiveSetPassword(String path, String password) {
+            try {
+                ZipTool.Archive a = archiveFor(path, false);
+                char[] pw = password == null || password.isEmpty() ? null : password.toCharArray();
+                a.setPassword(pw);
+                if (pw != null) {
+                    ZipTool.Entry probe = null;
+                    for (ZipTool.Entry e : a.entries) if (!e.dir && e.encrypted() && e.size > 0) { probe = e; break; }
+                    if (probe != null) {
+                        InputStream in = a.open(probe);
+                        java.util.zip.CRC32 crc = new java.util.zip.CRC32();
+                        try {
+                            byte[] buf = new byte[16384];
+                            int n;
+                            while ((n = in.read(buf)) > 0) crc.update(buf, 0, n);
+                        } finally {
+                            in.close();
+                        }
+                        // a traditional entry's 1-byte check can falsely accept a wrong password (1 in 256): the CRC of the decompressed
+                        // data is the real check. AES's own authentication code already failed the read above if it mismatched.
+                        if (probe.crc != 0 && crc.getValue() != probe.crc) throw new ZipTool.NeedPassword(true, "That password did not work");
+                    }
+                }
+                return new JSONObject().put("ok", true).toString();
+            } catch (Throwable t) {
+                return archiveFail(t);
+            }
+        }
+
+        /** The JSON archiveOpen/archiveOpen2 return once an archive is open. */
+        private JSONObject archiveOpenJson(ZipTool.Archive a, String p) throws Exception {
+            int files = 0;
+            boolean encrypted = false;
+            for (ZipTool.Entry e : a.entries) {
+                if (e.dir) continue;
+                files++;
+                if (e.encrypted()) encrypted = true;
+            }
+            String block = archiveEditBlock(p);
+            if (block == null && a.prefix > 0) block = "This file has data in front of the archive (a self-extracting or signed package), so it can be viewed but not edited.";
+            JSONObject r = new JSONObject();
+            r.put("ok", true);
+            r.put("path", p);
+            r.put("name", new File(p).getName());
+            r.put("count", a.entries.size());
+            r.put("files", files);
+            r.put("size", a.length);
+            r.put("zip64", a.zip64);
+            r.put("format", a.format);
+            r.put("solid", a.solid);
+            r.put("encrypted", encrypted || a.headerEncrypted);
+            r.put("staged", archiveStaged(p));
+            r.put("apk", p.toLowerCase(java.util.Locale.US).endsWith(".apk"));
+            r.put("editable", block == null);
+            r.put("whyNot", block == null ? "" : block);
+            return r;
         }
 
         /**
@@ -8801,10 +8903,7 @@ public class MainActivity extends Activity {
                         }
                         res.put("ok", true);
                     } catch (Throwable t) {
-                        try {
-                            res.put("ok", false);
-                            res.put("error", errMsg(t));
-                        } catch (Exception ignored) {}
+                        putArchiveError(res, t);
                     } finally {
                         if (tmp != null) tmp.delete();
                         if (ticker != null) ticker.stop();
@@ -8842,6 +8941,7 @@ public class MainActivity extends Activity {
                 public void run() {
                     JSONObject res = new JSONObject();
                     File tmp = null;
+                    File textTmp = null;
                     try {
                         JSONObject op = new JSONObject(opJson);
                         String kind = op.optString("op");
@@ -8850,65 +8950,102 @@ public class MainActivity extends Activity {
                         String block = archiveEditBlock(p);
                         if (block != null) throw new IOException(block);
                         ZipTool.Archive a = archiveFor(p, false);
+                        if (!a.isZip() && !ArchiveIo.supportsEdit(a.format)) throw new IOException("This archive can't be edited here.");
                         requireUnchanged(p);
-                        List<ZipTool.Edit> edits = new ArrayList<ZipTool.Edit>();
-                        String msg;
                         String name = op.optString("name");
-                        if ("delete".equals(kind)) {
-                            edits.add(name.endsWith("/") ? ZipTool.Edit.deleteTree(name) : ZipTool.Edit.delete(name));
-                            msg = "Deleted " + name;
-                        } else if ("rename".equals(kind)) {
-                            String to = op.optString("to");
-                            if (name.endsWith("/")) edits.add(ZipTool.Edit.renameTree(name, to.endsWith("/") ? to : to + "/"));
-                            else edits.add(ZipTool.Edit.rename(name, to));
-                            msg = "Renamed " + name + " to " + to;
-                        } else if ("replaceText".equals(kind)) {
-                            String text = op.optString("text");
-                            if (op.optBoolean("crlf")) text = text.replace("\r\n", "\n").replace("\n", "\r\n");
-                            if (a.find(name) == null) throw new IOException("Not found in the archive: " + name);
-                            edits.add(ZipTool.Edit.replace(name, text.getBytes("UTF-8")));
-                            msg = "Saved " + name;
-                        } else if ("add".equals(kind)) {
-                            String from = fmCanonicalPath(op.optString("from"));
-                            File src = new File(from);
-                            if (!src.isFile() || !src.canRead()) {
-                                needFileAccess("To add that file", from);
-                                throw new IOException("Can't read " + from + ". Pick a file on shared storage (All-files access is needed).");
-                            }
-                            String to = op.optString("to");
-                            if (a.find(to) != null) {
-                                if (!op.optBoolean("overwrite")) throw new IOException("\"" + to + "\" is already in the archive");
-                                edits.add(ZipTool.Edit.replace(to, src));
-                            } else {
-                                edits.add(ZipTool.Edit.add(to, src));
-                            }
-                            msg = "Added " + to;
-                        } else if ("mkdir".equals(kind)) {
-                            String to = op.optString("to");
-                            edits.add(ZipTool.Edit.add(to.endsWith("/") ? to : to + "/", new byte[0]));
-                            msg = "Created folder " + to;
-                        } else {
-                            throw new IOException("Unknown edit: " + kind);
-                        }
-
+                        String msg;
                         File orig = new File(p);
                         File dir = orig.getParentFile();
                         boolean direct = orig.canWrite() && dir != null && dir.canWrite();
                         tmp = direct ? new File(dir, "." + orig.getName() + ".edit-tmp") : new File(getCacheDir(), "archive_edit.tmp");
                         notifyArchiveProgress("Rewriting " + orig.getName() + "…");
                         final long[] last = {0};
-                        ZipTool.rewrite(a, tmp, edits, p.toLowerCase(java.util.Locale.US).endsWith(".apk"), new ZipTool.Progress() {
-                            @Override
-                            public boolean onProgress(long doneBytes, int doneFiles, String current) {
-                                long now = System.currentTimeMillis();
-                                if (now - last[0] > 250) {
-                                    last[0] = now;
-                                    notifyArchiveProgress("Rewriting… " + doneFiles + " entries, " + XapkInfo.humanBytes(doneBytes));
+                        if (a.isZip()) {
+                            List<ZipTool.Edit> edits = new ArrayList<ZipTool.Edit>();
+                            if ("delete".equals(kind)) {
+                                edits.add(name.endsWith("/") ? ZipTool.Edit.deleteTree(name) : ZipTool.Edit.delete(name));
+                                msg = "Deleted " + name;
+                            } else if ("rename".equals(kind)) {
+                                String to = op.optString("to");
+                                if (name.endsWith("/")) edits.add(ZipTool.Edit.renameTree(name, to.endsWith("/") ? to : to + "/"));
+                                else edits.add(ZipTool.Edit.rename(name, to));
+                                msg = "Renamed " + name + " to " + to;
+                            } else if ("replaceText".equals(kind)) {
+                                String text = op.optString("text");
+                                if (op.optBoolean("crlf")) text = text.replace("\r\n", "\n").replace("\n", "\r\n");
+                                if (a.find(name) == null) throw new IOException("Not found in the archive: " + name);
+                                edits.add(ZipTool.Edit.replace(name, text.getBytes("UTF-8")));
+                                msg = "Saved " + name;
+                            } else if ("add".equals(kind)) {
+                                File src = addSource(op);
+                                String to = op.optString("to");
+                                if (a.find(to) != null) {
+                                    if (!op.optBoolean("overwrite")) throw new IOException("\"" + to + "\" is already in the archive");
+                                    edits.add(ZipTool.Edit.replace(to, src));
+                                } else {
+                                    edits.add(ZipTool.Edit.add(to, src));
                                 }
-                                return true;
+                                msg = "Added " + to;
+                            } else if ("mkdir".equals(kind)) {
+                                String to = op.optString("to");
+                                edits.add(ZipTool.Edit.add(to.endsWith("/") ? to : to + "/", new byte[0]));
+                                msg = "Created folder " + to;
+                            } else {
+                                throw new IOException("Unknown edit: " + kind);
                             }
-                        });
-                        ZipTool.open(tmp);      // a result that can't be read back never replaces the original
+                            ZipTool.rewrite(a, tmp, edits, p.toLowerCase(java.util.Locale.US).endsWith(".apk"), new ZipTool.Progress() {
+                                @Override
+                                public boolean onProgress(long doneBytes, int doneFiles, String current) {
+                                    long now = System.currentTimeMillis();
+                                    if (now - last[0] > 250) {
+                                        last[0] = now;
+                                        notifyArchiveProgress("Rewriting… " + doneFiles + " entries, " + XapkInfo.humanBytes(doneBytes));
+                                    }
+                                    return true;
+                                }
+                            });
+                            ZipTool.open(tmp);      // a result that can't be read back never replaces the original
+                        } else {
+                            List<ArchiveIo.Edit> edits = new ArrayList<ArchiveIo.Edit>();
+                            if ("delete".equals(kind)) {
+                                edits.add(name.endsWith("/") ? ArchiveIo.Edit.deleteTree(name) : ArchiveIo.Edit.delete(name));
+                                msg = "Deleted " + name;
+                            } else if ("rename".equals(kind)) {
+                                String to = op.optString("to");
+                                if (name.endsWith("/")) edits.add(ArchiveIo.Edit.renameTree(name, to.endsWith("/") ? to : to + "/"));
+                                else edits.add(ArchiveIo.Edit.rename(name, to));
+                                msg = "Renamed " + name + " to " + to;
+                            } else if ("replaceText".equals(kind)) {
+                                String text = op.optString("text");
+                                if (op.optBoolean("crlf")) text = text.replace("\r\n", "\n").replace("\n", "\r\n");
+                                if (a.find(name) == null) throw new IOException("Not found in the archive: " + name);
+                                textTmp = new File(getCacheDir(), "archive_edit_text.tmp");
+                                java.nio.file.Files.write(textTmp.toPath(), text.getBytes("UTF-8"));
+                                edits.add(ArchiveIo.Edit.replace(name, textTmp));
+                                msg = "Saved " + name;
+                            } else if ("add".equals(kind)) {
+                                File src = addSource(op);
+                                String to = op.optString("to");
+                                edits.add(a.find(to) != null && op.optBoolean("overwrite") ? ArchiveIo.Edit.replace(to, src) : ArchiveIo.Edit.add(to, src));
+                                if (a.find(to) != null && !op.optBoolean("overwrite")) throw new IOException("\"" + to + "\" is already in the archive");
+                                msg = "Added " + to;
+                            } else if ("mkdir".equals(kind)) {
+                                String to = op.optString("to");
+                                edits.add(ArchiveIo.Edit.add(to.endsWith("/") ? to : to + "/", null));
+                                msg = "Created folder " + to;
+                            } else {
+                                throw new IOException("Unknown edit: " + kind);
+                            }
+                            ArchiveIo.rewrite(a.file, tmp, a.password(), edits, new ArchiveIo.Progress() {
+                                @Override
+                                public boolean tick(long bytesDone) {
+                                    long now = System.currentTimeMillis();
+                                    if (now - last[0] > 250) { last[0] = now; notifyArchiveProgress("Rewriting… " + XapkInfo.humanBytes(bytesDone)); }
+                                    return true;
+                                }
+                            });
+                            ArchiveIo.list(tmp, a.format, a.password());      // a result that can't be read back never replaces the original
+                        }
                         if (direct) {
                             if (!tmp.renameTo(orig)) throw new IOException("Couldn't replace " + orig.getName());
                         } else {
@@ -8920,12 +9057,10 @@ public class MainActivity extends Activity {
                         res.put("message", msg);
                         res.put("apk", p.toLowerCase(java.util.Locale.US).endsWith(".apk"));
                     } catch (Throwable t) {
-                        try {
-                            res.put("ok", false);
-                            res.put("error", errMsg(t));
-                        } catch (Exception ignored) {}
+                        putArchiveError(res, t);
                     } finally {
                         if (tmp != null) tmp.delete();
+                        if (textTmp != null) textTmp.delete();
                         synchronized (archiveLock) {
                             archiveBusy = false;
                         }
@@ -8939,6 +9074,17 @@ public class MainActivity extends Activity {
                 return "error";
             }
             return "started";
+        }
+
+        /** The file an "add" edit reads from (must be readable by this app). */
+        private File addSource(JSONObject op) throws IOException {
+            String from = fmCanonicalPath(op.optString("from"));
+            File src = new File(from);
+            if (!src.isFile() || !src.canRead()) {
+                needFileAccess("To add that file", from);
+                throw new IOException("Can't read " + from + ". Pick a file on shared storage (All-files access is needed).");
+            }
+            return src;
         }
 
         /** Forgets every open archive: shell-staged copies and the nested ones extracted to the cache are deleted. */
@@ -8966,6 +9112,157 @@ public class MainActivity extends Activity {
             }
             if (p.startsWith(archiveNestedDir().getAbsolutePath() + "/")) new File(p).delete();
             if (staged != null) deleteStagedFiles(java.util.Collections.singletonList(staged));
+        }
+
+        /**
+         * Makes a new archive from files and folders on storage. optsJson is {format,name,dir,level,policy,password,enc}; itemsJson is
+         * [{p,d}, ...] (the full path of each top-level file or folder picked). Returns "started" or "busy"; the end arrives as
+         * window.onArchiveResult({op:"create", ok, files, bytes, csize, dest, encrypted, problems}).
+         */
+        @JavascriptInterface
+        public String archiveCreate(final String optsJson, final String itemsJson) {
+            synchronized (archiveLock) {
+                if (archiveBusy) return "busy";
+                archiveBusy = true;
+                archiveCancel = false;
+            }
+            if (!submitJob(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject res = new JSONObject();
+                    JobTicker ticker = null;
+                    Runnable cancelHook = null;
+                    char[] pw = null;
+                    try {
+                        res.put("op", "create");
+                        JSONObject opts = new JSONObject(optsJson);
+                        JSONArray itemsArr = new JSONArray(itemsJson);
+                        String format = opts.optString("format", "zip");
+                        boolean singleOnly = "gz".equals(format) || "bz2".equals(format) || "xz".equals(format) || "zst".equals(format) || "lz4".equals(format);
+                        if (!"zip".equals(format) && !ArchiveIo.supportsCreate(format)) throw new IOException("This format isn't available in this build yet. Use Zip for now.");
+                        String name = opts.optString("name");
+                        File dir = new File(fmCanonicalPath(opts.optString("dir")));
+                        int level = opts.optInt("level", 6);
+                        boolean replace = "replace".equals(opts.optString("policy"));
+                        String password = opts.optString("password", "");
+                        String enc = opts.optString("enc", "aes256");
+                        if (!password.isEmpty() && !"zip".equals(format) && !ArchiveIo.supportsPassword(format)) throw new IOException("A password can be set for Zip and 7z only.");
+                        if (!(dir.isDirectory() || dir.mkdirs()) || !dir.canWrite()) throw new IOException("Can't write to " + dir);
+                        File dest = new File(dir, name);
+                        if (!replace && FileOps.exists(dest)) dest = new File(dir, FileOps.uniqueName(dir, name));
+                        List<ArchiveIo.Source> srcs = new ArrayList<ArchiveIo.Source>();
+                        java.util.ArrayList<String> problems = new java.util.ArrayList<String>();
+                        java.util.Set<String> seen = new java.util.HashSet<String>();
+                        int[] fileCount = {0};
+                        long totalBytes = 0;
+                        for (int i = 0; i < itemsArr.length(); i++) {
+                            File f = new File(fmCanonicalPath(itemsArr.getJSONObject(i).optString("p")));
+                            totalBytes += czCollect(srcs, f, f.getName(), seen, problems, fileCount);
+                        }
+                        if (fileCount[0] == 0) throw new IOException("Nothing to compress");
+                        if (singleOnly && (srcs.size() != 1 || srcs.get(0).file == null || !srcs.get(0).file.isFile())) {
+                            throw new IOException("This format packs one file only. Pick a single file, or use Zip, 7z or a tar format for several.");
+                        }
+                        pw = password.isEmpty() ? null : password.toCharArray();
+                        final ProgressMeter meter = new ProgressMeter(totalBytes, 0, System.currentTimeMillis());
+                        cancelHook = new Runnable() { @Override public void run() { archiveCancel = true; } };
+                        JobService.begin(MainActivity.this, "Compressing " + dest.getName(), cancelHook);
+                        ticker = new JobTicker(meter, "Compressing", 1000, 20000, new JobTicker.Listener() {
+                            @Override
+                            public void onTick(String text, int pct, long stalledMs) {
+                                notifyArchiveProgress(text);
+                                JobService.progress(MainActivity.this, text, pct);
+                            }
+                        });
+                        ticker.start();
+                        boolean encrypted;
+                        if ("zip".equals(format)) {
+                            List<ZipWriter.Item> zitems = new ArrayList<ZipWriter.Item>(srcs.size());
+                            for (ArchiveIo.Source s : srcs) zitems.add(new ZipWriter.Item(s.name, s.file));
+                            int scheme = pw == null ? ZipWriter.NONE : "aes128".equals(enc) ? ZipWriter.AES128 : "zipcrypto".equals(enc) ? ZipWriter.ZIPCRYPTO : ZipWriter.AES256;
+                            encrypted = scheme != ZipWriter.NONE;
+                            ZipWriter.create(dest, zitems, level, pw, scheme, new ZipWriter.Progress() {
+                                @Override
+                                public boolean onProgress(long doneBytes, int doneFiles, String current) {
+                                    synchronized (meter) { meter.update(doneBytes, doneFiles, current, System.currentTimeMillis()); }
+                                    return !archiveCancel;
+                                }
+                            });
+                        } else {
+                            encrypted = pw != null;
+                            ArchiveIo.create(dest, format, srcs, pw, level, new ArchiveIo.Progress() {
+                                @Override
+                                public boolean tick(long bytesDone) {
+                                    synchronized (meter) { meter.update(bytesDone, 0, "", System.currentTimeMillis()); }
+                                    return !archiveCancel;
+                                }
+                            });
+                        }
+                        res.put("files", fileCount[0]);
+                        res.put("bytes", totalBytes);
+                        res.put("csize", dest.length());
+                        res.put("dest", dest.getPath());
+                        res.put("encrypted", encrypted);
+                        if (!problems.isEmpty()) res.put("problems", new JSONArray(problems));
+                        res.put("ok", true);
+                    } catch (Throwable t) {
+                        putArchiveError(res, t);
+                    } finally {
+                        if (pw != null) java.util.Arrays.fill(pw, '\0');
+                        if (ticker != null) ticker.stop();
+                        if (cancelHook != null) {
+                            String doneText = res.optBoolean("ok") ? "Compressed " + res.optInt("files") + (res.optInt("files") == 1 ? " file" : " files") : res.optString("error");
+                            JobService.end(MainActivity.this, cancelHook, doneText);
+                        }
+                        synchronized (archiveLock) {
+                            archiveBusy = false;
+                        }
+                    }
+                    notifyJs("window.onArchiveResult && window.onArchiveResult(" + res.toString() + ")");
+                }
+            })) {
+                synchronized (archiveLock) {
+                    archiveBusy = false;
+                }
+                return "error";
+            }
+            return "started";
+        }
+
+        /** Walks one picked file or folder, adding it (and, for a folder, everything under it) to items to compress. Returns the bytes added.
+         *  A symbolic link to a folder is left out (noted in problems) rather than followed, so a loop can't compress forever; a symbolic
+         *  link to a file is included as the file it points to. {@code seen} drops an exact duplicate path reached twice. */
+        private long czCollect(List<ArchiveIo.Source> out, File f, String name, java.util.Set<String> seen, List<String> problems, int[] fileCount) {
+            if (!seen.add(name)) return 0;
+            try {
+                boolean link = java.nio.file.Files.isSymbolicLink(f.toPath());
+                if (link && f.isDirectory()) { noteArc(problems, name + ": a symbolic link to a folder (left out)"); return 0; }
+                if (!f.exists()) { noteArc(problems, name + ": no longer there"); return 0; }
+                if (link || f.isFile()) {
+                    out.add(new ArchiveIo.Source(name, f));
+                    fileCount[0]++;
+                    return Math.max(0, f.length());
+                }
+                if (f.isDirectory()) {
+                    out.add(new ArchiveIo.Source(name + "/", f));
+                    File[] kids = f.listFiles();
+                    long total = 0;
+                    if (kids != null) {
+                        java.util.Arrays.sort(kids, new java.util.Comparator<File>() { @Override public int compare(File a, File b) { return a.getName().compareTo(b.getName()); } });
+                        for (File k : kids) total += czCollect(out, k, name + "/" + k.getName(), seen, problems, fileCount);
+                    }
+                    return total;
+                }
+                noteArc(problems, name + ": not a file or a folder");
+                return 0;
+            } catch (Exception e) {
+                noteArc(problems, name + ": " + (e.getMessage() == null ? "failed" : e.getMessage()));
+                return 0;
+            }
+        }
+
+        private void noteArc(List<String> problems, String line) {
+            if (problems != null && problems.size() < 20) problems.add(line);
         }
 
         /**

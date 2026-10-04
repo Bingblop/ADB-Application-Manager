@@ -101,6 +101,11 @@ exports.initScript = function (opts) {
       return 'started';
     },
     fmBatchCancel() { fm.cancels++; fm.cancelled = true; if (fm.release) { const r = fm.release; fm.release = null; setTimeout(r, 10); } },
+    fmRead(path) {
+      path = norm(path); fm.calls.push('fmRead:' + path);
+      const n = fm.fs[path];
+      return !n || n.dir ? 'Error: No such file' : n.bin ? '(binary)' : n.text;
+    },
     fmReadText(path) {
       path = norm(path); fm.calls.push('fmReadText:' + path);
       const n = fm.fs[path];
