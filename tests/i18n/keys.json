@@ -668,6 +668,7 @@
 {"k":"Full VirusTotal report →","ctx":"built by the code of: on vt result"},
 {"k":"Full changelog","ctx":"in a sheet (whats new)"},
 {"k":"Full info for one package","ctx":"built by the code of: top level"},
+{"k":"Full path to a folder","ctx":"in a sheet (ex) / sheet (cz)"},
 {"k":"Full unrestricted root access on rooted Samsung / Magisk / KernelSU / APatch devices.","ctx":"in a sheet (modes)"},
 {"k":"GRANTED","ctx":"built by the code of: render permissions list"},
 {"k":"Galaxy Store","ctx":"built by the code of: top level"},

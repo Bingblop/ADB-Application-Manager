@@ -5060,7 +5060,7 @@ Type any command below (e.g. pm list packages -d)
             <label class="ex-opt"><input type="radio" name="exWhere" value="here" onchange="exWhereChange()"><span>This folder<small id="exHerePath" translate="no"></small></span></label>
             <label class="ex-opt"><input type="radio" name="exWhere" value="named" onchange="exWhereChange()"><span>A new folder named after the archive<small id="exNamedPath" translate="no"></small></span></label>
             <label class="ex-opt"><input type="radio" name="exWhere" value="other" onchange="exWhereChange()"><span>Another folder</span></label>
-            <input class="modal-text-input" id="exOtherInput" style="display:none; margin-bottom:6px;" placeholder="/storage/emulated/0/Download/…" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Folder to extract into" onkeydown="if(event.key==='Enter') exGo()">
+            <input class="modal-text-input" id="exOtherInput" style="display:none; margin-bottom:6px;" placeholder="Full path to a folder" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Folder to extract into" onkeydown="if(event.key==='Enter') exGo()">
             <div class="switch-sub" style="margin:10px 0 4px;">If a file is already there</div>
             <label class="ex-opt"><input type="radio" name="exPolicy" value="replace"><span>Replace it</span></label>
             <label class="ex-opt"><input type="radio" name="exPolicy" value="skip"><span>Skip it</span></label>
@@ -5150,7 +5150,7 @@ Type any command below (e.g. pm list packages -d)
             <div class="switch-sub" style="margin:10px 0 4px;">Save into</div>
             <label class="ex-opt"><input type="radio" name="czWhere" value="here" onchange="czWhereChange()"><span>This folder<small id="czHerePath" translate="no"></small></span></label>
             <label class="ex-opt"><input type="radio" name="czWhere" value="other" onchange="czWhereChange()"><span>Another folder</span></label>
-            <input class="modal-text-input" id="czOtherInput" style="display:none; margin-bottom:6px;" placeholder="/storage/emulated/0/Download" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Folder to save into">
+            <input class="modal-text-input" id="czOtherInput" style="display:none; margin-bottom:6px;" placeholder="Full path to a folder" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Folder to save into">
             <div class="switch-sub" style="margin:10px 0 4px;">If the archive name is taken</div>
             <label class="ex-opt"><input type="radio" name="czPolicy" value="keep"><span>Keep both (the new one becomes name (1))</span></label>
             <label class="ex-opt"><input type="radio" name="czPolicy" value="replace"><span>Replace it</span></label>
