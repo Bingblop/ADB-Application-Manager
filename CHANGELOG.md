@@ -13,6 +13,8 @@
   - **Termux**: your own Termux, with bash and everything installed with pkg. A **Termux setup** checklist walks you through
     the one-time steps (install from F-Droid or GitHub, `allow-external-apps=true`, the "Run commands in Termux environment"
     permission, a connection test). Full-screen programs (nano, vim, top, a Python prompt) open in a real Termux window.
+    **Once Termux is set up, the Terminal opens on it by default** (bash, more compatible with the coding agents' own CLI
+    tools than the sandbox or Working mode); "Automatic" in Settings explains the rule.
 - **Coding Agents.** A drop-down with **None** first, then **API Key Required** (Gemini, Claude, ChatGPT, Cursor, Copilot,
   Perplexity) and **Free Open-Source** (DroidMind, OpenCode, Leon.ai, Jan.ai, AnythingLLM, and Ollama on the phone itself),
   plus a **Model**
@@ -39,6 +41,13 @@
 - **Terminal settings** (the gear in the Terminal): your keys by their hint only, the agent and model to start with, the
   default shell, whether agents must ask before running commands or changing files, and whether the conversation is kept.
   **Help** explains everything, with a link to every agent's website.
+- **MCP button**: a new sheet (next to Help) to add a Model Context Protocol connector - a preset (filesystem, fetch,
+  memory, GitHub, and more, each with its own note) or a custom one (name, stdio command or remote URL, extra environment
+  or header) - to any of the six CLI-based agents (Claude Code, Gemini CLI, Codex, Copilot CLI, Cursor CLI, OpenCode),
+  **two or more agents at once**, so the same server reaches all of them. Written into each agent's own config file in its
+  own shape (`.claude.json`, `.gemini/settings.json`, `~/.codex/config.toml`, and so on); a remote server's token is kept
+  as an environment variable for the agents that want it that way, never written into the file itself. Already-added
+  servers are listed with which agents they went to, and can be forgotten (removed from all of them at once).
 
 - **Safety**: "Always allow in this chat" applies only to the shell and user it was given in (a grant in the sandbox does not let
   commands run as root); a read through a link that leads out of the working folder (Termux's `~/storage`) is asked about;

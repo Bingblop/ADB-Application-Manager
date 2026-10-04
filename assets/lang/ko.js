@@ -250,7 +250,6 @@ x: {
 "Autofill service": "자동 완성 서비스",
 "Automatic": "자동",
 "Automatic (Recommended)": "자동 (권장)",
-"Automatic (Working mode when connected)": "자동 (연결된 경우 작동 모드)",
 "Available": "사용 가능",
 "B": "B",
 "BACK": "BACK",

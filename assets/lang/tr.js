@@ -250,7 +250,6 @@ x: {
 "Autofill service": "Otomatik doldurma hizmeti",
 "Automatic": "Otomatik",
 "Automatic (Recommended)": "Otomatik (önerilen)",
-"Automatic (Working mode when connected)": "Otomatik (bağlıysa Çalışma modu)",
 "Available": "Kullanılabilir",
 "B": "B",
 "BACK": "BACK",

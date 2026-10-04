@@ -4566,7 +4566,7 @@
                 .tx-select { width: 100%; min-width: 0; font-size: 12.5px; padding: 8px 6px; }
                 .tx-bar-btns { display: flex; gap: 6px; }
                 .tx-icon-btn { height: 38px; min-width: 42px; border-radius: 10px; border: 1px solid var(--border-glass); background: var(--bg-card); color: var(--text-main); font-size: 18px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0 8px; }
-                .tx-icon-btn.tx-help-btn { font-size: 12px; font-weight: 800; }
+                .tx-icon-btn.tx-help-btn, .tx-icon-btn.tx-mcp-btn { font-size: 12px; font-weight: 800; }
                 .tx-sub { display: flex; align-items: center; gap: 8px; margin: 8px 0; flex-wrap: wrap; }
                 .tx-shell-pick { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 800; color: var(--text-muted); }
                 .tx-shell-pick .op-select { font-size: 12px; max-width: 62vw; }
@@ -4613,7 +4613,7 @@
                 .tx-keys button:active { background: #2a2a2a; }
                 .tx-keys .tx-key-stop { color: #ff8a80; font-size: 11px; letter-spacing: -0.6px; }
                 /* The app's sheet subtitles break anywhere (they usually show package names); these are sentences */
-                #txConnectModal .sheet-title p, #txSettingsModal .sheet-title p, #txTermuxModal .sheet-title p, #txHelpModal .sheet-title p, #txAlertModal .sheet-title p { word-break: normal; overflow-wrap: anywhere; }
+                #txConnectModal .sheet-title p, #txSettingsModal .sheet-title p, #txTermuxModal .sheet-title p, #txHelpModal .sheet-title p, #txAlertModal .sheet-title p, #txMcpModal .sheet-title p { word-break: normal; overflow-wrap: anywhere; }
                 .tx-tools { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
                 .tx-sheet-sec { font-size: 11px; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: .3px; margin: 16px 0 6px; }
                 .tx-sheet-p { font-size: 12px; color: var(--text-main); line-height: 1.5; margin: 6px 0; }
@@ -4667,6 +4667,7 @@
                     </label>
                     <div class="tx-bar-btns">
                         <button class="tx-icon-btn" id="txSettingsBtn" onclick="txOpenSettings()" title="Terminal settings" aria-label="Terminal settings">⚙️</button>
+                        <button class="tx-icon-btn tx-mcp-btn" id="txMcpBtn" translate="no" onclick="txOpenMcp()" title="MCP servers for the coding agents" aria-label="MCP servers">MCP</button>
                         <button class="tx-icon-btn tx-help-btn" id="txHelpBtn" onclick="txOpenHelp()" title="How the Terminal works" aria-label="Help">Help</button>
                     </div>
                 </div>
@@ -4915,6 +4916,22 @@ Type any command below (e.g. pm list packages -d)
         </div>
     </div>
 
+    <!-- MCP servers for the coding agents -->
+    <div class="modal-overlay" id="txMcpModal" onclick="if(event.target===this) txCloseMcp()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-title">
+                        <h3>MCP servers</h3>
+                        <p>A custom connector, or one of these presets, added to any of the agents that sign in through Termux</p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="txCloseMcp()" role="button" aria-label="Close">✕</div>
+            </div>
+            <div id="txMcpBody" style="max-height:70vh; overflow-y:auto;"></div>
+        </div>
+    </div>
+
     <!-- Termux setup checklist -->
     <div class="modal-overlay" id="txTermuxModal" onclick="if(event.target===this) txCloseTermux()">
         <div class="modal-sheet">
@@ -5014,6 +5031,15 @@ Type any command below (e.g. pm list packages -d)
                     <li><b>Cursor</b>: Cursor CLI (agent login), signed in with your Cursor account.</li>
                 </ul>
                 <p>Choose the sign-in method in the agent's Connect sheet. The tools are installed into a Debian environment inside Termux when they have no Android build. This takes several minutes and up to about 1 GB; the providers do not support Android officially, so a tool may not run on every phone.</p>
+
+                <h4>MCP servers</h4>
+                <p>The MCP button opens a sheet to give an agent extra tools (files, the web, a browser, GitHub...) through the Model
+                   Context Protocol. Pick a preset or write your own: a name, a local command or a remote address, and any key or
+                   header it needs. Pick which agents to add it to — the same server can go into two or more at once, since each
+                   agent keeps it in its own file.</p>
+                <p class="tx-sheet-p muted">This only works with the agents that sign in through their own command-line tool in Termux
+                   (Claude Code, Gemini CLI, Codex, Copilot CLI, Cursor CLI, OpenCode); an agent used only with an API key cannot use
+                   one here.</p>
 
                 <h4>Termux</h4>
                 <ul>
@@ -15792,14 +15818,15 @@ Type any command below (e.g. pm list packages -d)
         function txCurShell() { return TX_SHELLS[txState.shell] ? txState.shell : txDefaultShell(); }
         function txDefaultShell() {
             if (TX_SHELLS[txSettings.defaultShell]) return txSettings.defaultShell;
+            if (txTermuxReadyLocal()) return 'termux';               // real bash and real packages: the most agent-friendly shell, when it is set up
             return isPrivilegedActive ? 'priv' : 'app';
         }
         function txShellBusy(b) { return !!txRuns[b]; }
 
         function txOnShown() {
-            if (!txState.shell) txState.shell = txDefaultShell();
             txRefreshVault();
-            txRefreshInfo();
+            txRefreshInfo();                                          // before txDefaultShell(), so "Termux is ready" is not a launch behind
+            if (!txState.shell) txState.shell = txDefaultShell();
             if (!txOpened) {
                 txOpened = true;
                 txBuildAgentSelect();
@@ -16576,6 +16603,27 @@ Type any command below (e.g. pm list packages -d)
             { label: 'Install DroidMind and adb inside Debian', cmd: 'apt-get install -y adb && ~/.local/bin/uv tool install --python 3.13 git+https://github.com/hyperb1iss/droidmind', debian: true }
         ];
         const TX_TERMUX_ALLOW_CMD = "mkdir -p ~/.termux && echo 'allow-external-apps=true' >> ~/.termux/termux.properties && termux-reload-settings";
+
+        // MCP (Model Context Protocol): picking a preset fills the custom-connector fields below it, which the user can still edit (a token, a path).
+        const TX_MCP_PRESETS = {
+            filesystem: { label: 'Filesystem', name: 'filesystem', transport: 'stdio', command: 'npx -y @modelcontextprotocol/server-filesystem /sdcard', note: 'Lets the agent read and write files under the folder named at the end of the command (change /sdcard to taste).' },
+            fetch: { label: 'Fetch', name: 'fetch', transport: 'stdio', command: 'uvx mcp-server-fetch', note: 'Fetches a web page as text for the agent. Needs uv (uvx) in the shell that runs it.' },
+            memory: { label: 'Memory', name: 'memory', transport: 'stdio', command: 'npx -y @modelcontextprotocol/server-memory', note: 'A small knowledge graph the agent can read and write between turns.' },
+            sequential: { label: 'Sequential Thinking', name: 'sequential-thinking', transport: 'stdio', command: 'npx -y @modelcontextprotocol/server-sequential-thinking', note: 'Lets the agent think in explicit steps before it acts.' },
+            playwright: { label: 'Playwright', name: 'playwright', transport: 'stdio', command: 'npx -y @playwright/mcp@latest', note: 'Browser automation. Needs Node and a Chromium download, which can be heavy on a phone.' },
+            github: { label: 'GitHub', name: 'github', transport: 'http', url: 'https://api.githubcopilot.com/mcp/', env: 'Authorization: Bearer YOUR_GITHUB_TOKEN', note: 'GitHub\'s own hosted server: issues, PRs, code search. Replace YOUR_GITHUB_TOKEN below with a token that has the scopes you need.' }
+        };
+        // Where each official command-line tool keeps its MCP servers, and the shape of one entry there. "std" is the common
+        // { command, args, env } / { url, headers } shape (Claude Code, Copilot CLI, Cursor CLI); Gemini CLI tells stream type
+        // apart by field name (httpUrl vs url); Codex keeps a TOML table; OpenCode's entries are shaped differently again.
+        const TX_MCP_AGENTS = {
+            claude: { path: '~/.claude.json', top: 'mcpServers', shape: 'std' },
+            gemini: { path: '~/.gemini/settings.json', top: 'mcpServers', shape: 'gemini' },
+            codex: { path: '~/.codex/config.toml', top: '', shape: 'toml' },
+            copilot: { path: '~/.copilot/mcp-config.json', top: 'mcpServers', shape: 'std' },
+            cursor: { path: '~/.cursor/mcp.json', top: 'mcpServers', shape: 'std' },
+            opencode: { path: '~/.config/opencode/opencode.json', top: 'mcp', shape: 'opencode' }
+        };
 
         // allowRun: "Always allow in this chat", per shell and user ({ 'app:10123': true }): a grant in the sandbox does not let commands run as root
         const txChat = { msgs: [], busy: false, stop: false, reqId: null, steps: 0, allowRun: {}, allowAll: false, undo: [], usage: { in: 0, out: 0 }, cursorAgent: '', cliCont: {}, ask: null };
@@ -17581,6 +17629,192 @@ Type any command below (e.g. pm list packages -d)
             }
         }
 
+        // ---------------------------------------------------------------- MCP servers
+        // "KEY=value" or "Header: value" lines, one per line; blank lines and # comments are ignored.
+        function txMcpEnvPairs(text) {
+            return String(text || '').split('\n').map(l => l.trim()).filter(l => l && l.charAt(0) !== '#')
+                .map(l => { const i = l.search(/[:=]/); return i < 0 ? null : [l.slice(0, i).trim(), l.slice(i + 1).trim()]; }).filter(Boolean);
+        }
+
+        // The server definition, in the exact shape the chosen agent's own config file expects.
+        function txMcpEntry(agentKey, form) {
+            const shape = TX_MCP_AGENTS[agentKey].shape;
+            const env = txMcpEnvPairs(form.env);
+            if (form.transport === 'stdio') {
+                const parts = form.command.trim().split(/\s+/).filter(Boolean);
+                const command = parts[0] || '', args = parts.slice(1);
+                if (shape === 'toml') {
+                    let toml = 'command = ' + JSON.stringify(command) + '\nargs = ' + JSON.stringify(args);
+                    if (env.length) toml += '\nenv = { ' + env.map(([k, v]) => JSON.stringify(k) + ' = ' + JSON.stringify(v)).join(', ') + ' }';
+                    return { toml };
+                }
+                if (shape === 'opencode') return { json: { type: 'local', command: [command].concat(args), environment: Object.fromEntries(env) } };
+                return { json: Object.assign({ command, args }, env.length ? { env: Object.fromEntries(env) } : {}) };
+            }
+            const url = form.url.trim(), headers = Object.fromEntries(env);
+            if (shape === 'toml') {
+                const out = { toml: 'url = ' + JSON.stringify(url) };
+                if (env.length) {
+                    const envVar = 'MCP_' + form.name.toUpperCase().replace(/[^A-Z0-9]+/g, '_') + '_TOKEN';
+                    out.toml += '\nbearer_token_env_var = ' + JSON.stringify(envVar);
+                    out.exportVar = [envVar, env[0][1].replace(/^Bearer\s+/i, '')];           // Codex reads a remote server's token from the environment, not from its own file
+                }
+                return out;
+            }
+            if (shape === 'gemini') {
+                const o = {}; o[form.transport === 'http' ? 'httpUrl' : 'url'] = url;
+                if (env.length) o.headers = headers;
+                return { json: o };
+            }
+            if (shape === 'opencode') return { json: { type: 'remote', url } };
+            return { json: Object.assign({ url }, env.length ? { headers } : {}) };
+        }
+
+        // Merges one entry into a JSON config (Claude Code, Gemini CLI, Copilot CLI, Cursor CLI, OpenCode): read what is
+        // there, set data[top][name], write it back with the same 2-space indent the tools themselves use. The entry
+        // travels as base64 so no quoting in the command can cut it short or let a value escape into the script.
+        function txMcpMergeJson(path, top, name, entryObj) {
+            const b64 = txB64Encode(new TextEncoder().encode(JSON.stringify(entryObj)));
+            const py = [
+                'import json, os, base64',
+                'p = os.path.expanduser(' + JSON.stringify(path) + ')',
+                "os.makedirs(os.path.dirname(p) or '.', exist_ok=True)",
+                'try:',
+                '    f = open(p); d = json.load(f); f.close()',
+                'except Exception:',
+                '    d = {}',
+                'd.setdefault(' + JSON.stringify(top) + ', {})[' + JSON.stringify(name) + '] = json.loads(base64.b64decode(' + JSON.stringify(b64) + ').decode("utf-8"))',
+                "open(p, 'w').write(json.dumps(d, indent=2))",
+                "print('saved')"
+            ].join('\n');
+            return 'python3 -c ' + txQ(py);
+        }
+
+        // Merges one [mcp_servers.<name>] table into Codex's config.toml: any earlier table with the same name is cut out
+        // first (by its header line, up to the next [ line), then the new one is appended.
+        function txMcpMergeToml(path, name, body) {
+            const b64 = txB64Encode(new TextEncoder().encode(body));
+            const py = [
+                'import os, base64',
+                'p = os.path.expanduser(' + JSON.stringify(path) + ')',
+                "os.makedirs(os.path.dirname(p) or '.', exist_ok=True)",
+                'try:',
+                '    f = open(p); lines = f.read().split(chr(10)); f.close()',
+                'except Exception:',
+                '    lines = []',
+                "header = '[mcp_servers.' + " + JSON.stringify(name) + " + ']'",
+                'out = []',
+                'skip = False',
+                'for line in lines:',
+                '    if line.strip() == header:',
+                '        skip = True',
+                '        continue',
+                "    if skip and line.startswith('['):",
+                '        skip = False',
+                '    if not skip:',
+                '        out.append(line)',
+                "while out and out[-1] == '':",
+                '    out.pop()',
+                'block = base64.b64decode(' + JSON.stringify(b64) + ').decode("utf-8")',
+                "text = chr(10).join(out) + (chr(10) + chr(10) if out else '') + header + chr(10) + block + chr(10)",
+                "open(p, 'w').write(text)",
+                "print('saved')"
+            ].join('\n');
+            return 'python3 -c ' + txQ(py);
+        }
+
+        function txMcpSteps(agentKey, name, entry) {
+            const cli = TX_CLI[agentKey], meta = TX_MCP_AGENTS[agentKey];
+            const debian = cli.where === 'debian';
+            const cmd = entry.toml ? txMcpMergeToml(meta.path, name, entry.toml) : txMcpMergeJson(meta.path, meta.top, name, entry.json);
+            const steps = debian ? TX_DEBIAN_STEPS.slice() : [];
+            steps.push({ label: 'Make sure Python is there (to edit ' + cli.name + '\'s config file)', cmd: 'command -v python3 >/dev/null 2>&1 || apt-get install -y python3 2>/dev/null || pkg install -y python', debian });
+            steps.push({ label: 'Add it to ' + cli.name + '\'s own config', cmd, debian });
+            if (entry.exportVar) steps.push({ label: 'Save the token for ' + cli.name, cmd: 'grep -q ' + txQ(entry.exportVar[0] + '=') + ' ~/.bashrc 2>/dev/null || echo ' + txQ('export ' + entry.exportVar[0] + '=' + entry.exportVar[1]) + ' >> ~/.bashrc', debian });
+            return steps;
+        }
+
+        async function txMcpApply() {
+            const status = document.getElementById('txMcpStatus');
+            const name = (document.getElementById('txMcpName').value || '').trim();
+            const transport = (document.querySelector('input[name="txMcpTransport"]:checked') || {}).value || 'stdio';
+            const command = (document.getElementById('txMcpCommand').value || '').trim();
+            const url = (document.getElementById('txMcpUrl').value || '').trim();
+            const env = document.getElementById('txMcpEnv').value || '';
+            const agents = [...document.querySelectorAll('#txMcpAgents input:checked')].map(c => c.value);
+            if (!/^[A-Za-z0-9_-]+$/.test(name)) { errNote(status, 'Name it with letters, numbers, - or _ only'); return; }
+            if (transport === 'stdio' && !command) { errNote(status, 'Enter the command to run'); return; }
+            if (transport !== 'stdio' && !/^https?:\/\//.test(url)) { errNote(status, 'Enter a server address starting with http:// or https://'); return; }
+            if (!agents.length) { errNote(status, 'Pick at least one agent'); return; }
+            haptic();
+            txCloseMcp();
+            const form = { name, transport, command, url, env };
+            for (const agentKey of agents) {
+                const entry = txMcpEntry(agentKey, form);
+                await txRunSteps(txF('Adding {0} to {1}', name, TX_CLI[agentKey].name), txMcpSteps(agentKey, name, entry));
+            }
+            const saved = kvGet('tx_mcp_servers', []);
+            const i = saved.findIndex(s => s.name === name);
+            const rec = { name, agents, at: Date.now() };
+            if (i >= 0) saved[i] = rec; else saved.push(rec);
+            kvSet('tx_mcp_servers', saved);
+        }
+
+        function txMcpForget(i) {
+            const saved = kvGet('tx_mcp_servers', []);
+            saved.splice(i, 1);
+            kvSet('tx_mcp_servers', saved);
+            txRenderMcp();
+        }
+
+        function txMcpPreset(id) {
+            const p = TX_MCP_PRESETS[id];
+            const note = document.getElementById('txMcpPresetNote');
+            if (!p) { if (note) note.textContent = ''; return; }
+            document.getElementById('txMcpName').value = p.name;
+            document.querySelectorAll('input[name="txMcpTransport"]').forEach(r => { r.checked = r.value === p.transport; });
+            document.getElementById('txMcpCommand').value = p.command || '';
+            document.getElementById('txMcpUrl').value = p.url || '';
+            document.getElementById('txMcpEnv').value = p.env || '';
+            if (note) note.textContent = p.note || '';
+        }
+
+        function txRenderMcp() {
+            const box = document.getElementById('txMcpBody');
+            if (!box) return;
+            const presetOpts = Object.keys(TX_MCP_PRESETS).map(id => '<option value="' + id + '">' + escapeHtml(TX_MCP_PRESETS[id].label) + '</option>').join('');
+            const agentRows = Object.keys(TX_CLI).map(k => '<label class="fm-opt" style="display:flex; margin:4px 0;"><input type="checkbox" name="txMcpAgent" value="' + k + '"> <span translate="no">' + escapeHtml(TX_CLI[k].name) + '</span></label>').join('');
+            const saved = kvGet('tx_mcp_servers', []);
+            const savedRows = saved.length ? saved.map((s, i) => '<div class="tx-row"><div class="tx-row-main"><div class="tx-row-name" translate="no">' + escapeHtml(s.name) + '</div><div class="tx-row-sub" translate="no">' + escapeHtml(s.agents.map(a => (TX_CLI[a] || {}).name || a).join(', ')) + '</div></div><button class="mode-action-btn" onclick="txMcpForget(' + i + ')">Forget</button></div>').join('')
+                : '<p class="tx-sheet-p muted">None added yet.</p>';
+            box.innerHTML =
+                '<p class="tx-sheet-p">A Model Context Protocol server gives a coding agent extra tools: files, the web, a browser, GitHub and the like. This only reaches the agents that sign in through their own command-line tool in Termux (Claude Code, Gemini CLI, Codex, Copilot CLI, Cursor CLI, OpenCode) — an agent used only with an API key cannot use one here.</p>'
+                + '<div class="tx-sheet-sec">Already added</div>' + savedRows
+                + '<div class="tx-sheet-sec">Preset</div>'
+                + '<select id="txMcpPreset" class="op-select" style="width:100%;" onchange="txMcpPreset(this.value)"><option value="">Pick one to fill the fields below, or write your own</option>' + presetOpts + '</select>'
+                + '<p class="tx-sheet-p muted" id="txMcpPresetNote"></p>'
+                + '<div class="tx-sheet-sec">Name</div>'
+                + '<input id="txMcpName" class="modal-text-input tx-key-input" placeholder="my-server" autocomplete="off" autocapitalize="off" spellcheck="false">'
+                + '<div class="tx-sheet-sec">How it runs</div>'
+                + '<label class="ex-opt"><input type="radio" name="txMcpTransport" value="stdio" checked><span>A local command (stdio)</span></label>'
+                + '<label class="ex-opt"><input type="radio" name="txMcpTransport" value="http"><span>A remote address, streamable HTTP</span></label>'
+                + '<label class="ex-opt"><input type="radio" name="txMcpTransport" value="sse"><span>A remote address, SSE</span></label>'
+                + '<div class="tx-sheet-sec">Command (for a local command)</div>'
+                + '<input id="txMcpCommand" class="modal-text-input tx-key-input" placeholder="npx -y @modelcontextprotocol/server-memory" autocomplete="off" autocapitalize="off" spellcheck="false">'
+                + '<div class="tx-sheet-sec">Address (for a remote server)</div>'
+                + '<input id="txMcpUrl" class="modal-text-input tx-key-input" placeholder="https://example.com/mcp" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="url">'
+                + '<div class="tx-sheet-sec">Environment or headers (one KEY=value or Header: value a line)</div>'
+                + '<textarea id="txMcpEnv" class="modal-textarea" translate="no" rows="3" placeholder="GITHUB_TOKEN=ghp_..." autocapitalize="off" autocorrect="off" spellcheck="false"></textarea>'
+                + '<div class="tx-sheet-sec">Agents to add it to</div>'
+                + '<div id="txMcpAgents">' + agentRows + '</div>'
+                + '<div class="mode-btn-row" style="margin-top:10px;"><button class="mode-action-btn primary" onclick="txMcpApply()">Add to the agents picked above</button></div>'
+                + '<p class="tx-sheet-p muted" id="txMcpStatus"></p>'
+                + '<p class="tx-sheet-p muted">Each agent keeps this in its own file, the same way its official sign-in does, so two or more agents can carry the same server and either can be used with it. Codex keeps a remote server\'s token as an environment variable instead of in its file. Not tested against every version of every tool.</p>';
+        }
+
+        function txOpenMcp() { haptic(); document.getElementById('txMcpModal').classList.add('show'); txRenderMcp(); }
+        function txCloseMcp() { document.getElementById('txMcpModal').classList.remove('show'); }
+
         function txCliLogin(ag) {
             const cli = TX_CLI[ag.cli];
             if (!cli) return;
@@ -18097,7 +18331,7 @@ Type any command below (e.g. pm list packages -d)
                 const cur = (txSettings.models || {})[a.id] || '';
                 return '<div class="tx-row"><div class="tx-row-main"><div class="tx-row-name">' + escapeHtml(a.name) + '</div></div><select class="op-select" style="max-width:52vw;" onchange="txSetDefaultModel(\'' + a.id + '\', this.value)"><option value="">Automatic</option>' + list.map(m => '<option translate="no" value="' + escapeHtml(m.id) + '"' + (m.id === cur ? ' selected' : '') + '>' + escapeHtml(m.id) + '</option>').join('') + '</select></div>';
             }).join('');
-            const shellOpts = [['', 'Automatic (Working mode when connected)'], ['app', 'This app (sandbox)'], ['priv', 'Working mode (ADB, Shizuku, Root)'], ['termux', 'Termux (bash and packages)']].map(([v, l]) => '<option value="' + v + '"' + ((txSettings.defaultShell || '') === v ? ' selected' : '') + '>' + escapeHtml(l) + '</option>').join('');
+            const shellOpts = [['', 'Automatic (Termux when set up, else Working mode)'], ['app', 'This app (sandbox)'], ['priv', 'Working mode (ADB, Shizuku, Root)'], ['termux', 'Termux (bash and packages)']].map(([v, l]) => '<option value="' + v + '"' + ((txSettings.defaultShell || '') === v ? ' selected' : '') + '>' + escapeHtml(l) + '</option>').join('');
             const steps = [10, 25, 50, 100].map(n => '<option value="' + n + '"' + (parseInt(txSettings.maxSteps, 10) === n ? ' selected' : '') + '>' + n + '</option>').join('');
             box.innerHTML =
                 '<div class="tx-sheet-sec">Keys and servers</div>' + rows

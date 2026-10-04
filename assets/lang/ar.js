@@ -250,7 +250,6 @@ x: {
 "Autofill service": "خدمة الملء التلقائي",
 "Automatic": "تلقائي",
 "Automatic (Recommended)": "تلقائي (موصى به)",
-"Automatic (Working mode when connected)": "تلقائي (وضع التشغيل عند الاتصال)",
 "Available": "متاح",
 "B": "B",
 "BACK": "BACK",

@@ -9,6 +9,7 @@ const tx = require('./lib/tx_mock');
   const page = await b.newPage({ viewport: { width: 400, height: 860 } });
   const errors = []; page.on('pageerror', e => errors.push(e.message));
   const env = await tx.install(page, { real: true });
+  await page.addInitScript(() => { window.__tx.info.termux = { installed: false, permission: false }; });   // a plain device: Termux is not set up, so the default shell is still Working mode
   await page.goto(PAGE); await page.waitForTimeout(300);
   const sleep = ms => page.waitForTimeout(ms);
   const scr = b2 => page.locator('#txScreen-' + b2).innerText();
@@ -88,7 +89,8 @@ const tx = require('./lib/tx_mock');
   await page.fill('#txInput', 'vim notes.txt'); await page.press('#txInput', 'Enter'); await sleep(50);
   console.log('10. vim is offered in Termux instead of hanging here:', (await scr('priv')).includes('[vim is a full-screen program: it needs a real terminal, so run it in Termux]'), JSON.stringify(await page.locator('#txScreen-priv .tx-btnrow').last().innerText()));
   await page.locator('#txScreen-priv .tx-btnrow').last().locator('button', { hasText: 'Open in Termux' }).click(); await sleep(30);
-  console.log('    Open in Termux hands it to Termux:', JSON.stringify(await page.evaluate(() => window.__tx.opens.slice(-1))));
+  console.log('    Termux is not set up on this device yet, so it offers the setup sheet instead of hanging:', await page.evaluate(() => document.getElementById('txTermuxModal').classList.contains('show')));
+  await page.evaluate(() => txCloseTermux());
   await page.fill('#txInput', 'top -n 1 -b');
   console.log('    prompts only count when started bare (top -n 1 prints once, python3 x.py runs a script):', JSON.stringify(await page.evaluate(() => ['top', 'top -n 1 -b', 'python3', 'python3 x.py', 'nano', 'nano a.txt', 'less a.txt', 'man ls', 'ssh me@host', 'ssh me@host uptime', 'ollama run qwen2.5-coder:1.5b', 'ollama run qwen2.5-coder:1.5b hi', 'claude', 'claude -p hi'].map(c => c + '=' + txIsFullscreen(c)))));
   await page.fill('#txInput', 'clear'); await page.press('#txInput', 'Enter'); await sleep(30);
@@ -140,7 +142,7 @@ const tx = require('./lib/tx_mock');
   console.log('    Restart shell closes it and opens a fresh one:', JSON.stringify(await page.evaluate(() => window.__tx.closes)), (await page.evaluate(() => window.__tx.starts.length)) === startsBefore + 2);
 
   // ---------------------------------------------------------------- shells that cannot start
-  await page.evaluate(() => { window.__tx.startFail.termux = 'termux_permission: this app may not run commands in Termux yet'; window.__tx.info.termux.permission = false; });
+  await page.evaluate(() => { window.__tx.startFail.termux = 'termux_permission: this app may not run commands in Termux yet'; window.__tx.info.termux.installed = true; window.__tx.info.termux.permission = false; });
   await page.selectOption('#txShell', 'termux'); await sleep(80);
   console.log('16. Termux without the permission: the setup sheet opens, and the screen says so with an Allow button:', await page.evaluate(() => document.getElementById('txTermuxModal').classList.contains('show')),
     (await scr('termux')).includes('[This app may not run commands in Termux yet.]'), JSON.stringify(await page.locator('#txScreen-termux .tx-btnrow').last().innerText()));

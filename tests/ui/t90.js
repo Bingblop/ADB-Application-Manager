@@ -9,6 +9,7 @@ const tx = require('./lib/tx_mock');
   const page = await b.newPage({ viewport: { width: 400, height: 860 } });
   const errors = []; page.on('pageerror', e => errors.push(e.message));
   const env = await tx.install(page, { real: true });
+  await page.addInitScript(() => { window.__tx.info.termux = { installed: false, permission: false }; });   // a plain device: Termux is not set up, so the default shell is still Working mode
   await page.addInitScript(() => {
     // keys already saved (as the app would report them): this script is about switching
     window.__ai.vault = {
@@ -114,6 +115,7 @@ const tx = require('./lib/tx_mock');
   const page2 = await b.newPage({ viewport: { width: 400, height: 860 } });
   page2.on('pageerror', e => errors.push('2: ' + e.message));
   const env2 = await tx.install(page2, { real: true });
+  await page2.addInitScript(() => { window.__tx.info.termux = { installed: false, permission: false }; });
   await page2.addInitScript(kv => { window.__kv = JSON.parse(kv); window.__ai && (window.__ai.vault = { claude: { key: true, hint: 'sk-ant-…aaaa', base: '', savedAt: 1, readable: true } }); }, kv);
   await page2.goto(PAGE); await page2.waitForTimeout(300);
   await page2.evaluate(() => switchView('terminal')); await page2.waitForTimeout(200);

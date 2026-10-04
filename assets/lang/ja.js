@@ -250,7 +250,6 @@ x: {
 "Autofill service": "自動入力サービス",
 "Automatic": "自動",
 "Automatic (Recommended)": "自動（推奨）",
-"Automatic (Working mode when connected)": "自動（接続時は動作モード）",
 "Available": "空き",
 "B": "B",
 "BACK": "BACK",

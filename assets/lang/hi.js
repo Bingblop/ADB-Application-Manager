@@ -250,7 +250,6 @@ x: {
 "Autofill service": "ऑटोफ़िल सेवा",
 "Automatic": "ऑटोमैटिक",
 "Automatic (Recommended)": "ऑटोमैटिक (अनुशंसित)",
-"Automatic (Working mode when connected)": "ऑटोमैटिक (कनेक्ट होने पर वर्किंग मोड)",
 "Available": "उपलब्ध",
 "B": "B",
 "BACK": "BACK",

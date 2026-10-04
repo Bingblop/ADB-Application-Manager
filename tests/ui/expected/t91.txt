@@ -1,4 +1,4 @@
-1. Help opens with its sections: true ["Overview","The three shells","Typing commands","Coding Agents","Chat commands","API keys","Subscriptions and website sign-in","Termux","Free and open-source","Limits","Agent websites"]
+1. Help opens with its sections: true ["Overview","The three shells","Typing commands","Coding Agents","Chat commands","API keys","Subscriptions and website sign-in","MCP servers","Termux","Free and open-source","Limits","Agent websites"]
    a link to every agent's website (and Termux): ["Gemini (Google)","Claude (Anthropic)","ChatGPT (OpenAI)","Cursor (SpaceX)","Copilot (GitHub)","Perplexity","DroidMind","OpenCode","Leon.ai","Jan.ai","AnythingLLM","Ollama","Termux"]
    a link opens in the browser: ["url:https://opencode.ai/"]
 2. Settings: the sections: true ["Keys and servers","Default agent and models","Shell","What agents may do","Sign-in tools in Termux","Chat"]

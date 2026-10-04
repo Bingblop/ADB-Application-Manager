@@ -250,7 +250,6 @@ x: {
 "Autofill service": "Layanan isi otomatis",
 "Automatic": "Otomatis",
 "Automatic (Recommended)": "Otomatis (Disarankan)",
-"Automatic (Working mode when connected)": "Otomatis (Mode kerja jika terhubung)",
 "Available": "Tersedia",
 "B": "B",
 "BACK": "BACK",

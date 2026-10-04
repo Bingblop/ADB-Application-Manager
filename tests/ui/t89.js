@@ -9,6 +9,7 @@ const tx = require('./lib/tx_mock');
   const page = await b.newPage({ viewport: { width: 400, height: 860 } });
   const errors = []; page.on('pageerror', e => errors.push(e.message));
   const env = await tx.install(page, { real: true });
+  await page.addInitScript(() => { window.__tx.info.termux = { installed: false, permission: false }; });   // a plain device: Termux is not set up, so the default shell is still Working mode
   await page.goto(PAGE); await page.waitForTimeout(300);
   const sleep = ms => page.waitForTimeout(ms);
   const clean = s => String(s).split(env.base).join('<tmp>');

@@ -520,6 +520,8 @@ Termux setup (the checklist is in the Terminal's settings): install Termux and o
 allow this app to *Run commands in Termux environment*, and test the connection. The app then starts one Termux command
 through Termux's official RUN_COMMAND intent that connects back to the app over a local connection only it can open (a one-time
 token), and becomes a live bash. Full-screen programs (nano, vim, top, a Python prompt) open in a real Termux window instead.
+**Automatic** picks Termux once it is set up (bash is more compatible with the coding agents' own CLI tools than the sandbox
+or Working mode), otherwise Working mode, otherwise the sandbox.
 
 **Keys like Termux's**: ESC, TAB (completes file names), CTRL-C (stops), the arrows (history and cursor), HOME, END and | / - ~.
 `clear` empties the screen, `exit` ends the shell (Enter starts a new one). Programs get no keyboard input while they run; in
@@ -552,6 +554,14 @@ supported on Android, so they may not run on every phone; when one fails, the Te
 private settings (backups are off). The app adds a key to a request itself, and only when the request goes to that provider's
 own address (or the server address you saved for Jan, AnythingLLM or Ollama); the page only ever sees the last four characters.
 Keys that appear in command output are masked before anything is sent to an agent.
+
+**MCP button.** Next to Help, a sheet for adding a [Model Context Protocol](https://modelcontextprotocol.io) connector to the
+CLI-based agents (Claude Code, Gemini CLI, Codex, Copilot CLI, Cursor CLI, OpenCode) — pick a preset (filesystem, fetch,
+memory, GitHub and more) or fill in a custom one (name, a `stdio` command or a remote URL, extra environment variables or
+headers), tick which agents should get it (more than one at once, so the same server reaches all of them), and apply. Each
+agent's own config file is written in its own shape; a remote server's token goes into an environment variable for the agents
+that expect it there, never into the file itself. Already-added servers are listed with which agents they went to, and
+**Forget** removes one from all of them.
 
 ## Working modes
 

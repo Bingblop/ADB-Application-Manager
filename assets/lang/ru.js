@@ -250,7 +250,6 @@ x: {
 "Autofill service": "Служба автозаполнения",
 "Automatic": "Автоматически",
 "Automatic (Recommended)": "Автоматически (рекомендуется)",
-"Automatic (Working mode when connected)": "Автоматически (режим работы, если подключён)",
 "Available": "Свободно",
 "B": "B",
 "BACK": "BACK",

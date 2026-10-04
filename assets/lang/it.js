@@ -250,7 +250,6 @@ x: {
 "Autofill service": "Servizio di compilazione automatica",
 "Automatic": "Automatico",
 "Automatic (Recommended)": "Automatico (consigliato)",
-"Automatic (Working mode when connected)": "Automatico (Modalità operativa se connessa)",
 "Available": "Disponibile",
 "B": "B",
 "BACK": "BACK",

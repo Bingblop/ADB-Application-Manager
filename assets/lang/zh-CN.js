@@ -250,7 +250,6 @@ x: {
 "Autofill service": "自动填充服务",
 "Automatic": "自动",
 "Automatic (Recommended)": "自动（推荐）",
-"Automatic (Working mode when connected)": "自动（已连接时使用工作模式）",
 "Available": "可用",
 "B": "B",
 "BACK": "BACK",

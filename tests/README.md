@@ -4,7 +4,7 @@ The checks the app is released with. None of this is part of the APK. There are 
 
 | | What it is | Needs |
 |---|---|---|
-| **UI** — `run.js`, `ui/` | 84 headless-Chromium scripts drive the real `assets/index.html` against a mock Android bridge: every tab, theme, filter, action, sheet and dialog | Node 18+, Playwright with its Chromium |
+| **UI** — `run.js`, `ui/` | 94 headless-Chromium scripts drive the real `assets/index.html` against a mock Android bridge: every tab, theme, filter, action, sheet and dialog | Node 18+, Playwright with its Chromium |
 | **Java** — `java/run.js`, `java/src/` | The parts of the app's Java that need no Android classes (settings and overlay rules, file rules, install hints, the archive engine, the Rish shell, the APK signer, the manifest decoder, the store parsers), compiled straight from `src/` and run with the JDK | JDK 8+; some suites also need Node, Python 3 with `zip`, `mksh` + `toybox`, `apksigner`, an APK, or the `org.json` jar |
 | **Translations** — `i18n/` | The list of every string of the page, the translator's brief and the tools that check, cut and put together the dictionaries in `assets/lang/` | Node 18+ (acorn and Playwright to regenerate the list) |
 
@@ -236,6 +236,7 @@ checked by compilation, review and these simulations, not on a device.
 | `t91` | v7.8 Terminal sheets and other connections: Help (sections, every agent's website), Settings (keys by hint, default agent and model, switches and their defaults, Ask before running off), the Termux setup checklist (missing, installed, refused for good with App info, allowed, the connection test), Jan found on the phone by itself, AnythingLLM asking for its key, Ollama installed through Termux, Claude by subscription through Claude Code (install steps, sign-in window, chatting with --continue and the saved key handed to the tool), Gemini CLI not installed, Copilot (token, CLI), Cursor cloud agents (start, stream, follow-up run, STOP cancels the run), DroidMind and Leon explained | |
 | `t92` | v7.8 review fixes: Always allow is per shell and user, a read through a link out of the folder is asked about, output mixed into a file read is refused, edit markers are whole lines, no edit of non-UTF-8 files, edited files keep their permissions, a cut-off answer is an error, Cursor key_ keys are masked | |
 | `t93` | v7.8 Perplexity: in the API Key Required group, its Connect sheet has no "Sign in with subscription" tab (no official CLI), OpenAI-shaped streaming chat to its own address, listed in Settings and Help; ChatGPT confirmed still present | |
+| `t94` | v7.8 Termux defaults to bash once it is set up (more compatible with the agents' own CLI tools than the sandbox or Working mode); the MCP sheet: presets, the agent checkboxes, applying a server to one or two CLI agents at once, the real steps run and the real file each of the six agents ends up with (run for real with `python3`, not just asserted as a string), re-applying without duplicating, the "already added" list and Forget | |
 | `test` | Working Modes (switching, Shizuku, IP:port entry, auto-detect) and Material 3 / Material You color presets |
 
 </details>

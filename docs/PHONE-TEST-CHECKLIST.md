@@ -107,6 +107,14 @@ Tick the box when it works; write what you saw when it does not.
 - [ ] Deny the Termux permission twice: the sheet explains how to allow it in App info. A Google Play copy of Termux: the sheet warns about it.
 - [ ] `nano test.txt` (or vim, top, a bare `python`) in the Termux shell: the Terminal offers to open it in Termux, and **Open in Termux** opens a real
       Termux window that runs it.
+- [ ] With Termux set up (and **Shell: Automatic** in Settings), close the app and open it again: the Terminal starts on **Termux**, not the sandbox or
+      Working mode (Settings explains why under "Automatic"). Without Termux set up, Automatic falls back to Working mode as before.
+- [ ] **MCP** button (next to Help): pick the **Filesystem** preset, tick **Claude Code** and **Gemini CLI**, **Add to the agents picked above**: the
+      steps run in Termux (installing Debian for Claude Code the first time, if needed) and finish without error. In Termux, `cat ~/.claude.json` and
+      `cat ~/.gemini/settings.json` both show the `mcpServers` entry with the right command. Open the MCP sheet again: the server is listed with both
+      agents; **Forget** removes it from both files at once (check with `cat` again).
+- [ ] A custom MCP connector: fill in a name and a remote URL instead of a command, tick **Codex**, apply: afterwards `cat ~/.codex/config.toml` shows
+      it, and if you gave it a token, it is an environment variable in that same file, never the token text itself.
 - [ ] **Coding Agents: Claude**, **ChatGPT**, **Gemini**, **Perplexity** with a real API key each: a wrong key is refused with the provider's message
       and nothing is saved; the right one is tested and saved, and the Model list fills in. Ask "list the files here and make hello.py print hi":
       every command and file change is shown first; **Run** / **Apply** works, **Skip** stops it, `/undo` takes the file change back. Perplexity's

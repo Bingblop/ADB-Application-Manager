@@ -28,7 +28,7 @@
    a folder ends in / (no space): "ls alpine/"
    completion asks the shell quietly (nothing about it on the screen): true [true,true,true]
 10. vim is offered in Termux instead of hanging here: true "Open in Termux\nRun here anyway"
-    Open in Termux hands it to Termux: ["vim notes.txt"]
+    Termux is not set up on this device yet, so it offers the setup sheet instead of hanging: true
     prompts only count when started bare (top -n 1 prints once, python3 x.py runs a script): ["top=true","top -n 1 -b=false","python3=true","python3 x.py=false","nano=true","nano a.txt=true","less a.txt=false","man ls=false","ssh me@host=true","ssh me@host uptime=false","ollama run qwen2.5-coder:1.5b=true","ollama run qwen2.5-coder:1.5b hi=false","claude=true","claude -p hi=false"]
 11. clear empties the screen: ""
 12. program output keeps its colours and drops other escape codes:

@@ -10,6 +10,7 @@ const tx = require('./lib/tx_mock');
   const page = await b.newPage({ viewport: { width: 400, height: 860 } });
   const errors = []; page.on('pageerror', e => errors.push(e.message));
   const env = await tx.install(page, { real: true });
+  await page.addInitScript(() => { window.__tx.info.termux = { installed: false, permission: false }; });   // a plain device: Termux is not set up, so the default shell is still Working mode
   await page.addInitScript(() => {
     window.__ai.vault = {
       claude: { key: true, hint: 'sk-ant-…aaaa', base: '', savedAt: 1790000000000, readable: true },
