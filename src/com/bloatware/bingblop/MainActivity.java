@@ -2534,6 +2534,7 @@ public class MainActivity extends Activity {
 
     private static final Object fmBatchLock = new Object();
     private static boolean fmBatchBusy;
+    private static volatile boolean fmBatchCancel;       // the page's Cancel: the running batch stops at the next step
 
     private static String fmBatchLabel(String op) {
         return "rm".equals(op) ? "Deleting" : "cp".equals(op) ? "Copying" : "Moving";
@@ -2545,6 +2546,70 @@ public class MainActivity extends Activity {
     }
 
     /** Places a batch delete / move must not touch: the root, any top-level folder, the user's whole storage, the system trees (see FileRules). */
+    /** Whether the app can do this one with its own file access: it can read the source and write where the result goes. */
+    private static boolean fmDirectOk(String op, String path, String destDir) {
+        try {
+            File f = new File(path);
+            if (!f.exists() && !java.nio.file.Files.isSymbolicLink(f.toPath())) return false;
+            File parent = f.getParentFile();
+            if ("rm".equals(op)) return parent != null && parent.canWrite();
+            if (!f.canRead()) return false;
+            if ("mv".equals(op) && (parent == null || !parent.canWrite())) return false;
+            File d = new File(destDir);
+            while (d != null && !d.exists()) d = d.getParentFile();           // the folder may still have to be made: its nearest parent decides
+            return d != null && d.isDirectory() && d.canWrite();
+        } catch (Exception e) { return false; }
+    }
+
+    /**
+     * One file operation with the app's own access: "" when it worked, a message when it failed, null when this one is not for Java
+     * (the path is out of reach, or the shape of the operation needs the shell). A message starting with "?" means: try the shell.
+     */
+    private static String fmOpDirect(String op, String a, String b) {
+        try {
+            File fa = new File(a);
+            if ("mkdir".equals(op)) {
+                File d = fa;
+                while (d != null && !d.exists()) d = d.getParentFile();
+                if (d == null || !d.isDirectory() || !d.canWrite()) return null;
+                if (fa.isDirectory()) return "";
+                return fa.mkdirs() ? "" : "The folder could not be created";
+            }
+            if ("touch".equals(op)) {
+                File p = fa.getParentFile();
+                if (p == null || !p.isDirectory() || !p.canWrite()) return null;
+                if (fa.exists()) return fa.setLastModified(System.currentTimeMillis()) ? "" : "?";
+                return fa.createNewFile() ? "" : "The file could not be created";
+            }
+            if ("rm".equals(op)) {
+                if (!fmDirectOk("rm", a, null)) return null;
+                FileOps.Result r = FileOps.delete(java.util.Collections.singletonList(fa), null);
+                return r.failed.isEmpty() ? "" : r.failed.get(0)[1];
+            }
+            if (("mv".equals(op) || "cp".equals(op)) && b != null && !b.isEmpty()) {
+                File fb = new File(b);
+                if ("mv".equals(op)) {                                          // a rename, or a move into a folder
+                    if (fb.isDirectory()) { if (!fmDirectOk("mv", a, b)) return null; FileOps.Result r = FileOps.move(java.util.Collections.singletonList(fa), fb, FileOps.REPLACE, null); return r.failed.isEmpty() ? "" : r.failed.get(0)[1]; }
+                    File pa = fa.getParentFile(), pb = fb.getParentFile();
+                    if (pa == null || pb == null || !pa.canWrite() || !pb.isDirectory() || !pb.canWrite() || !fa.exists()) return null;
+                    boolean same = false;
+                    try { same = fb.exists() && java.nio.file.Files.isSameFile(fa.toPath(), fb.toPath()); } catch (Exception ignored) {}      // only the case of the name changes
+                    if (fb.exists() && !same) return "A file or folder with that name is already there";
+                    return fa.renameTo(fb) ? "" : "?";
+                }
+                if (fb.isDirectory()) { if (!fmDirectOk("cp", a, b)) return null; FileOps.Result r = FileOps.copy(java.util.Collections.singletonList(fa), fb, FileOps.REPLACE, null); return r.failed.isEmpty() ? "" : r.failed.get(0)[1]; }
+            }
+        } catch (Exception e) {
+            return e.getMessage() == null ? "failed" : e.getMessage();
+        }
+        return null;
+    }
+
+    private static String fmSizeText(long b) {
+        if (b >= 1048576L) return String.format(java.util.Locale.US, "%.1f MB", b / 1048576.0);
+        return Math.max(1, b / 1024) + " KB";
+    }
+
     private static boolean fmProtectedPath(String p) {
         return FileRules.isProtected(p);
     }
@@ -7667,24 +7732,353 @@ public class MainActivity extends Activity {
             } catch (Exception e) { return "Error: " + e.getMessage(); }
         }
 
+        // ---- File manager: edit, pictures, PDF pages, Open With ----
+        private static final long FM_EDIT_MAX = 2L * 1024 * 1024;
+
+        /**
+         * A text file for the editor: {ok, text, size, mtime, writable} up to 2 MB, or {ok, binary:true} for something that is not text,
+         * or {ok:false, error}. mtime is what fmWriteText wants back, to notice that the file changed in between.
+         */
+        @JavascriptInterface
+        public String fmReadText(String path) {
+            JSONObject res = new JSONObject();
+            try {
+                path = fmCanonicalPath(path);
+                File f = new File(path);
+                byte[] data;
+                if (f.isFile() && f.canRead()) {
+                    long len = f.length();
+                    if (len > FM_EDIT_MAX) { res.put("ok", false); res.put("tooBig", true); res.put("size", len); res.put("error", "This file is over 2 MB: too big to edit here."); return res.toString(); }
+                    data = new byte[(int) len];
+                    java.io.DataInputStream in = new java.io.DataInputStream(new java.io.FileInputStream(f));
+                    try { in.readFully(data); } finally { in.close(); }
+                    res.put("mtime", f.lastModified());
+                    res.put("writable", f.canWrite() || (f.getParentFile() != null && f.getParentFile().canWrite()));
+                } else {
+                    if ("standard".equals(resolveExecMode())) { needFileAccess("To read this file", path); res.put("ok", false); res.put("error", "The app cannot read this file. Grant All-files access for storage, or set up ADB, Shizuku or Root."); return res.toString(); }
+                    // the exact bytes (base64 keeps line ends, a missing last newline and odd bytes), and an error is never mistaken for the file
+                    String qp = BackupScripts.quote(path);
+                    String out = executeShell("p=" + qp + "; if [ ! -f \"$p\" ] || [ ! -r \"$p\" ]; then echo FMERR_UNREADABLE; "
+                            + "elif [ \"$(wc -c < \"$p\")\" -gt " + FM_EDIT_MAX + " ]; then echo FMERR_BIG; "
+                            + "else (toybox base64 -w0 \"$p\" || base64 -w0 \"$p\") 2>/dev/null; fi");
+                    String t = out == null ? "" : out.trim();
+                    if (t.startsWith("FMERR_BIG")) { res.put("ok", false); res.put("tooBig", true); res.put("error", "This file is over 2 MB: too big to edit here."); return res.toString(); }
+                    if (t.startsWith("FMERR")) { res.put("ok", false); res.put("error", "The file could not be read, even with the working mode."); return res.toString(); }
+                    try { data = android.util.Base64.decode(t, android.util.Base64.DEFAULT); }
+                    catch (IllegalArgumentException e) { res.put("ok", false); res.put("error", "The file could not be read, even with the working mode."); return res.toString(); }
+                    res.put("mtime", 0);
+                    res.put("writable", true);
+                }
+                if (!FileOps.looksLikeText(data, data.length, false)) { res.put("ok", true); res.put("binary", true); res.put("size", data.length); return res.toString(); }
+                res.put("ok", true);
+                res.put("size", data.length);
+                res.put("text", new String(data, java.nio.charset.StandardCharsets.UTF_8));
+            } catch (Exception e) {
+                try { res.put("ok", false); res.put("error", e.getMessage() != null ? e.getMessage() : "failed"); } catch (Exception ignored) {}
+            }
+            return res.toString();
+        }
+
+        /**
+         * Saves text to a file. expectMtime is what fmReadText gave: when the file was changed since, nothing is written and the answer is
+         * {ok:false, changed:true}. Written to a temporary file and renamed, so a failure keeps the old content. Answer {ok, size, mtime}.
+         */
+        @JavascriptInterface
+        public String fmWriteText(String path, String text, double expectMtime) {
+            JSONObject res = new JSONObject();
+            try {
+                path = fmCanonicalPath(path);
+                if (fmProtectedPath(path)) { res.put("ok", false); res.put("error", "System location: not touched"); return res.toString(); }
+                byte[] data = (text == null ? "" : text).getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                if (data.length > FM_EDIT_MAX * 2) { res.put("ok", false); res.put("error", "Too much text to save here."); return res.toString(); }
+                File f = new File(path);
+                if (f.isDirectory()) { res.put("ok", false); res.put("error", "That is a folder, not a file."); return res.toString(); }
+                if (java.nio.file.Files.isSymbolicLink(f.toPath())) { try { f = f.getCanonicalFile(); } catch (IOException ignored) {} }
+                File dir = f.getParentFile();
+                if (f.exists() && expectMtime > 0 && Math.abs(f.lastModified() - (long) expectMtime) > 1) { res.put("ok", false); res.put("changed", true); res.put("error", "The file changed since it was opened."); return res.toString(); }
+                if (dir != null && dir.isDirectory() && dir.canWrite() && (!f.exists() || f.canWrite())) {
+                    FileOps.writeAtomic(f, data);
+                    res.put("ok", true); res.put("size", data.length); res.put("mtime", f.lastModified());
+                    return res.toString();
+                }
+                if ("standard".equals(resolveExecMode())) { needFileAccess("To save this file", path); res.put("ok", false); res.put("error", "The app cannot write here. Grant All-files access for storage, or set up ADB, Shizuku or Root."); return res.toString(); }
+                // through the same helper the other privileged writes use: a pipe, a push or a copy to a temporary name and a rename, never a
+                // redirection that empties the file before it is known that the new text can be read
+                File stage = new File(getCacheDir(), "fm_edit.tmp");
+                FileOps.writeAtomic(stage, data);
+                String err;
+                try { err = writeFileViaMode(resolveExecMode(), stage, f.getPath()); } finally { stage.delete(); }
+                if (err != null) { res.put("ok", false); res.put("error", err.length() > 200 ? err.substring(0, 200) : err); return res.toString(); }
+                res.put("ok", true); res.put("size", data.length); res.put("mtime", 0);
+            } catch (Exception e) {
+                try { res.put("ok", false); res.put("error", e.getMessage() != null ? e.getMessage() : "failed"); } catch (Exception ignored) {}
+            }
+            return res.toString();
+        }
+
+        /** A file as base64 (up to maxKb), for a font sample. Empty when the app cannot read it or it is bigger. */
+        @JavascriptInterface
+        public String fmReadB64(String path, int maxKb) {
+            try {
+                File f = new File(fmCanonicalPath(path));
+                long len = f.length();
+                if (!f.isFile() || !f.canRead() || len <= 0 || len > Math.min(12288, Math.max(1, maxKb)) * 1024L) return "";
+                byte[] data = new byte[(int) len];
+                java.io.DataInputStream in = new java.io.DataInputStream(new java.io.FileInputStream(f));
+                try { in.readFully(data); } finally { in.close(); }
+                return android.util.Base64.encodeToString(data, android.util.Base64.NO_WRAP);
+            } catch (Throwable t) { return ""; }
+        }
+
+        private final java.util.concurrent.ExecutorService thumbExec = java.util.concurrent.Executors.newSingleThreadExecutor();      // one picture at a time: a long list must not decode ten at once
+
+        private File thumbDir() { File d = new File(getCacheDir(), "fm_thumbs"); if (!d.isDirectory()) d.mkdirs(); return d; }
+
+        /** Small pictures of images and videos (px wide at most), from the cache when there. Each one arrives as window.onFmThumb(path, dataUrl). */
+        @JavascriptInterface
+        public void fmThumbs(final String pathsJson, final int px) {
+            thumbExec.submit(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        JSONArray in = new JSONArray(pathsJson);
+                        int size = Math.max(32, Math.min(256, px));
+                        for (int i = 0; i < in.length() && i < 200; i++) {
+                            String p = fmCanonicalPath(in.optString(i, ""));
+                            String url = fmThumbFor(p, size);
+                            if (url != null) notifyJs("window.onFmThumb && window.onFmThumb(" + JSONObject.quote(p) + "," + JSONObject.quote(url) + ")");
+                        }
+                        ThumbCache.purge(thumbDir(), ThumbCache.LIMIT_BYTES);
+                    } catch (Throwable ignored) {}
+                }
+            });
+        }
+
+        /** An image decoded no larger than lim on its long side, turned upright by its EXIF orientation, on a white ground (JPEG has no transparency). */
+        private android.graphics.Bitmap fmDecodeImage(String path, int lim) {
+            android.graphics.BitmapFactory.Options o = new android.graphics.BitmapFactory.Options();
+            o.inJustDecodeBounds = true;
+            android.graphics.BitmapFactory.decodeFile(path, o);
+            if (o.outWidth <= 0 || o.outHeight <= 0) return null;
+            int ss = 1;
+            while (Math.max(o.outWidth, o.outHeight) / (ss * 2) >= lim) ss *= 2;
+            o.inJustDecodeBounds = false;
+            o.inSampleSize = ss;
+            android.graphics.Bitmap bm = android.graphics.BitmapFactory.decodeFile(path, o);
+            if (bm == null) return null;
+            int rot = 0; boolean flip = false;
+            try {
+                int ori = new android.media.ExifInterface(path).getAttributeInt(android.media.ExifInterface.TAG_ORIENTATION, 1);
+                switch (ori) {
+                    case 3: rot = 180; break; case 6: rot = 90; break; case 8: rot = 270; break;
+                    case 2: flip = true; break; case 4: rot = 180; flip = true; break; case 5: rot = 90; flip = true; break; case 7: rot = 270; flip = true; break;
+                    default: break;
+                }
+            } catch (Throwable ignored) {}
+            float sc = Math.min(1f, (float) lim / Math.max(bm.getWidth(), bm.getHeight()));
+            android.graphics.Matrix m = new android.graphics.Matrix();
+            if (flip) m.postScale(-1f, 1f);
+            if (rot != 0) m.postRotate(rot);
+            if (sc < 1f) m.postScale(sc, sc);
+            android.graphics.Bitmap out = android.graphics.Bitmap.createBitmap(bm, 0, 0, bm.getWidth(), bm.getHeight(), m, true);
+            if (out != bm) bm.recycle();
+            if (out.hasAlpha()) {
+                android.graphics.Bitmap flat = android.graphics.Bitmap.createBitmap(out.getWidth(), out.getHeight(), android.graphics.Bitmap.Config.ARGB_8888);
+                android.graphics.Canvas cv = new android.graphics.Canvas(flat);
+                cv.drawColor(android.graphics.Color.WHITE);
+                cv.drawBitmap(out, 0, 0, null);
+                out.recycle();
+                out = flat;
+            }
+            return out;
+        }
+
+        private String fmThumbFor(String path, int px) {
+            try {
+                File f = new File(path);
+                String kind = ThumbCache.kindOf(f.getName());
+                if (kind.isEmpty() || !f.isFile() || !f.canRead() || f.length() <= 0 || (kind.equals("image") && f.length() > 80L * 1024 * 1024)) return null;
+                File cached = new File(thumbDir(), ThumbCache.key(path, f.lastModified(), f.length(), px) + ".jpg");
+                if (!cached.isFile()) {
+                    android.graphics.Bitmap bm = null;
+                    if (kind.equals("image")) {
+                        bm = fmDecodeImage(path, px);
+                    } else {
+                        android.media.MediaMetadataRetriever mr = new android.media.MediaMetadataRetriever();
+                        try { mr.setDataSource(path); bm = mr.getFrameAtTime(-1); } finally { try { mr.release(); } catch (Exception ignored) {} }
+                    }
+                    if (bm == null) return null;
+                    float sc = Math.min(1f, (float) px / Math.max(bm.getWidth(), bm.getHeight()));
+                    if (sc < 1f && !kind.equals("image")) { android.graphics.Bitmap sm = android.graphics.Bitmap.createScaledBitmap(bm, Math.max(1, Math.round(bm.getWidth() * sc)), Math.max(1, Math.round(bm.getHeight() * sc)), true); if (sm != bm) { bm.recycle(); bm = sm; } }
+                    java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
+                    bm.compress(android.graphics.Bitmap.CompressFormat.JPEG, 80, bo);
+                    bm.recycle();
+                    FileOps.writeAtomic(cached, bo.toByteArray());
+                } else {
+                    ThumbCache.touch(cached);
+                }
+                return "data:image/jpeg;base64," + android.util.Base64.encodeToString(java.nio.file.Files.readAllBytes(cached.toPath()), android.util.Base64.NO_WRAP);
+            } catch (Throwable t) { return null; }
+        }
+
+        /** How much the picture cache holds, and removing it. */
+        @JavascriptInterface
+        public String fmThumbCache(String action) {
+            JSONObject res = new JSONObject();
+            try {
+                File d = thumbDir();
+                if ("clear".equals(action)) res.put("freed", ThumbCache.clear(d));
+                res.put("bytes", ThumbCache.size(d));
+            } catch (Exception ignored) {}
+            return res.toString();
+        }
+
+        /** An image at up to maxPx for the viewer. Answer: window.onFmImage(path, dataUrl or "", width, height). */
+        @JavascriptInterface
+        public void fmImage(final String path, final int maxPx) {
+            submitJob(new Runnable() {
+                @Override
+                public void run() {
+                    String url = ""; int w = 0, h = 0;
+                    try {
+                        String p = fmCanonicalPath(path);
+                        File f = new File(p);
+                        if (f.isFile() && f.canRead() && f.length() < 120L * 1024 * 1024) {
+                            int lim = Math.max(256, Math.min(2048, maxPx));
+                            android.graphics.Bitmap bm = fmDecodeImage(p, lim);
+                            if (bm != null) {
+                                w = bm.getWidth(); h = bm.getHeight();
+                                java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
+                                bm.compress(android.graphics.Bitmap.CompressFormat.JPEG, 88, bo);
+                                bm.recycle();
+                                url = "data:image/jpeg;base64," + android.util.Base64.encodeToString(bo.toByteArray(), android.util.Base64.NO_WRAP);
+                            }
+                        }
+                                    } catch (Throwable ignored) {}
+                    notifyJs("window.onFmImage && window.onFmImage(" + JSONObject.quote(path) + "," + JSONObject.quote(url) + "," + w + "," + h + ")");
+                }
+            });
+        }
+
+        /** One page of a PDF as a picture. Answer: window.onFmPdf({ok, pages, page, data} or {ok:false, error}). */
+        @JavascriptInterface
+        public void fmPdf(final String path, final int page, final int widthPx) {
+            submitJob(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject res = new JSONObject();
+                    android.os.ParcelFileDescriptor pfd = null;
+                    android.graphics.pdf.PdfRenderer pr = null;
+                    try {
+                        File f = new File(fmCanonicalPath(path));
+                        if (!f.isFile() || !f.canRead()) throw new IOException("The app cannot read this file.");
+                        pfd = android.os.ParcelFileDescriptor.open(f, android.os.ParcelFileDescriptor.MODE_READ_ONLY);
+                        pr = new android.graphics.pdf.PdfRenderer(pfd);
+                        int n = pr.getPageCount();
+                        int pg = Math.max(0, Math.min(n - 1, page));
+                        android.graphics.pdf.PdfRenderer.Page pp = pr.openPage(pg);
+                        try {
+                            int w = Math.max(200, Math.min(1400, widthPx));
+                            int h = Math.max(1, Math.round(w * (float) pp.getHeight() / Math.max(1, pp.getWidth())));
+                            if (h > 4000) { w = Math.max(100, Math.round(w * 4000f / h)); h = 4000; }            // a very tall page is drawn smaller, not at 70000 pixels
+                            android.graphics.Bitmap bm = android.graphics.Bitmap.createBitmap(w, h, android.graphics.Bitmap.Config.ARGB_8888);
+                            bm.eraseColor(android.graphics.Color.WHITE);
+                            pp.render(bm, null, null, android.graphics.pdf.PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
+                            java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
+                            bm.compress(android.graphics.Bitmap.CompressFormat.JPEG, 85, bo);
+                            bm.recycle();
+                            res.put("ok", true); res.put("pages", n); res.put("page", pg); res.put("path", path);
+                            res.put("data", "data:image/jpeg;base64," + android.util.Base64.encodeToString(bo.toByteArray(), android.util.Base64.NO_WRAP));
+                        } finally { pp.close(); }
+                    } catch (Throwable t) {
+                        try { res = new JSONObject(); res.put("ok", false); res.put("path", path); res.put("error", t instanceof SecurityException ? "This PDF is protected or could not be opened." : (t.getMessage() != null ? t.getMessage() : "The PDF could not be shown.")); } catch (Exception ignored) {}
+                    } finally {
+                        try { if (pr != null) pr.close(); } catch (Exception ignored) {}
+                        try { if (pfd != null) pfd.close(); } catch (Exception ignored) {}
+                    }
+                    notifyJs("window.onFmPdf && window.onFmPdf(" + JSONObject.quote(res.toString()) + ")");
+                }
+            });
+        }
+
+        private String fmMime(String name) {
+            String n = name.toLowerCase(java.util.Locale.US);
+            int i = n.lastIndexOf('.');
+            String e = i < 0 ? "" : n.substring(i + 1);
+            String m = e.isEmpty() ? null : android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(e);
+            if (m != null) return m;
+            switch (e) {
+                case "md": case "log": case "ini": case "conf": case "cfg": case "prop": case "properties": case "sh": case "yml": case "yaml": case "toml": case "csv": case "srt": case "gradle": case "java": case "kt": case "py": case "js": case "ts": case "c": case "h": case "cpp": return "text/plain";
+                case "apk": return "application/vnd.android.package-archive";
+                case "mkv": return "video/x-matroska";
+                default: return "*/*";
+            }
+        }
+
+        /**
+         * Hands a file to another app: a copy (up to 400 MB) goes to this app's share folder and the system's "Open with" list is shown.
+         * Answer: window.onFmOpenWith({ok} or {ok:false, error}).
+         */
+        @JavascriptInterface
+        public void fmOpenWith(final String path, final String mimeHint, final boolean chooser) {
+            submitJob(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject res = new JSONObject();
+                    try {
+                        File src = new File(fmCanonicalPath(path));
+                        if (!src.isFile() || !src.canRead()) throw new IOException("The app cannot read this file. Grant All-files access for storage.");
+                        if (src.length() > 400L * 1024 * 1024) throw new IOException("This file is too big to hand over from here (over 400 MB).");
+                        File copy = ShareProvider.newShareFile(MainActivity.this, src.getName());
+                        java.io.FileOutputStream out = new java.io.FileOutputStream(copy);
+                        try { copyFile(src, out); } finally { out.close(); }
+                        final Uri uri = ShareProvider.uriFor(copy);
+                        final String mime = mimeHint != null && !mimeHint.isEmpty() ? mimeHint : fmMime(src.getName());
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    Intent v = new Intent(Intent.ACTION_VIEW);
+                                    v.setDataAndType(uri, mime);
+                                    v.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                                    Intent go = chooser ? Intent.createChooser(v, "Open with") : v;
+                                    go.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                                    startActivity(go);
+                                } catch (Exception e) {
+                                    notifyJs("window.onFmOpenWith && window.onFmOpenWith(" + JSONObject.quote("{\"ok\":false,\"error\":\"No app on this phone can open this kind of file.\"}") + ")");
+                                }
+                            }
+                        });
+                        res.put("ok", true);
+                    } catch (Throwable t) {
+                        try { res.put("ok", false); res.put("error", t.getMessage() != null ? t.getMessage() : "failed"); } catch (Exception ignored) {}
+                    }
+                    if (!res.optBoolean("ok", false)) notifyJs("window.onFmOpenWith && window.onFmOpenWith(" + JSONObject.quote(res.toString()) + ")");
+                }
+            });
+        }
+
         /** File op: mkdir|touch|rm|cp|mv. For rm, dirs are removed recursively. */
         @JavascriptInterface
         public String fmOp(String op, String a, String b) {
             JSONObject res = new JSONObject();
             try {
-                if ("standard".equals(resolveExecMode())) { res.put("ok", false); res.put("output", "needs ADB, Shizuku or Root"); return res.toString(); }
                 if (a == null || a.isEmpty()) { res.put("ok", false); res.put("output", "no path"); return res.toString(); }
                 a = fmCanonicalPath(a);
                 if (b != null && !b.isEmpty()) b = fmCanonicalPath(b);
                 // the same protection the batch operations have: removing or moving away a whole storage root, a top-level folder or a system tree
                 if (("rm".equals(op) || "mv".equals(op)) && fmProtectedPath(a)) { res.put("ok", false); res.put("output", "System location: not touched"); return res.toString(); }
+                // what the app can do with its own file access needs no working mode
+                String direct = fmOpDirect(op, a, b);
+                if (direct != null) { res.put("ok", direct.isEmpty()); res.put("output", direct.isEmpty() ? "OK" : direct); if (direct.isEmpty() || !direct.startsWith("?")) return res.toString(); }
+                if ("standard".equals(resolveExecMode())) { res.put("ok", false); res.put("output", "needs ADB, Shizuku or Root (or All-files access for storage)"); return res.toString(); }
                 String qa = BackupScripts.quote(a);
                 String cmd;
                 if ("mkdir".equals(op)) cmd = "mkdir -p " + qa + " && echo OK";
                 else if ("touch".equals(op)) cmd = "touch " + qa + " && echo OK";
                 else if ("rm".equals(op)) cmd = "rm -rf " + qa + " && echo OK";
                 else if ("cp".equals(op)) cmd = "cp -r " + qa + " " + BackupScripts.quote(b) + " && echo OK";
-                else if ("mv".equals(op)) cmd = "mv " + qa + " " + BackupScripts.quote(b) + " && echo OK";
+                else if ("mv".equals(op)) cmd = "if [ -e " + BackupScripts.quote(b) + " ] && [ ! -d " + BackupScripts.quote(b) + " ]; then echo 'A file or folder with that name is already there'; else mv " + qa + " " + BackupScripts.quote(b) + " && echo OK; fi";
                 else { res.put("ok", false); res.put("output", "unknown op"); return res.toString(); }
                 String out = executeShell(cmd);
                 res.put("ok", out != null && out.contains("OK"));
@@ -7734,9 +8128,25 @@ public class MainActivity extends Activity {
          */
         @JavascriptInterface
         public String fmBatch(final String op, final String pathsJson, final String destDir) {
+            return fmBatch2(op, pathsJson, destDir, "replace");
+        }
+
+        /** Stops the running batch after the item it is on. */
+        @JavascriptInterface
+        public void fmBatchCancel() { fmBatchCancel = true; }
+
+        /**
+         * Like fmBatch, with the rule for a name that is already in destDir: "replace" (folders merge), "skip" or "keep" (both: name (1).ext).
+         * Whatever the app can read and write itself is done in Java with no shell (so it works without a working mode); the rest goes
+         * through the privileged shell as before. Ends with window.onFmBatchDone({op, ok, total, done, skipped, cancelled, failed: [{p, error}]}).
+         */
+        @JavascriptInterface
+        public String fmBatch2(final String op, final String pathsJson, final String destDir, final String policyName) {
+            final int policy = FileOps.policyOf(policyName);
             synchronized (fmBatchLock) {
                 if (fmBatchBusy) return "busy";
                 fmBatchBusy = true;
+                fmBatchCancel = false;
             }
             if (!submitJob(new Runnable() {
                 @Override
@@ -7744,7 +8154,6 @@ public class MainActivity extends Activity {
                     JSONObject res = new JSONObject();
                     try {
                         res.put("op", op);
-                        if ("standard".equals(resolveExecMode())) throw new IOException("This needs ADB, Shizuku or Root.");
                         if (!"rm".equals(op) && !"cp".equals(op) && !"mv".equals(op)) throw new IOException("Unknown operation: " + op);
                         JSONArray in = new JSONArray(pathsJson);
                         List<String> paths = new ArrayList<String>();
@@ -7765,12 +8174,57 @@ public class MainActivity extends Activity {
                             else if (!"rm".equals(op) && (dest.equals(q) || dest.startsWith(q + "/"))) failed.put(new JSONObject().put("p", q).put("error", "Can't put a folder inside itself"));
                             else todo.add(q);
                         }
-                        int done = 0;
+                        int done = 0, skipped = 0;
+                        boolean cancelled = false;
+                        // what the app can do itself, in Java; the rest goes to the shell below
+                        List<File> direct = new ArrayList<File>();
+                        List<String> viaShell = new ArrayList<String>();
+                        for (String q : todo) { if (fmDirectOk(op, q, dest)) direct.add(new File(q)); else viaShell.add(q); }
+                        if (!direct.isEmpty()) {
+                            FileOps.Progress prog = new FileOps.Progress() {
+                                long shownAt;
+                                @Override
+                                public boolean onProgress(String name, long bytes, int items) {
+                                    long now = android.os.SystemClock.elapsedRealtime();
+                                    if (now - shownAt < 120) return !fmBatchCancel;                   // the page is told a few times a second, Cancel is looked at every time
+                                    shownAt = now;
+                                    notifyJs("window.onFmBatchProgress && window.onFmBatchProgress(" + JSONObject.quote(fmBatchLabel(op) + " " + name + (bytes > 0 ? " (" + fmSizeText(bytes) + ")" : "") + "…") + ")");
+                                    return !fmBatchCancel;
+                                }
+                            };
+                            FileOps.Result fr = "rm".equals(op) ? FileOps.delete(direct, prog) : "cp".equals(op) ? FileOps.copy(direct, new File(dest), policy, prog) : FileOps.move(direct, new File(dest), policy, prog);
+                            done += fr.done;
+                            skipped += fr.skipped;
+                            cancelled = fr.cancelled;
+                            for (String[] f : fr.failed) failed.put(new JSONObject().put("p", f[0]).put("error", f[1]));
+                        }
+                        if (!viaShell.isEmpty() && "standard".equals(resolveExecMode())) {
+                            for (String q : viaShell) failed.put(new JSONObject().put("p", q).put("error", "The app cannot reach this. Grant All-files access for storage, or set up ADB, Shizuku or Root."));
+                            viaShell.clear();
+                        }
+                        todo = viaShell;
                         String qd = BackupScripts.quote(dest);
                         final int chunk = 40;
                         boolean linkLost = false;                         // the connection to the device is gone: nothing after that point is tried
-                        for (int from = 0; from < todo.size(); from += chunk) {
+                        for (int from = 0; from < todo.size() && !cancelled; from += chunk) {
+                            if (fmBatchCancel) { cancelled = true; break; }
                             List<String> part = todo.subList(from, Math.min(todo.size(), from + chunk));
+                            if (policy != FileOps.REPLACE && !"rm".equals(op)) {
+                                // a rule for taken names needs a look at each name: one command per item
+                                for (String q : part) {
+                                    if (fmBatchCancel) { cancelled = true; break; }
+                                    if (linkLost) { failed.put(new JSONObject().put("p", q).put("error", "The connection to the device was lost")); continue; }
+                                    String o2 = batchShell(FileOps.shellScript("cp".equals(op) ? "cp -r" : "mv", q, dest, policy));
+                                    if (o2 != null && o2.contains("FMOK")) done++;
+                                    else if (o2 != null && o2.contains("FMSKIP")) skipped++;
+                                    else {
+                                        String m2 = o2 == null ? "failed" : o2.trim();
+                                        if (fmTransportLost(m2)) linkLost = true;
+                                        failed.put(new JSONObject().put("p", q).put("error", m2.isEmpty() ? "failed" : (m2.length() > 200 ? m2.substring(0, 200) : m2)));
+                                    }
+                                }
+                                continue;
+                            }
                             if (linkLost) {
                                 for (String q : part) failed.put(new JSONObject().put("p", q).put("error", "The connection to the device was lost"));
                                 continue;
@@ -7825,8 +8279,10 @@ public class MainActivity extends Activity {
                         }
                         res.put("total", paths.size());
                         res.put("done", done);
+                        res.put("skipped", skipped);
+                        res.put("cancelled", cancelled);
                         res.put("failed", failed);
-                        res.put("ok", failed.length() == 0);
+                        res.put("ok", failed.length() == 0 && !cancelled);
                     } catch (Throwable t) {
                         try {
                             res.put("ok", false);

@@ -1,4 +1,4 @@
-1. the file manager sheet of an .apk offers Sign…: true ["Install","Sign…","View contents","Rename","Copy","Move","Delete"]
+1. the file manager sheet of an .apk offers Sign…: true ["Install","Sign…","View contents","Open with…","Share","Rename","Copy","Move","Delete"]
    a .zip does not: true
    tapping it opens the sign sheet and closes the file sheet: true
    the sheet shows the app, its valid signature, the installed copy with a different signer and the not-yet-made key: true "APP\nExample <b>App</b> · com.example.app · v2.1\nSIGNATURE NOW\n✓ Valid\nAA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA\nINSTALLED COPY\nv2.0 is signed by someone else. Android refuses to update it with this app’s key: uninstall it first (its data is lost)"

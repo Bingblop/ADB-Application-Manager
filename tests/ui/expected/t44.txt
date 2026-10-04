@@ -1,6 +1,6 @@
-1. apk sheet: "View contents" (no plain View), still has Install: true ["Install","Sign…","View contents","Rename","Copy","Move","Delete"]
+1. apk sheet: "View contents" (no plain View), still has Install: true ["Install","Sign…","View contents","Open with…","Share","Rename","Copy","Move","Delete"]
    zip sheet: "View contents", no "Open as archive" duplicate: true
-   text file sheet: "View" + "Open as archive" (any package file): true ["View","Open as archive","Rename","Copy","Move","Delete"]
+   text file sheet: "View" + "Open as archive" (any package file): true ["View","Edit","Open with…","Share","Open as archive","Rename","Copy","Move","Delete"]
 2. archive opened through the bridge, browser shown, file list hidden, sheet closed: true {"calls":["/storage/emulated/0/Download/app.apk"],"card":"block","top":"none","list":"none","modal":false}
    header: name, file count, size, path: true "910 files • 5.0 MB\n/storage/emulated/0/Download/app.apk"
    APK signature warning shown: true

@@ -321,9 +321,9 @@ const PKG = { type: 'apk', pkg: 'com.example.app', label: 'Example App', version
     const s = await sheet(page);
     check('   asking for the storage folder (Go) when nothing can read it asks for the access, saying why', s.shown && s.title === 'File access needed' && /^To browse files on this phone, this app needs All-files access/.test(s.reason), s.reason);
     await back(page, { files: true });
-    await page.waitForSelector('#fmList .perm-row');
+    await page.waitForFunction(() => window.__calls.opened.filter(x => x === 'fmList:/storage/emulated/0').length === 3);
     check('   once it is allowed the sheet closes, the folder is listed again by itself and the hint goes', (await closed(page)) && (await listed()) === 3 && (await wasToast(page, /File access allowed/))
-      && (await ev(page, () => getComputedStyle(document.getElementById('fmAccessHint')).display)) === 'none' && (await page.locator('#fmList .perm-row').count()) === 2);
+      && (await ev(page, () => getComputedStyle(document.getElementById('fmAccessHint')).display)) === 'none' && (await page.locator('#fmList .perm-row[data-i]').count()) === 2);
   });
   await scenario({ mode: { priv: true } }, async page => {
     await ev(page, () => { switchView('files'); fmGo('/storage/emulated/0'); });
