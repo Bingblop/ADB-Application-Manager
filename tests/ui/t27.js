@@ -80,6 +80,22 @@ const { chromium, PAGE } = require('./lib/pw');
   console.log('11. before recall, panel expanded:', JSON.stringify(await state()));
   await page.evaluate(() => recallSavedList('list_test'));
   console.log('12. after recallSavedList -> fresh selection starts collapsed:', JSON.stringify(await state()));
+  await page.evaluate(() => clearBatchSelection());
+
+  // "Keep selection after running" - ticking it stops a batch action from clearing the selection, so another
+  // action can run on the same apps right away; unticking it restores the normal clear-after-running behavior.
+  await page.evaluate(() => { toggleSelectPkg('com.a'); toggleSelectPkg('com.b'); expandBatchPanel(); });
+  await page.locator('.switch-row:has(#batchKeepSelectionToggle)').click();
+  console.log('13. ticked "Keep selection after running":', await page.isChecked('#batchKeepSelectionToggle'));
+  await page.click('.batch-grid-btn:has-text("Force Stop")'); await page.waitForTimeout(600);
+  await page.evaluate(() => closeCommandResultsModal());
+  console.log('14. after a batch action with it ticked -> selection kept, sheet still shown:', JSON.stringify(await state()));
+
+  await page.locator('.switch-row:has(#batchKeepSelectionToggle)').click();
+  console.log('15. unticked it:', await page.isChecked('#batchKeepSelectionToggle'));
+  await page.click('.batch-grid-btn:has-text("Force Stop")'); await page.waitForTimeout(600);
+  await page.evaluate(() => closeCommandResultsModal());
+  console.log('16. after a batch action with it unticked -> selection + panel reset, same as before:', JSON.stringify(await state()));
 
   console.log('errors:', JSON.stringify(errors));
   await b.close();

@@ -1,5 +1,14 @@
 # Changelog
 
+## v7.9.3-Pro (versionCode 793)
+
+- **"Keep selection after running"** in the Apps tab's batch panel. Running a batch command (Freeze, Suspend,
+  Uninstall, ...) used to always clear the selection once it finished, so running a second command on the same
+  apps meant picking every one of them again. Ticking this new switch leaves the selection as it is - the panel
+  sits behind the result dialog the same way the single-app sheet does - so another command can run on the same
+  apps right away; it's remembered between launches, and the existing "✕ Clear" button and long-press on the
+  floating checkmark still clear the selection by hand at any time.
+
 ## v7.9.2-Pro (versionCode 792)
 
 - **Systemless uninstall for system apps.** When `pm uninstall --user 0` is refused with Android's own "only root

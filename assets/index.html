@@ -4789,6 +4789,10 @@ Type any command below (e.g. pm list packages -d)
                 <button class="batch-grid-btn" onclick="shareSelectedPackages()">Share List</button>
             </div>
         </div>
+        <label class="switch-row" style="margin-top:10px; padding-top:10px;">
+            <div><div class="switch-title">Keep selection after running</div><div class="switch-sub">Run another command on these same apps without reselecting them</div></div>
+            <input type="checkbox" class="switch-input" id="batchKeepSelectionToggle" onchange="setBatchKeepSelection(this.checked)"><span class="switch-track"></span>
+        </label>
         <div class="batch-actions-grid">
             <button class="batch-grid-btn" onclick="batchAction('freeze')">Freeze</button>
             <button class="batch-grid-btn" onclick="batchAction('unfreeze')">Enable</button>
@@ -6181,6 +6185,9 @@ Type any command below (e.g. pm list packages -d)
         let filteredApps = [];
         let selectedPkgs = new Set();
         let batchPanelExpanded = false;
+        // When on, a batch action (Freeze, Suspend, Uninstall, ...) leaves the selection as it is instead of
+        // clearing it, so the same apps are ready for another action straight away. Remembered in ui_state.
+        let batchKeepSelection = false;
         let currentFilter = 'all';
         let inspectedPkg = null;
         let currentWorkingMode = 'unprivileged';
@@ -7783,6 +7790,7 @@ Type any command below (e.g. pm list packages -d)
                 showVersions: showListVersions,
                 appSort: appSort,
                 filtersHintDone: filtersHintDone,
+                batchKeepSelection: batchKeepSelection,
                 search: { names: searchOpts.names, packages: searchOpts.packages, regex: searchOpts.regex },
                 uad: { removal: Array.from(uadFilters.removal), list: uadFilters.list, state: uadFilters.state, brand: uadFilters.brand }
             });
@@ -7797,6 +7805,11 @@ Type any command below (e.g. pm list packages -d)
                     if (sel) sel.value = appSort;
                 }
                 if (st.filtersHintDone === true) filtersHintDone = true;
+                if (typeof st.batchKeepSelection === 'boolean') {
+                    batchKeepSelection = st.batchKeepSelection;
+                    const kcb = document.getElementById('batchKeepSelectionToggle');
+                    if (kcb) kcb.checked = batchKeepSelection;
+                }
                 if (st.search && typeof st.search === 'object') {
                     ['names', 'packages', 'regex'].forEach(k => { if (typeof st.search[k] === 'boolean') searchOpts[k] = st.search[k]; });
                     if (!searchOpts.names && !searchOpts.packages) searchOpts.names = true;      // one of the two always searches
@@ -9927,6 +9940,11 @@ Type any command below (e.g. pm list packages -d)
             updateBatchBar();
         }
 
+        function setBatchKeepSelection(on) {
+            batchKeepSelection = !!on;
+            saveUiState();
+        }
+
         function clearBatchSelection() {
             selectedPkgs.clear();
             updateBatchBar();
@@ -10002,7 +10020,10 @@ Type any command below (e.g. pm list packages -d)
                     res.rows.map(r => ({ pkg: r.pkg, name: r.name, action: action, success: r.success })));
                 showToast(`Batch Done: ${res.success} succeeded, ${res.failed} failed`);
                 showCommandResults('Batch Results', action.toUpperCase() + ' • ' + arr.length + ' apps', res.rows);
-                clearBatchSelection();
+                // "Keep selection" leaves the apps selected (and the panel as it was) so another batch action
+                // can run on the same set right away - the floating sheet sits behind the result dialog the
+                // same way the single-app sheet does, and is there again once that dialog is dismissed.
+                if (!batchKeepSelection) clearBatchSelection();
                 setTimeout(loadPackageData, 400);
             }
         }
