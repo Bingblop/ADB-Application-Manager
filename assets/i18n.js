@@ -107,7 +107,14 @@
   // ---------- where not to translate ----------
   var noSel = '';                                            // what the page says is data (names, paths, output), see skip()
   // skip('.app-name, #log'): the elements that match are data of the app, not its text: they are left as they are in every language
-  function skip(sel) { noSel = noSel ? noSel + ',' + sel : sel; }
+  function skip(sel) {
+    noSel = noSel ? noSel + ',' + sel : sel;
+    try {                                                    // data keeps the direction of its own text in a right-to-left language, as translate="no" does
+      var st = document.createElement('style');
+      st.textContent = sel.split(',').map(function (x) { return 'html[dir="rtl"] ' + x.trim(); }).join(',') + '{unicode-bidi:plaintext}';
+      (document.head || document.documentElement).appendChild(st);
+    } catch (e) {}
+  }
   function isNo(el) {
     if (!el.getAttribute) return false;
     if (el.getAttribute('translate') === 'no' || (el.classList && el.classList.contains('notranslate'))) return true;
@@ -200,7 +207,10 @@
 
   // ---------- walking ----------
   function doElement(el) {
-    if (SKIP_TAGS[tagName(el)] || isNo(el)) return;
+    if (SKIP_TAGS[tagName(el)] || isNo(el)) {
+      if (tagName(el) === 'TEXTAREA' || (el.getAttribute && el.getAttribute('translate') === 'no')) doAttrs(el);   // the text inside stays, the hint and label are the app's own words
+      return;
+    }
     doAttrs(el);
     if (mixed(el) && doBlock(el)) return;
     for (var c = el.firstChild; c; c = c.nextSibling) {
@@ -232,7 +242,7 @@
           for (var k = 0; k < r.addedNodes.length; k++) doNode(r.addedNodes[k]);
           if (r.removedNodes.length && tg.nodeType === 1 && !skipped(tg) && (blockSrc.has(tg) || mixed(tg))) doBlock(tg);
         } else if (r.type === 'characterData') doNode(tg);
-        else if (r.type === 'attributes' && tg.nodeType === 1 && !skipped(tg)) doAttrs(tg);
+        else if (r.type === 'attributes' && tg.nodeType === 1 && (!skipped(tg) || tagName(tg) === 'TEXTAREA')) doAttrs(tg);
       }
     } finally { observer.observe(document.documentElement, OBSERVE); }
   }
@@ -300,11 +310,13 @@
       document.head.appendChild(s);
     });
   }
+  var setSeq = 0;
   // set('es') loads the dictionary, then switches, and answers whether it worked. set('en') needs no file.
   function set(code) {
     if (!find(code)) return Promise.resolve(false);
+    var my = ++setSeq;                                       // two quick picks: the last one wins, whatever order the files arrive in
     if (code === 'en') { apply('en'); return Promise.resolve(true); }
-    return load(code).then(function (d) { apply(code, d); return true; }, function () { return false; });
+    return load(code).then(function (d) { if (my === setSeq) apply(code, d); return true; }, function () { return false; });
   }
 
   // ---------- start: the language chosen last time ----------
@@ -315,7 +327,7 @@
     if (typeof saved === 'string' && saved !== 'en' && find(saved)) startCode = saved;
   } catch (e) {}
   if (startCode && !window.__LANGS[startCode]) {
-    if (document.readyState === 'loading') document.write('<script src="lang/' + startCode + '.js"><\/script>');   // synchronous: the dictionary is there before the page is drawn
+    if (document.readyState === 'loading') { document.write('<script src="lang/' + startCode + '.js"><\/script>'); }   // synchronous: the dictionary is there before the page is drawn
     else load(startCode).then(function (d) { apply(startCode, d); }, function () {});
   }
   function begin() {

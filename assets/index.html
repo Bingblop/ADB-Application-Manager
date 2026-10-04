@@ -1222,6 +1222,7 @@
         .font-row .fr-name { font-size: 14px; font-weight: 700; overflow-wrap: anywhere; }
         .font-row .fr-meta { font-size: 11px; color: var(--text-muted); overflow-wrap: anywhere; }
         .font-sample { background: var(--input-bg); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 12px; margin: 10px 0; overflow-wrap: anywhere; }
+        .font-sample * { font-family: inherit; }
         .font-sample .fs-big { font-size: 34px; line-height: 1.2; }
         .font-sample .fs-line { font-size: 15px; line-height: 1.5; margin-top: 6px; }
         .font-sample .fs-bold { font-weight: 700; }
@@ -5743,6 +5744,7 @@ Type any command below (e.g. pm list packages -d)
             '.uad-name', '.uad-pkg', '.uad-desc', '.uad-tag',
             '#installPkgLabel', '#installPkgName', '#installSplitsCard .switch-title', '#installExtrasCard .switch-title',
             '.result-item-name', '.result-item-pkg', '.result-item-output', '#commandResultsTitle', '#commandResultsSubtitle', '#signName', '.sign-v', '.sign-fp',
+            '.saved-list-title', '.profile-item h4', '.backup-item h4', '.hist-title',
             '#termOutput', '.term-row-cmd', '.cheat-cmd', '#logcatOutput', '.lc-msg', '#storeDetailName'
         ].join(', '));
         function initLanguageUi() {
@@ -5773,15 +5775,22 @@ Type any command below (e.g. pm list packages -d)
         let fontFound = [];                              // what the search found
         let fontScanning = false;
         let fontPreviewMeta = null;                      // the font on the sheet
-        let fontPvFace = null;
+        const fontFaces = {};                            // the loaded face of each name (AppFont, PreviewFont)
+        function fontDrop(name) { if (fontFaces[name]) { try { document.fonts.delete(fontFaces[name]); } catch (e) {} delete fontFaces[name]; } }
 
         function fontFace(name, which, meta) {
             const b64 = window.AndroidBridge && window.AndroidBridge.fontData ? window.AndroidBridge.fontData(which) : '';
             if (!b64) return Promise.reject(new Error('The font file is missing.'));
-            const bin = atob(b64), bytes = new Uint8Array(bin.length);
-            for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-            const face = new FontFace(name, bytes.buffer, meta && meta.variable ? { weight: '1 1000' } : {});
-            return face.load().then(() => { document.fonts.add(face); return face; });
+            // decoded by the browser (not byte by byte in script); an older face of the same name is removed so it cannot keep winning or hold memory
+            return fetch('data:application/octet-stream;base64,' + b64).then(r => r.arrayBuffer()).then(buf => {
+                const face = new FontFace(name, buf, meta && meta.variable ? { weight: '1 1000' } : {});
+                return face.load().then(() => {
+                    if (fontFaces[name]) { try { document.fonts.delete(fontFaces[name]); } catch (e) {} }
+                    document.fonts.add(face);
+                    fontFaces[name] = face;
+                    return face;
+                });
+            });
         }
         function fontSetCss(on) {
             const st = document.documentElement.style;
@@ -5819,6 +5828,7 @@ Type any command below (e.g. pm list packages -d)
             appFont = { mode: 'system' };
             kvSet('ui_font', appFont);
             fontSetCss(false);
+            fontDrop('AppFont');
             fontRender();
             showToast('The system font is back.');
         }
@@ -5910,13 +5920,11 @@ Type any command below (e.g. pm list packages -d)
             const sample = document.getElementById('fontPvSample');
             sample.style.fontFamily = '';
             fontFace('PreviewFont', 'preview', d).then(face => {
-                if (fontPvFace) { try { document.fonts.delete(fontPvFace); } catch (e) {} }
-                fontPvFace = face;
                 sample.style.fontFamily = "'PreviewFont', " + FONT_STACK;
             }, e => { document.getElementById('fontPvNote').innerText = 'This font could not be shown: ' + (e && e.message || e); });
             document.getElementById('fontPreviewModal').classList.add('show');
         };
-        function fontPreviewClose() { haptic(); document.getElementById('fontPreviewModal').classList.remove('show'); }
+        function fontPreviewClose() { haptic(); document.getElementById('fontPreviewModal').classList.remove('show'); fontDrop('PreviewFont'); }
         function fontPreviewUse() {
             if (!fontPreviewMeta || !window.AndroidBridge || !window.AndroidBridge.fontApply) return;
             haptic();

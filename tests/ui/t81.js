@@ -121,6 +121,14 @@ const SETUP = `window.__LANGS = window.__LANGS || {}; window.__LANGS.es = ${JSON
   check('9. a saved language with no dictionary: English, no error, the drop-down on English', await ev(page, () => document.documentElement.lang === 'en' && document.getElementById('langSelect').value === 'en'));
   await page.close();
 
+  // 10) a text box keeps its content but its hint and label are translated; two quick picks end on the last one
+  page = await open();
+  await ev(page, () => { const t = document.createElement('textarea'); t.id = 'tmpTa'; t.placeholder = 'Filter found fonts…'; t.setAttribute('aria-label', 'Language'); document.body.appendChild(t); });
+  await ev(page, () => { LANG_ENGINE.set('ar'); LANG_ENGINE.set('es'); });
+  await sleep(200);
+  check('10. a text area\'s placeholder and label are translated, and of two quick language picks the last one wins', await ev(page, () => { const t = document.getElementById('tmpTa'); return t.placeholder === 'Filtrar fuentes…' && t.getAttribute('aria-label') === 'Idioma' && LANG_ENGINE.code === 'es' && document.documentElement.lang === 'es'; }));
+  await page.close();
+
   await b.close();
   fs.rmSync(BARE_DIR, { recursive: true, force: true });
   console.log(bad ? bad + ' FAILED' : 'ALL PASSED');
