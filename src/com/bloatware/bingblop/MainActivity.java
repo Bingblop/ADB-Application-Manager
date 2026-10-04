@@ -2534,6 +2534,7 @@ public class MainActivity extends Activity {
 
     private static final Object fmBatchLock = new Object();
     private static boolean fmBatchBusy;
+    private static volatile boolean archiveCancel;      // the page's Cancel for an extraction
     private static volatile boolean fmBatchCancel;       // the page's Cancel: the running batch stops at the next step
 
     private static String fmBatchLabel(String op) {
@@ -2603,6 +2604,15 @@ public class MainActivity extends Activity {
             return e.getMessage() == null ? "failed" : e.getMessage();
         }
         return null;
+    }
+
+    private static String fmBatchDoneText(String op, JSONObject res) {
+        try {
+            if (res.has("error")) return String.valueOf(res.optString("error"));
+            String verb = "rm".equals(op) ? "Deleted" : "cp".equals(op) ? "Copied" : "Moved";
+            int bad = res.optJSONArray("failed") == null ? 0 : res.optJSONArray("failed").length();
+            return verb + " " + res.optInt("done") + " of " + res.optInt("total") + (bad > 0 ? " · " + bad + " failed" : "") + (res.optBoolean("cancelled") ? " · stopped" : "");
+        } catch (Exception e) { return ""; }
     }
 
     private static String fmSizeText(long b) {
@@ -7732,6 +7742,96 @@ public class MainActivity extends Activity {
             } catch (Exception e) { return "Error: " + e.getMessage(); }
         }
 
+        // ---- File manager: search ----
+        private volatile FileSearch.Limits searchLimits;
+        private final Object searchLock = new Object();
+        private boolean searchBusy;
+
+        /** Places to search besides the folder on screen: [{id, label, path}]: storage, the usual folders, SD cards and USB drives. */
+        @JavascriptInterface
+        public String fmSearchPlaces() {
+            JSONArray out = new JSONArray();
+            try {
+                String base = fmCanonicalPath("/sdcard");
+                String[][] fixed = {{"storage", "Internal storage", base}, {"download", "Downloads", base + "/Download"}, {"dcim", "Camera and photos", base + "/DCIM"},
+                        {"pictures", "Pictures", base + "/Pictures"}, {"documents", "Documents", base + "/Documents"}, {"music", "Music", base + "/Music"}, {"movies", "Movies", base + "/Movies"}};
+                for (String[] f : fixed) if (new File(f[2]).isDirectory()) out.put(new JSONObject().put("id", f[0]).put("label", f[1]).put("path", f[2]));
+                File[] vols = new File("/storage").listFiles();
+                if (vols != null) for (File v : vols) if (v.getName().matches("[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}") && v.isDirectory()) out.put(new JSONObject().put("id", "vol-" + v.getName()).put("label", "SD card or drive " + v.getName()).put("path", v.getPath()));
+                out.put(new JSONObject().put("id", "phone").put("label", "Whole phone").put("path", "/"));
+            } catch (Exception ignored) {}
+            return out.toString();
+        }
+
+        /**
+         * Searches (see FileSearch for the query: name, ext:, size:, date:, type:, content:, archive:). rootsJson: the folders to look in. nested: go into subfolders
+         * (off: only the files and folders directly in each root). archives: also look at the entries of zip-format archives. hidden: include names that begin
+         * with a dot. Answer "started" or "busy"; progress arrives as window.onFmSearchProgress({folder, visited, found}) and the end as
+         * window.onFmSearchDone({ok, hits, truncated, cancelled, problems, ms, visited, error}).
+         */
+        @JavascriptInterface
+        public String fmSearch(final String queryText, final String rootsJson, final boolean nested, final boolean archives, final boolean hidden) {
+            synchronized (searchLock) {
+                if (searchBusy) return "busy";
+                searchBusy = true;
+            }
+            if (!submitJob(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject res = new JSONObject();
+                    final long t0 = System.currentTimeMillis();
+                    try {
+                        FileSearch.Query q = FileSearch.parse(queryText, t0, java.util.TimeZone.getDefault());
+                        q.recursive = nested; q.inArchives = archives; q.includeHidden = hidden;
+                        List<File> roots = new ArrayList<File>();
+                        JSONArray ra = new JSONArray(rootsJson);
+                        for (int i = 0; i < ra.length() && i < 20; i++) { String r = fmCanonicalPath(ra.optString(i, "")); if (!r.isEmpty()) roots.add(new File(r)); }
+                        if (roots.isEmpty()) throw new IOException("Choose where to search");
+                        final FileSearch.Limits lim = new FileSearch.Limits();
+                        lim.deadlineMs = t0 + 90000;
+                        searchLimits = lim;
+                        res.put("problems", new JSONArray(q.problems));
+                        if (q.isEmpty()) { res.put("ok", true); res.put("hits", new JSONArray()); res.put("empty", true); }
+                        else {
+                            List<FileSearch.Hit> hits = FileSearch.run(roots, q, lim, new FileSearch.Progress() {
+                                @Override
+                                public boolean onProgress(String folder, int visited, int found) {
+                                    try { notifyJs("window.onFmSearchProgress && window.onFmSearchProgress(" + new JSONObject().put("folder", folder).put("visited", visited).put("found", found).toString() + ")"); } catch (Exception ignored) {}
+                                    return !lim.cancelled;
+                                }
+                            });
+                            JSONArray arr = new JSONArray();
+                            for (FileSearch.Hit h : hits) {
+                                JSONObject o = new JSONObject().put("path", h.path).put("dir", h.dir).put("size", h.size).put("mtime", h.mtime).put("why", h.why);
+                                if (h.entry != null) o.put("entry", h.entry);
+                                if (h.line != null) { o.put("line", h.line); o.put("lineNo", h.lineNo); }
+                                arr.put(o);
+                            }
+                            res.put("ok", true); res.put("hits", arr); res.put("truncated", lim.hitLimit); res.put("cancelled", lim.cancelled); res.put("visited", lim.visited);
+                        }
+                    } catch (Throwable t) {
+                        try { res.put("ok", false); res.put("error", t.getMessage() != null ? t.getMessage() : "The search failed"); } catch (Exception ignored) {}
+                    } finally {
+                        searchLimits = null;
+                        synchronized (searchLock) { searchBusy = false; }
+                    }
+                    try { res.put("ms", System.currentTimeMillis() - t0); } catch (Exception ignored) {}
+                    notifyJs("window.onFmSearchDone && window.onFmSearchDone(" + res.toString() + ")");
+                }
+            })) {
+                synchronized (searchLock) { searchBusy = false; }
+                return "error";
+            }
+            return "started";
+        }
+
+        /** Stops the running search. */
+        @JavascriptInterface
+        public void fmSearchCancel() {
+            FileSearch.Limits l = searchLimits;
+            if (l != null) l.cancelled = true;
+        }
+
         // ---- File manager: edit, pictures, PDF pages, Open With ----
         private static final long FM_EDIT_MAX = 2L * 1024 * 1024;
 
@@ -8152,6 +8252,7 @@ public class MainActivity extends Activity {
                 @Override
                 public void run() {
                     JSONObject res = new JSONObject();
+                    JobTicker ticker = null;
                     try {
                         res.put("op", op);
                         if (!"rm".equals(op) && !"cp".equals(op) && !"mv".equals(op)) throw new IOException("Unknown operation: " + op);
@@ -8180,15 +8281,25 @@ public class MainActivity extends Activity {
                         List<File> direct = new ArrayList<File>();
                         List<String> viaShell = new ArrayList<String>();
                         for (String q : todo) { if (fmDirectOk(op, q, dest)) direct.add(new File(q)); else viaShell.add(q); }
+                        // the numbers of the job: percent, speed, time left, a stall; shown on the page and in a notification that keeps the job alive
+                        long totalBytes = 0;
+                        if (!"rm".equals(op) && !direct.isEmpty()) totalBytes = FileOps.sizeOf(direct, 50000);
+                        final ProgressMeter meter = new ProgressMeter(totalBytes, todo.size(), System.currentTimeMillis());
+                        final String title = fmBatchLabel(op) + " " + todo.size() + (todo.size() == 1 ? " item" : " items");
+                        JobService.begin(MainActivity.this, title, new Runnable() { @Override public void run() { fmBatchCancel = true; } });
+                        ticker = new JobTicker(meter, fmBatchLabel(op), 1000, 20000, new JobTicker.Listener() {
+                            @Override
+                            public void onTick(String text, int pct, long stalledMs) {
+                                notifyJs("window.onFmBatchProgress && window.onFmBatchProgress(" + JSONObject.quote(text) + ")");
+                                JobService.progress(MainActivity.this, text, pct);
+                            }
+                        });
+                        ticker.start();
                         if (!direct.isEmpty()) {
                             FileOps.Progress prog = new FileOps.Progress() {
-                                long shownAt;
                                 @Override
                                 public boolean onProgress(String name, long bytes, int items) {
-                                    long now = android.os.SystemClock.elapsedRealtime();
-                                    if (now - shownAt < 120) return !fmBatchCancel;                   // the page is told a few times a second, Cancel is looked at every time
-                                    shownAt = now;
-                                    notifyJs("window.onFmBatchProgress && window.onFmBatchProgress(" + JSONObject.quote(fmBatchLabel(op) + " " + name + (bytes > 0 ? " (" + fmSizeText(bytes) + ")" : "") + "…") + ")");
+                                    synchronized (meter) { meter.update(bytes, items, name, System.currentTimeMillis()); }
                                     return !fmBatchCancel;
                                 }
                             };
@@ -8209,6 +8320,7 @@ public class MainActivity extends Activity {
                         for (int from = 0; from < todo.size() && !cancelled; from += chunk) {
                             if (fmBatchCancel) { cancelled = true; break; }
                             List<String> part = todo.subList(from, Math.min(todo.size(), from + chunk));
+                            synchronized (meter) { meter.update(0, done + skipped + failed.length(), part.isEmpty() ? "" : part.get(0).substring(part.get(0).lastIndexOf('/') + 1), System.currentTimeMillis()); }
                             if (policy != FileOps.REPLACE && !"rm".equals(op)) {
                                 // a rule for taken names needs a look at each name: one command per item
                                 for (String q : part) {
@@ -8289,6 +8401,8 @@ public class MainActivity extends Activity {
                             res.put("error", errMsg(t));
                         } catch (Exception ignored) {}
                     } finally {
+                        if (ticker != null) ticker.stop();
+                        JobService.end(MainActivity.this, fmBatchDoneText(op, res));
                         synchronized (fmBatchLock) {
                             fmBatchBusy = false;
                         }
@@ -8484,15 +8598,33 @@ public class MainActivity extends Activity {
          */
         @JavascriptInterface
         public String archiveExtract(final String path, final String entry, final String destDir) {
+            return archiveExtract2(path, entry, destDir, "replace", false);
+        }
+
+        /** Stops the extraction that is running, after the file it is on. */
+        @JavascriptInterface
+        public void archiveCancel() { archiveCancel = true; }
+
+        /**
+         * Extracts a file, a folder or the whole archive (entry "" or ending in "/") into destDir. policy is the rule for a file that is already there:
+         * "replace", "skip" or "keep" (both: name (1).ext). deleteAfter removes the archive when the whole of it was extracted without a skipped or
+         * failed file. Shows progress (percent, speed, time left, a stall) on the page and in a notification with Cancel.
+         * The end arrives as window.onArchiveResult({op, ok, files, bytes, skipped, kept, deletedArchive, dest, problems}).
+         */
+        @JavascriptInterface
+        public String archiveExtract2(final String path, final String entry, final String destDir, final String policyName, final boolean deleteAfter) {
+            final int policy = FileOps.policyOf(policyName);
             synchronized (archiveLock) {
                 if (archiveBusy) return "busy";
                 archiveBusy = true;
+                archiveCancel = false;
             }
             if (!submitJob(new Runnable() {
                 @Override
                 public void run() {
                     JSONObject res = new JSONObject();
                     File tmp = null;
+                    JobTicker ticker = null;
                     try {
                         res.put("op", "extract");
                         ZipTool.Archive a = archiveFor(path, false);
@@ -8501,6 +8633,16 @@ public class MainActivity extends Activity {
                         String name = entry == null ? "" : entry;
                         boolean tree = name.isEmpty() || name.endsWith("/");
                         boolean writable = (dir.isDirectory() || dir.mkdirs()) && dir.canWrite();
+                        final ProgressMeter meter = new ProgressMeter(tree ? ZipTool.sizeUnder(a, name) : 0, 0, System.currentTimeMillis());
+                        JobService.begin(MainActivity.this, "Extracting " + new File(fmCanonicalPath(path)).getName(), new Runnable() { @Override public void run() { archiveCancel = true; } });
+                        ticker = new JobTicker(meter, "Extracting", 1000, 20000, new JobTicker.Listener() {
+                            @Override
+                            public void onTick(String text, int pct, long stalledMs) {
+                                notifyArchiveProgress(text);
+                                JobService.progress(MainActivity.this, text, pct);
+                            }
+                        });
+                        ticker.start();
                         if (!tree) {
                             ZipTool.Entry e = a.find(name);
                             if (e == null || e.dir) throw new IOException("Not found in the archive: " + name);
@@ -8508,16 +8650,26 @@ public class MainActivity extends Activity {
                             if (base == null) throw new IOException("Unsafe file name: " + name);
                             notifyArchiveProgress("Extracting " + base + "…");
                             requireNotArchive(path, new File(dest, base));
-                            long bytes;
-                            if (writable) {
-                                bytes = ZipTool.extractTo(a, e, new File(dir, base), new File(fmCanonicalPath(path)));
+                            long bytes = 0;
+                            File target = new File(dir, base);
+                            boolean leave = false;
+                            if (writable && (target.exists() || java.nio.file.Files.isSymbolicLink(target.toPath()))) {
+                                if (policy == FileOps.SKIP) leave = true;
+                                else if (policy == FileOps.KEEP_BOTH) target = new File(dir, FileOps.uniqueName(dir, base));
+                            }
+                            if (leave) {
+                                res.put("kept", 1);
+                            } else if (writable) {
+                                bytes = ZipTool.extractTo(a, e, target, new File(fmCanonicalPath(path)));
+                                dest = target.getParent();
+                                base = target.getName();
                             } else {
                                 tmp = new File(getCacheDir(), "archive_extract.tmp");
                                 bytes = ZipTool.extractTo(a, e, tmp);
                                 String err = writeFileTo(tmp, dest + "/" + base);
                                 if (err != null) throw new IOException(err);
                             }
-                            res.put("files", 1);
+                            res.put("files", leave ? 0 : 1);
                             res.put("bytes", bytes);
                             res.put("skipped", 0);
                             res.put("dest", dest + "/" + base);
@@ -8530,19 +8682,24 @@ public class MainActivity extends Activity {
                             long[] r = ZipTool.extractTree(a, name, dir, new ZipTool.Progress() {
                                 @Override
                                 public boolean onProgress(long doneBytes, int doneFiles, String current) {
-                                    long now = System.currentTimeMillis();
-                                    if (now - last[0] > 200 && !current.isEmpty()) {
-                                        last[0] = now;
-                                        notifyArchiveProgress("Extracting " + (doneFiles + 1) + ": " + current);
-                                    }
-                                    return true;
+                                    synchronized (meter) { meter.update(doneBytes, doneFiles, current, System.currentTimeMillis()); }
+                                    return !archiveCancel;
                                 }
-                            }, problems, new File(fmCanonicalPath(path)));
+                            }, problems, new File(fmCanonicalPath(path)), policy);
                             res.put("files", r[0]);
                             res.put("bytes", r[1]);
                             res.put("skipped", r[2]);
+                            res.put("kept", r[3]);
                             res.put("problems", new JSONArray(problems));
                             res.put("dest", dest);
+                            // the whole archive, everything written, nothing skipped or failed: the archive may go (only when asked)
+                            if (deleteAfter && name.isEmpty() && r[2] == 0 && r[3] == 0 && problems.isEmpty() && r[0] > 0) {
+                                File af = new File(fmCanonicalPath(path));
+                                boolean gone = false;
+                                try { archiveRelease(path); } catch (Throwable ignored) {}
+                                if (af.isFile() && af.getParentFile() != null && af.getParentFile().canWrite()) gone = af.delete();
+                                res.put("deletedArchive", gone);
+                            }
                         }
                         res.put("ok", true);
                     } catch (Throwable t) {
@@ -8552,6 +8709,9 @@ public class MainActivity extends Activity {
                         } catch (Exception ignored) {}
                     } finally {
                         if (tmp != null) tmp.delete();
+                        if (ticker != null) ticker.stop();
+                        String doneText = res.optBoolean("ok") ? "Extracted " + res.optInt("files") + (res.optInt("files") == 1 ? " file" : " files") + (res.optInt("kept") > 0 ? " · " + res.optInt("kept") + " left as they were" : "") : res.optString("error");
+                        JobService.end(MainActivity.this, doneText);
                         synchronized (archiveLock) {
                             archiveBusy = false;
                         }

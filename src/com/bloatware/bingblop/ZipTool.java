@@ -596,6 +596,21 @@ public final class ZipTool {
     }
 
     public static long[] extractTree(Archive a, String path, File destDir, Progress cb, List<String> problems, File protect) throws IOException {
+        return extractTree(a, path, destDir, cb, problems, protect, FileOps.REPLACE);
+    }
+
+    /** The bytes of the files under {@code path} (the whole archive when empty): what an extraction will write. */
+    public static long sizeUnder(Archive a, String path) {
+        long n = 0;
+        for (Entry e : under(a, path)) if (!e.dir && e.size > 0) n += e.size;
+        return n;
+    }
+
+    /**
+     * Extracts with a rule for a file that is already there: REPLACE writes over it, SKIP leaves it, KEEP_BOTH writes the new one as "name (1).ext".
+     * The answer is {files, bytes, skipped (unsafe names and failures), left alone (existing files that SKIP kept)}.
+     */
+    public static long[] extractTree(Archive a, String path, File destDir, Progress cb, List<String> problems, File protect, int policy) throws IOException {
         boolean tree = path.isEmpty() || path.endsWith("/");
         String base = "";
         if (tree && !path.isEmpty()) {
@@ -604,7 +619,7 @@ public final class ZipTool {
         }
         String canonRoot = destDir.getCanonicalPath();
         long bytes = 0;
-        int files = 0, skipped = 0;
+        int files = 0, skipped = 0, kept = 0;
         for (Entry e : under(a, path)) {
             if (e.dir) continue;
             String rel;
@@ -616,6 +631,10 @@ public final class ZipTool {
             String canon = out.getCanonicalPath();
             if (!canon.startsWith(canonRoot + File.separator)) { skipped++; note(problems, e.name + ": unsafe name"); continue; }
             if (cb != null && !cb.onProgress(bytes, files, e.name)) throw new IOException("Cancelled");
+            if (out.exists() || java.nio.file.Files.isSymbolicLink(out.toPath())) {
+                if (policy == FileOps.SKIP) { kept++; continue; }
+                if (policy == FileOps.KEEP_BOTH && !out.isDirectory()) out = new File(out.getParentFile(), FileOps.uniqueName(out.getParentFile(), out.getName()));
+            }
             try {
                 bytes += extractTo(a, e, out, protect);
                 files++;
@@ -625,7 +644,7 @@ public final class ZipTool {
             }
         }
         if (cb != null) cb.onProgress(bytes, files, "");
-        return new long[]{files, bytes, skipped};
+        return new long[]{files, bytes, skipped, kept};
     }
 
     private static void note(List<String> problems, String line) {

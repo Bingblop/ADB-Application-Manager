@@ -255,6 +255,27 @@ public class FileOpsTest {
     check("Cancel during the only item stops it and leaves nothing behind", r.cancelled && r.done == 0 && names(cd2).isEmpty());
     rm(rv); rm(rs);
 
+    // ---------- extraction with a rule for taken names ----------
+    File zs = tmp("fo-zip"), zd = tmp("fo-zdst");
+    File zf = new File(zs, "a.zip");
+    try (java.util.zip.ZipOutputStream z = new java.util.zip.ZipOutputStream(new java.io.FileOutputStream(zf))) {
+      for (String[] e : new String[][]{{"one.txt", "NEW1"}, {"dir/two.txt", "NEW2"}, {"dir/three.txt", "NEW3"}}) { z.putNextEntry(new java.util.zip.ZipEntry(e[0])); z.write(e[1].getBytes(StandardCharsets.UTF_8)); z.closeEntry(); }
+    }
+    write(new File(zd, "one.txt"), "OLD1"); write(new File(zd, "dir/two.txt"), "OLD2");
+    ZipTool.Archive za = ZipTool.open(zf);
+    check("sizeUnder counts the bytes the extraction will write", ZipTool.sizeUnder(za, "") == 12 && ZipTool.sizeUnder(za, "dir/") == 8);
+    long[] zr = ZipTool.extractTree(za, "", zd, null, new ArrayList<String>(), null, FileOps.SKIP);
+    check("extract with skip: taken names stay, new ones are written, the answer counts them", zr[0] == 1 && zr[3] == 2 && read(new File(zd, "one.txt")).equals("OLD1") && read(new File(zd, "dir/two.txt")).equals("OLD2") && read(new File(zd, "dir/three.txt")).equals("NEW3"));
+    zr = ZipTool.extractTree(za, "", zd, null, new ArrayList<String>(), null, FileOps.KEEP_BOTH);
+    check("extract with keep both: the new ones arrive as (1), the old ones stay", zr[0] == 3 && read(new File(zd, "one (1).txt")).equals("NEW1") && read(new File(zd, "one.txt")).equals("OLD1") && read(new File(zd, "dir/two (1).txt")).equals("NEW2") && read(new File(zd, "dir/three (1).txt")).equals("NEW3"));
+    zr = ZipTool.extractTree(za, "", zd, null, new ArrayList<String>(), null, FileOps.REPLACE);
+    check("extract with replace writes over them", read(new File(zd, "one.txt")).equals("NEW1") && read(new File(zd, "dir/two.txt")).equals("NEW2") && zr[3] == 0);
+    final int[] zcalls = {0};
+    boolean zcut = false;
+    try { ZipTool.extractTree(za, "", tmp("fo-zc"), new ZipTool.Progress() { public boolean onProgress(long b2, int f2, String c2) { zcalls[0]++; return false; } }, new ArrayList<String>(), null, FileOps.REPLACE); } catch (IOException e) { zcut = e.getMessage().contains("Cancelled"); }
+    check("Cancel (progress says false) stops the extraction", zcut && zcalls[0] == 1);
+    rm(zs); rm(zd);
+
     // ---------- picture cache ----------
     File tc = tmp("fo-thumbs");
     String k1 = ThumbCache.key("/a/b.jpg", 1000, 2000, 96), k2 = ThumbCache.key("/a/b.jpg", 1001, 2000, 96), k3 = ThumbCache.key("/a/b.jpg", 1000, 2000, 128);
