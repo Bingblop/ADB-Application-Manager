@@ -132,3 +132,32 @@ Tick the box when it works; write what you saw when it does not.
 - [ ] Reboot the phone: the saved keys still work (they are sealed by the phone's keystore). Clear the app's data: they are gone.
 - [ ] Switch the app's language (Settings, Language): the Terminal's buttons, sheets, Help and its [notes] are translated; commands, output, file
       names and model names stay as they are.
+
+## v7.9: Command-Line Interface, three new agents, Effort, and AI help in the ADB Console
+
+- [ ] The tab bar now reads **Command-Line Interface** (not "Terminal / ADB Console"). It still opens on the same Terminal
+      page, with the same Terminal | ADB Console switch at the top, unchanged.
+- [ ] **Coding Agents** list: **Grok**, **Muse** and **Deepseek** appear in API Key Required; **Kilo Code** appears in Free
+      Open-Source. Connect Grok, Muse and Deepseek each with a real API key: a wrong key is refused with the provider's own
+      message; the right one is tested, saved, and the Model list fills in; ask something and the reply streams in. Picking
+      **Kilo Code** opens an explainer (website, source), not a chat.
+- [ ] **Model** and **Effort** sit side by side. Pick a fresh agent for the first time: Model and Effort both start on their
+      balanced choice. Switch Effort between Low / Balanced / High for Claude, ChatGPT, Gemini and Grok and ask the same
+      question each time: the answers noticeably differ in depth/length at High vs Low for a question that invites
+      reasoning (for example "what's the best order to do X, Y and Z and why"). For Deepseek or Muse, switching Effort
+      changes nothing about the reply (the setting is kept, just inert).
+- [ ] **Settings** (gear in the Terminal): the Default agent and models section now also has an Effort column per connected
+      agent; picking one there is remembered after restarting the app, same as the Model column next to it.
+- [ ] Switch to the **ADB Console** pane. With no agent connected yet, tap the **$** button next to its input: it stays on
+      **$** and toasts to pick an agent in the Terminal first. Connect an agent there, come back to ADB Console, tap **$**
+      again: it becomes **AI**, and a small note names the agent and model it is asking.
+- [ ] Ask it something like "how do I list installed packages with adb shell" (with Working mode or Root set up): the
+      question is echoed, the answer streams in, and if it proposes a command, a card shows it with **Run** / **Skip**.
+      **Run** actually runs it (the normal "Shell Command Result" sheet appears, same as a typed command); **Skip** leaves
+      it alone. Ask something with no obvious command ("what does `pm list packages -3` do"): no card, just the explanation.
+- [ ] Turn **"Ask before running commands"** off in Settings, then ask the console agent for a command again: it runs on
+      its own, with a one-line note instead of a card.
+- [ ] A pinned command chip or a saved script still runs immediately when tapped, even while the console is in **AI** mode
+      (it is not sent to the agent as a question).
+- [ ] Switch the app's language again: the new agent names, Effort's Low/Balanced/High and the console's AI note are still
+      English (to translate later); everything already translated in v7.8 is unaffected.

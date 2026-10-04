@@ -1,5 +1,26 @@
 # Changelog
 
+## v7.9-Pro (versionCode 790)
+
+- **The tab is now "Command-Line Interface"** (still Terminal first, ADB Console next to it, same big switch and the same
+  two panes as v7.8 - only the tab's own name changed).
+- **Three new API-key agents**: **Grok (SpaceX)**, **Muse (Meta)** and **Deepseek**, each with its own address, its own key
+  page, and its own masked key hint. **Kilo Code** is listed too, in Free Open-Source - it is an editor extension with no
+  confirmed phone-terminal CLI, so it is explained (website and source) rather than wired up to chat here, the same way
+  DroidMind and Leon.ai already are. OpenCode was already here and stays as it was.
+- **Effort**, next to Model: **Low, Balanced or High**, for how hard an agent is asked to think. Balanced is the first
+  choice, the same way the Model list's own first (recommended) entry already balances speed and cost. It actually changes
+  the request for the agents whose own API has that knob - Claude's extended-thinking budget, ChatGPT and Grok's
+  reasoning_effort, Gemini's thinking budget - and is simply kept, with no effect, for the others (Deepseek, Muse, the
+  official sign-in tools in Termux). Settings gets a matching Effort column next to each agent's default model.
+- **The AI agents can help in the ADB Console too**, not just the Terminal: a new **$ / AI** button next to its input
+  switches it to ask the Coding Agent picked in the Terminal (the same agent, model and effort - no separate picker here)
+  for ADB/shell syntax and code help. The agent answers inline in the console's own output, and may propose **one command**
+  at a time, shown with **Run** / **Skip** (or run straight away when "Ask before running commands" is off) through the
+  console's own execution path - never a parallel shell of its own. Its own small memory is separate from the Terminal's.
+- **Translations**: the new agents, the Effort words and the console's AI help are still English-only in the other 12
+  languages for now (to translate later); everything already translated is unaffected by the tab rename.
+
 ## v7.8-Pro (versionCode 780)
 
 - **The ADB Console tab is now "Terminal / ADB Console"**, with a big switch at the top between the two. **Terminal** comes

@@ -4,7 +4,7 @@ The checks the app is released with. None of this is part of the APK. There are 
 
 | | What it is | Needs |
 |---|---|---|
-| **UI** — `run.js`, `ui/` | 94 headless-Chromium scripts drive the real `assets/index.html` against a mock Android bridge: every tab, theme, filter, action, sheet and dialog | Node 18+, Playwright with its Chromium |
+| **UI** — `run.js`, `ui/` | 96 headless-Chromium scripts drive the real `assets/index.html` against a mock Android bridge: every tab, theme, filter, action, sheet and dialog | Node 18+, Playwright with its Chromium |
 | **Java** — `java/run.js`, `java/src/` | The parts of the app's Java that need no Android classes (settings and overlay rules, file rules, install hints, the archive engine, the Rish shell, the APK signer, the manifest decoder, the store parsers), compiled straight from `src/` and run with the JDK | JDK 8+; some suites also need Node, Python 3 with `zip`, `mksh` + `toybox`, `apksigner`, an APK, or the `org.json` jar |
 | **Translations** — `i18n/` | The list of every string of the page, the translator's brief and the tools that check, cut and put together the dictionaries in `assets/lang/` | Node 18+ (acorn and Playwright to regenerate the list) |
 
@@ -237,6 +237,8 @@ checked by compilation, review and these simulations, not on a device.
 | `t92` | v7.8 review fixes: Always allow is per shell and user, a read through a link out of the folder is asked about, output mixed into a file read is refused, edit markers are whole lines, no edit of non-UTF-8 files, edited files keep their permissions, a cut-off answer is an error, Cursor key_ keys are masked | |
 | `t93` | v7.8 Perplexity: in the API Key Required group, its Connect sheet has no "Sign in with subscription" tab (no official CLI), OpenAI-shaped streaming chat to its own address, listed in Settings and Help; ChatGPT confirmed still present | |
 | `t94` | v7.8 Termux defaults to bash once it is set up (more compatible with the agents' own CLI tools than the sandbox or Working mode); the MCP sheet: presets, the agent checkboxes, applying a server to one or two CLI agents at once, the real steps run and the real file each of the six agents ends up with (run for real with `python3`, not just asserted as a string), re-applying without duplicating, the "already added" list and Forget | |
+| `t95` | v7.9 Grok, Muse, Deepseek (their own Connect sheet, host and chat) and Kilo Code (explained only, no chat); the Effort drop-down's real effect on the request sent to each API that has the knob - Claude's thinking budget, ChatGPT and Grok's reasoning_effort, Gemini's thinkingConfig - and its absence for Deepseek, which keeps the setting but sends nothing extra | |
+| `t96` | v7.9 AI assist in the classic ADB Console: the $ / AI toggle (refuses with no agent connected), the note naming who it asks, a question answered inline with at most one proposed command (Run / Skip, or straight through with "Ask before running" off) carried out through the console's own `executeShell`, a plain answer showing no card, and a pinned/saved command still running as a command even while the console is in AI mode | |
 | `test` | Working Modes (switching, Shizuku, IP:port entry, auto-detect) and Material 3 / Material You color presets |
 
 </details>

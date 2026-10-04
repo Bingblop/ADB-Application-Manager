@@ -75,7 +75,7 @@ tell you when a new version is out (see [Updates](#updates)).
 | **Quick actions** | **Quick Settings tiles** and a **home-screen widget** to switch the working mode and force-stop a list of apps without opening the app |
 | **What's new** | The changelog is inside the app: it opens once after an update, and from About |
 | **Productivity** | Select and copy any text · copy buttons for package, version and name · **share sheet** for package lists, CSV, manifest, terminal output and backups · **search with highlight and next/previous** in the manifest viewer and terminal · remembered filters and sort |
-| **Terminal** | **New in v7.8:** a **Termux-style terminal** with three persistent shells (this app's sandbox, the working mode, or **your own Termux** with bash and pkg packages), Termux's extra keys, colours, history and TAB completion · **Coding Agents**: Gemini, Claude, ChatGPT, Cursor, Copilot and Perplexity (API key, or your subscription through the providers' own CLIs in Termux) and free options (Jan.ai, AnythingLLM, Ollama on the phone, OpenCode) that **run commands and edit files with your OK at each step** · keys encrypted and sent only to their own provider — see [Terminal and coding agents](#terminal-and-coding-agents) |
+| **Terminal** | A **Termux-style terminal** with three persistent shells (this app's sandbox, the working mode, or **your own Termux** with bash and pkg packages), Termux's extra keys, colours, history and TAB completion · **Coding Agents**: Gemini, Claude, ChatGPT, Cursor, Copilot, Perplexity, Grok, Muse and Deepseek (API key, or your subscription through the providers' own CLIs in Termux) and free options (Jan.ai, AnythingLLM, Ollama on the phone, OpenCode) that **run commands and edit files with your OK at each step**, with a Model and an Effort to pick from · keys encrypted and sent only to their own provider · the classic ADB Console can ask the same agent for syntax help too — see [Terminal and coding agents](#terminal-and-coding-agents) |
 | **ADB Console** | Run shell commands through the active mode (off the page's thread), with output search, copy and share · **🕘 history, ⭐ saved scripts and pinned chips** · **🐚 Rish mode**: a persistent Shizuku shell where `cd` and `export` stick, with a STOP that ends a command and its children · a searchable **📋 ADB cheat sheet** of ~90 commands you tap to drop into the input |
 | **Files** | Privileged file manager · **select many** and copy / move / delete together · open **.apk / .zip / .xapk / .jar … without extracting**, preview text, images and decoded Android XML, extract, rename, delete, add files and edit text in place · **install from inside an archive**, **open nested archives**, **compare two archives** · **sign an edited APK** on the device |
 | **Logcat** | Readable, **color-coded** log (one row per entry, tappable level key) · **limit it to one app** · save or share the filtered log as a bug-report text file |
@@ -100,7 +100,7 @@ Left to right, with the **settings gear** (it opens Settings: language, appearan
 | **UAD-NG Debloater** | The UAD-NG list for your phone, a review step before anything runs, history with Undo |
 | **APK Installer** | Install `.apk` / `.apks` / `.apkm` / `.xapk` with full control of the options, plus the optional VirusTotal check |
 | **File Manager** | A privileged file manager that also opens packages and archives without extracting them, and can sign an edited APK |
-| **Terminal / ADB Console** | **Terminal**: a Termux-style terminal with coding agents ([details](#terminal-and-coding-agents)). **ADB Console**: a shell through the active mode, with history, saved scripts, a cheat sheet and a persistent Rish shell |
+| **Command-Line Interface** | **Terminal**: a Termux-style terminal with coding agents ([details](#terminal-and-coding-agents)). **ADB Console**: a shell through the active mode, with history, saved scripts, a cheat sheet and a persistent Rish shell |
 | **Hidden Settings** | Read, flip, edit and create Android's own Global, Secure and System settings ([details](#hidden-settings)) |
 | **RRO/Monet Customization** | Recolor Android (Material You: wallpaper or any color, six styles) and switch system overlays on or off ([details](#overlays-and-material-you)) |
 | **App Updater** | This app, Galaxy Store apps and sideloaded open-source apps (GitHub, Codeberg, F-Droid, IzzyOnDroid, Obtainium) |
@@ -110,6 +110,18 @@ Left to right, with the **settings gear** (it opens Settings: language, appearan
 | **About** | Who made it, which build and key you have, debug info, the Permissions sheet, and the coffee button |
 
 Every tab except Application Manager and About can be switched off or moved in **Settings → Feature List**.
+
+## New in v7.9
+
+- **The tab is now "Command-Line Interface"** (same Terminal-first switch, same ADB Console next to it as v7.8 - only the
+  tab's own name changed).
+- **Grok (SpaceX), Muse (Meta) and Deepseek** join the API-key agents; **Kilo Code** joins the free/open-source list,
+  explained rather than wired up to chat (no confirmed phone-terminal CLI for it, the same treatment as DroidMind/Leon.ai).
+- **Effort**, next to Model: Low / Balanced / High, defaulting to Balanced. Actually changes the request for Claude, ChatGPT,
+  Gemini and Grok (their own reasoning/thinking knob); kept but inert for the others.
+- **The ADB Console can ask an agent too**: a **$ / AI** button next to its input asks the same agent/model/effort picked in
+  the Terminal for syntax/code help, with at most one proposed command per answer, Run / Skip through the console's own
+  execution path. Details: [Terminal and coding agents](#terminal-and-coding-agents).
 
 ## New in v7.8
 
@@ -504,7 +516,8 @@ Every tab except Application Manager and About can be switched off or moved in *
 
 ## Terminal and coding agents
 
-The first page of the **Terminal / ADB Console** tab is a Termux-style terminal with AI coding agents built in.
+The first page of the **Command-Line Interface** tab is a Termux-style terminal with AI coding agents built in; a big switch
+at the top goes to the classic **ADB Console** next to it.
 
 **Shells.** Pick one with **Shell** above the screen; each keeps its own screen and stays open while you use other tabs, so
 `cd`, `export` and variables carry over:
@@ -527,23 +540,32 @@ or Working mode), otherwise Working mode, otherwise the sandbox.
 `clear` empties the screen, `exit` ends the shell (Enter starts a new one). Programs get no keyboard input while they run; in
 Termux, `pkg` and `apt` answer yes by themselves.
 
-**Coding Agents.** Choose one in **Coding Agents**, then a **Model**. The **$ / AI** button left of the input switches between
-shell commands and chat (`!command` runs a command from the chat; `/help` lists the chat commands). The agent works in the
-current shell through four kinds of step — run a command, read a file, write a file, edit part of a file — and **every command
-and every change is shown first** (an edit as a line-by-line diff) with Run / Apply, Skip, or Always allow for the rest of the
-chat. Reading files in the current folder needs no OK. `/undo` takes back the last change, STOP or CTRL-C ends everything,
-and switching agent or model keeps the conversation.
+**Coding Agents.** Choose one in **Coding Agents**, then a **Model** and an **Effort** (Low, Balanced or High: how hard the
+agent is asked to think — Balanced the first time, the same as the Model list's own first, speed-and-cost-balanced entry).
+Effort only changes anything for the agents whose own API has that knob (Claude, ChatGPT, Gemini, Grok); the others keep the
+setting but it has no effect. The **$ / AI** button left of the input switches between shell commands and chat (`!command`
+runs a command from the chat; `/help` lists the chat commands). The agent works in the current shell through four kinds of
+step — run a command, read a file, write a file, edit part of a file — and **every command and every change is shown first**
+(an edit as a line-by-line diff) with Run / Apply, Skip, or Always allow for the rest of the chat. Reading files in the
+current folder needs no OK. `/undo` takes back the last change, STOP or CTRL-C ends everything, and switching agent, model
+or effort keeps the conversation.
 
 | Agent | Connects with |
 |---|---|
 | Gemini (Google), Claude (Anthropic), ChatGPT (OpenAI) | an API key from the provider (tested first), or your subscription through Gemini CLI, Claude Code or Codex in Termux |
 | Cursor (SpaceX) | an API key for Cursor's Cloud Agents (they work in Cursor's cloud, optionally on a Git repository you name), or Cursor CLI in Termux |
 | Copilot (GitHub) | GitHub's Copilot CLI in Termux, signed in with GitHub or with a fine-grained token (GitHub Models was retired in July 2026) |
-| Perplexity | an API key from Perplexity's website (tested first); no official sign-in tool, so no subscription option |
+| Perplexity, Grok (SpaceX), Muse (Meta), Deepseek | an API key from the provider's own website (tested first); no official sign-in tool, so no subscription option |
 | Jan.ai, AnythingLLM | the address of the computer that runs it (found by itself when it runs on the phone); AnythingLLM also needs its key |
 | Ollama (on-device) | Ollama in Termux with a small coding model, installed from the agent's sheet: free and offline |
 | OpenCode | the OpenCode CLI, installed in Termux |
-| DroidMind, Leon.ai | explained in their sheet: DroidMind is a tool other agents use to control Android (every agent here can already work with the phone through the Working mode shell); Leon is a computer assistant |
+| DroidMind, Kilo Code, Leon.ai | explained in their sheet: DroidMind is a tool other agents use to control Android (every agent here can already work with the phone through the Working mode shell); Kilo Code is an editor extension with no phone terminal of its own; Leon is a computer assistant |
+
+**The classic ADB Console can ask an agent too.** Next to its input, a **$ / AI** button switches it to ask the same agent,
+model and effort picked in the Terminal above — for ADB/shell syntax and code help, not full file access. The agent answers
+inline in the console, and may propose one command at a time, shown with **Run** / **Skip** (or run on its own when "Ask
+before running commands" is off) through the console's own execution path. Its memory of the conversation is its own,
+separate from the Terminal's.
 
 **Subscriptions.** Anthropic and Google do not allow other apps to use a Claude or Google login, so a subscription is used
 through the provider's own tool: the agent's sheet installs it into Termux (into a Debian container when it has no Android

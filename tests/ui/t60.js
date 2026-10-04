@@ -35,8 +35,8 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
 
   // 1) placement
   const tabs = await ev(() => Array.from(document.querySelectorAll('.tab-btn')).map(b => b.innerText.replace(/\s+/g, ' ').trim()));
-  const iTerm = tabs.findIndex(t => /ADB Console/.test(t)), iSet = tabs.findIndex(t => /Hidden Settings/.test(t));
-  check('1. the Hidden Settings tab sits right after ADB Console (RRO/Monet Customization, added in v6.0, follows it)', iSet === iTerm + 1 && /RRO\/Monet/.test(tabs[iSet + 1]), JSON.stringify(tabs));
+  const iTerm = tabs.findIndex(t => /Command-Line Interface/.test(t)), iSet = tabs.findIndex(t => /Hidden Settings/.test(t));
+  check('1. the Hidden Settings tab sits right after Command-Line Interface (RRO/Monet Customization, added in v6.0, follows it)', iSet === iTerm + 1 && /RRO\/Monet/.test(tabs[iSet + 1]), JSON.stringify(tabs));
   await ev(() => switchView('settings')); await sleep(80);
   check('   it activates its own button and view', (await ev(() => document.querySelector('.tab-btn.active').innerText.replace(/\s+/g, ' ').trim())) === 'Hidden Settings' && (await ev(() => currentViewName())) === 'settings');
   await ev(() => switchView('store')); await sleep(60);

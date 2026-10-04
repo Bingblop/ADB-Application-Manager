@@ -61,6 +61,9 @@ public final class AgentRules {
             new Provider("copilot", "api.github.com", "Authorization", "Bearer ", "https://api.github.com/user",
                     new String[][]{{"Accept", "application/vnd.github+json"}, {"X-GitHub-Api-Version", "2022-11-28"}}, "COPILOT_GITHUB_TOKEN"),
             new Provider("perplexity", "api.perplexity.ai", "Authorization", "Bearer ", "https://api.perplexity.ai/v1/models", null, "PERPLEXITY_API_KEY"),
+            new Provider("grok", "api.x.ai", "Authorization", "Bearer ", "https://api.x.ai/v1/models", null, "XAI_API_KEY"),
+            new Provider("muse", "api.llama.com", "Authorization", "Bearer ", "https://api.llama.com/v1/models", null, "LLAMA_API_KEY"),
+            new Provider("deepseek", "api.deepseek.com", "Authorization", "Bearer ", "https://api.deepseek.com/v1/models", null, "DEEPSEEK_API_KEY"),
             new Provider("jan", null, "Authorization", "Bearer ", "/models", null, null),
             new Provider("anythingllm", null, "Authorization", "Bearer ", "/models", null, null),
             new Provider("ollama", null, "Authorization", "Bearer ", "/models", null, null),
@@ -139,7 +142,7 @@ public final class AgentRules {
         String s = secret.trim();
         if (s.length() <= 10) return s.isEmpty() ? "" : "••••";
         int keep = 0;
-        java.util.regex.Matcher m = java.util.regex.Pattern.compile("^(sk-ant-|sk-proj-|sk-|pplx-|AIza|github_pat_|gh[pousr]_|crsr_|key_)").matcher(s);
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("^(sk-ant-|sk-proj-|sk-|pplx-|xai-|LLM\\||AIza|github_pat_|gh[pousr]_|crsr_|key_)").matcher(s);
         if (m.find()) keep = m.end();
         return s.substring(0, keep) + "…" + s.substring(s.length() - 4);
     }
@@ -154,7 +157,9 @@ public final class AgentRules {
                 .replaceAll("(gh[pousr]_[A-Za-z0-9]{4})[A-Za-z0-9]{20,}", "$1…")
                 .replaceAll("(crsr_[A-Za-z0-9]{4})[A-Za-z0-9_\\-]{16,}", "$1…")
                 .replaceAll("\\b(key_[A-Za-z0-9]{4})[A-Za-z0-9_\\-]{24,}", "$1…")
-                .replaceAll("(pplx-[A-Za-z0-9]{4})[A-Za-z0-9]{16,}", "$1…");
+                .replaceAll("(pplx-[A-Za-z0-9]{4})[A-Za-z0-9]{16,}", "$1…")
+                .replaceAll("(xai-[A-Za-z0-9]{4})[A-Za-z0-9]{16,}", "$1…")
+                .replaceAll("(LLM\\|[A-Za-z0-9]{4})[A-Za-z0-9|_\\-]{10,}", "$1…");
     }
 
     /** A key is visible ASCII only, as an HTTP header must be: no spaces, no control characters, at most 4096 characters. Empty is allowed

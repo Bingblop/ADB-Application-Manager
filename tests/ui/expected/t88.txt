@@ -1,5 +1,5 @@
-1. the tab reads Terminal over ADB Console: "Terminal\nADB Console"
-   the Feature List calls it Terminal / ADB Console: Terminal / ADB Console
+1. the tab reads Terminal over ADB Console: "Command-Line\nInterface"
+   the Feature List calls it Terminal / ADB Console: Command-Line Interface
 2. the Terminal page comes first, the ADB Console page is hidden: true
    the switch is big (at least 48 px tall): true Terminal is the selected one: true
 3. ADB Console shows the classic console (Rish mode, cheat sheet, its own output box): true

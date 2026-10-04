@@ -26,11 +26,14 @@ public class AgentRulesTest {
     AgentRules.Provider copilot = AgentRules.find("copilot");
     AgentRules.Provider jan = AgentRules.find("jan");
     AgentRules.Provider perplexity = AgentRules.find("perplexity");
+    AgentRules.Provider grok = AgentRules.find("grok");
+    AgentRules.Provider muse = AgentRules.find("muse");
+    AgentRules.Provider deepseek = AgentRules.find("deepseek");
 
     // ---------------------------------------------------------------- the provider table
     check("every key provider is known, with its host", "api.anthropic.com".equals(claude.host) && "api.openai.com".equals(openai.host)
         && "generativelanguage.googleapis.com".equals(gemini.host) && "api.cursor.com".equals(cursor.host) && "api.github.com".equals(copilot.host)
-        && "api.perplexity.ai".equals(perplexity.host));
+        && "api.perplexity.ai".equals(perplexity.host) && "api.x.ai".equals(grok.host) && "api.llama.com".equals(muse.host) && "api.deepseek.com".equals(deepseek.host));
     check("Perplexity: Bearer token, its own models endpoint as the test, and its key never leaves that host",
         "Authorization".equals(perplexity.header) && "Bearer ".equals(perplexity.prefix) && "PERPLEXITY_API_KEY".equals(perplexity.env)
         && perplexity.test.equals("https://api.perplexity.ai/v1/models")
@@ -38,6 +41,23 @@ public class AgentRulesTest {
         && !AgentRules.allowed(perplexity, null, "https://evil.example/v1/chat/completions"));
     check("a pplx- key's hint shows only the prefix and the last four", AgentRules.hint("pplx-0123456789abcdef0123456789abcdef").equals("pplx-…cdef"));
     check("redact masks a pplx- key in output", AgentRules.redact("Authorization: Bearer pplx-0123456789abcdef0123456789abcdef").equals("Authorization: Bearer pplx-0123…"));
+    check("Grok (xAI): Bearer token to api.x.ai only, env var and hint/redact of an xai- key",
+        "Authorization".equals(grok.header) && "Bearer ".equals(grok.prefix) && "XAI_API_KEY".equals(grok.env)
+        && grok.test.equals("https://api.x.ai/v1/models")
+        && AgentRules.allowed(grok, null, "https://api.x.ai/v1/chat/completions") && !AgentRules.allowed(grok, null, "https://evil.example/v1/chat/completions")
+        && AgentRules.hint("xai-0123456789abcdef0123456789abcdef").equals("xai-…cdef")
+        && AgentRules.redact("Authorization: Bearer xai-0123456789abcdef0123456789abcdef").equals("Authorization: Bearer xai-0123…"));
+    check("Muse (Meta Llama API): Bearer token to api.llama.com only, env var and hint/redact of an LLM| key",
+        "Authorization".equals(muse.header) && "Bearer ".equals(muse.prefix) && "LLAMA_API_KEY".equals(muse.env)
+        && muse.test.equals("https://api.llama.com/v1/models")
+        && AgentRules.allowed(muse, null, "https://api.llama.com/v1/chat/completions") && !AgentRules.allowed(muse, null, "https://evil.example/v1/chat/completions")
+        && AgentRules.hint("LLM|0123456789|abcdefghijklmnopqrstuvwxyz").equals("LLM|…wxyz")
+        && AgentRules.redact("Authorization: Bearer LLM|0123456789|abcdefghijklmnopqrstuvwxyz").equals("Authorization: Bearer LLM|0123…"));
+    check("Deepseek: Bearer token to api.deepseek.com only, env var, and its sk- key already masked by the generic sk- pattern",
+        "Authorization".equals(deepseek.header) && "Bearer ".equals(deepseek.prefix) && "DEEPSEEK_API_KEY".equals(deepseek.env)
+        && deepseek.test.equals("https://api.deepseek.com/v1/models")
+        && AgentRules.allowed(deepseek, null, "https://api.deepseek.com/v1/chat/completions") && !AgentRules.allowed(deepseek, null, "https://evil.example/v1/chat/completions")
+        && AgentRules.hint("sk-0123456789abcdef0123456789abcdef").equals("sk-…cdef"));
     check("unknown providers are not", AgentRules.find("evil") == null && AgentRules.find(null) == null);
     check("Claude: x-api-key plus the API version header", "x-api-key".equals(claude.header) && "".equals(claude.prefix)
         && claude.extra.length == 1 && "anthropic-version".equals(claude.extra[0][0]) && "2023-06-01".equals(claude.extra[0][1]));

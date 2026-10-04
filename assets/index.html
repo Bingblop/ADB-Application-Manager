@@ -4665,6 +4665,10 @@
                         <span class="tx-field-label">Model</span>
                         <select id="txModel" class="op-select tx-select" onchange="txPickModel(this.value)" aria-label="Model" disabled></select>
                     </label>
+                    <label class="tx-field">
+                        <span class="tx-field-label">Effort</span>
+                        <select id="txEffort" class="op-select tx-select" onchange="txPickEffort(this.value)" aria-label="Effort" disabled></select>
+                    </label>
                     <div class="tx-bar-btns">
                         <button class="tx-icon-btn" id="txSettingsBtn" onclick="txOpenSettings()" title="Terminal settings" aria-label="Terminal settings">⚙️</button>
                         <button class="tx-icon-btn tx-mcp-btn" id="txMcpBtn" translate="no" onclick="txOpenMcp()" title="MCP servers for the coding agents" aria-label="MCP servers">MCP</button>
@@ -4745,7 +4749,9 @@ Type any command below (e.g. pm list packages -d)
 </div>
 
             <div class="rish-promptline" id="termPromptLine" style="display:none;"></div>
+            <div class="term-ai-note" id="termAiNote" style="display:none; font-size:11px; color:var(--text-muted); margin-top:8px;"></div>
             <div class="term-input-row" style="margin-top:12px;">
+                <button class="tx-mode-btn" id="termModeBtn" translate="no" onclick="termToggleMode()" title="Shell commands or ask the coding agent" aria-label="Shell commands or ask the coding agent">$</button>
                 <input type="text" class="term-input" id="termCmd" placeholder="Enter shell command..." onkeydown="termKey(event)" oninput="termHistPos = -1" autocapitalize="none" autocorrect="off" autocomplete="off" spellcheck="false" inputmode="text">
                 <button class="term-run-btn" id="termRunBtn" onclick="termRunClick()">RUN</button>
             </div>
@@ -5002,7 +5008,8 @@ Type any command below (e.g. pm list packages -d)
 
                 <h4>Coding Agents</h4>
                 <ul>
-                    <li>Pick an agent, then the model. The first time, the agent asks for what it needs (an API key, a server address, or a sign-in) and tests it before you start.</li>
+                    <li>Pick an agent, then the model and the effort (Low, Balanced or High: how hard it is asked to think). The first time, both start at a balanced choice, and the agent asks for what it needs (an API key, a server address, or a sign-in) and tests it before you start.</li>
+                    <li>Effort only changes anything for the agents whose own API has that knob (Claude, ChatGPT, Gemini, Grok); for the others it is kept but has no effect when chatting by API key, and none of them pass it on to their own sign-in tool in Termux.</li>
                     <li>The button left of the input switches between <b>$</b> (shell commands) and <b>AI</b> (chat). In chat, start a line with ! to run it as a command instead, for example !ls.</li>
                     <li>Agents act through four kinds of steps: run a command, read a file, write a file, or edit part of a file. Before a command runs or a file changes you see exactly what, and choose Run (or Apply), Skip, or Always allow for the rest of the chat. Reading files in the current folder needs no OK.</li>
                     <li>STOP (or CTRL-C) ends the agent's reply and the command it started. New chat starts over; switching agents or models keeps the conversation going with the new one.</li>
@@ -5012,13 +5019,13 @@ Type any command below (e.g. pm list packages -d)
                 <h4>Chat commands</h4>
                 <ul>
                     <li><code>/help</code> this help, <code>/new</code> new chat, <code>/clear</code> clear the screen</li>
-                    <li><code>/agent claude</code> switch agent, <code>/model name</code> switch model, <code>/models</code> list models</li>
+                    <li><code>/agent claude</code> switch agent, <code>/model name</code> switch model, <code>/models</code> list models, <code>/effort high</code> switch effort</li>
                     <li><code>/shell</code> and <code>/chat</code> switch the input, <code>/undo</code> takes back the last file change</li>
                     <li><code>/stop</code> stops, <code>/login</code> signs in with the agent's own app, <code>/settings</code> opens the settings</li>
                 </ul>
 
                 <h4>API keys</h4>
-                <p>Gemini, Claude, ChatGPT, Cursor and Perplexity connect with an API key from the provider's website (links below). Usage is billed by the provider to that key's account; Google's Gemini API also has a free tier, where Google may use what you send to improve its products.</p>
+                <p>Gemini, Claude, ChatGPT, Cursor, Perplexity, Grok, Muse and Deepseek connect with an API key from the provider's website (links below). Usage is billed by the provider to that key's account; Google's Gemini API also has a free tier, where Google may use what you send to improve its products.</p>
                 <p>Keys are encrypted with a key that stays in the phone's secure hardware, and they are only ever sent to their own provider's address. The page never sees them again after you type them; only the last four characters are shown.</p>
 
                 <h4>Subscriptions and website sign-in</h4>
@@ -5054,6 +5061,7 @@ Type any command below (e.g. pm list packages -d)
                     <li><b>AnythingLLM</b> runs on a computer or server; enter its address and a key from Settings, Developer API.</li>
                     <li><b>Ollama (on-device)</b> runs a small coding model on the phone itself through Termux: free and offline after the download.</li>
                     <li><b>OpenCode</b> is an open-source coding agent; it is installed in Termux and can use many providers.</li>
+                    <li><b>Kilo Code</b> is an open-source AI coding agent, usually run from an editor rather than a phone terminal: its website explains its own setup.</li>
                     <li><b>DroidMind</b> gives AI agents control of an Android device over ADB. It is a tool for other agents rather than a chat; every agent here can already work with this phone through the Working mode shell.</li>
                     <li><b>Leon.ai</b> is an open-source personal assistant that runs on a computer.</li>
                 </ul>
@@ -5073,8 +5081,12 @@ Type any command below (e.g. pm list packages -d)
                     <button class="mode-action-btn" onclick="openUrlExternal('https://cursor.com')">Cursor (SpaceX)</button>
                     <button class="mode-action-btn" onclick="openUrlExternal('https://github.com/features/copilot/cli')">Copilot (GitHub)</button>
                     <button class="mode-action-btn" onclick="openUrlExternal('https://www.perplexity.ai/')">Perplexity</button>
+                    <button class="mode-action-btn" onclick="openUrlExternal('https://console.x.ai')">Grok (SpaceX)</button>
+                    <button class="mode-action-btn" onclick="openUrlExternal('https://llama.developer.meta.com/')">Muse (Meta)</button>
+                    <button class="mode-action-btn" onclick="openUrlExternal('https://platform.deepseek.com/')">Deepseek</button>
                     <button class="mode-action-btn" onclick="openUrlExternal('https://www.mdskills.ai/skills/droidmind')">DroidMind</button>
                     <button class="mode-action-btn" onclick="openUrlExternal('https://opencode.ai/')">OpenCode</button>
+                    <button class="mode-action-btn" onclick="openUrlExternal('https://kilocode.ai/')">Kilo Code</button>
                     <button class="mode-action-btn" onclick="openUrlExternal('https://getleon.ai/')">Leon.ai</button>
                     <button class="mode-action-btn" onclick="openUrlExternal('https://www.jan.ai/')">Jan.ai</button>
                     <button class="mode-action-btn" onclick="openUrlExternal('https://anythingllm.com/')">AnythingLLM</button>
@@ -6382,7 +6394,7 @@ Type any command below (e.g. pm list packages -d)
             { key: 'debloater', label: 'UAD-NG\nDebloater', name: 'UAD-NG Debloater' },
             { key: 'installer', label: 'APK\nInstaller', name: 'APK Installer' },
             { key: 'files', label: 'File\nManager', name: 'File Manager' },
-            { key: 'terminal', label: 'Terminal\nADB Console', name: 'Terminal / ADB Console' },
+            { key: 'terminal', label: 'Command-Line\nInterface', name: 'Command-Line Interface' },
             { key: 'settings', label: 'Hidden\nSettings', name: 'Hidden Settings' },
             { key: 'overlays', label: 'RRO/Monet\nCustomization', name: 'RRO/Monet Customization' },
             { key: 'updates', label: 'App\nUpdater', name: 'App Updater' },
@@ -15485,6 +15497,7 @@ Type any command below (e.g. pm list packages -d)
         function runTerminalCmd(override) {
             if (rishActive) { rishSubmit(override); return; }
             const input = document.getElementById('termCmd');
+            if (termMode === 'chat' && typeof override !== 'string') { const q = input.value.trim(); if (q) { input.value = ''; termAiSend(q); } return; }
             const cmd = (typeof override === 'string' ? override : input.value).trim();
             if (!cmd) return;
             if (termShellRun) { showToast('A command is still running. Wait for it to finish.'); return; }      // before the box is cleared: what was typed stays
@@ -15518,6 +15531,115 @@ Type any command below (e.g. pm list packages -d)
 
         let termShellRun = null;       // the command running in the normal terminal: { id, cmd }
         let termShellSeq = 0;
+
+        // ---------- ADB Console: the same Coding Agent picked in the Terminal, for syntax/code help here too ----------
+        // A smaller, one-shot cousin of the Terminal's own agent engine: no file reads or edits, at most one proposed
+        // command per answer, run through this console's own execution path (so it follows the active Working Mode
+        // exactly as a typed command would) rather than a persistent shell session of its own.
+        let termMode = 'shell';        // 'shell' | 'chat'
+        let termAiBusy = false;
+        let termAiHist = [];           // this console's own short chat memory: [{role, text}], separate from the Terminal's
+        let termAiSeq = 0;
+        const termAiPending = {};      // id -> the exact command text a Run/Skip row refers to
+        const TX_CONSOLE_SYSTEM = 'You help with ADB and shell command syntax in an Android terminal. Answer briefly and practically. '
+            + 'If you want to propose exactly one command for the user to run here, put it by itself inside <run></run> tags at the end '
+            + 'of your answer (no explanation inside the tags); otherwise do not use a <run> tag at all.';
+
+        function termSyncModeUi() {
+            const btn = document.getElementById('termModeBtn');
+            const ag = txAgentDef(txState.agent);
+            if (btn) { btn.textContent = termMode === 'chat' ? 'AI' : '$'; btn.classList.toggle('chat', termMode === 'chat'); btn.disabled = termAiBusy; }
+            const input = document.getElementById('termCmd');
+            if (input) input.placeholder = termMode === 'chat' ? 'Ask about a command...' : 'Enter shell command...';
+            const note = document.getElementById('termAiNote');
+            if (note) {
+                if (termMode === 'chat' && ag && ag.id !== 'none') { note.style.display = ''; note.textContent = txF('Asking {0} ({1})', ag.name, txModelFor(ag) || txT('default model')); }
+                else note.style.display = 'none';
+            }
+        }
+
+        function termToggleMode() {
+            haptic();
+            if (termMode === 'shell') {
+                const ag = txAgentDef(txState.agent);
+                if (!ag || ag.id === 'none') { showToast('Pick a Coding Agent in the Terminal first'); return; }
+                if (!txAgentReady(ag)) { showToast('Connect ' + ag.name.replace(/\s*\(.*\)$/, '') + ' in the Terminal first'); return; }
+                termMode = 'chat';
+            } else termMode = 'shell';
+            termSyncModeUi();
+        }
+
+        function termAiAsk(ag, cmd) {
+            const who = ag.name.replace(/\s*\(.*\)$/, '');
+            const term = document.getElementById('termOutput');
+            term.insertAdjacentHTML('beforeend', '<span style="color:var(--text-muted);">? ' + escapeHtml(cmd) + '</span>\n');
+            term.scrollTop = term.scrollHeight;
+            return who;
+        }
+
+        async function termAiSend(q) {
+            if (termAiBusy) { showToast('Still answering: wait for it to finish'); return; }
+            const ag = txAgentDef(txState.agent);
+            if (!ag || ag.id === 'none') { showToast('Pick a Coding Agent in the Terminal first'); return; }
+            const who = termAiAsk(ag, q);
+            termAiBusy = true;
+            termSyncModeUi();
+            const term = document.getElementById('termOutput');
+            const span = document.createElement('span');
+            span.style.color = 'var(--text-main)';
+            term.appendChild(span);
+            let shown = '';
+            try {
+                const model = txModelFor(ag);
+                const effort = txEffortFor(ag);
+                const msgs = termAiHist.concat([{ role: 'user', text: q }]);
+                const r = await txTurnApi(ag, model, effort, TX_CONSOLE_SYSTEM, msgs, t => { shown += t; span.textContent = txForModel(shown); term.scrollTop = term.scrollHeight; });
+                termAiHist = msgs.concat([{ role: 'assistant', text: r.text }]).slice(-12);
+                const act = txParseAction(r.text);
+                span.textContent = txForModel((act ? act.before : r.text).trim());
+                term.appendChild(document.createTextNode('\n'));
+                if (act && act.type === 'run' && act.body.trim() && !act.truncated) termAiProposeRun(who, act.body.trim());
+            } catch (e) {
+                span.textContent = '';
+                term.insertAdjacentHTML('beforeend', '<span class="is-err">' + escapeHtml((e && e.msg) || (e && e.message) || String(e)) + '</span>\n');
+            }
+            termAiBusy = false;
+            termSyncModeUi();
+            term.scrollTop = term.scrollHeight;
+        }
+
+        function termAiProposeRun(who, cmd) {
+            const term = document.getElementById('termOutput');
+            const id = 'tac' + (++termAiSeq);
+            termAiPending[id] = cmd;
+            if (!txSettings.askRun) { term.insertAdjacentHTML('beforeend', '<span class="rish-note">[' + escapeHtml(who) + ' runs: ' + escapeHtml(cmd) + ']\n</span>'); termAiRunProposed(id); return; }
+            term.insertAdjacentHTML('beforeend', '<div id="' + id + '" style="margin:6px 0; border:1px solid var(--border-glass); border-radius:8px; padding:8px 10px; background:var(--input-bg);">'
+                + '<div style="color:var(--text-muted); font-size:11px;">' + escapeHtml(who) + ' wants to run this:</div>'
+                + '<div style="color:var(--text-main); word-break:break-all;" translate="no">' + escapeHtml(cmd) + '</div>'
+                + '<div class="mode-btn-row" style="margin-top:6px;"><button class="mode-action-btn primary" onclick="termAiRunProposed(\'' + id + '\')">Run</button><button class="mode-action-btn" onclick="termAiSkipProposed(\'' + id + '\')">Skip</button></div></div>');
+            term.scrollTop = term.scrollHeight;
+        }
+
+        function termAiRunProposed(id) {
+            const cmd = termAiPending[id];
+            if (cmd === undefined) return;
+            delete termAiPending[id];
+            haptic();
+            const card = document.getElementById(id);
+            if (card) card.remove();
+            runTerminalCmd(cmd);
+        }
+
+        function termAiSkipProposed(id) {
+            if (termAiPending[id] === undefined) return;
+            delete termAiPending[id];
+            haptic();
+            const term = document.getElementById('termOutput');
+            const card = document.getElementById(id);
+            if (card) card.remove();
+            term.insertAdjacentHTML('beforeend', '<span class="rish-note">[skipped]\n</span>');
+            term.scrollTop = term.scrollHeight;
+        }
 
         function onShellDone(id, out) {
             const run = termShellRun;
@@ -15747,7 +15869,8 @@ Type any command below (e.g. pm list packages -d)
         if (document.readyState !== 'loading') termRenderPins();
 
         // ======================================================================================
-        // Terminal (v7.8): a Termux-style terminal with coding agents, the first page of the "Terminal / ADB Console" tab.
+        // Terminal (v7.8): a Termux-style terminal with coding agents, the first page of the "Command-Line Interface" tab
+        // (named Terminal / ADB Console through v7.8; the two panes inside it, Terminal and ADB Console, keep their own names).
         // Shells are persistent native sessions, one per backend (MainActivity termStart / termRun):
         //   app    - this app's own sandbox (always there)
         //   priv   - the working mode (ADB, Shizuku, Root)
@@ -15771,13 +15894,18 @@ Type any command below (e.g. pm list packages -d)
         function txIsFullscreen(cmd) { const c = String(cmd || '').trim(); return TX_FULLSCREEN_ANY.test(c) || TX_FULLSCREEN_BARE.test(c); }
 
         let txPane = kvGet('term_subtab', 'terminal') === 'console' ? 'console' : 'terminal';
-        const txState = Object.assign({ agent: 'none', models: {}, shell: '', mode: 'shell' }, kvGet('tx_state', {}) || {});
+        const txState = Object.assign({ agent: 'none', models: {}, efforts: {}, shell: '', mode: 'shell' }, kvGet('tx_state', {}) || {});
         if (!txState.models || typeof txState.models !== 'object') txState.models = {};
+        if (!txState.efforts || typeof txState.efforts !== 'object') txState.efforts = {};
         const txSettings = Object.assign({
             defaultAgent: '', defaultShell: '', askRun: true, askWrite: true, readOutside: false, maxSteps: 25,
-            termuxProfile: true, keepChat: true, cliYolo: false, connect: {}, cursorRepo: ''
+            termuxProfile: true, keepChat: true, cliYolo: false, connect: {}, cursorRepo: '', efforts: {}
         }, kvGet('tx_settings', {}) || {});
         if (!txSettings.connect || typeof txSettings.connect !== 'object') txSettings.connect = {};
+        if (!txSettings.efforts || typeof txSettings.efforts !== 'object') txSettings.efforts = {};
+        // Low / Balanced / High: how hard an agent is asked to think, where its own API has that knob. Balanced is the default -
+        // the same "speed and resource cost" balance the model list's own first (recommended) entry already aims for.
+        const TX_EFFORTS = [['low', 'Low'], ['balanced', 'Balanced'], ['high', 'High']];
         const txSess = { app: { st: 'off' }, priv: { st: 'off' }, termux: { st: 'off' } };   // st: off | starting | ready | error | ended
         const txScr = {};               // per shell: { el, line, sgr, tail, cr, chars, trimmed }
         const txRuns = {};              // per shell, the command running there: { b, id, kind, quiet, resolve, head, tail, total }
@@ -15830,10 +15958,12 @@ Type any command below (e.g. pm list packages -d)
             if (!txOpened) {
                 txOpened = true;
                 txBuildAgentSelect();
+                txBuildEffortSelect();
                 txRestoreChat();
                 if (txSettings.defaultAgent && txAgentDef(txSettings.defaultAgent)) txState.agent = txSettings.defaultAgent;
                 if (!txAgentDef(txState.agent)) txState.agent = 'none';
                 Object.keys(txSettings.models || {}).forEach(k => { if (txSettings.models[k]) txState.models[k] = txSettings.models[k]; });
+                Object.keys(txSettings.efforts || {}).forEach(k => { if (txSettings.efforts[k]) txState.efforts[k] = txSettings.efforts[k]; });
                 txShowScreen(txCurShell());
                 txWelcome();
                 txSyncAgentUi();
@@ -16548,8 +16678,12 @@ Type any command below (e.g. pm list packages -d)
             { id: 'cursor', name: 'Cursor (SpaceX)', group: 'key', api: 'cursor', provider: 'cursor', cli: 'cursor', color: '#f2f2f2', keyUrl: 'https://cursor.com/dashboard', keyLook: 'key_…' },
             { id: 'copilot', name: 'Copilot (GitHub)', group: 'key', api: 'cli', provider: 'copilot', cli: 'copilot', color: '#c9d1d9', keyUrl: 'https://github.com/settings/personal-access-tokens/new', keyLook: 'github_pat_…' },
             { id: 'perplexity', name: 'Perplexity', group: 'key', api: 'perplexity', provider: 'perplexity', color: '#20808d', keyUrl: 'https://www.perplexity.ai/settings/api', keyLook: 'pplx-…' },
+            { id: 'grok', name: 'Grok (SpaceX)', group: 'key', api: 'grok', provider: 'grok', color: '#ffffff', keyUrl: 'https://console.x.ai', keyLook: 'xai-…' },
+            { id: 'muse', name: 'Muse (Meta)', group: 'key', api: 'muse', provider: 'muse', color: '#7b68ee', keyUrl: 'https://llama.developer.meta.com/', keyLook: 'LLM|…' },
+            { id: 'deepseek', name: 'Deepseek', group: 'key', api: 'deepseek', provider: 'deepseek', color: '#22d3ee', keyUrl: 'https://platform.deepseek.com/api_keys', keyLook: 'sk-…' },
             { id: 'droidmind', name: 'DroidMind', group: 'oss', api: 'info', color: '#a5d6a7', site: 'https://www.mdskills.ai/skills/droidmind' },
             { id: 'opencode', name: 'OpenCode', group: 'oss', api: 'cli', cli: 'opencode', color: '#f5f543', site: 'https://opencode.ai/' },
+            { id: 'kilocode', name: 'Kilo Code', group: 'oss', api: 'info', color: '#ff6b9d', site: 'https://kilocode.ai/' },
             { id: 'leon', name: 'Leon.ai', group: 'oss', api: 'info', color: '#ffb74d', site: 'https://getleon.ai/' },
             { id: 'jan', name: 'Jan.ai', group: 'oss', api: 'openai-compat', provider: 'jan', color: '#fbbf24', site: 'https://www.jan.ai/', bases: ['http://127.0.0.1:1337/v1'], keyOptional: true },
             { id: 'anythingllm', name: 'AnythingLLM', group: 'oss', api: 'openai-compat', provider: 'anythingllm', color: '#60a5fa', site: 'https://anythingllm.com/', bases: ['http://127.0.0.1:3001/api/v1/openai'] },
@@ -16562,6 +16696,9 @@ Type any command below (e.g. pm list packages -d)
             cursor: ['default'],
             copilot: ['default'],
             perplexity: ['sonar', 'sonar-pro', 'sonar-reasoning-pro', 'sonar-deep-research'],
+            grok: ['grok-5-fast', 'grok-5', 'grok-4-fast'],
+            muse: ['llama-5-scout', 'llama-5-maverick', 'llama-4-scout'],
+            deepseek: ['deepseek-chat', 'deepseek-reasoner'],
             opencode: ['default'],
             ollama: ['qwen2.5-coder:1.5b']
         };
@@ -16665,6 +16802,12 @@ Type any command below (e.g. pm list packages -d)
                 + '<optgroup label="' + escapeHtml('Free Open-Source') + '">' + TX_AGENTS.filter(a => a.group === 'oss').map(opt).join('') + '</optgroup>';
         }
 
+        function txBuildEffortSelect() {
+            const sel = document.getElementById('txEffort');
+            if (!sel) return;
+            sel.innerHTML = TX_EFFORTS.map(([v, l]) => '<option value="' + v + '">' + escapeHtml(l) + '</option>').join('');
+        }
+
         function txModelList(ag) {
             if (!ag || ag.id === 'none') return [];
             const cached = kvGet('tx_models_' + ag.id, null);
@@ -16685,6 +16828,12 @@ Type any command below (e.g. pm list packages -d)
             return pref || (list[0] && list[0].id) || '';
         }
 
+        // Low / Balanced / High: "balanced" the first time an agent is picked, same as the model list's own recommended (first) entry.
+        function txEffortFor(ag) {
+            if (!ag || ag.id === 'none') return 'balanced';
+            return txState.efforts[ag.id] || (txSettings.efforts || {})[ag.id] || 'balanced';
+        }
+
         function txSyncAgentUi() {
             const sel = document.getElementById('txAgent');
             if (sel && sel.value !== txState.agent) sel.value = txState.agent;
@@ -16697,6 +16846,13 @@ Type any command below (e.g. pm list packages -d)
                 const cur = txModelFor(ag);
                 if (cur) ms.value = cur;
             }
+            const es = document.getElementById('txEffort');
+            if (es) {
+                es.disabled = !ag || ag.id === 'none' || txChat.busy;
+                es.value = txEffortFor(ag);
+            }
+            if (termMode === 'chat' && (!ag || ag.id === 'none')) termMode = 'shell';
+            termSyncModeUi();
             txSyncUi();
         }
 
@@ -16747,6 +16903,16 @@ Type any command below (e.g. pm list packages -d)
             txSyncUi();
         }
 
+        function txPickEffort(id) {
+            const ag = txAgentDef(txState.agent);
+            if (!ag || ag.id === 'none') return;
+            haptic();
+            txState.efforts[ag.id] = id;
+            txSaveState();
+            txNote('[' + txF('effort: {0}', id) + ']');
+            txSyncUi();
+        }
+
         // ---------------------------------------------------------------- model lists
         function txParseModels(ag, body) {
             let j = {};
@@ -16755,7 +16921,7 @@ Type any command below (e.g. pm list packages -d)
             if (ag.api === 'anthropic') out = (j.data || []).map(m => ({ id: m.id, name: m.display_name || m.id }));
             else if (ag.api === 'openai') out = (j.data || []).filter(m => /^(gpt-|o\d|chatgpt-)/.test(m.id) && !/(embedding|tts|whisper|transcribe|moderation|image|realtime|audio|search|computer-use|deep-research|instruct)/.test(m.id) && !m.shutdown_date).map(m => ({ id: m.id, name: m.id }));
             else if (ag.api === 'gemini') out = (j.models || []).filter(m => (m.supportedGenerationMethods || []).indexOf('generateContent') >= 0 && !/(tts|image|live|embedding|transcribe|robotics|veo|lyria|aqa|imagen|native-audio)/.test(m.name)).map(m => ({ id: String(m.name).replace(/^models\//, ''), name: m.displayName || String(m.name).replace(/^models\//, '') }));
-            else if (ag.api === 'perplexity') out = (j.data || []).map(m => ({ id: m.id, name: m.id })).filter(m => m.id);
+            else if (ag.api === 'perplexity' || ag.api === 'grok' || ag.api === 'muse' || ag.api === 'deepseek') out = (j.data || []).map(m => ({ id: m.id, name: m.id })).filter(m => m.id);
             else if (ag.api === 'openai-compat') out = (j.data || j.models || []).map(m => ({ id: m.id || m.name || m.model, name: m.name || m.id || m.model })).filter(m => m.id);
             else if (ag.api === 'cursor') out = (j.items || j.models || j.data || []).map(m => ({ id: m.id, name: m.displayName || m.name || m.id })).filter(m => m.id);
             const seen = new Set();
@@ -16781,6 +16947,9 @@ Type any command below (e.g. pm list packages -d)
             else if (ag.api === 'gemini') spec = { url: 'https://generativelanguage.googleapis.com/v1beta/models?pageSize=200', method: 'GET', auth: 'gemini' };
             else if (ag.api === 'cursor') spec = { url: 'https://api.cursor.com/v1/models', method: 'GET', auth: 'cursor' };
             else if (ag.api === 'perplexity') spec = { url: 'https://api.perplexity.ai/v1/models', method: 'GET', auth: 'perplexity' };
+            else if (ag.api === 'grok') spec = { url: 'https://api.x.ai/v1/models', method: 'GET', auth: 'grok' };
+            else if (ag.api === 'muse') spec = { url: 'https://api.llama.com/v1/models', method: 'GET', auth: 'muse' };
+            else if (ag.api === 'deepseek') spec = { url: 'https://api.deepseek.com/v1/models', method: 'GET', auth: 'deepseek' };
             else if (ag.api === 'openai-compat' && txBase(ag)) spec = { url: txBase(ag) + '/models', method: 'GET', auth: ag.provider };
             if (!spec) return;
             try {
@@ -16982,9 +17151,10 @@ Type any command below (e.g. pm list packages -d)
         async function txModelTurn(ag) {
             const b = txCurShell();
             const model = txModelFor(ag);
+            const effort = txEffortFor(ag);
             const blk = txAiStart(ag, b);
             try {
-                const r = await txTurnApi(ag, model, txSystemPrompt(ag), txNeutralHistory(), t => txAiAppend(blk, t));
+                const r = await txTurnApi(ag, model, effort, txSystemPrompt(ag), txNeutralHistory(), t => txAiAppend(blk, t));
                 txChat.usage.in += r.usage.in;
                 txChat.usage.out += r.usage.out;
                 const act = txParseAction(r.text);
@@ -16998,13 +17168,20 @@ Type any command below (e.g. pm list packages -d)
             }
         }
 
-        async function txTurnApi(ag, model, system, msgs, onText) {
+        // Low / Balanced / High, applied only where a provider's own API has a matching knob; the others simply ignore the setting
+        // (their effort drop-down still shows and is remembered, for when they are called through their own CLI instead).
+        async function txTurnApi(ag, model, effort, system, msgs, onText) {
             const usage = { in: 0, out: 0 };
             let text = '';
             const add = t => { if (!t) return; text += t; onText(t); };
             const json = { 'content-type': 'application/json' };
             if (ag.api === 'anthropic') {
                 const body = { model, max_tokens: 8192, system, stream: true, messages: msgs.map(m => ({ role: m.role, content: m.text })) };
+                if (effort !== 'low') {
+                    const budget = effort === 'high' ? 10000 : 4096;          // extended thinking: off at "Low", a bigger budget at "High"
+                    body.thinking = { type: 'enabled', budget_tokens: budget };
+                    body.max_tokens = budget + 4096;
+                }
                 await txAiCall({ url: 'https://api.anthropic.com/v1/messages', method: 'POST', auth: 'claude', stream: true, headers: json, body: JSON.stringify(body) }, ev => {
                     if (!ev.data) return;
                     const d = JSON.parse(ev.data);
@@ -17013,12 +17190,14 @@ Type any command below (e.g. pm list packages -d)
                     else if (d.type === 'message_delta' && d.usage) usage.out += d.usage.output_tokens || 0;
                     else if (d.type === 'error') throw txMkErr(d.error && d.error.type === 'overloaded_error' ? 529 : 500, '', JSON.stringify(d), {});
                 });
-            } else if (ag.api === 'openai' || ag.api === 'openai-compat' || ag.api === 'perplexity') {
+            } else if (ag.api === 'openai' || ag.api === 'openai-compat' || ag.api === 'perplexity' || ag.api === 'grok' || ag.api === 'muse' || ag.api === 'deepseek') {
                 const compat = ag.api === 'openai-compat';
-                const base = ag.api === 'openai' ? 'https://api.openai.com/v1' : ag.api === 'perplexity' ? 'https://api.perplexity.ai' : txBase(ag);
+                const FIXED_BASES = { perplexity: 'https://api.perplexity.ai', grok: 'https://api.x.ai/v1', muse: 'https://api.llama.com/v1', deepseek: 'https://api.deepseek.com/v1' };
+                const base = ag.api === 'openai' ? 'https://api.openai.com/v1' : FIXED_BASES[ag.api] || txBase(ag);
                 if (!base) throw { local: true, msg: 'No server address is saved for ' + ag.name + '.' };
                 const body = { model, stream: true, messages: [{ role: ag.api === 'openai' ? 'developer' : 'system', content: system }].concat(msgs.map(m => ({ role: m.role, content: m.text }))) };
-                if (ag.api === 'openai') body.stream_options = { include_usage: true };
+                if (ag.api === 'openai') { body.stream_options = { include_usage: true }; body.reasoning_effort = effort === 'high' ? 'high' : effort === 'low' ? 'low' : 'medium'; }
+                else if (ag.api === 'grok' && effort !== 'balanced') body.reasoning_effort = effort;      // xAI documents only low/high; "Balanced" leaves the model's own default
                 await txAiCall({ url: base + '/chat/completions', method: 'POST', auth: ag.provider, stream: true, headers: json, body: JSON.stringify(body) }, ev => {
                     if (!ev.data || ev.data === '[DONE]') return;
                     const d = JSON.parse(ev.data);
@@ -17029,7 +17208,8 @@ Type any command below (e.g. pm list packages -d)
                     if (d.usage) { usage.in += d.usage.prompt_tokens || 0; usage.out += d.usage.completion_tokens || 0; }
                 });
             } else if (ag.api === 'gemini') {
-                const body = { systemInstruction: { parts: [{ text: system }] }, contents: msgs.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.text }] })), generationConfig: { maxOutputTokens: 8192 } };
+                const thinkingBudget = effort === 'low' ? 0 : effort === 'high' ? 8192 : -1;      // 0 = off, -1 = dynamic ("Balanced")
+                const body = { systemInstruction: { parts: [{ text: system }] }, contents: msgs.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.text }] })), generationConfig: { maxOutputTokens: 8192, thinkingConfig: { thinkingBudget } } };
                 let meta = null;
                 await txAiCall({ url: 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':streamGenerateContent?alt=sse', method: 'POST', auth: 'gemini', stream: true, headers: json, body: JSON.stringify(body) }, ev => {
                     if (!ev.data) return;
@@ -17871,6 +18051,16 @@ Type any command below (e.g. pm list packages -d)
                     if (txEngine(ag) !== 'cli') txLoadModels(ag, true);
                     return;
                 }
+                case 'effort': {
+                    if (!ag || ag.id === 'none') { txNote('[pick an agent first]'); return; }
+                    const want = arg.toLowerCase();
+                    if (!arg) { txNote('effort for ' + ag.name + ': ' + TX_EFFORTS.map(([v]) => v + (v === txEffortFor(ag) ? ' (in use)' : '')).join(', ')); return; }
+                    if (!TX_EFFORTS.some(([v]) => v === want)) { txNote('[effort is low, balanced or high]', null, 'tx-err'); return; }
+                    const es = document.getElementById('txEffort');
+                    if (es) es.value = want;
+                    txPickEffort(want);
+                    return;
+                }
             }
             txChatSend(text);           // not a command: it is a message
         }
@@ -17923,12 +18113,14 @@ Type any command below (e.g. pm list packages -d)
             const saved = v.key ? '<p class="tx-sheet-p">Saved: <b translate="no">' + escapeHtml(v.hint || '••••') + '</b>' + (v.savedAt ? ' · ' + escapeHtml(new Date(v.savedAt).toLocaleDateString(langLocale())) : '') + (v.readable === false ? ' · <span class="is-err">it can no longer be read: enter it again</span>' : '') + '</p>' : '';
             let h = '';
             if (ag.api === 'info') {
-                h = ag.id === 'droidmind'
-                    ? '<p class="tx-sheet-p">DroidMind is an MCP server: a tool that gives AI agents control of an Android device over ADB (apps, files, logs, screenshots). It is not a chat by itself.</p>'
+                if (ag.id === 'droidmind') h = '<p class="tx-sheet-p">DroidMind is an MCP server: a tool that gives AI agents control of an Android device over ADB (apps, files, logs, screenshots). It is not a chat by itself.</p>'
                     + '<p class="tx-sheet-p">In this Terminal every agent can already work with this phone: choose Working mode as the shell, and the agent runs pm, am, dumpsys and other commands, each with your OK.</p>'
                     + '<p class="tx-sheet-p muted">To use DroidMind with an agent that speaks MCP (such as Claude Code or OpenCode), install it into the Debian container in Termux. Then start it with droidmind --transport sse and add it to that agent as an MCP server.</p>'
-                    + '<div class="mode-btn-row" style="margin-top:10px;"><button class="mode-action-btn primary" onclick="txInstallDroidMind()">Install DroidMind in Termux</button><button class="mode-action-btn" onclick="openUrlExternal(\'https://www.mdskills.ai/skills/droidmind\')">Website</button><button class="mode-action-btn" onclick="openUrlExternal(\'https://github.com/hyperb1iss/droidmind\')">Source</button></div>'
-                    : '<p class="tx-sheet-p">Leon is an open-source personal assistant (skills, voice) that runs on a computer with Node.js and Python. It has no Android version and is not a coding agent, so it does not chat in this Terminal.</p>'
+                    + '<div class="mode-btn-row" style="margin-top:10px;"><button class="mode-action-btn primary" onclick="txInstallDroidMind()">Install DroidMind in Termux</button><button class="mode-action-btn" onclick="openUrlExternal(\'https://www.mdskills.ai/skills/droidmind\')">Website</button><button class="mode-action-btn" onclick="openUrlExternal(\'https://github.com/hyperb1iss/droidmind\')">Source</button></div>';
+                else if (ag.id === 'kilocode') h = '<p class="tx-sheet-p">Kilo Code is an open-source AI coding agent built as an editor extension (VS Code, JetBrains), not a phone terminal tool, so it does not chat here.</p>'
+                    + '<p class="tx-sheet-p muted">For a coding agent that runs right here in Termux instead, choose OpenCode, or one of the API-key / sign-in agents above.</p>'
+                    + '<div class="mode-btn-row" style="margin-top:10px;"><button class="mode-action-btn" onclick="openUrlExternal(\'https://kilocode.ai/\')">Website</button><button class="mode-action-btn" onclick="openUrlExternal(\'https://github.com/Kilo-Org/kilocode\')">Source</button></div>';
+                else h = '<p class="tx-sheet-p">Leon is an open-source personal assistant (skills, voice) that runs on a computer with Node.js and Python. It has no Android version and is not a coding agent, so it does not chat in this Terminal.</p>'
                     + '<p class="tx-sheet-p muted">For a free assistant on this phone, choose Ollama (on-device); for one on your computer, Jan.ai or AnythingLLM.</p>'
                     + '<div class="mode-btn-row" style="margin-top:10px;"><button class="mode-action-btn" onclick="openUrlExternal(\'https://getleon.ai/\')">Website</button><button class="mode-action-btn" onclick="openUrlExternal(\'https://github.com/leon-ai/leon\')">Source</button></div>';
                 box.innerHTML = h;
@@ -17962,7 +18154,7 @@ Type any command below (e.g. pm list packages -d)
                     + '<button class="sdb-tab' + (txConnectTab === 'cli' ? ' active' : '') + '" role="tab" onclick="txConnectSet(\'cli\')">Sign in with subscription</button></div>';
             }
             if (!onlyCli && txConnectTab === 'key') {
-                const host = { claude: 'api.anthropic.com', chatgpt: 'api.openai.com', gemini: 'generativelanguage.googleapis.com', cursor: 'api.cursor.com', perplexity: 'api.perplexity.ai' }[ag.provider] || '';
+                const host = { claude: 'api.anthropic.com', chatgpt: 'api.openai.com', gemini: 'generativelanguage.googleapis.com', cursor: 'api.cursor.com', perplexity: 'api.perplexity.ai', grok: 'api.x.ai', muse: 'api.llama.com', deepseek: 'api.deepseek.com' }[ag.provider] || '';
                 h += '<p class="tx-sheet-p">Paste your ' + escapeHtml(ag.name.replace(/\s*\(.*\)$/, '')) + ' API key. It is tested right away, then kept encrypted on this phone and only ever sent to <span translate="no">' + escapeHtml(host) + '</span>.</p>' + saved
                     + '<input id="txKeyInput" type="password" class="modal-text-input tx-key-input" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="' + escapeHtml(ag.keyLook || '') + '">'
                     + (ag.id === 'cursor' ? '<div class="tx-sheet-sec">Repository (optional)</div><input id="txCursorRepo" class="modal-text-input tx-key-input" translate="no" placeholder="https://github.com/you/project" value="' + escapeHtml(txSettings.cursorRepo || '') + '" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="url">' : '')
@@ -18329,7 +18521,11 @@ Type any command below (e.g. pm list packages -d)
             const modelRows = TX_AGENTS.filter(a => a.id !== 'none' && a.api !== 'info' && (txHasKey(a.provider) || txBase(a) || txSettings.connect[a.id] === 'cli')).map(a => {
                 const list = txModelList(a);
                 const cur = (txSettings.models || {})[a.id] || '';
-                return '<div class="tx-row"><div class="tx-row-main"><div class="tx-row-name">' + escapeHtml(a.name) + '</div></div><select class="op-select" style="max-width:52vw;" onchange="txSetDefaultModel(\'' + a.id + '\', this.value)"><option value="">Automatic</option>' + list.map(m => '<option translate="no" value="' + escapeHtml(m.id) + '"' + (m.id === cur ? ' selected' : '') + '>' + escapeHtml(m.id) + '</option>').join('') + '</select></div>';
+                const effCur = (txSettings.efforts || {})[a.id] || '';
+                const effOpts = '<option value="">Balanced</option>' + TX_EFFORTS.filter(([v]) => v !== 'balanced').map(([v, l]) => '<option value="' + v + '"' + (v === effCur ? ' selected' : '') + '>' + escapeHtml(l) + '</option>').join('');
+                return '<div class="tx-row"><div class="tx-row-main"><div class="tx-row-name">' + escapeHtml(a.name) + '</div></div>'
+                    + '<select class="op-select" style="max-width:34vw;" onchange="txSetDefaultModel(\'' + a.id + '\', this.value)"><option value="">Automatic</option>' + list.map(m => '<option translate="no" value="' + escapeHtml(m.id) + '"' + (m.id === cur ? ' selected' : '') + '>' + escapeHtml(m.id) + '</option>').join('') + '</select>'
+                    + '<select class="op-select" style="max-width:20vw; margin-left:4px;" onchange="txSetDefaultEffort(\'' + a.id + '\', this.value)" aria-label="Effort">' + effOpts + '</select></div>';
             }).join('');
             const shellOpts = [['', 'Automatic (Termux when set up, else Working mode)'], ['app', 'This app (sandbox)'], ['priv', 'Working mode (ADB, Shizuku, Root)'], ['termux', 'Termux (bash and packages)']].map(([v, l]) => '<option value="' + v + '"' + ((txSettings.defaultShell || '') === v ? ' selected' : '') + '>' + escapeHtml(l) + '</option>').join('');
             const steps = [10, 25, 50, 100].map(n => '<option value="' + n + '"' + (parseInt(txSettings.maxSteps, 10) === n ? ' selected' : '') + '>' + n + '</option>').join('');
@@ -18359,6 +18555,14 @@ Type any command below (e.g. pm list packages -d)
             if (model) txSettings.models[agent] = model; else delete txSettings.models[agent];
             txSaveSettings();
             if (model) { txState.models[agent] = model; txSaveState(); }
+            txSyncAgentUi();
+        }
+
+        function txSetDefaultEffort(agent, effort) {
+            txSettings.efforts = Object.assign({}, txSettings.efforts || {});
+            if (effort) txSettings.efforts[agent] = effort; else delete txSettings.efforts[agent];
+            txSaveSettings();
+            if (effort) { txState.efforts[agent] = effort; txSaveState(); }
             txSyncAgentUi();
         }
 

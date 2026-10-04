@@ -1,5 +1,5 @@
-1. the tab bar names it "Hidden Settings": true ["Application Manager","Saved Applications","UAD-NG Debloater","APK Installer","File Manager","Terminal ADB Console","Hidden Settings","RRO/Monet Customization","App Updater","App Stores","Logcat Viewer","Task Manager","About"]
-   it sits between ADB Console and RRO/Monet Customization: true ["Terminal ADB Console","Hidden Settings","RRO/Monet Customization","App Updater"]
+1. the tab bar names it "Hidden Settings": true ["Application Manager","Saved Applications","UAD-NG Debloater","APK Installer","File Manager","Command-Line Interface","Hidden Settings","RRO/Monet Customization","App Updater","App Stores","Logcat Viewer","Task Manager","About"]
+   it sits between Command-Line Interface and RRO/Monet Customization: true ["Command-Line Interface","Hidden Settings","RRO/Monet Customization","App Updater"]
 2. the button opens it and becomes the active one: true
 3. its card says what it is: true
 4. the ⋯ menu is "Hidden settings tools": true

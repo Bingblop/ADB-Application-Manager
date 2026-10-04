@@ -211,7 +211,7 @@ for (const [k, v] of keys.p) {
   const blocks = [...new Set(await page.evaluate(() => I18N.blocks(document.body)))];
   const tabs = await page.evaluate(() => TAB_DEFS.map(t => t.label.replace(/\n/g, ' ')));
   const places = await page.evaluate(() => {
-    const names = { apps: 'Application Manager tab', 'saved-lists': 'Saved Applications tab', debloater: 'UAD-NG Debloater tab', installer: 'APK Installer tab', files: 'File Manager tab', terminal: 'Terminal / ADB Console tab', settings: 'Hidden Settings tab', overlays: 'RRO/Monet Customization tab', updates: 'App Updater tab', store: 'App Stores tab', logcat: 'Logcat Viewer tab', about: 'About tab', prefs: 'Settings (the gear in the header)' };
+    const names = { apps: 'Application Manager tab', 'saved-lists': 'Saved Applications tab', debloater: 'UAD-NG Debloater tab', installer: 'APK Installer tab', files: 'File Manager tab', terminal: 'Command-Line Interface tab', settings: 'Hidden Settings tab', overlays: 'RRO/Monet Customization tab', updates: 'App Updater tab', store: 'App Stores tab', logcat: 'Logcat Viewer tab', about: 'About tab', prefs: 'Settings (the gear in the header)' };
     const where = (el) => {
       const v = el.closest('.view-content'); if (v) { const k = v.id.replace(/^view-/, ''); return names[k] || v.id; }
       const m = el.closest('.modal-overlay'); if (m) return 'a sheet (' + m.id.replace(/Modal$/, '').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase() + ')';

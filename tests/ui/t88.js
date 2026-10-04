@@ -1,4 +1,4 @@
-// v7.8 Terminal / ADB Console tab, the Terminal itself: the two-line tab label, the big Terminal | ADB Console switch (Terminal first,
+// v7.8 Command-Line Interface tab, the Terminal itself: the two-line tab label, the big Terminal | ADB Console switch (Terminal first,
 // the choice remembered), one persistent shell per backend with its own screen (commands run in a real /bin/sh here), history,
 // Termux's extra keys, TAB completion, colours / progress lines / split escape codes, full-screen programs offered in Termux, exit
 // and restart, CTRL-C, and what the screen says (with the button that fixes it) when a shell cannot start.
