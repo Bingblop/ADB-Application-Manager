@@ -1,5 +1,42 @@
 # Changelog
 
+## v7.8-Pro (versionCode 780)
+
+- **The ADB Console tab is now "Terminal / ADB Console"**, with a big switch at the top between the two. **Terminal** comes
+  first and the tab remembers which one you used last; **ADB Console** is the console you know (Rish mode, cheat sheet,
+  saved commands), unchanged.
+- **Terminal: a Termux-style command line.** A black screen with colours, Termux's row of extra keys (ESC, TAB, CTRL-C,
+  arrows, HOME, END, | / - ~), command history, TAB completion of file names, progress bars that redraw in place, and
+  **three shells**, each with its own screen that stays open while you use other tabs (cd and export carry over):
+  - **This app (sandbox)**: always there, no setup.
+  - **Working mode**: the shell user through ADB or Shizuku, or root with Root.
+  - **Termux**: your own Termux, with bash and everything installed with pkg. A **Termux setup** checklist walks you through
+    the one-time steps (install from F-Droid or GitHub, `allow-external-apps=true`, the "Run commands in Termux environment"
+    permission, a connection test). Full-screen programs (nano, vim, top, a Python prompt) open in a real Termux window.
+- **Coding Agents.** A drop-down with **None** first, then **API Key Required** (Gemini, Claude, ChatGPT, Cursor, Copilot) and
+  **Free Open-Source** (DroidMind, OpenCode, Leon.ai, Jan.ai, AnythingLLM, and Ollama on the phone itself), plus a **Model**
+  drop-down. Choosing an agent asks for what it needs and **tests it first**: a refused key is explained in plain words with
+  the provider's own message. Chat in the Terminal: the agent answers as it types, and it can **run commands, read files,
+  write files and edit parts of files** in the current shell, **each step shown first** with Run / Apply, Skip, or Always
+  allow for the rest of the chat. Edits show a line-by-line diff, `/undo` takes a change back, STOP (or CTRL-C) ends it all.
+  **Switch agents or models in the middle**: the conversation carries over. Slash commands: /help, /new, /agent, /model,
+  /models, /shell, /chat, /undo, /stop, /login, /settings; `!command` runs a command from the chat.
+- **API keys stay safe**: sealed with a key that never leaves the phone's secure hardware, sent only to their own provider's
+  address (the app adds them; the page never sees them again), and never shown to an agent (keys in output are masked).
+- **Subscriptions (website sign-in)** go through the providers' **official command-line tools** in Termux, because Anthropic
+  and Google do not allow other apps to use a Claude or Google login: Claude Code, Gemini CLI, Codex (ChatGPT), Copilot CLI
+  and Cursor CLI. The Connect sheet installs the tool (into a Debian container in Termux when it has no Android build),
+  opens its own sign-in in Termux, and the Terminal then chats through it.
+- **Cursor** connects to Cursor's Cloud Agents with an API key (they work in Cursor's cloud, optionally on a Git repository
+  you name); **Copilot** runs through GitHub's Copilot CLI, since GitHub retired GitHub Models in July 2026.
+- **Free options**: **Jan.ai** and **Ollama** are found on the phone by themselves when they run there (or enter a computer's
+  address); **AnythingLLM** asks for its server's key; **Ollama** can be installed into Termux with a small coding model in
+  one go; **OpenCode** is installed in Termux. **DroidMind** and **Leon.ai** are explained (tools for other agents and a
+  computer assistant) with their install or website.
+- **Terminal settings** (the gear in the Terminal): your keys by their hint only, the agent and model to start with, the
+  default shell, whether agents must ask before running commands or changing files, and whether the conversation is kept.
+  **Help** explains everything, with a link to every agent's website.
+
 ## v7.7-Pro (versionCode 770)
 
 - **Task Manager → GPU: a Renderer switch.** A dropdown showing the HWUI backend currently in use (Vulkan, OpenGL, or

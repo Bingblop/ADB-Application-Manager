@@ -1,7 +1,7 @@
 0. the scan reads symbols written as escapes too (\u26a1, a surrogate pair, \u{1F4A5}, &#x26A1;, &#9889;): true
 1. the page has no emoji but the gears (© is not an emoji and is left): true []
-   exactly two gears are written in it: the header button and the button on an app row: true
-   the header gear is the first, the row gear the one named App Settings: true
+   exactly three gears are written in it: the header button, the button on an app row and the Terminal settings button: true
+   the header gear is the first, the row gear the one named App Settings, the third the Terminal's: true
    the changelog the What's new screen shows has none: true []
    the layouts and resources (home-screen widget, tiles) have none: true
    the Java sources have none (they put text on the page and in notifications): true

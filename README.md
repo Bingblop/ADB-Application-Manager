@@ -36,7 +36,7 @@ Debugging, Shizuku or Root**.
 ## Contents
 
 [Download](#download--install) · [Features](#features) · [The tabs](#the-tabs) · [Screenshots](#screenshots) ·
-[Working modes](#working-modes) · [Debloater](#debloater) · [Updates](#updates) · [Hidden settings](#hidden-settings) ·
+[Terminal &amp; coding agents](#terminal-and-coding-agents) · [Working modes](#working-modes) · [Debloater](#debloater) · [Updates](#updates) · [Hidden settings](#hidden-settings) ·
 [Overlays &amp; Material You](#overlays-and-material-you) · [App menu](#app-menu) · [Profiles](#app-profiles) · [Backup &amp; restore](#backup-and-restore) ·
 [Quick tiles &amp; widget](#quick-settings-tiles-and-widget) · [Copy, share &amp; search](#copy-share-and-search) ·
 [Permissions](#permissions) · [Themes](#themes) · [How it works](#how-it-works) · [Building](#building) · [Project layout](#project-layout) ·
@@ -75,7 +75,8 @@ tell you when a new version is out (see [Updates](#updates)).
 | **Quick actions** | **Quick Settings tiles** and a **home-screen widget** to switch the working mode and force-stop a list of apps without opening the app |
 | **What's new** | The changelog is inside the app: it opens once after an update, and from About |
 | **Productivity** | Select and copy any text · copy buttons for package, version and name · **share sheet** for package lists, CSV, manifest, terminal output and backups · **search with highlight and next/previous** in the manifest viewer and terminal · remembered filters and sort |
-| **Terminal** | Run shell commands through the active mode (off the page's thread), with output search, copy and share · **🕘 history, ⭐ saved scripts and pinned chips** · **🐚 Rish mode**: a persistent Shizuku shell where `cd` and `export` stick, with a STOP that ends a command and its children · a searchable **📋 ADB cheat sheet** of ~90 commands you tap to drop into the input |
+| **Terminal** | **New in v7.8:** a **Termux-style terminal** with three persistent shells (this app's sandbox, the working mode, or **your own Termux** with bash and pkg packages), Termux's extra keys, colours, history and TAB completion · **Coding Agents**: Gemini, Claude, ChatGPT, Cursor and Copilot (API key, or your subscription through the providers' own CLIs in Termux) and free options (Jan.ai, AnythingLLM, Ollama on the phone, OpenCode) that **run commands and edit files with your OK at each step** · keys encrypted and sent only to their own provider — see [Terminal and coding agents](#terminal-and-coding-agents) |
+| **ADB Console** | Run shell commands through the active mode (off the page's thread), with output search, copy and share · **🕘 history, ⭐ saved scripts and pinned chips** · **🐚 Rish mode**: a persistent Shizuku shell where `cd` and `export` stick, with a STOP that ends a command and its children · a searchable **📋 ADB cheat sheet** of ~90 commands you tap to drop into the input |
 | **Files** | Privileged file manager · **select many** and copy / move / delete together · open **.apk / .zip / .xapk / .jar … without extracting**, preview text, images and decoded Android XML, extract, rename, delete, add files and edit text in place · **install from inside an archive**, **open nested archives**, **compare two archives** · **sign an edited APK** on the device |
 | **Logcat** | Readable, **color-coded** log (one row per entry, tappable level key) · **limit it to one app** · save or share the filtered log as a bug-report text file |
 | **Hidden Settings** | Read and edit the phone's **Global**, **Secure** and **System** settings, one sub-tab per table · search names, values and descriptions · tap to edit, **press and hold to flip** a switch (1 / 0, true / false), **＋ to create** a setting · plain-English descriptions and ⚠️ warnings for the ones that bite · every change is read back to prove it, with **Undo** and a log of changes with **Revert** — see [Hidden settings](#hidden-settings) |
@@ -99,7 +100,7 @@ Left to right, with the **settings gear** (it opens Settings: language, appearan
 | **UAD-NG Debloater** | The UAD-NG list for your phone, a review step before anything runs, history with Undo |
 | **APK Installer** | Install `.apk` / `.apks` / `.apkm` / `.xapk` with full control of the options, plus the optional VirusTotal check |
 | **File Manager** | A privileged file manager that also opens packages and archives without extracting them, and can sign an edited APK |
-| **ADB Console** | A shell through the active mode, with history, saved scripts, a cheat sheet and a persistent Rish shell |
+| **Terminal / ADB Console** | **Terminal**: a Termux-style terminal with coding agents ([details](#terminal-and-coding-agents)). **ADB Console**: a shell through the active mode, with history, saved scripts, a cheat sheet and a persistent Rish shell |
 | **Hidden Settings** | Read, flip, edit and create Android's own Global, Secure and System settings ([details](#hidden-settings)) |
 | **RRO/Monet Customization** | Recolor Android (Material You: wallpaper or any color, six styles) and switch system overlays on or off ([details](#overlays-and-material-you)) |
 | **App Updater** | This app, Galaxy Store apps and sideloaded open-source apps (GitHub, Codeberg, F-Droid, IzzyOnDroid, Obtainium) |
@@ -109,6 +110,17 @@ Left to right, with the **settings gear** (it opens Settings: language, appearan
 | **About** | Who made it, which build and key you have, debug info, the Permissions sheet, and the coffee button |
 
 Every tab except Application Manager and About can be switched off or moved in **Settings → Feature List**.
+
+## New in v7.8
+
+- **Terminal / ADB Console.** The ADB Console tab now opens on a **Termux-style Terminal** (a big switch at the top goes back to
+  the classic ADB Console; the tab remembers your choice). Three persistent shells, each on its own screen: **this app's
+  sandbox**, the **working mode** (shell user or root) and **your own Termux** (bash and every pkg package).
+- **Coding Agents** in the Terminal: **None**, then Gemini, Claude, ChatGPT, Cursor and Copilot (API key, or your subscription
+  through each provider's official command-line tool in Termux), and free / open-source options (Jan.ai, AnythingLLM,
+  **Ollama on the phone**, OpenCode, plus DroidMind and Leon.ai explained). Keys are **tested before use**, kept **encrypted**,
+  and only ever sent to their own provider. The agent runs commands, reads, writes and edits files **with your OK at each
+  step**; switch agent or model mid-chat and the conversation carries on. Details: [Terminal and coding agents](#terminal-and-coding-agents).
 
 ## New in v7.5
 
@@ -489,6 +501,56 @@ Every tab except Application Manager and About can be switched off or moved in *
 
 > The screenshots and the animation are rendered from the app's real UI with sample data. The Quick Settings
 > tiles, the widget and the notification are drawn by Android itself, so they are described below instead.
+
+## Terminal and coding agents
+
+The first page of the **Terminal / ADB Console** tab is a Termux-style terminal with AI coding agents built in.
+
+**Shells.** Pick one with **Shell** above the screen; each keeps its own screen and stays open while you use other tabs, so
+`cd`, `export` and variables carry over:
+
+| Shell | Runs as | Needs |
+|---|---|---|
+| This app (sandbox) | this app, in its private home folder, with Android's toolbox | nothing |
+| Working mode | the shell user (ADB, Shizuku) or root (Root) | a [working mode](#working-modes) |
+| Termux | Termux, with bash and everything installed with `pkg` | Termux from F-Droid or GitHub, plus the one-time setup below |
+
+Termux setup (the checklist is in the Terminal's settings): install Termux and open it once, run
+`mkdir -p ~/.termux && echo 'allow-external-apps=true' >> ~/.termux/termux.properties && termux-reload-settings` in Termux,
+allow this app to *Run commands in Termux environment*, and test the connection. The app then starts one Termux command
+through Termux's official RUN_COMMAND intent that connects back to the app over a local connection only it can open (a one-time
+token), and becomes a live bash. Full-screen programs (nano, vim, top, a Python prompt) open in a real Termux window instead.
+
+**Keys like Termux's**: ESC, TAB (completes file names), CTRL-C (stops), the arrows (history and cursor), HOME, END and | / - ~.
+`clear` empties the screen, `exit` ends the shell (Enter starts a new one). Programs get no keyboard input while they run; in
+Termux, `pkg` and `apt` answer yes by themselves.
+
+**Coding Agents.** Choose one in **Coding Agents**, then a **Model**. The **$ / AI** button left of the input switches between
+shell commands and chat (`!command` runs a command from the chat; `/help` lists the chat commands). The agent works in the
+current shell through four kinds of step — run a command, read a file, write a file, edit part of a file — and **every command
+and every change is shown first** (an edit as a line-by-line diff) with Run / Apply, Skip, or Always allow for the rest of the
+chat. Reading files in the current folder needs no OK. `/undo` takes back the last change, STOP or CTRL-C ends everything,
+and switching agent or model keeps the conversation.
+
+| Agent | Connects with |
+|---|---|
+| Gemini (Google), Claude (Anthropic), ChatGPT (OpenAI) | an API key from the provider (tested first), or your subscription through Gemini CLI, Claude Code or Codex in Termux |
+| Cursor (SpaceX) | an API key for Cursor's Cloud Agents (they work in Cursor's cloud, optionally on a Git repository you name), or Cursor CLI in Termux |
+| Copilot (GitHub) | GitHub's Copilot CLI in Termux, signed in with GitHub or with a fine-grained token (GitHub Models was retired in July 2026) |
+| Jan.ai, AnythingLLM | the address of the computer that runs it (found by itself when it runs on the phone); AnythingLLM also needs its key |
+| Ollama (on-device) | Ollama in Termux with a small coding model, installed from the agent's sheet: free and offline |
+| OpenCode | the OpenCode CLI, installed in Termux |
+| DroidMind, Leon.ai | explained in their sheet: DroidMind is a tool other agents use to control Android (every agent here can already work with the phone through the Working mode shell); Leon is a computer assistant |
+
+**Subscriptions.** Anthropic and Google do not allow other apps to use a Claude or Google login, so a subscription is used
+through the provider's own tool: the agent's sheet installs it into Termux (into a Debian container when it has no Android
+build), opens its own website sign-in in a Termux window, and the Terminal then chats through it. These tools are not officially
+supported on Android, so they may not run on every phone; when one fails, the Terminal shows its exact message.
+
+**Keys.** Keys are sealed with an Android Keystore key (it never leaves the phone's secure hardware) and stored in the app's
+private settings (backups are off). The app adds a key to a request itself, and only when the request goes to that provider's
+own address (or the server address you saved for Jan, AnythingLLM or Ollama); the page only ever sees the last four characters.
+Keys that appear in command output are masked before anything is sent to an agent.
 
 ## Working modes
 
@@ -883,6 +945,9 @@ Also in the sources: [`ManifestDecoder`](src/com/bloatware/bingblop/ManifestDeco
   open, downloads you start and, only if you add your own API key, VirusTotal lookups. **☕ Buy me a coffee** just opens
   PayPal in your browser.
 - The ADB key is created on your phone and never leaves it. The APK contains no key.
+- **Coding agents** only talk to the provider you pick, with the key you saved (encrypted with an Android Keystore key, sent
+  only to that provider's own address). What you type, and the output of the steps you allow, goes to that provider; keys
+  in output are masked first. Nothing runs or changes without your OK unless you turn that off in the Terminal settings.
 - The three special accesses are yours to give: the sheet only opens Android's own screens. With a working mode the app can switch
   Usage access and Display over other apps on for itself (the same shell could do it anyway); All files access is only ever given on
   Android's screen. Every one can be taken back there.
@@ -996,7 +1061,7 @@ What is checked before each release, and what is not. The checks live in [`tests
 (`cd tests && npm install && npx playwright install chromium && node run.js && node java/run.js`; what each needs and how a
 script passes is in [tests/README.md](tests/README.md)).
 
-- **The UI** (`tests/run.js`, about four minutes): 79 headless-Chromium scripts drive the real `assets/index.html` against a mock Android bridge:
+- **The UI** (`tests/run.js`, about four minutes): 91 headless-Chromium scripts drive the real `assets/index.html` against a mock Android bridge:
   every tab, theme, filter, share / copy / find action, profiles and the drift banner, backups, the Installer, the
   Store, the file manager and archive browser, the terminal, About, the Back button, the height of the app menu and, for the Hidden Settings tab, the
   list, search, filters and sort, tap-to-edit, press-and-hold flipping (with touch events of any hold length), creating,
@@ -1013,8 +1078,11 @@ script passes is in [tests/README.md](tests/README.md)).
   update count on App Updater), the header gear and Settings, the Feature List (switches, arrows, Reset to Default, a saved choice from an older
   version, a damaged one, a tab that is off reached by a link or by Back, the layout at 320, 360 and 412 px), the search bar and its menu
   (placement, the three options, the swap rule, patterns and plain text, exact matches, kept between launches, closing by tap, Escape and Back, three
-  screen sizes) and a scan of the sources and of every tab and sheet for emoji.
-- **Native rules, off the device** (`tests/java/run.js`, 33 suites): the parts of the Java that need no Android classes are compiled
+  screen sizes) and a scan of the sources and of every tab and sheet for emoji. For v7.8: the Terminal (commands in a real shell,
+  history, extra keys, TAB completion, colours and progress lines, one screen per shell, every shell that cannot start) and
+  the coding agents against recorded provider streams (key tests, approvals, files written and edited for real, undo, STOP,
+  errors, switching agents mid-chat, the setup sheets, sign-in tools, Cursor's cloud agents).
+- **Native rules, off the device** (`tests/java/run.js`, 36 suites): the parts of the Java that need no Android classes are compiled
   and run as plain Java. For the Hidden Settings tab that is 311 checks of `SettingsDb`, including round trips through a real `sh` (and a fake
   `settings` that refuses on purpose) for hostile values (quotes, `;`, `$(...)`, backticks, `>`, newlines, Unicode), and a
   comparison of the name, value and size checks in Java and in the page over 1,322 cases (the color check of the Overlays tab

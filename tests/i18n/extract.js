@@ -90,6 +90,9 @@ const fnName = (anc) => {
 const isCmp = (p, node) => p && ((p.type === 'BinaryExpression' && ['===', '!==', '==', '!=', 'in', 'instanceof'].includes(p.operator)) || (p.type === 'SwitchCase' && p.test === node) || (p.type === 'MemberExpression' && p.computed && p.property === node) || (p.type === 'Property' && p.key === node && !p.computed) || (p.type === 'ImportDeclaration'));
 const top = (node, anc) => { const p = anc[anc.length - 2]; return !(p && ((p.type === 'BinaryExpression' && p.operator === '+') || (p.type === 'ConditionalExpression' && p.test !== node) || (p.type === 'LogicalExpression' && (p.operator === '||' || p.operator === '??')) || (p.type === 'TemplateLiteral'))); };
 
+// what the coding agents are told, and shell commands the Terminal builds: never shown to a person
+const neverShown = (anc) => anc.some(a => a.type === 'FunctionDeclaration' && a.id && /^(txSystemPrompt|txCliWrap|txCliLogin|txComplete|txReadFile|txWriteBytes)$/.test(a.id.name));
+
 walk.ancestor(ast, {
   Literal(node, st, anc) {
     if (typeof node.value !== 'string') return;
@@ -97,6 +100,7 @@ walk.ancestor(ast, {
     if (isCmp(p, node)) return;
     if (anc.some(a => a.type === 'VariableDeclarator' && a.id && a.id.name === 'OVL_PRESETS')) return;       // the list of 700 color names: they stay as they are
     if (anc.some(a => a.type === 'VariableDeclarator' && a.id && a.id.name === 'SYN_WORDS')) return;          // per-language keyword lists for the code-colour tokenizer: not sentences
+    if (neverShown(anc)) return;
     // a piece of a longer text ('Could not load: ' + error) is part of the template made from the whole expression
     if (p && p.type === 'BinaryExpression' && p.operator === '+' && /\{|\}/.test('') === false && !(p.left.type === 'Literal' && p.right.type === 'Literal')) return;
     const ctx = 'js ' + fnName(anc);
@@ -107,16 +111,19 @@ walk.ancestor(ast, {
   },
   TemplateLiteral(node, st, anc) {
     if (!top(node, anc)) return;
+    if (neverShown(anc)) return;
     const ctx = 'js ' + fnName(anc);
     alts(node).forEach(parts => emit(parts, ctx));
   },
   BinaryExpression(node, st, anc) {
     if (node.operator !== '+' || !top(node, anc)) return;
+    if (neverShown(anc)) return;
     const ctx = 'js ' + fnName(anc);
     alts(node).forEach(parts => emit(parts, ctx));
   },
   ConditionalExpression(node, st, anc) {
     if (!top(node, anc)) return;
+    if (neverShown(anc)) return;
     const ctx = 'js ' + fnName(anc);
     alts(node).forEach(parts => { if (parts.length === 1 && parts[0] === null) return; emit(parts, ctx); });
   },
@@ -168,7 +175,7 @@ for (const [k, v] of keys.p) {
   const blocks = [...new Set(await page.evaluate(() => I18N.blocks(document.body)))];
   const tabs = await page.evaluate(() => TAB_DEFS.map(t => t.label.replace(/\n/g, ' ')));
   const places = await page.evaluate(() => {
-    const names = { apps: 'Application Manager tab', 'saved-lists': 'Saved Applications tab', debloater: 'UAD-NG Debloater tab', installer: 'APK Installer tab', files: 'File Manager tab', terminal: 'ADB Console tab', settings: 'Hidden Settings tab', overlays: 'RRO/Monet Customization tab', updates: 'App Updater tab', store: 'App Stores tab', logcat: 'Logcat Viewer tab', about: 'About tab', prefs: 'Settings (the gear in the header)' };
+    const names = { apps: 'Application Manager tab', 'saved-lists': 'Saved Applications tab', debloater: 'UAD-NG Debloater tab', installer: 'APK Installer tab', files: 'File Manager tab', terminal: 'Terminal / ADB Console tab', settings: 'Hidden Settings tab', overlays: 'RRO/Monet Customization tab', updates: 'App Updater tab', store: 'App Stores tab', logcat: 'Logcat Viewer tab', about: 'About tab', prefs: 'Settings (the gear in the header)' };
     const where = (el) => {
       const v = el.closest('.view-content'); if (v) { const k = v.id.replace(/^view-/, ''); return names[k] || v.id; }
       const m = el.closest('.modal-overlay'); if (m) return 'a sheet (' + m.id.replace(/Modal$/, '').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase() + ')';

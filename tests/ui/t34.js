@@ -16,7 +16,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.goto(PAGE); await page.waitForTimeout(300);
 
   // ---- terminal input no auto-capitalize ----
-  await page.evaluate(() => switchView('terminal')); await page.waitForTimeout(100);
+  await page.evaluate(() => (switchView('terminal'), txShowPane('console'))); await page.waitForTimeout(100);
   const caps = await page.getAttribute('#termCmd', 'autocapitalize');
   const corr = await page.getAttribute('#termCmd', 'autocorrect');
   console.log('1. termCmd autocapitalize:', caps, '| autocorrect:', corr, '| spellcheck:', await page.getAttribute('#termCmd', 'spellcheck'));

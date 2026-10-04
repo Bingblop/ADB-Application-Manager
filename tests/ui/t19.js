@@ -56,7 +56,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.evaluate(() => shareManifest());
   await page.evaluate(() => closeInspector());
   // terminal find
-  await page.evaluate(() => switchView('terminal')); await page.fill('#termCmd', 'x');
+  await page.evaluate(() => (switchView('terminal'), txShowPane('console'))); await page.fill('#termCmd', 'x');
   await page.evaluate(() => { runTerminalCmd(); closeCommandResultsModal(); }); await page.waitForTimeout(200);
   await page.fill('#termSearch', 'alpha');
   console.log('terminal find:', await page.innerText('#termFindCount'));
