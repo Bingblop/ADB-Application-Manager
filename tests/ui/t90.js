@@ -101,7 +101,7 @@ const tx = require('./lib/tx_mock');
   console.log('   <done> ends the turn and shows its summary:', JSON.stringify(await tail()));
   await page.evaluate(() => { txSettings.maxSteps = 2; });
   for (let i = 0; i < 3; i++) await page.evaluate(s => window.__ai.queue.unshift({ match: sp => /\/v1\/messages$/.test(sp.url), sse: s }), tx.claudeSse('Next.\n<run>echo loop</run>'));
-  await page.evaluate(() => { txChat.allowRun = true; });
+  await page.evaluate(() => { txChat.allowRun = { ['priv:' + txSess.priv.uid]: true }; });      // "Always allow" for this shell and user
   await say('loop'); await idle();
   console.log('7. after the step limit the agent pauses:', JSON.stringify(await tail()));
   await page.evaluate(() => { txSettings.maxSteps = 25; window.__ai.queue = window.__ai.queue.filter(q => q.keep); });

@@ -151,7 +151,28 @@ public final class AgentRules {
                 .replaceAll("(AIza[0-9A-Za-z_\\-]{4})[0-9A-Za-z_\\-]{20,}", "$1…")
                 .replaceAll("(github_pat_[A-Za-z0-9]{4})[A-Za-z0-9_]{20,}", "$1…")
                 .replaceAll("(gh[pousr]_[A-Za-z0-9]{4})[A-Za-z0-9]{20,}", "$1…")
-                .replaceAll("(crsr_[A-Za-z0-9]{4})[A-Za-z0-9_\\-]{16,}", "$1…");
+                .replaceAll("(crsr_[A-Za-z0-9]{4})[A-Za-z0-9_\\-]{16,}", "$1…")
+                .replaceAll("\\b(key_[A-Za-z0-9]{4})[A-Za-z0-9_\\-]{24,}", "$1…");
+    }
+
+    /** A key is visible ASCII only, as an HTTP header must be: no spaces, no control characters, at most 4096 characters. Empty is allowed
+     *  (a server that needs no key). A key with a control character would come back in the error of the HTTP library, which quotes the header. */
+    public static boolean keyLooksValid(String k) {
+        if (k == null) return true;
+        if (k.length() > 4096) return false;
+        for (int i = 0; i < k.length(); i++) {
+            char c = k.charAt(i);
+            if (c < 0x21 || c > 0x7e) return false;
+        }
+        return true;
+    }
+
+    /** What an error may carry back to the page: {@code secret} itself and anything else that looks like a key are masked. */
+    public static String scrub(String text, String secret) {
+        if (text == null || text.isEmpty()) return "";
+        String t = text;
+        if (secret != null && secret.length() >= 4) t = t.replace(secret, "…");
+        return redact(t);
     }
 
     // ---------------------------------------------------------------------------------------------

@@ -397,7 +397,9 @@ const FILES = {
   // many pictures: scrolling past them does not ask for all
   const many = {}; for (let i = 0; i < 600; i++) many[ROOT + '/Many/img' + String(i).padStart(4, '0') + '.jpg'] = { size: 100, bin: true };
   page = await open({ files: Object.assign({}, FILES, many) });
-  await go(page, ROOT + '/Many'); await sleep(300);
+  await go(page, ROOT + '/Many');
+  for (let t = 0; t < 60 && !(await ev(page, () => window.__fm.thumbReqs.length)); t++) await sleep(50);   // the first batch comes when the list has settled (later on a busy machine)
+  await sleep(300);
   const first = await ev(page, () => window.__fm.thumbReqs.map(r => r.paths).flat().length);
   await ev(page, () => { const l = document.getElementById('fmList'); window.scrollTo(0, 0); });
   for (let y = 0; y < 30000; y += 3000) { await page.mouse.wheel(0, 3000); await sleep(10); }

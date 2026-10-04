@@ -91,6 +91,28 @@ public class AgentRulesTest {
     check("redact masks every kind of key", !red.contains("UVWXYZ012345") && !red.contains("ijklmnopq ") && !red.contains("6789 ") && !red.contains("zzzzzzzzzzzzzzzzzzz")
         && !red.contains("qrstuvwxyz123456") && !red.contains("opqrstuvwxyz") && red.contains("sk-ant-api03-…") && red.contains("AIzaSyD1…"));
     check("redact leaves ordinary text alone", "ls -la /sdcard && echo sk- done".equals(AgentRules.redact("ls -la /sdcard && echo sk- done")) && AgentRules.redact(null) == null);
+    // Cursor keys that start with key_ (as hint() knows them) are masked too, but not a word like api_key_name or a short key_id
+    String ck = "key_" + "0123456789abcdef0123456789abcdef0123456789abcdef";
+    check("redact masks a key_ Cursor key", AgentRules.redact("export CURSOR_API_KEY=" + ck).equals("export CURSOR_API_KEY=key_0123…"));
+    check("redact leaves key_ words alone", "api_key_name_is_long_enough_to_look_like_one key_id".equals(AgentRules.redact("api_key_name_is_long_enough_to_look_like_one key_id")));
+
+    // keyLooksValid: visible ASCII only (what an HTTP header carries); a control character would come back quoted in the HTTP library's error
+    check("keyLooksValid: a normal key", AgentRules.keyLooksValid("sk-ant-api03-abc_DEF-123"));
+    check("keyLooksValid: empty is allowed (a server without a key)", AgentRules.keyLooksValid("") && AgentRules.keyLooksValid(null));
+    check("keyLooksValid: no space, tab, line break", !AgentRules.keyLooksValid("sk-a b") && !AgentRules.keyLooksValid("sk-a\tb") && !AgentRules.keyLooksValid("sk-a\nb") && !AgentRules.keyLooksValid("sk-a\rb"));
+    check("keyLooksValid: no control character (BEL, DEL)", !AgentRules.keyLooksValid("sk-a\u0007b") && !AgentRules.keyLooksValid("sk-a\u007fb"));
+    check("keyLooksValid: no character outside ASCII", !AgentRules.keyLooksValid("sk-caf\u00e9") && !AgentRules.keyLooksValid("sk-\u200bzero-width"));
+    StringBuilder longKey = new StringBuilder(); for (int i = 0; i < 4097; i++) longKey.append('a');
+    check("keyLooksValid: at most 4096 characters", !AgentRules.keyLooksValid(longKey.toString()) && AgentRules.keyLooksValid(longKey.substring(1)));
+
+    // scrub: the key itself and anything key-like are masked in an error before it goes back to the page
+    String tok = "my-own-server-token-1234567890";
+    String err = "Unexpected char 0x07 at 12 in Authorization value: Bearer " + tok + " (and sk-ant-api03-ABCDEFGHIJKLMNOPQRSTUV)";
+    String sc = AgentRules.scrub(err, tok);
+    check("scrub masks the secret itself (" + sc + ")", sc.indexOf(tok) < 0 && sc.contains("Bearer …"));
+    check("scrub masks other key-like text", sc.indexOf("ABCDEFGHIJKLMNOPQRSTUV") < 0);
+    check("scrub of nothing is empty", "".equals(AgentRules.scrub(null, tok)) && "".equals(AgentRules.scrub("", tok)));
+    check("scrub ignores a too-short secret", "abc abc".equals(AgentRules.scrub("abc abc", "abc")));
 
     // ---------------------------------------------------------------- headers the page may not set
     check("credential headers are the app's alone (any case)", AgentRules.reservedHeader("Authorization") && AgentRules.reservedHeader("x-api-key")

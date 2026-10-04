@@ -16574,7 +16574,8 @@ Type any command below (e.g. pm list packages -d)
         ];
         const TX_TERMUX_ALLOW_CMD = "mkdir -p ~/.termux && echo 'allow-external-apps=true' >> ~/.termux/termux.properties && termux-reload-settings";
 
-        const txChat = { msgs: [], busy: false, stop: false, reqId: null, steps: 0, allowRun: false, allowAll: false, undo: [], usage: { in: 0, out: 0 }, cursorAgent: '', cliCont: {}, ask: null };
+        // allowRun: "Always allow in this chat", per shell and user ({ 'app:10123': true }): a grant in the sandbox does not let commands run as root
+        const txChat = { msgs: [], busy: false, stop: false, reqId: null, steps: 0, allowRun: {}, allowAll: false, undo: [], usage: { in: 0, out: 0 }, cursorAgent: '', cliCont: {}, ask: null };
 
         function txAgentDef(id) { return TX_AGENTS.find(a => a.id === id) || null; }
         function txQ(s) { return "'" + String(s).replace(/'/g, "'\\''") + "'"; }
@@ -16795,6 +16796,7 @@ Type any command below (e.g. pm list packages -d)
             if (res.cancelled) { c.reject({ cancelled: true }); return; }
             if (!res.status) { c.reject(txMkErr(0, res.error || 'No answer', '', res.headers || {})); return; }
             if (res.status >= 300) { c.reject(txMkErr(res.status, res.error, res.body, res.headers || {})); return; }
+            if (res.error) { c.reject(Object.assign(txMkErr(res.status, res.error, '', res.headers || {}), { cut: true })); return; }   // 2xx, then the connection broke
             c.resolve(res);
         };
 
@@ -16815,6 +16817,8 @@ Type any command below (e.g. pm list packages -d)
             if (!e) return 'Something went wrong.';
             if (e.cancelled) return 'Stopped.';
             if (e.local) return e.msg;
+            if (e instanceof Error) return txF('Something went wrong: {0}', e.message);          // a fault here, not an answer from the provider
+            if (e.cut) return txF('The answer was cut off ({0}). Try again.', e.error);
             const s = e.status, m = (e.msg + ' ' + e.code).toLowerCase();
             if (!s) return 'No connection: ' + (e.error || e.msg || 'the request did not go through');
             if (s === 401 || /api_key_invalid|api key not valid|invalid.*key|incorrect api key|authentication_error/.test(m)) return 'The key was not accepted. Check it, or make a new one on the provider\'s website.';
@@ -17030,12 +17034,24 @@ Type any command below (e.g. pm list packages -d)
             return cwd !== '/' && (abs === cwd || abs.indexOf(cwd + '/') === 0);
         }
 
+        // A link in the working folder can lead anywhere (Termux's ~/storage leads to the shared storage): the shell says where both paths really lead
+        async function txReallyInside(b, abs) {
+            const cwd = txAbs(b, txSess[b].cwd || '/');
+            const n = txNonce();
+            const r = await txExec(b, 'for p in ' + txQ(abs) + ' ' + txQ(cwd) + '; do q=$(readlink -f "$p" 2>/dev/null); printf "@@R' + n + ' %s\\n" "${q:-$p}"; done', 'quiet');
+            const real = String(r.output || '').split('\n').filter(l => l.indexOf('@@R' + n + ' ') === 0).map(l => l.slice(n.length + 4));
+            if (real.length !== 2 || !real[0] || !real[1] || real[1] === '/') return false;             // not sure: ask
+            return real[0] === real[1] || real[0].indexOf(real[1] + '/') === 0;
+        }
+        function txNonce() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); }
+
         // Output for a model: no colour codes, no keys, the start and the end of long output
         function txStripAnsi(s) { return String(s || '').replace(/\x1b\[[0-9;?]*[ -\/]*[@-~]/g, '').replace(/\x1b\][^\x07\x1b]*(\x07|\x1b\\)/g, '').replace(/\r(?!\n)/g, '\n'); }
         function txRedact(s) {
             return String(s || '').replace(/(sk-ant-[A-Za-z0-9_\-]{6})[A-Za-z0-9_\-]{10,}/g, '$1…').replace(/(sk-(?:proj-)?[A-Za-z0-9]{4})[A-Za-z0-9_\-]{16,}/g, '$1…')
                 .replace(/(AIza[0-9A-Za-z_\-]{4})[0-9A-Za-z_\-]{20,}/g, '$1…').replace(/(github_pat_[A-Za-z0-9]{4})[A-Za-z0-9_]{20,}/g, '$1…')
-                .replace(/(gh[pousr]_[A-Za-z0-9]{4})[A-Za-z0-9]{20,}/g, '$1…').replace(/(crsr_[A-Za-z0-9]{4})[A-Za-z0-9_\-]{16,}/g, '$1…');
+                .replace(/(gh[pousr]_[A-Za-z0-9]{4})[A-Za-z0-9]{20,}/g, '$1…').replace(/(crsr_[A-Za-z0-9]{4})[A-Za-z0-9_\-]{16,}/g, '$1…')
+                .replace(/\b(key_[A-Za-z0-9]{4})[A-Za-z0-9_\-]{24,}/g, '$1…');
         }
         function txForModel(out) {
             let s = txRedact(txStripAnsi(out));
@@ -17119,19 +17135,24 @@ Type any command below (e.g. pm list packages -d)
             for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
             return btoa(s);
         }
+        // The file comes back as base64 between two markers with a fresh nonce, and its size is checked: something else that prints in the same shell
+        // (a job started with &) cannot slip into the bytes unnoticed. A file that is not UTF-8 text counts as binary: an edit would change bytes it did not touch.
         async function txReadFile(b, abs) {
-            const q = txQ(abs);
-            const r = await txExec(b, 'f=' + q + '; if [ -f "$f" ]; then s=$(wc -c < "$f" | tr -d " "); if [ "$s" -gt 1048576 ]; then echo "@@BIG $s"; else echo "@@B64"; base64 < "$f"; fi; elif [ -e "$f" ]; then echo "@@NOTFILE"; else echo "@@NONE"; fi', 'quiet');
+            const q = txQ(abs), n = txNonce();
+            const r = await txExec(b, 'f=' + q + '; if [ -f "$f" ]; then s=$(wc -c < "$f" | tr -d " "); if [ "$s" -gt 1048576 ]; then echo "@@BIG' + n + ' $s"; else echo "@@B64' + n + ' $s"; base64 < "$f"; echo "@@END' + n + '"; fi; elif [ -e "$f" ]; then echo "@@NOTFILE' + n + '"; else echo "@@NONE' + n + '"; fi', 'quiet');
             const out = String(r.output || '');
             if (r.error) return { error: r.error };
-            if (/^@@NONE/.test(out)) return { exists: false };
-            if (/^@@NOTFILE/.test(out)) return { error: 'not a regular file' };
-            if (/^@@BIG/.test(out)) return { error: 'the file is over 1 MB' };
-            const m = /^@@B64\n([\s\S]*)$/.exec(out);
+            if (out.indexOf('@@NONE' + n) >= 0) return { exists: false };
+            if (out.indexOf('@@NOTFILE' + n) >= 0) return { error: 'not a regular file' };
+            if (out.indexOf('@@BIG' + n) >= 0) return { error: 'the file is over 1 MB' };
+            const m = new RegExp('@@B64' + n + ' (\\d+)\\n([\\s\\S]*?)@@END' + n).exec(out);
             if (!m) return { error: out.trim().slice(0, 200) || 'could not read it' };
-            const bytes = txB64Decode(m[1]);
-            const text = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
-            return { exists: true, text, b64: txB64Encode(bytes), binary: /\u0000/.test(text) };
+            let bytes = null;
+            try { bytes = txB64Decode(m[2].split('\n').filter(l => /^[A-Za-z0-9+\/=]+$/.test(l.trim())).join('')); } catch (e) { bytes = null; }   // atob refuses a broken string
+            if (!bytes || bytes.length !== parseInt(m[1], 10)) return { error: 'could not read it cleanly (something else in this shell is printing): stop that and try again' };
+            let text, utf8 = true;
+            try { text = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(bytes); } catch (e) { utf8 = false; text = new TextDecoder('utf-8', { fatal: false, ignoreBOM: true }).decode(bytes); }
+            return { exists: true, text, b64: txB64Encode(bytes), binary: !utf8 || /\u0000/.test(text) };
         }
         async function txWriteBytes(b, abs, bytes) {
             const q = txQ(abs), tmp = txQ(abs + '.adbm-part');
@@ -17144,9 +17165,11 @@ Type any command below (e.g. pm list packages -d)
                 if (r.exit !== 0) { await txExec(b, 'rm -f ' + tmp, 'quiet'); return { error: (r.output || '').trim() || 'writing failed' }; }
                 if (txChat.stop) { await txExec(b, 'rm -f ' + tmp, 'quiet'); return { error: 'stopped' }; }
             }
-            r = await txExec(b, 'mv -f ' + tmp + ' ' + q + ' && wc -c < ' + q, 'quiet');
+            const n = txNonce();
+            r = await txExec(b, 'if [ -e ' + q + ' ]; then m=$(stat -c %a ' + q + ' 2>/dev/null); [ -n "$m" ] && chmod "$m" ' + tmp + '; o=$(stat -c %u:%g ' + q + ' 2>/dev/null); [ -n "$o" ] && chown "$o" ' + tmp + ' 2>/dev/null; fi; mv -f ' + tmp + ' ' + q + ' && echo "@@W' + n + ' $(wc -c < ' + q + ' | tr -d \' \')"', 'quiet');
             if (r.exit !== 0) return { error: (r.output || '').trim() || 'could not finish writing' };
-            return { bytes: parseInt(String(r.output).trim(), 10) || 0 };
+            const wm = new RegExp('@@W' + n + ' (\\d+)').exec(String(r.output || ''));
+            return { bytes: wm ? parseInt(wm[1], 10) : 0 };
         }
 
         async function txEnsureShell(b) {
@@ -17166,10 +17189,11 @@ Type any command below (e.g. pm list packages -d)
             if (act.type === 'run') {
                 const cmd = act.body.trim();
                 if (!cmd) return { text: '<result action="run" status="error">empty command</result>' };
-                if (txSettings.askRun && !txChat.allowRun && !txChat.allowAll) {
+                const grant = b + ':' + (txSess[b].uid === undefined || txSess[b].uid === null ? '?' : txSess[b].uid);
+                if (txSettings.askRun && !txChat.allowRun[grant] && !txChat.allowAll) {
                     const a = await txAsk(b, txF('{0} wants to run this in {1} ({2}):', who, txT(TX_SHELLS[b].name), txShortPath(b, cwd)), cmd, { yes: 'Run', always: 'Always allow in this chat' });
                     if (a === 'no') return { text: '<result action="run" status="denied">The user did not run it. Wait for their next message.</result>', denied: true };
-                    if (a === 'always') txChat.allowRun = true;
+                    if (a === 'always') txChat.allowRun[grant] = true;
                 }
                 if (txChat.stop) return { text: '', denied: true };
                 txEcho(b, cmd);
@@ -17180,7 +17204,7 @@ Type any command below (e.g. pm list packages -d)
                 const p = act.attrs.path || act.body.trim();
                 if (!p) return { text: '<result action="read" status="error">read needs path="..."</result>' };
                 const abs = txAbs(b, p);
-                if (!txInside(b, abs) && !txSettings.readOutside && !txChat.allowAll) {
+                if (!txSettings.readOutside && !txChat.allowAll && !(txInside(b, abs) && await txReallyInside(b, abs))) {
                     const a = await txAsk(b, txF('{0} wants to read a file outside the working folder:', who), abs, { yes: 'Allow' });
                     if (a === 'no') return { text: '<result action="read" status="denied">The user did not allow reading it.</result>', denied: true };
                 }
@@ -17189,11 +17213,13 @@ Type any command below (e.g. pm list packages -d)
                 if (e1 < s1) e1 = s1;
                 if (e1 - s1 > 1999) e1 = s1 + 1999;
                 txNote('[' + who + ' reads ' + p + (act.attrs.start || act.attrs.end ? ', lines ' + s1 + '-' + e1 : '') + ']', b);
-                const r = await txExec(b, 'f=' + txQ(abs) + '; if [ -f "$f" ]; then printf "@@N %s\\n" "$(wc -l < "$f" | tr -d " ")"; sed -n "' + s1 + ',' + e1 + 'p" "$f" | head -c 60000; elif [ -d "$f" ]; then echo "@@DIR"; ls -la "$f" | head -n 300; else echo "@@NONE"; fi', 'quiet');
+                const nn = txNonce();          // markers with a fresh nonce: output of a job running in the background cannot pass for them
+                const r = await txExec(b, 'f=' + txQ(abs) + '; if [ -f "$f" ]; then printf "@@N' + nn + ' %s\\n" "$(wc -l < "$f" | tr -d " ")"; sed -n "' + s1 + ',' + e1 + 'p" "$f" | head -c 60000; elif [ -d "$f" ]; then echo "@@DIR' + nn + '"; ls -la "$f" | head -n 300; else echo "@@NONE' + nn + '"; fi', 'quiet');
                 const out = String(r.output || '');
-                if (/^@@NONE/.test(out)) return { text: '<result action="read" path="' + txAttr(p) + '" status="error">no such file</result>' };
-                if (/^@@DIR/.test(out)) return { text: '<result action="read" path="' + txAttr(p) + '" status="directory">\n' + txForModel(out.replace(/^@@DIR\n/, '')) + '\n</result>' };
-                const m = /^@@N (\d+)\n([\s\S]*)$/.exec(out);
+                if (out.indexOf('@@NONE' + nn) >= 0) return { text: '<result action="read" path="' + txAttr(p) + '" status="error">no such file</result>' };
+                const di = out.indexOf('@@DIR' + nn + '\n');
+                if (di >= 0) return { text: '<result action="read" path="' + txAttr(p) + '" status="directory">\n' + txForModel(out.slice(di + nn.length + 6)) + '\n</result>' };
+                const m = new RegExp('@@N' + nn + ' (\\d+)\\n([\\s\\S]*)$').exec(out);
                 if (!m) return { text: '<result action="read" path="' + txAttr(p) + '" status="error">' + txAttr(out.trim().slice(0, 300)) + '</result>' };
                 const n = parseInt(m[1], 10);
                 return { text: '<result action="read" path="' + txAttr(p) + '" lines="' + s1 + '-' + Math.min(e1, Math.max(n, s1)) + ' of ' + n + '">\n' + txRedact(m[2]) + '\n</result>' };
@@ -17210,7 +17236,7 @@ Type any command below (e.g. pm list packages -d)
                     if (next && !/\n$/.test(next)) next += '\n';
                 } else {
                     if (!old.exists) return { text: '<result action="edit" path="' + txAttr(p) + '" status="error">no such file: use write to create it</result>' };
-                    if (old.binary) return { text: '<result action="edit" path="' + txAttr(p) + '" status="error">this is a binary file</result>' };
+                    if (old.binary) return { text: '<result action="edit" path="' + txAttr(p) + '" status="error">this is a binary file, or text that is not UTF-8: edit would change bytes you did not touch. Leave it, or replace it whole with write.</result>' };
                     const res = txApplyEdits(old.text, act.body);
                     if (res.error) return { text: '<result action="edit" path="' + txAttr(p) + '" status="error">' + txAttr(res.error) + '</result>' };
                     next = res.text;
@@ -17234,15 +17260,21 @@ Type any command below (e.g. pm list packages -d)
         function txApplyEdits(text, body) {
             const crlf = /\r\n/.test(text);
             let cur = crlf ? text.replace(/\r\n/g, '\n') : text;
-            const re = /<<<<<<< SEARCH\r?\n([\s\S]*?)\r?\n?=======\r?\n([\s\S]*?)\r?\n?>>>>>>> REPLACE/g;
+            // the markers are whole lines: a line of the file such as "x = 1=======" or "# =======" is not one
+            const re = /^<<<<<<< SEARCH[ \t]*\r?\n(?:([\s\S]*?)\r?\n)?=======[ \t]*\r?\n(?:([\s\S]*?)\r?\n)?>>>>>>> REPLACE[ \t]*$/gm;
             let m, n = 0;
             while ((m = re.exec(body))) {
                 n++;
-                const find = m[1].replace(/\r\n/g, '\n'), repl = m[2].replace(/\r\n/g, '\n');
+                const find = (m[1] || '').replace(/\r\n/g, '\n'), repl = (m[2] || '').replace(/\r\n/g, '\n');
                 if (!find) return { error: 'SEARCH block ' + n + ' is empty' };
                 let at = cur.indexOf(find);
                 if (at >= 0 && cur.indexOf(find, at + 1) >= 0) return { error: 'SEARCH block ' + n + ' matches more than once: include more lines' };
-                if (at >= 0) { cur = cur.slice(0, at) + repl + cur.slice(at + find.length); continue; }
+                if (at >= 0) {
+                    let end = at + find.length;
+                    if (!repl && cur.charAt(end) === '\n' && (at === 0 || cur.charAt(at - 1) === '\n')) end++;     // a whole line taken out leaves no empty line behind
+                    cur = cur.slice(0, at) + repl + cur.slice(end);
+                    continue;
+                }
                 // trailing spaces may differ
                 const lines = cur.split('\n'), want = find.split('\n').map(l => l.replace(/\s+$/, ''));
                 let hit = -1, hits = 0;
@@ -17252,7 +17284,7 @@ Type any command below (e.g. pm list packages -d)
                     if (ok) { hits++; hit = i; }
                 }
                 if (hits !== 1) return { error: 'SEARCH block ' + n + (hits ? ' matches more than once' : ' was not found in the file') + ': read the file again and copy the lines exactly' };
-                lines.splice(hit, want.length, ...repl.split('\n'));
+                lines.splice(hit, want.length, ...(repl ? repl.split('\n') : []));
                 cur = lines.join('\n');
             }
             if (!n) return { error: 'no SEARCH/REPLACE block found' };
@@ -17366,7 +17398,7 @@ Type any command below (e.g. pm list packages -d)
             txChat.msgs = [];
             txChat.undo = [];
             txChat.usage = { in: 0, out: 0 };
-            txChat.allowRun = false;
+            txChat.allowRun = {};
             txChat.allowAll = false;
             txChat.cursorAgent = '';
             txChat.cliCont = {};

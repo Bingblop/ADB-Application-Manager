@@ -37,6 +37,16 @@
   default shell, whether agents must ask before running commands or changing files, and whether the conversation is kept.
   **Help** explains everything, with a link to every agent's website.
 
+- **Safety**: "Always allow in this chat" applies only to the shell and user it was given in (a grant in the sandbox does not let
+  commands run as root); a read through a link that leads out of the working folder (Termux's `~/storage`) is asked about;
+  files are read for edits between nonce markers with a size check; edit markers are whole lines; a file that is not UTF-8
+  text is not edited; edited files keep their permissions; an answer cut off mid-stream is reported as an error; a key with a
+  control character is refused and keys are masked in any error that goes back to the page.
+- **Translations**: the agent and model drop-downs and the Shell options are translated (agent and model names stay as they
+  are); optgroup headings are translated app-wide (the Compress dialog's "One file only" too); the File Manager search help
+  showed `size:&gt;10mb` in every language and now shows `size:>10mb`. About 70 of the Terminal's own status lines are still
+  in English in the other languages.
+
 ## v7.7-Pro (versionCode 770)
 
 - **Task Manager → GPU: a Renderer switch.** A dropdown showing the HWUI backend currently in use (Vulkan, OpenGL, or

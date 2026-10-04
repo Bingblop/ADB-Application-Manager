@@ -33,6 +33,8 @@ public final class AiHttp {
         public int connectTimeoutMs = 20000;
         /** The longest silence allowed (a model can think for a while before its first word). */
         public int readTimeoutMs = 300000;
+        /** The key that was added to the headers: kept only to mask it in an error message that quotes a header. */
+        public String secret;
     }
 
     public static final class Response {

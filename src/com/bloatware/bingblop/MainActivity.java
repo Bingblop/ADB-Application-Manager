@@ -1425,17 +1425,17 @@ public class MainActivity extends Activity {
         }
         for (String[] h : p.extra) if (!req.headers.containsKey(h[0])) req.headers.put(h[0], h[1]);
         String key = vault().get(auth);
-        if (key != null && !key.isEmpty()) req.headers.put(p.header, p.prefix + key);
+        if (key != null && !key.isEmpty()) { req.headers.put(p.header, p.prefix + key); req.secret = key; }
         else if (!p.ownServer()) return "no " + auth + " key is saved: add it in Terminal settings";
         return null;
     }
 
-    private void aiFinish(String reqId, AiHttp.Response r) {
+    private void aiFinish(String reqId, AiHttp.Response r, String secret) {
         JSONObject o = new JSONObject();
         try {
             o.put("status", r.status);
             o.put("body", r.body == null ? "" : r.body);
-            o.put("error", r.error == null ? "" : r.error);
+            o.put("error", AgentRules.scrub(r.error, secret));          // an exception may quote a header: the key never goes back to the page
             o.put("cancelled", r.cancelled);
             JSONObject h = new JSONObject();
             for (Map.Entry<String, String> e : r.headers.entrySet()) h.put(e.getKey(), e.getValue());
@@ -7005,7 +7005,7 @@ public class MainActivity extends Activity {
                     });
                     stream.flush();
                     aiCalls.remove(id);
-                    aiFinish(id, r);
+                    aiFinish(id, r, req.secret);
                 }
             });
             return "started";
@@ -7028,7 +7028,7 @@ public class MainActivity extends Activity {
             final AgentRules.Provider p = AgentRules.find(provider);
             if (p == null) return "error: unknown provider";
             final String k = key == null ? "" : key.trim();
-            if (k.length() > 4096 || k.indexOf('\n') >= 0 || k.indexOf('\r') >= 0 || k.indexOf(' ') >= 0) return "error: that does not look like a key";
+            if (!AgentRules.keyLooksValid(k)) return "error: that does not look like a key";
             String b = "";
             if (p.ownServer()) {
                 try {
@@ -7059,7 +7059,7 @@ public class MainActivity extends Activity {
                         o.put("ok", ok);
                         o.put("status", r.status);
                         o.put("body", r.body.length() > 1000000 ? r.body.substring(0, 1000000) : r.body);
-                        o.put("error", r.error);
+                        o.put("error", AgentRules.scrub(r.error, k));
                         o.put("cancelled", r.cancelled);
                         o.put("base", fb);
                         o.put("hint", AgentRules.hint(k));
@@ -7079,7 +7079,7 @@ public class MainActivity extends Activity {
                     } catch (Throwable t) {
                         try {
                             o.put("ok", false);
-                            o.put("error", errMsg(t));
+                            o.put("error", AgentRules.scrub(errMsg(t), k));
                         } catch (Exception ignored) {}
                     }
                     aiCalls.remove(id);
@@ -7095,7 +7095,7 @@ public class MainActivity extends Activity {
             AgentRules.Provider p = AgentRules.find(provider);
             if (p == null) return "error: unknown provider";
             String k = key == null ? "" : key.trim();
-            if (k.length() > 4096 || k.indexOf('\n') >= 0 || k.indexOf('\r') >= 0 || k.indexOf(' ') >= 0) return "error: that does not look like a key";
+            if (!AgentRules.keyLooksValid(k)) return "error: that does not look like a key";
             try {
                 if (p.ownServer()) vault().setBase(p.id, AgentRules.normalizeBase(base));
                 else if (k.isEmpty()) return "error: enter the key first";

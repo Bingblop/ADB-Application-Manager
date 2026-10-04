@@ -261,9 +261,12 @@ public final class RishShell {
         write("exec 2>&1\nexec 3>&1\n");
 
         final StringBuilder probe = new StringBuilder();
+        // The answer is marked with a fresh nonce: a login profile that prints a banner (or anything else the shell says first) is not read as
+        // the pid and uid. A wrong pid would leave STOP unable to end what a command started.
+        final String mark = "@@ID" + Long.toHexString(new java.security.SecureRandom().nextLong() & Long.MAX_VALUE) + ":";
         Result r;
         try {
-            r = runLocked("printf '%s|%s|%s|%s' \"$$\" \"$(id -u)\" \"$(getprop ro.product.device 2>/dev/null)\" \"$(command -v printf)\"",
+            r = runLocked("printf '" + mark + "%s|%s|%s|%s\\n' \"$$\" \"$(id -u)\" \"$(getprop ro.product.device 2>/dev/null)\" \"$(command -v printf)\"",
                     probeTimeoutMs, new Sink() {
                         @Override
                         public void onOutput(String text) {
@@ -278,7 +281,14 @@ public final class RishShell {
             closeProcess(true);
             throw new IOException(r.exited ? "the shell ended right after it started" : "the shell started but did not answer");
         }
-        String[] f = probe.toString().split("\\|", -1);
+        String line = probe.toString();
+        int at = line.lastIndexOf(mark);
+        if (at >= 0) {
+            line = line.substring(at + mark.length());
+            int nl = line.indexOf('\n');
+            if (nl >= 0) line = line.substring(0, nl);
+        }
+        String[] f = line.trim().split("\\|", -1);
         synchronized (lock) {
             if (f.length >= 1) shellPid = parseInt(f[0], -1);
             if (f.length >= 2) uid = parseInt(f[1], -1);
