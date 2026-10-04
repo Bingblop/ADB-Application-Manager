@@ -109,6 +109,14 @@ Left to right, with the **settings gear** (it opens Settings: language, appearan
 
 Every tab except Application Manager and About can be switched off or moved in **Settings → Feature List**.
 
+## New in v7.2
+
+- **File manager:** a **".." row** at the top of every list (go up one folder), **＋ File**, **Show hidden files**, cached
+  **thumbnails** of images and videos, a **Replace / Skip / Keep both** sheet when a name is taken, **Cancel** for a running job,
+  **Open with…** and **Share** on any file, a **text editor** (**Edit**), and viewers for **pictures, PDF pages and fonts**. Copy, move,
+  delete, rename and create work with All-files access alone, with no working mode. Archives beyond zip, search and the extract
+  dialog follow in the next releases.
+
 ## New in v7.1
 
 - **A language setting.** **Settings → Language**, at the very top: English (the default) and thirteen more, each named in its own
@@ -966,7 +974,7 @@ script passes is in [tests/README.md](tests/README.md)).
   version, a damaged one, a tab that is off reached by a link or by Back, the layout at 320, 360 and 412 px), the search bar and its menu
   (placement, the three options, the swap rule, patterns and plain text, exact matches, kept between launches, closing by tap, Escape and Back, three
   screen sizes) and a scan of the sources and of every tab and sheet for emoji.
-- **Native rules, off the device** (`tests/java/run.js`, 18 suites): the parts of the Java that need no Android classes are compiled
+- **Native rules, off the device** (`tests/java/run.js`, 19 suites): the parts of the Java that need no Android classes are compiled
   and run as plain Java. For the Hidden Settings tab that is 311 checks of `SettingsDb`, including round trips through a real `sh` (and a fake
   `settings` that refuses on purpose) for hostile values (quotes, `;`, `$(...)`, backticks, `>`, newlines, Unicode), and a
   comparison of the name, value and size checks in Java and in the page over 1,322 cases (the color check of the Overlays tab

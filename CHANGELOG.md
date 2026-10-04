@@ -1,5 +1,43 @@
 # Changelog
 
+## v7.2-Pro (versionCode 720)
+
+File manager, the first part of its overhaul.
+
+- **A ".." row at the top of every list.** A folder drawn in CSS and "..": tap it to go up one folder. It is there in an empty folder
+  and when a folder cannot be listed, so there is always a way out; the **Up** button stays. At the root of the phone there is
+  nothing above, so no row. Every row now has a picture in front of it: a folder, a page, or the small picture of an image or video.
+- **＋ File** next to **＋ Folder**: asks for a name (no slash, not "." or "..", not one that is taken, hidden files included),
+  creates an empty file and opens the editor on it when it is a text file.
+- **Show hidden files**: a box under the title (off at the start, kept between launches). Names that begin with a dot are left out
+  until it is ticked, and the list says how many it is not showing. They are dimmed when shown.
+- **Thumbnails, cached.** Images and videos show a small picture in place of the page. The app makes each one once (a 96 px JPEG),
+  keeps it in its cache keyed by path, size and modified time, and trims the cache to 48 MB by removing the least recently used.
+  **Show thumbnails** switches it off; **Clear thumbnail cache** empties it and says how much was freed.
+- **When a name is already taken** (Paste here), a sheet offers **Replace** (a folder is merged with the one there), **Skip** (what is
+  there stays; a folder still receives the files that are new) or **Keep both** (the new one becomes `name (1).ext`, `archive (1).tar.gz`,
+  `folder (1)`). A copy pasted into its own folder offers it too, so it makes a duplicate. A move onto the same folder does nothing.
+  The toast counts what was copied, skipped and failed.
+- **Cancel** on a running copy, move or delete: it stops after the item it is on. A copy is written to a temporary name and renamed
+  when whole, so a stopped or failed copy never leaves half a file and never costs the file it was going to replace.
+- **No working mode needed for files the app can reach.** With All-files access, copy, move, delete, rename, ＋ Folder and ＋ File
+  run in the app itself; ADB / Shizuku / Root are used only for what the app cannot reach (and for naming rules there, one command
+  per item). The batch operations and the single ones both do this.
+- **Open with…** and **Share** on any file: a copy (up to 400 MB) is handed to the app you choose through the app's share folder.
+  **View** on a video or a sound does the same.
+- **A text editor.** **Edit** on a text file (or one with an ending the app does not know; a file that is not text, or over 2 MB, is
+  refused with the reason): the whole text, Wrap lines, a line and column, Save, and a question before closing with unsaved
+  changes. A file changed by something else since it was opened is not overwritten unasked. Saving writes a temporary file and
+  renames it, so a failed save keeps the old text; a file the app cannot write opens read only.
+- **Viewers.** **View** on a picture shows it (up to 1600 px, Fit / actual size), on a **PDF** shows its pages one at a time with
+  Previous and Next (Android's own renderer), on a **.ttf / .otf** shows a sample set in that font.
+- **For developers:** `FileOps` (copy, move and delete with the three rules, links, cancel, atomic writes, and the same rules as an
+  `sh` script for the shell route) and `ThumbCache` are plain Java with their own suite (`node java/run.js fileops`, 64 checks); the
+  page side has `tests/ui/t82.js` with a small virtual file system (`tests/ui/lib/fm_mock.js`).
+- **Not in this release** (next ones): archives other than zip (7z, rar, tar and its family, with passwords), search by name, date,
+  size and type with `content:` and `archive:`, the extract dialog with a destination chooser, and the foreground service with progress,
+  speed and time left. Video and sound are not played inside the app; **Open with…** hands them to a player.
+
 ## v7.1-Pro (versionCode 710)
 
 - **A language setting.** **Settings** (the gear at the top) now starts with **Language**, a drop-down with English (the default) and
