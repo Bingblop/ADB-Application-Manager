@@ -165,6 +165,10 @@ public final class ZipTool {
         final Source src;
         /** The password the page gave for this archive (an encrypted zip entry, an encrypted 7z or rar); null when none. */
         private volatile char[] password;
+        /** All entries are packed as one block (a solid 7z/rar, a compressed tar): opening one late in the archive decodes the ones before it. */
+        public boolean solid;
+        /** The names themselves are encrypted (7z, rar -hp): the archive needed a password just to be listed. */
+        public boolean headerEncrypted;
 
         /** A non-zip archive: the entries were listed by {@code src}. */
         Archive(File file, long length, long lastModified, List<Entry> entries, String format, Source src, char[] password) {
