@@ -6,7 +6,7 @@ const { chromium, PAGE } = require('./lib/pw');
   const page = await b.newPage({ viewport: { width: 400, height: 900 } });
   const errors = []; page.on('pageerror', e => errors.push(e.message));
   await page.addInitScript(() => {
-    window.__src = []; window.__refresh = []; window.__install = []; window.__copied = []; window.__metered = false;
+    window.__src = []; window.__refresh = []; window.__install = []; window.__copied = []; window.__metered = false; window.__appActions = [];
     window.AndroidBridge = {
       vibrate() {}, loadPreferences() { return '{}'; }, loadCustomLists() { return '[]'; }, getSystemInfo() { return '{}'; },
       loadPackages() { return '[]'; }, isSystemDarkMode() { return true; }, setSystemBarColor() {}, getMaterialYouColors() { return '{}'; },
@@ -18,6 +18,7 @@ const { chromium, PAGE } = require('./lib/pw');
       storeSourceInstall(json) { window.__install.push(JSON.parse(json)); },
       isNetworkMetered() { return window.__metered; },
       copyToClipboard(t) { window.__copied.push(t); }, openAuroraStore() {}, openUrlExternal() {},
+      executeAppAction(action, pkg) { window.__appActions.push(action + ':' + pkg); return action === 'launch' ? 'Launched' : 'Settings opened'; },
     };
   });
   await page.goto(PAGE); await page.waitForTimeout(300);
@@ -93,10 +94,16 @@ const { chromium, PAGE } = require('./lib/pw');
   console.log('7. install sends key/owner/repo/resolveKind:', inst && inst.key === 'own0/app0' && inst.owner === 'own0' && inst.repo === 'app0' && inst.resolveKind === 'github');
   await page.evaluate(() => onStoreInstallProgress(JSON.stringify({ pkg: 'own0/app0', stage: 'downloading', percent: 40, message: '3 MB' })));
   const prog = await page.locator('#githubList .store-row').first().locator('.sr-status').innerText();
-  await page.evaluate(() => onStoreInstallProgress(JSON.stringify({ pkg: 'own0/app0', stage: 'done', percent: 100, message: 'Installed App 000 v1.0.' })));
+  await page.evaluate(() => onStoreInstallProgress(JSON.stringify({ pkg: 'own0/app0', stage: 'done', percent: 100, message: 'Installed App 000 v1.0.', installedPkg: 'com.example.app000', label: 'App 000' })));
   const done = await page.locator('#githubList .store-row').first().locator('.sr-status').innerText();
   const reEnabled = await page.locator('#githubList .store-row').first().locator('.store-inst-btn').isEnabled();
   console.log('   progress keyed by repo (no package name yet): downloading -> done, button re-enabled:', /40%/.test(prog) && /Installed App 000/.test(done) && reEnabled, JSON.stringify(prog), JSON.stringify(done));
+  const actionLabels = await page.locator('#commandResultsActions button').allInnerTexts();
+  console.log('   the result sheet opens too, with Launch Application and Application Settings for the REAL installed package (not the repo key):', await page.evaluate(() => document.getElementById('commandResultsModal').classList.contains('show')), JSON.stringify(actionLabels));
+  await page.locator('#commandResultsActions button', { hasText: 'Launch Application' }).click();
+  await page.locator('#commandResultsActions button', { hasText: 'Application Settings' }).click();
+  console.log('   both act on com.example.app000, never on the repo key own0/app0:', JSON.stringify(await page.evaluate(() => window.__appActions)));
+  await page.evaluate(() => closeCommandResultsModal());
 
   // 8) Live search + merge, even for results the local filter would hide.
   await page.fill('#githubSearch', 'zzqq'); await page.waitForTimeout(40);

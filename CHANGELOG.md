@@ -1,5 +1,14 @@
 # Changelog
 
+## v7.9.1-Pro (versionCode 791)
+
+- **App Stores: a successful install now offers Launch Application and Application Settings**, the same result sheet
+  the APK Installer tab already shows - for every catalog (ShizuStore, GitHub, F-Droid, Orion, and a typed owner/repo).
+  Before, a store install only ever showed a plain "Installed" toast with no way to open the app or its settings from
+  there. The real, installed package name (read from the downloaded APK itself, not the catalog's own tracking key -
+  a GitHub repository has no package name until its APK is read) is what the two buttons act on, so they are correct
+  even when the catalog's listing didn't know the package name ahead of time.
+
 ## v7.9-Pro (versionCode 790)
 
 - **The tab is now "Command-Line Interface"** (still Terminal first, ADB Console next to it, same big switch and the same

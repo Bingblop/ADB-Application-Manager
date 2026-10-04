@@ -2360,7 +2360,8 @@ public class MainActivity extends Activity {
                         String out = installApk(apk);
                         if (out != null && out.contains("Success")) {
                             storeInstallProgress(key, "done", 100, "Installed " + name
-                                    + (archive.versionName != null ? " " + archive.versionName : "") + ".");
+                                    + (archive.versionName != null ? " " + archive.versionName : "") + ".",
+                                    archive.packageName, name);
                         } else {
                             throw new IllegalStateException(out == null || out.trim().isEmpty() ? "install failed" : out.trim());
                         }
@@ -2376,12 +2377,23 @@ public class MainActivity extends Activity {
     }
 
     private void storeInstallProgress(String pkg, String stage, int percent, String message) {
+        storeInstallProgress(pkg, stage, percent, message, "", "");
+    }
+
+    /**
+     * {@code pkg} here is the progress key (a GitHub repo has no package name until the APK is read), so a
+     * successful install also reports the real, installed package name and app label separately: the page
+     * needs the true package name to offer Launch / Application Settings, which the key is not guaranteed to be.
+     */
+    private void storeInstallProgress(String pkg, String stage, int percent, String message, String installedPkg, String label) {
         try {
             JSONObject o = new JSONObject();
             o.put("pkg", pkg == null ? "" : pkg);
             o.put("stage", stage);
             o.put("percent", percent);
             o.put("message", message == null ? "" : message);
+            o.put("installedPkg", installedPkg == null ? "" : installedPkg);
+            o.put("label", label == null ? "" : label);
             notifyUpdates("onStoreInstallProgress", o);
         } catch (Exception ignored) {}
     }

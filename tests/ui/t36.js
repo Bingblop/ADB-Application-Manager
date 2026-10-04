@@ -31,9 +31,10 @@ const { chromium, PAGE } = require('./lib/pw');
       storeInstall(apkUrl, pkg, label) {
         window.__calls.push('install:' + pkg + ':' + apkUrl);
         setTimeout(() => window.onStoreInstallProgress(JSON.stringify({ pkg, stage: 'downloading', percent: 50, message: '2 MB' })), 0);
-        setTimeout(() => window.onStoreInstallProgress(JSON.stringify({ pkg, stage: 'done', percent: 100, message: 'Installed 2.1.' })), 5);
+        setTimeout(() => window.onStoreInstallProgress(JSON.stringify({ pkg, stage: 'done', percent: 100, message: 'Installed ' + label + ' 2.1.', installedPkg: pkg, label })), 5);
       },
       openUrlExternal() { window.__calls.push('openUrl'); },
+      executeAppAction(action, pkg) { window.__calls.push('action:' + action + ':' + pkg); return action === 'launch' ? 'Launched' : 'Settings opened'; },
     };
   });
   await page.goto(PAGE); await page.waitForTimeout(300);
@@ -73,6 +74,16 @@ const { chromium, PAGE } = require('./lib/pw');
   const installed = (await page.evaluate(() => window.__calls)).some(c => c.startsWith('install:'));
   const progressText = await page.locator('#storeInstallProgress').innerText();
   console.log('6. install bridge called:', installed, '| progress:', JSON.stringify(progressText));
+
+  // 7) A successful install also opens the result sheet, with Launch Application and Application Settings.
+  const resultShown = await page.evaluate(() => document.getElementById('commandResultsModal').classList.contains('show'));
+  const actionLabels = await page.locator('#commandResultsActions button').allInnerTexts();
+  console.log('7. the install result sheet opens with Launch Application and Application Settings:', resultShown, JSON.stringify(actionLabels));
+  await page.locator('#commandResultsActions button', { hasText: 'Launch Application' }).click(); await page.waitForTimeout(30);
+  console.log('   Launch Application calls the bridge with the real package name:', await page.evaluate(() => window.__calls.includes('action:launch:com.alpha')));
+  await page.locator('#commandResultsActions button', { hasText: 'Application Settings' }).click(); await page.waitForTimeout(30);
+  console.log('   Application Settings too:', await page.evaluate(() => window.__calls.includes('action:app_settings:com.alpha')));
+  await page.evaluate(() => closeCommandResultsModal());
 
   console.log('errors:', JSON.stringify(errors));
   await b.close();

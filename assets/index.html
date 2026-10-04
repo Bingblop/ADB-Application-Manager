@@ -8954,7 +8954,18 @@ Type any command below (e.g. pm list packages -d)
                 if (terminal) delete storeInline[d.pkg];
             }
 
-            if (d.stage === 'done') showToast('Installed');
+            if (d.stage === 'done') {
+                showToast('Installed');
+                if (d.installedPkg) {
+                    const instPkg = d.installedPkg, instName = d.label || instPkg;
+                    showCommandResults('Installed ' + instName, d.message || '',
+                        [{ name: instName, pkg: instPkg, output: d.message || '', success: true }],
+                        [
+                            { label: 'Launch Application', onClick: () => installLaunchApp(instPkg, instName) },
+                            { label: 'Application Settings', onClick: () => openAppSettings(instPkg) }
+                        ]);
+                }
+            }
         }
         window.onStoreInstallProgress = onStoreInstallProgress;
 
