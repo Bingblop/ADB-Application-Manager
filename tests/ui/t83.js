@@ -40,7 +40,7 @@ const ZIPFILES = { [ROOT + '/pack.zip']: [{ name: 'one.txt', text: 'NEW1' }, { n
   // ---------------------------------------------------------------- 1) the bar and its options
   let page = await open();
   const bar = await ev(page, () => ({ ph: document.getElementById('fmSearchInput').placeholder, scope: Array.from(document.getElementById('fmSearchScope').options).map(o => o.text), nested: document.getElementById('fmSearchNested').checked, arc: document.getElementById('fmSearchArc').checked, help: getComputedStyle(document.getElementById('fmSearchHelp')).display }));
-  check('1. a search bar with a drop-down of where to search, and two boxes: subfolders (on) and inside archives (off)', /Search/.test(bar.ph) && bar.scope.join('|') === 'This folder|Internal storage|Downloads|SD card or drive 1234-ABCD|Whole phone' && bar.nested === true && bar.arc === false, JSON.stringify(bar));
+  check('1. a search bar with a drop-down of where to search, and two boxes: subfolders (on) and inside archives (off)', /Search/.test(bar.ph) && bar.scope.join('|') === 'This folder|Internal storage|Downloads|SD card or drive (1234-ABCD)|Whole phone' && bar.nested === true && bar.arc === false, JSON.stringify(bar));
   check('   the help is folded away until "Search help" is tapped', bar.help === 'none' && (await ev(page, () => { fmSearchHelpToggle(); return getComputedStyle(document.getElementById('fmSearchHelp')).display !== 'none' && /content:word/.test(document.getElementById('fmSearchHelp').innerText); })));
   await ev(page, () => fmSearchHelpToggle());
   await search(page, '   ', 50);
@@ -135,7 +135,7 @@ const ZIPFILES = { [ROOT + '/pack.zip']: [{ name: 'one.txt', text: 'NEW1' }, { n
   const ab = await ev(page, () => Array.from(document.querySelectorAll('#fmActionBtns button')).map(x => x.innerText));
   check('6. a zip in the file manager offers Extract… (a text file does not)', ab.includes('Extract…') && !(await ev(page, () => { fmActions('/storage/emulated/0/Docs/a.txt', false, 'a.txt'); return Array.from(document.querySelectorAll('#fmActionBtns button')).some(x => x.innerText === 'Extract…'); })));
   await ev(page, () => { fmActions('/storage/emulated/0/pack.zip', false, 'pack.zip'); fmExtractFile(); }); await sleep(40);
-  const d1 = await ev(page, () => ({ open: document.getElementById('exModal').classList.contains('show'), sub: document.getElementById('exSub').innerText, here: document.getElementById('exHerePath').innerText, named: document.getElementById('exNamedPath').innerText, where: document.querySelector('input[name=exWhere]:checked').value, policy: document.querySelector('input[name=exPolicy]:checked').value, del: getComputedStyle(document.getElementById('exDelRow')).display, other: getComputedStyle(document.getElementById('exOtherInput')).display }));
+  const d1 = await ev(page, () => ({ open: document.getElementById('exModal').classList.contains('show'), sub: (document.getElementById('exWhat').innerText + document.getElementById('exNames').innerText), here: document.getElementById('exHerePath').innerText, named: document.getElementById('exNamedPath').innerText, where: document.querySelector('input[name=exWhere]:checked').value, policy: document.querySelector('input[name=exPolicy]:checked').value, del: getComputedStyle(document.getElementById('exDelRow')).display, other: getComputedStyle(document.getElementById('exOtherInput')).display }));
   check('   the dialog names the archive, offers its folder and a new folder named after it (the ending dropped); a new folder and Keep both are chosen at first', d1.open && d1.sub === 'pack.zip' && d1.here === ROOT && d1.named === ROOT + '/pack' && d1.where === 'named' && d1.policy === 'keep' && d1.del !== 'none' && d1.other === 'none', JSON.stringify(d1));
   await ev(page, () => exGo()); await sleep(250);
   const e1 = await ev(page, () => window.__fm.extracts.slice(-1)[0]);
@@ -171,7 +171,7 @@ const ZIPFILES = { [ROOT + '/pack.zip']: [{ name: 'one.txt', text: 'NEW1' }, { n
   page.__accept = false;
   // from inside the archive browser: a folder of it, no delete option
   await ev(page, () => { arc = { path: '/storage/emulated/0/pack.zip', name: 'pack.zip', nested: false }; arcTarget = { path: 'docs/', dir: true, name: 'docs' }; arcCloseModal = () => {}; arcExtractStart(); });
-  const d2 = await ev(page, () => ({ sub: document.getElementById('exSub').innerText, del: getComputedStyle(document.getElementById('exDelRow')).display }));
+  const d2 = await ev(page, () => ({ sub: (document.getElementById('exWhat').innerText + document.getElementById('exNames').innerText), del: getComputedStyle(document.getElementById('exDelRow')).display }));
   check('   from the archive browser a folder of the archive: the dialog says which, and there is no "delete the archive"', /docs/.test(d2.sub) && /pack\.zip/.test(d2.sub) && d2.del === 'none', JSON.stringify(d2));
   await ev(page, () => exClose());
   await page.close();
@@ -185,6 +185,55 @@ const ZIPFILES = { [ROOT + '/pack.zip']: [{ name: 'one.txt', text: 'NEW1' }, { n
   check('   Cancel tells the app to stop and the line goes away', (await ev(page, () => window.__fm.extractCancels)) === 1 && getComputedStyleNone(await ev(page, () => getComputedStyle(document.getElementById('fmBatchStatus')).display)));
   await page.close();
 
+
+  // ---------------------------------------------------------------- 7) what the reviews found
+  page = await open();
+  // a search keeps working when the folder underneath is changed, and starting one leaves selecting
+  await ev(page, () => { fmSelEnter('/storage/emulated/0/a.txt'); fmClip = { op: 'cp', paths: ['/storage/emulated/0/Docs/a.txt'] }; fmClipRender(); });
+  await search(page, 'notes', 300);
+  check('7. starting a search leaves selecting, and the Paste bar is hidden under the results', !(await ev(page, () => fmSelMode)) && (await ev(page, () => getComputedStyle(document.getElementById('fmSelBar')).display)) === 'none' && (await ev(page, () => getComputedStyle(document.getElementById('fmClipBar')).display)) === 'none');
+  await ev(page, () => fmRefresh()); await sleep(400);
+  check('   a refresh of the folder (after a rename, a delete or an extraction) makes the results again instead of throwing them away', (await ev(page, () => fmSearchMode)) && (await rows(page)).length === 2 && (await ev(page, () => window.__fm.searches.length)) === 2);
+  await ev(page, () => fmSearchExit());
+  check('   leaving the results brings the Paste bar back', (await ev(page, () => getComputedStyle(document.getElementById('fmClipBar')).display)) !== 'none');
+  // keyboard: Enter on the "In folder" button does one thing
+  await search(page, 'notes', 300);
+  await ev(page, () => { window.__log = []; const o = window.fmSearchOpen, r = window.fmSearchReveal; window.fmSearchOpen = i => { window.__log.push('open' + i); }; window.fmSearchReveal = i => { window.__log.push('reveal' + i); }; });
+  await page.focus('#fmSearchList .perm-row button'); await page.keyboard.press('Enter'); await sleep(30);
+  check('   Enter on the "In folder" button shows it in its folder and does not also open the file', (await ev(page, () => window.__log.join())) === 'reveal0' || (await ev(page, () => window.__log.join())) === 'reveal0');
+  await page.close();
+  // a second search after leaving a slow one
+  page = await open({ holdSearch: true });
+  await search(page, 'notes', 80);
+  await ev(page, () => fmSearchExit());
+  check('   leaving the results while a search runs puts the button back to Search, so the next search can start', (await ev(page, () => document.getElementById('fmSearchBtn').innerText)) === 'Search' && !(await ev(page, () => fmSearchRunning)));
+  await page.close();
+  // the real "Extract this folder" of the archive browser
+  page = await open();
+  await ev(page, () => { arc = { path: '/storage/emulated/0/pack.zip', name: 'pack.zip', nested: false, count: 3 }; arcDir = 'docs/'; arcExtractHere(); });
+  const eh = await ev(page, () => ({ ex: document.getElementById('exModal').classList.contains('show'), arcm: document.getElementById('arcModal').classList.contains('show'), what: document.getElementById('exWhat').innerText, names: document.getElementById('exNames').innerText }));
+  check('   "Extract this folder" in the archive browser opens only the extract dialog (the old sheet is not left on top)', eh.ex && !eh.arcm && eh.what === 'The folder' && /docs/.test(eh.names), JSON.stringify(eh));
+  await ev(page, () => exClose());
+  // names for the new folder
+  for (const [name, want] of [['data.tar.gz', 'data'], ['a.b.c.zip', 'a.b.c'], ['.zip', 'zip (extracted)'], ['README', 'README (extracted)']]) {
+    await ev(page, n => extractOpen({ src: '/storage/emulated/0/' + n, name: n, whole: true, deletable: true }), name);
+    const got = await ev(page, () => document.getElementById('exNamedPath').innerText);
+    check('   the folder for ' + JSON.stringify(name) + ' is "' + want + '" (never the file itself, never a hidden folder)', got === '/storage/emulated/0/' + want, got);
+    await ev(page, () => exClose());
+  }
+  await ev(page, () => extractOpen({ src: '/pack.zip', name: 'pack.zip', whole: true }));
+  check('   an archive at the root of the phone does not give a double slash', (await ev(page, () => document.getElementById('exNamedPath').innerText)) === '/pack' && (await ev(page, () => (document.querySelector('input[name=exWhere][value=named]').checked = true, exDest()))) === '/pack');
+  await ev(page, () => exClose());
+  // an extraction does not start while a copy runs
+  await ev(page, () => { fmBatchRunning = true; extractOpen({ src: '/storage/emulated/0/pack.zip', name: 'pack.zip', whole: true }); exGo(); }); await sleep(30);
+  check('   an extraction does not start while a copy or move is running (it would take over its status line and Cancel)', /still running/.test(await toast(page)) && !(await ev(page, () => !!window.__fm.extracts)));
+  await ev(page, () => { fmBatchRunning = false; });
+  await page.close();
+  // the search texts are built so that they can be translated
+  page = await open();
+  await search(page, 'notes', 300);
+  check('   the count line is made of pieces the translation can match ("N found", the time kept as a number)', await ev(page, () => Array.from(document.querySelectorAll('#fmSearchCount > span')).map(x => x.innerText).join('|').replace(/\d/g, '#')) === '# found|# s'.replace('# s', '#.# s'));
+  await page.close();
   await b.close();
   console.log(bad ? bad + ' FAILED' : 'ALL PASSED');
   process.exit(bad ? 1 : 0);

@@ -1,7 +1,7 @@
 1. the search asks the app to look at the files (names, versions, copies): the .apk ones, the paths it can read: true
    before the answer nothing is flagged: true
-   a second copy is flagged "Duplicate" and says which file it is the same as: true {"name":"Duplicateapp-2.0 (1).apk","flags":["Duplicate"],"picked":false,"pkg":"com.example.app · 2.0 · same as app-2.0.apk"}
-   an old version is flagged "Older version" and says which file is newer: true {"name":"Older versionapp-1.0.apk","flags":["Older version"],"picked":false,"pkg":"com.example.app · 1.0 · newer: app-2.0.apk"}
+   a second copy is flagged "Duplicate" and says which file it is the same as: true {"name":"app-2.0 (1).apk","flags":["Duplicate"],"picked":false,"pkg":"com.example.app · 2.0 · same as app-2.0.apk"}
+   an old version is flagged "Older version" and says which file is newer: true {"name":"app-1.0.apk","flags":["Older version"],"picked":false,"pkg":"com.example.app · 1.0 · newer: app-2.0.apk"}
    the file to keep and an unrelated one are not flagged; the package and version are shown: true
    a bundle the app cannot read gets no flags and no package line: true
 2. Select shows the boxes and the buttons (the first is now Done): true
@@ -29,4 +29,14 @@
    no offer when a failed install: true
    no offer when the file was already deleted by the old option: true Launch Application|Application Settings
    no offer for a file picked through Android's chooser (it is not a path of the storage): true
+6. a filter that hides picked files un-picks them: the count and the button follow what is shown: true {"n":1,"label":"Delete selected (1)","shown":1}
+   Delete acts on that one file only (not on the four hidden ones): true
+   "Select duplicates and older versions" also works only on the shown files: true
+   when the kept copy / the newer version is deleted, the files that pointed at it lose their flags: true [["app-1.0.apk",[]],["app-2.0 (1).apk",[]],["other.apk",[]],["bundle.xapk",[]]]
+   so "Select duplicates and older versions" finds nothing to delete (the last copy is kept): true
+   the files are looked at again by the app after a delete: true
+   deleting a picked row on its own un-picks it: the button says "Delete selected" (off) again: true
+   a new scan forgets the picks and the button follows: true
+   while a batch is deleting, a tap on a row does nothing, and a second Delete does not start a second batch: true
+   after the offer and Undo the row is back with its kind, size and age (not a bare name): true
 ALL PASSED

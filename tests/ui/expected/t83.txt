@@ -1,4 +1,4 @@
-1. a search bar with a drop-down of where to search, and two boxes: subfolders (on) and inside archives (off): true {"ph":"Search: name, ext:jpg, size:>5mb, date:7d, content:word, archive:name","scope":["This folder","Internal storage","Downloads","SD card or drive 1234-ABCD","Whole phone"],"nested":true,"arc":false,"help":"none"}
+1. a search bar with a drop-down of where to search, and two boxes: subfolders (on) and inside archives (off): true {"ph":"Search files and folders","scope":["This folder","Internal storage","Downloads","SD card or drive (1234-ABCD)","Whole phone"],"nested":true,"arc":false,"help":"none"}
    the help is folded away until "Search help" is tapped: true
    an empty query asks for something to search for and sends nothing: true
 2. a search sends the query, the folder on screen, subfolders on, archives off, hidden off: true {"q":"notes","roots":["/storage/emulated/0"],"nested":true,"archives":false,"hidden":false}
@@ -41,4 +41,17 @@
    from the archive browser a folder of the archive: the dialog says which, and there is no "delete the archive": true {"sub":"The folder docs · pack.zip","del":"none"}
    while it runs: a line with the file, percent, speed and time left, and a Cancel button: true {"shown":true,"text":"Extracting 1 of 3: a.txt — 33% · 1.2 MB/s · 4 s left","cancel":true}
    Cancel tells the app to stop and the line goes away: true
+7. starting a search leaves selecting, and the Paste bar is hidden under the results: true
+   a refresh of the folder (after a rename, a delete or an extraction) makes the results again instead of throwing them away: true
+   leaving the results brings the Paste bar back: true
+   Enter on the "In folder" button shows it in its folder and does not also open the file: true
+   leaving the results while a search runs puts the button back to Search, so the next search can start: true
+   "Extract this folder" in the archive browser opens only the extract dialog (the old sheet is not left on top): true {"ex":true,"arcm":false,"what":"The folder","names":" docs · pack.zip"}
+   the folder for "data.tar.gz" is "data" (never the file itself, never a hidden folder): true /storage/emulated/0/data
+   the folder for "a.b.c.zip" is "a.b.c" (never the file itself, never a hidden folder): true /storage/emulated/0/a.b.c
+   the folder for ".zip" is "zip (extracted)" (never the file itself, never a hidden folder): true /storage/emulated/0/zip (extracted)
+   the folder for "README" is "README (extracted)" (never the file itself, never a hidden folder): true /storage/emulated/0/README (extracted)
+   an archive at the root of the phone does not give a double slash: true
+   an extraction does not start while a copy or move is running (it would take over its status line and Cancel): true
+   the count line is made of pieces the translation can match ("N found", the time kept as a number): true
 ALL PASSED

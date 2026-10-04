@@ -31,7 +31,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     return page;
   };
   const ev = (page, fn, arg) => page.evaluate(fn, arg);
-  const rowsOf = page => ev(page, () => Array.from(document.querySelectorAll('#apkScanList .apk-scan-row')).map(r => ({ name: r.querySelector('.apk-scan-name').innerText, flags: Array.from(r.querySelectorAll('.apk-flag')).map(f => f.innerText), picked: r.classList.contains('apk-picked'), pkg: (r.querySelector('.apk-scan-pkg') || {}).innerText || '' })));
+  const rowsOf = page => ev(page, () => Array.from(document.querySelectorAll('#apkScanList .apk-scan-row')).map(r => ({ name: r.querySelector('.apk-scan-name').innerText, flags: Array.from(r.querySelectorAll('.apk-flag')).map(f => f.innerText), picked: r.classList.contains('apk-picked'), pkg: ((r.querySelector('.apk-scan-pkg') || {}).parentElement || {}).innerText || '' })));
   const snack = page => ev(page, () => { const e = document.getElementById('sdbSnack'); return e.classList.contains('show') ? document.getElementById('sdbSnackMsg').innerText : ''; });
   const settle = page => page.waitForFunction(() => window.__opQueue.length === 0 && apkOpWait.size === 0);
 
@@ -75,6 +75,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   check('   Undo puts both back (the files and their places in the list), and says how many', (await ev(page, () => window.__calls.ops.filter(o => o.startsWith('untrash:')).length)) === 2 && (await ev(page, () => document.querySelectorAll('#apkScanList .apk-scan-row').length)) === 5 && /Restored 2 files/.test(await ev(page, () => document.getElementById('toastMsg').innerText)));
   check('   the files are on the fake storage again', (await ev(page, () => window.__fs.has('/storage/emulated/0/Download/app-1.0.apk') && window.__fs.has('/storage/emulated/0/Download/app-2.0 (1).apk'))));
   // let the bar run out: the files go for good
+  await ev(page, a => window.__analyzeFinish(a), ANALYSIS); await sleep(40);
   await ev(page, () => { apkSelCleanup(); });
   await ev(page, () => apkSelDelete()); await settle(page); await sleep(60);
   await ev(page, () => sdbSnackHide()); await settle(page); await sleep(60);
@@ -139,6 +140,67 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   check('   no offer for a file picked through Android\'s chooser (it is not a path of the storage)', !(await ev(page, () => Array.from(document.querySelectorAll('#commandResultsActions button')).some(x => /installer file/.test(x.innerText)))));
   await page.close();
 
+
+  // ---------------------------------------------------------------- 6) what the reviews found
+  // a filter that hides a picked file un-picks it: Delete selected acts on what is shown
+  page = await open();
+  await ev(page, a => window.__analyzeFinish(a), ANALYSIS); await sleep(40);
+  await ev(page, () => { apkSelToggle(); apkSelAll(); });
+  const before = await ev(page, () => apkSel.size);
+  await ev(page, () => { const k = document.getElementById('apkScanKind'); k.value = 'xapk'; renderApkScan(); });
+  const after = await ev(page, () => ({ n: apkSel.size, label: document.getElementById('apkSelDelBtn').innerText, shown: document.querySelectorAll('#apkScanList .apk-scan-row').length }));
+  check('6. a filter that hides picked files un-picks them: the count and the button follow what is shown', before === 5 && after.n === 1 && after.shown === 1 && after.label === 'Delete selected (1)', JSON.stringify(after));
+  page.__accept = true;
+  await ev(page, () => apkSelDelete()); await settle(page); await sleep(60);
+  check('   Delete acts on that one file only (not on the four hidden ones)', (await ev(page, () => window.__calls.ops.filter(o => o.startsWith('trash:')).length)) === 1);
+  await ev(page, () => { document.getElementById('apkScanKind').value = ''; renderApkScan(); });
+  await ev(page, a => window.__analyzeFinish(a), ANALYSIS); await sleep(40);
+  await ev(page, () => { apkSelCleanup(); });
+  check('   "Select duplicates and older versions" also works only on the shown files', (await ev(page, () => apkSel.size)) === 2);
+  await page.close();
+
+  // deleting the kept copy: the flags of the others are forgotten, so the last copy is not called a duplicate
+  page = await open();
+  await ev(page, a => window.__analyzeFinish(a), ANALYSIS); await sleep(40);
+  await ev(page, () => { const f = apkScanFiles.find(x => x.path.endsWith('app-2.0.apk')); apkTrashFile(f); }); await settle(page); await sleep(60);
+  const fl = await rowsOf(page);
+  check('   when the kept copy / the newer version is deleted, the files that pointed at it lose their flags', fl.every(r => r.flags.length === 0), JSON.stringify(fl.map(r => [r.name, r.flags])));
+  await ev(page, () => { apkSelToggle(); apkSelCleanup(); });
+  check('   so "Select duplicates and older versions" finds nothing to delete (the last copy is kept)', (await ev(page, () => apkSel.size)) === 0 && /No duplicates or older versions found/.test(await ev(page, () => document.getElementById('toastMsg').innerText)));
+  check('   the files are looked at again by the app after a delete', (await ev(page, () => window.__calls.analyze.length)) >= 1);
+  await page.close();
+
+  // the label and the count after a single delete of a picked row, and after a new scan
+  page = await open();
+  await ev(page, () => { apkSelToggle(); document.querySelectorAll('#apkScanList .apk-scan-row')[3].click(); });
+  await ev(page, () => apkTrashFile(apkScanFiles.find(x => apkSel.has(x.path)))); await settle(page); await sleep(60);
+  check('   deleting a picked row on its own un-picks it: the button says "Delete selected" (off) again', (await ev(page, () => apkSel.size)) === 0 && (await ev(page, () => document.getElementById('apkSelDelBtn').innerText)) === 'Delete selected' && (await ev(page, () => document.getElementById('apkSelDelBtn').disabled)));
+  await ev(page, () => { document.querySelectorAll('#apkScanList .apk-scan-row')[0].click(); window.__scanFinish(); }); await sleep(60);
+  check('   a new scan forgets the picks and the button follows', (await ev(page, () => document.getElementById('apkSelDelBtn').innerText)) === 'Delete selected');
+  await page.close();
+
+  // taps wait while a batch deletes
+  page = await open({ holdOps: true });
+  await ev(page, a => window.__analyzeFinish(a), ANALYSIS); await sleep(40);
+  await ev(page, () => { apkSelToggle(); apkSelCleanup(); });
+  page.__accept = true;
+  await ev(page, () => apkSelDelete()); await sleep(40);
+  await ev(page, () => document.querySelectorAll('#apkScanList .apk-scan-row')[0].click());
+  check('   while a batch is deleting, a tap on a row does nothing, and a second Delete does not start a second batch', (await ev(page, () => window.__calls.inspect.length)) === 0 && (await ev(page, () => { apkSelDelete(); return window.__calls.ops.filter(o => o.startsWith('trash:')).length; })) <= 1);
+  await ev(page, () => window.__opsFlush()); await sleep(60); await ev(page, () => window.__opsFlush()); await sleep(60);
+  await settle(page);
+  await page.close();
+
+  // the offer: Undo brings the row back whole
+  page = await open();
+  await ev(page, () => { window.__pkgs['/storage/emulated/0/Download/other.apk'] = { type: 'apk', pkg: 'com.other', label: 'Other', versionName: '5', versionCode: 5, minSdk: 26, targetSdk: 34, totalSize: 4e6, splits: [{ path: '/cache/base.apk', name: 'base.apk', size: 4e6, isBase: true, split: '', configFor: '', feature: false }], signed: true, installed: false }; installFromScan(3); });
+  await page.waitForFunction(() => !!installData);
+  await ev(page, () => runInstall()); await ev(page, () => window.onInstallResult(JSON.stringify({ ok: true, output: 'Success', method: 'adb', pkg: 'com.other' }))); await sleep(60);
+  await ev(page, () => document.querySelectorAll('#commandResultsActions button')[2].click()); await settle(page); await sleep(60);
+  await ev(page, () => sdbSnackUndoNow()); await settle(page); await sleep(80);
+  const restored = await rowsOf(page);
+  check('   after the offer and Undo the row is back with its kind, size and age (not a bare name)', restored.length === 5 && (await ev(page, () => { const r = Array.from(document.querySelectorAll('#apkScanList .apk-scan-row')).find(x => /other\.apk/.test(x.innerText)); return !!r && /APK/.test(r.querySelector('.apk-kind').innerText) && /MB/.test(r.innerText); })));
+  await page.close();
   await b.close();
   console.log(bad ? bad + ' FAILED' : 'ALL PASSED');
   process.exit(bad ? 1 : 0);
