@@ -6596,8 +6596,8 @@ public class MainActivity extends Activity {
                 if ("unsuspend".equals(action)) return executeShell("pm unsuspend " + pkg);
                 if ("force_stop".equals(action)) return executeShell("am force-stop " + pkg);
                 if ("clear_data".equals(action)) return executeShell("pm clear " + pkg);
-                if ("uninstall".equals(action)) return executeShell("pm uninstall --user 0 " + pkg);
-                if ("uninstall_keep_data".equals(action)) return executeShell("pm uninstall -k --user 0 " + pkg);
+                if ("uninstall".equals(action)) return withUninstallHint(executeShell("pm uninstall --user 0 " + pkg));
+                if ("uninstall_keep_data".equals(action)) return withUninstallHint(executeShell("pm uninstall -k --user 0 " + pkg));
                 if ("uninstall_updates".equals(action)) return executeShell("pm uninstall-system-updates " + pkg);
                 if ("reinstall".equals(action)) return executeShell("pm install-existing " + pkg);
                 if ("launch".equals(action)) {
@@ -6620,6 +6620,13 @@ public class MainActivity extends Activity {
             } catch (Exception e) {
                 return "Error: " + e.getMessage();
             }
+        }
+
+        /** A failed {@code pm uninstall} line, with a plain-language note appended when it is one of the common,
+         *  cryptic refusals {@link UninstallHints} recognizes (most often: this needs actual root). */
+        private String withUninstallHint(String out) {
+            String advice = UninstallHints.advice(out);
+            return advice.isEmpty() ? out : (out == null ? "" : out.trim()) + "\n\nNote: " + advice;
         }
 
         @JavascriptInterface

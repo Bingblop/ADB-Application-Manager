@@ -87,6 +87,7 @@ Two things made scripts fail only on a busy machine, and what to do instead:
 | `parity` | The page and the Java rules give the same answer to the same names, values and colors (about 1,300 inputs) | Node |
 | `filerules` | File manager path rules: canonical form, protected folders | |
 | `installhints` | What an install failure means | |
+| `uninstallhints` | What an uninstall failure means: needs actual root (not just ADB/Shizuku shell) to delete a system app for one user, a device policy, a user restriction | |
 | `pure` | Package-file scan output and XAPK data paths | `org.json` |
 | `apktrash` | Deleting a found package file with Undo (which paths may be deleted, where a file waits, how it comes back) and the storage search's progress, against a real folder tree | `org.json` |
 | `fontscan` | Font search for the app font: which files are fonts, what a font calls itself (the name table in every encoding and shape, collections, variable fonts), the bounded walk and its progress, and the checked copy that stores a chosen font | `org.json` |
