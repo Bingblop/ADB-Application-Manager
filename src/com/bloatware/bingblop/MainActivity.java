@@ -7236,6 +7236,58 @@ public class MainActivity extends Activity {
         }
 
         /**
+         * Reads the package name and version of the found .apk files and finds identical copies (same size and SHA-256) and older versions of a package that is there
+         * in a newer one (see ApkFlags). Nothing is changed. Answer: window.onApkAnalyze({files: [{path, pkg, vn, vc, dupOf, older, newest, newestPath}], ms}).
+         */
+        @JavascriptInterface
+        public void apkAnalyze(final String pathsJson) {
+            submitJob(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject res = new JSONObject();
+                    long t0 = System.currentTimeMillis();
+                    try {
+                        JSONArray in = new JSONArray(pathsJson);
+                        List<ApkFlags.Item> items = new ArrayList<ApkFlags.Item>();
+                        PackageManager pm = getPackageManager();
+                        for (int i = 0; i < in.length() && i < 2000; i++) {
+                            File f = new File(in.optString(i, ""));
+                            if (!f.isFile() || !f.canRead()) continue;
+                            ApkFlags.Item it = new ApkFlags.Item();
+                            it.path = f.getPath(); it.size = f.length(); it.mtime = f.lastModified();
+                            if (f.getName().toLowerCase(java.util.Locale.US).endsWith(".apk")) {
+                                try {
+                                    android.content.pm.PackageInfo pi = pm.getPackageArchiveInfo(f.getPath(), 0);
+                                    if (pi != null) {
+                                        it.pkg = pi.packageName == null ? "" : pi.packageName;
+                                        it.versionName = pi.versionName == null ? "" : pi.versionName;
+                                        it.versionCode = Build.VERSION.SDK_INT >= 28 ? pi.getLongVersionCode() : pi.versionCode;
+                                    }
+                                } catch (Throwable ignored) {}
+                            }
+                            items.add(it);
+                        }
+                        ApkFlags.hashSameSizes(items, 400L * 1024 * 1024, t0 + 45000);
+                        ApkFlags.compute(items);
+                        JSONArray out = new JSONArray();
+                        for (ApkFlags.Item it : items) {
+                            if (it.pkg.isEmpty() && it.duplicateOf == null) continue;
+                            JSONObject o = new JSONObject().put("path", it.path).put("pkg", it.pkg).put("vn", it.versionName).put("vc", it.versionCode);
+                            if (it.duplicateOf != null) o.put("dupOf", it.duplicateOf);
+                            if (it.older) { o.put("older", true); o.put("newest", it.newestVersion); o.put("newestPath", it.newestPath); }
+                            out.put(o);
+                        }
+                        res.put("files", out);
+                    } catch (Throwable t) {
+                        try { res.put("files", new JSONArray()); res.put("error", String.valueOf(t.getMessage())); } catch (Exception ignored) {}
+                    }
+                    try { res.put("ms", System.currentTimeMillis() - t0); } catch (Exception ignored) {}
+                    notifyJs("window.onApkAnalyze && window.onApkAnalyze(" + res.toString() + ")");
+                }
+            });
+        }
+
+        /**
          * Deletes a found package file with an Undo. op "trash" (a = path) moves it into its storage volume's trash folder,
          * "untrash" (a = trash path, b = the original path) puts it back, "purge" (a = a trash path, or empty for every trash folder)
          * deletes for good. Answer: window.onApkFileOp(id, json) with ok and trash / path, or error.
