@@ -197,15 +197,13 @@ public final class FileSearch {
         return c.getTimeInMillis();
     }
 
-    /** A day "2025-03-01" as its start, or -1. */
+    /** A day "2025-03-01" as its start (a day whose midnight does not exist in the zone starts when the clock first shows it), or -1 when it is not a day. */
     private static long day(String s, TimeZone tz) {
         java.util.regex.Matcher m = Pattern.compile("^(\\d{4})-(\\d{1,2})-(\\d{1,2})$").matcher(s.trim());
         if (!m.matches()) return -1;
-        Calendar c = Calendar.getInstance(tz);
-        c.clear();
-        c.setLenient(false);
-        try { c.set(Integer.parseInt(m.group(1)), Integer.parseInt(m.group(2)) - 1, Integer.parseInt(m.group(3)), 0, 0, 0); return c.getTimeInMillis(); }
-        catch (IllegalArgumentException e) { return -1; }
+        try {
+            return java.time.LocalDate.of(Integer.parseInt(m.group(1)), Integer.parseInt(m.group(2)), Integer.parseInt(m.group(3))).atStartOfDay(tz.toZoneId()).toInstant().toEpochMilli();
+        } catch (java.time.DateTimeException e) { return -1; }
     }
 
     static boolean parseDate(String v, Query q, long now, TimeZone tz) {
@@ -299,17 +297,21 @@ public final class FileSearch {
     // matching
     // ---------------------------------------------------------------------------------------------
 
-    private static Pattern glob(String g) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < g.length(); i++) {
-            char c = g.charAt(i);
-            if (c == '*') sb.append(".*"); else if (c == '?') sb.append('.'); else sb.append(Pattern.quote(String.valueOf(c)));
+    /** Wildcard match of the whole text: * is any run of characters (also none), ? is one character. Linear in practice, no regex: a name with many stars cannot make it hang. */
+    static boolean globMatch(String text, String pat) {
+        int t = 0, p = 0, star = -1, mark = 0;
+        while (t < text.length()) {
+            if (p < pat.length() && (pat.charAt(p) == '?' || pat.charAt(p) == text.charAt(t))) { t++; p++; }
+            else if (p < pat.length() && pat.charAt(p) == '*') { star = p++; mark = t; }
+            else if (star >= 0) { p = star + 1; t = ++mark; }
+            else return false;
         }
-        return Pattern.compile(sb.toString(), Pattern.DOTALL);
+        while (p < pat.length() && pat.charAt(p) == '*') p++;
+        return p == pat.length();
     }
 
     static boolean nameHas(String lowerName, String term) {
-        if (term.indexOf('*') >= 0 || term.indexOf('?') >= 0) return glob(term).matcher(lowerName).matches() || glob("*" + term + "*").matcher(lowerName).matches();
+        if (term.indexOf('*') >= 0 || term.indexOf('?') >= 0) return globMatch(lowerName, "*" + term + "*");
         return lowerName.contains(term);
     }
 
@@ -317,7 +319,7 @@ public final class FileSearch {
         String low = name.toLowerCase(Locale.US);
         for (String t : q.names) if (!nameHas(low, t)) return false;
         for (String t : q.notNames) if (nameHas(low, t)) return false;
-        if (!q.exts.isEmpty() && !q.exts.contains(ext(name))) return false;
+        if (!q.exts.isEmpty() && !q.exts.contains(ext(name)) && !(name.startsWith(".") && name.lastIndexOf('.') == 0 && q.exts.contains(low.substring(1)))) return false;     // .gitignore is found by ".gitignore"
         return true;
     }
 
@@ -328,37 +330,53 @@ public final class FileSearch {
         return mtime >= q.minTime && mtime <= q.maxTime;
     }
 
-    /** First line of the stream that holds every term (case ignored), as {lineNo, line}; null when none or when it is not text. Reads at most maxBytes. */
+    /** Reads until the buffer is full or the stream ends; returns how many bytes it got. */
+    private static int fill(InputStream in, byte[] b) throws IOException {
+        int n = 0;
+        while (n < b.length) { int r = in.read(b, n, b.length - n); if (r < 0) break; n += r; }
+        return n;
+    }
+
+    /**
+     * First line of the stream that holds every term (case ignored), as {lineNo, line}; null when none or when it is not text. Reads at most maxBytes, and a
+     * line longer than 64 K characters is cut into pieces, so one line of a huge file cannot fill the memory.
+     */
     static Object[] findInText(InputStream in, List<String> terms, long maxBytes) throws IOException {
         byte[] head = new byte[8192];
-        java.io.PushbackInputStream pin = new java.io.PushbackInputStream(in, head.length);
-        int n = pin.read(head);
+        int n = fill(in, head);
         if (n <= 0) return null;
-        if (!FileOps.looksLikeText(head, n, n == head.length)) return null;
-        pin.unread(head, 0, n);
-        BufferedReader r = new BufferedReader(new InputStreamReader(pin, StandardCharsets.UTF_8), 32768);
-        // every term must be in the file, the line shown is the first one that has the first term
-        boolean[] seen = new boolean[terms.size()];
-        int left = terms.size(), lineNo = 0, firstLine = 0;
-        String firstText = null;
+        if (!FileOps.looksLikeText(head, n, n == head.length)) return null;                  // a character cut at the end of the head is fine when there is more
+        InputStreamReader r = new InputStreamReader(new java.io.SequenceInputStream(new java.io.ByteArrayInputStream(head, 0, n), in), StandardCharsets.UTF_8);
+        Scan sc = new Scan(terms);
+        StringBuilder line = new StringBuilder();
+        char[] buf = new char[8192];
         long read = 0;
-        String ln;
-        while ((ln = r.readLine()) != null) {
-            lineNo++;
-            read += ln.length() + 1;
-            if (read > maxBytes) break;
-            String low = ln.toLowerCase(Locale.US);
-            for (int i = 0; i < seen.length; i++) {
-                if (!seen[i] && low.contains(terms.get(i))) {
-                    seen[i] = true; left--;
-                    if (firstText == null) { firstText = ln; firstLine = lineNo; }
-                }
+        int k;
+        while (sc.left > 0 && (k = r.read(buf)) >= 0) {
+            read += k;
+            for (int i = 0; i < k && sc.left > 0; i++) {
+                char c = buf[i];
+                if (c == '\n') { sc.line(line); line.setLength(0); sc.lineNo++; }
+                else { line.append(c); if (line.length() >= 65536) { sc.line(line); line.setLength(0); } }       // a very long line goes in pieces
             }
-            if (left == 0) break;
+            if (read > maxBytes) break;
         }
-        if (left > 0) return null;
-        String t = firstText.trim();
-        return new Object[]{firstLine, t.length() > 160 ? t.substring(0, 160) : t};
+        if (sc.left > 0 && line.length() > 0) sc.line(line);
+        if (sc.left > 0) return null;
+        String t = sc.firstText.trim();
+        return new Object[]{sc.firstLine, t.length() > 160 ? t.substring(0, 160) : t};
+    }
+
+    /** Which of the terms have been seen, and the first line that held one. */
+    private static final class Scan {
+        final List<String> terms; final boolean[] seen; int left, lineNo = 1, firstLine; String firstText;
+        Scan(List<String> terms) { this.terms = terms; seen = new boolean[terms.size()]; left = terms.size(); }
+        void line(CharSequence ln) {
+            String low = ln.toString().toLowerCase(Locale.US);
+            for (int t = 0; t < seen.length; t++) {
+                if (!seen[t] && low.contains(terms.get(t))) { seen[t] = true; left--; if (firstText == null) { firstText = ln.toString(); firstLine = lineNo; } }
+            }
+        }
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -389,7 +407,11 @@ public final class FileSearch {
         for (File root : roots) {
             if (r.stop()) break;
             if (!root.exists()) continue;
-            if (root.isDirectory()) walk(root, 0, r, true); else look(root, r);
+            try {
+                if (root.isDirectory()) walk(root, 0, r, true); else look(root, r);
+            } catch (RuntimeException e) {
+                // one odd name or folder must not throw away what was found: the walk goes on with the next root
+            }
         }
         if (progress != null) progress.onProgress("", lim.visited, r.hits.size());
         return r.hits;
@@ -525,7 +547,7 @@ public final class FileSearch {
                     r.hits.add(h);
                 }
             }
-        } catch (IOException | RuntimeException e) {
+        } catch (IOException | RuntimeException | OutOfMemoryError e) {
             // a damaged or unreadable archive is simply skipped
         } finally {
             if (z != null) try { z.close(); } catch (IOException ignored) {}

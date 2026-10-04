@@ -19,15 +19,21 @@ public class JobService extends Service {
     private static final String CHANNEL = "jobs", DONE_CHANNEL = "jobs_done";
     private static final int ID = 7201, DONE_ID = 7202;
     private static final String ACTION_CANCEL = "com.bloatware.bingblop.JOB_CANCEL";
-    private static volatile Runnable cancelHook;
-    private static volatile String title = "Working…";
-    private static volatile String text = "";
-    private static volatile int pct = -1;
-    private static volatile boolean running;
+    private static final java.util.List<Runnable> cancelHooks = new java.util.ArrayList<Runnable>();
+    private static String title = "Working…";
+    private static String text = "";
+    private static int pct = -1;
+    private static int active;                        // jobs that have begun and not ended: the notification stays until the last one is done
+    private static volatile boolean running;          // the service has called startForeground
+    private static boolean stopRequested;             // the last job ended before the service had started: it stops itself as soon as it has
 
-    /** Starts the notification. {@code onCancel} runs when the person taps Cancel in it. */
+    /** Starts (or joins) the notification. {@code onCancel} runs when the person taps Cancel in it. */
     public static void begin(Context c, String jobTitle, Runnable onCancel) {
-        title = jobTitle; text = ""; pct = -1; cancelHook = onCancel;
+        synchronized (JobService.class) {
+            active++;
+            title = jobTitle; text = ""; pct = -1; stopRequested = false;
+            if (onCancel != null) cancelHooks.add(onCancel);
+        }
         try {
             Intent i = new Intent(c, JobService.class);
             if (Build.VERSION.SDK_INT >= 26) c.startForegroundService(i); else c.startService(i);
@@ -37,15 +43,26 @@ public class JobService extends Service {
     }
 
     public static void progress(Context c, String t, int percent) {
-        text = t; pct = percent;
-        if (!running) return;
-        NotificationManager nm = (NotificationManager) c.getSystemService(Context.NOTIFICATION_SERVICE);
-        if (nm != null) try { nm.notify(ID, build(c)); } catch (RuntimeException ignored) {}
+        synchronized (JobService.class) {
+            if (active <= 0 || !running) return;
+            text = t; pct = percent;
+            NotificationManager nm = (NotificationManager) c.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (nm != null) try { nm.notify(ID, build(c)); } catch (RuntimeException ignored) {}
+        }
     }
 
-    public static void end(Context c, String doneText) {
-        cancelHook = null;
-        try { c.stopService(new Intent(c, JobService.class)); } catch (RuntimeException ignored) {}
+    /** One job is done. The last one stops the service (after it has started, if it has not yet) and leaves a short "done" note. */
+    public static void end(Context c, Runnable onCancel, String doneText) {
+        boolean last;
+        synchronized (JobService.class) {
+            if (onCancel != null) cancelHooks.remove(onCancel);
+            active = Math.max(0, active - 1);
+            last = active == 0;
+            if (last) { text = ""; stopRequested = !running; }
+        }
+        if (last && running) {
+            try { c.stopService(new Intent(c, JobService.class)); } catch (RuntimeException ignored) {}
+        }
         if (doneText == null || doneText.isEmpty()) return;
         NotificationManager nm = (NotificationManager) c.getSystemService(Context.NOTIFICATION_SERVICE);
         if (nm == null) return;
@@ -74,23 +91,33 @@ public class JobService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent != null && ACTION_CANCEL.equals(intent.getAction())) {
-            Runnable r = cancelHook;
-            if (r != null) try { r.run(); } catch (RuntimeException ignored) {}
-            text = "Stopping…";
+            java.util.List<Runnable> hooks;
+            synchronized (JobService.class) { hooks = new java.util.ArrayList<Runnable>(cancelHooks); text = "Stopping…"; }
+            for (Runnable r : hooks) try { r.run(); } catch (RuntimeException ignored) {}
+            if (!running) { stopSelf(); return START_NOT_STICKY; }                  // nothing runs: this was only the Cancel of a notification that outlived its job
             NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            if (nm != null && running) try { nm.notify(ID, build(this)); } catch (RuntimeException ignored) {}
+            if (nm != null) try { nm.notify(ID, build(this)); } catch (RuntimeException ignored) {}
             return START_NOT_STICKY;
         }
-        NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        if (Build.VERSION.SDK_INT >= 26 && nm != null) nm.createNotificationChannel(new NotificationChannel(CHANNEL, "File jobs", NotificationManager.IMPORTANCE_LOW));
-        Notification n = build(this);
-        if (Build.VERSION.SDK_INT >= 29) startForeground(ID, n, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
-        else startForeground(ID, n);
-        running = true;
+        try {
+            NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            if (Build.VERSION.SDK_INT >= 26 && nm != null) nm.createNotificationChannel(new NotificationChannel(CHANNEL, "File jobs", NotificationManager.IMPORTANCE_LOW));
+            Notification n;
+            synchronized (JobService.class) { n = build(this); }
+            if (Build.VERSION.SDK_INT >= 29) startForeground(ID, n, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
+            else startForeground(ID, n);
+        } catch (RuntimeException e) {
+            // not allowed to run in the foreground right now (a restriction of the phone): the job goes on without the notification
+            stopSelf();
+            return START_NOT_STICKY;
+        }
+        boolean stop;
+        synchronized (JobService.class) { running = true; stop = stopRequested; stopRequested = false; }
+        if (stop) stopSelf();                                                         // the job was over before the service got going
         return START_NOT_STICKY;
     }
 
-    @Override public void onDestroy() { running = false; super.onDestroy(); }
+    @Override public void onDestroy() { synchronized (JobService.class) { running = false; } super.onDestroy(); }
 
     @Override public IBinder onBind(Intent intent) { return null; }
 }

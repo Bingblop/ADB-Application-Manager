@@ -599,6 +599,13 @@ public final class ZipTool {
         return extractTree(a, path, destDir, cb, problems, protect, FileOps.REPLACE);
     }
 
+    /** How many files (not folders) are under {@code path}; the whole archive when empty. */
+    public static int countFiles(Archive a, String path) {
+        int n = 0;
+        for (Entry e : under(a, path)) if (!e.dir) n++;
+        return n;
+    }
+
     /** The bytes of the files under {@code path} (the whole archive when empty): what an extraction will write. */
     public static long sizeUnder(Archive a, String path) {
         long n = 0;

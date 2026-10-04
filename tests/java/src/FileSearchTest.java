@@ -40,6 +40,7 @@ public class FileSearchTest {
   }
   static void rm(File f) { if (f.isDirectory() && !Files.isSymbolicLink(f.toPath())) { File[] k = f.listFiles(); if (k != null) for (File x : k) rm(x); } f.delete(); }
   static List<String> l(String... a) { return Arrays.asList(a); }
+  static long timed(Runnable r) { long t = System.currentTimeMillis(); r.run(); return System.currentTimeMillis() - t; }
 
   public static void main(String[] args) throws Exception {
     File root = Files.createTempDirectory("fs-root").toFile();
@@ -144,6 +145,30 @@ public class FileSearchTest {
     check("a root that is a file is looked at by itself", names(FileSearch.run(Collections.singletonList(new File(root, "top.txt")), FileSearch.parse("top", NOW, UTC), new FileSearch.Limits(), null), root).equals(l("top.txt")));
     check("kinds", FileSearch.kindOf("a.JPG", false).equals("image") && FileSearch.kindOf("a.apk", false).equals("apk") && FileSearch.kindOf("x", true).equals("folder") && FileSearch.kindOf("noext", false).equals("file") && FileSearch.kindOf("a.tar.gz", false).equals("archive"));
 
+    // ---------- the review's findings ----------
+    check("a name with many stars cannot hang the matcher", timed(new Runnable() { public void run() { FileSearch.nameHas(new String(new char[200]).replace('\0', 'a'), "*a*a*a*a*a*a*a*a*a*a*a*b"); } }) < 2000);
+    check("globMatch: stars, question marks, the whole name", FileSearch.globMatch("img_001.jpg", "img_*.jpg") && FileSearch.globMatch("a", "*a*") && FileSearch.globMatch("abc", "a?c") && !FileSearch.globMatch("abc", "a?d") && FileSearch.globMatch("x", "**") && !FileSearch.globMatch("ab", "a") && FileSearch.globMatch("", "*"));
+    // a long single line does not use the memory of the whole line; the word at its start is still found
+    final int big = 64 * 1024 * 1024;
+    java.io.InputStream endless = new java.io.InputStream() {
+      long left = 400L * 1024 * 1024; boolean first = true;
+      public int read() { return left-- > 0 ? 'x' : -1; }
+      public int read(byte[] b, int off, int len) { if (left <= 0) return -1; int k = (int) Math.min(len, left); for (int i = 0; i < k; i++) b[off + i] = 'x'; if (first) { b[off] = 'm'; b[off + 1] = 'i'; b[off + 2] = 'l'; b[off + 3] = 'k'; first = false; } left -= k; return k; }
+    };
+    Object[] lm = FileSearch.findInText(endless, Collections.singletonList("milk"), 1024 * 1024);
+    check("a 400 MB line with the word at its start: found, reading stops at the limit, no huge buffer", lm != null && ((String) lm[1]).startsWith("milkxxx") && ((String) lm[1]).length() <= 160);
+    java.io.InputStream shortReads = new java.io.InputStream() {
+      byte[] data = "Grüße aus Köln — ключ 日本語\nsecond line milk\n".getBytes(StandardCharsets.UTF_8); int pos;
+      public int read() { return pos < data.length ? data[pos++] & 0xFF : -1; }
+      public int read(byte[] b, int off, int len) { if (pos >= data.length) return -1; int k = Math.min(Math.min(len, 7), data.length - pos); System.arraycopy(data, pos, b, off, k); pos += k; return k; }
+    };
+    Object[] sm = FileSearch.findInText(shortReads, Collections.singletonList("milk"), 1 << 20);
+    check("a stream that hands out 7 bytes at a time (like an inflater) is still read as text", sm != null && ((Integer) sm[0]) == 2 && ((String) sm[1]).equals("second line milk"));
+    File dots = Files.createTempDirectory("fs-dot").toFile(); write(new File(dots, ".gitignore"), "x"); write(new File(dots, ".bashrc"), "y"); write(new File(dots, "a.gitignore"), "z");
+    check("a dot file is found by its name with the dot, and by ext:", names(FileSearch.run(Collections.singletonList(dots), FileSearch.parse(".gitignore", NOW, UTC), new FileSearch.Limits(), null), dots).equals(l(".gitignore", "a.gitignore")) && find(dots, ".bashrc", true, true, false).equals(l(".bashrc")));
+    rm(dots);
+    check("a day whose midnight does not exist in the zone is still a day (America/Sao_Paulo 2018-11-04)", FileSearch.parse("date:2018-11-04", NOW, TimeZone.getTimeZone("America/Sao_Paulo")).problems.isEmpty() && FileSearch.parse("date:2018-03-11..2018-03-12", NOW, TimeZone.getTimeZone("America/Havana")).problems.isEmpty());
+    check("a day that is not a day is still refused", FileSearch.parse("date:2025-13-01", NOW, UTC).problems.size() == 1 && FileSearch.parse("date:2025-02-30", NOW, UTC).problems.size() == 1);
     rm(root); rm(outside);
     System.out.println(fails == 0 ? "ALL PASSED (" + n + " checks)" : fails + " FAILED");
     System.exit(fails == 0 ? 0 : 1);

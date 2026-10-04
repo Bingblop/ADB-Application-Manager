@@ -32,6 +32,11 @@ public class ProgressMeterTest {
     w.update(101, 0, "x", t + 41000);
     check("one more byte is progress and resets the stall", !w.stalled(t + 42000, 30000));
 
+    // a stall: the old speed and time left are no longer shown
+    ProgressMeter st = new ProgressMeter(100L * 1024 * 1024, 2, t);
+    st.update(10L * 1024 * 1024, 1, "a", t + 1000); st.update(20L * 1024 * 1024, 1, "a", t + 2000);
+    check("while it moves the line has speed and time left", st.line("Copying", t + 2100).contains("/s") && st.line("Copying", t + 2100).contains("left"));
+    check("after 5 s with no movement the line drops the old speed and time left but keeps the percent", !st.line("Copying", t + 8000).contains("/s") && !st.line("Copying", t + 8000).contains("left") && st.line("Copying", t + 8000).contains("20%"));
     // no total known: items decide, else -1
     ProgressMeter u = new ProgressMeter(0, 4, t);
     u.update(0, 1, "f", t + 100);

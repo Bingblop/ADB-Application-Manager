@@ -84,9 +84,10 @@ public final class ProgressMeter {
         int p = percent();
         StringBuilder tail = new StringBuilder();
         if (p >= 0) tail.append(p).append('%');
-        if (speed >= 1) { if (tail.length() > 0) tail.append(" · "); tail.append(size((long) speed)).append("/s"); }
+        boolean stale = nowMs - lastMoveMs >= 5000;                  // nothing moved for a while: the old speed and time left would only mislead
+        if (speed >= 1 && !stale) { if (tail.length() > 0) tail.append(" · "); tail.append(size((long) speed)).append("/s"); }
         long eta = etaSeconds();
-        if (eta >= 0 && nowMs - startMs > 1500) { if (tail.length() > 0) tail.append(" · "); tail.append(duration(eta)).append(" left"); }
+        if (eta >= 0 && nowMs - startMs > 1500 && !stale) { if (tail.length() > 0) tail.append(" · "); tail.append(duration(eta)).append(" left"); }
         if (tail.length() > 0) s.append(" — ").append(tail);
         return s.toString();
     }

@@ -7241,7 +7241,11 @@ public class MainActivity extends Activity {
          */
         @JavascriptInterface
         public void apkAnalyze(final String pathsJson) {
-            submitJob(new Runnable() {
+            synchronized (analyzeLock) {
+                if (analyzeBusy) return;                                   // one analysis at a time: the answer of the running one comes
+                analyzeBusy = true;
+            }
+            if (!submitJob(new Runnable() {
                 @Override
                 public void run() {
                     JSONObject res = new JSONObject();
@@ -7250,24 +7254,52 @@ public class MainActivity extends Activity {
                         JSONArray in = new JSONArray(pathsJson);
                         List<ApkFlags.Item> items = new ArrayList<ApkFlags.Item>();
                         PackageManager pm = getPackageManager();
+                        java.util.Set<String> seenFiles = new java.util.HashSet<String>();
                         for (int i = 0; i < in.length() && i < 2000; i++) {
                             File f = new File(in.optString(i, ""));
                             if (!f.isFile() || !f.canRead()) continue;
+                            String canon;
+                            try { canon = f.getCanonicalPath(); } catch (IOException e) { canon = f.getPath(); }
+                            if (!seenFiles.add(canon)) continue;           // the same file under two names (a link, a second mount point) is one file, never its own duplicate
                             ApkFlags.Item it = new ApkFlags.Item();
                             it.path = f.getPath(); it.size = f.length(); it.mtime = f.lastModified();
                             if (f.getName().toLowerCase(java.util.Locale.US).endsWith(".apk")) {
                                 try {
-                                    android.content.pm.PackageInfo pi = pm.getPackageArchiveInfo(f.getPath(), 0);
+                                    int fl = Build.VERSION.SDK_INT >= 28 ? PackageManager.GET_SIGNING_CERTIFICATES : 0;
+                                    android.content.pm.PackageInfo pi = pm.getPackageArchiveInfo(f.getPath(), fl);
                                     if (pi != null) {
                                         it.pkg = pi.packageName == null ? "" : pi.packageName;
                                         it.versionName = pi.versionName == null ? "" : pi.versionName;
                                         it.versionCode = Build.VERSION.SDK_INT >= 28 ? pi.getLongVersionCode() : pi.versionCode;
+                                        if (Build.VERSION.SDK_INT >= 28 && pi.signingInfo != null) {
+                                            android.content.pm.Signature[] sg = pi.signingInfo.getApkContentsSigners();
+                                            if (sg != null && sg.length > 0) {
+                                                java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+                                                StringBuilder sb = new StringBuilder();
+                                                for (byte b : md.digest(sg[0].toByteArray())) sb.append(String.format("%02x", b & 0xFF));
+                                                it.signer = sb.toString();
+                                            }
+                                        }
                                     }
+                                } catch (Throwable ignored) {}
+                                try {                                      // which kinds of phone: the lib/<abi>/ folders inside
+                                    java.util.TreeSet<String> abis = new java.util.TreeSet<String>();
+                                    java.util.zip.ZipFile z = new java.util.zip.ZipFile(f);
+                                    try {
+                                        java.util.Enumeration<? extends java.util.zip.ZipEntry> en = z.entries();
+                                        int guard = 0;
+                                        while (en.hasMoreElements() && ++guard < 20000) {
+                                            String nm = en.nextElement().getName();
+                                            if (nm.startsWith("lib/")) { int sl = nm.indexOf('/', 4); if (sl > 4) abis.add(nm.substring(4, sl)); }
+                                        }
+                                    } finally { z.close(); }
+                                    it.abis = String.join(",", abis);
                                 } catch (Throwable ignored) {}
                             }
                             items.add(it);
                         }
-                        ApkFlags.hashSameSizes(items, 400L * 1024 * 1024, t0 + 45000);
+                        boolean complete = ApkFlags.hashSameSizes(items, 400L * 1024 * 1024, t0 + 45000);
+                        res.put("partial", !complete);
                         ApkFlags.compute(items);
                         JSONArray out = new JSONArray();
                         for (ApkFlags.Item it : items) {
@@ -7282,9 +7314,12 @@ public class MainActivity extends Activity {
                         try { res.put("files", new JSONArray()); res.put("error", String.valueOf(t.getMessage())); } catch (Exception ignored) {}
                     }
                     try { res.put("ms", System.currentTimeMillis() - t0); } catch (Exception ignored) {}
+                    synchronized (analyzeLock) { analyzeBusy = false; }
                     notifyJs("window.onApkAnalyze && window.onApkAnalyze(" + res.toString() + ")");
                 }
-            });
+            })) {
+                synchronized (analyzeLock) { analyzeBusy = false; }
+            }
         }
 
         /**
@@ -7795,7 +7830,10 @@ public class MainActivity extends Activity {
         }
 
         // ---- File manager: search ----
+        private final Object analyzeLock = new Object();
+        private boolean analyzeBusy;
         private volatile FileSearch.Limits searchLimits;
+        private volatile boolean searchCancelEarly;
         private final Object searchLock = new Object();
         private boolean searchBusy;
 
@@ -7826,6 +7864,7 @@ public class MainActivity extends Activity {
             synchronized (searchLock) {
                 if (searchBusy) return "busy";
                 searchBusy = true;
+                searchCancelEarly = false;
             }
             if (!submitJob(new Runnable() {
                 @Override
@@ -7841,6 +7880,7 @@ public class MainActivity extends Activity {
                         if (roots.isEmpty()) throw new IOException("Choose where to search");
                         final FileSearch.Limits lim = new FileSearch.Limits();
                         lim.deadlineMs = t0 + 90000;
+                        lim.cancelled = searchCancelEarly;                  // a Cancel that came before the walk was set up still counts
                         searchLimits = lim;
                         res.put("problems", new JSONArray(q.problems));
                         if (q.isEmpty()) { res.put("ok", true); res.put("hits", new JSONArray()); res.put("empty", true); }
@@ -7880,6 +7920,7 @@ public class MainActivity extends Activity {
         /** Stops the running search. */
         @JavascriptInterface
         public void fmSearchCancel() {
+            searchCancelEarly = true;
             FileSearch.Limits l = searchLimits;
             if (l != null) l.cancelled = true;
         }
@@ -8305,6 +8346,7 @@ public class MainActivity extends Activity {
                 public void run() {
                     JSONObject res = new JSONObject();
                     JobTicker ticker = null;
+                    Runnable cancelHook = null;
                     try {
                         res.put("op", op);
                         if (!"rm".equals(op) && !"cp".equals(op) && !"mv".equals(op)) throw new IOException("Unknown operation: " + op);
@@ -8338,7 +8380,8 @@ public class MainActivity extends Activity {
                         if (!"rm".equals(op) && !direct.isEmpty()) totalBytes = FileOps.sizeOf(direct, 50000);
                         final ProgressMeter meter = new ProgressMeter(totalBytes, todo.size(), System.currentTimeMillis());
                         final String title = fmBatchLabel(op) + " " + todo.size() + (todo.size() == 1 ? " item" : " items");
-                        JobService.begin(MainActivity.this, title, new Runnable() { @Override public void run() { fmBatchCancel = true; } });
+                        cancelHook = new Runnable() { @Override public void run() { fmBatchCancel = true; } };
+                        JobService.begin(MainActivity.this, title, cancelHook);
                         ticker = new JobTicker(meter, fmBatchLabel(op), 1000, 20000, new JobTicker.Listener() {
                             @Override
                             public void onTick(String text, int pct, long stalledMs) {
@@ -8454,7 +8497,7 @@ public class MainActivity extends Activity {
                         } catch (Exception ignored) {}
                     } finally {
                         if (ticker != null) ticker.stop();
-                        JobService.end(MainActivity.this, fmBatchDoneText(op, res));
+                        if (cancelHook != null) JobService.end(MainActivity.this, cancelHook, fmBatchDoneText(op, res));
                         synchronized (fmBatchLock) {
                             fmBatchBusy = false;
                         }
@@ -8677,6 +8720,7 @@ public class MainActivity extends Activity {
                     JSONObject res = new JSONObject();
                     File tmp = null;
                     JobTicker ticker = null;
+                    Runnable cancelHook = null;
                     try {
                         res.put("op", "extract");
                         ZipTool.Archive a = archiveFor(path, false);
@@ -8686,8 +8730,9 @@ public class MainActivity extends Activity {
                         boolean tree = name.isEmpty() || name.endsWith("/");
                         boolean writable = (dir.isDirectory() || dir.mkdirs()) && dir.canWrite();
                         final ProgressMeter meter = new ProgressMeter(tree ? ZipTool.sizeUnder(a, name) : 0, 0, System.currentTimeMillis());
-                        JobService.begin(MainActivity.this, "Extracting " + new File(fmCanonicalPath(path)).getName(), new Runnable() { @Override public void run() { archiveCancel = true; } });
-                        ticker = new JobTicker(meter, "Extracting", 1000, 20000, new JobTicker.Listener() {
+                        cancelHook = new Runnable() { @Override public void run() { archiveCancel = true; } };
+                        JobService.begin(MainActivity.this, "Extracting " + new File(fmCanonicalPath(path)).getName(), cancelHook);
+                        ticker = new JobTicker(meter, "Extracting", 1000, tree ? 20000 : Long.MAX_VALUE / 4, new JobTicker.Listener() {
                             @Override
                             public void onTick(String text, int pct, long stalledMs) {
                                 notifyArchiveProgress(text);
@@ -8705,6 +8750,7 @@ public class MainActivity extends Activity {
                             long bytes = 0;
                             File target = new File(dir, base);
                             boolean leave = false;
+                            if (!writable && policy != FileOps.REPLACE) throw new IOException("Skip and Keep both need a folder this app can write to itself. Choose one on shared storage, or use Replace.");
                             if (writable && FileOps.exists(target)) {
                                 if (policy == FileOps.SKIP) leave = true;
                                 else if (policy == FileOps.KEEP_BOTH) target = new File(dir, FileOps.uniqueName(dir, base));
@@ -8745,7 +8791,7 @@ public class MainActivity extends Activity {
                             res.put("problems", new JSONArray(problems));
                             res.put("dest", dest);
                             // the whole archive, everything written, nothing skipped or failed: the archive may go (only when asked)
-                            if (deleteAfter && name.isEmpty() && r[2] == 0 && r[3] == 0 && problems.isEmpty() && r[0] > 0) {
+                            if (deleteAfter && name.isEmpty() && r[2] == 0 && r[3] == 0 && problems.isEmpty() && r[0] > 0 && r[0] == ZipTool.countFiles(a, "")) {
                                 File af = new File(fmCanonicalPath(path));
                                 boolean gone = false;
                                 try { archiveRelease(path); } catch (Throwable ignored) {}
@@ -8763,7 +8809,7 @@ public class MainActivity extends Activity {
                         if (tmp != null) tmp.delete();
                         if (ticker != null) ticker.stop();
                         String doneText = res.optBoolean("ok") ? "Extracted " + res.optInt("files") + (res.optInt("files") == 1 ? " file" : " files") + (res.optInt("kept") > 0 ? " · " + res.optInt("kept") + " left as they were" : "") : res.optString("error");
-                        JobService.end(MainActivity.this, doneText);
+                        if (cancelHook != null) JobService.end(MainActivity.this, cancelHook, doneText);
                         synchronized (archiveLock) {
                             archiveBusy = false;
                         }

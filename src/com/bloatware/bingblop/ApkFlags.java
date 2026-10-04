@@ -27,6 +27,8 @@ public final class ApkFlags {
         public String versionName = "";
         public long versionCode = -1;    // -1 when unknown
         public String hash = "";         // content hash, "" when not computed
+        public String signer = "";       // SHA-256 of the signing certificate, "" when unknown
+        public String abis = "";         // the native library folders (lib/<abi>/) it carries, sorted, "" for none
         // the result:
         public String duplicateOf;       // path of the copy that is kept, or null
         public boolean older;            // a newer version of the same package is in the list
@@ -57,22 +59,29 @@ public final class ApkFlags {
             Item keep = g.get(0);
             for (int i = 1; i < g.size(); i++) g.get(i).duplicateOf = keep.path;
         }
-        // versions of one package
+        // versions of one package: only builds of the same package, signed by the same key and for the same kinds of phone are compared (an x86 build or a
+        // modded copy with a higher code does not make the real one "older")
         Map<String, Item> newest = new HashMap<String, Item>();
         for (Item it : items) {
             if (it.pkg.isEmpty() || it.versionCode < 0 || it.duplicateOf != null) continue;
-            Item cur = newest.get(it.pkg);
-            if (cur == null || it.versionCode > cur.versionCode || (it.versionCode == cur.versionCode && it.mtime > cur.mtime)) newest.put(it.pkg, it);
+            String k = lineKey(it);
+            Item cur = newest.get(k);
+            if (cur == null || it.versionCode > cur.versionCode || (it.versionCode == cur.versionCode && it.mtime > cur.mtime)) newest.put(k, it);
         }
         for (Item it : items) {
             if (it.pkg.isEmpty() || it.versionCode < 0) continue;
-            Item n = newest.get(it.pkg);
+            Item n = newest.get(lineKey(it));
             if (n != null && n != it && n.versionCode > it.versionCode) { it.older = true; it.newestVersion = n.versionCode; it.newestPath = n.path; }
         }
     }
 
+    private static String lineKey(Item it) { return it.pkg + "|" + it.signer + "|" + it.abis; }
+
     /** SHA-256 of a file, hex. Reads at most {@code maxBytes}; returns "" when the file is bigger (not worth the time) or cannot be read. */
-    public static String sha256(File f, long maxBytes) {
+    public static String sha256(File f, long maxBytes) { return sha256(f, maxBytes, Long.MAX_VALUE); }
+
+    /** The same, giving up (empty) when {@code deadlineMs} passes in the middle of a big file. */
+    public static String sha256(File f, long maxBytes, long deadlineMs) {
         if (f.length() > maxBytes) return "";
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
@@ -80,7 +89,10 @@ public final class ApkFlags {
             try {
                 byte[] buf = new byte[256 * 1024];
                 int n;
-                while ((n = in.read(buf)) > 0) md.update(buf, 0, n);
+                while ((n = in.read(buf)) > 0) {
+                    md.update(buf, 0, n);
+                    if (System.currentTimeMillis() > deadlineMs) return "";
+                }
             } finally { in.close(); }
             StringBuilder sb = new StringBuilder();
             for (byte b : md.digest()) sb.append(String.format("%02x", b & 0xFF));
@@ -91,7 +103,7 @@ public final class ApkFlags {
     }
 
     /** Hashes only the files whose size is shared with another file (a file with a size of its own has no twin). */
-    public static void hashSameSizes(List<Item> items, long maxBytesEach, long deadlineMs) {
+    public static boolean hashSameSizes(List<Item> items, long maxBytesEach, long deadlineMs) {
         Map<Long, List<Item>> bySize = new HashMap<Long, List<Item>>();
         for (Item it : items) if (it.size > 0) {
             List<Item> l = bySize.get(it.size);
@@ -101,9 +113,10 @@ public final class ApkFlags {
         for (List<Item> g : bySize.values()) {
             if (g.size() < 2) continue;
             for (Item it : g) {
-                if (System.currentTimeMillis() > deadlineMs) return;
-                it.hash = sha256(new File(it.path), maxBytesEach);
+                if (System.currentTimeMillis() > deadlineMs) return false;
+                it.hash = sha256(new File(it.path), maxBytesEach, deadlineMs);
             }
         }
+        return true;                                       // false: the time ran out, some files have no hash and may have a twin that was not found
     }
 }

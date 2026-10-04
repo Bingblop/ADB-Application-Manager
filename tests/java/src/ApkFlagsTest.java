@@ -38,6 +38,15 @@ public class ApkFlagsTest {
     l = new ArrayList<ApkFlags.Item>(); l.add(n1); l.add(n2); l.add(n0);
     ApkFlags.compute(l);
     check("two copies of the newest version: one is a duplicate, neither is older, the old one is older than the kept copy", n2.duplicateOf.equals(n1.path) && !n1.older && !n2.older && n0.older && n0.newestPath.equals(n1.path));
+    // other builds of a package (another signer, another set of native libraries) are not "newer"
+    ApkFlags.Item m1 = item("/d/m1.apk", 1, 1, "com.m", 10, ""), m2 = item("/d/m2.apk", 2, 2, "com.m", 99, ""), m3 = item("/d/m3.apk", 3, 3, "com.m", 99, "");
+    m1.signer = "AAAA"; m2.signer = "BBBB"; m3.signer = "AAAA"; m3.abis = "x86";
+    l = new ArrayList<ApkFlags.Item>(); l.add(m1); l.add(m2); l.add(m3);
+    ApkFlags.compute(l);
+    check("a build with another signer, or for another ABI, does not make this one older", !m1.older && !m2.older && !m3.older);
+    ApkFlags.Item m4 = item("/d/m4.apk", 4, 4, "com.m", 11, ""); m4.signer = "AAAA";
+    l.add(m4); ApkFlags.compute(l);
+    check("the same signer and ABIs still compare", m1.older && m1.newestPath.equals(m4.path));
     // same version code twice, different files
     ApkFlags.Item s1 = item("/d/s1.apk", 1, 100, "com.s", 4, ""), s2 = item("/d/s2.apk", 2, 200, "com.s", 4, "");
     l = new ArrayList<ApkFlags.Item>(); l.add(s1); l.add(s2);
@@ -59,8 +68,9 @@ public class ApkFlagsTest {
     int dups = 0; for (ApkFlags.Item i : real) if (i.duplicateOf != null) dups++;
     check("real files: the two with the same content, one of them a duplicate", real.get(0).hash.equals(real.get(1).hash) && !real.get(0).hash.equals(real.get(2).hash) && dups == 1);
     check("a file over the size limit is not hashed", ApkFlags.sha256(f1, 3).isEmpty() && !ApkFlags.sha256(f1, 100).isEmpty());
+    check("a deadline that has passed gives up in the middle of a file", ApkFlags.sha256(f1, 100, 0).isEmpty());
     check("a missing file gives no hash", ApkFlags.sha256(new File(dir, "nope"), 100).isEmpty());
-    ApkFlags.hashSameSizes(real, 1L << 20, 0);
+    check("hashing reports that the time ran out", !ApkFlags.hashSameSizes(real, 1L << 20, 0) && ApkFlags.hashSameSizes(real, 1L << 20, Long.MAX_VALUE));
     for (File f : dir.listFiles()) f.delete(); dir.delete();
     System.out.println(fails == 0 ? "ALL PASSED (" + n + " checks)" : fails + " FAILED");
     System.exit(fails == 0 ? 0 : 1);
