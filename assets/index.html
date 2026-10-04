@@ -4609,9 +4609,11 @@
                 .tx-send-btn { flex: 0 0 auto; height: 44px; min-width: 70px; border-radius: 10px; border: none; background: linear-gradient(135deg, var(--accent), var(--secondary)); color: var(--on-accent); font-weight: 800; font-size: 13px; cursor: pointer; }
                 .tx-send-btn.stop { background: #c62828; color: #fff; }
                 .tx-keys { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 6px; }
-                .tx-keys button { background: #111; color: #e6e6e6; border: 1px solid #2a2a2a; border-radius: 8px; min-height: 38px; font-family: monospace; font-size: 12px; font-weight: 700; cursor: pointer; padding: 0; }
+                .tx-keys button { background: #111; color: #e6e6e6; border: 1px solid #2a2a2a; border-radius: 8px; min-height: 38px; font-family: monospace; font-size: 12px; font-weight: 700; cursor: pointer; padding: 0; white-space: nowrap; overflow: hidden; }
                 .tx-keys button:active { background: #2a2a2a; }
-                .tx-keys .tx-key-stop { color: #ff8a80; }
+                .tx-keys .tx-key-stop { color: #ff8a80; font-size: 11px; letter-spacing: -0.6px; }
+                /* The app's sheet subtitles break anywhere (they usually show package names); these are sentences */
+                #txConnectModal .sheet-title p, #txSettingsModal .sheet-title p, #txTermuxModal .sheet-title p, #txHelpModal .sheet-title p, #txAlertModal .sheet-title p { word-break: normal; overflow-wrap: anywhere; }
                 .tx-tools { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
                 .tx-sheet-sec { font-size: 11px; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: .3px; margin: 16px 0 6px; }
                 .tx-sheet-p { font-size: 12px; color: var(--text-main); line-height: 1.5; margin: 6px 0; }
@@ -15765,6 +15767,8 @@ Type any command below (e.g. pm list packages -d)
         function txSaveSettings() { kvSet('tx_settings', txSettings); }
         // The Terminal's own words on its screen (the screen itself is left alone by the translator: it is mostly program output)
         function txT(s) { try { return LANG_ENGINE && LANG_ENGINE.t ? LANG_ENGINE.t(s) : s; } catch (e) { return s; } }
+        // A sentence with changing parts ({0}, {1} ...): translated as a pattern, then filled in, so a model or key name is never looked up in a dictionary
+        function txF(tpl) { const args = Array.prototype.slice.call(arguments, 1); return txT(tpl).replace(/\{(\d+)\}/g, (m, n) => (args[+n] !== undefined ? String(args[+n]) : m)); }
 
         function txShowPane(p) {
             txPane = p === 'console' ? 'console' : 'terminal';
@@ -15875,7 +15879,7 @@ Type any command below (e.g. pm list packages -d)
             }
             const fresh = !res.reused || s.st !== 'ready';
             Object.assign(s, { st: 'ready', kind: res.kind || '', uid: res.uid, cwd: res.cwd || '', prompt: res.prompt || '', host: res.host || '', msg: '' });
-            if (fresh) txNote('[' + txShellReadyText(b, res) + ']', b);
+            if (fresh) txNote('[' + txT(txShellReadyText(b, res)) + ']', b);
             txSyncUi();
             if (txPending && txPending.b === b) {
                 const p = txPending;
@@ -16124,7 +16128,8 @@ Type any command below (e.g. pm list packages -d)
             const line = txLineStart(sc);
             const sp = document.createElement('span');
             sp.className = cls || 'tx-note';
-            const shown = txT(String(text));
+            const raw = String(text), br = /^\[([\s\S]*)\]$/.exec(raw);
+            const shown = br ? '[' + txT(br[1]) + ']' : txT(raw);           // Termux-style [notes]: the words inside the brackets are translated
             sp.textContent = shown;
             line.appendChild(sp);
             sc.chars += shown.length;
@@ -16673,9 +16678,11 @@ Type any command below (e.g. pm list packages -d)
 
         function txAnnounceAgent(ag, was) {
             const e = txEngine(ag);
-            const how = e === 'cli' ? TX_CLI[ag.cli].name + ' in Termux' : e === 'cursor' ? 'Cursor\'s cloud agents' : (txVault[ag.provider] && txVault[ag.provider].hint ? 'key ' + txVault[ag.provider].hint : txBase(ag));
-            const kept = txChat.msgs.length && was && was !== ag.id ? ' The conversation continues with it.' : '';
-            txNote('[' + ag.name + ', ' + (txModelFor(ag) || 'default model') + ', through ' + how + '.' + kept + ' The ' + (txSess[txCurShell()].uid === 0 ? '#' : '$') + ' button switches to commands.]', null, 'tx-ok');
+            const how = e === 'cli' ? txF('{0} in Termux', TX_CLI[ag.cli].name) : e === 'cursor' ? txT('Cursor\'s cloud agents') : (txVault[ag.provider] && txVault[ag.provider].hint ? txF('key {0}', txVault[ag.provider].hint) : txBase(ag));
+            let s = txF('{0}, {1}, through {2}.', ag.name, txModelFor(ag) || txT('default model'), how);
+            if (txChat.msgs.length && was && was !== ag.id) s += ' ' + txT('The conversation continues with it.');
+            s += ' ' + txT(txSess[txCurShell()].uid === 0 ? 'The # button switches to commands.' : 'The $ button switches to commands.');
+            txNote('[' + s + ']', null, 'tx-ok');
         }
 
         function txPickModel(id) {
@@ -16684,7 +16691,7 @@ Type any command below (e.g. pm list packages -d)
             haptic();
             txState.models[ag.id] = id;
             txSaveState();
-            txNote('[model: ' + id + ']');
+            txNote('[' + txF('model: {0}', id) + ']');
             txSyncUi();
         }
 
@@ -17385,6 +17392,12 @@ Type any command below (e.g. pm list packages -d)
         }
 
         // ---------------------------------------------------------------- Cursor: cloud agents (they work in Cursor's cloud)
+        // A new Cursor agent does not know the conversation so far: it gets the last few messages with the request
+        function txCursorPrompt(text) {
+            const history = txChat.msgs.slice(0, -1).slice(-8).map(m => (m.role === 'user' ? 'User: ' : 'Assistant: ') + String(m.text).trim().slice(0, 2000)).join('\n\n');
+            return (history ? 'Earlier in this conversation:\n' + history + '\n\nNow: ' : '') + text;
+        }
+
         async function txCursorTurn(ag, text) {
             txChat.busy = true;
             txChat.stop = false;
@@ -17406,8 +17419,7 @@ Type any command below (e.g. pm list packages -d)
                     }
                 }
                 if (!runId) {
-                    const history = txChat.msgs.slice(0, -1).slice(-8).map(m => (m.role === 'user' ? 'User: ' : 'Assistant: ') + String(m.text).trim().slice(0, 2000)).join('\n\n');
-                    const body = { prompt: { text: (history ? 'Earlier in this conversation:\n' + history + '\n\nNow: ' : '') + text } };
+                    const body = { prompt: { text: txCursorPrompt(text) } };
                     if (model && model !== 'default') body.model = { id: model };
                     if (txSettings.cursorRepo) body.repos = [{ url: txSettings.cursorRepo }];
                     const r = await txAiCall({ url: 'https://api.cursor.com/v1/agents', method: 'POST', auth: 'cursor', headers: json, body: JSON.stringify(body) });
@@ -17493,14 +17505,17 @@ Type any command below (e.g. pm list packages -d)
         }
 
         // Runs setup steps one by one in the Termux shell (visible), stopping at the first that fails. debian steps run inside the container.
+        // A command for the Debian container inside Termux (proot-distro)
+        function txDebianCmd(inner) { return 'proot-distro login debian -- bash -lc ' + txQ(inner); }
+
         async function txRunSteps(title, steps) {
             if (!(await txEnsureTermux())) { txButtons('termux', [{ label: 'Termux setup', go: true, on: () => txOpenTermuxSetup() }]); return false; }
             if (txRuns.termux) { txNote('[a command is still running: wait for it or CTRL-C]', 'termux', 'tx-warn'); return false; }
-            txNote('== ' + title + ' (' + steps.length + ' steps; CTRL-C stops) ==', 'termux', 'tx-ok');
+            txNote('▶ ' + txT(title) + ' (' + steps.length + ' steps, CTRL-C stops)', 'termux', 'tx-ok');
             for (let i = 0; i < steps.length; i++) {
                 const st = steps[i];
-                const cmd = st.debian ? 'proot-distro login debian -- bash -lc ' + txQ('export PATH="$HOME/.local/bin:$PATH"; ' + st.cmd) : st.cmd;
-                txNote('-- ' + (i + 1) + '/' + steps.length + ': ' + st.label, 'termux', 'tx-warn');
+                const cmd = st.debian ? txDebianCmd('export PATH="$HOME/.local/bin:$PATH"; ' + st.cmd) : st.cmd;
+                txNote('-- ' + (i + 1) + '/' + steps.length + ': ' + txT(st.label), 'termux', 'tx-warn');
                 txEcho('termux', cmd);
                 const r = await txExec('termux', cmd, 'agent');
                 if (r.exit !== 0) {
@@ -17508,7 +17523,7 @@ Type any command below (e.g. pm list packages -d)
                     return false;
                 }
             }
-            txNote('== done: ' + title + ' ==', 'termux', 'tx-ok');
+            txNote('✓ ' + txT(title) + ': done', 'termux', 'tx-ok');
             return true;
         }
 
@@ -17533,7 +17548,7 @@ Type any command below (e.g. pm list packages -d)
             const cli = TX_CLI[ag.cli];
             if (!cli) return;
             const inner = 'export PATH="$HOME/.local/bin:$HOME/.opencode/bin:$PATH"; echo "Signing in to ' + cli.name + '. Follow the link it shows; come back to ADB App Manager when it says you are signed in."; ' + cli.login;
-            const cmd = cli.where === 'debian' ? 'proot-distro login debian -- bash -lc ' + txQ(inner) : inner;
+            const cmd = cli.where === 'debian' ? txDebianCmd(inner) : inner;
             txOpenTermux(cmd);
         }
 
@@ -17578,7 +17593,7 @@ Type any command below (e.g. pm list packages -d)
                         txState.models[ag.id] = arg;
                         txSaveState();
                         txSyncAgentUi();
-                        txNote('[model: ' + arg + ']');
+                        txNote('[' + txF('model: {0}', arg) + ']');
                         return;
                     }
                     txNote('models for ' + ag.name + ': ' + txModelList(ag).map(m => m.id + (m.id === txModelFor(ag) ? ' (in use)' : '')).join(', '));
@@ -17655,7 +17670,7 @@ Type any command below (e.g. pm list packages -d)
                     ollama: 'Ollama runs a coding model right on this phone: free, and offline once the model is downloaded. It is installed in Termux; small models (1.5B to 3B) run best on a phone.'
                 }[ag.id];
                 h = '<p class="tx-sheet-p">' + escapeHtml(desc) + '</p>'
-                    + '<div class="tx-sheet-p muted" id="txProbeStatus">' + (txBase(ag) ? 'Connected to ' + escapeHtml(txBase(ag)) : '') + '</div>'
+                    + '<div class="tx-sheet-p muted" id="txProbeStatus" translate="no">' + (txBase(ag) ? escapeHtml(txF('Connected to {0}', txBase(ag))) : '') + '</div>'
                     + '<div class="tx-sheet-sec">Server address</div>'
                     + '<input id="txBaseInput" class="modal-text-input tx-key-input" translate="no" value="' + escapeHtml(txBase(ag) || (ag.bases || [''])[0]) + '" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="url">'
                     + '<div class="tx-sheet-sec">API key' + (ag.keyOptional ? ' (only if the server asks for one)' : '') + '</div>' + saved
@@ -17830,7 +17845,7 @@ Type any command below (e.g. pm list packages -d)
             const say = t => { const s = status(); if (s && txConnectAgent === ag.id) s.textContent = t; };
             for (const base of ag.bases || []) {
                 if (txConnectAgent !== ag.id) return;
-                say('Looking for ' + ag.name + ' on this phone (' + base + ')…');
+                say(txF('Looking for {0} on this phone ({1})…', ag.name, base));      // translated here: the address is not looked up in a dictionary
                 try {
                     const r = await txAiCall({ url: base + '/models', method: 'GET', readTimeoutMs: 8000 }, null, true);
                     let s = '';
@@ -17838,7 +17853,7 @@ Type any command below (e.g. pm list packages -d)
                     txRefreshVault();
                     if (s === 'ok') {
                         txStoreModels(ag, txParseModels(ag, r.body));
-                        say('Found it: ' + base);
+                        say(txF('Found it: {0}', base));
                         if (txConnectAgent === ag.id) {
                             txCloseConnect();
                             const was = txState.agent;
@@ -17852,14 +17867,14 @@ Type any command below (e.g. pm list packages -d)
                     return;
                 } catch (e) {
                     if (e && (e.status === 401 || e.status === 403)) {
-                        say('Found a server at ' + base + ' that needs a key: enter it below and tap Connect.');
+                        say(txF('Found a server at {0} that needs a key: enter it below and tap Connect.', base));
                         const bi = document.getElementById('txBaseInput');
                         if (bi) bi.value = base;
                         return;
                     }
                 }
             }
-            say(ag.id === 'ollama' ? 'Ollama is not running on this phone yet. Install it below, or enter the address of a computer that runs it.' : 'Not found on this phone. Enter the address of the computer that runs it, then Connect.');
+            say(txT(ag.id === 'ollama' ? 'Ollama is not running on this phone yet. Install it below, or enter the address of a computer that runs it.' : 'Not found on this phone. Enter the address of the computer that runs it, then Connect.'));
         }
 
         async function txInstallOllama() {
@@ -18043,7 +18058,7 @@ Type any command below (e.g. pm list packages -d)
             const modelRows = TX_AGENTS.filter(a => a.id !== 'none' && a.api !== 'info' && (txHasKey(a.provider) || txBase(a) || txSettings.connect[a.id] === 'cli')).map(a => {
                 const list = txModelList(a);
                 const cur = (txSettings.models || {})[a.id] || '';
-                return '<div class="tx-row"><div class="tx-row-main"><div class="tx-row-name">' + escapeHtml(a.name) + '</div></div><select class="op-select" style="max-width:52vw;" onchange="txSetDefaultModel(\'' + a.id + '\', this.value)"><option value="">Automatic</option>' + list.map(m => '<option value="' + escapeHtml(m.id) + '"' + (m.id === cur ? ' selected' : '') + '>' + escapeHtml(m.id) + '</option>').join('') + '</select></div>';
+                return '<div class="tx-row"><div class="tx-row-main"><div class="tx-row-name">' + escapeHtml(a.name) + '</div></div><select class="op-select" style="max-width:52vw;" onchange="txSetDefaultModel(\'' + a.id + '\', this.value)"><option value="">Automatic</option>' + list.map(m => '<option translate="no" value="' + escapeHtml(m.id) + '"' + (m.id === cur ? ' selected' : '') + '>' + escapeHtml(m.id) + '</option>').join('') + '</select></div>';
             }).join('');
             const shellOpts = [['', 'Automatic (Working mode when connected)'], ['app', 'This app (sandbox)'], ['priv', 'Working mode (ADB, Shizuku, Root)'], ['termux', 'Termux (bash and packages)']].map(([v, l]) => '<option value="' + v + '"' + ((txSettings.defaultShell || '') === v ? ' selected' : '') + '>' + escapeHtml(l) + '</option>').join('');
             const steps = [10, 25, 50, 100].map(n => '<option value="' + n + '"' + (parseInt(txSettings.maxSteps, 10) === n ? ' selected' : '') + '>' + n + '</option>').join('');
