@@ -194,4 +194,26 @@ final class ProcStats {
         for (Proc p : procs) sum += p.rssKb;
         return sum;
     }
+
+    // ---- system-wide thread count ----
+
+    private static final Pattern THREADS_LINE = Pattern.compile("Threads:\\s*(\\d+)\\s*$");
+
+    /**
+     * The total thread count across every process, from a privileged {@code grep -H '^Threads:'} swept over every
+     * {@code /proc/<pid>/status} file (one {@code /proc/<pid>/status:Threads:<tab><n>} line per process). Only the
+     * trailing number on each matching line is read, so the exact column spacing/tabs a given kernel prints does not
+     * matter. Null or empty input, or input with no matching lines, comes back as 0 rather than throwing.
+     */
+    static long sumThreads(String grepOutput) {
+        long sum = 0;
+        if (grepOutput == null) return sum;
+        for (String raw : grepOutput.split("\r?\n", -1)) {
+            java.util.regex.Matcher m = THREADS_LINE.matcher(raw);
+            if (m.find()) {
+                try { sum += Long.parseLong(m.group(1)); } catch (NumberFormatException ignored) {}
+            }
+        }
+        return sum;
+    }
 }

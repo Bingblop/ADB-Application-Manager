@@ -3658,6 +3658,10 @@
                 .tm-net-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 10px; border: 1px solid var(--border-glass); border-radius: 10px; background: rgba(var(--ov), 0.04); font-size: 11.5px; }
                 .tm-net-row b { font-weight: 800; }
                 .tm-net-row span { color: var(--text-muted); font-size: 10.5px; }
+                .tm-info-title { font-size: 11px; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 0.3px; margin: 16px 0 6px; }
+                .tm-cluster { padding: 8px 10px; border: 1px solid var(--border-glass); border-radius: 10px; background: rgba(var(--ov), 0.04); margin-top: 8px; }
+                .tm-cluster-head { font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; }
+                .tm-cluster .tm-stat-grid { grid-template-columns: 1fr 1fr 1fr; margin-top: 0; }
             </style>
 
             <div class="color-card" id="tmTop">
@@ -3721,30 +3725,35 @@
                 <div id="tmCpuPanel" style="display:none;">
                     <div class="tm-canvas-wrap"><canvas id="tmCpuCanvas"></canvas><div class="tm-canvas-label" id="tmCpuNow">—</div><div class="tm-canvas-sub" id="tmCpuSub">&nbsp;</div></div>
                     <div class="tm-cores" id="tmCpuCores"></div>
+                    <div id="tmCpuInfo"></div>
                 </div>
 
                 <!-- RAM -->
                 <div id="tmRamPanel" style="display:none;">
                     <div class="tm-canvas-wrap"><canvas id="tmRamCanvas"></canvas><div class="tm-canvas-label" id="tmRamNow">—</div><div class="tm-canvas-sub" id="tmRamSub">&nbsp;</div></div>
                     <div class="tm-stat-grid" id="tmRamStats"></div>
+                    <div id="tmRamInfo"></div>
                 </div>
 
                 <!-- GPU -->
                 <div id="tmGpuPanel" style="display:none;">
                     <div class="tm-canvas-wrap"><canvas id="tmGpuCanvas"></canvas><div class="tm-canvas-label" id="tmGpuNow">—</div><div class="tm-canvas-sub" id="tmGpuSub">&nbsp;</div></div>
                     <div class="switch-sub" id="tmGpuNote" style="margin-top:4px;">GPU load is not exposed the same way on every phone, so this may say "Not available" on yours.</div>
+                    <div id="tmGpuInfo"></div>
                 </div>
 
                 <!-- BATTERY -->
                 <div id="tmBatteryPanel" style="display:none;">
                     <div class="tm-canvas-wrap"><canvas id="tmBattCanvas"></canvas><div class="tm-canvas-label" id="tmBattNow">—</div><div class="tm-canvas-sub" id="tmBattSub">&nbsp;</div></div>
                     <div class="tm-stat-grid" id="tmBattStats"></div>
+                    <div id="tmBattInfo"></div>
                 </div>
 
                 <!-- NETWORK -->
                 <div id="tmNetworkPanel" style="display:none;">
                     <div class="tm-canvas-wrap"><canvas id="tmNetCanvas"></canvas><div class="tm-canvas-label" id="tmNetNow">—</div><div class="tm-canvas-sub" id="tmNetSub">&nbsp;</div></div>
                     <div class="tm-net-ifaces" id="tmNetIfaces"></div>
+                    <div id="tmNetInfo"></div>
                 </div>
             </div>
         </section>
@@ -4810,6 +4819,9 @@ Type any command below (e.g. pm list packages -d)
                 </button>
                 <button class="sheet-btn" onclick="singleAction('uninstall')" id="sheetBtnUninstall">
                     <span>Uninstall</span>
+                </button>
+                <button class="sheet-btn" onclick="singleAction('uninstall_system_dialog')" id="sheetBtnUninstallSystem" title="Opens Android's own uninstall screen for this app - can remove a system app without root, where the direct Uninstall button above needs it">
+                    <span>Uninstall (System)</span>
                 </button>
                 <button class="sheet-btn" onclick="singleAction('reinstall')" id="sheetBtnReinstall" style="display:none;">
                     <span>Reinstall</span>
@@ -6138,7 +6150,7 @@ Type any command below (e.g. pm list packages -d)
             '.result-item-name', '.result-item-pkg', '.result-item-output', '#commandResultsTitle', '#commandResultsSubtitle', '#signName', '.sign-v', '.sign-fp',
             '.saved-list-title', '.profile-item h4', '.backup-item h4', '.hist-title',
             '#termOutput', '.term-row-cmd', '.cheat-cmd', '#logcatOutput', '.lc-msg', '#storeDetailName',
-            '.tm-row-name', '.tm-row-sub'
+            '.tm-row-name', '.tm-row-sub', '.tm-stat-raw'
         ].join(', '));
         function initLanguageUi() {
             const sel = document.getElementById('langSelect');
@@ -9606,6 +9618,19 @@ Type any command below (e.g. pm list packages -d)
             haptic();
             if (window.AndroidBridge && window.AndroidBridge.executeAppAction) {
                 window.AndroidBridge.executeAppAction('app_settings', pkg);
+            }
+        }
+
+        // Hands uninstalling off to Android's own system dialog instead of a shell command - no working mode
+        // needed, and for a system app this can succeed without root where the direct Uninstall button cannot.
+        // The actual result happens after the system dialog is answered, outside this call, so this only
+        // confirms the dialog opened and nudges the person to check back once they've answered it.
+        function openSystemUninstallDialog(pkg) {
+            haptic();
+            closeInspector();
+            if (window.AndroidBridge && window.AndroidBridge.executeAppAction) {
+                window.AndroidBridge.executeAppAction('uninstall_system_dialog', pkg);
+                showToast('Opened the system uninstall dialog - confirm there, then come back and refresh');
             }
         }
 
@@ -13744,16 +13769,66 @@ Type any command below (e.g. pm list packages -d)
         }
 
         // ---- CPU ----
+        // Row is [label, value] or [label, value, true] when value is a raw device-reported string (a SoC name,
+        // governor, battery chemistry, ...) that must not be run through the dictionary like an app-authored label.
+        function tmInfoGrid(title, rows) {
+            if (!rows.length) return '';
+            return `<div class="tm-info-title">${escapeHtml(title)}</div><div class="tm-stat-grid">`
+                + rows.map(r => `<div class="tm-stat"><b${r[2] ? ' class="tm-stat-raw"' : ''}>${escapeHtml(r[1])}</b><span>${escapeHtml(r[0])}</span></div>`).join('') + '</div>';
+        }
+        function tmFormatHz(hz) {
+            if (!hz) return '—';
+            if (hz >= 1e9) return (hz / 1e9).toFixed(2) + ' GHz';
+            if (hz >= 1e6) return Math.round(hz / 1e6) + ' MHz';
+            if (hz >= 1e3) return Math.round(hz / 1e3) + ' kHz';
+            return hz + ' Hz';
+        }
+        function tmFormatUptime(ms) {
+            let mins = Math.floor((ms || 0) / 60000);
+            const days = Math.floor(mins / 1440); mins -= days * 1440;
+            const hours = Math.floor(mins / 60); mins -= hours * 60;
+            if (days > 0) return days + 'd ' + hours + 'h';
+            if (hours > 0) return hours + 'h ' + mins + 'm';
+            return mins + 'm';
+        }
+        function tmFormatHoursMinutes(hours) {
+            if (!isFinite(hours) || hours < 0) return '—';
+            const totalMin = Math.round(hours * 60);
+            const h = Math.floor(totalMin / 60), m = totalMin % 60;
+            return h > 0 ? (h + 'h ' + m + 'm') : (m + 'm');
+        }
+
         function tmRenderCpu() {
             const d = tmLastData;
             const nowEl = document.getElementById('tmCpuNow');
             const subEl = document.getElementById('tmCpuSub');
             const coresEl = document.getElementById('tmCpuCores');
-            if (!d || !d.ok || !d.cpu) { nowEl.innerText = '—'; subEl.innerText = 'Waiting for data…'; coresEl.innerHTML = ''; return; }
+            const infoEl = document.getElementById('tmCpuInfo');
+            if (!d || !d.ok || !d.cpu) { nowEl.innerText = '—'; subEl.innerText = 'Waiting for data…'; coresEl.innerHTML = ''; infoEl.innerHTML = ''; return; }
             nowEl.innerText = Math.round(d.cpu.overall) + '%';
             subEl.innerText = d.cpu.cores + ' core' + (d.cpu.cores === 1 ? '' : 's');
             const per = d.cpu.perCore || [];
             coresEl.innerHTML = per.length ? per.map((v, i) => `<div class="tm-core"><b>${Math.round(v)}%</b><span>Core ${i}</span></div>`).join('') : '<div class="tm-core"><b>—</b><span>No per-core data yet</span></div>';
+
+            const c = d.cpu;
+            const infoRows = [];
+            if (c.soc) infoRows.push(['SoC', c.soc, true]);
+            if (c.arch) infoRows.push(['Architecture', c.arch, true]);
+            if (c.abi) infoRows.push(['ABI', c.abi, true]);
+            if (c.governor) infoRows.push(['Governor', c.governor, true]);
+            if (c.tempC != null) infoRows.push(['Temperature', Math.round(c.tempC) + '°C (estimated)']);
+            const sysRows = [];
+            if (c.processes != null) sysRows.push(['Processes', String(c.processes)]);
+            if (c.threads != null) sysRows.push(['Threads', String(c.threads)]);
+            if (c.uptimeMs != null) sysRows.push(['Uptime', tmFormatUptime(c.uptimeMs)]);
+            let html = tmInfoGrid('Processor Information', infoRows) + tmInfoGrid('System Statistics', sysRows);
+            if (c.clusters && c.clusters.length) {
+                html += c.clusters.map((cl, i) => `<div class="tm-cluster"><div class="tm-cluster-head">Cluster ${i} · ${cl.cores} core${cl.cores === 1 ? '' : 's'}</div><div class="tm-stat-grid">`
+                    + `<div class="tm-stat"><b>${tmFormatHz(cl.minHz)}</b><span>Min</span></div>`
+                    + `<div class="tm-stat"><b>${tmFormatHz(cl.curHz)}</b><span>Current</span></div>`
+                    + `<div class="tm-stat"><b>${tmFormatHz(cl.maxHz)}</b><span>Max</span></div></div></div>`).join('');
+            }
+            infoEl.innerHTML = html;
         }
 
         // ---- RAM ----
@@ -13762,12 +13837,22 @@ Type any command below (e.g. pm list packages -d)
             const nowEl = document.getElementById('tmRamNow');
             const subEl = document.getElementById('tmRamSub');
             const statsEl = document.getElementById('tmRamStats');
-            if (!d || !d.ok || !d.mem || !d.mem.totalKb) { nowEl.innerText = '—'; subEl.innerText = 'Waiting for data…'; statsEl.innerHTML = ''; return; }
+            const infoEl = document.getElementById('tmRamInfo');
+            if (!d || !d.ok || !d.mem || !d.mem.totalKb) { nowEl.innerText = '—'; subEl.innerText = 'Waiting for data…'; statsEl.innerHTML = ''; infoEl.innerHTML = ''; return; }
             const m = d.mem;
             nowEl.innerText = Math.round(100 * m.usedKb / m.totalKb) + '%';
             subEl.innerText = `Using ${formatBytes(m.usedKb * 1024)} of ${formatBytes(m.totalKb * 1024)}`;
             const rows = [['Used', formatBytes(m.usedKb * 1024)], ['Available', formatBytes(m.availableKb * 1024)], ['Swap used', formatBytes(m.swapUsedKb * 1024)], ['Swap total', formatBytes(m.swapTotalKb * 1024)]];
             statsEl.innerHTML = rows.map(r => `<div class="tm-stat"><b>${r[1]}</b><span>${r[0]}</span></div>`).join('');
+
+            const infoRows = [];
+            if (m.freeKb != null) infoRows.push(['Free', formatBytes(m.freeKb * 1024)]);
+            if (m.buffersKb != null) infoRows.push(['Buffers', formatBytes(m.buffersKb * 1024)]);
+            if (m.cachedKb != null) infoRows.push(['Cached', formatBytes(m.cachedKb * 1024)]);
+            if (m.swapFreeKb != null) infoRows.push(['Swap free', formatBytes(m.swapFreeKb * 1024)]);
+            if (m.swapCachedKb != null) infoRows.push(['Swap cached', formatBytes(m.swapCachedKb * 1024)]);
+            if (m.pageSizeBytes) infoRows.push(['Page size', formatBytes(m.pageSizeBytes)]);
+            infoEl.innerHTML = tmInfoGrid('Memory Information', infoRows);
         }
 
         // ---- GPU ----
@@ -13776,15 +13861,24 @@ Type any command below (e.g. pm list packages -d)
             const nowEl = document.getElementById('tmGpuNow');
             const subEl = document.getElementById('tmGpuSub');
             const noteEl = document.getElementById('tmGpuNote');
-            if (!d || !d.ok || !d.gpu || !d.gpu.available) {
+            const infoEl = document.getElementById('tmGpuInfo');
+            const gpu = d && d.gpu;
+            if (!d || !d.ok || !gpu || !gpu.available) {
                 nowEl.innerText = '—';
                 subEl.innerText = (d && d.privileged === false) ? 'Needs a working mode' : 'Not available on this phone';
                 if (noteEl) noteEl.style.display = '';
-                return;
+            } else {
+                if (noteEl) noteEl.style.display = gpu.approx ? '' : 'none';
+                nowEl.innerText = gpu.percent != null ? Math.round(gpu.percent) + '%' : '—';
+                subEl.innerText = gpu.label || (gpu.approx ? 'Approximate (clock-speed based)' : '');
             }
-            if (noteEl) noteEl.style.display = d.gpu.approx ? '' : 'none';
-            nowEl.innerText = d.gpu.percent != null ? Math.round(d.gpu.percent) + '%' : '—';
-            subEl.innerText = d.gpu.label || (d.gpu.approx ? 'Approximate (clock-speed based)' : '');
+            const infoRows = [];
+            if (gpu) {
+                infoRows.push(['Vulkan', gpu.vulkanSupported ? 'Supported' : 'Not supported']);
+                if (gpu.vulkanApi) infoRows.push(['Vulkan API', gpu.vulkanApi]);
+                if (gpu.glesVersion) infoRows.push(['OpenGL ES', gpu.glesVersion]);
+            }
+            infoEl.innerHTML = tmInfoGrid('GPU Information', infoRows);
         }
 
         // ---- Battery ----
@@ -13795,8 +13889,9 @@ Type any command below (e.g. pm list packages -d)
             const nowEl = document.getElementById('tmBattNow');
             const subEl = document.getElementById('tmBattSub');
             const statsEl = document.getElementById('tmBattStats');
+            const infoEl = document.getElementById('tmBattInfo');
             const b = d && d.battery;
-            if (!b || b.percent == null || b.percent < 0) { nowEl.innerText = '—'; subEl.innerText = 'Waiting for data…'; statsEl.innerHTML = ''; return; }
+            if (!b || b.percent == null || b.percent < 0) { nowEl.innerText = '—'; subEl.innerText = 'Waiting for data…'; statsEl.innerHTML = ''; infoEl.innerHTML = ''; return; }
             nowEl.innerText = Math.round(b.percent) + '%';
             const PLUG = { 1: 'AC', 2: 'USB', 4: 'Wireless' };
             const STATUS = { 2: 'Charging', 3: 'Discharging', 4: 'Not charging', 5: 'Full' };
@@ -13810,6 +13905,22 @@ Type any command below (e.g. pm list packages -d)
             const HEALTH = { 2: 'Good', 3: 'Overheat', 4: 'Dead', 5: 'Over voltage', 6: 'Failure', 7: 'Cold' };
             const rows = [['Temperature', tempStr], ['Current', curStr], ['Voltage', voltStr], ['Health', HEALTH[b.health] || 'Unknown']];
             statsEl.innerHTML = rows.map(r => `<div class="tm-stat"><b>${r[1]}</b><span>${r[0]}</span></div>`).join('');
+
+            const chargeMicroAh = (b.chargeCounterMicroAh != null && b.chargeCounterMicroAh > -2000000000) ? b.chargeCounterMicroAh : null;
+            const infoRows = [];
+            if (b.technology) infoRows.push(['Technology', b.technology, true]);
+            infoRows.push(['Source', b.plugged ? (PLUG[b.plugged] || 'Plugged in') : 'Battery']);
+            if (b.voltageMv > 0 && curMicro != null) {
+                const watts = (b.voltageMv / 1000) * (Math.abs(curMicro) / 1e6);
+                infoRows.push(['Power', watts.toFixed(2) + ' W']);
+            }
+            if (chargeMicroAh != null) infoRows.push(['Charge', Math.round(chargeMicroAh / 1000) + ' mAh']);
+            if (chargeMicroAh != null && b.percent > 0) infoRows.push(['Capacity (estimated)', Math.round(chargeMicroAh / 1000 / (b.percent / 100)) + ' mAh']);
+            if (b.status === 3 && chargeMicroAh != null && curMicro != null && Math.abs(curMicro) > 1000) {
+                infoRows.push(['Time left (estimated)', tmFormatHoursMinutes(chargeMicroAh / Math.abs(curMicro))]);
+            }
+            infoRows.push(['Charge cycles', b.cycleCount != null ? String(b.cycleCount) : 'N/A']);
+            infoEl.innerHTML = tmInfoGrid('Battery Information', infoRows);
         }
 
         // ---- Network ----
@@ -13818,13 +13929,19 @@ Type any command below (e.g. pm list packages -d)
             const nowEl = document.getElementById('tmNetNow');
             const subEl = document.getElementById('tmNetSub');
             const ifacesEl = document.getElementById('tmNetIfaces');
+            const infoEl = document.getElementById('tmNetInfo');
             const net = d && d.net;
-            if (!net) { nowEl.innerText = '—'; subEl.innerText = 'Waiting for data…'; ifacesEl.innerHTML = ''; return; }
+            if (!net) { nowEl.innerText = '—'; subEl.innerText = 'Waiting for data…'; ifacesEl.innerHTML = ''; infoEl.innerHTML = ''; return; }
             const total = (net.totalRxBytesPerSec || 0) + (net.totalTxBytesPerSec || 0);
             nowEl.innerText = formatBytes(total) + '/s';
             subEl.innerText = '↓ ' + formatBytes(net.totalRxBytesPerSec || 0) + '/s  ↑ ' + formatBytes(net.totalTxBytesPerSec || 0) + '/s';
             const ifaces = (net.ifaces || []).slice().sort((a, b) => (b.rxBytesPerSec + b.txBytesPerSec) - (a.rxBytesPerSec + a.txBytesPerSec));
             ifacesEl.innerHTML = ifaces.length ? ifaces.map(i => `<div class="tm-net-row"><b>${escapeHtml(i.name)}</b><span>↓ ${formatBytes(i.rxBytesPerSec)}/s  ↑ ${formatBytes(i.txBytesPerSec)}/s</span></div>`).join('') : '<div class="list-empty">No active network interface.</div>';
+
+            const infoRows = [];
+            if (net.totalRxBytes != null) infoRows.push(['Total received', formatBytes(net.totalRxBytes)]);
+            if (net.totalTxBytes != null) infoRows.push(['Total sent', formatBytes(net.totalTxBytes)]);
+            infoEl.innerHTML = tmInfoGrid('Network Statistics', infoRows);
         }
 
         // ---- Play Store / Aurora update routing (lightweight) ----
@@ -13880,6 +13997,7 @@ Type any command below (e.g. pm list packages -d)
 
             document.getElementById('sheetBtnReinstall').style.display = app.isUninstalled ? 'flex' : 'none';
             document.getElementById('sheetBtnUninstall').style.display = app.isUninstalled ? 'none' : 'flex';
+            document.getElementById('sheetBtnUninstallSystem').style.display = app.isUninstalled ? 'none' : 'flex';
             // The menu shows Freeze for enabled apps and Enable for frozen ones
             document.getElementById('sheetBtnFreeze').style.display = app.isFrozen ? 'none' : 'flex';
             document.getElementById('sheetBtnUnfreeze').style.display = app.isFrozen ? 'flex' : 'none';
@@ -14456,6 +14574,7 @@ Type any command below (e.g. pm list packages -d)
         function singleAction(action) {
             if (!inspectedPkg) return;
             if (action === 'app_settings') { openAppSettings(inspectedPkg); return; }
+            if (action === 'uninstall_system_dialog') { openSystemUninstallDialog(inspectedPkg); return; }
             if (!guardPrivilege(action)) return;
             quickAction(action, inspectedPkg);
             closeInspector();

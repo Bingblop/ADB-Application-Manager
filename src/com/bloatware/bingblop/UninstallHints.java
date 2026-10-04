@@ -41,7 +41,7 @@ final class UninstallHints {
     static String advice(String out) {
         if (out == null || success(out)) return "";
         if (rootRequired(out)) {
-            return "This system app can only be removed with actual Root access - shell-level ADB or Shizuku is not enough, even though it can do most other things here. If this phone is rooted, switch to Root mode in Working Modes and try again. Without root, use Freeze instead: the app disappears from the launcher and stops running, though its file stays on the device (removing it from /system needs root either way).";
+            return "Shell-level ADB or Shizuku cannot remove a system app for one user this way, even though it can do most other things here. If this phone is rooted, switch to Root mode in Working Modes and try again. Without root, try the \"Uninstall (System)\" button instead: it hands the removal to Android's own uninstall screen, which can succeed where this direct method needs root. Freeze is the fallback if even that is refused: the app disappears from the launcher and stops running, but stays installed (just disabled) rather than showing as uninstalled.";
         }
         if (policyBlocked(out)) {
             return "A device policy (an enterprise / work profile, or this phone's device owner) requires this app and is blocking its removal. That can't be bypassed from here while the policy applies.";
