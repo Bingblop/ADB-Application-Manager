@@ -109,6 +109,19 @@ Left to right, with the **settings gear** (it opens Settings: language, appearan
 
 Every tab except Application Manager and About can be switched off or moved in **Settings → Feature List**.
 
+## New in v7.4
+
+- **7z, rar and the tar family** (`.tar`, `.tar.gz/bz2/xz/zst/lz4`, and a bare `.gz/bz2/xz/zst/lz4`) open, browse and extract like a zip
+  everywhere the file manager already does it (the archive browser, **Extract…**, search's `archive:`, Find APKs' duplicate check); a
+  solid or compressed one says so and extracts in a single pass. 7z and the tar family can be edited in place too; rar is read only.
+- **Passwords:** a dialog asks when an archive or an entry needs one (a wrong one says so and asks again), kept only in memory, only for
+  that open archive. Zip has ZipCrypto and WinZip AES-128/192/256; 7z has its own AES-256 (names included); rar's passwords are for
+  reading only.
+- **A Compress dialog:** make a zip, 7z, tar format, or a single compressed file, from a file's sheet or a selection — a name, a packing
+  level, where to save, and what to do if that name is taken. **A password is optional.**
+- **Code and markup in colour** by default in the editor, the plain viewer and an archive's text preview (the usual languages and
+  markup formats); **word wrap is on by default**; both are switches next to each other, remembered for next time.
+
 ## New in v7.3
 
 - **Search in the file manager:** a bar with a **where to search** drop-down (this folder, storage, Downloads, photos, an SD card, the whole phone)
@@ -955,7 +968,11 @@ assets/libadb.so               arm64 adb client for ADB TCP / Wireless Debugging
 assets/rish, rish_shizuku.dex  Shizuku shell fallback
 res/                           Launcher icons, widget layout, tile and notification icons, strings
 libs/                          Shizuku API 13.1.5 (api, provider, shared, aidl); RE2J 1.8 (linear-time
-                               regex for untrusted, network-supplied patterns, see UpdateManager)
+                               regex for untrusted, network-supplied patterns, see UpdateManager);
+                               Apache Commons Compress 1.27.1 + Commons IO 2.16.1 + Commons Lang3 3.16.0
+                               + Tukaani XZ 1.10 + SLF4J API 1.7.36 (7z and the tar family, see ArchiveIo);
+                               junrar 7.5.5 (RAR 1.5–4.x, see RarReader); Aircompressor 0.27 (pure-Java
+                               zstd, see ArchiveIo)
 docs/screenshots/              Images and the debloat-flow animation used in this README
 tests/                         The UI scripts and Java suites the app is checked with, and how to run them (tests/README.md)
 build.sh                       Build script (Termux or Linux)
@@ -988,7 +1005,7 @@ script passes is in [tests/README.md](tests/README.md)).
   version, a damaged one, a tab that is off reached by a link or by Back, the layout at 320, 360 and 412 px), the search bar and its menu
   (placement, the three options, the swap rule, patterns and plain text, exact matches, kept between launches, closing by tap, Escape and Back, three
   screen sizes) and a scan of the sources and of every tab and sheet for emoji.
-- **Native rules, off the device** (`tests/java/run.js`, 23 suites): the parts of the Java that need no Android classes are compiled
+- **Native rules, off the device** (`tests/java/run.js`, 27 suites): the parts of the Java that need no Android classes are compiled
   and run as plain Java. For the Hidden Settings tab that is 311 checks of `SettingsDb`, including round trips through a real `sh` (and a fake
   `settings` that refuses on purpose) for hostile values (quotes, `;`, `$(...)`, backticks, `>`, newlines, Unicode), and a
   comparison of the name, value and size checks in Java and in the page over 1,322 cases (the color check of the Overlays tab
@@ -998,7 +1015,9 @@ script passes is in [tests/README.md](tests/README.md)).
   holds, and every step of an Apply, Undo, Default and refusal against a fake phone (the Samsung switch included). The same
   approach covers the file-manager path rules, the install-answer reader, the package-file scan and XAPK paths, the F-Droid and
   GitHub catalog parsers (against real indexes and feeds), the manifest decoder (against every compiled XML file of a real APK),
-  the archive engine (two suites, with generated bad, truncated, encrypted and 4 GB archives), the Rish shell (one suite against
+  the zip engine (two suites, with generated bad, truncated, encrypted and 4 GB archives), the 7z / tar family and rar engines
+  (checked against 7-Zip, py7zr, the system archive tools, and real RAR4/RAR5 archives from two upstream projects' own test
+  suites), the Rish shell (one suite against
   a real `mksh` with `toybox`) and the APK signer (v2 signatures cross-checked with `apksigner`). For v6.1, 133 checks of `ApkTrash` (which
   paths may be deleted, where a file waits and how it comes back, and the search's progress against a real folder tree) and 17 of
   `SplitInfo` (what a split's manifest says about it). The backup scripts and the regex handling of the update checks have no suite of

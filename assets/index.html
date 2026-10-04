@@ -12266,8 +12266,16 @@ Type any command below (e.g. pm list packages -d)
         function arcHeader() {
             if (!arc) return;
             document.getElementById('arcTitle').innerText = (arc.chain ? arc.chain.join(' › ') : arc.name);
-            document.getElementById('arcMeta').innerText = arc.files + ' file' + (arc.files === 1 ? '' : 's') + ' • ' + arcSize(arc.size)
-                + (arc.zip64 ? ' • ZIP64' : '') + (arc.format && arc.format !== 'zip' ? ' • ' + arc.format.toUpperCase() + (arc.solid ? ' (solid: files are packed together)' : '') : '') + (arc.encrypted ? ' • password-protected' : '') + (arc.staged ? ' • opened from a temporary copy' : '') + '\n' + (arc.nested ? 'inside ' + (arc.chain.slice(0, -1).join(' › ')) : arc.path);
+            let meta = arc.files + ' file' + (arc.files === 1 ? '' : 's') + ' • ' + arcSize(arc.size);
+            if (arc.zip64) meta += ' • ZIP64';
+            if (arc.format && arc.format !== 'zip') {
+                meta += ' • ' + arc.format.toUpperCase();
+                if (arc.solid) meta += ' (solid: files are packed together)';
+            }
+            if (arc.encrypted) meta += ' • password-protected';
+            if (arc.staged) meta += ' • opened from a temporary copy';
+            meta += '\n' + (arc.nested ? 'inside ' + (arc.chain.slice(0, -1).join(' › ')) : arc.path);
+            document.getElementById('arcMeta').innerText = meta;
             const note = document.getElementById('arcNote');
             let msg = '';
             if (!arc.editable) msg = 'View only: ' + (arc.whyNot || 'this archive can not be edited here.');

@@ -105,6 +105,10 @@ Two things made scripts fail only on a busy machine, and what to do instead:
 | `signer` | The in-app APK signer: v2 signatures checked with `apksigner`, RSA and EC keys, re-signing, edited and big APKs, tampering | an APK, `apksigner`, `keytool` |
 | `signmismatch` | The signer refuses a key that does not match its certificate | an APK, `keytool` |
 | `axml` | The manifest decoder reads every compiled XML file of a real APK | an APK |
+| `archiveio` | 7z and the tar family (`tar`, `.tar.gz/bz2/xz/zst/lz4`, and a bare `.gz/bz2/xz/zst/lz4`): detect, list, one-pass walk, open, create, rewrite with edits, 7z AES-256 with encrypted names, cancel, atomic write | 7-Zip, py7zr, `tar`, `gzip`, `bzip2`, `xz`, `zstd`, `lz4` (each optional: a missing one SKIPs its own checks) |
+| `rarreader` | RAR archives (RAR 1.5–4.x via junrar, RAR5 hand-written): list, one-pass walk, open, solid archives, filters (E8/E8E9/ARM/delta), AES-256 data and `-hp` encrypted headers, against real RAR4/RAR5 fixtures from the `rarfile` and `libarchive` projects (`fixtures/rar/fetch.sh`; a fixture-less run SKIPs) | |
+| `zipwriter` | Making a new zip: stored / deflated, folders, unicode names, the ZIP64 end record, and AES-256 / AES-128 / ZipCrypto passwords, read back through the zip engine, Info-ZIP and pyzipper | Python 3 with `pyzipper` (optional); `unzip` |
+| `zipcrypt` | Zip passwords at the raw-entry level: traditional ZipCrypto and WinZip AES (128/192/256), checked against Info-ZIP `zip`/`unzip` and pyzipper, wrong password, tampering, empty and large entries, unicode | Python 3 with `pyzipper` (optional); `zip`, `unzip` |
 
 - `org.json`: Android's copy is only stubs, so pass a real one: `ORG_JSON_JAR=/path/json-20240303.jar`
   (`curl -L -o .cache/org-json.jar https://repo1.maven.org/maven2/org/json/json/20240303/json-20240303.jar` is found by itself),
@@ -127,7 +131,7 @@ checked by compilation, review and these simulations, not on a device.
 
 ## The UI scripts, one by one
 
-<details><summary>84 scripts</summary>
+<details><summary>86 scripts</summary>
 
 | Script | Covers |
 |---|---|
@@ -214,6 +218,8 @@ checked by compilation, review and these simulations, not on a device.
 | `t82` | v7.2 File Manager: the ".." row (first row, CSS folder, 44 px, also in an empty or unreadable folder, none at the root), Show hidden files, ＋ File (name rules, editor opens), the editor (save, unsaved prompt, changed-on-disk, read only, not text, over 2 MB, failed save), Replace / Skip / Keep both with the counts, Cancel, Open with / Share, the picture, PDF and font viewers, thumbnails (only images and videos, off switch, no script from an answer), no working mode needed | `lib/fm_mock.js` |
 | `t83` | v7.3 File Manager II: the search bar (where to search, subfolders / inside archives boxes kept between launches, hidden files), results (name, folder, size, date, matching line, archive entries, open / show in folder, Stop, a limit, Back), and the extract dialog (this folder / named after the archive / another folder, Replace / Skip / Keep both, delete the archive afterwards with a question, choices remembered, progress and Cancel) | `lib/fm_mock.js` |
 | `t84` | v7.3 Installer, what the search found: Duplicate / Older version flags, Select and the cleanup pick, Delete selected with one Undo (and the files going for good when the bar goes), and the offer to delete the installer file after an install | `lib/inst_mock.js` |
+| `t85` | v7.4 Code and markup shown in colour by default (editor, plain viewer, archive preview): tags / attributes / strings / comments told apart, typing updates it live, the Colors switch and its own choice remembered, nested `<script>`/`<style>`, a plain text file left alone, hostile HTML in a file never runs (the colour layer is built from escaped text), a size cap, odd/unfinished input never throws, word wrap on by default and remembered, the colours follow light/dark | `lib/fm_mock.js` |
+| `t86` | v7.4 The password dialog (asked on open, mid-browse and on extract; wrong password tried again, never saved) and the Compress dialog (zip / 7z / tar family / a single compressed file, packing level, an optional password with the right protection choices per format, where to save, name-taken policy, Select-mode and single-file sheet entry points) | |
 | `test` | Working Modes (switching, Shizuku, IP:port entry, auto-detect) and Material 3 / Material You color presets |
 
 </details>
