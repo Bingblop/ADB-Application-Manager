@@ -49,6 +49,12 @@ File manager, part two: search, the extract dialog and long jobs that keep going
   (search and extract dialog) and `t84.js` (Find APKs cleanup and the offer after an install).
 - **Not in this release:** archive formats other than zip-family (7z, rar, tar and its family, with passwords) are the next release.
   Search reads only folders the app itself can read.
+- **Behaviour worth knowing.** In Find APKs the selection follows the filter (files hidden by a filter are un-picked and the count and the
+  button follow what is shown), flags are recomputed after deletes and Undo, and an older version is compared only against the same app
+  with the same signer and ABIs. Several long jobs at once share one notification.
+- **Known limits.** A single-file extraction cannot be cancelled mid-file; **Delete the archive afterwards** deletes permanently (not to the
+  trash) and ignores empty-folder entries; replacing a folder through a working mode (shell) can differ slightly from the direct route;
+  a few place names and native problem messages are still English.
 
 ## v7.2-Pro (versionCode 720)
 
