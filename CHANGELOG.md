@@ -1,5 +1,34 @@
 # Changelog
 
+## v7.1-Pro (versionCode 710)
+
+- **A language setting.** **Settings** (the gear at the top) now starts with **Language**, a drop-down with English (the default) and
+  thirteen more, each named in its own letters: Español, Français, Deutsch, Português (Brasil), Italiano, Русский, 简体中文, 日本語,
+  한국어, العربية, हिन्दी, Türkçe and Bahasa Indonesia. The language changes at once, with no restart: tabs, buttons, filters,
+  sheets, messages, the text in sentences with bold words or links, tool tips, input hints, and the dialogs of the browser. It is
+  kept between launches and the app starts in it. Names of apps, packages, files, folders, settings and colors, paths, and the
+  output of commands, logs and the terminal are left as they are, so an app called "Settings" keeps its name. Dates and numbers
+  follow the language. Arabic runs from right to left. A language whose file cannot be loaded changes nothing and says so. The
+  words of the notifications, the quick tiles and the home-screen widget are still English.
+- **A font for the app.** **Settings > Font** (after the colors): **Use system font** or a font of your own, only for the text of this
+  app (the rest of the phone is not touched). **Find fonts on this phone** searches storage for .ttf and .otf files with a progress
+  bar and lists them with their real names (read from the font file, also for a variable font); **Choose a file…** opens Android's
+  file chooser instead and needs no access to storage. Tap a font to see it on a sheet (a sample set in it) and then **Use this
+  font**. A refused file says why (not a font, a collection, over 24 MB). The font is kept by the app and loaded again at each
+  start; if it cannot be loaded the system font stays and the choice is dropped. Names, paths and commands in code-style boxes keep
+  their own monospace font.
+- **Saved App Lists is now Saved Applications** (the tab, its first card and the quick-list tile text).
+- **A new app icon:** the lightning bolt of the header on the same cyan-to-violet tile, as an adaptive icon.
+- **For people who translate:** `tests/i18n/` holds the list of every string of the page (`keys.json`), the translator's brief,
+  and the tools that cut a language into files, check them (changing parts, tags, line breaks, script) and put them together;
+  `node i18n/check.js` checks all dictionaries in `assets/lang/`. A second tool (`audit.js`) finds names or paths that a word of
+  a dictionary would have translated.
+- **Tests.** Two new UI scripts: `t80` (the font: search, progress, list, sheet, use, system font, next launch, a font that cannot be
+  loaded, the chooser, no access, an empty list, a variable font) and `t81` (the language: the drop-down, switching at once and back,
+  kept between launches, later texts, dialogs, names left alone, right to left, a dictionary that is missing); a Java suite for the font
+  search (`fontscan`: which files are fonts, what a font calls itself in every encoding, the bounded walk, the checked copy). 81 UI
+  scripts and 18 Java suites in all.
+
 ## v7.0-Pro (versionCode 700)
 
 - **New tab names, order and two-line labels.** The tab bar now reads Application Manager, Saved App Lists, UAD-NG Debloater, APK

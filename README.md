@@ -14,7 +14,7 @@ Debugging, Shizuku or Root**.
 
 ### [⬇️ Download the latest APK](https://github.com/Bingblop/ADB-Application-Manager/releases/latest)
 
-`com.bloatware.bingblop` · v7.0-Pro · signed APK, installs over every earlier version without uninstalling
+`com.bloatware.bingblop` · v7.1-Pro · signed APK, installs over every earlier version without uninstalling
 
 <table>
   <tr>
@@ -90,12 +90,12 @@ tell you when a new version is out (see [Updates](#updates)).
 
 ## The tabs
 
-Left to right, with the **settings gear** (it opens Settings: appearance, colors and the Feature List) in the header:
+Left to right, with the **settings gear** (it opens Settings: language, appearance, colors, font and the Feature List) in the header:
 
 | Tab | For |
 |---|---|
 | **Application Manager** | Every package on the phone: search (with a menu for names, package names and regex), sort, filter, batch actions, profiles, backups, CSV export; **⋯** opens an app's menu, the gear next to it the app's Android settings |
-| **Saved App Lists** | Named groups of apps to freeze, enable, stop or share together, and the **quick list** behind the tile and widget |
+| **Saved Applications** | Named groups of apps to freeze, enable, stop or share together, and the **quick list** behind the tile and widget |
 | **UAD-NG Debloater** | The UAD-NG list for your phone, a review step before anything runs, history with Undo |
 | **APK Installer** | Install `.apk` / `.apks` / `.apkm` / `.xapk` with full control of the options, plus the optional VirusTotal check |
 | **File Manager** | A privileged file manager that also opens packages and archives without extracting them, and can sign an edited APK |
@@ -109,9 +109,21 @@ Left to right, with the **settings gear** (it opens Settings: appearance, colors
 
 Every tab except Application Manager and About can be switched off or moved in **Settings → Feature List**.
 
+## New in v7.1
+
+- **A language setting.** **Settings → Language**, at the very top: English (the default) and thirteen more, each named in its own
+  letters (Español, Français, Deutsch, Português (Brasil), Italiano, Русский, 简体中文, 日本語, 한국어, العربية, हिन्दी, Türkçe, Bahasa
+  Indonesia). It changes the text at once, with no restart, and is kept between launches. Names of apps, files, packages and
+  settings, paths and command or log output are never translated; dates and numbers follow the language; Arabic runs right to
+  left. Notifications, the quick tiles and the widget are still English. For translators: [`tests/i18n`](tests/i18n/README.md).
+- **A font for the app.** **Settings → Font**: the system font, or a `.ttf` / `.otf` of your own, for the text of this app only.
+  *Find fonts on this phone* searches storage with a progress bar and lists the fonts by their real names; *Choose a file…* needs no
+  storage access. A sheet shows the font before you use it.
+- **Saved App Lists is now Saved Applications**, and the app icon is the lightning bolt of the header.
+
 ## New in v7.0
 
-- **New tab names and order, on two lines.** Application Manager · Saved App Lists · UAD-NG Debloater · APK Installer · File
+- **New tab names and order, on two lines.** Application Manager · Saved Applications · UAD-NG Debloater · APK Installer · File
   Manager · ADB Console · Hidden Settings · RRO/Monet Customization · App Updater · App Stores · Logcat Viewer · About. See
   [The tabs](#the-tabs).
 - **A settings gear** replaces the colors button. It opens **Settings**: Appearance, the theme palettes and color pickers, and the
@@ -954,7 +966,7 @@ script passes is in [tests/README.md](tests/README.md)).
   version, a damaged one, a tab that is off reached by a link or by Back, the layout at 320, 360 and 412 px), the search bar and its menu
   (placement, the three options, the swap rule, patterns and plain text, exact matches, kept between launches, closing by tap, Escape and Back, three
   screen sizes) and a scan of the sources and of every tab and sheet for emoji.
-- **Native rules, off the device** (`tests/java/run.js`, 17 suites): the parts of the Java that need no Android classes are compiled
+- **Native rules, off the device** (`tests/java/run.js`, 18 suites): the parts of the Java that need no Android classes are compiled
   and run as plain Java. For the Hidden Settings tab that is 311 checks of `SettingsDb`, including round trips through a real `sh` (and a fake
   `settings` that refuses on purpose) for hostile values (quotes, `;`, `$(...)`, backticks, `>`, newlines, Unicode), and a
   comparison of the name, value and size checks in Java and in the page over 1,322 cases (the color check of the Overlays tab

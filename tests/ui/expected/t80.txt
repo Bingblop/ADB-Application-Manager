@@ -1,0 +1,27 @@
+1. the Font card sits after the colors and before the Feature List: true ["Language","Appearance","Curated Theme Palettes","Font","Feature List"]
+   the system font is in use (a narrow letter is narrow) and there is no button to go back to it: true 18
+2. while it runs: a progress bar, what it has searched, and the button is off: true {"bar":true,"now":"60","msg":"Searched Download (2 of 3 folders) · 1 found","btn":true}
+   at the end: the bar is gone, three fonts are listed with their file and size, and the note says so: true {"bar":"none","rows":["Fixture Boxes Fixture-Boxes-Regular.ttf · 3 KB","Fixture Boxes Bold Fixture-Boxes-Bold.ttf · 3 KB","Inter Inter.ttf · 856 KB · variable"],"note":"3 fonts found. Tap one to see it before you use it.","filter":"none","btn":false}
+   the list says Bold for the bold file and leaves Regular out of the name: true ["Fixture Boxes Fixture-Boxes-Regular.ttf · 3 KB","Fixture Boxes Bold Fixture-Boxes-Bold.ttf · 3 KB","Inter Inter.ttf · 856 KB · variable"]
+   a short list has no filter box: true
+3. tapping a font opens a sheet with its name and file, and a sample set in that font: true {"open":true,"name":"Fixture Boxes","file":"Fixture-Boxes-Regular.ttf · 3 KB","fam":"PreviewFont, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif","w":48}
+   the app was asked for exactly that file: true
+   Cancel closes the sheet and the page keeps the system font: true
+4. a file that is not a font gives the reason in a toast and opens no sheet: true Could not use that file: That file is not a TrueType or OpenType font.
+5. Use this font: the sheet closes, the page is set in it, "In use" names it: true {"cur":"In use: Fixture Boxes (Fixture-Boxes-Regular.ttf, 3 KB)","body":"AppFont, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif","kv":{"mode":"custom","family":"Fixture Boxes","style":"Regular","name":"Fixture-Boxes-Regular.ttf","kind":"ttf","variable":false,"size":2796},"css":"'AppFont', -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif","sys":"flex","mono":"monospace","sheet":false}
+   every letter of the page is now a 0.6 em box: true
+   the choice is kept (kv ui_font) with the font's details: true {"mode":"custom","family":"Fixture Boxes","style":"Regular","name":"Fixture-Boxes-Regular.ttf","kind":"ttf","variable":false,"size":2796}
+   code-style text (the path of the file manager) keeps its monospace font: true monospace
+   the toast says which font: true Font: Fixture Boxes
+6. at the next launch the chosen font is applied again: true
+7. Use system font: the app is told to drop the file, the page is back in the system font, the choice is kept as system: true {"css":"","kv":{"mode":"system"},"btn":"none"}
+8. a saved font that is missing: the system font stays, the choice is reset and a toast says so: true {"css":"","kv":{"mode":"system"},"cur":"In use: the system font"} The font could not be loaded, so the system font is used.
+9. Choose a file: the chooser opens, its answer is read and shown on the sheet: true pickFontFile,fontPreview:content://font/1
+10. nothing found: a sentence says so and that a file can still be chosen by hand: true
+    no access to storage: the note says so in the failed color and the access prompt opens: true {"note":"This app cannot read storage. Grant All-files access, or choose a font file by hand (that needs no access).","err":true,"prompt":"File access needed\n\nAllow it to continue\n\n✕\nTo search storage for fonts, this app needs All-files access. You can also choose a font file by hand, which needs no access.\nAll files access\nBrowse storage, find packages on it and install from it.\nAllow\nNot now"}
+    a failed search starts with words and is in the failed color: true
+10b. a variable font is loaded with a weight range (1 to 1000), a static one without: true [["PreviewFont","1 1000"],["AppFont","1 1000"]]
+11. twelve fonts: the filter box shows and narrows the list by name: true
+    typing zebra leaves one font: true
+    a name nothing has says so: true
+ALL PASSED

@@ -1,11 +1,12 @@
 # Tests
 
-The checks the app is released with. None of this is part of the APK. There are two kinds:
+The checks the app is released with. None of this is part of the APK. There are three kinds:
 
 | | What it is | Needs |
 |---|---|---|
-| **UI** — `run.js`, `ui/` | 79 headless-Chromium scripts drive the real `assets/index.html` against a mock Android bridge: every tab, theme, filter, action, sheet and dialog | Node 18+, Playwright with its Chromium |
+| **UI** — `run.js`, `ui/` | 81 headless-Chromium scripts drive the real `assets/index.html` against a mock Android bridge: every tab, theme, filter, action, sheet and dialog | Node 18+, Playwright with its Chromium |
 | **Java** — `java/run.js`, `java/src/` | The parts of the app's Java that need no Android classes (settings and overlay rules, file rules, install hints, the archive engine, the Rish shell, the APK signer, the manifest decoder, the store parsers), compiled straight from `src/` and run with the JDK | JDK 8+; some suites also need Node, Python 3 with `zip`, `mksh` + `toybox`, `apksigner`, an APK, or the `org.json` jar |
+| **Translations** — `i18n/` | The list of every string of the page, the translator's brief and the tools that check, cut and put together the dictionaries in `assets/lang/` | Node 18+ (acorn and Playwright to regenerate the list) |
 
 ## Run them
 
@@ -88,6 +89,7 @@ Two things made scripts fail only on a busy machine, and what to do instead:
 | `installhints` | What an install failure means | |
 | `pure` | Package-file scan output and XAPK data paths | `org.json` |
 | `apktrash` | Deleting a found package file with Undo (which paths may be deleted, where a file waits, how it comes back) and the storage search's progress, against a real folder tree | `org.json` |
+| `fontscan` | Font search for the app font: which files are fonts, what a font calls itself (the name table in every encoding and shape, collections, variable fonts), the bounded walk and its progress, and the checked copy that stores a chosen font | `org.json` |
 | `splitinfo` | What a split APK's manifest says about it (split name, the feature module it configures, the feature flag) | |
 | `fdroid` | F-Droid index v1 / v2 parsing against real indexes | `org.json` |
 | `komi` | GitHub catalog (Komi) feeds: mapping, de-duplication, dates | `org.json` |
@@ -120,7 +122,7 @@ checked by compilation, review and these simulations, not on a device.
 
 ## The UI scripts, one by one
 
-<details><summary>79 scripts</summary>
+<details><summary>81 scripts</summary>
 
 | Script | Covers |
 |---|---|
@@ -202,6 +204,8 @@ checked by compilation, review and these simulations, not on a device.
 | `t77` | v7.0 Application Manager search: the bar sits under all the filters with a menu at its right end (names, package names, regex), all on at the start, kept between launches, one of names and packages always on, an invalid pattern or one that could freeze the list (3,000 apps) searched as text, exact matches with regex off; the menu opens in view with the batch button out of the way (five screens, with and without a selection), closes by tap, Escape, Back, typing, going into the box and leaving the tab but not by a scroll; the note is readable on the light page and set once. |
 | `t78` | v7.0: no emoji in the sources (page, changelog, layouts, Java) or in anything drawn on any tab or sheet; only the two settings gears remain. |
 | `t79` | v7.0 review of the emoji removal: a line that says something failed says so in words and color (store, installer, search, VirusTotal), the buttons that were told apart by a picture (danger, main action, pinned command, install-time permission, shell launch) are told apart again, the terminal find box at three widths, sub-tab sizes, the new tab names in sentences, no symbol written as an escape. |
+| `t80` | v7.1 Font setting: the Font card after the colors, a storage search with a progress bar and a list (filter box from 9 fonts), a sheet that shows the font before it is used (Cancel changes nothing, a file that is not a font gives the reason), Use this font (the whole page changes, code-style text keeps its monospace, the choice is kept), the next launch, the system font again, a saved font that is gone, the file chooser, no access / nothing found / a failed search, a variable font. Uses the fixture font `fixtures/Fixture-Boxes-Regular.ttf` (every lowercase letter a box 0.6 em wide). |
+| `t81` | v7.1 Language setting: the Language card first in Settings, English chosen, 14 languages named in themselves; choosing one changes titles, tab labels, buttons, templates, toasts, attributes and dialogs at once without a reload; kept between launches and in effect before the first draw; back to English restores everything; names of apps stay; Arabic is right to left; a dictionary that is missing changes nothing and says so. Uses small dictionaries made for the test. |
 | `test` | Working Modes (switching, Shizuku, IP:port entry, auto-detect) and Material 3 / Material You color presets |
 
 </details>

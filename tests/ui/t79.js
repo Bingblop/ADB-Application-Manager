@@ -119,10 +119,10 @@ const ratio = (a, b2) => { const lum = c => { const v = c.match(/[\d.]+/g).slice
 
   // 5) names in sentences, and no symbols written as escapes
   const src = fs.readFileSync(fileURLToPath(PAGE), 'utf8');
-  const stale = [/Go to Applications/, /<b>Files<\/b>/, /Installing from Files/, /Installs from Files/, /From Files:/, /Open Saved Lists/, /Applications tab/].filter(re => re.test(src)).map(String);
-  check('5. no sentence of the page names a tab that has another name now (Files, Applications, Saved Lists)', stale.length === 0, JSON.stringify(stale));
+  const stale = [/Go to Applications/, /<b>Files<\/b>/, /Installing from Files/, /Installs from Files/, /From Files:/, /Open Saved Lists/, /Saved App Lists/, /Applications tab/].filter(re => re.test(src)).map(String);
+  check('5. no sentence of the page names a tab that has another name now (Files, Applications, Saved Lists, Saved App Lists)', stale.length === 0, JSON.stringify(stale));
   const java = fs.readFileSync(path.join(REPO, 'src', 'com', 'bloatware', 'bingblop', 'MainActivity.java'), 'utf8');
-  check('   the tile that stops the quick list tells where it is set with the names of v7.0', /Open Saved App Lists in the app and tap Quick list\./.test(java) && !/\\u26a1/i.test(java));
+  check('   the tile that stops the quick list tells where it is set with the names of v7.0', /Open Saved Applications in the app and tap Quick list\./.test(java) && !/\\u26a1/i.test(java));
   check('   the About tab names File Manager', /Installs started from File Manager/.test(await ev(() => document.getElementById('view-about').innerText)));
 
   // 6) the permissions of an app: the ones that cannot be changed carry a "locked" badge (the padlock said so before)

@@ -22,7 +22,7 @@
    the sub-tabs of Hidden Settings and App Stores are 14 px (they were 13), the log level chips 12 px (11): true {"sdbTab":"14px","store":"14px","lc":"16px"}
 4. [dark] the filled accent button ("Apply", "Watching") is readable (contrast 12.3:1, at least 4.5): true {"prof":["rgb(0, 0, 0)","rgb(208, 188, 255)"],"sub":["rgb(0, 0, 0)"]}
 4. [light] the filled accent button ("Apply", "Watching") is readable (contrast 6.4:1, at least 4.5): true {"prof":["rgb(255, 255, 255)","rgb(103, 80, 164)"],"sub":["rgb(255, 255, 255)"]}
-5. no sentence of the page names a tab that has another name now (Files, Applications, Saved Lists): true []
+5. no sentence of the page names a tab that has another name now (Files, Applications, Saved Lists, Saved App Lists): true []
    the tile that stops the quick list tells where it is set with the names of v7.0: true
    the About tab names File Manager: true
 6. every permission that cannot be changed has the "locked" badge, and no other has it: true {"rows":45,"locked":22,"badged":22,"wrong":0}
