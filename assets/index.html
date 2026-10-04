@@ -1928,6 +1928,27 @@
         #fmList.fm-selecting .fm-more { display: none; }
         #fmList .perm-row { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
         #fmList .perm-row.fm-picked { background: var(--accent-glow); border-radius: 10px; }
+        .fm-opts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; margin-top: 10px; }
+        .fm-opt { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; cursor: pointer; }
+        .fm-opt input { width: 18px; height: 18px; accent-color: var(--accent); }
+        /* the pictures of the list: a folder and a page drawn with CSS, or the small picture of an image or video */
+        .fm-ico { position: relative; flex: 0 0 34px; width: 34px; height: 34px; margin-right: 10px; display: flex; align-items: center; justify-content: center; border-radius: 8px; overflow: hidden; }
+        .fm-ico img { width: 100%; height: 100%; object-fit: cover; }
+        .fm-folder { position: relative; width: 24px; height: 17px; background: var(--accent); border-radius: 2px 3px 3px 3px; margin-top: 3px; }
+        .fm-folder::before { content: ""; position: absolute; left: 0; top: -4px; width: 11px; height: 5px; background: var(--accent); border-radius: 2px 2px 0 0; }
+        .fm-folder::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 12px; background: rgba(255, 255, 255, 0.22); border-radius: 0 0 3px 3px; }
+        .fm-page { position: relative; width: 18px; height: 23px; border: 2px solid var(--text-muted); border-radius: 2px 6px 2px 2px; opacity: 0.8; }
+        .fm-page::before { content: ""; position: absolute; left: 3px; right: 3px; top: 7px; height: 2px; background: var(--text-muted); box-shadow: 0 4px 0 var(--text-muted), 0 8px 0 var(--text-muted); }
+        #fmList .fm-up-row { cursor: pointer; }
+        #fmList .fm-up-row .perm-name { font-size: 15px; letter-spacing: 1px; }
+        .fm-hidden-row .perm-name { opacity: 0.7; }
+        .fm-edit-sheet { width: 100%; max-width: 640px; height: min(88vh, 760px); display: flex; flex-direction: column; }
+        .fm-edit-area { flex: 1; width: 100%; min-height: 160px; resize: none; font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; font-size: 13px; line-height: 1.45; padding: 10px; border-radius: 10px; border: 1px solid var(--border-glass); background: var(--input-bg); color: var(--text-main); tab-size: 4; white-space: pre; overflow: auto; }
+        .fm-edit-area.wrap { white-space: pre-wrap; overflow-wrap: anywhere; }
+        .fm-edit-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin-top: 8px; font-size: 11px; color: var(--text-muted); }
+        .fm-media-stage { flex: 1; min-height: 160px; overflow: auto; text-align: center; border-radius: 10px; background: rgba(var(--ov), 0.05); }
+        .fm-media-stage img { max-width: 100%; height: auto; }
+        .fm-media-stage.actual img { max-width: none; }
         #fmList .perm-row.fm-picked .fm-chk { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 
         .sign-row { padding: 7px 0; border-bottom: 1px solid rgba(var(--ov), 0.06); }
@@ -3439,12 +3460,18 @@
                     <input type="text" class="list-search" id="fmPathInput" placeholder="/storage/emulated/0" value="/storage/emulated/0" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter') fmGo(this.value)">
                     <button class="term-run-btn" onclick="fmGo(document.getElementById('fmPathInput').value)">Go</button>
                 </div>
+                <div class="fm-opts">
+                    <label class="fm-opt"><input type="checkbox" id="fmHiddenChk" onchange="fmSetOpt('hidden', this.checked)"> Show hidden files</label>
+                    <label class="fm-opt"><input type="checkbox" id="fmThumbChk" onchange="fmSetOpt('thumbs', this.checked)"> Show thumbnails</label>
+                    <button class="batch-tool-link" id="fmThumbClearBtn" onclick="fmThumbClear()">Clear thumbnail cache</button>
+                </div>
                 <div class="batch-sheet-tools" style="margin:8px 0; gap:12px; flex-wrap:wrap;">
                     <button class="batch-tool-link" onclick="fmUp()">Up</button>
                     <button class="batch-tool-link" onclick="fmGo('/storage/emulated/0')">Storage</button>
                     <button class="batch-tool-link" onclick="fmGo('/data/local/tmp')">/data/local/tmp</button>
                     <button class="batch-tool-link" onclick="fmGo('/system')">/system</button>
                     <button class="batch-tool-link" onclick="fmNewFolder()">＋ Folder</button>
+                    <button class="batch-tool-link" onclick="fmNewFile()">＋ File</button>
                     <button class="batch-tool-link" onclick="fmRefresh()">Refresh</button>
                     <button class="batch-tool-link" id="fmSelectBtn" onclick="fmToggleSelectMode()">Select</button>
                 </div>
@@ -4912,6 +4939,63 @@ Type any command below (e.g. pm list packages -d)
         </div>
     </div>
 
+    <div class="modal-overlay" id="fmEditModal" onclick="if(event.target===this) fmEditClose()">
+        <div class="modal-sheet fm-edit-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-title">
+                        <h3 id="fmEditName">File</h3>
+                        <p id="fmEditPath" style="font-family:monospace; word-break:break-all;"></p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="fmEditClose()">✕</div>
+            </div>
+            <div class="fm-opts" style="margin:0 0 8px;">
+                <button class="batch-tool-link" id="fmEditSave" onclick="fmEditSave()">Save</button>
+                <label class="fm-opt"><input type="checkbox" id="fmEditWrap" onchange="fmEditWrap(this.checked)"> Wrap lines</label>
+                <button class="batch-tool-link" onclick="fmEditClose()">Close</button>
+            </div>
+            <textarea class="fm-edit-area" id="fmEditArea" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="File text" oninput="fmEditInput()" onkeyup="fmEditPos()" onclick="fmEditPos()"></textarea>
+            <div class="fm-edit-foot"><span id="fmEditStatus"></span><span id="fmEditPos"></span></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="fmMediaModal" onclick="if(event.target===this) fmMediaClose()">
+        <div class="modal-sheet fm-edit-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-title">
+                        <h3 id="fmMediaName">File</h3>
+                        <p id="fmMediaMeta"></p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="fmMediaClose()">✕</div>
+            </div>
+            <div class="fm-opts" style="margin:0 0 8px;" id="fmMediaBar"></div>
+            <div class="fm-media-stage" id="fmMediaStage"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="fmConflictModal" onclick="if(event.target===this) fmConflictCancel()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-title">
+                        <h3 id="fmConflictTitle">Names already taken</h3>
+                        <p id="fmConflictSub"></p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="fmConflictCancel()">✕</div>
+            </div>
+            <div class="batch-actions-grid">
+                <button class="batch-grid-btn danger" onclick="fmConflictChoose('replace')">Replace</button>
+                <button class="batch-grid-btn" onclick="fmConflictChoose('skip')">Skip</button>
+                <button class="batch-grid-btn accent" onclick="fmConflictChoose('keep')">Keep both</button>
+            </div>
+            <p class="switch-sub" style="margin-top:10px;">Replace puts the new one over the old one (folders are merged). Skip leaves what is there. Keep both adds the new one as name (1).ext.</p>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="termModal" onclick="if(event.target===this) termCloseModal()">
         <div class="modal-sheet">
             <div class="sheet-header">
@@ -6344,6 +6428,12 @@ Type any command below (e.g. pm list packages -d)
         }
 
         // Privilege Guard
+        // File manager: a job runs when the app can reach the files itself (All-files access) or a working mode can
+        function fmCanWork(actionName) {
+            if (isPrivilegedActive || fileAccessGranted()) return true;
+            return guardPrivilege(actionName);
+        }
+
         function guardPrivilege(actionName) {
             if (!isPrivilegedActive) {
                 openPrivilegeRequiredModal(actionName);
@@ -10296,7 +10386,25 @@ Type any command below (e.g. pm list packages -d)
         let fmActionTarget = null;
         let fmPendingOp = null;
 
-        function onFilesShown() { fmGo(fmPath, true); }
+        let fmLast = { entries: [] };                    // the listing on screen, so an option can redraw it without asking again
+        let fmOpts = { hidden: false, thumbs: true };    // Show hidden files, Show thumbnails (kept between launches)
+        let fmOptsLoaded = false;
+        function fmOptsLoad() {
+            if (fmOptsLoaded) return;
+            fmOptsLoaded = true;
+            const v = kvGet('fm_opts', null);
+            if (v && typeof v === 'object') fmOpts = { hidden: !!v.hidden, thumbs: v.thumbs !== false };
+            const h = document.getElementById('fmHiddenChk'), t = document.getElementById('fmThumbChk');
+            if (h) h.checked = fmOpts.hidden;
+            if (t) t.checked = fmOpts.thumbs;
+        }
+        function fmSetOpt(key, val) {
+            fmOpts[key] = !!val;
+            kvSet('fm_opts', fmOpts);
+            renderFm(fmLast);
+            fmSelRender();
+        }
+        function onFilesShown() { fmOptsLoad(); fmGo(fmPath, true); }
         // auto: the tab opening by itself (the inline hint is enough then); a folder the user chose asks for the access when it is what is missing
         function fmGo(path, auto) {
             path = (path || '/').trim() || '/';
@@ -10317,7 +10425,8 @@ Type any command below (e.g. pm list packages -d)
                 if (!entries.length && d.names) entries = parseNameList(d.names);
                 d.error = d.error || parsed.error;
             }
-            renderFm({ error: d.error, entries, raw: d.raw || '' });
+            fmLast = { error: d.error, entries, raw: d.raw || '' };
+            renderFm(fmLast);
             updateFmAccessHint(fmPath, entries);
             // not when a working mode answered (d.source 'shell'): it reads storage without this access, and an empty folder is just empty
             if (!auto && /^\/(sdcard|storage)(\/|$)/.test(fmPath) && (d.error || !entries.length) && d.source !== 'shell' && !fileAccessGranted()) {
@@ -10407,35 +10516,110 @@ Type any command below (e.g. pm list packages -d)
         function fmParent(p) { p = fmNormalizePath(p); const i = p.lastIndexOf('/'); return i <= 0 ? '/' : p.substring(0, i); }
         function fmJoin(name) { return fmNormalizePath((fmPath === '/' ? '' : fmPath) + '/' + name); }
 
+        // what a row shows in front of its name, by the ending of the name
+        const FM_TEXT_EXT = /\.(txt|md|markdown|log|json|xml|html?|css|js|mjs|ts|tsx|jsx|java|kt|kts|py|sh|bash|zsh|c|h|cc|cpp|hpp|cs|go|rs|rb|php|pl|sql|yml|yaml|toml|ini|conf|cfg|properties|prop|gradle|csv|tsv|srt|vtt|rc|env|gitignore|bat|ps1|tex|svg|smali|pro|mk|lst|list|txt~|bak)$/i;
+        const FM_IMG_EXT = /\.(jpe?g|png|gif|webp|bmp|heic|heif|avif)$/i;
+        const FM_VID_EXT = /\.(mp4|m4v|3gp|mkv|webm|mov|avi)$/i;
+        const FM_AUD_EXT = /\.(mp3|m4a|aac|ogg|oga|opus|wav|flac|amr|mid|midi)$/i;
+        const FM_FONT_EXT = /\.(ttf|otf)$/i;
+        function fmKind(name) {
+            if (FM_IMG_EXT.test(name)) return 'image';
+            if (FM_VID_EXT.test(name)) return 'video';
+            if (FM_AUD_EXT.test(name)) return 'audio';
+            if (/\.pdf$/i.test(name)) return 'pdf';
+            if (FM_FONT_EXT.test(name)) return 'font';
+            if (/\.(apk|apks|apkm|xapk)$/i.test(name)) return 'apk';
+            if (ARC_EXT.test(name) || /\.(7z|rar|tar|gz|bz2|xz|zst|lz4|tgz|tbz2|txz|iso|img|bin|so|dex|odex|vdex|oat|art|ko|db|sqlite|dat|class)$/i.test(name)) return 'binary';
+            if (FM_TEXT_EXT.test(name)) return 'text';
+            return /\.[A-Za-z0-9]{1,5}$/.test(name) ? 'other' : 'text';          // a name with no ending is usually a text file (README, Makefile ...)
+        }
+        function fmUpRowHtml() {
+            if (fmPath === '/') return '';
+            return '<div class="perm-row fm-up-row" id="fmUpRow" role="button" aria-label="Up one folder" onclick="fmUp()">'
+                + '<div class="fm-ico"><div class="fm-folder"></div></div>'
+                + '<div class="perm-info"><div class="perm-name fm-dir">..</div><div class="perm-sub">Up one folder</div></div></div>';
+        }
         function renderFm(d) {
             const el = document.getElementById('fmList');
             fmRows = [];
-            if (!d.entries || !d.entries.length) {
-                if (d.error) { el.innerHTML = '<div class="list-empty">' + escapeHtml(d.error) + '</div>'; return; }
-                if (d.raw && d.raw.trim()) {
+            const up = fmUpRowHtml();
+            const all = d.entries || [];
+            const shown = fmOpts.hidden ? all : all.filter(e => !(e.name && e.name.charAt(0) === '.'));
+            const hiddenN = all.length - shown.length;
+            if (!shown.length) {
+                if (d.error && !all.length) { el.innerHTML = up + '<div class="list-empty">' + escapeHtml(d.error) + '</div>'; return; }
+                if (!all.length && d.raw && d.raw.trim()) {
                     // Nothing parsed but the listing wasn't empty - show the raw output so the format is visible.
-                    el.innerHTML = '<div class="list-empty">Couldn\'t read this listing. Raw output:</div>'
+                    el.innerHTML = up + '<div class="list-empty">Couldn\'t read this listing. Raw output:</div>'
                         + '<pre style="white-space:pre-wrap; word-break:break-all; font-size:11px; color:var(--text-muted); padding:8px;">' + escapeHtml(d.raw.slice(0, 4000)) + '</pre>';
                     return;
                 }
-                el.innerHTML = '<div class="list-empty">Empty folder.</div>';
+                el.innerHTML = up + '<div class="list-empty">' + (hiddenN ? 'Only hidden files are here. Tick Show hidden files to see them.' : 'Empty folder.') + '</div>';
                 return;
             }
-            const entries = d.entries.slice().sort((a, b) => (b.isDir - a.isDir) || a.name.localeCompare(b.name));
+            const entries = shown.slice().sort((a, b) => (b.isDir - a.isDir) || a.name.localeCompare(b.name));
             // Rows are looked up by index: a file name can hold any character (quotes included), so it is never put in a handler string
-            fmRows = entries.map(e => ({ name: e.name, isDir: !!e.isDir, full: fmJoin(e.name) }));
-            el.innerHTML = entries.map((e, i) => {
+            fmRows = entries.map(e => ({ name: e.name, isDir: !!e.isDir, full: fmJoin(e.name), kind: e.isDir ? 'dir' : fmKind(e.name) }));
+            el.innerHTML = up + entries.map((e, i) => {
                 const sub = escapeHtml(e.perms + (e.isDir ? '' : ' • ' + fmtInstallSize(e.size)) + (e.link ? ' → ' + e.link : ''));
-                return `<div class="perm-row${fmSel.has(fmRows[i].full) ? ' fm-picked' : ''}" data-i="${i}">
+                const k = fmRows[i].kind;
+                const thumb = (k === 'image' || k === 'video') ? ' data-thumb="1"' : '';
+                const ico = e.isDir ? '<div class="fm-folder"></div>' : '<div class="fm-page"></div>';
+                return `<div class="perm-row${fmSel.has(fmRows[i].full) ? ' fm-picked' : ''}${e.name.charAt(0) === '.' ? ' fm-hidden-row' : ''}" data-i="${i}">
                     <div class="fm-chk" aria-hidden="true" onclick="fmRowTap(${i})">✓</div>
+                    <div class="fm-ico" data-ii="${i}"${thumb} onclick="fmRowTap(${i})">${ico}</div>
                     <div class="perm-info" style="cursor:pointer;" onclick="fmRowTap(${i})" data-i="${i}">
                         <div class="perm-name${e.isDir ? ' fm-dir' : ''}">${escapeHtml(e.name)}${e.isDir ? '/' : ''}</div>
                         <div class="perm-sub">${sub}</div>
                     </div>
                     <button class="perm-toggle-btn locked fm-more" onclick="fmActionsIdx(${i})">⋯</button>
                 </div>`;
-            }).join('');
+            }).join('') + (hiddenN ? '<div class="list-empty" style="padding:10px 0;">' + hiddenN + ' hidden item' + (hiddenN === 1 ? '' : 's') + ' not shown</div>' : '');
             el.classList.toggle('fm-selecting', fmSelMode);
+            fmThumbSetup();
+        }
+
+        // ---- small pictures of images and videos (the app keeps them in a cache and serves them from there) ----
+        let fmThumbGen = 0, fmThumbIO = null, fmThumbQueue = [], fmThumbTimer = null;
+        function fmThumbSetup() {
+            fmThumbGen++;
+            fmThumbQueue = [];
+            if (fmThumbIO) { try { fmThumbIO.disconnect(); } catch (e) {} fmThumbIO = null; }
+            if (!fmOpts.thumbs || !window.AndroidBridge || !window.AndroidBridge.fmThumbs) return;
+            const icons = Array.from(document.querySelectorAll('#fmList .fm-ico[data-thumb]'));
+            if (!icons.length) return;
+            const want = ico => { const r = fmRows[+ico.dataset.ii]; if (r) fmThumbQueue.push(r.full); };
+            if ('IntersectionObserver' in window) {
+                fmThumbIO = new IntersectionObserver(list => {
+                    list.forEach(en => { if (en.isIntersecting) { fmThumbIO.unobserve(en.target); want(en.target); } });
+                    if (fmThumbQueue.length && !fmThumbTimer) fmThumbTimer = setTimeout(fmThumbFlush, 60);
+                }, { rootMargin: '240px' });
+                icons.forEach(i => fmThumbIO.observe(i));
+            } else {
+                icons.slice(0, 60).forEach(want);
+                fmThumbFlush();
+            }
+        }
+        function fmThumbFlush() {
+            fmThumbTimer = null;
+            const batch = fmThumbQueue.splice(0, 40);
+            if (batch.length) { try { window.AndroidBridge.fmThumbs(JSON.stringify(batch), 96); } catch (e) {} }
+            if (fmThumbQueue.length) fmThumbTimer = setTimeout(fmThumbFlush, 120);
+        }
+        window.onFmThumb = function (path, url) {
+            if (!fmOpts.thumbs || !/^data:image\/jpeg;base64,[A-Za-z0-9+\/=]+$/.test(url || '')) return;
+            const i = fmRows.findIndex(r => r.full === path);
+            if (i < 0) return;
+            const ico = document.querySelector('#fmList .fm-ico[data-ii="' + i + '"]');
+            if (ico) ico.innerHTML = '<img alt="" src="' + url + '">';
+        };
+        function fmThumbClear() {
+            haptic();
+            let r = {};
+            try { r = JSON.parse(window.AndroidBridge.fmThumbCache('clear')); } catch (e) {}
+            showToast('Thumbnail cache cleared' + (r.freed ? ' (' + fmtInstallSize(r.freed) + ')' : ''));
+            fmThumbSetup();
+            fmRefresh();
         }
         let fmRows = [];
 
@@ -10574,36 +10758,56 @@ Type any command below (e.g. pm list packages -d)
 
         function fmClipClear() { haptic(); fmClip = null; fmClipRender(); }
 
-        function fmBatchStart(op, paths, dest) {
+        function fmBatchStart(op, paths, dest, policy) {
             if (fmBatchRunning) { showToast('A file job is still running'); return false; }
             if (!window.AndroidBridge || !window.AndroidBridge.fmBatch) { showToast('Needs the app build'); return false; }
             let st = 'error';
-            try { st = window.AndroidBridge.fmBatch(op, JSON.stringify(paths), dest || ''); } catch (e) { st = 'error'; }
+            try { st = window.AndroidBridge.fmBatch2 ? window.AndroidBridge.fmBatch2(op, JSON.stringify(paths), dest || '', policy || 'replace') : window.AndroidBridge.fmBatch(op, JSON.stringify(paths), dest || ''); } catch (e) { st = 'error'; }
             if (st !== 'started') { showToast(st === 'busy' ? 'A file job is still running' : 'The job could not start'); return false; }
             fmBatchRunning = true;
             const el = document.getElementById('fmBatchStatus');
-            if (el) { el.style.display = ''; el.innerText = 'Working…'; }
+            if (el) { el.style.display = ''; el.innerHTML = '<span id="fmBatchText">Working…</span> <button class="batch-tool-link" id="fmBatchCancelBtn" onclick="fmBatchCancelTap()">Cancel</button>'; }
             fmClipRender();
             return true;
         }
 
         function fmPaste() {
             if (!fmClip) return;
-            if (!guardPrivilege('Paste')) return;
+            if (!fmCanWork('Paste')) return;
             // something already in this folder can't be copied or moved onto itself
             const here = fmNormalizePath(fmPath);
-            const paths = fmClip.paths.filter(p => fmParent(p) !== here);
+            // a move into the folder an item is already in does nothing; a copy there is a duplicate (the dialog below offers Keep both)
+            const paths = fmClip.op === 'mv' ? fmClip.paths.filter(p => fmParent(p) !== here) : fmClip.paths.slice();
             if (!paths.length) { showToast('That is already in this folder'); return; }
-            const existing = new Set(fmRows.map(r => r.name));
+            const existing = new Set(fmListedNames());
             const clash = paths.filter(p => existing.has(fmBase(p)));
-            if (clash.length && !confirm(clash.length + ' item' + (clash.length === 1 ? '' : 's') + ' with the same name already exist here (' + clash.slice(0, 3).map(fmBase).join(', ') + (clash.length > 3 ? ', …' : '') + '). Replace ' + (clash.length === 1 ? 'it' : 'them') + '?')) return;
             haptic();
-            fmBatchStart(fmClip.op, paths, here);
+            if (clash.length) { fmConflictAsk(fmClip.op, paths, here, clash); return; }
+            fmBatchStart(fmClip.op, paths, here, 'keep');           // nothing is taken: 'keep' only matters for a name inside a folder, where it never overwrites
         }
+        // every name in the folder shown, hidden ones too (a hidden file can hold a name as well)
+        function fmListedNames() { return (fmLast.entries || []).map(e => e.name); }
+
+        let fmConflict = null;
+        function fmConflictAsk(op, paths, dest, clash) {
+            fmConflict = { op, paths, dest };
+            document.getElementById('fmConflictTitle').innerText = clash.length === 1 ? 'A name is already taken' : 'Names already taken';
+            document.getElementById('fmConflictSub').innerText = clash.length + ' of ' + paths.length + ' in this folder: ' + clash.slice(0, 3).map(fmBase).join(', ') + (clash.length > 3 ? ', …' : '');
+            document.getElementById('fmConflictModal').classList.add('show');
+        }
+        function fmConflictChoose(policy) {
+            const c = fmConflict;
+            document.getElementById('fmConflictModal').classList.remove('show');
+            fmConflict = null;
+            if (!c) return;
+            haptic();
+            fmBatchStart(c.op, c.paths, c.dest, policy);
+        }
+        function fmConflictCancel() { fmConflict = null; document.getElementById('fmConflictModal').classList.remove('show'); }
 
         function fmDeleteSelected() {
             if (!fmSel.size) { showToast('Select something first'); return; }
-            if (!guardPrivilege('Delete')) return;
+            if (!fmCanWork('Delete')) return;
             const paths = Array.from(fmSel);
             const names = paths.slice(0, 3).map(fmBase).join(', ') + (paths.length > 3 ? ', …' : '');
             if (!confirm('Delete ' + paths.length + ' item' + (paths.length === 1 ? '' : 's') + ' (' + names + ')? Folders go with everything in them. This can not be undone.')) return;
@@ -10612,8 +10816,14 @@ Type any command below (e.g. pm list packages -d)
         }
 
         function onFmBatchProgress(msg) {
-            const el = document.getElementById('fmBatchStatus');
-            if (el && fmBatchRunning) { el.style.display = ''; el.innerText = msg; }
+            const t = document.getElementById('fmBatchText');
+            if (t && fmBatchRunning) t.innerText = msg;
+        }
+        function fmBatchCancelTap() {
+            haptic();
+            try { window.AndroidBridge.fmBatchCancel && window.AndroidBridge.fmBatchCancel(); } catch (e) {}
+            const t = document.getElementById('fmBatchText');
+            if (t) t.innerText = 'Stopping…';
         }
 
         function onFmBatchDone(r) {
@@ -10626,11 +10836,11 @@ Type any command below (e.g. pm list packages -d)
                 showToast(r.error);
             } else {
                 const failed = Array.isArray(r.failed) ? r.failed : [];
-                showToast(verb + ' ' + (r.done || 0) + ' of ' + (r.total || 0) + (failed.length ? ' • ' + failed.length + ' failed' : ''));
+                showToast(verb + ' ' + (r.done || 0) + ' of ' + (r.total || 0) + (r.skipped ? ' • ' + r.skipped + ' skipped' : '') + (failed.length ? ' • ' + failed.length + ' failed' : '') + (r.cancelled ? ' • stopped' : ''));
                 if (failed.length) {
                     showCommandResults('File manager', verb.toLowerCase(), failed.map(f => ({ name: fmBase(f.p), pkg: f.p, output: f.error, success: false })));
                 }
-                if (r.op === 'mv' && fmClip && !failed.length) fmClip = null;
+                if (r.op === 'mv' && fmClip && !failed.length && !r.cancelled && !r.skipped) fmClip = null;
             }
             fmClipRender();
             fmRefresh();
@@ -10649,10 +10859,14 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('fmActionPath').innerText = full;
             document.getElementById('fmDestRow').style.display = 'none';
             document.getElementById('fmViewer').style.display = 'none';
+            const kind = isDir ? 'dir' : fmKind(name);
             const btns = [];
             if (!isDir && /\.(apk|apks|apkm|xapk)$/i.test(name)) btns.push(`<button class="batch-grid-btn accent" onclick="fmInstallFile()">Install</button>`);
             if (!isDir && /\.apk$/i.test(name)) btns.push(`<button class="batch-grid-btn" onclick="fmSignFile()">Sign…</button>`);
             if (!isDir) btns.push(`<button class="batch-grid-btn" onclick="fmViewFile()">${ARC_EXT.test(name) ? 'View contents' : 'View'}</button>`);
+            if (!isDir && (kind === 'text' || kind === 'other')) btns.push(`<button class="batch-grid-btn accent" onclick="fmEditOpen()">Edit</button>`);
+            if (!isDir) btns.push(`<button class="batch-grid-btn" onclick="fmOpenWith()">Open with…</button>`);
+            if (!isDir) btns.push(`<button class="batch-grid-btn" onclick="fmShareFile()">Share</button>`);
             if (!isDir && !ARC_EXT.test(name)) btns.push(`<button class="batch-grid-btn" onclick="fmOpenAsArchive()">Open as archive</button>`);
             btns.push(`<button class="batch-grid-btn" onclick="fmStartDest('rename')">Rename</button>`);
             btns.push(`<button class="batch-grid-btn" onclick="fmStartDest('cp')">Copy</button>`);
@@ -10690,13 +10904,19 @@ Type any command below (e.g. pm list packages -d)
             if (!fmActionTarget || !fmPendingOp) return;
             const src = fmActionTarget.full;
             const val = (document.getElementById('fmDestInput').value || '').trim();
-            if (fmPendingOp === 'mkdir') {
-                if (!val) { showToast('Enter a name'); return; }
+            if (fmPendingOp === 'mkdir' || fmPendingOp === 'mkfile') {
+                const bad = fmBadName(val);
+                if (bad) { showToast(bad); return; }
+                const target = fmJoin(val);
+                if (fmListedNames().indexOf(val) >= 0) { showToast('That name is already used here'); return; }
+                const isFile = fmPendingOp === 'mkfile';
                 let rk;
-                try { rk = JSON.parse(window.AndroidBridge.fmOp('mkdir', (fmPath === '/' ? '' : fmPath) + '/' + val, null)); } catch (e) { rk = { ok: false }; }
-                showToast(rk.ok ? 'Folder created' : 'Failed');
+                try { rk = JSON.parse(window.AndroidBridge.fmOp(isFile ? 'touch' : 'mkdir', target, null)); } catch (e) { rk = { ok: false, output: String(e && e.message || e) }; }
                 closeFmAction();
+                if (!rk.ok) { showToast(rk.output && rk.output.length < 90 ? rk.output : 'Failed'); return; }
+                showToast(isFile ? 'File created' : 'Folder created');
                 fmRefresh();
+                if (isFile) { fmActionTarget = { full: target, isDir: false, name: val }; if (fmKind(val) === 'text' || fmKind(val) === 'other') fmEditOpen(); }
                 return;
             }
             let op = fmPendingOp, a = src, b = null;
@@ -10711,7 +10931,7 @@ Type any command below (e.g. pm list packages -d)
             }
             let r;
             try { r = JSON.parse(window.AndroidBridge.fmOp(op, a, b)); } catch (e) { r = { ok: false, output: String(e && e.message || e) }; }
-            showToast(r.ok ? 'Done' : 'Failed');
+            showToast(r.ok ? 'Done' : (r.output && r.output.length < 90 && !/\n/.test(r.output) ? r.output : 'Failed'));
             closeFmAction();
             fmRefresh();
             if (!r.ok) showCommandResults('File op', op, [{ name: fmActionTarget ? fmActionTarget.name : '', pkg: a, output: r.output, success: false }]);
@@ -10720,6 +10940,11 @@ Type any command below (e.g. pm list packages -d)
             if (!fmActionTarget) return;
             // .apk / .zip / package files open as a folder tree (nothing is extracted). If one turns out not to be a
             // readable archive, fall back to the plain text viewer below.
+            const vk = fmKind(fmActionTarget.name);
+            if (vk === 'image') { fmShowImage(); return; }
+            if (vk === 'pdf') { fmShowPdf(); return; }
+            if (vk === 'font') { fmShowFont(); return; }
+            if (vk === 'video' || vk === 'audio') { fmOpenWith(); return; }
             if (ARC_EXT.test(fmActionTarget.name)) {
                 const target = fmActionTarget;
                 arcOpen(target.full, r => {
@@ -10758,8 +10983,37 @@ Type any command below (e.g. pm list packages -d)
             if (r.ok && r.ref) { closeFmAction(); installFromFilesStart(r.ref); }
             else { showToast('Could not stage APK'); showCommandResults('Install from files', fmActionTarget.name, [{ name: fmActionTarget.name, pkg: fmActionTarget.full, output: r.error || 'failed', success: false }]); }
         }
+        function fmNewFile() {
+            if (!fmCanWork('Create file')) return;
+            fmActionTarget = { full: fmPath, isDir: true, name: fmPath };
+            fmPendingOp = 'mkfile';
+            document.getElementById('fmActionName').innerText = 'New file';
+            document.getElementById('fmActionPath').innerText = fmPath;
+            document.getElementById('fmActionBtns').innerHTML = '';
+            document.getElementById('fmViewer').style.display = 'none';
+            const row = document.getElementById('fmDestRow');
+            const input = document.getElementById('fmDestInput');
+            const confirm = document.getElementById('fmDestConfirm');
+            row.style.display = '';
+            input.style.display = '';
+            input.value = '';
+            input.placeholder = 'File name, for example notes.txt';
+            confirm.className = 'mode-action-btn primary';
+            confirm.style.background = '';
+            confirm.innerText = 'Create';
+            haptic();
+            document.getElementById('fmActionModal').classList.add('show');
+        }
+        // null when a name is fine, else why not (the same rules as the app's FileOps.badName)
+        function fmBadName(n) {
+            if (!n || !n.trim()) return 'Enter a name';
+            if (n === '.' || n === '..') return 'That name is not allowed';
+            if (n.indexOf('/') >= 0) return 'A name cannot contain a slash';
+            if (n.length > 255 || /[\u0000-\u001f]/.test(n)) return 'That name is not allowed';
+            return null;
+        }
         function fmNewFolder() {
-            if (!guardPrivilege('Create folder')) return;
+            if (!fmCanWork('Create folder')) return;
             fmActionTarget = { full: fmPath, isDir: true, name: fmPath };
             fmPendingOp = 'mkdir';
             document.getElementById('fmActionName').innerText = 'New folder';
@@ -10778,6 +11032,184 @@ Type any command below (e.g. pm list packages -d)
             confirm.innerText = 'Create';
             haptic();
             document.getElementById('fmActionModal').classList.add('show');
+        }
+
+        // ---- File manager: Open with, Share, the text editor, and viewers for pictures, PDF and fonts ----
+        function fmOpenWith() {
+            if (!fmActionTarget || fmActionTarget.isDir) return;
+            if (!window.AndroidBridge || !window.AndroidBridge.fmOpenWith) { showToast('Needs the app build'); return; }
+            haptic();
+            showToast('Opening…');
+            try { window.AndroidBridge.fmOpenWith(fmActionTarget.full, '', true); } catch (e) { showToast('Could not hand the file over'); }
+        }
+        window.onFmOpenWith = function (json) {
+            let d; try { d = JSON.parse(json); } catch (e) { d = {}; }
+            if (d && d.ok === false) showToast(d.error || 'Could not open the file');
+        };
+        function fmShareFile() {
+            if (!fmActionTarget || fmActionTarget.isDir) return;
+            haptic();
+            let r = '';
+            try { r = window.AndroidBridge.shareStoredFile(fmActionTarget.full, '', fmActionTarget.name); } catch (e) { r = 'Error: ' + (e && e.message || e); }
+            if (r) showToast(String(r).replace(/^Error:\s*/, '') || 'Could not share the file');
+        }
+
+        // the editor: the whole file as text (up to 2 MB), saved through a temporary file so a failure keeps the old content
+        let fmEd = null;                                // { path, name, mtime, orig, writable, busy }
+        function fmEditOpen() {
+            if (!fmActionTarget || fmActionTarget.isDir) return;
+            if (!window.AndroidBridge || !window.AndroidBridge.fmReadText) { showToast('Needs the app build'); return; }
+            const t = fmActionTarget;
+            let d;
+            try { d = JSON.parse(window.AndroidBridge.fmReadText(t.full)); } catch (e) { d = { ok: false, error: String(e && e.message || e) }; }
+            if (!d.ok) { showToast(d.error || 'Could not read the file'); return; }
+            if (d.binary) { showToast('This is not a text file. Use View, or Open with…'); return; }
+            closeFmAction();
+            fmEd = { path: t.full, name: t.name, mtime: d.mtime || 0, orig: d.text || '', writable: d.writable !== false, busy: false };
+            document.getElementById('fmEditName').innerText = t.name;
+            document.getElementById('fmEditPath').innerText = t.full;
+            const ta = document.getElementById('fmEditArea');
+            ta.value = fmEd.orig;
+            ta.readOnly = !fmEd.writable;
+            document.getElementById('fmEditWrap').checked = ta.classList.contains('wrap');
+            fmEditInput();
+            document.getElementById('fmEditModal').classList.add('show');
+            ta.scrollTop = 0;
+            try { ta.setSelectionRange(0, 0); } catch (e) {}
+            fmEditPos();
+        }
+        function fmEditDirty() { const ta = document.getElementById('fmEditArea'); return !!fmEd && ta.value !== fmEd.orig; }
+        function fmEditInput() {
+            if (!fmEd) return;
+            const dirty = fmEditDirty();
+            document.getElementById('fmEditSave').disabled = !dirty || !fmEd.writable || fmEd.busy;
+            const ta = document.getElementById('fmEditArea');
+            document.getElementById('fmEditStatus').innerText = (fmEd.writable ? (dirty ? 'Unsaved changes' : 'Saved') : 'Read only') + ' · ' + ta.value.length + ' characters';
+            fmEditPos();
+        }
+        function fmEditPos() {
+            const ta = document.getElementById('fmEditArea');
+            const pre = ta.value.slice(0, ta.selectionStart);
+            const line = pre.split('\n').length, col = pre.length - pre.lastIndexOf('\n');
+            document.getElementById('fmEditPos').innerText = 'Line ' + line + ', column ' + col;
+        }
+        function fmEditWrap(on) { document.getElementById('fmEditArea').classList.toggle('wrap', !!on); }
+        function fmEditSave(force) {
+            if (!fmEd || fmEd.busy || !fmEditDirty()) return;
+            const text = document.getElementById('fmEditArea').value;
+            fmEd.busy = true; fmEditInput();
+            let d;
+            try { d = JSON.parse(window.AndroidBridge.fmWriteText(fmEd.path, text, force ? 0 : fmEd.mtime)); } catch (e) { d = { ok: false, error: String(e && e.message || e) }; }
+            fmEd.busy = false;
+            if (d.ok) {
+                fmEd.orig = text; fmEd.mtime = d.mtime || 0;
+                showToast('Saved');
+                fmEditInput();
+                fmRefresh();
+                return;
+            }
+            fmEditInput();
+            if (d.changed) {
+                if (confirm('This file was changed by something else since you opened it. Save your version over it?')) fmEditSave(true);
+                return;
+            }
+            showToast(d.error || 'Could not save the file');
+        }
+        function fmEditClose() {
+            if (!fmEd) { document.getElementById('fmEditModal').classList.remove('show'); return; }
+            if (fmEditDirty() && !confirm('Close without saving your changes?')) return;
+            haptic();
+            fmEd = null;
+            document.getElementById('fmEditModal').classList.remove('show');
+        }
+
+        // pictures, PDF pages and fonts open in one viewer sheet
+        let fmMedia = null;                             // { kind, path, name, page, pages, actual }
+        let fmMediaFace = null;
+        function fmMediaOpen(kind, t, bar, meta) {
+            closeFmAction();
+            fmMedia = { kind, path: t.full, name: t.name, page: 0, pages: 0, actual: false };
+            document.getElementById('fmMediaName').innerText = t.name;
+            document.getElementById('fmMediaMeta').innerText = meta || '';
+            document.getElementById('fmMediaBar').innerHTML = bar || '';
+            const st = document.getElementById('fmMediaStage');
+            st.classList.remove('actual');
+            st.style.textAlign = '';
+            st.innerHTML = '<div class="list-empty">Loading…</div>';
+            document.getElementById('fmMediaModal').classList.add('show');
+        }
+        function fmMediaClose() {
+            haptic();
+            fmMedia = null;
+            document.getElementById('fmMediaModal').classList.remove('show');
+            if (fmMediaFace) { try { document.fonts.delete(fmMediaFace); } catch (e) {} fmMediaFace = null; }
+            document.getElementById('fmMediaStage').innerHTML = '';
+        }
+        function fmMediaWith() { if (fmMedia) { fmActionTarget = { full: fmMedia.path, isDir: false, name: fmMedia.name }; fmOpenWith(); } }
+        function fmMediaToggleSize() {
+            if (!fmMedia) return;
+            fmMedia.actual = !fmMedia.actual;
+            document.getElementById('fmMediaStage').classList.toggle('actual', fmMedia.actual);
+        }
+        const FM_DATA_IMG = /^data:image\/(jpeg|png);base64,[A-Za-z0-9+\/=]+$/;
+
+        function fmShowImage() {
+            if (!fmActionTarget) return;
+            if (!window.AndroidBridge || !window.AndroidBridge.fmImage) { showToast('Needs the app build'); return; }
+            fmMediaOpen('image', fmActionTarget, '<button class="batch-tool-link" onclick="fmMediaToggleSize()">Fit / actual size</button><button class="batch-tool-link" onclick="fmMediaWith()">Open with…</button>', '');
+            window.AndroidBridge.fmImage(fmMedia.path, 1600);
+        }
+        window.onFmImage = function (path, url, w, h) {
+            if (!fmMedia || fmMedia.kind !== 'image' || fmMedia.path !== path) return;
+            const st = document.getElementById('fmMediaStage');
+            if (!FM_DATA_IMG.test(url || '')) { st.innerHTML = '<div class="list-empty">This picture could not be shown here. Try Open with…</div>'; return; }
+            st.innerHTML = '<img alt="" src="' + url + '">';
+            document.getElementById('fmMediaMeta').innerText = w + ' × ' + h;
+        };
+
+        function fmShowPdf() {
+            if (!fmActionTarget) return;
+            if (!window.AndroidBridge || !window.AndroidBridge.fmPdf) { showToast('Needs the app build'); return; }
+            fmMediaOpen('pdf', fmActionTarget, '<button class="batch-tool-link" id="fmPdfPrev" onclick="fmPdfGo(-1)">Previous</button><span class="fm-opt" id="fmPdfPos"></span><button class="batch-tool-link" id="fmPdfNext" onclick="fmPdfGo(1)">Next</button><button class="batch-tool-link" onclick="fmMediaWith()">Open with…</button>', '');
+            fmPdfLoad(0);
+        }
+        function fmPdfLoad(n) {
+            if (!fmMedia) return;
+            fmMedia.want = n;
+            const w = Math.max(400, Math.min(1400, Math.round((window.innerWidth || 400) * (window.devicePixelRatio || 1))));
+            window.AndroidBridge.fmPdf(fmMedia.path, n, w);
+        }
+        function fmPdfGo(d) { if (fmMedia && fmMedia.kind === 'pdf') { const n = Math.max(0, Math.min(fmMedia.pages - 1, fmMedia.page + d)); if (n !== fmMedia.page) fmPdfLoad(n); } }
+        window.onFmPdf = function (json) {
+            if (!fmMedia || fmMedia.kind !== 'pdf') return;
+            let d; try { d = JSON.parse(json); } catch (e) { d = { ok: false, error: 'unreadable answer' }; }
+            const st = document.getElementById('fmMediaStage');
+            if (!d.ok || !FM_DATA_IMG.test(d.data || '')) { st.innerHTML = '<div class="list-empty">' + escapeHtml(d.error || 'The PDF could not be shown.') + '</div>'; return; }
+            fmMedia.page = d.page; fmMedia.pages = d.pages;
+            st.innerHTML = '<img alt="" src="' + d.data + '">';
+            st.scrollTop = 0;
+            document.getElementById('fmPdfPos').innerText = (d.page + 1) + ' / ' + d.pages;
+            document.getElementById('fmPdfPrev').disabled = d.page <= 0;
+            document.getElementById('fmPdfNext').disabled = d.page >= d.pages - 1;
+        };
+
+        function fmShowFont() {
+            if (!fmActionTarget) return;
+            const t = fmActionTarget;
+            if (!window.AndroidBridge || !window.AndroidBridge.fmReadB64) { showToast('Needs the app build'); return; }
+            const b64 = window.AndroidBridge.fmReadB64(t.full, 12288);
+            if (!b64) { showToast('This font could not be read (it may be over 12 MB, or out of reach)'); return; }
+            fmMediaOpen('font', t, '<button class="batch-tool-link" onclick="fmMediaWith()">Open with…</button>', '');
+            const st = document.getElementById('fmMediaStage');
+            fetch('data:application/octet-stream;base64,' + b64).then(r => r.arrayBuffer()).then(buf => {
+                const face = new FontFace('FmSample', buf);
+                return face.load().then(() => { document.fonts.add(face); return face; });
+            }).then(face => {
+                if (!fmMedia || fmMedia.kind !== 'font') { try { document.fonts.delete(face); } catch (e) {} return; }
+                fmMediaFace = face;
+                st.style.textAlign = 'left';
+                st.innerHTML = '<div class="font-sample" style="font-family:\'FmSample\'" translate="no"><div class="fs-big">Aa Bb Cc 123</div><div class="fs-line">The quick brown fox jumps over the lazy dog.</div><div class="fs-line fs-bold">The quick brown fox jumps over the lazy dog.</div><div class="fs-line">ABCDEFGHIJKLMNOPQRSTUVWXYZ</div><div class="fs-line">abcdefghijklmnopqrstuvwxyz 0123456789</div></div>';
+            }, () => { st.innerHTML = '<div class="list-empty">This font could not be shown.</div>'; });
         }
 
         // ---- File manager: archive browser ----

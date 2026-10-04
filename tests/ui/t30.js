@@ -36,7 +36,7 @@ const { chromium, PAGE } = require('./lib/pw');
   // ---- File manager ----
   await page.evaluate(() => switchView('files'));
   await page.waitForTimeout(150);
-  console.log('1. files listed on open:', await page.locator('#fmList .perm-row').count(), '(expect 3)');
+  console.log('1. files listed on open:', await page.locator('#fmList .perm-row[data-i]').count(), '(expect 3)');
   console.log('   current path:', await page.locator('#fmCurrentPath').innerText());
 
   // navigate into Download

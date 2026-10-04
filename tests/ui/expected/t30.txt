@@ -1,8 +1,8 @@
 1. files listed on open: 0 (expect 3)
    current path: /storage/emulated/0
-2. navigated into Download: /sdcard/Download | entries: 1
+2. navigated into Download: /sdcard/Download | entries: 2
 3. up back to: /sdcard
-4. apk action buttons: ["Install","Sign…","View contents","Rename","Copy","Move","Delete"]
+4. apk action buttons: ["Install","Sign…","View contents","Open with…","Share","Rename","Copy","Move","Delete"]
    install staged + routed to installer tab: [ 'install:/sdcard/app.apk', 'inspect:/data/local/tmp/fm_install.apk' ] | installer active: true
 5. view file read call + viewer shown: [ 'read:/sdcard/notes.txt' ] | true
 6. rename op (expect mv to /sdcard/renamed.txt): [ 'op:mv:/sdcard/notes.txt:/sdcard/renamed.txt' ]

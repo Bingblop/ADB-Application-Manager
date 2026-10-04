@@ -28,5 +28,5 @@
    the debloat history: no emoji: true []
    the batch bar: no emoji: true []
    a toast is just its message (no icon element): true
-   folders in the file manager end in a slash (no folder picture): true ["Download/","a.txt"]
+   folders in the file manager end in a slash (no folder picture): true ["..","Download/","a.txt"]
 all checks passed

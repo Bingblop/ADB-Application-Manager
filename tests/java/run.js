@@ -40,6 +40,7 @@ const SUITES = [
     kind: 'parity', needs: ['node'] },
   { name: 'filerules', title: 'File manager path rules: canonical form, protected folders', tests: ['FileRulesTest'], main: 'com.bloatware.bingblop.FileRulesTest' },
   { name: 'apktrash', title: 'Deleting a found package file with Undo (which paths, where it waits) and the storage search\'s progress, against a real folder tree', tests: ['ApkTrashTest'], main: 'com.bloatware.bingblop.ApkTrashTest', needs: ['json'] },
+  { name: 'fileops', title: 'File manager copy, move and delete with replace / skip / keep both, free names (name (1).ext), cancel, links, atomic write, and the same rules as a shell script', tests: ['FileOpsTest'], main: 'com.bloatware.bingblop.FileOpsTest' },
   { name: 'fontscan', title: 'Font search for the app font: which files are fonts, what a font calls itself (the name table in every encoding and shape), the bounded walk and its progress', tests: ['FontScanTest'], main: 'FontScanTest', needs: ['json'] },
   { name: 'splitinfo', title: 'What a split APK\'s manifest says about it (split name, the feature module it configures, feature flag)', tests: ['SplitInfoTest'], main: 'com.bloatware.bingblop.SplitInfoTest' },
   { name: 'installhints', title: 'What an install failure means (adb / pm install answers)', tests: ['InstallHintsTest'], main: 'com.bloatware.bingblop.InstallHintsTest' },

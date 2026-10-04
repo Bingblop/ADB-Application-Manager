@@ -120,7 +120,7 @@ const MOCK = fs.readFileSync(fixture('uad_mock.json'), 'utf8');
   await page.evaluate(() => closeInspector()); await sleep(100);
 
   await page.evaluate(() => switchView('files')); await sleep(250);
-  const fm = await page.evaluate(() => ({ rows: [...document.querySelectorAll('#fmList .perm-row')].map(r => r.querySelector('.perm-name').innerText), html: document.getElementById('fmList').innerHTML, pwned: window.__pwned || 0 }));
+  const fm = await page.evaluate(() => ({ rows: [...document.querySelectorAll('#fmList .perm-row[data-i]')].map(r => r.querySelector('.perm-name').innerText), html: document.getElementById('fmList').innerHTML, pwned: window.__pwned || 0 }));
   console.log('   file names with quotes / markup render as text:', fm.rows.length === 3 && fm.rows.some(r => r.includes('<b>html</b>.zip')) && !/<b>html/.test(fm.html.replace(/&lt;b&gt;/g, '')) && fm.pwned === 0, JSON.stringify(fm.rows));
   // tapping the tricky folder navigates with the exact name, and the action sheet opens for the quoted file
   await page.locator('#fmList .perm-row', { hasText: "x');window" }).locator('.perm-info').click(); await sleep(200);

@@ -24,8 +24,10 @@ const { chromium, PAGE } = require('./lib/pw');
         const entries = (window.__fs[path] || []).map(e => Object.assign({ isLink: false, perms: (e.isDir ? 'd' : '-') + 'rwx', size: 0 }, e));
         return JSON.stringify({ path, entries });
       },
-      fmBatch(op, pathsJson, dest) {
-        window.__calls.batch.push({ op, paths: JSON.parse(pathsJson), dest });
+      fmBatch2(op, pathsJson, dest, policy) { return this.fmBatch(op, pathsJson, dest, policy); },
+      fmBatchCancel() { window.__calls.cancel = (window.__calls.cancel || 0) + 1; },
+      fmBatch(op, pathsJson, dest, policy) {
+        window.__calls.batch.push({ op, paths: JSON.parse(pathsJson), dest, policy });
         if (window.__batchBusy) return 'busy';
         setTimeout(() => window.onFmBatchProgress && window.onFmBatchProgress('Working 1 of 2…'), 15);
         const done = () => window.onFmBatchDone(window.__batchReply || { op, ok: true, total: JSON.parse(pathsJson).length, done: JSON.parse(pathsJson).length, failed: [] });
@@ -99,15 +101,21 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.evaluate(() => fmGo('/storage/emulated/0/Download')); await sleep(120);
   console.log('   the clipboard survives opening another folder:', await vis('#fmClipBar'));
   dialogs.length = 0;
-  await page.locator('#fmPasteBtn').click(); await sleep(250);
+  await page.locator('#fmPasteBtn').click(); await sleep(150);
+  const askShown = await vis('#fmConflictModal'), askText = await page.locator('#fmConflictSub').innerText();
+  await page.locator('#fmConflictModal .batch-grid-btn.danger').click(); await sleep(250);
   const call2 = await page.evaluate(() => window.__calls.batch.slice(-1)[0]);
-  console.log('   Paste here: a.txt already exists there, so it asks to replace, then sends cp with the folder:', dialogs.length === 1 && /1 item with the same name/.test(dialogs[0]) && /a\.txt/.test(dialogs[0]) && call2.op === 'cp' && call2.dest === '/storage/emulated/0/Download' && call2.paths.length === 2, JSON.stringify(call2) + ' ' + JSON.stringify(dialogs));
+  console.log('   Paste here: a.txt already exists there, so a sheet asks (Replace / Skip / Keep both), then sends cp with the folder and the choice:', askShown && /1 of 2/.test(askText) && /a\.txt/.test(askText) && call2.policy === 'replace' && call2.op === 'cp' && call2.dest === '/storage/emulated/0/Download' && call2.paths.length === 2, JSON.stringify(call2) + ' ' + JSON.stringify(dialogs));
   console.log('   a copy keeps the clipboard for another paste:', await vis('#fmClipBar'));
   // paste into the folder the items are already in: refused
   await page.evaluate(() => fmGo('/storage/emulated/0')); await sleep(100);
   const before = await page.evaluate(() => window.__calls.batch.length);
   await page.locator('#fmPasteBtn').click(); await sleep(120);
-  console.log('   pasting into the folder they came from is refused:', (await page.evaluate(() => window.__calls.batch.length)) === before && /already in this folder/i.test(await toast()));
+  console.log('   pasting a copy into the folder it came from asks what to do (Keep both makes a duplicate) and sends nothing until chosen:', (await page.evaluate(() => window.__calls.batch.length)) === before && await vis('#fmConflictModal'));
+  await page.evaluate(() => fmConflictCancel()); await sleep(40);
+  await page.evaluate(() => { fmClip.op = 'mv'; });
+  await page.locator('#fmPasteBtn').click(); await sleep(120);
+  console.log('   pasting a move into the folder it came from is refused:', (await page.evaluate(() => window.__calls.batch.length)) === before && /already in this folder/i.test(await toast()));
   await page.locator('#fmClipBar button', { hasText: '✕' }).click(); await sleep(40);
   console.log('   ✕ drops the clipboard:', !(await vis('#fmClipBar')) && (await page.evaluate(() => fmClip)) === null);
 
