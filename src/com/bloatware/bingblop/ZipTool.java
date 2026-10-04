@@ -69,6 +69,39 @@ public final class ZipTool {
         final byte[] comment;
         final byte[] extra;          // the central directory's extra-field records, as stored
         final boolean latin1;        // the name bytes are not UTF-8, so the name was read one byte per character
+        /** An entry of another format (7z, tar, rar ...): the zip-only fields above are blank and these carry the facts. */
+        public final boolean foreign;
+        final long foreignMtime;
+        final boolean foreignEncrypted;
+        public final String linkTarget;       // a symbolic link's target (other formats only), else null
+        public final int mode;                // Unix permission bits when the format keeps them, else -1
+
+        /** An entry of a non-zip archive. */
+        Entry(String name, boolean dir, long size, long csize, long mtimeMs, int mode, boolean encrypted, String linkTarget) {
+            this.rawName = name.getBytes(StandardCharsets.UTF_8);
+            this.latin1 = false;
+            this.extra = new byte[0];
+            this.comment = new byte[0];
+            this.name = dir && !name.endsWith("/") ? name + "/" : name;
+            this.dir = dir || name.endsWith("/");
+            this.versionMadeBy = 0;
+            this.versionNeeded = 0;
+            this.flags = 0;
+            this.method = -1;
+            this.dosTime = 0;
+            this.dosDate = 0;
+            this.crc = 0;
+            this.csize = csize;
+            this.size = size;
+            this.lho = 0;
+            this.internalAttrs = 0;
+            this.externalAttrs = 0;
+            this.foreign = true;
+            this.foreignMtime = mtimeMs;
+            this.foreignEncrypted = encrypted;
+            this.linkTarget = linkTarget;
+            this.mode = mode;
+        }
 
         Entry(byte[] rawName, String name, boolean latin1, int versionMadeBy, int versionNeeded, int flags, int method, int dosTime, int dosDate,
               long crc, long csize, long size, long lho, int internalAttrs, long externalAttrs, byte[] comment, byte[] extra) {
@@ -90,14 +123,19 @@ public final class ZipTool {
             this.internalAttrs = internalAttrs;
             this.externalAttrs = externalAttrs;
             this.comment = comment;
+            this.foreign = false;
+            this.foreignMtime = 0;
+            this.foreignEncrypted = false;
+            this.linkTarget = null;
+            this.mode = -1;
         }
 
         public boolean encrypted() {
-            return (flags & 1) != 0;
+            return foreign ? foreignEncrypted : (flags & 1) != 0;
         }
 
         public long mtime() {
-            return dosToMillis(dosDate, dosTime);
+            return foreign ? foreignMtime : dosToMillis(dosDate, dosTime);
         }
 
         /** Last path segment. */
@@ -121,9 +159,48 @@ public final class ZipTool {
         /** Bytes in front of the first entry (a self-extractor stub, a CRX header ...); 0 for an ordinary archive. */
         public final long prefix;
         private Map<String, Entry> byName;
+        /** "zip" for a zip-family file, else the other format's name ("7z", "rar5", "tar.gz" ...). */
+        public final String format;
+        /** Where the entries of a non-zip archive come from; null for a zip. */
+        final Source src;
+        /** The password the page gave for this archive (an encrypted zip entry, an encrypted 7z or rar); null when none. */
+        private volatile char[] password;
+
+        /** A non-zip archive: the entries were listed by {@code src}. */
+        Archive(File file, long length, long lastModified, List<Entry> entries, String format, Source src, char[] password) {
+            this.prefix = 0;
+            this.file = file;
+            this.length = length;
+            this.lastModified = lastModified;
+            this.entries = entries;
+            this.comment = new byte[0];
+            this.zip64 = false;
+            this.cdOffset = 0;
+            this.cdSize = 0;
+            this.eocdOffset = 0;
+            this.format = format;
+            this.src = src;
+            this.password = password;
+        }
+
+        public boolean isZip() {
+            return src == null;
+        }
+
+        public char[] password() {
+            return password;
+        }
+
+        public void setPassword(char[] pw) {
+            char[] old = this.password;
+            this.password = pw == null || pw.length == 0 ? null : pw.clone();
+            if (old != null) Arrays.fill(old, '\0');
+        }
 
         Archive(File file, long length, long lastModified, List<Entry> entries, byte[] comment, boolean zip64,
                 long cdOffset, long cdSize, long eocdOffset, long prefix) {
+            this.format = "zip";
+            this.src = null;
             this.prefix = prefix;
             this.file = file;
             this.length = length;
@@ -150,7 +227,8 @@ public final class ZipTool {
 
         /** Opens the entry's decompressed bytes. The caller closes the stream. */
         public InputStream open(Entry e) throws IOException {
-            if (e.encrypted()) throw new IOException("This entry is encrypted");
+            if (src != null) return src.open(this, e, password);
+            if (e.encrypted()) return ZipTool.openEncrypted(this, e);
             if (e.method != 0 && e.method != 8) throw new IOException("Unsupported compression method " + e.method);
             if (e.size == 0 && e.csize == 0) return new ByteArrayInputStream(new byte[0]);     // some writers leave a deflated empty file with no stream at all
             final RandomAccessFile raf = new RandomAccessFile(file, "r");
@@ -176,6 +254,33 @@ public final class ZipTool {
                 throw ex;
             }
         }
+    }
+
+    /** Thrown when an archive or entry needs a password ({@code wrong} false) or the one given is wrong. */
+    public static class NeedPassword extends IOException {
+        public final boolean wrong;
+
+        public NeedPassword(boolean wrong, String message) {
+            super(message);
+            this.wrong = wrong;
+        }
+    }
+
+    /** Visits the entries of a non-zip archive in order. Return false to stop. The stream is valid only during the call. */
+    public interface Walker {
+        boolean entry(Entry e, InputStream data) throws IOException;
+    }
+
+    /** The data of a non-zip archive (see ArchiveFormats). */
+    public interface Source {
+        /** One entry's bytes. */
+        InputStream open(Archive a, Entry e, char[] password) throws IOException;
+
+        /** One pass over all entries (solid archives are decoded once instead of once per entry). */
+        void walk(Archive a, char[] password, Walker w) throws IOException;
+
+        /** True when opening one entry means reading the archive from its start (7z solid, tar.*, rar): extraction then goes through walk. */
+        boolean sequential();
     }
 
     /** Reads at most {@code limit} bytes of the file from the current position. */
@@ -537,15 +642,32 @@ public final class ZipTool {
 
     /** As {@link #extractTo(Archive, Entry, File)}; {@code protect} is another file that must not be overwritten (the real file of a staged copy). */
     public static long extractTo(Archive a, Entry e, File dest, File protect) throws IOException {
+        checkTarget(a, dest, protect);
+        InputStream in = a.open(e);
+        try {
+            return writeStream(e, in, dest);
+        } finally {
+            in.close();
+        }
+    }
+
+    private static void checkTarget(Archive a, File dest, File protect) throws IOException {
         File parent = dest.getAbsoluteFile().getParentFile();
         if (parent != null && !parent.isDirectory() && !parent.mkdirs()) throw new IOException("Can't create " + parent);
         String canon = dest.getCanonicalPath();
         if (canon.equals(a.file.getCanonicalPath()) || (protect != null && canon.equals(protect.getCanonicalPath()))) {
             throw new IOException("That would overwrite the archive itself. Pick another folder.");
         }
+    }
+
+    /**
+     * Writes an entry's data to {@code dest} through a hidden temporary file, checks it against the entry's size and (zip) CRC-32, and only
+     * then moves it into place. Other formats carry no CRC here (their readers check their own), and a size of -1 means "not known".
+     */
+    private static long writeStream(Entry e, InputStream in, File dest) throws IOException {
+        File parent = dest.getAbsoluteFile().getParentFile();
         File part = new File(parent, "." + dest.getName() + ".part");
         boolean ok = false;
-        InputStream in = a.open(e);
         try {
             long total = 0;
             CRC32 crc = new CRC32();
@@ -561,8 +683,8 @@ public final class ZipTool {
             } finally {
                 out.close();
             }
-            if (total != e.size) throw new IOException("\"" + e.name + "\" is damaged (its size doesn't match)");
-            if (crc.getValue() != e.crc) throw new IOException("\"" + e.name + "\" is damaged (its checksum doesn't match)");
+            if (e.size >= 0 && total != e.size) throw new IOException("\"" + e.name + "\" is damaged (its size doesn't match)");
+            if (!e.foreign && crc.getValue() != e.crc) throw new IOException("\"" + e.name + "\" is damaged (its checksum doesn't match)");
             if (!part.renameTo(dest)) {
                 dest.delete();
                 if (!part.renameTo(dest)) throw new IOException("Couldn't write " + dest);
@@ -572,7 +694,6 @@ public final class ZipTool {
             if (when > 0) dest.setLastModified(when);
             return total;
         } finally {
-            in.close();
             if (!ok) part.delete();
         }
     }
@@ -624,6 +745,7 @@ public final class ZipTool {
             String trimmed = path.substring(0, path.length() - 1);
             base = trimmed.substring(trimmed.lastIndexOf('/') + 1);
         }
+        if (a.src != null && a.src.sequential()) return extractTreeWalk(a, path, tree, base, destDir, cb, problems, protect, policy);
         String canonRoot = destDir.getCanonicalPath();
         long bytes = 0;
         int files = 0, skipped = 0, kept = 0;
@@ -645,6 +767,8 @@ public final class ZipTool {
             try {
                 bytes += extractTo(a, e, out, protect);
                 files++;
+            } catch (NeedPassword np) {
+                throw np;
             } catch (IOException ex) {
                 skipped++;
                 note(problems, e.name + ": " + (ex.getMessage() == null ? "failed" : ex.getMessage()));
@@ -652,6 +776,97 @@ public final class ZipTool {
         }
         if (cb != null) cb.onProgress(bytes, files, "");
         return new long[]{files, bytes, skipped, kept};
+    }
+
+    /** extractTree for archives that are read in one pass (7z, tar.*, rar): the entries are met in archive order, each is written as it comes. */
+    private static long[] extractTreeWalk(final Archive a, final String path, final boolean tree, final String base, final File destDir, final Progress cb,
+                                          final List<String> problems, final File protect, final int policy) throws IOException {
+        final String canonRoot = destDir.getCanonicalPath();
+        final long[] st = {0, 0, 0, 0};      // bytes, files, skipped, kept
+        final java.util.HashSet<String> wanted = new java.util.HashSet<String>();
+        for (Entry e : under(a, path)) if (!e.dir) wanted.add(e.name);
+        final int total = wanted.size();
+        final int[] seen = {0};
+        a.src.walk(a, a.password(), new Walker() {
+            @Override
+            public boolean entry(Entry e, InputStream data) throws IOException {
+                if (e.dir || !wanted.contains(e.name)) return true;
+                seen[0]++;
+                String rel = tree ? (base.isEmpty() ? "" : base + "/") + e.name.substring(path.length()) : e.baseName();
+                String safe = safeName(rel);
+                if (safe == null) { st[2]++; note(problems, e.name + ": unsafe name"); return true; }
+                File out = new File(destDir, safe);
+                String canon = out.getCanonicalPath();
+                if (!canon.startsWith(canonRoot + File.separator)) { st[2]++; note(problems, e.name + ": unsafe name"); return true; }
+                if (cb != null && !cb.onProgress(st[0], (int) st[1], e.name)) throw new IOException("Cancelled");
+                if (e.linkTarget != null) { st[2]++; note(problems, e.name + ": symbolic link (not extracted)"); return true; }
+                if (FileOps.exists(out)) {
+                    if (policy == FileOps.SKIP) { st[3]++; return true; }
+                    if (policy == FileOps.KEEP_BOTH && !out.isDirectory()) out = new File(out.getParentFile(), FileOps.uniqueName(out.getParentFile(), out.getName()));
+                }
+                try {
+                    checkTarget(a, out, protect);
+                    st[0] += writeStream(e, data, out);
+                    st[1]++;
+                } catch (NeedPassword np) {
+                    throw np;
+                } catch (IOException ex) {
+                    String m = ex.getMessage() == null ? "failed" : ex.getMessage();
+                    if (m.startsWith("Cancelled")) throw ex;
+                    st[2]++;
+                    note(problems, e.name + ": " + m);
+                }
+                return true;
+            }
+        });
+        if (cb != null) cb.onProgress(st[0], (int) st[1], "");
+        return new long[]{st[1], st[0], st[2], st[3]};
+    }
+
+    /** The decrypted, decompressed bytes of a password-protected zip entry (ZipCrypto, or WinZip AES-128/192/256). */
+    private static InputStream openEncrypted(Archive a, Entry e) throws IOException {
+        char[] pw = a.password();
+        if (pw == null) throw new NeedPassword(false, "This entry is password-protected");
+        if ((e.flags & 0x40) != 0) throw new IOException("This entry uses strong encryption (PKWARE), which can't be read here");
+        final RandomAccessFile raf = new RandomAccessFile(a.file, "r");
+        try {
+            long start = dataStart(raf, e);
+            if (start + e.csize > raf.length()) throw new IOException("The archive is truncated");
+            raf.seek(start);
+            InputStream raw = new BufferedInputStream(new Bounded(raf, e.csize), 65536);
+            if (e.method == ZipCrypt.METHOD_AES) {
+                int[] ax = ZipCrypt.parseAesExtra(e.extra);
+                if (ax == null) throw new IOException("Unsupported encryption (no AES record)");
+                return decompress(ZipCrypt.decryptAes(raw, e.csize, pw, ax[1]), ax[2]);
+            }
+            int check = (e.flags & 0x0008) != 0 ? ZipCrypt.checkByteFromDosTime(e.dosTime) : ZipCrypt.checkByteFromCrc(e.crc);
+            return decompress(ZipCrypt.decryptTraditional(raw, pw, check), e.method);
+        } catch (ZipCrypt.WrongPassword w) {
+            raf.close();
+            throw new NeedPassword(true, "That password did not work");
+        } catch (IOException | RuntimeException ex) {
+            raf.close();
+            throw ex;
+        }
+    }
+
+    private static InputStream decompress(InputStream in, int method) throws IOException {
+        if (method == 0) return in;
+        if (method != 8) {
+            in.close();
+            throw new IOException("Unsupported compression method " + method);
+        }
+        final Inflater inf = new Inflater(true);
+        return new InflaterInputStream(in, inf, 65536) {
+            @Override
+            public void close() throws IOException {
+                try {
+                    super.close();
+                } finally {
+                    inf.end();
+                }
+            }
+        };
     }
 
     private static void note(List<String> problems, String line) {

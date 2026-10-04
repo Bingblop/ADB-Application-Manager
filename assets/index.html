@@ -3519,6 +3519,7 @@
                     <button class="batch-tool-link" onclick="fmSelectAll()">All</button>
                     <button class="batch-tool-link" onclick="fmClipSet('cp')">Copy</button>
                     <button class="batch-tool-link" onclick="fmClipSet('mv')">Move</button>
+                    <button class="batch-tool-link" onclick="czOpenSelected()">Compress</button>
                     <button class="batch-tool-link" style="color:#FF5252;" onclick="fmDeleteSelected()">Delete</button>
                     <button class="batch-tool-link" onclick="fmSelExit()">✕</button>
                 </div>
@@ -5042,6 +5043,93 @@ Type any command below (e.g. pm list packages -d)
             <label class="fm-opt" id="exDelRow" style="margin-top:10px;"><input type="checkbox" id="exDel"> Delete the archive afterwards</label>
             <div class="switch-sub" id="exDelNote" style="display:none;">The archive is deleted only when every file of it was extracted, with nothing skipped.</div>
             <button class="mode-action-btn primary" style="width:100%; justify-content:center; margin-top:12px;" id="exGoBtn" onclick="exGo()">Extract</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="pwModal" onclick="if(event.target===this) pwCancel()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-title">
+                        <h3 id="pwTitle">Password needed</h3>
+                        <p id="pwName" translate="no" style="word-break:break-all;"></p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="pwCancel()" role="button" aria-label="Close">✕</div>
+            </div>
+            <div class="sdb-problem" id="pwWrong" style="display:none;">That password did not work. Try again.</div>
+            <input class="modal-text-input" id="pwInput" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Password" aria-label="Password" onkeydown="if(event.key==='Enter') pwOk()">
+            <label class="fm-opt" style="margin-top:8px;"><input type="checkbox" id="pwShow" onchange="pwShowToggle()"> Show the password</label>
+            <div class="switch-sub" style="margin-top:6px;">The password is used only for this archive, only while it is open. It is never saved.</div>
+            <button class="mode-action-btn primary" style="width:100%; justify-content:center; margin-top:12px;" id="pwOk" onclick="pwOk()">Open</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="czModal" onclick="if(event.target===this) czClose()">
+        <div class="modal-sheet" style="max-height:92vh; overflow:auto;">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-title">
+                        <h3>Compress</h3>
+                        <p><span id="czWhat"></span><span id="czNames" translate="no"></span></p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="czClose()" role="button" aria-label="Close">✕</div>
+            </div>
+            <div class="switch-sub" style="margin-bottom:4px;">Name of the archive</div>
+            <div style="display:flex; gap:6px; align-items:center;">
+                <input class="modal-text-input" id="czName" style="flex:1; margin:0;" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Name of the archive" onkeydown="if(event.key==='Enter') czGo()">
+                <span id="czExt" translate="no" style="font-family:monospace;"></span>
+            </div>
+            <div class="switch-sub" style="margin:10px 0 4px;">Format</div>
+            <select class="modal-text-input" id="czFormat" onchange="czFormatChange()" aria-label="Format">
+                <option value="zip">Zip (.zip) — opens everywhere</option>
+                <option value="7z">7z (.7z) — packs smallest</option>
+                <option value="tar.gz">tar.gz (.tar.gz)</option>
+                <option value="tar.bz2">tar.bz2 (.tar.bz2)</option>
+                <option value="tar.xz">tar.xz (.tar.xz)</option>
+                <option value="tar.zst">tar.zst (.tar.zst)</option>
+                <option value="tar.lz4">tar.lz4 (.tar.lz4)</option>
+                <option value="tar">tar (.tar) — no packing</option>
+                <optgroup label="One file only" id="czSingles">
+                    <option value="gz">gz (.gz)</option>
+                    <option value="bz2">bz2 (.bz2)</option>
+                    <option value="xz">xz (.xz)</option>
+                    <option value="zst">zst (.zst)</option>
+                    <option value="lz4">lz4 (.lz4)</option>
+                </optgroup>
+            </select>
+            <div id="czLevelRow">
+                <div class="switch-sub" style="margin:10px 0 4px;">Packing</div>
+                <select class="modal-text-input" id="czLevel" aria-label="Packing">
+                    <option value="0">Store (no packing, fastest)</option>
+                    <option value="1">Fast</option>
+                    <option value="6">Normal</option>
+                    <option value="9">Maximum (slowest)</option>
+                </select>
+            </div>
+            <div id="czPwRow">
+                <div class="switch-sub" style="margin:10px 0 4px;">Password (optional)</div>
+                <input class="modal-text-input" id="czPw" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Leave empty for none" aria-label="Password" style="margin-bottom:4px;">
+                <label class="fm-opt"><input type="checkbox" id="czPwShow" onchange="document.getElementById('czPw').type = this.checked ? 'text' : 'password'"> Show the password</label>
+                <div id="czEncRow">
+                    <div class="switch-sub" style="margin:8px 0 4px;">Protection</div>
+                    <select class="modal-text-input" id="czEnc" aria-label="Protection">
+                        <option value="aes256">AES-256 (strong; 7-Zip, WinZip and most phone apps)</option>
+                        <option value="aes128">AES-128</option>
+                        <option value="zipcrypto">ZipCrypto (weak, but opens in everything)</option>
+                    </select>
+                </div>
+                <div class="switch-sub" id="czPwNote" style="margin-top:6px;"></div>
+            </div>
+            <div class="switch-sub" style="margin:10px 0 4px;">Save into</div>
+            <label class="ex-opt"><input type="radio" name="czWhere" value="here" onchange="czWhereChange()"><span>This folder<small id="czHerePath" translate="no"></small></span></label>
+            <label class="ex-opt"><input type="radio" name="czWhere" value="other" onchange="czWhereChange()"><span>Another folder</span></label>
+            <input class="modal-text-input" id="czOtherInput" style="display:none; margin-bottom:6px;" placeholder="/storage/emulated/0/Download" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Folder to save into">
+            <div class="switch-sub" style="margin:10px 0 4px;">If the archive name is taken</div>
+            <label class="ex-opt"><input type="radio" name="czPolicy" value="keep"><span>Keep both (the new one becomes name (1))</span></label>
+            <label class="ex-opt"><input type="radio" name="czPolicy" value="replace"><span>Replace it</span></label>
+            <button class="mode-action-btn primary" style="width:100%; justify-content:center; margin-top:12px;" id="czGoBtn" onclick="czGo()">Compress</button>
         </div>
     </div>
 
@@ -11114,6 +11202,7 @@ Type any command below (e.g. pm list packages -d)
             if (!isDir) btns.push(`<button class="batch-grid-btn" onclick="fmShareFile()">Share</button>`);
             if (!isDir && ARC_EXT.test(name)) btns.push(`<button class="batch-grid-btn" onclick="fmExtractFile()">Extract…</button>`);
             if (!isDir && !ARC_EXT.test(name)) btns.push(`<button class="batch-grid-btn" onclick="fmOpenAsArchive()">Open as archive</button>`);
+            btns.push(`<button class="batch-grid-btn" onclick="czOpenOne()">Compress…</button>`);
             btns.push(`<button class="batch-grid-btn" onclick="fmStartDest('rename')">Rename</button>`);
             btns.push(`<button class="batch-grid-btn" onclick="fmStartDest('cp')">Copy</button>`);
             btns.push(`<button class="batch-grid-btn" onclick="fmStartDest('mv')">Move</button>`);
@@ -11396,6 +11485,124 @@ Type any command below (e.g. pm list packages -d)
             fmGo(h.dir ? h.path.slice(0, h.path.lastIndexOf('/')) || '/' : parent);
         }
 
+        // ---- the password dialog: asked when an archive or an entry needs one; never stored ----
+        let pwResolve = null;
+        function pwAsk(name, wrong, okText, title) {
+            return new Promise(res => {
+                if (pwResolve) { const old = pwResolve; pwResolve = null; old(null); }
+                pwResolve = res;
+                document.getElementById('pwTitle').innerText = title || 'Password needed';
+                document.getElementById('pwName').innerText = name || '';
+                document.getElementById('pwWrong').style.display = wrong ? '' : 'none';
+                document.getElementById('pwOk').innerText = okText || 'Open';
+                const inp = document.getElementById('pwInput');
+                inp.value = ''; inp.type = 'password';
+                document.getElementById('pwShow').checked = false;
+                document.getElementById('pwModal').classList.add('show');
+                setTimeout(() => { try { inp.focus(); } catch (e) {} }, 60);
+            });
+        }
+        function pwDone(v) {
+            const r = pwResolve;
+            pwResolve = null;
+            const inp = document.getElementById('pwInput');
+            if (inp) inp.value = '';
+            document.getElementById('pwModal').classList.remove('show');
+            if (r) r(v);
+        }
+        function pwOk() {
+            const v = document.getElementById('pwInput').value;
+            if (!v) { showToast('Enter the password'); return; }
+            pwDone(v);
+        }
+        function pwCancel() { haptic(); pwDone(null); }
+        function pwShowToggle() { document.getElementById('pwInput').type = document.getElementById('pwShow').checked ? 'text' : 'password'; }
+
+        // ---- the compress dialog: make a zip, 7z or tar archive from the picked files and folders ----
+        let cz = null;                                  // { items: [{ full, isDir, name }], parent }
+        let czRunning = false;
+        const CZ_EXT = { zip: '.zip', '7z': '.7z', 'tar.gz': '.tar.gz', 'tar.bz2': '.tar.bz2', 'tar.xz': '.tar.xz', 'tar.zst': '.tar.zst', 'tar.lz4': '.tar.lz4', tar: '.tar', gz: '.gz', bz2: '.bz2', xz: '.xz', zst: '.zst', lz4: '.lz4' };
+        function czOpenSelected() {
+            if (!fmSel.size) { showToast('Select something first'); return; }
+            const items = Array.from(fmSel).map(full => { const r = fmRows.find(x => x.full === full); return { full, isDir: !!(r && r.isDir), name: fmBase(full) }; });
+            czOpen(items);
+        }
+        function czOpenOne() {
+            if (!fmActionTarget) return;
+            const t = fmActionTarget;
+            closeFmAction();
+            czOpen([{ full: t.full, isDir: !!t.isDir, name: t.name }]);
+        }
+        function czOpen(items) {
+            if (!window.AndroidBridge || !window.AndroidBridge.archiveCreate) { showToast('Needs the app build'); return; }
+            const parent = fmDirOf(items[0].full);
+            cz = { items, parent };
+            document.getElementById('czWhat').innerText = items.length === 1 ? (items[0].isDir ? 'The folder ' : 'The file ') : items.length + ' items: ';
+            document.getElementById('czNames').innerText = items.slice(0, 3).map(i => i.name).join(', ') + (items.length > 3 ? ', …' : '');
+            const one = items.length === 1 && !items[0].isDir;
+            document.getElementById('czSingles').style.display = one ? '' : 'none';
+            Array.from(document.getElementById('czSingles').children).forEach(o => { o.disabled = !one; });
+            const saved = kvGet('cz_opts', null) || {};
+            const fmtSel = document.getElementById('czFormat');
+            let fmt = CZ_EXT[saved.format] ? saved.format : 'zip';
+            if (!one && /^(gz|bz2|xz|zst|lz4)$/.test(fmt)) fmt = 'zip';
+            fmtSel.value = fmt;
+            document.getElementById('czLevel').value = ['0', '1', '6', '9'].includes(String(saved.level)) ? String(saved.level) : '6';
+            document.getElementById('czEnc').value = ['aes256', 'aes128', 'zipcrypto'].includes(saved.enc) ? saved.enc : 'aes256';
+            document.getElementById('czPw').value = '';
+            document.getElementById('czPw').type = 'password';
+            document.getElementById('czPwShow').checked = false;
+            const baseName = items.length === 1 ? items[0].name.replace(/\.[^.]+$/, '') || items[0].name : (fmBase(parent) || 'Archive');
+            document.getElementById('czName').value = baseName;
+            document.getElementById('czHerePath').innerText = parent;
+            document.querySelector('input[name="czWhere"][value="' + (saved.where === 'other' ? 'other' : 'here') + '"]').checked = true;
+            document.getElementById('czOtherInput').value = saved.other || (parent + '/');
+            document.querySelector('input[name="czPolicy"][value="' + (saved.policy === 'replace' ? 'replace' : 'keep') + '"]').checked = true;
+            czFormatChange();
+            czWhereChange();
+            document.getElementById('czModal').classList.add('show');
+            haptic();
+        }
+        function czWhereChange() { document.getElementById('czOtherInput').style.display = document.querySelector('input[name="czWhere"]:checked').value === 'other' ? '' : 'none'; }
+        function czFormatChange() {
+            const f = document.getElementById('czFormat').value;
+            document.getElementById('czExt').innerText = CZ_EXT[f] || '';
+            document.getElementById('czLevelRow').style.display = f === 'tar' ? 'none' : '';
+            const canPw = f === 'zip' || f === '7z';
+            document.getElementById('czPwRow').style.display = canPw ? '' : 'none';
+            document.getElementById('czEncRow').style.display = f === 'zip' ? '' : 'none';
+            document.getElementById('czPwNote').innerText = f === '7z' ? '7z protects the contents with AES-256 and hides the file names too.' : 'Anyone who has the password can open it. If it is lost, the files can not be recovered.';
+        }
+        function czClose() { document.getElementById('czModal').classList.remove('show'); const p = document.getElementById('czPw'); if (p) p.value = ''; cz = null; }
+        function czGo() {
+            if (!cz) return;
+            const f = document.getElementById('czFormat').value;
+            let name = (document.getElementById('czName').value || '').trim();
+            if (!name || /[\/\u0000]/.test(name)) { showToast('Enter a name without slashes'); return; }
+            const ext = CZ_EXT[f];
+            if (name.toLowerCase().endsWith(ext)) name = name.slice(0, -ext.length) || name;
+            const where = document.querySelector('input[name="czWhere"]:checked').value;
+            let dir = where === 'here' ? cz.parent : (document.getElementById('czOtherInput').value || '').trim().replace(/\/+$/, '');
+            if (!dir || dir.charAt(0) !== '/') { showToast('Enter the full path of a folder'); return; }
+            const policy = document.querySelector('input[name="czPolicy"]:checked').value;
+            const level = parseInt(document.getElementById('czLevel').value, 10);
+            const enc = document.getElementById('czEnc').value;
+            const pw = (f === 'zip' || f === '7z') ? document.getElementById('czPw').value : '';
+            kvSet('cz_opts', { format: f, level, enc, where, other: document.getElementById('czOtherInput').value, policy });
+            if ((typeof arcBusy !== 'undefined' && arcBusy) || exRunning || czRunning) { showToast('Another archive job is still running'); return; }
+            if (fmBatchRunning) { showToast('A file job is still running'); return; }
+            const opts = { format: f, name: name + ext, dir, level, policy, password: pw, enc };
+            const items = cz.items.map(i => ({ p: i.full, d: !!i.isDir }));
+            const wasSel = fmSelMode;
+            czClose();
+            czRunning = true;
+            const el = document.getElementById('fmBatchStatus'); el.style.display = ''; el.innerHTML = '<span id="fmBatchText">Compressing…</span> <button class="batch-tool-link" onclick="fmArchiveCancelTap()">Cancel</button>';
+            let st = 'unavailable';
+            try { st = window.AndroidBridge.archiveCreate(JSON.stringify(opts), JSON.stringify(items)); } catch (e) { st = 'error'; }
+            if (st !== 'started') { czRunning = false; if (!fmBatchRunning) el.style.display = 'none'; showToast(st === 'busy' ? 'Another archive job is still running' : st === 'error' ? 'The compression could not start' : 'Needs the app build'); return; }
+            if (wasSel) fmSelExit();
+        }
+
         // ---- the extract dialog: where to, what to do with a name that is taken, and whether the archive goes afterwards ----
         let ex = null;                                  // { src, entry, name, whole, parent, base, fromArc }
         let exRunning = false, exLast = null;
@@ -11454,8 +11661,21 @@ Type any command below (e.g. pm list packages -d)
             if (o.fromArc) arcSetBusy(true, 'Extracting…');
             else { const el = document.getElementById('fmBatchStatus'); el.style.display = ''; el.innerHTML = '<span id="fmBatchText">Extracting…</span> <button class="batch-tool-link" onclick="fmArchiveCancelTap()">Cancel</button>'; }
             const st = window.AndroidBridge.archiveExtract2(o.src, o.entry, dest, policy, !!del);
-            exLast = { name: o.name, src: o.src, del: !!del };
+            exLast = { name: o.name, src: o.src, del: !!del, args: { o, dest, policy, del: !!del } };
             if (st !== 'started') { exRunning = false; arcSetBusy(false); if (!fmBatchRunning) document.getElementById('fmBatchStatus').style.display = 'none'; showToast(st === 'busy' ? 'Another archive job is still running' : st === 'error' ? 'The extraction could not start' : 'Needs the app build'); }
+        }
+        async function exAskPassword(wrong) {
+            const a = exLast && exLast.args;
+            if (!a) return;
+            const pw = await pwAsk(a.o.name, wrong, 'Extract');
+            if (pw === null) return;
+            const s = arcBridge('archiveSetPassword', a.o.src, pw);
+            if (!s.ok) {
+                if (s.wrong || s.needPassword) { exAskPassword(true); return; }
+                showToast(s.error || 'Could not use that password');
+                return;
+            }
+            exStart(a.o, a.dest, a.policy, a.del);
         }
         function fmArchiveCancelTap() { haptic(); try { window.AndroidBridge.archiveCancel(); } catch (e) {} const t = document.getElementById('fmBatchText'); if (t) t.innerText = 'Stopping…'; }
         // Extract… on a zip-format file in the file manager: the whole archive, without opening it first
@@ -11662,7 +11882,7 @@ Type any command below (e.g. pm list packages -d)
         // View on an .apk / .zip / package file opens its contents as folders without extracting anything. Entries
         // can be previewed (text, images, compiled XML decoded back to XML, hex), extracted, renamed, deleted or
         // edited in place: the archive is rewritten next to the original and swapped in only once that worked.
-        const ARC_EXT = /\.(apk|apks|apkm|xapk|zip|jar|aar|aab|war|epub|docx|xlsx|pptx|odt|ods|odp|ipa|xpi|crx|kmz|cbz|whl|nupkg|vsix|mrpack|3mf|mcpack|mcworld)$/i;
+        const ARC_EXT = /\.(apk|apks|apkm|xapk|zip|jar|aar|aab|war|epub|docx|xlsx|pptx|odt|ods|odp|ipa|xpi|crx|kmz|cbz|whl|nupkg|vsix|mrpack|3mf|mcpack|mcworld|7z|cb7|rar|cbr|tar|tgz|tbz|tbz2|txz|tzst|tlz4|gz|bz2|xz|zst|lz4)$/i;
         const ARC_PAGE = 400;
         let arc = null;                 // the open archive: { path, name, count, files, size, editable, whyNot, apk, staged, zip64 }
         let arcDir = '';                // folder shown: "" or "res/layout/"
@@ -11706,26 +11926,41 @@ Type any command below (e.g. pm list packages -d)
             // let the toast paint first: the bridge call is synchronous
             setTimeout(() => {
                 const r = arcBridge('archiveOpen', path);
+                if (!r.ok && r.needPassword) { arcOpenLocked(path, name, !!r.wrong, onFail); return; }
                 if (!r.ok) { if (onFail) onFail(r); else showToast(r.error || 'Not a readable archive'); return; }
-                closeFmAction();
-                arc = r;
-                arcStack = [];
-                arcDiff = null;
-                document.getElementById('arcDiffHead').style.display = 'none';
-                document.getElementById('arcCrumbs').style.display = '';
-                arcDir = '';
-                arcQuery = '';
-                arcApkAcked = false;
-                arcNeedsSign = false;
-                document.getElementById('arcSearch').value = '';
-                document.getElementById('fmTopCard').style.display = 'none';
-                document.getElementById('fmListCard').style.display = 'none';
-                document.getElementById('arcCard').style.display = '';
-                arcHeader();
-                arcLoad(true);
-                const card = document.getElementById('arcCard');
-                if (card && card.scrollIntoView) card.scrollIntoView({ block: 'start' });
+                arcShow(r);
             }, 40);
+        }
+
+        // an archive that can't even be listed without its password (7z with encrypted names, rar -hp): ask, then open it with the answer
+        async function arcOpenLocked(path, name, wrong, onFail) {
+            const pw = await pwAsk(name, wrong, 'Open');
+            if (pw === null) return;
+            const r = arcBridge('archiveOpen2', path, pw);
+            if (!r.ok && r.needPassword) { arcOpenLocked(path, name, true, onFail); return; }
+            if (!r.ok) { if (onFail) onFail(r); else showToast(r.error || 'Not a readable archive'); return; }
+            arcShow(r);
+        }
+
+        function arcShow(r) {
+            closeFmAction();
+            arc = r;
+            arcStack = [];
+            arcDiff = null;
+            document.getElementById('arcDiffHead').style.display = 'none';
+            document.getElementById('arcCrumbs').style.display = '';
+            arcDir = '';
+            arcQuery = '';
+            arcApkAcked = false;
+            arcNeedsSign = false;
+            document.getElementById('arcSearch').value = '';
+            document.getElementById('fmTopCard').style.display = 'none';
+            document.getElementById('fmListCard').style.display = 'none';
+            document.getElementById('arcCard').style.display = '';
+            arcHeader();
+            arcLoad(true);
+            const card = document.getElementById('arcCard');
+            if (card && card.scrollIntoView) card.scrollIntoView({ block: 'start' });
         }
 
         function arcClose() {
@@ -11758,7 +11993,7 @@ Type any command below (e.g. pm list packages -d)
             if (!arc) return;
             document.getElementById('arcTitle').innerText = (arc.chain ? arc.chain.join(' › ') : arc.name);
             document.getElementById('arcMeta').innerText = arc.files + ' file' + (arc.files === 1 ? '' : 's') + ' • ' + arcSize(arc.size)
-                + (arc.zip64 ? ' • ZIP64' : '') + (arc.staged ? ' • opened from a temporary copy' : '') + '\n' + (arc.nested ? 'inside ' + (arc.chain.slice(0, -1).join(' › ')) : arc.path);
+                + (arc.zip64 ? ' • ZIP64' : '') + (arc.format && arc.format !== 'zip' ? ' • ' + arc.format.toUpperCase() + (arc.solid ? ' (solid: files are packed together)' : '') : '') + (arc.encrypted ? ' • password-protected' : '') + (arc.staged ? ' • opened from a temporary copy' : '') + '\n' + (arc.nested ? 'inside ' + (arc.chain.slice(0, -1).join(' › ')) : arc.path);
             const note = document.getElementById('arcNote');
             let msg = '';
             if (!arc.editable) msg = 'View only: ' + (arc.whyNot || 'this archive can not be edited here.');
@@ -11923,6 +12158,7 @@ Type any command below (e.g. pm list packages -d)
         function arcViewEntry() {
             if (!arc || !arcTarget || arcTarget.dir) return;
             const r = arcBridge('archiveRead', arcSrcPath(), arcTarget.path);
+            if (!r.ok && r.needPassword) { arcAskEntryPassword(!!r.wrong); return; }
             if (!r.ok) { showToast(r.error || 'Could not read the entry'); return; }
             arcPreview = r;
             arcResetSheet();
@@ -11953,6 +12189,18 @@ Type any command below (e.g. pm list packages -d)
             }
             document.getElementById('arcViewMeta').innerText = meta;
             arcSheetButtons(true);
+        }
+
+        async function arcAskEntryPassword(wrong) {
+            const pw = await pwAsk(arc ? arc.name : '', wrong, 'Unlock');
+            if (pw === null) return;
+            const s = arcBridge('archiveSetPassword', arcSrcPath(), pw);
+            if (!s.ok) {
+                if (s.wrong || s.needPassword) { arcAskEntryPassword(true); return; }
+                showToast(s.error || 'Could not use that password');
+                return;
+            }
+            arcViewEntry();
         }
 
         function arcEditStart() {
@@ -12328,7 +12576,7 @@ Type any command below (e.g. pm list packages -d)
                 if (el) { el.style.display = ''; el.innerText = msg; }
                 return;
             }
-            if (exRunning && !arcBusy) { const t = document.getElementById('fmBatchText'); if (t) t.innerText = msg; return; }
+            if ((exRunning || czRunning) && !arcBusy) { const t = document.getElementById('fmBatchText'); if (t) t.innerText = msg; return; }
             if (!arcBusy) return;
             const st = document.getElementById('arcStatus');
             st.style.display = '';
@@ -12338,8 +12586,10 @@ Type any command below (e.g. pm list packages -d)
         function onArchiveResult(r) {
             arcSetBusy(false);
             if (exRunning && (!r || !r.op || r.op === 'extract')) exRunning = false;
+            if (czRunning && (!r || r.op === 'create' || !r.op)) { czRunning = false; const bs0 = document.getElementById('fmBatchStatus'); if (bs0 && !fmBatchRunning) bs0.style.display = 'none'; }
             if (!r) return;
             if (r.op === 'extract') { exRunning = false; const bs = document.getElementById('fmBatchStatus'); if (bs && !fmBatchRunning) bs.style.display = 'none'; }
+            if (!r.ok && r.needPassword && r.op === 'extract' && exLast && exLast.args) { exAskPassword(!!r.wrong); return; }
             if (!r.ok) {
                 const wasAdd = arcLastOp && arcLastOp.op === 'add';
                 if (wasAdd && /already in the archive/.test(r.error || '') && confirm('“' + arcLastOp.to + '” is already in the archive. Replace it?')) {
@@ -12352,6 +12602,13 @@ Type any command below (e.g. pm list packages -d)
                 return;
             }
             dropArchiveReport();
+            if (r.op === 'create') {
+                czRunning = false;
+                const bs = document.getElementById('fmBatchStatus'); if (bs && !fmBatchRunning) bs.style.display = 'none';
+                showToast('Created ' + String(r.dest || '').split('/').pop() + ' (' + r.files + ' file' + (r.files === 1 ? '' : 's') + ', ' + arcSize(r.bytes) + ' → ' + arcSize(r.csize) + (r.encrypted ? ', password-protected' : '') + ')');
+                if (currentViewName() === 'files') fmRefresh();
+                return;
+            }
             if (r.op === 'extract') {
                 exRunning = false;
                 const bs = document.getElementById('fmBatchStatus'); if (bs && !fmBatchRunning) bs.style.display = 'none';
