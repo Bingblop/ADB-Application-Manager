@@ -631,7 +631,7 @@ public final class ZipTool {
             String canon = out.getCanonicalPath();
             if (!canon.startsWith(canonRoot + File.separator)) { skipped++; note(problems, e.name + ": unsafe name"); continue; }
             if (cb != null && !cb.onProgress(bytes, files, e.name)) throw new IOException("Cancelled");
-            if (out.exists() || java.nio.file.Files.isSymbolicLink(out.toPath())) {
+            if (FileOps.exists(out)) {
                 if (policy == FileOps.SKIP) { kept++; continue; }
                 if (policy == FileOps.KEEP_BOTH && !out.isDirectory()) out = new File(out.getParentFile(), FileOps.uniqueName(out.getParentFile(), out.getName()));
             }

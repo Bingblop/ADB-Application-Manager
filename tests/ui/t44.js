@@ -72,6 +72,7 @@ const { chromium, PAGE, OUT } = require('./lib/pw');
         return JSON.stringify(r);
       },
       archiveExtract(path, entry, dest) { window.__calls.extract.push([path, entry, dest]); return window.__busy ? 'busy' : 'started'; },
+      archiveExtract2(path, entry, dest, policy, del) { window.__calls.extract.push([path, entry, dest, policy, del]); return window.__busy ? 'busy' : 'started'; },
       archiveEdit(path, op) { window.__calls.edit.push(JSON.parse(op)); return window.__busy ? 'busy' : 'started'; },
       archiveClose() { window.__calls.close++; },
     };
@@ -210,31 +211,32 @@ const { chromium, PAGE, OUT } = require('./lib/pw');
   await page.evaluate(() => arcGo('assets/')); await sleep(40);
   await page.locator('#arcList .perm-row', { hasText: 'config.json' }).locator('.perm-toggle-btn').click(); await sleep(60);
   await page.locator('#arcModalBtns button', { hasText: 'Extract' }).click(); await sleep(40);
-  const dflt = await page.locator('#arcInput').inputValue();
-  console.log('9. extract asks for a folder, default is Download/<archive name>:', dflt === '/storage/emulated/0/Download/app', JSON.stringify(dflt));
-  await page.fill('#arcInput', '/storage/emulated/0/Download/out');
-  await page.locator('#arcInputConfirm').click(); await sleep(80);
+  const dflt = await page.evaluate(() => ({ shown: document.getElementById('exModal').classList.contains('show'), named: document.getElementById('exNamedPath').innerText, where: document.querySelector('input[name=exWhere]:checked').value }));
+  console.log('9. extract opens the dialog, a new folder named after the archive is the default:', dflt.shown && dflt.named === '/storage/emulated/0/Download/app' && dflt.where === 'named', JSON.stringify(dflt));
+  await page.check('input[name=exWhere][value=other]');
+  await page.fill('#exOtherInput', '/storage/emulated/0/Download/out');
+  await page.locator('#exGoBtn').click(); await sleep(80);
   let ex = await page.evaluate(() => window.__calls.extract.slice());
-  console.log('   bridge called with archive, entry, destination:', JSON.stringify(ex[0]) === JSON.stringify(['/storage/emulated/0/Download/app.apk', 'assets/config.json', '/storage/emulated/0/Download/out']));
+  console.log('   bridge called with archive, entry, destination:', JSON.stringify(ex[0].slice(0, 3)) === JSON.stringify(['/storage/emulated/0/Download/app.apk', 'assets/config.json', '/storage/emulated/0/Download/out']));
   await page.evaluate(() => onArchiveProgress('Extracting 1: assets/config.json')); await sleep(30);
   console.log('   progress shown:', /Extracting 1/.test(await page.locator('#arcStatus').innerText()));
   await page.evaluate(() => onArchiveResult({ ok: true, op: 'extract', files: 1, bytes: 24, skipped: 0, dest: '/storage/emulated/0/Download/out/config.json' })); await sleep(60);
   console.log('   done toast names the destination:', /Extracted 1 file/.test(await toastText()) && /out\/config\.json/.test(await toastText()), JSON.stringify(await toastText()));
   await page.evaluate(() => arcGo('res/')); await sleep(40);
   await page.locator('#arcCard .batch-tool-link', { hasText: 'Extract this folder' }).click(); await sleep(80);
-  const exh = await page.evaluate(() => ({ label: document.getElementById('arcInputLabel').innerText, name: document.getElementById('arcModalName').innerText, btns: document.getElementById('arcModalBtns').children.length }));
-  console.log('   "Extract this folder" targets the folder being viewed:', /Extract this folder/.test(exh.label) && exh.name === 'res' && exh.btns === 0, JSON.stringify(exh));
-  await page.locator('#arcInputConfirm').click(); await sleep(60);
+  const exh = await page.evaluate(() => ({ sub: document.getElementById('exSub').innerText, open: document.getElementById('exModal').classList.contains('show') }));
+  console.log('   "Extract this folder" targets the folder being viewed:', exh.open && /res/.test(exh.sub) && /app\.apk/.test(exh.sub), JSON.stringify(exh));
+  await page.locator('#exGoBtn').click(); await sleep(60);
   ex = await page.evaluate(() => window.__calls.extract.slice());
   console.log('   ...and sends the folder path (trailing slash = tree):', ex[1][1] === 'res/');
   await page.evaluate(() => onArchiveResult({ ok: true, op: 'extract', files: 2, bytes: 940, skipped: 1, dest: '/x' })); await sleep(40);
   console.log('   skipped unsafe names are mentioned:', /1 skipped/.test(await toastText()));
   await page.evaluate(() => arcGo('')); await sleep(40);
   await page.locator('#arcCard .batch-tool-link', { hasText: 'Extract this folder' }).click(); await sleep(60);
-  const whole = await page.evaluate(() => ({ name: document.getElementById('arcModalName').innerText }));
-  await page.locator('#arcInputConfirm').click(); await sleep(40);
+  const whole = await page.evaluate(() => ({ sub: document.getElementById('exSub').innerText }));
+  await page.locator('#exGoBtn').click(); await sleep(40);
   ex = await page.evaluate(() => window.__calls.extract.slice());
-  console.log('   at the root it extracts the whole archive (empty path):', whole.name === 'Whole archive' && ex[2][1] === '');
+  console.log('   at the root it extracts the whole archive (empty path):', whole.sub === 'app.apk' && ex[2][1] === '');
   await page.evaluate(() => onArchiveResult({ ok: true, op: 'extract', files: 910, bytes: 1, skipped: 0, dest: '/x' })); await sleep(40);
 
   // 10) Rename, delete, new folder, add file.

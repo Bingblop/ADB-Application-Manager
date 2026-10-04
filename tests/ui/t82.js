@@ -400,7 +400,7 @@ const FILES = {
   for (let y = 0; y < 30000; y += 3000) { await page.mouse.wheel(0, 3000); await sleep(10); }
   await sleep(500);
   const asked = await ev(page, () => window.__fm.thumbReqs.map(r => r.paths).flat().length);
-  check('   a fast scroll through 600 pictures asks for far fewer than 600 (' + first + ' at first, ' + asked + ' after), and never twice for one', first > 0 && first <= 40 && asked < 300 && (await ev(page, () => { const a = window.__fm.thumbReqs.map(r => r.paths).flat(); return new Set(a).size === a.length; })));
+  check('   a fast scroll through 600 pictures asks for far fewer than 600 and never twice for one', first > 0 && first <= 40 && asked < 300 && (await ev(page, () => { const a = window.__fm.thumbReqs.map(r => r.paths).flat(); return new Set(a).size === a.length; })));
   await page.close();
 
   await b.close();

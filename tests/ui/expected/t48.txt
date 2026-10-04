@@ -17,11 +17,11 @@
    line diff: -six, +SIX CHANGED, +thirteen with a collapsed gap and a summary: true {"add":["+ SIX CHANGED","+ thirteen"],"del":["- six"],"gap":1,"meta":"+2 / −1 lines • data/readme.txt"}
    manifest diff shows the new permission: true ["+   <uses-permission name=\"READ_SMS\"/>"]
    Old / New read the matching archive: true
-   extracting a removed file reads it from the first archive: true ["/sd/bundle.xapk","config.arm64.apk","/storage/emulated/0/Download/bundle"]
+   extracting a removed file reads it from the first archive: true ["/sd/bundle.xapk","config.arm64.apk","/storage/emulated/0/Download/bundle","keep",false]
    Back closes the comparison and returns to the folder view: true
    the last comparison target is pre-filled next time: true
    an installed app's package name is accepted: true
    an unknown target shows the error and leaves the browser as it was: true
 4. identical archives say so: true
-5. extract defaults to the folder used last time: true ["/storage/emulated/0/Download/bundle","/storage/emulated/0/Documents/out"]
+5. extract offers the new folder at first and remembers the folder used last time: true ["/storage/emulated/0/Download/bundle","/storage/emulated/0/Documents/out"]
 errors: []

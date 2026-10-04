@@ -90,7 +90,8 @@ public final class FileOps {
 
     /** exists() says false for a link whose target is gone; such a link still holds the name. */
     static boolean exists(File f) {
-        return f.exists() || Files.isSymbolicLink(f.toPath());
+        if (f.exists()) return true;
+        try { return Files.isSymbolicLink(f.toPath()); } catch (java.nio.file.InvalidPathException e) { return false; }     // a name this JVM cannot map: it is not there as a link either
     }
 
     /**
@@ -195,7 +196,9 @@ public final class FileOps {
         return m == null || m.isEmpty() ? e.getClass().getSimpleName() : (m.length() > 200 ? m.substring(0, 200) : m);
     }
 
-    private static boolean isLink(File f) { return Files.isSymbolicLink(f.toPath()); }
+    private static boolean isLink(File f) {
+        try { return Files.isSymbolicLink(f.toPath()); } catch (java.nio.file.InvalidPathException e) { return false; }
+    }
 
     private static boolean sameFile(File a, File b) {
         try { return a.getCanonicalPath().equals(b.getCanonicalPath()); } catch (IOException e) { return false; }

@@ -95,5 +95,5 @@
    a picture answer for another file does not show up in a PDF viewer: true
    Show hidden files and Show thumbnails are restored from the saved choice: true
    at 320 px the editor's close button stays on screen: true {"right":301,"w":320,"over":0}
-   a fast scroll through 600 pictures asks for far fewer than 600 (12 at first, 66 after), and never twice for one: true
+   a fast scroll through 600 pictures asks for far fewer than 600 and never twice for one: true
 ALL PASSED

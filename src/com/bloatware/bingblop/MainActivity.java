@@ -8705,7 +8705,7 @@ public class MainActivity extends Activity {
                             long bytes = 0;
                             File target = new File(dir, base);
                             boolean leave = false;
-                            if (writable && (target.exists() || java.nio.file.Files.isSymbolicLink(target.toPath()))) {
+                            if (writable && FileOps.exists(target)) {
                                 if (policy == FileOps.SKIP) leave = true;
                                 else if (policy == FileOps.KEEP_BOTH) target = new File(dir, FileOps.uniqueName(dir, base));
                             }

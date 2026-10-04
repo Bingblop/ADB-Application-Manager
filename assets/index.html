@@ -11331,7 +11331,7 @@ Type any command below (e.g. pm list packages -d)
                     + '<div class="fm-ico">' + ico + '</div>'
                     + '<div class="perm-info"><div class="perm-name' + (h.dir ? ' fm-dir' : '') + '">' + escapeHtml(name) + (h.dir ? '/' : '') + '</div>'
                     + '<div class="perm-sub">' + escapeHtml(where) + '</div><div class="perm-sub">' + escapeHtml(meta) + '</div>' + line + '</div>'
-                    + '<button class="perm-toggle-btn locked fm-more" aria-label="Show in the folder" onclick="event.stopPropagation(); fmSearchReveal(' + i + ')">↗</button></div>';
+                    + '<button class="perm-toggle-btn locked fm-more" style="width:auto; padding:0 10px;" aria-label="Show in the folder" onclick="event.stopPropagation(); fmSearchReveal(' + i + ')">In folder</button></div>';
             }).join('');
         };
         function fmSearchOpen(i) {
@@ -11970,9 +11970,7 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('arcModalName').innerText = arcDir ? name : 'Whole archive';
             document.getElementById('arcModalPath').innerText = arcDir || arc.path;
             document.getElementById('arcModalBtns').innerHTML = '';
-            arcExtractStart();
-            document.getElementById('arcModal').classList.add('show');
-            haptic();
+            arcExtractStart();                               // the dialog of its own; the archive sheet is not needed behind it
         }
 
         function arcRenameStart() {
