@@ -4683,24 +4683,24 @@
                 </div>
                 <div class="tx-screens" id="txScreens"></div>
                 <div class="tx-inputline">
-                    <button class="tx-mode-btn" id="txModeBtn" onclick="txToggleMode()" title="Shell commands or AI chat" aria-label="Shell commands or AI chat">$</button>
+                    <button class="tx-mode-btn" id="txModeBtn" translate="no" onclick="txToggleMode()" title="Shell commands or AI chat" aria-label="Shell commands or AI chat">$</button>
                     <textarea id="txInput" class="tx-input" rows="1" placeholder="Type a command" onkeydown="txKey(event)" oninput="txAutosize()" autocapitalize="none" autocorrect="off" autocomplete="off" spellcheck="false" enterkeyhint="send" aria-label="Terminal input"></textarea>
-                    <button class="tx-send-btn" id="txSendBtn" onclick="txSendClick()">RUN</button>
+                    <button class="tx-send-btn" id="txSendBtn" translate="no" onclick="txSendClick()">RUN</button>
                 </div>
                 <div class="tx-keys" id="txKeys" role="toolbar" aria-label="Extra keys">
-                    <button data-k="esc" title="Clear the line">ESC</button>
-                    <button data-k="tab" title="Complete a file name">TAB</button>
-                    <button data-k="ctrlc" class="tx-key-stop" title="Stop what is running">CTRL-C</button>
-                    <button data-k="up" title="Previous command" aria-label="Previous command">▲</button>
-                    <button data-k="down" title="Next command" aria-label="Next command">▼</button>
-                    <button data-k="left" title="Cursor left" aria-label="Cursor left">←</button>
-                    <button data-k="right" title="Cursor right" aria-label="Cursor right">→</button>
-                    <button data-k="home" title="Start of the line">HOME</button>
-                    <button data-k="end" title="End of the line">END</button>
-                    <button data-k="|" aria-label="Pipe">|</button>
-                    <button data-k="/" aria-label="Slash">/</button>
-                    <button data-k="-" aria-label="Dash">-</button>
-                    <button data-k="~" aria-label="Tilde">~</button>
+                    <button translate="no" data-k="esc" title="Clear the line">ESC</button>
+                    <button translate="no" data-k="tab" title="Complete a file name">TAB</button>
+                    <button translate="no" data-k="ctrlc" class="tx-key-stop" title="Stop what is running">CTRL-C</button>
+                    <button translate="no" data-k="up" title="Previous command" aria-label="Previous command">▲</button>
+                    <button translate="no" data-k="down" title="Next command" aria-label="Next command">▼</button>
+                    <button translate="no" data-k="left" title="Cursor left" aria-label="Cursor left">←</button>
+                    <button translate="no" data-k="right" title="Cursor right" aria-label="Cursor right">→</button>
+                    <button translate="no" data-k="home" title="Start of the line">HOME</button>
+                    <button translate="no" data-k="end" title="End of the line">END</button>
+                    <button translate="no" data-k="|" aria-label="Pipe">|</button>
+                    <button translate="no" data-k="/" aria-label="Slash">/</button>
+                    <button translate="no" data-k="-" aria-label="Dash">-</button>
+                    <button translate="no" data-k="~" aria-label="Tilde">~</button>
                 </div>
                 <div class="tx-tools">
                     <button class="term-icon-btn" onclick="txClearScreen()">Clear</button>
@@ -4964,7 +4964,7 @@ Type any command below (e.g. pm list packages -d)
             <div class="tx-help" id="txHelpBody" style="max-height:70vh; overflow-y:auto;">
                 <h4>Overview</h4>
                 <p>The Terminal is a Termux-style command line with AI coding agents built in. Type shell commands, or pick an agent under <b>Coding Agents</b> and chat with it: the agent can look at files and run commands in the same shell, and it asks you before anything runs. Choose <b>None</b> to use the Terminal on your own.</p>
-                <p>The <b>ADB Console</b> next to it is the classic console of this app (Rish mode, cheat sheet, saved commands). The tab remembers which of the two you used last.</p>
+                <p><b>ADB Console</b>, next to it, is the classic console of this app (Rish mode, cheat sheet, saved commands). The tab remembers which of the two you used last.</p>
 
                 <h4>The three shells</h4>
                 <ul>
@@ -6491,7 +6491,7 @@ Type any command below (e.g. pm list packages -d)
             '.saved-list-title', '.profile-item h4', '.backup-item h4', '.hist-title',
             '#termOutput', '.term-row-cmd', '.cheat-cmd', '#logcatOutput', '.lc-msg', '#storeDetailName',
             '.tm-row-name', '.tm-row-sub', '.tm-stat-raw',
-            '.tx-screen', '#txAgent', '#txModel', '.tx-key-input', '.tx-sheet-code', '.tx-row-sub[translate="no"]'
+            '.tx-screen', '.tx-key-input', '.tx-sheet-code', '.tx-row-sub[translate="no"]', '#txHelpModal code'
         ].join(', '));
         function initLanguageUi() {
             const sel = document.getElementById('langSelect');
@@ -15879,7 +15879,7 @@ Type any command below (e.g. pm list packages -d)
             }
             const fresh = !res.reused || s.st !== 'ready';
             Object.assign(s, { st: 'ready', kind: res.kind || '', uid: res.uid, cwd: res.cwd || '', prompt: res.prompt || '', host: res.host || '', msg: '' });
-            if (fresh) txNote('[' + txT(txShellReadyText(b, res)) + ']', b);
+            if (fresh) txNote('[' + txShellReadyText(b, res) + ']', b);
             txSyncUi();
             if (txPending && txPending.b === b) {
                 const p = txPending;
@@ -15889,9 +15889,9 @@ Type any command below (e.g. pm list packages -d)
         };
 
         function txShellReadyText(b, res) {
-            const who = res.uid === 0 ? 'root' : res.kind === 'app' ? 'this app' : res.kind === 'termux' ? 'Termux' : 'the shell user';
-            const via = { app: 'this app', shizuku: 'Shizuku', root: 'Root', adb: 'ADB', termux: 'Termux' }[res.kind] || res.kind;
-            return (b === 'termux' ? 'bash' : 'sh') + ' ready through ' + via + ', running as ' + who + ' (uid ' + res.uid + ') in ' + txShortPath(b, res.cwd || '/');
+            const who = res.uid === 0 ? 'root' : res.kind === 'app' ? txT('this app') : res.kind === 'termux' ? 'Termux' : txT('the shell user');
+            const via = res.kind === 'app' ? txT('this app') : ({ shizuku: 'Shizuku', root: 'Root', adb: 'ADB', termux: 'Termux' }[res.kind] || res.kind);
+            return txF('{0} ready through {1}, running as {2} (uid {3}) in {4}', b === 'termux' ? 'bash' : 'sh', via, who, res.uid, txShortPath(b, res.cwd || '/'));
         }
 
         // Why a shell did not start, with the button that fixes it
@@ -16607,7 +16607,7 @@ Type any command below (e.g. pm list packages -d)
         function txBuildAgentSelect() {
             const sel = document.getElementById('txAgent');
             if (!sel) return;
-            const opt = a => '<option value="' + a.id + '">' + escapeHtml(a.name) + '</option>';
+            const opt = a => '<option value="' + a.id + '"' + (a.id === 'none' ? '' : ' translate="no"') + '>' + escapeHtml(a.name) + '</option>';      // names stay as they are; None and the headings are translated
             sel.innerHTML = opt(TX_AGENTS[0])
                 + '<optgroup label="' + escapeHtml('API Key Required') + '">' + TX_AGENTS.filter(a => a.group === 'key').map(opt).join('') + '</optgroup>'
                 + '<optgroup label="' + escapeHtml('Free Open-Source') + '">' + TX_AGENTS.filter(a => a.group === 'oss').map(opt).join('') + '</optgroup>';
@@ -16640,7 +16640,7 @@ Type any command below (e.g. pm list packages -d)
             const ag = txAgentDef(txState.agent);
             if (ms) {
                 const list = txModelList(ag);
-                ms.innerHTML = list.length ? list.map(m => '<option value="' + escapeHtml(m.id) + '">' + escapeHtml(m.name && m.name !== m.id ? m.name + ' (' + m.id + ')' : m.id) + '</option>').join('') : '<option value="">-</option>';
+                ms.innerHTML = list.length ? list.map(m => '<option value="' + escapeHtml(m.id) + '"' + (m.id === 'default' ? '' : ' translate="no"') + '>' + escapeHtml(m.name && m.name !== m.id ? m.name + ' (' + m.id + ')' : m.id) + '</option>').join('') : '<option value="">-</option>';
                 ms.disabled = !list.length || txChat.busy;
                 const cur = txModelFor(ag);
                 if (cur) ms.value = cur;
@@ -17167,7 +17167,7 @@ Type any command below (e.g. pm list packages -d)
                 const cmd = act.body.trim();
                 if (!cmd) return { text: '<result action="run" status="error">empty command</result>' };
                 if (txSettings.askRun && !txChat.allowRun && !txChat.allowAll) {
-                    const a = await txAsk(b, who + ' wants to run this in ' + TX_SHELLS[b].name + ' (' + txShortPath(b, cwd) + '):', cmd, { yes: 'Run', always: 'Always allow in this chat' });
+                    const a = await txAsk(b, txF('{0} wants to run this in {1} ({2}):', who, txT(TX_SHELLS[b].name), txShortPath(b, cwd)), cmd, { yes: 'Run', always: 'Always allow in this chat' });
                     if (a === 'no') return { text: '<result action="run" status="denied">The user did not run it. Wait for their next message.</result>', denied: true };
                     if (a === 'always') txChat.allowRun = true;
                 }
@@ -17181,7 +17181,7 @@ Type any command below (e.g. pm list packages -d)
                 if (!p) return { text: '<result action="read" status="error">read needs path="..."</result>' };
                 const abs = txAbs(b, p);
                 if (!txInside(b, abs) && !txSettings.readOutside && !txChat.allowAll) {
-                    const a = await txAsk(b, who + ' wants to read a file outside the working folder:', abs, { yes: 'Allow' });
+                    const a = await txAsk(b, txF('{0} wants to read a file outside the working folder:', who), abs, { yes: 'Allow' });
                     if (a === 'no') return { text: '<result action="read" status="denied">The user did not allow reading it.</result>', denied: true };
                 }
                 let s1 = Math.max(1, parseInt(act.attrs.start, 10) || 1);
@@ -17216,7 +17216,7 @@ Type any command below (e.g. pm list packages -d)
                     next = res.text;
                 }
                 if (txSettings.askWrite && !txChat.allowAll) {
-                    const a = await txAsk(b, who + ' wants to ' + (act.type === 'edit' ? 'change ' : old.exists ? 'replace ' : 'create ') + txShortPath(b, abs) + ':', txDiffNode(old.exists ? old.text : '', next), { yes: 'Apply' });
+                    const a = await txAsk(b, txF(act.type === 'edit' ? '{0} wants to change {1}:' : old.exists ? '{0} wants to replace {1}:' : '{0} wants to create {1}:', who, txShortPath(b, abs)), txDiffNode(old.exists ? old.text : '', next), { yes: 'Apply' });
                     if (a === 'no') return { text: '<result action="' + act.type + '" path="' + txAttr(p) + '" status="denied">The user did not apply it. Wait for their next message.</result>', denied: true };
                 }
                 if (txChat.stop) return { text: '', denied: true };
@@ -17511,7 +17511,7 @@ Type any command below (e.g. pm list packages -d)
         async function txRunSteps(title, steps) {
             if (!(await txEnsureTermux())) { txButtons('termux', [{ label: 'Termux setup', go: true, on: () => txOpenTermuxSetup() }]); return false; }
             if (txRuns.termux) { txNote('[a command is still running: wait for it or CTRL-C]', 'termux', 'tx-warn'); return false; }
-            txNote('▶ ' + txT(title) + ' (' + steps.length + ' steps, CTRL-C stops)', 'termux', 'tx-ok');
+            txNote('» ' + txT(title) + ' (' + steps.length + ' steps, CTRL-C stops)', 'termux', 'tx-ok');
             for (let i = 0; i < steps.length; i++) {
                 const st = steps[i];
                 const cmd = st.debian ? txDebianCmd('export PATH="$HOME/.local/bin:$PATH"; ' + st.cmd) : st.cmd;

@@ -115,7 +115,7 @@ const tx = require('./lib/tx_mock');
   await page.locator('#txConnectBody button', { hasText: 'Install Ollama in Termux' }).click();
   await until(() => !txRuns.termux && window.__tx.runs.some(r => /ollama pull/.test(r.cmd))); await sleep(200);
   console.log('   the steps, run one by one in the Termux shell:', JSON.stringify(await termuxRuns()));
-  console.log('   and on its screen:', JSON.stringify((await scrT()).split('\n').filter(l => /^(▶|✓|--)/.test(l))));
+  console.log('   and on its screen:', JSON.stringify((await scrT()).split('\n').filter(l => /^(»|✓|--)/.test(l))));
   await page.evaluate(() => txCloseConnect());
 
   // ---------------------------------------------------------------- Claude, signed in through Claude Code

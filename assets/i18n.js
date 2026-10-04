@@ -26,7 +26,7 @@
     { code: 'tr', name: 'Türkçe', dir: 'ltr', locale: 'tr' },
     { code: 'id', name: 'Bahasa Indonesia', dir: 'ltr', locale: 'id' }
   ];
-  var ATTRS = ['title', 'placeholder', 'aria-label', 'alt'];
+  var ATTRS = ['title', 'placeholder', 'aria-label', 'alt', 'label'];             // label: the heading of an <optgroup>
   var SKIP_TAGS = { SCRIPT: 1, STYLE: 1, TEXTAREA: 1, NOSCRIPT: 1, SVG: 1, CANVAS: 1 };
   var OBSERVE = { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ATTRS };
   var BLOCK_MAX = 60;                                        // an element with more children than this is a list, not a sentence

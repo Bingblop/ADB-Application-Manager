@@ -38,7 +38,7 @@ const add = (kind, key, ctx) => {
 const forced = { x: new Set(), p: new Set() };
 
 // ---------- markup: text between tags and the attributes that are shown ----------
-const ATTR_RE = /\b(title|placeholder|aria-label|alt)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
+const ATTR_RE = /\b(title|placeholder|aria-label|alt|label)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
 function fromMarkup(s, ctx) {
   s.replace(ATTR_RE, (m, at, v1, v2) => { add('x', v1 !== undefined ? v1 : v2, ctx); return m; });
   s.replace(/<[^>]*>/g, '\u0001').split('\u0001').forEach(t => { if (!/\{\d+\}/.test(t)) add('x', t, ctx); else add('p', t, ctx); });
@@ -224,14 +224,16 @@ for (const [k, v] of keys.p) {
     const addp = (t, el) => { t = norm(t); if (!t || !/[A-Za-z]/.test(t)) return; (out[t] = out[t] || new Set()).add(where(el)); };
     const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     let n; while ((n = w.nextNode())) { const p = n.parentElement; if (p && !/^(SCRIPT|STYLE)$/.test(p.tagName)) addp(n.nodeValue, p); }
-    document.querySelectorAll('[title],[placeholder],[aria-label],[alt]').forEach(e => ['title', 'placeholder', 'aria-label', 'alt'].forEach(a => { const v = e.getAttribute(a); if (v) addp(v, e); }));
+    document.querySelectorAll('[title],[placeholder],[aria-label],[alt],optgroup[label]').forEach(e => ['title', 'placeholder', 'aria-label', 'alt', 'label'].forEach(a => { const v = e.getAttribute(a); if (v) addp(v, e); }));
     return Object.fromEntries(Object.entries(out).map(([k, v]) => [k, [...v]]));
   });
+  // the text of a drop-down choice is shown on its own, even when a sentence elsewhere has the same words between its tags
+  const alone = new Set(await page.evaluate(() => [...document.querySelectorAll('option')].map(o => o.textContent.replace(/\s+/g, ' ').trim())));
   await b.close();
 
   // the pieces of a sentence that has its own entry (the text between its tags) are not asked for separately when they are long: they are never shown alone
   const frag = new Set();
-  blocks.forEach(s => s.split(/<\/?\d+\/?>|<br>/).forEach(t => { t = collapse(t); if (t.split(' ').length >= 3) frag.add(t); }));
+  blocks.forEach(s => s.split(/<\/?\d+\/?>|<br>/).forEach(t => { t = collapse(t); if (t.split(' ').length >= 3 && !alone.has(t)) frag.add(t); }));
   const TABS = new Set(tabs);
   const hint = (k, fn) => {
     let h;
