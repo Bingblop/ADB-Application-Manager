@@ -1,5 +1,16 @@
 # Changelog
 
+## v7.9.14-Pro (versionCode 804)
+
+- **Terminal: sync the Termux shell with your real Termux.** Two new pieces under Terminal settings' Shell
+  section (and in the Termux setup checklist): a "Match my Termux environment" switch, on by default, that
+  sources ~/.bashrc when a Termux shell starts here too - so aliases, functions and PATH additions you keep
+  there work the same way in this app, not just the PATH/profile the existing "Use my Termux login profile"
+  switch already read; and a "Sync with Termux" button that turns that switch on if it was off, restarts any
+  already-running Termux session so the change applies right away, and opens Termux to run
+  termux-setup-storage - so granting it access to shared/phone storage is one tap instead of a command typed
+  by hand.
+
 ## v7.9.13-Pro (versionCode 803)
 
 - **Saved Applications: the "Saved" tag no longer crowds the title.** Each saved list's name and app count now have

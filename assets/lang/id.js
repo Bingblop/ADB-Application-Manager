@@ -397,7 +397,6 @@ x: {
 "Command finished: see the ADB Console": "Perintah selesai: lihat Konsol ADB",
 "Command history": "Riwayat perintah",
 "Command ready — edit any": "Perintah siap — edit bila perlu",
-"Commands run as Termux, in its home folder, with your Termux packages. Full-screen programs open in Termux itself. For files on the shared storage, also run termux-setup-storage once in Termux.": "Perintah berjalan sebagai Termux, di folder home-nya, dengan paket Termux Anda. Program layar penuh terbuka di Termux itu sendiri. Untuk file di penyimpanan bersama, jalankan juga termux-setup-storage sekali di Termux.",
 "Commands you run show up here.": "Perintah yang dijalankan akan muncul di sini.",
 "Common installer sources": "Sumber penginstal umum",
 "Common requester addresses": "Alamat peminta umum",

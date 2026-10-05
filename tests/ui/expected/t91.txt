@@ -7,11 +7,14 @@
    a default model and effort can be set for each connected agent: 2
    ... stored, and in use now: claude-opus-5-5 claude-opus-5-5
    the effort select too: high high
-   switches and their defaults: ["Use my Termux login profile=true","Ask before running commands=true","Ask before changing files=true","Read files outside the working folder without asking=false","Let them act without asking=false","Keep the conversation between launches=true"]
+   switches and their defaults: ["Use my Termux login profile=true","Match my Termux environment=true","Ask before running commands=true","Ask before changing files=true","Read files outside the working folder without asking=false","Let them act without asking=false","Keep the conversation between launches=true"]
    turning one off is stored: false
+   turning off "match my Termux environment" is stored: false
+   Sync with Termux, not set up yet: Settings closes and the setup checklist opens instead: true true
 3. with Ask before running off, commands run without a card, and the default model is used: true 0 claude-opus-5-5
 4. Termux missing: ["1 Install Termux [F-Droid, GitHub]","2 Open Termux once [Open Termux]","3 Let Termux take commands from other apps [Copy, Open Termux]","4 Allow this app [Allow(off)]","5 Test the connection [Test(off)]"]
    its sub text: "Termux is free. Get it from F-Droid or GitHub; the old Google Play build is not suitable."
+   Sync with Termux is disabled until Termux is set up, same as Use Termux as the shell: true
    installed, not allowed yet: ["✓ Install Termux","2 Open Termux once [Open Termux]","3 Let Termux take commands from other apps [Copy, Open Termux]","4 Allow this app [Allow]","5 Test the connection [Test(off)]"]
    the command for step 3: "mkdir -p ~/.termux && echo 'allow-external-apps=true' >> ~/.termux/termux.properties && termux-reload-settings"
    Android refuses for good: the way to allow it by hand: true "Android will not ask again. Allow it by hand: App info of this app, Permissions, Additional permissions, Run commands in Termux environment." "App info\nOK"
@@ -19,6 +22,8 @@
    allowed: ["✓ Install Termux","2 Open Termux once [Open Termux]","3 Let Termux take commands from other apps [Copy, Open Termux]","✓ Allow this app","5 Test the connection [Test]"]
    the test while Termux still refuses other apps: "Termux does not take commands from other apps yet: run the command of step 3 in Termux, then test again."
    and once it is set: ["✓ Install Termux","2 Open Termux once [Open Termux]","✓ Let Termux take commands from other apps [Copy, Open Termux]","✓ Allow this app","✓ Test the connection [Test]"]
+   Sync with Termux, set up: re-enables matching, closes the session and opens termux-setup-storage: true ["termux"] ["termux-setup-storage"]
+   starting it hands the native bridge matchEnv too: ["termux",{"profile":true,"matchEnv":true,"cwd":""}]
    Use Termux as the shell: termux true
 5. Jan: looks on this phone by itself, finds it, saves the address and is ready: {"key":false,"hint":"","base":"http://127.0.0.1:1337/v1","savedAt":<epoch ms>,"readable":true} ["llama-4-8b","qwen3-coder-7b"]
    chatting: the saved address, its own provider name for the app, a plain system prompt: http://127.0.0.1:1337/v1/chat/completions jan llama-4-8b system true

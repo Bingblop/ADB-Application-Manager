@@ -16246,7 +16246,7 @@ Type any command below (e.g. pm list packages -d)
         if (!txState.efforts || typeof txState.efforts !== 'object') txState.efforts = {};
         const txSettings = Object.assign({
             defaultAgent: '', defaultShell: '', askRun: true, askWrite: true, readOutside: false, maxSteps: 25,
-            termuxProfile: true, keepChat: true, cliYolo: false, connect: {}, cursorRepo: '', efforts: {}
+            termuxProfile: true, termuxMatchEnv: true, keepChat: true, cliYolo: false, connect: {}, cursorRepo: '', efforts: {}
         }, kvGet('tx_settings', {}) || {});
         if (!txSettings.connect || typeof txSettings.connect !== 'object') txSettings.connect = {};
         if (!txSettings.efforts || typeof txSettings.efforts !== 'object') txSettings.efforts = {};
@@ -16367,7 +16367,7 @@ Type any command below (e.g. pm list packages -d)
             s.msg = '';
             txSyncUi();
             let r = '';
-            try { r = String(window.AndroidBridge.termStart(b, JSON.stringify({ profile: !!txSettings.termuxProfile, cwd: cwd || s.cwd || '' })) || ''); } catch (e) { r = 'error: ' + (e && e.message || e); }
+            try { r = String(window.AndroidBridge.termStart(b, JSON.stringify({ profile: !!txSettings.termuxProfile, matchEnv: !!txSettings.termuxMatchEnv, cwd: cwd || s.cwd || '' })) || ''); } catch (e) { r = 'error: ' + (e && e.message || e); }
             if (r.indexOf('error') === 0) window.onTermStarted(b, { ok: false, message: r.replace(/^error:\s*/, '') });
         }
 
@@ -18820,8 +18820,8 @@ Type any command below (e.g. pm list packages -d)
                 + step(3, !!(txProbe && txProbe.ok), 'Let Termux take commands from other apps', 'In Termux, paste and run:<span class="tx-sheet-code" translate="no">' + escapeHtml(TX_TERMUX_ALLOW_CMD) + '</span>', '<button class="mode-action-btn primary" onclick="copyText(TX_TERMUX_ALLOW_CMD); showToast(\'Copied: paste it in Termux\')">Copy</button><button class="mode-action-btn" onclick="txLaunchTermuxApp()">Open Termux</button>')
                 + step(4, !!t.permission, 'Allow this app', t.permission ? 'Allowed: "Run commands in Termux environment".' : 'Android asks whether this app may "Run commands in Termux environment".', t.permission ? '' : '<button class="mode-action-btn primary" onclick="txTermuxAllow()"' + (t.installed ? '' : ' disabled') + '>Allow</button>')
                 + step(5, !!(txProbe && txProbe.ok), 'Test the connection', txProbe ? (txProbe.ok ? 'Termux answered. All set.' : '<span class="is-err">' + escapeHtml(txProbe.message || 'No answer') + '</span>') : 'Sends a harmless command to Termux and waits for the answer.', '<button class="mode-action-btn" id="txProbeBtn" onclick="txTermuxTest()"' + (t.installed && t.permission ? '' : ' disabled') + '>Test</button>')
-                + '<div class="mode-btn-row" style="margin-top:12px;"><button class="mode-action-btn primary" onclick="txUseTermuxShell()"' + (t.installed && t.permission ? '' : ' disabled') + '>Use Termux as the shell</button></div>'
-                + '<p class="tx-sheet-p muted">Commands run as Termux, in its home folder, with your Termux packages. Full-screen programs open in Termux itself. For files on the shared storage, also run termux-setup-storage once in Termux.</p>';
+                + '<div class="mode-btn-row" style="margin-top:12px;"><button class="mode-action-btn primary" onclick="txUseTermuxShell()"' + (t.installed && t.permission ? '' : ' disabled') + '>Use Termux as the shell</button><button class="mode-action-btn" onclick="txSyncTermux()"' + (t.installed && t.permission ? '' : ' disabled') + '>Sync with Termux</button></div>'
+                + '<p class="tx-sheet-p muted">Commands run as Termux, in its home folder, with your Termux packages and (with Match my Termux environment on) your aliases and functions too. Sync with Termux also opens Termux so you can grant it access to shared storage.</p>';
         }
 
         function txTermuxTest() {
@@ -18845,6 +18845,23 @@ Type any command below (e.g. pm list packages -d)
             const sel = document.getElementById('txShell');
             if (sel) sel.value = 'termux';
             txPickShell('termux');
+        }
+
+        // Sets up (or updates) the in-app Termux shell to match the real Termux app: turns on "Match my Termux
+        // environment" if it was off, restarts any already-running Termux session so the change applies right away,
+        // and opens termux-setup-storage in Termux so shared/phone storage access gets granted there too.
+        function txSyncTermux() {
+            haptic();
+            txCloseSettings();          // harmless if it was not open; keeps a redirect into the setup modal from stacking on top of it
+            txRefreshInfo();
+            const t = txInfo && txInfo.termux || {};
+            if (!t.installed || !t.permission) { txOpenTermux('termux-setup-storage'); return; }
+            if (!txSettings.termuxMatchEnv) { txSettings.termuxMatchEnv = true; txSaveSettings(); }
+            if (window.AndroidBridge && window.AndroidBridge.termClose) { try { window.AndroidBridge.termClose('termux'); } catch (e) {} }
+            if (txSess.termux) txSess.termux.st = 'off';
+            showToast('Syncing with Termux - opening it to finish storage access');
+            txOpenTermux('termux-setup-storage');
+            if (txCurShell() === 'termux') txStartShell('termux');
         }
 
         // ---------------------------------------------------------------- settings
@@ -18894,7 +18911,8 @@ Type any command below (e.g. pm list packages -d)
                 + '<div class="tx-sheet-sec">Shell</div>'
                 + '<div class="tx-row"><div class="tx-row-main"><div class="tx-row-name">Shell when the Terminal opens</div></div><select class="op-select" style="max-width:52vw;" onchange="txSet(\'defaultShell\', this.value)">' + shellOpts + '</select></div>'
                 + sw('termuxProfile', 'Use my Termux login profile', 'Termux shells read ~/.bash_profile or ~/.profile first (PATH and the like). Turn off if your profile starts another program.')
-                + '<div class="mode-btn-row" style="margin-top:10px;"><button class="mode-action-btn" onclick="txCloseSettings(); txOpenTermuxSetup()">Termux setup</button></div>'
+                + sw('termuxMatchEnv', 'Match my Termux environment', 'Also sources ~/.bashrc, so aliases and functions from your own Termux shell work here too. Turn off if yours does something unexpected for a non-interactive shell.')
+                + '<div class="mode-btn-row" style="margin-top:10px;"><button class="mode-action-btn" onclick="txCloseSettings(); txOpenTermuxSetup()">Termux setup</button><button class="mode-action-btn primary" onclick="txSyncTermux()">Sync with Termux</button></div>'
                 + '<div class="tx-sheet-sec">What agents may do</div>'
                 + sw('askRun', 'Ask before running commands', 'Shows each command with Run, Skip and Always allow in this chat.')
                 + sw('askWrite', 'Ask before changing files', 'Shows what changes, line by line, with Apply, Skip and Always allow in this chat.')

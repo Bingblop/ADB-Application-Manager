@@ -397,7 +397,6 @@ x: {
 "Command finished: see the ADB Console": "命令已完成：请查看 ADB 控制台",
 "Command history": "命令历史记录",
 "Command ready — edit any": "命令已就绪，请编辑所有",
-"Commands run as Termux, in its home folder, with your Termux packages. Full-screen programs open in Termux itself. For files on the shared storage, also run termux-setup-storage once in Termux.": "命令以 Termux 的身份在其主目录中运行，并可使用你的 Termux 软件包。全屏程序会直接在 Termux 中打开。如需访问共享存储空间中的文件，还需在 Termux 中运行一次 termux-setup-storage。",
 "Commands you run show up here.": "运行过的命令会显示在这里。",
 "Common installer sources": "常见的安装来源",
 "Common requester addresses": "常见的请求方地址",

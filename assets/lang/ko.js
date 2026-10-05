@@ -397,7 +397,6 @@ x: {
 "Command finished: see the ADB Console": "명령어 완료: ADB 콘솔에서 확인하세요",
 "Command history": "명령어 기록",
 "Command ready — edit any": "명령어가 준비되었습니다 — 필요한 부분을 수정하세요",
-"Commands run as Termux, in its home folder, with your Termux packages. Full-screen programs open in Termux itself. For files on the shared storage, also run termux-setup-storage once in Termux.": "명령어는 Termux 권한으로, Termux의 홈 폴더에서, 설치된 Termux 패키지를 사용해 실행됩니다. 전체 화면 프로그램은 Termux 자체에서 열립니다. 공유 저장 공간의 파일을 사용하려면 Termux에서 termux-setup-storage도 한 번 실행하세요.",
 "Commands you run show up here.": "실행한 명령어가 여기에 표시됩니다.",
 "Common installer sources": "자주 쓰는 설치 출처",
 "Common requester addresses": "자주 쓰는 요청자 주소",

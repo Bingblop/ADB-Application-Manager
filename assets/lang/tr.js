@@ -397,7 +397,6 @@ x: {
 "Command finished: see the ADB Console": "Komut tamamlandı: ADB Konsolu’na bakın",
 "Command history": "Komut geçmişi",
 "Command ready — edit any": "Komut hazır — gerekirse düzenleyin",
-"Commands run as Termux, in its home folder, with your Termux packages. Full-screen programs open in Termux itself. For files on the shared storage, also run termux-setup-storage once in Termux.": "Komutlar Termux olarak, onun ana klasöründe ve Termux paketlerinizle çalışır. Tam ekran programlar doğrudan Termux’ta açılır. Paylaşılan depolamadaki dosyalar için Termux’ta bir kez termux-setup-storage komutunu da çalıştırın.",
 "Commands you run show up here.": "Çalıştırdığınız komutlar burada görünür.",
 "Common installer sources": "Yaygın yükleyici kaynakları",
 "Common requester addresses": "Yaygın isteyen adresleri",

@@ -397,7 +397,6 @@ x: {
 "Command finished: see the ADB Console": "Comando concluído: veja o Console ADB",
 "Command history": "Histórico de comandos",
 "Command ready — edit any": "Comando pronto — edite qualquer",
-"Commands run as Termux, in its home folder, with your Termux packages. Full-screen programs open in Termux itself. For files on the shared storage, also run termux-setup-storage once in Termux.": "Os comandos são executados como o Termux, na pasta pessoal dele, com os seus pacotes do Termux. Programas em tela cheia abrem no próprio Termux. Para arquivos no armazenamento compartilhado, execute também termux-setup-storage uma vez no Termux.",
 "Commands you run show up here.": "Os comandos executados aparecem aqui.",
 "Common installer sources": "Origens de instalador comuns",
 "Common requester addresses": "Endereços de solicitante comuns",

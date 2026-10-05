@@ -1339,7 +1339,7 @@ public class MainActivity extends Activity {
     }
 
     /** Set up once per new shell: no pagers or terminal tricks (there is no keyboard input to running programs). */
-    private static String termInitScript(String kind) {
+    private static String termInitScript(String kind, boolean matchEnv) {
         StringBuilder s = new StringBuilder("export PAGER=cat GIT_PAGER=cat MANPAGER=cat TERM=dumb GIT_TERMINAL_PROMPT=0 2>/dev/null; ");
         if ("termux".equals(kind)) {
             s.append("export DEBIAN_FRONTEND=noninteractive PATH=\"$HOME/.local/bin:$HOME/bin:$PATH\"; ")
@@ -1348,6 +1348,10 @@ public class MainActivity extends Activity {
                     .append("local c=\"$1\"; shift; command pkg \"$c\" -y \"$@\";; *) command pkg \"$@\";; esac; }; ")
                     .append("apt() { case \"$1\" in install|reinstall|upgrade|remove|purge|autoremove|full-upgrade|dist-upgrade) ")
                     .append("local c=\"$1\"; shift; command apt \"$c\" -y \"$@\";; *) command apt \"$@\";; esac; }; ");
+            // "profile" (login shell) already reads ~/.bash_profile or ~/.profile; neither of those pulls in ~/.bashrc
+            // unless the user's own profile chains to it, so without this, aliases/functions/exports a Termux user
+            // keeps in .bashrc would silently be missing here even with the login profile on.
+            if (matchEnv) s.append("[ -f \"$HOME/.bashrc\" ] && . \"$HOME/.bashrc\" >/dev/null 2>&1; ");
         }
         s.append("true");
         return s.toString();
@@ -6741,7 +6745,8 @@ public class MainActivity extends Activity {
         /**
          * Starts (or reuses) the Terminal's shell for {@code backend}: "app", "priv" or "termux". Returns "starting" (or "error: ...");
          * the outcome arrives as window.onTermStarted(backend, json) with ok, kind, uid, host, cwd, prompt, reused, or message.
-         * {@code optsJson}: {cwd, profile} (profile: Termux reads the user's login profile).
+         * {@code optsJson}: {cwd, profile, matchEnv} (profile: Termux reads the user's login profile; matchEnv: also
+         * sources ~/.bashrc, so aliases and functions from the user's own Termux shell work here too).
          */
         @JavascriptInterface
         public String termStart(final String backend, final String optsJson) {
@@ -6797,7 +6802,8 @@ public class MainActivity extends Activity {
                             try {
                                 String cwd = opts.optString("cwd", "");
                                 sh.start(cwd.isEmpty() ? null : cwd);
-                                sh.run(termInitScript(kind), 15000, null);
+                                boolean matchEnv = "termux".equals(kind) && opts.optBoolean("matchEnv", true);
+                                sh.run(termInitScript(kind, matchEnv), 15000, null);
                             } catch (Throwable failed) {
                                 synchronized (termGate) {
                                     if (slot.shell == sh) slot.shell = null;
