@@ -88,6 +88,7 @@ public final class RishShell {
 
     private final Spawner spawner;
     private final long probeTimeoutMs;
+    private final String syntaxShell;     // what checks a command's syntax before it runs: the session's own kind of shell
     private final String nonce;
     private final String marker;          // RS + "@@RISH:" + nonce + ":" - what a command's trailer starts with
     private final Object lock = new Object();     // guards everything below
@@ -126,8 +127,18 @@ public final class RishShell {
 
     /** {@code probeTimeoutMs}: how long a freshly started shell gets to answer before start() gives up. */
     public RishShell(Spawner spawner, long probeTimeoutMs) {
+        this(spawner, probeTimeoutMs, "sh");
+    }
+
+    /**
+     * {@code syntaxShell}: the shell that syntax-checks each command first ({@code <syntaxShell> -n -c '<command>'}). It has to
+     * be the same kind of shell as the session: a bash session (Termux) checked by a plain sh would refuse bash syntax such as
+     * arrays or {@code [[ ]]}.
+     */
+    public RishShell(Spawner spawner, long probeTimeoutMs, String syntaxShell) {
         this.spawner = spawner;
         this.probeTimeoutMs = probeTimeoutMs;
+        this.syntaxShell = syntaxShell == null || !syntaxShell.matches("[A-Za-z0-9_./+-]+") ? "sh" : syntaxShell;
         byte[] raw = new byte[8];
         new SecureRandom().nextBytes(raw);
         StringBuilder hex = new StringBuilder();
@@ -250,9 +261,12 @@ public final class RishShell {
         write("exec 2>&1\nexec 3>&1\n");
 
         final StringBuilder probe = new StringBuilder();
+        // The answer is marked with a fresh nonce: a login profile that prints a banner (or anything else the shell says first) is not read as
+        // the pid and uid. A wrong pid would leave STOP unable to end what a command started.
+        final String mark = "@@ID" + Long.toHexString(new java.security.SecureRandom().nextLong() & Long.MAX_VALUE) + ":";
         Result r;
         try {
-            r = runLocked("printf '%s|%s|%s|%s' \"$$\" \"$(id -u)\" \"$(getprop ro.product.device 2>/dev/null)\" \"$(command -v printf)\"",
+            r = runLocked("printf '" + mark + "%s|%s|%s|%s\\n' \"$$\" \"$(id -u)\" \"$(getprop ro.product.device 2>/dev/null)\" \"$(command -v printf)\"",
                     probeTimeoutMs, new Sink() {
                         @Override
                         public void onOutput(String text) {
@@ -267,7 +281,14 @@ public final class RishShell {
             closeProcess(true);
             throw new IOException(r.exited ? "the shell ended right after it started" : "the shell started but did not answer");
         }
-        String[] f = probe.toString().split("\\|", -1);
+        String line = probe.toString();
+        int at = line.lastIndexOf(mark);
+        if (at >= 0) {
+            line = line.substring(at + mark.length());
+            int nl = line.indexOf('\n');
+            if (nl >= 0) line = line.substring(0, nl);
+        }
+        String[] f = line.trim().split("\\|", -1);
         synchronized (lock) {
             if (f.length >= 1) shellPid = parseInt(f[0], -1);
             if (f.length >= 2) uid = parseInt(f[1], -1);
@@ -353,7 +374,7 @@ public final class RishShell {
             // `sh -n` rejects bad syntax first and `command eval` keeps the shell alive even if some shell
             // treats an eval error as fatal (eval is a POSIX special builtin, `command` lifts that).
             String q = quote(cmd);
-            write("{ sh -n -c " + q + " && command eval " + q + "; } </dev/null 2>&1; " + pf + " '\\036@@RISH:" + nonce
+            write("{ " + syntaxShell + " -n -c " + q + " && command eval " + q + "; } </dev/null 2>&1; " + pf + " '\\036@@RISH:" + nonce
                     + ":%s|%s\\036' \"$?\" \"${PWD:-$(pwd)}\" >&3\n");
         } catch (IOException e) {
             synchronized (lock) {

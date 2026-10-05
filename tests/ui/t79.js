@@ -88,7 +88,7 @@ const ratio = (a, b2) => { const lum = c => { const v = c.match(/[\d.]+/g).slice
   // 3) the find box of the terminal at three widths, and the sizes of the sub-tabs and chips
   for (const w of [320, 360, 412]) {
     const p = await open({ width: w, height: 760 });
-    await p.evaluate(() => switchView('terminal'));
+    await p.evaluate(() => (switchView('terminal'), txShowPane('console')));
     await sleep(100);
     const m = await p.evaluate(() => {
       const inp = document.getElementById('termSearch'), nav = Array.from(document.querySelectorAll('.find-bar .find-nav')), ib = inp.getBoundingClientRect();

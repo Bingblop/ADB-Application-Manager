@@ -15,7 +15,7 @@ exports.initScript = function (opts) {
   const calls = { actions: [], opened: [], perms: [], scan: 0, ops: [], inspect: [], install: [], kv: [], settings: [], toasts: [] };
   window.__calls = calls;
   window.__kv = Object.assign({}, opts.kv || {});
-  window.__perm = Object.assign({ files: true, usage: true, overlay: true }, opts.perm || {});
+  window.__perm = Object.assign({ files: true, usage: true, overlay: true, storage_legacy: true, secure_settings: true, restricted_settings: true }, opts.perm || {});
   window.__device = Object.assign({ abis: ['arm64-v8a', 'armeabi-v7a', 'armeabi'], dpi: 420, locales: ['en-US'], sdk: 34 }, opts.device || {});
   window.__mode = Object.assign({ priv: true }, opts.mode || {});
   window.__pkgs = {};
@@ -61,6 +61,9 @@ exports.initScript = function (opts) {
     requestAllFilesAccess() { calls.perms.push('files'); },
     requestUsageAccess() { calls.perms.push('usage'); if (window.__mode.priv && opts.grantUsageByShell) { window.__perm.usage = true; return 'granted'; } return 'settings'; },
     requestOverlayAccess() { calls.perms.push('overlay'); if (window.__mode.priv && opts.grantOverlayByShell) { window.__perm.overlay = true; return 'granted'; } return 'settings'; },
+    requestLegacyStorageAccess() { calls.perms.push('storage_legacy'); if (window.__mode.priv) { window.__perm.storage_legacy = true; return 'granted'; } return 'settings'; },
+    requestWriteSecureSettings() { calls.perms.push('secure_settings'); if (window.__mode.priv) { window.__perm.secure_settings = true; return 'granted'; } return 'settings'; },
+    requestRestrictedSettingsAccess() { calls.perms.push('restricted_settings'); if (window.__mode.priv) { window.__perm.restricted_settings = true; return 'granted'; } return 'settings'; },
     // ---- the device, for the splits ----
     getDeviceProfile() { return JSON.stringify(window.__device); },
     // ---- picking and reading a package ----

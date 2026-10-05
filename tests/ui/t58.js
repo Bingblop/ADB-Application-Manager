@@ -59,7 +59,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await closeAll();
 
   // 2) The terminal row keeps its RUN button on narrow screens
-  await ev(() => switchView('terminal')); await sleep(200);
+  await ev(() => (switchView('terminal'), txShowPane('console'))); await sleep(200);
   for (const w of [320, 360, 412]) {
     await page.setViewportSize({ width: w, height: 800 }); await sleep(150);
     const m = await ev(() => ({ run: document.getElementById('termRunBtn').getBoundingClientRect(), s: document.documentElement.scrollWidth, i: innerWidth, input: document.getElementById('termCmd').getBoundingClientRect().width }));
@@ -106,7 +106,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await ev(() => { const s = storeSrc.github; s.error = ''; s.note = ''; s.loading = false; });
 
   // 5) Terminal: a busy shell keeps what was typed; a finished command does not pop a sheet over another tab
-  await ev(() => switchView('terminal')); await sleep(100);
+  await ev(() => (switchView('terminal'), txShowPane('console'))); await sleep(100);
   await ev(() => { termShellRun = { id: 'sx', cmd: 'sleep 9' }; document.getElementById('termCmd').value = 'echo keep me'; termHistory = ['older']; });
   await ev(() => runTerminalCmd());
   const t5 = await ev(() => ({ val: document.getElementById('termCmd').value, hist: termHistory.slice() }));
@@ -114,7 +114,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await ev(() => { termShellRun = { id: 's1', cmd: 'ls' }; switchView('apps'); });
   await ev(() => onShellDone('s1', 'out')); await sleep(60);
   console.log('   the answer arriving on another tab is a toast, not a sheet over that tab:', !(await ev(() => document.getElementById('commandResultsModal').classList.contains('show'))) && /see the ADB Console/.test(await toast()));
-  await ev(() => { termShellRun = { id: 's2', cmd: 'ls' }; switchView('terminal'); });
+  await ev(() => { termShellRun = { id: 's2', cmd: 'ls' }; (switchView('terminal'), txShowPane('console')); });
   await ev(() => onShellDone('s2', 'out2')); await sleep(60);
   console.log('   on the Console tab the report sheet opens as before:', await ev(() => document.getElementById('commandResultsModal').classList.contains('show')));
   await closeAll();
@@ -218,7 +218,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await ev(() => fmSelExit());
 
   // 12) The history filter box keeps its element (and an IME's composition) while typing
-  await ev(() => { termHistory = ['ls', 'pm list packages', 'dumpsys battery', 'getprop', 'id', 'ps -A', 'settings list global', 'cmd package list']; kvSet('term_hist', termHistory); switchView('terminal'); termOpenHistory(); }); await sleep(150);
+  await ev(() => { termHistory = ['ls', 'pm list packages', 'dumpsys battery', 'getprop', 'id', 'ps -A', 'settings list global', 'cmd package list']; kvSet('term_hist', termHistory); (switchView('terminal'), txShowPane('console')); termOpenHistory(); }); await sleep(150);
   await ev(() => { window.__f1 = document.getElementById('termHistFilter'); });
   await page.locator('#termHistFilter').click();
   await page.keyboard.type('pm', { delay: 40 }); await sleep(100);

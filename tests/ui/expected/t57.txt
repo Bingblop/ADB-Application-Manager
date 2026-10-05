@@ -1,4 +1,4 @@
-1. About is the last tab in the top bar: true ["Application Manager","Saved Applications","UAD-NG Debloater","APK Installer","File Manager","ADB Console","Hidden Settings","RRO/Monet Customization","App Updater","App Stores","Logcat Viewer","Task Manager","About"]
+1. About is the last tab in the top bar: true ["Application Manager","Saved Applications","UAD-NG Debloater","APK Installer","File Manager","Command-Line Interface","Hidden Settings","RRO/Monet Customization","App Updater","App Stores","Logcat Viewer","Task Manager","About"]
    tapping it shows the About page and highlights that tab only: true {"view":"about","active":1,"last":true,"shown":true}
    the old About card in Colors is gone (one About, not two): true
 2. it names the developer Bingblop and shows the repo: true

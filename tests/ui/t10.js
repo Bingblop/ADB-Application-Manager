@@ -29,9 +29,13 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.evaluate(() => openInspector('com.facebook.katana')); await page.waitForTimeout(150);
   console.log('Facebook menu → Suspend visible:', await page.isVisible('#sheetBtnSuspend'), 'Unsuspend visible:', await page.isVisible('#sheetBtnUnsuspend'));
   await page.click('#sheetBtnUnsuspend'); await page.waitForTimeout(600); await page.evaluate(() => closeCommandResultsModal());
+  // The single-app sheet is left open behind the result dialog now (not auto-closed) - close it by hand before
+  // reopening it for Netflix, same as the person tapping its own close button once they're done looking.
+  await page.evaluate(() => closeInspector());
   await page.evaluate(() => openInspector('com.netflix.mediaclient')); await page.waitForTimeout(150);
   console.log('Netflix menu → Suspend visible:', await page.isVisible('#sheetBtnSuspend'), 'Unsuspend visible:', await page.isVisible('#sheetBtnUnsuspend'));
   await page.click('#sheetBtnSuspend'); await page.waitForTimeout(600); await page.evaluate(() => closeCommandResultsModal());
+  await page.evaluate(() => closeInspector());
   console.log('after single actions:', await badges());
   // Batch: suspend Spotify + Bixby (needs confirmation), then batch unsuspend
   await page.evaluate(() => { toggleSelectPkg('com.spotify.music'); toggleSelectPkg('com.samsung.android.bixby.agent'); });

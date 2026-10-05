@@ -10,6 +10,8 @@
 6. card chips (stars/downloads/version/category): true ["10k stars","500k downloads","v1.0","Video"]
 7. install sends key/owner/repo/resolveKind: true
    progress keyed by repo (no package name yet): downloading -> done, button re-enabled: true "3 MB 40%" "Installed App 000 v1.0. 100%"
+   the result sheet opens too, with Launch Application and Application Settings for the REAL installed package (not the repo key): true ["Launch Application","Application Settings"]
+   both act on com.example.app000, never on the repo key own0/app0: ["launch:com.example.app000","app_settings:com.example.app000"]
 8. live search: prompt shown, bridge asked q:zzqq, hit merged + visible: true | "Found 1 more for “zzqq”."
 9. owner/repo prompt installs directly: true | "Finding the latest release of cool-app…"
 10. offline-mirror fallback explained to the user: true

@@ -11,4 +11,8 @@
 10. next selection after that -> collapsed again: {"fab":true,"sheet":false,"badge":"1","count":"1 Selected"}
 11. before recall, panel expanded: {"fab":false,"sheet":true,"badge":"1","count":"1 Selected"}
 12. after recallSavedList -> fresh selection starts collapsed: {"fab":true,"sheet":false,"badge":"2","count":"2 Selected"}
+13. ticked "Keep selection after running": true
+14. after a batch action with it ticked -> selection kept, sheet still shown: {"fab":false,"sheet":true,"badge":"2","count":"2 Selected"}
+15. unticked it: false
+16. after a batch action with it unticked -> selection + panel reset, same as before: {"fab":false,"sheet":false,"badge":"2","count":"2 Selected"}
 errors: []

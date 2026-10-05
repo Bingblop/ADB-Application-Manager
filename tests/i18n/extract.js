@@ -27,15 +27,18 @@ const hasLetters = (s) => /[^\s\d\W]|[^\x00-\x7f]/.test(s);
 const keys = { x: new Map(), p: new Map(), b: new Map() };          // key -> { ctx: Set, seen }
 const add = (kind, key, ctx) => {
   key = collapse(key.replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&hellip;/g, '…').replace(/&middot;/g, '·').replace(/&rarr;/g, '→'));
-  if (!key || !hasLetters(key.replace(/\{\d+\}/g, '').replace(/<\/?\d+\/?>/g, ''))) return;
+  if (!key || !hasLetters(key.replace(/\{\d+\}/g, '').replace(/<\/?\d+\/?>/g, ''))) return null;
   { let n = 0; key = key.replace(/\{\d+\}/g, () => '{' + (n++) + '}'); }                      // holes are numbered by order of appearance in this string
   const m = keys[kind];
   if (!m.has(key)) m.set(key, { ctx: new Set() });
   if (ctx) m.get(key).ctx.add(ctx);
+  return key;
 };
+// what the page itself hands to the translator (txT) or writes as a line of the Terminal (txNote) is text, whatever it looks like ("[shell closed]")
+const forced = { x: new Set(), p: new Set() };
 
 // ---------- markup: text between tags and the attributes that are shown ----------
-const ATTR_RE = /\b(title|placeholder|aria-label|alt)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
+const ATTR_RE = /\b(title|placeholder|aria-label|alt|label)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
 function fromMarkup(s, ctx) {
   s.replace(ATTR_RE, (m, at, v1, v2) => { add('x', v1 !== undefined ? v1 : v2, ctx); return m; });
   s.replace(/<[^>]*>/g, '\u0001').split('\u0001').forEach(t => { if (!/\{\d+\}/.test(t)) add('x', t, ctx); else add('p', t, ctx); });
@@ -61,6 +64,7 @@ function alts(node) {
       return cur.length > MAXALT ? [[null]] : cur;
     }
     case 'BinaryExpression':
+      if (node.operator === '+' && ((isNum(node.right) && !hasStr(node.left)) || (isNum(node.left) && !hasStr(node.right)))) return [[null]];   // i + 1: a number, not text
       if (node.operator === '+') { const r = product(alts(node.left), alts(node.right)); return r.length > MAXALT ? [[null]] : r; }
       return [[null]];
     case 'ConditionalExpression': { const r = alts(node.consequent).concat(alts(node.alternate)); return r.length > MAXALT ? [[null]] : r; }
@@ -69,6 +73,12 @@ function alts(node) {
       return [[null]];
     default: return [[null]];
   }
+}
+function isNum(n) { return n.type === 'Literal' && typeof n.value === 'number'; }
+function hasStr(n) {
+  return (n.type === 'Literal' && typeof n.value === 'string') || n.type === 'TemplateLiteral'
+    || (n.type === 'BinaryExpression' && n.operator === '+' && (hasStr(n.left) || hasStr(n.right)))
+    || (n.type === 'ConditionalExpression' && (hasStr(n.consequent) || hasStr(n.alternate)));
 }
 function product(A, B) { const out = []; for (const x of A) for (const y of B) out.push(x.concat(y)); return out; }
 // two holes next to each other are one hole
@@ -90,33 +100,63 @@ const fnName = (anc) => {
 const isCmp = (p, node) => p && ((p.type === 'BinaryExpression' && ['===', '!==', '==', '!=', 'in', 'instanceof'].includes(p.operator)) || (p.type === 'SwitchCase' && p.test === node) || (p.type === 'MemberExpression' && p.computed && p.property === node) || (p.type === 'Property' && p.key === node && !p.computed) || (p.type === 'ImportDeclaration'));
 const top = (node, anc) => { const p = anc[anc.length - 2]; return !(p && ((p.type === 'BinaryExpression' && p.operator === '+') || (p.type === 'ConditionalExpression' && p.test !== node) || (p.type === 'LogicalExpression' && (p.operator === '||' || p.operator === '??')) || (p.type === 'TemplateLiteral'))); };
 
+// what the coding agents are told, and shell commands the Terminal builds: never shown to a person
+const neverShown = (anc) => anc.some(a => a.type === 'FunctionDeclaration' && a.id && /^(txSystemPrompt|txCliWrap|txCliLogin|txComplete|txReadFile|txWriteBytes|txApplyEdits|txCursorPrompt|txDebianCmd)$/.test(a.id.name))
+  || (anc.some(a => a.type === 'VariableDeclarator' && a.id && a.id.name === 'TX_CLI') && anc.some(a => a.type === 'ArrowFunctionExpression' || a.type === 'FunctionExpression'));   // the command lines of the agents' own tools
+// what the page tells a coding agent about its steps (<result ...>), and web addresses with changing parts: not text either
+const forModel = (v) => /<\/?result\b/.test(v);
+const isUrl = (key) => /^https?:\/\/\S*\{\d+\}\S*$/.test(key);
+
 walk.ancestor(ast, {
+  CallExpression(node, st, anc) {
+    if (node.callee.type !== 'Identifier' || !/^(txT|txF|txNote)$/.test(node.callee.name) || !node.arguments.length) return;
+    if (neverShown(anc)) return;
+    const ctx = 'js ' + fnName(anc);
+    alts(node.arguments[0]).forEach(parts => {
+      parts = parts.slice();
+      const L = parts.length - 1;                                                   // a Termux-style [note]: the words inside the brackets
+      if (typeof parts[0] === 'string' && typeof parts[L] === 'string' && parts[0].charAt(0) === '[' && parts[L].slice(-1) === ']') {
+        if (L === 0) parts[0] = parts[0].slice(1, -1); else { parts[0] = parts[0].slice(1); parts[L] = parts[L].slice(0, -1); }
+      }
+      const lit = parts.filter(p => typeof p === 'string').join('');
+      if ((lit.match(/\p{L}/gu) || []).length < 2) return;                          // ^C
+      const key = toKey(parts);
+      if (forModel(key) || isUrl(key) || /[<>]/.test(key) || key.indexOf('\n') >= 0) return;
+      const kind = /\{\d+\}/.test(key) ? 'p' : 'x', k = add(kind, key, ctx);
+      if (k) forced[kind].add(k);
+    });
+  },
   Literal(node, st, anc) {
     if (typeof node.value !== 'string') return;
     const p = anc[anc.length - 2];
     if (isCmp(p, node)) return;
     if (anc.some(a => a.type === 'VariableDeclarator' && a.id && a.id.name === 'OVL_PRESETS')) return;       // the list of 700 color names: they stay as they are
     if (anc.some(a => a.type === 'VariableDeclarator' && a.id && a.id.name === 'SYN_WORDS')) return;          // per-language keyword lists for the code-colour tokenizer: not sentences
+    if (neverShown(anc)) return;
     // a piece of a longer text ('Could not load: ' + error) is part of the template made from the whole expression
     if (p && p.type === 'BinaryExpression' && p.operator === '+' && /\{|\}/.test('') === false && !(p.left.type === 'Literal' && p.right.type === 'Literal')) return;
     const ctx = 'js ' + fnName(anc);
     // a string with line breaks: line by line (a break in a message is on purpose); markup in it: text between tags
     const v = node.value;
+    if (forModel(v)) return;
     if (/[<>]/.test(v)) { fromMarkup(v, ctx); return; }
     if (v.indexOf('\n') >= 0) v.split('\n').forEach(l => add('x', l, ctx)); else add('x', v, ctx);
   },
   TemplateLiteral(node, st, anc) {
     if (!top(node, anc)) return;
+    if (neverShown(anc)) return;
     const ctx = 'js ' + fnName(anc);
     alts(node).forEach(parts => emit(parts, ctx));
   },
   BinaryExpression(node, st, anc) {
     if (node.operator !== '+' || !top(node, anc)) return;
+    if (neverShown(anc)) return;
     const ctx = 'js ' + fnName(anc);
     alts(node).forEach(parts => emit(parts, ctx));
   },
   ConditionalExpression(node, st, anc) {
     if (!top(node, anc)) return;
+    if (neverShown(anc)) return;
     const ctx = 'js ' + fnName(anc);
     alts(node).forEach(parts => { if (parts.length === 1 && parts[0] === null) return; emit(parts, ctx); });
   },
@@ -125,6 +165,7 @@ function emit(parts, ctx) {
   const lit = parts.filter(p => typeof p === 'string').join('');
   if (!hasLetters(lit)) return;
   const key = toKey(parts);
+  if (forModel(key) || isUrl(key)) return;
   if (/[<>]/.test(key)) { fromMarkup(key, ctx); return; }
   const lines = key.indexOf('\n') >= 0 ? key.split('\n') : [key];
   lines.forEach(l => { if (/\{\d+\}/.test(l)) add('p', l, ctx); else add('x', l, ctx); });
@@ -148,10 +189,12 @@ if (seenArg) fs.writeFileSync(seenFile, JSON.stringify([...seen].filter(k => key
 
 const found = { x: [], p: [] };
 for (const [k, v] of keys.x) {
+  if (forced.x.has(k)) { found.x.push({ k, fn: [...v.ctx] }); continue; }
   if (isData(k)) continue;
   if (seen.has(k) || uiLike(k) || label(k)) found.x.push({ k, fn: [...v.ctx] });
 }
 for (const [k, v] of keys.p) {
+  if (forced.p.has(k)) { found.p.push({ k, fn: [...v.ctx] }); continue; }
   const letters = k.replace(/\{\d+\}/g, '').replace(/[^\p{L}]/gu, '').length;
   if (letters < 4 || /^\{\d+\}\s*[\p{L}]{1,3}$/u.test(k)) continue;                 // "{0} s": too little text to tell from a name
   if (/[\[\]=;<>]|base64|\.[a-z]{2,4}$|^#|^\./.test(k) || !/\s|[:.!?…]/.test(k.replace(/\{\d+\}/g, ''))) continue;   // a selector, a data URL, a file name: not a sentence
@@ -168,7 +211,7 @@ for (const [k, v] of keys.p) {
   const blocks = [...new Set(await page.evaluate(() => I18N.blocks(document.body)))];
   const tabs = await page.evaluate(() => TAB_DEFS.map(t => t.label.replace(/\n/g, ' ')));
   const places = await page.evaluate(() => {
-    const names = { apps: 'Application Manager tab', 'saved-lists': 'Saved Applications tab', debloater: 'UAD-NG Debloater tab', installer: 'APK Installer tab', files: 'File Manager tab', terminal: 'ADB Console tab', settings: 'Hidden Settings tab', overlays: 'RRO/Monet Customization tab', updates: 'App Updater tab', store: 'App Stores tab', logcat: 'Logcat Viewer tab', about: 'About tab', prefs: 'Settings (the gear in the header)' };
+    const names = { apps: 'Application Manager tab', 'saved-lists': 'Saved Applications tab', debloater: 'UAD-NG Debloater tab', installer: 'APK Installer tab', files: 'File Manager tab', terminal: 'Command-Line Interface tab', settings: 'Hidden Settings tab', overlays: 'RRO/Monet Customization tab', updates: 'App Updater tab', store: 'App Stores tab', logcat: 'Logcat Viewer tab', about: 'About tab', prefs: 'Settings (the gear in the header)' };
     const where = (el) => {
       const v = el.closest('.view-content'); if (v) { const k = v.id.replace(/^view-/, ''); return names[k] || v.id; }
       const m = el.closest('.modal-overlay'); if (m) return 'a sheet (' + m.id.replace(/Modal$/, '').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase() + ')';
@@ -181,14 +224,16 @@ for (const [k, v] of keys.p) {
     const addp = (t, el) => { t = norm(t); if (!t || !/[A-Za-z]/.test(t)) return; (out[t] = out[t] || new Set()).add(where(el)); };
     const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     let n; while ((n = w.nextNode())) { const p = n.parentElement; if (p && !/^(SCRIPT|STYLE)$/.test(p.tagName)) addp(n.nodeValue, p); }
-    document.querySelectorAll('[title],[placeholder],[aria-label],[alt]').forEach(e => ['title', 'placeholder', 'aria-label', 'alt'].forEach(a => { const v = e.getAttribute(a); if (v) addp(v, e); }));
+    document.querySelectorAll('[title],[placeholder],[aria-label],[alt],optgroup[label]').forEach(e => ['title', 'placeholder', 'aria-label', 'alt', 'label'].forEach(a => { const v = e.getAttribute(a); if (v) addp(v, e); }));
     return Object.fromEntries(Object.entries(out).map(([k, v]) => [k, [...v]]));
   });
+  // the text of a drop-down choice is shown on its own, even when a sentence elsewhere has the same words between its tags
+  const alone = new Set(await page.evaluate(() => [...document.querySelectorAll('option')].map(o => o.textContent.replace(/\s+/g, ' ').trim())));
   await b.close();
 
   // the pieces of a sentence that has its own entry (the text between its tags) are not asked for separately when they are long: they are never shown alone
   const frag = new Set();
-  blocks.forEach(s => s.split(/<\/?\d+\/?>|<br>/).forEach(t => { t = collapse(t); if (t.split(' ').length >= 3) frag.add(t); }));
+  blocks.forEach(s => s.split(/<\/?\d+\/?>|<br>/).forEach(t => { t = collapse(t); if (t.split(' ').length >= 3 && !alone.has(t)) frag.add(t); }));
   const TABS = new Set(tabs);
   const hint = (k, fn) => {
     let h;

@@ -1,0 +1,21 @@
+1. ChatGPT and Perplexity are both in API Key Required: "API Key Required: Gemini (Google), Claude (Anthropic), ChatGPT (OpenAI), Cursor (SpaceX), Copilot (GitHub), Perplexity, Grok (SpaceX), Muse (Meta), Deepseek"
+2. choosing it opens its Connect sheet, with no tab bar (no CLI to sign in with): true true
+   it says where the key goes: true
+3. a refused key is explained: Perplexity: the test failed
+4. a good key: sheet closes, models come from the test itself: true ["sonar","sonar-pro","sonar-reasoning-pro"]
+   the page keeps nothing of the key: true
+5. the request: its own address, the Bearer key never shown to the page, system role (not developer), streamed: https://api.perplexity.ai/chat/completions sonar system true
+   the reply streamed in: perplexity › Perplexity can search the web; here it just answers.
+6. Settings lists it with its key hint: true key pplx-GO…cdef
+7. Help lists a Perplexity website button, and still lists ChatGPT's: [
+  'Gemini (Google)',  'Claude (Anthropic)',
+  'ChatGPT (OpenAI)', 'Cursor (SpaceX)',
+  'Copilot (GitHub)', 'Perplexity',
+  'Grok (SpaceX)',    'Muse (Meta)',
+  'Deepseek',         'DroidMind',
+  'OpenCode',         'Kilo Code',
+  'Leon.ai',          'Jan.ai',
+  'AnythingLLM',      'Ollama',
+  'Termux'
+]
+page errors: none

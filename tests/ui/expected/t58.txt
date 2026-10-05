@@ -1,9 +1,9 @@
 1. the New side of a comparison has no Edit text (it is the other archive): true ["Show differences","New","Old","Extract…"]
    the Old side is this archive: Edit text is offered: true ["Show differences","New","Old","Edit text","Extract…"]
    an ordinary entry of the open archive still can be edited: true
-2. 320 px: RUN stays 70 px wide, inside the screen, no sideways scroll: true {"run":70,"right":304,"input":210}
-2. 360 px: RUN stays 70 px wide, inside the screen, no sideways scroll: true {"run":70,"right":344,"input":250}
-2. 412 px: RUN stays 70 px wide, inside the screen, no sideways scroll: true {"run":70,"right":396,"input":302}
+2. 320 px: RUN stays 70 px wide, inside the screen, no sideways scroll: true {"run":70,"right":304,"input":156}
+2. 360 px: RUN stays 70 px wide, inside the screen, no sideways scroll: true {"run":70,"right":344,"input":196}
+2. 412 px: RUN stays 70 px wide, inside the screen, no sideways scroll: true {"run":70,"right":396,"input":248}
 3. with the entry sheet open, the failure report is the top sheet: true commandResultsModal
    closing it leaves the entry sheet for a retry: true
    a retry that worked: no stale FAILED sheet is left under or over it: true

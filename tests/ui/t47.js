@@ -31,7 +31,7 @@ const { chromium, PAGE } = require('./lib/pw');
   };
   await boot();
   await page.goto(PAGE); await page.waitForTimeout(350);
-  await page.evaluate(() => switchView('terminal')); await page.waitForTimeout(150);
+  await page.evaluate(() => (switchView('terminal'), txShowPane('console'))); await page.waitForTimeout(150);
   const sleep = ms => page.waitForTimeout(ms);
   const type = async c => { await page.fill('#termCmd', c); await page.press('#termCmd', 'Enter'); await sleep(60); await page.evaluate(() => { try { closeCommandResultsModal(); } catch (e) {} }); await sleep(40); };
   const calls = () => page.evaluate(() => window.__calls.slice());
@@ -149,7 +149,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.evaluate(() => { termSaved = [{ name: 'Keep me', cmd: 'echo kept', pinned: true }]; kvSet('term_saved', termSaved); termRemember('echo from history'); });
   await boot();
   await page.reload(); await sleep(400);
-  await page.evaluate(() => switchView('terminal')); await sleep(150);
+  await page.evaluate(() => (switchView('terminal'), txShowPane('console'))); await sleep(150);
   const back = await page.evaluate(() => ({ hist: termHistory.slice(0, 2), saved: termSaved.map(x => x.name), chips: [...document.querySelectorAll('#view-terminal .term-pin')].map(c => c.textContent) }));
   console.log('6. history, saved commands and chips come back after a restart:', back.hist[0] === 'echo from history' && back.saved.join() === 'Keep me' && back.chips.join() === 'Keep me', JSON.stringify(back));
 

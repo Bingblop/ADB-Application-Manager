@@ -37,6 +37,15 @@ function load(file) {
   (d.p || []).forEach(e => map.set(e[0], e[1]));
   return map;
 }
+// markup in a translation: only the numbered tags of the English. A < or > that is plain text in the English ("size:>10mb", "date:<2024-01-01") stays as it is.
+const loose = s => s.replace(/<\/?\d+\/?>|<br>/g, '');
+const nOf = (s, ch) => loose(s).split(ch).length - 1;
+const badMarkup = (en, v, own) => {
+  const cut = s => own.reduce((acc, x) => acc.split(x).join(''), s);
+  const vv = cut(v), ee = cut(en);
+  return /<[A-Za-z\/!?]/.test(loose(vv)) || nOf(vv, '<') > nOf(ee, '<') || nOf(vv, '>') > nOf(ee, '>');
+};
+const ENTITY = /&(gt|lt|amp|quot|apos|nbsp|#\d+|#x[0-9a-f]+);/i;
 const langName = code => {
   const m = new RegExp("\\{ code: '" + code.replace(/[-]/g, '\\-') + "', name: '([^']+)'").exec(fs.readFileSync(path.join(ROOT, 'assets', 'i18n.js'), 'utf8'));
   if (!m) { console.error(code + ' is not in the language list of assets/i18n.js'); process.exit(2); }
@@ -82,8 +91,8 @@ if (cmd === 'chunks') {
     if (holes(e.en) !== holes(v)) problems.push('changing parts differ ' + tag + ' -> ' + JSON.stringify(v.slice(0, 80)) + ' (needs ' + (holes(e.en) || 'none') + ')');
     if (tags(e.en) !== tags(v)) problems.push('tags differ ' + tag + ' -> ' + JSON.stringify(v.slice(0, 80)) + ' (needs ' + (tags(e.en) || 'none') + ')');
     const own = (e.en.match(/<[A-Za-z][^<>]*>/g) || []).filter(x => !/^<br>$/.test(x));         // text that merely looks like a tag in the English ("<placeholders>") stays as it is
-    const vv = own.reduce((acc, x) => acc.split(x).join(''), v);
-    if (/<(?!\/?\d+\/?>|br>)/.test(vv) || />/.test(vv.replace(/<\/?\d+\/?>|<br>/g, ''))) problems.push('markup that is not a numbered tag in ' + tag + ' -> ' + JSON.stringify(v.slice(0, 80)));
+    if (badMarkup(e.en, v, own)) problems.push('markup that is not a numbered tag in ' + tag + ' -> ' + JSON.stringify(v.slice(0, 80)));
+    if (ENTITY.test(v) && !ENTITY.test(e.en)) problems.push('an HTML entity in ' + tag + ' (the page shows it as it is: write the character itself, as the English does) -> ' + JSON.stringify(v.slice(0, 80)));
     for (const x of own) if (v.indexOf(x) < 0) problems.push('the text ' + x + ' of the English is missing in ' + tag);
     if (/\n/.test(v)) {
       if (!/tab label/.test(e.ctx || '')) problems.push('a line break in ' + tag + ' (only tab labels may have one)');

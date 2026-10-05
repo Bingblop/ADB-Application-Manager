@@ -10,6 +10,7 @@
 // renamed, markup that is not one of the tags, a key that is not in the page any more. A warning: a long string left as it is, a language whose
 // script does not show in most of its translations, strings with no translation yet.
 'use strict';
+const ENTITY = /&(gt|lt|amp|quot|apos|nbsp|#\d+|#x[0-9a-f]+);/i;
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
@@ -67,8 +68,11 @@ for (const code of files.filter(c => !only.length || only.includes(c))) {
     if (holes(k) !== holes(v)) err(code, 'changing parts differ: ' + JSON.stringify(k).slice(0, 70) + ' -> ' + JSON.stringify(v).slice(0, 70));
     if (tags(k) !== tags(v)) err(code, 'tags differ: ' + JSON.stringify(k).slice(0, 70) + ' -> ' + JSON.stringify(v).slice(0, 70));
     const own = (k.match(/<[A-Za-z][^<>]*>/g) || []).filter(x => !/^<br>$/.test(x));        // text that merely looks like a tag in the English ("<placeholders>") stays as it is
-    const vv = own.reduce((acc, x) => acc.split(x).join(''), v);
-    if (/<(?!\/?\d+\/?>|br>)/.test(vv) || />/.test(vv.replace(/<\/?\d+\/?>|<br>/g, ''))) err(code, 'markup that is not a numbered tag in ' + JSON.stringify(v).slice(0, 80));
+    const cut = s => own.reduce((acc, x) => acc.split(x).join(''), s), vv = cut(v), kk = cut(k);
+    const loose = s => s.replace(/<\/?\d+\/?>|<br>/g, ''), nOf = (s, ch) => loose(s).split(ch).length - 1;
+    // only the numbered tags of the English; a < or > that is plain text in the English ("size:>10mb") stays as it is
+    if (/<[A-Za-z\/!?]/.test(loose(vv)) || nOf(vv, '<') > nOf(kk, '<') || nOf(vv, '>') > nOf(kk, '>')) err(code, 'markup that is not a numbered tag in ' + JSON.stringify(v).slice(0, 80));
+    if (ENTITY.test(v) && !ENTITY.test(k)) err(code, 'an HTML entity (the page shows it as it is) in ' + JSON.stringify(v).slice(0, 80));
     for (const x of own) if (v.indexOf(x) < 0) err(code, 'the text ' + x + ' of the English is missing in ' + JSON.stringify(v).slice(0, 80));
     if (KEYS && !keySet.has(k)) err(code, 'a key the page does not have: ' + JSON.stringify(k).slice(0, 80));
     const words = k.replace(/\{\d+\}|<\/?\d+\/?>|<br>/g, ' ').split(/\s+/).filter(Boolean);

@@ -1,4 +1,4 @@
-1. the Hidden Settings tab sits right after ADB Console (RRO/Monet Customization, added in v6.0, follows it): true ["Application Manager","Saved Applications","UAD-NG Debloater","APK Installer","File Manager","ADB Console","Hidden Settings","RRO/Monet Customization","App Updater","App Stores","Logcat Viewer","Task Manager","About"]
+1. the Hidden Settings tab sits right after Command-Line Interface (RRO/Monet Customization, added in v6.0, follows it): true ["Application Manager","Saved Applications","UAD-NG Debloater","APK Installer","File Manager","Command-Line Interface","Hidden Settings","RRO/Monet Customization","App Updater","App Stores","Logcat Viewer","Task Manager","About"]
    it activates its own button and view: true
    and the neighbours still work (App Stores, About): true
    About keeps its button: true

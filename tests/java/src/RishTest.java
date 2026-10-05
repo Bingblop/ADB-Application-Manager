@@ -189,6 +189,30 @@ public class RishTest {
     check("quote plain", "'abc'".equals(RishShell.quote("abc")));
     check("quote single quotes", "'it'\\''s'".equals(RishShell.quote("it's")));
 
+    // A login profile that prints a banner (Termux's ~/.bash_profile with neofetch, a "welcome" line) before the identity probe answers:
+    // the pid and uid are still read from the marked answer, so STOP can still end what a command started.
+    RishShell chatty = new RishShell(new RishShell.Spawner() {
+      public Process spawn(String[] a) throws Exception {
+        if (a.length > 1) return local.spawn(a);           // the helpers (ps, kill) STOP uses
+        ProcessBuilder pb = new ProcessBuilder("sh", "-c", "echo 'Welcome to this phone|0|fake|/x'; printf 'banner without a newline 1|2|3'; exec sh");
+        pb.directory(new File("/"));
+        return pb.start();
+      }
+    });
+    chatty.start();
+    check("a chatty profile: pid read (" + chatty.pid() + ")", chatty.pid() > 1);
+    check("a chatty profile: uid read (" + chatty.uid() + ")", String.valueOf(chatty.uid()).equals(realUid));
+    final RishShell chattyF = chatty;
+    long ct0 = System.currentTimeMillis();
+    new Thread(() -> { try { Thread.sleep(400); } catch (Exception e) {} chattyF.stop(); }).start();
+    RishShell.Result cr = chatty.run("sleep 30", 20000, new Collect());
+    long cdt = System.currentTimeMillis() - ct0;
+    check("a chatty profile: stop still ends a sleeping command (" + cdt + " ms, stopped " + cr.stopped + ", restarted " + cr.restarted + ")", cdt < 4000 && cr.stopped && !cr.restarted);
+    Collect cc0 = new Collect();
+    chatty.run("echo after", 10000, cc0);
+    check("a chatty profile: the shell still works after", "after\n".equals(cc0.text()));
+    chatty.close();
+
     // Concurrent runs serialise (second waits for first)
     final RishShell s2 = new RishShell(local);
     s2.start();

@@ -1,5 +1,128 @@
 # Changelog
 
+## v7.9.3-Pro (versionCode 793)
+
+- **"Keep selection after running"** in the Apps tab's batch panel. Running a batch command (Freeze, Suspend,
+  Uninstall, ...) used to always clear the selection once it finished, so running a second command on the same
+  apps meant picking every one of them again. Ticking this new switch leaves the selection as it is - the panel
+  sits behind the result dialog the same way the single-app sheet does - so another command can run on the same
+  apps right away; it's remembered between launches, and the existing "✕ Clear" button and long-press on the
+  floating checkmark still clear the selection by hand at any time.
+
+## v7.9.2-Pro (versionCode 792)
+
+- **Systemless uninstall for system apps.** When `pm uninstall --user 0` is refused with Android's own "only root
+  can delete system app for a particular user" line, the app now automatically retries through a direct Binder
+  call to `IPackageManager.deletePackageAsUser` - run as a standalone `app_process` under whichever privileged
+  shell (ADB or Shizuku) is already active - the same technique App Manager and Canta use for the same refusal.
+  This removes the app for the current user; it stays in the system partition, the same result a normal
+  uninstall gives for a non-system app, and only runs when the active mode isn't already Root (which removes it
+  directly, no fallback needed).
+- **Removed the "Uninstall (System)" button.** It handed the removal to Android's own uninstall dialog, which on
+  many phones did nothing useful for a preloaded system app - the automatic fallback above actually works instead,
+  so the button (and the single-app sheet's own line it used to take up) is gone.
+- **Several command results that said "Success" had actually failed.** Freeze/Enable, Suspend/Unsuspend, Force
+  Stop, Clear Data, Uninstall and Remove Updates (single app, batch, Debloater, Undo and Profiles alike) used to
+  decide success by scanning the command's own output for words like "error" or "failed" - an empty answer, or an
+  OEM shell's own reworded refusal, read as success either way. They now read the shell's real exit status instead,
+  which no amount of rewording or silence can hide.
+- **Three more permissions on first launch, once a working mode is active**: Read/Write External Storage, Write
+  Secure Settings and Access Restricted Settings (AppOps) - granted straight through the privileged shell, since
+  none of them has an Android settings screen of its own. They join the existing All files access / Usage access /
+  Display over other apps sheet, and (like those three) are also under About → Permissions.
+- **The single-app sheet stays open behind its result dialog.** Running an action from the app menu (⋯) used to
+  close the sheet outright; it now stays open underneath the result dialog, the same way the Installer and Signer
+  sheets already behave, and its Freeze/Suspend/Uninstall buttons catch up once the result is dismissed.
+
+## v7.9.1-Pro (versionCode 791)
+
+- **App Stores: a successful install now offers Launch Application and Application Settings**, the same result sheet
+  the APK Installer tab already shows - for every catalog (ShizuStore, GitHub, F-Droid, Orion, and a typed owner/repo).
+  Before, a store install only ever showed a plain "Installed" toast with no way to open the app or its settings from
+  there. The real, installed package name (read from the downloaded APK itself, not the catalog's own tracking key -
+  a GitHub repository has no package name until its APK is read) is what the two buttons act on, so they are correct
+  even when the catalog's listing didn't know the package name ahead of time.
+
+## v7.9-Pro (versionCode 790)
+
+- **The tab is now "Command-Line Interface"** (still Terminal first, ADB Console next to it, same big switch and the same
+  two panes as v7.8 - only the tab's own name changed).
+- **Three new API-key agents**: **Grok (SpaceX)**, **Muse (Meta)** and **Deepseek**, each with its own address, its own key
+  page, and its own masked key hint. **Kilo Code** is listed too, in Free Open-Source - it is an editor extension with no
+  confirmed phone-terminal CLI, so it is explained (website and source) rather than wired up to chat here, the same way
+  DroidMind and Leon.ai already are. OpenCode was already here and stays as it was.
+- **Effort**, next to Model: **Low, Balanced or High**, for how hard an agent is asked to think. Balanced is the first
+  choice, the same way the Model list's own first (recommended) entry already balances speed and cost. It actually changes
+  the request for the agents whose own API has that knob - Claude's extended-thinking budget, ChatGPT and Grok's
+  reasoning_effort, Gemini's thinking budget - and is simply kept, with no effect, for the others (Deepseek, Muse, the
+  official sign-in tools in Termux). Settings gets a matching Effort column next to each agent's default model.
+- **The AI agents can help in the ADB Console too**, not just the Terminal: a new **$ / AI** button next to its input
+  switches it to ask the Coding Agent picked in the Terminal (the same agent, model and effort - no separate picker here)
+  for ADB/shell syntax and code help. The agent answers inline in the console's own output, and may propose **one command**
+  at a time, shown with **Run** / **Skip** (or run straight away when "Ask before running commands" is off) through the
+  console's own execution path - never a parallel shell of its own. Its own small memory is separate from the Terminal's.
+- **Translations**: the new agents, the Effort words and the console's AI help are still English-only in the other 12
+  languages for now (to translate later); everything already translated is unaffected by the tab rename.
+
+## v7.8-Pro (versionCode 780)
+
+- **The ADB Console tab is now "Terminal / ADB Console"**, with a big switch at the top between the two. **Terminal** comes
+  first and the tab remembers which one you used last; **ADB Console** is the console you know (Rish mode, cheat sheet,
+  saved commands), unchanged.
+- **Terminal: a Termux-style command line.** A black screen with colours, Termux's row of extra keys (ESC, TAB, CTRL-C,
+  arrows, HOME, END, | / - ~), command history, TAB completion of file names, progress bars that redraw in place, and
+  **three shells**, each with its own screen that stays open while you use other tabs (cd and export carry over):
+  - **This app (sandbox)**: always there, no setup.
+  - **Working mode**: the shell user through ADB or Shizuku, or root with Root.
+  - **Termux**: your own Termux, with bash and everything installed with pkg. A **Termux setup** checklist walks you through
+    the one-time steps (install from F-Droid or GitHub, `allow-external-apps=true`, the "Run commands in Termux environment"
+    permission, a connection test). Full-screen programs (nano, vim, top, a Python prompt) open in a real Termux window.
+    **Once Termux is set up, the Terminal opens on it by default** (bash, more compatible with the coding agents' own CLI
+    tools than the sandbox or Working mode); "Automatic" in Settings explains the rule.
+- **Coding Agents.** A drop-down with **None** first, then **API Key Required** (Gemini, Claude, ChatGPT, Cursor, Copilot,
+  Perplexity) and **Free Open-Source** (DroidMind, OpenCode, Leon.ai, Jan.ai, AnythingLLM, and Ollama on the phone itself),
+  plus a **Model**
+  drop-down. Choosing an agent asks for what it needs and **tests it first**: a refused key is explained in plain words with
+  the provider's own message. Chat in the Terminal: the agent answers as it types, and it can **run commands, read files,
+  write files and edit parts of files** in the current shell, **each step shown first** with Run / Apply, Skip, or Always
+  allow for the rest of the chat. Edits show a line-by-line diff, `/undo` takes a change back, STOP (or CTRL-C) ends it all.
+  **Switch agents or models in the middle**: the conversation carries over. Slash commands: /help, /new, /agent, /model,
+  /models, /shell, /chat, /undo, /stop, /login, /settings; `!command` runs a command from the chat.
+- **API keys stay safe**: sealed with a key that never leaves the phone's secure hardware, sent only to their own provider's
+  address (the app adds them; the page never sees them again), and never shown to an agent (keys in output are masked).
+- **Subscriptions (website sign-in)** go through the providers' **official command-line tools** in Termux, because Anthropic
+  and Google do not allow other apps to use a Claude or Google login: Claude Code, Gemini CLI, Codex (ChatGPT), Copilot CLI
+  and Cursor CLI. The Connect sheet installs the tool (into a Debian container in Termux when it has no Android build),
+  opens its own sign-in in Termux, and the Terminal then chats through it.
+- **Cursor** connects to Cursor's Cloud Agents with an API key (they work in Cursor's cloud, optionally on a Git repository
+  you name); **Copilot** runs through GitHub's Copilot CLI, since GitHub retired GitHub Models in July 2026.
+- **Perplexity** connects with an API key from its own website (its Sonar models; no official sign-in tool, so it is an
+  API key only, with no "Sign in with subscription" tab).
+- **Free options**: **Jan.ai** and **Ollama** are found on the phone by themselves when they run there (or enter a computer's
+  address); **AnythingLLM** asks for its server's key; **Ollama** can be installed into Termux with a small coding model in
+  one go; **OpenCode** is installed in Termux. **DroidMind** and **Leon.ai** are explained (tools for other agents and a
+  computer assistant) with their install or website.
+- **Terminal settings** (the gear in the Terminal): your keys by their hint only, the agent and model to start with, the
+  default shell, whether agents must ask before running commands or changing files, and whether the conversation is kept.
+  **Help** explains everything, with a link to every agent's website.
+- **MCP button**: a new sheet (next to Help) to add a Model Context Protocol connector - a preset (filesystem, fetch,
+  memory, GitHub, and more, each with its own note) or a custom one (name, stdio command or remote URL, extra environment
+  or header) - to any of the six CLI-based agents (Claude Code, Gemini CLI, Codex, Copilot CLI, Cursor CLI, OpenCode),
+  **two or more agents at once**, so the same server reaches all of them. Written into each agent's own config file in its
+  own shape (`.claude.json`, `.gemini/settings.json`, `~/.codex/config.toml`, and so on); a remote server's token is kept
+  as an environment variable for the agents that want it that way, never written into the file itself. Already-added
+  servers are listed with which agents they went to, and can be forgotten (removed from all of them at once).
+
+- **Safety**: "Always allow in this chat" applies only to the shell and user it was given in (a grant in the sandbox does not let
+  commands run as root); a read through a link that leads out of the working folder (Termux's `~/storage`) is asked about;
+  files are read for edits between nonce markers with a size check; edit markers are whole lines; a file that is not UTF-8
+  text is not edited; edited files keep their permissions; an answer cut off mid-stream is reported as an error; a key with a
+  control character is refused and keys are masked in any error that goes back to the page.
+- **Translations**: the agent and model drop-downs and the Shell options are translated (agent and model names stay as they
+  are); optgroup headings are translated app-wide (the Compress dialog's "One file only" too); the File Manager search help
+  showed `size:&gt;10mb` in every language and now shows `size:>10mb`. About 70 of the Terminal's own status lines are still
+  in English in the other languages.
+
 ## v7.7-Pro (versionCode 770)
 
 - **Task Manager → GPU: a Renderer switch.** A dropdown showing the HWUI backend currently in use (Vulkan, OpenGL, or

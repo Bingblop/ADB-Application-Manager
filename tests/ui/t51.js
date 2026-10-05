@@ -35,7 +35,7 @@ const { chromium, PAGE } = require('./lib/pw');
     };
   });
   await page.goto(PAGE); await page.waitForTimeout(300);
-  await page.evaluate(() => switchView('terminal')); await page.waitForTimeout(150);
+  await page.evaluate(() => (switchView('terminal'), txShowPane('console'))); await page.waitForTimeout(150);
   const term = () => page.locator('#termOutput').innerText();
   const sleep = ms => page.waitForTimeout(ms);
   const type = async cmd => { await page.fill('#termCmd', cmd); await page.press('#termCmd', 'Enter'); };
