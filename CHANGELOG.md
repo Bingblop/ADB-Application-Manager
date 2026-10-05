@@ -1,5 +1,25 @@
 # Changelog
 
+## v7.9.6-Pro (versionCode 796)
+
+- **Batch actions no longer freeze the page while they run.** The live progress added in v7.9.5 still blocked the
+  page for the whole loop - each app's action is a synchronous call into the native side, and that call was still
+  being made from the page's own thread, which is also the WebView's. The batch now runs through a dedicated
+  native batch runner instead, off the page's thread entirely, so the page can actually repaint and respond while
+  it works; the Stop button and the live per-app progress behave exactly as before.
+- **Apps list: version numbers are off by default.** A less cluttered list row - the "Versions" filter pill above
+  the list still turns them back on, and the single-app menu and command results always show the version either
+  way.
+- **Logcat Viewer starts playing on its own.** Opening the tab used to need a tap on Play; it now scrolls to the
+  top and starts live-tailing immediately.
+- **Terminal: a larger input box**, and a Shift key on the extra-keys row that swaps in a second row of symbols
+  (`` ` $ ; : " ' \ { } ( ) * & # ``) a phone keyboard usually buries behind its own symbols layer.
+- **Terminal: a Cheat Sheet button**, with a different set of commands depending on which of the three shells is
+  picked - common bash for Termux, file/text basics for this app's own sandbox shell, and the existing ADB
+  reference for the privileged working mode.
+- **Single-app menu: Share moved to the top-right corner** of the sheet, next to ✕ - the Copy row underneath now
+  fits on one line, and everything below it shifts up.
+
 ## v7.9.5-Pro (versionCode 795)
 
 - **Live progress for batch actions.** Running a command (Freeze, Force Stop, Uninstall, ...) across several

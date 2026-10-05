@@ -975,6 +975,14 @@
             gap: 12px;
         }
 
+        .sheet-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 0 0 auto;
+            align-self: flex-start;
+        }
+
         .sheet-avatar:empty { display: none; }
         .perm-name.fm-dir { color: var(--accent); font-weight: 800; }
 
@@ -3170,7 +3178,7 @@
                 <div class="filter-pill" data-filter="suspended" onclick="setFilter('suspended', this)">Suspended (<span id="countSuspended">0</span>)</div>
                 <div class="filter-pill" data-filter="patched" onclick="setFilter('patched', this)">Patched (<span id="countPatched">0</span>)</div>
                 <div class="filter-pill" data-filter="uninstalled" onclick="setFilter('uninstalled', this)">Uninstalled (<span id="countUninstalled">0</span>)</div>
-                <div class="toggle-pill active" id="versionTogglePill" onclick="toggleListVersions()" title="Show app versions in the list">Versions</div>
+                <div class="toggle-pill" id="versionTogglePill" onclick="toggleListVersions()" title="Show app versions in the list">Versions</div>
             </div>
 
             <!-- Search bar: under the filters, with a menu for what is searched and how -->
@@ -4625,7 +4633,7 @@
                 .tx-mode-btn { flex: 0 0 auto; width: 46px; height: 44px; border-radius: 10px; background: #000; color: #23d18b; font-family: monospace; font-weight: 800; font-size: 14px; border: 1px solid #333; cursor: pointer; }
                 .tx-mode-btn.chat { color: #f5f543; }
                 .tx-mode-btn:disabled { opacity: .55; }
-                .tx-input { flex: 1 1 auto; min-width: 0; min-height: 44px; max-height: 150px; resize: none; background: #000; color: #fff; border: 1px solid #333; border-radius: 10px; font-family: 'DejaVu Sans Mono', 'Roboto Mono', monospace; font-size: 14px; line-height: 1.35; padding: 11px 10px; box-sizing: border-box; }
+                .tx-input { flex: 1 1 auto; min-width: 0; min-height: 56px; max-height: 170px; resize: none; background: #000; color: #fff; border: 1px solid #333; border-radius: 10px; font-family: 'DejaVu Sans Mono', 'Roboto Mono', monospace; font-size: 15.5px; line-height: 1.4; padding: 13px 11px; box-sizing: border-box; }
                 .tx-input:focus { outline: none; border-color: var(--accent); }
                 .tx-send-btn { flex: 0 0 auto; height: 44px; min-width: 70px; border-radius: 10px; border: none; background: linear-gradient(135deg, var(--accent), var(--secondary)); color: var(--on-accent); font-weight: 800; font-size: 13px; cursor: pointer; }
                 .tx-send-btn.stop { background: #c62828; color: #fff; }
@@ -4633,6 +4641,12 @@
                 .tx-keys button { background: #111; color: #e6e6e6; border: 1px solid #2a2a2a; border-radius: 8px; min-height: 38px; font-family: monospace; font-size: 12px; font-weight: 700; cursor: pointer; padding: 0; white-space: nowrap; overflow: hidden; }
                 .tx-keys button:active { background: #2a2a2a; }
                 .tx-keys .tx-key-stop { color: #ff8a80; font-size: 11px; letter-spacing: -0.6px; }
+                /* Shift swaps the first row's keys for a second row of symbols a phone keyboard often buries behind
+                   its own symbols layer - Shift itself stays in both rows so it always toggles back. */
+                .tx-keys .tx-key-shift.active { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+                .tx-keys .tx-key-alt { display: none; }
+                .tx-keys.shifted .tx-key-alt { display: block; }
+                .tx-keys.shifted .tx-key-base { display: none; }
                 /* The app's sheet subtitles break anywhere (they usually show package names); these are sentences */
                 #txConnectModal .sheet-title p, #txSettingsModal .sheet-title p, #txTermuxModal .sheet-title p, #txHelpModal .sheet-title p, #txAlertModal .sheet-title p, #txMcpModal .sheet-title p { word-break: normal; overflow-wrap: anywhere; }
                 .tx-tools { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
@@ -4714,23 +4728,39 @@
                     <button class="tx-send-btn" id="txSendBtn" translate="no" onclick="txSendClick()">RUN</button>
                 </div>
                 <div class="tx-keys" id="txKeys" role="toolbar" aria-label="Extra keys">
-                    <button translate="no" data-k="esc" title="Clear the line">ESC</button>
-                    <button translate="no" data-k="tab" title="Complete a file name">TAB</button>
-                    <button translate="no" data-k="ctrlc" class="tx-key-stop" title="Stop what is running">CTRL-C</button>
-                    <button translate="no" data-k="up" title="Previous command" aria-label="Previous command">▲</button>
-                    <button translate="no" data-k="down" title="Next command" aria-label="Next command">▼</button>
-                    <button translate="no" data-k="left" title="Cursor left" aria-label="Cursor left">←</button>
-                    <button translate="no" data-k="right" title="Cursor right" aria-label="Cursor right">→</button>
-                    <button translate="no" data-k="home" title="Start of the line">HOME</button>
-                    <button translate="no" data-k="end" title="End of the line">END</button>
-                    <button translate="no" data-k="|" aria-label="Pipe">|</button>
-                    <button translate="no" data-k="/" aria-label="Slash">/</button>
-                    <button translate="no" data-k="-" aria-label="Dash">-</button>
-                    <button translate="no" data-k="~" aria-label="Tilde">~</button>
+                    <button translate="no" data-k="esc" class="tx-key-base" title="Clear the line">ESC</button>
+                    <button translate="no" data-k="tab" class="tx-key-base" title="Complete a file name">TAB</button>
+                    <button translate="no" data-k="ctrlc" class="tx-key-base tx-key-stop" title="Stop what is running">CTRL-C</button>
+                    <button translate="no" data-k="up" class="tx-key-base" title="Previous command" aria-label="Previous command">▲</button>
+                    <button translate="no" data-k="down" class="tx-key-base" title="Next command" aria-label="Next command">▼</button>
+                    <button translate="no" data-k="left" class="tx-key-base" title="Cursor left" aria-label="Cursor left">←</button>
+                    <button translate="no" data-k="right" class="tx-key-base" title="Cursor right" aria-label="Cursor right">→</button>
+                    <button translate="no" data-k="home" class="tx-key-base" title="Start of the line">HOME</button>
+                    <button translate="no" data-k="end" class="tx-key-base" title="End of the line">END</button>
+                    <button translate="no" data-k="|" class="tx-key-base" aria-label="Pipe">|</button>
+                    <button translate="no" data-k="/" class="tx-key-base" aria-label="Slash">/</button>
+                    <button translate="no" data-k="-" class="tx-key-base" aria-label="Dash">-</button>
+                    <button translate="no" data-k="~" class="tx-key-base" aria-label="Tilde">~</button>
+                    <button translate="no" data-k="`" class="tx-key-alt" aria-label="Backtick">`</button>
+                    <button translate="no" data-k="$" class="tx-key-alt" aria-label="Dollar">$</button>
+                    <button translate="no" data-k=";" class="tx-key-alt" aria-label="Semicolon">;</button>
+                    <button translate="no" data-k=":" class="tx-key-alt" aria-label="Colon">:</button>
+                    <button translate="no" data-k="&quot;" class="tx-key-alt" aria-label="Double quote">"</button>
+                    <button translate="no" data-k="'" class="tx-key-alt" aria-label="Single quote">'</button>
+                    <button translate="no" data-k="\" class="tx-key-alt" aria-label="Backslash">\</button>
+                    <button translate="no" data-k="{" class="tx-key-alt" aria-label="Open brace">{</button>
+                    <button translate="no" data-k="}" class="tx-key-alt" aria-label="Close brace">}</button>
+                    <button translate="no" data-k="(" class="tx-key-alt" aria-label="Open parenthesis">(</button>
+                    <button translate="no" data-k=")" class="tx-key-alt" aria-label="Close parenthesis">)</button>
+                    <button translate="no" data-k="*" class="tx-key-alt" aria-label="Asterisk">*</button>
+                    <button translate="no" data-k="&amp;" class="tx-key-alt" aria-label="Ampersand">&amp;</button>
+                    <button translate="no" data-k="#" class="tx-key-alt" aria-label="Hash">#</button>
+                    <button translate="no" data-k="shift" class="tx-key-shift" title="More symbols" aria-label="Shift: more symbols">SHIFT</button>
                 </div>
                 <div class="tx-tools">
                     <button class="term-icon-btn" onclick="txClearScreen()">Clear</button>
                     <button class="term-icon-btn" onclick="txCopyScreen()">Copy</button>
+                    <button class="term-icon-btn" onclick="openCheatSheet(true)">Cheat Sheet</button>
                     <button class="term-icon-btn" onclick="txOpenTermux('')">Open in Termux</button>
                     <button class="term-icon-btn" id="txNewChatBtn" onclick="txNewChat()" style="display:none;">New chat</button>
                     <button class="term-icon-btn" id="txRestartBtn" onclick="txRestartShell()">Restart shell</button>
@@ -4899,19 +4929,21 @@ Type any command below (e.g. pm list packages -d)
             <div class="sheet-header">
                 <div class="sheet-app-hero">
                     <div class="sheet-title">
-                        <h3>ADB Cheat Sheet</h3>
-                        <p>Tap a command to drop it in the input. These run in the on-device shell — no <code>adb shell</code> prefix needed.</p>
+                        <h3 id="cheatSheetTitle">ADB Cheat Sheet</h3>
+                        <p id="cheatSheetSub">Tap a command to drop it in the input. These run in the on-device shell — no <code>adb shell</code> prefix needed.</p>
                     </div>
                 </div>
                 <div style="font-size:20px; cursor:pointer;" onclick="closeCheatSheet()">✕</div>
             </div>
             <input type="text" class="list-search" id="cheatSearch" placeholder="Search commands…" oninput="renderCheatSheet(this.value)" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" style="margin-bottom:10px;">
             <div id="cheatSheetBody" style="max-height:48vh; overflow-y:auto;"></div>
-            <div style="margin-top:12px; border-top:1px solid var(--border-glass, rgba(128,128,128,0.22)); padding-top:10px;">
-                <button class="mode-action-btn" id="cheatGistBtn" onclick="loadCheatGist()">Load the full reference from the gist</button>
-                <div id="cheatGistBox" style="margin-top:8px; max-height:40vh; overflow:auto;"></div>
+            <div id="cheatGistSection">
+                <div style="margin-top:12px; border-top:1px solid var(--border-glass, rgba(128,128,128,0.22)); padding-top:10px;">
+                    <button class="mode-action-btn" id="cheatGistBtn" onclick="loadCheatGist()">Load the full reference from the gist</button>
+                    <div id="cheatGistBox" style="margin-top:8px; max-height:40vh; overflow:auto;"></div>
+                </div>
+                <div class="uad-credit" style="margin-top:10px;">Quick list in on-device shell form; the full reference loads live from <a href="#" onclick="openUrlExternal('https://gist.github.com/Pulimet/5013acf2cd5b28e55036c82c91bd56d8'); return false;">Pulimet's ADB gist</a>. Commands with &lt;placeholders&gt; need editing before they run.</div>
             </div>
-            <div class="uad-credit" style="margin-top:10px;">Quick list in on-device shell form; the full reference loads live from <a href="#" onclick="openUrlExternal('https://gist.github.com/Pulimet/5013acf2cd5b28e55036c82c91bd56d8'); return false;">Pulimet's ADB gist</a>. Commands with &lt;placeholders&gt; need editing before they run.</div>
         </div>
     </div>
 
@@ -5186,7 +5218,6 @@ Type any command below (e.g. pm list packages -d)
                             <span class="copy-chip" onclick="copyAppField('pkg')">Copy package</span>
                             <span class="copy-chip" onclick="copyAppField('version')">Copy version</span>
                             <span class="copy-chip" onclick="copyAppField('name')">Copy name</span>
-                            <span class="copy-chip" onclick="shareAppInfo()">Share</span>
                         </div>
                         <p id="sheetDates" class="sheet-dates"></p>
                         <p id="sheetSizes" class="sheet-dates"></p>
@@ -5194,7 +5225,10 @@ Type any command below (e.g. pm list packages -d)
                         <div id="sheetMods" class="sheet-update-hint" style="display:none;"></div>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="closeInspector()">✕</div>
+                <div class="sheet-header-actions">
+                    <span class="copy-chip" onclick="shareAppInfo()">Share</span>
+                    <div style="font-size:20px; cursor:pointer;" onclick="closeInspector()">✕</div>
+                </div>
             </div>
 
             <!-- Action Grid -->
@@ -7117,10 +7151,9 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('commandResultsModal').classList.add('show');
         }
 
-        // true while runBatchAction's own step loop is actively processing apps - lets the modal's ✕/Cancel
-        // act as an early Stop instead of silently hiding a job that is still running in the background.
+        // true while a native appActionBatch run is in flight - lets the modal's ✕/Cancel act as an early Stop
+        // instead of silently hiding a job that is still running (off the page's own thread) in the background.
         let batchRunActive = false;
-        let batchRunCancelled = false;
 
         function batchConfirmShowBody(mode) {
             document.getElementById('batchConfirmBody').style.display = mode === 'confirm' ? '' : 'none';
@@ -7168,10 +7201,12 @@ Type any command below (e.g. pm list packages -d)
         }
 
         // Ends the running batch after whichever app is currently mid-action finishes (that one call can't be
-        // interrupted once started) - every app not reached yet is left exactly as it was.
+        // interrupted once started) - every app not reached yet is left exactly as it was. The actual loop runs
+        // natively (see runBatchAction below), so this just flags it there; window.onAppBatchDone reports back
+        // once it has actually stopped.
         function batchActionStop() {
             haptic();
-            batchRunCancelled = true;
+            if (window.AndroidBridge && window.AndroidBridge.appBatchCancel) window.AndroidBridge.appBatchCancel();
             const btn = document.getElementById('batchProgressStopBtn');
             if (btn) { btn.disabled = true; btn.innerText = 'Stopping…'; }
         }
@@ -8381,7 +8416,10 @@ Type any command below (e.g. pm list packages -d)
         }
 
         // ---------- Versions in the app list / app menu ----------
-        let showListVersions = true;
+        // Off by default now - a less cluttered list row. The single-app menu and command results always show the
+        // version regardless of this; it only thins out the main list rows (see appVersionHtml() below, and the
+        // "Versions" filter pill above the list, which stays in sync with it and can turn it back on).
+        let showListVersions = false;
 
         let bridgeUpdatesCache = { at: 0, list: [] };
 
@@ -10073,52 +10111,63 @@ Type any command below (e.g. pm list packages -d)
         // apps purely so the progress text/bar actually repaint between native calls, which otherwise block
         // the page the same way any other AndroidBridge call does. Stop (or the sheet's own ✕) ends it after
         // whichever app is already running finishes; nothing after that point is touched.
+        // Runs one action across every app in arr via the native appActionBatch (see MainActivity.java) - off
+        // the page's own thread, unlike performDetailedBatchAction's per-app executeAppAction calls below, which
+        // block whichever thread calls them. Looping those calls from the page's own thread, even one at a time
+        // with a setTimeout(0) between apps, still froze the page for the whole run: that thread is the
+        // WebView's own, so nothing on it - including a repaint - runs while a call made from it is in flight.
+        // Progress arrives as window.onAppBatchProgress, the end as window.onAppBatchDone, both below.
         function runBatchAction(action, arr) {
             haptic();
-            if (!window.AndroidBridge) return;
-            batchRunCancelled = false;
-            batchRunActive = true;
-            const total = arr.length;
-            const rows = [];
-            let success = 0, failed = 0, i = 0;
+            if (!window.AndroidBridge || !window.AndroidBridge.appActionBatch) return;
 
-            document.getElementById('batchConfirmTitle').innerText = (ACTION_LABELS[action] || action) + ' ' + total + ' app' + (total === 1 ? '' : 's');
+            document.getElementById('batchConfirmTitle').innerText = (ACTION_LABELS[action] || action) + ' ' + arr.length + ' app' + (arr.length === 1 ? '' : 's');
             document.getElementById('batchConfirmSubtitle').innerText = '';
+            document.getElementById('batchProgressText').innerText = '';
+            document.getElementById('batchProgressBar').style.width = '0%';
             const stopBtn = document.getElementById('batchProgressStopBtn');
             if (stopBtn) { stopBtn.disabled = false; stopBtn.innerText = 'Stop'; }
             batchConfirmShowBody('progress');
             document.getElementById('batchConfirmModal').classList.add('show');
 
-            const finish = () => {
-                batchRunActive = false;
+            const started = window.AndroidBridge.appActionBatch(action, JSON.stringify(arr));
+            if (started !== 'started') {
                 document.getElementById('batchConfirmModal').classList.remove('show');
-                const stopped = batchRunCancelled && i < total;
-                const label = `${ACTION_LABELS[action] || action} ${rows.length} app${rows.length === 1 ? '' : 's'}` + (stopped ? ' (stopped early)' : '');
-                recordHistory('apps', label, rows.map(r => ({ pkg: r.pkg, name: r.name, action: action, success: r.success })));
-                showToast(stopped ? `Stopped: ${success} succeeded, ${failed} failed, ${total - i} not run` : `Batch Done: ${success} succeeded, ${failed} failed`);
-                showCommandResults('Batch Results', action.toUpperCase() + ' • ' + rows.length + ' of ' + total + ' apps' + (stopped ? ' (stopped)' : ''), rows);
-                // "Keep selection" leaves the apps selected (and the panel as it was) so another batch action
-                // can run on the same set right away - the floating sheet sits behind the result dialog the
-                // same way the single-app sheet does, and is there again once that dialog is dismissed.
-                if (!batchKeepSelection) clearBatchSelection();
-                setTimeout(loadPackageData, 400);
-            };
-
-            const step = () => {
-                if (batchRunCancelled || i >= total) { finish(); return; }
-                const pkg = arr[i];
-                const app = allApps.find(a => a.pkg === pkg) || { name: pkg, pkg: pkg };
-                document.getElementById('batchProgressText').innerText = `${i + 1} of ${total}: ${app.name} (${pkg})`;
-                document.getElementById('batchProgressBar').style.width = Math.round(i / total * 100) + '%';
-                const res = performDetailedBatchAction(action, [pkg]);
-                if (res.success) success++; else failed++;
-                rows.push.apply(rows, res.rows);
-                i++;
-                document.getElementById('batchProgressBar').style.width = Math.round(i / total * 100) + '%';
-                setTimeout(step, 0);
-            };
-            step();
+                showToast('Another batch action is already running');
+                return;
+            }
+            batchRunActive = true;
         }
+
+        // Fires once before each app's own action runs natively.
+        window.onAppBatchProgress = function (i, total, pkg) {
+            const app = allApps.find(a => a.pkg === pkg) || { name: pkg, pkg: pkg };
+            document.getElementById('batchProgressText').innerText = `${i + 1} of ${total}: ${app.name} (${pkg})`;
+            document.getElementById('batchProgressBar').style.width = Math.round(i / total * 100) + '%';
+        };
+
+        // Fires once the native run has finished (to completion, or stopped early).
+        window.onAppBatchDone = function (resultJson) {
+            batchRunActive = false;
+            let res; try { res = JSON.parse(resultJson); } catch (e) { res = null; }
+            document.getElementById('batchConfirmModal').classList.remove('show');
+            if (!res || !res.ok) { showToast('Batch action failed to run'); return; }
+            const action = res.action, total = res.total, stopped = !!res.cancelled;
+            const rows = (res.rows || []).map(r => {
+                const app = allApps.find(a => a.pkg === r.pkg) || { name: r.pkg, pkg: r.pkg };
+                return { name: app.name, pkg: r.pkg, output: r.output, success: r.success };
+            });
+            const success = rows.filter(r => r.success).length, failed = rows.length - success;
+            const label = `${ACTION_LABELS[action] || action} ${rows.length} app${rows.length === 1 ? '' : 's'}` + (stopped ? ' (stopped early)' : '');
+            recordHistory('apps', label, rows.map(r => ({ pkg: r.pkg, name: r.name, action: action, success: r.success })));
+            showToast(stopped ? `Stopped: ${success} succeeded, ${failed} failed, ${total - rows.length} not run` : `Batch Done: ${success} succeeded, ${failed} failed`);
+            showCommandResults('Batch Results', action.toUpperCase() + ' • ' + rows.length + ' of ' + total + ' apps' + (stopped ? ' (stopped)' : ''), rows);
+            // "Keep selection" leaves the apps selected (and the panel as it was) so another batch action
+            // can run on the same set right away - the floating sheet sits behind the result dialog the
+            // same way the single-app sheet does, and is there again once that dialog is dismissed.
+            if (!batchKeepSelection) clearBatchSelection();
+            setTimeout(loadPackageData, 400);
+        };
 
         // Opens Android's App Info screen. Works in every mode, including Read-Only.
         function openAppSettings(pkg) {
@@ -13795,7 +13844,12 @@ Type any command below (e.g. pm list packages -d)
         let logcatCounts = { V: 0, D: 0, I: 0, W: 0, E: 0, F: 0 };
         const logcatHidden = new Set();         // levels switched off through the key
 
-        function onLogcatShown() { logcatRefresh(); }
+        // Lands at the top of the tab (not wherever the page happened to be scrolled before switching to it) and
+        // starts live-tailing right away, instead of a one-off read that needs Play pressed by hand.
+        function onLogcatShown() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            logcatTogglePlay();
+        }
 
         function logcatParse(text) {
             const out = [];
@@ -16643,7 +16697,7 @@ Type any command below (e.g. pm list packages -d)
             const inp = document.getElementById('txInput');
             if (!inp) return;
             inp.style.height = 'auto';
-            inp.style.height = Math.min(150, Math.max(44, inp.scrollHeight)) + 'px';
+            inp.style.height = Math.min(170, Math.max(56, inp.scrollHeight)) + 'px';
             txHistPos = -1;
         }
 
@@ -16723,6 +16777,13 @@ Type any command below (e.g. pm list packages -d)
                 case 'right': inp.setSelectionRange(Math.min(v.length, z + 1), Math.min(v.length, z + 1)); break;
                 case 'home': inp.setSelectionRange(lineStart, lineStart); break;
                 case 'end': inp.setSelectionRange(lineEnd, lineEnd); break;
+                case 'shift': {
+                    const row = document.getElementById('txKeys');
+                    const on = row.classList.toggle('shifted');
+                    const btn = row.querySelector('.tx-key-shift');
+                    if (btn) btn.classList.toggle('active', on);
+                    break;
+                }
                 default:
                     inp.value = v.slice(0, a) + k + v.slice(z);
                     inp.setSelectionRange(a + k.length, a + k.length);
@@ -19113,8 +19174,118 @@ Type any command below (e.g. pm list packages -d)
             ]},
         ];
 
-        function openCheatSheet() {
+        // This app's own shell (the "sandbox" entry of the Terminal's Shell picker): a real /system/bin/sh, but
+        // running as this app's own unprivileged user - no root, no ADB/Shizuku, and no pm/dumpsys/am (those need
+        // a privileged shell; see the Working-mode sheet above). Scoped to plain file and text basics that work
+        // under any app's own UID.
+        const SANDBOX_CHEAT_SHEET = [
+            { cat: 'Files', items: [
+                ['ls -la', 'List files, including hidden ones'],
+                ['pwd', 'Print the current folder'],
+                ['cd <dir>', 'Change folder'],
+                ['cat <file>', 'Print a text file'],
+                ['cp <src> <dst>', 'Copy a file'],
+                ['mv <src> <dst>', 'Move or rename a file'],
+                ['rm <file>', 'Delete a file'],
+                ['mkdir -p <dir>', 'Make a folder (with parents)'],
+                ['find . -name "<pattern>"', 'Find files by name'],
+                ['du -sh <path>', 'Size of a file or folder'],
+            ]},
+            { cat: 'Text', items: [
+                ['echo "<text>"', 'Print text'],
+                ['grep "<text>" <file>', 'Search a file for text'],
+                ['head -n 20 <file>', 'First 20 lines'],
+                ['tail -n 20 <file>', 'Last 20 lines'],
+                ['wc -l <file>', 'Count lines'],
+            ]},
+            { cat: 'Process / system', items: [
+                ['ps', 'Running processes (usually just this app\'s own - Android limits what an app can see)'],
+                ['id', 'This app\'s own user and group id'],
+                ['env', 'Environment variables'],
+                ['df -h', 'Free storage space'],
+                ['uname -a', 'System/kernel info'],
+                ['date', 'Current date and time'],
+            ]},
+        ];
+
+        // Termux's own bash, with the full package ecosystem (pkg/apt) and whatever is installed.
+        const TERMUX_CHEAT_SHEET = [
+            { cat: 'Packages', items: [
+                ['pkg update && pkg upgrade', 'Refresh and upgrade installed packages'],
+                ['pkg install <name>', 'Install a package'],
+                ['pkg uninstall <name>', 'Remove a package'],
+                ['pkg search <name>', 'Find a package by name'],
+                ['pkg list-installed', 'List installed packages'],
+                ['termux-setup-storage', 'Grant access to shared/phone storage'],
+            ]},
+            { cat: 'Files', items: [
+                ['ls -la', 'List files, including hidden ones'],
+                ['cd ~/storage/shared', 'Go to shared phone storage (after termux-setup-storage)'],
+                ['pwd', 'Print the current folder'],
+                ['cp <src> <dst>', 'Copy a file'],
+                ['mv <src> <dst>', 'Move or rename a file'],
+                ['rm -r <path>', 'Delete a file or folder'],
+                ['mkdir -p <dir>', 'Make a folder (with parents)'],
+                ['find . -name "<pattern>"', 'Find files by name'],
+                ['du -sh <path>', 'Size of a file or folder'],
+                ['chmod +x <file>', 'Make a file executable'],
+            ]},
+            { cat: 'Text', items: [
+                ['cat <file>', 'Print a file'],
+                ['nano <file>', 'Edit a file (simple editor)'],
+                ['vim <file>', 'Edit a file (if installed)'],
+                ['grep -r "<text>" .', 'Search file contents recursively'],
+                ['sed -i "s/<a>/<b>/g" <file>', 'Replace text in a file'],
+                ['head -n 20 <file>', 'First 20 lines'],
+                ['tail -f <file>', 'Follow a growing file (e.g. a log)'],
+                ['wc -l <file>', 'Count lines'],
+            ]},
+            { cat: 'Git', items: [
+                ['git clone <url>', 'Clone a repository'],
+                ['git status', 'What changed'],
+                ['git add -A && git commit -m "<msg>"', 'Stage and commit everything'],
+                ['git pull', 'Pull the latest changes'],
+                ['git push', 'Push commits'],
+            ]},
+            { cat: 'Network', items: [
+                ['curl -O <url>', 'Download a file'],
+                ['wget <url>', 'Download a file'],
+                ['ssh <user>@<host>', 'Connect over SSH'],
+                ['ping -c 4 <host>', 'Check a host is reachable'],
+            ]},
+            { cat: 'Process / system', items: [
+                ['top', 'Live process list'],
+                ['ps aux', 'All running processes'],
+                ['kill <pid>', 'Stop a process'],
+                ['df -h', 'Free storage space'],
+                ['uname -a', 'System/kernel info'],
+                ['whoami', 'Current user'],
+                ['exit', 'Leave this shell'],
+            ]},
+        ];
+
+        // Which dataset + input box openCheatSheet()/cheatInsert() work against. Default: the classic ADB
+        // Console's termCmd and its ADB-focused CHEAT_SHEET (every pre-existing caller stays exactly as it was).
+        let cheatSheet = CHEAT_SHEET;
+        let cheatTarget = 'termCmd';
+
+        // From the ADB Console (no args): the ADB cheat sheet, unchanged. From the Terminal mode's own Cheat
+        // Sheet button: whichever of the three shells the Shell picker is currently on.
+        function openCheatSheet(fromTerminal) {
             haptic();
+            if (fromTerminal) {
+                const shell = txCurShell();
+                cheatSheet = shell === 'termux' ? TERMUX_CHEAT_SHEET : shell === 'app' ? SANDBOX_CHEAT_SHEET : CHEAT_SHEET;
+                cheatTarget = 'txInput';
+            } else {
+                cheatSheet = CHEAT_SHEET;
+                cheatTarget = 'termCmd';
+            }
+            const titles = { app: ['Sandbox Cheat Sheet', 'This app\'s own shell - no root, ADB or package manager.'], termux: ['Termux Cheat Sheet', 'Common bash commands for Termux\'s own shell.'] };
+            const t = fromTerminal && titles[txCurShell()];
+            document.getElementById('cheatSheetTitle').innerText = t ? t[0] : 'ADB Cheat Sheet';
+            document.getElementById('cheatSheetSub').innerText = t ? t[1] : 'Tap a command to drop it in the input. These run in the on-device shell — no adb shell prefix needed.';
+            document.getElementById('cheatGistSection').style.display = cheatSheet === CHEAT_SHEET ? '' : 'none';     // the gist is ADB-specific reference material
             const s = document.getElementById('cheatSearch');
             if (s) s.value = '';
             renderCheatSheet('');
@@ -19127,7 +19298,7 @@ Type any command below (e.g. pm list packages -d)
             const body = document.getElementById('cheatSheetBody');
             let html = '';
             let shown = 0;
-            CHEAT_SHEET.forEach(group => {
+            cheatSheet.forEach(group => {
                 const items = group.items.filter(it => !q || it[0].toLowerCase().includes(q) || it[1].toLowerCase().includes(q) || group.cat.toLowerCase().includes(q));
                 if (!items.length) return;
                 shown += items.length;
@@ -19144,9 +19315,10 @@ Type any command below (e.g. pm list packages -d)
         }
 
         function cheatInsert(cmd) {
-            const input = document.getElementById('termCmd');
+            const input = document.getElementById(cheatTarget);
             if (!input) return;
             input.value = cmd;
+            if (cheatTarget === 'txInput') txAutosize();
             closeCheatSheet();
             try { input.focus(); } catch (e) {}
             // Select the first <placeholder> so it's easy to replace

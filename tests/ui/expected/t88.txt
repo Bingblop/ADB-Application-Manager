@@ -23,6 +23,10 @@
    END then - and /: "~cat| file-/"
    tapping the keys keeps the focus in the input (the keyboard stays up): txInput
    ESC clears the line: ""
+   the base keys are shown, SHIFT is not active yet: true
+10. SHIFT swaps in the symbol keys instead (base keys hidden), and lights up: true
+    a symbol key still inserts at the cursor: "${}"
+    tapping SHIFT again goes back to the base keys: true
 9. TAB completes as far as the names agree: "cat alp" and lists them: true
    one match: the whole name and a space: "cat alpha.txt "
    a folder ends in / (no space): "ls alpine/"

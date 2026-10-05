@@ -2,6 +2,7 @@
 // own close (✕ / tap-outside) having the same halting effect as Stop while a run is active, instead of
 // silently hiding the dialog while the remaining apps keep running unseen.
 const { chromium, PAGE } = require('./lib/pw');
+const appBatchMock = require('./lib/appbatch_mock');
 (async () => {
   const b = await chromium.launch();
   const page = await b.newPage({ viewport: { width: 400, height: 860 } });
@@ -38,6 +39,7 @@ const { chromium, PAGE } = require('./lib/pw');
       },
     };
   });
+  await page.addInitScript(appBatchMock.installAppBatchMock);
   await page.goto(PAGE); await page.waitForTimeout(400);
   const sleep = ms => page.waitForTimeout(ms);
   const $eval = fn => page.evaluate(fn);

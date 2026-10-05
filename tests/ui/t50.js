@@ -37,7 +37,9 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.goto(PAGE); await page.waitForTimeout(500);
   const sleep = ms => page.waitForTimeout(ms);
   const toast = () => page.locator('#toastMsg').innerText();
-  await page.evaluate(() => switchView('logcat')); await sleep(300);
+  // Opening the tab now starts live-tailing on its own; paused right away so the rest of this test's own
+  // explicit fetches (picking an app, Save/Share, the filter box) aren't interleaved with background polling.
+  await page.evaluate(() => { switchView('logcat'); logcatStop(); }); await sleep(300);
 
   // 1) Default: all apps, nothing filtered.
   console.log('1. the app button starts at "All apps" with no clear button:', (await page.locator('#logcatAppBtn').innerText()) === 'All apps ▾' && !(await page.locator('#logcatAppClear').isVisible()));

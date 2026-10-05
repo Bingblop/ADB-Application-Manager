@@ -2845,6 +2845,10 @@ public class MainActivity extends Activity {
     private static volatile boolean archiveCancel;      // the page's Cancel for an extraction
     private static volatile boolean fmBatchCancel;       // the page's Cancel: the running batch stops at the next step
 
+    private static final Object appBatchLock = new Object();
+    private static boolean appBatchBusy;
+    private static volatile boolean appBatchCancel;      // the page's Stop: the running batch stops after the app it is on
+
     private static String fmBatchLabel(String op) {
         return "rm".equals(op) ? "Deleting" : "cp".equals(op) ? "Copying" : "Moving";
     }
@@ -7452,6 +7456,77 @@ public class MainActivity extends Activity {
             } catch (Exception e) {
                 return "Error: " + e.getMessage();
             }
+        }
+
+        /** Stops the running batch after whichever app it is already on; that one call can't be interrupted
+         *  once started, so every app not reached yet is left exactly as it was. */
+        @JavascriptInterface
+        public void appBatchCancel() { appBatchCancel = true; }
+
+        /**
+         * Runs {@link #executeAppAction} across every package in pkgsJson (a JSON array of package name
+         * strings) one at a time, off the page's thread - the point of this method existing at all, since
+         * executeAppAction's own shell round-trip blocks whichever thread calls it, and running the whole loop
+         * on the page's thread (as the JS side used to, one bridge call per app with only a setTimeout(0)
+         * between them) still froze the page for the entire loop: the page's thread is also the WebView's own,
+         * so nothing on it - including a repaint - runs while a call made from it is in flight.
+         * Returns "started" (or "busy" while a previous call is still running); progress arrives as
+         * window.onAppBatchProgress(i, total, pkg) before each app's own action runs, and the end as
+         * window.onAppBatchDone({action, total, done, cancelled, rows: [{pkg, output, success}]}).
+         */
+        @JavascriptInterface
+        public String appActionBatch(final String action, final String pkgsJson) {
+            synchronized (appBatchLock) {
+                if (appBatchBusy) return "busy";
+                appBatchBusy = true;
+                appBatchCancel = false;
+            }
+            if (!submitJob(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject res = new JSONObject();
+                    try {
+                        JSONArray pkgs = new JSONArray(pkgsJson);
+                        int total = pkgs.length();
+                        JSONArray rows = new JSONArray();
+                        int done = 0;
+                        boolean cancelled = false;
+                        int i = 0;
+                        for (; i < total; i++) {
+                            if (appBatchCancel) { cancelled = true; break; }
+                            String pkg = pkgs.optString(i, "");
+                            notifyJs("window.onAppBatchProgress && window.onAppBatchProgress(" + i + "," + total + "," + JSONObject.quote(pkg) + ")");
+                            String flagged = executeAppAction(action, pkg);
+                            boolean ok = flagOk(flagged);
+                            String out = flagText(flagged);
+                            if (ok) done++;
+                            rows.put(new JSONObject().put("pkg", pkg).put("output", out).put("success", ok));
+                        }
+                        res.put("action", action);
+                        res.put("total", total);
+                        res.put("done", done);
+                        res.put("cancelled", cancelled);
+                        res.put("rows", rows);
+                        res.put("ok", true);
+                    } catch (Throwable t) {
+                        try {
+                            res.put("ok", false);
+                            res.put("error", errMsg(t));
+                        } catch (Exception ignored) {}
+                    } finally {
+                        synchronized (appBatchLock) {
+                            appBatchBusy = false;
+                        }
+                    }
+                    notifyJs("window.onAppBatchDone && window.onAppBatchDone(" + res.toString() + ")");
+                }
+            })) {
+                synchronized (appBatchLock) {
+                    appBatchBusy = false;
+                }
+                return "error";
+            }
+            return "started";
         }
 
         // A single '\u0001' + ('1'|'0') flag glued onto the front of a pm/am result, read from the command's
