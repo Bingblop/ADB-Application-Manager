@@ -1,5 +1,13 @@
 # Changelog
 
+## v7.9.7-Pro (versionCode 797)
+
+- **About tab: Device Specs**, under Handy to know - hardware (model, chipset, CPU cores and clock range, RAM,
+  Vulkan/OpenGL ES, screen, storage), software (Android version, security patch, build ID), system (uptime,
+  locale, timezone), battery, network, camera and sensors, all in one place. Refreshed automatically when the
+  About tab opens, plus its own Refresh button. Every reading is a public, context-free one (BatteryManager,
+  world-readable /proc and /sys nodes, CameraManager/SensorManager characteristics) - no working mode needed.
+
 ## v7.9.6-Pro (versionCode 796)
 
 - **Batch actions no longer freeze the page while they run.** The live progress added in v7.9.5 still blocked the
@@ -13,7 +21,8 @@
 - **Logcat Viewer starts playing on its own.** Opening the tab used to need a tap on Play; it now scrolls to the
   top and starts live-tailing immediately.
 - **Terminal: a larger input box**, and a Shift key on the extra-keys row that swaps in a second row of symbols
-  (`` ` $ ; : " ' \ { } ( ) * & # ``) a phone keyboard usually buries behind its own symbols layer.
+  (backtick, dollar, semicolon, colon, quotes, backslash, braces, parentheses, asterisk, ampersand, hash) a
+  phone keyboard usually buries behind its own symbols layer.
 - **Terminal: a Cheat Sheet button**, with a different set of commands depending on which of the three shells is
   picked - common bash for Termux, file/text basics for this app's own sandbox shell, and the existing ADB
   reference for the privileged working mode.

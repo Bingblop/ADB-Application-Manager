@@ -4572,6 +4572,15 @@
             </div>
 
             <div class="color-card">
+                <div class="color-card-title">Device Specs</div>
+                <div class="color-card-subtitle">Hardware, software, system, battery, network, camera and sensors - everything this phone will say about itself, with no working mode needed.</div>
+                <div class="mode-btn-row" style="margin:8px 0 2px;">
+                    <button class="mode-action-btn" onclick="renderDeviceSpecs()">Refresh</button>
+                </div>
+                <div id="deviceSpecsBody"></div>
+            </div>
+
+            <div class="color-card">
                 <div class="color-card-title">Privacy</div>
                 <div class="about-tip">No account, no ads, no analytics and no server of ours. Everything runs on your phone. The app only goes online for something you open or ask for: update checks, App Stores, the debloat list, and a VirusTotal lookup if you add your own key.</div>
                 <div class="about-tip">The ADB key and the APK-signing key are created on this phone and never leave it.</div>
@@ -21662,7 +21671,7 @@ Type any command below (e.g. pm list packages -d)
             return ms ? new Date(ms).toLocaleDateString(langLocale(), { year: 'numeric', month: 'short', day: 'numeric' }) : '';
         }
 
-        function onAboutShown() { renderAbout(); }
+        function onAboutShown() { renderAbout(); renderDeviceSpecs(); }
 
         function renderAbout() {
             let i = {};
@@ -21689,6 +21698,76 @@ Type any command below (e.g. pm list packages -d)
             sig.innerHTML = '<div class="about-sigline ' + (official ? 'about-ok' : 'about-warn') + '">'
                 + (official ? 'Signed with the official release key' : 'Not signed with the official release key (a debug, fork or modified build)') + '</div>'
                 + '<div class="about-hash">SHA-256 ' + escapeHtml(signFp(i.signerSha256)) + '</div>';
+        }
+
+        // Everything the device will say about itself with no working mode: hardware, software, system, battery,
+        // network, camera and sensors. One native call (getDeviceSpecs), all public/context-free reads on that
+        // side - refreshed when the About tab opens, and by its own Refresh button.
+        function renderDeviceSpecs() {
+            const body = document.getElementById('deviceSpecsBody');
+            if (!body) return;
+            if (!window.AndroidBridge || !window.AndroidBridge.getDeviceSpecs) { body.innerHTML = '<div class="list-empty">Needs the app build.</div>'; return; }
+            let d;
+            try { d = JSON.parse(window.AndroidBridge.getDeviceSpecs() || '{}'); } catch (e) { d = null; }
+            if (!d || !d.ok) { body.innerHTML = '<div class="list-empty">Could not read the device specs.</div>'; return; }
+
+            const hw = d.hardware || {}, sw = d.software || {}, sys = d.system || {}, b = d.battery || {}, net = d.network || {};
+            const cams = Array.isArray(d.cameras) ? d.cameras : [], sensors = Array.isArray(d.sensors) ? d.sensors : [];
+
+            const hwRows = [];
+            if (hw.model) hwRows.push(['Model', hw.manufacturer && hw.manufacturer !== hw.model ? hw.manufacturer + ' ' + hw.model : hw.model]);
+            if (hw.brand) hwRows.push(['Brand', hw.brand]);
+            if (hw.soc) hwRows.push(['Chipset (SoC)', hw.soc]);
+            if (hw.abi) hwRows.push(['CPU architecture', hw.abi]);
+            if (Array.isArray(hw.clusters) && hw.clusters.length) {
+                const cores = hw.clusters.reduce((n, c) => n + (c.cores || 0), 0);
+                hwRows.push(['CPU cores', cores + ' (' + hw.clusters.length + (hw.clusters.length === 1 ? ' cluster' : ' clusters') + ')']);
+                hwRows.push(['CPU clock range', hw.clusters.map(c => tmFormatHz(c.minHz) + '–' + tmFormatHz(c.maxHz)).join(', ')]);
+            }
+            if (hw.ramTotalKb) hwRows.push(['RAM', formatBytes(hw.ramTotalKb * 1024)]);
+            if (hw.vulkanSupported != null) hwRows.push(['Vulkan', hw.vulkanSupported ? ('Supported' + (hw.vulkanApi ? ' (API ' + hw.vulkanApi + ')' : '')) : 'Not supported']);
+            if (hw.glesVersion) hwRows.push(['OpenGL ES', hw.glesVersion]);
+            if (hw.screenWidthPx) hwRows.push(['Screen resolution', hw.screenWidthPx + ' × ' + hw.screenHeightPx]);
+            if (hw.densityDpi) hwRows.push(['Screen density', hw.densityDpi + ' dpi']);
+            if (hw.refreshRateHz) hwRows.push(['Refresh rate', Math.round(hw.refreshRateHz) + ' Hz']);
+            if (hw.storageTotalBytes) hwRows.push(['Storage', formatBytes(hw.storageFreeBytes) + ' free of ' + formatBytes(hw.storageTotalBytes)]);
+
+            const swRows = [];
+            if (sw.androidRelease) swRows.push(['Android version', sw.androidRelease + (sw.sdk ? ' (API ' + sw.sdk + ')' : '')]);
+            if (sw.securityPatch) swRows.push(['Security patch', sw.securityPatch]);
+            if (sw.buildId) swRows.push(['Build ID', sw.buildId, true]);
+            if (sw.bootloader) swRows.push(['Bootloader', sw.bootloader, true]);
+            if (sw.kernel) swRows.push(['Kernel', sw.kernel.split('\n')[0].slice(0, 120), true]);
+
+            const sysRows = [];
+            if (sys.uptimeMs != null) sysRows.push(['Uptime', tmFormatHoursMinutes(sys.uptimeMs / 3600000)]);
+            if (sys.locale) sysRows.push(['Locale', sys.locale]);
+            if (sys.timezone) sysRows.push(['Timezone', sys.timezone]);
+
+            const PLUG = { 1: 'AC', 2: 'USB', 4: 'Wireless' };
+            const STATUS = { 2: 'Charging', 3: 'Discharging', 4: 'Not charging', 5: 'Full' };
+            const HEALTH = { 2: 'Good', 3: 'Overheat', 4: 'Dead', 5: 'Over voltage', 6: 'Failure', 7: 'Cold' };
+            const battRows = [];
+            if (b.percent != null && b.percent >= 0) battRows.push(['Level', Math.round(b.percent) + '%']);
+            if (b.status != null) battRows.push(['Status', STATUS[b.status] || 'Unknown']);
+            if (b.plugged != null) battRows.push(['Power source', b.plugged ? (PLUG[b.plugged] || 'Plugged in') : 'Battery']);
+            if (b.technology) battRows.push(['Technology', b.technology, true]);
+            if (b.health != null) battRows.push(['Health', HEALTH[b.health] || 'Unknown']);
+            if (b.cycleCount != null) battRows.push(['Charge cycles', String(b.cycleCount)]);
+
+            const netRows = [];
+            if (net.type) netRows.push(['Connection', net.type + (net.connected === false ? ' (not connected)' : '')]);
+            if (Array.isArray(net.interfaces) && net.interfaces.length) netRows.push(['Interfaces', net.interfaces.join(', '), true]);
+
+            const camRows = cams.map((c, i) => ['Camera ' + (i + 1) + ' (' + (c.facing || 'unknown') + ')', (c.megapixels ? c.megapixels + ' MP' : '—') + (c.flash ? ' · Flash' : '')]);
+
+            let html = tmInfoGrid('Hardware', hwRows) + tmInfoGrid('Software', swRows) + tmInfoGrid('System', sysRows)
+                + tmInfoGrid('Battery', battRows) + tmInfoGrid('Network', netRows) + tmInfoGrid('Camera', camRows);
+            if (sensors.length) {
+                html += '<div class="tm-info-title">Sensors (' + sensors.length + ')</div>'
+                    + '<div class="tm-net-ifaces">' + sensors.map(s => '<div class="tm-net-row"><b>' + escapeHtml(s.name || '') + '</b><span>' + escapeHtml(s.vendor || '') + '</span></div>').join('') + '</div>';
+            }
+            body.innerHTML = html || '<div class="list-empty">No device info available.</div>';
         }
 
         function aboutDebugText() {

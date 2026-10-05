@@ -7287,6 +7287,130 @@ public class MainActivity extends Activity {
             }
         }
 
+        /**
+         * A broad, one-shot snapshot for the About tab's Device Specs card: hardware, software, system, battery,
+         * network, camera and sensors. Every read here is public and context-free - BatteryManager, world-readable
+         * /proc and /sys nodes (via {@link #readWorldReadable}, {@link #cpuInfoJson()}), PackageManager/
+         * ActivityManager feature queries ({@link #gpuInfoJson()}), and CameraManager/SensorManager static
+         * characteristics, none of which need the camera permission (only opening one for capture does) - so this
+         * works the same with or without a working mode connected, unlike everything shell-based in this file.
+         */
+        @JavascriptInterface
+        public String getDeviceSpecs() {
+            JSONObject res = new JSONObject();
+            try {
+                JSONObject hw = new JSONObject();
+                hw.put("model", Build.MODEL);
+                hw.put("manufacturer", Build.MANUFACTURER);
+                hw.put("brand", Build.BRAND);
+                mergeInto(hw, cpuInfoJson());
+                mergeInto(hw, gpuInfoJson());
+                try {
+                    String memRaw = readWorldReadable("/proc/meminfo");
+                    if (!memRaw.isEmpty()) hw.put("ramTotalKb", MemStats.parse(memRaw).totalKb);
+                } catch (Throwable ignored) {}
+                try {
+                    android.view.WindowManager wm = (android.view.WindowManager) getSystemService(WINDOW_SERVICE);
+                    if (wm != null && wm.getDefaultDisplay() != null) {
+                        android.util.DisplayMetrics dm = new android.util.DisplayMetrics();
+                        wm.getDefaultDisplay().getRealMetrics(dm);
+                        hw.put("screenWidthPx", dm.widthPixels);
+                        hw.put("screenHeightPx", dm.heightPixels);
+                        hw.put("densityDpi", dm.densityDpi);
+                        float refresh = wm.getDefaultDisplay().getRefreshRate();
+                        if (refresh > 0) hw.put("refreshRateHz", refresh);
+                    }
+                } catch (Throwable ignored) {}
+                try {
+                    android.os.StatFs sfs = new android.os.StatFs(android.os.Environment.getDataDirectory().getPath());
+                    hw.put("storageTotalBytes", sfs.getTotalBytes());
+                    hw.put("storageFreeBytes", sfs.getAvailableBytes());
+                } catch (Throwable ignored) {}
+                res.put("hardware", hw);
+
+                JSONObject sw = new JSONObject();
+                sw.put("androidRelease", Build.VERSION.RELEASE);
+                sw.put("sdk", Build.VERSION.SDK_INT);
+                if (Build.VERSION.SECURITY_PATCH != null) sw.put("securityPatch", Build.VERSION.SECURITY_PATCH);
+                sw.put("buildId", Build.ID);
+                sw.put("bootloader", Build.BOOTLOADER);
+                try {
+                    String kernel = readWorldReadable("/proc/version").trim();
+                    if (!kernel.isEmpty()) sw.put("kernel", kernel);
+                } catch (Throwable ignored) {}
+                res.put("software", sw);
+
+                JSONObject sys = new JSONObject();
+                sys.put("uptimeMs", android.os.SystemClock.elapsedRealtime());
+                sys.put("locale", java.util.Locale.getDefault().toLanguageTag());
+                sys.put("timezone", java.util.TimeZone.getDefault().getID());
+                res.put("system", sys);
+
+                res.put("battery", tmBatteryJson());
+
+                JSONObject net = new JSONObject();
+                try {
+                    android.net.ConnectivityManager cm = (android.net.ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+                    android.net.NetworkInfo ni = cm == null ? null : cm.getActiveNetworkInfo();
+                    if (ni != null) {
+                        net.put("type", ni.getTypeName());
+                        net.put("connected", ni.isConnected());
+                    }
+                } catch (Throwable ignored) {}
+                try {
+                    String netRaw = readWorldReadable("/proc/net/dev");
+                    if (!netRaw.isEmpty()) {
+                        JSONArray ifaceArr = new JSONArray();
+                        for (NetStats.Iface i : NetStats.parse(netRaw).ifaces) {
+                            if (!"lo".equals(i.name)) ifaceArr.put(i.name);
+                        }
+                        net.put("interfaces", ifaceArr);
+                    }
+                } catch (Throwable ignored) {}
+                res.put("network", net);
+
+                JSONArray cams = new JSONArray();
+                try {
+                    android.hardware.camera2.CameraManager camMgr = (android.hardware.camera2.CameraManager) getSystemService(CAMERA_SERVICE);
+                    if (camMgr != null) {
+                        for (String id : camMgr.getCameraIdList()) {
+                            android.hardware.camera2.CameraCharacteristics c = camMgr.getCameraCharacteristics(id);
+                            JSONObject cj = new JSONObject();
+                            Integer facing = c.get(android.hardware.camera2.CameraCharacteristics.LENS_FACING);
+                            cj.put("facing", facing == null ? "unknown"
+                                    : facing == android.hardware.camera2.CameraCharacteristics.LENS_FACING_FRONT ? "front"
+                                    : facing == android.hardware.camera2.CameraCharacteristics.LENS_FACING_BACK ? "back" : "external");
+                            android.util.Size size = c.get(android.hardware.camera2.CameraCharacteristics.SENSOR_INFO_PIXEL_ARRAY_SIZE);
+                            if (size != null) cj.put("megapixels", Math.round(size.getWidth() * size.getHeight() / 100000.0) / 10.0);
+                            Boolean flash = c.get(android.hardware.camera2.CameraCharacteristics.FLASH_INFO_AVAILABLE);
+                            cj.put("flash", flash != null && flash);
+                            cams.put(cj);
+                        }
+                    }
+                } catch (Throwable ignored) {}
+                res.put("cameras", cams);
+
+                JSONArray sensors = new JSONArray();
+                try {
+                    android.hardware.SensorManager sm = (android.hardware.SensorManager) getSystemService(SENSOR_SERVICE);
+                    if (sm != null) {
+                        for (android.hardware.Sensor s : sm.getSensorList(android.hardware.Sensor.TYPE_ALL)) {
+                            JSONObject sj = new JSONObject();
+                            sj.put("name", s.getName());
+                            sj.put("vendor", s.getVendor());
+                            sensors.put(sj);
+                        }
+                    }
+                } catch (Throwable ignored) {}
+                res.put("sensors", sensors);
+
+                res.put("ok", true);
+            } catch (Throwable t) {
+                try { res.put("ok", false); res.put("error", errMsg(t)); } catch (Exception ignored) {}
+            }
+            return res.toString();
+        }
+
         /** What a split APK has to match to suit this phone: its CPU architectures (best first), screen density and languages (best first). */
         @JavascriptInterface
         public String getDeviceProfile() {
