@@ -1,5 +1,13 @@
 # Changelog
 
+## v7.9.4-Pro (versionCode 794)
+
+- **Fixed the systemless-uninstall fallback actually reporting failure after it succeeded.** It passed a plain
+  Java dynamic proxy as the callback Android calls back into with the real result; a proxy has no native Binder
+  behind it, so that callback could never be delivered - the app removal went through, but this app's own process
+  timed out waiting for a result it was never going to receive, and showed the uninstall as failed. The callback
+  is now backed by a real `android.os.Binder`, which the system can actually call back into.
+
 ## v7.9.3-Pro (versionCode 793)
 
 - **"Keep selection after running"** in the Apps tab's batch panel. Running a batch command (Freeze, Suspend,

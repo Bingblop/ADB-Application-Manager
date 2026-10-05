@@ -1,5 +1,10 @@
 package com.bloatware.bingblop;
 
+import android.os.Binder;
+import android.os.IBinder;
+import android.os.Parcel;
+import android.os.RemoteException;
+
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -24,9 +29,16 @@ import java.util.concurrent.TimeUnit;
  * before the callback parameter is treated as a "version" and set to -1 (any installed version); every
  * int/long after the callback is, in order, userId then the delete flags - a shape that has held for this
  * method across every API level since 26 (this app's own minSdkVersion). The callback itself is implemented
- * with a dynamic proxy rather than a named class, since IPackageDeleteObserver and IPackageDeleteObserver2
- * (whichever one this device's signature asks for) are both plain single-method interfaces - the proxy just
- * reads the int result code out of whichever one call the system makes back.
+ * with a real {@link Binder} subclass, not a {@link Proxy} - a plain dynamic proxy has no native Binder behind
+ * it, so a remote call back into one (exactly what the system does to report the result here) can never be
+ * delivered; it would silently never arrive, leaving this process to time out even though the deletion itself
+ * went through. The {@link Proxy} that gets passed to {@code deletePackageAsUser} only exists to satisfy the
+ * Java type system for the reflective call (the parameter's declared type is the hidden IPackageDeleteObserver
+ * / IPackageDeleteObserver2 interface, which cannot be implemented directly without compiling against it); the
+ * one method it actually answers locally is {@code asBinder()}, where it hands back the real Binder. Both
+ * observer interfaces are plain single-method callbacks shaped the same way for this purpose - (String, int,
+ * ...) - so the real Binder's onTransact reads the package name, then the one int result code, and ignores
+ * anything after it.
  */
 public final class SystemlessUninstallRunner {
 
@@ -106,7 +118,7 @@ public final class SystemlessUninstallRunner {
             if (t == String.class) {
                 callArgs[i] = pkg;
             } else if (i == observerIndex) {
-                callArgs[i] = observerProxy(t, resultCode, latch);
+                callArgs[i] = observerProxy(t, observerBinder(t.getName(), resultCode, latch));
             } else if (t == int.class || t == long.class) {
                 if (i < observerIndex) {
                     // Before the callback: a "version code" parameter - -1 means accept whatever is installed.
@@ -135,19 +147,40 @@ public final class SystemlessUninstallRunner {
         }
     }
 
-    private static Object observerProxy(Class<?> iface, final int[] resultCode, final CountDownLatch latch) {
+    /** The real, native-backed Binder the system actually calls back into. Its onTransact is what runs for
+     *  the packageDeleted/onPackageDeleted callback - never the {@link Proxy}'s InvocationHandler, since an
+     *  incoming Binder transaction is dispatched to whatever concrete IBinder {@code asBinder()} handed out,
+     *  bypassing Java interface dispatch entirely. */
+    private static Binder observerBinder(final String descriptor, final int[] resultCode, final CountDownLatch latch) {
+        return new Binder() {
+            @Override
+            protected boolean onTransact(int code, Parcel data, Parcel reply, int flags) throws RemoteException {
+                try {
+                    data.enforceInterface(descriptor);
+                    data.readString();              // the package name - not needed here
+                    resultCode[0] = data.readInt();  // packageDeleted(String,int) / onPackageDeleted(String,int,String): the int is always second
+                } catch (Throwable ignored) {
+                    // leave resultCode at its sentinel; still release the latch below so this never hangs
+                } finally {
+                    if (reply != null && (flags & IBinder.FLAG_ONEWAY) == 0) reply.writeNoException();
+                    latch.countDown();
+                }
+                return true;
+            }
+        };
+    }
+
+    /** A type witness only: {@code deletePackageAsUser}'s reflected parameter type is the hidden
+     *  IPackageDeleteObserver/IPackageDeleteObserver2 interface, which cannot be implemented directly without
+     *  compiling against it, so {@link Method#invoke} needs a {@link Proxy} of that exact interface to accept
+     *  the argument at all. The only method actually called on it locally is {@code asBinder()} (by the AIDL
+     *  marshalling code, to get the real IBinder to write into the outgoing Parcel) - that is the one method
+     *  answered here, with the real {@link #observerBinder}; nothing else is ever invoked on this object. */
+    private static Object observerProxy(Class<?> iface, final Binder realBinder) {
         return Proxy.newProxyInstance(iface.getClassLoader(), new Class<?>[] { iface }, new InvocationHandler() {
             @Override
             public Object invoke(Object proxy, Method method, Object[] methodArgs) {
-                if (methodArgs != null) {
-                    for (Object a : methodArgs) {
-                        if (a instanceof Integer) {
-                            resultCode[0] = (Integer) a;
-                            break;
-                        }
-                    }
-                }
-                latch.countDown();
+                if ("asBinder".equals(method.getName())) return realBinder;
                 return null;
             }
         });
