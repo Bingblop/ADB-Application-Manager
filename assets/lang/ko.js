@@ -1611,7 +1611,6 @@ x: {
 "Share the app": "앱 공유",
 "Sharing is only available in the app": "공유는 앱에서만 사용할 수 있습니다",
 "Shell": "셸",
-"Shell Command Result": "셸 명령어 결과",
 "Shell commands or AI chat": "셸 명령어 또는 AI 채팅",
 "Shell when the Terminal opens": "터미널 시작 시 셸",
 "Shells, keys, coding agents, sign-in and safety": "셸, 키, 코딩 에이전트, 로그인 및 안전",

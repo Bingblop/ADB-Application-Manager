@@ -1611,7 +1611,6 @@ x: {
 "Share the app": "アプリを共有",
 "Sharing is only available in the app": "共有はアプリ内でのみ利用できます",
 "Shell": "シェル",
-"Shell Command Result": "シェルコマンドの結果",
 "Shell commands or AI chat": "シェルコマンドまたはAIチャット",
 "Shell when the Terminal opens": "ターミナルを開いたときのシェル",
 "Shells, keys, coding agents, sign-in and safety": "シェル、キー、コーディングエージェント、ログイン、安全性",

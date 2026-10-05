@@ -59,12 +59,12 @@ const appBatchMock = require('./lib/appbatch_mock');
   await page.evaluate(() => closeInspector());
   // terminal find
   await page.evaluate(() => (switchView('terminal'), txShowPane('console'))); await page.fill('#termCmd', 'x');
-  await page.evaluate(() => { runTerminalCmd(); closeCommandResultsModal(); }); await page.waitForTimeout(200);
+  await page.evaluate(() => runTerminalCmd()); await page.waitForTimeout(200);
   await page.fill('#termSearch', 'alpha');
   console.log('terminal find:', await page.innerText('#termFindCount'));
   await page.evaluate(() => termFind(1));
   console.log('terminal next:', await page.innerText('#termFindCount'));
-  await page.fill('#termCmd', 'y'); await page.evaluate(() => { runTerminalCmd(); closeCommandResultsModal(); });
+  await page.fill('#termCmd', 'y'); await page.evaluate(() => runTerminalCmd());
   console.log('after new output (re-highlighted):', await page.innerText('#termFindCount'));
   await page.evaluate(() => { copyTerminal(); shareTerminal(); });
   // CSV share + selected packages

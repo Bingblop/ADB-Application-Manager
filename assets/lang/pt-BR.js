@@ -1611,7 +1611,6 @@ x: {
 "Share the app": "Compartilhar o app",
 "Sharing is only available in the app": "Compartilhar só está disponível no app",
 "Shell": "Shell",
-"Shell Command Result": "Resultado do comando do shell",
 "Shell commands or AI chat": "Comandos do shell ou chat com IA",
 "Shell when the Terminal opens": "Shell ao abrir o Terminal",
 "Shells, keys, coding agents, sign-in and safety": "Shells, chaves, agentes de código, login e segurança",

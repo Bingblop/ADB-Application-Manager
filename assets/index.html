@@ -15860,9 +15860,12 @@ Type any command below (e.g. pm list packages -d)
                 return;
             }
             if (window.AndroidBridge) {
+                // no result modal here: an arbitrary typed command has no fixed "success" marker to show one
+                // honestly (it used to hardcode success:true), and the output is already right here in the
+                // terminal pane - a modal repeating it added a tap for no new information (command-result audit,
+                // finding #4 / nuisance A).
                 const res = window.AndroidBridge.executeShell(cmd) || '';
                 term.appendChild(document.createTextNode(res));
-                showCommandResults('Shell Command Result', cmd, [{ name: cmd, pkg: 'shell', output: res, success: true }]);
             }
             term.scrollTop = term.scrollHeight;
             if (document.getElementById('termSearch').value) termFind(0);
@@ -15989,9 +15992,9 @@ Type any command below (e.g. pm list packages -d)
             if (wait) wait.remove();
             const res = String(out || '');
             term.appendChild(document.createTextNode(res));
-            // the report only where the command was typed: if the user moved to another tab meanwhile, a sheet would pop up over unrelated work
-            if (currentViewName() === 'terminal') showCommandResults('Shell Command Result', run.cmd, [{ name: run.cmd, pkg: 'shell', output: res, success: true }]);
-            else showToast('Command finished: see the ADB Console');
+            // no result modal (see runTerminalCmd) - but still worth a toast if the user has since left the tab,
+            // since then the output appearing isn't something they're looking at right now.
+            if (currentViewName() !== 'terminal') showToast('Command finished: see the ADB Console');
             term.scrollTop = term.scrollHeight;
             if (document.getElementById('termSearch').value) termFind(0);
         }

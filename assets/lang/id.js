@@ -1611,7 +1611,6 @@ x: {
 "Share the app": "Bagikan aplikasi",
 "Sharing is only available in the app": "Berbagi hanya tersedia di aplikasi",
 "Shell": "Shell",
-"Shell Command Result": "Hasil Perintah Shell",
 "Shell commands or AI chat": "Perintah shell atau chat AI",
 "Shell when the Terminal opens": "Shell saat Terminal dibuka",
 "Shells, keys, coding agents, sign-in and safety": "Shell, kunci, agen koding, login, dan keamanan",

@@ -1611,7 +1611,6 @@ x: {
 "Share the app": "Поделиться приложением",
 "Sharing is only available in the app": "Функция «Поделиться» доступна только в приложении",
 "Shell": "Оболочка",
-"Shell Command Result": "Результат команды оболочки",
 "Shell commands or AI chat": "Команды оболочки или чат с ИИ",
 "Shell when the Terminal opens": "Оболочка при открытии Терминала",
 "Shells, keys, coding agents, sign-in and safety": "Оболочки, ключи, агенты для кода, вход и безопасность",

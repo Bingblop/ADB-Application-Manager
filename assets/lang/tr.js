@@ -1611,7 +1611,6 @@ x: {
 "Share the app": "Uygulamayı paylaş",
 "Sharing is only available in the app": "Paylaşım yalnızca uygulamada kullanılabilir",
 "Shell": "Shell",
-"Shell Command Result": "Shell komut sonucu",
 "Shell commands or AI chat": "Shell komutları veya AI sohbeti",
 "Shell when the Terminal opens": "Terminal açıldığında seçili shell",
 "Shells, keys, coding agents, sign-in and safety": "Shell’ler, anahtarlar, kodlama ajanları, oturum açma ve güvenlik",

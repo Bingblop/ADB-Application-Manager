@@ -1611,7 +1611,6 @@ x: {
 "Share the app": "分享此应用",
 "Sharing is only available in the app": "分享功能仅在应用内可用",
 "Shell": "Shell",
-"Shell Command Result": "Shell 命令结果",
 "Shell commands or AI chat": "Shell 命令或 AI 对话",
 "Shell when the Terminal opens": "打开终端时的 Shell",
 "Shells, keys, coding agents, sign-in and safety": "Shell、密钥、编程智能体、登录与安全",

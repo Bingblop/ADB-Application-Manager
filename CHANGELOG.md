@@ -1,5 +1,12 @@
 # Changelog
 
+## v7.9.10-Pro (versionCode 800)
+
+- **Terminal: no more "Shell Command Result" popup after every command.** It hardcoded success regardless of
+  what the command actually did, and duplicated output already printed right there in the terminal pane one
+  line above it - per the command-result audit's own nuisance finding, the single most disruptive, lowest-value
+  prompt in the app. Removed outright; a command run from another tab still gets a toast when it finishes.
+
 ## v7.9.9-Pro (versionCode 799)
 
 - **Dex optimization no longer freezes the page.** Recompiling an app (or several) ran a `pm compile` call

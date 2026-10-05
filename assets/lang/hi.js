@@ -1611,7 +1611,6 @@ x: {
 "Share the app": "ऐप शेयर करें",
 "Sharing is only available in the app": "शेयरिंग सिर्फ़ ऐप में उपलब्ध है",
 "Shell": "शेल",
-"Shell Command Result": "शेल कमांड परिणाम",
 "Shell commands or AI chat": "शेल कमांड या AI चैट",
 "Shell when the Terminal opens": "टर्मिनल खुलने पर शेल",
 "Shells, keys, coding agents, sign-in and safety": "शेल, कुंजियां, कोडिंग एजेंट, साइन-इन और सुरक्षा",
