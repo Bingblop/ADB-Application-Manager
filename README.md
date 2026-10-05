@@ -14,7 +14,7 @@ Debugging, Shizuku or Root**.
 
 ### [⬇️ Download the latest APK](https://github.com/Bingblop/ADB-Application-Manager/releases/latest)
 
-`com.bloatware.bingblop` · v7.5-Pro · signed APK, installs over every earlier version without uninstalling
+`com.bloatware.bingblop` · v7.9.15-Pro · signed APK, installs over every earlier version without uninstalling
 
 <table>
   <tr>
@@ -64,8 +64,8 @@ tell you when a new version is out (see [Updates](#updates)).
 
 | | |
 |---|---|
-| **Apps** | Browse every package, including ones uninstalled for your user · search · sort by name, update date, install date, size or "updates first" · filters for running, 3rd party, system, frozen, suspended, uninstalled, **updated in the last 7 days** and **🧩 patched** (ReVanced, Morphe, Xposed / LSPosed modules, LSPatch / NPatch, debug-signed repackages) · **the big counters at the top light up for the filter you are looking at** · versions and update hints in the list · select many and run batch actions · save selections as named lists · export everything to CSV |
-| **Actions** | **App menu (one app):** Launch · Force Stop · Freeze / Enable · **Suspend / Unsuspend** · Clear Data · Uninstall for user 0 (a system app that needs root falls back automatically to a direct Binder call, the same workaround App Manager and Canta use - see below) · Reinstall removed system apps · Remove Updates · App Info · **Extract APK** · **Backup**. **Batch (selected apps):** Freeze · Enable · Force Stop · Suspend · Unsuspend · Clear Data · Uninstall · Reinstall · Save to List · Copy Packages · Share List · **Keep selection after running** (optional switch: run another batch command on the same apps without reselecting them) |
+| **Apps** | Browse every package, including ones uninstalled for your user · search · sort by name, update date, install date, size or "updates first" · filters for running, 3rd party, system, frozen, suspended, uninstalled, **updated in the last 7 days** and **🧩 patched** (ReVanced, Morphe, Xposed / LSPosed modules, LSPatch / NPatch, debug-signed repackages) · **the big counters at the top light up for the filter you are looking at** · a clean row layout (name, package and badges flush left; checkbox, letter icon, gear and ⋯ together on the right) · versions and update hints in the list (versions are off by default; the Versions filter turns them on) · select many and run batch actions · save selections as named lists · export everything to CSV |
+| **Actions** | **App menu (one app):** Launch · Force Stop · Freeze / Enable · **Suspend / Unsuspend** · Clear Data · Uninstall for user 0 (a system app that needs root falls back automatically to a direct Binder call, the same workaround App Manager and Canta use - see below) · Reinstall removed system apps · Remove Updates · App Info · **Extract APK** · **Backup**. **Batch (selected apps):** Freeze · Enable · Force Stop · Suspend · Unsuspend · Clear Data · Uninstall · Reinstall · Save to List · Copy Packages · Share List · **Keep selection after running** (optional switch: run another batch command on the same apps without reselecting them) · batch actions, Dex optimization and applying a profile all run **off the page's thread with a live progress bar (app name and package, fill bar) and a Stop button**, so the page never freezes while they work |
 | **Debloater** | The [UAD-NG](https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation) community list (5,000+ packages) with descriptions and dependency warnings · filter by removal level, vendor list, state and **phone brand** · review step before anything runs · **history log with one-tap Undo** |
 | **Installer** | All-in-one installer for `.apk`, `.apks` (bundletool), `.apkm` (APKMirror) and `.xapk` (with OBB / game data) · reads the package name, version, SDK range, size and signing certificate first · pick the authorizer (ADB / Shizuku / Root / none) and every `pm install` flag (grant all permissions, downgrade, test, all users, update ownership …) · signature-mismatch and unknown-signature gates · optional dex optimization and auto-delete · **storage search** with a progress bar that lists every package file on the phone, where **press and hold deletes a file with Undo** · **the splits that fit the phone are ticked** (CPU, screen density, language) · **▾ lists of common installers and requesters** for the `-i` and `--originating-uri` boxes · **Launch Application / Application Settings** buttons once an install worked · optional **VirusTotal** check with your own API key (a SHA-256 lookup; nothing is uploaded unless you say so) · the app can be Android's handler for APK files |
 | **Updates** | **Update the app itself** from its own GitHub releases (dedicated card, signed-key check, seamless with a privileged mode or the system installer without one) · **Galaxy Store** (Samsung system apps) · **GitHub, Codeberg, F-Droid, IzzyOnDroid and the Obtainium catalog** for sideloaded open-source apps · import your **Obtainium** export · Update one or **Update All** · signing-key check before installing · Google Play apps hand off to Aurora Store or the Play Store page |
@@ -75,19 +75,19 @@ tell you when a new version is out (see [Updates](#updates)).
 | **Quick actions** | **Quick Settings tiles** and a **home-screen widget** to switch the working mode and force-stop a list of apps without opening the app |
 | **What's new** | The changelog is inside the app: it opens once after an update, and from About |
 | **Productivity** | Select and copy any text · copy buttons for package, version and name · **share sheet** for package lists, CSV, manifest, terminal output and backups · **search with highlight and next/previous** in the manifest viewer and terminal · remembered filters and sort |
-| **Terminal** | A **Termux-style terminal** with three persistent shells (this app's sandbox, the working mode, or **your own Termux** with bash and pkg packages), Termux's extra keys, colours, history and TAB completion · **Coding Agents**: Gemini, Claude, ChatGPT, Cursor, Copilot, Perplexity, Grok, Muse and Deepseek (API key, or your subscription through the providers' own CLIs in Termux) and free options (Jan.ai, AnythingLLM, Ollama on the phone, OpenCode) that **run commands and edit files with your OK at each step**, with a Model and an Effort to pick from · keys encrypted and sent only to their own provider · the classic ADB Console can ask the same agent for syntax help too — see [Terminal and coding agents](#terminal-and-coding-agents) |
+| **Terminal** | A **Termux-style terminal** with three persistent shells (this app's sandbox, the working mode, or **your own Termux** with bash and pkg packages), Termux's extra keys, colours, history and TAB completion · **Coding Agents**: Gemini, Claude, ChatGPT, Cursor, Copilot, Perplexity, Grok, Muse and Deepseek (API key, or your subscription through the providers' own CLIs in Termux) and free options (Jan.ai, AnythingLLM, Ollama on the phone, OpenCode) that **run commands and edit files with your OK at each step**, with a Model and an Effort to pick from · a **Shift** key for the symbols a phone keyboard buries, a larger input box and a **Cheat Sheet** that changes with the shell (bash for Termux, file and text basics for the sandbox, the ADB reference for the working mode) · **Sync with Termux** makes the in-app Termux shell match your real one (aliases and functions from `~/.bashrc` included) and grants Termux storage access in one tap · keys encrypted and sent only to their own provider · the classic ADB Console can ask the same agent for syntax help too — see [Terminal and coding agents](#terminal-and-coding-agents) |
 | **ADB Console** | Run shell commands through the active mode (off the page's thread), with output search, copy and share · **🕘 history, ⭐ saved scripts and pinned chips** · **🐚 Rish mode**: a persistent Shizuku shell where `cd` and `export` stick, with a STOP that ends a command and its children · a searchable **📋 ADB cheat sheet** of ~90 commands you tap to drop into the input |
-| **Files** | Privileged file manager · **select many** and copy / move / delete together · open **.apk / .zip / .xapk / .jar … without extracting**, preview text, images and decoded Android XML, extract, rename, delete, add files and edit text in place · **install from inside an archive**, **open nested archives**, **compare two archives** · **sign an edited APK** on the device |
+| **Files** | Privileged file manager · **Add storage**: an SD card, USB drive or shared folder through Android's own document picker (no working mode or root needed) · **select many** and copy / move / delete together · open **.apk / .zip / .xapk / .jar … without extracting**, preview text, images and decoded Android XML, extract, rename, delete, add files and edit text in place · **install from inside an archive**, **open nested archives**, **compare two archives** · **sign an edited APK** on the device |
 | **Logcat** | Readable, **color-coded** log (one row per entry, tappable level key) · **limit it to one app** · save or share the filtered log as a bug-report text file |
 | **Hidden Settings** | Read and edit the phone's **Global**, **Secure** and **System** settings, one sub-tab per table · search names, values and descriptions · tap to edit, **press and hold to flip** a switch (1 / 0, true / false), **＋ to create** a setting · plain-English descriptions and ⚠️ warnings for the ones that bite · every change is read back to prove it, with **Undo** and a log of changes with **Revert** — see [Hidden settings](#hidden-settings) |
 | **Overlays** | **New in v6.0:** change Android's **Material You** theme from the phone — the **wallpaper** or **any color** (hex, sliders or 657 named presets) with one of six **styles** (Tonal Spot … Spritz), and the palette Android is really using shown afterwards · list every **overlay** (`cmd overlay list`) grouped by the app it restyles, search and filter it, **switch one on or off** with its switch or by **pressing and holding** its row · every change is read back to prove it, with **Undo** — see [Overlays and Material You](#overlays-and-material-you) |
 | **App Stores** | **ShizuStore**, **GitHub** (up to 5,000 apps, live search), **F-Droid** (any known repository, streamed) and **Orion** as sub-tabs, each with a category drop-down · every install comes from the app's own upstream (nothing is rehosted), through your active mode or the system installer · a successful install offers **Launch Application** and **Application Settings**, the same as the APK Installer |
 | **Modes** | ADB over TCP · Wireless Debugging (pairing, mDNS port detection, and **🔔 pairing from a notification** so the code can't expire while you switch apps) · Shizuku · Root · Automatic · Read-Only |
-| **Themes** | **Material 3** (default) · **Material You** (follows your wallpaper) · six more palettes · Light / Dark / System / Schedule · pure-black AMOLED option · per-mode color tuning |
+| **Themes** | **Material 3** (default) · **Material You** (follows your wallpaper) · six more palettes · Light / Dark / System / Schedule · pure-black AMOLED option · per-mode color tuning · **Expressive Animations** (Material 3 Expressive's springier motion across the whole app, on by default, with its own switch under Settings → Motion) |
 | **Security** | A **private ADB key is generated on each install** (nothing is bundled) · fingerprint shown in the app · signing-certificate comparison before every update |
 | **Navigation** | A Back button that closes the open sheet, clears a selection, steps up a folder or out of an archive, returns to the previous tab, and only then asks for a deliberate second press to leave (it also asks first while an install, update, file job or command is running) |
 | **Permissions** | A first-launch sheet offers **All files access**, **Usage access** and **Display over other apps** (each optional, also under About); with a working mode it also offers **Read/Write External Storage**, **Write Secure Settings** and **Access Restricted Settings**, granted straight through the shell. An action that fails for want of file access asks for it on the spot and carries on once it is allowed — see [Permissions](#permissions) |
-| **About** | The developer and the GitHub repo, this build's version, device and **signing certificate** (✅ for the official release key), copyable debug info for bug reports, the **🔐 Permissions** sheet, and an optional **☕ Buy me a coffee** (PayPal, $1 or any amount) |
+| **About** | The developer and the GitHub repo, this build's version, device and **signing certificate** (✅ for the official release key), a **Device Specs** card (hardware, software, system, battery, network, camera and sensors, refreshed when the tab opens), copyable debug info for bug reports, the **🔐 Permissions** sheet, and an optional **☕ Buy me a coffee** (PayPal, $1 or any amount) |
 
 ## The tabs
 
@@ -112,6 +112,45 @@ Left to right, with the **settings gear** (it opens Settings: language, appearan
 Every tab except Application Manager and About can be switched off or moved in **Settings → Feature List**.
 
 ## New in v7.9
+
+**v7.9.15 is the latest build.** Everything from v7.9 through v7.9.15 is below; the full, dated list is in
+[CHANGELOG.md](CHANGELOG.md) (and inside the app, under About).
+
+**Newest (v7.9.12 to v7.9.15)**
+
+- **Expressive Animations** (v7.9.15). A new **Motion** card in Settings, right below the theme cards, with one switch that is **on by
+  default**: Material 3 Expressive's springier, overshooting motion for the app's own transitions (sheets, modals, buttons,
+  switches) instead of a plain fade or slide. The width-based progress bars keep a plain ease so they never visibly pass 100%, and
+  the phone's own reduced-motion setting always wins over the switch.
+- **Sync with Termux** (v7.9.14). The Terminal's Termux shell can now match your real Termux: a **Match my Termux environment**
+  switch (on by default) also sources `~/.bashrc`, so your aliases, functions and PATH additions work here too, and a **Sync with
+  Termux** button (Terminal settings, and the Termux setup checklist) turns that on, restarts a running Termux session so it applies
+  at once, and opens Termux to run `termux-setup-storage` - storage access in one tap instead of a typed command.
+- **Saved Applications** (v7.9.13). A saved list's name and app count get the whole header; the "Saved" tag sits above its own
+  Recall / Quick list / Edit / Copy / Delete row.
+- **A cleaner Apps row** (v7.9.12). Name, package and badges start flush left; the checkbox, letter icon, gear and ⋯ buttons sit
+  together on the right.
+
+**Earlier in v7.9.x**
+
+- **Coding Agents can be allowed to change files** (v7.9.11): the write / edit card gets the same **Always allow in this chat** button
+  the run card had, independent of the run and read-outside-the-folder approvals.
+- **No "Shell Command Result" popup** after every Terminal command (v7.9.10): it always claimed success and repeated the output
+  printed right above it.
+- **No more freezes** (v7.9.5 to v7.9.9): batch actions, **Dex optimization** and **applying a Profile** run off the page's thread with
+  a live progress bar and a **Stop** button; a routine, successful single-app action shows a toast instead of a toast *and* a dialog
+  (a failure still gets the dialog); more result dialogs read the real exit status instead of scanning for failure words.
+- **File Manager: Add storage** (v7.9.8): an SD card, USB drive or a folder another app shares, through Android's document-tree picker.
+  Browse, create, rename, delete and edit text in place work; copy, move, compress, Open with and Share are not there yet for this kind
+  of storage and say so.
+- **About: Device Specs** (v7.9.7): hardware, software, system, battery, network, camera and sensors in one card, no working mode needed.
+- **Terminal and Logcat** (v7.9.6): a larger input box, a **Shift** key row and a **Cheat Sheet** per shell; Logcat starts playing by
+  itself; version numbers are off by default in the app list.
+- **Keep selection after running** (v7.9.3), **systemless uninstall** for system apps through a direct Binder call (v7.9.2, fixed in
+  v7.9.4), real exit statuses for freeze / suspend / stop / clear / uninstall results (v7.9.2) and **Launch Application** after a store
+  install (v7.9.1).
+
+**v7.9**
 
 - **The tab is now "Command-Line Interface"** (same Terminal-first switch, same ADB Console next to it as v7.8 - only the
   tab's own name changed).
@@ -534,7 +573,10 @@ allow this app to *Run commands in Termux environment*, and test the connection.
 through Termux's official RUN_COMMAND intent that connects back to the app over a local connection only it can open (a one-time
 token), and becomes a live bash. Full-screen programs (nano, vim, top, a Python prompt) open in a real Termux window instead.
 **Automatic** picks Termux once it is set up (bash is more compatible with the coding agents' own CLI tools than the sandbox
-or Working mode), otherwise Working mode, otherwise the sandbox.
+or Working mode), otherwise Working mode, otherwise the sandbox. **Match my Termux environment** (Terminal settings, on by
+default) also sources your `~/.bashrc`, so aliases and functions you keep there work in this shell too, and **Sync with Termux**
+(settings, or the setup checklist) switches it on, restarts a running Termux session and opens Termux to run
+`termux-setup-storage` for you; Android still shows its own storage permission prompt, which you tap once.
 
 **Keys like Termux's**: ESC, TAB (completes file names), CTRL-C (stops), the arrows (history and cursor), HOME, END and | / - ~.
 `clear` empties the screen, `exit` ends the shell (Enter starts a new one). Programs get no keyboard input while they run; in
@@ -914,6 +956,11 @@ for nothing, and a working mode reads storage without it.
 wallpaper changes) come first, followed by six classic palettes. Every palette has light and dark variants,
 colors can be fine-tuned per mode, and everything is remembered between launches.
 
+**Motion:** the **Expressive Animations** switch (Settings, in its own card right below the theme cards; on by default) gives the
+app's transitions Material 3 Expressive's springier, overshooting easing instead of a plain ease. Progress bars are left at a
+plain ease so they never visibly pass 100%, and when the phone's own *reduce motion* setting is on the app follows it, whatever
+the switch says.
+
 ## How it works
 
 The UI is one HTML file rendered in a `WebView`; a small Java bridge turns taps into package-manager
@@ -1113,7 +1160,7 @@ What is checked before each release, and what is not. The checks live in [`tests
 (`cd tests && npm install && npx playwright install chromium && node run.js && node java/run.js`; what each needs and how a
 script passes is in [tests/README.md](tests/README.md)).
 
-- **The UI** (`tests/run.js`, about four minutes): 93 headless-Chromium scripts drive the real `assets/index.html` against a mock Android bridge:
+- **The UI** (`tests/run.js`, about four minutes): 100 headless-Chromium scripts drive the real `assets/index.html` against a mock Android bridge:
   every tab, theme, filter, share / copy / find action, profiles and the drift banner, backups, the Installer, the
   Store, the file manager and archive browser, the terminal, About, the Back button, the height of the app menu and, for the Hidden Settings tab, the
   list, search, filters and sort, tap-to-edit, press-and-hold flipping (with touch events of any hold length), creating,
@@ -1133,7 +1180,10 @@ script passes is in [tests/README.md](tests/README.md)).
   screen sizes) and a scan of the sources and of every tab and sheet for emoji. For v7.8: the Terminal (commands in a real shell,
   history, extra keys, TAB completion, colours and progress lines, one screen per shell, every shell that cannot start) and
   the coding agents against recorded provider streams (key tests, approvals, files written and edited for real, undo, STOP,
-  errors, switching agents mid-chat, the setup sheets, sign-in tools, Cursor's cloud agents).
+  errors, switching agents mid-chat, the setup sheets, sign-in tools, Cursor's cloud agents). For v7.9: the batch, Dex optimization
+and profile progress bars with Stop, the Always allow card for file changes, Add storage, Device Specs, the Termux sync
+(the switch, the button, and the option reaching the native side), and Expressive Animations (the curve actually changing on a
+real transition, the progress bars staying plain, the phone's reduce-motion setting winning, and the choice surviving a relaunch).
 - **Native rules, off the device** (`tests/java/run.js`, 36 suites): the parts of the Java that need no Android classes are compiled
   and run as plain Java. For the Hidden Settings tab that is 311 checks of `SettingsDb`, including round trips through a real `sh` (and a fake
   `settings` that refuses on purpose) for hostile values (quotes, `;`, `$(...)`, backticks, `>`, newlines, Unicode), and a
@@ -1176,6 +1226,7 @@ Debloat data from [UAD-NG](https://github.com/Universal-Debloater-Alliance/unive
 (GPL-3.0, downloaded at runtime). Shell access via [Shizuku](https://github.com/RikkaApps/Shizuku-API).
 Update sources: Galaxy Store, GitHub, Codeberg, [F-Droid](https://f-droid.org),
 [IzzyOnDroid](https://apt.izzysoft.de/fdroid) and the [Obtainium](https://github.com/ImranR98/Obtainium)
-community catalog.
+community catalog. The Task Manager tab is modeled on
+[RohitKushvaha01/TaskManager](https://github.com/RohitKushvaha01/TaskManager).
 
 Changes by version: [CHANGELOG.md](CHANGELOG.md).
