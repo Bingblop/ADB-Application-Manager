@@ -472,12 +472,13 @@
             background: rgba(0, 229, 255, 0.1);
         }
 
+        /* Just the checkbox and the avatar now (app-meta sits on its own, to the left of this) - sized to its
+           content, not stretched, so it and app-actions sit together on the right. */
         .app-left {
             display: flex;
             align-items: center;
             gap: 12px;
-            flex: 1;
-            overflow: hidden;
+            flex-shrink: 0;
             cursor: pointer;
         }
 
@@ -9957,14 +9958,14 @@ Type any command below (e.g. pm list packages -d)
             const pk = escapeHtml(app.pkg);
             return `
                 <div class="app-card ${isSelected ? 'selected' : ''} ${app.isSuspended ? 'suspended' : ''}" id="card_${pk}" data-pkg="${pk}">
+                    <div class="app-meta" onclick="toggleSelectPkg(this.parentElement.dataset.pkg)">
+                        <div class="app-name">${escapeHtml(app.name)}</div>
+                        <div class="app-pkg">${pk}</div>
+                        <div class="badge-row">${badges}${listVersionLabel(app)}${listSortMeta(app)}</div>
+                    </div>
                     <div class="app-left" onclick="toggleSelectPkg(this.parentElement.dataset.pkg)">
                         <div class="app-checkbox">${isSelected ? '✓' : ''}</div>
                         <div class="app-avatar">${escapeHtml(initial)}</div>
-                        <div class="app-meta">
-                            <div class="app-name">${escapeHtml(app.name)}</div>
-                            <div class="app-pkg">${pk}</div>
-                            <div class="badge-row">${badges}${listVersionLabel(app)}${listSortMeta(app)}</div>
-                        </div>
                     </div>
                     <div class="app-actions">
                         <button class="btn-mini" title="App Settings" aria-label="App Settings" onclick="openAppSettings(this.closest('.app-card').dataset.pkg)">⚙️</button>

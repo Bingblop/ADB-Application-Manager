@@ -52,9 +52,13 @@ const MOCK = fs.readFileSync(fixture('uad_mock.json'), 'utf8');
     const html = await page.locator('#card_com\\.netflix\\.mediaclient').innerHTML();
     console.log(tag + '2. app rows have only ⚙️ App Settings and ⋯ Menu:', rowBtns.length === 2 && /App Settings/.test(rowBtns[0]) && /Menu/.test(rowBtns[1]), JSON.stringify(rowBtns));
     console.log(tag + '   no force-stop control or handler left in the row:', !/force/i.test(html) && !/forceStop|force-stop|forcestop/i.test(html) && !/⏹|⛔|🛑/.test(html));
-    const w = await page.locator('#card_com\\.netflix\\.mediaclient .app-meta').evaluate(e => e.getBoundingClientRect().width);
-    const wLeft = await page.locator('#card_com\\.netflix\\.mediaclient .app-left').evaluate(e => e.getBoundingClientRect().width);
-    console.log(tag + '   the freed room goes to the text (meta width ' + Math.round(w) + 'px of ' + Math.round(wLeft) + 'px):', w > 150);
+    const geo = await page.locator('#card_com\\.netflix\\.mediaclient').evaluate(card => ({
+      meta: card.querySelector('.app-meta').getBoundingClientRect(),
+      left: card.querySelector('.app-left').getBoundingClientRect(),
+      actions: card.querySelector('.app-actions').getBoundingClientRect(),
+    }));
+    console.log(tag + '   the freed room goes to the text (meta is ' + Math.round(geo.meta.width) + 'px wide):', geo.meta.width > 150);
+    console.log(tag + '   checkbox+avatar and the row\'s own buttons sit together on the right, text starts flush left:', geo.meta.left < geo.left.left && geo.left.right <= geo.actions.left && (geo.actions.left - geo.left.right) < 20);
 
     // 3) Selecting apps shows the checkmark FAB; a normal tap opens the panel and keeps the selection.
     await page.evaluate(() => { toggleSelectPkg('com.facebook.katana'); toggleSelectPkg('com.spotify.music'); toggleSelectPkg('com.example.fifth'); }); await sleep(350);

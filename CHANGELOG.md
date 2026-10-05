@@ -1,5 +1,11 @@
 # Changelog
 
+## v7.9.12-Pro (versionCode 802)
+
+- **Apps list: a cleaner row layout.** The app's name, package and badges now start flush against the left edge
+  instead of sharing space with the checkbox and icon; the checkbox, the letter icon, ⚙️ and ⋯ all sit together
+  on the right instead. No change to what anything does - Debloater/UAD-NG rows are unaffected.
+
 ## v7.9.11-Pro (versionCode 801)
 
 - **Coding Agents: "Always allow" for file changes, not just commands.** A proposed `<run>` command already had
