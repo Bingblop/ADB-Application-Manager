@@ -91,9 +91,9 @@ const { chromium, PAGE } = require('./lib/pw');
   // 3) Navigate into a folder, then Up (SAF has no parent lookup - a breadcrumb stack gets this right).
   await page.locator('#fmList .perm-row', { hasText: 'Documents' }).locator('.perm-info').click(); await sleep(100);
   console.log('3. descending into Documents lists its own entries:', JSON.stringify(await rowNames()) === JSON.stringify(['notes.txt']));
-  await page.click('button[onclick="fmUp()"]'); await sleep(100);
+  await page.click('#fmUpRow'); await sleep(100);
   console.log('   Up returns to the root listing:', JSON.stringify((await rowNames()).sort()) === JSON.stringify(['Documents', 'photo.jpg']));
-  await page.click('button[onclick="fmUp()"]'); await sleep(80);
+  await page.click('#fmUpRow'); await sleep(80);
   console.log('   Up again at the top of this storage does not error, just says so:', /top of this storage/.test(await toastText()));
 
   // 4) New folder and new file reach the SAF create method (not the POSIX mkdir/touch path) - with no working
@@ -148,7 +148,7 @@ const { chromium, PAGE } = require('./lib/pw');
   const bt = await page.evaluate(() => window.__batch.slice());
   console.log('   Paste calls fmBatch2("cp", [uri], <this folder uri>) with the uri untouched:', bt.length === 1 && bt[0][0] === 'cp' && bt[0][1][0].startsWith('content://mock/root1/') && bt[0][2].startsWith('content://mock/root1/') && !/[^:]\/\//.test(bt[0][2]), JSON.stringify(bt));
   await page.evaluate(() => { fmBatchRunning = false; fmClip = null; fmClipRender(); });
-  await page.click('button[onclick="fmUp()"]'); await sleep(100);
+  await page.click('#fmUpRow'); await sleep(100);
 
   // Multi-select now works in added storage, and offers Copy / Move / Delete but not Compress.
   await page.click('#fmSelectBtn'); await sleep(60);

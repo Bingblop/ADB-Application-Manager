@@ -699,6 +699,19 @@
             gap: 12px;
         }
 
+        /* File Manager buttons look like buttons: an outline, a pressed state, and a tap of haptic feedback (see the delegated click below) */
+        #view-files .batch-tool-link {
+            background: var(--bg-surface);
+            border: 1px solid var(--accent);
+            border-radius: 10px;
+            padding: 7px 12px;
+            min-height: 34px;
+            transition: background 0.15s, transform 0.12s;
+        }
+        #view-files .batch-tool-link:active:not(:disabled) { background: var(--accent); color: var(--on-accent); transform: scale(0.96); }
+        #view-files .batch-tool-link:disabled { opacity: 0.45; }
+        #view-files .fm-selbar, #view-files .fm-opts { gap: 8px; }
+
         .batch-tool-link {
             background: none;
             border: none;
@@ -3577,7 +3590,6 @@
                 </div>
                 <div class="batch-sheet-tools" id="fmRootsRow" style="margin:8px 0 0; gap:12px; flex-wrap:wrap;"></div>
                 <div class="batch-sheet-tools" style="margin:8px 0; gap:12px; flex-wrap:wrap;">
-                    <button class="batch-tool-link" onclick="fmUp()">Up</button>
                     <button class="batch-tool-link" onclick="fmGo('/storage/emulated/0')">Storage</button>
                     <button class="batch-tool-link" translate="no" onclick="fmGo('/data/local/tmp')">/data/local/tmp</button>
                     <button class="batch-tool-link" translate="no" onclick="fmGo('/system')">/system</button>
@@ -6631,6 +6643,9 @@ Type any command below (e.g. pm list packages -d)
             haptic();
             return true;
         }
+
+        // every File Manager button gives the tap of feedback, whatever its own handler does
+        document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('#view-files button'); if (b && !b.disabled) haptic(); }, true);
 
         function haptic() {
             if (window.AndroidBridge && window.AndroidBridge.vibrate) {
@@ -10086,12 +10101,12 @@ Type any command below (e.g. pm list packages -d)
                         <div class="app-pkg">${pk}</div>
                         <div class="badge-row">${badges}${listVersionLabel(app)}${listSortMeta(app)}</div>
                     </div>
-                    <div class="app-left" onclick="toggleSelectPkg(this.parentElement.dataset.pkg)">
-                        <div class="app-checkbox">${isSelected ? '✓' : ''}</div>
-                    </div>
                     <div class="app-actions">
                         <button class="btn-mini" title="App Settings" aria-label="App Settings" onclick="openAppSettings(this.closest('.app-card').dataset.pkg)">⚙️</button>
                         <button class="btn-mini" title="Menu" onclick="openInspector(this.closest('.app-card').dataset.pkg)">⋯</button>
+                    </div>
+                    <div class="app-left" onclick="toggleSelectPkg(this.parentElement.dataset.pkg)">
+                        <div class="app-checkbox">${isSelected ? '✓' : ''}</div>
                     </div>
                 </div>
             `;
