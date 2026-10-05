@@ -2448,7 +2448,6 @@ p: [
 ["Error: {0}", "Hata: {0}"],
 ["Every app that is not enabled is saved. {0} app would be saved now.", "Etkin olmayan her uygulama kaydedilir. Şimdi kaydederseniz {0} uygulama kaydedilir."],
 ["Every app that is not enabled is saved. {0} apps would be saved now.", "Etkin olmayan her uygulama kaydedilir. Şimdi kaydederseniz {0} uygulama kaydedilir."],
-["Executing {0} on {1} apps...", "{1} uygulamada {0} yürütülüyor..."],
 ["Exported {0} apps to {1}", "{0} uygulama dışa aktarıldı: {1}"],
 ["Exported • via {0}", "Dışa aktarılmış • {0} ile"],
 ["Extract failed: {0}", "Çıkarma başarısız oldu: {0}"],

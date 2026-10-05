@@ -2448,7 +2448,6 @@ p: [
 ["Error: {0}", "خطأ: {0}"],
 ["Every app that is not enabled is saved. {0} app would be saved now.", "يتم حفظ كل تطبيق غير مفعّل. سيتم حفظ {0} تطبيق الآن."],
 ["Every app that is not enabled is saved. {0} apps would be saved now.", "يتم حفظ كل تطبيق غير مفعّل. التطبيقات التي ستُحفظ الآن: {0}."],
-["Executing {0} on {1} apps...", "جارٍ تنفيذ {0} على {1} من التطبيقات..."],
 ["Exported {0} apps to {1}", "تم تصدير {0} من التطبيقات إلى {1}"],
 ["Exported • via {0}", "مُصدَّر • عبر {0}"],
 ["Extract failed: {0}", "فشل الاستخراج: {0}"],

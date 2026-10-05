@@ -2448,7 +2448,6 @@ p: [
 ["Error: {0}", "Fehler: {0}"],
 ["Every app that is not enabled is saved. {0} app would be saved now.", "Jede nicht aktivierte App wird gespeichert. Jetzt würde {0} App gespeichert werden."],
 ["Every app that is not enabled is saved. {0} apps would be saved now.", "Jede nicht aktivierte App wird gespeichert. Jetzt würden {0} Apps gespeichert werden."],
-["Executing {0} on {1} apps...", "{0} wird auf {1} Apps ausgeführt..."],
 ["Exported {0} apps to {1}", "{0} Apps nach {1} exportiert"],
 ["Exported • via {0}", "Exportiert • über {0}"],
 ["Extract failed: {0}", "Extrahieren fehlgeschlagen: {0}"],

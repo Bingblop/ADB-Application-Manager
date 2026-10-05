@@ -2448,7 +2448,6 @@ p: [
 ["Error: {0}", "오류: {0}"],
 ["Every app that is not enabled is saved. {0} app would be saved now.", "사용 설정되지 않은 앱이 모두 저장됩니다. 지금 저장하면 앱 {0}개가 저장됩니다."],
 ["Every app that is not enabled is saved. {0} apps would be saved now.", "사용 설정되지 않은 앱이 모두 저장됩니다. 지금 저장하면 앱 {0}개가 저장됩니다."],
-["Executing {0} on {1} apps...", "앱 {1}개에 {0} 실행 중..."],
 ["Exported {0} apps to {1}", "앱 {0}개 내보냄: {1}"],
 ["Exported • via {0}", "내보냄 • {0} 경유"],
 ["Extract failed: {0}", "추출 실패: {0}"],

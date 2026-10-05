@@ -2908,18 +2908,37 @@
             padding: 3px 10px;
             font-size: 10px;
         }
+        /* Sort + Export/Share CSV/Profiles/Backups: one row, scrolling sideways on the rare phone too narrow
+           for all of it at once (same fallback the filter chips use below), rather than wrapping a lone button
+           onto its own near-empty line. */
         .apps-sort-row {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 3px;
             margin: -4px 0 10px;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+            touch-action: pan-x;
+        }
+
+        .apps-sort-row::-webkit-scrollbar {
+            display: none;
         }
 
         .apps-sort-label {
             font-size: 11px;
             font-weight: 800;
             color: var(--text-muted);
+            flex: 0 0 auto;
+        }
+
+        .apps-sort-row .mode-action-btn {
+            flex: 0 0 auto;
+            padding: 7px 7px;
+            font-size: 10.5px;
+            white-space: nowrap;
         }
 
         /* A small tip bubble between the buttons and the filter chips, its point aimed at the chips */
@@ -2965,8 +2984,10 @@
         }
 
         .apps-sort-select {
-            flex: 1;
-            min-width: 120px;
+            flex: 0 1 auto;
+            min-width: 60px;
+            width: 60px;
+            font-size: 10.5px;
         }
 
         .app-meta-line {
@@ -5434,11 +5455,20 @@ Type any command below (e.g. pm list packages -d)
                 </div>
                 <div style="font-size:20px; cursor:pointer;" onclick="closeBatchConfirmModal()">✕</div>
             </div>
-            <div class="modal-helper">These apps are currently selected for this action:</div>
-            <div class="confirm-list-box" id="batchConfirmList"></div>
-            <div style="display:flex; gap:10px; margin-top:8px;">
-                <button class="mode-action-btn primary" style="flex:1; justify-content:center;" id="batchConfirmExecuteBtn" onclick="confirmPendingBatchAction()">Confirm</button>
-                <button class="mode-action-btn" style="padding:10px 16px;" onclick="closeBatchConfirmModal()">Cancel</button>
+            <div id="batchConfirmBody">
+                <div class="modal-helper">These apps are currently selected for this action:</div>
+                <div class="confirm-list-box" id="batchConfirmList"></div>
+                <div style="display:flex; gap:10px; margin-top:8px;">
+                    <button class="mode-action-btn primary" style="flex:1; justify-content:center;" id="batchConfirmExecuteBtn" onclick="confirmPendingBatchAction()">Confirm</button>
+                    <button class="mode-action-btn" style="padding:10px 16px;" onclick="closeBatchConfirmModal()">Cancel</button>
+                </div>
+            </div>
+            <div id="batchProgressBody" style="display:none;">
+                <div class="uad-status" id="batchProgressText" style="margin-bottom:8px;"></div>
+                <div class="backup-bar"><div id="batchProgressBar" style="width:0%;"></div></div>
+                <div style="display:flex; gap:10px; margin-top:14px;">
+                    <button class="mode-action-btn" style="flex:1; justify-content:center;" id="batchProgressStopBtn" onclick="batchActionStop()">Stop</button>
+                </div>
             </div>
         </div>
     </div>
@@ -7087,8 +7117,19 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('commandResultsModal').classList.add('show');
         }
 
+        // true while runBatchAction's own step loop is actively processing apps - lets the modal's ✕/Cancel
+        // act as an early Stop instead of silently hiding a job that is still running in the background.
+        let batchRunActive = false;
+        let batchRunCancelled = false;
+
+        function batchConfirmShowBody(mode) {
+            document.getElementById('batchConfirmBody').style.display = mode === 'confirm' ? '' : 'none';
+            document.getElementById('batchProgressBody').style.display = mode === 'progress' ? '' : 'none';
+        }
+
         function closeBatchConfirmModal() {
             haptic();
+            if (batchRunActive) { batchActionStop(); return; }
             pendingBatchAction = null;
             document.getElementById('batchConfirmModal').classList.remove('show');
         }
@@ -7108,16 +7149,31 @@ Type any command below (e.g. pm list packages -d)
                 const app = allApps.find(a => a.pkg === pkg) || { name: pkg, pkg: pkg };
                 return '<div class="confirm-list-row"><strong>' + escapeHtml(app.name) + '</strong><br><span style="font-size:10px; color:var(--text-muted);">' + escapeHtml(pkg) + '</span></div>';
             }).join('');
+            batchConfirmShowBody('confirm');
             document.getElementById('batchConfirmModal').classList.add('show');
         }
 
         function confirmPendingBatchAction() {
             if (!pendingBatchAction) return;
             const next = pendingBatchAction;
-            document.getElementById('batchConfirmModal').classList.remove('show');
             pendingBatchAction = null;
-            if (next.custom) { next.custom(); return; }
+            if (next.custom) {
+                document.getElementById('batchConfirmModal').classList.remove('show');
+                next.custom();
+                return;
+            }
+            // The modal stays open and visible - runBatchAction swaps it straight into progress mode,
+            // so Confirm doesn't flash the sheet closed and immediately reopen it.
             runBatchAction(next.action, next.pkgs);
+        }
+
+        // Ends the running batch after whichever app is currently mid-action finishes (that one call can't be
+        // interrupted once started) - every app not reached yet is left exactly as it was.
+        function batchActionStop() {
+            haptic();
+            batchRunCancelled = true;
+            const btn = document.getElementById('batchProgressStopBtn');
+            if (btn) { btn.disabled = true; btn.innerText = 'Stopping…'; }
         }
 
         function performDetailedBatchAction(action, pkgs) {
@@ -10011,21 +10067,57 @@ Type any command below (e.g. pm list packages -d)
             runBatchAction(action, arr);
         }
 
+        // Runs one action across every app in arr, one at a time, with its own progress sheet (reusing the
+        // batch confirm modal's shell - swapped into its "progress" body - so Confirm doesn't have to close
+        // one sheet just to open another). Each step yields back to the browser with setTimeout(…, 0) between
+        // apps purely so the progress text/bar actually repaint between native calls, which otherwise block
+        // the page the same way any other AndroidBridge call does. Stop (or the sheet's own ✕) ends it after
+        // whichever app is already running finishes; nothing after that point is touched.
         function runBatchAction(action, arr) {
             haptic();
-            showToast(`Executing ${action} on ${arr.length} apps...`);
-            if (window.AndroidBridge) {
-                const res = performDetailedBatchAction(action, arr);
-                recordHistory('apps', `${ACTION_LABELS[action] || action} ${arr.length} app${arr.length === 1 ? '' : 's'}`,
-                    res.rows.map(r => ({ pkg: r.pkg, name: r.name, action: action, success: r.success })));
-                showToast(`Batch Done: ${res.success} succeeded, ${res.failed} failed`);
-                showCommandResults('Batch Results', action.toUpperCase() + ' • ' + arr.length + ' apps', res.rows);
+            if (!window.AndroidBridge) return;
+            batchRunCancelled = false;
+            batchRunActive = true;
+            const total = arr.length;
+            const rows = [];
+            let success = 0, failed = 0, i = 0;
+
+            document.getElementById('batchConfirmTitle').innerText = (ACTION_LABELS[action] || action) + ' ' + total + ' app' + (total === 1 ? '' : 's');
+            document.getElementById('batchConfirmSubtitle').innerText = '';
+            const stopBtn = document.getElementById('batchProgressStopBtn');
+            if (stopBtn) { stopBtn.disabled = false; stopBtn.innerText = 'Stop'; }
+            batchConfirmShowBody('progress');
+            document.getElementById('batchConfirmModal').classList.add('show');
+
+            const finish = () => {
+                batchRunActive = false;
+                document.getElementById('batchConfirmModal').classList.remove('show');
+                const stopped = batchRunCancelled && i < total;
+                const label = `${ACTION_LABELS[action] || action} ${rows.length} app${rows.length === 1 ? '' : 's'}` + (stopped ? ' (stopped early)' : '');
+                recordHistory('apps', label, rows.map(r => ({ pkg: r.pkg, name: r.name, action: action, success: r.success })));
+                showToast(stopped ? `Stopped: ${success} succeeded, ${failed} failed, ${total - i} not run` : `Batch Done: ${success} succeeded, ${failed} failed`);
+                showCommandResults('Batch Results', action.toUpperCase() + ' • ' + rows.length + ' of ' + total + ' apps' + (stopped ? ' (stopped)' : ''), rows);
                 // "Keep selection" leaves the apps selected (and the panel as it was) so another batch action
                 // can run on the same set right away - the floating sheet sits behind the result dialog the
                 // same way the single-app sheet does, and is there again once that dialog is dismissed.
                 if (!batchKeepSelection) clearBatchSelection();
                 setTimeout(loadPackageData, 400);
-            }
+            };
+
+            const step = () => {
+                if (batchRunCancelled || i >= total) { finish(); return; }
+                const pkg = arr[i];
+                const app = allApps.find(a => a.pkg === pkg) || { name: pkg, pkg: pkg };
+                document.getElementById('batchProgressText').innerText = `${i + 1} of ${total}: ${app.name} (${pkg})`;
+                document.getElementById('batchProgressBar').style.width = Math.round(i / total * 100) + '%';
+                const res = performDetailedBatchAction(action, [pkg]);
+                if (res.success) success++; else failed++;
+                rows.push.apply(rows, res.rows);
+                i++;
+                document.getElementById('batchProgressBar').style.width = Math.round(i / total * 100) + '%';
+                setTimeout(step, 0);
+            };
+            step();
         }
 
         // Opens Android's App Info screen. Works in every mode, including Read-Only.
@@ -10048,6 +10140,22 @@ Type any command below (e.g. pm list packages -d)
             const lowered = s.toLowerCase();
             const ok = !(lowered.includes('error') || lowered.includes('failed') || lowered.includes('failure') || lowered.includes('exception'));
             return { ok, output: s };
+        }
+
+        // For a raw executeShell() call with no flagged result of its own (executeAppAction's pm/am actions
+        // already carry one - see parseActionResult): runs the command and reads success from its own real
+        // exit status, the same reasoning and the same "; echo marker:$?" trick runShellAction uses natively,
+        // just done here in JS for the handful of spots that still call executeShell directly.
+        function execShellOk(cmd) {
+            if (!window.AndroidBridge || !window.AndroidBridge.executeShell) return { ok: false, output: '' };
+            const marker = '__RC' + Date.now() + Math.random().toString(36).slice(2) + '__';
+            const raw = String(window.AndroidBridge.executeShell(cmd + '; echo "' + marker + ':$?"') || '');
+            const idx = raw.lastIndexOf(marker + ':');
+            if (idx < 0) return { ok: true, output: raw }; // no real shell to parse from - nothing to contradict success
+            let output = raw.slice(0, idx);
+            while (output.endsWith('\n')) output = output.slice(0, -1);
+            const rc = parseInt(raw.slice(idx + marker.length + 1).trim(), 10);
+            return { ok: rc === 0, output };
         }
 
         function quickAction(action, pkg) {
@@ -14088,8 +14196,8 @@ Type any command below (e.g. pm list packages -d)
         function tmKillProc(pkg) {
             haptic();
             if (!window.AndroidBridge || !window.AndroidBridge.tmKill) return;
-            window.AndroidBridge.tmKill(pkg);
-            showToast('Stopped ' + pkg);
+            const { ok } = parseActionResult(window.AndroidBridge.tmKill(pkg));
+            showToast(ok ? 'Stopped ' + pkg : 'Could not stop ' + pkg);
             if (window.AndroidBridge.tmRefreshNow) window.AndroidBridge.tmRefreshNow();
         }
 
@@ -14344,9 +14452,9 @@ Type any command below (e.g. pm list packages -d)
             haptic();
             const label = tmRendererLabel(v);
             if (note) note.innerText = `Switching to ${label}…`;
-            window.AndroidBridge.executeShell('setprop debug.hwui.renderer ' + v);
-            window.AndroidBridge.executeShell('am crash com.android.systemui');
-            showToast(`${label} set - System UI restarted to apply it`);
+            const r1 = execShellOk('setprop debug.hwui.renderer ' + v);
+            const r2 = execShellOk('am crash com.android.systemui');
+            showToast(r1.ok && r2.ok ? `${label} set - System UI restarted to apply it` : `Could not switch to ${label}`);
             tmLoadRenderer();
         }
 
@@ -14706,9 +14814,8 @@ Type any command below (e.g. pm list packages -d)
             if (!guardPrivilege('Modify Permission')) return;
             haptic();
             if (!window.AndroidBridge || !inspectedPkg) return;
-            const out = window.AndroidBridge.setPermission(inspectedPkg, perm, !wasGranted) || '';
-            const failed = /error|exception|not a changeable|securityexception/i.test(out);
-            showToast(failed ? out.split('\n')[0] : (wasGranted ? 'Revoked ' : 'Granted ') + perm.replace(/^android\.permission\./, ''));
+            const { ok, output } = parseActionResult(window.AndroidBridge.setPermission(inspectedPkg, perm, !wasGranted));
+            showToast(ok ? (wasGranted ? 'Revoked ' : 'Granted ') + perm.replace(/^android\.permission\./, '') : (output.split('\n')[0] || 'Could not change that permission'));
             reloadInspectorDetails();
         }
 
@@ -14788,9 +14895,8 @@ Type any command below (e.g. pm list packages -d)
             if (!guardPrivilege('Change App Op')) return;
             haptic();
             if (!window.AndroidBridge || !inspectedPkg) return;
-            const out = (window.AndroidBridge.setAppOp(inspectedPkg, op, mode) || '').trim();
-            const failed = /error|exception|unknown|usage/i.test(out);
-            showToast(failed ? out.split('\n')[0] : op + ' → ' + mode);
+            const { ok, output } = parseActionResult(window.AndroidBridge.setAppOp(inspectedPkg, op, mode));
+            showToast(ok ? op + ' → ' + mode : (output.trim().split('\n')[0] || 'Could not change that app op'));
             refreshAppOps();
         }
 
@@ -15090,8 +15196,8 @@ Type any command below (e.g. pm list packages -d)
             if (!guardPrivilege('Stop Service')) return;
             haptic();
             if (window.AndroidBridge && inspectedPkg) {
-                window.AndroidBridge.executeShell(`am stopservice '${inspectedPkg}/${srv}'`);
-                showToast('Service stopped');
+                const { ok } = execShellOk(`am stopservice '${inspectedPkg}/${srv}'`);
+                showToast(ok ? 'Service stopped' : 'Could not stop the service');
             }
         }
 

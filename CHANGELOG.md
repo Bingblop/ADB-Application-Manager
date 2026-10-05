@@ -1,5 +1,22 @@
 # Changelog
 
+## v7.9.5-Pro (versionCode 795)
+
+- **Live progress for batch actions.** Running a command (Freeze, Force Stop, Uninstall, ...) across several
+  selected apps used to just show a spinner with no detail until it was all done. The batch panel now shows which
+  app is currently being processed (name and package), a fill bar for how many are done, and a Stop button that
+  ends the run after whichever app is already in flight finishes - nothing past that point is touched. Closing the
+  sheet (✕ or tapping outside) while a run is active does the same thing, instead of silently hiding a job that
+  would otherwise keep running unseen.
+- **More command-result prompts now reflect what actually happened**, instead of assuming success or scanning
+  output for a fixed set of failure words: Task Manager's "Kill" and GPU renderer switch, stopping a component's
+  service, granting/revoking a permission, and changing an app op all now read the real result (exit code, or the
+  native call's own outcome) the same way the rest of the app's actions already did. Optimize (Dex compile) also
+  picks up a keyword gap ("failed") the old scan was missing.
+- **Apps tab: the Sort/Export/Share CSV/Profiles/Backups row** no longer wraps "Backups" onto its own near-empty
+  line on a phone-width screen - the row scrolls sideways like the filter pills above it instead, with everything
+  below it shifted up to fill the gap.
+
 ## v7.9.4-Pro (versionCode 794)
 
 - **Fixed the systemless-uninstall fallback actually reporting failure after it succeeded.** It passed a plain

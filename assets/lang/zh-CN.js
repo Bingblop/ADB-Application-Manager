@@ -2448,7 +2448,6 @@ p: [
 ["Error: {0}", "错误：{0}"],
 ["Every app that is not enabled is saved. {0} app would be saved now.", "所有未启用的应用都会被保存。现在将保存 {0} 个应用。"],
 ["Every app that is not enabled is saved. {0} apps would be saved now.", "所有未启用的应用都会被保存。现在将保存 {0} 个应用。"],
-["Executing {0} on {1} apps...", "正在对 {1} 个应用执行{0}…"],
 ["Exported {0} apps to {1}", "已将 {0} 个应用导出到 {1}"],
 ["Exported • via {0}", "已导出 • 通过 {0}"],
 ["Extract failed: {0}", "提取失败：{0}"],

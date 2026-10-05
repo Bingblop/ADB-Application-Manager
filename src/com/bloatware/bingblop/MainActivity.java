@@ -11009,10 +11009,10 @@ public class MainActivity extends Activity {
                 if ("standard".equals(resolveExecMode())) { r.put("ok", false); r.put("output", "Error: dex optimization needs ADB, Shizuku or Root."); return r.toString(); }
                 String m = mode == null ? "speed" : mode.replaceAll("[^a-z-]", "");
                 if (m.isEmpty()) m = "speed";
-                String out = executeShell("pm compile -m " + m + (force ? " -f " : " ") + pkg);
-                String low = out == null ? "" : out.toLowerCase();
-                r.put("ok", low.contains("success") || low.contains("performed") || (!low.contains("error") && !low.contains("failure") && !low.contains("unknown") && !low.contains("usage")));
-                r.put("output", out != null && !out.trim().isEmpty() ? out.trim() : "Done");
+                String flagged = runShellAction("pm compile -m " + m + (force ? " -f " : " ") + pkg);
+                String out = flagText(flagged);
+                r.put("ok", flagOk(flagged));
+                r.put("output", !out.trim().isEmpty() ? out.trim() : "Done");
             } catch (Exception e) {
                 try { r.put("ok", false); r.put("output", "Error: " + e.getMessage()); } catch (Exception ignored) {}
             }
@@ -11080,12 +11080,12 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String setAppOp(String pkg, String op, String mode) {
-            return executeShell("appops set " + pkg + " " + op + " " + mode);
+            return runShellAction("appops set " + pkg + " " + op + " " + mode);
         }
 
         @JavascriptInterface
         public String setPermission(String pkg, String perm, boolean grant) {
-            return grant ? executeShell("pm grant " + pkg + " " + perm) : executeShell("pm revoke " + pkg + " " + perm);
+            return runShellAction(grant ? ("pm grant " + pkg + " " + perm) : ("pm revoke " + pkg + " " + perm));
         }
 
         @JavascriptInterface

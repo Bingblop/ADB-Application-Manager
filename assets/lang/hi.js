@@ -2448,7 +2448,6 @@ p: [
 ["Error: {0}", "त्रुटि: {0}"],
 ["Every app that is not enabled is saved. {0} app would be saved now.", "हर वह ऐप सहेजा जाता है जो सक्षम नहीं है। अभी {0} ऐप सहेजा जाएगा।"],
 ["Every app that is not enabled is saved. {0} apps would be saved now.", "हर वह ऐप सहेजा जाता है जो सक्षम नहीं है। अभी {0} ऐप्स सहेजे जाएंगे।"],
-["Executing {0} on {1} apps...", "{1} ऐप्स पर {0} चलाया जा रहा है..."],
 ["Exported {0} apps to {1}", "{0} ऐप्स {1} में एक्सपोर्ट किए गए"],
 ["Exported • via {0}", "एक्सपोर्टेड • {0} के ज़रिए"],
 ["Extract failed: {0}", "एक्सट्रैक्ट विफल रहा: {0}"],

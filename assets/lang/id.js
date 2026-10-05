@@ -2448,7 +2448,6 @@ p: [
 ["Error: {0}", "Error: {0}"],
 ["Every app that is not enabled is saved. {0} app would be saved now.", "Semua aplikasi yang tidak diaktifkan akan disimpan. {0} aplikasi akan disimpan sekarang."],
 ["Every app that is not enabled is saved. {0} apps would be saved now.", "Semua aplikasi yang tidak diaktifkan akan disimpan. {0} aplikasi akan disimpan sekarang."],
-["Executing {0} on {1} apps...", "Menjalankan {0} pada {1} aplikasi..."],
 ["Exported {0} apps to {1}", "{0} aplikasi diekspor ke {1}"],
 ["Exported • via {0}", "Diekspor • via {0}"],
 ["Extract failed: {0}", "Ekstraksi gagal: {0}"],

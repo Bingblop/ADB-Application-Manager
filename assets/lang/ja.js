@@ -2448,7 +2448,6 @@ p: [
 ["Error: {0}", "エラー：{0}"],
 ["Every app that is not enabled is saved. {0} app would be saved now.", "有効でないアプリはすべて保存されます。現在{0}個のアプリが保存対象です。"],
 ["Every app that is not enabled is saved. {0} apps would be saved now.", "有効でないアプリはすべて保存されます。現在{0}個のアプリが保存対象です。"],
-["Executing {0} on {1} apps...", "{1}個のアプリで{0}を実行しています…"],
 ["Exported {0} apps to {1}", "{0}個のアプリを{1}にエクスポートしました"],
 ["Exported • via {0}", "エクスポート済み • {0}経由"],
 ["Extract failed: {0}", "抽出に失敗しました：{0}"],
