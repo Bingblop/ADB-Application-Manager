@@ -1647,7 +1647,6 @@ x: {
 "Showing the first 5000 matches. Type more of the name to narrow it down.": "仅显示前 5000 个匹配项。请输入更多名称以缩小范围。",
 "Showing the value the phone holds now": "显示手机当前保存的值",
 "Shows each command with Run, Skip and Always allow in this chat.": "逐条显示命令，并提供“运行”、“跳过”和“在本次对话中始终允许”。",
-"Shows what changes, line by line, with Apply and Skip.": "逐行显示更改内容，并提供“应用”和“跳过”。",
 "Sideloaded apps are matched to their source through your sources, your imported Obtainium list, the Obtainium community catalog, IzzyOnDroid and F-Droid. Every download is checked to be the same app, a newer version and signed with the same key before installing through ADB, Shizuku or Root. Play Store apps keep updating through the Play Store.": "侧载的应用会通过你设置的来源、你导入的 Obtainium 列表、Obtainium 社区目录、IzzyOnDroid 和 F-Droid 匹配到各自的来源。每次下载在通过 ADB、Shizuku 或 Root 安装前，都会校验是否为同一应用、是否为更新版本，以及是否使用同一密钥签名。Play Store 应用仍通过 Play Store 更新。",
 "Sideloaded apps with no known source. Set a GitHub, Codeberg or F-Droid link to check them.": "没有已知来源的侧载应用。请设置 GitHub、Codeberg 或 F-Droid 链接以检查更新。",
 "Sign": "签名",

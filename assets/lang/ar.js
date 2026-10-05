@@ -1647,7 +1647,6 @@ x: {
 "Showing the first 5000 matches. Type more of the name to narrow it down.": "يتم عرض أول 5000 تطابق. اكتب المزيد من الاسم لتضييق النتائج.",
 "Showing the value the phone holds now": "عرض القيمة الحالية في الهاتف",
 "Shows each command with Run, Skip and Always allow in this chat.": "يعرض كل أمر مع «تنفيذ» و«تخطّي» و«السماح دائمًا في هذه الدردشة».",
-"Shows what changes, line by line, with Apply and Skip.": "يعرض ما سيتغيّر سطرًا بسطر، مع «تطبيق» و«تخطّي».",
 "Sideloaded apps are matched to their source through your sources, your imported Obtainium list, the Obtainium community catalog, IzzyOnDroid and F-Droid. Every download is checked to be the same app, a newer version and signed with the same key before installing through ADB, Shizuku or Root. Play Store apps keep updating through the Play Store.": "تتم مطابقة التطبيقات المثبّتة من خارج المتجر بمصادرها عبر مصادرك وقائمة Obtainium التي استوردتها وفهرس مجتمع Obtainium وIzzyOnDroid وF-Droid. يتم التحقق من كل تنزيل بأنه التطبيق نفسه وإصدار أحدث وموقّع بالمفتاح نفسه قبل التثبيت عبر ADB أو Shizuku أو Root. وتستمر تطبيقات Play Store في التحديث عبر Play Store.",
 "Sideloaded apps with no known source. Set a GitHub, Codeberg or F-Droid link to check them.": "تطبيقات مثبّتة من خارج المتجر بلا مصدر معروف. عيّن رابط GitHub أو Codeberg أو F-Droid للتحقق منها.",
 "Sign": "توقيع",

@@ -17111,8 +17111,9 @@ Type any command below (e.g. pm list packages -d)
             opencode: { path: '~/.config/opencode/opencode.json', top: 'mcp', shape: 'opencode' }
         };
 
-        // allowRun: "Always allow in this chat", per shell and user ({ 'app:10123': true }): a grant in the sandbox does not let commands run as root
-        const txChat = { msgs: [], busy: false, stop: false, reqId: null, steps: 0, allowRun: {}, allowAll: false, undo: [], usage: { in: 0, out: 0 }, cursorAgent: '', cliCont: {}, ask: null };
+        // allowRun: "Always allow in this chat", per shell and user ({ 'app:10123': true }): a grant in the sandbox does not let commands run as root.
+        // allowWrite is the same idea for write/edit - one flat grant (not per shell, a file change carries the same weight wherever it runs).
+        const txChat = { msgs: [], busy: false, stop: false, reqId: null, steps: 0, allowRun: {}, allowWrite: false, allowAll: false, undo: [], usage: { in: 0, out: 0 }, cursorAgent: '', cliCont: {}, ask: null };
 
         function txAgentDef(id) { return TX_AGENTS.find(a => a.id === id) || null; }
         function txQ(s) { return "'" + String(s).replace(/'/g, "'\\''") + "'"; }
@@ -17823,9 +17824,10 @@ Type any command below (e.g. pm list packages -d)
                     if (res.error) return { text: '<result action="edit" path="' + txAttr(p) + '" status="error">' + txAttr(res.error) + '</result>' };
                     next = res.text;
                 }
-                if (txSettings.askWrite && !txChat.allowAll) {
-                    const a = await txAsk(b, txF(act.type === 'edit' ? '{0} wants to change {1}:' : old.exists ? '{0} wants to replace {1}:' : '{0} wants to create {1}:', who, txShortPath(b, abs)), txDiffNode(old.exists ? old.text : '', next), { yes: 'Apply' });
+                if (txSettings.askWrite && !txChat.allowAll && !txChat.allowWrite) {
+                    const a = await txAsk(b, txF(act.type === 'edit' ? '{0} wants to change {1}:' : old.exists ? '{0} wants to replace {1}:' : '{0} wants to create {1}:', who, txShortPath(b, abs)), txDiffNode(old.exists ? old.text : '', next), { yes: 'Apply', always: 'Always allow in this chat' });
                     if (a === 'no') return { text: '<result action="' + act.type + '" path="' + txAttr(p) + '" status="denied">The user did not apply it. Wait for their next message.</result>', denied: true };
+                    if (a === 'always') txChat.allowWrite = true;
                 }
                 if (txChat.stop) return { text: '', denied: true };
                 const w = await txWriteBytes(b, abs, new TextEncoder().encode(next));
@@ -17981,6 +17983,7 @@ Type any command below (e.g. pm list packages -d)
             txChat.undo = [];
             txChat.usage = { in: 0, out: 0 };
             txChat.allowRun = {};
+            txChat.allowWrite = false;
             txChat.allowAll = false;
             txChat.cursorAgent = '';
             txChat.cliCont = {};
@@ -18889,7 +18892,7 @@ Type any command below (e.g. pm list packages -d)
                 + '<div class="mode-btn-row" style="margin-top:10px;"><button class="mode-action-btn" onclick="txCloseSettings(); txOpenTermuxSetup()">Termux setup</button></div>'
                 + '<div class="tx-sheet-sec">What agents may do</div>'
                 + sw('askRun', 'Ask before running commands', 'Shows each command with Run, Skip and Always allow in this chat.')
-                + sw('askWrite', 'Ask before changing files', 'Shows what changes, line by line, with Apply and Skip.')
+                + sw('askWrite', 'Ask before changing files', 'Shows what changes, line by line, with Apply, Skip and Always allow in this chat.')
                 + sw('readOutside', 'Read files outside the working folder without asking', 'Off: reading outside the current folder needs your OK.')
                 + '<div class="tx-row"><div class="tx-row-main"><div class="tx-row-name">Steps per request</div><div class="tx-row-sub">The agent pauses after this many steps.</div></div><select class="op-select" onchange="txSet(\'maxSteps\', parseInt(this.value, 10))">' + steps + '</select></div>'
                 + '<div class="tx-sheet-sec">Sign-in tools in Termux</div>'

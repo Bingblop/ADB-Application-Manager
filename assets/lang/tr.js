@@ -1647,7 +1647,6 @@ x: {
 "Showing the first 5000 matches. Type more of the name to narrow it down.": "İlk 5000 eşleşme gösteriliyor. Daraltmak için adın daha fazlasını yazın.",
 "Showing the value the phone holds now": "Telefonun şu an tuttuğu değer gösteriliyor",
 "Shows each command with Run, Skip and Always allow in this chat.": "Her komutu Çalıştır, Atla ve Bu sohbette her zaman izin ver seçenekleriyle gösterir.",
-"Shows what changes, line by line, with Apply and Skip.": "Neyin değiştiğini satır satır, Uygula ve Atla seçenekleriyle gösterir.",
 "Sideloaded apps are matched to their source through your sources, your imported Obtainium list, the Obtainium community catalog, IzzyOnDroid and F-Droid. Every download is checked to be the same app, a newer version and signed with the same key before installing through ADB, Shizuku or Root. Play Store apps keep updating through the Play Store.": "Yan yüklenen uygulamalar; kaynaklarınız, içe aktardığınız Obtainium listesi, Obtainium topluluk kataloğu, IzzyOnDroid ve F-Droid üzerinden kaynaklarıyla eşleştirilir. Her indirme, ADB, Shizuku veya Root ile yüklenmeden önce aynı uygulama olduğu, daha yeni bir sürüm olduğu ve aynı anahtarla imzalandığı yönünden denetlenir. Play Store uygulamaları Play Store üzerinden güncellenmeye devam eder.",
 "Sideloaded apps with no known source. Set a GitHub, Codeberg or F-Droid link to check them.": "Bilinen kaynağı olmayan yan yüklenen uygulamalar. Denetlemek için bir GitHub, Codeberg veya F-Droid bağlantısı ayarlayın.",
 "Sign": "İmzala",

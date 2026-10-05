@@ -1647,7 +1647,6 @@ x: {
 "Showing the first 5000 matches. Type more of the name to narrow it down.": "最初の5000件を表示しています。名前をさらに入力して絞り込んでください。",
 "Showing the value the phone holds now": "端末が現在保持している値を表示しています",
 "Shows each command with Run, Skip and Always allow in this chat.": "各コマンドを「実行」「スキップ」「このチャットでは常に許可」とともに表示します。",
-"Shows what changes, line by line, with Apply and Skip.": "変更内容を1行ずつ、「適用」「スキップ」とともに表示します。",
 "Sideloaded apps are matched to their source through your sources, your imported Obtainium list, the Obtainium community catalog, IzzyOnDroid and F-Droid. Every download is checked to be the same app, a newer version and signed with the same key before installing through ADB, Shizuku or Root. Play Store apps keep updating through the Play Store.": "サイドロードしたアプリは、ユーザーが設定したソース、インポートしたObtainiumリスト、Obtainiumコミュニティカタログ、IzzyOnDroid、F-Droidを通じて提供元と照合されます。ダウンロードしたものはすべて、同じアプリであること、より新しいバージョンであること、同じキーで署名されていることを確認してから、ADB、Shizuku、Root経由でインストールされます。Play Storeのアプリは、引き続きPlay Storeから更新されます。",
 "Sideloaded apps with no known source. Set a GitHub, Codeberg or F-Droid link to check them.": "提供元が不明なサイドロードアプリです。更新を確認するには、GitHub、Codeberg、F-Droidのリンクを設定してください。",
 "Sign": "署名",

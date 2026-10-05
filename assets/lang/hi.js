@@ -1647,7 +1647,6 @@ x: {
 "Showing the first 5000 matches. Type more of the name to narrow it down.": "पहले 5000 मिलान दिख रहे हैं। दायरा घटाने के लिए नाम का और हिस्सा लिखें।",
 "Showing the value the phone holds now": "फ़ोन में अभी मौजूद मान दिख रहा है",
 "Shows each command with Run, Skip and Always allow in this chat.": "हर कमांड को “चलाएं”, “छोड़ें” और “इस चैट में हमेशा अनुमति दें” के साथ दिखाता है।",
-"Shows what changes, line by line, with Apply and Skip.": "जो बदलेगा उसे लाइन-दर-लाइन, “लागू करें” और “छोड़ें” के साथ दिखाता है।",
 "Sideloaded apps are matched to their source through your sources, your imported Obtainium list, the Obtainium community catalog, IzzyOnDroid and F-Droid. Every download is checked to be the same app, a newer version and signed with the same key before installing through ADB, Shizuku or Root. Play Store apps keep updating through the Play Store.": "साइडलोड किए गए ऐप्स का स्रोत आपके स्रोतों, आपकी आयात की गई Obtainium सूची, Obtainium कम्युनिटी कैटलॉग, IzzyOnDroid और F-Droid के ज़रिए पहचाना जाता है। ADB, Shizuku या Root से इंस्टॉल करने से पहले हर डाउनलोड की जांच होती है कि वह वही ऐप है, नया वर्शन है और उसी कुंजी से साइन किया गया है। Play Store के ऐप्स Play Store से ही अपडेट होते रहते हैं।",
 "Sideloaded apps with no known source. Set a GitHub, Codeberg or F-Droid link to check them.": "साइडलोड किए गए ऐप्स जिनका कोई ज्ञात स्रोत नहीं है। उन्हें जांचने के लिए GitHub, Codeberg या F-Droid लिंक सेट करें।",
 "Sign": "साइन करें",

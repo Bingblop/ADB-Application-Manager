@@ -1647,7 +1647,6 @@ x: {
 "Showing the first 5000 matches. Type more of the name to narrow it down.": "Se muestran las primeras 5000 coincidencias. Escribe más del nombre para acotar.",
 "Showing the value the phone holds now": "Se muestra el valor que tiene el teléfono ahora",
 "Shows each command with Run, Skip and Always allow in this chat.": "Muestra cada comando con Ejecutar, Omitir y Permitir siempre en este chat.",
-"Shows what changes, line by line, with Apply and Skip.": "Muestra qué cambia, línea por línea, con Aplicar y Omitir.",
 "Sideloaded apps are matched to their source through your sources, your imported Obtainium list, the Obtainium community catalog, IzzyOnDroid and F-Droid. Every download is checked to be the same app, a newer version and signed with the same key before installing through ADB, Shizuku or Root. Play Store apps keep updating through the Play Store.": "Las apps instaladas manualmente se asocian con su fuente mediante tus fuentes, tu lista de Obtainium importada, el catálogo de la comunidad de Obtainium, IzzyOnDroid y F-Droid. Antes de instalar mediante ADB, Shizuku o Root, se verifica que cada descarga sea la misma app, una versión más reciente y esté firmada con la misma clave. Las apps de Play Store siguen actualizándose mediante Play Store.",
 "Sideloaded apps with no known source. Set a GitHub, Codeberg or F-Droid link to check them.": "Apps instaladas manualmente sin fuente conocida. Define un enlace de GitHub, Codeberg o F-Droid para verificarlas.",
 "Sign": "Firmar",

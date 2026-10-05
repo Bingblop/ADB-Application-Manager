@@ -1647,7 +1647,6 @@ x: {
 "Showing the first 5000 matches. Type more of the name to narrow it down.": "처음 5000개의 일치 항목을 표시합니다. 이름을 더 입력하여 범위를 좁히세요.",
 "Showing the value the phone holds now": "휴대전화의 현재 값을 표시합니다",
 "Shows each command with Run, Skip and Always allow in this chat.": "각 명령어를 실행, 건너뛰기, 이 채팅에서 항상 허용 버튼과 함께 표시합니다.",
-"Shows what changes, line by line, with Apply and Skip.": "변경 내용을 한 줄씩 적용 및 건너뛰기 버튼과 함께 표시합니다.",
 "Sideloaded apps are matched to their source through your sources, your imported Obtainium list, the Obtainium community catalog, IzzyOnDroid and F-Droid. Every download is checked to be the same app, a newer version and signed with the same key before installing through ADB, Shizuku or Root. Play Store apps keep updating through the Play Store.": "사이드로드한 앱은 사용자가 지정한 출처, 가져온 Obtainium 목록, Obtainium 커뮤니티 카탈로그, IzzyOnDroid, F-Droid를 통해 출처와 연결됩니다. ADB, Shizuku 또는 Root로 설치하기 전에 모든 다운로드 파일이 같은 앱이고 더 높은 버전이며 같은 키로 서명되었는지 확인합니다. Play Store 앱은 계속 Play Store를 통해 업데이트됩니다.",
 "Sideloaded apps with no known source. Set a GitHub, Codeberg or F-Droid link to check them.": "출처를 알 수 없는 사이드로드 앱입니다. 확인하려면 GitHub, Codeberg 또는 F-Droid 링크를 설정하세요.",
 "Sign": "서명",

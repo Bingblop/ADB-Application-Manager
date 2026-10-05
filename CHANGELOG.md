@@ -1,5 +1,14 @@
 # Changelog
 
+## v7.9.11-Pro (versionCode 801)
+
+- **Coding Agents: "Always allow" for file changes, not just commands.** A proposed `<run>` command already had
+  an "Always allow in this chat" option next to Run and Skip; a proposed file write or edit only ever offered
+  Apply and Skip, so every single change needed its own tap, however many steps a task took. The same "Always
+  allow" button is now on that card too - once pressed, the rest of the chat's file changes go through with no
+  further asking (reading outside the working folder and running commands are unaffected and still need their
+  own say-so, unless those were separately allowed too).
+
 ## v7.9.10-Pro (versionCode 800)
 
 - **Terminal: no more "Shell Command Result" popup after every command.** It hardcoded success regardless of
