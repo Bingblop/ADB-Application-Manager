@@ -1,5 +1,23 @@
 # Changelog
 
+## v7.9.9-Pro (versionCode 799)
+
+- **Dex optimization no longer freezes the page.** Recompiling an app (or several) ran a `pm compile` call
+  straight from the page's own thread, exactly the freeze batch actions had before v7.9.6 - now it runs off the
+  page's thread with a live progress bar and a Stop button, for one app or many alike.
+- **Fewer redundant "it worked" popups.** A single-app ⋯ menu action and a single app's Dex optimization used to
+  show a toast *and* a full result dialog for a routine, successful action - now, like every other action in the
+  app (toggling a component, a file-manager operation, launching an activity...), the dialog only shows up when
+  something needs explaining; a failure still gets it.
+- **Applying a Profile** now runs the same way batch actions do - off the page's thread with the progress bar
+  above, instead of freezing the page for however long the whole plan took - and the Profiles sheet stays open
+  behind the result dialog afterwards instead of closing first, matching every other flow in the app.
+- Single-app menu: the Copy package / Copy version / Copy name row no longer wraps to a second line on a narrow
+  phone; Share sits further from the ✕ so a slightly careless tap doesn't land on the wrong one.
+- Terminal: the Ctrl+C key now just reads "CTRL" (still stops whatever is running).
+- Credits: added a mention of [RohitKushvaha01/TaskManager](https://github.com/RohitKushvaha01/TaskManager),
+  which the Task Manager tab is modeled on.
+
 ## v7.9.8-Pro (versionCode 798)
 
 - **File Manager: Add storage.** Bring in an SD card, a USB drive, or a folder another app is willing to share,

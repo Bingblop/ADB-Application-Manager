@@ -1,9 +1,11 @@
 // Profiles: apply plan per app state, refused saves rolled back; APK extraction one at a time, no share sheet
 const { chromium, PAGE } = require('./lib/pw');
+const appBatchMock = require('./lib/appbatch_mock');
 (async () => {
   const b = await chromium.launch();
   const page = await b.newPage({ viewport: { width: 400, height: 860 } });
   const errors = []; page.on('pageerror', e => errors.push(e.message));
+  const sleep = ms => page.waitForTimeout(ms);
   await page.addInitScript(() => {
     window.__calls = []; window.__store = {}; window.__saveOk = true; window.__extractCbs = [];
     window.AndroidBridge = {
@@ -25,6 +27,7 @@ const { chromium, PAGE } = require('./lib/pw');
       { pkg: 'f.frozenSusp', name: 'F', isSystem: true, isFrozen: true, isSuspended: true },
     ];
   });
+  await page.addInitScript(appBatchMock.installAppBatchMock);
   await page.goto(PAGE); await page.waitForTimeout(500);
   const plan = (entries) => page.evaluate(es => { const p = profilePlan({ apps: es }); const o = {}; PLAN_ORDER.forEach(k => { if (p.steps[k].length) o[k] = p.steps[k]; }); return JSON.stringify({ steps: o, same: p.same, missing: p.missing, apps: p.apps }); }, entries);
 
@@ -45,8 +48,11 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.evaluate(() => { profiles = [{ id: 'p', name: 'P', created: 1, apps: [{ pkg: 'a.suspended', name: 'A', state: 'disabled' }, { pkg: 'c.uninstalled', name: 'C', state: 'disabled' }, { pkg: 'd.enabled', name: 'D', state: 'uninstalled' }] }]; openProfiles(); previewProfile('p'); });
   console.log('preview:', (await page.innerText('#profilePreview')).replace(/\s+/g, ' ').slice(0, 150));
   await page.evaluate(() => { window.__calls.length = 0; applyProfile(); });
+  await sleep(400);
   console.log('apply order:', JSON.stringify(await page.evaluate(() => window.__calls)));
+  console.log('sheet stays open behind the result dialog (not closed first):', await page.evaluate(() => document.getElementById('profilesModal').classList.contains('show')));
   await page.evaluate(() => closeCommandResultsModal());
+  await page.evaluate(() => closeProfiles());
 
   // --- saving that the app could not keep is reported and rolled back ---
   await page.evaluate(() => { profiles = []; window.__saveOk = false; openProfiles(); });

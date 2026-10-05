@@ -2512,8 +2512,6 @@ p: [
 ["Opening {0}…", "Открытие {0}…"],
 ["Opens in a Termux window, where {0} shows its own website sign-in. Come back here when it says you are signed in.", "Открывается в окне Termux, где {0} показывает вход через свой сайт. Вернитесь сюда, когда он сообщит, что вход выполнен."],
 ["Optimized {0}/{1}", "Оптимизировано {0}/{1}"],
-["Optimizing {0} apps...", "Оптимизация приложений: {0}..."],
-["Optimizing {0}...", "Оптимизация {0}..."],
 ["Overlays tab: {0}", "Вкладка «Оверлеи»: {0}"],
 ["PORT {0} OPEN", "ПОРТ {0} ОТКРЫТ"],
 ["Package: {0}", "Пакет: {0}"],

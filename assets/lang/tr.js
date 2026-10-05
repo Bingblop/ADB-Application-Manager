@@ -2512,8 +2512,6 @@ p: [
 ["Opening {0}…", "{0} açılıyor…"],
 ["Opens in a Termux window, where {0} shows its own website sign-in. Come back here when it says you are signed in.", "Bir Termux penceresinde açılır; orada {0} kendi web sitesindeki oturum açma sayfasını gösterir. Oturum açtığınızı bildirdiğinde buraya geri dönün."],
 ["Optimized {0}/{1}", "Optimize edildi: {0}/{1}"],
-["Optimizing {0} apps...", "{0} uygulama optimize ediliyor..."],
-["Optimizing {0}...", "{0} optimize ediliyor..."],
 ["Overlays tab: {0}", "Katmanlar sekmesi: {0}"],
 ["PORT {0} OPEN", "PORT {0} AÇIK"],
 ["Package: {0}", "Paket: {0}"],

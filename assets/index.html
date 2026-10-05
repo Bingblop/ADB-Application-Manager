@@ -72,10 +72,12 @@
 
         .copy-chip, .find-nav, .profile-btn { -webkit-user-select: none; user-select: none; }
         .apps-tool-btn.term-pin { border-color: var(--accent); color: var(--accent); }          /* a pinned command next to the built-in buttons */
-        .copy-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+        .copy-row { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 6px; margin-top: 8px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+        .copy-row::-webkit-scrollbar { display: none; }
         .copy-chip {
             border: 1px solid var(--border); background: var(--bg-card, transparent); color: var(--text-main);
             font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 12px; cursor: pointer;
+            flex-shrink: 0;
         }
         .copy-chip:active { transform: scale(0.96); }
         .find-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0; }
@@ -978,7 +980,7 @@
         .sheet-header-actions {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 46px;
             flex: 0 0 auto;
             align-self: flex-start;
         }
@@ -4590,6 +4592,7 @@
             <div class="color-card">
                 <div class="color-card-title">Credits</div>
                 <div class="about-tip">Debloat data from <a href="#" onclick="openUrlExternal('https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation'); return false;">UAD-NG</a> (GPL-3.0). Shell access through <a href="#" onclick="openUrlExternal('https://github.com/RikkaApps/Shizuku-API'); return false;">Shizuku</a>. Update sources: Galaxy Store, GitHub, Codeberg, F-Droid, IzzyOnDroid and the Obtainium community catalog.</div>
+                <div class="about-tip">Task Manager tab modeled on <a href="#" onclick="openUrlExternal('https://github.com/RohitKushvaha01/TaskManager'); return false;">RohitKushvaha01/TaskManager</a>.</div>
             </div>
         </section>
 
@@ -4740,7 +4743,7 @@
                 <div class="tx-keys" id="txKeys" role="toolbar" aria-label="Extra keys">
                     <button translate="no" data-k="esc" class="tx-key-base" title="Clear the line">ESC</button>
                     <button translate="no" data-k="tab" class="tx-key-base" title="Complete a file name">TAB</button>
-                    <button translate="no" data-k="ctrlc" class="tx-key-base tx-key-stop" title="Stop what is running">CTRL-C</button>
+                    <button translate="no" data-k="ctrlc" class="tx-key-base tx-key-stop" title="Stop what is running">CTRL</button>
                     <button translate="no" data-k="up" class="tx-key-base" title="Previous command" aria-label="Previous command">▲</button>
                     <button translate="no" data-k="down" class="tx-key-base" title="Next command" aria-label="Next command">▼</button>
                     <button translate="no" data-k="left" class="tx-key-base" title="Cursor left" aria-label="Cursor left">←</button>
@@ -7172,7 +7175,7 @@ Type any command below (e.g. pm list packages -d)
 
         function closeBatchConfirmModal() {
             haptic();
-            if (batchRunActive) { batchActionStop(); return; }
+            if (batchRunActive || optimizeRunActive || profileRunActive) { batchActionStop(); return; }
             pendingBatchAction = null;
             document.getElementById('batchConfirmModal').classList.remove('show');
         }
@@ -7216,7 +7219,8 @@ Type any command below (e.g. pm list packages -d)
         // once it has actually stopped.
         function batchActionStop() {
             haptic();
-            if (window.AndroidBridge && window.AndroidBridge.appBatchCancel) window.AndroidBridge.appBatchCancel();
+            if (optimizeRunActive) { if (window.AndroidBridge && window.AndroidBridge.optimizeBatchCancel) window.AndroidBridge.optimizeBatchCancel(); }
+            else if (window.AndroidBridge && window.AndroidBridge.appBatchCancel) window.AndroidBridge.appBatchCancel();     // also stops a running profile - it is one appActionBatch call per action group
             const btn = document.getElementById('batchProgressStopBtn');
             if (btn) { btn.disabled = true; btn.innerText = 'Stopping…'; }
         }
@@ -10149,8 +10153,11 @@ Type any command below (e.g. pm list packages -d)
             batchRunActive = true;
         }
 
-        // Fires once before each app's own action runs natively.
+        // Fires once before each app's own action runs natively. A profile applies several action groups through
+        // this same native batch runner, one group at a time, so its own progress/done handlers take over first
+        // whenever a profile run (rather than a plain selection batch) is the one in flight.
         window.onAppBatchProgress = function (i, total, pkg) {
+            if (profileRunActive) { profileOnBatchProgress(i, total, pkg); return; }
             const app = allApps.find(a => a.pkg === pkg) || { name: pkg, pkg: pkg };
             document.getElementById('batchProgressText').innerText = `${i + 1} of ${total}: ${app.name} (${pkg})`;
             document.getElementById('batchProgressBar').style.width = Math.round(i / total * 100) + '%';
@@ -10158,6 +10165,7 @@ Type any command below (e.g. pm list packages -d)
 
         // Fires once the native run has finished (to completion, or stopped early).
         window.onAppBatchDone = function (resultJson) {
+            if (profileRunActive) { profileOnBatchDone(resultJson); return; }
             batchRunActive = false;
             let res; try { res = JSON.parse(resultJson); } catch (e) { res = null; }
             document.getElementById('batchConfirmModal').classList.remove('show');
@@ -10224,7 +10232,9 @@ Type any command below (e.g. pm list packages -d)
                 const app = allApps.find(a => a.pkg === pkg) || { name: pkg, pkg: pkg };
                 const { ok, output } = parseActionResult(window.AndroidBridge.executeAppAction(action, pkg));
                 showToast(ok ? 'Action executed' : 'Action reported a problem');
-                showCommandResults('Command Result', action.toUpperCase(), [{ name: app.name, pkg: pkg, output: output, success: ok }]);
+                // Modal only on failure (the same convention as toggleComponent/fmOp/launchActivity/Archive/Sign/Settings/Overlay) -
+                // the toast alone already carries a successful, routine action; the modal would just be a redundant extra tap.
+                if (!ok) showCommandResults('Command Result', action.toUpperCase(), [{ name: app.name, pkg: pkg, output: output, success: ok }]);
                 if (UNDO_ACTION[action]) recordHistory('apps', `${ACTION_LABELS[action] || action} ${app.name}`, [{ pkg: pkg, name: app.name, action: action, success: ok }]);
                 setTimeout(loadPackageData, 400);
             }
@@ -14877,37 +14887,65 @@ Type any command below (e.g. pm list packages -d)
             haptic();
             document.getElementById('optimizeModal').classList.remove('show');
         }
+        // Dex optimize (single app or several) runs through optimizeAppBatch, off the page's thread, exactly like
+        // runBatchAction already does for the app-action batch - a single `pm compile` can take real time, and
+        // calling it straight from the page's own thread blocks the WebView itself for that whole time with no
+        // way to show progress. A single app is just a one-item array, so both paths get the same live progress
+        // bar and Stop button; only the single-app case drops the result modal on success (nuisance per the
+        // command-result audit: toggleComponent's comparable single-item toggle only shows it on failure, and the
+        // toast alone already says enough for a routine, reversible recompile). The batch case keeps its modal
+        // either way - the per-app breakdown is the useful part there.
+        let optimizeRunActive = false;
+        let optimizeSubLabel = '';
         function confirmOptimize() {
             const mode = document.getElementById('optimizeMode').value;
             const force = document.getElementById('optimizeForce').checked;
             document.getElementById('optimizeModal').classList.remove('show');
-            if (!window.AndroidBridge || !window.AndroidBridge.optimizeApp) { showToast('Needs the app build'); return; }
+            if (!window.AndroidBridge || !window.AndroidBridge.optimizeAppBatch) { showToast('Needs the app build'); return; }
+            const pkgs = pendingOptimizeTarget === 'batch' ? Array.from(selectedPkgs) : (inspectedPkg ? [inspectedPkg] : []);
+            if (!pkgs.length) return;
             haptic();
-            const sub = 'compile -m ' + mode + (force ? ' -f' : '');
-            const run = pkg => { try { return JSON.parse(window.AndroidBridge.optimizeApp(pkg, mode, force)); } catch (e) { return { ok: false, output: String(e && e.message || e) }; } };
-            if (pendingOptimizeTarget === 'batch') {
-                const arr = Array.from(selectedPkgs);
-                showToast(`Optimizing ${arr.length} apps...`);
-                const rows = [];
-                let ok = 0;
-                arr.forEach(pkg => {
-                    const app = allApps.find(a => a.pkg === pkg) || { name: pkg, pkg };
-                    const r = run(pkg);
-                    if (r.ok) ok++;
-                    rows.push({ name: app.name, pkg, output: r.output, success: !!r.ok });
-                });
-                showToast(`Optimized ${ok}/${arr.length}`);
-                showCommandResults('Dex optimization', sub + ' • ' + arr.length + ' apps', rows);
-            } else {
-                const pkg = inspectedPkg;
-                if (!pkg) return;
-                const app = allApps.find(a => a.pkg === pkg) || { name: pkg, pkg };
-                showToast('Optimizing ' + app.name + '...');
-                const r = run(pkg);
-                showToast(r.ok ? 'Optimized' : 'Failed');
-                showCommandResults('Dex optimization', sub + ' • ' + app.name, [{ name: app.name, pkg, output: r.output, success: !!r.ok }]);
+            optimizeSubLabel = 'compile -m ' + mode + (force ? ' -f' : '');
+            document.getElementById('batchConfirmTitle').innerText = 'Optimizing ' + pkgs.length + ' app' + (pkgs.length === 1 ? '' : 's');
+            document.getElementById('batchConfirmSubtitle').innerText = '';
+            document.getElementById('batchProgressText').innerText = '';
+            document.getElementById('batchProgressBar').style.width = '0%';
+            const stopBtn = document.getElementById('batchProgressStopBtn');
+            if (stopBtn) { stopBtn.disabled = false; stopBtn.innerText = 'Stop'; }
+            batchConfirmShowBody('progress');
+            document.getElementById('batchConfirmModal').classList.add('show');
+            const started = window.AndroidBridge.optimizeAppBatch(JSON.stringify(pkgs), mode, !!force);
+            if (started !== 'started') {
+                document.getElementById('batchConfirmModal').classList.remove('show');
+                showToast('A file or batch job is already running');
+                return;
             }
+            optimizeRunActive = true;
         }
+        window.onOptimizeBatchProgress = function (i, total, pkg) {
+            const app = allApps.find(a => a.pkg === pkg) || { name: pkg, pkg: pkg };
+            document.getElementById('batchProgressText').innerText = `${i + 1} of ${total}: ${app.name} (${pkg})`;
+            document.getElementById('batchProgressBar').style.width = Math.round(i / total * 100) + '%';
+        };
+        window.onOptimizeBatchDone = function (resultJson) {
+            optimizeRunActive = false;
+            let res; try { res = JSON.parse(resultJson); } catch (e) { res = null; }
+            document.getElementById('batchConfirmModal').classList.remove('show');
+            if (!res || !res.ok) { showToast('Dex optimization failed to run'); return; }
+            const total = res.total, stopped = !!res.cancelled;
+            const rows = (res.rows || []).map(r => {
+                const app = allApps.find(a => a.pkg === r.pkg) || { name: r.pkg, pkg: r.pkg };
+                return { name: app.name, pkg: r.pkg, output: r.output, success: r.success };
+            });
+            const success = rows.filter(r => r.success).length, failed = rows.length - success;
+            if (rows.length === 1) {
+                showToast(stopped ? 'Stopped' : (rows[0].success ? 'Optimized' : 'Failed'));
+                if (!stopped && !rows[0].success) showCommandResults('Dex optimization', optimizeSubLabel + ' • ' + rows[0].name, rows);
+            } else {
+                showToast(stopped ? `Stopped: ${success} succeeded, ${failed} failed, ${total - rows.length} not run` : `Optimized ${success}/${total}`);
+                showCommandResults('Dex optimization', optimizeSubLabel + ' • ' + rows.length + ' apps' + (stopped ? ' (stopped)' : ''), rows);
+            }
+        };
 
         // ---------- Permissions list ----------
         function setPermsFilter(f) {
@@ -22123,6 +22161,13 @@ Type any command below (e.g. pm list packages -d)
                 <button class="profile-btn" onclick="document.getElementById('profilePreview').style.display='none'">Cancel</button>`;
         }
 
+        // Applying a profile runs its action groups (unfreeze, freeze, suspend, ...) one after another through
+        // appActionBatch - the same native async batch runner runBatchAction uses - instead of the old
+        // performDetailedBatchAction's synchronous, per-app loop on the page's own thread, which froze the page
+        // for however long the whole plan took. window.onAppBatchProgress/onAppBatchDone are shared with
+        // runBatchAction's own batch run, so they route here first whenever a profile run is the one in flight.
+        let profileRunActive = false;
+        let profileRunState = null;
         function applyProfile() {
             if (!profilePending) return;
             if (!guardPrivilege('Apply profile')) return;
@@ -22131,21 +22176,65 @@ Type any command below (e.g. pm list packages -d)
             const plan = profilePending.plan;
             profilePending = null;
             document.getElementById('profilePreview').style.display = 'none';
-            if (!pr || !window.AndroidBridge) return;
-            const histRows = [];
-            const shown = [];
-            let ok = 0, bad = 0;
-            PLAN_ORDER.forEach(action => {
-                const pkgs = plan.steps[action];
-                if (!pkgs.length) return;
-                const res = performDetailedBatchAction(action, pkgs);
-                ok += res.success; bad += res.failed;
-                res.rows.forEach(r => { shown.push(r); histRows.push({ pkg: r.pkg, name: r.name, action, success: r.success }); });
+            if (!pr || !window.AndroidBridge || !window.AndroidBridge.appActionBatch) return;
+            const groups = PLAN_ORDER.map(action => ({ action, pkgs: plan.steps[action] })).filter(g => g.pkgs.length);
+            if (!groups.length) { showToast('Nothing to do'); return; }
+            profileRunState = { groups, idx: 0, ok: 0, bad: 0, histRows: [], shown: [], name: pr.name, totalApps: groups.reduce((n, g) => n + g.pkgs.length, 0), doneBefore: 0 };
+            document.getElementById('batchConfirmTitle').innerText = 'Applying "' + pr.name + '"';
+            document.getElementById('batchConfirmSubtitle').innerText = '';
+            document.getElementById('batchProgressText').innerText = '';
+            document.getElementById('batchProgressBar').style.width = '0%';
+            const stopBtn = document.getElementById('batchProgressStopBtn');
+            if (stopBtn) { stopBtn.disabled = false; stopBtn.innerText = 'Stop'; }
+            batchConfirmShowBody('progress');
+            document.getElementById('batchConfirmModal').classList.add('show');
+            profileRunActive = true;
+            profileRunNextGroup();
+        }
+        function profileRunNextGroup() {
+            const st = profileRunState;
+            if (!st || st.idx >= st.groups.length) { profileRunFinish(false); return; }
+            const g = st.groups[st.idx];
+            const started = window.AndroidBridge.appActionBatch(g.action, JSON.stringify(g.pkgs));
+            if (started !== 'started') { profileRunFinish(false); return; }        // another batch is already running natively - leave what has run so far intact
+        }
+        function profileOnBatchProgress(i, total, pkg) {
+            const st = profileRunState;
+            if (!st) return;
+            const app = allApps.find(a => a.pkg === pkg) || { name: pkg, pkg: pkg };
+            const doneApps = st.doneBefore + i;
+            document.getElementById('batchProgressText').innerText = `${doneApps + 1} of ${st.totalApps}: ${app.name} (${pkg})`;
+            document.getElementById('batchProgressBar').style.width = Math.round(doneApps / st.totalApps * 100) + '%';
+        }
+        function profileOnBatchDone(resultJson) {
+            const st = profileRunState;
+            if (!st) return;
+            let res; try { res = JSON.parse(resultJson); } catch (e) { res = null; }
+            if (!res || !res.ok) { profileRunFinish(false); return; }
+            const action = res.action;
+            (res.rows || []).forEach(r => {
+                const app = allApps.find(a => a.pkg === r.pkg) || { name: r.pkg, pkg: r.pkg };
+                if (r.success) st.ok++; else st.bad++;
+                st.shown.push({ name: app.name, pkg: r.pkg, output: r.output, success: r.success });
+                st.histRows.push({ pkg: r.pkg, name: app.name, action, success: r.success });
             });
-            recordHistory('apps', `Applied profile "${pr.name}"`, histRows);
-            showToast(`Profile applied: ${ok} succeeded, ${bad} failed`);
-            closeProfiles();
-            showCommandResults('Profile Results', pr.name + ' • ' + shown.length + ' apps', shown);
+            if (res.cancelled) { profileRunFinish(true); return; }
+            st.doneBefore += st.groups[st.idx].pkgs.length;
+            st.idx++;
+            profileRunNextGroup();
+        }
+        function profileRunFinish(stopped) {
+            const st = profileRunState;
+            profileRunActive = false;
+            profileRunState = null;
+            document.getElementById('batchConfirmModal').classList.remove('show');
+            if (!st) return;
+            recordHistory('apps', `Applied profile "${st.name}"`, st.histRows);
+            showToast(stopped ? `Stopped: ${st.ok} succeeded, ${st.bad} failed` : `Profile applied: ${st.ok} succeeded, ${st.bad} failed`);
+            // Unlike the old synchronous version, the Profiles sheet is left open behind the result dialog -
+            // the same stay-open convention the single-app and batch-selection flows already use, so the user
+            // can act again (or just look at the profile list) without having to renavigate.
+            showCommandResults('Profile Results', st.name + ' • ' + st.shown.length + ' apps' + (stopped ? ' (stopped)' : ''), st.shown);
             setTimeout(loadPackageData, 400);
         }
 

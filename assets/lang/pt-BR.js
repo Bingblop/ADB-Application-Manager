@@ -2512,8 +2512,6 @@ p: [
 ["Opening {0}…", "Abrindo {0}…"],
 ["Opens in a Termux window, where {0} shows its own website sign-in. Come back here when it says you are signed in.", "Abre em uma janela do Termux, onde {0} mostra o login do próprio site. Volte aqui quando aparecer que o login foi feito."],
 ["Optimized {0}/{1}", "Otimizados {0}/{1}"],
-["Optimizing {0} apps...", "Otimizando {0} apps..."],
-["Optimizing {0}...", "Otimizando {0}..."],
 ["Overlays tab: {0}", "Aba de overlays: {0}"],
 ["PORT {0} OPEN", "PORTA {0} ABERTA"],
 ["Package: {0}", "Pacote: {0}"],

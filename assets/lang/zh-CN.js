@@ -2512,8 +2512,6 @@ p: [
 ["Opening {0}…", "正在打开 {0}…"],
 ["Opens in a Termux window, where {0} shows its own website sign-in. Come back here when it says you are signed in.", "将在 Termux 窗口中打开，{0} 会在那里显示它自己的网页登录。提示你已登录后，请回到这里。"],
 ["Optimized {0}/{1}", "已优化 {0}/{1}"],
-["Optimizing {0} apps...", "正在优化 {0} 个应用…"],
-["Optimizing {0}...", "正在优化 {0}…"],
 ["Overlays tab: {0}", "叠加层标签页：{0}"],
 ["PORT {0} OPEN", "端口 {0} 已开放"],
 ["Package: {0}", "包名：{0}"],

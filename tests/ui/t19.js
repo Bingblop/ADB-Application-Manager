@@ -1,5 +1,6 @@
 // Copy/share and find: menu chips, no Share APK button, manifest/terminal find, CSV, package lists, profiles
 const { chromium, PAGE } = require('./lib/pw');
+const appBatchMock = require('./lib/appbatch_mock');
 (async () => {
   const b = await chromium.launch();
   const page = await b.newPage({ viewport: { width: 400, height: 860 } });
@@ -31,6 +32,7 @@ const { chromium, PAGE } = require('./lib/pw');
       extractApk(p) { setTimeout(() => window.onApkExtracted(JSON.stringify({ ok: true, path: 'Download/ADB App Manager/APKs/x.apk', ref: 'content://media/1', mime: 'application/vnd.android.package-archive', bytes: 10, splits: 1 })), 20); },
     };
   });
+  await page.addInitScript(appBatchMock.installAppBatchMock);
   await page.goto(PAGE); await page.waitForTimeout(400);
   const calls = () => page.evaluate(() => window.__calls.slice());
   // copy chips in app menu

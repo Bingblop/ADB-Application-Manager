@@ -2849,6 +2849,10 @@ public class MainActivity extends Activity {
     private static boolean appBatchBusy;
     private static volatile boolean appBatchCancel;      // the page's Stop: the running batch stops after the app it is on
 
+    private static final Object optimizeBatchLock = new Object();
+    private static boolean optimizeBatchBusy;
+    private static volatile boolean optimizeBatchCancel;  // same Stop convention, for Dex optimization (single app or several)
+
     private static String fmBatchLabel(String op) {
         return "rm".equals(op) ? "Deleting" : "cp".equals(op) ? "Copying" : "Moving";
     }
@@ -11658,6 +11662,71 @@ public class MainActivity extends Activity {
                 try { r.put("ok", false); r.put("output", "Error: " + e.getMessage()); } catch (Exception ignored) {}
             }
             return r.toString();
+        }
+
+        /** Stops the running Dex-optimization batch after whichever app it is already on (that one `pm compile`
+         *  call can't be interrupted once started), the same Stop convention as {@link #appBatchCancel()}. */
+        @JavascriptInterface
+        public void optimizeBatchCancel() { optimizeBatchCancel = true; }
+
+        /**
+         * Runs {@link #optimizeApp} across every package in pkgsJson, off the page's thread - a single `pm compile`
+         * call can take real time (full recompilation of a big app), and calling it straight from the page's own
+         * thread (as the old single-app and batch Dex-optimize paths both used to) blocks the WebView itself for
+         * that whole time, exactly the freeze {@link #appActionBatch} was already built to avoid for ordinary app
+         * actions. Used for a single app too (a one-item array), so both paths get the same async treatment and
+         * live progress. Returns "started" (or "busy"); progress arrives as window.onOptimizeBatchProgress(i,
+         * total, pkg) before each app's own compile runs, and the end as window.onOptimizeBatchDone({total, done,
+         * cancelled, rows: [{pkg, output, success}], ok}).
+         */
+        @JavascriptInterface
+        public String optimizeAppBatch(final String pkgsJson, final String mode, final boolean force) {
+            synchronized (optimizeBatchLock) {
+                if (optimizeBatchBusy) return "busy";
+                optimizeBatchBusy = true;
+                optimizeBatchCancel = false;
+            }
+            if (!submitJob(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject res = new JSONObject();
+                    try {
+                        JSONArray pkgs = new JSONArray(pkgsJson);
+                        int total = pkgs.length();
+                        JSONArray rows = new JSONArray();
+                        int done = 0;
+                        boolean cancelled = false;
+                        for (int i = 0; i < total; i++) {
+                            if (optimizeBatchCancel) { cancelled = true; break; }
+                            String pkg = pkgs.optString(i, "");
+                            notifyJs("window.onOptimizeBatchProgress && window.onOptimizeBatchProgress(" + i + "," + total + "," + JSONObject.quote(pkg) + ")");
+                            JSONObject one;
+                            try { one = new JSONObject(optimizeApp(pkg, mode, force)); } catch (Exception e) { one = new JSONObject(); one.put("ok", false); one.put("output", errMsg(e)); }
+                            boolean ok = one.optBoolean("ok", false);
+                            if (ok) done++;
+                            rows.put(new JSONObject().put("pkg", pkg).put("output", one.optString("output", "")).put("success", ok));
+                        }
+                        res.put("total", total);
+                        res.put("done", done);
+                        res.put("cancelled", cancelled);
+                        res.put("rows", rows);
+                        res.put("ok", true);
+                    } catch (Throwable t) {
+                        try { res.put("ok", false); res.put("error", errMsg(t)); } catch (Exception ignored) {}
+                    } finally {
+                        synchronized (optimizeBatchLock) {
+                            optimizeBatchBusy = false;
+                        }
+                    }
+                    notifyJs("window.onOptimizeBatchDone && window.onOptimizeBatchDone(" + res.toString() + ")");
+                }
+            })) {
+                synchronized (optimizeBatchLock) {
+                    optimizeBatchBusy = false;
+                }
+                return "error";
+            }
+            return "started";
         }
 
         @JavascriptInterface

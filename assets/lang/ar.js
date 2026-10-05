@@ -2512,8 +2512,6 @@ p: [
 ["Opening {0}…", "جارٍ فتح {0}…"],
 ["Opens in a Termux window, where {0} shows its own website sign-in. Come back here when it says you are signed in.", "يُفتح في نافذة Termux، حيث يعرض {0} صفحة تسجيل الدخول الخاصة به على الويب. عُد إلى هنا عندما يُبلغك بأنك سجّلت الدخول."],
 ["Optimized {0}/{1}", "تم تحسين {0}/{1}"],
-["Optimizing {0} apps...", "جارٍ تحسين {0} من التطبيقات..."],
-["Optimizing {0}...", "جارٍ تحسين {0}..."],
 ["Overlays tab: {0}", "تبويب الطبقات: {0}"],
 ["PORT {0} OPEN", "المنفذ {0} مفتوح"],
 ["Package: {0}", "الحزمة: {0}"],

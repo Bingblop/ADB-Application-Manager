@@ -2512,8 +2512,6 @@ p: [
 ["Opening {0}…", "{0} खोला जा रहा है…"],
 ["Opens in a Termux window, where {0} shows its own website sign-in. Come back here when it says you are signed in.", "Termux विंडो में खुलता है, जहां {0} अपनी वेबसाइट वाला साइन-इन दिखाता है। जब वह बताए कि आप साइन इन हो गए हैं, तब यहां लौट आएं।"],
 ["Optimized {0}/{1}", "{0}/{1} ऑप्टिमाइज़ हुए"],
-["Optimizing {0} apps...", "{0} ऐप्स ऑप्टिमाइज़ हो रहे हैं..."],
-["Optimizing {0}...", "{0} ऑप्टिमाइज़ हो रहा है..."],
 ["Overlays tab: {0}", "ओवरले टैब: {0}"],
 ["PORT {0} OPEN", "पोर्ट {0} खुला है"],
 ["Package: {0}", "पैकेज: {0}"],

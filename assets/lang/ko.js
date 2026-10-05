@@ -2512,8 +2512,6 @@ p: [
 ["Opening {0}…", "{0} 여는 중…"],
 ["Opens in a Termux window, where {0} shows its own website sign-in. Come back here when it says you are signed in.", "Termux 창이 열리고 {0}의 자체 웹사이트 로그인이 표시됩니다. 로그인되었다는 메시지가 나오면 여기로 돌아오세요."],
 ["Optimized {0}/{1}", "최적화됨 {0}/{1}"],
-["Optimizing {0} apps...", "앱 {0}개 최적화 중..."],
-["Optimizing {0}...", "{0} 최적화 중..."],
 ["Overlays tab: {0}", "오버레이 탭: {0}"],
 ["PORT {0} OPEN", "포트 {0} 열림"],
 ["Package: {0}", "패키지: {0}"],

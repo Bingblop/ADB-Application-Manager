@@ -2512,8 +2512,6 @@ p: [
 ["Opening {0}…", "Membuka {0}…"],
 ["Opens in a Termux window, where {0} shows its own website sign-in. Come back here when it says you are signed in.", "Terbuka di jendela Termux, tempat {0} menampilkan login situs webnya sendiri. Kembali ke sini setelah alat itu menyatakan Anda sudah login."],
 ["Optimized {0}/{1}", "{0}/{1} dioptimalkan"],
-["Optimizing {0} apps...", "Mengoptimalkan {0} aplikasi..."],
-["Optimizing {0}...", "Mengoptimalkan {0}..."],
 ["Overlays tab: {0}", "Tab Overlay: {0}"],
 ["PORT {0} OPEN", "PORT {0} TERBUKA"],
 ["Package: {0}", "Paket: {0}"],
