@@ -1,5 +1,8 @@
 // Inspector Components tab: four sections, enable/disable, exported filter; single and batch dex optimization
+// (async, off the page's thread, with a live progress bar - the single-app case shows a toast only on success,
+// matching toggleComponent's "modal only on failure" convention; the batch case keeps its per-app breakdown).
 const { chromium, PAGE } = require('./lib/pw');
+const optimizeBatchMock = require('./lib/optimizebatch_mock');
 (async () => {
   const b = await chromium.launch();
   const page = await b.newPage({ viewport: { width: 400, height: 860 } });
@@ -26,7 +29,11 @@ const { chromium, PAGE } = require('./lib/pw');
       optimizeApp(pkg, mode, force) { window.__calls.push('opt:' + pkg + ':' + mode + ':' + force); return JSON.stringify({ ok: true, output: 'Success' }); },
     };
   });
+  await page.addInitScript(optimizeBatchMock.installOptimizeBatchMock);
   await page.goto(PAGE); await page.waitForTimeout(400);
+  const sleep = ms => page.waitForTimeout(ms);
+  const toastText = () => page.locator('#toastMsg').innerText();
+  const resultsShown = () => page.evaluate(() => document.getElementById('commandResultsModal').classList.contains('show'));
 
   await page.evaluate(() => openInspector('com.x'));
   await page.click('.sheet-tab-pill[data-tab="comps"]');
@@ -52,20 +59,37 @@ const { chromium, PAGE } = require('./lib/pw');
   const expTxt = await page.locator('#compsContainer').innerText();
   console.log('exported filter: shows Main(act) & Provider, hides Hidden & Svc:', expTxt.includes('Main') && expTxt.includes('Provider') && !expTxt.includes('Hidden') && !expTxt.includes('Svc'));
 
-  // ---- Single-app dexopt ----
+  // ---- Single-app dexopt: async (a progress bar shows while it runs), toast-only on success ----
   await page.evaluate(() => { window.__calls.length = 0; openOptimizeModal('single'); });
   console.log('optimize modal shown (single):', await page.isVisible('#optimizeModal.show'));
-  await page.evaluate(() => { document.getElementById('optimizeMode').value = 'everything'; document.getElementById('optimizeForce').checked = true; confirmOptimize(); });
-  await page.waitForTimeout(100);
+  const midRun = await page.evaluate(() => {
+    document.getElementById('optimizeMode').value = 'everything'; document.getElementById('optimizeForce').checked = true;
+    confirmOptimize();
+    // read state in the same turn as the call above - the mock resolves on the next tick, same as the real
+    // native batch runner would eventually do after a real (slow) pm compile call, and a separate round trip
+    // through Playwright is itself slow enough to miss that window.
+    return { shown: document.getElementById('batchConfirmModal').classList.contains('show'), text: document.getElementById('batchProgressText').innerText };
+  });
+  console.log('a progress bar shows while it runs (not frozen, no indication it still works):', midRun.shown && /com\.x/.test(midRun.text), JSON.stringify(midRun));
+  await sleep(150);
   console.log('single optimize call:', await page.evaluate(() => window.__calls));
+  console.log('single success: toast only, no result modal (nuisance fix - matches toggleComponent):', (await toastText()) === 'Optimized' && !(await resultsShown()));
+  console.log('progress modal closes itself when done:', !(await page.evaluate(() => document.getElementById('batchConfirmModal').classList.contains('show'))));
 
-  // ---- Batch dexopt ----
-  await page.evaluate(() => closeCommandResultsModal());
+  // ---- Batch dexopt: same async path, but keeps its useful per-app breakdown modal either way ----
   await page.evaluate(() => { window.__calls.length = 0; toggleSelectPkg('com.x'); toggleSelectPkg('com.y'); openOptimizeModal('batch'); });
   console.log('optimize modal shown (batch):', await page.isVisible('#optimizeModal.show'));
   await page.evaluate(() => { document.getElementById('optimizeMode').value = 'speed'; document.getElementById('optimizeForce').checked = false; confirmOptimize(); });
-  await page.waitForTimeout(150);
+  await sleep(200);
   console.log('batch optimize calls (expect 2, speed, false):', await page.evaluate(() => window.__calls));
+  console.log('batch keeps the per-app breakdown modal even on success:', await resultsShown());
+  await page.evaluate(() => closeCommandResultsModal());
+
+  // ---- A failed single optimize still gets the modal (the toast alone wouldn't explain why) ----
+  await page.evaluate(() => { window.AndroidBridge.optimizeApp = (pkg) => JSON.stringify({ ok: false, output: 'pm compile: Failed to optimize package' }); clearBatchSelection(); window.__calls.length = 0; openOptimizeModal('single'); confirmOptimize(); });
+  await sleep(150);
+  console.log('a failed single optimize still shows the result modal:', (await toastText()) === 'Failed' && await resultsShown());
+  await page.evaluate(() => closeCommandResultsModal());
 
   console.log('errors:', JSON.stringify(errors));
   await b.close();

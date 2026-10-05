@@ -1,5 +1,152 @@
 # Changelog
 
+## v7.9.17-Pro (versionCode 807)
+
+- **Icon pack setting.** A new "Icon pack" card in Settings, right under Font, lists the icon packs installed on the
+  phone (the ADW, Nova, Apex and Go theme convention). Pick one and the list's icons are drawn from it; an app the
+  pack does not cover keeps its own icon, "Default icons" goes back, and each pack's icons are cached separately
+  (refreshed when the pack or the app updates). Press and hold still saves the icon shown.
+
+## v7.9.16-Pro (versionCode 806)
+
+- **App icons in the list.** Every row now shows the app's own icon to the left of its name, package and badges, and the
+  letter box is gone, which gives the text more room. Icons are drawn off the page's thread and cached on the phone
+  (re-drawn only when an app updates), so later launches show them straight away. Press and hold an icon to save it as a
+  PNG to Download/ADB App Manager/Icons.
+
+## v7.9.15-Pro (versionCode 805)
+
+- **Expressive Animations.** A new "Motion" card in Settings, right below the theme cards, holds one switch (on by
+  default): Material 3 Expressive's springier, overshooting motion for the app's own transitions - modals, sheets,
+  buttons, switches and the like - instead of a plain fade or slide. The few width-based progress fills (backup,
+  storage scans, the self-update check) are left at a plain ease, where an overshoot would visibly pass 100% before
+  settling back, and the whole thing steps aside automatically when the phone's own reduced-motion setting is on,
+  whatever this switch says.
+
+## v7.9.14-Pro (versionCode 804)
+
+- **Terminal: sync the Termux shell with your real Termux.** Two new pieces under Terminal settings' Shell
+  section (and in the Termux setup checklist): a "Match my Termux environment" switch, on by default, that
+  sources ~/.bashrc when a Termux shell starts here too - so aliases, functions and PATH additions you keep
+  there work the same way in this app, not just the PATH/profile the existing "Use my Termux login profile"
+  switch already read; and a "Sync with Termux" button that turns that switch on if it was off, restarts any
+  already-running Termux session so the change applies right away, and opens Termux to run
+  termux-setup-storage - so granting it access to shared/phone storage is one tap instead of a command typed
+  by hand.
+
+## v7.9.13-Pro (versionCode 803)
+
+- **Saved Applications: the "Saved" tag no longer crowds the title.** Each saved list's name and app count now have
+  the card's full header to themselves; the "Saved" badge moved down to sit right above its own action-button row
+  (Recall, Quick list, Edit, Copy, Delete), the same "identity on its own row, controls clustered together"
+  layout the Apps list just got, adapted to how this card is actually built (no checkbox or icon to move).
+
+## v7.9.12-Pro (versionCode 802)
+
+- **Apps list: a cleaner row layout.** The app's name, package and badges now start flush against the left edge
+  instead of sharing space with the checkbox and icon; the checkbox, the letter icon, the gear and ⋯ buttons all
+  sit together on the right instead. No change to what anything does - Debloater/UAD-NG rows are unaffected.
+
+## v7.9.11-Pro (versionCode 801)
+
+- **Coding Agents: "Always allow" for file changes, not just commands.** A proposed `<run>` command already had
+  an "Always allow in this chat" option next to Run and Skip; a proposed file write or edit only ever offered
+  Apply and Skip, so every single change needed its own tap, however many steps a task took. The same "Always
+  allow" button is now on that card too - once pressed, the rest of the chat's file changes go through with no
+  further asking (reading outside the working folder and running commands are unaffected and still need their
+  own say-so, unless those were separately allowed too).
+
+## v7.9.10-Pro (versionCode 800)
+
+- **Terminal: no more "Shell Command Result" popup after every command.** It hardcoded success regardless of
+  what the command actually did, and duplicated output already printed right there in the terminal pane one
+  line above it - per the command-result audit's own nuisance finding, the single most disruptive, lowest-value
+  prompt in the app. Removed outright; a command run from another tab still gets a toast when it finishes.
+
+## v7.9.9-Pro (versionCode 799)
+
+- **Dex optimization no longer freezes the page.** Recompiling an app (or several) ran a `pm compile` call
+  straight from the page's own thread, exactly the freeze batch actions had before v7.9.6 - now it runs off the
+  page's thread with a live progress bar and a Stop button, for one app or many alike.
+- **Fewer redundant "it worked" popups.** A single-app ⋯ menu action and a single app's Dex optimization used to
+  show a toast *and* a full result dialog for a routine, successful action - now, like every other action in the
+  app (toggling a component, a file-manager operation, launching an activity...), the dialog only shows up when
+  something needs explaining; a failure still gets it.
+- **Applying a Profile** now runs the same way batch actions do - off the page's thread with the progress bar
+  above, instead of freezing the page for however long the whole plan took - and the Profiles sheet stays open
+  behind the result dialog afterwards instead of closing first, matching every other flow in the app.
+- Single-app menu: the Copy package / Copy version / Copy name row no longer wraps to a second line on a narrow
+  phone; Share sits further from the ✕ so a slightly careless tap doesn't land on the wrong one.
+- Terminal: the Ctrl+C key now just reads "CTRL" (still stops whatever is running).
+- Credits: added a mention of [RohitKushvaha01/TaskManager](https://github.com/RohitKushvaha01/TaskManager),
+  which the Task Manager tab is modeled on.
+
+## v7.9.8-Pro (versionCode 798)
+
+- **File Manager: Add storage.** Bring in an SD card, a USB drive, or a folder another app is willing to share,
+  through Android's own document-tree picker - no working mode, root or All-files access needed, since the OS
+  grants this app that one tree directly. Added roots show as quick-switch buttons above the file list and are
+  remembered across launches; removing one only drops this app's access, nothing on the storage itself. Inside
+  one: full browsing (with its own Up, since this kind of storage has no parent folder to look up - an added
+  root's own breadcrumb trail is kept instead), new file/new folder, rename, delete, and viewing/editing a text
+  file in place all work the same as internal storage. Copy, move, compress, Open with, Share and multi-select
+  are not there yet for this kind of storage and are hidden or refused with a clear message rather than silently
+  failing - they're next.
+
+## v7.9.7-Pro (versionCode 797)
+
+- **About tab: Device Specs**, under Handy to know - hardware (model, chipset, CPU cores and clock range, RAM,
+  Vulkan/OpenGL ES, screen, storage), software (Android version, security patch, build ID), system (uptime,
+  locale, timezone), battery, network, camera and sensors, all in one place. Refreshed automatically when the
+  About tab opens, plus its own Refresh button. Every reading is a public, context-free one (BatteryManager,
+  world-readable /proc and /sys nodes, CameraManager/SensorManager characteristics) - no working mode needed.
+
+## v7.9.6-Pro (versionCode 796)
+
+- **Batch actions no longer freeze the page while they run.** The live progress added in v7.9.5 still blocked the
+  page for the whole loop - each app's action is a synchronous call into the native side, and that call was still
+  being made from the page's own thread, which is also the WebView's. The batch now runs through a dedicated
+  native batch runner instead, off the page's thread entirely, so the page can actually repaint and respond while
+  it works; the Stop button and the live per-app progress behave exactly as before.
+- **Apps list: version numbers are off by default.** A less cluttered list row - the "Versions" filter pill above
+  the list still turns them back on, and the single-app menu and command results always show the version either
+  way.
+- **Logcat Viewer starts playing on its own.** Opening the tab used to need a tap on Play; it now scrolls to the
+  top and starts live-tailing immediately.
+- **Terminal: a larger input box**, and a Shift key on the extra-keys row that swaps in a second row of symbols
+  (backtick, dollar, semicolon, colon, quotes, backslash, braces, parentheses, asterisk, ampersand, hash) a
+  phone keyboard usually buries behind its own symbols layer.
+- **Terminal: a Cheat Sheet button**, with a different set of commands depending on which of the three shells is
+  picked - common bash for Termux, file/text basics for this app's own sandbox shell, and the existing ADB
+  reference for the privileged working mode.
+- **Single-app menu: Share moved to the top-right corner** of the sheet, next to ✕ - the Copy row underneath now
+  fits on one line, and everything below it shifts up.
+
+## v7.9.5-Pro (versionCode 795)
+
+- **Live progress for batch actions.** Running a command (Freeze, Force Stop, Uninstall, ...) across several
+  selected apps used to just show a spinner with no detail until it was all done. The batch panel now shows which
+  app is currently being processed (name and package), a fill bar for how many are done, and a Stop button that
+  ends the run after whichever app is already in flight finishes - nothing past that point is touched. Closing the
+  sheet (✕ or tapping outside) while a run is active does the same thing, instead of silently hiding a job that
+  would otherwise keep running unseen.
+- **More command-result prompts now reflect what actually happened**, instead of assuming success or scanning
+  output for a fixed set of failure words: Task Manager's "Kill" and GPU renderer switch, stopping a component's
+  service, granting/revoking a permission, and changing an app op all now read the real result (exit code, or the
+  native call's own outcome) the same way the rest of the app's actions already did. Optimize (Dex compile) also
+  picks up a keyword gap ("failed") the old scan was missing.
+- **Apps tab: the Sort/Export/Share CSV/Profiles/Backups row** no longer wraps "Backups" onto its own near-empty
+  line on a phone-width screen - the row scrolls sideways like the filter pills above it instead, with everything
+  below it shifted up to fill the gap.
+
+## v7.9.4-Pro (versionCode 794)
+
+- **Fixed the systemless-uninstall fallback actually reporting failure after it succeeded.** It passed a plain
+  Java dynamic proxy as the callback Android calls back into with the real result; a proxy has no native Binder
+  behind it, so that callback could never be delivered - the app removal went through, but this app's own process
+  timed out waiting for a result it was never going to receive, and showed the uninstall as failed. The callback
+  is now backed by a real `android.os.Binder`, which the system can actually call back into.
+
 ## v7.9.3-Pro (versionCode 793)
 
 - **"Keep selection after running"** in the Apps tab's batch panel. Running a batch command (Freeze, Suspend,

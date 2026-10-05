@@ -121,6 +121,16 @@ const tx = require('./lib/tx_mock');
   await say('/undo'); await sleep(50);
   console.log('    nothing left:', JSON.stringify((await scr()).trim().split('\n').pop()));
 
+  // ---------------------------------------------------------------- write/edit: Always allow in this chat
+  await reply('Making it again.\n<write path="hello.py">\nprint("one")\n</write>');
+  await reply('Now extending it - no need to ask after this.\n<edit path="hello.py">\n<<<<<<< SEARCH\nprint("one")\n=======\nprint("two")\n>>>>>>> REPLACE\n</edit>');
+  await reply('Done.');
+  await say('recreate it, then change it'); await until(() => !!document.querySelector('#txScreen-priv .tx-card:last-of-type .tx-btnrow'));
+  console.log('11a. a write/edit card also offers Always allow, next to Apply and Skip:', JSON.stringify(await page.locator('#txScreen-priv .tx-card').last().locator('.tx-btnrow').innerText()));
+  await page.locator('#txScreen-priv .tx-card button', { hasText: 'Always allow in this chat' }).last().click(); await idle();
+  console.log('    it applies, and the edit queued right behind it goes straight through with no OK at all:', JSON.stringify(env.read('priv', 'hello.py')));
+  console.log('    run approval and write approval are independent - "Always allow" from the earlier run did not already cover this:', (await page.locator('#txScreen-priv .tx-card').count()) > 0);
+
   // ---------------------------------------------------------------- STOP and errors
   await reply('This is a long answer that is still being written', { hold: true });
   await say('write me a long story'); await sleep(80);

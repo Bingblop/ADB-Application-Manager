@@ -11,6 +11,7 @@ flags: susp only, app frozen+susp  : {"steps":{"unfreeze":["f.frozenSusp"],"susp
 not on this phone                  : {"steps":{},"same":0,"missing":1,"apps":0}
 preview: P Will bring back 1, unsuspend 2, disable 2, uninstall 1 (3 apps). 0 already match, 0 are not on this phone and are skipped. Confirm apply (3) Cancel
 apply order: ["reinstall:c.uninstalled","unsuspend:a.suspended","unsuspend:c.uninstalled","freeze:a.suspended","freeze:c.uninstalled","uninstall:d.enabled"]
+sheet stays open behind the result dialog (not closed first): true
 save refused → list size: 0 | toast: Profiles are full. Delete one to make room.
 save ok → list size: 1 | stored: true
 delete refused → still there: true

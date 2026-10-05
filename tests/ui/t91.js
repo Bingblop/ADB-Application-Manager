@@ -60,7 +60,13 @@ const tx = require('./lib/tx_mock');
   console.log('   switches and their defaults:', JSON.stringify(sw));
   await page.locator('#txSettingsBody .switch-row', { hasText: 'Ask before running commands' }).locator('.switch-track').click();
   console.log('   turning one off is stored:', JSON.parse(await page.evaluate(() => window.__kv.tx_settings)).askRun);
-  await page.evaluate(() => txCloseSettings());
+  await page.locator('#txSettingsBody .switch-row', { hasText: 'Match my Termux environment' }).locator('.switch-track').click();
+  console.log('   turning off "match my Termux environment" is stored:', JSON.parse(await page.evaluate(() => window.__kv.tx_settings)).termuxMatchEnv);
+  await page.locator('#txSettingsBody .switch-row', { hasText: 'Match my Termux environment' }).locator('.switch-track').click();   // back on, for the rest of this test
+  // Termux is not set up yet at this point in the test: Sync with Termux (from Settings) redirects into the setup checklist instead of erroring, and closes Settings first so the two sheets do not stack.
+  await page.locator('#txSettingsBody button', { hasText: 'Sync with Termux' }).click(); await sleep(60);
+  console.log('   Sync with Termux, not set up yet: Settings closes and the setup checklist opens instead:', !(await shown('txSettingsModal')), await shown('txTermuxModal'));
+  await page.evaluate(() => txCloseTermux());
 
   // ---------------------------------------------------------------- with "ask before running" off
   await page.selectOption('#txAgent', 'claude'); await sleep(50);
@@ -76,6 +82,7 @@ const tx = require('./lib/tx_mock');
   const steps = async () => JSON.stringify(await page.evaluate(() => [...document.querySelectorAll('#txTermuxBody .tx-check')].map(c => c.querySelector('.tx-check-n').textContent + ' ' + c.querySelector('.tx-check-title').textContent + (c.querySelector('.mode-btn-row') ? ' [' + [...c.querySelectorAll('button')].map(x => x.textContent + (x.disabled ? '(off)' : '')).join(', ') + ']' : ''))));
   console.log('4. Termux missing:', await steps());
   console.log('   its sub text:', JSON.stringify(await page.locator('#txTermuxBody .tx-check-sub').first().innerText()));
+  console.log('   Sync with Termux is disabled until Termux is set up, same as Use Termux as the shell:', await page.locator('#txTermuxBody button', { hasText: 'Sync with Termux' }).isDisabled());
   await page.evaluate(() => { window.__tx.info.termux = { installed: true, permission: false, version: '0.118.3', installer: 'org.fdroid.fdroid' }; window.__tx.permAnswer = [false, false]; txTermuxChanged(); });
   console.log('   installed, not allowed yet:', await steps());
   console.log('   the command for step 3:', JSON.stringify(await page.locator('#txTermuxBody .tx-sheet-code').innerText()));
@@ -92,7 +99,17 @@ const tx = require('./lib/tx_mock');
   await page.evaluate(() => { window.__tx.probeAnswer = { ok: true, message: '' }; });
   await page.locator('#txTermuxBody button', { hasText: 'Test' }).click(); await sleep(60);
   console.log('   and once it is set:', await steps());
+  // Now that Termux is installed and allowed, Sync with Termux runs for real: re-enables "match my environment"
+  // (turned off earlier), closes any running Termux session so the next start picks that up, and opens
+  // termux-setup-storage in Termux so the user can grant it shared-storage access.
+  await page.evaluate(() => { txSettings.termuxMatchEnv = false; txSaveSettings(); window.__tx.closes.length = 0; window.__tx.opens.length = 0; });
+  await page.locator('#txTermuxBody button', { hasText: 'Sync with Termux' }).click(); await sleep(60);
+  console.log('   Sync with Termux, set up: re-enables matching, closes the session and opens termux-setup-storage:',
+    JSON.parse(await page.evaluate(() => window.__kv.tx_settings)).termuxMatchEnv,
+    JSON.stringify(await page.evaluate(() => window.__tx.closes)),
+    JSON.stringify(await page.evaluate(() => window.__tx.opens)));
   await page.locator('#txTermuxBody button', { hasText: 'Use Termux as the shell' }).click(); await until(() => txSess.termux.st === 'ready');
+  console.log('   starting it hands the native bridge matchEnv too:', JSON.stringify(await page.evaluate(() => window.__tx.starts.filter(s => s[0] === 'termux').pop())));
   console.log('   Use Termux as the shell:', await page.locator('#txShell').inputValue(), !(await shown('txTermuxModal')));
   await page.evaluate(() => { const s = document.getElementById('txShell'); s.value = 'priv'; txPickShell('priv'); });
 

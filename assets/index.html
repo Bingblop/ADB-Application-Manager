@@ -51,6 +51,22 @@
             scroll-padding-top: calc(var(--hdr-h, 65px) + var(--tabs-h, 57px) + 8px);
         }
 
+        /* Material 3 Expressive, the "Expressive Animations" setting (default on): every transition in the app gets a
+           springier, overshooting easing curve instead of a plain ease, the same curve this page already used for its
+           one hand-built bounce (the FAB clear gesture). Left at a plain ease for the few width-based progress fills
+           (backup/batch, storage scans, self-update check), where overshoot would visibly pass 100% before settling
+           back. Off entirely when the OS asks for reduced motion, regardless of the setting. */
+        @media (prefers-reduced-motion: no-preference) {
+            html.expressive-anim * {
+                transition-timing-function: cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+            }
+            html.expressive-anim .backup-bar > div,
+            html.expressive-anim .apk-scan-bar > div,
+            html.expressive-anim .upd-bar > div {
+                transition-timing-function: ease !important;
+            }
+        }
+
         body {
             background-color: var(--bg-base);
             color: var(--text-main);
@@ -65,17 +81,19 @@
         button, select, .tab-btn, .filter-pill, .toggle-pill, .filter-chip, .sheet-btn, .sheet-tab-pill,
         .mode-action-btn, .batch-grid-btn, .batch-tool-link, .btn-mini, .app-checkbox, .appearance-btn,
         .palette-preset-card, .stat-card, .status-badge, .perm-toggle-btn, .op-mode-btn, .switch-row,
-        .search-clear, .app-avatar, .sheet-avatar, .picker-bubble-btn, .sm-row, .fl-switch, .fl-name {
+        .search-clear, .sheet-avatar, .picker-bubble-btn, .sm-row, .fl-switch, .fl-name {
             -webkit-user-select: none;
             user-select: none;
         }
 
         .copy-chip, .find-nav, .profile-btn { -webkit-user-select: none; user-select: none; }
         .apps-tool-btn.term-pin { border-color: var(--accent); color: var(--accent); }          /* a pinned command next to the built-in buttons */
-        .copy-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+        .copy-row { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 6px; margin-top: 8px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+        .copy-row::-webkit-scrollbar { display: none; }
         .copy-chip {
             border: 1px solid var(--border); background: var(--bg-card, transparent); color: var(--text-main);
             font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 12px; cursor: pointer;
+            flex-shrink: 0;
         }
         .copy-chip:active { transform: scale(0.96); }
         .find-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0; }
@@ -470,12 +488,13 @@
             background: rgba(0, 229, 255, 0.1);
         }
 
+        /* Just the checkbox and the avatar now (app-meta sits on its own, to the left of this) - sized to its
+           content, not stretched, so it and app-actions sit together on the right. */
         .app-left {
             display: flex;
             align-items: center;
             gap: 12px;
-            flex: 1;
-            overflow: hidden;
+            flex-shrink: 0;
             cursor: pointer;
         }
 
@@ -498,19 +517,19 @@
             border-color: var(--accent);
         }
 
-        .app-avatar {
-            width: 36px;
-            height: 36px;
+        /* The app's own icon, to the left of its info (drawn natively, cached on disk); press and hold saves it */
+        .app-icon {
+            width: 40px;
+            height: 40px;
             border-radius: 10px;
             background: var(--bg-surface);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 15px;
-            font-weight: 800;
-            color: var(--accent);
-            border: 1px solid var(--border-glass);
+            object-fit: contain;
             flex-shrink: 0;
+            margin-right: 10px;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: manipulation;
         }
 
         .app-meta {
@@ -598,7 +617,7 @@
         }
 
         /* Suspended apps look paused in the list */
-        .app-card.suspended .app-avatar {
+        .app-card.suspended .app-icon {
             opacity: 0.55;
             filter: grayscale(1);
         }
@@ -975,6 +994,14 @@
             gap: 12px;
         }
 
+        .sheet-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 46px;
+            flex: 0 0 auto;
+            align-self: flex-start;
+        }
+
         .sheet-avatar:empty { display: none; }
         .perm-name.fm-dir { color: var(--accent); font-weight: 800; }
 
@@ -1344,10 +1371,14 @@
         }
 
         .saved-list-head {
+            margin-bottom: 8px;
+        }
+
+        /* The "Saved" badge sits with the action buttons below, not the title - so the title/count
+           have the full row to themselves. */
+        .saved-list-controls {
             display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 10px;
+            justify-content: flex-end;
             margin-bottom: 8px;
         }
 
@@ -2908,18 +2939,37 @@
             padding: 3px 10px;
             font-size: 10px;
         }
+        /* Sort + Export/Share CSV/Profiles/Backups: one row, scrolling sideways on the rare phone too narrow
+           for all of it at once (same fallback the filter chips use below), rather than wrapping a lone button
+           onto its own near-empty line. */
         .apps-sort-row {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 3px;
             margin: -4px 0 10px;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+            touch-action: pan-x;
+        }
+
+        .apps-sort-row::-webkit-scrollbar {
+            display: none;
         }
 
         .apps-sort-label {
             font-size: 11px;
             font-weight: 800;
             color: var(--text-muted);
+            flex: 0 0 auto;
+        }
+
+        .apps-sort-row .mode-action-btn {
+            flex: 0 0 auto;
+            padding: 7px 7px;
+            font-size: 10.5px;
+            white-space: nowrap;
         }
 
         /* A small tip bubble between the buttons and the filter chips, its point aimed at the chips */
@@ -2965,8 +3015,10 @@
         }
 
         .apps-sort-select {
-            flex: 1;
-            min-width: 120px;
+            flex: 0 1 auto;
+            min-width: 60px;
+            width: 60px;
+            font-size: 10.5px;
         }
 
         .app-meta-line {
@@ -3149,7 +3201,7 @@
                 <div class="filter-pill" data-filter="suspended" onclick="setFilter('suspended', this)">Suspended (<span id="countSuspended">0</span>)</div>
                 <div class="filter-pill" data-filter="patched" onclick="setFilter('patched', this)">Patched (<span id="countPatched">0</span>)</div>
                 <div class="filter-pill" data-filter="uninstalled" onclick="setFilter('uninstalled', this)">Uninstalled (<span id="countUninstalled">0</span>)</div>
-                <div class="toggle-pill active" id="versionTogglePill" onclick="toggleListVersions()" title="Show app versions in the list">Versions</div>
+                <div class="toggle-pill" id="versionTogglePill" onclick="toggleListVersions()" title="Show app versions in the list">Versions</div>
             </div>
 
             <!-- Search bar: under the filters, with a menu for what is searched and how -->
@@ -3523,6 +3575,7 @@
                     <label class="fm-opt"><input type="checkbox" id="fmThumbChk" onchange="fmSetOpt('thumbs', this.checked)"> Show thumbnails</label>
                     <button class="batch-tool-link" id="fmThumbClearBtn" onclick="fmThumbClear()">Clear thumbnail cache</button>
                 </div>
+                <div class="batch-sheet-tools" id="fmRootsRow" style="margin:8px 0 0; gap:12px; flex-wrap:wrap;"></div>
                 <div class="batch-sheet-tools" style="margin:8px 0; gap:12px; flex-wrap:wrap;">
                     <button class="batch-tool-link" onclick="fmUp()">Up</button>
                     <button class="batch-tool-link" onclick="fmGo('/storage/emulated/0')">Storage</button>
@@ -4449,6 +4502,19 @@
                 </div>
             </div>
 
+            <div class="color-card">
+                <div class="color-card-title">Motion</div>
+                <div class="color-card-subtitle">How the app itself moves, on top of its theme</div>
+                <label class="switch-row">
+                    <div>
+                        <div class="switch-title">Expressive Animations</div>
+                        <div class="switch-sub">Material 3 Expressive's bouncier, springier motion throughout the app, instead of a plain fade or slide.</div>
+                    </div>
+                    <input type="checkbox" class="switch-input" id="expressiveAnimToggle" checked onchange="setExpressiveAnimations(this.checked)">
+                    <span class="switch-track"></span>
+                </label>
+            </div>
+
             <div class="color-card" id="fontCard">
                 <div class="color-card-title">Font</div>
                 <div class="color-card-subtitle">The font of the text in this app. It does not change the font of the rest of your phone.</div>
@@ -4464,6 +4530,12 @@
                     <input type="text" class="list-search" id="fontScanSearch" placeholder="Filter found fonts…" style="display:none; margin-top:8px;" oninput="fontScanRender()" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false">
                     <div id="fontScanList" class="font-list"></div>
                 </div>
+            </div>
+
+            <div class="color-card" id="iconPackCard">
+                <div class="color-card-title">Icon pack</div>
+                <div class="color-card-subtitle">Draw the app icons in the list with an icon pack you have installed (ADW, Nova, Apex and Go packs). Apps the pack does not cover keep their own icon.</div>
+                <select class="op-select" id="iconPackSelect" aria-label="Icon pack" onchange="setIconPack(this.value)"></select>
             </div>
 
             <div class="color-card" id="featureCard">
@@ -4543,6 +4615,15 @@
             </div>
 
             <div class="color-card">
+                <div class="color-card-title">Device Specs</div>
+                <div class="color-card-subtitle">Hardware, software, system, battery, network, camera and sensors - everything this phone will say about itself, with no working mode needed.</div>
+                <div class="mode-btn-row" style="margin:8px 0 2px;">
+                    <button class="mode-action-btn" onclick="renderDeviceSpecs()">Refresh</button>
+                </div>
+                <div id="deviceSpecsBody"></div>
+            </div>
+
+            <div class="color-card">
                 <div class="color-card-title">Privacy</div>
                 <div class="about-tip">No account, no ads, no analytics and no server of ours. Everything runs on your phone. The app only goes online for something you open or ask for: update checks, App Stores, the debloat list, and a VirusTotal lookup if you add your own key.</div>
                 <div class="about-tip">The ADB key and the APK-signing key are created on this phone and never leave it.</div>
@@ -4551,6 +4632,7 @@
             <div class="color-card">
                 <div class="color-card-title">Credits</div>
                 <div class="about-tip">Debloat data from <a href="#" onclick="openUrlExternal('https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation'); return false;">UAD-NG</a> (GPL-3.0). Shell access through <a href="#" onclick="openUrlExternal('https://github.com/RikkaApps/Shizuku-API'); return false;">Shizuku</a>. Update sources: Galaxy Store, GitHub, Codeberg, F-Droid, IzzyOnDroid and the Obtainium community catalog.</div>
+                <div class="about-tip">Task Manager tab modeled on <a href="#" onclick="openUrlExternal('https://github.com/RohitKushvaha01/TaskManager'); return false;">RohitKushvaha01/TaskManager</a>.</div>
             </div>
         </section>
 
@@ -4604,7 +4686,7 @@
                 .tx-mode-btn { flex: 0 0 auto; width: 46px; height: 44px; border-radius: 10px; background: #000; color: #23d18b; font-family: monospace; font-weight: 800; font-size: 14px; border: 1px solid #333; cursor: pointer; }
                 .tx-mode-btn.chat { color: #f5f543; }
                 .tx-mode-btn:disabled { opacity: .55; }
-                .tx-input { flex: 1 1 auto; min-width: 0; min-height: 44px; max-height: 150px; resize: none; background: #000; color: #fff; border: 1px solid #333; border-radius: 10px; font-family: 'DejaVu Sans Mono', 'Roboto Mono', monospace; font-size: 14px; line-height: 1.35; padding: 11px 10px; box-sizing: border-box; }
+                .tx-input { flex: 1 1 auto; min-width: 0; min-height: 56px; max-height: 170px; resize: none; background: #000; color: #fff; border: 1px solid #333; border-radius: 10px; font-family: 'DejaVu Sans Mono', 'Roboto Mono', monospace; font-size: 15.5px; line-height: 1.4; padding: 13px 11px; box-sizing: border-box; }
                 .tx-input:focus { outline: none; border-color: var(--accent); }
                 .tx-send-btn { flex: 0 0 auto; height: 44px; min-width: 70px; border-radius: 10px; border: none; background: linear-gradient(135deg, var(--accent), var(--secondary)); color: var(--on-accent); font-weight: 800; font-size: 13px; cursor: pointer; }
                 .tx-send-btn.stop { background: #c62828; color: #fff; }
@@ -4612,6 +4694,12 @@
                 .tx-keys button { background: #111; color: #e6e6e6; border: 1px solid #2a2a2a; border-radius: 8px; min-height: 38px; font-family: monospace; font-size: 12px; font-weight: 700; cursor: pointer; padding: 0; white-space: nowrap; overflow: hidden; }
                 .tx-keys button:active { background: #2a2a2a; }
                 .tx-keys .tx-key-stop { color: #ff8a80; font-size: 11px; letter-spacing: -0.6px; }
+                /* Shift swaps the first row's keys for a second row of symbols a phone keyboard often buries behind
+                   its own symbols layer - Shift itself stays in both rows so it always toggles back. */
+                .tx-keys .tx-key-shift.active { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+                .tx-keys .tx-key-alt { display: none; }
+                .tx-keys.shifted .tx-key-alt { display: block; }
+                .tx-keys.shifted .tx-key-base { display: none; }
                 /* The app's sheet subtitles break anywhere (they usually show package names); these are sentences */
                 #txConnectModal .sheet-title p, #txSettingsModal .sheet-title p, #txTermuxModal .sheet-title p, #txHelpModal .sheet-title p, #txAlertModal .sheet-title p, #txMcpModal .sheet-title p { word-break: normal; overflow-wrap: anywhere; }
                 .tx-tools { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
@@ -4693,23 +4781,39 @@
                     <button class="tx-send-btn" id="txSendBtn" translate="no" onclick="txSendClick()">RUN</button>
                 </div>
                 <div class="tx-keys" id="txKeys" role="toolbar" aria-label="Extra keys">
-                    <button translate="no" data-k="esc" title="Clear the line">ESC</button>
-                    <button translate="no" data-k="tab" title="Complete a file name">TAB</button>
-                    <button translate="no" data-k="ctrlc" class="tx-key-stop" title="Stop what is running">CTRL-C</button>
-                    <button translate="no" data-k="up" title="Previous command" aria-label="Previous command">▲</button>
-                    <button translate="no" data-k="down" title="Next command" aria-label="Next command">▼</button>
-                    <button translate="no" data-k="left" title="Cursor left" aria-label="Cursor left">←</button>
-                    <button translate="no" data-k="right" title="Cursor right" aria-label="Cursor right">→</button>
-                    <button translate="no" data-k="home" title="Start of the line">HOME</button>
-                    <button translate="no" data-k="end" title="End of the line">END</button>
-                    <button translate="no" data-k="|" aria-label="Pipe">|</button>
-                    <button translate="no" data-k="/" aria-label="Slash">/</button>
-                    <button translate="no" data-k="-" aria-label="Dash">-</button>
-                    <button translate="no" data-k="~" aria-label="Tilde">~</button>
+                    <button translate="no" data-k="esc" class="tx-key-base" title="Clear the line">ESC</button>
+                    <button translate="no" data-k="tab" class="tx-key-base" title="Complete a file name">TAB</button>
+                    <button translate="no" data-k="ctrlc" class="tx-key-base tx-key-stop" title="Stop what is running">CTRL</button>
+                    <button translate="no" data-k="up" class="tx-key-base" title="Previous command" aria-label="Previous command">▲</button>
+                    <button translate="no" data-k="down" class="tx-key-base" title="Next command" aria-label="Next command">▼</button>
+                    <button translate="no" data-k="left" class="tx-key-base" title="Cursor left" aria-label="Cursor left">←</button>
+                    <button translate="no" data-k="right" class="tx-key-base" title="Cursor right" aria-label="Cursor right">→</button>
+                    <button translate="no" data-k="home" class="tx-key-base" title="Start of the line">HOME</button>
+                    <button translate="no" data-k="end" class="tx-key-base" title="End of the line">END</button>
+                    <button translate="no" data-k="|" class="tx-key-base" aria-label="Pipe">|</button>
+                    <button translate="no" data-k="/" class="tx-key-base" aria-label="Slash">/</button>
+                    <button translate="no" data-k="-" class="tx-key-base" aria-label="Dash">-</button>
+                    <button translate="no" data-k="~" class="tx-key-base" aria-label="Tilde">~</button>
+                    <button translate="no" data-k="`" class="tx-key-alt" aria-label="Backtick">`</button>
+                    <button translate="no" data-k="$" class="tx-key-alt" aria-label="Dollar">$</button>
+                    <button translate="no" data-k=";" class="tx-key-alt" aria-label="Semicolon">;</button>
+                    <button translate="no" data-k=":" class="tx-key-alt" aria-label="Colon">:</button>
+                    <button translate="no" data-k="&quot;" class="tx-key-alt" aria-label="Double quote">"</button>
+                    <button translate="no" data-k="'" class="tx-key-alt" aria-label="Single quote">'</button>
+                    <button translate="no" data-k="\" class="tx-key-alt" aria-label="Backslash">\</button>
+                    <button translate="no" data-k="{" class="tx-key-alt" aria-label="Open brace">{</button>
+                    <button translate="no" data-k="}" class="tx-key-alt" aria-label="Close brace">}</button>
+                    <button translate="no" data-k="(" class="tx-key-alt" aria-label="Open parenthesis">(</button>
+                    <button translate="no" data-k=")" class="tx-key-alt" aria-label="Close parenthesis">)</button>
+                    <button translate="no" data-k="*" class="tx-key-alt" aria-label="Asterisk">*</button>
+                    <button translate="no" data-k="&amp;" class="tx-key-alt" aria-label="Ampersand">&amp;</button>
+                    <button translate="no" data-k="#" class="tx-key-alt" aria-label="Hash">#</button>
+                    <button translate="no" data-k="shift" class="tx-key-shift" title="More symbols" aria-label="Shift: more symbols">SHIFT</button>
                 </div>
                 <div class="tx-tools">
                     <button class="term-icon-btn" onclick="txClearScreen()">Clear</button>
                     <button class="term-icon-btn" onclick="txCopyScreen()">Copy</button>
+                    <button class="term-icon-btn" onclick="openCheatSheet(true)">Cheat Sheet</button>
                     <button class="term-icon-btn" onclick="txOpenTermux('')">Open in Termux</button>
                     <button class="term-icon-btn" id="txNewChatBtn" onclick="txNewChat()" style="display:none;">New chat</button>
                     <button class="term-icon-btn" id="txRestartBtn" onclick="txRestartShell()">Restart shell</button>
@@ -4878,19 +4982,21 @@ Type any command below (e.g. pm list packages -d)
             <div class="sheet-header">
                 <div class="sheet-app-hero">
                     <div class="sheet-title">
-                        <h3>ADB Cheat Sheet</h3>
-                        <p>Tap a command to drop it in the input. These run in the on-device shell — no <code>adb shell</code> prefix needed.</p>
+                        <h3 id="cheatSheetTitle">ADB Cheat Sheet</h3>
+                        <p id="cheatSheetSub">Tap a command to drop it in the input. These run in the on-device shell — no <code>adb shell</code> prefix needed.</p>
                     </div>
                 </div>
                 <div style="font-size:20px; cursor:pointer;" onclick="closeCheatSheet()">✕</div>
             </div>
             <input type="text" class="list-search" id="cheatSearch" placeholder="Search commands…" oninput="renderCheatSheet(this.value)" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" style="margin-bottom:10px;">
             <div id="cheatSheetBody" style="max-height:48vh; overflow-y:auto;"></div>
-            <div style="margin-top:12px; border-top:1px solid var(--border-glass, rgba(128,128,128,0.22)); padding-top:10px;">
-                <button class="mode-action-btn" id="cheatGistBtn" onclick="loadCheatGist()">Load the full reference from the gist</button>
-                <div id="cheatGistBox" style="margin-top:8px; max-height:40vh; overflow:auto;"></div>
+            <div id="cheatGistSection">
+                <div style="margin-top:12px; border-top:1px solid var(--border-glass, rgba(128,128,128,0.22)); padding-top:10px;">
+                    <button class="mode-action-btn" id="cheatGistBtn" onclick="loadCheatGist()">Load the full reference from the gist</button>
+                    <div id="cheatGistBox" style="margin-top:8px; max-height:40vh; overflow:auto;"></div>
+                </div>
+                <div class="uad-credit" style="margin-top:10px;">Quick list in on-device shell form; the full reference loads live from <a href="#" onclick="openUrlExternal('https://gist.github.com/Pulimet/5013acf2cd5b28e55036c82c91bd56d8'); return false;">Pulimet's ADB gist</a>. Commands with &lt;placeholders&gt; need editing before they run.</div>
             </div>
-            <div class="uad-credit" style="margin-top:10px;">Quick list in on-device shell form; the full reference loads live from <a href="#" onclick="openUrlExternal('https://gist.github.com/Pulimet/5013acf2cd5b28e55036c82c91bd56d8'); return false;">Pulimet's ADB gist</a>. Commands with &lt;placeholders&gt; need editing before they run.</div>
         </div>
     </div>
 
@@ -5165,7 +5271,6 @@ Type any command below (e.g. pm list packages -d)
                             <span class="copy-chip" onclick="copyAppField('pkg')">Copy package</span>
                             <span class="copy-chip" onclick="copyAppField('version')">Copy version</span>
                             <span class="copy-chip" onclick="copyAppField('name')">Copy name</span>
-                            <span class="copy-chip" onclick="shareAppInfo()">Share</span>
                         </div>
                         <p id="sheetDates" class="sheet-dates"></p>
                         <p id="sheetSizes" class="sheet-dates"></p>
@@ -5173,7 +5278,10 @@ Type any command below (e.g. pm list packages -d)
                         <div id="sheetMods" class="sheet-update-hint" style="display:none;"></div>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="closeInspector()">✕</div>
+                <div class="sheet-header-actions">
+                    <span class="copy-chip" onclick="shareAppInfo()">Share</span>
+                    <div style="font-size:20px; cursor:pointer;" onclick="closeInspector()">✕</div>
+                </div>
             </div>
 
             <!-- Action Grid -->
@@ -5434,11 +5542,20 @@ Type any command below (e.g. pm list packages -d)
                 </div>
                 <div style="font-size:20px; cursor:pointer;" onclick="closeBatchConfirmModal()">✕</div>
             </div>
-            <div class="modal-helper">These apps are currently selected for this action:</div>
-            <div class="confirm-list-box" id="batchConfirmList"></div>
-            <div style="display:flex; gap:10px; margin-top:8px;">
-                <button class="mode-action-btn primary" style="flex:1; justify-content:center;" id="batchConfirmExecuteBtn" onclick="confirmPendingBatchAction()">Confirm</button>
-                <button class="mode-action-btn" style="padding:10px 16px;" onclick="closeBatchConfirmModal()">Cancel</button>
+            <div id="batchConfirmBody">
+                <div class="modal-helper">These apps are currently selected for this action:</div>
+                <div class="confirm-list-box" id="batchConfirmList"></div>
+                <div style="display:flex; gap:10px; margin-top:8px;">
+                    <button class="mode-action-btn primary" style="flex:1; justify-content:center;" id="batchConfirmExecuteBtn" onclick="confirmPendingBatchAction()">Confirm</button>
+                    <button class="mode-action-btn" style="padding:10px 16px;" onclick="closeBatchConfirmModal()">Cancel</button>
+                </div>
+            </div>
+            <div id="batchProgressBody" style="display:none;">
+                <div class="uad-status" id="batchProgressText" style="margin-bottom:8px;"></div>
+                <div class="backup-bar"><div id="batchProgressBar" style="width:0%;"></div></div>
+                <div style="display:flex; gap:10px; margin-top:14px;">
+                    <button class="mode-action-btn" style="flex:1; justify-content:center;" id="batchProgressStopBtn" onclick="batchActionStop()">Stop</button>
+                </div>
             </div>
         </div>
     </div>
@@ -6238,6 +6355,7 @@ Type any command below (e.g. pm list packages -d)
             appearance: 'system',       // 'light' | 'dark' | 'system' | 'schedule'
             schedule: { lightAt: '07:00', darkAt: '19:00' },
             pureBlack: false,           // true black backgrounds in dark mode (AMOLED)
+            expressiveAnimations: true, // Material 3 Expressive's springier, overshooting motion app-wide
             overrides: { dark: {}, light: {} }
         };
 
@@ -6483,6 +6601,7 @@ Type any command below (e.g. pm list packages -d)
             });
             const gear = document.getElementById('prefsHeaderBtn');
             if (gear) gear.classList.toggle('active', viewName === 'prefs');
+            if (viewName === 'prefs') iconPackRender();
 
             document.querySelectorAll('.view-content').forEach(v => {
                 v.classList.remove('active');
@@ -6896,14 +7015,14 @@ Type any command below (e.g. pm list packages -d)
                 return `
                     <div class="saved-list-card">
                         <div class="saved-list-head">
-                            <div style="min-width:0; flex:1;">
-                                <div class="saved-list-title">${escapeHtml(list.name || 'Untitled List')}</div>
-                                <div class="saved-list-meta">${pkgs.length} apps</div>
-                            </div>
-                            <div class="tag-badge tag-system">Saved</div>
+                            <div class="saved-list-title">${escapeHtml(list.name || 'Untitled List')}</div>
+                            <div class="saved-list-meta">${pkgs.length} apps</div>
                         </div>
                         ${desc}
                         <div class="saved-list-pkgs">${chips || '<span class="saved-pkg-chip">No packages</span>'}${more}</div>
+                        <div class="saved-list-controls">
+                            <div class="tag-badge tag-system">Saved</div>
+                        </div>
                         <div class="saved-list-actions">
                             <button class="apps-tool-btn" data-list-id="${listId}" onclick="recallSavedList(this.getAttribute('data-list-id'))">Recall</button>
                             <button class="apps-tool-btn${quickListId === (list.id || '') ? ' active' : ''}" data-list-id="${listId}" onclick="toggleQuickList(this.getAttribute('data-list-id'))" title="Use this list for the Quick Settings tile and the widget">${quickListId === (list.id || '') ? 'Quick list ✓' : 'Quick list'}</button>
@@ -7087,8 +7206,18 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('commandResultsModal').classList.add('show');
         }
 
+        // true while a native appActionBatch run is in flight - lets the modal's ✕/Cancel act as an early Stop
+        // instead of silently hiding a job that is still running (off the page's own thread) in the background.
+        let batchRunActive = false;
+
+        function batchConfirmShowBody(mode) {
+            document.getElementById('batchConfirmBody').style.display = mode === 'confirm' ? '' : 'none';
+            document.getElementById('batchProgressBody').style.display = mode === 'progress' ? '' : 'none';
+        }
+
         function closeBatchConfirmModal() {
             haptic();
+            if (batchRunActive || optimizeRunActive || profileRunActive) { batchActionStop(); return; }
             pendingBatchAction = null;
             document.getElementById('batchConfirmModal').classList.remove('show');
         }
@@ -7108,16 +7237,34 @@ Type any command below (e.g. pm list packages -d)
                 const app = allApps.find(a => a.pkg === pkg) || { name: pkg, pkg: pkg };
                 return '<div class="confirm-list-row"><strong>' + escapeHtml(app.name) + '</strong><br><span style="font-size:10px; color:var(--text-muted);">' + escapeHtml(pkg) + '</span></div>';
             }).join('');
+            batchConfirmShowBody('confirm');
             document.getElementById('batchConfirmModal').classList.add('show');
         }
 
         function confirmPendingBatchAction() {
             if (!pendingBatchAction) return;
             const next = pendingBatchAction;
-            document.getElementById('batchConfirmModal').classList.remove('show');
             pendingBatchAction = null;
-            if (next.custom) { next.custom(); return; }
+            if (next.custom) {
+                document.getElementById('batchConfirmModal').classList.remove('show');
+                next.custom();
+                return;
+            }
+            // The modal stays open and visible - runBatchAction swaps it straight into progress mode,
+            // so Confirm doesn't flash the sheet closed and immediately reopen it.
             runBatchAction(next.action, next.pkgs);
+        }
+
+        // Ends the running batch after whichever app is currently mid-action finishes (that one call can't be
+        // interrupted once started) - every app not reached yet is left exactly as it was. The actual loop runs
+        // natively (see runBatchAction below), so this just flags it there; window.onAppBatchDone reports back
+        // once it has actually stopped.
+        function batchActionStop() {
+            haptic();
+            if (optimizeRunActive) { if (window.AndroidBridge && window.AndroidBridge.optimizeBatchCancel) window.AndroidBridge.optimizeBatchCancel(); }
+            else if (window.AndroidBridge && window.AndroidBridge.appBatchCancel) window.AndroidBridge.appBatchCancel();     // also stops a running profile - it is one appActionBatch call per action group
+            const btn = document.getElementById('batchProgressStopBtn');
+            if (btn) { btn.disabled = true; btn.innerText = 'Stopping…'; }
         }
 
         function performDetailedBatchAction(action, pkgs) {
@@ -7137,7 +7284,7 @@ Type any command below (e.g. pm list packages -d)
         // Privilege Guard
         // File manager: a job runs when the app can reach the files itself (All-files access) or a working mode can
         function fmCanWork(actionName) {
-            if (isPrivilegedActive || fileAccessGranted()) return true;
+            if (fmPath.startsWith('content://') || isPrivilegedActive || fileAccessGranted()) return true;        // added storage reaches files through its own grant, no working mode needed
             return guardPrivilege(actionName);
         }
 
@@ -8325,7 +8472,10 @@ Type any command below (e.g. pm list packages -d)
         }
 
         // ---------- Versions in the app list / app menu ----------
-        let showListVersions = true;
+        // Off by default now - a less cluttered list row. The single-app menu and command results always show the
+        // version regardless of this; it only thins out the main list rows (see appVersionHtml() below, and the
+        // "Versions" filter pill above the list, which stays in sync with it and can turn it back on).
+        let showListVersions = false;
 
         let bridgeUpdatesCache = { at: 0, list: [] };
 
@@ -9796,6 +9946,7 @@ Type any command below (e.g. pm list packages -d)
             }
 
             container.innerHTML = filteredApps.slice(0, appsShown).map(appCardHtml).join('') + appsMoreHtml();
+            appsLoadIcons();
             appsWatchMore();
         }
 
@@ -9819,6 +9970,7 @@ Type any command below (e.g. pm list packages -d)
             const from = Math.min(filteredApps.length, appsShown);
             appsShown += APPS_PAGE;
             container.insertAdjacentHTML('beforeend', filteredApps.slice(from, appsShown).map(appCardHtml).join('') + appsMoreHtml());
+            appsLoadIcons();
             appsWatchMore();
         }
 
@@ -9833,9 +9985,75 @@ Type any command below (e.g. pm list packages -d)
             appsMoreObserver.observe(more);
         }
 
+        // ---------- App icons: drawn natively and cached on disk, kept in memory here; press and hold one to save it ----------
+        const appIconCache = {};
+        const appIconAsked = new Set();
+        let iconPack = kvGet('icon_pack', '') || '';
+        function iconPackRender() {
+            const sel = document.getElementById('iconPackSelect');
+            if (!sel) return;
+            let packs = [];
+            try { packs = JSON.parse((window.AndroidBridge && window.AndroidBridge.getIconPacks && window.AndroidBridge.getIconPacks()) || '[]'); } catch (e) {}
+            if (iconPack && !packs.some(p => p.pkg === iconPack)) { iconPack = ''; kvSet('icon_pack', ''); }
+            sel.innerHTML = '<option value="">Default icons</option>' + packs.map(p => '<option translate="no" value="' + escapeHtml(p.pkg) + '"' + (p.pkg === iconPack ? ' selected' : '') + '>' + escapeHtml(p.label) + '</option>').join('');
+            sel.value = iconPack;
+        }
+        function setIconPack(pkg) {
+            haptic();
+            iconPack = pkg || '';
+            kvSet('icon_pack', iconPack);
+            Object.keys(appIconCache).forEach(k => delete appIconCache[k]);
+            appIconAsked.clear();
+            document.querySelectorAll('img.app-icon').forEach(img => img.removeAttribute('src'));
+            appsLoadIcons();
+            showToast(iconPack ? 'Icon pack applied' : 'Default icons');
+        }
+        function appsLoadIcons() {
+            if (!window.AndroidBridge || !window.AndroidBridge.loadAppIcons) return;
+            const want = [];
+            document.querySelectorAll('img.app-icon:not([src])').forEach(img => {
+                const pkg = img.getAttribute('data-icon');
+                if (pkg && !appIconAsked.has(pkg)) { appIconAsked.add(pkg); want.push(pkg); }
+            });
+            for (let i = 0; i < want.length; i += 24) {
+                try { window.AndroidBridge.loadAppIcons(JSON.stringify(want.slice(i, i + 24)), iconPack); } catch (e) {}
+            }
+        }
+        window.onAppIcons = function (map) {
+            Object.keys(map || {}).forEach(pkg => { appIconCache[pkg] = map[pkg]; });
+            document.querySelectorAll('img.app-icon:not([src])').forEach(img => {
+                const u = appIconCache[img.getAttribute('data-icon')];
+                if (u) img.src = u;
+            });
+        };
+        window.onAppIconSaved = function (r) {
+            if (r && r.ok) showToast('Icon saved to ' + r.path);
+            else showToast('Could not save the icon' + (r && r.error ? ': ' + r.error : ''));
+        };
+        (function () {
+            let timer = null, startX = 0, startY = 0;
+            const clear = () => { if (timer) { clearTimeout(timer); timer = null; } };
+            document.addEventListener('contextmenu', e => { if (e.target.closest && e.target.closest('img.app-icon')) e.preventDefault(); });
+            document.addEventListener('pointerdown', e => {
+                const img = e.target.closest ? e.target.closest('img.app-icon') : null;
+                if (!img) return;
+                startX = e.clientX; startY = e.clientY;
+                clear();
+                timer = setTimeout(() => {
+                    timer = null;
+                    const pkg = img.getAttribute('data-icon');
+                    const app = allApps.find(a => a.pkg === pkg);
+                    haptic();
+                    if (!window.AndroidBridge || !window.AndroidBridge.saveAppIcon) { showToast('Needs the app build'); return; }
+                    window.AndroidBridge.saveAppIcon(pkg, app ? app.name : '', iconPack);
+                }, 550);
+            });
+            document.addEventListener('pointermove', e => { if (timer && Math.hypot(e.clientX - startX, e.clientY - startY) > 10) clear(); });
+            ['pointerup', 'pointercancel', 'scroll'].forEach(ev => document.addEventListener(ev, clear, true));
+        })();
+
         function appCardHtml(app) {
             const isSelected = selectedPkgs.has(app.pkg);
-            const initial = (app.name && app.name.length > 0) ? firstChar(app.name, '?') : '?';
 
             let badges = '';
             if (app.isRunning) badges += '<span class="tag-badge tag-running">RUNNING</span>';
@@ -9849,14 +10067,14 @@ Type any command below (e.g. pm list packages -d)
             const pk = escapeHtml(app.pkg);
             return `
                 <div class="app-card ${isSelected ? 'selected' : ''} ${app.isSuspended ? 'suspended' : ''}" id="card_${pk}" data-pkg="${pk}">
+                    <img class="app-icon" alt="" draggable="false" data-icon="${pk}"${appIconCache[app.pkg] ? ` src="${appIconCache[app.pkg]}"` : ''}>
+                    <div class="app-meta" onclick="toggleSelectPkg(this.parentElement.dataset.pkg)">
+                        <div class="app-name">${escapeHtml(app.name)}</div>
+                        <div class="app-pkg">${pk}</div>
+                        <div class="badge-row">${badges}${listVersionLabel(app)}${listSortMeta(app)}</div>
+                    </div>
                     <div class="app-left" onclick="toggleSelectPkg(this.parentElement.dataset.pkg)">
                         <div class="app-checkbox">${isSelected ? '✓' : ''}</div>
-                        <div class="app-avatar">${escapeHtml(initial)}</div>
-                        <div class="app-meta">
-                            <div class="app-name">${escapeHtml(app.name)}</div>
-                            <div class="app-pkg">${pk}</div>
-                            <div class="badge-row">${badges}${listVersionLabel(app)}${listSortMeta(app)}</div>
-                        </div>
                     </div>
                     <div class="app-actions">
                         <button class="btn-mini" title="App Settings" aria-label="App Settings" onclick="openAppSettings(this.closest('.app-card').dataset.pkg)">⚙️</button>
@@ -10011,22 +10229,73 @@ Type any command below (e.g. pm list packages -d)
             runBatchAction(action, arr);
         }
 
+        // Runs one action across every app in arr, one at a time, with its own progress sheet (reusing the
+        // batch confirm modal's shell - swapped into its "progress" body - so Confirm doesn't have to close
+        // one sheet just to open another). Each step yields back to the browser with setTimeout(…, 0) between
+        // apps purely so the progress text/bar actually repaint between native calls, which otherwise block
+        // the page the same way any other AndroidBridge call does. Stop (or the sheet's own ✕) ends it after
+        // whichever app is already running finishes; nothing after that point is touched.
+        // Runs one action across every app in arr via the native appActionBatch (see MainActivity.java) - off
+        // the page's own thread, unlike performDetailedBatchAction's per-app executeAppAction calls below, which
+        // block whichever thread calls them. Looping those calls from the page's own thread, even one at a time
+        // with a setTimeout(0) between apps, still froze the page for the whole run: that thread is the
+        // WebView's own, so nothing on it - including a repaint - runs while a call made from it is in flight.
+        // Progress arrives as window.onAppBatchProgress, the end as window.onAppBatchDone, both below.
         function runBatchAction(action, arr) {
             haptic();
-            showToast(`Executing ${action} on ${arr.length} apps...`);
-            if (window.AndroidBridge) {
-                const res = performDetailedBatchAction(action, arr);
-                recordHistory('apps', `${ACTION_LABELS[action] || action} ${arr.length} app${arr.length === 1 ? '' : 's'}`,
-                    res.rows.map(r => ({ pkg: r.pkg, name: r.name, action: action, success: r.success })));
-                showToast(`Batch Done: ${res.success} succeeded, ${res.failed} failed`);
-                showCommandResults('Batch Results', action.toUpperCase() + ' • ' + arr.length + ' apps', res.rows);
-                // "Keep selection" leaves the apps selected (and the panel as it was) so another batch action
-                // can run on the same set right away - the floating sheet sits behind the result dialog the
-                // same way the single-app sheet does, and is there again once that dialog is dismissed.
-                if (!batchKeepSelection) clearBatchSelection();
-                setTimeout(loadPackageData, 400);
+            if (!window.AndroidBridge || !window.AndroidBridge.appActionBatch) return;
+
+            document.getElementById('batchConfirmTitle').innerText = (ACTION_LABELS[action] || action) + ' ' + arr.length + ' app' + (arr.length === 1 ? '' : 's');
+            document.getElementById('batchConfirmSubtitle').innerText = '';
+            document.getElementById('batchProgressText').innerText = '';
+            document.getElementById('batchProgressBar').style.width = '0%';
+            const stopBtn = document.getElementById('batchProgressStopBtn');
+            if (stopBtn) { stopBtn.disabled = false; stopBtn.innerText = 'Stop'; }
+            batchConfirmShowBody('progress');
+            document.getElementById('batchConfirmModal').classList.add('show');
+
+            const started = window.AndroidBridge.appActionBatch(action, JSON.stringify(arr));
+            if (started !== 'started') {
+                document.getElementById('batchConfirmModal').classList.remove('show');
+                showToast('Another batch action is already running');
+                return;
             }
+            batchRunActive = true;
         }
+
+        // Fires once before each app's own action runs natively. A profile applies several action groups through
+        // this same native batch runner, one group at a time, so its own progress/done handlers take over first
+        // whenever a profile run (rather than a plain selection batch) is the one in flight.
+        window.onAppBatchProgress = function (i, total, pkg) {
+            if (profileRunActive) { profileOnBatchProgress(i, total, pkg); return; }
+            const app = allApps.find(a => a.pkg === pkg) || { name: pkg, pkg: pkg };
+            document.getElementById('batchProgressText').innerText = `${i + 1} of ${total}: ${app.name} (${pkg})`;
+            document.getElementById('batchProgressBar').style.width = Math.round(i / total * 100) + '%';
+        };
+
+        // Fires once the native run has finished (to completion, or stopped early).
+        window.onAppBatchDone = function (resultJson) {
+            if (profileRunActive) { profileOnBatchDone(resultJson); return; }
+            batchRunActive = false;
+            let res; try { res = JSON.parse(resultJson); } catch (e) { res = null; }
+            document.getElementById('batchConfirmModal').classList.remove('show');
+            if (!res || !res.ok) { showToast('Batch action failed to run'); return; }
+            const action = res.action, total = res.total, stopped = !!res.cancelled;
+            const rows = (res.rows || []).map(r => {
+                const app = allApps.find(a => a.pkg === r.pkg) || { name: r.pkg, pkg: r.pkg };
+                return { name: app.name, pkg: r.pkg, output: r.output, success: r.success };
+            });
+            const success = rows.filter(r => r.success).length, failed = rows.length - success;
+            const label = `${ACTION_LABELS[action] || action} ${rows.length} app${rows.length === 1 ? '' : 's'}` + (stopped ? ' (stopped early)' : '');
+            recordHistory('apps', label, rows.map(r => ({ pkg: r.pkg, name: r.name, action: action, success: r.success })));
+            showToast(stopped ? `Stopped: ${success} succeeded, ${failed} failed, ${total - rows.length} not run` : `Batch Done: ${success} succeeded, ${failed} failed`);
+            showCommandResults('Batch Results', action.toUpperCase() + ' • ' + rows.length + ' of ' + total + ' apps' + (stopped ? ' (stopped)' : ''), rows);
+            // "Keep selection" leaves the apps selected (and the panel as it was) so another batch action
+            // can run on the same set right away - the floating sheet sits behind the result dialog the
+            // same way the single-app sheet does, and is there again once that dialog is dismissed.
+            if (!batchKeepSelection) clearBatchSelection();
+            setTimeout(loadPackageData, 400);
+        };
 
         // Opens Android's App Info screen. Works in every mode, including Read-Only.
         function openAppSettings(pkg) {
@@ -10050,6 +10319,22 @@ Type any command below (e.g. pm list packages -d)
             return { ok, output: s };
         }
 
+        // For a raw executeShell() call with no flagged result of its own (executeAppAction's pm/am actions
+        // already carry one - see parseActionResult): runs the command and reads success from its own real
+        // exit status, the same reasoning and the same "; echo marker:$?" trick runShellAction uses natively,
+        // just done here in JS for the handful of spots that still call executeShell directly.
+        function execShellOk(cmd) {
+            if (!window.AndroidBridge || !window.AndroidBridge.executeShell) return { ok: false, output: '' };
+            const marker = '__RC' + Date.now() + Math.random().toString(36).slice(2) + '__';
+            const raw = String(window.AndroidBridge.executeShell(cmd + '; echo "' + marker + ':$?"') || '');
+            const idx = raw.lastIndexOf(marker + ':');
+            if (idx < 0) return { ok: true, output: raw }; // no real shell to parse from - nothing to contradict success
+            let output = raw.slice(0, idx);
+            while (output.endsWith('\n')) output = output.slice(0, -1);
+            const rc = parseInt(raw.slice(idx + marker.length + 1).trim(), 10);
+            return { ok: rc === 0, output };
+        }
+
         function quickAction(action, pkg) {
             if (!guardPrivilege(action)) return;
             haptic();
@@ -10057,7 +10342,9 @@ Type any command below (e.g. pm list packages -d)
                 const app = allApps.find(a => a.pkg === pkg) || { name: pkg, pkg: pkg };
                 const { ok, output } = parseActionResult(window.AndroidBridge.executeAppAction(action, pkg));
                 showToast(ok ? 'Action executed' : 'Action reported a problem');
-                showCommandResults('Command Result', action.toUpperCase(), [{ name: app.name, pkg: pkg, output: output, success: ok }]);
+                // Modal only on failure (the same convention as toggleComponent/fmOp/launchActivity/Archive/Sign/Settings/Overlay) -
+                // the toast alone already carries a successful, routine action; the modal would just be a redundant extra tap.
+                if (!ok) showCommandResults('Command Result', action.toUpperCase(), [{ name: app.name, pkg: pkg, output: output, success: ok }]);
                 if (UNDO_ACTION[action]) recordHistory('apps', `${ACTION_LABELS[action] || action} ${app.name}`, [{ pkg: pkg, name: app.name, action: action, success: ok }]);
                 setTimeout(loadPackageData, 400);
             }
@@ -11298,6 +11585,61 @@ Type any command below (e.g. pm list packages -d)
         let fmActionTarget = null;
         let fmPendingOp = null;
 
+        // ---- Added storage (SAF document-tree roots: an SD card, USB drive, another app's folder...) ----
+        // fmPath holds the SAF document URI itself while browsing one of these (safe to pass straight back into
+        // fmList/fmOp - it is never run through the POSIX path helpers below). fmSafStack is the breadcrumb trail
+        // back up to the root: SAF has no parent-of-a-folder lookup, so each descend pushes where it came from.
+        let fmSafRoots = [];
+        let fmSafRootsLoaded = false;
+        let fmSafStack = [];
+        function fmSafRootsLoad() {
+            if (fmSafRootsLoaded) return;
+            fmSafRootsLoaded = true;
+            const v = loadStoreJson('fm_saf_roots', []);
+            fmSafRoots = Array.isArray(v) ? v : [];
+            renderFmRoots();
+        }
+        function renderFmRoots() {
+            const el = document.getElementById('fmRootsRow');
+            if (!el) return;
+            el.innerHTML = fmSafRoots.map((r, i) => `<button class="batch-tool-link" onclick="fmGoRoot(${i})" title="${escapeHtml(r.uri)}">${escapeHtml(r.label || 'Storage')}</button>`
+                + `<button class="batch-tool-link" aria-label="Remove ${escapeHtml(r.label || 'this storage')}" onclick="fmRemoveRoot(${i})">✕</button>`).join('')
+                + `<button class="batch-tool-link" onclick="fmAddStorage()">＋ Add storage</button>`;
+        }
+        function fmAddStorage() {
+            haptic();
+            if (!window.AndroidBridge || !window.AndroidBridge.pickAddStorage) { showToast('Needs the app build'); return; }
+            window.AndroidBridge.pickAddStorage();
+        }
+        window.onStorageRootPicked = function (uri, label) {
+            if (!uri) return;                                 // the picker was cancelled
+            if (!fmSafRoots.some(r => r.uri === uri)) {
+                fmSafRoots.push({ uri, label: label || 'Storage' });
+                saveStoreJson('fm_saf_roots', fmSafRoots);
+            }
+            renderFmRoots();
+            fmSafStack = [];
+            fmGo(uri);
+        };
+        function fmGoRoot(i) {
+            const r = fmSafRoots[i];
+            if (!r) return;
+            haptic();
+            fmSafStack = [];
+            fmGo(r.uri);
+        }
+        function fmRemoveRoot(i) {
+            const r = fmSafRoots[i];
+            if (!r) return;
+            haptic();
+            if (!confirm('Remove "' + (r.label || 'this storage') + '" from the file manager? This only takes away this app\'s access to it - nothing on it is deleted.')) return;
+            try { window.AndroidBridge && window.AndroidBridge.removeStorageRoot && window.AndroidBridge.removeStorageRoot(r.uri); } catch (e) {}
+            fmSafRoots.splice(i, 1);
+            saveStoreJson('fm_saf_roots', fmSafRoots);
+            renderFmRoots();
+            if (fmPath === r.uri || fmSafStack.includes(r.uri)) { fmSafStack = []; fmGo('/storage/emulated/0'); }
+        }
+
         let fmLast = { entries: [] };                    // the listing on screen, so an option can redraw it without asking again
         let fmOpts = { hidden: false, thumbs: true };    // Show hidden files, Show thumbnails (kept between launches)
         let fmOptsLoaded = false;
@@ -11317,7 +11659,7 @@ Type any command below (e.g. pm list packages -d)
             if (key === 'hidden') { const here = new Set(fmRows.map(r => r.full)); Array.from(fmSel).forEach(p => { if (!here.has(p)) fmSel.delete(p); }); }     // what is no longer listed is no longer picked
             fmSelRender();
         }
-        function onFilesShown() { fmOptsLoad(); fmSearchInit(); fmGo(fmPath, true, true); }
+        function onFilesShown() { fmOptsLoad(); fmSafRootsLoad(); fmSearchInit(); fmGo(fmPath, true, true); }
         // auto: the tab opening by itself (the inline hint is enough then); a folder the user chose asks for the access when it is what is missing
         function fmGo(path, auto, keepSearch) {
             path = (path || '/').trim() || '/';
@@ -11326,7 +11668,8 @@ Type any command below (e.g. pm list packages -d)
             if (fmSelMode || fmSel.size) { fmSelMode = false; fmSel.clear(); }
             let d;
             try { d = JSON.parse(window.AndroidBridge.fmList(path)); } catch (e) { d = { error: String(e && e.message || e) }; }
-            fmPath = fmNormalizePath(d.path || path);
+            const rawPath = d.path || path;
+            fmPath = rawPath.startsWith('content://') ? rawPath : fmNormalizePath(rawPath);
             document.getElementById('fmPathInput').value = fmPath;
             document.getElementById('fmCurrentPath').innerText = fmPath;
             let entries;
@@ -11420,6 +11763,11 @@ Type any command below (e.g. pm list packages -d)
             if (fmSearchMode && !fmSearchRunning && fmSearchQuery) { document.getElementById('fmSearchInput').value = fmSearchQuery; fmSearchGo(); }       // something was renamed, deleted or extracted: the results are made again
         }
         function fmUp() {
+            if (fmPath.startsWith('content://')) {
+                if (!fmSafStack.length) { showToast('This is the top of this storage'); return; }
+                fmGo(fmSafStack.pop());
+                return;
+            }
             const i = fmPath.lastIndexOf('/');
             fmGo(i <= 0 ? '/' : fmPath.substring(0, i));
         }
@@ -11451,7 +11799,7 @@ Type any command below (e.g. pm list packages -d)
             return /\.[A-Za-z0-9]{1,5}$/.test(name) ? 'other' : 'text';          // a name with no ending is usually a text file (README, Makefile ...)
         }
         function fmUpRowHtml() {
-            if (fmPath === '/') return '';
+            if (fmPath === '/' || (fmPath.startsWith('content://') && !fmSafStack.length)) return '';
             return '<div class="perm-row fm-up-row" id="fmUpRow" role="button" tabindex="0" aria-label="Up one folder" onclick="if (!fmSelMode) fmUp()" onkeydown="if (event.key === \'Enter\' || event.key === \' \') { event.preventDefault(); if (!fmSelMode) fmUp(); }">'
                 + '<div class="fm-ico"><div class="fm-folder"></div></div>'
                 + '<div class="perm-info"><div class="perm-name fm-dir">..</div><div class="perm-sub">Up one folder</div></div></div>';
@@ -11476,7 +11824,7 @@ Type any command below (e.g. pm list packages -d)
             }
             const entries = shown.slice().sort((a, b) => (b.isDir - a.isDir) || a.name.localeCompare(b.name));
             // Rows are looked up by index: a file name can hold any character (quotes included), so it is never put in a handler string
-            fmRows = entries.map(e => ({ name: e.name, isDir: !!e.isDir, full: fmJoin(e.name), kind: e.isDir ? 'dir' : fmKind(e.name) }));
+            fmRows = entries.map(e => ({ name: e.name, isDir: !!e.isDir, full: e.uri || fmJoin(e.name), kind: e.isDir ? 'dir' : fmKind(e.name) }));
             el.innerHTML = up + entries.map((e, i) => {
                 const sub = escapeHtml(e.perms + (e.isDir ? '' : ' • ' + fmtInstallSize(e.size)) + (e.link ? ' → ' + e.link : ''));
                 const k = fmRows[i].kind;
@@ -11581,6 +11929,7 @@ Type any command below (e.g. pm list packages -d)
         }
 
         function fmSelEnter(full) {
+            if (fmPath.startsWith('content://')) { showToast("Multi-select isn't available yet in added storage - use an item's own ⋯ menu"); return; }
             fmSelMode = true;
             if (full) fmSel.add(full);
             fmSelRender();
@@ -11775,7 +12124,10 @@ Type any command below (e.g. pm list packages -d)
 
         function fmTapIdx(i) { const r = fmRows[i]; if (r) fmTap(r.isDir, r.full, r.name); }
         function fmActionsIdx(i) { const r = fmRows[i]; if (r) fmActions(r.full, r.isDir, r.name); }
-        function fmTap(isDir, full, name) { if (isDir) fmGo(full); else fmActions(full, false, name); }
+        function fmTap(isDir, full, name) {
+            if (isDir) { if (fmPath.startsWith('content://')) fmSafStack.push(fmPath); fmGo(full); return; }
+            fmActions(full, false, name);
+        }
 
         function fmActions(full, isDir, name) {
             fmActionTarget = { full, isDir, name };
@@ -11784,20 +12136,23 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('fmActionPath').innerText = full;
             document.getElementById('fmDestRow').style.display = 'none';
             document.getElementById('fmViewer').style.display = 'none';
+            const isSaf = full.startsWith('content://');
             const kind = isDir ? 'dir' : fmKind(name);
             const btns = [];
-            if (!isDir && /\.(apk|apks|apkm|xapk)$/i.test(name)) btns.push(`<button class="batch-grid-btn accent" onclick="fmInstallFile()">Install</button>`);
-            if (!isDir && /\.apk$/i.test(name)) btns.push(`<button class="batch-grid-btn" onclick="fmSignFile()">Sign…</button>`);
-            if (!isDir) btns.push(`<button class="batch-grid-btn" onclick="fmViewFile()">${ARC_EXT.test(name) ? 'View contents' : 'View'}</button>`);
+            if (!isDir && !isSaf && /\.(apk|apks|apkm|xapk)$/i.test(name)) btns.push(`<button class="batch-grid-btn accent" onclick="fmInstallFile()">Install</button>`);
+            if (!isDir && !isSaf && /\.apk$/i.test(name)) btns.push(`<button class="batch-grid-btn" onclick="fmSignFile()">Sign…</button>`);
+            // Added storage (SAF) can view/edit text in place; the kind-specific viewers, Open With, Share, archive
+            // and compress all stream through java.io.File today and have no SAF-aware path yet.
+            if (!isDir && (!isSaf || kind === 'text' || kind === 'other')) btns.push(`<button class="batch-grid-btn" onclick="fmViewFile()">${!isSaf && ARC_EXT.test(name) ? 'View contents' : 'View'}</button>`);
             if (!isDir && (kind === 'text' || kind === 'other')) btns.push(`<button class="batch-grid-btn accent" onclick="fmEditOpen()">Edit</button>`);
-            if (!isDir) btns.push(`<button class="batch-grid-btn" onclick="fmOpenWith()">Open with…</button>`);
-            if (!isDir) btns.push(`<button class="batch-grid-btn" onclick="fmShareFile()">Share</button>`);
-            if (!isDir && ARC_EXT.test(name)) btns.push(`<button class="batch-grid-btn" onclick="fmExtractFile()">Extract…</button>`);
-            if (!isDir && !ARC_EXT.test(name)) btns.push(`<button class="batch-grid-btn" onclick="fmOpenAsArchive()">Open as archive</button>`);
-            btns.push(`<button class="batch-grid-btn" onclick="czOpenOne()">Compress…</button>`);
+            if (!isDir && !isSaf) btns.push(`<button class="batch-grid-btn" onclick="fmOpenWith()">Open with…</button>`);
+            if (!isDir && !isSaf) btns.push(`<button class="batch-grid-btn" onclick="fmShareFile()">Share</button>`);
+            if (!isDir && !isSaf && ARC_EXT.test(name)) btns.push(`<button class="batch-grid-btn" onclick="fmExtractFile()">Extract…</button>`);
+            if (!isDir && !isSaf && !ARC_EXT.test(name)) btns.push(`<button class="batch-grid-btn" onclick="fmOpenAsArchive()">Open as archive</button>`);
+            if (!isSaf) btns.push(`<button class="batch-grid-btn" onclick="czOpenOne()">Compress…</button>`);
             btns.push(`<button class="batch-grid-btn" onclick="fmStartDest('rename')">Rename</button>`);
-            btns.push(`<button class="batch-grid-btn" onclick="fmStartDest('cp')">Copy</button>`);
-            btns.push(`<button class="batch-grid-btn" onclick="fmStartDest('mv')">Move</button>`);
+            if (!isSaf) btns.push(`<button class="batch-grid-btn" onclick="fmStartDest('cp')">Copy</button>`);
+            if (!isSaf) btns.push(`<button class="batch-grid-btn" onclick="fmStartDest('mv')">Move</button>`);
             btns.push(`<button class="batch-grid-btn danger" onclick="fmStartDest('rm')">Delete</button>`);
             document.getElementById('fmActionBtns').innerHTML = btns.join('');
             haptic();
@@ -11831,6 +12186,7 @@ Type any command below (e.g. pm list packages -d)
             if (!fmActionTarget || !fmPendingOp) return;
             const src = fmActionTarget.full;
             const val = (document.getElementById('fmDestInput').value || '').trim();
+            const inSaf = fmPath.startsWith('content://');
             if (fmPendingOp === 'mkdir' || fmPendingOp === 'mkfile') {
                 const bad = fmBadName(val);
                 if (bad) { showToast(bad); return; }
@@ -11838,18 +12194,32 @@ Type any command below (e.g. pm list packages -d)
                 if (fmListedNames().some(n => n.toLowerCase() === val.toLowerCase())) { showToast('That name is already used here'); return; }     // storage is case-insensitive: Todo.txt is todo.txt
                 const isFile = fmPendingOp === 'mkfile';
                 let rk;
-                try { rk = JSON.parse(window.AndroidBridge.fmOp(isFile ? 'touch' : 'mkdir', target, null)); } catch (e) { rk = { ok: false, output: String(e && e.message || e) }; }
+                try {
+                    rk = inSaf ? JSON.parse(window.AndroidBridge.fmNewSaf(fmPath, val, isFile ? 'file' : 'dir'))
+                        : JSON.parse(window.AndroidBridge.fmOp(isFile ? 'touch' : 'mkdir', target, null));
+                } catch (e) { rk = { ok: false, output: String(e && e.message || e) }; }
                 closeFmAction();
                 if (!rk.ok) { showToast(rk.output && rk.output.length < 90 ? rk.output : 'Failed'); return; }
                 showToast(isFile ? 'File created' : 'Folder created');
                 fmRefresh();
-                if (isFile) { fmActionTarget = { full: target, isDir: false, name: val }; if (fmKind(val) === 'text' || fmKind(val) === 'other') fmEditOpen(); }
+                if (isFile) {
+                    fmActionTarget = { full: inSaf ? (rk.uri || fmPath) : target, isDir: false, name: val };
+                    if (fmKind(val) === 'text' || fmKind(val) === 'other') fmEditOpen();
+                }
                 return;
             }
             let op = fmPendingOp, a = src, b = null;
             if (op === 'rename') {
                 const badR = fmBadName(val);
                 if (badR) { showToast(badR); return; }
+                if (src.startsWith('content://')) {
+                    let rk;
+                    try { rk = JSON.parse(window.AndroidBridge.fmRenameSaf(src, val)); } catch (e) { rk = { ok: false, output: String(e && e.message || e) }; }
+                    showToast(rk.ok ? 'Done' : (rk.output && rk.output.length < 90 ? rk.output : 'Failed'));
+                    closeFmAction();
+                    fmRefresh();
+                    return;
+                }
                 op = 'mv'; b = fmParent(src) + '/' + val;
             } else if (op === 'cp' || op === 'mv') {
                 if (!val) { showToast('Enter a destination'); return; }
@@ -13687,7 +14057,12 @@ Type any command below (e.g. pm list packages -d)
         let logcatCounts = { V: 0, D: 0, I: 0, W: 0, E: 0, F: 0 };
         const logcatHidden = new Set();         // levels switched off through the key
 
-        function onLogcatShown() { logcatRefresh(); }
+        // Lands at the top of the tab (not wherever the page happened to be scrolled before switching to it) and
+        // starts live-tailing right away, instead of a one-off read that needs Play pressed by hand.
+        function onLogcatShown() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            logcatTogglePlay();
+        }
 
         function logcatParse(text) {
             const out = [];
@@ -14088,8 +14463,8 @@ Type any command below (e.g. pm list packages -d)
         function tmKillProc(pkg) {
             haptic();
             if (!window.AndroidBridge || !window.AndroidBridge.tmKill) return;
-            window.AndroidBridge.tmKill(pkg);
-            showToast('Stopped ' + pkg);
+            const { ok } = parseActionResult(window.AndroidBridge.tmKill(pkg));
+            showToast(ok ? 'Stopped ' + pkg : 'Could not stop ' + pkg);
             if (window.AndroidBridge.tmRefreshNow) window.AndroidBridge.tmRefreshNow();
         }
 
@@ -14344,9 +14719,9 @@ Type any command below (e.g. pm list packages -d)
             haptic();
             const label = tmRendererLabel(v);
             if (note) note.innerText = `Switching to ${label}…`;
-            window.AndroidBridge.executeShell('setprop debug.hwui.renderer ' + v);
-            window.AndroidBridge.executeShell('am crash com.android.systemui');
-            showToast(`${label} set - System UI restarted to apply it`);
+            const r1 = execShellOk('setprop debug.hwui.renderer ' + v);
+            const r2 = execShellOk('am crash com.android.systemui');
+            showToast(r1.ok && r2.ok ? `${label} set - System UI restarted to apply it` : `Could not switch to ${label}`);
             tmLoadRenderer();
         }
 
@@ -14622,37 +14997,65 @@ Type any command below (e.g. pm list packages -d)
             haptic();
             document.getElementById('optimizeModal').classList.remove('show');
         }
+        // Dex optimize (single app or several) runs through optimizeAppBatch, off the page's thread, exactly like
+        // runBatchAction already does for the app-action batch - a single `pm compile` can take real time, and
+        // calling it straight from the page's own thread blocks the WebView itself for that whole time with no
+        // way to show progress. A single app is just a one-item array, so both paths get the same live progress
+        // bar and Stop button; only the single-app case drops the result modal on success (nuisance per the
+        // command-result audit: toggleComponent's comparable single-item toggle only shows it on failure, and the
+        // toast alone already says enough for a routine, reversible recompile). The batch case keeps its modal
+        // either way - the per-app breakdown is the useful part there.
+        let optimizeRunActive = false;
+        let optimizeSubLabel = '';
         function confirmOptimize() {
             const mode = document.getElementById('optimizeMode').value;
             const force = document.getElementById('optimizeForce').checked;
             document.getElementById('optimizeModal').classList.remove('show');
-            if (!window.AndroidBridge || !window.AndroidBridge.optimizeApp) { showToast('Needs the app build'); return; }
+            if (!window.AndroidBridge || !window.AndroidBridge.optimizeAppBatch) { showToast('Needs the app build'); return; }
+            const pkgs = pendingOptimizeTarget === 'batch' ? Array.from(selectedPkgs) : (inspectedPkg ? [inspectedPkg] : []);
+            if (!pkgs.length) return;
             haptic();
-            const sub = 'compile -m ' + mode + (force ? ' -f' : '');
-            const run = pkg => { try { return JSON.parse(window.AndroidBridge.optimizeApp(pkg, mode, force)); } catch (e) { return { ok: false, output: String(e && e.message || e) }; } };
-            if (pendingOptimizeTarget === 'batch') {
-                const arr = Array.from(selectedPkgs);
-                showToast(`Optimizing ${arr.length} apps...`);
-                const rows = [];
-                let ok = 0;
-                arr.forEach(pkg => {
-                    const app = allApps.find(a => a.pkg === pkg) || { name: pkg, pkg };
-                    const r = run(pkg);
-                    if (r.ok) ok++;
-                    rows.push({ name: app.name, pkg, output: r.output, success: !!r.ok });
-                });
-                showToast(`Optimized ${ok}/${arr.length}`);
-                showCommandResults('Dex optimization', sub + ' • ' + arr.length + ' apps', rows);
-            } else {
-                const pkg = inspectedPkg;
-                if (!pkg) return;
-                const app = allApps.find(a => a.pkg === pkg) || { name: pkg, pkg };
-                showToast('Optimizing ' + app.name + '...');
-                const r = run(pkg);
-                showToast(r.ok ? 'Optimized' : 'Failed');
-                showCommandResults('Dex optimization', sub + ' • ' + app.name, [{ name: app.name, pkg, output: r.output, success: !!r.ok }]);
+            optimizeSubLabel = 'compile -m ' + mode + (force ? ' -f' : '');
+            document.getElementById('batchConfirmTitle').innerText = 'Optimizing ' + pkgs.length + ' app' + (pkgs.length === 1 ? '' : 's');
+            document.getElementById('batchConfirmSubtitle').innerText = '';
+            document.getElementById('batchProgressText').innerText = '';
+            document.getElementById('batchProgressBar').style.width = '0%';
+            const stopBtn = document.getElementById('batchProgressStopBtn');
+            if (stopBtn) { stopBtn.disabled = false; stopBtn.innerText = 'Stop'; }
+            batchConfirmShowBody('progress');
+            document.getElementById('batchConfirmModal').classList.add('show');
+            const started = window.AndroidBridge.optimizeAppBatch(JSON.stringify(pkgs), mode, !!force);
+            if (started !== 'started') {
+                document.getElementById('batchConfirmModal').classList.remove('show');
+                showToast('A file or batch job is already running');
+                return;
             }
+            optimizeRunActive = true;
         }
+        window.onOptimizeBatchProgress = function (i, total, pkg) {
+            const app = allApps.find(a => a.pkg === pkg) || { name: pkg, pkg: pkg };
+            document.getElementById('batchProgressText').innerText = `${i + 1} of ${total}: ${app.name} (${pkg})`;
+            document.getElementById('batchProgressBar').style.width = Math.round(i / total * 100) + '%';
+        };
+        window.onOptimizeBatchDone = function (resultJson) {
+            optimizeRunActive = false;
+            let res; try { res = JSON.parse(resultJson); } catch (e) { res = null; }
+            document.getElementById('batchConfirmModal').classList.remove('show');
+            if (!res || !res.ok) { showToast('Dex optimization failed to run'); return; }
+            const total = res.total, stopped = !!res.cancelled;
+            const rows = (res.rows || []).map(r => {
+                const app = allApps.find(a => a.pkg === r.pkg) || { name: r.pkg, pkg: r.pkg };
+                return { name: app.name, pkg: r.pkg, output: r.output, success: r.success };
+            });
+            const success = rows.filter(r => r.success).length, failed = rows.length - success;
+            if (rows.length === 1) {
+                showToast(stopped ? 'Stopped' : (rows[0].success ? 'Optimized' : 'Failed'));
+                if (!stopped && !rows[0].success) showCommandResults('Dex optimization', optimizeSubLabel + ' • ' + rows[0].name, rows);
+            } else {
+                showToast(stopped ? `Stopped: ${success} succeeded, ${failed} failed, ${total - rows.length} not run` : `Optimized ${success}/${total}`);
+                showCommandResults('Dex optimization', optimizeSubLabel + ' • ' + rows.length + ' apps' + (stopped ? ' (stopped)' : ''), rows);
+            }
+        };
 
         // ---------- Permissions list ----------
         function setPermsFilter(f) {
@@ -14706,9 +15109,8 @@ Type any command below (e.g. pm list packages -d)
             if (!guardPrivilege('Modify Permission')) return;
             haptic();
             if (!window.AndroidBridge || !inspectedPkg) return;
-            const out = window.AndroidBridge.setPermission(inspectedPkg, perm, !wasGranted) || '';
-            const failed = /error|exception|not a changeable|securityexception/i.test(out);
-            showToast(failed ? out.split('\n')[0] : (wasGranted ? 'Revoked ' : 'Granted ') + perm.replace(/^android\.permission\./, ''));
+            const { ok, output } = parseActionResult(window.AndroidBridge.setPermission(inspectedPkg, perm, !wasGranted));
+            showToast(ok ? (wasGranted ? 'Revoked ' : 'Granted ') + perm.replace(/^android\.permission\./, '') : (output.split('\n')[0] || 'Could not change that permission'));
             reloadInspectorDetails();
         }
 
@@ -14788,9 +15190,8 @@ Type any command below (e.g. pm list packages -d)
             if (!guardPrivilege('Change App Op')) return;
             haptic();
             if (!window.AndroidBridge || !inspectedPkg) return;
-            const out = (window.AndroidBridge.setAppOp(inspectedPkg, op, mode) || '').trim();
-            const failed = /error|exception|unknown|usage/i.test(out);
-            showToast(failed ? out.split('\n')[0] : op + ' → ' + mode);
+            const { ok, output } = parseActionResult(window.AndroidBridge.setAppOp(inspectedPkg, op, mode));
+            showToast(ok ? op + ' → ' + mode : (output.trim().split('\n')[0] || 'Could not change that app op'));
             refreshAppOps();
         }
 
@@ -15090,8 +15491,8 @@ Type any command below (e.g. pm list packages -d)
             if (!guardPrivilege('Stop Service')) return;
             haptic();
             if (window.AndroidBridge && inspectedPkg) {
-                window.AndroidBridge.executeShell(`am stopservice '${inspectedPkg}/${srv}'`);
-                showToast('Service stopped');
+                const { ok } = execShellOk(`am stopservice '${inspectedPkg}/${srv}'`);
+                showToast(ok ? 'Service stopped' : 'Could not stop the service');
             }
         }
 
@@ -15107,6 +15508,7 @@ Type any command below (e.g. pm list packages -d)
             const root = document.documentElement;
             const css = root.style;
             root.setAttribute('data-appearance', mode);
+            root.classList.toggle('expressive-anim', !!themeState.expressiveAnimations);
             css.setProperty('color-scheme', mode);
 
             css.setProperty('--accent', t.accent);
@@ -15187,6 +15589,8 @@ Type any command below (e.g. pm list packages -d)
             if (darkAt && document.activeElement !== darkAt) darkAt.value = themeState.schedule.darkAt;
             const pb = document.getElementById('pureBlackToggle');
             if (pb) pb.checked = !!themeState.pureBlack;
+            const ea = document.getElementById('expressiveAnimToggle');
+            if (ea) ea.checked = !!themeState.expressiveAnimations;
             const reset = document.getElementById('resetTweaksBtn');
             if (reset) {
                 const has = Object.keys(themeState.overrides[mode] || {}).length > 0;
@@ -15276,6 +15680,13 @@ Type any command below (e.g. pm list packages -d)
             if (on && effectiveMode() === 'light') showToast('Pure black applies whenever dark mode is active');
         }
 
+        function setExpressiveAnimations(on) {
+            themeState.expressiveAnimations = !!on;
+            haptic();
+            applyTheme();
+            showToast(on ? 'Expressive animations on' : 'Expressive animations off');
+        }
+
         // Keep the scheduled appearance current while the app stays open
         let lastScheduledMode = null;
         setInterval(() => {
@@ -15331,6 +15742,7 @@ Type any command below (e.g. pm list packages -d)
                     if (['light', 'dark', 'system', 'schedule'].includes(saved.appearance)) themeState.appearance = saved.appearance;
                     if (saved.schedule && saved.schedule.lightAt && saved.schedule.darkAt) themeState.schedule = { lightAt: saved.schedule.lightAt, darkAt: saved.schedule.darkAt };
                     themeState.pureBlack = !!saved.pureBlack;
+                    themeState.expressiveAnimations = saved.expressiveAnimations === undefined ? true : !!saved.expressiveAnimations;
                     themeState.overrides = {
                         dark: (saved.overrides && saved.overrides.dark) || {},
                         light: (saved.overrides && saved.overrides.light) || {}
@@ -15569,9 +15981,12 @@ Type any command below (e.g. pm list packages -d)
                 return;
             }
             if (window.AndroidBridge) {
+                // no result modal here: an arbitrary typed command has no fixed "success" marker to show one
+                // honestly (it used to hardcode success:true), and the output is already right here in the
+                // terminal pane - a modal repeating it added a tap for no new information (command-result audit,
+                // finding #4 / nuisance A).
                 const res = window.AndroidBridge.executeShell(cmd) || '';
                 term.appendChild(document.createTextNode(res));
-                showCommandResults('Shell Command Result', cmd, [{ name: cmd, pkg: 'shell', output: res, success: true }]);
             }
             term.scrollTop = term.scrollHeight;
             if (document.getElementById('termSearch').value) termFind(0);
@@ -15698,9 +16113,9 @@ Type any command below (e.g. pm list packages -d)
             if (wait) wait.remove();
             const res = String(out || '');
             term.appendChild(document.createTextNode(res));
-            // the report only where the command was typed: if the user moved to another tab meanwhile, a sheet would pop up over unrelated work
-            if (currentViewName() === 'terminal') showCommandResults('Shell Command Result', run.cmd, [{ name: run.cmd, pkg: 'shell', output: res, success: true }]);
-            else showToast('Command finished: see the ADB Console');
+            // no result modal (see runTerminalCmd) - but still worth a toast if the user has since left the tab,
+            // since then the output appearing isn't something they're looking at right now.
+            if (currentViewName() !== 'terminal') showToast('Command finished: see the ADB Console');
             term.scrollTop = term.scrollHeight;
             if (document.getElementById('termSearch').value) termFind(0);
         }
@@ -15947,7 +16362,7 @@ Type any command below (e.g. pm list packages -d)
         if (!txState.efforts || typeof txState.efforts !== 'object') txState.efforts = {};
         const txSettings = Object.assign({
             defaultAgent: '', defaultShell: '', askRun: true, askWrite: true, readOutside: false, maxSteps: 25,
-            termuxProfile: true, keepChat: true, cliYolo: false, connect: {}, cursorRepo: '', efforts: {}
+            termuxProfile: true, termuxMatchEnv: true, keepChat: true, cliYolo: false, connect: {}, cursorRepo: '', efforts: {}
         }, kvGet('tx_settings', {}) || {});
         if (!txSettings.connect || typeof txSettings.connect !== 'object') txSettings.connect = {};
         if (!txSettings.efforts || typeof txSettings.efforts !== 'object') txSettings.efforts = {};
@@ -16068,7 +16483,7 @@ Type any command below (e.g. pm list packages -d)
             s.msg = '';
             txSyncUi();
             let r = '';
-            try { r = String(window.AndroidBridge.termStart(b, JSON.stringify({ profile: !!txSettings.termuxProfile, cwd: cwd || s.cwd || '' })) || ''); } catch (e) { r = 'error: ' + (e && e.message || e); }
+            try { r = String(window.AndroidBridge.termStart(b, JSON.stringify({ profile: !!txSettings.termuxProfile, matchEnv: !!txSettings.termuxMatchEnv, cwd: cwd || s.cwd || '' })) || ''); } catch (e) { r = 'error: ' + (e && e.message || e); }
             if (r.indexOf('error') === 0) window.onTermStarted(b, { ok: false, message: r.replace(/^error:\s*/, '') });
         }
 
@@ -16537,7 +16952,7 @@ Type any command below (e.g. pm list packages -d)
             const inp = document.getElementById('txInput');
             if (!inp) return;
             inp.style.height = 'auto';
-            inp.style.height = Math.min(150, Math.max(44, inp.scrollHeight)) + 'px';
+            inp.style.height = Math.min(170, Math.max(56, inp.scrollHeight)) + 'px';
             txHistPos = -1;
         }
 
@@ -16617,6 +17032,13 @@ Type any command below (e.g. pm list packages -d)
                 case 'right': inp.setSelectionRange(Math.min(v.length, z + 1), Math.min(v.length, z + 1)); break;
                 case 'home': inp.setSelectionRange(lineStart, lineStart); break;
                 case 'end': inp.setSelectionRange(lineEnd, lineEnd); break;
+                case 'shift': {
+                    const row = document.getElementById('txKeys');
+                    const on = row.classList.toggle('shifted');
+                    const btn = row.querySelector('.tx-key-shift');
+                    if (btn) btn.classList.toggle('active', on);
+                    break;
+                }
                 default:
                     inp.value = v.slice(0, a) + k + v.slice(z);
                     inp.setSelectionRange(a + k.length, a + k.length);
@@ -16810,8 +17232,9 @@ Type any command below (e.g. pm list packages -d)
             opencode: { path: '~/.config/opencode/opencode.json', top: 'mcp', shape: 'opencode' }
         };
 
-        // allowRun: "Always allow in this chat", per shell and user ({ 'app:10123': true }): a grant in the sandbox does not let commands run as root
-        const txChat = { msgs: [], busy: false, stop: false, reqId: null, steps: 0, allowRun: {}, allowAll: false, undo: [], usage: { in: 0, out: 0 }, cursorAgent: '', cliCont: {}, ask: null };
+        // allowRun: "Always allow in this chat", per shell and user ({ 'app:10123': true }): a grant in the sandbox does not let commands run as root.
+        // allowWrite is the same idea for write/edit - one flat grant (not per shell, a file change carries the same weight wherever it runs).
+        const txChat = { msgs: [], busy: false, stop: false, reqId: null, steps: 0, allowRun: {}, allowWrite: false, allowAll: false, undo: [], usage: { in: 0, out: 0 }, cursorAgent: '', cliCont: {}, ask: null };
 
         function txAgentDef(id) { return TX_AGENTS.find(a => a.id === id) || null; }
         function txQ(s) { return "'" + String(s).replace(/'/g, "'\\''") + "'"; }
@@ -17522,9 +17945,10 @@ Type any command below (e.g. pm list packages -d)
                     if (res.error) return { text: '<result action="edit" path="' + txAttr(p) + '" status="error">' + txAttr(res.error) + '</result>' };
                     next = res.text;
                 }
-                if (txSettings.askWrite && !txChat.allowAll) {
-                    const a = await txAsk(b, txF(act.type === 'edit' ? '{0} wants to change {1}:' : old.exists ? '{0} wants to replace {1}:' : '{0} wants to create {1}:', who, txShortPath(b, abs)), txDiffNode(old.exists ? old.text : '', next), { yes: 'Apply' });
+                if (txSettings.askWrite && !txChat.allowAll && !txChat.allowWrite) {
+                    const a = await txAsk(b, txF(act.type === 'edit' ? '{0} wants to change {1}:' : old.exists ? '{0} wants to replace {1}:' : '{0} wants to create {1}:', who, txShortPath(b, abs)), txDiffNode(old.exists ? old.text : '', next), { yes: 'Apply', always: 'Always allow in this chat' });
                     if (a === 'no') return { text: '<result action="' + act.type + '" path="' + txAttr(p) + '" status="denied">The user did not apply it. Wait for their next message.</result>', denied: true };
+                    if (a === 'always') txChat.allowWrite = true;
                 }
                 if (txChat.stop) return { text: '', denied: true };
                 const w = await txWriteBytes(b, abs, new TextEncoder().encode(next));
@@ -17680,6 +18104,7 @@ Type any command below (e.g. pm list packages -d)
             txChat.undo = [];
             txChat.usage = { in: 0, out: 0 };
             txChat.allowRun = {};
+            txChat.allowWrite = false;
             txChat.allowAll = false;
             txChat.cursorAgent = '';
             txChat.cliCont = {};
@@ -18511,8 +18936,8 @@ Type any command below (e.g. pm list packages -d)
                 + step(3, !!(txProbe && txProbe.ok), 'Let Termux take commands from other apps', 'In Termux, paste and run:<span class="tx-sheet-code" translate="no">' + escapeHtml(TX_TERMUX_ALLOW_CMD) + '</span>', '<button class="mode-action-btn primary" onclick="copyText(TX_TERMUX_ALLOW_CMD); showToast(\'Copied: paste it in Termux\')">Copy</button><button class="mode-action-btn" onclick="txLaunchTermuxApp()">Open Termux</button>')
                 + step(4, !!t.permission, 'Allow this app', t.permission ? 'Allowed: "Run commands in Termux environment".' : 'Android asks whether this app may "Run commands in Termux environment".', t.permission ? '' : '<button class="mode-action-btn primary" onclick="txTermuxAllow()"' + (t.installed ? '' : ' disabled') + '>Allow</button>')
                 + step(5, !!(txProbe && txProbe.ok), 'Test the connection', txProbe ? (txProbe.ok ? 'Termux answered. All set.' : '<span class="is-err">' + escapeHtml(txProbe.message || 'No answer') + '</span>') : 'Sends a harmless command to Termux and waits for the answer.', '<button class="mode-action-btn" id="txProbeBtn" onclick="txTermuxTest()"' + (t.installed && t.permission ? '' : ' disabled') + '>Test</button>')
-                + '<div class="mode-btn-row" style="margin-top:12px;"><button class="mode-action-btn primary" onclick="txUseTermuxShell()"' + (t.installed && t.permission ? '' : ' disabled') + '>Use Termux as the shell</button></div>'
-                + '<p class="tx-sheet-p muted">Commands run as Termux, in its home folder, with your Termux packages. Full-screen programs open in Termux itself. For files on the shared storage, also run termux-setup-storage once in Termux.</p>';
+                + '<div class="mode-btn-row" style="margin-top:12px;"><button class="mode-action-btn primary" onclick="txUseTermuxShell()"' + (t.installed && t.permission ? '' : ' disabled') + '>Use Termux as the shell</button><button class="mode-action-btn" onclick="txSyncTermux()"' + (t.installed && t.permission ? '' : ' disabled') + '>Sync with Termux</button></div>'
+                + '<p class="tx-sheet-p muted">Commands run as Termux, in its home folder, with your Termux packages and (with Match my Termux environment on) your aliases and functions too. Sync with Termux also opens Termux so you can grant it access to shared storage.</p>';
         }
 
         function txTermuxTest() {
@@ -18536,6 +18961,23 @@ Type any command below (e.g. pm list packages -d)
             const sel = document.getElementById('txShell');
             if (sel) sel.value = 'termux';
             txPickShell('termux');
+        }
+
+        // Sets up (or updates) the in-app Termux shell to match the real Termux app: turns on "Match my Termux
+        // environment" if it was off, restarts any already-running Termux session so the change applies right away,
+        // and opens termux-setup-storage in Termux so shared/phone storage access gets granted there too.
+        function txSyncTermux() {
+            haptic();
+            txCloseSettings();          // harmless if it was not open; keeps a redirect into the setup modal from stacking on top of it
+            txRefreshInfo();
+            const t = txInfo && txInfo.termux || {};
+            if (!t.installed || !t.permission) { txOpenTermux('termux-setup-storage'); return; }
+            if (!txSettings.termuxMatchEnv) { txSettings.termuxMatchEnv = true; txSaveSettings(); }
+            if (window.AndroidBridge && window.AndroidBridge.termClose) { try { window.AndroidBridge.termClose('termux'); } catch (e) {} }
+            if (txSess.termux) txSess.termux.st = 'off';
+            showToast('Syncing with Termux - opening it to finish storage access');
+            txOpenTermux('termux-setup-storage');
+            if (txCurShell() === 'termux') txStartShell('termux');
         }
 
         // ---------------------------------------------------------------- settings
@@ -18585,10 +19027,11 @@ Type any command below (e.g. pm list packages -d)
                 + '<div class="tx-sheet-sec">Shell</div>'
                 + '<div class="tx-row"><div class="tx-row-main"><div class="tx-row-name">Shell when the Terminal opens</div></div><select class="op-select" style="max-width:52vw;" onchange="txSet(\'defaultShell\', this.value)">' + shellOpts + '</select></div>'
                 + sw('termuxProfile', 'Use my Termux login profile', 'Termux shells read ~/.bash_profile or ~/.profile first (PATH and the like). Turn off if your profile starts another program.')
-                + '<div class="mode-btn-row" style="margin-top:10px;"><button class="mode-action-btn" onclick="txCloseSettings(); txOpenTermuxSetup()">Termux setup</button></div>'
+                + sw('termuxMatchEnv', 'Match my Termux environment', 'Also sources ~/.bashrc, so aliases and functions from your own Termux shell work here too. Turn off if yours does something unexpected for a non-interactive shell.')
+                + '<div class="mode-btn-row" style="margin-top:10px;"><button class="mode-action-btn" onclick="txCloseSettings(); txOpenTermuxSetup()">Termux setup</button><button class="mode-action-btn primary" onclick="txSyncTermux()">Sync with Termux</button></div>'
                 + '<div class="tx-sheet-sec">What agents may do</div>'
                 + sw('askRun', 'Ask before running commands', 'Shows each command with Run, Skip and Always allow in this chat.')
-                + sw('askWrite', 'Ask before changing files', 'Shows what changes, line by line, with Apply and Skip.')
+                + sw('askWrite', 'Ask before changing files', 'Shows what changes, line by line, with Apply, Skip and Always allow in this chat.')
                 + sw('readOutside', 'Read files outside the working folder without asking', 'Off: reading outside the current folder needs your OK.')
                 + '<div class="tx-row"><div class="tx-row-main"><div class="tx-row-name">Steps per request</div><div class="tx-row-sub">The agent pauses after this many steps.</div></div><select class="op-select" onchange="txSet(\'maxSteps\', parseInt(this.value, 10))">' + steps + '</select></div>'
                 + '<div class="tx-sheet-sec">Sign-in tools in Termux</div>'
@@ -19007,8 +19450,118 @@ Type any command below (e.g. pm list packages -d)
             ]},
         ];
 
-        function openCheatSheet() {
+        // This app's own shell (the "sandbox" entry of the Terminal's Shell picker): a real /system/bin/sh, but
+        // running as this app's own unprivileged user - no root, no ADB/Shizuku, and no pm/dumpsys/am (those need
+        // a privileged shell; see the Working-mode sheet above). Scoped to plain file and text basics that work
+        // under any app's own UID.
+        const SANDBOX_CHEAT_SHEET = [
+            { cat: 'Files', items: [
+                ['ls -la', 'List files, including hidden ones'],
+                ['pwd', 'Print the current folder'],
+                ['cd <dir>', 'Change folder'],
+                ['cat <file>', 'Print a text file'],
+                ['cp <src> <dst>', 'Copy a file'],
+                ['mv <src> <dst>', 'Move or rename a file'],
+                ['rm <file>', 'Delete a file'],
+                ['mkdir -p <dir>', 'Make a folder (with parents)'],
+                ['find . -name "<pattern>"', 'Find files by name'],
+                ['du -sh <path>', 'Size of a file or folder'],
+            ]},
+            { cat: 'Text', items: [
+                ['echo "<text>"', 'Print text'],
+                ['grep "<text>" <file>', 'Search a file for text'],
+                ['head -n 20 <file>', 'First 20 lines'],
+                ['tail -n 20 <file>', 'Last 20 lines'],
+                ['wc -l <file>', 'Count lines'],
+            ]},
+            { cat: 'Process / system', items: [
+                ['ps', 'Running processes (usually just this app\'s own - Android limits what an app can see)'],
+                ['id', 'This app\'s own user and group id'],
+                ['env', 'Environment variables'],
+                ['df -h', 'Free storage space'],
+                ['uname -a', 'System/kernel info'],
+                ['date', 'Current date and time'],
+            ]},
+        ];
+
+        // Termux's own bash, with the full package ecosystem (pkg/apt) and whatever is installed.
+        const TERMUX_CHEAT_SHEET = [
+            { cat: 'Packages', items: [
+                ['pkg update && pkg upgrade', 'Refresh and upgrade installed packages'],
+                ['pkg install <name>', 'Install a package'],
+                ['pkg uninstall <name>', 'Remove a package'],
+                ['pkg search <name>', 'Find a package by name'],
+                ['pkg list-installed', 'List installed packages'],
+                ['termux-setup-storage', 'Grant access to shared/phone storage'],
+            ]},
+            { cat: 'Files', items: [
+                ['ls -la', 'List files, including hidden ones'],
+                ['cd ~/storage/shared', 'Go to shared phone storage (after termux-setup-storage)'],
+                ['pwd', 'Print the current folder'],
+                ['cp <src> <dst>', 'Copy a file'],
+                ['mv <src> <dst>', 'Move or rename a file'],
+                ['rm -r <path>', 'Delete a file or folder'],
+                ['mkdir -p <dir>', 'Make a folder (with parents)'],
+                ['find . -name "<pattern>"', 'Find files by name'],
+                ['du -sh <path>', 'Size of a file or folder'],
+                ['chmod +x <file>', 'Make a file executable'],
+            ]},
+            { cat: 'Text', items: [
+                ['cat <file>', 'Print a file'],
+                ['nano <file>', 'Edit a file (simple editor)'],
+                ['vim <file>', 'Edit a file (if installed)'],
+                ['grep -r "<text>" .', 'Search file contents recursively'],
+                ['sed -i "s/<a>/<b>/g" <file>', 'Replace text in a file'],
+                ['head -n 20 <file>', 'First 20 lines'],
+                ['tail -f <file>', 'Follow a growing file (e.g. a log)'],
+                ['wc -l <file>', 'Count lines'],
+            ]},
+            { cat: 'Git', items: [
+                ['git clone <url>', 'Clone a repository'],
+                ['git status', 'What changed'],
+                ['git add -A && git commit -m "<msg>"', 'Stage and commit everything'],
+                ['git pull', 'Pull the latest changes'],
+                ['git push', 'Push commits'],
+            ]},
+            { cat: 'Network', items: [
+                ['curl -O <url>', 'Download a file'],
+                ['wget <url>', 'Download a file'],
+                ['ssh <user>@<host>', 'Connect over SSH'],
+                ['ping -c 4 <host>', 'Check a host is reachable'],
+            ]},
+            { cat: 'Process / system', items: [
+                ['top', 'Live process list'],
+                ['ps aux', 'All running processes'],
+                ['kill <pid>', 'Stop a process'],
+                ['df -h', 'Free storage space'],
+                ['uname -a', 'System/kernel info'],
+                ['whoami', 'Current user'],
+                ['exit', 'Leave this shell'],
+            ]},
+        ];
+
+        // Which dataset + input box openCheatSheet()/cheatInsert() work against. Default: the classic ADB
+        // Console's termCmd and its ADB-focused CHEAT_SHEET (every pre-existing caller stays exactly as it was).
+        let cheatSheet = CHEAT_SHEET;
+        let cheatTarget = 'termCmd';
+
+        // From the ADB Console (no args): the ADB cheat sheet, unchanged. From the Terminal mode's own Cheat
+        // Sheet button: whichever of the three shells the Shell picker is currently on.
+        function openCheatSheet(fromTerminal) {
             haptic();
+            if (fromTerminal) {
+                const shell = txCurShell();
+                cheatSheet = shell === 'termux' ? TERMUX_CHEAT_SHEET : shell === 'app' ? SANDBOX_CHEAT_SHEET : CHEAT_SHEET;
+                cheatTarget = 'txInput';
+            } else {
+                cheatSheet = CHEAT_SHEET;
+                cheatTarget = 'termCmd';
+            }
+            const titles = { app: ['Sandbox Cheat Sheet', 'This app\'s own shell - no root, ADB or package manager.'], termux: ['Termux Cheat Sheet', 'Common bash commands for Termux\'s own shell.'] };
+            const t = fromTerminal && titles[txCurShell()];
+            document.getElementById('cheatSheetTitle').innerText = t ? t[0] : 'ADB Cheat Sheet';
+            document.getElementById('cheatSheetSub').innerText = t ? t[1] : 'Tap a command to drop it in the input. These run in the on-device shell — no adb shell prefix needed.';
+            document.getElementById('cheatGistSection').style.display = cheatSheet === CHEAT_SHEET ? '' : 'none';     // the gist is ADB-specific reference material
             const s = document.getElementById('cheatSearch');
             if (s) s.value = '';
             renderCheatSheet('');
@@ -19021,7 +19574,7 @@ Type any command below (e.g. pm list packages -d)
             const body = document.getElementById('cheatSheetBody');
             let html = '';
             let shown = 0;
-            CHEAT_SHEET.forEach(group => {
+            cheatSheet.forEach(group => {
                 const items = group.items.filter(it => !q || it[0].toLowerCase().includes(q) || it[1].toLowerCase().includes(q) || group.cat.toLowerCase().includes(q));
                 if (!items.length) return;
                 shown += items.length;
@@ -19038,9 +19591,10 @@ Type any command below (e.g. pm list packages -d)
         }
 
         function cheatInsert(cmd) {
-            const input = document.getElementById('termCmd');
+            const input = document.getElementById(cheatTarget);
             if (!input) return;
             input.value = cmd;
+            if (cheatTarget === 'txInput') txAutosize();
             closeCheatSheet();
             try { input.focus(); } catch (e) {}
             // Select the first <placeholder> so it's easy to replace
@@ -21384,7 +21938,7 @@ Type any command below (e.g. pm list packages -d)
             return ms ? new Date(ms).toLocaleDateString(langLocale(), { year: 'numeric', month: 'short', day: 'numeric' }) : '';
         }
 
-        function onAboutShown() { renderAbout(); }
+        function onAboutShown() { renderAbout(); renderDeviceSpecs(); }
 
         function renderAbout() {
             let i = {};
@@ -21411,6 +21965,76 @@ Type any command below (e.g. pm list packages -d)
             sig.innerHTML = '<div class="about-sigline ' + (official ? 'about-ok' : 'about-warn') + '">'
                 + (official ? 'Signed with the official release key' : 'Not signed with the official release key (a debug, fork or modified build)') + '</div>'
                 + '<div class="about-hash">SHA-256 ' + escapeHtml(signFp(i.signerSha256)) + '</div>';
+        }
+
+        // Everything the device will say about itself with no working mode: hardware, software, system, battery,
+        // network, camera and sensors. One native call (getDeviceSpecs), all public/context-free reads on that
+        // side - refreshed when the About tab opens, and by its own Refresh button.
+        function renderDeviceSpecs() {
+            const body = document.getElementById('deviceSpecsBody');
+            if (!body) return;
+            if (!window.AndroidBridge || !window.AndroidBridge.getDeviceSpecs) { body.innerHTML = '<div class="list-empty">Needs the app build.</div>'; return; }
+            let d;
+            try { d = JSON.parse(window.AndroidBridge.getDeviceSpecs() || '{}'); } catch (e) { d = null; }
+            if (!d || !d.ok) { body.innerHTML = '<div class="list-empty">Could not read the device specs.</div>'; return; }
+
+            const hw = d.hardware || {}, sw = d.software || {}, sys = d.system || {}, b = d.battery || {}, net = d.network || {};
+            const cams = Array.isArray(d.cameras) ? d.cameras : [], sensors = Array.isArray(d.sensors) ? d.sensors : [];
+
+            const hwRows = [];
+            if (hw.model) hwRows.push(['Model', hw.manufacturer && hw.manufacturer !== hw.model ? hw.manufacturer + ' ' + hw.model : hw.model]);
+            if (hw.brand) hwRows.push(['Brand', hw.brand]);
+            if (hw.soc) hwRows.push(['Chipset (SoC)', hw.soc]);
+            if (hw.abi) hwRows.push(['CPU architecture', hw.abi]);
+            if (Array.isArray(hw.clusters) && hw.clusters.length) {
+                const cores = hw.clusters.reduce((n, c) => n + (c.cores || 0), 0);
+                hwRows.push(['CPU cores', cores + ' (' + hw.clusters.length + (hw.clusters.length === 1 ? ' cluster' : ' clusters') + ')']);
+                hwRows.push(['CPU clock range', hw.clusters.map(c => tmFormatHz(c.minHz) + '–' + tmFormatHz(c.maxHz)).join(', ')]);
+            }
+            if (hw.ramTotalKb) hwRows.push(['RAM', formatBytes(hw.ramTotalKb * 1024)]);
+            if (hw.vulkanSupported != null) hwRows.push(['Vulkan', hw.vulkanSupported ? ('Supported' + (hw.vulkanApi ? ' (API ' + hw.vulkanApi + ')' : '')) : 'Not supported']);
+            if (hw.glesVersion) hwRows.push(['OpenGL ES', hw.glesVersion]);
+            if (hw.screenWidthPx) hwRows.push(['Screen resolution', hw.screenWidthPx + ' × ' + hw.screenHeightPx]);
+            if (hw.densityDpi) hwRows.push(['Screen density', hw.densityDpi + ' dpi']);
+            if (hw.refreshRateHz) hwRows.push(['Refresh rate', Math.round(hw.refreshRateHz) + ' Hz']);
+            if (hw.storageTotalBytes) hwRows.push(['Storage', formatBytes(hw.storageFreeBytes) + ' free of ' + formatBytes(hw.storageTotalBytes)]);
+
+            const swRows = [];
+            if (sw.androidRelease) swRows.push(['Android version', sw.androidRelease + (sw.sdk ? ' (API ' + sw.sdk + ')' : '')]);
+            if (sw.securityPatch) swRows.push(['Security patch', sw.securityPatch]);
+            if (sw.buildId) swRows.push(['Build ID', sw.buildId, true]);
+            if (sw.bootloader) swRows.push(['Bootloader', sw.bootloader, true]);
+            if (sw.kernel) swRows.push(['Kernel', sw.kernel.split('\n')[0].slice(0, 120), true]);
+
+            const sysRows = [];
+            if (sys.uptimeMs != null) sysRows.push(['Uptime', tmFormatHoursMinutes(sys.uptimeMs / 3600000)]);
+            if (sys.locale) sysRows.push(['Locale', sys.locale]);
+            if (sys.timezone) sysRows.push(['Timezone', sys.timezone]);
+
+            const PLUG = { 1: 'AC', 2: 'USB', 4: 'Wireless' };
+            const STATUS = { 2: 'Charging', 3: 'Discharging', 4: 'Not charging', 5: 'Full' };
+            const HEALTH = { 2: 'Good', 3: 'Overheat', 4: 'Dead', 5: 'Over voltage', 6: 'Failure', 7: 'Cold' };
+            const battRows = [];
+            if (b.percent != null && b.percent >= 0) battRows.push(['Level', Math.round(b.percent) + '%']);
+            if (b.status != null) battRows.push(['Status', STATUS[b.status] || 'Unknown']);
+            if (b.plugged != null) battRows.push(['Power source', b.plugged ? (PLUG[b.plugged] || 'Plugged in') : 'Battery']);
+            if (b.technology) battRows.push(['Technology', b.technology, true]);
+            if (b.health != null) battRows.push(['Health', HEALTH[b.health] || 'Unknown']);
+            if (b.cycleCount != null) battRows.push(['Charge cycles', String(b.cycleCount)]);
+
+            const netRows = [];
+            if (net.type) netRows.push(['Connection', net.type + (net.connected === false ? ' (not connected)' : '')]);
+            if (Array.isArray(net.interfaces) && net.interfaces.length) netRows.push(['Interfaces', net.interfaces.join(', '), true]);
+
+            const camRows = cams.map((c, i) => ['Camera ' + (i + 1) + ' (' + (c.facing || 'unknown') + ')', (c.megapixels ? c.megapixels + ' MP' : '—') + (c.flash ? ' · Flash' : '')]);
+
+            let html = tmInfoGrid('Hardware', hwRows) + tmInfoGrid('Software', swRows) + tmInfoGrid('System', sysRows)
+                + tmInfoGrid('Battery', battRows) + tmInfoGrid('Network', netRows) + tmInfoGrid('Camera', camRows);
+            if (sensors.length) {
+                html += '<div class="tm-info-title">Sensors (' + sensors.length + ')</div>'
+                    + '<div class="tm-net-ifaces">' + sensors.map(s => '<div class="tm-net-row"><b>' + escapeHtml(s.name || '') + '</b><span>' + escapeHtml(s.vendor || '') + '</span></div>').join('') + '</div>';
+            }
+            body.innerHTML = html || '<div class="list-empty">No device info available.</div>';
         }
 
         function aboutDebugText() {
@@ -21682,6 +22306,13 @@ Type any command below (e.g. pm list packages -d)
                 <button class="profile-btn" onclick="document.getElementById('profilePreview').style.display='none'">Cancel</button>`;
         }
 
+        // Applying a profile runs its action groups (unfreeze, freeze, suspend, ...) one after another through
+        // appActionBatch - the same native async batch runner runBatchAction uses - instead of the old
+        // performDetailedBatchAction's synchronous, per-app loop on the page's own thread, which froze the page
+        // for however long the whole plan took. window.onAppBatchProgress/onAppBatchDone are shared with
+        // runBatchAction's own batch run, so they route here first whenever a profile run is the one in flight.
+        let profileRunActive = false;
+        let profileRunState = null;
         function applyProfile() {
             if (!profilePending) return;
             if (!guardPrivilege('Apply profile')) return;
@@ -21690,21 +22321,65 @@ Type any command below (e.g. pm list packages -d)
             const plan = profilePending.plan;
             profilePending = null;
             document.getElementById('profilePreview').style.display = 'none';
-            if (!pr || !window.AndroidBridge) return;
-            const histRows = [];
-            const shown = [];
-            let ok = 0, bad = 0;
-            PLAN_ORDER.forEach(action => {
-                const pkgs = plan.steps[action];
-                if (!pkgs.length) return;
-                const res = performDetailedBatchAction(action, pkgs);
-                ok += res.success; bad += res.failed;
-                res.rows.forEach(r => { shown.push(r); histRows.push({ pkg: r.pkg, name: r.name, action, success: r.success }); });
+            if (!pr || !window.AndroidBridge || !window.AndroidBridge.appActionBatch) return;
+            const groups = PLAN_ORDER.map(action => ({ action, pkgs: plan.steps[action] })).filter(g => g.pkgs.length);
+            if (!groups.length) { showToast('Nothing to do'); return; }
+            profileRunState = { groups, idx: 0, ok: 0, bad: 0, histRows: [], shown: [], name: pr.name, totalApps: groups.reduce((n, g) => n + g.pkgs.length, 0), doneBefore: 0 };
+            document.getElementById('batchConfirmTitle').innerText = 'Applying "' + pr.name + '"';
+            document.getElementById('batchConfirmSubtitle').innerText = '';
+            document.getElementById('batchProgressText').innerText = '';
+            document.getElementById('batchProgressBar').style.width = '0%';
+            const stopBtn = document.getElementById('batchProgressStopBtn');
+            if (stopBtn) { stopBtn.disabled = false; stopBtn.innerText = 'Stop'; }
+            batchConfirmShowBody('progress');
+            document.getElementById('batchConfirmModal').classList.add('show');
+            profileRunActive = true;
+            profileRunNextGroup();
+        }
+        function profileRunNextGroup() {
+            const st = profileRunState;
+            if (!st || st.idx >= st.groups.length) { profileRunFinish(false); return; }
+            const g = st.groups[st.idx];
+            const started = window.AndroidBridge.appActionBatch(g.action, JSON.stringify(g.pkgs));
+            if (started !== 'started') { profileRunFinish(false); return; }        // another batch is already running natively - leave what has run so far intact
+        }
+        function profileOnBatchProgress(i, total, pkg) {
+            const st = profileRunState;
+            if (!st) return;
+            const app = allApps.find(a => a.pkg === pkg) || { name: pkg, pkg: pkg };
+            const doneApps = st.doneBefore + i;
+            document.getElementById('batchProgressText').innerText = `${doneApps + 1} of ${st.totalApps}: ${app.name} (${pkg})`;
+            document.getElementById('batchProgressBar').style.width = Math.round(doneApps / st.totalApps * 100) + '%';
+        }
+        function profileOnBatchDone(resultJson) {
+            const st = profileRunState;
+            if (!st) return;
+            let res; try { res = JSON.parse(resultJson); } catch (e) { res = null; }
+            if (!res || !res.ok) { profileRunFinish(false); return; }
+            const action = res.action;
+            (res.rows || []).forEach(r => {
+                const app = allApps.find(a => a.pkg === r.pkg) || { name: r.pkg, pkg: r.pkg };
+                if (r.success) st.ok++; else st.bad++;
+                st.shown.push({ name: app.name, pkg: r.pkg, output: r.output, success: r.success });
+                st.histRows.push({ pkg: r.pkg, name: app.name, action, success: r.success });
             });
-            recordHistory('apps', `Applied profile "${pr.name}"`, histRows);
-            showToast(`Profile applied: ${ok} succeeded, ${bad} failed`);
-            closeProfiles();
-            showCommandResults('Profile Results', pr.name + ' • ' + shown.length + ' apps', shown);
+            if (res.cancelled) { profileRunFinish(true); return; }
+            st.doneBefore += st.groups[st.idx].pkgs.length;
+            st.idx++;
+            profileRunNextGroup();
+        }
+        function profileRunFinish(stopped) {
+            const st = profileRunState;
+            profileRunActive = false;
+            profileRunState = null;
+            document.getElementById('batchConfirmModal').classList.remove('show');
+            if (!st) return;
+            recordHistory('apps', `Applied profile "${st.name}"`, st.histRows);
+            showToast(stopped ? `Stopped: ${st.ok} succeeded, ${st.bad} failed` : `Profile applied: ${st.ok} succeeded, ${st.bad} failed`);
+            // Unlike the old synchronous version, the Profiles sheet is left open behind the result dialog -
+            // the same stay-open convention the single-app and batch-selection flows already use, so the user
+            // can act again (or just look at the profile list) without having to renavigate.
+            showCommandResults('Profile Results', st.name + ' • ' + st.shown.length + ' apps' + (stopped ? ' (stopped)' : ''), st.shown);
             setTimeout(loadPackageData, 400);
         }
 

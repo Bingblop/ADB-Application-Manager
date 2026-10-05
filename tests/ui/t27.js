@@ -1,5 +1,6 @@
 // Batch selection: floating button vs expanded sheet, collapse, clear, reset after an action or list recall
 const { chromium, PAGE } = require('./lib/pw');
+const appBatchMock = require('./lib/appbatch_mock');
 (async () => {
   const b = await chromium.launch();
   const page = await b.newPage({ viewport: { width: 400, height: 860 } });
@@ -20,6 +21,7 @@ const { chromium, PAGE } = require('./lib/pw');
       executeAppAction(action, pkg) { return `Package ${pkg} ${action} ok`; },
     };
   });
+  await page.addInitScript(appBatchMock.installAppBatchMock);
   await page.goto(PAGE); await page.waitForTimeout(400);
 
   // Both the FAB and the sheet reveal via a CSS transition (opacity/transform), so give it a

@@ -8,8 +8,8 @@
 6. rename op (expect mv to /sdcard/renamed.txt): [ 'op:mv:/sdcard/notes.txt:/sdcard/renamed.txt' ]
 7. delete op (expect rm): [ 'op:rm:/sdcard/notes.txt' ]
 8. mkdir op (expect mkdir /sdcard/NewDir): [ 'op:mkdir:/sdcard/NewDir' ]
-9. logcat loaded on open: [ 'logcat:I::500' ]
-   output shown: LOG level=I lines=500
+9. logcat loaded on open: [ 'logcat:I::300' ]
+   output shown: LOG level=I lines=300
 No log lines.
 10. logcat refresh with level E + filter: [ 'logcat:E:ActivityManager:500' ]
 11. logcat clear called: true

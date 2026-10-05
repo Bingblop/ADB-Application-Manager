@@ -1339,7 +1339,7 @@ public class MainActivity extends Activity {
     }
 
     /** Set up once per new shell: no pagers or terminal tricks (there is no keyboard input to running programs). */
-    private static String termInitScript(String kind) {
+    private static String termInitScript(String kind, boolean matchEnv) {
         StringBuilder s = new StringBuilder("export PAGER=cat GIT_PAGER=cat MANPAGER=cat TERM=dumb GIT_TERMINAL_PROMPT=0 2>/dev/null; ");
         if ("termux".equals(kind)) {
             s.append("export DEBIAN_FRONTEND=noninteractive PATH=\"$HOME/.local/bin:$HOME/bin:$PATH\"; ")
@@ -1348,6 +1348,10 @@ public class MainActivity extends Activity {
                     .append("local c=\"$1\"; shift; command pkg \"$c\" -y \"$@\";; *) command pkg \"$@\";; esac; }; ")
                     .append("apt() { case \"$1\" in install|reinstall|upgrade|remove|purge|autoremove|full-upgrade|dist-upgrade) ")
                     .append("local c=\"$1\"; shift; command apt \"$c\" -y \"$@\";; *) command apt \"$@\";; esac; }; ");
+            // "profile" (login shell) already reads ~/.bash_profile or ~/.profile; neither of those pulls in ~/.bashrc
+            // unless the user's own profile chains to it, so without this, aliases/functions/exports a Termux user
+            // keeps in .bashrc would silently be missing here even with the login profile on.
+            if (matchEnv) s.append("[ -f \"$HOME/.bashrc\" ] && . \"$HOME/.bashrc\" >/dev/null 2>&1; ");
         }
         s.append("true");
         return s.toString();
@@ -2844,6 +2848,14 @@ public class MainActivity extends Activity {
     private static boolean fmBatchBusy;
     private static volatile boolean archiveCancel;      // the page's Cancel for an extraction
     private static volatile boolean fmBatchCancel;       // the page's Cancel: the running batch stops at the next step
+
+    private static final Object appBatchLock = new Object();
+    private static boolean appBatchBusy;
+    private static volatile boolean appBatchCancel;      // the page's Stop: the running batch stops after the app it is on
+
+    private static final Object optimizeBatchLock = new Object();
+    private static boolean optimizeBatchBusy;
+    private static volatile boolean optimizeBatchCancel;  // same Stop convention, for Dex optimization (single app or several)
 
     private static String fmBatchLabel(String op) {
         return "rm".equals(op) ? "Deleting" : "cp".equals(op) ? "Copying" : "Moving";
@@ -5014,6 +5026,10 @@ public class MainActivity extends Activity {
      * /storage/emulated/0/../0 can neither reach nor hide a place the protection list names.
      */
     private String fmCanonicalPath(String path) {
+        // A storage root added through pickAddStorage() is an opaque content:// tree/document URI, not a POSIX
+        // path - running it through alias-swapping and "." / ".." folding would corrupt it (SAF URIs can
+        // legitimately contain their own "/" and ":" in the document id). Pass it through untouched.
+        if (path != null && path.startsWith("content://")) return path;
         String primary = "/storage/emulated/0";
         try {
             File ext = android.os.Environment.getExternalStorageDirectory();
@@ -5021,6 +5037,33 @@ public class MainActivity extends Activity {
                 primary = ext.getAbsolutePath();
         } catch (Exception ignored) {}
         return FileRules.canonical(path, primary);
+    }
+
+    /** A human-readable name for a picked storage tree: the root document's own display name, falling back to
+     *  the volume-ish part of its tree id (most DocumentsProviders encode it as "authority:label", e.g.
+     *  "primary:Download" or an SD card's "1234-5678:"), and the raw URI as a last resort. */
+    private String storageRootLabel(Uri treeUri) {
+        String docId = null;
+        try {
+            docId = android.provider.DocumentsContract.getTreeDocumentId(treeUri);
+            Uri docUri = android.provider.DocumentsContract.buildDocumentUriUsingTree(treeUri, docId);
+            android.database.Cursor c = getContentResolver().query(docUri,
+                    new String[]{android.provider.DocumentsContract.Document.COLUMN_DISPLAY_NAME}, null, null, null);
+            if (c != null) {
+                try {
+                    if (c.moveToFirst()) {
+                        String name = c.getString(0);
+                        if (name != null && !name.isEmpty()) return name;
+                    }
+                } finally { c.close(); }
+            }
+        } catch (Throwable ignored) {}
+        if (docId != null) {
+            int colon = docId.indexOf(':');
+            if (colon >= 0 && colon + 1 < docId.length()) return docId.substring(colon + 1);
+            if (colon < 0 && !docId.isEmpty()) return docId;
+        }
+        return treeUri.toString();
     }
 
     private boolean backupExists(String ref) {
@@ -5712,10 +5755,25 @@ public class MainActivity extends Activity {
     }
 
     private static final int REQ_IMPORT_OBTAINIUM = 4201;
+    private static final int REQ_PICK_STORAGE_TREE = 4205;
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQ_PICK_STORAGE_TREE) {
+            final Uri picked = (resultCode == RESULT_OK && data != null) ? data.getData() : null;
+            if (picked == null) { notifyJs("window.onStorageRootPicked && window.onStorageRootPicked(null)"); return; }
+            try {
+                getContentResolver().takePersistableUriPermission(picked,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+            } catch (Exception ignored) {
+                // some providers (notably a few cloud ones) don't support a persistable grant; the tree URI
+                // still works for the rest of this session, it just won't survive a process restart.
+            }
+            String label = storageRootLabel(picked);
+            notifyJs("window.onStorageRootPicked && window.onStorageRootPicked(" + JSONObject.quote(picked.toString()) + "," + JSONObject.quote(label) + ")");
+            return;
+        }
         if (requestCode == REQ_PICK_BACKUP) {
             final Uri picked = (resultCode == RESULT_OK && data != null) ? data.getData() : null;
             if (picked == null) return;
@@ -5919,6 +5977,147 @@ public class MainActivity extends Activity {
                 new File(ref).delete();
             }
         } catch (Exception ignored) {}
+    }
+
+    /** App icons for the list, kept on disk (files/icon_cache/<pkg>_<lastUpdateTime>.png, 96 px) so later launches skip the drawing. */
+    private File iconCacheDir(String pack) {
+        File d = new File(getFilesDir(), pack == null || pack.isEmpty() ? "icon_cache" : "icon_cache_" + pack.replaceAll("[^A-Za-z0-9._]", "_"));
+        if (!d.isDirectory()) d.mkdirs();
+        return d;
+    }
+
+    private static final String[] ICON_PACK_ACTIONS = {"org.adw.launcher.THEMES", "com.novalauncher.THEME", "com.anddoes.launcher.THEME", "com.gau.go.launcherex.theme"};
+    private final Map<String, Map<String, String>> iconPackFilters = new java.util.HashMap<String, Map<String, String>>();
+
+    /** Installed icon packs (the ADW / Nova / Apex / Go theme convention): [{pkg, label}]. */
+    private String listIconPacks() {
+        JSONArray out = new JSONArray();
+        try {
+            PackageManager pm = getPackageManager();
+            java.util.Set<String> seen = new java.util.HashSet<String>();
+            for (String action : ICON_PACK_ACTIONS) {
+                for (android.content.pm.ResolveInfo ri : pm.queryIntentActivities(new Intent(action), 0)) {
+                    String pkg = ri.activityInfo.packageName;
+                    if (!seen.add(pkg)) continue;
+                    out.put(new JSONObject().put("pkg", pkg).put("label", String.valueOf(ri.loadLabel(pm))));
+                }
+            }
+        } catch (Throwable ignored) {}
+        return out.toString();
+    }
+
+    /** What an icon pack's appfilter.xml maps: "ComponentInfo{pkg/cls}" and bare "pkg" to a drawable name. */
+    private synchronized Map<String, String> iconPackFilter(String pack) {
+        Map<String, String> m = iconPackFilters.get(pack);
+        if (m != null) return m;
+        m = new java.util.HashMap<String, String>();
+        try {
+            Resources res = getPackageManager().getResourcesForApplication(pack);
+            org.xmlpull.v1.XmlPullParser xp = null;
+            int id = res.getIdentifier("appfilter", "xml", pack);
+            if (id != 0) {
+                xp = res.getXml(id);
+            } else {
+                try {
+                    xp = android.util.Xml.newPullParser();
+                    xp.setInput(res.getAssets().open("appfilter.xml"), "UTF-8");
+                } catch (Exception noAsset) {
+                    xp = null;
+                }
+            }
+            if (xp != null) {
+                int ev;
+                while ((ev = xp.next()) != org.xmlpull.v1.XmlPullParser.END_DOCUMENT) {
+                    if (ev != org.xmlpull.v1.XmlPullParser.START_TAG || !"item".equals(xp.getName())) continue;
+                    String comp = xp.getAttributeValue(null, "component");
+                    String dr = xp.getAttributeValue(null, "drawable");
+                    if (comp == null || dr == null || dr.isEmpty()) continue;
+                    if (!m.containsKey(comp)) m.put(comp, dr);
+                    int slash = comp.indexOf('/');
+                    if (comp.startsWith("ComponentInfo{") && slash > 14) {
+                        String pkg = comp.substring(14, slash);
+                        if (!m.containsKey(pkg)) m.put(pkg, dr);
+                    }
+                }
+            }
+        } catch (Throwable ignored) {}
+        iconPackFilters.put(pack, m);
+        return m;
+    }
+
+    private android.graphics.drawable.Drawable iconPackDrawable(String pack, String pkg) {
+        try {
+            PackageManager pm = getPackageManager();
+            Map<String, String> f = iconPackFilter(pack);
+            String name = null;
+            Intent li = pm.getLaunchIntentForPackage(pkg);
+            if (li != null && li.getComponent() != null) name = f.get("ComponentInfo{" + li.getComponent().getPackageName() + "/" + li.getComponent().getClassName() + "}");
+            if (name == null) name = f.get(pkg);
+            if (name == null) return null;
+            Resources res = pm.getResourcesForApplication(pack);
+            int id = res.getIdentifier(name, "drawable", pack);
+            if (id == 0) id = res.getIdentifier(name, "mipmap", pack);
+            return id == 0 ? null : res.getDrawable(id, null);
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    /** The icon of {@code pkg} at px x px: from the icon pack {@code pack} when it has one for the app, else the app's own. */
+    private android.graphics.Bitmap renderAppIcon(String pkg, int px, String pack) throws Exception {
+        PackageManager pm = getPackageManager();
+        android.graphics.drawable.Drawable d = pack == null || pack.isEmpty() ? null : iconPackDrawable(pack, pkg);
+        if (d == null) d = pm.getApplicationIcon(pm.getApplicationInfo(pkg, PackageManager.MATCH_UNINSTALLED_PACKAGES));
+        android.graphics.Bitmap b = android.graphics.Bitmap.createBitmap(px, px, android.graphics.Bitmap.Config.ARGB_8888);
+        android.graphics.Canvas c = new android.graphics.Canvas(b);
+        d.setBounds(0, 0, px, px);
+        d.draw(c);
+        return b;
+    }
+
+    /** The cached PNG of {@code pkg}'s icon (in {@code pack} when given) as a data: URI, drawn and cached on first use; null when it has none. */
+    private String iconDataUri(String pkg, String pack) {
+        try {
+            long stamp = 0;
+            PackageManager pm = getPackageManager();
+            try {
+                stamp = pm.getPackageInfo(pkg, PackageManager.MATCH_UNINSTALLED_PACKAGES).lastUpdateTime;
+            } catch (Exception ignored) {}
+            if (pack != null && !pack.isEmpty()) {
+                try {
+                    stamp += pm.getPackageInfo(pack, 0).lastUpdateTime;
+                } catch (Exception ignored) {}
+            }
+            File dir = iconCacheDir(pack);
+            File f = new File(dir, pkg + "_" + stamp + ".png");
+            if (!f.isFile()) {
+                final String prefix = pkg + "_";
+                File[] old = dir.listFiles();
+                if (old != null) for (File o : old) {
+                    String n = o.getName();
+                    if (n.startsWith(prefix) && n.substring(prefix.length()).matches("\\d+\\.png")) o.delete();
+                }
+                android.graphics.Bitmap b = renderAppIcon(pkg, 96, pack);
+                FileOutputStream out = new FileOutputStream(f);
+                try {
+                    b.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, out);
+                } finally {
+                    out.close();
+                }
+            }
+            java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+            java.io.FileInputStream in = new java.io.FileInputStream(f);
+            try {
+                byte[] buf = new byte[8192];
+                int n;
+                while ((n = in.read(buf)) > 0) bos.write(buf, 0, n);
+            } finally {
+                in.close();
+            }
+            return "data:image/png;base64," + android.util.Base64.encodeToString(bos.toByteArray(), android.util.Base64.NO_WRAP);
+        } catch (Throwable t) {
+            return null;
+        }
     }
 
     /** Copies an app's APK (or base + splits as a .apks bundle) to Downloads. Result via window.onApkExtracted(json). */
@@ -6687,7 +6886,8 @@ public class MainActivity extends Activity {
         /**
          * Starts (or reuses) the Terminal's shell for {@code backend}: "app", "priv" or "termux". Returns "starting" (or "error: ...");
          * the outcome arrives as window.onTermStarted(backend, json) with ok, kind, uid, host, cwd, prompt, reused, or message.
-         * {@code optsJson}: {cwd, profile} (profile: Termux reads the user's login profile).
+         * {@code optsJson}: {cwd, profile, matchEnv} (profile: Termux reads the user's login profile; matchEnv: also
+         * sources ~/.bashrc, so aliases and functions from the user's own Termux shell work here too).
          */
         @JavascriptInterface
         public String termStart(final String backend, final String optsJson) {
@@ -6743,7 +6943,8 @@ public class MainActivity extends Activity {
                             try {
                                 String cwd = opts.optString("cwd", "");
                                 sh.start(cwd.isEmpty() ? null : cwd);
-                                sh.run(termInitScript(kind), 15000, null);
+                                boolean matchEnv = "termux".equals(kind) && opts.optBoolean("matchEnv", true);
+                                sh.run(termInitScript(kind, matchEnv), 15000, null);
                             } catch (Throwable failed) {
                                 synchronized (termGate) {
                                     if (slot.shell == sh) slot.shell = null;
@@ -7283,6 +7484,130 @@ public class MainActivity extends Activity {
             }
         }
 
+        /**
+         * A broad, one-shot snapshot for the About tab's Device Specs card: hardware, software, system, battery,
+         * network, camera and sensors. Every read here is public and context-free - BatteryManager, world-readable
+         * /proc and /sys nodes (via {@link #readWorldReadable}, {@link #cpuInfoJson()}), PackageManager/
+         * ActivityManager feature queries ({@link #gpuInfoJson()}), and CameraManager/SensorManager static
+         * characteristics, none of which need the camera permission (only opening one for capture does) - so this
+         * works the same with or without a working mode connected, unlike everything shell-based in this file.
+         */
+        @JavascriptInterface
+        public String getDeviceSpecs() {
+            JSONObject res = new JSONObject();
+            try {
+                JSONObject hw = new JSONObject();
+                hw.put("model", Build.MODEL);
+                hw.put("manufacturer", Build.MANUFACTURER);
+                hw.put("brand", Build.BRAND);
+                mergeInto(hw, cpuInfoJson());
+                mergeInto(hw, gpuInfoJson());
+                try {
+                    String memRaw = readWorldReadable("/proc/meminfo");
+                    if (!memRaw.isEmpty()) hw.put("ramTotalKb", MemStats.parse(memRaw).totalKb);
+                } catch (Throwable ignored) {}
+                try {
+                    android.view.WindowManager wm = (android.view.WindowManager) getSystemService(WINDOW_SERVICE);
+                    if (wm != null && wm.getDefaultDisplay() != null) {
+                        android.util.DisplayMetrics dm = new android.util.DisplayMetrics();
+                        wm.getDefaultDisplay().getRealMetrics(dm);
+                        hw.put("screenWidthPx", dm.widthPixels);
+                        hw.put("screenHeightPx", dm.heightPixels);
+                        hw.put("densityDpi", dm.densityDpi);
+                        float refresh = wm.getDefaultDisplay().getRefreshRate();
+                        if (refresh > 0) hw.put("refreshRateHz", refresh);
+                    }
+                } catch (Throwable ignored) {}
+                try {
+                    android.os.StatFs sfs = new android.os.StatFs(android.os.Environment.getDataDirectory().getPath());
+                    hw.put("storageTotalBytes", sfs.getTotalBytes());
+                    hw.put("storageFreeBytes", sfs.getAvailableBytes());
+                } catch (Throwable ignored) {}
+                res.put("hardware", hw);
+
+                JSONObject sw = new JSONObject();
+                sw.put("androidRelease", Build.VERSION.RELEASE);
+                sw.put("sdk", Build.VERSION.SDK_INT);
+                if (Build.VERSION.SECURITY_PATCH != null) sw.put("securityPatch", Build.VERSION.SECURITY_PATCH);
+                sw.put("buildId", Build.ID);
+                sw.put("bootloader", Build.BOOTLOADER);
+                try {
+                    String kernel = readWorldReadable("/proc/version").trim();
+                    if (!kernel.isEmpty()) sw.put("kernel", kernel);
+                } catch (Throwable ignored) {}
+                res.put("software", sw);
+
+                JSONObject sys = new JSONObject();
+                sys.put("uptimeMs", android.os.SystemClock.elapsedRealtime());
+                sys.put("locale", java.util.Locale.getDefault().toLanguageTag());
+                sys.put("timezone", java.util.TimeZone.getDefault().getID());
+                res.put("system", sys);
+
+                res.put("battery", tmBatteryJson());
+
+                JSONObject net = new JSONObject();
+                try {
+                    android.net.ConnectivityManager cm = (android.net.ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+                    android.net.NetworkInfo ni = cm == null ? null : cm.getActiveNetworkInfo();
+                    if (ni != null) {
+                        net.put("type", ni.getTypeName());
+                        net.put("connected", ni.isConnected());
+                    }
+                } catch (Throwable ignored) {}
+                try {
+                    String netRaw = readWorldReadable("/proc/net/dev");
+                    if (!netRaw.isEmpty()) {
+                        JSONArray ifaceArr = new JSONArray();
+                        for (NetStats.Iface i : NetStats.parse(netRaw).ifaces) {
+                            if (!"lo".equals(i.name)) ifaceArr.put(i.name);
+                        }
+                        net.put("interfaces", ifaceArr);
+                    }
+                } catch (Throwable ignored) {}
+                res.put("network", net);
+
+                JSONArray cams = new JSONArray();
+                try {
+                    android.hardware.camera2.CameraManager camMgr = (android.hardware.camera2.CameraManager) getSystemService(CAMERA_SERVICE);
+                    if (camMgr != null) {
+                        for (String id : camMgr.getCameraIdList()) {
+                            android.hardware.camera2.CameraCharacteristics c = camMgr.getCameraCharacteristics(id);
+                            JSONObject cj = new JSONObject();
+                            Integer facing = c.get(android.hardware.camera2.CameraCharacteristics.LENS_FACING);
+                            cj.put("facing", facing == null ? "unknown"
+                                    : facing == android.hardware.camera2.CameraCharacteristics.LENS_FACING_FRONT ? "front"
+                                    : facing == android.hardware.camera2.CameraCharacteristics.LENS_FACING_BACK ? "back" : "external");
+                            android.util.Size size = c.get(android.hardware.camera2.CameraCharacteristics.SENSOR_INFO_PIXEL_ARRAY_SIZE);
+                            if (size != null) cj.put("megapixels", Math.round(size.getWidth() * size.getHeight() / 100000.0) / 10.0);
+                            Boolean flash = c.get(android.hardware.camera2.CameraCharacteristics.FLASH_INFO_AVAILABLE);
+                            cj.put("flash", flash != null && flash);
+                            cams.put(cj);
+                        }
+                    }
+                } catch (Throwable ignored) {}
+                res.put("cameras", cams);
+
+                JSONArray sensors = new JSONArray();
+                try {
+                    android.hardware.SensorManager sm = (android.hardware.SensorManager) getSystemService(SENSOR_SERVICE);
+                    if (sm != null) {
+                        for (android.hardware.Sensor s : sm.getSensorList(android.hardware.Sensor.TYPE_ALL)) {
+                            JSONObject sj = new JSONObject();
+                            sj.put("name", s.getName());
+                            sj.put("vendor", s.getVendor());
+                            sensors.put(sj);
+                        }
+                    }
+                } catch (Throwable ignored) {}
+                res.put("sensors", sensors);
+
+                res.put("ok", true);
+            } catch (Throwable t) {
+                try { res.put("ok", false); res.put("error", errMsg(t)); } catch (Exception ignored) {}
+            }
+            return res.toString();
+        }
+
         /** What a split APK has to match to suit this phone: its CPU architectures (best first), screen density and languages (best first). */
         @JavascriptInterface
         public String getDeviceProfile() {
@@ -7452,6 +7777,77 @@ public class MainActivity extends Activity {
             } catch (Exception e) {
                 return "Error: " + e.getMessage();
             }
+        }
+
+        /** Stops the running batch after whichever app it is already on; that one call can't be interrupted
+         *  once started, so every app not reached yet is left exactly as it was. */
+        @JavascriptInterface
+        public void appBatchCancel() { appBatchCancel = true; }
+
+        /**
+         * Runs {@link #executeAppAction} across every package in pkgsJson (a JSON array of package name
+         * strings) one at a time, off the page's thread - the point of this method existing at all, since
+         * executeAppAction's own shell round-trip blocks whichever thread calls it, and running the whole loop
+         * on the page's thread (as the JS side used to, one bridge call per app with only a setTimeout(0)
+         * between them) still froze the page for the entire loop: the page's thread is also the WebView's own,
+         * so nothing on it - including a repaint - runs while a call made from it is in flight.
+         * Returns "started" (or "busy" while a previous call is still running); progress arrives as
+         * window.onAppBatchProgress(i, total, pkg) before each app's own action runs, and the end as
+         * window.onAppBatchDone({action, total, done, cancelled, rows: [{pkg, output, success}]}).
+         */
+        @JavascriptInterface
+        public String appActionBatch(final String action, final String pkgsJson) {
+            synchronized (appBatchLock) {
+                if (appBatchBusy) return "busy";
+                appBatchBusy = true;
+                appBatchCancel = false;
+            }
+            if (!submitJob(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject res = new JSONObject();
+                    try {
+                        JSONArray pkgs = new JSONArray(pkgsJson);
+                        int total = pkgs.length();
+                        JSONArray rows = new JSONArray();
+                        int done = 0;
+                        boolean cancelled = false;
+                        int i = 0;
+                        for (; i < total; i++) {
+                            if (appBatchCancel) { cancelled = true; break; }
+                            String pkg = pkgs.optString(i, "");
+                            notifyJs("window.onAppBatchProgress && window.onAppBatchProgress(" + i + "," + total + "," + JSONObject.quote(pkg) + ")");
+                            String flagged = executeAppAction(action, pkg);
+                            boolean ok = flagOk(flagged);
+                            String out = flagText(flagged);
+                            if (ok) done++;
+                            rows.put(new JSONObject().put("pkg", pkg).put("output", out).put("success", ok));
+                        }
+                        res.put("action", action);
+                        res.put("total", total);
+                        res.put("done", done);
+                        res.put("cancelled", cancelled);
+                        res.put("rows", rows);
+                        res.put("ok", true);
+                    } catch (Throwable t) {
+                        try {
+                            res.put("ok", false);
+                            res.put("error", errMsg(t));
+                        } catch (Exception ignored) {}
+                    } finally {
+                        synchronized (appBatchLock) {
+                            appBatchBusy = false;
+                        }
+                    }
+                    notifyJs("window.onAppBatchDone && window.onAppBatchDone(" + res.toString() + ")");
+                }
+            })) {
+                synchronized (appBatchLock) {
+                    appBatchBusy = false;
+                }
+                return "error";
+            }
+            return "started";
         }
 
         // A single '\u0001' + ('1'|'0') flag glued onto the front of a pm/am result, read from the command's
@@ -8340,6 +8736,37 @@ public class MainActivity extends Activity {
             });
         }
 
+        /** Lets the user add a storage location through Android's own document-tree picker (an SD card, USB
+         *  drive, another app's exposed storage such as Termux, a cloud provider - whatever the device offers),
+         *  for the File Manager to browse alongside the device's own storage. The chosen tree gets a persistable
+         *  read/write grant, so it still works after this app restarts, without asking again. Answer:
+         *  window.onStorageRootPicked(uri, label), or (null) if the user backed out. */
+        @JavascriptInterface
+        public void pickAddStorage() {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+                    i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+                    try {
+                        startActivityForResult(i, REQ_PICK_STORAGE_TREE);
+                    } catch (Exception e) {
+                        notifyJs("window.onStorageRootPicked && window.onStorageRootPicked(null)");
+                    }
+                }
+            });
+        }
+
+        /** Gives up this app's access to a storage tree added through pickAddStorage(). The page drops it from
+         *  its own list of roots; this just releases the matching OS-level grant so it doesn't linger. */
+        @JavascriptInterface
+        public void removeStorageRoot(String uriString) {
+            try {
+                getContentResolver().releasePersistableUriPermission(Uri.parse(uriString),
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+            } catch (Exception ignored) {}
+        }
+
         private boolean isInstalled(String pkg) {
             try { getPackageManager().getPackageInfo(pkg, 0); return true; } catch (Exception e) { return false; }
         }
@@ -9088,6 +9515,7 @@ public class MainActivity extends Activity {
                 // Resolve /sdcard and /storage/self/primary to the concrete /storage/emulated/0 (readable
                 // by both the app and a shell), and normalize slashes so paths self-heal.
                 String p = fmCanonicalPath(path);
+                if (p.startsWith("content://")) return fmListSaf(p);
                 res.put("path", p);
                 int slash = p.lastIndexOf('/');
                 res.put("parent", p.equals("/") ? "/" : (slash <= 0 ? "/" : p.substring(0, slash)));
@@ -9135,6 +9563,173 @@ public class MainActivity extends Activity {
                 try { res.put("error", e.getMessage()); } catch (Exception ignored) {}
             }
             return res.toString();
+        }
+
+        /** Recovers the tree URI an SAF document URI was built from (see {@link #fmListSaf}) - every document URI
+         *  this app hands back to the page is built with {@code buildDocumentUriUsingTree}, which keeps the
+         *  original /tree/&lt;id&gt; segment alongside the appended /document/&lt;id&gt; one, so the tree id (and
+         *  from it, the tree URI) can always be read back out of it, not just out of the bare root URI the picker
+         *  first returned. */
+        private Uri safTreeUri(Uri uri) {
+            return android.provider.DocumentsContract.buildTreeDocumentUri(uri.getAuthority(), android.provider.DocumentsContract.getTreeDocumentId(uri));
+        }
+
+        /** The document id this URI points AT: the current folder/file when it is a document URI (has its own
+         *  /document/&lt;id&gt; segment - true for anything previously returned by fmListSaf), or the tree's own
+         *  root id for the bare tree URI pickAddStorage() first hands back, before anything has been listed yet. */
+        private String safCurrentDocId(Uri uri) {
+            try {
+                return android.provider.DocumentsContract.getDocumentId(uri);
+            } catch (Exception e) {
+                return android.provider.DocumentsContract.getTreeDocumentId(uri);
+            }
+        }
+
+        /** Lists a storage root added through pickAddStorage(), or a folder inside one, via the platform
+         *  DocumentsContract - no java.io.File, no shell, works the same for any provider the device offers (an
+         *  SD card, USB OTG, another app's exposed storage, a cloud provider...). Each entry carries its own full
+         *  document URI (see {@link #safTreeUri}) since SAF has no path-join the way POSIX folders do - the page
+         *  navigates into a child by using that URI directly, not by composing one out of a name. */
+        private String fmListSaf(String uriString) {
+            JSONObject res = new JSONObject();
+            try {
+                Uri incoming = Uri.parse(uriString);
+                Uri treeUri = safTreeUri(incoming);
+                String curDocId = safCurrentDocId(incoming);
+                res.put("path", uriString);
+                res.put("isSaf", true);
+                Uri childrenUri = android.provider.DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, curDocId);
+                JSONArray entries = new JSONArray();
+                android.database.Cursor c = getContentResolver().query(childrenUri, new String[]{
+                        android.provider.DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                        android.provider.DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                        android.provider.DocumentsContract.Document.COLUMN_MIME_TYPE,
+                        android.provider.DocumentsContract.Document.COLUMN_SIZE,
+                        android.provider.DocumentsContract.Document.COLUMN_LAST_MODIFIED,
+                }, null, null, null);
+                if (c != null) {
+                    try {
+                        while (c.moveToNext()) {
+                            String childId = c.getString(0);
+                            String name = c.getString(1);
+                            String mime = c.getString(2);
+                            boolean isDir = android.provider.DocumentsContract.Document.MIME_TYPE_DIR.equals(mime);
+                            JSONObject e = new JSONObject();
+                            e.put("name", name != null ? name : childId);
+                            e.put("isDir", isDir);
+                            e.put("isLink", false);
+                            e.put("size", c.isNull(3) ? 0 : c.getLong(3));
+                            e.put("lastModified", c.isNull(4) ? 0 : c.getLong(4));
+                            e.put("uri", android.provider.DocumentsContract.buildDocumentUriUsingTree(treeUri, childId).toString());
+                            entries.put(e);
+                        }
+                    } finally { c.close(); }
+                }
+                res.put("entries", entries);
+                res.put("source", "saf");
+            } catch (Throwable t) {
+                try { res.put("error", errMsg(t)); } catch (Exception ignored) {}
+            }
+            return res.toString();
+        }
+
+        /** fmReadText for a SAF document URI - same {ok,text,size,mtime,writable} contract as fmReadText, via
+         *  ContentResolver streaming instead of java.io.File. */
+        private String fmReadTextSaf(String uriString) {
+            JSONObject res = new JSONObject();
+            try {
+                Uri uri = Uri.parse(uriString);
+                long size = -1, mtime = 0; boolean writable = true;
+                android.database.Cursor c = getContentResolver().query(uri, new String[]{
+                        android.provider.DocumentsContract.Document.COLUMN_SIZE,
+                        android.provider.DocumentsContract.Document.COLUMN_LAST_MODIFIED,
+                        android.provider.DocumentsContract.Document.COLUMN_FLAGS,
+                }, null, null, null);
+                if (c != null) {
+                    try {
+                        if (c.moveToFirst()) {
+                            if (!c.isNull(0)) size = c.getLong(0);
+                            if (!c.isNull(1)) mtime = c.getLong(1);
+                            writable = !c.isNull(2) && (c.getLong(2) & android.provider.DocumentsContract.Document.FLAG_SUPPORTS_WRITE) != 0;
+                        }
+                    } finally { c.close(); }
+                }
+                if (size > FM_EDIT_MAX) { res.put("ok", false); res.put("tooBig", true); res.put("size", size); res.put("error", "This file is over 2 MB: too big to edit here."); return res.toString(); }
+                java.io.InputStream in = getContentResolver().openInputStream(uri);
+                if (in == null) { res.put("ok", false); res.put("error", "The app cannot read this file."); return res.toString(); }
+                byte[] data;
+                try {
+                    java.io.ByteArrayOutputStream buf = new java.io.ByteArrayOutputStream();
+                    byte[] chunk = new byte[8192]; int n;
+                    while ((n = in.read(chunk)) >= 0) {
+                        buf.write(chunk, 0, n);
+                        if (buf.size() > FM_EDIT_MAX) { res.put("ok", false); res.put("tooBig", true); res.put("size", buf.size()); res.put("error", "This file is over 2 MB: too big to edit here."); return res.toString(); }
+                    }
+                    data = buf.toByteArray();
+                } finally { in.close(); }
+                res.put("mtime", mtime);
+                res.put("writable", writable);
+                if (!FileOps.looksLikeText(data, data.length, false)) { res.put("ok", true); res.put("binary", true); res.put("size", data.length); return res.toString(); }
+                res.put("ok", true);
+                res.put("size", data.length);
+                res.put("text", new String(data, java.nio.charset.StandardCharsets.UTF_8));
+            } catch (Throwable t) {
+                try { res.put("ok", false); res.put("error", errMsg(t)); } catch (Exception ignored) {}
+            }
+            return res.toString();
+        }
+
+        /** fmWriteText for a SAF document URI - same {ok,size,mtime}/{ok:false,changed:true} contract, via
+         *  ContentResolver.openOutputStream(uri,"wt") (truncating write) instead of an atomic File rename. */
+        private String fmWriteTextSaf(String uriString, String text, double expectMtime) {
+            JSONObject res = new JSONObject();
+            try {
+                Uri uri = Uri.parse(uriString);
+                byte[] data = (text == null ? "" : text).getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                if (data.length > FM_EDIT_MAX * 2) { res.put("ok", false); res.put("error", "Too much text to save here."); return res.toString(); }
+                if (expectMtime > 0) {
+                    long mtime = 0;
+                    android.database.Cursor c = getContentResolver().query(uri, new String[]{ android.provider.DocumentsContract.Document.COLUMN_LAST_MODIFIED }, null, null, null);
+                    if (c != null) { try { if (c.moveToFirst() && !c.isNull(0)) mtime = c.getLong(0); } finally { c.close(); } }
+                    if (mtime > 0 && Math.abs(mtime - (long) expectMtime) > 1) { res.put("ok", false); res.put("changed", true); res.put("error", "The file changed since it was opened."); return res.toString(); }
+                }
+                java.io.OutputStream out = getContentResolver().openOutputStream(uri, "wt");
+                if (out == null) { res.put("ok", false); res.put("error", "The app cannot write here."); return res.toString(); }
+                try { out.write(data); out.flush(); } finally { out.close(); }
+                long newMtime = 0;
+                android.database.Cursor c2 = getContentResolver().query(uri, new String[]{ android.provider.DocumentsContract.Document.COLUMN_LAST_MODIFIED }, null, null, null);
+                if (c2 != null) { try { if (c2.moveToFirst() && !c2.isNull(0)) newMtime = c2.getLong(0); } finally { c2.close(); } }
+                res.put("ok", true); res.put("size", data.length); res.put("mtime", newMtime);
+            } catch (Throwable t) {
+                try { res.put("ok", false); res.put("error", errMsg(t)); } catch (Exception ignored) {}
+            }
+            return res.toString();
+        }
+
+        /** fmReadB64 for a SAF document URI - same base64-up-to-maxKb contract, via ContentResolver. */
+        private String fmReadB64Saf(String uriString, int maxKb) {
+            try {
+                Uri uri = Uri.parse(uriString);
+                long size = -1;
+                android.database.Cursor c = getContentResolver().query(uri, new String[]{ android.provider.DocumentsContract.Document.COLUMN_SIZE }, null, null, null);
+                if (c != null) { try { if (c.moveToFirst() && !c.isNull(0)) size = c.getLong(0); } finally { c.close(); } }
+                long cap = Math.min(12288, Math.max(1, maxKb)) * 1024L;
+                if (size > cap) return "";
+                java.io.InputStream in = getContentResolver().openInputStream(uri);
+                if (in == null) return "";
+                byte[] data;
+                try {
+                    java.io.ByteArrayOutputStream buf = new java.io.ByteArrayOutputStream();
+                    byte[] chunk = new byte[8192]; int n;
+                    while ((n = in.read(chunk)) >= 0) {
+                        buf.write(chunk, 0, n);
+                        if (buf.size() > cap) return "";
+                    }
+                    data = buf.toByteArray();
+                } finally { in.close(); }
+                if (data.length == 0) return "";
+                return android.util.Base64.encodeToString(data, android.util.Base64.NO_WRAP);
+            } catch (Throwable t) { return ""; }
         }
 
         /** Whether the app has broad storage access (All-files access on Android 11+). */
@@ -9284,6 +9879,21 @@ public class MainActivity extends Activity {
         public String fmRead(String path) {
             try {
                 path = fmCanonicalPath(path);
+                if (path.startsWith("content://")) {
+                    java.io.InputStream in = getContentResolver().openInputStream(Uri.parse(path));
+                    if (in == null) return "Error: could not open this file.";
+                    try {
+                        java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
+                        byte[] buf = new byte[65536];
+                        int n, total = 0;
+                        while ((n = in.read(buf)) > 0) {
+                            bo.write(buf, 0, n);
+                            total += n;
+                            if (total >= 131072) break;
+                        }
+                        return new String(bo.toByteArray(), "UTF-8");
+                    } finally { in.close(); }
+                }
                 File f = new File(path);
                 if (f.isFile() && f.canRead()) {
                     java.io.FileInputStream in = new java.io.FileInputStream(f);
@@ -9412,6 +10022,7 @@ public class MainActivity extends Activity {
             JSONObject res = new JSONObject();
             try {
                 path = fmCanonicalPath(path);
+                if (path.startsWith("content://")) return fmReadTextSaf(path);
                 File f = new File(path);
                 byte[] data;
                 if (f.isFile() && f.canRead()) {
@@ -9456,6 +10067,7 @@ public class MainActivity extends Activity {
             JSONObject res = new JSONObject();
             try {
                 path = fmCanonicalPath(path);
+                if (path.startsWith("content://")) return fmWriteTextSaf(path, text, expectMtime);
                 if (fmProtectedPath(path)) { res.put("ok", false); res.put("error", "System location: not touched"); return res.toString(); }
                 byte[] data = (text == null ? "" : text).getBytes(java.nio.charset.StandardCharsets.UTF_8);
                 if (data.length > FM_EDIT_MAX * 2) { res.put("ok", false); res.put("error", "Too much text to save here."); return res.toString(); }
@@ -9488,7 +10100,9 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public String fmReadB64(String path, int maxKb) {
             try {
-                File f = new File(fmCanonicalPath(path));
+                String p = fmCanonicalPath(path);
+                if (p.startsWith("content://")) return fmReadB64Saf(p, maxKb);
+                File f = new File(p);
                 long len = f.length();
                 if (!f.isFile() || !f.canRead() || len <= 0 || len > Math.min(12288, Math.max(1, maxKb)) * 1024L) return "";
                 byte[] data = new byte[(int) len];
@@ -9726,6 +10340,178 @@ public class MainActivity extends Activity {
             });
         }
 
+        /** Creates a new file or folder inside a SAF parent (mkdir/touch have no "target path" to give fmOp for a
+         *  SAF location - there is no join-by-string here, so the parent and the new name travel separately). */
+        @JavascriptInterface
+        public String fmNewSaf(String parentUri, String name, String type) {
+            JSONObject res = new JSONObject();
+            try {
+                Uri parent = Uri.parse(parentUri);
+                boolean isDir = "dir".equals(type);
+                String mime = isDir ? android.provider.DocumentsContract.Document.MIME_TYPE_DIR : fmMime(name);
+                if (!isDir && "*/*".equals(mime)) mime = "application/octet-stream";
+                Uri created = android.provider.DocumentsContract.createDocument(getContentResolver(), parent, mime, name);
+                res.put("ok", created != null);
+                res.put("output", created != null ? "OK" : "Could not create " + name);
+                if (created != null) res.put("uri", created.toString());
+            } catch (Throwable t) {
+                try { res.put("ok", false); res.put("output", errMsg(t)); } catch (Exception ignored) {}
+            }
+            return res.toString();
+        }
+
+        /** Renames a SAF document in place. There is no "same folder, new name" path string to hand fmOp the way
+         *  a POSIX rename gets one (fmJoin(newName)), so this takes the plain new display name directly. */
+        @JavascriptInterface
+        public String fmRenameSaf(String uri, String newName) {
+            JSONObject res = new JSONObject();
+            try {
+                Uri renamed = android.provider.DocumentsContract.renameDocument(getContentResolver(), Uri.parse(uri), newName);
+                res.put("ok", renamed != null);
+                res.put("output", renamed != null ? "OK" : "A file or folder with that name is already there");
+            } catch (Throwable t) {
+                try { res.put("ok", false); res.put("output", errMsg(t)); } catch (Exception ignored) {}
+            }
+            return res.toString();
+        }
+
+        /** Copies (recursively, for a folder) a SAF document as a new child of destParentUri, keeping its own name. */
+        private String safCopyInto(Uri srcUri, Uri destParentUri) {
+            try {
+                android.content.ContentResolver cr = getContentResolver();
+                String name = null, mime = null;
+                android.database.Cursor c = cr.query(srcUri, new String[]{
+                        android.provider.DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                        android.provider.DocumentsContract.Document.COLUMN_MIME_TYPE,
+                }, null, null, null);
+                if (c != null) { try { if (c.moveToFirst()) { name = c.getString(0); mime = c.getString(1); } } finally { c.close(); } }
+                if (name == null) return "Could not read the source";
+                boolean isDir = android.provider.DocumentsContract.Document.MIME_TYPE_DIR.equals(mime);
+                if (isDir) {
+                    Uri newDir = android.provider.DocumentsContract.createDocument(cr, destParentUri, android.provider.DocumentsContract.Document.MIME_TYPE_DIR, name);
+                    if (newDir == null) return "Could not create " + name;
+                    Uri srcTree = safTreeUri(srcUri);
+                    String srcDocId = safCurrentDocId(srcUri);
+                    Uri childrenUri = android.provider.DocumentsContract.buildChildDocumentsUriUsingTree(srcTree, srcDocId);
+                    android.database.Cursor kids = cr.query(childrenUri, new String[]{ android.provider.DocumentsContract.Document.COLUMN_DOCUMENT_ID }, null, null, null);
+                    if (kids != null) {
+                        try {
+                            while (kids.moveToNext()) {
+                                Uri kidUri = android.provider.DocumentsContract.buildDocumentUriUsingTree(srcTree, kids.getString(0));
+                                String err = safCopyInto(kidUri, newDir);
+                                if (err != null) return err;
+                            }
+                        } finally { kids.close(); }
+                    }
+                    return null;
+                }
+                String m = mime != null ? mime : "application/octet-stream";
+                Uri newFile = android.provider.DocumentsContract.createDocument(cr, destParentUri, m, name);
+                if (newFile == null) return "Could not create " + name;
+                return safStreamCopy(cr.openInputStream(srcUri), cr.openOutputStream(newFile), name);
+            } catch (Throwable t) { return errMsg(t); }
+        }
+
+        /** Copies a plain filesystem file or folder as a new child of a SAF folder, keeping its own name (recursive for a folder). */
+        private String safCopyPosixIntoSaf(File srcFile, Uri destParentUri) {
+            try {
+                android.content.ContentResolver cr = getContentResolver();
+                String name = srcFile.getName();
+                if (srcFile.isDirectory()) {
+                    Uri newDir = android.provider.DocumentsContract.createDocument(cr, destParentUri, android.provider.DocumentsContract.Document.MIME_TYPE_DIR, name);
+                    if (newDir == null) return "Could not create " + name;
+                    File[] kids = srcFile.listFiles();
+                    if (kids != null) for (File k : kids) { String err = safCopyPosixIntoSaf(k, newDir); if (err != null) return err; }
+                    return null;
+                }
+                String mime = fmMime(name);
+                if ("*/*".equals(mime)) mime = "application/octet-stream";
+                Uri newFile = android.provider.DocumentsContract.createDocument(cr, destParentUri, mime, name);
+                if (newFile == null) return "Could not create " + name;
+                return safStreamCopy(new java.io.FileInputStream(srcFile), cr.openOutputStream(newFile), name);
+            } catch (Throwable t) { return errMsg(t); }
+        }
+
+        /** Copies a SAF document as a new child of a plain filesystem folder, keeping its own name (recursive for a folder). */
+        private String safCopyIntoPosix(Uri srcUri, File destDir) {
+            try {
+                android.content.ContentResolver cr = getContentResolver();
+                String name = null, mime = null;
+                android.database.Cursor c = cr.query(srcUri, new String[]{
+                        android.provider.DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                        android.provider.DocumentsContract.Document.COLUMN_MIME_TYPE,
+                }, null, null, null);
+                if (c != null) { try { if (c.moveToFirst()) { name = c.getString(0); mime = c.getString(1); } } finally { c.close(); } }
+                if (name == null) return "Could not read the source";
+                boolean isDir = android.provider.DocumentsContract.Document.MIME_TYPE_DIR.equals(mime);
+                File dest = new File(destDir, name);
+                if (isDir) {
+                    if (!dest.isDirectory() && !dest.mkdirs()) return "Could not create " + name;
+                    Uri srcTree = safTreeUri(srcUri);
+                    String srcDocId = safCurrentDocId(srcUri);
+                    Uri childrenUri = android.provider.DocumentsContract.buildChildDocumentsUriUsingTree(srcTree, srcDocId);
+                    android.database.Cursor kids = cr.query(childrenUri, new String[]{ android.provider.DocumentsContract.Document.COLUMN_DOCUMENT_ID }, null, null, null);
+                    if (kids != null) {
+                        try {
+                            while (kids.moveToNext()) {
+                                Uri kidUri = android.provider.DocumentsContract.buildDocumentUriUsingTree(srcTree, kids.getString(0));
+                                String err = safCopyIntoPosix(kidUri, dest);
+                                if (err != null) return err;
+                            }
+                        } finally { kids.close(); }
+                    }
+                    return null;
+                }
+                return safStreamCopy(cr.openInputStream(srcUri), new java.io.FileOutputStream(dest), name);
+            } catch (Throwable t) { return errMsg(t); }
+        }
+
+        /** Streams in to out (closing both either way) - the shared tail of every single-file SAF/POSIX copy above. */
+        private String safStreamCopy(java.io.InputStream in, java.io.OutputStream out, String name) {
+            try {
+                if (in == null || out == null) return "Could not copy " + name;
+                try {
+                    byte[] buf = new byte[65536];
+                    int n;
+                    while ((n = in.read(buf)) >= 0) out.write(buf, 0, n);
+                    out.flush();
+                } finally {
+                    try { in.close(); } catch (Exception ignored) {}
+                    try { out.close(); } catch (Exception ignored) {}
+                }
+                return null;
+            } catch (Throwable t) { return errMsg(t); }
+        }
+
+        /** Deletes, copies or moves where at least one side is a SAF document URI - the other side, when a cp/mv crosses
+         *  into or out of a SAF root, may be a plain filesystem path. Unlike fmOp's POSIX convention, "b" here is always
+         *  a destination FOLDER's own identity (a SAF document URI, or a plain directory path), never a bare new name -
+         *  a same-folder rename has no such path string to build and uses fmRenameSaf instead. Returns "" on success,
+         *  else an error message (never null). */
+        private String fmOpSaf(String op, String a, String b) {
+            try {
+                if ("rm".equals(op)) {
+                    boolean ok = android.provider.DocumentsContract.deleteDocument(getContentResolver(), Uri.parse(a));
+                    return ok ? "" : "Could not delete";
+                }
+                if ("cp".equals(op) || "mv".equals(op)) {
+                    if (b == null || b.isEmpty()) return "no destination";
+                    boolean srcSaf = a.startsWith("content://");
+                    boolean dstSaf = b.startsWith("content://");
+                    String err = dstSaf
+                            ? (srcSaf ? safCopyInto(Uri.parse(a), Uri.parse(b)) : safCopyPosixIntoSaf(new File(a), Uri.parse(b)))
+                            : safCopyIntoPosix(Uri.parse(a), new File(b));
+                    if (err != null) return err;
+                    if ("mv".equals(op)) {
+                        if (srcSaf) android.provider.DocumentsContract.deleteDocument(getContentResolver(), Uri.parse(a));
+                        else FileOps.delete(java.util.Collections.singletonList(new File(a)), null);
+                    }
+                    return "";
+                }
+                return "unknown op";
+            } catch (Throwable t) { return errMsg(t); }
+        }
+
         /** File op: mkdir|touch|rm|cp|mv. For rm, dirs are removed recursively. */
         @JavascriptInterface
         public String fmOp(String op, String a, String b) {
@@ -9734,6 +10520,12 @@ public class MainActivity extends Activity {
                 if (a == null || a.isEmpty()) { res.put("ok", false); res.put("output", "no path"); return res.toString(); }
                 a = fmCanonicalPath(a);
                 if (b != null && !b.isEmpty()) b = fmCanonicalPath(b);
+                if (a.startsWith("content://") || (b != null && b.startsWith("content://"))) {
+                    String out = fmOpSaf(op, a, b);
+                    res.put("ok", out.isEmpty());
+                    res.put("output", out.isEmpty() ? "OK" : out);
+                    return res.toString();
+                }
                 // the same protection the batch operations have: removing or moving away a whole storage root, a top-level folder or a system tree
                 if (("rm".equals(op) || "mv".equals(op)) && fmProtectedPath(a)) { res.put("ok", false); res.put("output", "System location: not touched"); return res.toString(); }
                 // what the app can do with its own file access needs no working mode
@@ -11009,14 +11801,144 @@ public class MainActivity extends Activity {
                 if ("standard".equals(resolveExecMode())) { r.put("ok", false); r.put("output", "Error: dex optimization needs ADB, Shizuku or Root."); return r.toString(); }
                 String m = mode == null ? "speed" : mode.replaceAll("[^a-z-]", "");
                 if (m.isEmpty()) m = "speed";
-                String out = executeShell("pm compile -m " + m + (force ? " -f " : " ") + pkg);
-                String low = out == null ? "" : out.toLowerCase();
-                r.put("ok", low.contains("success") || low.contains("performed") || (!low.contains("error") && !low.contains("failure") && !low.contains("unknown") && !low.contains("usage")));
-                r.put("output", out != null && !out.trim().isEmpty() ? out.trim() : "Done");
+                String flagged = runShellAction("pm compile -m " + m + (force ? " -f " : " ") + pkg);
+                String out = flagText(flagged);
+                r.put("ok", flagOk(flagged));
+                r.put("output", !out.trim().isEmpty() ? out.trim() : "Done");
             } catch (Exception e) {
                 try { r.put("ok", false); r.put("output", "Error: " + e.getMessage()); } catch (Exception ignored) {}
             }
             return r.toString();
+        }
+
+        /** Stops the running Dex-optimization batch after whichever app it is already on (that one `pm compile`
+         *  call can't be interrupted once started), the same Stop convention as {@link #appBatchCancel()}. */
+        @JavascriptInterface
+        public void optimizeBatchCancel() { optimizeBatchCancel = true; }
+
+        /**
+         * Runs {@link #optimizeApp} across every package in pkgsJson, off the page's thread - a single `pm compile`
+         * call can take real time (full recompilation of a big app), and calling it straight from the page's own
+         * thread (as the old single-app and batch Dex-optimize paths both used to) blocks the WebView itself for
+         * that whole time, exactly the freeze {@link #appActionBatch} was already built to avoid for ordinary app
+         * actions. Used for a single app too (a one-item array), so both paths get the same async treatment and
+         * live progress. Returns "started" (or "busy"); progress arrives as window.onOptimizeBatchProgress(i,
+         * total, pkg) before each app's own compile runs, and the end as window.onOptimizeBatchDone({total, done,
+         * cancelled, rows: [{pkg, output, success}], ok}).
+         */
+        @JavascriptInterface
+        public String optimizeAppBatch(final String pkgsJson, final String mode, final boolean force) {
+            synchronized (optimizeBatchLock) {
+                if (optimizeBatchBusy) return "busy";
+                optimizeBatchBusy = true;
+                optimizeBatchCancel = false;
+            }
+            if (!submitJob(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject res = new JSONObject();
+                    try {
+                        JSONArray pkgs = new JSONArray(pkgsJson);
+                        int total = pkgs.length();
+                        JSONArray rows = new JSONArray();
+                        int done = 0;
+                        boolean cancelled = false;
+                        for (int i = 0; i < total; i++) {
+                            if (optimizeBatchCancel) { cancelled = true; break; }
+                            String pkg = pkgs.optString(i, "");
+                            notifyJs("window.onOptimizeBatchProgress && window.onOptimizeBatchProgress(" + i + "," + total + "," + JSONObject.quote(pkg) + ")");
+                            JSONObject one;
+                            try { one = new JSONObject(optimizeApp(pkg, mode, force)); } catch (Exception e) { one = new JSONObject(); one.put("ok", false); one.put("output", errMsg(e)); }
+                            boolean ok = one.optBoolean("ok", false);
+                            if (ok) done++;
+                            rows.put(new JSONObject().put("pkg", pkg).put("output", one.optString("output", "")).put("success", ok));
+                        }
+                        res.put("total", total);
+                        res.put("done", done);
+                        res.put("cancelled", cancelled);
+                        res.put("rows", rows);
+                        res.put("ok", true);
+                    } catch (Throwable t) {
+                        try { res.put("ok", false); res.put("error", errMsg(t)); } catch (Exception ignored) {}
+                    } finally {
+                        synchronized (optimizeBatchLock) {
+                            optimizeBatchBusy = false;
+                        }
+                    }
+                    notifyJs("window.onOptimizeBatchDone && window.onOptimizeBatchDone(" + res.toString() + ")");
+                }
+            })) {
+                synchronized (optimizeBatchLock) {
+                    optimizeBatchBusy = false;
+                }
+                return "error";
+            }
+            return "started";
+        }
+
+        /** Installed icon packs as JSON [{pkg, label}]. */
+        @JavascriptInterface
+        public String getIconPacks() {
+            return listIconPacks();
+        }
+
+        /** Icons for the packages in {@code pkgsJson}, drawn off the page's thread and cached on disk. Answers arrive in chunks as window.onAppIcons({pkg: dataUri}). */
+        @JavascriptInterface
+        public String loadAppIcons(final String pkgsJson, final String pack) {
+            if (!submitJob(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        JSONArray pkgs = new JSONArray(pkgsJson);
+                        JSONObject chunk = new JSONObject();
+                        for (int i = 0; i < pkgs.length(); i++) {
+                            String pkg = pkgs.optString(i, "");
+                            if (pkg.isEmpty()) continue;
+                            String uri = iconDataUri(pkg, pack);
+                            if (uri != null) chunk.put(pkg, uri);
+                            if (chunk.length() >= 12 || i == pkgs.length() - 1) {
+                                if (chunk.length() > 0) notifyJs("window.onAppIcons && window.onAppIcons(" + chunk.toString() + ")");
+                                chunk = new JSONObject();
+                            }
+                        }
+                    } catch (Throwable ignored) {}
+                }
+            })) return "error";
+            return "started";
+        }
+
+        /** Saves an app's icon (256 px PNG) to Download/ADB App Manager/Icons. Result via window.onAppIconSaved(json{ok, pkg, path, error}). */
+        @JavascriptInterface
+        public String saveAppIcon(final String pkg, final String label, final String pack) {
+            if (!submitJob(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject res = new JSONObject();
+                    Object[] target = null;
+                    try {
+                        res.put("pkg", pkg);
+                        android.graphics.Bitmap b = renderAppIcon(pkg, 256, pack);
+                        String base = (label == null || label.trim().isEmpty() ? pkg : label.trim() + " (" + pkg + ")");
+                        target = openDownloadOutput(base + ".png", "image/png", "Icons");
+                        java.io.OutputStream out = (java.io.OutputStream) target[0];
+                        try {
+                            b.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, out);
+                        } finally {
+                            out.close();
+                        }
+                        res.put("ok", true);
+                        res.put("path", (String) target[1]);
+                    } catch (Throwable t) {
+                        deleteDownloadTarget(target);
+                        try {
+                            res.put("ok", false);
+                            res.put("error", errMsg(t));
+                        } catch (Exception ignored) {}
+                    }
+                    notifyJs("window.onAppIconSaved && window.onAppIconSaved(" + res.toString() + ")");
+                }
+            })) return "error";
+            return "started";
         }
 
         @JavascriptInterface
@@ -11080,12 +12002,12 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String setAppOp(String pkg, String op, String mode) {
-            return executeShell("appops set " + pkg + " " + op + " " + mode);
+            return runShellAction("appops set " + pkg + " " + op + " " + mode);
         }
 
         @JavascriptInterface
         public String setPermission(String pkg, String perm, boolean grant) {
-            return grant ? executeShell("pm grant " + pkg + " " + perm) : executeShell("pm revoke " + pkg + " " + perm);
+            return runShellAction(grant ? ("pm grant " + pkg + " " + perm) : ("pm revoke " + pkg + " " + perm));
         }
 
         @JavascriptInterface

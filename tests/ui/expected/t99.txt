@@ -1,0 +1,12 @@
+1. Device Specs section exists, under Handy to know: true
+2. opening the tab fetches it on its own (no Refresh press needed): true
+   Hardware shows model, SoC, cores, RAM, screen and storage: true
+   Software shows Android version, patch and build: true
+   Battery shows level, status and cycles: true
+   Network shows the connection and interfaces: true
+   Camera lists each one with megapixels and flash: true
+3. Sensors are listed by name and vendor, with a count: true
+4. leaving and coming back refreshes it again: true
+5. the Refresh button fetches it again by hand: true
+6. without the bridge method, a plain message instead of breaking: true
+errors: []

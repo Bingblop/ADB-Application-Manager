@@ -7,10 +7,9 @@
 3. denied -> shows error text: true
 4. apk size parsed: 24117248 (expect 24117248)
    symlink target parsed: /storage/self/primary
-5. logcat loaded on open: true
-   play btn label: Pause
-6. polling while playing (expect >=2): 4
-7. paused stops polling (counts equal): true ( 4 == 4 )
+5. opening the tab already starts playing (a fetch happened, Pause shown): true
+6. polling continues on its own (expect >=2): true 4
+7. pausing stops polling (counts equal): true ( 4 == 4 )
    play btn back to Play: Play
 8. leaving logcat tab stops polling: true
 9. logcat box height: 584.797px

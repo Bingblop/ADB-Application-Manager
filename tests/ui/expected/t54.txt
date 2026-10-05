@@ -2,7 +2,7 @@
    the page is not frozen meanwhile (a tab switch works): true
    a second command is refused while one runs: true
    the output replaces the running line: true
-   the result sheet opens as before: true
+   no result modal pops up - the output above already is the result: true
 2. the next command runs once the first has finished: true
    a start the app refuses shows an error line and frees the box: true
    an answer for a command that is not the current one is ignored: true

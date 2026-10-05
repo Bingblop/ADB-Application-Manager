@@ -5,7 +5,12 @@ setComponentEnabled called: [ 'toggle:com.x.BootRcv:false' ]
 BootRcv buttons after disable (expect ENABLE present): ["ENABLE"]
 exported filter: shows Main(act) & Provider, hides Hidden & Svc: true
 optimize modal shown (single): true
+a progress bar shows while it runs (not frozen, no indication it still works): true {"shown":true,"text":"1 of 1: X App (com.x)"}
 single optimize call: [ 'opt:com.x:everything:true' ]
+single success: toast only, no result modal (nuisance fix - matches toggleComponent): true
+progress modal closes itself when done: true
 optimize modal shown (batch): true
 batch optimize calls (expect 2, speed, false): [ 'opt:com.x:speed:false', 'opt:com.y:speed:false' ]
+batch keeps the per-app breakdown modal even on success: true
+a failed single optimize still shows the result modal: true
 errors: []

@@ -1,0 +1,11 @@
+1. On the Working mode shell: priv
+   its Cheat Sheet is the ADB one, with the gist section shown: true
+   categories look like the ADB set: true
+2. Switched to the sandbox shell -> a different, smaller cheat sheet, no gist section: true
+   it has no package-manager / ADB categories: ["FILES","TEXT","PROCESS / SYSTEM"] true
+   tapping a command fills the Terminal's own input (not the ADB Console's): true
+3. Switched to Termux -> a bash-flavoured cheat sheet, no gist section: true
+   it covers packages, git and network (none of which the sandbox shell has): true
+4. the ADB Console's own Cheat Sheet button still shows the ADB set, unaffected by the Terminal's shell picker: true
+   and still fills the Console's own input: true
+errors: []

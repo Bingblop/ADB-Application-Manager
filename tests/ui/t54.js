@@ -43,17 +43,14 @@ const { chromium, PAGE } = require('./lib/pw');
   await sleep(350);
   const t1 = await term();
   console.log('   the output replaces the running line:', /out-of-echo hi/.test(t1) && !/running…/.test(t1));
-  console.log('   the result sheet opens as before:', await page.locator('#commandResultsModal.show').count() === 1);
-  await page.evaluate(() => closeCommandResultsModal());
+  console.log('   no result modal pops up - the output above already is the result:', (await page.locator('#commandResultsModal.show').count()) === 0);
 
   // 2) The next command works; a refused start is reported.
   await page.fill('#termCmd', 'id'); await page.press('#termCmd', 'Enter'); await sleep(400);
   console.log('2. the next command runs once the first has finished:', /out-of-id/.test(await term()));
-  await page.evaluate(() => closeCommandResultsModal());
   await page.evaluate(() => { window.__shellMode = 'refuse'; });
   await page.fill('#termCmd', 'x'); await page.press('#termCmd', 'Enter'); await sleep(100);
   console.log('   a start the app refuses shows an error line and frees the box:', /could not be started/.test(await term()) && (await page.evaluate(() => termShellRun)) === null);
-  await page.evaluate(() => closeCommandResultsModal());
   await page.evaluate(() => { window.__shellMode = 'ok'; });
   // a stale answer is ignored
   await page.evaluate(() => onShellDone('s999', 'STALE'));

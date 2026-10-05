@@ -14,7 +14,7 @@
    a catalog error while a search is pending ends the load and is shown as the error: true {"loading":false,"searching":false,"error":"boom"}
 5. pressing RUN while one runs keeps the typed text and the history: true {"val":"echo keep me","hist":["older"]}
    the answer arriving on another tab is a toast, not a sheet over that tab: true
-   on the Console tab the report sheet opens as before: true
+   on the Console tab itself, still no result sheet (no modal-on-success for an arbitrary command): true
 6. in a comparison Add file / New folder are hidden: true
    closing it clears the filter text, brings Add file / New folder back, and re-lists the folder: true
    opening an archive inside clears the comparison view (the header does not stay): true

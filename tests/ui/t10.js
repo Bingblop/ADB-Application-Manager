@@ -1,5 +1,6 @@
 // Suspended apps: badge, filter and count, menu Suspend/Unsuspend, batch suspend (confirm) and batch unsuspend
 const { chromium, PAGE } = require('./lib/pw');
+const appBatchMock = require('./lib/appbatch_mock');
 (async () => {
   const b = await chromium.launch();
   for (const dark of [true, false]) {
@@ -19,6 +20,7 @@ const { chromium, PAGE } = require('./lib/pw');
         return `Package ${pkg} new suspended state: ${action === 'suspend'}`; },
     };
   }, dark);
+  await page.addInitScript(appBatchMock.installAppBatchMock);
   await page.goto(PAGE); await page.waitForTimeout(300);
   const badges = async () => (await page.locator('.app-card').evaluateAll(cs => cs.map(c => c.querySelector('.app-name').innerText + (c.classList.contains('suspended') ? '[⏸]' : '') + ' ' + [...c.querySelectorAll('.tag-badge')].map(t => t.innerText).join('/')))).join(' | ');
   console.log(`--- ${dark ? 'DARK' : 'LIGHT'} ---`);

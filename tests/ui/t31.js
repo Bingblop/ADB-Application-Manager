@@ -65,22 +65,20 @@ const { chromium, PAGE } = require('./lib/pw');
   const link = parsed.entries.find(e => e.isLink);
   console.log('   symlink target parsed:', link && link.link);
 
-  // ---- logcat play/pause ----
-  await page.evaluate(() => { window.__which = 'toybox'; switchView('logcat'); }); await page.waitForTimeout(150);
-  console.log('5. logcat loaded on open:', await page.evaluate(() => window.__calls.length >= 1));
-  await page.evaluate(() => { window.__calls.length = 0; logcatTogglePlay(); });
-  console.log('   play btn label:', await page.locator('#logcatPlayBtn').innerText());
-  await page.waitForTimeout(3300); // ~2 polls at 1.5s
+  // ---- logcat play/pause: opening the tab now starts playing on its own ----
+  await page.evaluate(() => { window.__which = 'toybox'; window.__calls.length = 0; switchView('logcat'); }); await page.waitForTimeout(150);
+  console.log('5. opening the tab already starts playing (a fetch happened, Pause shown):', (await page.evaluate(() => window.__calls.length >= 1)) && (await page.locator('#logcatPlayBtn').innerText()) === 'Pause');
+  await page.waitForTimeout(3300); // ~3 more polls at 1s, with no need to press Play by hand
   const pollCount = await page.evaluate(() => window.__calls.length);
-  console.log('6. polling while playing (expect >=2):', pollCount);
+  console.log('6. polling continues on its own (expect >=2):', pollCount >= 2, pollCount);
   await page.evaluate(() => logcatTogglePlay()); // pause
   const afterPause = await page.evaluate(() => window.__calls.length);
   await page.waitForTimeout(1800);
   const afterWait = await page.evaluate(() => window.__calls.length);
-  console.log('7. paused stops polling (counts equal):', afterPause === afterWait, '(', afterPause, '==', afterWait, ')');
+  console.log('7. pausing stops polling (counts equal):', afterPause === afterWait, '(', afterPause, '==', afterWait, ')');
   console.log('   play btn back to Play:', await page.locator('#logcatPlayBtn').innerText());
 
-  // leaving the tab stops polling
+  // leaving the tab stops polling, even resumed mid-play (not just when already paused)
   await page.evaluate(() => { logcatTogglePlay(); switchView('apps'); });
   await page.waitForTimeout(100);
   const c1 = await page.evaluate(() => window.__calls.length);

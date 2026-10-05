@@ -13,9 +13,10 @@ const { chromium, PAGE } = require('./lib/pw');
     window.AndroidBridge = {
       executeShell(cmd) {
         window.__calls.executeShell.push(cmd);
-        const m = /^setprop debug\.hwui\.renderer (\S+)$/.exec(cmd);
+        const base = cmd.split(';')[0];
+        const m = /^setprop debug\.hwui\.renderer (\S+)$/.exec(base);
         if (m) { window.__rendererProp = m[1]; return ''; }
-        if (cmd === 'getprop debug.hwui.renderer') return window.__rendererProp || '';
+        if (base === 'getprop debug.hwui.renderer') return window.__rendererProp || '';
         return '';
       },
       vibrate() {}, loadPreferences() { return '{}'; }, loadCustomLists() { return '[]'; }, getSystemInfo() { return '{}'; },
@@ -99,11 +100,11 @@ const { chromium, PAGE } = require('./lib/pw');
   console.log('12. switching to GPU loads the renderer dropdown: Default plus both backends, since this sample supports Vulkan:', JSON.stringify(await optionValues()) === JSON.stringify(['', 'skiagl', 'skiavk']) && !(await page.evaluate(() => document.getElementById('tmRendererSelect').disabled)));
   let before = await page.evaluate(() => window.__calls.executeShell.length);
   await page.selectOption('#tmRendererSelect', 'skiavk'); await sleep(30);
-  console.log('    picking Vulkan runs setprop skiavk then crashes System UI, in that order (then re-reads the property, a 3rd call):', JSON.stringify(await page.evaluate(n => window.__calls.executeShell.slice(n, n + 2), before)) === JSON.stringify(['setprop debug.hwui.renderer skiavk', 'am crash com.android.systemui']));
+  console.log('    picking Vulkan runs setprop skiavk then crashes System UI, in that order (then re-reads the property, a 3rd call):', JSON.stringify(await page.evaluate(n => window.__calls.executeShell.slice(n, n + 2).map(c => c.split(';')[0]), before)) === JSON.stringify(['setprop debug.hwui.renderer skiavk', 'am crash com.android.systemui']));
   console.log('    the dropdown re-reads the property right after and reflects it (no "Default" option once it is actually set):', (await page.evaluate(() => document.getElementById('tmRendererSelect').value)) === 'skiavk' && JSON.stringify(await optionValues()) === JSON.stringify(['skiagl', 'skiavk']));
   before = await page.evaluate(() => window.__calls.executeShell.length);
   await page.selectOption('#tmRendererSelect', 'skiagl'); await sleep(30);
-  console.log('    picking OpenGL does the same with skiagl:', JSON.stringify(await page.evaluate(n => window.__calls.executeShell.slice(n, n + 2), before)) === JSON.stringify(['setprop debug.hwui.renderer skiagl', 'am crash com.android.systemui']) && (await page.evaluate(() => document.getElementById('tmRendererSelect').value)) === 'skiagl');
+  console.log('    picking OpenGL does the same with skiagl:', JSON.stringify(await page.evaluate(n => window.__calls.executeShell.slice(n, n + 2).map(c => c.split(';')[0]), before)) === JSON.stringify(['setprop debug.hwui.renderer skiagl', 'am crash com.android.systemui']) && (await page.evaluate(() => document.getElementById('tmRendererSelect').value)) === 'skiagl');
 
   const beforeTick = await page.evaluate(() => document.getElementById('tmRendererSelect').outerHTML);
   const shellCallsBeforeTick = await page.evaluate(() => window.__calls.executeShell.length);

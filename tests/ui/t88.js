@@ -74,6 +74,17 @@ const tx = require('./lib/tx_mock');
   await page.click('#txKeys button[data-k="esc"]');
   console.log('   ESC clears the line:', JSON.stringify(await page.locator('#txInput').inputValue()));
 
+  // ---------------------------------------------------------------- Shift: a second row of symbol keys
+  console.log('   the base keys are shown, SHIFT is not active yet:', await page.locator('#txKeys button[data-k="tab"]').isVisible() && !(await page.locator('#txKeys button[data-k="`"]').isVisible()) && !(await page.locator('#txKeys .tx-key-shift').evaluate(e => e.classList.contains('active'))));
+  await page.click('#txKeys .tx-key-shift');
+  console.log('10. SHIFT swaps in the symbol keys instead (base keys hidden), and lights up:', !(await page.locator('#txKeys button[data-k="tab"]').isVisible()) && (await page.locator('#txKeys button[data-k="`"]').isVisible()) && (await page.locator('#txKeys .tx-key-shift').evaluate(e => e.classList.contains('active'))));
+  await page.focus('#txInput');
+  await page.click('#txKeys button[data-k="$"]'); await page.click('#txKeys button[data-k="{"]'); await page.click('#txKeys button[data-k="}"]');
+  console.log('    a symbol key still inserts at the cursor:', JSON.stringify(await page.locator('#txInput').inputValue()));
+  await page.click('#txKeys .tx-key-shift');
+  console.log('    tapping SHIFT again goes back to the base keys:', await page.locator('#txKeys button[data-k="tab"]').isVisible() && !(await page.locator('#txKeys button[data-k="`"]').isVisible()));
+  await page.click('#txKeys button[data-k="esc"]');
+
   // ---------------------------------------------------------------- TAB completion
   env.write('priv', 'alpha.txt', 'a\n'); env.write('priv', 'alpine/x', 'x\n'); env.write('priv', 'beta.txt', 'b\n');
   await page.fill('#txInput', 'cat al'); await page.click('#txKeys button[data-k="tab"]'); await until(() => !txRuns.priv); await sleep(50);

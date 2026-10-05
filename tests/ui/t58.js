@@ -105,7 +105,8 @@ const { chromium, PAGE } = require('./lib/pw');
   console.log('   a catalog error while a search is pending ends the load and is shown as the error:', st.after.loading === false && st.after.searching === false && st.after.error === 'boom', JSON.stringify(st.after));
   await ev(() => { const s = storeSrc.github; s.error = ''; s.note = ''; s.loading = false; });
 
-  // 5) Terminal: a busy shell keeps what was typed; a finished command does not pop a sheet over another tab
+  // 5) Terminal: a busy shell keeps what was typed; a finished command never pops a result sheet (the output is
+  // already right there in the terminal pane) - only a toast if the answer arrives on another tab.
   await ev(() => (switchView('terminal'), txShowPane('console'))); await sleep(100);
   await ev(() => { termShellRun = { id: 'sx', cmd: 'sleep 9' }; document.getElementById('termCmd').value = 'echo keep me'; termHistory = ['older']; });
   await ev(() => runTerminalCmd());
@@ -116,7 +117,7 @@ const { chromium, PAGE } = require('./lib/pw');
   console.log('   the answer arriving on another tab is a toast, not a sheet over that tab:', !(await ev(() => document.getElementById('commandResultsModal').classList.contains('show'))) && /see the ADB Console/.test(await toast()));
   await ev(() => { termShellRun = { id: 's2', cmd: 'ls' }; (switchView('terminal'), txShowPane('console')); });
   await ev(() => onShellDone('s2', 'out2')); await sleep(60);
-  console.log('   on the Console tab the report sheet opens as before:', await ev(() => document.getElementById('commandResultsModal').classList.contains('show')));
+  console.log('   on the Console tab itself, still no result sheet (no modal-on-success for an arbitrary command):', !(await ev(() => document.getElementById('commandResultsModal').classList.contains('show'))));
   await closeAll();
 
   // 6) Compare / nested state

@@ -23,8 +23,9 @@ const { chromium, PAGE } = require('./lib/pw');
   console.log('   lowercase-by-default (autocapitalize none/off):', caps === 'none' || caps === 'off');
 
   // ---- cheat sheet button opens modal with commands ----
-  console.log('2. cheat sheet button present:', await page.isVisible('button:has-text("Cheat Sheet")'));
-  await page.click('button:has-text("Cheat Sheet")'); await page.waitForTimeout(150);
+  // (the Terminal pane has its own, separate Cheat Sheet button now too - scoped to the Console pane here)
+  console.log('2. cheat sheet button present:', await page.isVisible('#txPaneConsole button:has-text("Cheat Sheet")'));
+  await page.click('#txPaneConsole button:has-text("Cheat Sheet")'); await page.waitForTimeout(150);
   console.log('   modal shown:', await page.evaluate(() => document.getElementById('cheatSheetModal').classList.contains('show')));
   const cats = await page.locator('#cheatSheetBody .cheat-cat').allInnerTexts();
   console.log('   categories:', cats.length, JSON.stringify(cats.slice(0, 4)));
@@ -48,13 +49,13 @@ const { chromium, PAGE } = require('./lib/pw');
   console.log('   inserted into termCmd:', JSON.stringify(val), '| no "adb shell" prefix:', !val.startsWith('adb '));
 
   // ---- a command with a placeholder gets inserted and is runnable ----
-  await page.click('button:has-text("Cheat Sheet")'); await page.waitForTimeout(100);
+  await page.click('#txPaneConsole button:has-text("Cheat Sheet")'); await page.waitForTimeout(100);
   await page.fill('#cheatSearch', 'force-stop'); await page.waitForTimeout(80);
   await page.locator('#cheatSheetBody .cheat-row').first().click(); await page.waitForTimeout(80);
   console.log('5. placeholder command inserted:', JSON.stringify(await page.inputValue('#termCmd')));
 
   // ---- full reference from the gist (JSONP) ----
-  await page.click('button:has-text("Cheat Sheet")'); await page.waitForTimeout(100);
+  await page.click('#txPaneConsole button:has-text("Cheat Sheet")'); await page.waitForTimeout(100);
   console.log('6. gist load button present:', await page.isVisible('#cheatGistBtn'));
   // simulate the JSONP callback firing (no network in sandbox) and confirm it renders
   await page.evaluate(() => { loadCheatGist(); window.__onPulimetGist({ div: '<div class="gist">MOCK GIST CONTENT</div>', stylesheet: '' }); });

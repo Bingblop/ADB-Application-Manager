@@ -46,7 +46,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.evaluate(() => closeInspector()); await page.waitForTimeout(200);
   // Terminal output
   await page.evaluate(() => (switchView('terminal'), txShowPane('console'))); await page.fill('#termCmd', 'pm list packages');
-  await page.evaluate(() => { runTerminalCmd(); closeCommandResultsModal(); }); await page.waitForTimeout(200);
+  await page.evaluate(() => runTerminalCmd()); await page.waitForTimeout(200);
   const term = await page.evaluate(() => { const r = document.createRange(); r.selectNodeContents(document.getElementById('termOutput')); const s = window.getSelection(); s.removeAllRanges(); s.addRange(r); return s.toString(); });
   console.log('terminal selection contains output:', term.includes('package:com.android.chrome'));
   console.log('errors:', JSON.stringify(errors));

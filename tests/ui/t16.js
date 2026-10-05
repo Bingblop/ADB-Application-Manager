@@ -47,11 +47,12 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.evaluate(() => { closeInspector(); openInspector('org.fdroid.fdroid'); }); await page.waitForTimeout(100);
   console.log('hint shown for fdroid (no update):', await page.isVisible('#sheetUpdateHint'));
   await page.evaluate(() => closeInspector());
-  // Toggle off + remember
+  // Off by default (a less cluttered list row); toggle on + remember
+  console.log('pill starts off, no version in the row by default:', !(await page.locator('#versionTogglePill').evaluate(e => e.classList.contains('active'))));
   await page.click('#versionTogglePill');
-  console.log('toggle off → row:', await label('org.fdroid.fdroid'));
+  console.log('toggle on → row:', await label('org.fdroid.fdroid'));
   await page.click('.filter-pill[data-filter="system"]');
-  console.log('toggle still off after filter change:', !(await page.locator('#versionTogglePill').evaluate(e => e.classList.contains('active'))));
+  console.log('toggle still on after filter change:', await page.locator('#versionTogglePill').evaluate(e => e.classList.contains('active')));
   const store = await page.evaluate(() => window.__st.store);
   const errs1 = page.__errors;
   page = await mk(store);
