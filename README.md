@@ -113,6 +113,7 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ## What's new in v7.9
 
+- **App icons** in the list (cached, press and hold to save one) and a roomier row.
 - **Expressive Animations**: Material 3 Expressive's springier motion across the app (Settings → Motion, on by default).
 - **Sync with Termux**: the in-app Termux shell matches your real one (aliases and functions included) and gets storage access in one tap.
 - **Add storage** in the file manager (SD card, USB drive, shared folders) and **Device Specs** in About.

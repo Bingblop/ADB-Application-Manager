@@ -58,8 +58,8 @@
     Enter on an arrow: the row moves to the top and the focus goes to the other arrow (the one pressed has nowhere to go): true {"row":"debloater","label":"Move UAD-NG Debloater down","first":"debloater"}
     and that one keeps working: true
     after a tap on an arrow the row is where it was on the screen (583 px, now 583 px), so the next tap moves the same row: true
-13. [320 px, scrolled] the tab bar sticks right under the header (header 87 px), and the top of its first line is not covered: true {"hdr":87,"tabs":57,"tabTop":87,"hdrBottom":87,"firstLineUncovered":true,"uadTop":"148px","pad":"152px"}
-    the Debloater action bar sticks right under the tab bar, and scroll-padding leaves room for both: true {"hdr":87,"tabs":57,"tabTop":87,"hdrBottom":87,"firstLineUncovered":true,"uadTop":"148px","pad":"152px"}
+13. [320 px, scrolled] the tab bar sticks right under the header (header 98 px), and the top of its first line is not covered: true {"hdr":98,"tabs":57,"tabTop":98,"hdrBottom":98,"firstLineUncovered":true,"uadTop":"159px","pad":"163px"}
+    the Debloater action bar sticks right under the tab bar, and scroll-padding leaves room for both: true {"hdr":98,"tabs":57,"tabTop":98,"hdrBottom":98,"firstLineUncovered":true,"uadTop":"159px","pad":"163px"}
 13. [360 px, scrolled] the tab bar sticks right under the header (header 87 px), and the top of its first line is not covered: true {"hdr":87,"tabs":57,"tabTop":87,"hdrBottom":87,"firstLineUncovered":true,"uadTop":"148px","pad":"152px"}
     the Debloater action bar sticks right under the tab bar, and scroll-padding leaves room for both: true {"hdr":87,"tabs":57,"tabTop":87,"hdrBottom":87,"firstLineUncovered":true,"uadTop":"148px","pad":"152px"}
 13. [412 px, scrolled] the tab bar sticks right under the header (header 67 px), and the top of its first line is not covered: true {"hdr":67,"tabs":57,"tabTop":67,"hdrBottom":67,"firstLineUncovered":true,"uadTop":"128px","pad":"132px"}

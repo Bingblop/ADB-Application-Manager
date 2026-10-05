@@ -81,7 +81,7 @@
         button, select, .tab-btn, .filter-pill, .toggle-pill, .filter-chip, .sheet-btn, .sheet-tab-pill,
         .mode-action-btn, .batch-grid-btn, .batch-tool-link, .btn-mini, .app-checkbox, .appearance-btn,
         .palette-preset-card, .stat-card, .status-badge, .perm-toggle-btn, .op-mode-btn, .switch-row,
-        .search-clear, .app-avatar, .sheet-avatar, .picker-bubble-btn, .sm-row, .fl-switch, .fl-name {
+        .search-clear, .sheet-avatar, .picker-bubble-btn, .sm-row, .fl-switch, .fl-name {
             -webkit-user-select: none;
             user-select: none;
         }
@@ -517,19 +517,19 @@
             border-color: var(--accent);
         }
 
-        .app-avatar {
-            width: 36px;
-            height: 36px;
+        /* The app's own icon, to the left of its info (drawn natively, cached on disk); press and hold saves it */
+        .app-icon {
+            width: 40px;
+            height: 40px;
             border-radius: 10px;
             background: var(--bg-surface);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 15px;
-            font-weight: 800;
-            color: var(--accent);
-            border: 1px solid var(--border-glass);
+            object-fit: contain;
             flex-shrink: 0;
+            margin-right: 10px;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: manipulation;
         }
 
         .app-meta {
@@ -617,7 +617,7 @@
         }
 
         /* Suspended apps look paused in the list */
-        .app-card.suspended .app-avatar {
+        .app-card.suspended .app-icon {
             opacity: 0.55;
             filter: grayscale(1);
         }
@@ -9939,6 +9939,7 @@ Type any command below (e.g. pm list packages -d)
             }
 
             container.innerHTML = filteredApps.slice(0, appsShown).map(appCardHtml).join('') + appsMoreHtml();
+            appsLoadIcons();
             appsWatchMore();
         }
 
@@ -9962,6 +9963,7 @@ Type any command below (e.g. pm list packages -d)
             const from = Math.min(filteredApps.length, appsShown);
             appsShown += APPS_PAGE;
             container.insertAdjacentHTML('beforeend', filteredApps.slice(from, appsShown).map(appCardHtml).join('') + appsMoreHtml());
+            appsLoadIcons();
             appsWatchMore();
         }
 
@@ -9976,9 +9978,55 @@ Type any command below (e.g. pm list packages -d)
             appsMoreObserver.observe(more);
         }
 
+        // ---------- App icons: drawn natively and cached on disk, kept in memory here; press and hold one to save it ----------
+        const appIconCache = {};
+        const appIconAsked = new Set();
+        function appsLoadIcons() {
+            if (!window.AndroidBridge || !window.AndroidBridge.loadAppIcons) return;
+            const want = [];
+            document.querySelectorAll('img.app-icon:not([src])').forEach(img => {
+                const pkg = img.getAttribute('data-icon');
+                if (pkg && !appIconAsked.has(pkg)) { appIconAsked.add(pkg); want.push(pkg); }
+            });
+            for (let i = 0; i < want.length; i += 24) {
+                try { window.AndroidBridge.loadAppIcons(JSON.stringify(want.slice(i, i + 24))); } catch (e) {}
+            }
+        }
+        window.onAppIcons = function (map) {
+            Object.keys(map || {}).forEach(pkg => { appIconCache[pkg] = map[pkg]; });
+            document.querySelectorAll('img.app-icon:not([src])').forEach(img => {
+                const u = appIconCache[img.getAttribute('data-icon')];
+                if (u) img.src = u;
+            });
+        };
+        window.onAppIconSaved = function (r) {
+            if (r && r.ok) showToast('Icon saved to ' + r.path);
+            else showToast('Could not save the icon' + (r && r.error ? ': ' + r.error : ''));
+        };
+        (function () {
+            let timer = null, startX = 0, startY = 0;
+            const clear = () => { if (timer) { clearTimeout(timer); timer = null; } };
+            document.addEventListener('contextmenu', e => { if (e.target.closest && e.target.closest('img.app-icon')) e.preventDefault(); });
+            document.addEventListener('pointerdown', e => {
+                const img = e.target.closest ? e.target.closest('img.app-icon') : null;
+                if (!img) return;
+                startX = e.clientX; startY = e.clientY;
+                clear();
+                timer = setTimeout(() => {
+                    timer = null;
+                    const pkg = img.getAttribute('data-icon');
+                    const app = allApps.find(a => a.pkg === pkg);
+                    haptic();
+                    if (!window.AndroidBridge || !window.AndroidBridge.saveAppIcon) { showToast('Needs the app build'); return; }
+                    window.AndroidBridge.saveAppIcon(pkg, app ? app.name : '');
+                }, 550);
+            });
+            document.addEventListener('pointermove', e => { if (timer && Math.hypot(e.clientX - startX, e.clientY - startY) > 10) clear(); });
+            ['pointerup', 'pointercancel', 'scroll'].forEach(ev => document.addEventListener(ev, clear, true));
+        })();
+
         function appCardHtml(app) {
             const isSelected = selectedPkgs.has(app.pkg);
-            const initial = (app.name && app.name.length > 0) ? firstChar(app.name, '?') : '?';
 
             let badges = '';
             if (app.isRunning) badges += '<span class="tag-badge tag-running">RUNNING</span>';
@@ -9992,6 +10040,7 @@ Type any command below (e.g. pm list packages -d)
             const pk = escapeHtml(app.pkg);
             return `
                 <div class="app-card ${isSelected ? 'selected' : ''} ${app.isSuspended ? 'suspended' : ''}" id="card_${pk}" data-pkg="${pk}">
+                    <img class="app-icon" alt="" draggable="false" data-icon="${pk}"${appIconCache[app.pkg] ? ` src="${appIconCache[app.pkg]}"` : ''}>
                     <div class="app-meta" onclick="toggleSelectPkg(this.parentElement.dataset.pkg)">
                         <div class="app-name">${escapeHtml(app.name)}</div>
                         <div class="app-pkg">${pk}</div>
@@ -9999,7 +10048,6 @@ Type any command below (e.g. pm list packages -d)
                     </div>
                     <div class="app-left" onclick="toggleSelectPkg(this.parentElement.dataset.pkg)">
                         <div class="app-checkbox">${isSelected ? '✓' : ''}</div>
-                        <div class="app-avatar">${escapeHtml(initial)}</div>
                     </div>
                     <div class="app-actions">
                         <button class="btn-mini" title="App Settings" aria-label="App Settings" onclick="openAppSettings(this.closest('.app-card').dataset.pkg)">⚙️</button>

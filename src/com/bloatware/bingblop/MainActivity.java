@@ -5979,6 +5979,63 @@ public class MainActivity extends Activity {
         } catch (Exception ignored) {}
     }
 
+    /** App icons for the list, kept on disk (files/icon_cache/<pkg>_<lastUpdateTime>.png, 96 px) so later launches skip the drawing. */
+    private File iconCacheDir() {
+        File d = new File(getFilesDir(), "icon_cache");
+        if (!d.isDirectory()) d.mkdirs();
+        return d;
+    }
+
+    private android.graphics.Bitmap renderAppIcon(String pkg, int px) throws Exception {
+        PackageManager pm = getPackageManager();
+        ApplicationInfo ai = pm.getApplicationInfo(pkg, PackageManager.MATCH_UNINSTALLED_PACKAGES);
+        android.graphics.drawable.Drawable d = pm.getApplicationIcon(ai);
+        android.graphics.Bitmap b = android.graphics.Bitmap.createBitmap(px, px, android.graphics.Bitmap.Config.ARGB_8888);
+        android.graphics.Canvas c = new android.graphics.Canvas(b);
+        d.setBounds(0, 0, px, px);
+        d.draw(c);
+        return b;
+    }
+
+    /** The cached PNG of {@code pkg}'s icon as a data: URI (drawn and cached on first use), or null when it has none. */
+    private String iconDataUri(String pkg) {
+        try {
+            long stamp = 0;
+            try {
+                stamp = getPackageManager().getPackageInfo(pkg, PackageManager.MATCH_UNINSTALLED_PACKAGES).lastUpdateTime;
+            } catch (Exception ignored) {}
+            File dir = iconCacheDir();
+            File f = new File(dir, pkg + "_" + stamp + ".png");
+            if (!f.isFile()) {
+                final String prefix = pkg + "_";
+                File[] old = dir.listFiles();
+                if (old != null) for (File o : old) {
+                    String n = o.getName();
+                    if (n.startsWith(prefix) && n.substring(prefix.length()).matches("\\d+\\.png")) o.delete();
+                }
+                android.graphics.Bitmap b = renderAppIcon(pkg, 96);
+                FileOutputStream out = new FileOutputStream(f);
+                try {
+                    b.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, out);
+                } finally {
+                    out.close();
+                }
+            }
+            java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+            java.io.FileInputStream in = new java.io.FileInputStream(f);
+            try {
+                byte[] buf = new byte[8192];
+                int n;
+                while ((n = in.read(buf)) > 0) bos.write(buf, 0, n);
+            } finally {
+                in.close();
+            }
+            return "data:image/png;base64," + android.util.Base64.encodeToString(bos.toByteArray(), android.util.Base64.NO_WRAP);
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
     /** Copies an app's APK (or base + splits as a .apks bundle) to Downloads. Result via window.onApkExtracted(json). */
     private void runExtractApk(final String pkg) {
         executor.submit(new Runnable() {
@@ -11732,6 +11789,65 @@ public class MainActivity extends Activity {
                 }
                 return "error";
             }
+            return "started";
+        }
+
+        /** Icons for the packages in {@code pkgsJson}, drawn off the page's thread and cached on disk. Answers arrive in chunks as window.onAppIcons({pkg: dataUri}). */
+        @JavascriptInterface
+        public String loadAppIcons(final String pkgsJson) {
+            if (!submitJob(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        JSONArray pkgs = new JSONArray(pkgsJson);
+                        JSONObject chunk = new JSONObject();
+                        for (int i = 0; i < pkgs.length(); i++) {
+                            String pkg = pkgs.optString(i, "");
+                            if (pkg.isEmpty()) continue;
+                            String uri = iconDataUri(pkg);
+                            if (uri != null) chunk.put(pkg, uri);
+                            if (chunk.length() >= 12 || i == pkgs.length() - 1) {
+                                if (chunk.length() > 0) notifyJs("window.onAppIcons && window.onAppIcons(" + chunk.toString() + ")");
+                                chunk = new JSONObject();
+                            }
+                        }
+                    } catch (Throwable ignored) {}
+                }
+            })) return "error";
+            return "started";
+        }
+
+        /** Saves an app's icon (256 px PNG) to Download/ADB App Manager/Icons. Result via window.onAppIconSaved(json{ok, pkg, path, error}). */
+        @JavascriptInterface
+        public String saveAppIcon(final String pkg, final String label) {
+            if (!submitJob(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject res = new JSONObject();
+                    Object[] target = null;
+                    try {
+                        res.put("pkg", pkg);
+                        android.graphics.Bitmap b = renderAppIcon(pkg, 256);
+                        String base = (label == null || label.trim().isEmpty() ? pkg : label.trim() + " (" + pkg + ")");
+                        target = openDownloadOutput(base + ".png", "image/png", "Icons");
+                        java.io.OutputStream out = (java.io.OutputStream) target[0];
+                        try {
+                            b.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, out);
+                        } finally {
+                            out.close();
+                        }
+                        res.put("ok", true);
+                        res.put("path", (String) target[1]);
+                    } catch (Throwable t) {
+                        deleteDownloadTarget(target);
+                        try {
+                            res.put("ok", false);
+                            res.put("error", errMsg(t));
+                        } catch (Exception ignored) {}
+                    }
+                    notifyJs("window.onAppIconSaved && window.onAppIconSaved(" + res.toString() + ")");
+                }
+            })) return "error";
             return "started";
         }
 

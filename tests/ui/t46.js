@@ -108,7 +108,7 @@ const MOCK = fs.readFileSync(fixture('uad_mock.json'), 'utf8');
   // 8) HTML injection: labels / file names are text, never markup or script.
   await page.evaluate(() => switchView('apps')); await sleep(200);
   const names = await page.locator('.app-card .app-name').allInnerTexts();
-  const imgs = await page.locator('.app-card img').count();
+  const imgs = await page.locator('.app-card img:not(.app-icon)').count();
   const pwned1 = await page.evaluate(() => window.__pwned || 0);
   console.log('8. app label with HTML shows as plain text, no element injected:', imgs === 0 && names.some(n => n.includes('<img src=x onerror=') && n.includes('<b>bold</b>')) && pwned1 === 0, JSON.stringify(names.filter(n => /Evil|Quote/.test(n))));
   const tapOk = await page.evaluate(() => { toggleSelectPkg(document.querySelector('.app-card[data-pkg="com.evil.label"] .app-left').parentElement.dataset.pkg); return selectedPkgs.has('com.evil.label'); });

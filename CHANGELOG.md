@@ -1,5 +1,12 @@
 # Changelog
 
+## v7.9.16-Pro (versionCode 806)
+
+- **App icons in the list.** Every row now shows the app's own icon to the left of its name, package and badges, and the
+  letter box is gone, which gives the text more room. Icons are drawn off the page's thread and cached on the phone
+  (re-drawn only when an app updates), so later launches show them straight away. Press and hold an icon to save it as a
+  PNG to Download/ADB App Manager/Icons.
+
 ## v7.9.15-Pro (versionCode 805)
 
 - **Expressive Animations.** A new "Motion" card in Settings, right below the theme cards, holds one switch (on by
