@@ -1,5 +1,21 @@
 # Changelog
 
+## v7.9.18-Pro (versionCode 808)
+
+- **Added storage (SD card, USB drive, another app's folder) does more.** Copy and Move now work there: pick them from a
+  file's menu or select several items, then open the target folder and tap Paste - in, out of, or between added
+  storages, with the usual "name already taken" choices and a Stop button. Multi-select is on in added storage too.
+  Pictures, PDFs, fonts and archives open in their viewers, and Open with, Share and Extract work: the file is copied
+  once to the app's cache first (up to 300 MB) and reused until the original changes. Search works there as well, by name,
+  type, size and date (content: and archive: look inside files, so they are skipped in added storage).
+- **Icon packs now dress apps they do not cover.** When the pack ships a background, mask or overlay for apps it has no
+  icon for, such an app's own icon is shown on that background, scaled the way the pack asks, so the list looks uniform.
+  Settings, Icon pack also has a "Clear icon cache" button.
+- **Fewer false "failed" results.** An app launch or app action is only reported as failed when the output says so at the
+  start of a line ("Error: ...", "Error type 3", an exception, "No activities found"), so an app whose name or package
+  contains "error" or "failed" no longer shows as a failure. The file manager's own commands now confirm success with a
+  marker on a line of its own instead of searching the output for "OK".
+
 ## v7.9.17-Pro (versionCode 807)
 
 - **Icon pack setting.** A new "Icon pack" card in Settings, right under Font, lists the icon packs installed on the

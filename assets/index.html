@@ -3593,7 +3593,7 @@
                     <button class="batch-tool-link" onclick="fmSelectAll()">All</button>
                     <button class="batch-tool-link" onclick="fmClipSet('cp')">Copy</button>
                     <button class="batch-tool-link" onclick="fmClipSet('mv')">Move</button>
-                    <button class="batch-tool-link" onclick="czOpenSelected()">Compress</button>
+                    <button class="batch-tool-link" id="fmSelCompressBtn" onclick="czOpenSelected()">Compress</button>
                     <button class="batch-tool-link" style="color:#FF5252;" onclick="fmDeleteSelected()">Delete</button>
                     <button class="batch-tool-link" onclick="fmSelExit()">✕</button>
                 </div>
@@ -4534,8 +4534,11 @@
 
             <div class="color-card" id="iconPackCard">
                 <div class="color-card-title">Icon pack</div>
-                <div class="color-card-subtitle">Draw the app icons in the list with an icon pack you have installed (ADW, Nova, Apex and Go packs). Apps the pack does not cover keep their own icon.</div>
+                <div class="color-card-subtitle">Draw the app icons in the list with an icon pack you have installed (ADW, Nova, Apex and Go packs). Apps the pack does not cover get the pack's background and shape when it has one, and otherwise keep their own icon.</div>
                 <select class="op-select" id="iconPackSelect" aria-label="Icon pack" onchange="setIconPack(this.value)"></select>
+                <div class="mode-btn-row" style="margin-top:12px;">
+                    <button class="mode-action-btn" id="iconCacheClearBtn" onclick="clearIconCache()">Clear icon cache</button>
+                </div>
             </div>
 
             <div class="color-card" id="featureCard">
@@ -10008,6 +10011,16 @@ Type any command below (e.g. pm list packages -d)
             appsLoadIcons();
             showToast(iconPack ? 'Icon pack applied' : 'Default icons');
         }
+        function clearIconCache() {
+            haptic();
+            let n = 0;
+            try { n = Number(window.AndroidBridge && window.AndroidBridge.clearAppIconCache && window.AndroidBridge.clearAppIconCache()) || 0; } catch (e) {}
+            Object.keys(appIconCache).forEach(k => delete appIconCache[k]);
+            appIconAsked.clear();
+            document.querySelectorAll('img.app-icon').forEach(img => img.removeAttribute('src'));
+            appsLoadIcons();
+            showToast(n ? 'Icon cache cleared, icons are being redrawn' : 'Icon cache was already empty');
+        }
         function appsLoadIcons() {
             if (!window.AndroidBridge || !window.AndroidBridge.loadAppIcons) return;
             const want = [];
@@ -11574,8 +11587,8 @@ Type any command below (e.g. pm list packages -d)
             if (!window.AndroidBridge || !window.AndroidBridge.executeAppAction) { showToast('Needs the app build'); return; }
             let out = '';
             try { out = String(window.AndroidBridge.executeAppAction('launch', pkg) || ''); } catch (e) { out = 'Error: ' + String(e && e.message || e); }
-            const low = out.toLowerCase();
-            const failed = low.includes('error') || low.includes('failed') || low.includes('exception') || low.includes('aborted') || low.includes('no activities');
+            // a failure is a line that starts that way ("Error: ...", "Error type 3", "No activities found"): an app called "Error Log" is not one
+            const failed = /^\s*(error\b|error type\b|exception\b|(java|android)\.[a-z.]*(exception|error)\b|security\s*exception|failure\b|failed\b|aborted\b|status:\s*(failed|error)|warning: activity not started|no activities found|permission denial)/im.test(out);
             if (failed) showToast(name + " can't be opened from here" + (out.trim() ? ': ' + out.trim().split('\n')[0].slice(0, 80) : ''));
             else showToast('Opening ' + name + '…');
         }
@@ -11922,6 +11935,8 @@ Type any command below (e.g. pm list packages -d)
             }
             const bar = document.getElementById('fmSelBar');
             if (bar) bar.style.display = fmSelMode ? '' : 'none';
+            const cz = document.getElementById('fmSelCompressBtn');
+            if (cz) cz.style.display = fmPath.startsWith('content://') ? 'none' : '';     // compressing reads through java.io.File, which added storage is not
             const cnt = document.getElementById('fmSelCount');
             if (cnt) cnt.innerText = fmSelCountText();
             const btn = document.getElementById('fmSelectBtn');
@@ -11929,7 +11944,6 @@ Type any command below (e.g. pm list packages -d)
         }
 
         function fmSelEnter(full) {
-            if (fmPath.startsWith('content://')) { showToast("Multi-select isn't available yet in added storage - use an item's own ⋯ menu"); return; }
             fmSelMode = true;
             if (full) fmSel.add(full);
             fmSelRender();
@@ -12029,6 +12043,15 @@ Type any command below (e.g. pm list packages -d)
             showToast(fmClip.paths.length + ' item' + (fmClip.paths.length === 1 ? '' : 's') + (op === 'mv' ? ' ready to move' : ' ready to copy'));
         }
 
+        function fmClipOne(op) {
+            if (!fmActionTarget) return;
+            haptic();
+            fmClip = { op, paths: [fmActionTarget.full] };
+            closeFmAction();
+            fmClipRender();
+            showToast(op === 'mv' ? 'Ready to move: open the target folder, then tap Paste' : 'Ready to copy: open the target folder, then tap Paste');
+        }
+
         function fmClipClear() { haptic(); fmClip = null; fmClipRender(); }
 
         function fmBatchStart(op, paths, dest, policy) {
@@ -12048,9 +12071,11 @@ Type any command below (e.g. pm list packages -d)
             if (!fmClip) return;
             if (!fmCanWork('Paste')) return;
             // something already in this folder can't be copied or moved onto itself
-            const here = fmNormalizePath(fmPath);
+            const inSaf = fmPath.startsWith('content://');
+            const here = inSaf ? fmPath : fmNormalizePath(fmPath);          // an added-storage folder is a document URI, never folded like a path
             // a move into the folder an item is already in does nothing; a copy there is a duplicate (the dialog below offers Keep both)
-            const paths = fmClip.op === 'mv' ? fmClip.paths.filter(p => fmParent(p) !== here) : fmClip.paths.slice();
+            // (added storage has no parent lookup: the app skips an item that is already in the folder)
+            const paths = fmClip.op === 'mv' && !inSaf ? fmClip.paths.filter(p => p.startsWith('content://') || fmParent(p) !== here) : fmClip.paths.slice();
             if (!paths.length) { showToast('That is already in this folder'); return; }
             const existing = new Set(fmListedNames());
             const clash = paths.filter(p => existing.has(fmBase(p)));
@@ -12141,18 +12166,18 @@ Type any command below (e.g. pm list packages -d)
             const btns = [];
             if (!isDir && !isSaf && /\.(apk|apks|apkm|xapk)$/i.test(name)) btns.push(`<button class="batch-grid-btn accent" onclick="fmInstallFile()">Install</button>`);
             if (!isDir && !isSaf && /\.apk$/i.test(name)) btns.push(`<button class="batch-grid-btn" onclick="fmSignFile()">Sign…</button>`);
-            // Added storage (SAF) can view/edit text in place; the kind-specific viewers, Open With, Share, archive
-            // and compress all stream through java.io.File today and have no SAF-aware path yet.
-            if (!isDir && (!isSaf || kind === 'text' || kind === 'other')) btns.push(`<button class="batch-grid-btn" onclick="fmViewFile()">${!isSaf && ARC_EXT.test(name) ? 'View contents' : 'View'}</button>`);
+            // Added storage (SAF) views and edits text in place; the other viewers, Open with, Share and the archive tools work on a copy kept in the app's cache.
+            if (!isDir) btns.push(`<button class="batch-grid-btn" onclick="fmViewFile()">${!isSaf && ARC_EXT.test(name) ? 'View contents' : 'View'}</button>`);
             if (!isDir && (kind === 'text' || kind === 'other')) btns.push(`<button class="batch-grid-btn accent" onclick="fmEditOpen()">Edit</button>`);
-            if (!isDir && !isSaf) btns.push(`<button class="batch-grid-btn" onclick="fmOpenWith()">Open with…</button>`);
-            if (!isDir && !isSaf) btns.push(`<button class="batch-grid-btn" onclick="fmShareFile()">Share</button>`);
-            if (!isDir && !isSaf && ARC_EXT.test(name)) btns.push(`<button class="batch-grid-btn" onclick="fmExtractFile()">Extract…</button>`);
-            if (!isDir && !isSaf && !ARC_EXT.test(name)) btns.push(`<button class="batch-grid-btn" onclick="fmOpenAsArchive()">Open as archive</button>`);
+            if (!isDir) btns.push(`<button class="batch-grid-btn" onclick="fmOpenWith()">Open with…</button>`);
+            if (!isDir) btns.push(`<button class="batch-grid-btn" onclick="fmShareFile()">Share</button>`);
+            if (!isDir && ARC_EXT.test(name)) btns.push(`<button class="batch-grid-btn" onclick="fmExtractFile()">Extract…</button>`);
+            if (!isDir && !ARC_EXT.test(name)) btns.push(`<button class="batch-grid-btn" onclick="fmOpenAsArchive()">Open as archive</button>`);
             if (!isSaf) btns.push(`<button class="batch-grid-btn" onclick="czOpenOne()">Compress…</button>`);
             btns.push(`<button class="batch-grid-btn" onclick="fmStartDest('rename')">Rename</button>`);
-            if (!isSaf) btns.push(`<button class="batch-grid-btn" onclick="fmStartDest('cp')">Copy</button>`);
-            if (!isSaf) btns.push(`<button class="batch-grid-btn" onclick="fmStartDest('mv')">Move</button>`);
+            // added storage has no path to type: Copy and Move put the item on the clipboard, then Paste goes in the folder you open
+            btns.push(isSaf ? `<button class="batch-grid-btn" onclick="fmClipOne('cp')">Copy</button>` : `<button class="batch-grid-btn" onclick="fmStartDest('cp')">Copy</button>`);
+            btns.push(isSaf ? `<button class="batch-grid-btn" onclick="fmClipOne('mv')">Move</button>` : `<button class="batch-grid-btn" onclick="fmStartDest('mv')">Move</button>`);
             btns.push(`<button class="batch-grid-btn danger" onclick="fmStartDest('rm')">Delete</button>`);
             document.getElementById('fmActionBtns').innerHTML = btns.join('');
             haptic();
@@ -12239,6 +12264,7 @@ Type any command below (e.g. pm list packages -d)
             // .apk / .zip / package files open as a folder tree (nothing is extracted). If one turns out not to be a
             // readable archive, fall back to the plain text viewer below.
             const vk = fmKind(fmActionTarget.name);
+            if (String(fmActionTarget.full).startsWith('content://') && ((vk !== 'text' && vk !== 'other') || ARC_EXT.test(fmActionTarget.name)) && fmNeedLocal(fmViewFile)) return;
             if (vk === 'image') { fmShowImage(); return; }
             if (vk === 'pdf') { fmShowPdf(); return; }
             if (vk === 'font') { fmShowFont(); return; }
@@ -12255,6 +12281,7 @@ Type any command below (e.g. pm list packages -d)
             fmViewText();
         }
         function fmOpenAsArchive() {
+            if (fmNeedLocal(fmOpenAsArchive)) return;
             if (!fmActionTarget) return;
             arcOpen(fmActionTarget.full, r => showToast((r && r.error) || 'Not a readable archive'));
         }
@@ -12369,7 +12396,7 @@ Type any command below (e.g. pm list packages -d)
             const q = (document.getElementById('fmSearchInput').value || '').trim();
             if (!q) { showToast('Type what to search for'); return; }
             if (!window.AndroidBridge || !window.AndroidBridge.fmSearch) { showToast('Needs the app build'); return; }
-            if (!fileAccessGranted() && !isPrivilegedActive) { promptFileAccess('To search the files on this phone, this app needs All-files access.', () => fmSearchGo(), true); return; }
+            if (!fileAccessGranted() && !isPrivilegedActive && !fmSearchRoot().startsWith('content://')) { promptFileAccess('To search the files on this phone, this app needs All-files access.', () => fmSearchGo(), true); return; }
             haptic();
             fmSelExit();
             fmSearchQuery = q;
@@ -12645,14 +12672,38 @@ Type any command below (e.g. pm list packages -d)
         function fmArchiveCancelTap() { haptic(); try { window.AndroidBridge.archiveCancel(); } catch (e) {} const t = document.getElementById('fmBatchText'); if (t) t.innerText = 'Stopping…'; }
         // Extract… on a zip-format file in the file manager: the whole archive, without opening it first
         function fmExtractFile() {
+            if (fmNeedLocal(fmExtractFile)) return;
             if (!fmActionTarget || fmActionTarget.isDir) return;
             const t = fmActionTarget;
             closeFmAction();
-            extractOpen({ src: t.full, entry: '', name: t.name, whole: true, deletable: /^\/(storage|sdcard)\//.test(t.full) });
+            extractOpen({ src: t.full, entry: '', name: t.name, whole: true, deletable: !t.safUri && /^\/(storage|sdcard)\//.test(t.full), parent: t.safUri ? '/storage/emulated/0/Download' : undefined });
         }
 
         // ---- File manager: Open with, Share, the text editor, and viewers for pictures, PDF and fonts ----
+        // Added storage is read through its own grant, but the viewers, Open with, Share and the archive tools read files by path:
+        // the file is copied to the app's cache first (one copy is reused while the original is unchanged) and then handled as usual.
+        let fmStageWant = null;
+        function fmNeedLocal(fn) {
+            const t = fmActionTarget;
+            if (!t || !String(t.full).startsWith('content://')) return false;
+            if (!window.AndroidBridge || !window.AndroidBridge.fmStageSaf) { showToast('Needs the app build'); return true; }
+            let st = 'error';
+            try { st = window.AndroidBridge.fmStageSaf(t.full); } catch (e) { st = 'error'; }
+            if (st !== 'started') { showToast('Could not read this file'); return true; }
+            fmStageWant = { fn, target: t };
+            showToast('Getting the file…');
+            return true;
+        }
+        window.onFmSafStaged = function (r) {
+            const w = fmStageWant;
+            if (!w || !r || r.uri !== w.target.full) return;
+            fmStageWant = null;
+            if (!r.ok) { showToast(r.error || 'Could not read this file'); return; }
+            fmActionTarget = { full: r.path, isDir: false, name: w.target.name, safUri: w.target.full };
+            w.fn();
+        };
         function fmOpenWith() {
+            if (fmNeedLocal(fmOpenWith)) return;
             if (!fmActionTarget || fmActionTarget.isDir) return;
             if (!window.AndroidBridge || !window.AndroidBridge.fmOpenWith) { showToast('Needs the app build'); return; }
             haptic();
@@ -12664,6 +12715,7 @@ Type any command below (e.g. pm list packages -d)
             if (d && d.ok === false) showToast(d.error || 'Could not open the file');
         };
         function fmShareFile() {
+            if (fmNeedLocal(fmShareFile)) return;
             if (!fmActionTarget || fmActionTarget.isDir) return;
             haptic();
             let r = '';
