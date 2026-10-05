@@ -5980,16 +5980,94 @@ public class MainActivity extends Activity {
     }
 
     /** App icons for the list, kept on disk (files/icon_cache/<pkg>_<lastUpdateTime>.png, 96 px) so later launches skip the drawing. */
-    private File iconCacheDir() {
-        File d = new File(getFilesDir(), "icon_cache");
+    private File iconCacheDir(String pack) {
+        File d = new File(getFilesDir(), pack == null || pack.isEmpty() ? "icon_cache" : "icon_cache_" + pack.replaceAll("[^A-Za-z0-9._]", "_"));
         if (!d.isDirectory()) d.mkdirs();
         return d;
     }
 
-    private android.graphics.Bitmap renderAppIcon(String pkg, int px) throws Exception {
+    private static final String[] ICON_PACK_ACTIONS = {"org.adw.launcher.THEMES", "com.novalauncher.THEME", "com.anddoes.launcher.THEME", "com.gau.go.launcherex.theme"};
+    private final Map<String, Map<String, String>> iconPackFilters = new java.util.HashMap<String, Map<String, String>>();
+
+    /** Installed icon packs (the ADW / Nova / Apex / Go theme convention): [{pkg, label}]. */
+    private String listIconPacks() {
+        JSONArray out = new JSONArray();
+        try {
+            PackageManager pm = getPackageManager();
+            java.util.Set<String> seen = new java.util.HashSet<String>();
+            for (String action : ICON_PACK_ACTIONS) {
+                for (android.content.pm.ResolveInfo ri : pm.queryIntentActivities(new Intent(action), 0)) {
+                    String pkg = ri.activityInfo.packageName;
+                    if (!seen.add(pkg)) continue;
+                    out.put(new JSONObject().put("pkg", pkg).put("label", String.valueOf(ri.loadLabel(pm))));
+                }
+            }
+        } catch (Throwable ignored) {}
+        return out.toString();
+    }
+
+    /** What an icon pack's appfilter.xml maps: "ComponentInfo{pkg/cls}" and bare "pkg" to a drawable name. */
+    private synchronized Map<String, String> iconPackFilter(String pack) {
+        Map<String, String> m = iconPackFilters.get(pack);
+        if (m != null) return m;
+        m = new java.util.HashMap<String, String>();
+        try {
+            Resources res = getPackageManager().getResourcesForApplication(pack);
+            org.xmlpull.v1.XmlPullParser xp = null;
+            int id = res.getIdentifier("appfilter", "xml", pack);
+            if (id != 0) {
+                xp = res.getXml(id);
+            } else {
+                try {
+                    xp = android.util.Xml.newPullParser();
+                    xp.setInput(res.getAssets().open("appfilter.xml"), "UTF-8");
+                } catch (Exception noAsset) {
+                    xp = null;
+                }
+            }
+            if (xp != null) {
+                int ev;
+                while ((ev = xp.next()) != org.xmlpull.v1.XmlPullParser.END_DOCUMENT) {
+                    if (ev != org.xmlpull.v1.XmlPullParser.START_TAG || !"item".equals(xp.getName())) continue;
+                    String comp = xp.getAttributeValue(null, "component");
+                    String dr = xp.getAttributeValue(null, "drawable");
+                    if (comp == null || dr == null || dr.isEmpty()) continue;
+                    if (!m.containsKey(comp)) m.put(comp, dr);
+                    int slash = comp.indexOf('/');
+                    if (comp.startsWith("ComponentInfo{") && slash > 14) {
+                        String pkg = comp.substring(14, slash);
+                        if (!m.containsKey(pkg)) m.put(pkg, dr);
+                    }
+                }
+            }
+        } catch (Throwable ignored) {}
+        iconPackFilters.put(pack, m);
+        return m;
+    }
+
+    private android.graphics.drawable.Drawable iconPackDrawable(String pack, String pkg) {
+        try {
+            PackageManager pm = getPackageManager();
+            Map<String, String> f = iconPackFilter(pack);
+            String name = null;
+            Intent li = pm.getLaunchIntentForPackage(pkg);
+            if (li != null && li.getComponent() != null) name = f.get("ComponentInfo{" + li.getComponent().getPackageName() + "/" + li.getComponent().getClassName() + "}");
+            if (name == null) name = f.get(pkg);
+            if (name == null) return null;
+            Resources res = pm.getResourcesForApplication(pack);
+            int id = res.getIdentifier(name, "drawable", pack);
+            if (id == 0) id = res.getIdentifier(name, "mipmap", pack);
+            return id == 0 ? null : res.getDrawable(id, null);
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    /** The icon of {@code pkg} at px x px: from the icon pack {@code pack} when it has one for the app, else the app's own. */
+    private android.graphics.Bitmap renderAppIcon(String pkg, int px, String pack) throws Exception {
         PackageManager pm = getPackageManager();
-        ApplicationInfo ai = pm.getApplicationInfo(pkg, PackageManager.MATCH_UNINSTALLED_PACKAGES);
-        android.graphics.drawable.Drawable d = pm.getApplicationIcon(ai);
+        android.graphics.drawable.Drawable d = pack == null || pack.isEmpty() ? null : iconPackDrawable(pack, pkg);
+        if (d == null) d = pm.getApplicationIcon(pm.getApplicationInfo(pkg, PackageManager.MATCH_UNINSTALLED_PACKAGES));
         android.graphics.Bitmap b = android.graphics.Bitmap.createBitmap(px, px, android.graphics.Bitmap.Config.ARGB_8888);
         android.graphics.Canvas c = new android.graphics.Canvas(b);
         d.setBounds(0, 0, px, px);
@@ -5997,14 +6075,20 @@ public class MainActivity extends Activity {
         return b;
     }
 
-    /** The cached PNG of {@code pkg}'s icon as a data: URI (drawn and cached on first use), or null when it has none. */
-    private String iconDataUri(String pkg) {
+    /** The cached PNG of {@code pkg}'s icon (in {@code pack} when given) as a data: URI, drawn and cached on first use; null when it has none. */
+    private String iconDataUri(String pkg, String pack) {
         try {
             long stamp = 0;
+            PackageManager pm = getPackageManager();
             try {
-                stamp = getPackageManager().getPackageInfo(pkg, PackageManager.MATCH_UNINSTALLED_PACKAGES).lastUpdateTime;
+                stamp = pm.getPackageInfo(pkg, PackageManager.MATCH_UNINSTALLED_PACKAGES).lastUpdateTime;
             } catch (Exception ignored) {}
-            File dir = iconCacheDir();
+            if (pack != null && !pack.isEmpty()) {
+                try {
+                    stamp += pm.getPackageInfo(pack, 0).lastUpdateTime;
+                } catch (Exception ignored) {}
+            }
+            File dir = iconCacheDir(pack);
             File f = new File(dir, pkg + "_" + stamp + ".png");
             if (!f.isFile()) {
                 final String prefix = pkg + "_";
@@ -6013,7 +6097,7 @@ public class MainActivity extends Activity {
                     String n = o.getName();
                     if (n.startsWith(prefix) && n.substring(prefix.length()).matches("\\d+\\.png")) o.delete();
                 }
-                android.graphics.Bitmap b = renderAppIcon(pkg, 96);
+                android.graphics.Bitmap b = renderAppIcon(pkg, 96, pack);
                 FileOutputStream out = new FileOutputStream(f);
                 try {
                     b.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, out);
@@ -11792,9 +11876,15 @@ public class MainActivity extends Activity {
             return "started";
         }
 
+        /** Installed icon packs as JSON [{pkg, label}]. */
+        @JavascriptInterface
+        public String getIconPacks() {
+            return listIconPacks();
+        }
+
         /** Icons for the packages in {@code pkgsJson}, drawn off the page's thread and cached on disk. Answers arrive in chunks as window.onAppIcons({pkg: dataUri}). */
         @JavascriptInterface
-        public String loadAppIcons(final String pkgsJson) {
+        public String loadAppIcons(final String pkgsJson, final String pack) {
             if (!submitJob(new Runnable() {
                 @Override
                 public void run() {
@@ -11804,7 +11894,7 @@ public class MainActivity extends Activity {
                         for (int i = 0; i < pkgs.length(); i++) {
                             String pkg = pkgs.optString(i, "");
                             if (pkg.isEmpty()) continue;
-                            String uri = iconDataUri(pkg);
+                            String uri = iconDataUri(pkg, pack);
                             if (uri != null) chunk.put(pkg, uri);
                             if (chunk.length() >= 12 || i == pkgs.length() - 1) {
                                 if (chunk.length() > 0) notifyJs("window.onAppIcons && window.onAppIcons(" + chunk.toString() + ")");
@@ -11819,7 +11909,7 @@ public class MainActivity extends Activity {
 
         /** Saves an app's icon (256 px PNG) to Download/ADB App Manager/Icons. Result via window.onAppIconSaved(json{ok, pkg, path, error}). */
         @JavascriptInterface
-        public String saveAppIcon(final String pkg, final String label) {
+        public String saveAppIcon(final String pkg, final String label, final String pack) {
             if (!submitJob(new Runnable() {
                 @Override
                 public void run() {
@@ -11827,7 +11917,7 @@ public class MainActivity extends Activity {
                     Object[] target = null;
                     try {
                         res.put("pkg", pkg);
-                        android.graphics.Bitmap b = renderAppIcon(pkg, 256);
+                        android.graphics.Bitmap b = renderAppIcon(pkg, 256, pack);
                         String base = (label == null || label.trim().isEmpty() ? pkg : label.trim() + " (" + pkg + ")");
                         target = openDownloadOutput(base + ".png", "image/png", "Icons");
                         java.io.OutputStream out = (java.io.OutputStream) target[0];

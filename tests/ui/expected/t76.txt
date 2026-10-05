@@ -9,7 +9,7 @@
 2. the header button is a gear called Settings (not the colours palette): true {"text":"⚙","label":"Settings","role":"button"}
    it opens Settings, no tab is lit and the gear shows that you are there: true {"view":"prefs","anyTab":false,"gearOn":true}
    the gear goes dark again on a tab: true
-3. Settings: the language at the very top, then Appearance and the colour cards, the Feature List after them: true ["Language","Appearance","Curated Theme Palettes","Motion","Font","Feature List"]
+3. Settings: the language at the very top, then Appearance and the colour cards, the Feature List after them: true ["Language","Appearance","Curated Theme Palettes","Motion","Font","Icon pack","Feature List"]
    eleven rows, every tab except Application Manager and About, in the tab bar order, all on: true ["Saved Applications","UAD-NG Debloater","APK Installer","File Manager","Command-Line Interface","Hidden Settings","RRO/Monet Customization","App Updater","App Stores","Logcat Viewer","Task Manager"]
    the first row cannot move up and the last cannot move down: true
    the names are the full names: true

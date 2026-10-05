@@ -1,5 +1,12 @@
 # Changelog
 
+## v7.9.17-Pro (versionCode 807)
+
+- **Icon pack setting.** A new "Icon pack" card in Settings, right under Font, lists the icon packs installed on the
+  phone (the ADW, Nova, Apex and Go theme convention). Pick one and the list's icons are drawn from it; an app the
+  pack does not cover keeps its own icon, "Default icons" goes back, and each pack's icons are cached separately
+  (refreshed when the pack or the app updates). Press and hold still saves the icon shown.
+
 ## v7.9.16-Pro (versionCode 806)
 
 - **App icons in the list.** Every row now shows the app's own icon to the left of its name, package and badges, and the

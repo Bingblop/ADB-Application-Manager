@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.bloatware.bingblop"
-    android:versionCode="806"
-    android:versionName="7.9.16-Pro">
+    android:versionCode="807"
+    android:versionName="7.9.17-Pro">
 
     <uses-sdk
         android:minSdkVersion="26"
@@ -39,6 +39,19 @@
         <package android:name="com.termux" />
         <intent>
             <action android:name="android.intent.action.MAIN" />
+        </intent>
+        <!-- Icon packs (the ADW / Nova / Apex / Go theme convention), for Settings -> Icon pack -->
+        <intent>
+            <action android:name="org.adw.launcher.THEMES" />
+        </intent>
+        <intent>
+            <action android:name="com.novalauncher.THEME" />
+        </intent>
+        <intent>
+            <action android:name="com.anddoes.launcher.THEME" />
+        </intent>
+        <intent>
+            <action android:name="com.gau.go.launcherex.theme" />
         </intent>
     </queries>
 

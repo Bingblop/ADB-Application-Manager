@@ -4532,6 +4532,12 @@
                 </div>
             </div>
 
+            <div class="color-card" id="iconPackCard">
+                <div class="color-card-title">Icon pack</div>
+                <div class="color-card-subtitle">Draw the app icons in the list with an icon pack you have installed (ADW, Nova, Apex and Go packs). Apps the pack does not cover keep their own icon.</div>
+                <select class="op-select" id="iconPackSelect" aria-label="Icon pack" onchange="setIconPack(this.value)"></select>
+            </div>
+
             <div class="color-card" id="featureCard">
                 <div class="color-card-title">Feature List</div>
                 <div class="color-card-subtitle">Turn a tab off to take it out of the tab bar and use the arrows to put the tabs in the order you like. Application Manager and About always stay where they are.</div>
@@ -6595,6 +6601,7 @@ Type any command below (e.g. pm list packages -d)
             });
             const gear = document.getElementById('prefsHeaderBtn');
             if (gear) gear.classList.toggle('active', viewName === 'prefs');
+            if (viewName === 'prefs') iconPackRender();
 
             document.querySelectorAll('.view-content').forEach(v => {
                 v.classList.remove('active');
@@ -9981,6 +9988,26 @@ Type any command below (e.g. pm list packages -d)
         // ---------- App icons: drawn natively and cached on disk, kept in memory here; press and hold one to save it ----------
         const appIconCache = {};
         const appIconAsked = new Set();
+        let iconPack = kvGet('icon_pack', '') || '';
+        function iconPackRender() {
+            const sel = document.getElementById('iconPackSelect');
+            if (!sel) return;
+            let packs = [];
+            try { packs = JSON.parse((window.AndroidBridge && window.AndroidBridge.getIconPacks && window.AndroidBridge.getIconPacks()) || '[]'); } catch (e) {}
+            if (iconPack && !packs.some(p => p.pkg === iconPack)) { iconPack = ''; kvSet('icon_pack', ''); }
+            sel.innerHTML = '<option value="">Default icons</option>' + packs.map(p => '<option translate="no" value="' + escapeHtml(p.pkg) + '"' + (p.pkg === iconPack ? ' selected' : '') + '>' + escapeHtml(p.label) + '</option>').join('');
+            sel.value = iconPack;
+        }
+        function setIconPack(pkg) {
+            haptic();
+            iconPack = pkg || '';
+            kvSet('icon_pack', iconPack);
+            Object.keys(appIconCache).forEach(k => delete appIconCache[k]);
+            appIconAsked.clear();
+            document.querySelectorAll('img.app-icon').forEach(img => img.removeAttribute('src'));
+            appsLoadIcons();
+            showToast(iconPack ? 'Icon pack applied' : 'Default icons');
+        }
         function appsLoadIcons() {
             if (!window.AndroidBridge || !window.AndroidBridge.loadAppIcons) return;
             const want = [];
@@ -9989,7 +10016,7 @@ Type any command below (e.g. pm list packages -d)
                 if (pkg && !appIconAsked.has(pkg)) { appIconAsked.add(pkg); want.push(pkg); }
             });
             for (let i = 0; i < want.length; i += 24) {
-                try { window.AndroidBridge.loadAppIcons(JSON.stringify(want.slice(i, i + 24))); } catch (e) {}
+                try { window.AndroidBridge.loadAppIcons(JSON.stringify(want.slice(i, i + 24)), iconPack); } catch (e) {}
             }
         }
         window.onAppIcons = function (map) {
@@ -10018,7 +10045,7 @@ Type any command below (e.g. pm list packages -d)
                     const app = allApps.find(a => a.pkg === pkg);
                     haptic();
                     if (!window.AndroidBridge || !window.AndroidBridge.saveAppIcon) { showToast('Needs the app build'); return; }
-                    window.AndroidBridge.saveAppIcon(pkg, app ? app.name : '');
+                    window.AndroidBridge.saveAppIcon(pkg, app ? app.name : '', iconPack);
                 }, 550);
             });
             document.addEventListener('pointermove', e => { if (timer && Math.hypot(e.clientX - startX, e.clientY - startY) > 10) clear(); });
