@@ -1,10 +1,17 @@
 # Changelog
 
+## v7.9.13-Pro (versionCode 803)
+
+- **Saved Applications: the "Saved" tag no longer crowds the title.** Each saved list's name and app count now have
+  the card's full header to themselves; the "Saved" badge moved down to sit right above its own action-button row
+  (Recall, Quick list, Edit, Copy, Delete), the same "identity on its own row, controls clustered together"
+  layout the Apps list just got, adapted to how this card is actually built (no checkbox or icon to move).
+
 ## v7.9.12-Pro (versionCode 802)
 
 - **Apps list: a cleaner row layout.** The app's name, package and badges now start flush against the left edge
-  instead of sharing space with the checkbox and icon; the checkbox, the letter icon, ⚙️ and ⋯ all sit together
-  on the right instead. No change to what anything does - Debloater/UAD-NG rows are unaffected.
+  instead of sharing space with the checkbox and icon; the checkbox, the letter icon, the gear and ⋯ buttons all
+  sit together on the right instead. No change to what anything does - Debloater/UAD-NG rows are unaffected.
 
 ## v7.9.11-Pro (versionCode 801)
 

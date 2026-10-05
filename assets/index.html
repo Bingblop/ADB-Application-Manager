@@ -1355,10 +1355,14 @@
         }
 
         .saved-list-head {
+            margin-bottom: 8px;
+        }
+
+        /* The "Saved" badge sits with the action buttons below, not the title - so the title/count
+           have the full row to themselves. */
+        .saved-list-controls {
             display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 10px;
+            justify-content: flex-end;
             margin-bottom: 8px;
         }
 
@@ -6974,14 +6978,14 @@ Type any command below (e.g. pm list packages -d)
                 return `
                     <div class="saved-list-card">
                         <div class="saved-list-head">
-                            <div style="min-width:0; flex:1;">
-                                <div class="saved-list-title">${escapeHtml(list.name || 'Untitled List')}</div>
-                                <div class="saved-list-meta">${pkgs.length} apps</div>
-                            </div>
-                            <div class="tag-badge tag-system">Saved</div>
+                            <div class="saved-list-title">${escapeHtml(list.name || 'Untitled List')}</div>
+                            <div class="saved-list-meta">${pkgs.length} apps</div>
                         </div>
                         ${desc}
                         <div class="saved-list-pkgs">${chips || '<span class="saved-pkg-chip">No packages</span>'}${more}</div>
+                        <div class="saved-list-controls">
+                            <div class="tag-badge tag-system">Saved</div>
+                        </div>
                         <div class="saved-list-actions">
                             <button class="apps-tool-btn" data-list-id="${listId}" onclick="recallSavedList(this.getAttribute('data-list-id'))">Recall</button>
                             <button class="apps-tool-btn${quickListId === (list.id || '') ? ' active' : ''}" data-list-id="${listId}" onclick="toggleQuickList(this.getAttribute('data-list-id'))" title="Use this list for the Quick Settings tile and the widget">${quickListId === (list.id || '') ? 'Quick list ✓' : 'Quick list'}</button>
