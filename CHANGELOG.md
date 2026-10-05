@@ -1,5 +1,17 @@
 # Changelog
 
+## v7.9.8-Pro (versionCode 798)
+
+- **File Manager: Add storage.** Bring in an SD card, a USB drive, or a folder another app is willing to share,
+  through Android's own document-tree picker - no working mode, root or All-files access needed, since the OS
+  grants this app that one tree directly. Added roots show as quick-switch buttons above the file list and are
+  remembered across launches; removing one only drops this app's access, nothing on the storage itself. Inside
+  one: full browsing (with its own Up, since this kind of storage has no parent folder to look up - an added
+  root's own breadcrumb trail is kept instead), new file/new folder, rename, delete, and viewing/editing a text
+  file in place all work the same as internal storage. Copy, move, compress, Open with, Share and multi-select
+  are not there yet for this kind of storage and are hidden or refused with a clear message rather than silently
+  failing - they're next.
+
 ## v7.9.7-Pro (versionCode 797)
 
 - **About tab: Device Specs**, under Handy to know - hardware (model, chipset, CPU cores and clock range, RAM,

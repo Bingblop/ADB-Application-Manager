@@ -5018,6 +5018,10 @@ public class MainActivity extends Activity {
      * /storage/emulated/0/../0 can neither reach nor hide a place the protection list names.
      */
     private String fmCanonicalPath(String path) {
+        // A storage root added through pickAddStorage() is an opaque content:// tree/document URI, not a POSIX
+        // path - running it through alias-swapping and "." / ".." folding would corrupt it (SAF URIs can
+        // legitimately contain their own "/" and ":" in the document id). Pass it through untouched.
+        if (path != null && path.startsWith("content://")) return path;
         String primary = "/storage/emulated/0";
         try {
             File ext = android.os.Environment.getExternalStorageDirectory();
@@ -5025,6 +5029,33 @@ public class MainActivity extends Activity {
                 primary = ext.getAbsolutePath();
         } catch (Exception ignored) {}
         return FileRules.canonical(path, primary);
+    }
+
+    /** A human-readable name for a picked storage tree: the root document's own display name, falling back to
+     *  the volume-ish part of its tree id (most DocumentsProviders encode it as "authority:label", e.g.
+     *  "primary:Download" or an SD card's "1234-5678:"), and the raw URI as a last resort. */
+    private String storageRootLabel(Uri treeUri) {
+        String docId = null;
+        try {
+            docId = android.provider.DocumentsContract.getTreeDocumentId(treeUri);
+            Uri docUri = android.provider.DocumentsContract.buildDocumentUriUsingTree(treeUri, docId);
+            android.database.Cursor c = getContentResolver().query(docUri,
+                    new String[]{android.provider.DocumentsContract.Document.COLUMN_DISPLAY_NAME}, null, null, null);
+            if (c != null) {
+                try {
+                    if (c.moveToFirst()) {
+                        String name = c.getString(0);
+                        if (name != null && !name.isEmpty()) return name;
+                    }
+                } finally { c.close(); }
+            }
+        } catch (Throwable ignored) {}
+        if (docId != null) {
+            int colon = docId.indexOf(':');
+            if (colon >= 0 && colon + 1 < docId.length()) return docId.substring(colon + 1);
+            if (colon < 0 && !docId.isEmpty()) return docId;
+        }
+        return treeUri.toString();
     }
 
     private boolean backupExists(String ref) {
@@ -5716,10 +5747,25 @@ public class MainActivity extends Activity {
     }
 
     private static final int REQ_IMPORT_OBTAINIUM = 4201;
+    private static final int REQ_PICK_STORAGE_TREE = 4205;
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQ_PICK_STORAGE_TREE) {
+            final Uri picked = (resultCode == RESULT_OK && data != null) ? data.getData() : null;
+            if (picked == null) { notifyJs("window.onStorageRootPicked && window.onStorageRootPicked(null)"); return; }
+            try {
+                getContentResolver().takePersistableUriPermission(picked,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+            } catch (Exception ignored) {
+                // some providers (notably a few cloud ones) don't support a persistable grant; the tree URI
+                // still works for the rest of this session, it just won't survive a process restart.
+            }
+            String label = storageRootLabel(picked);
+            notifyJs("window.onStorageRootPicked && window.onStorageRootPicked(" + JSONObject.quote(picked.toString()) + "," + JSONObject.quote(label) + ")");
+            return;
+        }
         if (requestCode == REQ_PICK_BACKUP) {
             final Uri picked = (resultCode == RESULT_OK && data != null) ? data.getData() : null;
             if (picked == null) return;
@@ -8539,6 +8585,37 @@ public class MainActivity extends Activity {
             });
         }
 
+        /** Lets the user add a storage location through Android's own document-tree picker (an SD card, USB
+         *  drive, another app's exposed storage such as Termux, a cloud provider - whatever the device offers),
+         *  for the File Manager to browse alongside the device's own storage. The chosen tree gets a persistable
+         *  read/write grant, so it still works after this app restarts, without asking again. Answer:
+         *  window.onStorageRootPicked(uri, label), or (null) if the user backed out. */
+        @JavascriptInterface
+        public void pickAddStorage() {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+                    i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+                    try {
+                        startActivityForResult(i, REQ_PICK_STORAGE_TREE);
+                    } catch (Exception e) {
+                        notifyJs("window.onStorageRootPicked && window.onStorageRootPicked(null)");
+                    }
+                }
+            });
+        }
+
+        /** Gives up this app's access to a storage tree added through pickAddStorage(). The page drops it from
+         *  its own list of roots; this just releases the matching OS-level grant so it doesn't linger. */
+        @JavascriptInterface
+        public void removeStorageRoot(String uriString) {
+            try {
+                getContentResolver().releasePersistableUriPermission(Uri.parse(uriString),
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+            } catch (Exception ignored) {}
+        }
+
         private boolean isInstalled(String pkg) {
             try { getPackageManager().getPackageInfo(pkg, 0); return true; } catch (Exception e) { return false; }
         }
@@ -9287,6 +9364,7 @@ public class MainActivity extends Activity {
                 // Resolve /sdcard and /storage/self/primary to the concrete /storage/emulated/0 (readable
                 // by both the app and a shell), and normalize slashes so paths self-heal.
                 String p = fmCanonicalPath(path);
+                if (p.startsWith("content://")) return fmListSaf(p);
                 res.put("path", p);
                 int slash = p.lastIndexOf('/');
                 res.put("parent", p.equals("/") ? "/" : (slash <= 0 ? "/" : p.substring(0, slash)));
@@ -9334,6 +9412,173 @@ public class MainActivity extends Activity {
                 try { res.put("error", e.getMessage()); } catch (Exception ignored) {}
             }
             return res.toString();
+        }
+
+        /** Recovers the tree URI an SAF document URI was built from (see {@link #fmListSaf}) - every document URI
+         *  this app hands back to the page is built with {@code buildDocumentUriUsingTree}, which keeps the
+         *  original /tree/&lt;id&gt; segment alongside the appended /document/&lt;id&gt; one, so the tree id (and
+         *  from it, the tree URI) can always be read back out of it, not just out of the bare root URI the picker
+         *  first returned. */
+        private Uri safTreeUri(Uri uri) {
+            return android.provider.DocumentsContract.buildTreeDocumentUri(uri.getAuthority(), android.provider.DocumentsContract.getTreeDocumentId(uri));
+        }
+
+        /** The document id this URI points AT: the current folder/file when it is a document URI (has its own
+         *  /document/&lt;id&gt; segment - true for anything previously returned by fmListSaf), or the tree's own
+         *  root id for the bare tree URI pickAddStorage() first hands back, before anything has been listed yet. */
+        private String safCurrentDocId(Uri uri) {
+            try {
+                return android.provider.DocumentsContract.getDocumentId(uri);
+            } catch (Exception e) {
+                return android.provider.DocumentsContract.getTreeDocumentId(uri);
+            }
+        }
+
+        /** Lists a storage root added through pickAddStorage(), or a folder inside one, via the platform
+         *  DocumentsContract - no java.io.File, no shell, works the same for any provider the device offers (an
+         *  SD card, USB OTG, another app's exposed storage, a cloud provider...). Each entry carries its own full
+         *  document URI (see {@link #safTreeUri}) since SAF has no path-join the way POSIX folders do - the page
+         *  navigates into a child by using that URI directly, not by composing one out of a name. */
+        private String fmListSaf(String uriString) {
+            JSONObject res = new JSONObject();
+            try {
+                Uri incoming = Uri.parse(uriString);
+                Uri treeUri = safTreeUri(incoming);
+                String curDocId = safCurrentDocId(incoming);
+                res.put("path", uriString);
+                res.put("isSaf", true);
+                Uri childrenUri = android.provider.DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, curDocId);
+                JSONArray entries = new JSONArray();
+                android.database.Cursor c = getContentResolver().query(childrenUri, new String[]{
+                        android.provider.DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                        android.provider.DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                        android.provider.DocumentsContract.Document.COLUMN_MIME_TYPE,
+                        android.provider.DocumentsContract.Document.COLUMN_SIZE,
+                        android.provider.DocumentsContract.Document.COLUMN_LAST_MODIFIED,
+                }, null, null, null);
+                if (c != null) {
+                    try {
+                        while (c.moveToNext()) {
+                            String childId = c.getString(0);
+                            String name = c.getString(1);
+                            String mime = c.getString(2);
+                            boolean isDir = android.provider.DocumentsContract.Document.MIME_TYPE_DIR.equals(mime);
+                            JSONObject e = new JSONObject();
+                            e.put("name", name != null ? name : childId);
+                            e.put("isDir", isDir);
+                            e.put("isLink", false);
+                            e.put("size", c.isNull(3) ? 0 : c.getLong(3));
+                            e.put("lastModified", c.isNull(4) ? 0 : c.getLong(4));
+                            e.put("uri", android.provider.DocumentsContract.buildDocumentUriUsingTree(treeUri, childId).toString());
+                            entries.put(e);
+                        }
+                    } finally { c.close(); }
+                }
+                res.put("entries", entries);
+                res.put("source", "saf");
+            } catch (Throwable t) {
+                try { res.put("error", errMsg(t)); } catch (Exception ignored) {}
+            }
+            return res.toString();
+        }
+
+        /** fmReadText for a SAF document URI - same {ok,text,size,mtime,writable} contract as fmReadText, via
+         *  ContentResolver streaming instead of java.io.File. */
+        private String fmReadTextSaf(String uriString) {
+            JSONObject res = new JSONObject();
+            try {
+                Uri uri = Uri.parse(uriString);
+                long size = -1, mtime = 0; boolean writable = true;
+                android.database.Cursor c = getContentResolver().query(uri, new String[]{
+                        android.provider.DocumentsContract.Document.COLUMN_SIZE,
+                        android.provider.DocumentsContract.Document.COLUMN_LAST_MODIFIED,
+                        android.provider.DocumentsContract.Document.COLUMN_FLAGS,
+                }, null, null, null);
+                if (c != null) {
+                    try {
+                        if (c.moveToFirst()) {
+                            if (!c.isNull(0)) size = c.getLong(0);
+                            if (!c.isNull(1)) mtime = c.getLong(1);
+                            writable = !c.isNull(2) && (c.getLong(2) & android.provider.DocumentsContract.Document.FLAG_SUPPORTS_WRITE) != 0;
+                        }
+                    } finally { c.close(); }
+                }
+                if (size > FM_EDIT_MAX) { res.put("ok", false); res.put("tooBig", true); res.put("size", size); res.put("error", "This file is over 2 MB: too big to edit here."); return res.toString(); }
+                java.io.InputStream in = getContentResolver().openInputStream(uri);
+                if (in == null) { res.put("ok", false); res.put("error", "The app cannot read this file."); return res.toString(); }
+                byte[] data;
+                try {
+                    java.io.ByteArrayOutputStream buf = new java.io.ByteArrayOutputStream();
+                    byte[] chunk = new byte[8192]; int n;
+                    while ((n = in.read(chunk)) >= 0) {
+                        buf.write(chunk, 0, n);
+                        if (buf.size() > FM_EDIT_MAX) { res.put("ok", false); res.put("tooBig", true); res.put("size", buf.size()); res.put("error", "This file is over 2 MB: too big to edit here."); return res.toString(); }
+                    }
+                    data = buf.toByteArray();
+                } finally { in.close(); }
+                res.put("mtime", mtime);
+                res.put("writable", writable);
+                if (!FileOps.looksLikeText(data, data.length, false)) { res.put("ok", true); res.put("binary", true); res.put("size", data.length); return res.toString(); }
+                res.put("ok", true);
+                res.put("size", data.length);
+                res.put("text", new String(data, java.nio.charset.StandardCharsets.UTF_8));
+            } catch (Throwable t) {
+                try { res.put("ok", false); res.put("error", errMsg(t)); } catch (Exception ignored) {}
+            }
+            return res.toString();
+        }
+
+        /** fmWriteText for a SAF document URI - same {ok,size,mtime}/{ok:false,changed:true} contract, via
+         *  ContentResolver.openOutputStream(uri,"wt") (truncating write) instead of an atomic File rename. */
+        private String fmWriteTextSaf(String uriString, String text, double expectMtime) {
+            JSONObject res = new JSONObject();
+            try {
+                Uri uri = Uri.parse(uriString);
+                byte[] data = (text == null ? "" : text).getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                if (data.length > FM_EDIT_MAX * 2) { res.put("ok", false); res.put("error", "Too much text to save here."); return res.toString(); }
+                if (expectMtime > 0) {
+                    long mtime = 0;
+                    android.database.Cursor c = getContentResolver().query(uri, new String[]{ android.provider.DocumentsContract.Document.COLUMN_LAST_MODIFIED }, null, null, null);
+                    if (c != null) { try { if (c.moveToFirst() && !c.isNull(0)) mtime = c.getLong(0); } finally { c.close(); } }
+                    if (mtime > 0 && Math.abs(mtime - (long) expectMtime) > 1) { res.put("ok", false); res.put("changed", true); res.put("error", "The file changed since it was opened."); return res.toString(); }
+                }
+                java.io.OutputStream out = getContentResolver().openOutputStream(uri, "wt");
+                if (out == null) { res.put("ok", false); res.put("error", "The app cannot write here."); return res.toString(); }
+                try { out.write(data); out.flush(); } finally { out.close(); }
+                long newMtime = 0;
+                android.database.Cursor c2 = getContentResolver().query(uri, new String[]{ android.provider.DocumentsContract.Document.COLUMN_LAST_MODIFIED }, null, null, null);
+                if (c2 != null) { try { if (c2.moveToFirst() && !c2.isNull(0)) newMtime = c2.getLong(0); } finally { c2.close(); } }
+                res.put("ok", true); res.put("size", data.length); res.put("mtime", newMtime);
+            } catch (Throwable t) {
+                try { res.put("ok", false); res.put("error", errMsg(t)); } catch (Exception ignored) {}
+            }
+            return res.toString();
+        }
+
+        /** fmReadB64 for a SAF document URI - same base64-up-to-maxKb contract, via ContentResolver. */
+        private String fmReadB64Saf(String uriString, int maxKb) {
+            try {
+                Uri uri = Uri.parse(uriString);
+                long size = -1;
+                android.database.Cursor c = getContentResolver().query(uri, new String[]{ android.provider.DocumentsContract.Document.COLUMN_SIZE }, null, null, null);
+                if (c != null) { try { if (c.moveToFirst() && !c.isNull(0)) size = c.getLong(0); } finally { c.close(); } }
+                long cap = Math.min(12288, Math.max(1, maxKb)) * 1024L;
+                if (size > cap) return "";
+                java.io.InputStream in = getContentResolver().openInputStream(uri);
+                if (in == null) return "";
+                byte[] data;
+                try {
+                    java.io.ByteArrayOutputStream buf = new java.io.ByteArrayOutputStream();
+                    byte[] chunk = new byte[8192]; int n;
+                    while ((n = in.read(chunk)) >= 0) {
+                        buf.write(chunk, 0, n);
+                        if (buf.size() > cap) return "";
+                    }
+                    data = buf.toByteArray();
+                } finally { in.close(); }
+                if (data.length == 0) return "";
+                return android.util.Base64.encodeToString(data, android.util.Base64.NO_WRAP);
+            } catch (Throwable t) { return ""; }
         }
 
         /** Whether the app has broad storage access (All-files access on Android 11+). */
@@ -9483,6 +9728,21 @@ public class MainActivity extends Activity {
         public String fmRead(String path) {
             try {
                 path = fmCanonicalPath(path);
+                if (path.startsWith("content://")) {
+                    java.io.InputStream in = getContentResolver().openInputStream(Uri.parse(path));
+                    if (in == null) return "Error: could not open this file.";
+                    try {
+                        java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
+                        byte[] buf = new byte[65536];
+                        int n, total = 0;
+                        while ((n = in.read(buf)) > 0) {
+                            bo.write(buf, 0, n);
+                            total += n;
+                            if (total >= 131072) break;
+                        }
+                        return new String(bo.toByteArray(), "UTF-8");
+                    } finally { in.close(); }
+                }
                 File f = new File(path);
                 if (f.isFile() && f.canRead()) {
                     java.io.FileInputStream in = new java.io.FileInputStream(f);
@@ -9611,6 +9871,7 @@ public class MainActivity extends Activity {
             JSONObject res = new JSONObject();
             try {
                 path = fmCanonicalPath(path);
+                if (path.startsWith("content://")) return fmReadTextSaf(path);
                 File f = new File(path);
                 byte[] data;
                 if (f.isFile() && f.canRead()) {
@@ -9655,6 +9916,7 @@ public class MainActivity extends Activity {
             JSONObject res = new JSONObject();
             try {
                 path = fmCanonicalPath(path);
+                if (path.startsWith("content://")) return fmWriteTextSaf(path, text, expectMtime);
                 if (fmProtectedPath(path)) { res.put("ok", false); res.put("error", "System location: not touched"); return res.toString(); }
                 byte[] data = (text == null ? "" : text).getBytes(java.nio.charset.StandardCharsets.UTF_8);
                 if (data.length > FM_EDIT_MAX * 2) { res.put("ok", false); res.put("error", "Too much text to save here."); return res.toString(); }
@@ -9687,7 +9949,9 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public String fmReadB64(String path, int maxKb) {
             try {
-                File f = new File(fmCanonicalPath(path));
+                String p = fmCanonicalPath(path);
+                if (p.startsWith("content://")) return fmReadB64Saf(p, maxKb);
+                File f = new File(p);
                 long len = f.length();
                 if (!f.isFile() || !f.canRead() || len <= 0 || len > Math.min(12288, Math.max(1, maxKb)) * 1024L) return "";
                 byte[] data = new byte[(int) len];
@@ -9925,6 +10189,178 @@ public class MainActivity extends Activity {
             });
         }
 
+        /** Creates a new file or folder inside a SAF parent (mkdir/touch have no "target path" to give fmOp for a
+         *  SAF location - there is no join-by-string here, so the parent and the new name travel separately). */
+        @JavascriptInterface
+        public String fmNewSaf(String parentUri, String name, String type) {
+            JSONObject res = new JSONObject();
+            try {
+                Uri parent = Uri.parse(parentUri);
+                boolean isDir = "dir".equals(type);
+                String mime = isDir ? android.provider.DocumentsContract.Document.MIME_TYPE_DIR : fmMime(name);
+                if (!isDir && "*/*".equals(mime)) mime = "application/octet-stream";
+                Uri created = android.provider.DocumentsContract.createDocument(getContentResolver(), parent, mime, name);
+                res.put("ok", created != null);
+                res.put("output", created != null ? "OK" : "Could not create " + name);
+                if (created != null) res.put("uri", created.toString());
+            } catch (Throwable t) {
+                try { res.put("ok", false); res.put("output", errMsg(t)); } catch (Exception ignored) {}
+            }
+            return res.toString();
+        }
+
+        /** Renames a SAF document in place. There is no "same folder, new name" path string to hand fmOp the way
+         *  a POSIX rename gets one (fmJoin(newName)), so this takes the plain new display name directly. */
+        @JavascriptInterface
+        public String fmRenameSaf(String uri, String newName) {
+            JSONObject res = new JSONObject();
+            try {
+                Uri renamed = android.provider.DocumentsContract.renameDocument(getContentResolver(), Uri.parse(uri), newName);
+                res.put("ok", renamed != null);
+                res.put("output", renamed != null ? "OK" : "A file or folder with that name is already there");
+            } catch (Throwable t) {
+                try { res.put("ok", false); res.put("output", errMsg(t)); } catch (Exception ignored) {}
+            }
+            return res.toString();
+        }
+
+        /** Copies (recursively, for a folder) a SAF document as a new child of destParentUri, keeping its own name. */
+        private String safCopyInto(Uri srcUri, Uri destParentUri) {
+            try {
+                android.content.ContentResolver cr = getContentResolver();
+                String name = null, mime = null;
+                android.database.Cursor c = cr.query(srcUri, new String[]{
+                        android.provider.DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                        android.provider.DocumentsContract.Document.COLUMN_MIME_TYPE,
+                }, null, null, null);
+                if (c != null) { try { if (c.moveToFirst()) { name = c.getString(0); mime = c.getString(1); } } finally { c.close(); } }
+                if (name == null) return "Could not read the source";
+                boolean isDir = android.provider.DocumentsContract.Document.MIME_TYPE_DIR.equals(mime);
+                if (isDir) {
+                    Uri newDir = android.provider.DocumentsContract.createDocument(cr, destParentUri, android.provider.DocumentsContract.Document.MIME_TYPE_DIR, name);
+                    if (newDir == null) return "Could not create " + name;
+                    Uri srcTree = safTreeUri(srcUri);
+                    String srcDocId = safCurrentDocId(srcUri);
+                    Uri childrenUri = android.provider.DocumentsContract.buildChildDocumentsUriUsingTree(srcTree, srcDocId);
+                    android.database.Cursor kids = cr.query(childrenUri, new String[]{ android.provider.DocumentsContract.Document.COLUMN_DOCUMENT_ID }, null, null, null);
+                    if (kids != null) {
+                        try {
+                            while (kids.moveToNext()) {
+                                Uri kidUri = android.provider.DocumentsContract.buildDocumentUriUsingTree(srcTree, kids.getString(0));
+                                String err = safCopyInto(kidUri, newDir);
+                                if (err != null) return err;
+                            }
+                        } finally { kids.close(); }
+                    }
+                    return null;
+                }
+                String m = mime != null ? mime : "application/octet-stream";
+                Uri newFile = android.provider.DocumentsContract.createDocument(cr, destParentUri, m, name);
+                if (newFile == null) return "Could not create " + name;
+                return safStreamCopy(cr.openInputStream(srcUri), cr.openOutputStream(newFile), name);
+            } catch (Throwable t) { return errMsg(t); }
+        }
+
+        /** Copies a plain filesystem file or folder as a new child of a SAF folder, keeping its own name (recursive for a folder). */
+        private String safCopyPosixIntoSaf(File srcFile, Uri destParentUri) {
+            try {
+                android.content.ContentResolver cr = getContentResolver();
+                String name = srcFile.getName();
+                if (srcFile.isDirectory()) {
+                    Uri newDir = android.provider.DocumentsContract.createDocument(cr, destParentUri, android.provider.DocumentsContract.Document.MIME_TYPE_DIR, name);
+                    if (newDir == null) return "Could not create " + name;
+                    File[] kids = srcFile.listFiles();
+                    if (kids != null) for (File k : kids) { String err = safCopyPosixIntoSaf(k, newDir); if (err != null) return err; }
+                    return null;
+                }
+                String mime = fmMime(name);
+                if ("*/*".equals(mime)) mime = "application/octet-stream";
+                Uri newFile = android.provider.DocumentsContract.createDocument(cr, destParentUri, mime, name);
+                if (newFile == null) return "Could not create " + name;
+                return safStreamCopy(new java.io.FileInputStream(srcFile), cr.openOutputStream(newFile), name);
+            } catch (Throwable t) { return errMsg(t); }
+        }
+
+        /** Copies a SAF document as a new child of a plain filesystem folder, keeping its own name (recursive for a folder). */
+        private String safCopyIntoPosix(Uri srcUri, File destDir) {
+            try {
+                android.content.ContentResolver cr = getContentResolver();
+                String name = null, mime = null;
+                android.database.Cursor c = cr.query(srcUri, new String[]{
+                        android.provider.DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                        android.provider.DocumentsContract.Document.COLUMN_MIME_TYPE,
+                }, null, null, null);
+                if (c != null) { try { if (c.moveToFirst()) { name = c.getString(0); mime = c.getString(1); } } finally { c.close(); } }
+                if (name == null) return "Could not read the source";
+                boolean isDir = android.provider.DocumentsContract.Document.MIME_TYPE_DIR.equals(mime);
+                File dest = new File(destDir, name);
+                if (isDir) {
+                    if (!dest.isDirectory() && !dest.mkdirs()) return "Could not create " + name;
+                    Uri srcTree = safTreeUri(srcUri);
+                    String srcDocId = safCurrentDocId(srcUri);
+                    Uri childrenUri = android.provider.DocumentsContract.buildChildDocumentsUriUsingTree(srcTree, srcDocId);
+                    android.database.Cursor kids = cr.query(childrenUri, new String[]{ android.provider.DocumentsContract.Document.COLUMN_DOCUMENT_ID }, null, null, null);
+                    if (kids != null) {
+                        try {
+                            while (kids.moveToNext()) {
+                                Uri kidUri = android.provider.DocumentsContract.buildDocumentUriUsingTree(srcTree, kids.getString(0));
+                                String err = safCopyIntoPosix(kidUri, dest);
+                                if (err != null) return err;
+                            }
+                        } finally { kids.close(); }
+                    }
+                    return null;
+                }
+                return safStreamCopy(cr.openInputStream(srcUri), new java.io.FileOutputStream(dest), name);
+            } catch (Throwable t) { return errMsg(t); }
+        }
+
+        /** Streams in to out (closing both either way) - the shared tail of every single-file SAF/POSIX copy above. */
+        private String safStreamCopy(java.io.InputStream in, java.io.OutputStream out, String name) {
+            try {
+                if (in == null || out == null) return "Could not copy " + name;
+                try {
+                    byte[] buf = new byte[65536];
+                    int n;
+                    while ((n = in.read(buf)) >= 0) out.write(buf, 0, n);
+                    out.flush();
+                } finally {
+                    try { in.close(); } catch (Exception ignored) {}
+                    try { out.close(); } catch (Exception ignored) {}
+                }
+                return null;
+            } catch (Throwable t) { return errMsg(t); }
+        }
+
+        /** Deletes, copies or moves where at least one side is a SAF document URI - the other side, when a cp/mv crosses
+         *  into or out of a SAF root, may be a plain filesystem path. Unlike fmOp's POSIX convention, "b" here is always
+         *  a destination FOLDER's own identity (a SAF document URI, or a plain directory path), never a bare new name -
+         *  a same-folder rename has no such path string to build and uses fmRenameSaf instead. Returns "" on success,
+         *  else an error message (never null). */
+        private String fmOpSaf(String op, String a, String b) {
+            try {
+                if ("rm".equals(op)) {
+                    boolean ok = android.provider.DocumentsContract.deleteDocument(getContentResolver(), Uri.parse(a));
+                    return ok ? "" : "Could not delete";
+                }
+                if ("cp".equals(op) || "mv".equals(op)) {
+                    if (b == null || b.isEmpty()) return "no destination";
+                    boolean srcSaf = a.startsWith("content://");
+                    boolean dstSaf = b.startsWith("content://");
+                    String err = dstSaf
+                            ? (srcSaf ? safCopyInto(Uri.parse(a), Uri.parse(b)) : safCopyPosixIntoSaf(new File(a), Uri.parse(b)))
+                            : safCopyIntoPosix(Uri.parse(a), new File(b));
+                    if (err != null) return err;
+                    if ("mv".equals(op)) {
+                        if (srcSaf) android.provider.DocumentsContract.deleteDocument(getContentResolver(), Uri.parse(a));
+                        else FileOps.delete(java.util.Collections.singletonList(new File(a)), null);
+                    }
+                    return "";
+                }
+                return "unknown op";
+            } catch (Throwable t) { return errMsg(t); }
+        }
+
         /** File op: mkdir|touch|rm|cp|mv. For rm, dirs are removed recursively. */
         @JavascriptInterface
         public String fmOp(String op, String a, String b) {
@@ -9933,6 +10369,12 @@ public class MainActivity extends Activity {
                 if (a == null || a.isEmpty()) { res.put("ok", false); res.put("output", "no path"); return res.toString(); }
                 a = fmCanonicalPath(a);
                 if (b != null && !b.isEmpty()) b = fmCanonicalPath(b);
+                if (a.startsWith("content://") || (b != null && b.startsWith("content://"))) {
+                    String out = fmOpSaf(op, a, b);
+                    res.put("ok", out.isEmpty());
+                    res.put("output", out.isEmpty() ? "OK" : out);
+                    return res.toString();
+                }
                 // the same protection the batch operations have: removing or moving away a whole storage root, a top-level folder or a system tree
                 if (("rm".equals(op) || "mv".equals(op)) && fmProtectedPath(a)) { res.put("ok", false); res.put("output", "System location: not touched"); return res.toString(); }
                 // what the app can do with its own file access needs no working mode

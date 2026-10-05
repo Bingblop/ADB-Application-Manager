@@ -3552,6 +3552,7 @@
                     <label class="fm-opt"><input type="checkbox" id="fmThumbChk" onchange="fmSetOpt('thumbs', this.checked)"> Show thumbnails</label>
                     <button class="batch-tool-link" id="fmThumbClearBtn" onclick="fmThumbClear()">Clear thumbnail cache</button>
                 </div>
+                <div class="batch-sheet-tools" id="fmRootsRow" style="margin:8px 0 0; gap:12px; flex-wrap:wrap;"></div>
                 <div class="batch-sheet-tools" style="margin:8px 0; gap:12px; flex-wrap:wrap;">
                     <button class="batch-tool-link" onclick="fmUp()">Up</button>
                     <button class="batch-tool-link" onclick="fmGo('/storage/emulated/0')">Storage</button>
@@ -7237,7 +7238,7 @@ Type any command below (e.g. pm list packages -d)
         // Privilege Guard
         // File manager: a job runs when the app can reach the files itself (All-files access) or a working mode can
         function fmCanWork(actionName) {
-            if (isPrivilegedActive || fileAccessGranted()) return true;
+            if (fmPath.startsWith('content://') || isPrivilegedActive || fileAccessGranted()) return true;        // added storage reaches files through its own grant, no working mode needed
             return guardPrivilege(actionName);
         }
 
@@ -11464,6 +11465,61 @@ Type any command below (e.g. pm list packages -d)
         let fmActionTarget = null;
         let fmPendingOp = null;
 
+        // ---- Added storage (SAF document-tree roots: an SD card, USB drive, another app's folder...) ----
+        // fmPath holds the SAF document URI itself while browsing one of these (safe to pass straight back into
+        // fmList/fmOp - it is never run through the POSIX path helpers below). fmSafStack is the breadcrumb trail
+        // back up to the root: SAF has no parent-of-a-folder lookup, so each descend pushes where it came from.
+        let fmSafRoots = [];
+        let fmSafRootsLoaded = false;
+        let fmSafStack = [];
+        function fmSafRootsLoad() {
+            if (fmSafRootsLoaded) return;
+            fmSafRootsLoaded = true;
+            const v = loadStoreJson('fm_saf_roots', []);
+            fmSafRoots = Array.isArray(v) ? v : [];
+            renderFmRoots();
+        }
+        function renderFmRoots() {
+            const el = document.getElementById('fmRootsRow');
+            if (!el) return;
+            el.innerHTML = fmSafRoots.map((r, i) => `<button class="batch-tool-link" onclick="fmGoRoot(${i})" title="${escapeHtml(r.uri)}">${escapeHtml(r.label || 'Storage')}</button>`
+                + `<button class="batch-tool-link" aria-label="Remove ${escapeHtml(r.label || 'this storage')}" onclick="fmRemoveRoot(${i})">✕</button>`).join('')
+                + `<button class="batch-tool-link" onclick="fmAddStorage()">＋ Add storage</button>`;
+        }
+        function fmAddStorage() {
+            haptic();
+            if (!window.AndroidBridge || !window.AndroidBridge.pickAddStorage) { showToast('Needs the app build'); return; }
+            window.AndroidBridge.pickAddStorage();
+        }
+        window.onStorageRootPicked = function (uri, label) {
+            if (!uri) return;                                 // the picker was cancelled
+            if (!fmSafRoots.some(r => r.uri === uri)) {
+                fmSafRoots.push({ uri, label: label || 'Storage' });
+                saveStoreJson('fm_saf_roots', fmSafRoots);
+            }
+            renderFmRoots();
+            fmSafStack = [];
+            fmGo(uri);
+        };
+        function fmGoRoot(i) {
+            const r = fmSafRoots[i];
+            if (!r) return;
+            haptic();
+            fmSafStack = [];
+            fmGo(r.uri);
+        }
+        function fmRemoveRoot(i) {
+            const r = fmSafRoots[i];
+            if (!r) return;
+            haptic();
+            if (!confirm('Remove "' + (r.label || 'this storage') + '" from the file manager? This only takes away this app\'s access to it - nothing on it is deleted.')) return;
+            try { window.AndroidBridge && window.AndroidBridge.removeStorageRoot && window.AndroidBridge.removeStorageRoot(r.uri); } catch (e) {}
+            fmSafRoots.splice(i, 1);
+            saveStoreJson('fm_saf_roots', fmSafRoots);
+            renderFmRoots();
+            if (fmPath === r.uri || fmSafStack.includes(r.uri)) { fmSafStack = []; fmGo('/storage/emulated/0'); }
+        }
+
         let fmLast = { entries: [] };                    // the listing on screen, so an option can redraw it without asking again
         let fmOpts = { hidden: false, thumbs: true };    // Show hidden files, Show thumbnails (kept between launches)
         let fmOptsLoaded = false;
@@ -11483,7 +11539,7 @@ Type any command below (e.g. pm list packages -d)
             if (key === 'hidden') { const here = new Set(fmRows.map(r => r.full)); Array.from(fmSel).forEach(p => { if (!here.has(p)) fmSel.delete(p); }); }     // what is no longer listed is no longer picked
             fmSelRender();
         }
-        function onFilesShown() { fmOptsLoad(); fmSearchInit(); fmGo(fmPath, true, true); }
+        function onFilesShown() { fmOptsLoad(); fmSafRootsLoad(); fmSearchInit(); fmGo(fmPath, true, true); }
         // auto: the tab opening by itself (the inline hint is enough then); a folder the user chose asks for the access when it is what is missing
         function fmGo(path, auto, keepSearch) {
             path = (path || '/').trim() || '/';
@@ -11492,7 +11548,8 @@ Type any command below (e.g. pm list packages -d)
             if (fmSelMode || fmSel.size) { fmSelMode = false; fmSel.clear(); }
             let d;
             try { d = JSON.parse(window.AndroidBridge.fmList(path)); } catch (e) { d = { error: String(e && e.message || e) }; }
-            fmPath = fmNormalizePath(d.path || path);
+            const rawPath = d.path || path;
+            fmPath = rawPath.startsWith('content://') ? rawPath : fmNormalizePath(rawPath);
             document.getElementById('fmPathInput').value = fmPath;
             document.getElementById('fmCurrentPath').innerText = fmPath;
             let entries;
@@ -11586,6 +11643,11 @@ Type any command below (e.g. pm list packages -d)
             if (fmSearchMode && !fmSearchRunning && fmSearchQuery) { document.getElementById('fmSearchInput').value = fmSearchQuery; fmSearchGo(); }       // something was renamed, deleted or extracted: the results are made again
         }
         function fmUp() {
+            if (fmPath.startsWith('content://')) {
+                if (!fmSafStack.length) { showToast('This is the top of this storage'); return; }
+                fmGo(fmSafStack.pop());
+                return;
+            }
             const i = fmPath.lastIndexOf('/');
             fmGo(i <= 0 ? '/' : fmPath.substring(0, i));
         }
@@ -11617,7 +11679,7 @@ Type any command below (e.g. pm list packages -d)
             return /\.[A-Za-z0-9]{1,5}$/.test(name) ? 'other' : 'text';          // a name with no ending is usually a text file (README, Makefile ...)
         }
         function fmUpRowHtml() {
-            if (fmPath === '/') return '';
+            if (fmPath === '/' || (fmPath.startsWith('content://') && !fmSafStack.length)) return '';
             return '<div class="perm-row fm-up-row" id="fmUpRow" role="button" tabindex="0" aria-label="Up one folder" onclick="if (!fmSelMode) fmUp()" onkeydown="if (event.key === \'Enter\' || event.key === \' \') { event.preventDefault(); if (!fmSelMode) fmUp(); }">'
                 + '<div class="fm-ico"><div class="fm-folder"></div></div>'
                 + '<div class="perm-info"><div class="perm-name fm-dir">..</div><div class="perm-sub">Up one folder</div></div></div>';
@@ -11642,7 +11704,7 @@ Type any command below (e.g. pm list packages -d)
             }
             const entries = shown.slice().sort((a, b) => (b.isDir - a.isDir) || a.name.localeCompare(b.name));
             // Rows are looked up by index: a file name can hold any character (quotes included), so it is never put in a handler string
-            fmRows = entries.map(e => ({ name: e.name, isDir: !!e.isDir, full: fmJoin(e.name), kind: e.isDir ? 'dir' : fmKind(e.name) }));
+            fmRows = entries.map(e => ({ name: e.name, isDir: !!e.isDir, full: e.uri || fmJoin(e.name), kind: e.isDir ? 'dir' : fmKind(e.name) }));
             el.innerHTML = up + entries.map((e, i) => {
                 const sub = escapeHtml(e.perms + (e.isDir ? '' : ' • ' + fmtInstallSize(e.size)) + (e.link ? ' → ' + e.link : ''));
                 const k = fmRows[i].kind;
@@ -11747,6 +11809,7 @@ Type any command below (e.g. pm list packages -d)
         }
 
         function fmSelEnter(full) {
+            if (fmPath.startsWith('content://')) { showToast("Multi-select isn't available yet in added storage - use an item's own ⋯ menu"); return; }
             fmSelMode = true;
             if (full) fmSel.add(full);
             fmSelRender();
@@ -11941,7 +12004,10 @@ Type any command below (e.g. pm list packages -d)
 
         function fmTapIdx(i) { const r = fmRows[i]; if (r) fmTap(r.isDir, r.full, r.name); }
         function fmActionsIdx(i) { const r = fmRows[i]; if (r) fmActions(r.full, r.isDir, r.name); }
-        function fmTap(isDir, full, name) { if (isDir) fmGo(full); else fmActions(full, false, name); }
+        function fmTap(isDir, full, name) {
+            if (isDir) { if (fmPath.startsWith('content://')) fmSafStack.push(fmPath); fmGo(full); return; }
+            fmActions(full, false, name);
+        }
 
         function fmActions(full, isDir, name) {
             fmActionTarget = { full, isDir, name };
@@ -11950,20 +12016,23 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('fmActionPath').innerText = full;
             document.getElementById('fmDestRow').style.display = 'none';
             document.getElementById('fmViewer').style.display = 'none';
+            const isSaf = full.startsWith('content://');
             const kind = isDir ? 'dir' : fmKind(name);
             const btns = [];
-            if (!isDir && /\.(apk|apks|apkm|xapk)$/i.test(name)) btns.push(`<button class="batch-grid-btn accent" onclick="fmInstallFile()">Install</button>`);
-            if (!isDir && /\.apk$/i.test(name)) btns.push(`<button class="batch-grid-btn" onclick="fmSignFile()">Sign…</button>`);
-            if (!isDir) btns.push(`<button class="batch-grid-btn" onclick="fmViewFile()">${ARC_EXT.test(name) ? 'View contents' : 'View'}</button>`);
+            if (!isDir && !isSaf && /\.(apk|apks|apkm|xapk)$/i.test(name)) btns.push(`<button class="batch-grid-btn accent" onclick="fmInstallFile()">Install</button>`);
+            if (!isDir && !isSaf && /\.apk$/i.test(name)) btns.push(`<button class="batch-grid-btn" onclick="fmSignFile()">Sign…</button>`);
+            // Added storage (SAF) can view/edit text in place; the kind-specific viewers, Open With, Share, archive
+            // and compress all stream through java.io.File today and have no SAF-aware path yet.
+            if (!isDir && (!isSaf || kind === 'text' || kind === 'other')) btns.push(`<button class="batch-grid-btn" onclick="fmViewFile()">${!isSaf && ARC_EXT.test(name) ? 'View contents' : 'View'}</button>`);
             if (!isDir && (kind === 'text' || kind === 'other')) btns.push(`<button class="batch-grid-btn accent" onclick="fmEditOpen()">Edit</button>`);
-            if (!isDir) btns.push(`<button class="batch-grid-btn" onclick="fmOpenWith()">Open with…</button>`);
-            if (!isDir) btns.push(`<button class="batch-grid-btn" onclick="fmShareFile()">Share</button>`);
-            if (!isDir && ARC_EXT.test(name)) btns.push(`<button class="batch-grid-btn" onclick="fmExtractFile()">Extract…</button>`);
-            if (!isDir && !ARC_EXT.test(name)) btns.push(`<button class="batch-grid-btn" onclick="fmOpenAsArchive()">Open as archive</button>`);
-            btns.push(`<button class="batch-grid-btn" onclick="czOpenOne()">Compress…</button>`);
+            if (!isDir && !isSaf) btns.push(`<button class="batch-grid-btn" onclick="fmOpenWith()">Open with…</button>`);
+            if (!isDir && !isSaf) btns.push(`<button class="batch-grid-btn" onclick="fmShareFile()">Share</button>`);
+            if (!isDir && !isSaf && ARC_EXT.test(name)) btns.push(`<button class="batch-grid-btn" onclick="fmExtractFile()">Extract…</button>`);
+            if (!isDir && !isSaf && !ARC_EXT.test(name)) btns.push(`<button class="batch-grid-btn" onclick="fmOpenAsArchive()">Open as archive</button>`);
+            if (!isSaf) btns.push(`<button class="batch-grid-btn" onclick="czOpenOne()">Compress…</button>`);
             btns.push(`<button class="batch-grid-btn" onclick="fmStartDest('rename')">Rename</button>`);
-            btns.push(`<button class="batch-grid-btn" onclick="fmStartDest('cp')">Copy</button>`);
-            btns.push(`<button class="batch-grid-btn" onclick="fmStartDest('mv')">Move</button>`);
+            if (!isSaf) btns.push(`<button class="batch-grid-btn" onclick="fmStartDest('cp')">Copy</button>`);
+            if (!isSaf) btns.push(`<button class="batch-grid-btn" onclick="fmStartDest('mv')">Move</button>`);
             btns.push(`<button class="batch-grid-btn danger" onclick="fmStartDest('rm')">Delete</button>`);
             document.getElementById('fmActionBtns').innerHTML = btns.join('');
             haptic();
@@ -11997,6 +12066,7 @@ Type any command below (e.g. pm list packages -d)
             if (!fmActionTarget || !fmPendingOp) return;
             const src = fmActionTarget.full;
             const val = (document.getElementById('fmDestInput').value || '').trim();
+            const inSaf = fmPath.startsWith('content://');
             if (fmPendingOp === 'mkdir' || fmPendingOp === 'mkfile') {
                 const bad = fmBadName(val);
                 if (bad) { showToast(bad); return; }
@@ -12004,18 +12074,32 @@ Type any command below (e.g. pm list packages -d)
                 if (fmListedNames().some(n => n.toLowerCase() === val.toLowerCase())) { showToast('That name is already used here'); return; }     // storage is case-insensitive: Todo.txt is todo.txt
                 const isFile = fmPendingOp === 'mkfile';
                 let rk;
-                try { rk = JSON.parse(window.AndroidBridge.fmOp(isFile ? 'touch' : 'mkdir', target, null)); } catch (e) { rk = { ok: false, output: String(e && e.message || e) }; }
+                try {
+                    rk = inSaf ? JSON.parse(window.AndroidBridge.fmNewSaf(fmPath, val, isFile ? 'file' : 'dir'))
+                        : JSON.parse(window.AndroidBridge.fmOp(isFile ? 'touch' : 'mkdir', target, null));
+                } catch (e) { rk = { ok: false, output: String(e && e.message || e) }; }
                 closeFmAction();
                 if (!rk.ok) { showToast(rk.output && rk.output.length < 90 ? rk.output : 'Failed'); return; }
                 showToast(isFile ? 'File created' : 'Folder created');
                 fmRefresh();
-                if (isFile) { fmActionTarget = { full: target, isDir: false, name: val }; if (fmKind(val) === 'text' || fmKind(val) === 'other') fmEditOpen(); }
+                if (isFile) {
+                    fmActionTarget = { full: inSaf ? (rk.uri || fmPath) : target, isDir: false, name: val };
+                    if (fmKind(val) === 'text' || fmKind(val) === 'other') fmEditOpen();
+                }
                 return;
             }
             let op = fmPendingOp, a = src, b = null;
             if (op === 'rename') {
                 const badR = fmBadName(val);
                 if (badR) { showToast(badR); return; }
+                if (src.startsWith('content://')) {
+                    let rk;
+                    try { rk = JSON.parse(window.AndroidBridge.fmRenameSaf(src, val)); } catch (e) { rk = { ok: false, output: String(e && e.message || e) }; }
+                    showToast(rk.ok ? 'Done' : (rk.output && rk.output.length < 90 ? rk.output : 'Failed'));
+                    closeFmAction();
+                    fmRefresh();
+                    return;
+                }
                 op = 'mv'; b = fmParent(src) + '/' + val;
             } else if (op === 'cp' || op === 'mv') {
                 if (!val) { showToast('Enter a destination'); return; }
