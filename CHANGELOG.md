@@ -1,5 +1,14 @@
 # Changelog
 
+## v7.9.15-Pro (versionCode 805)
+
+- **Expressive Animations.** A new "Motion" card in Settings, right below the theme cards, holds one switch (on by
+  default): Material 3 Expressive's springier, overshooting motion for the app's own transitions - modals, sheets,
+  buttons, switches and the like - instead of a plain fade or slide. The few width-based progress fills (backup,
+  storage scans, the self-update check) are left at a plain ease, where an overshoot would visibly pass 100% before
+  settling back, and the whole thing steps aside automatically when the phone's own reduced-motion setting is on,
+  whatever this switch says.
+
 ## v7.9.14-Pro (versionCode 804)
 
 - **Terminal: sync the Termux shell with your real Termux.** Two new pieces under Terminal settings' Shell

@@ -20,8 +20,12 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.goto(PAGE); await page.waitForTimeout(1200);
   console.log('startup toast:', await page.locator('#toastMsg').innerText());
   const v = () => page.evaluate(() => { const c = getComputedStyle(document.documentElement); return ['--bg-base','--bg-card','--bg-sheet'].map(x => c.getPropertyValue(x).trim()).join(' ') + ' mode=' + document.documentElement.dataset.appearance + ' bar=' + window.__st.bar; });
-  // Schedule
+  const timingFor = cls => page.evaluate(c => { const d = document.createElement('div'); d.className = c; document.body.appendChild(d); const t = getComputedStyle(d).transitionTimingFunction; d.remove(); return t; }, cls);
+  const timingForBarFill = () => page.evaluate(() => { const bar = document.createElement('div'); bar.className = 'backup-bar'; const fill = document.createElement('div'); bar.appendChild(fill); document.body.appendChild(bar); const t = getComputedStyle(fill).transitionTimingFunction; bar.remove(); return t; });
+  // Fresh install, nothing saved yet: Expressive Animations defaults on
   await page.evaluate(() => switchView('prefs')); await page.waitForTimeout(200);
+  console.log('expressive animations, fresh install: on by default:', await page.evaluate(() => themeState.expressiveAnimations), '| html class:', await page.evaluate(() => document.documentElement.classList.contains('expressive-anim')), '| toggle checked:', await page.isChecked('#expressiveAnimToggle'));
+  // Schedule
   await page.click('.appearance-btn[data-appearance="schedule"]');
   console.log('schedule row visible:', await page.isVisible('#scheduleRow'), '|', await page.locator('#appearanceNote').innerText());
   const sm = await page.evaluate(() => [[6,59],[7,0],[12,0],[18,59],[19,0],[23,30]].map(([h,m]) => `${h}:${String(m).padStart(2,'0')}=${scheduledMode(new Date(2026,9,1,h,m))}`).join(' '));
@@ -38,7 +42,14 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.screenshot({ path: 'pureblack_colors.png' });
   await page.click('.appearance-btn[data-appearance="light"]');
   console.log('light (pure black ignored):', await v());
-  console.log('saved:', await page.evaluate(() => { const s = JSON.parse(window.__st.prefs); return JSON.stringify({ appearance: s.appearance, schedule: s.schedule, pureBlack: s.pureBlack }); }));
+  // Expressive Animations
+  console.log('expressive, on: a themed transition gets the bounce curve, a progress fill stays plain ease:', await timingFor('batch-bottom-sheet'), '|', await timingForBarFill());
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  console.log('the OS\'s own reduced-motion setting wins over it:', await timingFor('batch-bottom-sheet'));
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.locator('.switch-row:has(#expressiveAnimToggle)').click();
+  console.log('turned off: the themed transition is back to its own curve, html class gone, toggle unchecked:', await timingFor('batch-bottom-sheet'), '|', await page.evaluate(() => document.documentElement.classList.contains('expressive-anim')), '|', await page.isChecked('#expressiveAnimToggle'));
+  console.log('saved:', await page.evaluate(() => { const s = JSON.parse(window.__st.prefs); return JSON.stringify({ appearance: s.appearance, schedule: s.schedule, pureBlack: s.pureBlack, expressiveAnimations: s.expressiveAnimations }); }));
   // Persist across reload
   await page.click('.appearance-btn[data-appearance="schedule"]');
   const prefs = await page.evaluate(() => window.__st.prefs);
@@ -56,6 +67,6 @@ const { chromium, PAGE } = require('./lib/pw');
   const p2 = await b.newPage();
   await p2.addInitScript(p => { window.AndroidBridge = { vibrate() {}, loadPreferences() { return p; }, savePreferences() {}, loadCustomLists() { return '[]'; }, getSystemInfo() { return '{}'; }, isSystemDarkMode() { return false; }, setSystemBarColor() {}, loadPackages() { return '[]'; }, getWorkingMode() { return '{}'; } }; }, await page.evaluate(() => window.__st.prefs));
   await p2.goto(PAGE); await p2.waitForTimeout(300);
-  console.log('restored:', await p2.evaluate(() => JSON.stringify({ appearance: themeState.appearance, pureBlack: themeState.pureBlack, schedule: themeState.schedule, bg: getComputedStyle(document.documentElement).getPropertyValue('--bg-base') })));
+  console.log('restored:', await p2.evaluate(() => JSON.stringify({ appearance: themeState.appearance, pureBlack: themeState.pureBlack, expressiveAnimations: themeState.expressiveAnimations, schedule: themeState.schedule, bg: getComputedStyle(document.documentElement).getPropertyValue('--bg-base') })));
   console.log('errors:', JSON.stringify(errors));
   await b.close(); })();

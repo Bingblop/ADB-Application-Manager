@@ -51,6 +51,22 @@
             scroll-padding-top: calc(var(--hdr-h, 65px) + var(--tabs-h, 57px) + 8px);
         }
 
+        /* Material 3 Expressive, the "Expressive Animations" setting (default on): every transition in the app gets a
+           springier, overshooting easing curve instead of a plain ease, the same curve this page already used for its
+           one hand-built bounce (the FAB clear gesture). Left at a plain ease for the few width-based progress fills
+           (backup/batch, storage scans, self-update check), where overshoot would visibly pass 100% before settling
+           back. Off entirely when the OS asks for reduced motion, regardless of the setting. */
+        @media (prefers-reduced-motion: no-preference) {
+            html.expressive-anim * {
+                transition-timing-function: cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+            }
+            html.expressive-anim .backup-bar > div,
+            html.expressive-anim .apk-scan-bar > div,
+            html.expressive-anim .upd-bar > div {
+                transition-timing-function: ease !important;
+            }
+        }
+
         body {
             background-color: var(--bg-base);
             color: var(--text-main);
@@ -4486,6 +4502,19 @@
                 </div>
             </div>
 
+            <div class="color-card">
+                <div class="color-card-title">Motion</div>
+                <div class="color-card-subtitle">How the app itself moves, on top of its theme</div>
+                <label class="switch-row">
+                    <div>
+                        <div class="switch-title">Expressive Animations</div>
+                        <div class="switch-sub">Material 3 Expressive's bouncier, springier motion throughout the app, instead of a plain fade or slide.</div>
+                    </div>
+                    <input type="checkbox" class="switch-input" id="expressiveAnimToggle" checked onchange="setExpressiveAnimations(this.checked)">
+                    <span class="switch-track"></span>
+                </label>
+            </div>
+
             <div class="color-card" id="fontCard">
                 <div class="color-card-title">Font</div>
                 <div class="color-card-subtitle">The font of the text in this app. It does not change the font of the rest of your phone.</div>
@@ -6320,6 +6349,7 @@ Type any command below (e.g. pm list packages -d)
             appearance: 'system',       // 'light' | 'dark' | 'system' | 'schedule'
             schedule: { lightAt: '07:00', darkAt: '19:00' },
             pureBlack: false,           // true black backgrounds in dark mode (AMOLED)
+            expressiveAnimations: true, // Material 3 Expressive's springier, overshooting motion app-wide
             overrides: { dark: {}, light: {} }
         };
 
@@ -15403,6 +15433,7 @@ Type any command below (e.g. pm list packages -d)
             const root = document.documentElement;
             const css = root.style;
             root.setAttribute('data-appearance', mode);
+            root.classList.toggle('expressive-anim', !!themeState.expressiveAnimations);
             css.setProperty('color-scheme', mode);
 
             css.setProperty('--accent', t.accent);
@@ -15483,6 +15514,8 @@ Type any command below (e.g. pm list packages -d)
             if (darkAt && document.activeElement !== darkAt) darkAt.value = themeState.schedule.darkAt;
             const pb = document.getElementById('pureBlackToggle');
             if (pb) pb.checked = !!themeState.pureBlack;
+            const ea = document.getElementById('expressiveAnimToggle');
+            if (ea) ea.checked = !!themeState.expressiveAnimations;
             const reset = document.getElementById('resetTweaksBtn');
             if (reset) {
                 const has = Object.keys(themeState.overrides[mode] || {}).length > 0;
@@ -15572,6 +15605,13 @@ Type any command below (e.g. pm list packages -d)
             if (on && effectiveMode() === 'light') showToast('Pure black applies whenever dark mode is active');
         }
 
+        function setExpressiveAnimations(on) {
+            themeState.expressiveAnimations = !!on;
+            haptic();
+            applyTheme();
+            showToast(on ? 'Expressive animations on' : 'Expressive animations off');
+        }
+
         // Keep the scheduled appearance current while the app stays open
         let lastScheduledMode = null;
         setInterval(() => {
@@ -15627,6 +15667,7 @@ Type any command below (e.g. pm list packages -d)
                     if (['light', 'dark', 'system', 'schedule'].includes(saved.appearance)) themeState.appearance = saved.appearance;
                     if (saved.schedule && saved.schedule.lightAt && saved.schedule.darkAt) themeState.schedule = { lightAt: saved.schedule.lightAt, darkAt: saved.schedule.darkAt };
                     themeState.pureBlack = !!saved.pureBlack;
+                    themeState.expressiveAnimations = saved.expressiveAnimations === undefined ? true : !!saved.expressiveAnimations;
                     themeState.overrides = {
                         dark: (saved.overrides && saved.overrides.dark) || {},
                         light: (saved.overrides && saved.overrides.light) || {}
