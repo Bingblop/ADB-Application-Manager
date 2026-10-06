@@ -4871,6 +4871,25 @@ public class MainActivity extends Activity {
         }
     }
 
+    /**
+     * The file sent to another device to remove a system app there: the small jar built with the app (assets/uninstall_runner.jar, only the runner's
+     * classes), kept per app version; or, with a build that has none, this app's own APK, which holds the same class. Null when neither can be found.
+     */
+    private String cdUninstallHelperPath() {
+        try {
+            int ver = getPackageManager().getPackageInfo(getPackageName(), 0).versionCode;
+            File f = new File(getFilesDir(), "uninstall_runner_" + ver + ".jar");
+            extractAsset("uninstall_runner.jar", f);
+            if (f.length() > 0) return f.getAbsolutePath();
+            f.delete();
+        } catch (Exception ignored) {}
+        try {
+            return getPackageManager().getApplicationInfo(getPackageName(), 0).sourceDir;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     private static String cdErrorJson(String tag, String out) {
         try {
             return new JSONObject().put("tag", tag).put("out", out).toString();
@@ -8966,6 +8985,47 @@ public class MainActivity extends Activity {
                             res.put("install", out);
                         } catch (Exception e) {
                             try { res.put("out", "Error: " + e.getMessage()); } catch (Exception ignored) {}
+                        }
+                        cdCancelled.remove(t);
+                        notifyJs("window.onCdResult && window.onCdResult(" + res.toString() + ")");
+                    }
+                });
+            } catch (java.util.concurrent.RejectedExecutionException closing) {
+                notifyJs("window.onCdResult && window.onCdResult(" + cdErrorJson(t, "Error: the app is closing") + ")");
+            }
+        }
+
+        /**
+         * Uninstalls an app on a connected device for its user 0 the way this phone does for itself: {@code pm uninstall --user 0}, and when that device
+         * says only root can remove a system app, the direct Binder helper sent there and run (see DeviceUninstall). Answer: window.onCdResult({tag, ok, out}).
+         */
+        @JavascriptInterface
+        public void cdUninstall(final String tag, final String serial, final String pkg) {
+            final String t = tag == null ? "" : tag;
+            if (!DeviceLink.validSerial(serial)) { notifyJs("window.onCdResult && window.onCdResult(" + cdErrorJson(t, "Error: choose a device first") + ")"); return; }
+            if (!DeviceUninstall.validPackage(pkg)) { notifyJs("window.onCdResult && window.onCdResult(" + cdErrorJson(t, "Error: that is not a package name") + ")"); return; }
+            cdCancelled.remove(t);
+            try {
+                cdExecutor.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        JSONObject res = new JSONObject();
+                        try {
+                            res.put("tag", t);
+                            DeviceUninstall.Result r = DeviceUninstall.run(pkg, new DeviceLink.Adb() {
+                                @Override
+                                public String run(List<String> a, int timeoutMs) {
+                                    List<String> full = new ArrayList<String>();
+                                    full.add("-s");
+                                    full.add(serial);
+                                    full.addAll(a);
+                                    return cdExec(t, full, timeoutMs);
+                                }
+                            }, cdUninstallHelperPath(), Long.toString(System.nanoTime(), 36));
+                            res.put("ok", r.ok);
+                            res.put("out", r.text);
+                        } catch (Exception e) {
+                            try { res.put("ok", false); res.put("out", "Error: " + e.getMessage()); } catch (Exception ignored) {}
                         }
                         cdCancelled.remove(t);
                         notifyJs("window.onCdResult && window.onCdResult(" + res.toString() + ")");

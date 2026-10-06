@@ -16839,9 +16839,26 @@ Type any command below (e.g. pm list packages -d)
         }
 
         // Runs one change on the device. Resolves { ok, out }; on success the list is updated in place
+        // Removing an app goes through the same steps as on this phone: pm uninstall --user 0 and, when a system app is refused (only root may remove it), the direct Binder
+        // helper sent to that device and run there (AndroidBridge.cdUninstall). Resolves { ok, out } like cdSh does, with the answer's own words.
+        function cdUninstallRun(pkg) {
+            return new Promise(res => {
+                const b = window.AndroidBridge;
+                const tag = 'cd' + (++cdSeq);
+                cdWait[tag] = r => res({ ok: !!r.ok && !cdFail(r.out), out: String(r.out == null ? '' : r.out) });
+                try { b.cdUninstall(tag, cd.serial, pkg); }
+                catch (e) { delete cdWait[tag]; res({ ok: false, out: 'Error: ' + (e && e.message || e) }); }
+            });
+        }
         async function cdDo(act, pkg) {
-            let out = await cdSh(CD_APP_CMDS[act](pkg), { timeout: 60000 });
-            let ok = cdActOk(out);
+            let out, ok;
+            if (act === 'uninstall' && cd.serial && window.AndroidBridge && window.AndroidBridge.cdUninstall) {
+                const u = await cdUninstallRun(pkg);
+                out = u.out; ok = u.ok;
+            } else {
+                out = await cdSh(CD_APP_CMDS[act](pkg), { timeout: 60000 });
+                ok = cdActOk(out);
+            }
             if (act === 'reinstall' && !ok) { out = await cdSh('pm install-existing ' + cdQ(pkg), { timeout: 60000 }); ok = cdActOk(out); }
             if (ok) {
                 const a = (cd.apps || []).find(x => x.pkg === pkg);

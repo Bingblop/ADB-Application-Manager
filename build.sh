@@ -130,14 +130,28 @@ CLASS_FILES=$(find "$WORK_DIR/obj/classes" -name "*.class")
 "${D8[@]}" --release --min-api "$MIN_SDK" --lib "$BOOTCLASSPATH" \
     --output "$WORK_DIR/bin" $CLASS_FILES "$WORK_DIR"/libs/*.jar || fail "d8 failed"
 
+# The small helper that removes a system app on ANOTHER device (Connected Devices): only the SystemlessUninstallRunner classes, as a jar with a
+# classes.dex that app_process can run there. It is sent to the device with adb push, so it is kept small instead of sending the whole APK.
+step "Building the uninstall helper for other devices (d8)..."
+RUNNER_DIR="$WORK_DIR/obj/runner"
+rm -rf "$RUNNER_DIR"; mkdir -p "$RUNNER_DIR"
+RUNNER_CLASSES=$(find "$WORK_DIR/obj/classes" -name "SystemlessUninstallRunner*.class")
+[ -n "$RUNNER_CLASSES" ] || fail "SystemlessUninstallRunner was not compiled"
+"${D8[@]}" --release --min-api "$MIN_SDK" --lib "$BOOTCLASSPATH" --output "$RUNNER_DIR" $RUNNER_CLASSES || fail "d8 failed (uninstall helper)"
+[ -f "$RUNNER_DIR/classes.dex" ] || fail "the uninstall helper has no classes.dex"
+
 # ---- Step 5: Package dex + native adb ---------------------------------------------------------
 step "Packaging classes.dex and native libraries..."
 python3 - "$WORK_DIR" "$ABI" <<'EOF'
 import sys, zipfile, os
 work, abi = sys.argv[1], sys.argv[2]
 apk = os.path.join(work, 'bin', 'unsigned.apk')
+runner_jar = os.path.join(work, 'obj', 'runner', 'uninstall_runner.jar')
+with zipfile.ZipFile(runner_jar, 'w', zipfile.ZIP_DEFLATED) as j:
+    j.write(os.path.join(work, 'obj', 'runner', 'classes.dex'), 'classes.dex')
 with zipfile.ZipFile(apk, 'a', zipfile.ZIP_DEFLATED) as z:
     z.write(os.path.join(work, 'bin', 'classes.dex'), 'classes.dex')
+    z.write(runner_jar, 'assets/uninstall_runner.jar')
     if abi in ('arm64-v8a', 'universal'):
         libadb = os.path.join(work, 'assets', 'libadb.so')
         if os.path.exists(libadb):
