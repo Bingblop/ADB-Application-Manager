@@ -1324,6 +1324,12 @@
             cursor: default;
         }
 
+        /* Settings > Trim Caches: the explanation under the button */
+        .trim-explain { margin-top: 12px; font-size: 11.5px; line-height: 1.5; color: var(--text-muted); }
+        .trim-explain p { margin: 0 0 8px 0; }
+        .trim-explain b { color: var(--text-main); }
+        .trim-explain code { font-family: monospace; font-size: 11px; padding: 1px 5px; border-radius: 6px; background: rgba(var(--ov), 0.08); color: var(--accent); word-break: break-all; }
+
         /* App menu: the Features, Configurations, Signatures and Libraries tabs */
         .ax-sec { font-weight: 800; font-size: 11px; margin: 12px 0 6px 0; color: var(--secondary); letter-spacing: 0.4px; text-transform: uppercase; }
         .ax-note { font-size: 11px; color: var(--text-muted); line-height: 1.45; margin: 4px 0 8px 0; }
@@ -2577,6 +2583,9 @@
             transform: scale(0.96);
             opacity: 0.85;
         }
+
+        .mode-action-btn.locked { opacity: 0.7; }
+        .mode-action-btn:disabled { opacity: 0.6; cursor: default; }
 
         .mode-tip-box {
             background: rgba(0, 229, 255, 0.06);
@@ -5119,6 +5128,23 @@
                 <div class="color-card-subtitle">Hold a finger on these for about half a second. You feel a short tap when it works.</div>
                 <div class="hold-list"><div class="hold-row"><span class="hold-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg></span><div class="hold-txt"><div class="hold-what"><b>An app row</b><span class="hold-where">Apps</span></div><div class="hold-does">Opens that app's menu (the same as tapping ⋯). Tap the checkbox to select it instead.</div></div></div><div class="hold-row"><span class="hold-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg></span><div class="hold-txt"><div class="hold-what"><b>An app's icon</b><span class="hold-where">Apps</span></div><div class="hold-does">Saves the icon as a PNG to Download/ADB App Manager/Icons.</div></div></div><div class="hold-row"><span class="hold-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg></span><div class="hold-txt"><div class="hold-what"><b>The Action Button</b><span class="hold-where">Apps, Debloater</span></div><div class="hold-does">A sheet with every action for that app: settings, launch, force stop, enable or disable, uninstall, suspend, permissions, activities. Choose which ones it lists below.</div></div></div><div class="hold-row"><span class="hold-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg></span><div class="hold-txt"><div class="hold-what"><b>The round checkmark button (when apps are selected)</b><span class="hold-where">Apps</span></div><div class="hold-does">Clears every selection at once.</div></div></div><div class="hold-row"><span class="hold-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg></span><div class="hold-txt"><div class="hold-what"><b>A file or folder row</b><span class="hold-where">File Manager</span></div><div class="hold-does">Starts selecting. Tap more rows to add them, then Copy, Move or Delete.</div></div></div><div class="hold-row"><span class="hold-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg></span><div class="hold-txt"><div class="hold-what"><b>A file the APK search found</b><span class="hold-where">Installer</span></div><div class="hold-does">Deletes it from the phone, with an Undo right after.</div></div></div><div class="hold-row"><span class="hold-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg></span><div class="hold-txt"><div class="hold-what"><b>A setting that is 1 or 0</b><span class="hold-where">Hidden Settings</span></div><div class="hold-does">Flips it.</div></div></div><div class="hold-row"><span class="hold-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg></span><div class="hold-txt"><div class="hold-what"><b>An overlay row</b><span class="hold-where">Overlays</span></div><div class="hold-does">Switches that overlay on or off.</div></div></div></div>
             </div>
+
+            <div class="color-card" id="trimCachesCard">
+                <div class="color-card-title">Trim Caches</div>
+                <div class="color-card-subtitle">Free up storage by clearing the cache of every app on your phone in one go.</div>
+                <div class="mode-btn-row">
+                    <button class="mode-action-btn primary" id="trimCachesBtn" onclick="trimCachesAll()"><span id="trimCachesLock"></span><span id="trimCachesLabel">Trim Caches in All Applications</span></button>
+                </div>
+                <div class="switch-sub" id="trimCachesStatus" style="display:none; margin-top:8px;"></div>
+                <div class="trim-explain" id="trimCachesExplain">
+                    <p><b>What it runs.</b> The button runs <code translate="no">pm trim-caches 128G</code> on the phone, the same as typing <code translate="no">adb shell pm trim-caches 128G</code> on a computer. It needs a working mode (ADB, Wireless Debugging, Shizuku or Root); without one the button is locked.</p>
+                    <p><b>What it does.</b> <code translate="no">pm trim-caches</code> asks Android to free space by deleting app caches until the phone has the amount of free storage you give it. 128 GB is more free space than any phone has, so the target can never be reached: Android keeps going and clears every cache it is allowed to clear, in every app, instead of stopping after the first few. The apps it starts with, and the order, are Android's own choice.</p>
+                    <p><b>What is trimmed.</b> Only cache: the temporary files each app keeps in its own <i>cache</i> folder (and in its <i>code cache</i> folder), on the phone's internal storage and in the app's folder under Android/data. That is things like downloaded thumbnails and images, web pages a browser kept for next time, map tiles, video and music that was only buffered, and temporary files an app made while working. Android treats all of it as safe to throw away, and the app makes it again when it needs it.</p>
+                    <p><b>What is not touched.</b> Your apps themselves, their data and settings, logins and accounts, saved games, photos, videos, downloads and every other file in your folders. Nothing is uninstalled and no app is reset.</p>
+                    <p><b>What you may notice.</b> The first start of an app afterwards can be a little slower, and it may use mobile data to fetch images again. An app that keeps offline downloads in its cache folder (some music, video and map apps do) may need to download them again. Apps that are running right now may keep some of their cache until they close.</p>
+                    <p><b>How long it takes.</b> From a few seconds to a minute or two, depending on how many apps you have and how much cache they hold. The app stays usable while it runs, and a report shows how much free space there was before and after.</p>
+                </div>
+            </div>
         </section>
 
         <!-- VIEW: ABOUT -->
@@ -7613,7 +7639,7 @@ Type any command below (e.g. pm list packages -d)
             });
             const gear = document.getElementById('prefsHeaderBtn');
             if (gear) gear.classList.toggle('active', viewName === 'prefs');
-            if (viewName === 'prefs') { iconPackRender(); actionBtnRender(); }
+            if (viewName === 'prefs') { iconPackRender(); actionBtnRender(); trimSyncLock(); }
 
             document.querySelectorAll('.view-content').forEach(v => {
                 v.classList.remove('active');
@@ -8432,6 +8458,7 @@ Type any command below (e.g. pm list packages -d)
                 const configured = d.configuredMode || 'auto';
                 currentWorkingMode = d.activeMode || 'unprivileged';
                 isPrivilegedActive = !!d.isPrivileged;
+                trimSyncLock();
                 const pinnedButNotReady = configured !== 'auto' && configured !== 'unprivileged' && !d.modeAvailable;
 
                 // Update Header Badge
@@ -19964,6 +19991,7 @@ Type any command below (e.g. pm list packages -d)
         }
 
         function onShellDone(id, out) {
+            if (trimRun && trimRun.id === id) { trimDone(id, out); return; }
             const run = termShellRun;
             if (!run || run.id !== id) return;
             termShellRun = null;
@@ -19979,6 +20007,79 @@ Type any command below (e.g. pm list packages -d)
             if (document.getElementById('termSearch').value) termFind(0);
         }
         window.onShellDone = onShellDone;
+
+        // ---------- Settings > Trim Caches in All Applications: `pm trim-caches 128G` ----------
+        // Runs off the page's thread (executeShellAsync); the free space of /data is read before and after so the report can say what was freed.
+        const TRIM_CMD = 'pm trim-caches 128G';
+        let trimRun = null;       // { id, before } while it runs
+        let trimSeq = 0;
+
+        function trimSyncLock() {
+            const lock = document.getElementById('trimCachesLock');
+            if (lock) lock.innerText = lk(lockedNow());
+            const btn = document.getElementById('trimCachesBtn');
+            if (btn) { btn.classList.toggle('locked', lockedNow()); if (lockedNow()) btn.title = NEEDS_MODE; else btn.removeAttribute('title'); }
+        }
+        // the free kilobytes on /data from a line like "/dev/block/dm-48 114000000 52000000 61000000 46% /data"
+        function trimFreeKb(line) {
+            const t = String(line || '').trim().split(/\s+/);
+            if (t.length < 4) return null;
+            const kb = parseInt(t[t.length - 3], 10);
+            return isFinite(kb) ? kb : null;
+        }
+        function trimFmt(kb) {
+            if (kb === null || kb === undefined) return 'unknown';
+            return formatBytes(Math.abs(kb) * 1024);
+        }
+        function trimCachesAll() {
+            if (trimRun) { showToast('Already trimming. Wait for it to finish.'); return; }
+            if (!guardPrivilege('Trim caches in all applications')) return;
+            if (!window.AndroidBridge) { showToast('Needs the app build'); return; }
+            if (!confirm('Trim the caches of every app now? Only cache files are deleted. Apps, their data, logins and your files stay as they are.')) return;
+            haptic();
+            const script = 'df -k /data | tail -n 1; echo __TRIM_BEGIN__; ' + TRIM_CMD + '; echo __TRIM_RC__$?; df -k /data | tail -n 1';
+            const id = 'trim' + (++trimSeq);
+            trimRun = { id };
+            trimSetBusy(true);
+            let st = '';
+            if (window.AndroidBridge.executeShellAsync) {
+                try { st = window.AndroidBridge.executeShellAsync(id, script); } catch (e) { st = ''; }
+                if (st !== 'started') trimDone(id, 'Error: the command could not be started');
+            } else {
+                // an older build: the same command, straight from the page's thread
+                setTimeout(() => { let out = ''; try { out = window.AndroidBridge.executeShell(script) || ''; } catch (e) { out = 'Error: ' + (e && e.message || e); } trimDone(id, out); }, 50);
+            }
+        }
+        function trimSetBusy(on) {
+            const btn = document.getElementById('trimCachesBtn'), lab = document.getElementById('trimCachesLabel'), status = document.getElementById('trimCachesStatus');
+            if (btn) btn.disabled = on;
+            if (lab) lab.innerText = on ? 'Trimming caches…' : 'Trim Caches in All Applications';
+            if (status) { status.style.display = on ? '' : 'none'; status.innerText = on ? 'Android is clearing the caches. This can take up to a minute or two; you can keep using the app.' : ''; }
+        }
+        function trimDone(id, out) {
+            if (!trimRun || trimRun.id !== id) return;
+            trimRun = null;
+            trimSetBusy(false);
+            const text = String(out || '');
+            const lines = text.split('\n').map(l => l.replace(/\r$/, ''));
+            const bi = lines.indexOf('__TRIM_BEGIN__');
+            const ri = lines.findIndex(l => l.indexOf('__TRIM_RC__') === 0);
+            const before = bi > 0 ? trimFreeKb(lines[bi - 1]) : null;
+            const rc = ri >= 0 ? parseInt(lines[ri].slice('__TRIM_RC__'.length), 10) : null;
+            const after = ri >= 0 && ri + 1 < lines.length ? trimFreeKb(lines.slice(ri + 1).filter(l => l.trim()).pop()) : null;
+            const said = (bi >= 0 && ri > bi ? lines.slice(bi + 1, ri) : (bi < 0 ? lines : [])).join('\n').trim();
+            const failed = (rc !== null && rc !== 0) || (rc === null && !said) || /\b(error|exception|failure|invalid|unknown|denied|not allowed|inaccessible|not configured)\b/i.test(said);
+            let freed = '';
+            if (before !== null && after !== null) {
+                freed = after >= before ? 'Free space on the phone: ' + trimFmt(before) + ' before, ' + trimFmt(after) + ' after (' + (after > before ? trimFmt(after - before) + ' freed' : 'nothing more could be freed') + ').'
+                    : 'Free space on the phone: ' + trimFmt(before) + ' before, ' + trimFmt(after) + ' after (other things on the phone used space meanwhile).';
+            }
+            showCommandResults('Trim Caches in All Applications', failed ? 'It did not finish' : 'Caches trimmed', [{
+                name: TRIM_CMD, pkg: failed ? '' : freed,
+                output: said || (failed ? 'The command gave no answer.' : 'Done. The command printed nothing, which is what it does when it works.' + (freed ? '' : ' (The free space could not be read.)')),
+                success: !failed,
+            }]);
+        }
 
         // ---------- Terminal: command history, saved commands, pinned chips ----------
         // History keeps the last commands (any mode); Saved are named commands/scripts you keep, optionally pinned as
