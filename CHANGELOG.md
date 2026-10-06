@@ -1,5 +1,19 @@
 # Changelog
 
+## v7.9.20-Pro (versionCode 810)
+
+- **An Enabled filter, and filters that combine.** A new Enabled pill in the Application Manager tab (installed apps that
+  are not disabled; a suspended app is still enabled), and the pills and the big boxes at the top can now be used
+  together: tap more than one and the list shows the apps that match all of them, such as Running + 3rd Party for your
+  running user apps or Enabled + System for your enabled system apps. A tap on a filter that is on turns it off, All
+  Apps (or the Total installed box) turns them all off, a line under the buttons names what is combined, and 3rd
+  Party / System, and Enabled / Frozen, are each one filter with two values: one on, or none. The same combining
+  pills are in the other lists too: the Debloater has an "Also show only" row (Updated 7d, Running, 3rd Party, System,
+  Suspended, Patched) that works together with its own Removal, vendor and state rows, and Saved Applications has the
+  full set of pills, applied to the apps inside each list (a list shows how many of its apps match, lists with no match
+  are hidden, and Recall takes only the matching apps).
+- **A small gap** between the checkbox and the ... button on each Apps list row.
+
 ## v7.9.19-Pro (versionCode 809)
 
 - **Presets and saved commands can be exported and imported.** Batch Ops has Export presets and Import..., Command has

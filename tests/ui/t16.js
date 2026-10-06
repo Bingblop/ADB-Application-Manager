@@ -51,7 +51,7 @@ const { chromium, PAGE } = require('./lib/pw');
   console.log('pill starts off, no version in the row by default:', !(await page.locator('#versionTogglePill').evaluate(e => e.classList.contains('active'))));
   await page.click('#versionTogglePill');
   console.log('toggle on → row:', await label('org.fdroid.fdroid'));
-  await page.click('.filter-pill[data-filter="system"]');
+  await page.click('#filterScroll .filter-pill[data-filter="system"]');
   console.log('toggle still on after filter change:', await page.locator('#versionTogglePill').evaluate(e => e.classList.contains('active')));
   const store = await page.evaluate(() => window.__st.store);
   const errs1 = page.__errors;

@@ -41,10 +41,10 @@ const { chromium, PAGE } = require('./lib/pw');
     console.log((s + ':').padEnd(10), await names(), '|', await metas());
   }
   await page.selectOption('#appSort', 'name');
-  console.log('recent pill:', await page.locator('.filter-pill[data-filter="recent"]').innerText());
-  await page.click('.filter-pill[data-filter="recent"]');
+  console.log('recent pill:', await page.locator('#filterScroll .filter-pill[data-filter="recent"]').innerText());
+  await page.click('#filterScroll .filter-pill[data-filter="recent"]');
   console.log('recent apps:', await names());
-  await page.click('.filter-pill[data-filter="all"]');
+  await page.click('#filterScroll .filter-pill[data-filter="all"]');
   // Export
   await page.click('#view-apps >> text=Export');
   const saved = await page.evaluate(() => window.__st.saved);

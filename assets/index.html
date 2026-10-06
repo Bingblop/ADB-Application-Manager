@@ -514,6 +514,8 @@
 
         .app-card { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }      /* a long press opens the app's menu, not a text selection */
 
+        .app-actions + .app-left { margin-left: 10px; }          /* a small gap between the "..." button and the checkbox */
+
         .app-card.selected .app-checkbox {
             background: var(--accent);
             border-color: var(--accent);
@@ -3261,12 +3263,14 @@
                 <span class="filters-hint-x" role="button" tabindex="0" aria-label="Hide this tip" onclick="dismissFiltersHint()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dismissFiltersHint();}">✕</span>
             </div>
 
+            <div class="switch-sub" id="filterSummary" style="display:none; margin:-2px 2px 8px;"></div>
             <div class="filter-scroll" id="filterScroll" onscroll="filtersScrolled()">
                 <div class="filter-pill active" data-filter="all" onclick="setFilter('all', this)">All Apps (<span id="countAll">0</span>)</div>
                 <div class="filter-pill" data-filter="recent" onclick="setFilter('recent', this)">Updated 7d (<span id="countRecent">0</span>)</div>
                 <div class="filter-pill" data-filter="running" onclick="setFilter('running', this)">Running (<span id="countRunning">0</span>)</div>
                 <div class="filter-pill" data-filter="user" onclick="setFilter('user', this)">3rd Party (<span id="countUser">0</span>)</div>
                 <div class="filter-pill" data-filter="system" onclick="setFilter('system', this)">System (<span id="countSystem">0</span>)</div>
+                <div class="filter-pill" data-filter="enabled" onclick="setFilter('enabled', this)">Enabled (<span id="countEnabled">0</span>)</div>
                 <div class="filter-pill" data-filter="frozen" onclick="setFilter('frozen', this)">Frozen (<span id="countFrozen">0</span>)</div>
                 <div class="filter-pill" data-filter="suspended" onclick="setFilter('suspended', this)">Suspended (<span id="countSuspended">0</span>)</div>
                 <div class="filter-pill" data-filter="patched" onclick="setFilter('patched', this)">Patched (<span id="countPatched">0</span>)</div>
@@ -3355,6 +3359,10 @@
                 <span class="filter-chip" data-state="uninstalled" onclick="setUadState('uninstalled')">Uninstalled</span>
                 <span class="filter-chip" data-state="all" onclick="setUadState('all')">All</span>
             </div>
+
+            <div class="switch-sub" style="margin:4px 2px 4px;">Also show only (combine as many as you like):</div>
+            <div class="filter-scroll" id="uadExtraRow"></div>
+            <div class="switch-sub" id="uadExtraSummary" style="display:none; margin:2px 2px 6px;"></div>
 
             <div class="uad-actions">
                 <div class="uad-count" id="uadCount">0 packages</div>
@@ -4352,6 +4360,9 @@
             <div class="saved-lists-toolbar">
                 <button class="apps-tool-btn" onclick="openListEditorModal()">New List</button>
             </div>
+            <div class="switch-sub" style="margin:0 2px 4px;">Show only the apps in each list that match (combine as many as you like):</div>
+            <div class="filter-scroll" id="savedFilterRow"></div>
+            <div class="switch-sub" id="savedFilterSummary" style="display:none; margin:2px 2px 8px;"></div>
 
             <div id="savedListsContainer">
                 <div style="text-align:center; padding: 28px 20px; color: var(--text-muted);">
@@ -6547,7 +6558,11 @@ Type any command below (e.g. pm list packages -d)
         // When on, a batch action (Freeze, Suspend, Uninstall, ...) leaves the selection as it is instead of
         // clearing it, so the same apps are ready for another action straight away. Remembered in ui_state.
         let batchKeepSelection = false;
-        let currentFilter = 'all';
+        // Filters combine: any number of pills / boxes can be on, and an app has to match every one of them (Running + 3rd Party = your running
+        // user apps). None on is "All Apps". Two pairs can only have one member on, or none: 3rd Party / System, and Enabled / Frozen.
+        const activeFilters = new Set();
+        const FILTER_GROUPS = [['user', 'system'], ['enabled', 'frozen']];
+        const FILTER_NAMES = { recent: 'Updated 7d', running: 'Running', user: '3rd Party', system: 'System', enabled: 'Enabled', frozen: 'Frozen', suspended: 'Suspended', patched: 'Patched', uninstalled: 'Uninstalled' };
         let inspectedPkg = null;
         let currentWorkingMode = 'unprivileged';
         let isPrivilegedActive = false;
@@ -7239,9 +7254,27 @@ Type any command below (e.g. pm list packages -d)
             } catch (e) {}
         }
 
+        // The Saved Applications filters: the same pills as the Application Manager, applied to the apps inside each list
+        const savedFilters = new Set();
+        const SAVED_FILTER_KEYS = ['recent', 'running', 'user', 'system', 'enabled', 'frozen', 'suspended', 'patched', 'uninstalled'];
+        function setSavedFilter(k) {
+            toggleFilterIn(savedFilters, k);
+            haptic();
+            renderSavedLists();
+        }
+        // the packages of a list that pass the filters on (an app that is not on this phone passes none of them)
+        function savedListShown(list) {
+            const pkgs = Array.isArray(list.packages) ? list.packages : [];
+            if (!savedFilters.size) return pkgs;
+            return pkgs.filter(pk => { const a = allApps.find(x => x.pkg === pk); return !!a && appMatchesFilterSet(a, savedFilters); });
+        }
         function renderSavedLists() {
             const container = document.getElementById('savedListsContainer');
             if (!container) return;
+            const row = document.getElementById('savedFilterRow');
+            if (row) row.innerHTML = filterPillsHtml(savedFilters, 'setSavedFilter', SAVED_FILTER_KEYS);
+            const sum = document.getElementById('savedFilterSummary');
+            if (sum) { sum.style.display = savedFilters.size > 1 ? '' : 'none'; sum.innerText = filterSummaryText(savedFilters); }
             if (!customLists.length) {
                 container.innerHTML = `
                     <div style="text-align:center; padding: 28px 20px; color: var(--text-muted);">
@@ -7251,8 +7284,16 @@ Type any command below (e.g. pm list packages -d)
                     </div>`;
                 return;
             }
-            container.innerHTML = customLists.map(list => {
-                const pkgs = Array.isArray(list.packages) ? list.packages : [];
+            const shownLists = customLists.filter(l => !savedFilters.size || savedListShown(l).length);
+            if (!shownLists.length) {
+                container.innerHTML = '<div style="text-align:center; padding: 28px 20px; color: var(--text-muted); font-size:12px;">No saved list has apps that match these filters.</div>';
+                return;
+            }
+            container.innerHTML = shownLists.map(list => {
+                const all = Array.isArray(list.packages) ? list.packages : [];
+                const pkgs = savedListShown(list);
+                const metaText = (savedFilters.size ? pkgs.length + ' of ' + all.length : pkgs.length) + ' apps';
+                const recallText = savedFilters.size ? 'Recall ' + pkgs.length : 'Recall';
                 const desc = list.description ? `<div class="saved-list-desc">${escapeHtml(list.description)}</div>` : '';
                 const chips = pkgs.slice(0, 6).map(pkg => `<span class="saved-pkg-chip">${escapeHtml(pkg)}</span>`).join('');
                 const more = pkgs.length > 6 ? `<span class="saved-pkg-chip">+${pkgs.length - 6} more</span>` : '';
@@ -7261,7 +7302,7 @@ Type any command below (e.g. pm list packages -d)
                     <div class="saved-list-card">
                         <div class="saved-list-head">
                             <div class="saved-list-title">${escapeHtml(list.name || 'Untitled List')}</div>
-                            <div class="saved-list-meta">${pkgs.length} apps</div>
+                            <div class="saved-list-meta">${metaText}</div>
                         </div>
                         ${desc}
                         <div class="saved-list-pkgs">${chips || '<span class="saved-pkg-chip">No packages</span>'}${more}</div>
@@ -7269,7 +7310,7 @@ Type any command below (e.g. pm list packages -d)
                             <div class="tag-badge tag-system">Saved</div>
                         </div>
                         <div class="saved-list-actions">
-                            <button class="apps-tool-btn" data-list-id="${listId}" onclick="recallSavedList(this.getAttribute('data-list-id'))">Recall</button>
+                            <button class="apps-tool-btn" data-list-id="${listId}" onclick="recallSavedList(this.getAttribute('data-list-id'))">${recallText}</button>
                             <button class="apps-tool-btn${quickListId === (list.id || '') ? ' active' : ''}" data-list-id="${listId}" onclick="toggleQuickList(this.getAttribute('data-list-id'))" title="Use this list for the Quick Settings tile and the widget">${quickListId === (list.id || '') ? 'Quick list ✓' : 'Quick list'}</button>
                             <button class="apps-tool-btn" data-list-id="${listId}" onclick="openListEditorModal(this.getAttribute('data-list-id'))">Edit</button>
                             <button class="apps-tool-btn" data-list-id="${listId}" onclick="copySavedList(this.getAttribute('data-list-id'))">Copy</button>
@@ -7373,11 +7414,11 @@ Type any command below (e.g. pm list packages -d)
             if (!list) return;
             selectedPkgs.clear();
             batchPanelExpanded = false;
-            (list.packages || []).forEach(pkg => selectedPkgs.add(pkg));
+            savedListShown(list).forEach(pkg => selectedPkgs.add(pkg));          // with filters on, only the apps that match
             updateBatchBar();
             renderApps();
             switchView('apps');
-            showToast('Recalled ' + selectedPkgs.size + ' apps from ' + list.name);
+            showToast('Recalled ' + selectedPkgs.size + ' apps from ' + list.name + (savedFilters.size ? ' (filtered)' : ''));
         }
 
         function copySavedList(listId) {
@@ -7996,6 +8037,23 @@ Type any command below (e.g. pm list packages -d)
             saveUiState();
         }
 
+        // The Debloater's combining filters, the same pills as the Application Manager (the On device / Enabled / Disabled row above covers state)
+        const uadExtra = new Set();
+        const UAD_EXTRA_KEYS = ['recent', 'running', 'user', 'system', 'suspended', 'patched'];
+        function renderUadExtra() {
+            const row = document.getElementById('uadExtraRow');
+            if (!row) return;
+            row.innerHTML = filterPillsHtml(uadExtra, 'setUadExtra', UAD_EXTRA_KEYS);
+            const sum = document.getElementById('uadExtraSummary');
+            sum.style.display = uadExtra.size > 1 ? '' : 'none';
+            sum.innerText = filterSummaryText(uadExtra);
+        }
+        function setUadExtra(k) {
+            toggleFilterIn(uadExtra, k);
+            haptic();
+            renderUadExtra();
+            renderUadList();
+        }
         function uadVisiblePackages(ignoreBrand) {
             const q = (document.getElementById('uadSearch').value || '').toLowerCase().trim();
             return uadPackages.filter(p => {
@@ -8004,6 +8062,7 @@ Type any command below (e.g. pm list packages -d)
                 if (uadFilters.list !== 'all' && p.list !== uadFilters.list) return false;
                 if (uadFilters.state === 'present' && p.state === 'uninstalled') return false;
                 if (['enabled', 'disabled', 'uninstalled'].includes(uadFilters.state) && p.state !== uadFilters.state) return false;
+                if (uadExtra.size) { const a = abAppFor(p.pkg); if (!a || !appMatchesFilterSet(a, uadExtra)) return false; }
                 if (q && !(p.pkg.toLowerCase().includes(q) || p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q))) return false;
                 return true;
             }).sort((a, b) => (UAD_LEVEL_ORDER[a.removal] - UAD_LEVEL_ORDER[b.removal]) || a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
@@ -8033,6 +8092,7 @@ Type any command below (e.g. pm list packages -d)
                 return;
             }
             renderUadBrandChips();
+            renderUadExtra();
             const rows = uadVisiblePackages();
             document.getElementById('uadCount').innerText = `${rows.length} shown • ${uadSelected.size} selected`;
             if (!rows.length) {
@@ -8213,8 +8273,8 @@ Type any command below (e.g. pm list packages -d)
                 }
                 // The Apps tab always opens on "Total Installed" (the "all" filter) after the app was gone from memory: a filter left on
                 // last time is not brought back, so the whole list is what you see first.
-                currentFilter = 'all';
-                document.querySelectorAll('.filter-pill').forEach(p => p.classList.toggle('active', p.getAttribute('data-filter') === currentFilter));
+                activeFilters.clear();
+                syncFilterUi();
                 if (st.uad) {
                     if (Array.isArray(st.uad.removal)) uadFilters.removal = new Set(st.uad.removal.filter(r => UAD_LEVEL_ORDER[r] !== undefined));
                     if (st.uad.list) uadFilters.list = st.uad.list;
@@ -10133,29 +10193,54 @@ Type any command below (e.g. pm list packages -d)
             if (e.key === 'Escape' && closeSearchMenu()) { e.preventDefault(); const b = document.getElementById('searchMenuBtn'); if (b) b.focus(); }
         });
 
+        // Does this app match every filter in the set? 3rd Party / System leave out uninstalled apps unless Uninstalled is on too.
+        function appMatchesFilterSet(app, f) {
+            if (f.has('running') && !app.isRunning) return false;
+            if (f.has('enabled') && (app.isFrozen || app.isUninstalled)) return false;       // installed and not disabled (a suspended app is still enabled)
+            if (f.has('frozen') && !app.isFrozen) return false;
+            if (f.has('suspended') && !app.isSuspended) return false;
+            if (f.has('user') && (app.isSystem || (app.isUninstalled && !f.has('uninstalled')))) return false;
+            if (f.has('system') && (!app.isSystem || (app.isUninstalled && !f.has('uninstalled')))) return false;
+            if (f.has('uninstalled') && !app.isUninstalled) return false;
+            if (f.has('recent') && !isRecentlyUpdated(app)) return false;
+            if (f.has('patched') && !(app.mods && app.mods.length)) return false;
+            return true;
+        }
+        function appMatchesFilters(app) { return appMatchesFilterSet(app, activeFilters); }
+
+        // A tap on a filter turns it on or off in the set ("all" empties it); a pair (3rd Party / System, Enabled / Frozen) keeps one member
+        function toggleFilterIn(set, filter) {
+            if (filter === 'all') { set.clear(); return; }
+            if (set.has(filter)) { set.delete(filter); return; }
+            FILTER_GROUPS.forEach(g => { if (g.includes(filter)) g.forEach(x => set.delete(x)); });
+            set.add(filter);
+        }
+        function filterSummaryText(set) {
+            return 'Showing apps that are ' + Array.from(set).map(k => FILTER_NAMES[k] || k).join(' + ') + '. Tap All to clear.';
+        }
+        // the row of pills for a view that has its own set: Saved Applications and the Debloater
+        function filterPillsHtml(set, fn, keys) {
+            return '<div class="filter-pill' + (set.size ? '' : ' active') + '" data-filter="all" onclick="' + fn + '(\'all\')">All</div>'
+                + keys.map(k => '<div class="filter-pill' + (set.has(k) ? ' active' : '') + '" data-filter="' + k + '" onclick="' + fn + '(\'' + k + '\')">' + FILTER_NAMES[k] + '</div>').join('');
+        }
+
         // Render Apps
         function renderApps() {
             const match = buildAppMatcher(document.getElementById('searchInput').value);
 
             filteredApps = allApps.filter(app => {
-                if (currentFilter === 'running' && !app.isRunning) return false;
-                if (currentFilter === 'frozen' && !app.isFrozen) return false;
-                if (currentFilter === 'suspended' && !app.isSuspended) return false;
-                if (currentFilter === 'user' && (app.isSystem || app.isUninstalled)) return false;
-                if (currentFilter === 'system' && (!app.isSystem || app.isUninstalled)) return false;
-                if (currentFilter === 'uninstalled' && !app.isUninstalled) return false;
-                if (currentFilter === 'recent' && !isRecentlyUpdated(app)) return false;
-                if (currentFilter === 'patched' && !(app.mods && app.mods.length)) return false;
+                if (activeFilters.size && !appMatchesFilters(app)) return false;
 
                 return match ? !!match(app) : true;
             });
             sortApps(filteredApps);
 
             // Update stats counts (one pass over the list)
-            const n = { running: 0, frozen: 0, user: 0, system: 0, uninstalled: 0, recent: 0, suspended: 0, patched: 0 };
+            const n = { running: 0, enabled: 0, frozen: 0, user: 0, system: 0, uninstalled: 0, recent: 0, suspended: 0, patched: 0 };
             allApps.forEach(a => {
                 if (a.isRunning) n.running++;
                 if (a.isFrozen) n.frozen++;
+                if (!a.isFrozen && !a.isUninstalled) n.enabled++;
                 if (a.isUninstalled) n.uninstalled++;
                 else if (a.isSystem) n.system++;
                 else n.user++;
@@ -10174,6 +10259,7 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('countRunning').innerText = n.running;
             document.getElementById('countUser').innerText = n.user;
             document.getElementById('countSystem').innerText = n.system;
+            document.getElementById('countEnabled').innerText = n.enabled;
             document.getElementById('countFrozen').innerText = n.frozen;
             document.getElementById('countRecent').innerText = n.recent;
             document.getElementById('countSuspended').innerText = n.suspended;
@@ -11421,28 +11507,37 @@ Type any command below (e.g. pm list packages -d)
             }
         }
 
+        // A tap on a pill or a box turns that filter on or off, next to the ones already on. "All Apps" turns them all off.
         function setFilter(filter, el) {
-            currentFilter = filter;
+            toggleFilterIn(activeFilters, filter);
             resetAppsWindow();
-            saveUiState();
-            if (!el) {
-                document.querySelectorAll('.filter-pill').forEach(p => p.classList.toggle('active', p.getAttribute('data-filter') === filter));
-            }
-            if (el) {
-                document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
-                el.classList.add('active');
-                el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-            }
             haptic();
-            syncStatCards();
+            syncFilterUi();
+            if (el && filter !== 'all' && activeFilters.has(filter)) el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
             renderApps();
             window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // The pills and the big boxes at the top light up for every filter that is on; All Apps / Total installed when none is
+        function syncFilterUi() {
+            const none = activeFilters.size === 0;
+            document.querySelectorAll('#filterScroll .filter-pill[data-filter]').forEach(p => {
+                const k = p.getAttribute('data-filter');
+                p.classList.toggle('active', k === 'all' ? none : activeFilters.has(k));
+            });
+            syncStatCards();
+            const sum = document.getElementById('filterSummary');
+            if (sum) {
+                sum.style.display = activeFilters.size > 1 ? '' : 'none';
+                sum.innerText = filterSummaryText(activeFilters).replace('Tap All to clear', 'Tap All Apps to clear');
+            }
         }
 
         // The big buttons at the top (Total installed, Running, ...) light up when the list below is showing their filter
         function syncStatCards() {
             document.querySelectorAll('.stat-card[data-filter]').forEach(c => {
-                const on = c.getAttribute('data-filter') === currentFilter;
+                const k = c.getAttribute('data-filter');
+                const on = k === 'all' ? activeFilters.size === 0 : activeFilters.has(k);
                 c.classList.toggle('active', on);
                 c.setAttribute('aria-pressed', on ? 'true' : 'false');
             });

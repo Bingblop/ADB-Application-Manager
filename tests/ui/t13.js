@@ -45,7 +45,7 @@ function bridgeInit([mock, store]) {
   console.log('tabs:', (await page.locator('.tab-btn').allInnerTexts()).map(t => t.replace(/\s+/g, ' ')).join(' | '));
 
   // ---- 1. Remembered filters ----
-  await page.click('.filter-pill[data-filter="system"]');
+  await page.click('#filterScroll .filter-pill[data-filter="system"]');
   await page.click('.tab-btn:has-text("Debloater")'); await page.waitForTimeout(200);
   await page.click('#uadRemovalRow [data-removal="Advanced"]'); await page.click('#uadListRow [data-list="Oem"]');
   await page.click('#uadStateRow [data-state="enabled"]'); await page.click('#uadBrandRow .filter-chip.device-brand');
@@ -99,7 +99,7 @@ function bridgeInit([mock, store]) {
   p2.on('pageerror', e => errors.push('p2: ' + e.message));
   await p2.addInitScript(bridgeInit, [MOCK, persisted]);
   await p2.goto(PAGE); await p2.waitForTimeout(300);
-  console.log('RELAUNCH apps filter:', await p2.locator('.filter-pill.active').innerText());
+  console.log('RELAUNCH apps filter:', await p2.locator('#filterScroll .filter-pill.active').innerText());
   await p2.click('.tab-btn:has-text("Debloater")'); await p2.waitForTimeout(200);
   console.log('RELAUNCH uad chips:', (await p2.locator('#uadRemovalRow .active, #uadListRow .active, #uadStateRow .active, #uadBrandRow .active').allInnerTexts()).join(', '));
   await p2.click('text=/^History$/'); await p2.waitForTimeout(100);
