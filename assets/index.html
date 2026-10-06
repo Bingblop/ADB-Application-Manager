@@ -750,6 +750,32 @@
         .als-cb.on { background: var(--accent); border-color: var(--accent); }
         .als-desc { color: var(--text-main); opacity: 0.85; }
 
+        /* The big outlined arrow at the top of the app menu and the batch menu, in the middle: it looks like the button it is */
+        .sheet-arrow-row { display: flex; justify-content: center; margin: -4px 0 10px; }
+        .sheet-arrow-btn { width: 64px; height: 38px; display: inline-flex; align-items: center; justify-content: center; background: var(--bg-surface); color: var(--accent); border: 2px solid var(--accent); border-radius: 14px; cursor: pointer; padding: 0; transition: background 0.15s, transform 0.12s; }
+        .sheet-arrow-btn:active { background: var(--accent); color: var(--on-accent); transform: scale(0.95); }
+        .batch-bottom-sheet { max-height: 92vh; overflow-y: auto; }
+        .batch-help { font-size: 12px; line-height: 1.5; color: var(--text-muted); background: rgba(var(--ov), 0.05); border: 1px solid var(--border-glass); border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; }
+        .batch-help b { color: var(--text-main); }
+        .batch-help-list { margin: 6px 0 8px 18px; padding: 0; }
+        .batch-help-list li { margin-bottom: 4px; }
+        .batch-help code, .bc-examples code, .bc-preview code { font-family: monospace; font-size: 11px; color: var(--accent); word-break: break-all; }
+        .bc-examples { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+        .bc-preview { font-size: 11.5px; color: var(--text-muted); margin-top: 8px; word-break: break-all; line-height: 1.5; }
+        .bc-preview .bc-warn { color: #FFA726; }
+        .bops-list { max-height: 44vh; overflow-y: auto; }
+        .bops-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-top: 1px solid var(--border-glass); }
+        .bops-row:first-child { border-top: none; }
+        .bops-row .app-checkbox { cursor: pointer; }
+        .bops-row.on .app-checkbox { background: var(--accent); border-color: var(--accent); }
+        .bops-name { flex: 1; min-width: 0; font-size: 12px; font-weight: 700; word-break: break-all; }
+        .bops-row select { max-width: 110px; }
+        .sa-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--border-glass); }
+        .sa-row:first-child { border-top: none; }
+        .sa-info { flex: 1; min-width: 0; }
+        .sa-name { font-size: 13px; font-weight: 800; word-break: break-word; }
+        .sa-pkg { font-size: 10.5px; color: var(--text-muted); word-break: break-all; }
+
         .batch-tool-link {
             background: none;
             border: none;
@@ -4947,12 +4973,12 @@ Type any command below (e.g. pm list packages -d)
 
     <!-- DOCKED BATCH COMMANDS SHEET (One UI 2-Row Grid: Never Cut Off, No Side Scroll Needed!) -->
     <div class="batch-bottom-sheet" id="floatingBatchBar">
+        <div class="sheet-arrow-row"><button type="button" class="sheet-arrow-btn" onclick="collapseBatchPanel()" aria-label="Minimize the batch menu" title="Minimize"><svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/></svg></button></div>
         <div class="batch-sheet-header">
             <div class="batch-sheet-title">
                 <span id="batchCountText">0 Selected</span>
             </div>
             <div class="batch-sheet-tools">
-                <button class="batch-tool-link batch-collapse-btn" onclick="collapseBatchPanel()" aria-label="Minimize">▾</button>
                 <button class="batch-tool-link" onclick="selectAllFiltered()">Select All</button>
                 <button class="batch-tool-link" onclick="clearBatchSelection()" style="color:var(--text-muted);">✕ Clear</button>
             </div>
@@ -4978,6 +5004,88 @@ Type any command below (e.g. pm list packages -d)
             <button class="batch-grid-btn" onclick="openOptimizeModal('batch')">Optimize</button>
             <button class="batch-grid-btn danger" onclick="batchAction('uninstall')">Uninstall</button>
             <button class="batch-grid-btn accent" onclick="batchAction('reinstall')">Reinstall</button>
+            <button class="batch-grid-btn" onclick="openBatchOps()">Batch Ops</button>
+            <button class="batch-grid-btn" onclick="openShowApps()">Show Apps</button>
+            <button class="batch-grid-btn" onclick="openBatchCmd()">Command</button>
+        </div>
+    </div>
+
+    <!-- Batch Ops: pick app ops and a value for each, set on every selected app -->
+    <div class="modal-overlay" id="batchOpsModal" onclick="if(event.target===this) closeBatchOps()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-title">
+                    <h3>Batch Ops (App Ops)</h3>
+                    <p id="bopsSub"></p>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="closeBatchOps()">✕</div>
+            </div>
+            <div class="batch-help">
+                <b>How it works:</b> tick every app op you want to change and choose the value for each one.
+                Pressing <b>Apply</b> sets every ticked op, to its own value, on every selected app, one app at a time.
+                <b>Allow</b>, <b>FG</b> (foreground only), <b>Ignore</b> and <b>Deny</b> set the mode; <b>Reset</b> puts it back to the system default.
+            </div>
+            <div class="list-toolbar"><input type="text" class="list-search" id="bopsSearch" placeholder="Search app ops…" oninput="bopsRender()" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+            <div class="switch-sub" id="bopsSummary" style="margin:6px 0;"></div>
+            <div id="bopsList" class="bops-list"></div>
+            <div class="op-custom-row">
+                <input type="text" class="list-search" id="bopsCustom" placeholder="Other op, e.g. RUN_ANY_IN_BACKGROUND" autocomplete="off" autocapitalize="characters" spellcheck="false">
+                <button class="mode-action-btn" onclick="bopsAddCustom()">Add</button>
+            </div>
+            <div class="mode-btn-row" style="margin-top:12px;">
+                <button class="mode-action-btn" onclick="bopsClear()">Clear ticks</button>
+                <button class="mode-action-btn primary" id="bopsApply" onclick="bopsApply()">Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Show Apps: the selected apps, each can be taken out -->
+    <div class="modal-overlay" id="showAppsModal" onclick="if(event.target===this) closeShowApps()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-title">
+                    <h3>Selected apps</h3>
+                    <p id="saSub"></p>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="closeShowApps()">✕</div>
+            </div>
+            <div class="batch-help">Tap <b>Remove</b> to take an app out of the selection. The batch actions only run on the apps listed here.</div>
+            <div class="list-toolbar"><input type="text" class="list-search" id="saSearch" placeholder="Search the selected apps…" oninput="showAppsRender()" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+            <div id="saList"></div>
+        </div>
+    </div>
+
+    <!-- Command: one custom shell command run on every selected app with $package replaced -->
+    <div class="modal-overlay" id="batchCmdModal" onclick="if(event.target===this) closeBatchCmd()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-title">
+                    <h3>Command on selected apps</h3>
+                    <p id="bcSub"></p>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="closeBatchCmd()">✕</div>
+            </div>
+            <div class="batch-help">
+                <b>How it works</b>
+                <ol class="batch-help-list">
+                    <li>Type one shell command. Write <code>$package</code> wherever the app's package name belongs.</li>
+                    <li>The app runs the command once for every selected app, one after another, and replaces <code>$package</code> with that app's real package name each time.</li>
+                    <li>The preview below shows exactly what will run for the first selected app. The result of every app is listed when it finishes.</li>
+                </ol>
+                It runs through your working mode (ADB, Shizuku or Root) exactly as typed, and <b>there is no undo</b>. Check the preview first.
+            </div>
+            <div class="bc-examples">
+                <span class="filter-chip" onclick="bcExample('pm clear $package')"><code>pm clear $package</code></span>
+                <span class="filter-chip" onclick="bcExample('am force-stop $package')"><code>am force-stop $package</code></span>
+                <span class="filter-chip" onclick="bcExample('cmd appops set $package RUN_ANY_IN_BACKGROUND ignore')"><code>appops … ignore</code></span>
+                <span class="filter-chip" onclick="bcExample('dumpsys package $package | grep versionName')"><code>dumpsys … versionName</code></span>
+            </div>
+            <textarea id="bcInput" class="list-search" rows="3" style="width:100%; font-family:monospace;" placeholder="Example: pm clear $package" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" oninput="bcPreview()"></textarea>
+            <div class="bc-preview" id="bcPreview"></div>
+            <div id="bcRecent" class="bc-examples" style="margin-top:8px;"></div>
+            <div class="mode-btn-row" style="margin-top:12px;">
+                <button class="mode-action-btn primary" id="bcRun" onclick="bcRun()">Run</button>
+            </div>
         </div>
     </div>
 
@@ -5382,6 +5490,7 @@ Type any command below (e.g. pm list packages -d)
     <!-- Inspector Modal -->
     <div class="modal-overlay" id="inspectorModal" onclick="if(event.target===this) closeInspector()">
         <div class="modal-sheet">
+            <div class="sheet-arrow-row"><button type="button" class="sheet-arrow-btn" onclick="closeInspector()" aria-label="Close the app menu" title="Close"><svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/></svg></button></div>
             <div class="sheet-header">
                 <div class="sheet-app-hero">
                     <div class="sheet-avatar" id="sheetAvatar"></div>
@@ -10574,6 +10683,127 @@ Type any command below (e.g. pm list packages -d)
             if (failed.length) showCommandResults('Activity Launcher', enable ? 'enable' : 'disable', failed);
         }
 
+        // ---------- Batch Ops (App Ops), Show Apps and Command: the batch menu's second page of tools ----------
+        const BOPS_LIST = ['COARSE_LOCATION', 'FINE_LOCATION', 'GPS', 'VIBRATE', 'READ_CONTACTS', 'WRITE_CONTACTS', 'READ_CALL_LOG', 'WRITE_CALL_LOG', 'READ_CALENDAR', 'WRITE_CALENDAR', 'WIFI_SCAN', 'POST_NOTIFICATION', 'NEIGHBORING_CELLS', 'CALL_PHONE', 'READ_SMS', 'WRITE_SMS', 'RECEIVE_SMS', 'RECEIVE_MMS', 'RECEIVE_WAP_PUSH', 'SEND_SMS', 'READ_ICC_SMS', 'WRITE_ICC_SMS', 'WRITE_SETTINGS', 'SYSTEM_ALERT_WINDOW', 'ACCESS_NOTIFICATIONS', 'CAMERA', 'RECORD_AUDIO', 'PLAY_AUDIO', 'READ_CLIPBOARD', 'WRITE_CLIPBOARD', 'TAKE_MEDIA_BUTTONS', 'TAKE_AUDIO_FOCUS', 'WAKE_LOCK', 'MONITOR_LOCATION', 'MONITOR_HIGH_POWER_LOCATION', 'GET_USAGE_STATS', 'MUTE_MICROPHONE', 'TOAST_WINDOW', 'PROJECT_MEDIA', 'ACTIVATE_VPN', 'WRITE_WALLPAPER', 'ASSIST_STRUCTURE', 'ASSIST_SCREENSHOT', 'READ_PHONE_STATE', 'ADD_VOICEMAIL', 'USE_SIP', 'PROCESS_OUTGOING_CALLS', 'USE_FINGERPRINT', 'BODY_SENSORS', 'READ_CELL_BROADCASTS', 'MOCK_LOCATION', 'READ_EXTERNAL_STORAGE', 'WRITE_EXTERNAL_STORAGE', 'TURN_SCREEN_ON', 'GET_ACCOUNTS', 'RUN_IN_BACKGROUND', 'READ_PHONE_NUMBERS', 'REQUEST_INSTALL_PACKAGES', 'PICTURE_IN_PICTURE', 'INSTANT_APP_START_FOREGROUND', 'ANSWER_PHONE_CALLS', 'RUN_ANY_IN_BACKGROUND', 'CHANGE_WIFI_STATE', 'REQUEST_DELETE_PACKAGES', 'BIND_ACCESSIBILITY_SERVICE', 'ACCEPT_HANDOVER', 'MANAGE_IPSEC_TUNNELS', 'START_FOREGROUND', 'BLUETOOTH_SCAN', 'USE_BIOMETRIC', 'ACTIVITY_RECOGNITION', 'SMS_FINANCIAL_TRANSACTIONS', 'READ_MEDIA_AUDIO', 'WRITE_MEDIA_AUDIO', 'READ_MEDIA_VIDEO', 'WRITE_MEDIA_VIDEO', 'READ_MEDIA_IMAGES', 'WRITE_MEDIA_IMAGES', 'LEGACY_STORAGE', 'ACCESS_ACCESSIBILITY', 'READ_DEVICE_IDENTIFIERS', 'ACCESS_MEDIA_LOCATION', 'QUERY_ALL_PACKAGES', 'MANAGE_EXTERNAL_STORAGE', 'INTERACT_ACROSS_PROFILES', 'ACTIVATE_PLATFORM_VPN', 'LOADER_USAGE_STATS', 'ACCESS_CALL_AUDIO', 'AUTO_REVOKE_PERMISSIONS_IF_UNUSED', 'AUTO_REVOKE_MANAGED_BY_INSTALLER', 'NO_ISOLATED_STORAGE', 'PHONE_CALL_MICROPHONE', 'PHONE_CALL_CAMERA', 'RECORD_AUDIO_HOTWORD', 'MANAGE_ONGOING_CALLS', 'MANAGE_CREDENTIALS', 'SCHEDULE_EXACT_ALARM', 'MANAGE_MEDIA', 'BLUETOOTH_CONNECT', 'UWB_RANGING', 'BLUETOOTH_ADVERTISE', 'RECORD_INCOMING_PHONE_AUDIO', 'NEARBY_WIFI_DEVICES', 'ESTABLISH_VPN_SERVICE', 'ESTABLISH_VPN_MANAGER', 'ACCESS_RESTRICTED_SETTINGS', 'RUN_USER_INITIATED_JOBS', 'READ_MEDIA_VISUAL_USER_SELECTED', 'FOREGROUND_SERVICE_SPECIAL_USE', 'USE_FULL_SCREEN_INTENT', 'SYSTEM_EXEMPT_FROM_SUSPENSION', 'SYSTEM_EXEMPT_FROM_POWER_RESTRICTIONS', 'SYSTEM_EXEMPT_FROM_HIBERNATION'].sort();
+        const BOPS_MODES = [['allow', 'Allow'], ['foreground', 'FG'], ['ignore', 'Ignore'], ['deny', 'Deny'], ['default', 'Reset']];
+        const bopsPick = new Map();          // op -> mode, for every ticked op
+        let bopsExtra = [];                  // ops typed in by hand
+        function bopsAll() { return Array.from(new Set(BOPS_LIST.concat(bopsExtra))).sort(); }
+        function openBatchOps() {
+            if (!selectedPkgs.size) { showToast('Select apps first'); return; }
+            haptic();
+            document.getElementById('bopsSub').innerText = 'Applies to ' + selectedPkgs.size + ' selected app' + (selectedPkgs.size === 1 ? '' : 's');
+            document.getElementById('bopsSearch').value = '';
+            document.getElementById('batchOpsModal').classList.add('show');
+            bopsRender();
+        }
+        function closeBatchOps() { haptic(); document.getElementById('batchOpsModal').classList.remove('show'); }
+        function bopsRender() {
+            const q = (document.getElementById('bopsSearch').value || '').toLowerCase().trim();
+            const rows = bopsAll().filter(op => !q || op.toLowerCase().includes(q) || op.replace(/_/g, ' ').toLowerCase().includes(q));
+            document.getElementById('bopsList').innerHTML = rows.length ? rows.map(op => {
+                const on = bopsPick.has(op), mode = bopsPick.get(op) || 'allow';
+                return `<div class="bops-row${on ? ' on' : ''}" data-op="${op}"><div class="app-checkbox" role="checkbox" aria-checked="${on}" onclick="bopsToggle(this.parentElement.dataset.op)">${on ? '✓' : ''}</div><div class="bops-name" translate="no">${op}</div><select class="op-select" aria-label="Value for ${op}" onchange="bopsMode(this.parentElement.dataset.op, this.value)">${BOPS_MODES.map(m => `<option value="${m[0]}"${m[0] === mode ? ' selected' : ''}>${m[1]}</option>`).join('')}</select></div>`;
+            }).join('') : '<div class="list-empty">No app ops match. Type its name below and tap Add.</div>';
+            const n = bopsPick.size;
+            document.getElementById('bopsSummary').innerText = n ? n + ' app op' + (n === 1 ? '' : 's') + ' ticked' : 'Nothing ticked yet';
+            const ap = document.getElementById('bopsApply');
+            ap.disabled = !n;
+            ap.innerText = n ? 'Apply to ' + selectedPkgs.size + ' app' + (selectedPkgs.size === 1 ? '' : 's') : 'Apply';
+        }
+        function bopsToggle(op) { haptic(); if (bopsPick.has(op)) bopsPick.delete(op); else bopsPick.set(op, 'allow'); bopsRender(); }
+        function bopsMode(op, mode) { bopsPick.set(op, mode); bopsRender(); }          // choosing a value ticks the op
+        function bopsClear() { haptic(); bopsPick.clear(); bopsRender(); }
+        function bopsAddCustom() {
+            const op = (document.getElementById('bopsCustom').value || '').trim().toUpperCase().replace(/\s+/g, '_');
+            if (!/^[A-Z][A-Z0-9_]+$/.test(op)) { showToast('Enter an app op name, e.g. RUN_ANY_IN_BACKGROUND'); return; }
+            haptic();
+            if (!BOPS_LIST.includes(op) && !bopsExtra.includes(op)) bopsExtra.push(op);
+            bopsPick.set(op, bopsPick.get(op) || 'allow');
+            document.getElementById('bopsCustom').value = '';
+            bopsRender();
+        }
+        function bopsApply() {
+            const pkgs = Array.from(selectedPkgs);
+            if (!pkgs.length || !bopsPick.size) return;
+            if (!guardPrivilege('Batch App Ops')) return;
+            const spec = Array.from(bopsPick.entries()).map(e => e[0] + '=' + e[1]).join(',');
+            if (!confirm('Set ' + bopsPick.size + ' app op' + (bopsPick.size === 1 ? '' : 's') + ' on ' + pkgs.length + ' app' + (pkgs.length === 1 ? '' : 's') + '?\n\n' + Array.from(bopsPick.entries()).map(e => e[0] + ' → ' + e[1]).join('\n'))) return;
+            closeBatchOps();
+            batchRunLabel = 'Set ' + bopsPick.size + ' app op' + (bopsPick.size === 1 ? '' : 's') + ' on';
+            batchRunHist = 'appops';
+            runBatchAction('appops:' + spec, pkgs);
+        }
+
+        function openShowApps() {
+            if (!selectedPkgs.size) { showToast('Select apps first'); return; }
+            haptic();
+            document.getElementById('saSearch').value = '';
+            document.getElementById('showAppsModal').classList.add('show');
+            showAppsRender();
+        }
+        function closeShowApps() { haptic(); document.getElementById('showAppsModal').classList.remove('show'); }
+        function showAppsRender() {
+            const q = (document.getElementById('saSearch').value || '').toLowerCase().trim();
+            const apps = Array.from(selectedPkgs).map(pkg => allApps.find(a => a.pkg === pkg) || { name: pkg, pkg })
+                .sort((a, b) => String(a.name).localeCompare(String(b.name), undefined, { sensitivity: 'base' }));
+            document.getElementById('saSub').innerText = selectedPkgs.size + ' app' + (selectedPkgs.size === 1 ? '' : 's') + ' selected';
+            const rows = apps.filter(a => !q || String(a.name).toLowerCase().includes(q) || a.pkg.toLowerCase().includes(q));
+            document.getElementById('saList').innerHTML = rows.length ? rows.map(a => `<div class="sa-row" data-pkg="${escapeHtml(a.pkg)}"><div class="sa-info"><div class="sa-name">${escapeHtml(a.name)}</div><div class="sa-pkg">${escapeHtml(a.pkg)}</div></div><button class="mode-action-btn" onclick="saRemove(this.closest('.sa-row').dataset.pkg)">Remove</button></div>`).join('') : '<div class="list-empty">No selected app matches.</div>';
+        }
+        function saRemove(pkg) {
+            if (!selectedPkgs.has(pkg)) return;
+            selectedPkgs.delete(pkg);
+            haptic();
+            updateBatchBar();
+            const card = document.getElementById('card_' + pkg);
+            if (card) { card.classList.remove('selected'); const cb = card.querySelector('.app-checkbox'); if (cb) cb.innerText = ''; }
+            if (!selectedPkgs.size) { closeShowApps(); showToast('Nothing selected any more'); return; }
+            showAppsRender();
+        }
+
+        let bcRecent = null;
+        function openBatchCmd() {
+            if (!selectedPkgs.size) { showToast('Select apps first'); return; }
+            haptic();
+            document.getElementById('bcSub').innerText = 'Runs once on each of the ' + selectedPkgs.size + ' selected app' + (selectedPkgs.size === 1 ? '' : 's');
+            document.getElementById('batchCmdModal').classList.add('show');
+            bcRenderRecent();
+            bcPreview();
+        }
+        function closeBatchCmd() { haptic(); document.getElementById('batchCmdModal').classList.remove('show'); }
+        function bcExample(cmd) { haptic(); document.getElementById('bcInput').value = cmd; bcPreview(); }
+        function bcPreview() {
+            const cmd = (document.getElementById('bcInput').value || '').trim();
+            const first = Array.from(selectedPkgs)[0] || 'com.example.app';
+            const box = document.getElementById('bcPreview'), run = document.getElementById('bcRun');
+            const n = selectedPkgs.size;
+            run.disabled = !cmd;
+            run.innerText = cmd ? 'Run on ' + n + ' app' + (n === 1 ? '' : 's') : 'Run';
+            if (!cmd) { box.innerHTML = 'Preview: type a command above.'; return; }
+            const shown = cmd.split('$package').join(first);
+            box.innerHTML = 'For <b>' + escapeHtml(first) + '</b> it will run:<br><code>' + escapeHtml(shown) + '</code>'
+                + (cmd.includes('$package') ? '' : '<br><span class="bc-warn">There is no $package in this command, so it runs the same thing ' + n + ' time' + (n === 1 ? '' : 's') + '.</span>');
+        }
+        function bcRenderRecent() {
+            if (bcRecent === null) { const v = kvGet('batch_cmd_recent', []); bcRecent = Array.isArray(v) ? v.filter(x => typeof x === 'string').slice(0, 6) : []; }
+            document.getElementById('bcRecent').innerHTML = bcRecent.length ? '<span class="switch-sub" style="width:100%;">Recent</span>' + bcRecent.map((c, i) => `<span class="filter-chip" data-i="${i}" onclick="bcExample(bcRecent[+this.dataset.i])"><code>${escapeHtml(c.length > 40 ? c.slice(0, 40) + '…' : c)}</code></span>`).join('') : '';
+        }
+        function bcRun() {
+            const cmd = (document.getElementById('bcInput').value || '').trim();
+            const pkgs = Array.from(selectedPkgs);
+            if (!cmd || !pkgs.length) return;
+            if (!guardPrivilege('Batch command')) return;
+            const note = cmd.includes('$package') ? '' : '\n\nThere is no $package in it, so the same command runs ' + pkgs.length + ' times.';
+            if (!confirm('Run this on ' + pkgs.length + ' app' + (pkgs.length === 1 ? '' : 's') + '?\n\n' + cmd.split('$package').join(pkgs[0]) + '\n\n(shown for ' + pkgs[0] + '; the others get their own package name)' + note + '\n\nThere is no undo.')) return;
+            bcRecent = [cmd].concat((bcRecent || []).filter(c => c !== cmd)).slice(0, 6);
+            kvSet('batch_cmd_recent', bcRecent);
+            closeBatchCmd();
+            batchRunLabel = 'Ran a command on';
+            batchRunHist = 'custom';
+            runBatchAction('custom:' + cmd, pkgs);
+        }
+
         // Press and hold anywhere on an app's row (the icon keeps its own hold, which saves the icon; the buttons and checkbox are left alone)
         // opens that app's menu, and the lift of the finger that follows is not also taken as a tap that selects the row.
         (function () {
@@ -10793,11 +11023,12 @@ Type any command below (e.g. pm list packages -d)
         // with a setTimeout(0) between apps, still froze the page for the whole run: that thread is the
         // WebView's own, so nothing on it - including a repaint - runs while a call made from it is in flight.
         // Progress arrives as window.onAppBatchProgress, the end as window.onAppBatchDone, both below.
+        let batchRunLabel = '', batchRunHist = '';        // a custom label (and history name) for a Batch Ops or Command run, whose "action" is the whole spec
         function runBatchAction(action, arr) {
             haptic();
             if (!window.AndroidBridge || !window.AndroidBridge.appActionBatch) return;
 
-            document.getElementById('batchConfirmTitle').innerText = (ACTION_LABELS[action] || action) + ' ' + arr.length + ' app' + (arr.length === 1 ? '' : 's');
+            document.getElementById('batchConfirmTitle').innerText = (batchRunLabel || ACTION_LABELS[action] || action) + ' ' + arr.length + ' app' + (arr.length === 1 ? '' : 's');
             document.getElementById('batchConfirmSubtitle').innerText = '';
             document.getElementById('batchProgressText').innerText = '';
             document.getElementById('batchProgressBar').style.width = '0%';
@@ -10810,6 +11041,7 @@ Type any command below (e.g. pm list packages -d)
             if (started !== 'started') {
                 document.getElementById('batchConfirmModal').classList.remove('show');
                 showToast('Another batch action is already running');
+                batchRunLabel = ''; batchRunHist = '';
                 return;
             }
             batchRunActive = true;
@@ -10838,10 +11070,12 @@ Type any command below (e.g. pm list packages -d)
                 return { name: app.name, pkg: r.pkg, output: r.output, success: r.success };
             });
             const success = rows.filter(r => r.success).length, failed = rows.length - success;
-            const label = `${ACTION_LABELS[action] || action} ${rows.length} app${rows.length === 1 ? '' : 's'}` + (stopped ? ' (stopped early)' : '');
-            recordHistory('apps', label, rows.map(r => ({ pkg: r.pkg, name: r.name, action: action, success: r.success })));
+            const label = `${batchRunLabel || ACTION_LABELS[action] || action} ${rows.length} app${rows.length === 1 ? '' : 's'}` + (stopped ? ' (stopped early)' : '');
+            const histAction = batchRunHist || action, shownAction = batchRunHist ? (batchRunHist === 'custom' ? 'Command' : 'App Ops') : action.toUpperCase();
+            batchRunLabel = ''; batchRunHist = '';
+            recordHistory('apps', label, rows.map(r => ({ pkg: r.pkg, name: r.name, action: histAction, success: r.success })));
             showToast(stopped ? `Stopped: ${success} succeeded, ${failed} failed, ${total - rows.length} not run` : `Batch Done: ${success} succeeded, ${failed} failed`);
-            showCommandResults('Batch Results', action.toUpperCase() + ' • ' + rows.length + ' of ' + total + ' apps' + (stopped ? ' (stopped)' : ''), rows);
+            showCommandResults('Batch Results', shownAction + ' • ' + rows.length + ' of ' + total + ' apps' + (stopped ? ' (stopped)' : ''), rows);
             // "Keep selection" leaves the apps selected (and the panel as it was) so another batch action
             // can run on the same set right away - the floating sheet sits behind the result dialog the
             // same way the single-app sheet does, and is there again once that dialog is dismissed.

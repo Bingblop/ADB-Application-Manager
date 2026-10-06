@@ -24,6 +24,13 @@
   (Settings, Action Button, Hold menu chooses which actions that sheet lists and in what order). The Permission Manager
   has an App Ops chip too (every app op with Allow / FG / Ignore / Deny / Reset, and a permission shows its app op), and
   in the Activity Launcher you can tick several activities and Enable or Disable them at once.
+- **More in the batch menu.** The batch menu is taller and has a fourth row: **Batch Ops** lists every app op, lets you
+  tick the ones to change and pick a value for each (Allow, FG, Ignore, Deny or Reset), and sets them all on every
+  selected app; **Show Apps** lists the selected apps and lets you remove any of them from the selection; **Command**
+  runs a shell command of your own on every selected app, one after another, replacing `$package` with each app's real
+  package name (the instructions, a live preview for the first app and a few examples are on the sheet; it runs
+  exactly as typed and has no undo). The little arrow at the top of the batch menu and of the app menu is now a larger,
+  outlined button in the middle.
 - **Press and hold guide.** A new card at the end of Settings lists everything that can be pressed and held (an app row,
   an app's icon, the Action Button, the selection checkmark, file rows, found APKs, Hidden Settings and overlay rows) and
   what each one does.

@@ -32,8 +32,8 @@ const found = (text) => { const m = decode(text).match(EMOJI); return m ? Array.
   const page_src = fs.readFileSync(fileURLToPath(PAGE), 'utf8');                       // the page under test (assets/index.html unless PAGE_URL says otherwise)
   const withoutGears = decode(page_src).replace(GEAR, '');
   check('1. the page has no emoji but the gears (© is not an emoji and is left)', found(withoutGears.replace(/©/g, '')).length === 0, JSON.stringify(found(withoutGears.replace(/©/g, ''))));
-  check('   exactly three gears are written in it: the header button, the button on an app row and the Terminal settings button', (decode(page_src).match(GEAR) || []).length === 3);
-  check('   the header gear is the first, the row gear the one named App Settings, the third the Terminal\'s', /id="prefsHeaderBtn"[^>]*>⚙️<\/div>/u.test(page_src) && /title="App Settings"[^>]*>⚙️<\/button>/u.test(page_src) && /id="txSettingsBtn"[^>]*>⚙️<\/button>/u.test(page_src));
+  check('   exactly two gears are written in it: the header button and the Terminal settings button (the app row button is an SVG icon now)', (decode(page_src).match(GEAR) || []).length === 2);
+  check('   the header gear is the first, the Terminal\'s the second', /id="prefsHeaderBtn"[^>]*>⚙️<\/div>/u.test(page_src) && /id="txSettingsBtn"[^>]*>⚙️<\/button>/u.test(page_src));
   check('   the changelog the What\'s new screen shows has none', found(fs.readFileSync(path.join(REPO, 'CHANGELOG.md'), 'utf8')).length === 0, JSON.stringify(found(fs.readFileSync(path.join(REPO, 'CHANGELOG.md'), 'utf8'))));
   const res = walk(path.join(REPO, 'res'), []).filter(f => /\.(xml|txt)$/.test(f)).filter(f => found(fs.readFileSync(f, 'utf8')).length);
   check('   the layouts and resources (home-screen widget, tiles) have none', res.length === 0, res.join(' '));
@@ -67,9 +67,9 @@ const found = (text) => { const m = decode(text).match(EMOJI); return m ? Array.
     document.querySelectorAll('[title],[aria-label],[placeholder],[alt]').forEach(e => ['title', 'aria-label', 'placeholder', 'alt'].forEach(a => { const v = e.getAttribute(a); if (v && re.test(v)) hits.push(a + ': ' + v.slice(0, 40)); }));
     return hits;
   });
-  const gears = () => ev(() => ({ header: document.getElementById('prefsHeaderBtn').innerText.replace(/️/g, ''), rows: document.querySelectorAll('.app-card .btn-mini[title="App Settings"]').length, cards: document.querySelectorAll('.app-card').length }));
+  const gears = () => ev(() => ({ header: document.getElementById('prefsHeaderBtn').innerText.replace(/️/g, ''), rows: document.querySelectorAll('.app-card .ab-btn[data-ab="settings"] svg').length, cards: document.querySelectorAll('.app-card').length }));
   let g = await gears();
-  check('2. the header shows the gear and every app in the list has its own gear', g.header === '⚙' && g.rows === g.cards && g.cards === 12, JSON.stringify(g));
+  check('2. the header shows the gear and every app in the list has its Action Button icon (App Settings by default)', g.header === '⚙' && g.rows === g.cards && g.cards === 12, JSON.stringify(g));
   const tabs = ['apps', 'saved-lists', 'debloater', 'installer', 'files', 'terminal', 'settings', 'overlays', 'updates', 'store', 'logcat', 'about', 'prefs'];
   for (const t of tabs) {
     await ev(k => switchView(k), t);

@@ -7851,6 +7851,14 @@ public class MainActivity extends Activity {
                 // text the user typed; everything below concatenates pkg into a shell command (or a monkey
                 // fallback), so refuse anything that isn't a well-formed package name before it gets there.
                 if (!BackupScripts.isPackageName(pkg)) return "Error: \"" + pkg + "\" is not a valid package name";
+                // Batch App Ops: "appops:OP=mode,OP=mode" sets each op on this app
+                if (action != null && action.startsWith("appops:")) return batchAppOps(action.substring(7), pkg);
+                // Batch Command: "custom:<command>" runs the user's command with $package replaced by this app's package name
+                if (action != null && action.startsWith("custom:")) {
+                    String tpl = action.substring(7).trim();
+                    if (tpl.isEmpty()) return "Error: the command is empty";
+                    return runShellAction(tpl.replace("$package", pkg));
+                }
                 if ("freeze".equals(action)) return runShellAction("pm disable-user " + pkg);
                 if ("unfreeze".equals(action)) {
                     String r1 = runShellAction("pm enable " + pkg);
@@ -7981,6 +7989,32 @@ public class MainActivity extends Activity {
 
         /** Runs one pm/am command through the active privileged shell and reports success from its own exit
          *  status (see {@link #RC_FLAG}), not from sniffing what it printed. */
+        /** One app's share of a Batch App Ops run: spec is "OP=mode,OP=mode" (names and modes are checked before they reach the shell). */
+        private String batchAppOps(String spec, String pkg) {
+            StringBuilder text = new StringBuilder();
+            boolean all = true;
+            int n = 0;
+            for (String pair : spec.split(",")) {
+                pair = pair.trim();
+                if (pair.isEmpty()) continue;
+                int eq = pair.indexOf('=');
+                String op = eq > 0 ? pair.substring(0, eq).trim() : "";
+                String mode = eq > 0 ? pair.substring(eq + 1).trim() : "";
+                if (!op.matches("[A-Z][A-Z0-9_]+") || !mode.matches("allow|ignore|deny|foreground|default")) {
+                    all = false;
+                    text.append(pair).append(": not a valid app op and value\n");
+                    continue;
+                }
+                String r = runShellAction("appops set " + pkg + " " + op + " " + mode);
+                boolean ok = flagOk(r);
+                if (!ok) all = false;
+                text.append(op).append(" -> ").append(mode).append(": ").append(ok ? "ok" : flagText(r).trim()).append("\n");
+                n++;
+            }
+            if (n == 0 && all) return flagged(false, "No app ops to set");
+            return flagged(all, text.toString().trim());
+        }
+
         private String runShellAction(String cmd) {
             String marker = "__RC" + System.nanoTime() + "__";
             String raw = executeShell(cmd + "; echo \"" + marker + ":$?\"");

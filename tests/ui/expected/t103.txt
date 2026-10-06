@@ -1,0 +1,21 @@
+batch grid: buttons / rows / the new row: {"buttons":12,"rows":4,"labels":["Batch Ops","Show Apps","Command"]}
+batch arrow: {"w":64,"h":38,"centered":true,"border":"2px solid","svg":true}
+sheet fits the screen: true
+Show Apps lists the selection: [ '3 apps selected', [ 'Alpha', 'Bravo', 'Charlie' ] ]
+Remove takes one out: [
+  [ 'com.example.alpha', 'com.example.charlie' ],
+  '2 Selected',
+  2,
+  false
+]
+Batch Ops opens with the list: [ 'Applies to 2 selected apps', true, true ]
+two ticked (choosing a value ticks it): [ '2 app ops ticked', 'Apply to 2 apps' ]
+Apply sends one batch with every op and value: [["appops:CAMERA=deny,RUN_ANY_IN_BACKGROUND=ignore",["com.example.alpha","com.example.charlie"]]] | asked: ["Set 2 app ops on 2 apps?\n\nCAMERA → deny\nRUN_ANY_IN_BACKGROUND → ignore"]
+the result dialog is titled for app ops: true
+Command instructions: [ true, true, true ]
+preview for the first selected app: For com.example.alpha it will run: pm clear com.example.alpha | Run on 2 apps
+Run sends custom:<command> to the batch runner: [["custom:pm clear $package",["com.example.alpha","com.example.charlie"]]]
+the recent command is kept: ["pm clear $package"]
+app menu arrow: {"w":64,"h":38,"centered":true,"border":"2px solid","svg":true}
+it closes the menu: true
+errors: []
