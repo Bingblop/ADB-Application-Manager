@@ -14,7 +14,7 @@
    a folder with only hidden files says so, and shows them when asked: true
    unticked: "Only hidden files are here": true
    a name taken by a hidden file counts as taken: true
-3. the toolbar has "＋ Folder" and "＋ File" side by side: true
+3. the toolbar has "＋ Folder" and "＋ File" side by side, and no Up button (the ".." row does that): true
    it asks for a name: true
    a bad name is refused with the reason: "": true
    a bad name is refused with the reason: "a/b.txt": true

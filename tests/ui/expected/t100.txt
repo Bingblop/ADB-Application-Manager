@@ -11,8 +11,8 @@
    the new folder shows up: true
    New File calls fmNewSaf(parentUri, name, "file"): true ["content://mock/root1/root","todo.txt","file"]
    a text file opens the editor right away, using the uri fmNewSaf handed back: true
-5. SAF file sheet offers View, Edit, Rename, Delete: true ["View","Edit","Rename","Copy","Move","Delete"]
-   offers Copy and Move (through the clipboard), hides Compress / Open with / Share: true
+5. SAF file sheet offers View, Edit, Rename, Delete: true ["View","Edit","Open with…","Share","Open as archive","Rename","Copy","Move","Delete"]
+   offers Copy and Move (through the clipboard), Open with and Share, but not Compress: true
 6. Rename prefilled with the bare name, calls fmRenameSaf(uri, newName): true [["content://mock/root1/n2","todo-list.txt"]]
    the renamed item shows up: true
    fmOp was never called for a rename: true
@@ -21,6 +21,9 @@
 8. Copy puts the item on the clipboard and shows the Paste bar: true true
    Paste calls fmBatch2("cp", [uri], <this folder uri>) with the uri untouched: true [["cp",["content://mock/root1/n2"],"content://mock/root1/f1","keep"]]
    Select turns selection mode on in added storage: true | Compress hidden: true
+   Open with copies the file to the cache first, then opens that copy: true [["content://mock/root1/n2"],["/data/cache/saf_stage/x_todo-list.txt"]]
+   Share does the same: true
+   Search here in added storage runs with the folder uri (no All-files prompt): true [["todo",["content://mock/root1/root"]]] | prompt shown: false
 9. removing the root calls removeStorageRoot(uri): true ["content://mock/root1/root"]
    the confirm names the root: true
    gone from the row and the persisted list: true
