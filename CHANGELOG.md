@@ -18,7 +18,9 @@
   app's current state. Permission Manager and Activity Launcher open a sheet like the app menu, listing every
   permission (with its label, description, group, protection level, whether it is granted and whether you can change it)
   or every activity (exported or not, enabled, the permission it needs, with Launch and Enable / Disable), each with a
-  search box and filters.
+  search box and filters. The Permission Manager can also grant or revoke, in one go, every changeable permission shown
+  by the current filter and search (it asks first and lists any that failed). The button also appears on the
+  Debloater rows, and holding it opens a sheet with every action for that app, whichever one is chosen in Settings.
 - **A tidier start and buttons.** The app now always opens on the Application Manager tab with "Total Installed"
   selected, even if a filter was left on last time. In the Apps list the checkbox sits to the right of the "⋯" menu,
   and its top-bar buttons share the File Manager's new outlined look (the File Manager's Up button is gone, the ".."

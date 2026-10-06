@@ -25,6 +25,7 @@ const { chromium, PAGE } = require('./lib/pw');
           { name: 'android.permission.READ_CONTACTS', granted: false, changeable: true, protection: 'runtime', label: 'read your contacts' }],
           activityInfo: [{ name: 'com.example.live.Main', exported: true, enabled: true, permission: '' }, { name: 'com.example.live.Secret', exported: false, enabled: false, permission: 'com.x.PERM' }] });
       },
+      getUadMatches() { return '{"packages":[]}'; }, getUadStatus() { return '{"cached":true,"count":0}'; },
       setPermission(pkg, perm, on) { window.__perm.push([pkg, perm, on]); return '\u00011ok'; },
     };
   }, apps);
@@ -70,6 +71,42 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.locator('#alsList .perm-toggle-btn.granted').first().click(); await sleep(200);
   console.log('  revoking calls setPermission:', JSON.stringify(await page.evaluate(() => window.__perm)));
   await page.evaluate(() => closeAppListSheet()); await sleep(100);
+
+  // Bulk grant / revoke, on what the filter and search show
+  await page.evaluate(() => { window.__perm.length = 0; });
+  await page.evaluate(() => closeAppListSheet()); await page.evaluate(() => { actionBtn = 'perms'; renderApps(); }); await sleep(120);
+  await btn('com.example.live').click(); await sleep(250);
+  console.log('bulk buttons (counts):', await page.evaluate(() => [document.getElementById('alsGrantAll').innerText, document.getElementById('alsRevokeAll').innerText]));
+  await page.click('#alsGrantAll'); await sleep(400);
+  console.log('Grant all shown asks, then grants the one denied permission:', JSON.stringify(await page.evaluate(() => window.__perm)), '| asked:', JSON.stringify(dialogs.slice(-1)));
+  await page.evaluate(() => { window.__perm.length = 0; });
+  await page.click('#alsRevokeAll'); await sleep(400);
+  console.log('Revoke all shown revokes the changeable granted ones (not the locked INTERNET):', JSON.stringify(await page.evaluate(() => window.__perm)));
+  await page.click('#alsFilterRow [data-filter="locked"]'); await sleep(100);
+  console.log('with only locked permissions shown both are empty:', await page.evaluate(() => [document.getElementById('alsGrantAll').disabled, document.getElementById('alsRevokeAll').disabled]));
+  await page.evaluate(() => closeAppListSheet()); await sleep(100);
+
+  // Hold the Action Button: every action for that app; a hold is not also a tap
+  await page.evaluate(() => { actionBtn = 'settings'; window.__acts.length = 0; renderApps(); }); await sleep(120);
+  const hb = await btn('com.example.frozen').boundingBox();
+  await page.mouse.move(hb.x + 8, hb.y + 8); await page.mouse.down(); await page.waitForTimeout(800); await page.mouse.up(); await sleep(200);
+  console.log('hold opens the actions sheet:', await page.evaluate(() => [document.getElementById('abSheet').classList.contains('show'), document.getElementById('abSheetTitle').innerText, Array.from(document.querySelectorAll('#abSheetList .ab-sheet-row')).map(r => r.innerText.trim())]), '| the hold did not also tap:', JSON.stringify(await page.evaluate(() => window.__acts)));
+  await page.locator('#abSheetList [data-kind="toggle"]').click(); await sleep(200);
+  console.log('picking Enable (the app is frozen) runs unfreeze and closes the sheet:', JSON.stringify(await page.evaluate(() => window.__acts)), !(await page.evaluate(() => document.getElementById('abSheet').classList.contains('show'))));
+
+  // Debloater rows get the same button
+  await page.evaluate(() => {
+    actionBtn = 'toggle';
+    uadFilters.removal = new Set(['Recommended']); uadFilters.state = 'all'; uadFilters.list = 'all'; uadFilters.brand = 'all';
+    uadPackages = [{ pkg: 'com.example.live', name: 'Live', state: 'enabled', removal: 'Recommended', brand: 'x', list: 'Oem', description: '' }, { pkg: 'com.example.frozen', name: 'Frozen', state: 'disabled', removal: 'Recommended', brand: 'x', list: 'Oem', description: '' }, { pkg: 'com.not.installed', name: 'Nope', state: 'enabled', removal: 'Recommended', brand: 'x', list: 'Oem', description: '' }];
+    uadLoaded = true; renderUadList();
+  });
+  console.log('Debloater rows show the button for apps on the phone:', await page.evaluate(() => Array.from(document.querySelectorAll('.uad-row')).map(r => r.dataset.pkg + ':' + (r.querySelector('.ab-btn') ? r.querySelector('.ab-btn').getAttribute('data-ab') : 'none'))));
+  await page.evaluate(() => { window.__acts.length = 0; });
+  await page.evaluate(() => document.querySelector('.uad-row[data-pkg="com.example.live"] .ab-btn').click()); await sleep(150);
+  console.log('tapping it on a Debloater row acts on that app:', JSON.stringify(await page.evaluate(() => window.__acts)));
+  await page.evaluate(() => { actionBtn = 'none'; renderUadList(); });
+  console.log('None hides it there too:', await page.evaluate(() => document.querySelectorAll('.uad-row .ab-btn').length));
 
   // Activity Launcher
   await page.evaluate(() => { actionBtn = 'acts'; renderApps(); }); await sleep(120);

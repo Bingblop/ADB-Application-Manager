@@ -726,7 +726,14 @@
         #view-apps .apps-sort-row .mode-action-btn:active:not(:disabled) { background: var(--accent); color: var(--on-accent); transform: scale(0.96); }
         #view-apps .app-actions .btn-mini { border-color: var(--accent); }
 
-        .ab-btn { color: var(--accent); }
+        .ab-btn { color: var(--accent); -webkit-touch-callout: none; }
+        .uad-row .uad-actions { margin-left: auto; align-self: flex-start; }
+        .ab-sheet-list { display: flex; flex-direction: column; gap: 8px; }
+        .ab-sheet-row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; background: var(--bg-surface); border: 1px solid var(--accent); border-radius: 12px; color: var(--text-main); font-size: 14px; font-weight: 700; text-align: left; cursor: pointer; }
+        .ab-sheet-row:active { background: var(--accent); color: var(--on-accent); }
+        .ab-sheet-row.current { box-shadow: 0 0 0 1px var(--accent-glow); }
+        .ab-sheet-ic { color: var(--accent); display: inline-flex; }
+        .ab-sheet-row:active .ab-sheet-ic { color: var(--on-accent); }
         .ab-preview { display: inline-flex; align-items: center; gap: 8px; color: var(--accent); }
         .ab-sep { color: var(--text-muted); font-size: 12px; }
         #appListSheet .modal-sheet { max-height: 90vh; }
@@ -5301,6 +5308,22 @@ Type any command below (e.g. pm list packages -d)
         </div>
     </div>
 
+    <!-- Hold the Action Button: every action for that app -->
+    <div class="modal-overlay" id="abSheet" onclick="if(event.target===this) closeAbSheet()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-title">
+                    <h3 id="abSheetTitle">App</h3>
+                    <p id="abSheetSub"></p>
+                </div>
+                <div class="sheet-header-actions">
+                    <div style="font-size:20px; cursor:pointer;" onclick="closeAbSheet()">✕</div>
+                </div>
+            </div>
+            <div id="abSheetList" class="ab-sheet-list"></div>
+        </div>
+    </div>
+
     <!-- Permission Manager / Activity Launcher: a list sheet for one app, opened from the Apps list's Action Button -->
     <div class="modal-overlay" id="appListSheet" onclick="if(event.target===this) closeAppListSheet()">
         <div class="modal-sheet">
@@ -5317,6 +5340,10 @@ Type any command below (e.g. pm list packages -d)
                 <input type="text" class="list-search" id="alsSearch" placeholder="Search…" oninput="alsRender()" autocomplete="off" autocapitalize="off" spellcheck="false">
             </div>
             <div class="chip-row" id="alsFilterRow"></div>
+            <div class="mode-btn-row" id="alsBulkRow" style="display:none; margin:6px 0;">
+                <button class="mode-action-btn" id="alsGrantAll" onclick="alsBulk(true)">Grant all shown</button>
+                <button class="mode-action-btn" id="alsRevokeAll" onclick="alsBulk(false)">Revoke all shown</button>
+            </div>
             <div class="switch-sub" id="alsSummary" style="margin:6px 0;"></div>
             <div id="alsList"></div>
         </div>
@@ -7885,6 +7912,7 @@ Type any command below (e.g. pm list packages -d)
                             ${p.description ? `<div class="uad-desc">${escapeHtml(p.description.trim())}</div>` : ''}
                             ${warn}
                         </div>
+                        ${abAppFor(p.pkg) ? `<div class="app-actions uad-actions">${actionBtnHtml(abAppFor(p.pkg))}</div>` : ''}
                     </div>`;
             }).join('');
         }
@@ -10153,8 +10181,8 @@ Type any command below (e.g. pm list packages -d)
         if (!AB_OPTIONS.some(o => o[0] === actionBtn)) actionBtn = 'settings';
 
         // what the button looks like and does for one app: { icon, label, run }
-        function actionBtnSpec(app) {
-            switch (actionBtn) {
+        function actionBtnSpec(app, kind) {
+            switch (kind || actionBtn) {
                 case 'forcestop': return { icon: 'forcestop', label: 'Force Stop' };
                 case 'launch': return { icon: 'launch', label: 'Launch app' };
                 case 'toggle': return app.isFrozen ? { icon: 'enable', label: 'Enable' } : { icon: 'disable', label: 'Disable' };
@@ -10166,16 +10194,24 @@ Type any command below (e.g. pm list packages -d)
             }
         }
         function abSvg(key) { return '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="' + AB_PATHS[key] + '"/></svg>'; }
+        // The button on an Apps list row or a Debloater row. Hold it for the list of every action for that app.
         function actionBtnHtml(app) {
             if (actionBtn === 'none') return '';
             const sp = actionBtnSpec(app);
-            return `<button class="btn-mini ab-btn" data-ab="${sp.icon}" title="${sp.label}" aria-label="${sp.label}" onclick="actionBtnTap(this.closest('.app-card').dataset.pkg)">${abSvg(sp.icon)}</button>`;
+            return `<button class="btn-mini ab-btn" data-ab="${sp.icon}" title="${sp.label} (hold for more)" aria-label="${sp.label}" onclick="actionBtnTap(this.closest('[data-pkg]').dataset.pkg)">${abSvg(sp.icon)}</button>`;
         }
-        function actionBtnTap(pkg) {
-            const app = allApps.find(a => a.pkg === pkg);
-            if (!app || actionBtn === 'none') return;
+        // the app as the buttons need it: the Apps list's own record, or (Debloater) built from the UAD-NG match's state
+        function abAppFor(pkg) {
+            const a = allApps.find(x => x.pkg === pkg);
+            if (a) return a;
+            const u = (typeof uadPackages !== 'undefined' ? uadPackages : []).find(x => x.pkg === pkg);
+            return u ? { pkg, name: u.name || pkg, isFrozen: u.state === 'disabled', isUninstalled: u.state === 'uninstalled', isSuspended: !!u.isSuspended } : null;
+        }
+        function abRun(kind, pkg) {
+            const app = abAppFor(pkg);
+            if (!app || kind === 'none') return;
             haptic();
-            switch (actionBtn) {
+            switch (kind) {
                 case 'forcestop': quickAction('force_stop', pkg); break;
                 case 'launch': installLaunchApp(pkg, app.name); break;
                 case 'toggle': quickAction(app.isFrozen ? 'unfreeze' : 'freeze', pkg); break;
@@ -10188,7 +10224,49 @@ Type any command below (e.g. pm list packages -d)
                 case 'acts': openAppListSheet('acts', pkg); break;
                 default: openAppSettings(pkg);
             }
+            if (typeof uadLoaded !== 'undefined' && uadLoaded && !['perms', 'acts', 'settings', 'launch'].includes(kind)) setTimeout(() => { if (uadLoaded) loadUadMatches(); }, 1000);     // the Debloater rows show the new state
         }
+        function actionBtnTap(pkg) { abRun(actionBtn, pkg); }
+
+        // Hold the Action Button: a sheet with every action for that app (the ones that change with the app show what they would do now)
+        const AB_SHEET_KINDS = ['settings', 'launch', 'forcestop', 'toggle', 'uninstall', 'suspend', 'perms', 'acts'];
+        function openAbSheet(pkg) {
+            const app = abAppFor(pkg);
+            if (!app) return;
+            haptic();
+            document.getElementById('abSheetTitle').innerText = app.name;
+            document.getElementById('abSheetSub').innerText = pkg;
+            document.getElementById('abSheetList').innerHTML = AB_SHEET_KINDS.map(k => {
+                const sp = actionBtnSpec(app, k);
+                return `<button class="ab-sheet-row${k === actionBtn ? ' current' : ''}" data-kind="${k}" data-pkg="${escapeHtml(pkg)}" onclick="abSheetPick(this.getAttribute('data-kind'), this.getAttribute('data-pkg'))"><span class="ab-sheet-ic">${abSvg(sp.icon)}</span><span class="ab-sheet-label">${sp.label}</span></button>`;
+            }).join('');
+            document.getElementById('abSheet').classList.add('show');
+        }
+        function closeAbSheet() { document.getElementById('abSheet').classList.remove('show'); }
+        function abSheetPick(kind, pkg) { closeAbSheet(); abRun(kind, pkg); }
+        (function () {
+            let timer = null, startX = 0, startY = 0, held = false;
+            const clear = () => { if (timer) { clearTimeout(timer); timer = null; } };
+            document.addEventListener('contextmenu', e => { if (e.target.closest && e.target.closest('.ab-btn')) e.preventDefault(); });
+            document.addEventListener('pointerdown', e => {
+                held = false;
+                const b = e.target.closest ? e.target.closest('.ab-btn') : null;
+                if (!b) return;
+                startX = e.clientX; startY = e.clientY;
+                clear();
+                timer = setTimeout(() => {
+                    timer = null;
+                    held = true;
+                    const host = b.closest('[data-pkg]');
+                    if (host) openAbSheet(host.dataset.pkg);
+                }, 550);
+            }, true);
+            document.addEventListener('pointermove', e => { if (timer && Math.hypot(e.clientX - startX, e.clientY - startY) > 10) clear(); });
+            ['pointerup', 'pointercancel', 'scroll'].forEach(ev => document.addEventListener(ev, clear, true));
+            document.addEventListener('click', e => {
+                if (held && e.target.closest && e.target.closest('.ab-btn')) { held = false; e.stopPropagation(); e.preventDefault(); }
+            }, true);
+        })();
         function actionBtnRender() {
             const sel = document.getElementById('actionBtnSelect');
             if (!sel) return;
@@ -10239,6 +10317,44 @@ Type any command below (e.g. pm list packages -d)
             haptic();
             alsRender();
         }
+        // Grant or revoke every changeable permission in the list as filtered and searched right now, one after the other
+        let alsBulkBusy = false;
+        function alsVisiblePerms() {
+            const d = inspectorData || {};
+            const q = (document.getElementById('alsSearch').value || '').toLowerCase().trim();
+            return (d.permissions || []).filter(p => {
+                if (alsFilter === 'granted' && !p.granted) return false;
+                if (alsFilter === 'denied' && p.granted) return false;
+                if (alsFilter === 'changeable' && !p.changeable) return false;
+                if (alsFilter === 'locked' && p.changeable) return false;
+                return !q || p.name.toLowerCase().includes(q) || String(p.label || '').toLowerCase().includes(q) || String(p.description || '').toLowerCase().includes(q);
+            });
+        }
+        async function alsBulk(grant) {
+            if (alsBulkBusy || alsKind !== 'perms') return;
+            const todo = alsVisiblePerms().filter(p => p.changeable && p.granted !== grant);
+            if (!todo.length) { showToast(grant ? 'Nothing to grant here' : 'Nothing to revoke here'); return; }
+            if (!guardPrivilege((grant ? 'Grant' : 'Revoke') + ' permissions')) return;
+            const app = allApps.find(a => a.pkg === inspectedPkg) || { name: inspectedPkg };
+            if (!confirm((grant ? 'Grant ' : 'Revoke ') + todo.length + ' permission' + (todo.length === 1 ? '' : 's') + ' ' + (grant ? 'to ' : 'from ') + app.name + '?')) return;
+            if (!window.AndroidBridge || !window.AndroidBridge.setPermission) { showToast('Needs the app build'); return; }
+            haptic();
+            alsBulkBusy = true;
+            const pkg = inspectedPkg, failed = [];
+            let done = 0;
+            for (let i = 0; i < todo.length; i++) {
+                showToast((grant ? 'Granting ' : 'Revoking ') + (i + 1) + ' of ' + todo.length + '…');
+                await new Promise(r => setTimeout(r, 0));
+                let r;
+                try { r = parseActionResult(window.AndroidBridge.setPermission(pkg, todo[i].name, grant)); } catch (e) { r = { ok: false, output: String(e && e.message || e) }; }
+                if (r.ok) done++; else failed.push({ name: todo[i].name.replace(/^android\.permission\./, ''), pkg: todo[i].name, output: r.output, success: false });
+            }
+            alsBulkBusy = false;
+            showToast((grant ? 'Granted ' : 'Revoked ') + done + ' of ' + todo.length + (failed.length ? ' • ' + failed.length + ' failed' : ''));
+            reloadInspectorDetails();
+            alsRender();
+            if (failed.length) showCommandResults('Permission Manager', grant ? 'grant' : 'revoke', failed);
+        }
         function alsRender() {
             if (!alsIsOpen()) return;
             const d = inspectorData || {};
@@ -10256,6 +10372,11 @@ Type any command below (e.g. pm list packages -d)
                     if (alsFilter === 'locked' && p.changeable) return false;
                     return !q || p.name.toLowerCase().includes(q) || String(p.label || '').toLowerCase().includes(q) || String(p.description || '').toLowerCase().includes(q);
                 }).sort((a, b) => (b.changeable - a.changeable) || a.name.localeCompare(b.name));
+                const toGrant = rows.filter(p => p.changeable && !p.granted).length, toRevoke = rows.filter(p => p.changeable && p.granted).length;
+                document.getElementById('alsBulkRow').style.display = '';
+                const gb = document.getElementById('alsGrantAll'), rb = document.getElementById('alsRevokeAll');
+                gb.innerText = 'Grant all shown (' + toGrant + ')'; gb.disabled = !toGrant || alsBulkBusy;
+                rb.innerText = 'Revoke all shown (' + toRevoke + ')'; rb.disabled = !toRevoke || alsBulkBusy;
                 list.innerHTML = rows.length ? rows.map(p => {
                     const short = p.name.replace(/^android\.permission\./, '');
                     const state = p.granted ? 'Granted' : 'Not granted';
@@ -10273,6 +10394,7 @@ Type any command below (e.g. pm list packages -d)
                     </div>${btn}</div>`;
                 }).join('') : '<div class="list-empty">' + (perms.length ? 'No permissions match.' : 'No permissions declared.') + '</div>';
             } else {
+                document.getElementById('alsBulkRow').style.display = 'none';
                 const acts = (d.activityInfo && d.activityInfo.length) ? d.activityInfo : (d.activities || []).map(n => ({ name: n, exported: false, enabled: true, permission: '' }));
                 sum.innerText = acts.length + ' activities · ' + acts.filter(a => a.exported).length + ' exported · ' + acts.filter(a => a.enabled === false).length + ' disabled';
                 const rows = acts.filter(a => {
