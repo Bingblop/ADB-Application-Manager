@@ -64,6 +64,28 @@ Run it for real reopens the sheet with the command, dry run off: [ true, 'echo $
 results offer Run again and Run again on the failed: ["Run again","Run again on the 1 that failed","Share CSV"] | ran: [["custom:failing $package",["com.example.alpha","com.example.charlie"]]]
 Run again on the failed sends only those: [["custom:failing $package",["com.example.charlie"]]]
 Run again repeats the run the dialog shows (here the retried one): [["custom:failing $package",["com.example.charlie"]]]
+saved presets before: [
+  'Silence notifications (copy 2)',
+  'Silence notifications (copy)',
+  'My preset'
+]
+Rename a saved preset: [ 'Quiet notifications', 'Silence notifications (copy)', 'My preset' ]
+a taken name is refused: [
+  [
+    'Quiet notifications',
+    'Silence notifications (copy)',
+    'My preset'
+  ],
+  'Another preset is already called My preset'
+]
+built-in presets have no Rename: [ 0, 0 ]
+Export presets shares a JSON file: ["batch_ops_presets_DATE.json","application/json","adb-app-manager",1,["Quiet notifications","Silence notifications (copy)","My preset"],false]
+importing the same file again adds nothing: [ 'Imported 0 presets and 0 commands (3 already here)', 3 ]
+Import brings in the good ones (a clash is kept as "(imported)", junk skipped): ["Imported 2 presets and 1 command",["Fresh","My preset (imported)","Quiet notifications","Silence notifications (copy)","My preset"],{"RECORD_AUDIO":"ignore"},["Imported cmd","Wipe cache (copy)","Wipe cache"]]
+a file that is not ours is refused: That is not a presets file from this app
+a read error is shown: Could not read that file: the file is over 1 MB
+Rename a saved command: [ 'Stop it', 'Wipe cache (copy)', 'Wipe cache' ]
+Export saved commands: ["batch_commands_DATE.json",["Stop it=am force-stop $package","Wipe cache (copy)=echo $package","Wipe cache=echo $package"]]
 app menu has no arrow, its X closes it: 0
 closed: true
 the batch X minimizes the menu (selection kept): [ true, 1 ]

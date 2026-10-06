@@ -5028,6 +5028,10 @@ Type any command below (e.g. pm list packages -d)
                 <button class="mode-action-btn" onclick="bopsAddCustom()">Add</button>
             </div>
             <div class="mode-btn-row" style="margin-top:12px;">
+                <button class="mode-action-btn" onclick="presetsExport('bops')">Export presets</button>
+                <button class="mode-action-btn" onclick="presetsImport('bops')">Import…</button>
+            </div>
+            <div class="mode-btn-row" style="margin-top:8px;">
                 <button class="mode-action-btn" onclick="bopsClear()">Clear ticks</button>
                 <button class="mode-action-btn primary" id="bopsApply" onclick="bopsApply()">Apply</button>
             </div>
@@ -5087,6 +5091,10 @@ Type any command below (e.g. pm list packages -d)
                 <input type="checkbox" class="switch-input" id="bcDry" onchange="bcPreview()"><span class="switch-track"></span>
             </label>
             <div class="mode-btn-row" style="margin-top:12px;">
+                <button class="mode-action-btn" onclick="presetsExport('cmds')">Export saved commands</button>
+                <button class="mode-action-btn" onclick="presetsImport('cmds')">Import…</button>
+            </div>
+            <div class="mode-btn-row" style="margin-top:8px;">
                 <button class="mode-action-btn" onclick="bcSave()">Save this command…</button>
                 <button class="mode-action-btn primary" id="bcRun" onclick="bcRun()">Run</button>
             </div>
@@ -10712,7 +10720,7 @@ Type any command below (e.g. pm list packages -d)
             if (!box) return;
             const dup = (k, i, name) => `<span class="preset-x" role="button" aria-label="Duplicate the preset ${escapeHtml(name)}" title="Duplicate" onclick="bopsDuplicate('${k}', ${i})"><svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false"><path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span>`;
             box.innerHTML = BOPS_BUILTIN.map((p, i) => `<span class="filter-chip preset-chip" title="${Object.keys(p.ops).length} app ops"><span onclick="bopsLoadPreset('b', ${i})">${escapeHtml(p.name)}</span>${dup('b', i, p.name)}</span>`).join('')
-                + bopsSavedLoad().map((p, i) => `<span class="filter-chip preset-chip" title="${Object.keys(p.ops).length} app ops"><span onclick="bopsLoadPreset('s', ${i})">${escapeHtml(p.name)}</span>${dup('s', i, p.name)}<span class="preset-x" role="button" aria-label="Delete the preset ${escapeHtml(p.name)}" onclick="bopsDeletePreset(${i})">✕</span></span>`).join('')
+                + bopsSavedLoad().map((p, i) => `<span class="filter-chip preset-chip" title="${Object.keys(p.ops).length} app ops"><span onclick="bopsLoadPreset('s', ${i})">${escapeHtml(p.name)}</span>${dup('s', i, p.name)}<span class="preset-x" role="button" aria-label="Rename the preset ${escapeHtml(p.name)}" title="Rename" onclick="bopsRename(${i})"><svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></span><span class="preset-x" role="button" aria-label="Delete the preset ${escapeHtml(p.name)}" onclick="bopsDeletePreset(${i})">✕</span></span>`).join('')
                 + '<span class="filter-chip" onclick="bopsSavePreset()">＋ Save ticked as preset…</span>';
         }
         function bopsLoadPreset(kind, i) {
@@ -10741,6 +10749,72 @@ Type any command below (e.g. pm list packages -d)
             bopsPresetsRender();
             showToast('Saved the preset ' + name);
         }
+        // ---- Export / import of the presets and the saved commands as a small JSON file ----
+        // { app: 'adb-app-manager', format: 1, bopsPresets: [{ name, ops: { OP: mode } }], batchCommands: [{ name, cmd }] } - an export holds the kind of the sheet it was made in; an import takes whatever the file has
+        function presetsExport(kind) {
+            const out = { app: 'adb-app-manager', format: 1, exportedAt: new Date().toISOString() };
+            let n = 0;
+            if (kind === 'bops') { out.bopsPresets = bopsSavedLoad(); n = out.bopsPresets.length; }
+            else { out.batchCommands = bcSavedLoad(); n = out.batchCommands.length; }
+            if (!n) { showToast(kind === 'bops' ? 'No saved presets to export yet' : 'No saved commands to export yet'); return; }
+            haptic();
+            shareFileViaBridge((kind === 'bops' ? 'batch_ops_presets_' : 'batch_commands_') + new Date().toISOString().slice(0, 10) + '.json', JSON.stringify(out, null, 2) + '\n', 'application/json');
+        }
+        function presetsImport(kind) {
+            if (!window.AndroidBridge || !window.AndroidBridge.pickTextFile) { showToast('Importing needs the app build'); return; }
+            haptic();
+            window.AndroidBridge.pickTextFile('presets-' + kind);
+        }
+        // what a file may bring in is checked the same way what is read back from storage is
+        function presetsFromFile(text) {
+            let d;
+            try { d = JSON.parse(text); } catch (e) { return null; }
+            if (!d || typeof d !== 'object' || d.app !== 'adb-app-manager') return null;
+            const presets = (Array.isArray(d.bopsPresets) ? d.bopsPresets : []).map(p => {
+                if (!p || typeof p.name !== 'string' || !p.ops || typeof p.ops !== 'object') return null;
+                const ops = {};
+                Object.keys(p.ops).slice(0, 300).forEach(op => { if (/^[A-Z][A-Z0-9_]+$/.test(op) && BOPS_MODES.some(m => m[0] === p.ops[op])) ops[op] = p.ops[op]; });
+                const name = p.name.trim().slice(0, 40);
+                return name && Object.keys(ops).length ? { name, ops } : null;
+            }).filter(Boolean).slice(0, 30);
+            const cmds = (Array.isArray(d.batchCommands) ? d.batchCommands : []).map(c => {
+                if (!c || typeof c.name !== 'string' || typeof c.cmd !== 'string') return null;
+                const name = c.name.trim().slice(0, 40), cmd = c.cmd.trim().slice(0, 2000);
+                return name && cmd ? { name, cmd } : null;
+            }).filter(Boolean).slice(0, 40);
+            return { presets, cmds };
+        }
+        window.onTextFilePicked = function (r) {
+            if (!r || !String(r.tag || '').startsWith('presets-')) return;
+            if (r.error) { showToast('Could not read that file: ' + r.error); return; }
+            const got = presetsFromFile(r.text || '');
+            if (!got) { showToast('That is not a presets file from this app'); return; }
+            if (!got.presets.length && !got.cmds.length) { showToast('Nothing usable in that file'); return; }
+            let np = 0, nc = 0, same = 0;
+            got.presets.forEach(p => {
+                const have = bopsSavedLoad().find(x => x.name === p.name);
+                if (have && JSON.stringify(have.ops) === JSON.stringify(p.ops)) { same++; return; }
+                const name = have ? uniqueImportName(p.name, bopsSavedLoad().map(x => x.name)) : p.name;
+                bopsSaved = [{ name, ops: p.ops }].concat(bopsSavedLoad()).slice(0, 30); np++;
+            });
+            got.cmds.forEach(c => {
+                const have = bcSavedLoad().find(x => x.name === c.name);
+                if (have && have.cmd === c.cmd) { same++; return; }
+                const name = have ? uniqueImportName(c.name, bcSavedLoad().map(x => x.name)) : c.name;
+                bcSaved = [{ name, cmd: c.cmd }].concat(bcSavedLoad()).slice(0, 40); nc++;
+            });
+            if (np) kvSet('bops_presets', bopsSaved);
+            if (nc) kvSet('batch_cmds', bcSaved);
+            bopsPresetsRender(); bcRenderRecent();
+            showToast('Imported ' + np + ' preset' + (np === 1 ? '' : 's') + ' and ' + nc + ' command' + (nc === 1 ? '' : 's') + (same ? ' (' + same + ' already here)' : ''));
+        };
+        // the name an imported item gets when its own is taken by something different: "Name (imported)", "Name (imported 2)", ...
+        function uniqueImportName(name, taken) {
+            let n = name.slice(0, 30) + ' (imported)', k = 2;
+            while (taken.includes(n)) n = name.slice(0, 30) + ' (imported ' + (k++) + ')';
+            return n;
+        }
+
         // a name that is not taken yet: "Name (copy)", "Name (copy 2)", ...
         function uniqueCopyName(name, taken) {
             const base = String(name).replace(/ \(copy( \d+)?\)$/, '');
@@ -10757,6 +10831,18 @@ Type any command below (e.g. pm list packages -d)
             kvSet('bops_presets', bopsSaved);
             bopsPresetsRender();
             showToast('Duplicated as ' + name);
+        }
+        function bopsRename(i) {
+            const p = bopsSavedLoad()[i];
+            if (!p) return;
+            const name = (prompt('New name for this preset:', p.name) || '').trim().slice(0, 40);
+            if (!name || name === p.name) return;
+            if (bopsSavedLoad().some((x, j) => j !== i && x.name === name)) { showToast('Another preset is already called ' + name); return; }
+            haptic();
+            p.name = name;
+            kvSet('bops_presets', bopsSaved);
+            bopsPresetsRender();
+            showToast('Renamed to ' + name);
         }
         function bopsDeletePreset(i) {
             const p = bopsSavedLoad()[i];
@@ -10889,7 +10975,7 @@ Type any command below (e.g. pm list packages -d)
         function bcRenderRecent() {
             if (bcRecent === null) { const v = kvGet('batch_cmd_recent', []); bcRecent = Array.isArray(v) ? v.filter(x => typeof x === 'string').slice(0, 6) : []; }
             const saved = bcSavedLoad();
-            document.getElementById('bcSaved').innerHTML = saved.length ? saved.map((c, i) => `<span class="filter-chip preset-chip" title="${escapeHtml(c.cmd)}"><span onclick="bcLoadSaved(${i})">${escapeHtml(c.name)}</span><span class="preset-x" role="button" aria-label="Duplicate the saved command ${escapeHtml(c.name)}" title="Duplicate" onclick="bcDuplicate(${i})"><svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false"><path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span><span class="preset-x" role="button" aria-label="Delete the saved command ${escapeHtml(c.name)}" onclick="bcDeleteSaved(${i})">✕</span></span>`).join('') : '<span class="switch-sub">None yet: type a command and tap Save this command.</span>';
+            document.getElementById('bcSaved').innerHTML = saved.length ? saved.map((c, i) => `<span class="filter-chip preset-chip" title="${escapeHtml(c.cmd)}"><span onclick="bcLoadSaved(${i})">${escapeHtml(c.name)}</span><span class="preset-x" role="button" aria-label="Duplicate the saved command ${escapeHtml(c.name)}" title="Duplicate" onclick="bcDuplicate(${i})"><svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false"><path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span><span class="preset-x" role="button" aria-label="Rename the saved command ${escapeHtml(c.name)}" title="Rename" onclick="bcRename(${i})"><svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></span><span class="preset-x" role="button" aria-label="Delete the saved command ${escapeHtml(c.name)}" onclick="bcDeleteSaved(${i})">✕</span></span>`).join('') : '<span class="switch-sub">None yet: type a command and tap Save this command.</span>';
             document.getElementById('bcRecent').innerHTML = bcRecent.length ? '<span class="switch-sub" style="width:100%;">Recent</span>' + bcRecent.map((c, i) => `<span class="filter-chip" data-i="${i}" onclick="bcExample(bcRecent[+this.dataset.i])"><code>${escapeHtml(c.length > 40 ? c.slice(0, 40) + '…' : c)}</code></span>`).join('') : '';
         }
         function bcLoadSaved(i) { const c = bcSavedLoad()[i]; if (c) bcExample(c.cmd); }
@@ -10913,6 +10999,18 @@ Type any command below (e.g. pm list packages -d)
             kvSet('batch_cmds', bcSaved);
             bcRenderRecent();
             showToast('Duplicated as ' + name);
+        }
+        function bcRename(i) {
+            const c = bcSavedLoad()[i];
+            if (!c) return;
+            const name = (prompt('New name for this command:', c.name) || '').trim().slice(0, 40);
+            if (!name || name === c.name) return;
+            if (bcSavedLoad().some((x, j) => j !== i && x.name === name)) { showToast('Another saved command is already called ' + name); return; }
+            haptic();
+            c.name = name;
+            kvSet('batch_cmds', bcSaved);
+            bcRenderRecent();
+            showToast('Renamed to ' + name);
         }
         function bcDeleteSaved(i) {
             const c = bcSavedLoad()[i];
