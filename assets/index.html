@@ -736,9 +736,18 @@
         .ab-sheet-row:active .ab-sheet-ic { color: var(--on-accent); }
         .ab-preview { display: inline-flex; align-items: center; gap: 8px; color: var(--accent); }
         .ab-sep { color: var(--text-muted); font-size: 12px; }
-        #appListSheet .modal-sheet { max-height: 90vh; }
         .als-row { align-items: flex-start; }
         .als-detail { font-size: 10.5px; color: var(--text-muted); margin-top: 3px; word-break: break-word; line-height: 1.4; }
+        .hold-list { display: flex; flex-direction: column; }
+        .hold-row { display: flex; gap: 10px; padding: 9px 0; border-top: 1px solid var(--border-glass); }
+        .hold-row:first-child { border-top: none; }
+        .hold-ic { color: var(--accent); flex: 0 0 auto; margin-top: 1px; }
+        .hold-txt { min-width: 0; }
+        .hold-what { font-size: 13px; }
+        .hold-where { font-size: 10px; font-weight: 800; color: var(--accent); border: 1px solid var(--accent); border-radius: 6px; padding: 1px 6px; margin-left: 8px; white-space: nowrap; }
+        .hold-does { font-size: 12px; color: var(--text-muted); margin-top: 2px; line-height: 1.4; }
+        .als-cb { margin: 2px 8px 0 0; cursor: pointer; }
+        .als-cb.on { background: var(--accent); border-color: var(--accent); }
         .als-desc { color: var(--text-main); opacity: 0.85; }
 
         .batch-tool-link {
@@ -4587,6 +4596,12 @@
                 <div class="color-card-subtitle">Choose what the extra button on each row of the Apps list does. It is always an icon, and the ones that change with the app (Enable / Disable, Install / Uninstall, Unsuspend / Suspend) switch their icon and action to match the app's current state.</div>
                 <select class="op-select" id="actionBtnSelect" aria-label="Action Button" onchange="setActionBtn(this.value)"></select>
                 <div class="switch-sub" id="actionBtnPreview" style="margin-top:8px;"></div>
+                <div class="color-card-title" style="margin-top:16px; font-size:13px;">Hold menu</div>
+                <div class="color-card-subtitle">Press and hold the Action Button for a sheet of actions for that app. Choose which actions it lists and in what order.</div>
+                <div id="abSheetCfgList" class="fl-list"></div>
+                <div class="mode-btn-row" style="margin-top:12px;">
+                    <button class="mode-action-btn" onclick="abCfgReset()">Reset to Default</button>
+                </div>
             </div>
 
             <div class="color-card" id="featureCard">
@@ -4596,6 +4611,11 @@
                 <div class="mode-btn-row" style="margin-top:12px;">
                     <button class="mode-action-btn" id="featureResetBtn" onclick="featureReset()">Reset to Default</button>
                 </div>
+            </div>
+            <div class="color-card" id="holdGuideCard">
+                <div class="color-card-title">Press and hold guide</div>
+                <div class="color-card-subtitle">Hold a finger on these for about half a second. You feel a short tap when it works.</div>
+                <div class="hold-list"><div class="hold-row"><span class="hold-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg></span><div class="hold-txt"><div class="hold-what"><b>An app row</b><span class="hold-where">Apps</span></div><div class="hold-does">Opens that app's menu (the same as tapping ⋯). Tap the checkbox to select it instead.</div></div></div><div class="hold-row"><span class="hold-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg></span><div class="hold-txt"><div class="hold-what"><b>An app's icon</b><span class="hold-where">Apps</span></div><div class="hold-does">Saves the icon as a PNG to Download/ADB App Manager/Icons.</div></div></div><div class="hold-row"><span class="hold-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg></span><div class="hold-txt"><div class="hold-what"><b>The Action Button</b><span class="hold-where">Apps, Debloater</span></div><div class="hold-does">A sheet with every action for that app: settings, launch, force stop, enable or disable, uninstall, suspend, permissions, activities. Choose which ones it lists below.</div></div></div><div class="hold-row"><span class="hold-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg></span><div class="hold-txt"><div class="hold-what"><b>The round checkmark button (when apps are selected)</b><span class="hold-where">Apps</span></div><div class="hold-does">Clears every selection at once.</div></div></div><div class="hold-row"><span class="hold-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg></span><div class="hold-txt"><div class="hold-what"><b>A file or folder row</b><span class="hold-where">File Manager</span></div><div class="hold-does">Starts selecting. Tap more rows to add them, then Copy, Move or Delete.</div></div></div><div class="hold-row"><span class="hold-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg></span><div class="hold-txt"><div class="hold-what"><b>A file the APK search found</b><span class="hold-where">Installer</span></div><div class="hold-does">Deletes it from the phone, with an Undo right after.</div></div></div><div class="hold-row"><span class="hold-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg></span><div class="hold-txt"><div class="hold-what"><b>A setting that is 1 or 0</b><span class="hold-where">Hidden Settings</span></div><div class="hold-does">Flips it.</div></div></div><div class="hold-row"><span class="hold-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg></span><div class="hold-txt"><div class="hold-what"><b>An overlay row</b><span class="hold-where">Overlays</span></div><div class="hold-does">Switches that overlay on or off.</div></div></div></div>
             </div>
         </section>
 
@@ -4657,7 +4677,7 @@
                 <div class="color-card-title">Handy to know</div>
                 <ul class="about-list">
                     <li><b>Back</b> closes the open sheet, steps up a folder or out of an archive, then returns to the tab you came from. Leaving takes a second, deliberate press.</li>
-                    <li><b>Press and hold</b> an app or a file to select several, then act on them all at once.</li>
+                    <li><b>Press and hold</b> opens an app's menu, or starts selecting files. Settings has a full guide to what can be held.</li>
                     <li><b>File Manager → View</b> opens an APK or ZIP without extracting it. Edit it, tap <b>Sign</b>, then install it.</li>
                     <li>Installs started from <b>File Manager</b> always go through ADB, Wireless Debugging, Shizuku or Root, never the system installer.</li>
                     <li><b>ADB Console → Rish</b> is a persistent Shizuku shell: <code>cd</code> and variables stay put between commands.</li>
@@ -5339,10 +5359,20 @@ Type any command below (e.g. pm list packages -d)
             <div class="list-toolbar">
                 <input type="text" class="list-search" id="alsSearch" placeholder="Search…" oninput="alsRender()" autocomplete="off" autocapitalize="off" spellcheck="false">
             </div>
+            <div class="chip-row" id="alsModeRow" style="display:none;">
+                <span class="filter-chip active" data-mode="perms" onclick="alsSetKind('perms')">Permissions</span>
+                <span class="filter-chip" data-mode="ops" onclick="alsSetKind('ops')">App Ops</span>
+            </div>
             <div class="chip-row" id="alsFilterRow"></div>
             <div class="mode-btn-row" id="alsBulkRow" style="display:none; margin:6px 0;">
                 <button class="mode-action-btn" id="alsGrantAll" onclick="alsBulk(true)">Grant all shown</button>
                 <button class="mode-action-btn" id="alsRevokeAll" onclick="alsBulk(false)">Revoke all shown</button>
+            </div>
+            <div class="mode-btn-row" id="alsActBulkRow" style="display:none; margin:6px 0; flex-wrap:wrap;">
+                <button class="mode-action-btn" onclick="alsSelAll()">Select all shown</button>
+                <button class="mode-action-btn" onclick="alsSelClear()">Clear</button>
+                <button class="mode-action-btn" id="alsEnableSel" onclick="alsBulkComp(true)">Enable selected</button>
+                <button class="mode-action-btn" id="alsDisableSel" onclick="alsBulkComp(false)">Disable selected</button>
             </div>
             <div class="switch-sub" id="alsSummary" style="margin:6px 0;"></div>
             <div id="alsList"></div>
@@ -10230,13 +10260,53 @@ Type any command below (e.g. pm list packages -d)
 
         // Hold the Action Button: a sheet with every action for that app (the ones that change with the app show what they would do now)
         const AB_SHEET_KINDS = ['settings', 'launch', 'forcestop', 'toggle', 'uninstall', 'suspend', 'perms', 'acts'];
+        const AB_KIND_NAMES = { settings: 'App Settings', launch: 'App Launcher', forcestop: 'Force Stop', toggle: 'Enable / Disable', uninstall: 'Install / Uninstall', suspend: 'Unsuspend / Suspend', perms: 'Permission Manager', acts: 'Activity Launcher' };
+        // which actions the hold sheet lists, and in what order: { order: [...], off: [...] }, kept as "ab_sheet"
+        function abCfgLoad() {
+            const v = kvGet('ab_sheet', null);
+            let order = [], off = [];
+            if (v && Array.isArray(v.order)) { order = v.order.filter(k => AB_SHEET_KINDS.includes(k)); off = Array.isArray(v.off) ? v.off.filter(k => AB_SHEET_KINDS.includes(k)) : []; }
+            AB_SHEET_KINDS.forEach(k => { if (!order.includes(k)) order.push(k); });
+            order = order.filter((k, i) => order.indexOf(k) === i);
+            if (off.length >= order.length) off = [];
+            return { order, off };
+        }
+        let abCfg = abCfgLoad();
+        function abCfgSave() { kvSet('ab_sheet', abCfg); }
+        function abCfgRender() {
+            const box = document.getElementById('abSheetCfgList');
+            if (!box) return;
+            const last = abCfg.order.length - 1;
+            box.innerHTML = abCfg.order.map((k, i) => {
+                const on = !abCfg.off.includes(k), name = escapeHtml(AB_KIND_NAMES[k]);
+                return '<div class="fl-row' + (on ? '' : ' off') + '" data-kind="' + k + '"><div class="fl-name">' + name + '</div>'
+                    + '<button type="button" class="fl-move" aria-label="Move ' + name + ' up"' + (i === 0 ? ' disabled' : '') + ' onclick="abCfgMove(\'' + k + '\', -1)">▲</button>'
+                    + '<button type="button" class="fl-move" aria-label="Move ' + name + ' down"' + (i === last ? ' disabled' : '') + ' onclick="abCfgMove(\'' + k + '\', 1)">▼</button>'
+                    + '<label class="fl-switch"><input type="checkbox" class="switch-input" aria-label="' + name + '"' + (on ? ' checked' : '') + ' onchange="abCfgToggle(\'' + k + '\', this.checked)"><span class="switch-track"></span></label></div>';
+            }).join('');
+        }
+        function abCfgMove(k, d) {
+            const i = abCfg.order.indexOf(k), j = i + d;
+            if (i < 0 || j < 0 || j >= abCfg.order.length) return;
+            haptic();
+            abCfg.order.splice(i, 1); abCfg.order.splice(j, 0, k);
+            abCfgSave(); abCfgRender();
+        }
+        function abCfgToggle(k, on) {
+            if (!on && abCfg.order.length - abCfg.off.length <= 1) { showToast('Keep at least one action in the hold menu'); abCfgRender(); return; }
+            haptic();
+            abCfg.off = abCfg.off.filter(x => x !== k);
+            if (!on) abCfg.off.push(k);
+            abCfgSave(); abCfgRender();
+        }
+        function abCfgReset() { haptic(); abCfg = { order: AB_SHEET_KINDS.slice(), off: [] }; abCfgSave(); abCfgRender(); showToast('Hold menu reset'); }
         function openAbSheet(pkg) {
             const app = abAppFor(pkg);
             if (!app) return;
             haptic();
             document.getElementById('abSheetTitle').innerText = app.name;
             document.getElementById('abSheetSub').innerText = pkg;
-            document.getElementById('abSheetList').innerHTML = AB_SHEET_KINDS.map(k => {
+            document.getElementById('abSheetList').innerHTML = abCfg.order.filter(k => !abCfg.off.includes(k)).map(k => {
                 const sp = actionBtnSpec(app, k);
                 return `<button class="ab-sheet-row${k === actionBtn ? ' current' : ''}" data-kind="${k}" data-pkg="${escapeHtml(pkg)}" onclick="abSheetPick(this.getAttribute('data-kind'), this.getAttribute('data-pkg'))"><span class="ab-sheet-ic">${abSvg(sp.icon)}</span><span class="ab-sheet-label">${sp.label}</span></button>`;
             }).join('');
@@ -10268,6 +10338,7 @@ Type any command below (e.g. pm list packages -d)
             }, true);
         })();
         function actionBtnRender() {
+            abCfgRender();
             const sel = document.getElementById('actionBtnSelect');
             if (!sel) return;
             sel.innerHTML = AB_OPTIONS.map(o => '<option value="' + o[0] + '"' + (o[0] === actionBtn ? ' selected' : '') + '>' + escapeHtml(o[1]) + '</option>').join('');
@@ -10290,6 +10361,7 @@ Type any command below (e.g. pm list packages -d)
 
         // ---------- Permission Manager / Activity Launcher sheet ----------
         let alsKind = '', alsFilter = 'all';
+        const alsSel = new Set();            // the activities ticked for Enable / Disable selected
         function alsIsOpen() { const m = document.getElementById('appListSheet'); return !!(m && m.classList.contains('show')); }
         function openAppListSheet(kind, pkg) {
             if (!window.AndroidBridge || !window.AndroidBridge.getAppDetails) { showToast('Needs the app build'); return; }
@@ -10297,18 +10369,30 @@ Type any command below (e.g. pm list packages -d)
             try { d = JSON.parse(window.AndroidBridge.getAppDetails(pkg)); } catch (e) { showToast('Could not read this app'); return; }
             inspectedPkg = pkg;                       // the permission and component actions below work on the app named here
             inspectorData = d;
-            alsKind = kind; alsFilter = 'all';
+            appOpsList = parseAppOps(d.appopsRaw || '');
             const app = allApps.find(a => a.pkg === pkg) || { name: pkg };
-            document.getElementById('alsTitle').innerText = kind === 'perms' ? 'Permission Manager' : 'Activity Launcher';
             document.getElementById('alsSub').innerText = app.name + ' · ' + pkg;
-            document.getElementById('alsSearch').value = '';
-            document.getElementById('alsSearch').placeholder = kind === 'perms' ? 'Search permissions…' : 'Search activities…';
-            const chips = kind === 'perms' ? [['all', 'All'], ['granted', 'Granted'], ['denied', 'Denied'], ['changeable', 'Changeable'], ['locked', 'Locked']]
-                : [['all', 'All'], ['exported', 'Exported'], ['unexported', 'Unexported'], ['disabled', 'Disabled']];
-            document.getElementById('alsFilterRow').innerHTML = chips.map(c => `<span class="filter-chip${c[0] === 'all' ? ' active' : ''}" data-filter="${c[0]}" onclick="alsSetFilter('${c[0]}')">${c[1]}</span>`).join('');
+            alsSel.clear();
+            alsSetKind(kind, true);
             document.getElementById('appListSheet').classList.add('show');
             haptic();
             alsRender();
+        }
+        // Permissions and App Ops share one sheet (a chip switches between them); Activities have their own
+        function alsSetKind(kind, silent) {
+            alsKind = kind; alsFilter = 'all';
+            if (!silent) haptic();
+            document.getElementById('alsTitle').innerText = kind === 'acts' ? 'Activity Launcher' : 'Permission Manager';
+            document.getElementById('alsSearch').value = '';
+            document.getElementById('alsSearch').placeholder = kind === 'perms' ? 'Search permissions…' : kind === 'ops' ? 'Search app ops…' : 'Search activities…';
+            const modes = document.getElementById('alsModeRow');
+            modes.style.display = kind === 'acts' ? 'none' : '';
+            modes.querySelectorAll('.filter-chip').forEach(c => c.classList.toggle('active', c.getAttribute('data-mode') === kind));
+            const chips = kind === 'perms' ? [['all', 'All'], ['granted', 'Granted'], ['denied', 'Denied'], ['changeable', 'Changeable'], ['locked', 'Locked']]
+                : kind === 'ops' ? [['all', 'All'], ['allow', 'Allowed'], ['restricted', 'Ignored / Denied'], ['foreground', 'Foreground']]
+                : [['all', 'All'], ['exported', 'Exported'], ['unexported', 'Unexported'], ['disabled', 'Disabled']];
+            document.getElementById('alsFilterRow').innerHTML = chips.map(c => `<span class="filter-chip${c[0] === 'all' ? ' active' : ''}" data-filter="${c[0]}" onclick="alsSetFilter('${c[0]}')">${c[1]}</span>`).join('');
+            if (!silent) alsRender();
         }
         function closeAppListSheet() { document.getElementById('appListSheet').classList.remove('show'); haptic(); }
         function alsSetFilter(f) {
@@ -10361,6 +10445,24 @@ Type any command below (e.g. pm list packages -d)
             const q = (document.getElementById('alsSearch').value || '').toLowerCase().trim();
             const list = document.getElementById('alsList');
             const sum = document.getElementById('alsSummary');
+            document.getElementById('alsBulkRow').style.display = alsKind === 'perms' ? '' : 'none';
+            document.getElementById('alsActBulkRow').style.display = alsKind === 'acts' ? '' : 'none';
+            if (alsKind === 'ops') {
+                const ops = appOpsList || [];
+                sum.innerText = ops.length + ' app ops · ' + ops.filter(o => o.mode === 'allow').length + ' allowed · ' + ops.filter(o => o.mode === 'ignore' || o.mode === 'deny').length + ' ignored or denied';
+                const rows = ops.filter(op => {
+                    if (alsFilter === 'allow' && op.mode !== 'allow') return false;
+                    if (alsFilter === 'restricted' && op.mode !== 'ignore' && op.mode !== 'deny') return false;
+                    if (alsFilter === 'foreground' && op.mode !== 'foreground') return false;
+                    return !q || op.name.toLowerCase().includes(q);
+                });
+                list.innerHTML = rows.length ? rows.map(op => {
+                    const sub = [op.uidOnly ? 'uid-level mode' : '', op.uidMode && !op.uidOnly ? 'uid: ' + op.uidMode : '', op.detail].filter(Boolean).join(' • ');
+                    const buttons = OP_MODES.map(([mode, label]) => `<button class="op-mode-btn ${mode} ${op.mode === mode ? 'on' : ''}" data-op="${escapeHtml(op.name)}" onclick="setAppOpMode(this.getAttribute('data-op'), '${mode}')">${label}</button>`).join('');
+                    return `<div class="perm-row als-row" style="flex-direction:column; align-items:stretch; gap:6px;"><div class="perm-info"><div class="perm-name" translate="no">${escapeHtml(op.name)}</div>${sub ? `<div class="als-detail">${escapeHtml(sub)}</div>` : ''}</div><div class="op-modes">${buttons}</div></div>`;
+                }).join('') : '<div class="list-empty">' + (ops.length ? 'No app ops match.' : (isPrivilegedActive ? 'No app ops recorded for this app yet.' : 'App ops need ADB, Shizuku or Root. Set up a working mode first.')) + '</div>';
+                return;
+            }
             if (alsKind === 'perms') {
                 const perms = d.permissions || [];
                 const granted = perms.filter(p => p.granted).length;
@@ -10391,6 +10493,7 @@ Type any command below (e.g. pm list packages -d)
                         ${p.description ? `<div class="als-detail als-desc">${escapeHtml(p.description)}</div>` : ''}
                         ${p.group ? `<div class="als-detail" translate="no">Group: ${escapeHtml(p.group.replace(/^android\.permission-group\./, ''))}</div>` : ''}
                         <div class="als-detail">${how}</div>
+                        ${alsOpLine(p.name)}
                     </div>${btn}</div>`;
                 }).join('') : '<div class="list-empty">' + (perms.length ? 'No permissions match.' : 'No permissions declared.') + '</div>';
             } else {
@@ -10406,7 +10509,8 @@ Type any command below (e.g. pm list packages -d)
                 list.innerHTML = rows.length ? rows.map(a => {
                     const short = a.name.split('.').pop();
                     const need = a.exported ? 'Exported: other apps can open it, so it launches without a working mode.' : 'Not exported: only the app itself can open it normally, so launching it needs a working mode.';
-                    return `<div class="perm-row als-row"><div class="perm-info">
+                    const picked = alsSel.has(a.name);
+                    return `<div class="perm-row als-row"><div class="app-checkbox als-cb${picked ? ' on' : ''}" role="checkbox" aria-checked="${picked}" data-comp="${escapeHtml(a.name)}" onclick="alsToggleSel(this.getAttribute('data-comp'))">${picked ? '✓' : ''}</div><div class="perm-info">
                         <div class="perm-name" translate="no">${escapeHtml(short)}</div>
                         <div class="perm-sub"><span class="perm-kind" style="${a.exported ? '' : 'color:#FFA726;border-color:rgba(255,145,0,0.4);'}">${a.exported ? 'exported' : 'unexported'}</span>${a.enabled === false ? '<span class="perm-kind" style="color:#FFA726;border-color:rgba(255,145,0,0.4);">disabled</span>' : '<span class="perm-kind">enabled</span>'}${a.permission ? '<span class="perm-kind">protected</span>' : ''}</div>
                         <div class="als-detail" translate="no">${escapeHtml(a.name)}</div>
@@ -10417,7 +10521,58 @@ Type any command below (e.g. pm list packages -d)
                         <button class="perm-toggle-btn ${a.enabled === false ? 'granted' : 'revoked'}" data-comp="${escapeHtml(a.name)}" onclick="toggleComponent(this.getAttribute('data-comp'), ${a.enabled === false ? 'true' : 'false'})">${a.enabled === false ? 'ENABLE' : 'DISABLE'}</button>
                     </div></div>`;
                 }).join('') : '<div class="list-empty">' + (acts.length ? 'No activities match.' : 'No activities.') + '</div>';
+                const chosen = acts.filter(a => alsSel.has(a.name));
+                const en = document.getElementById('alsEnableSel'), dis = document.getElementById('alsDisableSel');
+                en.innerText = 'Enable selected (' + chosen.filter(a => a.enabled === false).length + ')'; en.disabled = !chosen.some(a => a.enabled === false) || alsBulkBusy;
+                dis.innerText = 'Disable selected (' + chosen.filter(a => a.enabled !== false).length + ')'; dis.disabled = !chosen.some(a => a.enabled !== false) || alsBulkBusy;
             }
+        }
+        // the app op behind a permission, when this app has one recorded: CAMERA for android.permission.CAMERA, FINE_LOCATION for ACCESS_FINE_LOCATION
+        function alsOpLine(permName) {
+            const base = permName.replace(/^.*\./, '');
+            const op = (appOpsList || []).find(o => o.name === base || o.name === base.replace(/^ACCESS_/, ''));
+            return op ? `<div class="als-detail" translate="no">App op ${escapeHtml(op.name)}: ${escapeHtml(op.mode)}</div>` : '';
+        }
+        function alsVisibleActs() {
+            const d = inspectorData || {};
+            const acts = (d.activityInfo && d.activityInfo.length) ? d.activityInfo : (d.activities || []).map(n => ({ name: n, exported: false, enabled: true, permission: '' }));
+            const q = (document.getElementById('alsSearch').value || '').toLowerCase().trim();
+            return acts.filter(a => {
+                if (alsFilter === 'exported' && !a.exported) return false;
+                if (alsFilter === 'unexported' && a.exported) return false;
+                if (alsFilter === 'disabled' && a.enabled !== false) return false;
+                return !q || a.name.toLowerCase().includes(q);
+            });
+        }
+        function alsToggleSel(name) { haptic(); if (alsSel.has(name)) alsSel.delete(name); else alsSel.add(name); alsRender(); }
+        function alsSelAll() { haptic(); alsVisibleActs().forEach(a => alsSel.add(a.name)); alsRender(); }
+        function alsSelClear() { haptic(); alsSel.clear(); alsRender(); }
+        // Enable or disable every ticked activity that is not already in that state
+        async function alsBulkComp(enable) {
+            if (alsBulkBusy) return;
+            const acts = (inspectorData && inspectorData.activityInfo) || [];
+            const todo = acts.filter(a => alsSel.has(a.name) && (a.enabled === false) === enable);
+            if (!todo.length) { showToast('Nothing to ' + (enable ? 'enable' : 'disable')); return; }
+            if (!guardPrivilege((enable ? 'Enable' : 'Disable') + ' components')) return;
+            if (!confirm((enable ? 'Enable ' : 'Disable ') + todo.length + ' activit' + (todo.length === 1 ? 'y' : 'ies') + '?' + (enable ? '' : ' A disabled activity can no longer be opened until it is enabled again.'))) return;
+            if (!window.AndroidBridge || !window.AndroidBridge.setComponentEnabled) { showToast('Needs the app build'); return; }
+            haptic();
+            alsBulkBusy = true;
+            const pkg = inspectedPkg, failed = [];
+            let done = 0;
+            for (let i = 0; i < todo.length; i++) {
+                showToast((enable ? 'Enabling ' : 'Disabling ') + (i + 1) + ' of ' + todo.length + '…');
+                await new Promise(r => setTimeout(r, 0));
+                let r;
+                try { r = JSON.parse(window.AndroidBridge.setComponentEnabled(pkg, todo[i].name, enable)); } catch (e) { r = { ok: false, output: String(e && e.message || e) }; }
+                if (r.ok) { done++; todo[i].enabled = enable; alsSel.delete(todo[i].name); }
+                else failed.push({ name: todo[i].name.split('.').pop(), pkg: pkg + '/' + todo[i].name, output: r.output, success: false });
+            }
+            alsBulkBusy = false;
+            showToast((enable ? 'Enabled ' : 'Disabled ') + done + ' of ' + todo.length + (failed.length ? ' • ' + failed.length + ' failed' : ''));
+            renderComponentsList();
+            alsRender();
+            if (failed.length) showCommandResults('Activity Launcher', enable ? 'enable' : 'disable', failed);
         }
 
         // Press and hold anywhere on an app's row (the icon keeps its own hold, which saves the icon; the buttons and checkbox are left alone)
@@ -15647,6 +15802,7 @@ Type any command below (e.g. pm list packages -d)
             if (inspectorData) inspectorData.appopsRaw = raw;
             appOpsList = parseAppOps(raw);
             renderAppOpsList();
+            if (alsIsOpen()) alsRender();
         }
 
         // ---------- Manifest viewer ----------

@@ -20,7 +20,13 @@
   or every activity (exported or not, enabled, the permission it needs, with Launch and Enable / Disable), each with a
   search box and filters. The Permission Manager can also grant or revoke, in one go, every changeable permission shown
   by the current filter and search (it asks first and lists any that failed). The button also appears on the
-  Debloater rows, and holding it opens a sheet with every action for that app, whichever one is chosen in Settings.
+  Debloater rows, and holding it opens a sheet with every action for that app, whichever one is chosen in Settings
+  (Settings, Action Button, Hold menu chooses which actions that sheet lists and in what order). The Permission Manager
+  has an App Ops chip too (every app op with Allow / FG / Ignore / Deny / Reset, and a permission shows its app op), and
+  in the Activity Launcher you can tick several activities and Enable or Disable them at once.
+- **Press and hold guide.** A new card at the end of Settings lists everything that can be pressed and held (an app row,
+  an app's icon, the Action Button, the selection checkmark, file rows, found APKs, Hidden Settings and overlay rows) and
+  what each one does.
 - **A tidier start and buttons.** The app now always opens on the Application Manager tab with "Total Installed"
   selected, even if a filter was left on last time. In the Apps list the checkbox sits to the right of the "⋯" menu,
   and its top-bar buttons share the File Manager's new outlined look (the File Manager's Up button is gone, the ".."

@@ -12,20 +12,23 @@ const { chromium, PAGE } = require('./lib/pw');
     { pkg: 'com.example.gone', name: 'Gone', isFrozen: false, isSuspended: false, isUninstalled: true },
   ];
   await page.addInitScript(a => {
-    window.__acts = []; window.__perm = [];
+    window.__acts = []; window.__perm = []; window.__ops = []; window.__comp = [];
     window.AndroidBridge = {
       vibrate() {}, loadPreferences() { return '{}'; }, savePreferences() {}, loadCustomLists() { return '[]'; }, getSystemInfo() { return '{}'; },
       isSystemDarkMode() { return true; }, setSystemBarColor() {}, loadPackages() { return JSON.stringify(a); }, getWorkingMode() { return JSON.stringify({ mode: 'adb_tcp', isPrivileged: true, status: 'connected' }); },
       getIconPacks() { return '[]'; }, loadAppIcons() { return 'started'; },
       executeAppAction(act, pkg) { window.__acts.push([act, pkg]); return '\u00011ok'; },
       getAppDetails(pkg) {
-        return JSON.stringify({ versionName: '1', versionCode: 1, permissions: [
+        return JSON.stringify({ versionName: '1', versionCode: 1, appopsRaw: 'CAMERA: allow; time=+1h ago\nFINE_LOCATION: ignore\nRUN_ANY_IN_BACKGROUND: allow', permissions: [
           { name: 'android.permission.CAMERA', granted: true, changeable: true, protection: 'runtime', label: 'take pictures and videos', description: 'Allows the app to take photos.', group: 'android.permission-group.CAMERA' },
           { name: 'android.permission.INTERNET', granted: true, changeable: false, protection: 'normal', label: 'full network access' },
           { name: 'android.permission.READ_CONTACTS', granted: false, changeable: true, protection: 'runtime', label: 'read your contacts' }],
           activityInfo: [{ name: 'com.example.live.Main', exported: true, enabled: true, permission: '' }, { name: 'com.example.live.Secret', exported: false, enabled: false, permission: 'com.x.PERM' }] });
       },
       getUadMatches() { return '{"packages":[]}'; }, getUadStatus() { return '{"cached":true,"count":0}'; },
+      getAppOpsRaw() { return 'CAMERA: allow; time=+1h ago\nFINE_LOCATION: ignore\nRUN_ANY_IN_BACKGROUND: allow'; },
+      setAppOp(pkg, op, mode) { window.__ops.push([pkg, op, mode]); return '\u00011ok'; },
+      setComponentEnabled(pkg, name, on) { window.__comp.push([name, on]); return JSON.stringify({ ok: true }); },
       setPermission(pkg, perm, on) { window.__perm.push([pkg, perm, on]); return '\u00011ok'; },
     };
   }, apps);
@@ -107,6 +110,48 @@ const { chromium, PAGE } = require('./lib/pw');
   console.log('tapping it on a Debloater row acts on that app:', JSON.stringify(await page.evaluate(() => window.__acts)));
   await page.evaluate(() => { actionBtn = 'none'; renderUadList(); });
   console.log('None hides it there too:', await page.evaluate(() => document.querySelectorAll('.uad-row .ab-btn').length));
+
+  // App Ops view inside the Permission Manager, and the app op shown on its permission
+  await page.evaluate(() => closeAppListSheet()); await page.evaluate(() => { actionBtn = 'perms'; renderApps(); }); await sleep(120);
+  await btn('com.example.live').click(); await sleep(250);
+  console.log('a permission shows its app op:', await page.evaluate(() => /App op CAMERA: allow/.test(document.getElementById('alsList').innerText)));
+  await page.click('#alsModeRow [data-mode="ops"]'); await sleep(150);
+  console.log('App Ops chip:', await page.evaluate(() => [document.getElementById('alsSummary').innerText, document.querySelectorAll('#alsList .als-row').length, document.getElementById('alsGrantAll').offsetParent === null]));
+  await page.click('#alsFilterRow [data-filter="restricted"]'); await sleep(100);
+  console.log('  Ignored / Denied filter:', await page.locator('#alsList .als-row').count());
+  await page.click('#alsFilterRow [data-filter="all"]');
+  await page.locator('#alsList .op-mode-btn.deny').first().click(); await sleep(200);
+  console.log('  setting a mode calls setAppOp:', JSON.stringify(await page.evaluate(() => window.__ops)));
+  await page.click('#alsModeRow [data-mode="perms"]'); await sleep(100);
+  await page.evaluate(() => closeAppListSheet());
+
+  // Activity Launcher: tick several, enable / disable the ticked ones
+  await page.evaluate(() => { actionBtn = 'acts'; renderApps(); }); await sleep(120);
+  await btn('com.example.live').click(); await sleep(250);
+  await page.click('button[onclick="alsSelAll()"]'); await sleep(100);
+  console.log('Select all shown ticks both:', await page.evaluate(() => [document.querySelectorAll('#alsList .als-cb.on').length, document.getElementById('alsEnableSel').innerText, document.getElementById('alsDisableSel').innerText]));
+  await page.click('#alsDisableSel'); await sleep(400);
+  console.log('Disable selected disables only the enabled one:', JSON.stringify(await page.evaluate(() => window.__comp)));
+  await page.click('button[onclick="alsSelAll()"]'); await sleep(100);
+  await page.click('#alsEnableSel'); await sleep(400);
+  console.log('Enable selected then enables the disabled ones:', JSON.stringify(await page.evaluate(() => window.__comp.slice(1))));
+  await page.evaluate(() => closeAppListSheet());
+
+  // Hold menu: choose and order the actions
+  await page.evaluate(() => switchView('prefs')); await sleep(200);
+  console.log('hold menu list:', await page.evaluate(() => Array.from(document.querySelectorAll('#abSheetCfgList .fl-name')).map(e => e.innerText)));
+  await page.evaluate(() => { abCfgMove('acts', -1); abCfgToggle('launch', false); }); await sleep(100);
+  await page.evaluate(() => { switchView('apps'); actionBtn = 'settings'; renderApps(); }); await sleep(150);
+  const hb2 = await btn('com.example.live').boundingBox();
+  await page.mouse.move(hb2.x + 8, hb2.y + 8); await page.mouse.down(); await page.waitForTimeout(800); await page.mouse.up(); await sleep(200);
+  console.log('the hold sheet follows it (Activity Launcher moved up, App Launcher hidden):', JSON.stringify(await page.evaluate(() => Array.from(document.querySelectorAll('#abSheetList .ab-sheet-row')).map(r => r.innerText.trim()))), '| kept:', JSON.stringify(await page.evaluate(() => kvGet('ab_sheet', null))));
+  await page.evaluate(() => { closeAbSheet(); abCfgReset(); });
+  await page.evaluate(() => { for (const k of AB_SHEET_KINDS) abCfgToggle(k, false); });
+  console.log('the last action cannot be switched off:', await page.evaluate(() => abCfg.order.length - abCfg.off.length), '|', await page.locator('#toastMsg').innerText());
+  await page.evaluate(() => abCfgReset());
+
+  // the guide in Settings
+  console.log('Press and hold guide (Settings):', await page.evaluate(() => { const c = document.getElementById('holdGuideCard'); return [c.querySelector('.color-card-title').innerText, c.querySelectorAll('.hold-row').length, Array.from(c.querySelectorAll('.hold-what b')).map(b => b.innerText)]; }));
 
   // Activity Launcher
   await page.evaluate(() => { actionBtn = 'acts'; renderApps(); }); await sleep(120);
