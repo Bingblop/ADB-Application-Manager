@@ -91,9 +91,9 @@ const { chromium, PAGE } = require('./lib/pw');
   // 3) Navigate into a folder, then Up (SAF has no parent lookup - a breadcrumb stack gets this right).
   await page.locator('#fmList .perm-row', { hasText: 'Documents' }).locator('.perm-info').click(); await sleep(100);
   console.log('3. descending into Documents lists its own entries:', JSON.stringify(await rowNames()) === JSON.stringify(['notes.txt']));
-  await page.click('button[onclick="fmUp()"]'); await sleep(100);
+  await page.click('#fmUpRow'); await sleep(100);
   console.log('   Up returns to the root listing:', JSON.stringify((await rowNames()).sort()) === JSON.stringify(['Documents', 'photo.jpg']));
-  await page.click('button[onclick="fmUp()"]'); await sleep(80);
+  await page.evaluate(() => fmUp()); await sleep(80);
   console.log('   Up again at the top of this storage does not error, just says so:', /top of this storage/.test(await toastText()));
 
   // 4) New folder and new file reach the SAF create method (not the POSIX mkdir/touch path) - with no working
@@ -118,7 +118,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.locator('#fmList .perm-row', { hasText: 'todo.txt' }).locator('.perm-toggle-btn').click(); await sleep(60);
   const btns = await page.locator('#fmActionBtns button').allInnerTexts();
   console.log('5. SAF file sheet offers View, Edit, Rename, Delete:', ['View', 'Edit', 'Rename', 'Delete'].every(w => btns.some(t => t.includes(w))), JSON.stringify(btns));
-  console.log('   and hides Copy / Move / Compress / Open with / Share (not SAF-aware yet):', !['Copy', 'Move', 'Compress', 'Open with', 'Share'].some(w => btns.some(t => t.includes(w))));
+  console.log('   offers Copy and Move (through the clipboard), Open with and Share, but not Compress:', ['Copy', 'Move', 'Open with', 'Share'].every(w => btns.some(t => t.includes(w))) && !btns.some(t => t.includes('Compress')));
 
   // 6) Rename goes through fmRenameSaf with a bare new name, not fmOp.
   await page.locator('#fmActionBtns button', { hasText: 'Rename' }).click(); await sleep(60);
@@ -138,10 +138,46 @@ const { chromium, PAGE } = require('./lib/pw');
   console.log('7. Delete calls fmOp("rm", uri, null):', del.length === 1 && del[0][0] === 'rm' && del[0][1].startsWith('content://') && del[0][2] === null, JSON.stringify(del));
   console.log('   the deleted folder is gone:', !(await rowNames()).includes('Pics'));
 
-  // 8) Multi-select is refused with a clear toast, not silently broken.
+  // 8) Copy and Move: the item goes on the clipboard, Paste in the open folder sends content:// uris to fmBatch2 (the app copies / moves them one by one).
+  await page.evaluate(() => { window.__batch = []; window.AndroidBridge.fmBatch2 = (op, paths, dest, policy) => { window.__batch.push([op, JSON.parse(paths), dest, policy]); return 'started'; }; window.AndroidBridge.fmBatch = window.AndroidBridge.fmBatch2; });
+  await page.locator('#fmList .perm-row', { hasText: 'todo-list.txt' }).locator('.perm-toggle-btn').click(); await sleep(60);
+  await page.locator('#fmActionBtns button', { hasText: 'Copy' }).click(); await sleep(80);
+  console.log('8. Copy puts the item on the clipboard and shows the Paste bar:', await page.evaluate(() => fmClip && fmClip.op === 'cp' && fmClip.paths.length === 1 && fmClip.paths[0].startsWith('content://')), await page.locator('#fmClipBar').evaluate(e => e.style.display !== 'none'));
+  await page.locator('#fmList .perm-row', { hasText: 'Documents' }).click(); await sleep(150);
+  await page.click('#fmPasteBtn'); await sleep(100);
+  const bt = await page.evaluate(() => window.__batch.slice());
+  console.log('   Paste calls fmBatch2("cp", [uri], <this folder uri>) with the uri untouched:', bt.length === 1 && bt[0][0] === 'cp' && bt[0][1][0].startsWith('content://mock/root1/') && bt[0][2].startsWith('content://mock/root1/') && !/[^:]\/\//.test(bt[0][2]), JSON.stringify(bt));
+  await page.evaluate(() => { fmBatchRunning = false; fmClip = null; fmClipRender(); });
+  await page.click('#fmUpRow'); await sleep(100);
+
+  // Multi-select now works in added storage, and offers Copy / Move / Delete but not Compress.
   await page.click('#fmSelectBtn'); await sleep(60);
-  console.log('8. Select in added storage is refused with a clear toast:', /Multi-select isn.t available/.test(await toastText()));
-  console.log('   and selection mode never actually turns on:', !(await page.locator('#fmSelBar').evaluate(e => getComputedStyle(e).display !== 'none')));
+  console.log('   Select turns selection mode on in added storage:', await page.locator('#fmSelBar').evaluate(e => getComputedStyle(e).display !== 'none'), '| Compress hidden:', await page.locator('#fmSelCompressBtn').evaluate(e => getComputedStyle(e).display === 'none'));
+  await page.click('#fmSelectBtn'); await sleep(60);
+
+  // Open with and Share work on a copy in the app's cache: the page asks for it, then hands the copy's path to the usual call.
+  await page.evaluate(() => {
+    window.__stage = []; window.__with = []; window.__share = [];
+    window.AndroidBridge.fmStageSaf = uri => { window.__stage.push(uri); setTimeout(() => window.onFmSafStaged({ ok: true, uri, path: '/data/cache/saf_stage/x_todo-list.txt', name: 'todo-list.txt' }), 20); return 'started'; };
+    window.AndroidBridge.fmOpenWith = (p, m, c) => { window.__with.push(p); return 'started'; };
+    window.AndroidBridge.shareStoredFile = (p, m, n) => { window.__share.push(p); return ''; };
+  });
+  await page.locator('#fmList .perm-row', { hasText: 'todo-list.txt' }).locator('.perm-toggle-btn').click(); await sleep(60);
+  await page.locator('#fmActionBtns button', { hasText: 'Open with' }).click(); await sleep(150);
+  const stg = await page.evaluate(() => [window.__stage.slice(), window.__with.slice()]);
+  console.log('   Open with copies the file to the cache first, then opens that copy:', stg[0].length === 1 && stg[0][0].startsWith('content://') && stg[1][0] === '/data/cache/saf_stage/x_todo-list.txt', JSON.stringify(stg));
+  await page.evaluate(() => closeFmAction()); await sleep(60);
+  await page.locator('#fmList .perm-row', { hasText: 'todo-list.txt' }).locator('.perm-toggle-btn').click(); await sleep(60);
+  await page.locator('#fmActionBtns button', { hasText: 'Share' }).click(); await sleep(150);
+  console.log('   Share does the same:', JSON.stringify(await page.evaluate(() => window.__share)) === JSON.stringify(['/data/cache/saf_stage/x_todo-list.txt']));
+  await page.evaluate(() => closeFmAction());
+
+  // Search in added storage needs no All-files access and sends the folder's uri.
+  await page.evaluate(() => { window.__search = []; window.AndroidBridge.fmSearchPlaces = () => '[]'; window.AndroidBridge.fmSearch = (q, roots, n, a, h) => { window.__search.push([q, JSON.parse(roots)]); return 'started'; }; fmSearchInit(); });
+  await page.fill('#fmSearchInput', 'todo'); await page.click('#fmSearchBtn'); await sleep(100);
+  const sr = await page.evaluate(() => window.__search.slice());
+  console.log('   Search here in added storage runs with the folder uri (no All-files prompt):', sr.length === 1 && sr[0][0] === 'todo' && sr[0][1][0].startsWith('content://mock/root1/'), JSON.stringify(sr), '| prompt shown:', await page.locator('#privilegeModal').evaluate(e => e.classList.contains('show')));
+  await page.evaluate(() => { fmSearchRunning = false; fmSearchExit(); });
 
   // 9) Removing a root releases it natively, drops it from the row and the persisted list, and backs out to storage.
   await page.click('#fmRootsRow button:has-text("✕")'); await sleep(150);

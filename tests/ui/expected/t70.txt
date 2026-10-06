@@ -17,8 +17,8 @@
    …and Space: true running:true
    each card is a button with a pressed state for a screen reader: true
    the highlight does not shrink the card or move the grid: true
-3. a remembered filter lights its card at start: true frozen:true
-   a remembered filter with no card lights none: true none
+3. a remembered filter is ignored: the app opens on Total Installed: true all:true
+   a remembered filter with no card is ignored too: true all:true
 4. a tip sits under the Export / Share CSV buttons and above the filters: true {"shown":true,"text":"Scroll the filters below sideways for more filters ✕","belowButtons":true,"aboveFilters":true,"width":328,"sticky":"relative"}
    it tells to scroll the filters sideways for more: true Scroll the filters below sideways for more filters ✕
    the filters really do scroll sideways (more pills than fit): true

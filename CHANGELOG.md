@@ -1,5 +1,56 @@
 # Changelog
 
+## v7.9.18-Pro (versionCode 808)
+
+- **Added storage (SD card, USB drive, another app's folder) does more.** Copy and Move now work there: pick them from a
+  file's menu or select several items, then open the target folder and tap Paste - in, out of, or between added
+  storages, with the usual "name already taken" choices and a Stop button. Multi-select is on in added storage too.
+  Pictures, PDFs, fonts and archives open in their viewers, and Open with, Share and Extract work: the file is copied
+  once to the app's cache first (up to 300 MB) and reused until the original changes. Search works there as well, by name,
+  type, size and date (content: and archive: look inside files, so they are skipped in added storage).
+- **Icon packs now dress apps they do not cover.** When the pack ships a background, mask or overlay for apps it has no
+  icon for, such an app's own icon is shown on that background, scaled the way the pack asks, so the list looks uniform.
+  Settings, Icon pack also has a "Clear icon cache" button.
+- **Action Button setting.** A new "Action Button" card in Settings, right after Icon pack, chooses what the extra
+  button on each Apps list row does: App Settings (as before), Force Stop, App Launcher, Enable / Disable, Install /
+  Uninstall, Unsuspend / Suspend, Permission Manager, Activity Launcher or None (no button). It is always an icon, and the three
+  Enable / Disable, Install / Uninstall and Unsuspend / Suspend choices change their icon and action to match the
+  app's current state. Permission Manager and Activity Launcher open a sheet like the app menu, listing every
+  permission (with its label, description, group, protection level, whether it is granted and whether you can change it)
+  or every activity (exported or not, enabled, the permission it needs, with Launch and Enable / Disable), each with a
+  search box and filters. The Permission Manager can also grant or revoke, in one go, every changeable permission shown
+  by the current filter and search (it asks first and lists any that failed). The button also appears on the
+  Debloater rows, and holding it opens a sheet with every action for that app, whichever one is chosen in Settings
+  (Settings, Action Button, Hold menu chooses which actions that sheet lists and in what order). The Permission Manager
+  has an App Ops chip too (every app op with Allow / FG / Ignore / Deny / Reset, and a permission shows its app op), and
+  in the Activity Launcher you can tick several activities and Enable or Disable them at once.
+- **More in the batch menu.** The batch menu is taller and has a fourth row: **Batch Ops** lists every app op, lets you
+  tick the ones to change and pick a value for each (Allow, FG, Ignore, Deny or Reset), and sets them all on every
+  selected app; **Show Apps** lists the selected apps and lets you remove any of them from the selection; **Command**
+  runs a shell command of your own on every selected app, one after another, replacing `$package` with each app's real
+  package name (the instructions, a live preview for the first app and a few examples are on the sheet; it runs
+  exactly as typed and has no undo). Batch Ops has presets (Privacy lockdown, No location, Stop background activity,
+  Silence notifications and an Undo for the lockdown) and lets you save your own sets of app ops by name. Command can
+  save commands under a name, run on the apps of a saved list instead of the selection (the ones not on the phone are
+  skipped and counted), and every batch result dialog has a Share CSV button (app, package, OK or failed, the
+  command's output, the time and the command that was run). Presets and saved commands can be duplicated (the copy
+  is named "... (copy)"), Command has a Dry run switch that lists what would run for each app without running anything
+  (with Run it for real and Share CSV), and the batch results dialog has Run again, and Run again on the ones that
+  failed. The batch menu now has a ✕ at the top right, like the app menu's, that minimizes it.
+- **Press and hold guide.** A new card at the end of Settings lists everything that can be pressed and held (an app row,
+  an app's icon, the Action Button, the selection checkmark, file rows, found APKs, Hidden Settings and overlay rows) and
+  what each one does.
+- **A tidier start and buttons.** The app now always opens on the Application Manager tab with "Total Installed"
+  selected, even if a filter was left on last time. In the Apps list the checkbox sits to the right of the "⋯" menu,
+  and its top-bar buttons share the File Manager's new outlined look (the File Manager's Up button is gone, the ".."
+  row does that) with a haptic tap on every button.
+- **Press and hold an app row to open its menu.** Holding anywhere on a row (the icon keeps saving itself, the buttons and
+  checkbox are left alone) opens that app's single-app menu. App rows no longer start a text selection.
+- **Fewer false "failed" results.** An app launch or app action is only reported as failed when the output says so at the
+  start of a line ("Error: ...", "Error type 3", an exception, "No activities found"), so an app whose name or package
+  contains "error" or "failed" no longer shows as a failure. The file manager's own commands now confirm success with a
+  marker on a line of its own instead of searching the output for "OK".
+
 ## v7.9.17-Pro (versionCode 807)
 
 - **Icon pack setting.** A new "Icon pack" card in Settings, right under Font, lists the icon packs installed on the

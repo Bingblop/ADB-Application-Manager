@@ -31,7 +31,7 @@ const manifest = fs.readFileSync(fixture('manifest.xml'), 'utf8').split('\n').sl
   await page.goto(PAGE);
   await page.waitForTimeout(300);
   console.log('row buttons:', await page.locator('#card_com\\.sec\\.android\\.app\\.camera .btn-mini').evaluateAll(els => els.map(e => e.title).join(', ')));
-  await page.locator('#card_com\\.sec\\.android\\.app\\.camera .btn-mini[title="App Settings"]').click();
+  await page.locator('#card_com\\.sec\\.android\\.app\\.camera .ab-btn').click();
   await page.screenshot({ path: 'list.png' });
   await page.locator('#card_com\\.facebook\\.katana .btn-mini[title="Menu"]').click(); await page.waitForTimeout(200);
   console.log('frozen app menu shows Enable:', await page.isVisible('#sheetBtnUnfreeze'), 'Freeze:', await page.isVisible('#sheetBtnFreeze'));
@@ -49,7 +49,7 @@ const manifest = fs.readFileSync(fixture('manifest.xml'), 'utf8').split('\n').sl
   console.log('ops rows:', await page.locator('#opsContainer .perm-row').count());
   await page.click('#opsContainer .op-mode-btn.ignore[data-op="CAMERA"]'); await page.waitForTimeout(100);
   console.log('CAMERA mode now:', await page.locator('#opsContainer .op-mode-btn.on[data-op="CAMERA"]').innerText());
-  await page.fill('#opCustomName', 'run any in background'); await page.selectOption('#opCustomMode', 'deny'); await page.click('.op-custom-row button');
+  await page.fill('#opCustomName', 'run any in background'); await page.selectOption('#opCustomMode', 'deny'); await page.click('#sheetTabOps .op-custom-row button');
   await page.click('#opsFilterRow [data-filter="restricted"]');
   console.log('restricted ops:', await page.locator('#opsContainer .perm-name').allInnerTexts());
   await page.screenshot({ path: 'ops.png' });

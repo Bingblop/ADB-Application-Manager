@@ -53,7 +53,7 @@ const DEFAULT_ORDER = ['apps', 'saved-lists', 'debloater', 'installer', 'files',
   // 3) the Feature List: after the colour options, every tab but the two fixed ones
   await ev(page, () => switchView('prefs'));
   const order3 = await ev(page, () => Array.from(document.querySelectorAll('#view-prefs > .color-card')).map(c => c.querySelector('.color-card-title').innerText.trim()));
-  check('3. Settings: the language at the very top, then Appearance and the colour cards, the Feature List after them', order3[0] === 'Language' && /Appearance/.test(order3[1]) && order3[order3.length - 1] === 'Feature List', JSON.stringify(order3));
+  check('3. Settings: the language at the very top, then Appearance and the colour cards, the Feature List after them, then the Press and hold guide', order3[0] === 'Language' && /Appearance/.test(order3[1]) && order3[order3.length - 2] === 'Feature List' && order3[order3.length - 1] === 'Press and hold guide', JSON.stringify(order3));
   let r = await rows(page);
   check('   eleven rows, every tab except Application Manager and About, in the tab bar order, all on', r.length === 11 && r.map(x => x.key).join() === DEFAULT_ORDER.slice(1, 12).join() && r.every(x => x.on), JSON.stringify(r.map(x => x.name)));
   check('   the first row cannot move up and the last cannot move down', r[0].up === false && r[0].down === true && r[10].up === true && r[10].down === false);

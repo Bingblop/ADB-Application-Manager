@@ -323,6 +323,11 @@ public final class FileSearch {
         return true;
     }
 
+    /** Whether an item with this name, size, time and kind passes the name, ext:, type:, size: and date: parts of the query (content: and archive: need the bytes, not just the listing). */
+    public static boolean matchesListing(Query q, String name, long size, long mtime, boolean dir) {
+        return nameOk(q, name) && typeOk(q, name, dir) && metaOk(q, size, mtime, dir);
+    }
+
     private static boolean metaOk(Query q, long size, long mtime, boolean dir) {
         if (!dir && q.minSize >= 0 && size < q.minSize) return false;
         if (!dir && q.maxSize >= 0 && size > q.maxSize) return false;

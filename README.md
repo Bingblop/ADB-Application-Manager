@@ -14,7 +14,7 @@ recolor the whole system · run a real terminal with AI coding agents — **no c
 
 ## [⬇️ Get the latest APK](https://github.com/Bingblop/ADB-Application-Manager/releases/latest)
 
-`v7.9.17-Pro` · signed · installs over any earlier version · works with **ADB, Wireless Debugging, Shizuku or Root**
+`v7.9.18-Pro` · signed · installs over any earlier version · works with **ADB, Wireless Debugging, Shizuku or Root**
 
 <table>
   <tr>
@@ -113,6 +113,7 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ## What's new in v7.9
 
+- **Added storage** (SD card, USB drive) now copies, moves, previews, shares and searches too.
 - **App icons** in the list (cached, press and hold to save one), with an **Icon pack** setting to draw them from an installed icon pack.
 - **Expressive Animations**: Material 3 Expressive's springier motion across the app (Settings → Motion, on by default).
 - **Sync with Termux**: the in-app Termux shell matches your real one (aliases and functions included) and gets storage access in one tap.

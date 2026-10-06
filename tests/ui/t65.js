@@ -27,7 +27,9 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   await page.evaluate(() => switchView('files')); await sleep(250);
   for (const ms of [520, 700, 1000, 1500]) {
     await page.evaluate(() => { fmGo('/storage/emulated/0'); if (typeof fmSelExit === 'function') fmSelExit(); }); await sleep(200);
-    const box = await page.locator('#fmList .perm-info', { hasText: 'a.txt' }).first().boundingBox();
+    const row = page.locator('#fmList .perm-info', { hasText: 'a.txt' }).first();
+    await row.scrollIntoViewIfNeeded();
+    const box = await row.boundingBox();
     await touch(box.x + 40, box.y + box.height / 2, ms);
     const p = await picked();
     check('touch hold ' + ms + ' ms: the held file is picked, once', JSON.stringify(p) === '["a.txt"]', JSON.stringify(p));

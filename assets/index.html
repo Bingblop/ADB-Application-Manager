@@ -512,6 +512,8 @@
             flex-shrink: 0;
         }
 
+        .app-card { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }      /* a long press opens the app's menu, not a text selection */
+
         .app-card.selected .app-checkbox {
             background: var(--accent);
             border-color: var(--accent);
@@ -699,6 +701,79 @@
             gap: 12px;
         }
 
+        /* File Manager buttons look like buttons: an outline, a pressed state, and a tap of haptic feedback (see the delegated click below) */
+        #view-files .batch-tool-link {
+            background: var(--bg-surface);
+            border: 1px solid var(--accent);
+            border-radius: 10px;
+            padding: 7px 12px;
+            min-height: 34px;
+            transition: background 0.15s, transform 0.12s;
+        }
+        #view-files .batch-tool-link:active:not(:disabled) { background: var(--accent); color: var(--on-accent); transform: scale(0.96); }
+        #view-files .batch-tool-link:disabled { opacity: 0.45; }
+        #view-files .fm-selbar, #view-files .fm-opts { gap: 8px; }
+
+        /* The Apps list's top bar and row buttons get the same outline and pressed state; its taps give haptic feedback too */
+        #view-apps .apps-sort-row .mode-action-btn {
+            background: var(--bg-surface);
+            border: 1px solid var(--accent);
+            border-radius: 10px;
+            color: var(--accent);
+            font-weight: 800;
+            transition: background 0.15s, transform 0.12s;
+        }
+        #view-apps .apps-sort-row .mode-action-btn:active:not(:disabled) { background: var(--accent); color: var(--on-accent); transform: scale(0.96); }
+        #view-apps .app-actions .btn-mini { border-color: var(--accent); }
+
+        .ab-btn { color: var(--accent); -webkit-touch-callout: none; }
+        .uad-row .uad-actions { margin-left: auto; align-self: flex-start; }
+        .ab-sheet-list { display: flex; flex-direction: column; gap: 8px; }
+        .ab-sheet-row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; background: var(--bg-surface); border: 1px solid var(--accent); border-radius: 12px; color: var(--text-main); font-size: 14px; font-weight: 700; text-align: left; cursor: pointer; }
+        .ab-sheet-row:active { background: var(--accent); color: var(--on-accent); }
+        .ab-sheet-row.current { box-shadow: 0 0 0 1px var(--accent-glow); }
+        .ab-sheet-ic { color: var(--accent); display: inline-flex; }
+        .ab-sheet-row:active .ab-sheet-ic { color: var(--on-accent); }
+        .ab-preview { display: inline-flex; align-items: center; gap: 8px; color: var(--accent); }
+        .ab-sep { color: var(--text-muted); font-size: 12px; }
+        .als-row { align-items: flex-start; }
+        .als-detail { font-size: 10.5px; color: var(--text-muted); margin-top: 3px; word-break: break-word; line-height: 1.4; }
+        .hold-list { display: flex; flex-direction: column; }
+        .hold-row { display: flex; gap: 10px; padding: 9px 0; border-top: 1px solid var(--border-glass); }
+        .hold-row:first-child { border-top: none; }
+        .hold-ic { color: var(--accent); flex: 0 0 auto; margin-top: 1px; }
+        .hold-txt { min-width: 0; }
+        .hold-what { font-size: 13px; }
+        .hold-where { font-size: 10px; font-weight: 800; color: var(--accent); border: 1px solid var(--accent); border-radius: 6px; padding: 1px 6px; margin-left: 8px; white-space: nowrap; }
+        .hold-does { font-size: 12px; color: var(--text-muted); margin-top: 2px; line-height: 1.4; }
+        .als-cb { margin: 2px 8px 0 0; cursor: pointer; }
+        .als-cb.on { background: var(--accent); border-color: var(--accent); }
+        .als-desc { color: var(--text-main); opacity: 0.85; }
+
+        .batch-bottom-sheet { max-height: 92vh; overflow-y: auto; }
+        .batch-help { font-size: 12px; line-height: 1.5; color: var(--text-muted); background: rgba(var(--ov), 0.05); border: 1px solid var(--border-glass); border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; }
+        .batch-help b { color: var(--text-main); }
+        .batch-help-list { margin: 6px 0 8px 18px; padding: 0; }
+        .batch-help-list li { margin-bottom: 4px; }
+        .batch-help code, .bc-examples code, .bc-preview code { font-family: monospace; font-size: 11px; color: var(--accent); word-break: break-all; }
+        .bc-examples { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+        .bc-preview { font-size: 11.5px; color: var(--text-muted); margin-top: 8px; word-break: break-all; line-height: 1.5; }
+        .bc-preview .bc-warn { color: #FFA726; }
+        .preset-chip { display: inline-flex; align-items: center; gap: 6px; }
+        .preset-x { opacity: 0.7; padding: 0 2px; cursor: pointer; }
+        .bops-list { max-height: 44vh; overflow-y: auto; }
+        .bops-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-top: 1px solid var(--border-glass); }
+        .bops-row:first-child { border-top: none; }
+        .bops-row .app-checkbox { cursor: pointer; }
+        .bops-row.on .app-checkbox { background: var(--accent); border-color: var(--accent); }
+        .bops-name { flex: 1; min-width: 0; font-size: 12px; font-weight: 700; word-break: break-all; }
+        .bops-row select { max-width: 110px; }
+        .sa-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--border-glass); }
+        .sa-row:first-child { border-top: none; }
+        .sa-info { flex: 1; min-width: 0; }
+        .sa-name { font-size: 13px; font-weight: 800; word-break: break-word; }
+        .sa-pkg { font-size: 10.5px; color: var(--text-muted); word-break: break-all; }
+
         .batch-tool-link {
             background: none;
             border: none;
@@ -808,11 +883,6 @@
             display: flex;
             align-items: center;
             justify-content: center;
-        }
-
-        .batch-collapse-btn {
-            font-size: 15px;
-            color: var(--text-muted);
         }
 
         /* Color Settings View */
@@ -3577,7 +3647,6 @@
                 </div>
                 <div class="batch-sheet-tools" id="fmRootsRow" style="margin:8px 0 0; gap:12px; flex-wrap:wrap;"></div>
                 <div class="batch-sheet-tools" style="margin:8px 0; gap:12px; flex-wrap:wrap;">
-                    <button class="batch-tool-link" onclick="fmUp()">Up</button>
                     <button class="batch-tool-link" onclick="fmGo('/storage/emulated/0')">Storage</button>
                     <button class="batch-tool-link" translate="no" onclick="fmGo('/data/local/tmp')">/data/local/tmp</button>
                     <button class="batch-tool-link" translate="no" onclick="fmGo('/system')">/system</button>
@@ -3593,7 +3662,7 @@
                     <button class="batch-tool-link" onclick="fmSelectAll()">All</button>
                     <button class="batch-tool-link" onclick="fmClipSet('cp')">Copy</button>
                     <button class="batch-tool-link" onclick="fmClipSet('mv')">Move</button>
-                    <button class="batch-tool-link" onclick="czOpenSelected()">Compress</button>
+                    <button class="batch-tool-link" id="fmSelCompressBtn" onclick="czOpenSelected()">Compress</button>
                     <button class="batch-tool-link" style="color:#FF5252;" onclick="fmDeleteSelected()">Delete</button>
                     <button class="batch-tool-link" onclick="fmSelExit()">✕</button>
                 </div>
@@ -4534,8 +4603,24 @@
 
             <div class="color-card" id="iconPackCard">
                 <div class="color-card-title">Icon pack</div>
-                <div class="color-card-subtitle">Draw the app icons in the list with an icon pack you have installed (ADW, Nova, Apex and Go packs). Apps the pack does not cover keep their own icon.</div>
+                <div class="color-card-subtitle">Draw the app icons in the list with an icon pack you have installed (ADW, Nova, Apex and Go packs). Apps the pack does not cover get the pack's background and shape when it has one, and otherwise keep their own icon.</div>
                 <select class="op-select" id="iconPackSelect" aria-label="Icon pack" onchange="setIconPack(this.value)"></select>
+                <div class="mode-btn-row" style="margin-top:12px;">
+                    <button class="mode-action-btn" id="iconCacheClearBtn" onclick="clearIconCache()">Clear icon cache</button>
+                </div>
+            </div>
+
+            <div class="color-card" id="actionBtnCard">
+                <div class="color-card-title">Action Button</div>
+                <div class="color-card-subtitle">Choose what the extra button on each row of the Apps list does. It is always an icon, and the ones that change with the app (Enable / Disable, Install / Uninstall, Unsuspend / Suspend) switch their icon and action to match the app's current state.</div>
+                <select class="op-select" id="actionBtnSelect" aria-label="Action Button" onchange="setActionBtn(this.value)"></select>
+                <div class="switch-sub" id="actionBtnPreview" style="margin-top:8px;"></div>
+                <div class="color-card-title" style="margin-top:16px; font-size:13px;">Hold menu</div>
+                <div class="color-card-subtitle">Press and hold the Action Button for a sheet of actions for that app. Choose which actions it lists and in what order.</div>
+                <div id="abSheetCfgList" class="fl-list"></div>
+                <div class="mode-btn-row" style="margin-top:12px;">
+                    <button class="mode-action-btn" onclick="abCfgReset()">Reset to Default</button>
+                </div>
             </div>
 
             <div class="color-card" id="featureCard">
@@ -4545,6 +4630,11 @@
                 <div class="mode-btn-row" style="margin-top:12px;">
                     <button class="mode-action-btn" id="featureResetBtn" onclick="featureReset()">Reset to Default</button>
                 </div>
+            </div>
+            <div class="color-card" id="holdGuideCard">
+                <div class="color-card-title">Press and hold guide</div>
+                <div class="color-card-subtitle">Hold a finger on these for about half a second. You feel a short tap when it works.</div>
+                <div class="hold-list"><div class="hold-row"><span class="hold-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg></span><div class="hold-txt"><div class="hold-what"><b>An app row</b><span class="hold-where">Apps</span></div><div class="hold-does">Opens that app's menu (the same as tapping ⋯). Tap the checkbox to select it instead.</div></div></div><div class="hold-row"><span class="hold-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg></span><div class="hold-txt"><div class="hold-what"><b>An app's icon</b><span class="hold-where">Apps</span></div><div class="hold-does">Saves the icon as a PNG to Download/ADB App Manager/Icons.</div></div></div><div class="hold-row"><span class="hold-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg></span><div class="hold-txt"><div class="hold-what"><b>The Action Button</b><span class="hold-where">Apps, Debloater</span></div><div class="hold-does">A sheet with every action for that app: settings, launch, force stop, enable or disable, uninstall, suspend, permissions, activities. Choose which ones it lists below.</div></div></div><div class="hold-row"><span class="hold-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg></span><div class="hold-txt"><div class="hold-what"><b>The round checkmark button (when apps are selected)</b><span class="hold-where">Apps</span></div><div class="hold-does">Clears every selection at once.</div></div></div><div class="hold-row"><span class="hold-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg></span><div class="hold-txt"><div class="hold-what"><b>A file or folder row</b><span class="hold-where">File Manager</span></div><div class="hold-does">Starts selecting. Tap more rows to add them, then Copy, Move or Delete.</div></div></div><div class="hold-row"><span class="hold-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg></span><div class="hold-txt"><div class="hold-what"><b>A file the APK search found</b><span class="hold-where">Installer</span></div><div class="hold-does">Deletes it from the phone, with an Undo right after.</div></div></div><div class="hold-row"><span class="hold-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg></span><div class="hold-txt"><div class="hold-what"><b>A setting that is 1 or 0</b><span class="hold-where">Hidden Settings</span></div><div class="hold-does">Flips it.</div></div></div><div class="hold-row"><span class="hold-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg></span><div class="hold-txt"><div class="hold-what"><b>An overlay row</b><span class="hold-where">Overlays</span></div><div class="hold-does">Switches that overlay on or off.</div></div></div></div>
             </div>
         </section>
 
@@ -4606,7 +4696,7 @@
                 <div class="color-card-title">Handy to know</div>
                 <ul class="about-list">
                     <li><b>Back</b> closes the open sheet, steps up a folder or out of an archive, then returns to the tab you came from. Leaving takes a second, deliberate press.</li>
-                    <li><b>Press and hold</b> an app or a file to select several, then act on them all at once.</li>
+                    <li><b>Press and hold</b> opens an app's menu, or starts selecting files. Settings has a full guide to what can be held.</li>
                     <li><b>File Manager → View</b> opens an APK or ZIP without extracting it. Edit it, tap <b>Sign</b>, then install it.</li>
                     <li>Installs started from <b>File Manager</b> always go through ADB, Wireless Debugging, Shizuku or Root, never the system installer.</li>
                     <li><b>ADB Console → Rish</b> is a persistent Shizuku shell: <code>cd</code> and variables stay put between commands.</li>
@@ -4881,9 +4971,9 @@ Type any command below (e.g. pm list packages -d)
                 <span id="batchCountText">0 Selected</span>
             </div>
             <div class="batch-sheet-tools">
-                <button class="batch-tool-link batch-collapse-btn" onclick="collapseBatchPanel()" aria-label="Minimize">▾</button>
                 <button class="batch-tool-link" onclick="selectAllFiltered()">Select All</button>
-                <button class="batch-tool-link" onclick="clearBatchSelection()" style="color:var(--text-muted);">✕ Clear</button>
+                <button class="batch-tool-link" onclick="clearBatchSelection()" style="color:var(--text-muted);">Clear</button>
+                <div style="font-size:20px; cursor:pointer; margin-left:6px;" role="button" tabindex="0" aria-label="Close the batch menu" onclick="collapseBatchPanel()">✕</div>
             </div>
         </div>
         <div class="batch-save-row">
@@ -4907,6 +4997,99 @@ Type any command below (e.g. pm list packages -d)
             <button class="batch-grid-btn" onclick="openOptimizeModal('batch')">Optimize</button>
             <button class="batch-grid-btn danger" onclick="batchAction('uninstall')">Uninstall</button>
             <button class="batch-grid-btn accent" onclick="batchAction('reinstall')">Reinstall</button>
+            <button class="batch-grid-btn" onclick="openBatchOps()">Batch Ops</button>
+            <button class="batch-grid-btn" onclick="openShowApps()">Show Apps</button>
+            <button class="batch-grid-btn" onclick="openBatchCmd()">Command</button>
+        </div>
+    </div>
+
+    <!-- Batch Ops: pick app ops and a value for each, set on every selected app -->
+    <div class="modal-overlay" id="batchOpsModal" onclick="if(event.target===this) closeBatchOps()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-title">
+                    <h3>Batch Ops (App Ops)</h3>
+                    <p id="bopsSub"></p>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="closeBatchOps()">✕</div>
+            </div>
+            <div class="batch-help">
+                <b>How it works:</b> tick every app op you want to change and choose the value for each one.
+                Pressing <b>Apply</b> sets every ticked op, to its own value, on every selected app, one app at a time.
+                <b>Allow</b>, <b>FG</b> (foreground only), <b>Ignore</b> and <b>Deny</b> set the mode; <b>Reset</b> puts it back to the system default.
+            </div>
+            <div class="switch-sub" style="margin:2px 0 4px;">Presets (tap one to tick its app ops, then Apply):</div>
+            <div class="bc-examples" id="bopsPresets"></div>
+            <div class="list-toolbar"><input type="text" class="list-search" id="bopsSearch" placeholder="Search app ops…" oninput="bopsRender()" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+            <div class="switch-sub" id="bopsSummary" style="margin:6px 0;"></div>
+            <div id="bopsList" class="bops-list"></div>
+            <div class="op-custom-row">
+                <input type="text" class="list-search" id="bopsCustom" placeholder="Other op, e.g. RUN_ANY_IN_BACKGROUND" autocomplete="off" autocapitalize="characters" spellcheck="false">
+                <button class="mode-action-btn" onclick="bopsAddCustom()">Add</button>
+            </div>
+            <div class="mode-btn-row" style="margin-top:12px;">
+                <button class="mode-action-btn" onclick="bopsClear()">Clear ticks</button>
+                <button class="mode-action-btn primary" id="bopsApply" onclick="bopsApply()">Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Show Apps: the selected apps, each can be taken out -->
+    <div class="modal-overlay" id="showAppsModal" onclick="if(event.target===this) closeShowApps()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-title">
+                    <h3>Selected apps</h3>
+                    <p id="saSub"></p>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="closeShowApps()">✕</div>
+            </div>
+            <div class="batch-help">Tap <b>Remove</b> to take an app out of the selection. The batch actions only run on the apps listed here.</div>
+            <div class="list-toolbar"><input type="text" class="list-search" id="saSearch" placeholder="Search the selected apps…" oninput="showAppsRender()" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+            <div id="saList"></div>
+        </div>
+    </div>
+
+    <!-- Command: one custom shell command run on every selected app with $package replaced -->
+    <div class="modal-overlay" id="batchCmdModal" onclick="if(event.target===this) closeBatchCmd()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-title">
+                    <h3>Command on selected apps</h3>
+                    <p id="bcSub"></p>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="closeBatchCmd()">✕</div>
+            </div>
+            <div class="batch-help">
+                <b>How it works</b>
+                <ol class="batch-help-list">
+                    <li>Type one shell command. Write <code>$package</code> wherever the app's package name belongs.</li>
+                    <li>The app runs the command once for every selected app, one after another, and replaces <code>$package</code> with that app's real package name each time.</li>
+                    <li>The preview below shows exactly what will run for the first selected app. The result of every app is listed when it finishes.</li>
+                </ol>
+                It runs through your working mode (ADB, Shizuku or Root) exactly as typed, and <b>there is no undo</b>. Check the preview first.
+            </div>
+            <div class="bc-examples">
+                <span class="filter-chip" onclick="bcExample('pm clear $package')"><code>pm clear $package</code></span>
+                <span class="filter-chip" onclick="bcExample('am force-stop $package')"><code>am force-stop $package</code></span>
+                <span class="filter-chip" onclick="bcExample('cmd appops set $package RUN_ANY_IN_BACKGROUND ignore')"><code>appops … ignore</code></span>
+                <span class="filter-chip" onclick="bcExample('dumpsys package $package | grep versionName')"><code>dumpsys … versionName</code></span>
+            </div>
+            <div class="switch-sub" style="margin:2px 0 4px;">Run it on:</div>
+            <select class="op-select" id="bcTarget" aria-label="Which apps to run the command on" onchange="bcPreview()" style="width:100%; margin-bottom:8px;"></select>
+            <textarea id="bcInput" class="list-search" rows="3" style="width:100%; font-family:monospace;" placeholder="Example: pm clear $package" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" oninput="bcPreview()"></textarea>
+            <div class="bc-preview" id="bcPreview"></div>
+            <div class="switch-sub" style="margin:10px 0 2px;">Saved commands</div>
+            <div id="bcSaved" class="bc-examples"></div>
+            <div id="bcRecent" class="bc-examples" style="margin-top:4px;"></div>
+            <label class="switch-row" style="margin-top:10px; padding-top:10px;">
+                <div><div class="switch-title">Dry run</div><div class="switch-sub">Only list what would run for each app. Nothing is run.</div></div>
+                <input type="checkbox" class="switch-input" id="bcDry" onchange="bcPreview()"><span class="switch-track"></span>
+            </label>
+            <div class="mode-btn-row" style="margin-top:12px;">
+                <button class="mode-action-btn" onclick="bcSave()">Save this command…</button>
+                <button class="mode-action-btn primary" id="bcRun" onclick="bcRun()">Run</button>
+            </div>
         </div>
     </div>
 
@@ -5254,6 +5437,57 @@ Type any command below (e.g. pm list packages -d)
             <div class="mode-btn-row" style="margin-top:8px;">
                 <button class="mode-action-btn" onclick="importProfile()">Import</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Hold the Action Button: every action for that app -->
+    <div class="modal-overlay" id="abSheet" onclick="if(event.target===this) closeAbSheet()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-title">
+                    <h3 id="abSheetTitle">App</h3>
+                    <p id="abSheetSub"></p>
+                </div>
+                <div class="sheet-header-actions">
+                    <div style="font-size:20px; cursor:pointer;" onclick="closeAbSheet()">✕</div>
+                </div>
+            </div>
+            <div id="abSheetList" class="ab-sheet-list"></div>
+        </div>
+    </div>
+
+    <!-- Permission Manager / Activity Launcher: a list sheet for one app, opened from the Apps list's Action Button -->
+    <div class="modal-overlay" id="appListSheet" onclick="if(event.target===this) closeAppListSheet()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-title">
+                    <h3 id="alsTitle">Permissions</h3>
+                    <p id="alsSub"></p>
+                </div>
+                <div class="sheet-header-actions">
+                    <div style="font-size:20px; cursor:pointer;" onclick="closeAppListSheet()">✕</div>
+                </div>
+            </div>
+            <div class="list-toolbar">
+                <input type="text" class="list-search" id="alsSearch" placeholder="Search…" oninput="alsRender()" autocomplete="off" autocapitalize="off" spellcheck="false">
+            </div>
+            <div class="chip-row" id="alsModeRow" style="display:none;">
+                <span class="filter-chip active" data-mode="perms" onclick="alsSetKind('perms')">Permissions</span>
+                <span class="filter-chip" data-mode="ops" onclick="alsSetKind('ops')">App Ops</span>
+            </div>
+            <div class="chip-row" id="alsFilterRow"></div>
+            <div class="mode-btn-row" id="alsBulkRow" style="display:none; margin:6px 0;">
+                <button class="mode-action-btn" id="alsGrantAll" onclick="alsBulk(true)">Grant all shown</button>
+                <button class="mode-action-btn" id="alsRevokeAll" onclick="alsBulk(false)">Revoke all shown</button>
+            </div>
+            <div class="mode-btn-row" id="alsActBulkRow" style="display:none; margin:6px 0; flex-wrap:wrap;">
+                <button class="mode-action-btn" onclick="alsSelAll()">Select all shown</button>
+                <button class="mode-action-btn" onclick="alsSelClear()">Clear</button>
+                <button class="mode-action-btn" id="alsEnableSel" onclick="alsBulkComp(true)">Enable selected</button>
+                <button class="mode-action-btn" id="alsDisableSel" onclick="alsBulkComp(false)">Disable selected</button>
+            </div>
+            <div class="switch-sub" id="alsSummary" style="margin:6px 0;"></div>
+            <div id="alsList"></div>
         </div>
     </div>
 
@@ -6601,7 +6835,7 @@ Type any command below (e.g. pm list packages -d)
             });
             const gear = document.getElementById('prefsHeaderBtn');
             if (gear) gear.classList.toggle('active', viewName === 'prefs');
-            if (viewName === 'prefs') iconPackRender();
+            if (viewName === 'prefs') { iconPackRender(); actionBtnRender(); }
 
             document.querySelectorAll('.view-content').forEach(v => {
                 v.classList.remove('active');
@@ -6628,6 +6862,9 @@ Type any command below (e.g. pm list packages -d)
             haptic();
             return true;
         }
+
+        // every File Manager and Apps list button gives the tap of feedback, whatever its own handler does
+        document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('#view-files button, #view-apps button'); if (b && !b.disabled) haptic(); }, true);
 
         function haptic() {
             if (window.AndroidBridge && window.AndroidBridge.vibrate) {
@@ -7202,7 +7439,7 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('commandResultsModal').classList.toggle('has-actions', commandResultsActions.length > 0);
             document.getElementById('commandResultsTitle').innerText = title;
             document.getElementById('commandResultsSubtitle').innerText = subtitle;
-            document.getElementById('commandResultsList').innerHTML = rows.map(row => '<div class="result-item ' + (row.success ? 'success' : 'failed') + '"><div class="result-item-header"><div class="result-item-name">' + escapeHtml(row.name || row.pkg) + '</div><div class="tag-badge ' + (row.success ? 'tag-running' : 'tag-bloat') + '">' + (row.success ? 'Success' : 'Failed') + '</div></div><div class="result-item-pkg">' + escapeHtml(row.pkg || '') + '</div><div class="result-item-output">' + escapeHtml((row.output || '').trim() || 'No output returned') + '</div></div>').join('');
+            document.getElementById('commandResultsList').innerHTML = rows.map(row => '<div class="result-item ' + (row.success ? 'success' : 'failed') + '"><div class="result-item-header"><div class="result-item-name">' + escapeHtml(row.name || row.pkg) + '</div><div class="tag-badge ' + (row.success ? 'tag-running' : 'tag-bloat') + '">' + (row.label || (row.success ? 'Success' : 'Failed')) + '</div></div><div class="result-item-pkg">' + escapeHtml(row.pkg || '') + '</div><div class="result-item-output">' + escapeHtml((row.output || '').trim() || 'No output returned') + '</div></div>').join('');
             document.getElementById('commandResultsModal').classList.add('show');
         }
 
@@ -7817,6 +8054,7 @@ Type any command below (e.g. pm list packages -d)
                             ${p.description ? `<div class="uad-desc">${escapeHtml(p.description.trim())}</div>` : ''}
                             ${warn}
                         </div>
+                        ${abAppFor(p.pkg) ? `<div class="app-actions uad-actions">${actionBtnHtml(abAppFor(p.pkg))}</div>` : ''}
                     </div>`;
             }).join('');
         }
@@ -7933,7 +8171,6 @@ Type any command below (e.g. pm list packages -d)
         function saveUiState() {
             if (!uiStateLoaded) return; // don't overwrite saved filters with defaults during start-up
             saveStoreJson('ui_state', {
-                appsFilter: currentFilter,
                 showVersions: showListVersions,
                 appSort: appSort,
                 filtersHintDone: filtersHintDone,
@@ -7966,10 +8203,10 @@ Type any command below (e.g. pm list packages -d)
                     const pill = document.getElementById('versionTogglePill');
                     if (pill) pill.classList.toggle('active', showListVersions);
                 }
-                if (st.appsFilter) {
-                    currentFilter = st.appsFilter;
-                    document.querySelectorAll('.filter-pill').forEach(p => p.classList.toggle('active', p.getAttribute('data-filter') === currentFilter));
-                }
+                // The Apps tab always opens on "Total Installed" (the "all" filter) after the app was gone from memory: a filter left on
+                // last time is not brought back, so the whole list is what you see first.
+                currentFilter = 'all';
+                document.querySelectorAll('.filter-pill').forEach(p => p.classList.toggle('active', p.getAttribute('data-filter') === currentFilter));
                 if (st.uad) {
                     if (Array.isArray(st.uad.removal)) uadFilters.removal = new Set(st.uad.removal.filter(r => UAD_LEVEL_ORDER[r] !== undefined));
                     if (st.uad.list) uadFilters.list = st.uad.list;
@@ -10008,6 +10245,16 @@ Type any command below (e.g. pm list packages -d)
             appsLoadIcons();
             showToast(iconPack ? 'Icon pack applied' : 'Default icons');
         }
+        function clearIconCache() {
+            haptic();
+            let n = 0;
+            try { n = Number(window.AndroidBridge && window.AndroidBridge.clearAppIconCache && window.AndroidBridge.clearAppIconCache()) || 0; } catch (e) {}
+            Object.keys(appIconCache).forEach(k => delete appIconCache[k]);
+            appIconAsked.clear();
+            document.querySelectorAll('img.app-icon').forEach(img => img.removeAttribute('src'));
+            appsLoadIcons();
+            showToast(n ? 'Icon cache cleared, icons are being redrawn' : 'Icon cache was already empty');
+        }
         function appsLoadIcons() {
             if (!window.AndroidBridge || !window.AndroidBridge.loadAppIcons) return;
             const want = [];
@@ -10052,6 +10299,690 @@ Type any command below (e.g. pm list packages -d)
             ['pointerup', 'pointercancel', 'scroll'].forEach(ev => document.addEventListener(ev, clear, true));
         })();
 
+        // ---------- Action Button: the extra button on each row of the Apps list ----------
+        const AB_PATHS = {
+            settings: 'M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z',
+            forcestop: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4 14H8V8h8v8z',
+            launch: 'M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z',
+            enable: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z',
+            disable: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM4 12c0-4.42 3.58-8 8-8 1.85 0 3.55.63 4.9 1.69L5.69 16.9A7.902 7.902 0 0 1 4 12zm8 8c-1.85 0-3.55-.63-4.9-1.69L18.31 7.1A7.902 7.902 0 0 1 20 12c0 4.42-3.58 8-8 8z',
+            uninstall: 'M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z',
+            install: 'M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z',
+            suspend: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z',
+            unsuspend: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z',
+            perms: 'M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z',
+            acts: 'M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z'
+        };
+        const AB_OPTIONS = [
+            ['settings', 'App Settings'], ['forcestop', 'Force Stop'], ['launch', 'App Launcher'],
+            ['toggle', 'Enable / Disable (dynamic)'], ['uninstall', 'Install / Uninstall (dynamic)'], ['suspend', 'Unsuspend / Suspend (dynamic)'],
+            ['perms', 'Permission Manager'], ['acts', 'Activity Launcher'], ['none', 'None (no button)']
+        ];
+        let actionBtn = kvGet('action_btn', 'settings') || 'settings';
+        if (!AB_OPTIONS.some(o => o[0] === actionBtn)) actionBtn = 'settings';
+
+        // what the button looks like and does for one app: { icon, label, run }
+        function actionBtnSpec(app, kind) {
+            switch (kind || actionBtn) {
+                case 'forcestop': return { icon: 'forcestop', label: 'Force Stop' };
+                case 'launch': return { icon: 'launch', label: 'Launch app' };
+                case 'toggle': return app.isFrozen ? { icon: 'enable', label: 'Enable' } : { icon: 'disable', label: 'Disable' };
+                case 'uninstall': return app.isUninstalled ? { icon: 'install', label: 'Reinstall' } : { icon: 'uninstall', label: 'Uninstall' };
+                case 'suspend': return app.isSuspended ? { icon: 'unsuspend', label: 'Unsuspend' } : { icon: 'suspend', label: 'Suspend' };
+                case 'perms': return { icon: 'perms', label: 'Permission Manager' };
+                case 'acts': return { icon: 'acts', label: 'Activity Launcher' };
+                default: return { icon: 'settings', label: 'App Settings' };
+            }
+        }
+        function abSvg(key) { return '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="' + AB_PATHS[key] + '"/></svg>'; }
+        // The button on an Apps list row or a Debloater row. Hold it for the list of every action for that app.
+        function actionBtnHtml(app) {
+            if (actionBtn === 'none') return '';
+            const sp = actionBtnSpec(app);
+            return `<button class="btn-mini ab-btn" data-ab="${sp.icon}" title="${sp.label} (hold for more)" aria-label="${sp.label}" onclick="actionBtnTap(this.closest('[data-pkg]').dataset.pkg)">${abSvg(sp.icon)}</button>`;
+        }
+        // the app as the buttons need it: the Apps list's own record, or (Debloater) built from the UAD-NG match's state
+        function abAppFor(pkg) {
+            const a = allApps.find(x => x.pkg === pkg);
+            if (a) return a;
+            const u = (typeof uadPackages !== 'undefined' ? uadPackages : []).find(x => x.pkg === pkg);
+            return u ? { pkg, name: u.name || pkg, isFrozen: u.state === 'disabled', isUninstalled: u.state === 'uninstalled', isSuspended: !!u.isSuspended } : null;
+        }
+        function abRun(kind, pkg) {
+            const app = abAppFor(pkg);
+            if (!app || kind === 'none') return;
+            haptic();
+            switch (kind) {
+                case 'forcestop': quickAction('force_stop', pkg); break;
+                case 'launch': installLaunchApp(pkg, app.name); break;
+                case 'toggle': quickAction(app.isFrozen ? 'unfreeze' : 'freeze', pkg); break;
+                case 'uninstall':
+                    if (!app.isUninstalled && !confirm('Uninstall ' + app.name + '?')) return;
+                    quickAction(app.isUninstalled ? 'reinstall' : 'uninstall', pkg);
+                    break;
+                case 'suspend': quickAction(app.isSuspended ? 'unsuspend' : 'suspend', pkg); break;
+                case 'perms': openAppListSheet('perms', pkg); break;
+                case 'acts': openAppListSheet('acts', pkg); break;
+                default: openAppSettings(pkg);
+            }
+            if (typeof uadLoaded !== 'undefined' && uadLoaded && !['perms', 'acts', 'settings', 'launch'].includes(kind)) setTimeout(() => { if (uadLoaded) loadUadMatches(); }, 1000);     // the Debloater rows show the new state
+        }
+        function actionBtnTap(pkg) { abRun(actionBtn, pkg); }
+
+        // Hold the Action Button: a sheet with every action for that app (the ones that change with the app show what they would do now)
+        const AB_SHEET_KINDS = ['settings', 'launch', 'forcestop', 'toggle', 'uninstall', 'suspend', 'perms', 'acts'];
+        const AB_KIND_NAMES = { settings: 'App Settings', launch: 'App Launcher', forcestop: 'Force Stop', toggle: 'Enable / Disable', uninstall: 'Install / Uninstall', suspend: 'Unsuspend / Suspend', perms: 'Permission Manager', acts: 'Activity Launcher' };
+        // which actions the hold sheet lists, and in what order: { order: [...], off: [...] }, kept as "ab_sheet"
+        function abCfgLoad() {
+            const v = kvGet('ab_sheet', null);
+            let order = [], off = [];
+            if (v && Array.isArray(v.order)) { order = v.order.filter(k => AB_SHEET_KINDS.includes(k)); off = Array.isArray(v.off) ? v.off.filter(k => AB_SHEET_KINDS.includes(k)) : []; }
+            AB_SHEET_KINDS.forEach(k => { if (!order.includes(k)) order.push(k); });
+            order = order.filter((k, i) => order.indexOf(k) === i);
+            if (off.length >= order.length) off = [];
+            return { order, off };
+        }
+        let abCfg = abCfgLoad();
+        function abCfgSave() { kvSet('ab_sheet', abCfg); }
+        function abCfgRender() {
+            const box = document.getElementById('abSheetCfgList');
+            if (!box) return;
+            const last = abCfg.order.length - 1;
+            box.innerHTML = abCfg.order.map((k, i) => {
+                const on = !abCfg.off.includes(k), name = escapeHtml(AB_KIND_NAMES[k]);
+                return '<div class="fl-row' + (on ? '' : ' off') + '" data-kind="' + k + '"><div class="fl-name">' + name + '</div>'
+                    + '<button type="button" class="fl-move" aria-label="Move ' + name + ' up"' + (i === 0 ? ' disabled' : '') + ' onclick="abCfgMove(\'' + k + '\', -1)">▲</button>'
+                    + '<button type="button" class="fl-move" aria-label="Move ' + name + ' down"' + (i === last ? ' disabled' : '') + ' onclick="abCfgMove(\'' + k + '\', 1)">▼</button>'
+                    + '<label class="fl-switch"><input type="checkbox" class="switch-input" aria-label="' + name + '"' + (on ? ' checked' : '') + ' onchange="abCfgToggle(\'' + k + '\', this.checked)"><span class="switch-track"></span></label></div>';
+            }).join('');
+        }
+        function abCfgMove(k, d) {
+            const i = abCfg.order.indexOf(k), j = i + d;
+            if (i < 0 || j < 0 || j >= abCfg.order.length) return;
+            haptic();
+            abCfg.order.splice(i, 1); abCfg.order.splice(j, 0, k);
+            abCfgSave(); abCfgRender();
+        }
+        function abCfgToggle(k, on) {
+            if (!on && abCfg.order.length - abCfg.off.length <= 1) { showToast('Keep at least one action in the hold menu'); abCfgRender(); return; }
+            haptic();
+            abCfg.off = abCfg.off.filter(x => x !== k);
+            if (!on) abCfg.off.push(k);
+            abCfgSave(); abCfgRender();
+        }
+        function abCfgReset() { haptic(); abCfg = { order: AB_SHEET_KINDS.slice(), off: [] }; abCfgSave(); abCfgRender(); showToast('Hold menu reset'); }
+        function openAbSheet(pkg) {
+            const app = abAppFor(pkg);
+            if (!app) return;
+            haptic();
+            document.getElementById('abSheetTitle').innerText = app.name;
+            document.getElementById('abSheetSub').innerText = pkg;
+            document.getElementById('abSheetList').innerHTML = abCfg.order.filter(k => !abCfg.off.includes(k)).map(k => {
+                const sp = actionBtnSpec(app, k);
+                return `<button class="ab-sheet-row${k === actionBtn ? ' current' : ''}" data-kind="${k}" data-pkg="${escapeHtml(pkg)}" onclick="abSheetPick(this.getAttribute('data-kind'), this.getAttribute('data-pkg'))"><span class="ab-sheet-ic">${abSvg(sp.icon)}</span><span class="ab-sheet-label">${sp.label}</span></button>`;
+            }).join('');
+            document.getElementById('abSheet').classList.add('show');
+        }
+        function closeAbSheet() { document.getElementById('abSheet').classList.remove('show'); }
+        function abSheetPick(kind, pkg) { closeAbSheet(); abRun(kind, pkg); }
+        (function () {
+            let timer = null, startX = 0, startY = 0, held = false;
+            const clear = () => { if (timer) { clearTimeout(timer); timer = null; } };
+            document.addEventListener('contextmenu', e => { if (e.target.closest && e.target.closest('.ab-btn')) e.preventDefault(); });
+            document.addEventListener('pointerdown', e => {
+                held = false;
+                const b = e.target.closest ? e.target.closest('.ab-btn') : null;
+                if (!b) return;
+                startX = e.clientX; startY = e.clientY;
+                clear();
+                timer = setTimeout(() => {
+                    timer = null;
+                    held = true;
+                    const host = b.closest('[data-pkg]');
+                    if (host) openAbSheet(host.dataset.pkg);
+                }, 550);
+            }, true);
+            document.addEventListener('pointermove', e => { if (timer && Math.hypot(e.clientX - startX, e.clientY - startY) > 10) clear(); });
+            ['pointerup', 'pointercancel', 'scroll'].forEach(ev => document.addEventListener(ev, clear, true));
+            document.addEventListener('click', e => {
+                if (held && e.target.closest && e.target.closest('.ab-btn')) { held = false; e.stopPropagation(); e.preventDefault(); }
+            }, true);
+        })();
+        function actionBtnRender() {
+            abCfgRender();
+            const sel = document.getElementById('actionBtnSelect');
+            if (!sel) return;
+            sel.innerHTML = AB_OPTIONS.map(o => '<option value="' + o[0] + '"' + (o[0] === actionBtn ? ' selected' : '') + '>' + escapeHtml(o[1]) + '</option>').join('');
+            sel.value = actionBtn;
+            const pv = document.getElementById('actionBtnPreview');
+            if (pv) {
+                const keys = actionBtn === 'toggle' ? ['disable', 'enable'] : actionBtn === 'uninstall' ? ['uninstall', 'install'] : actionBtn === 'suspend' ? ['suspend', 'unsuspend'] : [actionBtnSpec({}).icon];
+                if (actionBtn === 'none') pv.innerText = 'No extra button is shown on the rows.';
+                else pv.innerHTML = '<span class="ab-preview">' + keys.map(abSvg).join('<span class="ab-sep">→</span>') + '</span>';
+            }
+        }
+        function setActionBtn(v) {
+            haptic();
+            actionBtn = AB_OPTIONS.some(o => o[0] === v) ? v : 'settings';
+            kvSet('action_btn', actionBtn);
+            actionBtnRender();
+            renderApps();
+            showToast('Action Button: ' + AB_OPTIONS.find(o => o[0] === actionBtn)[1].replace(/ \(dynamic\)/, '').replace(/ \(no button\)/, ''));
+        }
+
+        // ---------- Permission Manager / Activity Launcher sheet ----------
+        let alsKind = '', alsFilter = 'all';
+        const alsSel = new Set();            // the activities ticked for Enable / Disable selected
+        function alsIsOpen() { const m = document.getElementById('appListSheet'); return !!(m && m.classList.contains('show')); }
+        function openAppListSheet(kind, pkg) {
+            if (!window.AndroidBridge || !window.AndroidBridge.getAppDetails) { showToast('Needs the app build'); return; }
+            let d;
+            try { d = JSON.parse(window.AndroidBridge.getAppDetails(pkg)); } catch (e) { showToast('Could not read this app'); return; }
+            inspectedPkg = pkg;                       // the permission and component actions below work on the app named here
+            inspectorData = d;
+            appOpsList = parseAppOps(d.appopsRaw || '');
+            const app = allApps.find(a => a.pkg === pkg) || { name: pkg };
+            document.getElementById('alsSub').innerText = app.name + ' · ' + pkg;
+            alsSel.clear();
+            alsSetKind(kind, true);
+            document.getElementById('appListSheet').classList.add('show');
+            haptic();
+            alsRender();
+        }
+        // Permissions and App Ops share one sheet (a chip switches between them); Activities have their own
+        function alsSetKind(kind, silent) {
+            alsKind = kind; alsFilter = 'all';
+            if (!silent) haptic();
+            document.getElementById('alsTitle').innerText = kind === 'acts' ? 'Activity Launcher' : 'Permission Manager';
+            document.getElementById('alsSearch').value = '';
+            document.getElementById('alsSearch').placeholder = kind === 'perms' ? 'Search permissions…' : kind === 'ops' ? 'Search app ops…' : 'Search activities…';
+            const modes = document.getElementById('alsModeRow');
+            modes.style.display = kind === 'acts' ? 'none' : '';
+            modes.querySelectorAll('.filter-chip').forEach(c => c.classList.toggle('active', c.getAttribute('data-mode') === kind));
+            const chips = kind === 'perms' ? [['all', 'All'], ['granted', 'Granted'], ['denied', 'Denied'], ['changeable', 'Changeable'], ['locked', 'Locked']]
+                : kind === 'ops' ? [['all', 'All'], ['allow', 'Allowed'], ['restricted', 'Ignored / Denied'], ['foreground', 'Foreground']]
+                : [['all', 'All'], ['exported', 'Exported'], ['unexported', 'Unexported'], ['disabled', 'Disabled']];
+            document.getElementById('alsFilterRow').innerHTML = chips.map(c => `<span class="filter-chip${c[0] === 'all' ? ' active' : ''}" data-filter="${c[0]}" onclick="alsSetFilter('${c[0]}')">${c[1]}</span>`).join('');
+            if (!silent) alsRender();
+        }
+        function closeAppListSheet() { document.getElementById('appListSheet').classList.remove('show'); haptic(); }
+        function alsSetFilter(f) {
+            alsFilter = f;
+            document.querySelectorAll('#alsFilterRow .filter-chip').forEach(c => c.classList.toggle('active', c.getAttribute('data-filter') === f));
+            haptic();
+            alsRender();
+        }
+        // Grant or revoke every changeable permission in the list as filtered and searched right now, one after the other
+        let alsBulkBusy = false;
+        function alsVisiblePerms() {
+            const d = inspectorData || {};
+            const q = (document.getElementById('alsSearch').value || '').toLowerCase().trim();
+            return (d.permissions || []).filter(p => {
+                if (alsFilter === 'granted' && !p.granted) return false;
+                if (alsFilter === 'denied' && p.granted) return false;
+                if (alsFilter === 'changeable' && !p.changeable) return false;
+                if (alsFilter === 'locked' && p.changeable) return false;
+                return !q || p.name.toLowerCase().includes(q) || String(p.label || '').toLowerCase().includes(q) || String(p.description || '').toLowerCase().includes(q);
+            });
+        }
+        async function alsBulk(grant) {
+            if (alsBulkBusy || alsKind !== 'perms') return;
+            const todo = alsVisiblePerms().filter(p => p.changeable && p.granted !== grant);
+            if (!todo.length) { showToast(grant ? 'Nothing to grant here' : 'Nothing to revoke here'); return; }
+            if (!guardPrivilege((grant ? 'Grant' : 'Revoke') + ' permissions')) return;
+            const app = allApps.find(a => a.pkg === inspectedPkg) || { name: inspectedPkg };
+            if (!confirm((grant ? 'Grant ' : 'Revoke ') + todo.length + ' permission' + (todo.length === 1 ? '' : 's') + ' ' + (grant ? 'to ' : 'from ') + app.name + '?')) return;
+            if (!window.AndroidBridge || !window.AndroidBridge.setPermission) { showToast('Needs the app build'); return; }
+            haptic();
+            alsBulkBusy = true;
+            const pkg = inspectedPkg, failed = [];
+            let done = 0;
+            for (let i = 0; i < todo.length; i++) {
+                showToast((grant ? 'Granting ' : 'Revoking ') + (i + 1) + ' of ' + todo.length + '…');
+                await new Promise(r => setTimeout(r, 0));
+                let r;
+                try { r = parseActionResult(window.AndroidBridge.setPermission(pkg, todo[i].name, grant)); } catch (e) { r = { ok: false, output: String(e && e.message || e) }; }
+                if (r.ok) done++; else failed.push({ name: todo[i].name.replace(/^android\.permission\./, ''), pkg: todo[i].name, output: r.output, success: false });
+            }
+            alsBulkBusy = false;
+            showToast((grant ? 'Granted ' : 'Revoked ') + done + ' of ' + todo.length + (failed.length ? ' • ' + failed.length + ' failed' : ''));
+            reloadInspectorDetails();
+            alsRender();
+            if (failed.length) showCommandResults('Permission Manager', grant ? 'grant' : 'revoke', failed);
+        }
+        function alsRender() {
+            if (!alsIsOpen()) return;
+            const d = inspectorData || {};
+            const q = (document.getElementById('alsSearch').value || '').toLowerCase().trim();
+            const list = document.getElementById('alsList');
+            const sum = document.getElementById('alsSummary');
+            document.getElementById('alsBulkRow').style.display = alsKind === 'perms' ? '' : 'none';
+            document.getElementById('alsActBulkRow').style.display = alsKind === 'acts' ? '' : 'none';
+            if (alsKind === 'ops') {
+                const ops = appOpsList || [];
+                sum.innerText = ops.length + ' app ops · ' + ops.filter(o => o.mode === 'allow').length + ' allowed · ' + ops.filter(o => o.mode === 'ignore' || o.mode === 'deny').length + ' ignored or denied';
+                const rows = ops.filter(op => {
+                    if (alsFilter === 'allow' && op.mode !== 'allow') return false;
+                    if (alsFilter === 'restricted' && op.mode !== 'ignore' && op.mode !== 'deny') return false;
+                    if (alsFilter === 'foreground' && op.mode !== 'foreground') return false;
+                    return !q || op.name.toLowerCase().includes(q);
+                });
+                list.innerHTML = rows.length ? rows.map(op => {
+                    const sub = [op.uidOnly ? 'uid-level mode' : '', op.uidMode && !op.uidOnly ? 'uid: ' + op.uidMode : '', op.detail].filter(Boolean).join(' • ');
+                    const buttons = OP_MODES.map(([mode, label]) => `<button class="op-mode-btn ${mode} ${op.mode === mode ? 'on' : ''}" data-op="${escapeHtml(op.name)}" onclick="setAppOpMode(this.getAttribute('data-op'), '${mode}')">${label}</button>`).join('');
+                    return `<div class="perm-row als-row" style="flex-direction:column; align-items:stretch; gap:6px;"><div class="perm-info"><div class="perm-name" translate="no">${escapeHtml(op.name)}</div>${sub ? `<div class="als-detail">${escapeHtml(sub)}</div>` : ''}</div><div class="op-modes">${buttons}</div></div>`;
+                }).join('') : '<div class="list-empty">' + (ops.length ? 'No app ops match.' : (isPrivilegedActive ? 'No app ops recorded for this app yet.' : 'App ops need ADB, Shizuku or Root. Set up a working mode first.')) + '</div>';
+                return;
+            }
+            if (alsKind === 'perms') {
+                const perms = d.permissions || [];
+                const granted = perms.filter(p => p.granted).length;
+                sum.innerText = perms.length + ' declared · ' + granted + ' granted · ' + perms.filter(p => p.changeable).length + ' you can change';
+                const rows = perms.filter(p => {
+                    if (alsFilter === 'granted' && !p.granted) return false;
+                    if (alsFilter === 'denied' && p.granted) return false;
+                    if (alsFilter === 'changeable' && !p.changeable) return false;
+                    if (alsFilter === 'locked' && p.changeable) return false;
+                    return !q || p.name.toLowerCase().includes(q) || String(p.label || '').toLowerCase().includes(q) || String(p.description || '').toLowerCase().includes(q);
+                }).sort((a, b) => (b.changeable - a.changeable) || a.name.localeCompare(b.name));
+                const toGrant = rows.filter(p => p.changeable && !p.granted).length, toRevoke = rows.filter(p => p.changeable && p.granted).length;
+                document.getElementById('alsBulkRow').style.display = '';
+                const gb = document.getElementById('alsGrantAll'), rb = document.getElementById('alsRevokeAll');
+                gb.innerText = 'Grant all shown (' + toGrant + ')'; gb.disabled = !toGrant || alsBulkBusy;
+                rb.innerText = 'Revoke all shown (' + toRevoke + ')'; rb.disabled = !toRevoke || alsBulkBusy;
+                list.innerHTML = rows.length ? rows.map(p => {
+                    const short = p.name.replace(/^android\.permission\./, '');
+                    const state = p.granted ? 'Granted' : 'Not granted';
+                    const how = p.changeable ? 'You can grant or revoke it here.' : 'Install-time permission: fixed when the app was installed, it cannot be changed here.';
+                    const btn = p.changeable
+                        ? `<button class="perm-toggle-btn ${p.granted ? 'granted' : 'revoked'}" data-perm="${escapeHtml(p.name)}" data-granted="${p.granted}" onclick="togglePermission(this.getAttribute('data-perm'), this.getAttribute('data-granted') === 'true')">${p.granted ? 'GRANTED' : 'REVOKED'}</button>`
+                        : `<button class="perm-toggle-btn locked">${p.granted ? 'GRANTED' : 'NOT GRANTED'}</button>`;
+                    return `<div class="perm-row als-row"><div class="perm-info">
+                        <div class="perm-name">${escapeHtml(p.label || short)}</div>
+                        <div class="perm-sub"><span class="perm-kind">${escapeHtml(p.protection || 'unknown')}</span>${p.appOp ? '<span class="perm-kind">app op</span>' : ''}<span class="perm-kind">${state}</span></div>
+                        <div class="als-detail" translate="no">${escapeHtml(p.name)}</div>
+                        ${p.description ? `<div class="als-detail als-desc">${escapeHtml(p.description)}</div>` : ''}
+                        ${p.group ? `<div class="als-detail" translate="no">Group: ${escapeHtml(p.group.replace(/^android\.permission-group\./, ''))}</div>` : ''}
+                        <div class="als-detail">${how}</div>
+                        ${alsOpLine(p.name)}
+                    </div>${btn}</div>`;
+                }).join('') : '<div class="list-empty">' + (perms.length ? 'No permissions match.' : 'No permissions declared.') + '</div>';
+            } else {
+                document.getElementById('alsBulkRow').style.display = 'none';
+                const acts = (d.activityInfo && d.activityInfo.length) ? d.activityInfo : (d.activities || []).map(n => ({ name: n, exported: false, enabled: true, permission: '' }));
+                sum.innerText = acts.length + ' activities · ' + acts.filter(a => a.exported).length + ' exported · ' + acts.filter(a => a.enabled === false).length + ' disabled';
+                const rows = acts.filter(a => {
+                    if (alsFilter === 'exported' && !a.exported) return false;
+                    if (alsFilter === 'unexported' && a.exported) return false;
+                    if (alsFilter === 'disabled' && a.enabled !== false) return false;
+                    return !q || a.name.toLowerCase().includes(q);
+                }).sort((a, b) => (b.exported - a.exported) || a.name.localeCompare(b.name));
+                list.innerHTML = rows.length ? rows.map(a => {
+                    const short = a.name.split('.').pop();
+                    const need = a.exported ? 'Exported: other apps can open it, so it launches without a working mode.' : 'Not exported: only the app itself can open it normally, so launching it needs a working mode.';
+                    const picked = alsSel.has(a.name);
+                    return `<div class="perm-row als-row"><div class="app-checkbox als-cb${picked ? ' on' : ''}" role="checkbox" aria-checked="${picked}" data-comp="${escapeHtml(a.name)}" onclick="alsToggleSel(this.getAttribute('data-comp'))">${picked ? '✓' : ''}</div><div class="perm-info">
+                        <div class="perm-name" translate="no">${escapeHtml(short)}</div>
+                        <div class="perm-sub"><span class="perm-kind" style="${a.exported ? '' : 'color:#FFA726;border-color:rgba(255,145,0,0.4);'}">${a.exported ? 'exported' : 'unexported'}</span>${a.enabled === false ? '<span class="perm-kind" style="color:#FFA726;border-color:rgba(255,145,0,0.4);">disabled</span>' : '<span class="perm-kind">enabled</span>'}${a.permission ? '<span class="perm-kind">protected</span>' : ''}</div>
+                        <div class="als-detail" translate="no">${escapeHtml(a.name)}</div>
+                        ${a.permission ? `<div class="als-detail" translate="no">Needs permission: ${escapeHtml(a.permission)}</div>` : ''}
+                        <div class="als-detail">${need}</div>
+                    </div><div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">
+                        <button class="perm-toggle-btn ${a.exported ? 'granted' : 'locked'}" style="cursor:pointer;" data-comp="${escapeHtml(a.name)}" data-exported="${a.exported}" onclick="launchComponent(this.getAttribute('data-comp'), this.getAttribute('data-exported') === 'true')">LAUNCH</button>
+                        <button class="perm-toggle-btn ${a.enabled === false ? 'granted' : 'revoked'}" data-comp="${escapeHtml(a.name)}" onclick="toggleComponent(this.getAttribute('data-comp'), ${a.enabled === false ? 'true' : 'false'})">${a.enabled === false ? 'ENABLE' : 'DISABLE'}</button>
+                    </div></div>`;
+                }).join('') : '<div class="list-empty">' + (acts.length ? 'No activities match.' : 'No activities.') + '</div>';
+                const chosen = acts.filter(a => alsSel.has(a.name));
+                const en = document.getElementById('alsEnableSel'), dis = document.getElementById('alsDisableSel');
+                en.innerText = 'Enable selected (' + chosen.filter(a => a.enabled === false).length + ')'; en.disabled = !chosen.some(a => a.enabled === false) || alsBulkBusy;
+                dis.innerText = 'Disable selected (' + chosen.filter(a => a.enabled !== false).length + ')'; dis.disabled = !chosen.some(a => a.enabled !== false) || alsBulkBusy;
+            }
+        }
+        // the app op behind a permission, when this app has one recorded: CAMERA for android.permission.CAMERA, FINE_LOCATION for ACCESS_FINE_LOCATION
+        function alsOpLine(permName) {
+            const base = permName.replace(/^.*\./, '');
+            const op = (appOpsList || []).find(o => o.name === base || o.name === base.replace(/^ACCESS_/, ''));
+            return op ? `<div class="als-detail" translate="no">App op ${escapeHtml(op.name)}: ${escapeHtml(op.mode)}</div>` : '';
+        }
+        function alsVisibleActs() {
+            const d = inspectorData || {};
+            const acts = (d.activityInfo && d.activityInfo.length) ? d.activityInfo : (d.activities || []).map(n => ({ name: n, exported: false, enabled: true, permission: '' }));
+            const q = (document.getElementById('alsSearch').value || '').toLowerCase().trim();
+            return acts.filter(a => {
+                if (alsFilter === 'exported' && !a.exported) return false;
+                if (alsFilter === 'unexported' && a.exported) return false;
+                if (alsFilter === 'disabled' && a.enabled !== false) return false;
+                return !q || a.name.toLowerCase().includes(q);
+            });
+        }
+        function alsToggleSel(name) { haptic(); if (alsSel.has(name)) alsSel.delete(name); else alsSel.add(name); alsRender(); }
+        function alsSelAll() { haptic(); alsVisibleActs().forEach(a => alsSel.add(a.name)); alsRender(); }
+        function alsSelClear() { haptic(); alsSel.clear(); alsRender(); }
+        // Enable or disable every ticked activity that is not already in that state
+        async function alsBulkComp(enable) {
+            if (alsBulkBusy) return;
+            const acts = (inspectorData && inspectorData.activityInfo) || [];
+            const todo = acts.filter(a => alsSel.has(a.name) && (a.enabled === false) === enable);
+            if (!todo.length) { showToast('Nothing to ' + (enable ? 'enable' : 'disable')); return; }
+            if (!guardPrivilege((enable ? 'Enable' : 'Disable') + ' components')) return;
+            if (!confirm((enable ? 'Enable ' : 'Disable ') + todo.length + ' activit' + (todo.length === 1 ? 'y' : 'ies') + '?' + (enable ? '' : ' A disabled activity can no longer be opened until it is enabled again.'))) return;
+            if (!window.AndroidBridge || !window.AndroidBridge.setComponentEnabled) { showToast('Needs the app build'); return; }
+            haptic();
+            alsBulkBusy = true;
+            const pkg = inspectedPkg, failed = [];
+            let done = 0;
+            for (let i = 0; i < todo.length; i++) {
+                showToast((enable ? 'Enabling ' : 'Disabling ') + (i + 1) + ' of ' + todo.length + '…');
+                await new Promise(r => setTimeout(r, 0));
+                let r;
+                try { r = JSON.parse(window.AndroidBridge.setComponentEnabled(pkg, todo[i].name, enable)); } catch (e) { r = { ok: false, output: String(e && e.message || e) }; }
+                if (r.ok) { done++; todo[i].enabled = enable; alsSel.delete(todo[i].name); }
+                else failed.push({ name: todo[i].name.split('.').pop(), pkg: pkg + '/' + todo[i].name, output: r.output, success: false });
+            }
+            alsBulkBusy = false;
+            showToast((enable ? 'Enabled ' : 'Disabled ') + done + ' of ' + todo.length + (failed.length ? ' • ' + failed.length + ' failed' : ''));
+            renderComponentsList();
+            alsRender();
+            if (failed.length) showCommandResults('Activity Launcher', enable ? 'enable' : 'disable', failed);
+        }
+
+        // ---------- Batch Ops (App Ops), Show Apps and Command: the batch menu's second page of tools ----------
+        const BOPS_LIST = ['COARSE_LOCATION', 'FINE_LOCATION', 'GPS', 'VIBRATE', 'READ_CONTACTS', 'WRITE_CONTACTS', 'READ_CALL_LOG', 'WRITE_CALL_LOG', 'READ_CALENDAR', 'WRITE_CALENDAR', 'WIFI_SCAN', 'POST_NOTIFICATION', 'NEIGHBORING_CELLS', 'CALL_PHONE', 'READ_SMS', 'WRITE_SMS', 'RECEIVE_SMS', 'RECEIVE_MMS', 'RECEIVE_WAP_PUSH', 'SEND_SMS', 'READ_ICC_SMS', 'WRITE_ICC_SMS', 'WRITE_SETTINGS', 'SYSTEM_ALERT_WINDOW', 'ACCESS_NOTIFICATIONS', 'CAMERA', 'RECORD_AUDIO', 'PLAY_AUDIO', 'READ_CLIPBOARD', 'WRITE_CLIPBOARD', 'TAKE_MEDIA_BUTTONS', 'TAKE_AUDIO_FOCUS', 'WAKE_LOCK', 'MONITOR_LOCATION', 'MONITOR_HIGH_POWER_LOCATION', 'GET_USAGE_STATS', 'MUTE_MICROPHONE', 'TOAST_WINDOW', 'PROJECT_MEDIA', 'ACTIVATE_VPN', 'WRITE_WALLPAPER', 'ASSIST_STRUCTURE', 'ASSIST_SCREENSHOT', 'READ_PHONE_STATE', 'ADD_VOICEMAIL', 'USE_SIP', 'PROCESS_OUTGOING_CALLS', 'USE_FINGERPRINT', 'BODY_SENSORS', 'READ_CELL_BROADCASTS', 'MOCK_LOCATION', 'READ_EXTERNAL_STORAGE', 'WRITE_EXTERNAL_STORAGE', 'TURN_SCREEN_ON', 'GET_ACCOUNTS', 'RUN_IN_BACKGROUND', 'READ_PHONE_NUMBERS', 'REQUEST_INSTALL_PACKAGES', 'PICTURE_IN_PICTURE', 'INSTANT_APP_START_FOREGROUND', 'ANSWER_PHONE_CALLS', 'RUN_ANY_IN_BACKGROUND', 'CHANGE_WIFI_STATE', 'REQUEST_DELETE_PACKAGES', 'BIND_ACCESSIBILITY_SERVICE', 'ACCEPT_HANDOVER', 'MANAGE_IPSEC_TUNNELS', 'START_FOREGROUND', 'BLUETOOTH_SCAN', 'USE_BIOMETRIC', 'ACTIVITY_RECOGNITION', 'SMS_FINANCIAL_TRANSACTIONS', 'READ_MEDIA_AUDIO', 'WRITE_MEDIA_AUDIO', 'READ_MEDIA_VIDEO', 'WRITE_MEDIA_VIDEO', 'READ_MEDIA_IMAGES', 'WRITE_MEDIA_IMAGES', 'LEGACY_STORAGE', 'ACCESS_ACCESSIBILITY', 'READ_DEVICE_IDENTIFIERS', 'ACCESS_MEDIA_LOCATION', 'QUERY_ALL_PACKAGES', 'MANAGE_EXTERNAL_STORAGE', 'INTERACT_ACROSS_PROFILES', 'ACTIVATE_PLATFORM_VPN', 'LOADER_USAGE_STATS', 'ACCESS_CALL_AUDIO', 'AUTO_REVOKE_PERMISSIONS_IF_UNUSED', 'AUTO_REVOKE_MANAGED_BY_INSTALLER', 'NO_ISOLATED_STORAGE', 'PHONE_CALL_MICROPHONE', 'PHONE_CALL_CAMERA', 'RECORD_AUDIO_HOTWORD', 'MANAGE_ONGOING_CALLS', 'MANAGE_CREDENTIALS', 'SCHEDULE_EXACT_ALARM', 'MANAGE_MEDIA', 'BLUETOOTH_CONNECT', 'UWB_RANGING', 'BLUETOOTH_ADVERTISE', 'RECORD_INCOMING_PHONE_AUDIO', 'NEARBY_WIFI_DEVICES', 'ESTABLISH_VPN_SERVICE', 'ESTABLISH_VPN_MANAGER', 'ACCESS_RESTRICTED_SETTINGS', 'RUN_USER_INITIATED_JOBS', 'READ_MEDIA_VISUAL_USER_SELECTED', 'FOREGROUND_SERVICE_SPECIAL_USE', 'USE_FULL_SCREEN_INTENT', 'SYSTEM_EXEMPT_FROM_SUSPENSION', 'SYSTEM_EXEMPT_FROM_POWER_RESTRICTIONS', 'SYSTEM_EXEMPT_FROM_HIBERNATION'].sort();
+        const BOPS_MODES = [['allow', 'Allow'], ['foreground', 'FG'], ['ignore', 'Ignore'], ['deny', 'Deny'], ['default', 'Reset']];
+        const bopsPick = new Map();          // op -> mode, for every ticked op
+        let bopsExtra = [];                  // ops typed in by hand
+        // Presets: ready-made sets of app ops and the ones you save (kept as "bops_presets": [{ name, ops: { OP: mode } }])
+        const BOPS_BUILTIN = [
+            { name: 'Privacy lockdown', ops: { COARSE_LOCATION: 'ignore', FINE_LOCATION: 'ignore', CAMERA: 'ignore', RECORD_AUDIO: 'ignore', READ_CONTACTS: 'ignore', READ_CALL_LOG: 'ignore', READ_SMS: 'ignore', READ_CLIPBOARD: 'ignore', READ_PHONE_STATE: 'ignore', GET_ACCOUNTS: 'ignore' } },
+            { name: 'No location', ops: { COARSE_LOCATION: 'ignore', FINE_LOCATION: 'ignore', MONITOR_LOCATION: 'ignore', MONITOR_HIGH_POWER_LOCATION: 'ignore', WIFI_SCAN: 'ignore' } },
+            { name: 'Stop background activity', ops: { RUN_IN_BACKGROUND: 'ignore', RUN_ANY_IN_BACKGROUND: 'ignore', WAKE_LOCK: 'ignore' } },
+            { name: 'Silence notifications', ops: { POST_NOTIFICATION: 'ignore' } },
+            { name: 'Undo Privacy lockdown', ops: { COARSE_LOCATION: 'default', FINE_LOCATION: 'default', CAMERA: 'default', RECORD_AUDIO: 'default', READ_CONTACTS: 'default', READ_CALL_LOG: 'default', READ_SMS: 'default', READ_CLIPBOARD: 'default', READ_PHONE_STATE: 'default', GET_ACCOUNTS: 'default' } },
+        ];
+        let bopsSaved = null;
+        function bopsSavedLoad() {
+            if (bopsSaved === null) {
+                const v = kvGet('bops_presets', []);
+                bopsSaved = (Array.isArray(v) ? v : []).filter(p => p && typeof p.name === 'string' && p.ops && typeof p.ops === 'object').slice(0, 30);
+            }
+            return bopsSaved;
+        }
+        function bopsPresetsRender() {
+            const box = document.getElementById('bopsPresets');
+            if (!box) return;
+            const dup = (k, i, name) => `<span class="preset-x" role="button" aria-label="Duplicate the preset ${escapeHtml(name)}" title="Duplicate" onclick="bopsDuplicate('${k}', ${i})"><svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false"><path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span>`;
+            box.innerHTML = BOPS_BUILTIN.map((p, i) => `<span class="filter-chip preset-chip" title="${Object.keys(p.ops).length} app ops"><span onclick="bopsLoadPreset('b', ${i})">${escapeHtml(p.name)}</span>${dup('b', i, p.name)}</span>`).join('')
+                + bopsSavedLoad().map((p, i) => `<span class="filter-chip preset-chip" title="${Object.keys(p.ops).length} app ops"><span onclick="bopsLoadPreset('s', ${i})">${escapeHtml(p.name)}</span>${dup('s', i, p.name)}<span class="preset-x" role="button" aria-label="Delete the preset ${escapeHtml(p.name)}" onclick="bopsDeletePreset(${i})">✕</span></span>`).join('')
+                + '<span class="filter-chip" onclick="bopsSavePreset()">＋ Save ticked as preset…</span>';
+        }
+        function bopsLoadPreset(kind, i) {
+            const p = (kind === 'b' ? BOPS_BUILTIN : bopsSavedLoad())[i];
+            if (!p) return;
+            haptic();
+            bopsPick.clear();
+            Object.keys(p.ops).forEach(op => {
+                if (!/^[A-Z][A-Z0-9_]+$/.test(op) || !BOPS_MODES.some(m => m[0] === p.ops[op])) return;
+                if (!BOPS_LIST.includes(op) && !bopsExtra.includes(op)) bopsExtra.push(op);
+                bopsPick.set(op, p.ops[op]);
+            });
+            bopsRender();
+            showToast(p.name + ': ' + bopsPick.size + ' app op' + (bopsPick.size === 1 ? '' : 's') + ' ticked');
+        }
+        function bopsSavePreset() {
+            if (!bopsPick.size) { showToast('Tick some app ops first'); return; }
+            const name = (prompt('Name for this preset:', 'My preset') || '').trim().slice(0, 40);
+            if (!name) return;
+            haptic();
+            const list = bopsSavedLoad().filter(p => p.name !== name);
+            const ops = {}; bopsPick.forEach((m, op) => { ops[op] = m; });
+            list.unshift({ name, ops });
+            bopsSaved = list.slice(0, 30);
+            kvSet('bops_presets', bopsSaved);
+            bopsPresetsRender();
+            showToast('Saved the preset ' + name);
+        }
+        // a name that is not taken yet: "Name (copy)", "Name (copy 2)", ...
+        function uniqueCopyName(name, taken) {
+            const base = String(name).replace(/ \(copy( \d+)?\)$/, '');
+            let n = base + ' (copy)', k = 2;
+            while (taken.includes(n)) n = base + ' (copy ' + (k++) + ')';
+            return n.slice(0, 48);
+        }
+        function bopsDuplicate(kind, i) {
+            const src = (kind === 'b' ? BOPS_BUILTIN : bopsSavedLoad())[i];
+            if (!src) return;
+            haptic();
+            const name = uniqueCopyName(src.name, bopsSavedLoad().map(p => p.name));
+            bopsSaved = [{ name, ops: Object.assign({}, src.ops) }].concat(bopsSavedLoad()).slice(0, 30);
+            kvSet('bops_presets', bopsSaved);
+            bopsPresetsRender();
+            showToast('Duplicated as ' + name);
+        }
+        function bopsDeletePreset(i) {
+            const p = bopsSavedLoad()[i];
+            if (!p || !confirm('Delete the preset ' + p.name + '?')) return;
+            haptic();
+            bopsSaved.splice(i, 1);
+            kvSet('bops_presets', bopsSaved);
+            bopsPresetsRender();
+        }
+        function bopsAll() { return Array.from(new Set(BOPS_LIST.concat(bopsExtra))).sort(); }
+        function openBatchOps() {
+            if (!selectedPkgs.size) { showToast('Select apps first'); return; }
+            haptic();
+            document.getElementById('bopsSub').innerText = 'Applies to ' + selectedPkgs.size + ' selected app' + (selectedPkgs.size === 1 ? '' : 's');
+            document.getElementById('bopsSearch').value = '';
+            document.getElementById('batchOpsModal').classList.add('show');
+            bopsPresetsRender();
+            bopsRender();
+        }
+        function closeBatchOps() { haptic(); document.getElementById('batchOpsModal').classList.remove('show'); }
+        function bopsRender() {
+            const q = (document.getElementById('bopsSearch').value || '').toLowerCase().trim();
+            const rows = bopsAll().filter(op => !q || op.toLowerCase().includes(q) || op.replace(/_/g, ' ').toLowerCase().includes(q));
+            document.getElementById('bopsList').innerHTML = rows.length ? rows.map(op => {
+                const on = bopsPick.has(op), mode = bopsPick.get(op) || 'allow';
+                return `<div class="bops-row${on ? ' on' : ''}" data-op="${op}"><div class="app-checkbox" role="checkbox" aria-checked="${on}" onclick="bopsToggle(this.parentElement.dataset.op)">${on ? '✓' : ''}</div><div class="bops-name" translate="no">${op}</div><select class="op-select" aria-label="Value for ${op}" onchange="bopsMode(this.parentElement.dataset.op, this.value)">${BOPS_MODES.map(m => `<option value="${m[0]}"${m[0] === mode ? ' selected' : ''}>${m[1]}</option>`).join('')}</select></div>`;
+            }).join('') : '<div class="list-empty">No app ops match. Type its name below and tap Add.</div>';
+            const n = bopsPick.size;
+            document.getElementById('bopsSummary').innerText = n ? n + ' app op' + (n === 1 ? '' : 's') + ' ticked' : 'Nothing ticked yet';
+            const ap = document.getElementById('bopsApply');
+            ap.disabled = !n;
+            ap.innerText = n ? 'Apply to ' + selectedPkgs.size + ' app' + (selectedPkgs.size === 1 ? '' : 's') : 'Apply';
+        }
+        function bopsToggle(op) { haptic(); if (bopsPick.has(op)) bopsPick.delete(op); else bopsPick.set(op, 'allow'); bopsRender(); }
+        function bopsMode(op, mode) { bopsPick.set(op, mode); bopsRender(); }          // choosing a value ticks the op
+        function bopsClear() { haptic(); bopsPick.clear(); bopsRender(); }
+        function bopsAddCustom() {
+            const op = (document.getElementById('bopsCustom').value || '').trim().toUpperCase().replace(/\s+/g, '_');
+            if (!/^[A-Z][A-Z0-9_]+$/.test(op)) { showToast('Enter an app op name, e.g. RUN_ANY_IN_BACKGROUND'); return; }
+            haptic();
+            if (!BOPS_LIST.includes(op) && !bopsExtra.includes(op)) bopsExtra.push(op);
+            bopsPick.set(op, bopsPick.get(op) || 'allow');
+            document.getElementById('bopsCustom').value = '';
+            bopsRender();
+        }
+        function bopsApply() {
+            const pkgs = Array.from(selectedPkgs);
+            if (!pkgs.length || !bopsPick.size) return;
+            if (!guardPrivilege('Batch App Ops')) return;
+            const spec = Array.from(bopsPick.entries()).map(e => e[0] + '=' + e[1]).join(',');
+            if (!confirm('Set ' + bopsPick.size + ' app op' + (bopsPick.size === 1 ? '' : 's') + ' on ' + pkgs.length + ' app' + (pkgs.length === 1 ? '' : 's') + '?\n\n' + Array.from(bopsPick.entries()).map(e => e[0] + ' → ' + e[1]).join('\n'))) return;
+            closeBatchOps();
+            batchRunLabel = 'Set ' + bopsPick.size + ' app op' + (bopsPick.size === 1 ? '' : 's') + ' on';
+            batchRunHist = 'appops';
+            runBatchAction('appops:' + spec, pkgs);
+        }
+
+        function openShowApps() {
+            if (!selectedPkgs.size) { showToast('Select apps first'); return; }
+            haptic();
+            document.getElementById('saSearch').value = '';
+            document.getElementById('showAppsModal').classList.add('show');
+            showAppsRender();
+        }
+        function closeShowApps() { haptic(); document.getElementById('showAppsModal').classList.remove('show'); }
+        function showAppsRender() {
+            const q = (document.getElementById('saSearch').value || '').toLowerCase().trim();
+            const apps = Array.from(selectedPkgs).map(pkg => allApps.find(a => a.pkg === pkg) || { name: pkg, pkg })
+                .sort((a, b) => String(a.name).localeCompare(String(b.name), undefined, { sensitivity: 'base' }));
+            document.getElementById('saSub').innerText = selectedPkgs.size + ' app' + (selectedPkgs.size === 1 ? '' : 's') + ' selected';
+            const rows = apps.filter(a => !q || String(a.name).toLowerCase().includes(q) || a.pkg.toLowerCase().includes(q));
+            document.getElementById('saList').innerHTML = rows.length ? rows.map(a => `<div class="sa-row" data-pkg="${escapeHtml(a.pkg)}"><div class="sa-info"><div class="sa-name">${escapeHtml(a.name)}</div><div class="sa-pkg">${escapeHtml(a.pkg)}</div></div><button class="mode-action-btn" onclick="saRemove(this.closest('.sa-row').dataset.pkg)">Remove</button></div>`).join('') : '<div class="list-empty">No selected app matches.</div>';
+        }
+        function saRemove(pkg) {
+            if (!selectedPkgs.has(pkg)) return;
+            selectedPkgs.delete(pkg);
+            haptic();
+            updateBatchBar();
+            const card = document.getElementById('card_' + pkg);
+            if (card) { card.classList.remove('selected'); const cb = card.querySelector('.app-checkbox'); if (cb) cb.innerText = ''; }
+            if (!selectedPkgs.size) { closeShowApps(); showToast('Nothing selected any more'); return; }
+            showAppsRender();
+        }
+
+        let bcRecent = null, bcSaved = null;
+        // The apps a Command runs on: the selection, or the apps of a saved list that are on this phone
+        function bcTargets() {
+            const v = (document.getElementById('bcTarget') || {}).value || 'sel';
+            if (v === 'sel') return { pkgs: Array.from(selectedPkgs), skipped: 0, label: 'the selected apps' };
+            const l = customLists.find(x => x.id === v);
+            if (!l) return { pkgs: Array.from(selectedPkgs), skipped: 0, label: 'the selected apps' };
+            const have = new Set(allApps.map(a => a.pkg));
+            const pk = (l.packages || []).filter(p => have.has(p));
+            return { pkgs: pk, skipped: (l.packages || []).length - pk.length, label: 'the list ' + l.name };
+        }
+        function bcSavedLoad() {
+            if (bcSaved === null) {
+                const v = kvGet('batch_cmds', []);
+                bcSaved = (Array.isArray(v) ? v : []).filter(c => c && typeof c.name === 'string' && typeof c.cmd === 'string').slice(0, 40);
+            }
+            return bcSaved;
+        }
+        function openBatchCmd() {
+            if (!selectedPkgs.size) { showToast('Select apps first'); return; }
+            haptic();
+            const sel = document.getElementById('bcTarget');
+            sel.innerHTML = '<option value="sel">The selected apps (' + selectedPkgs.size + ')</option>' + customLists.map(l => '<option value="' + escapeHtml(l.id) + '">From a saved list: ' + escapeHtml(l.name) + ' (' + (l.packages || []).length + ')</option>').join('');
+            document.getElementById('batchCmdModal').classList.add('show');
+            bcRenderRecent();
+            bcPreview();
+        }
+        function closeBatchCmd() { haptic(); document.getElementById('batchCmdModal').classList.remove('show'); }
+        function bcExample(cmd) { haptic(); document.getElementById('bcInput').value = cmd; bcPreview(); }
+        function bcPreview() {
+            const cmd = (document.getElementById('bcInput').value || '').trim();
+            const t = bcTargets();
+            const first = t.pkgs[0] || 'com.example.app';
+            const box = document.getElementById('bcPreview'), run = document.getElementById('bcRun');
+            const n = t.pkgs.length;
+            document.getElementById('bcSub').innerText = 'Runs once on each of the ' + n + ' app' + (n === 1 ? '' : 's') + ' in ' + t.label + (t.skipped ? ' (' + t.skipped + ' in the list are not on this phone and are skipped)' : '');
+            const dry = !!(document.getElementById('bcDry') || {}).checked;
+            run.disabled = !cmd || !n;
+            run.innerText = cmd ? (dry ? 'Show what would run on ' : 'Run on ') + n + ' app' + (n === 1 ? '' : 's') : (dry ? 'Show' : 'Run');
+            if (!n) { box.innerHTML = '<span class="bc-warn">None of the apps in that list are on this phone.</span>'; return; }
+            if (!cmd) { box.innerHTML = 'Preview: type a command above.'; return; }
+            const shown = cmd.split('$package').join(first);
+            box.innerHTML = 'For <b>' + escapeHtml(first) + '</b> it will run:<br><code>' + escapeHtml(shown) + '</code>'
+                + (cmd.includes('$package') ? '' : '<br><span class="bc-warn">There is no $package in this command, so it runs the same thing ' + n + ' time' + (n === 1 ? '' : 's') + '.</span>');
+        }
+        function bcRenderRecent() {
+            if (bcRecent === null) { const v = kvGet('batch_cmd_recent', []); bcRecent = Array.isArray(v) ? v.filter(x => typeof x === 'string').slice(0, 6) : []; }
+            const saved = bcSavedLoad();
+            document.getElementById('bcSaved').innerHTML = saved.length ? saved.map((c, i) => `<span class="filter-chip preset-chip" title="${escapeHtml(c.cmd)}"><span onclick="bcLoadSaved(${i})">${escapeHtml(c.name)}</span><span class="preset-x" role="button" aria-label="Duplicate the saved command ${escapeHtml(c.name)}" title="Duplicate" onclick="bcDuplicate(${i})"><svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false"><path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span><span class="preset-x" role="button" aria-label="Delete the saved command ${escapeHtml(c.name)}" onclick="bcDeleteSaved(${i})">✕</span></span>`).join('') : '<span class="switch-sub">None yet: type a command and tap Save this command.</span>';
+            document.getElementById('bcRecent').innerHTML = bcRecent.length ? '<span class="switch-sub" style="width:100%;">Recent</span>' + bcRecent.map((c, i) => `<span class="filter-chip" data-i="${i}" onclick="bcExample(bcRecent[+this.dataset.i])"><code>${escapeHtml(c.length > 40 ? c.slice(0, 40) + '…' : c)}</code></span>`).join('') : '';
+        }
+        function bcLoadSaved(i) { const c = bcSavedLoad()[i]; if (c) bcExample(c.cmd); }
+        function bcSave() {
+            const cmd = (document.getElementById('bcInput').value || '').trim();
+            if (!cmd) { showToast('Type a command first'); return; }
+            const name = (prompt('Name for this command:', cmd.slice(0, 28)) || '').trim().slice(0, 40);
+            if (!name) return;
+            haptic();
+            bcSaved = [{ name, cmd }].concat(bcSavedLoad().filter(c => c.name !== name)).slice(0, 40);
+            kvSet('batch_cmds', bcSaved);
+            bcRenderRecent();
+            showToast('Saved the command ' + name);
+        }
+        function bcDuplicate(i) {
+            const c = bcSavedLoad()[i];
+            if (!c) return;
+            haptic();
+            const name = uniqueCopyName(c.name, bcSavedLoad().map(x => x.name));
+            bcSaved = [{ name, cmd: c.cmd }].concat(bcSavedLoad()).slice(0, 40);
+            kvSet('batch_cmds', bcSaved);
+            bcRenderRecent();
+            showToast('Duplicated as ' + name);
+        }
+        function bcDeleteSaved(i) {
+            const c = bcSavedLoad()[i];
+            if (!c || !confirm('Delete the saved command ' + c.name + '?')) return;
+            haptic();
+            bcSaved.splice(i, 1);
+            kvSet('batch_cmds', bcSaved);
+            bcRenderRecent();
+        }
+        function bcRun() {
+            const cmd = (document.getElementById('bcInput').value || '').trim();
+            const t = bcTargets(), pkgs = t.pkgs;
+            if (!cmd || !pkgs.length) return;
+            if (document.getElementById('bcDry').checked) { bcDryRun(cmd, pkgs, t.label); return; }
+            if (!guardPrivilege('Batch command')) return;
+            const note = cmd.includes('$package') ? '' : '\n\nThere is no $package in it, so the same command runs ' + pkgs.length + ' times.';
+            if (!confirm('Run this on ' + pkgs.length + ' app' + (pkgs.length === 1 ? '' : 's') + ' in ' + t.label + '?\n\n' + cmd.split('$package').join(pkgs[0]) + '\n\n(shown for ' + pkgs[0] + '; the others get their own package name)' + note + '\n\nThere is no undo.')) return;
+            bcRecent = [cmd].concat((bcRecent || []).filter(c => c !== cmd)).slice(0, 6);
+            kvSet('batch_cmd_recent', bcRecent);
+            closeBatchCmd();
+            batchRunLabel = 'Ran a command on';
+            batchRunHist = 'custom';
+            runBatchAction('custom:' + cmd, pkgs);
+        }
+
+        // Dry run: the command as it would be run for every app, listed in the results dialog, nothing run
+        function bcDryRun(cmd, pkgs, label) {
+            haptic();
+            const rows = pkgs.map(pkg => {
+                const app = allApps.find(a => a.pkg === pkg) || { name: pkg };
+                return { name: app.name, pkg, output: cmd.split('$package').join(pkg), success: true, label: 'Would run' };
+            });
+            const tv = document.getElementById('bcTarget').value;
+            closeBatchCmd();
+            showCommandResults('Dry run: nothing was run', rows.length + ' app' + (rows.length === 1 ? '' : 's') + ' in ' + label + ' · what would run for each', rows, [
+                { label: 'Run it for real', onClick: () => { document.getElementById('commandResultsModal').classList.remove('show'); document.getElementById('bcDry').checked = false; openBatchCmd(); document.getElementById('bcTarget').value = tv; document.getElementById('bcInput').value = cmd; bcPreview(); } },
+                { label: 'Share CSV', onClick: () => batchResultsCsv('Dry run', cmd, rows) }
+            ]);
+        }
+
+        // Press and hold anywhere on an app's row (the icon keeps its own hold, which saves the icon; the buttons and checkbox are left alone)
+        // opens that app's menu, and the lift of the finger that follows is not also taken as a tap that selects the row.
+        (function () {
+            let timer = null, startX = 0, startY = 0, fired = false;
+            const clear = () => { if (timer) { clearTimeout(timer); timer = null; } };
+            document.addEventListener('contextmenu', e => { if (e.target.closest && e.target.closest('.app-card')) e.preventDefault(); });
+            document.addEventListener('pointerdown', e => {
+                const t = e.target;
+                const card = t.closest ? t.closest('.app-card') : null;
+                fired = false; dragged = false;
+                if (!card || t.closest('img.app-icon, button, .app-left')) return;
+                startX = e.clientX; startY = e.clientY;
+                clear();
+                timer = setTimeout(() => {
+                    timer = null;
+                    fired = true;
+                    haptic();
+                    openInspector(card.dataset.pkg);
+                }, 550);
+            });
+            let dragged = false;
+            document.addEventListener('pointermove', e => { if (timer && Math.hypot(e.clientX - startX, e.clientY - startY) > 10) { clear(); dragged = true; } });
+            ['pointerup', 'pointercancel', 'scroll'].forEach(ev => document.addEventListener(ev, clear, true));
+            document.addEventListener('click', e => {
+                const inCard = e.target.closest && e.target.closest('.app-card');
+                if (inCard && (fired || dragged)) { fired = false; dragged = false; e.stopPropagation(); e.preventDefault(); return; }      // a hold, or a drag across the row (a mouse), is not a tap that selects it
+                dragged = false;
+            }, true);
+        })();
+
         function appCardHtml(app) {
             const isSelected = selectedPkgs.has(app.pkg);
 
@@ -10073,12 +11004,12 @@ Type any command below (e.g. pm list packages -d)
                         <div class="app-pkg">${pk}</div>
                         <div class="badge-row">${badges}${listVersionLabel(app)}${listSortMeta(app)}</div>
                     </div>
+                    <div class="app-actions">
+                        ${actionBtnHtml(app)}
+                        <button class="btn-mini" title="Menu" onclick="openInspector(this.closest('.app-card').dataset.pkg)">⋯</button>
+                    </div>
                     <div class="app-left" onclick="toggleSelectPkg(this.parentElement.dataset.pkg)">
                         <div class="app-checkbox">${isSelected ? '✓' : ''}</div>
-                    </div>
-                    <div class="app-actions">
-                        <button class="btn-mini" title="App Settings" aria-label="App Settings" onclick="openAppSettings(this.closest('.app-card').dataset.pkg)">⚙️</button>
-                        <button class="btn-mini" title="Menu" onclick="openInspector(this.closest('.app-card').dataset.pkg)">⋯</button>
                     </div>
                 </div>
             `;
@@ -10241,11 +11172,14 @@ Type any command below (e.g. pm list packages -d)
         // with a setTimeout(0) between apps, still froze the page for the whole run: that thread is the
         // WebView's own, so nothing on it - including a repaint - runs while a call made from it is in flight.
         // Progress arrives as window.onAppBatchProgress, the end as window.onAppBatchDone, both below.
+        let batchRunLabel = '', batchRunHist = '';        // a custom label (and history name) for a Batch Ops or Command run, whose "action" is the whole spec
+        let lastBatch = null;        // the batch that just ran, for "Run again" in its results dialog
         function runBatchAction(action, arr) {
             haptic();
+            lastBatch = { action, pkgs: arr.slice(), label: batchRunLabel, hist: batchRunHist };
             if (!window.AndroidBridge || !window.AndroidBridge.appActionBatch) return;
 
-            document.getElementById('batchConfirmTitle').innerText = (ACTION_LABELS[action] || action) + ' ' + arr.length + ' app' + (arr.length === 1 ? '' : 's');
+            document.getElementById('batchConfirmTitle').innerText = (batchRunLabel || ACTION_LABELS[action] || action) + ' ' + arr.length + ' app' + (arr.length === 1 ? '' : 's');
             document.getElementById('batchConfirmSubtitle').innerText = '';
             document.getElementById('batchProgressText').innerText = '';
             document.getElementById('batchProgressBar').style.width = '0%';
@@ -10258,6 +11192,7 @@ Type any command below (e.g. pm list packages -d)
             if (started !== 'started') {
                 document.getElementById('batchConfirmModal').classList.remove('show');
                 showToast('Another batch action is already running');
+                batchRunLabel = ''; batchRunHist = '';
                 return;
             }
             batchRunActive = true;
@@ -10286,16 +11221,54 @@ Type any command below (e.g. pm list packages -d)
                 return { name: app.name, pkg: r.pkg, output: r.output, success: r.success };
             });
             const success = rows.filter(r => r.success).length, failed = rows.length - success;
-            const label = `${ACTION_LABELS[action] || action} ${rows.length} app${rows.length === 1 ? '' : 's'}` + (stopped ? ' (stopped early)' : '');
-            recordHistory('apps', label, rows.map(r => ({ pkg: r.pkg, name: r.name, action: action, success: r.success })));
+            const label = `${batchRunLabel || ACTION_LABELS[action] || action} ${rows.length} app${rows.length === 1 ? '' : 's'}` + (stopped ? ' (stopped early)' : '');
+            const histAction = batchRunHist || action, shownAction = batchRunHist ? (batchRunHist === 'custom' ? 'Command' : 'App Ops') : action.toUpperCase();
+            batchRunLabel = ''; batchRunHist = '';
+            recordHistory('apps', label, rows.map(r => ({ pkg: r.pkg, name: r.name, action: histAction, success: r.success })));
             showToast(stopped ? `Stopped: ${success} succeeded, ${failed} failed, ${total - rows.length} not run` : `Batch Done: ${success} succeeded, ${failed} failed`);
-            showCommandResults('Batch Results', action.toUpperCase() + ' • ' + rows.length + ' of ' + total + ' apps' + (stopped ? ' (stopped)' : ''), rows);
+            const csvAction = action.startsWith('custom:') ? action.slice(7) : action.startsWith('appops:') ? action.slice(7) : action;
+            const failedPkgs = rows.filter(r => !r.success).map(r => r.pkg);
+            if (lastBatch) lastBatch.failed = failedPkgs;
+            const acts = [{ label: 'Run again', onClick: () => batchRunAgain(false) }];
+            if (failedPkgs.length && failedPkgs.length < (lastBatch ? lastBatch.pkgs.length : Infinity)) acts.push({ label: 'Run again on the ' + failedPkgs.length + ' that failed', onClick: () => batchRunAgain(true) });
+            acts.push({ label: 'Share CSV', onClick: () => batchResultsCsv(shownAction, csvAction, rows) });
+            showCommandResults('Batch Results', shownAction + ' • ' + rows.length + ' of ' + total + ' apps' + (stopped ? ' (stopped)' : ''), rows, acts);
             // "Keep selection" leaves the apps selected (and the panel as it was) so another batch action
             // can run on the same set right away - the floating sheet sits behind the result dialog the
             // same way the single-app sheet does, and is there again once that dialog is dismissed.
             if (!batchKeepSelection) clearBatchSelection();
             setTimeout(loadPackageData, 400);
         };
+
+        // "Run again" in the batch results: the same action on the same apps (or only the ones that failed). Risky ones ask first, as they did the first time.
+        function batchRunAgain(onlyFailed) {
+            const b = lastBatch;
+            if (!b) return;
+            const pkgs = onlyFailed ? (b.failed || []) : b.pkgs;
+            if (!pkgs.length) { showToast('Nothing to run again'); return; }
+            haptic();
+            document.getElementById('commandResultsModal').classList.remove('show');
+            if (!guardPrivilege('Run again')) return;
+            const spec = b.action.startsWith('custom:') || b.action.startsWith('appops:');
+            if (spec) {
+                if (!confirm('Run it again on ' + pkgs.length + ' app' + (pkgs.length === 1 ? '' : 's') + '?\n\n' + (b.action.startsWith('custom:') ? b.action.slice(7) : b.action.slice(7).split(',').join('\n')) + '\n\nThere is no undo.')) return;
+                batchRunLabel = b.label; batchRunHist = b.hist;
+                runBatchAction(b.action, pkgs);
+                return;
+            }
+            if (['freeze', 'uninstall', 'suspend'].includes(b.action)) { requestBatchConfirmation(b.action, pkgs); return; }
+            runBatchAction(b.action, pkgs);
+        }
+
+        // The results of a batch run as a CSV to share: one row per app, with the command (or action) that was run
+        function batchResultsCsv(kind, what, rows) {
+            haptic();
+            const out = [['App', 'Package', 'Result', 'Output', 'Run', 'Command or action']];
+            const ts = new Date().toISOString();
+            rows.forEach(r => out.push([r.name, r.pkg, r.label || (r.success ? 'OK' : 'Failed'), String(r.output || '').trim(), ts, what]));
+            const csv = out.map(r => r.map(csvCell).join(',')).join('\n') + '\n';
+            shareFileViaBridge('batch_' + String(kind).toLowerCase().replace(/[^a-z0-9]+/g, '_') + '_' + ts.slice(0, 10) + '.csv', csv, 'text/csv');
+        }
 
         // Opens Android's App Info screen. Works in every mode, including Read-Only.
         function openAppSettings(pkg) {
@@ -11574,8 +12547,8 @@ Type any command below (e.g. pm list packages -d)
             if (!window.AndroidBridge || !window.AndroidBridge.executeAppAction) { showToast('Needs the app build'); return; }
             let out = '';
             try { out = String(window.AndroidBridge.executeAppAction('launch', pkg) || ''); } catch (e) { out = 'Error: ' + String(e && e.message || e); }
-            const low = out.toLowerCase();
-            const failed = low.includes('error') || low.includes('failed') || low.includes('exception') || low.includes('aborted') || low.includes('no activities');
+            // a failure is a line that starts that way ("Error: ...", "Error type 3", "No activities found"): an app called "Error Log" is not one
+            const failed = /^\s*(error\b|error type\b|exception\b|(java|android)\.[a-z.]*(exception|error)\b|security\s*exception|failure\b|failed\b|aborted\b|status:\s*(failed|error)|warning: activity not started|no activities found|permission denial)/im.test(out);
             if (failed) showToast(name + " can't be opened from here" + (out.trim() ? ': ' + out.trim().split('\n')[0].slice(0, 80) : ''));
             else showToast('Opening ' + name + '…');
         }
@@ -11922,6 +12895,8 @@ Type any command below (e.g. pm list packages -d)
             }
             const bar = document.getElementById('fmSelBar');
             if (bar) bar.style.display = fmSelMode ? '' : 'none';
+            const cz = document.getElementById('fmSelCompressBtn');
+            if (cz) cz.style.display = fmPath.startsWith('content://') ? 'none' : '';     // compressing reads through java.io.File, which added storage is not
             const cnt = document.getElementById('fmSelCount');
             if (cnt) cnt.innerText = fmSelCountText();
             const btn = document.getElementById('fmSelectBtn');
@@ -11929,7 +12904,6 @@ Type any command below (e.g. pm list packages -d)
         }
 
         function fmSelEnter(full) {
-            if (fmPath.startsWith('content://')) { showToast("Multi-select isn't available yet in added storage - use an item's own ⋯ menu"); return; }
             fmSelMode = true;
             if (full) fmSel.add(full);
             fmSelRender();
@@ -12029,6 +13003,15 @@ Type any command below (e.g. pm list packages -d)
             showToast(fmClip.paths.length + ' item' + (fmClip.paths.length === 1 ? '' : 's') + (op === 'mv' ? ' ready to move' : ' ready to copy'));
         }
 
+        function fmClipOne(op) {
+            if (!fmActionTarget) return;
+            haptic();
+            fmClip = { op, paths: [fmActionTarget.full] };
+            closeFmAction();
+            fmClipRender();
+            showToast(op === 'mv' ? 'Ready to move: open the target folder, then tap Paste' : 'Ready to copy: open the target folder, then tap Paste');
+        }
+
         function fmClipClear() { haptic(); fmClip = null; fmClipRender(); }
 
         function fmBatchStart(op, paths, dest, policy) {
@@ -12048,9 +13031,11 @@ Type any command below (e.g. pm list packages -d)
             if (!fmClip) return;
             if (!fmCanWork('Paste')) return;
             // something already in this folder can't be copied or moved onto itself
-            const here = fmNormalizePath(fmPath);
+            const inSaf = fmPath.startsWith('content://');
+            const here = inSaf ? fmPath : fmNormalizePath(fmPath);          // an added-storage folder is a document URI, never folded like a path
             // a move into the folder an item is already in does nothing; a copy there is a duplicate (the dialog below offers Keep both)
-            const paths = fmClip.op === 'mv' ? fmClip.paths.filter(p => fmParent(p) !== here) : fmClip.paths.slice();
+            // (added storage has no parent lookup: the app skips an item that is already in the folder)
+            const paths = fmClip.op === 'mv' && !inSaf ? fmClip.paths.filter(p => p.startsWith('content://') || fmParent(p) !== here) : fmClip.paths.slice();
             if (!paths.length) { showToast('That is already in this folder'); return; }
             const existing = new Set(fmListedNames());
             const clash = paths.filter(p => existing.has(fmBase(p)));
@@ -12141,18 +13126,18 @@ Type any command below (e.g. pm list packages -d)
             const btns = [];
             if (!isDir && !isSaf && /\.(apk|apks|apkm|xapk)$/i.test(name)) btns.push(`<button class="batch-grid-btn accent" onclick="fmInstallFile()">Install</button>`);
             if (!isDir && !isSaf && /\.apk$/i.test(name)) btns.push(`<button class="batch-grid-btn" onclick="fmSignFile()">Sign…</button>`);
-            // Added storage (SAF) can view/edit text in place; the kind-specific viewers, Open With, Share, archive
-            // and compress all stream through java.io.File today and have no SAF-aware path yet.
-            if (!isDir && (!isSaf || kind === 'text' || kind === 'other')) btns.push(`<button class="batch-grid-btn" onclick="fmViewFile()">${!isSaf && ARC_EXT.test(name) ? 'View contents' : 'View'}</button>`);
+            // Added storage (SAF) views and edits text in place; the other viewers, Open with, Share and the archive tools work on a copy kept in the app's cache.
+            if (!isDir) btns.push(`<button class="batch-grid-btn" onclick="fmViewFile()">${!isSaf && ARC_EXT.test(name) ? 'View contents' : 'View'}</button>`);
             if (!isDir && (kind === 'text' || kind === 'other')) btns.push(`<button class="batch-grid-btn accent" onclick="fmEditOpen()">Edit</button>`);
-            if (!isDir && !isSaf) btns.push(`<button class="batch-grid-btn" onclick="fmOpenWith()">Open with…</button>`);
-            if (!isDir && !isSaf) btns.push(`<button class="batch-grid-btn" onclick="fmShareFile()">Share</button>`);
-            if (!isDir && !isSaf && ARC_EXT.test(name)) btns.push(`<button class="batch-grid-btn" onclick="fmExtractFile()">Extract…</button>`);
-            if (!isDir && !isSaf && !ARC_EXT.test(name)) btns.push(`<button class="batch-grid-btn" onclick="fmOpenAsArchive()">Open as archive</button>`);
+            if (!isDir) btns.push(`<button class="batch-grid-btn" onclick="fmOpenWith()">Open with…</button>`);
+            if (!isDir) btns.push(`<button class="batch-grid-btn" onclick="fmShareFile()">Share</button>`);
+            if (!isDir && ARC_EXT.test(name)) btns.push(`<button class="batch-grid-btn" onclick="fmExtractFile()">Extract…</button>`);
+            if (!isDir && !ARC_EXT.test(name)) btns.push(`<button class="batch-grid-btn" onclick="fmOpenAsArchive()">Open as archive</button>`);
             if (!isSaf) btns.push(`<button class="batch-grid-btn" onclick="czOpenOne()">Compress…</button>`);
             btns.push(`<button class="batch-grid-btn" onclick="fmStartDest('rename')">Rename</button>`);
-            if (!isSaf) btns.push(`<button class="batch-grid-btn" onclick="fmStartDest('cp')">Copy</button>`);
-            if (!isSaf) btns.push(`<button class="batch-grid-btn" onclick="fmStartDest('mv')">Move</button>`);
+            // added storage has no path to type: Copy and Move put the item on the clipboard, then Paste goes in the folder you open
+            btns.push(isSaf ? `<button class="batch-grid-btn" onclick="fmClipOne('cp')">Copy</button>` : `<button class="batch-grid-btn" onclick="fmStartDest('cp')">Copy</button>`);
+            btns.push(isSaf ? `<button class="batch-grid-btn" onclick="fmClipOne('mv')">Move</button>` : `<button class="batch-grid-btn" onclick="fmStartDest('mv')">Move</button>`);
             btns.push(`<button class="batch-grid-btn danger" onclick="fmStartDest('rm')">Delete</button>`);
             document.getElementById('fmActionBtns').innerHTML = btns.join('');
             haptic();
@@ -12239,6 +13224,7 @@ Type any command below (e.g. pm list packages -d)
             // .apk / .zip / package files open as a folder tree (nothing is extracted). If one turns out not to be a
             // readable archive, fall back to the plain text viewer below.
             const vk = fmKind(fmActionTarget.name);
+            if (String(fmActionTarget.full).startsWith('content://') && ((vk !== 'text' && vk !== 'other') || ARC_EXT.test(fmActionTarget.name)) && fmNeedLocal(fmViewFile)) return;
             if (vk === 'image') { fmShowImage(); return; }
             if (vk === 'pdf') { fmShowPdf(); return; }
             if (vk === 'font') { fmShowFont(); return; }
@@ -12255,6 +13241,7 @@ Type any command below (e.g. pm list packages -d)
             fmViewText();
         }
         function fmOpenAsArchive() {
+            if (fmNeedLocal(fmOpenAsArchive)) return;
             if (!fmActionTarget) return;
             arcOpen(fmActionTarget.full, r => showToast((r && r.error) || 'Not a readable archive'));
         }
@@ -12369,7 +13356,7 @@ Type any command below (e.g. pm list packages -d)
             const q = (document.getElementById('fmSearchInput').value || '').trim();
             if (!q) { showToast('Type what to search for'); return; }
             if (!window.AndroidBridge || !window.AndroidBridge.fmSearch) { showToast('Needs the app build'); return; }
-            if (!fileAccessGranted() && !isPrivilegedActive) { promptFileAccess('To search the files on this phone, this app needs All-files access.', () => fmSearchGo(), true); return; }
+            if (!fileAccessGranted() && !isPrivilegedActive && !fmSearchRoot().startsWith('content://')) { promptFileAccess('To search the files on this phone, this app needs All-files access.', () => fmSearchGo(), true); return; }
             haptic();
             fmSelExit();
             fmSearchQuery = q;
@@ -12645,14 +13632,38 @@ Type any command below (e.g. pm list packages -d)
         function fmArchiveCancelTap() { haptic(); try { window.AndroidBridge.archiveCancel(); } catch (e) {} const t = document.getElementById('fmBatchText'); if (t) t.innerText = 'Stopping…'; }
         // Extract… on a zip-format file in the file manager: the whole archive, without opening it first
         function fmExtractFile() {
+            if (fmNeedLocal(fmExtractFile)) return;
             if (!fmActionTarget || fmActionTarget.isDir) return;
             const t = fmActionTarget;
             closeFmAction();
-            extractOpen({ src: t.full, entry: '', name: t.name, whole: true, deletable: /^\/(storage|sdcard)\//.test(t.full) });
+            extractOpen({ src: t.full, entry: '', name: t.name, whole: true, deletable: !t.safUri && /^\/(storage|sdcard)\//.test(t.full), parent: t.safUri ? '/storage/emulated/0/Download' : undefined });
         }
 
         // ---- File manager: Open with, Share, the text editor, and viewers for pictures, PDF and fonts ----
+        // Added storage is read through its own grant, but the viewers, Open with, Share and the archive tools read files by path:
+        // the file is copied to the app's cache first (one copy is reused while the original is unchanged) and then handled as usual.
+        let fmStageWant = null;
+        function fmNeedLocal(fn) {
+            const t = fmActionTarget;
+            if (!t || !String(t.full).startsWith('content://')) return false;
+            if (!window.AndroidBridge || !window.AndroidBridge.fmStageSaf) { showToast('Needs the app build'); return true; }
+            let st = 'error';
+            try { st = window.AndroidBridge.fmStageSaf(t.full); } catch (e) { st = 'error'; }
+            if (st !== 'started') { showToast('Could not read this file'); return true; }
+            fmStageWant = { fn, target: t };
+            showToast('Getting the file…');
+            return true;
+        }
+        window.onFmSafStaged = function (r) {
+            const w = fmStageWant;
+            if (!w || !r || r.uri !== w.target.full) return;
+            fmStageWant = null;
+            if (!r.ok) { showToast(r.error || 'Could not read this file'); return; }
+            fmActionTarget = { full: r.path, isDir: false, name: w.target.name, safUri: w.target.full };
+            w.fn();
+        };
         function fmOpenWith() {
+            if (fmNeedLocal(fmOpenWith)) return;
             if (!fmActionTarget || fmActionTarget.isDir) return;
             if (!window.AndroidBridge || !window.AndroidBridge.fmOpenWith) { showToast('Needs the app build'); return; }
             haptic();
@@ -12664,6 +13675,7 @@ Type any command below (e.g. pm list packages -d)
             if (d && d.ok === false) showToast(d.error || 'Could not open the file');
         };
         function fmShareFile() {
+            if (fmNeedLocal(fmShareFile)) return;
             if (!fmActionTarget || fmActionTarget.isDir) return;
             haptic();
             let r = '';
@@ -14897,6 +15909,7 @@ Type any command below (e.g. pm list packages -d)
 
             renderComponentsList();
             document.getElementById('rawContainer').innerText = JSON.stringify(d, null, 2);
+            if (alsIsOpen()) alsRender();
         }
 
         // ---------- Components list ----------
@@ -14959,6 +15972,7 @@ Type any command below (e.g. pm list packages -d)
                 });
             });
             container.innerHTML = html || '<div class="list-empty">No components.</div>';
+            if (alsIsOpen()) alsRender();
         }
 
         // Enable or disable a component (pm enable/disable) and reflect the new state locally.
@@ -15211,6 +16225,7 @@ Type any command below (e.g. pm list packages -d)
             if (inspectorData) inspectorData.appopsRaw = raw;
             appOpsList = parseAppOps(raw);
             renderAppOpsList();
+            if (alsIsOpen()) alsRender();
         }
 
         // ---------- Manifest viewer ----------

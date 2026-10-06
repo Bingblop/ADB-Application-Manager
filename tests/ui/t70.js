@@ -60,12 +60,12 @@ for (let i = 0; i < 40; i++) apps.push({ pkg: 'com.example.app' + i, name: 'App 
   check('   the highlight does not shrink the card or move the grid', await ev(page, () => { const r = Array.from(document.querySelectorAll('.stat-card')).map(c => Math.round(c.getBoundingClientRect().width)); return new Set(r).size === 1; }));
   await page.close();
 
-  // 3) what was chosen last time is lit on the way in
+  // 3) a filter left on last time is not brought back: the app always opens on Total Installed ("all")
   page = await open({ ui_state: JSON.stringify({ appsFilter: 'frozen', showVersions: true, appSort: 'name' }) });
-  check('3. a remembered filter lights its card at start', (await active(page)) === 'frozen:true' && (await pill(page)) === 'frozen', await active(page));
+  check('3. a remembered filter is ignored: the app opens on Total Installed', (await active(page)) === 'all:true' && (await pill(page)) === 'all', await active(page));
   await page.close();
   page = await open({ ui_state: JSON.stringify({ appsFilter: 'patched', showVersions: true, appSort: 'name' }) });
-  check('   a remembered filter with no card lights none', (await active(page)) === 'none', await active(page));
+  check('   a remembered filter with no card is ignored too', (await active(page)) === 'all:true', await active(page));
   await page.close();
 
   // 4) the tip under Export / Share CSV

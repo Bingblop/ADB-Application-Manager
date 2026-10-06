@@ -13,6 +13,8 @@ const { chromium, PAGE } = require('./lib/pw');
       isSystemDarkMode() { return true; }, setSystemBarColor() {}, loadPackages() { return JSON.stringify(a); }, getWorkingMode() { return '{}'; },
       getIconPacks() { return JSON.stringify([{ pkg: 'com.pack.one', label: 'Pack One' }]); },
       loadAppIcons(json, pack) { const l = JSON.parse(json); window.__icon.asked.push(...l); window.__icon.packs.push(pack); const m = {}; l.forEach(p => { if (p !== 'com.example.noicon') m[p] = PNG; }); setTimeout(() => window.onAppIcons(m), 20); return 'started'; },
+      getAppDetails() { return '{}'; },
+      clearAppIconCache() { window.__icon.cleared = (window.__icon.cleared || 0) + 1; return 7; },
       saveAppIcon(pkg, label, pack) { window.__icon.saved.push([pkg, label, pack]); setTimeout(() => window.onAppIconSaved({ ok: true, pkg, path: 'Download/ADB App Manager/Icons/' + label + ' (' + pkg + ').png' }), 10); return 'started'; },
     };
   }, apps);
@@ -33,6 +35,11 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.mouse.move(box.x + 5, box.y + 5); await page.mouse.down(); await page.waitForTimeout(800); await page.mouse.up(); await page.waitForTimeout(200);
   console.log('press and hold saves it:', JSON.stringify(await page.evaluate(() => window.__icon.saved)), '|', await page.locator('#toastMsg').innerText());
   console.log('and does not select the row:', await page.locator('#card_com\\.example\\.one.selected').count());
+  // press and hold on the row (not the icon) opens that app's menu and does not select the row
+  const meta = page.locator('#card_com\\.example\\.two .app-meta'); const mb = await meta.boundingBox();
+  await page.mouse.move(mb.x + 20, mb.y + 10); await page.mouse.down(); await page.waitForTimeout(800); await page.mouse.up(); await page.waitForTimeout(250);
+  console.log('press and hold on the row opens the app menu:', await page.evaluate(() => { const m = document.getElementById('inspectorModal') || document.querySelector('.modal-overlay.show'); return !!(m && m.classList.contains('show')); }), '| row not selected:', await page.locator('#card_com\\.example\\.two.selected').count());
+  await page.evaluate(() => closeInspector()); await page.waitForTimeout(150);
   // Icon pack: the choice sits in Settings under Font, and picking one re-asks for every icon with that pack
   await page.evaluate(() => switchView('prefs')); await page.waitForTimeout(200);
   console.log('Icon pack card follows the Font card:', await page.evaluate(() => document.getElementById('fontCard').nextElementSibling.id), '| options:', JSON.stringify(await page.locator('#iconPackSelect option').allInnerTexts()));
@@ -40,6 +47,9 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.selectOption('#iconPackSelect', 'com.pack.one'); await page.waitForTimeout(300);
   console.log('picking a pack asks again, with the pack:', JSON.stringify(await page.evaluate(() => [window.__icon.asked.slice().sort(), [...new Set(window.__icon.packs.slice(-3))]])));
   console.log('and the choice is kept:', await page.evaluate(() => JSON.parse(window.__kv ? window.__kv.icon_pack : localStorage.getItem('icon_pack'))));
+  await page.evaluate(() => window.__icon.asked.length = 0);
+  await page.click('#iconCacheClearBtn'); await page.waitForTimeout(300);
+  console.log('Clear icon cache asks the app to clear, then redraws:', await page.evaluate(() => [window.__icon.cleared, window.__icon.asked.length > 0]), '|', await page.locator('#toastMsg').innerText());
   console.log('errors:', JSON.stringify(errors));
   await b.close();
 })();

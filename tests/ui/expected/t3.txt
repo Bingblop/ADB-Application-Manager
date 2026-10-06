@@ -1,4 +1,4 @@
-row buttons: App Settings, Menu
+row buttons: App Settings (hold for more), Menu
 frozen app menu shows Enable: true Freeze: false
 perm rows: 4 | tab label: Permissions (4)
 changeable rows: 2

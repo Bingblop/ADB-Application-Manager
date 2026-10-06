@@ -1569,8 +1569,15 @@ public class MainActivity extends Activity {
         boolean changeable = false;
         boolean appOp = false;
         String label = "";
+        String description = "";
+        String group = "";
         try {
             android.content.pm.PermissionInfo pi = pm.getPermissionInfo(permName, 0);
+            try {
+                CharSequence ds = pi.loadDescription(pm);
+                if (ds != null) description = ds.toString();
+            } catch (Throwable ignored) {}
+            if (pi.group != null) group = pi.group;
             int level = pi.protectionLevel;
             int base = level & android.content.pm.PermissionInfo.PROTECTION_MASK_BASE;
             boolean development = (level & android.content.pm.PermissionInfo.PROTECTION_FLAG_DEVELOPMENT) != 0;
@@ -1592,6 +1599,8 @@ public class MainActivity extends Activity {
         out.put("changeable", changeable);
         out.put("appOp", appOp);
         out.put("label", label);
+        out.put("description", description);
+        out.put("group", group);
     }
 
     /** Maps Android 12+ system tonal palettes to the app's color roles (Material 3 dark / light). */
@@ -2856,6 +2865,15 @@ public class MainActivity extends Activity {
     private static final Object optimizeBatchLock = new Object();
     private static boolean optimizeBatchBusy;
     private static volatile boolean optimizeBatchCancel;  // same Stop convention, for Dex optimization (single app or several)
+
+    /** The marker line fmOp's shell commands print when the command itself succeeded: a whole line, so a name or message that merely contains "OK" never counts. */
+    private static final java.util.regex.Pattern FM_OK_LINE = java.util.regex.Pattern.compile("(?m)^FMOK\\s*$");
+    /** What a failed app launch or app action prints, matched at the start of a line: "Error: ...", "Error type 3", an exception, "Warning: Activity not started", "No activities found", a permission denial. A package or app name that happens to contain "error" or "failed" is not a failure. */
+    private static final java.util.regex.Pattern LAUNCH_FAILED = java.util.regex.Pattern.compile(
+            "(?mi)^\\s*(error\\b|error type\\b|exception\\b|(java|android)\\.[a-z.]*(exception|error)\\b|security\\s*exception|failure\\b|failed\\b|aborted\\b|status:\\s*(failed|error)|warning: activity not started|no activities found|permission denial)");
+    private static boolean launchOutputFailed(String out) {
+        return out != null && LAUNCH_FAILED.matcher(out).find();
+    }
 
     private static String fmBatchLabel(String op) {
         return "rm".equals(op) ? "Deleting" : "cp".equals(op) ? "Copying" : "Moving";
@@ -6027,8 +6045,26 @@ public class MainActivity extends Activity {
             }
             if (xp != null) {
                 int ev;
+                StringBuilder backs = new StringBuilder();
                 while ((ev = xp.next()) != org.xmlpull.v1.XmlPullParser.END_DOCUMENT) {
-                    if (ev != org.xmlpull.v1.XmlPullParser.START_TAG || !"item".equals(xp.getName())) continue;
+                    if (ev != org.xmlpull.v1.XmlPullParser.START_TAG) continue;
+                    String tag = xp.getName();
+                    if ("iconback".equals(tag)) {
+                        for (int i = 0; i < xp.getAttributeCount(); i++) {
+                            if (xp.getAttributeName(i).startsWith("img")) backs.append(backs.length() > 0 ? "," : "").append(xp.getAttributeValue(i));
+                        }
+                        continue;
+                    }
+                    if ("iconmask".equals(tag) || "iconupon".equals(tag)) {
+                        if (xp.getAttributeCount() > 0 && !m.containsKey("#" + tag)) m.put("#" + tag, xp.getAttributeValue(0));
+                        continue;
+                    }
+                    if ("scale".equals(tag)) {
+                        String fct = xp.getAttributeValue(null, "factor");
+                        if (fct != null) m.put("#scale", fct);
+                        continue;
+                    }
+                    if (!"item".equals(tag)) continue;
                     String comp = xp.getAttributeValue(null, "component");
                     String dr = xp.getAttributeValue(null, "drawable");
                     if (comp == null || dr == null || dr.isEmpty()) continue;
@@ -6039,6 +6075,7 @@ public class MainActivity extends Activity {
                         if (!m.containsKey(pkg)) m.put(pkg, dr);
                     }
                 }
+                if (backs.length() > 0) m.put("#iconback", backs.toString());
             }
         } catch (Throwable ignored) {}
         iconPackFilters.put(pack, m);
@@ -6067,12 +6104,85 @@ public class MainActivity extends Activity {
     private android.graphics.Bitmap renderAppIcon(String pkg, int px, String pack) throws Exception {
         PackageManager pm = getPackageManager();
         android.graphics.drawable.Drawable d = pack == null || pack.isEmpty() ? null : iconPackDrawable(pack, pkg);
+        boolean themed = d != null;
         if (d == null) d = pm.getApplicationIcon(pm.getApplicationInfo(pkg, PackageManager.MATCH_UNINSTALLED_PACKAGES));
         android.graphics.Bitmap b = android.graphics.Bitmap.createBitmap(px, px, android.graphics.Bitmap.Config.ARGB_8888);
         android.graphics.Canvas c = new android.graphics.Canvas(b);
+        if (!themed && pack != null && !pack.isEmpty()) {
+            Map<String, String> f = iconPackFilter(pack);
+            if (f.containsKey("#iconback") || f.containsKey("#iconmask") || f.containsKey("#iconupon")) {
+                return themedFallbackIcon(pack, pkg, d, px, f);
+            }
+        }
         d.setBounds(0, 0, px, px);
         d.draw(c);
         return b;
+    }
+
+    private android.graphics.drawable.Drawable packDrawableByName(String pack, String name) {
+        try {
+            if (name == null || name.isEmpty()) return null;
+            Resources res = getPackageManager().getResourcesForApplication(pack);
+            int id = res.getIdentifier(name, "drawable", pack);
+            if (id == 0) id = res.getIdentifier(name, "mipmap", pack);
+            return id == 0 ? null : res.getDrawable(id, null);
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    /** An app the pack has no icon for, dressed the way the pack dresses such apps: its iconback, the app icon scaled by the pack's factor and cut by its iconmask, then its iconupon. */
+    private android.graphics.Bitmap themedFallbackIcon(String pack, String pkg, android.graphics.drawable.Drawable app, int px, Map<String, String> f) {
+        android.graphics.Bitmap out = android.graphics.Bitmap.createBitmap(px, px, android.graphics.Bitmap.Config.ARGB_8888);
+        android.graphics.Canvas c = new android.graphics.Canvas(out);
+        String backs = f.get("#iconback");
+        if (backs != null) {
+            String[] names = backs.split(",");
+            android.graphics.drawable.Drawable back = packDrawableByName(pack, names[Math.abs(pkg.hashCode()) % names.length]);
+            if (back != null) {
+                back.setBounds(0, 0, px, px);
+                back.draw(c);
+            }
+        }
+        float factor = 1f;
+        try {
+            if (f.containsKey("#scale")) factor = Float.parseFloat(f.get("#scale"));
+        } catch (Exception ignored) {}
+        if (factor <= 0f || factor > 1.5f) factor = 1f;
+        android.graphics.Bitmap fg = android.graphics.Bitmap.createBitmap(px, px, android.graphics.Bitmap.Config.ARGB_8888);
+        android.graphics.Canvas fc = new android.graphics.Canvas(fg);
+        int inset = Math.round(px * (1f - factor) / 2f);
+        app.setBounds(inset, inset, px - inset, px - inset);
+        app.draw(fc);
+        android.graphics.drawable.Drawable mask = packDrawableByName(pack, f.get("#iconmask"));
+        if (mask != null) {
+            android.graphics.Paint mp = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+            mp.setXfermode(new android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.DST_OUT));
+            android.graphics.Bitmap mb = android.graphics.Bitmap.createBitmap(px, px, android.graphics.Bitmap.Config.ARGB_8888);
+            mask.setBounds(0, 0, px, px);
+            mask.draw(new android.graphics.Canvas(mb));
+            fc.drawBitmap(mb, 0, 0, mp);
+        }
+        c.drawBitmap(fg, 0, 0, null);
+        android.graphics.drawable.Drawable upon = packDrawableByName(pack, f.get("#iconupon"));
+        if (upon != null) {
+            upon.setBounds(0, 0, px, px);
+            upon.draw(c);
+        }
+        return out;
+    }
+
+    /** Clears the cached list icons (every pack); returns how many files went. */
+    private int clearIconCache() {
+        int n = 0;
+        File[] dirs = getFilesDir().listFiles();
+        if (dirs != null) for (File d : dirs) {
+            if (!d.isDirectory() || !d.getName().startsWith("icon_cache")) continue;
+            File[] fs = d.listFiles();
+            if (fs != null) for (File x : fs) if (x.delete()) n++;
+            d.delete();
+        }
+        return n;
     }
 
     /** The cached PNG of {@code pkg}'s icon (in {@code pack} when given) as a data: URI, drawn and cached on first use; null when it has none. */
@@ -7741,6 +7851,14 @@ public class MainActivity extends Activity {
                 // text the user typed; everything below concatenates pkg into a shell command (or a monkey
                 // fallback), so refuse anything that isn't a well-formed package name before it gets there.
                 if (!BackupScripts.isPackageName(pkg)) return "Error: \"" + pkg + "\" is not a valid package name";
+                // Batch App Ops: "appops:OP=mode,OP=mode" sets each op on this app
+                if (action != null && action.startsWith("appops:")) return batchAppOps(action.substring(7), pkg);
+                // Batch Command: "custom:<command>" runs the user's command with $package replaced by this app's package name
+                if (action != null && action.startsWith("custom:")) {
+                    String tpl = action.substring(7).trim();
+                    if (tpl.isEmpty()) return "Error: the command is empty";
+                    return runShellAction(tpl.replace("$package", pkg));
+                }
                 if ("freeze".equals(action)) return runShellAction("pm disable-user " + pkg);
                 if ("unfreeze".equals(action)) {
                     String r1 = runShellAction("pm enable " + pkg);
@@ -7871,6 +7989,32 @@ public class MainActivity extends Activity {
 
         /** Runs one pm/am command through the active privileged shell and reports success from its own exit
          *  status (see {@link #RC_FLAG}), not from sniffing what it printed. */
+        /** One app's share of a Batch App Ops run: spec is "OP=mode,OP=mode" (names and modes are checked before they reach the shell). */
+        private String batchAppOps(String spec, String pkg) {
+            StringBuilder text = new StringBuilder();
+            boolean all = true;
+            int n = 0;
+            for (String pair : spec.split(",")) {
+                pair = pair.trim();
+                if (pair.isEmpty()) continue;
+                int eq = pair.indexOf('=');
+                String op = eq > 0 ? pair.substring(0, eq).trim() : "";
+                String mode = eq > 0 ? pair.substring(eq + 1).trim() : "";
+                if (!op.matches("[A-Z][A-Z0-9_]+") || !mode.matches("allow|ignore|deny|foreground|default")) {
+                    all = false;
+                    text.append(pair).append(": not a valid app op and value\n");
+                    continue;
+                }
+                String r = runShellAction("appops set " + pkg + " " + op + " " + mode);
+                boolean ok = flagOk(r);
+                if (!ok) all = false;
+                text.append(op).append(" -> ").append(mode).append(": ").append(ok ? "ok" : flagText(r).trim()).append("\n");
+                n++;
+            }
+            if (n == 0 && all) return flagged(false, "No app ops to set");
+            return flagged(all, text.toString().trim());
+        }
+
         private String runShellAction(String cmd) {
             String marker = "__RC" + System.nanoTime() + "__";
             String raw = executeShell(cmd + "; echo \"" + marker + ":$?\"");
@@ -7962,8 +8106,7 @@ public class MainActivity extends Activity {
                     String pkg = pkgs.getString(i);
                     String output = executeAppAction(action, pkg);
                     if (output == null) output = "";
-                    String lower = output.toLowerCase();
-                    boolean ok = !(lower.contains("error") || lower.contains("failed") || lower.contains("exception"));
+                    boolean ok = !launchOutputFailed(output) && !output.toLowerCase().contains("exception occurred");
                     if (ok) success++; else failed++;
                     JSONObject row = new JSONObject();
                     row.put("pkg", pkg);
@@ -8166,8 +8309,7 @@ public class MainActivity extends Activity {
                     String keyOut = launchViaAssistant(comp, tried);
                     String kl = keyOut == null ? "" : keyOut.toLowerCase();
                     // `input keyevent` prints nothing on success; a clean run means the assist key was dispatched.
-                    boolean dispatched = !(kl.contains("error") || kl.contains("exception")
-                            || kl.contains("not found") || kl.contains("permission denial"));
+                    boolean dispatched = !launchOutputFailed(keyOut) && !kl.contains("not found");
                     res.put("ok", dispatched);
                     res.put("method", "assistant");
                     res.put("output", dispatched
@@ -9960,9 +10102,14 @@ public class MainActivity extends Activity {
                         FileSearch.Query q = FileSearch.parse(queryText, t0, java.util.TimeZone.getDefault());
                         q.recursive = nested; q.inArchives = archives; q.includeHidden = hidden;
                         List<File> roots = new ArrayList<File>();
+                        List<String> safRoots = new ArrayList<String>();
                         JSONArray ra = new JSONArray(rootsJson);
-                        for (int i = 0; i < ra.length() && i < 20; i++) { String r = fmCanonicalPath(ra.optString(i, "")); if (!r.isEmpty()) roots.add(new File(r)); }
-                        if (roots.isEmpty()) throw new IOException("Choose where to search");
+                        for (int i = 0; i < ra.length() && i < 20; i++) {
+                            String r = fmCanonicalPath(ra.optString(i, ""));
+                            if (r.startsWith("content://")) safRoots.add(r);
+                            else if (!r.isEmpty()) roots.add(new File(r));
+                        }
+                        if (roots.isEmpty() && safRoots.isEmpty()) throw new IOException("Choose where to search");
                         final FileSearch.Limits lim = new FileSearch.Limits();
                         lim.deadlineMs = t0 + 90000;
                         lim.cancelled = searchCancelEarly;                  // a Cancel that came before the walk was set up still counts
@@ -9970,13 +10117,21 @@ public class MainActivity extends Activity {
                         res.put("problems", new JSONArray(q.problems));
                         if (q.isEmpty()) { res.put("ok", true); res.put("hits", new JSONArray()); res.put("empty", true); }
                         else {
-                            List<FileSearch.Hit> hits = FileSearch.run(roots, q, lim, new FileSearch.Progress() {
+                            FileSearch.Progress sprog = new FileSearch.Progress() {
                                 @Override
                                 public boolean onProgress(String folder, int visited, int found) {
                                     try { notifyJs("window.onFmSearchProgress && window.onFmSearchProgress(" + new JSONObject().put("folder", folder).put("visited", visited).put("found", found).toString() + ")"); } catch (Exception ignored) {}
                                     return !lim.cancelled;
                                 }
-                            });
+                            };
+                            List<FileSearch.Hit> hits = roots.isEmpty() ? new ArrayList<FileSearch.Hit>() : FileSearch.run(roots, q, lim, sprog);
+                            if (!safRoots.isEmpty()) {
+                                if (!q.content.isEmpty() || !q.archive.isEmpty()) res.getJSONArray("problems").put("content: and archive: look at file bytes, so they are skipped in added storage (names, sizes, dates and types are searched)");
+                                for (String sr : safRoots) {
+                                    if (lim.cancelled || lim.hitLimit) break;
+                                    searchSaf(Uri.parse(sr), q, lim, hits, sprog);
+                                }
+                            }
                             JSONArray arr = new JSONArray();
                             for (FileSearch.Hit h : hits) {
                                 JSONObject o = new JSONObject().put("path", h.path).put("dir", h.dir).put("size", h.size).put("mtime", h.mtime).put("why", h.why);
@@ -10000,6 +10155,111 @@ public class MainActivity extends Activity {
                 return "error";
             }
             return "started";
+        }
+
+        private static final long SAF_STAGE_MAX = 300L * 1024 * 1024;
+
+        /**
+         * Copies a file in added storage (a SAF document URI) to this app's cache so the viewers, Open with, Share and the archive tools,
+         * which all read through java.io.File, can work on it. Reused while the source's size and time are unchanged. Answer "started" or
+         * "busy"; the end arrives as window.onFmSafStaged({ok, uri, path, name} | {ok:false, uri, error}).
+         */
+        @JavascriptInterface
+        public String fmStageSaf(final String uriString) {
+            if (!submitJob(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject res = new JSONObject();
+                    try {
+                        res.put("uri", uriString);
+                        Uri uri = Uri.parse(uriString);
+                        String name = safDisplayName(uriString);
+                        if (name.isEmpty()) name = "file";
+                        long size = -1, mtime = 0;
+                        android.database.Cursor c = getContentResolver().query(uri, new String[]{android.provider.DocumentsContract.Document.COLUMN_SIZE, android.provider.DocumentsContract.Document.COLUMN_LAST_MODIFIED}, null, null, null);
+                        if (c != null) {
+                            try {
+                                if (c.moveToFirst()) { size = c.isNull(0) ? -1 : c.getLong(0); mtime = c.isNull(1) ? 0 : c.getLong(1); }
+                            } finally {
+                                c.close();
+                            }
+                        }
+                        if (size > SAF_STAGE_MAX) throw new IOException("This file is over 300 MB, too big to open from added storage here");
+                        File dir = new File(getCacheDir(), "saf_stage");
+                        if (!dir.isDirectory()) dir.mkdirs();
+                        File f = new File(dir, Integer.toHexString(uriString.hashCode()) + "_" + name.replaceAll("[\\\\/:*?\"<>|]", "_"));
+                        if (!(f.isFile() && mtime > 0 && f.lastModified() == mtime && (size < 0 || f.length() == size))) {
+                            java.io.InputStream in = getContentResolver().openInputStream(uri);
+                            if (in == null) throw new IOException("Could not read this file");
+                            FileOutputStream out = new FileOutputStream(f);
+                            try {
+                                byte[] buf = new byte[65536];
+                                long total = 0;
+                                int n;
+                                while ((n = in.read(buf)) >= 0) {
+                                    out.write(buf, 0, n);
+                                    total += n;
+                                    if (total > SAF_STAGE_MAX) throw new IOException("This file is over 300 MB, too big to open from added storage here");
+                                }
+                            } finally {
+                                try { in.close(); } catch (Exception ignored) {}
+                                out.close();
+                            }
+                            if (mtime > 0) f.setLastModified(mtime);
+                        }
+                        res.put("ok", true);
+                        res.put("path", f.getAbsolutePath());
+                        res.put("name", name);
+                    } catch (Throwable t) {
+                        try { res.put("ok", false); res.put("error", errMsg(t)); } catch (Exception ignored) {}
+                    }
+                    notifyJs("window.onFmSafStaged && window.onFmSafStaged(" + res.toString() + ")");
+                }
+            })) return "error";
+            return "started";
+        }
+
+        /** Walks an added-storage (SAF) folder through DocumentsContract and adds what matches the listing parts of the query. */
+        private void searchSaf(Uri root, FileSearch.Query q, FileSearch.Limits lim, List<FileSearch.Hit> hits, FileSearch.Progress progress) {
+            java.util.ArrayDeque<Object[]> todo = new java.util.ArrayDeque<Object[]>();
+            todo.add(new Object[]{root, 0});
+            Uri tree = safTreeUri(root);
+            while (!todo.isEmpty() && !lim.cancelled && !lim.hitLimit) {
+                Object[] cur = todo.poll();
+                Uri dir = (Uri) cur[0];
+                int depth = (Integer) cur[1];
+                if (System.currentTimeMillis() > lim.deadlineMs) { lim.hitLimit = true; break; }
+                android.database.Cursor c = null;
+                try {
+                    Uri kids = android.provider.DocumentsContract.buildChildDocumentsUriUsingTree(tree, safCurrentDocId(dir));
+                    c = getContentResolver().query(kids, new String[]{
+                            android.provider.DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                            android.provider.DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                            android.provider.DocumentsContract.Document.COLUMN_MIME_TYPE,
+                            android.provider.DocumentsContract.Document.COLUMN_SIZE,
+                            android.provider.DocumentsContract.Document.COLUMN_LAST_MODIFIED}, null, null, null);
+                    if (c == null) continue;
+                    while (c.moveToNext()) {
+                        String name = c.getString(1);
+                        if (name == null) continue;
+                        lim.visited++;
+                        boolean isDir = android.provider.DocumentsContract.Document.MIME_TYPE_DIR.equals(c.getString(2));
+                        Uri child = android.provider.DocumentsContract.buildDocumentUriUsingTree(tree, c.getString(0));
+                        if (!q.includeHidden && name.startsWith(".")) continue;
+                        if (FileSearch.matchesListing(q, name, c.isNull(3) ? 0 : c.getLong(3), c.isNull(4) ? 0 : c.getLong(4), isDir)) {
+                            FileSearch.Hit h = new FileSearch.Hit();
+                            h.path = child.toString(); h.dir = isDir; h.size = c.isNull(3) ? 0 : c.getLong(3); h.mtime = c.isNull(4) ? 0 : c.getLong(4); h.why = "name";
+                            hits.add(h);
+                            if (hits.size() >= lim.maxResults) { lim.hitLimit = true; break; }
+                        }
+                        if (isDir && q.recursive && depth < lim.maxDepth && lim.visited < lim.maxVisited) todo.add(new Object[]{child, depth + 1});
+                    }
+                } catch (Throwable ignored) {
+                } finally {
+                    if (c != null) c.close();
+                }
+                if (progress != null && !progress.onProgress(safDisplayName(dir.toString()), lim.visited, hits.size())) lim.cancelled = true;
+            }
         }
 
         /** Stops the running search. */
@@ -10512,6 +10772,97 @@ public class MainActivity extends Activity {
             } catch (Throwable t) { return errMsg(t); }
         }
 
+        /** The child of the SAF folder {@code parent} called {@code name}, or null. */
+        private Uri safChildNamed(Uri parent, String name) {
+            try {
+                Uri tree = safTreeUri(parent);
+                Uri kids = android.provider.DocumentsContract.buildChildDocumentsUriUsingTree(tree, safCurrentDocId(parent));
+                android.database.Cursor c = getContentResolver().query(kids, new String[]{
+                        android.provider.DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                        android.provider.DocumentsContract.Document.COLUMN_DISPLAY_NAME}, null, null, null);
+                if (c == null) return null;
+                try {
+                    while (c.moveToNext()) {
+                        if (name.equals(c.getString(1))) return android.provider.DocumentsContract.buildDocumentUriUsingTree(tree, c.getString(0));
+                    }
+                } finally {
+                    c.close();
+                }
+            } catch (Throwable ignored) {}
+            return null;
+        }
+
+        private String safDisplayName(String ref) {
+            if (!ref.startsWith("content://")) return new File(ref).getName();
+            try {
+                android.database.Cursor c = getContentResolver().query(Uri.parse(ref), new String[]{android.provider.DocumentsContract.Document.COLUMN_DISPLAY_NAME}, null, null, null);
+                if (c != null) {
+                    try {
+                        if (c.moveToFirst()) return c.getString(0);
+                    } finally {
+                        c.close();
+                    }
+                }
+            } catch (Throwable ignored) {}
+            return "";
+        }
+
+        /** A cp / mv / rm batch where some path, or the destination, is added storage (a SAF document URI): one item at a time through fmOpSaf, with the name rule applied here (replace deletes the clash first, skip leaves it, keep lets the provider number the copy). Fills {@code res} like the shell batch. */
+        private void runSafBatch(String op, List<String> paths, String dest, String policyName, JSONObject res) {
+            JSONArray failed = new JSONArray();
+            int done = 0, skipped = 0;
+            boolean cancelled = false;
+            Runnable hook = new Runnable() { @Override public void run() { fmBatchCancel = true; } };
+            String title = fmBatchLabel(op) + " " + paths.size() + (paths.size() == 1 ? " item" : " items");
+            JobService.begin(MainActivity.this, title, hook);
+            try {
+                for (int i = 0; i < paths.size(); i++) {
+                    if (fmBatchCancel) { cancelled = true; break; }
+                    String q = paths.get(i);
+                    String text = fmBatchLabel(op) + " " + (i + 1) + " of " + paths.size() + "…";
+                    notifyJs("window.onFmBatchProgress && window.onFmBatchProgress(" + JSONObject.quote(text) + ")");
+                    JobService.progress(MainActivity.this, text, paths.size() > 0 ? (i * 100) / paths.size() : 0);
+                    try {
+                        if (!"rm".equals(op)) {
+                            if (q.equals(dest)) throw new IOException("Can't put a folder inside itself");
+                            if (q.startsWith("content://") && dest.startsWith("content://")) {
+                                try {
+                                    String sd = android.provider.DocumentsContract.getDocumentId(Uri.parse(q));
+                                    String dd = android.provider.DocumentsContract.getDocumentId(Uri.parse(dest));
+                                    if (safTreeUri(Uri.parse(q)).equals(safTreeUri(Uri.parse(dest))) && (dd.equals(sd) || dd.startsWith(sd + "/"))) throw new IOException("Can't put a folder inside itself");
+                                } catch (IllegalArgumentException ignored) {}
+                            }
+                            if (!dest.startsWith("content://") && (dest.equals(q) || dest.startsWith(q + "/"))) throw new IOException("Can't put a folder inside itself");
+                            String name = safDisplayName(q);
+                            if (dest.startsWith("content://") && !name.isEmpty()) {
+                                Uri clash = safChildNamed(Uri.parse(dest), name);
+                                if (clash != null) {
+                                    if (clash.equals(Uri.parse(q))) { skipped++; continue; }
+                                    if ("skip".equals(policyName)) { skipped++; continue; }
+                                    if (!"keep".equals(policyName)) android.provider.DocumentsContract.deleteDocument(getContentResolver(), clash);
+                                }
+                            }
+                        }
+                        String err = fmOpSaf(op, q, dest);
+                        if (err.isEmpty()) done++;
+                        else failed.put(new JSONObject().put("p", q).put("error", err.length() > 200 ? err.substring(0, 200) : err));
+                    } catch (Throwable t) {
+                        try { failed.put(new JSONObject().put("p", q).put("error", errMsg(t))); } catch (Exception ignored) {}
+                    }
+                }
+                res.put("total", paths.size());
+                res.put("done", done);
+                res.put("skipped", skipped);
+                res.put("cancelled", cancelled);
+                res.put("failed", failed);
+                res.put("ok", failed.length() == 0 && !cancelled);
+            } catch (Throwable t) {
+                try { res.put("ok", false); res.put("error", errMsg(t)); } catch (Exception ignored) {}
+            } finally {
+                JobService.end(MainActivity.this, hook, fmBatchDoneText(op, res));
+            }
+        }
+
         /** File op: mkdir|touch|rm|cp|mv. For rm, dirs are removed recursively. */
         @JavascriptInterface
         public String fmOp(String op, String a, String b) {
@@ -10534,15 +10885,15 @@ public class MainActivity extends Activity {
                 if ("standard".equals(resolveExecMode())) { res.put("ok", false); res.put("output", "needs ADB, Shizuku or Root (or All-files access for storage)"); return res.toString(); }
                 String qa = BackupScripts.quote(a);
                 String cmd;
-                if ("mkdir".equals(op)) cmd = "mkdir -p " + qa + " && echo OK";
-                else if ("touch".equals(op)) cmd = "touch " + qa + " && echo OK";
-                else if ("rm".equals(op)) cmd = "rm -rf " + qa + " && echo OK";
-                else if ("cp".equals(op)) cmd = "cp -r " + qa + " " + BackupScripts.quote(b) + " && echo OK";
+                if ("mkdir".equals(op)) cmd = "mkdir -p " + qa + " && echo FMOK";
+                else if ("touch".equals(op)) cmd = "touch " + qa + " && echo FMOK";
+                else if ("rm".equals(op)) cmd = "rm -rf " + qa + " && echo FMOK";
+                else if ("cp".equals(op)) cmd = "cp -r " + qa + " " + BackupScripts.quote(b) + " && echo FMOK";
                 else if ("mv".equals(op)) cmd = "if [ -e " + BackupScripts.quote(b) + " ] && [ ! -d " + BackupScripts.quote(b) + " ]; then echo 'A file or folder with that name is already there'; else mv " + qa + " " + BackupScripts.quote(b) + " && echo OK; fi";
                 else { res.put("ok", false); res.put("output", "unknown op"); return res.toString(); }
                 String out = executeShell(cmd);
-                res.put("ok", out != null && out.contains("OK"));
-                res.put("output", out != null ? out.trim() : "");
+                res.put("ok", out != null && FM_OK_LINE.matcher(out).find());
+                res.put("output", out != null ? out.replaceAll("(?m)^FMOK\\s*$", "OK").trim() : "");
             } catch (Exception e) {
                 try { res.put("ok", false); res.put("output", "Error: " + e.getMessage()); } catch (Exception ignored) {}
             }
@@ -10628,6 +10979,14 @@ public class MainActivity extends Activity {
                         if (!"rm".equals(op)) {
                             dest = fmCanonicalPath(destDir == null ? "" : destDir.trim());
                             if (dest.isEmpty() || dest.equals("/")) throw new IOException("Choose a destination folder");
+                        }
+                        boolean anySaf = dest.startsWith("content://");
+                        for (String q : paths) if (q.startsWith("content://")) anySaf = true;
+                        if (anySaf) {
+                            runSafBatch(op, paths, dest, policyName, res);
+                            synchronized (fmBatchLock) { fmBatchBusy = false; }
+                            notifyJs("window.onFmBatchDone && window.onFmBatchDone(" + res.toString() + ")");
+                            return;
                         }
                         JSONArray failed = new JSONArray();
                         List<String> todo = new ArrayList<String>();
@@ -11874,6 +12233,12 @@ public class MainActivity extends Activity {
                 return "error";
             }
             return "started";
+        }
+
+        /** Deletes the cached list icons; returns how many files were removed. */
+        @JavascriptInterface
+        public int clearAppIconCache() {
+            return clearIconCache();
         }
 
         /** Installed icon packs as JSON [{pkg, label}]. */

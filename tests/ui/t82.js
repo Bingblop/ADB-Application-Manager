@@ -88,7 +88,7 @@ const FILES = {
 
   // ---------------------------------------------------------------- 3) + File
   page = await open();
-  check('3. the toolbar has "＋ Folder" and "＋ File" side by side', await ev(page, () => { const t = Array.from(document.querySelectorAll('#fmTopCard .batch-sheet-tools button')).map(x => x.innerText.trim()); return t.indexOf('＋ File') === t.indexOf('＋ Folder') + 1 && t.indexOf('Up') >= 0; }));
+  check('3. the toolbar has "＋ Folder" and "＋ File" side by side, and no Up button (the ".." row does that)', await ev(page, () => { const t = Array.from(document.querySelectorAll('#fmTopCard .batch-sheet-tools button')).map(x => x.innerText.trim()); return t.indexOf('＋ File') === t.indexOf('＋ Folder') + 1 && t.indexOf('Up') < 0; }));
   await ev(page, () => fmNewFile()); await sleep(40);
   check('   it asks for a name', (await modalOpen(page, 'fmActionModal')) && (await ev(page, () => document.getElementById('fmActionName').innerText)) === 'New file');
   for (const [bad1, why] of [['', /Enter a name/], ['a/b.txt', /slash/], ['..', /not allowed/], ['a.txt', /already used/]]) {
