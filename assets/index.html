@@ -7996,10 +7996,10 @@ Type any command below (e.g. pm list packages -d)
                     const pill = document.getElementById('versionTogglePill');
                     if (pill) pill.classList.toggle('active', showListVersions);
                 }
-                if (st.appsFilter) {
-                    currentFilter = st.appsFilter;
-                    document.querySelectorAll('.filter-pill').forEach(p => p.classList.toggle('active', p.getAttribute('data-filter') === currentFilter));
-                }
+                // The Apps tab always opens on "Total Installed" (the "all" filter) after the app was gone from memory: a filter left on
+                // last time is not brought back, so the whole list is what you see first.
+                currentFilter = 'all';
+                document.querySelectorAll('.filter-pill').forEach(p => p.classList.toggle('active', p.getAttribute('data-filter') === currentFilter));
                 if (st.uad) {
                     if (Array.isArray(st.uad.removal)) uadFilters.removal = new Set(st.uad.removal.filter(r => UAD_LEVEL_ORDER[r] !== undefined));
                     if (st.uad.list) uadFilters.list = st.uad.list;
