@@ -19,6 +19,16 @@ it works; write down what you saw when it does not.
 - [ ] About, **Help Guide** (next to GitHub): opens at once with no network, the contents list shows six groups, tapping a topic scrolls to it, **Contents** at the top and **Back to the contents** at the end of a topic return to the list, the search box keeps only the topics that hold every word, Back closes the guide, opening it again continues where you were.
 - [ ] Bottom sheets show a small grab handle; scrollbars are thin; a tab fades in when opened. Nothing is cut off or moved.
 
+**The app menu and Settings**
+
+- [ ] Open an app's menu: the pills are Permissions, App Ops, Activities, Components, Manifest, Raw, Features, Configurations, Signatures, Libraries (swipe the row sideways; the picked pill slides into view). No "Copy version" chip. **Activities** lists the screens (LAUNCH, DISABLE / ENABLE); **Components** lists receivers, services (STOP) and providers.
+- [ ] **Features**: a game shows OpenGL ES with "on this phone"; the Not on this phone chip lists what the phone lacks. **Configurations**: minimum / target / compiled Android versions are right for an app you know. **Signatures**: v2 / v3 are lit for a recent app; the SHA-256 matches what `apksigner verify --print-certs` (or the app's maker) says; tapping it copies it. **Libraries**: a Flutter or game app lists its .so files under arm64-v8a.
+- [ ] Uninstall, Clear Data and Rem Updates in the app menu ask first (Cancel changes nothing); Freeze and the others do not. The batch Freeze question reads "Confirm Freeze Selected Apps".
+- [ ] Settings, last card: **Trim Caches in All Applications**. Without a working mode it shows a padlock. With one: the question, then "Trimming caches…", then a report with free space before and after (a heavily used phone frees a few hundred MB or more). Apps, logins and files are intact.
+- [ ] The permissions sheet has **Install unknown apps** (Allow opens Android's screen, or grants at once with a working mode). Working Modes, Root: with Magisk / KernelSU set to deny this app the tag reads DENIED and the badge says "not ready"; after allowing it and re-selecting Root it reads ACTIVE.
+- [ ] The small **?** on the first card of a tab (Debloater, Installer, Files, Connected Devices, Settings, ...) opens the Help Guide at that tab's topic.
+- [ ] **Connected Devices**: Uninstall a system app on a watch that refuses with "only root can delete system app" (a Samsung watch, for example): the app is removed anyway and `/data/local/tmp` has no `adbam_unin_*.jar` left (`adb shell ls /data/local/tmp`). Reinstall brings it back.
+
 **APK variants (needs one 32-bit phone and one 64-bit phone)**
 
 - [ ] The release has three APKs and a `SHA256SUMS.txt` that lists them. `-arm64-v8a` installs on the 64-bit phone and its working modes work as before.

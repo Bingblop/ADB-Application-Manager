@@ -49,7 +49,7 @@ recolor the whole system · run a real terminal with AI coding agents — **no c
 | **Apps** | Search, sort and filter every package · freeze, suspend, uninstall (even system apps), clear data, reinstall · batch actions · saved lists · profiles you can share to another phone · CSV export |
 | **Installer** | `.apk`, `.apks`, `.apkm`, `.xapk` (with OBB) · every `pm install` flag · splits that fit your phone pre-ticked · optional VirusTotal check |
 | **Updates & stores** | Update the app itself, Galaxy Store apps, and open-source apps from GitHub, Codeberg, F-Droid and IzzyOnDroid · ShizuStore, GitHub, F-Droid and Orion catalogs |
-| **Inspector** | Permissions, App Ops, activities, services, receivers, providers (enable or disable any) · decoded manifest · launch unexported activities |
+| **Inspector** | Ten tabs per app: permissions, App Ops, activities, components (services, receivers, providers; enable or disable any) · decoded manifest · features, configurations (screens, Android versions), signatures (v1-v3.1, certificates, SHA-256) and libraries (native .so by CPU) · launch unexported activities |
 | **Files** | Privileged file manager · open APKs and archives (zip, 7z, rar, tar) without extracting · edit, sign, compare · add an SD card or USB drive |
 | **Command-Line Interface** | Terminal with three shells (sandbox, working mode, **your own Termux**) and AI agents · classic ADB Console with cheat sheet and Rish shell |
 | **Hidden Settings & Overlays** | Edit Android's settings tables · Material You color and style · switch overlays on and off |
@@ -57,6 +57,7 @@ recolor the whole system · run a real terminal with AI coding agents — **no c
 | **Help Guide** | A complete guide for beginners inside the app (About tab): table of contents, search, every tab explained, recipes, safety, troubleshooting |
 | **Monitoring** | Task Manager (processes, CPU, RAM, GPU, battery, network) · color-coded Logcat for one app · Device Specs |
 | **Quick actions** | Quick Settings tiles and a home-screen widget |
+| **Free up space** | One button in Settings runs `pm trim-caches 128G` to clear every app's cache, with a plain explanation of what is and is not touched |
 | **Make it yours** | Material 3 and Material You themes · light, dark, schedule, pure black · **Expressive Animations** · 14 languages · custom font · reorder or hide tabs |
 
 ## Install in 30 seconds

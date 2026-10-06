@@ -797,7 +797,8 @@ switch that will not change is reported instead of hidden. **Default** leaves it
 Tap **⋯** on any app for its version, install and update dates, any available update, sizes (APK, data,
 cache; data and cache need *usage access*, which the app can grant through ADB/Shizuku/Root) and actions:
 Launch, Force Stop, Freeze/Enable, Suspend/Unsuspend, Clear Data, Uninstall, Reinstall, Remove Updates, App
-Info and **Extract APK** (a `.apk`, or an `.apks` bundle for split apps, saved to Downloads). Five tabs follow:
+Info and **Extract APK** (a `.apk`, or an `.apks` bundle for split apps, saved to Downloads). **Uninstall**, **Clear Data** and
+**Rem Updates** ask first. Ten tabs follow (the row scrolls sideways):
 
 **Uninstalling a system app for one user without root** (`pm uninstall --user 0` answering "only root can delete
 system app for a particular user"): the app automatically retries through a direct Binder call to
@@ -808,11 +809,31 @@ non-system app), and needs a working mode that isn't already Root (Root removes 
 
 - **Permissions**: searchable, filterable; toggle runtime and development permissions
 - **App Ops**: Allow / Foreground / Ignore / Deny / Reset per op, plus setting any op by name
-- **Components**: all activities (exported and unexported) with **Launch**, plus services. Unexported
+- **Activities**: all activities (exported and unexported) with **Launch**, **Enable / Disable** and an exported filter. Unexported
   activities launch through ADB / Shizuku / Root; a launch that goes through just opens the activity, and Android's answer is
   shown only if it refuses
+- **Components**: receivers, services (with **Stop**) and providers, each with its exported / enabled / permission state
 - **Manifest**: decoded `AndroidManifest.xml` with search, copy, share and save to Downloads
 - **Raw**: the full details JSON
+- **Features**: the `uses-feature` list, each marked required or optional and *on this phone* or not (the OpenGL ES version is
+  compared with the phone's); filters for Required, Optional and Not on this phone
+- **Configurations**: `uses-configuration` (touch screen, keyboard, navigation, input features, OpenGL ES), the screen sizes and
+  densities the app supports, minimum / target / compile Android version, hardware acceleration, large heap, and this phone's CPU types
+- **Signatures**: the APK signature schemes present (v1 from META-INF, v2 / v3 / v3.1 from the APK Signing Block) and, for each signer
+  (and the earlier certificates after a key rotation), the subject, issuer, serial number, validity, signature algorithm, public key and
+  the MD5, SHA-1 and SHA-256 fingerprints (tap one to copy)
+- **Libraries**: `uses-library` / `uses-static-library` / `uses-native-library` from the manifest, the shared library files linked
+  into the app, and the native `.so` files of the base APK and its splits by CPU type
+
+The four last tabs are read in one go by the bridge call `getAppExtras(pkg)` (`AppExtras.java` does the decoding; each part is read on
+its own, so one that cannot be read does not blank the others).
+
+**Trim Caches in All Applications** (the last card of Settings) runs `pm trim-caches 128G` through the working mode, off the page's
+thread, and reports the free space of `/data` before and after. Only caches are cleared.
+
+**Uninstalling on a connected device** follows the same steps: `pm uninstall --user 0`, then, for the root-only refusal, the helper
+`assets/uninstall_runner.jar` (the `SystemlessUninstallRunner` classes only, built by `build.sh`) is pushed to `/data/local/tmp` of the
+device, run with `app_process`, and deleted again (`DeviceUninstall.java`).
 
 App rows show only **App Settings** and the **⋯ menu** (Force Stop lives in the menu and the batch sheet), so the list stays clean.
 

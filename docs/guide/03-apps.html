@@ -149,12 +149,12 @@
 </section>
 
 <section id="apps-menu" data-title="The app menu (one app)" data-group="The tabs">
-  <p class="hg-lead">The app menu is a sheet with everything about one app: its details, buttons to freeze, stop or remove it, and tabs for its permissions, app ops, components and manifest.</p>
+  <p class="hg-lead">The app menu is a sheet with everything about one app: its details, buttons to freeze, stop or remove it, and tabs for its permissions, app ops, activities, components, manifest, features, configurations, signatures and libraries.</p>
   <p><b>Where to find it:</b> in the <a href="#tab-apps">Application Manager</a>, tap the three-dot button on an app's row, or press and hold the row for about half a second (not on the icon, a button or the checkbox). Tap the X at the top right, or tap outside the sheet, to close it.</p>
 
   <h4>Before you start</h4>
   <ul>
-    <li>Reading works in every mode: the header, the permission list, components, the manifest and the Raw tab.</li>
+    <li>Reading works in every mode: the header, the permission list, activities, components, the manifest, the Raw tab, and the Features, Configurations, Signatures and Libraries tabs.</li>
     <li>Changing something needs a <a href="#modes-overview">working mode</a>. Buttons that need one show a small padlock symbol or open the "Working Mode Required" box. The table at the end of this page says which is which.</li>
     <li>The menu stays open after an action button such as Freeze runs, so you can do several things in a row. Its buttons update by themselves: Freeze turns into Enable, and so on.</li>
   </ul>
@@ -162,7 +162,7 @@
   <h4>The header</h4>
   <ul>
     <li><b>Name and package name.</b> The package name is the app's unique ID. Under them is the version, for example "Version 1.2.3 (12345)": the name people see, then the build number in brackets.</li>
-    <li><b>Copy package, Copy version, Copy name.</b> Three small chips that copy that text to the clipboard.</li>
+    <li><b>Copy package, Copy name.</b> Two small chips that copy that text to the clipboard.</li>
     <li><b>Dates.</b> "Installed (date)" and, when it is different, "Updated (date)".</li>
     <li><b>Sizes.</b> A line like "APK 12 MB (3 parts)", then Data and Cache sizes, with dots between the pieces. The APK is the app's file; "3 parts" means a split app. Data and Cache need <b>usage access</b>, a special Android permission. Until it is on, the line ends with a <b>Show data usage</b> link. Tap it and the app turns usage access on through your working mode, or opens Android's settings screen where you switch it on yourself.</li>
     <li><b>Update line.</b> If the <a href="#tab-updates">App Updater</a> has found a newer version, a line says so and shows a button. <b>Update</b> goes to the App Updater tab and starts the update (it needs a working mode). <b>Release</b> opens the release page, when the newest release has no file for your phone. <b>Download</b> shows up only for this app itself and takes you to its own update card. The App Updater tab must be switched on.</li>
@@ -190,9 +190,9 @@
       <tr><td><b>Force Stop</b></td><td>Ends the app now. It may start again later. Run as <code>am force-stop</code>.</td><td>Yes</td></tr>
       <tr><td><b>Freeze</b> / <b>Enable</b></td><td>Freeze disables the app. Enable switches it on again and also unsuspends it. Freeze shows for enabled apps, Enable for frozen ones.</td><td>Yes</td></tr>
       <tr><td><b>Suspend</b> / <b>Unsuspend</b></td><td>Pauses the app so it cannot be opened, or lifts that. Not offered for an uninstalled app.</td><td>Yes</td></tr>
-      <tr><td><b>Clear Data</b></td><td>Deletes the app's saved data and settings (<code>pm clear</code>). Cannot be undone.</td><td>Yes</td></tr>
-      <tr><td><b>Uninstall</b> / <b>Reinstall</b></td><td>Uninstall removes the app for you. Reinstall (<code>pm install-existing</code>) appears for an UNINSTALLED system app and brings it back.</td><td>Yes</td></tr>
-      <tr><td><b>Rem Updates</b></td><td>"Remove updates": takes the updates off a system app so it goes back to the version it shipped with (<code>pm uninstall-system-updates</code>). Use it only on a system app that has updates. It runs at once, and to get the updates back you update the app again from its store.</td><td>Yes</td></tr>
+      <tr><td><b>Clear Data</b></td><td>Deletes the app's saved data and settings (<code>pm clear</code>). Asks first. Cannot be undone.</td><td>Yes</td></tr>
+      <tr><td><b>Uninstall</b> / <b>Reinstall</b></td><td>Uninstall removes the app for you (it asks first). Reinstall (<code>pm install-existing</code>) appears for an UNINSTALLED system app and brings it back.</td><td>Yes</td></tr>
+      <tr><td><b>Rem Updates</b></td><td>"Remove updates": takes the updates off a system app so it goes back to the version it shipped with (<code>pm uninstall-system-updates</code>). Use it only on a system app that has updates. It asks first, and to get the updates back you update the app again from its store.</td><td>Yes</td></tr>
       <tr><td><b>App Info</b></td><td>Opens Android's own App info screen for the app.</td><td>No</td></tr>
       <tr><td><b>Extract APK</b></td><td>Copies the app's installer file to <code>Download/ADB App Manager/APKs</code> as <code>Name_version.apk</code>. A split app becomes one <code>.apks</code> bundle instead, which the <a href="#tab-installer">APK Installer</a> tab can install. A message names the saved file. On Android 8 and 9 the file goes to the app's own storage instead.</td><td>No</td></tr>
       <tr><td><b>Backup</b></td><td>Closes the menu and opens the backup box for this app. See <a href="#apps-backup">Backups and restore</a>.</td><td>Only to create the backup</td></tr>
@@ -201,10 +201,10 @@
     </tbody>
   </table>
   <p>After a button runs, a short message says "Action executed". If Android refuses, you see "Action reported a problem" and a <b>Command Result</b> box with Android's own words. Nothing was changed in that case.</p>
-  <div class="hg-danger"><b>Risky.</b> In this menu, <b>Uninstall</b>, <b>Clear Data</b>, <b>Rem Updates</b> and the other buttons run at once. There is no "Are you sure?" box. Check the app name at the top before you tap. Freeze, Suspend and Enable can be undone with their opposite button. Clear Data cannot be undone, and neither can Uninstall for an app you installed yourself.</div>
+  <div class="hg-danger"><b>Risky.</b> <b>Uninstall</b>, <b>Clear Data</b> and <b>Rem Updates</b> ask "Are you sure?" first, with a sentence that says what is lost: the question names the app, so check the name. Tap <b>OK</b> to go on or <b>Cancel</b> to stop with nothing changed. The other buttons (Launch, Force Stop, Freeze, Enable, Suspend, Unsuspend, Reinstall) run at once. Freeze, Suspend and Enable can be undone with their opposite button. Clear Data cannot be undone, and neither can Uninstall for an app you installed yourself.</div>
 
-  <h4>The five tabs under the buttons</h4>
-  <p>A row of pills switches between <b>Permissions</b>, <b>App Ops</b>, <b>Components</b>, <b>Manifest</b> and <b>Raw</b>. The first two show a count in brackets.</p>
+  <h4>The ten tabs under the buttons</h4>
+  <p>A row of pills switches between <b>Permissions</b>, <b>App Ops</b>, <b>Activities</b>, <b>Components</b>, <b>Manifest</b>, <b>Raw</b>, <b>Features</b>, <b>Configurations</b>, <b>Signatures</b> and <b>Libraries</b>. The row is wider than the screen: swipe it sideways to reach the last ones. Most pills show a count in brackets. The tab you pick slides into view. The first six are about what the app may do and is made of; the last four are about what it needs and who made it, and they only read, so they work in every mode.</p>
 
   <h5>Permissions</h5>
   <p>A permission is something an app asks Android to let it do, such as use the camera. The tab lists everything the app declares. Type in the search box to find one, and use the chips <b>All</b>, <b>Granted</b>, <b>Denied</b>, <b>Changeable</b> and <b>Install-time</b> to narrow the list. Changeable permissions are listed first.</p>
@@ -227,19 +227,25 @@
   </ul>
   <p>Under the list, a field "Other op, e.g. RUN_ANY_IN_BACKGROUND", a mode menu and a <b>Set</b> button let you set an op that is not listed.</p>
 
-  <h5>Components</h5>
-  <p>A component is one working part of an app. The tab lists four kinds: <b>Activities</b> (screens), <b>Receivers</b> (parts that listen for events such as the phone starting up), <b>Services</b> (parts that work in the background) and <b>Providers</b> (parts that share data with other apps). Each heading shows how many there are. Use the search box and the chips <b>All</b>, <b>Exported</b> and <b>Unexported</b>.</p>
+  <h5>Activities</h5>
+  <p>An activity is one screen of an app. This tab lists every one of them. The heading shows how many there are and how many are unexported, for example "ACTIVITIES (12 &bull; 9 unexported)". Use the search box and the chips <b>All</b>, <b>Exported</b> and <b>Unexported</b>. Exported screens are listed first.</p>
   <p>Each row has small tags: <b>exported</b> (other apps may open it) or <b>unexported</b> (only the app itself normally can), <b>disabled</b> when it is off, and <b>protected</b> when using it needs a permission. The buttons are:</p>
   <ul>
-    <li><b>LAUNCH</b> (activities only): opens that screen. For an unexported activity the button reads <b>LAUNCH (SHELL)</b>.</li>
+    <li><b>LAUNCH</b>: opens that screen. For an unexported activity the button reads <b>LAUNCH (SHELL)</b>.</li>
+    <li><b>DISABLE</b> or <b>ENABLE</b>: switches that one screen off or on (<code>pm disable</code> or <code>pm enable</code> on the single component).</li>
+  </ul>
+
+  <h5>Components</h5>
+  <p>A component is one working part of an app that is not a screen. The tab lists three kinds: <b>Receivers</b> (parts that listen for events such as the phone starting up), <b>Services</b> (parts that work in the background) and <b>Providers</b> (parts that share data with other apps). Each heading shows how many there are, and the tab's pill shows the total. Use the search box and the chips <b>All</b>, <b>Exported</b> and <b>Unexported</b>. The tags are the same as on the Activities tab. The buttons are:</p>
+  <ul>
     <li><b>STOP</b> (services only): stops that service.</li>
-    <li><b>DISABLE</b> or <b>ENABLE</b> (all four kinds): switches that one part off or on (<code>pm disable</code> or <code>pm enable</code> on the single component). Providers and receivers have only this button.</li>
+    <li><b>DISABLE</b> or <b>ENABLE</b> (all three kinds): switches that one part off or on. Providers and receivers have only this button.</li>
   </ul>
 
   <h5>Launching hidden activities</h5>
   <p>Many apps have screens that are not meant to be opened from outside, such as a hidden settings page. These are the unexported ones. The app can still open them for you through your working mode. How it works: it briefly sets the screen as your phone's "assistant" (and sets the voice-assistant setting aside), presses the assist key so Android itself starts it, waits about a second and a half, then puts your own settings back. An exported screen is first started directly with <code>am start</code>, and only if that fails does the app try the assistant way.</p>
   <ol class="hg-steps">
-    <li>Open the app menu, then the <b>Components</b> tab.</li>
+    <li>Open the app menu, then the <b>Activities</b> tab.</li>
     <li>Type part of a screen's name, for example <code>settings</code>, in the search box.</li>
     <li>Tap <b>LAUNCH (SHELL)</b> next to the screen. A message says "Launching (name)...".</li>
     <li>A message says "Activity launched" when the request went through, and the screen should open. If Android refused, the message says "Launch failed" and a box shows what Android answered. If the message says "Activity launched" but no screen opens, the screen probably needs extra information to start.</li>
@@ -258,20 +264,54 @@
   <h5>Raw</h5>
   <p>The raw details the app collected about this app, as plain text: version, folders, SDK levels, installer, tags, every permission and component, and the app-ops text. Useful when you need to copy something exact, or when you report a problem.</p>
 
-  <h5>Signing information</h5>
-  <p>The app menu has no screen that shows an app's signing certificate. The only signing-related item is the "Patched / modified" box, which reads the signing key to spot apps signed with the common debug key (a sign of re-signing by a tool). To look at an app's signature yourself, save a plain APK with <b>Extract APK</b> (a split app is saved as an <code>.apks</code> bundle, which this check does not read). Then open the <a href="#tab-files">File Manager</a>, go to <code>Download/ADB App Manager/APKs</code>, tap the file and choose <b>Sign...</b>. The <b>Sign APK</b> box shows "Signature now" (valid, or no longer valid) with the signer's fingerprint (a short code that identifies the key). The same box has buttons that sign the file with this app's own key, so tap the X to close it if you only wanted to look.</p>
+  <h5>Features</h5>
+  <p>A feature is a piece of hardware or software that an app says it needs, such as a touch screen, a camera, Bluetooth Low Energy or a certain version of OpenGL ES (the graphics system games use). The tab lists them with the names Android uses, for example <code>android.hardware.camera</code>. The first line says how many there are and how many are not on your phone. Each row has tags:</p>
+  <ul>
+    <li><b>required</b> or <b>optional</b>: whether the app asks for the feature as a must-have. An app that requires a feature your phone lacks is hidden from that phone in the Play Store. Optional ones only switch a part of the app off.</li>
+    <li><b>on this phone</b> (green) or <b>not on this phone</b> (orange): whether your phone has it. For the OpenGL ES row the app compares the version it asks for with the version your phone supports.</li>
+  </ul>
+  <p>Use the search box and the chips <b>All</b>, <b>Required</b>, <b>Optional</b> and <b>Not on this phone</b> to narrow the list. An app with no such entries shows "This app does not list any hardware or software features it needs". The list is read once, the first time you open any of the four last tabs for this app.</p>
+
+  <h5>Configurations</h5>
+  <p>This tab gathers what the app says about the screen and the controls it is made for, in small cards:</p>
+  <ul>
+    <li><b>Input and graphics it asks for</b>: touch screen (any, finger or stylus), keyboard, navigation (D-pad, trackball, wheel) and OpenGL ES version. Most apps ask for nothing here, and the tab says so in a sentence.</li>
+    <li><b>Screens</b>: the smallest screen width it needs in dp (a unit of screen size that does not depend on sharpness), the largest width it supports, and whether it supports small, normal, large and extra large screens, any screen density, resizing and right-to-left languages.</li>
+    <li><b>Android versions</b>: the oldest Android it runs on (minimum), the one it was written for (target) and the one it was built with (compiled against), each as "API 34 (Android 14)".</li>
+    <li><b>How it runs</b>: whether it uses hardware acceleration and asks for a large memory heap.</li>
+    <li><b>This phone</b>: the CPU types and OpenGL ES version of your phone, for comparison.</li>
+  </ul>
+
+  <h5>Signatures</h5>
+  <p>Every app is signed by its maker with a key, and Android only allows an update that is signed with the same key. This tab shows that signature:</p>
+  <ul>
+    <li><b>Signature schemes in the APK</b>: four pills, <b>v1</b>, <b>v2</b>, <b>v3</b> and <b>v3.1</b>, green with a tick when the app's file carries that kind of signature and grey with a dash when it does not. v1 is the old signature kept in the META-INF folder; v2, v3 and v3.1 sit in a block inside the file, and v3 and v3.1 allow the signing key to be changed later. For a split app only the base file is read.</li>
+    <li><b>Signer</b>: a card for the certificate the app is signed with: <b>Subject</b> (who it was made for) and <b>Issuer</b> (who made it; the same for a self-signed certificate, which is what almost every app has), <b>Serial number</b>, <b>Valid from</b> and <b>Valid until</b>, <b>Signature algorithm</b>, <b>Public key</b> (for example RSA, 2048 bits) and three fingerprints: <b>MD5</b>, <b>SHA-1</b> and <b>SHA-256</b>. A fingerprint is a short code that identifies the key. Tap a fingerprint to copy it. Tags show <b>self-signed</b>, <b>expired</b> or <b>not valid yet</b>. Android does not check the dates of an app's certificate, so "expired" is only information.</li>
+    <li><b>Earlier certificates</b>: when the maker has changed the signing key (key rotation), the older certificates are listed too.</li>
+    <li><b>Signers</b>: an app can be signed by several keys; each gets its own card.</li>
+    <li><b>Copy all</b> copies the whole thing as text.</li>
+  </ul>
+  <p>Compare the SHA-256 fingerprint with the one the app's maker publishes to check an app is the real one. The "Patched / modified" box in the header also reads the signing key, to spot apps signed with the common debug key (a sign of re-signing by a tool).</p>
+
+  <h5>Libraries</h5>
+  <p>Three lists of code the app uses, with a search box over all of them:</p>
+  <ul>
+    <li><b>Libraries it asks for</b>: the extra libraries named in the manifest, each tagged <b>shared</b>, <b>static</b> or <b>native</b> and <b>required</b> or <b>optional</b>, with a version for static ones. A required library that your phone lacks stops the app from installing.</li>
+    <li><b>Shared libraries linked in</b>: the library files Android actually linked into the app, with their paths, for example <code>/system/framework/org.apache.http.legacy.jar</code>.</li>
+    <li><b>Native libraries inside the APK</b>: the <code>.so</code> files (machine code that is not Java) in the app's file, grouped by CPU type such as arm64-v8a or armeabi-v7a, each with its size. The line above the list shows the folder where Android puts them and the app's main CPU type. For a split app the files of every part are listed. "No .so files" means the app runs on any CPU type or loads its code another way.</li>
+  </ul>
 
   <h4>What needs a working mode</h4>
   <table class="hg-table">
     <thead><tr><th>Part of the menu</th><th>Without a mode</th><th>With a mode</th></tr></thead>
     <tbody>
       <tr><td>Header, copy chips, Share, dates, sizes</td><td>Works (data and cache need usage access)</td><td>Works</td></tr>
-      <tr><td>App Info, Extract APK, Manifest, Raw</td><td>Works</td><td>Works</td></tr>
+      <tr><td>App Info, Extract APK, Manifest, Raw, Features, Configurations, Signatures, Libraries</td><td>Works</td><td>Works</td></tr>
       <tr><td>Launch, Force Stop, Freeze, Suspend, Clear Data, Uninstall, Rem Updates, Optimize</td><td>Opens "Working Mode Required"</td><td>Works</td></tr>
       <tr><td>Backup, Logs</td><td>Backup opens its box, but Create backup opens "Working Mode Required". Logs opens the Logcat Viewer, but it needs a working mode to read the log</td><td>Works</td></tr>
       <tr><td>Permissions</td><td>You can read the list. Toggles show a padlock.</td><td>Runtime ones can be changed</td></tr>
       <tr><td>App Ops</td><td>Not available</td><td>Works</td></tr>
-      <tr><td>Components</td><td>The list works. LAUNCH works for exported screens only. STOP and ENABLE / DISABLE show a padlock.</td><td>Everything works</td></tr>
+      <tr><td>Activities, Components</td><td>The lists work. LAUNCH works for exported screens only. STOP and ENABLE / DISABLE show a padlock.</td><td>Everything works</td></tr>
     </tbody>
   </table>
 
@@ -341,11 +381,11 @@
   <div class="hg-danger"><b>Risky.</b> Clear Data, Force Stop, Enable, Unsuspend and Reinstall start at once when you tap them: there is no confirmation list. Clear Data on the wrong selection deletes the saved data of every app in it, and that cannot be undone. Tap <b>Show Apps</b> first to read the list of what is selected.</div>
 
   <h4>The confirmation list, the progress bar and Stop</h4>
-  <p>Freeze, Suspend and Uninstall open a box first. Its title says "Confirm Disable Selected Apps" (for Freeze), "Confirm Suspend Selected Apps" or "Confirm Uninstall Selected Apps". It lists every app with its package name. Read it. Tap <b>Confirm Disable</b> (or <b>Confirm Suspend</b>, <b>Confirm Uninstall</b>) to go on, or <b>Cancel</b> to stop with nothing changed.</p>
+  <p>Freeze, Suspend and Uninstall open a box first. Its title says "Confirm Freeze Selected Apps", "Confirm Suspend Selected Apps" or "Confirm Uninstall Selected Apps". It lists every app with its package name. Read it. Tap <b>Confirm Freeze</b> (or <b>Confirm Suspend</b>, <b>Confirm Uninstall</b>) to go on, or <b>Cancel</b> to stop with nothing changed.</p>
   <p>While the batch runs, the same box shows a progress line, for example "2 of 5: Name (com.example.app)", a bar, and a <b>Stop</b> button. Stop (or the X at the top of the box) ends the batch once the app being worked on has finished. Every app not reached yet is left as it was. The button changes to "Stopping...", and a message later says how many succeeded, failed and were not run.</p>
 
   <h4>The results box</h4>
-  <p>When the batch ends, a message such as "Batch Done: 5 succeeded, 0 failed" appears and a box called <b>Batch Results</b> opens. Its subtitle names the action and the count, for example "FREEZE &bull; 5 of 5 apps" (here Freeze is still called FREEZE, not Disable). Each app has a card with its name, package name, the answer Android gave (or "No output returned") and a tag, <b>Success</b> or <b>Failed</b>. At the bottom:</p>
+  <p>When the batch ends, a message such as "Batch Done: 5 succeeded, 0 failed" appears and a box called <b>Batch Results</b> opens. Its subtitle names the action and the count, for example "FREEZE &bull; 5 of 5 apps" (the action keeps the name of the button you tapped). Each app has a card with its name, package name, the answer Android gave (or "No output returned") and a tag, <b>Success</b> or <b>Failed</b>. At the bottom:</p>
   <ul>
     <li><b>Run again</b>: runs the same action on the same apps (Freeze, Suspend and Uninstall ask first again).</li>
     <li><b>Run again on the (number) that failed</b>: shown when some, but not all, failed.</li>
@@ -360,8 +400,8 @@
     <li>In the Application Manager, tap five rows, one by one. The rows get a border, and a round button with a tick and the number 5 appears at the bottom right.</li>
     <li>Tap the round button. The batch sheet slides up and says "5 Selected".</li>
     <li>Tap <b>Show Apps</b> to check the five names. Tap <b>Remove</b> beside any you picked by mistake, then close the box with its X.</li>
-    <li>Tap <b>Freeze</b>. The box "Confirm Disable Selected Apps" opens with the five apps listed.</li>
-    <li>Tap <b>Confirm Disable</b>. A progress box shows "1 of 5", "2 of 5" and so on, with a bar.</li>
+    <li>Tap <b>Freeze</b>. The box "Confirm Freeze Selected Apps" opens with the five apps listed.</li>
+    <li>Tap <b>Confirm Freeze</b>. A progress box shows "1 of 5", "2 of 5" and so on, with a bar.</li>
     <li>When it ends, <b>Batch Results</b> opens. Each app should show <b>Success</b>. Tap <b>Done</b>.</li>
     <li>The five rows now have a FROZEN badge. To undo, select the same apps and tap <b>Enable</b>, or use <b>Undo</b> in the Debloater's History.</li>
   </ol>

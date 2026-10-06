@@ -34,6 +34,27 @@
   the app starts in read-only mode.
 - **Small refinements across the app**: thin scrollbars, visible keyboard / switch focus, figures that keep their width, a soft
   edge on cards, a grab handle on bottom sheets and a short fade when a tab opens. Nothing was moved, hidden or made smaller.
+- **The app menu has ten tabs.** Activities now have a tab of their own (Launch, Enable / Disable, the exported filter); Components
+  keeps the receivers, services (with Stop) and providers. Four tabs are new, at the end, and read-only (they work in every mode):
+  **Features** (the uses-feature list, each marked required or optional and "on this phone" or not, with a filter for the ones this
+  phone lacks), **Configurations** (touch screen, keyboard, navigation, OpenGL ES, screen sizes, minimum / target / compile Android
+  version, hardware acceleration, this phone's CPU types), **Signatures** (the v1, v2, v3 and v3.1 schemes of the APK, and for every
+  signer the subject, issuer, serial number, dates, algorithm, key and the MD5, SHA-1 and SHA-256 fingerprints, with earlier
+  certificates after a key change; tap a fingerprint to copy it) and **Libraries** (the libraries the manifest asks for, the shared
+  libraries linked in, and the native .so files of the APK by CPU type). The "Copy version" chip is gone.
+- **Trim Caches in All Applications**, the last card of Settings: runs `pm trim-caches 128G` through the working mode (the same as
+  `adb shell pm trim-caches 128G`), asks first, runs without freezing the app and reports how much space was freed. An explanation
+  under the button says what is trimmed (only caches) and what is not (apps, their data, files). It needs a working mode.
+- **Uninstalling a system app on a connected device** works the way it does on this phone: after `pm uninstall --user 0` is refused
+  ("only root can delete system app for a particular user"), a small helper is sent to the device, run there with app_process to
+  call the package manager directly, and removed again. The helper (assets/uninstall_runner.jar, about 6 KB) is built with the app.
+- **Asking before the three buttons that cannot be undone**: Uninstall, Clear Data and Rem Updates in the app menu now ask first,
+  in words that say what is lost. The batch Freeze question says Freeze (it said Disable).
+- **Permissions**: a new row, "Install unknown apps", in the permissions sheet (granted through a working mode, or Android's own
+  screen for this app).
+- **Root counts as ready only when it was granted.** With Root chosen, the app asks su for `id` and needs uid=0; an su file that the
+  root manager refused now shows DENIED and "not ready" (it showed ready). Nothing asks for root unless Root is the chosen mode.
+- **A small "?" on the first card of most tabs** opens the Help Guide at that tab's topic.
 - **Fixes**: the Coding Agents status now also reports the keys of Perplexity, Grok, Muse and Deepseek; the manifest declares
   REQUEST_INSTALL_PACKAGES, which an install without a working mode (and the app's own update without one) needs.
 
