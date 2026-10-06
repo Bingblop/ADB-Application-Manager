@@ -7,7 +7,11 @@
   together: tap more than one and the list shows the apps that match all of them, such as Running + 3rd Party for your
   running user apps or Enabled + System for your enabled system apps. A tap on a filter that is on turns it off, All
   Apps (or the Total installed box) turns them all off, a line under the buttons names what is combined, and 3rd
-  Party / System, and Enabled / Frozen, are each one filter with two values: one on, or none.
+  Party / System, and Enabled / Frozen, are each one filter with two values: one on, or none. The same combining
+  pills are in the other lists too: the Debloater has an "Also show only" row (Updated 7d, Running, 3rd Party, System,
+  Suspended, Patched) that works together with its own Removal, vendor and state rows, and Saved Applications has the
+  full set of pills, applied to the apps inside each list (a list shows how many of its apps match, lists with no match
+  are hidden, and Recall takes only the matching apps).
 
 ## v7.9.19-Pro (versionCode 809)
 
