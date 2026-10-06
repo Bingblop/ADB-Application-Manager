@@ -1,0 +1,444 @@
+<!-- Connect the app to your phone: working modes, the walk-throughs, Auto and Read-Only, permissions. -->
+
+<section id="modes-overview" data-title="Working modes: what they are and which to pick" data-group="Connect the app to your phone">
+<p class="hg-lead">A working mode is the way this app borrows enough power from Android to freeze, remove and change other apps. You choose one once; the coloured badge at the top right of the screen always shows which one is in use.</p>
+
+<h4>Why the app needs a working mode at all</h4>
+<p>Android keeps every app in its own protected box. An ordinary app, this one included, cannot freeze, uninstall or change the settings of another app. Android reserves those jobs for two special users (a "user" here is an account inside Android, not a person): <b>shell</b> (user number 2000), which is the user that ADB runs as, and <b>root</b>. A working mode is simply a way for this app to send its commands as one of those two users.</p>
+<ul>
+<li><b>ADB over TCP</b> and <b>Wireless Debugging</b> let the app's own built-in copy of ADB talk to the phone's ADB service, from the inside, as the shell user.</li>
+<li><b>Shizuku</b> is a separate app that has already started a helper running as the shell user (or as root) and lets this app use it.</li>
+<li><b>Root</b> runs the commands as root through the phone's <code>su</code> program, which your root manager (Magisk, KernelSU or APatch) controls.</li>
+<li><b>Read-Only</b> is what you get when none of these is ready: the app can look, and cannot change.</li>
+<li><b>Auto</b> is not a route of its own. It tries some of the above in a fixed order, and uses the first that is ready.</li>
+</ul>
+<p>The commands themselves are the ordinary Android ones (<code>pm</code>, <code>am</code>, <code>appops</code>, <code>settings</code> and so on). The app is just a convenient front end.</p>
+
+<h4>The six modes at a glance</h4>
+<table class="hg-table"><thead><tr><th>Mode</th><th>Needs a computer?</th><th>Android version</th><th>After a restart</th></tr></thead><tbody>
+<tr><td><a href="#mode-readonly">Auto</a></td><td>No</td><td>Same as the mode it picks</td><td>Picks again by itself</td></tr>
+<tr><td><a href="#mode-tcp">ADB over TCP (port 5555)</a></td><td>Once, to switch it on, on Android 8 to 10. On Android 11 and newer you can do it from Wireless Debugging instead.</td><td>8 or newer</td><td>Switched off again; the one-time step must be repeated</td></tr>
+<tr><td><a href="#mode-wireless">Wireless Debugging</a></td><td>No</td><td>11 or newer</td><td>Pairing is kept; switch Wireless debugging on again and connect to the new port</td></tr>
+<tr><td><a href="#mode-shizuku">Shizuku</a></td><td>Only if you start Shizuku that way. Starting it from the phone needs Android 11 or newer.</td><td>8 or newer</td><td>Shizuku stops; start it again</td></tr>
+<tr><td><a href="#mode-root">Root</a></td><td>No</td><td>8 or newer, on a rooted phone</td><td>Stays; nothing to redo</td></tr>
+<tr><td><a href="#mode-readonly">Read-Only</a></td><td>No</td><td>8 or newer</td><td>Always the same</td></tr>
+</tbody></table>
+<p>Effort, roughly: <b>Root</b> is the quickest if you already have it (one tap and one approval). <b>Wireless Debugging</b> takes about five minutes the first time, because of the pairing, and about a minute after that. <b>ADB over TCP</b> is one tap once the phone is listening, but getting it to listen needs a computer on Android 10 or older. <b>Shizuku</b> means installing and starting another app, and starting it again after each restart. <b>Auto</b> needs nothing, but only helps once one of the others is working.</p>
+
+<h4>Which one should I pick?</h4>
+<p>Read down the list and stop at the first line that fits.</p>
+<ol class="hg-steps">
+<li><b>Is your phone rooted?</b> If yes, pick <a href="#mode-root">Root</a>. It survives restarts and needs no Wi-Fi. (Auto never picks Root on its own, so you must choose it yourself.)</li>
+<li><b>Otherwise, is it Android 11 or newer?</b> Settings, About phone, shows the version. If yes, pick <a href="#mode-wireless">Wireless Debugging</a>. No computer is needed, only Wi-Fi.
+<ul>
+<li>If you tire of reconnecting every time the Wi-Fi changes, <a href="#mode-tcp">ADB over TCP</a> can be switched on from Wireless Debugging with one button, and does not depend on the Wi-Fi once it is on, but it is switched off by every restart.</li>
+<li>If you already use <a href="#mode-shizuku">Shizuku</a> and it is running, pick that instead; it is a single tap.</li>
+</ul></li>
+<li><b>Otherwise (Android 8 to 10, not rooted):</b> you need a computer and a USB cable. Use it once to switch on <a href="#mode-tcp">ADB over TCP</a>, or to start <a href="#mode-shizuku">Shizuku</a>. Both have to be redone after every restart. Without a computer, Read-Only is usually all this phone can do with the app.</li>
+<li><b>Not sure, or just browsing?</b> Leave it on <b>Auto</b> or <b>Read-Only</b>. Nothing is lost.</li>
+</ol>
+
+<h4>How to change the mode</h4>
+<ol class="hg-steps">
+<li>Tap the <b>badge</b> at the top right of the screen. (The orange banner at the top of the Application Manager tab has a <b>Set Up</b> button that opens the same place.)</li>
+<li>A sheet called <b>Working Modes &amp; ADB Setup</b> slides up. Under its title is a line such as "Selected: Automatic &#8226; Active: Setup Mode (Read-Only)", which tells you what you chose and what is actually in use.</li>
+<li>Find the card for the mode you want and use its button: <b>Use Automatic</b>, <b>Connect</b> then <b>Use This Mode</b> (ADB over TCP), the pair and connect steps (Wireless Debugging), <b>Authorize &amp; Use Shizuku</b>, <b>Request Root Access</b>, or <b>Continue in Read-Only</b>. The button of the mode you are on changes to <b>Selected</b> (the Shizuku card shows the tag <b>AUTHORIZED</b> instead).</li>
+<li>A message at the bottom says what happened, the badge updates, and the list of apps is reloaded.</li>
+</ol>
+<p>You may switch at any time, and nothing happens to your apps when you do. The app never changes the mode you chose by itself, except that <b>Disconnect</b> on a connected ADB mode drops you back to Auto. A tile in Android's quick settings can also cycle the mode without opening the app (<a href="#quick-tiles">Quick Settings tiles and widget</a>).</p>
+
+<h4>What the cards and their tags mean</h4>
+<p>The sheet starts with a card called <b>This App's ADB Key</b>, tagged <b>PRIVATE</b>. Each install makes its own key, which never leaves the phone. The fingerprint it shows is what Android's "Allow debugging?" prompt will display, so you can compare them. <b>Copy Fingerprint</b> copies it; <b>Regenerate Key</b> makes a new one, after which every ADB connection is dropped, Android asks again, and Wireless Debugging must be paired again.</p>
+<p>Then come the six mode cards, in this order: <b>Automatic (Recommended)</b>, <b>ADB over TCP (Port 5555)</b>, <b>Wireless Debugging (Android 11+)</b>, <b>Shizuku ADB Service</b>, <b>Root (Superuser - su)</b> and <b>Read-Only Mode (Unprivileged)</b>. A card has a green edge when that mode is in use, and an orange edge when you chose it but it is not ready. Each card also has a small tag:</p>
+<table class="hg-table"><thead><tr><th>Card</th><th>Tag</th><th>Meaning</th></tr></thead><tbody>
+<tr><td>Automatic</td><td>SELECTED or AUTO</td><td>SELECTED while Auto is your choice.</td></tr>
+<tr><td>ADB over TCP</td><td>CONNECTED, PORT 5555 OPEN, DISCONNECTED</td><td>Connected and ready; the port is open but the app is not connected (often a pending approval); nothing is listening.</td></tr>
+<tr><td>Wireless Debugging</td><td>CONNECTED or ANDROID 11+</td><td>Connected; or not connected, with a reminder of the Android version needed.</td></tr>
+<tr><td>Shizuku</td><td>AUTHORIZED, UPDATE SHIZUKU, RUNNING (UNAUTHORIZED), NOT RUNNING, NOT INSTALLED</td><td>Ready; Shizuku is running but too old; running but this app is not approved; installed but stopped; not on the phone.</td></tr>
+<tr><td>Root</td><td>ACTIVE, AVAILABLE, NOT FOUND</td><td>In use; a su program was found but Root is not your chosen mode; no su found.</td></tr>
+<tr><td>Read-Only</td><td>Safe</td><td>Always safe: it changes nothing.</td></tr>
+</tbody></table>
+
+<div class="hg-note"><b>Tip.</b> If you choose a mode that is not ready, the badge turns orange and says "(not ready)" after the mode's name. Nothing is broken: open the sheet, read the tag on that card, and finish the setup.</div>
+<div class="hg-warn"><b>Careful.</b> A working mode lets this app run powerful commands. Only set one up on a phone you own, and only use an app you trust. Read <a href="#safety">Safety</a> before you remove or disable system apps.</div>
+<p>Next: <a href="#mode-wireless">Wireless Debugging</a>, <a href="#mode-tcp">ADB over TCP</a>, <a href="#mode-shizuku">Shizuku</a>, <a href="#mode-root">Root</a>, <a href="#mode-readonly">Auto and Read-Only</a>, and <a href="#app-permissions">the permissions the app asks for</a>.</p>
+</section>
+
+<section id="mode-wireless" data-title="Wireless Debugging (Android 11 and newer)" data-group="Connect the app to your phone">
+<p class="hg-lead">Wireless Debugging is Android's built-in way to let an ADB tool connect over Wi-Fi. This app pairs with your own phone once, then connects, with no computer at all.</p>
+
+<h4>Before you start</h4>
+<ul>
+<li><b>Android 11 or newer.</b> The feature does not exist on older versions; use <a href="#mode-tcp">ADB over TCP</a> there.</li>
+<li><b>A Wi-Fi connection.</b> The phone must be joined to a Wi-Fi network (one without internet is usually fine). Wireless Debugging does not work over mobile data. If no Wi-Fi is around, joining the hotspot of another phone works on many phones.</li>
+<li><b>Developer options</b> switched on (step 1).</li>
+<li>About five minutes. Pairing is needed once; connecting again later takes a minute.</li>
+</ul>
+
+<h4>Step 1: switch on Developer options</h4>
+<p>Android hides its developer settings until you ask for them.</p>
+<ol class="hg-steps">
+<li>Open the phone's <b>Settings</b> and go to <b>About phone</b>. On a <b>Samsung</b> phone with One UI, go to <b>About phone</b>, then <b>Software information</b>.</li>
+<li>Find <b>Build number</b> and tap it <b>seven times</b>, quickly. Midway, a message counts down ("You are now 3 steps away from being a developer"). If the phone has a PIN, pattern or fingerprint, it asks for it.</li>
+<li>You see "You are now a developer!". A new entry, <b>Developer options</b>, now exists: on Samsung at the bottom of the main Settings list, on a Pixel under <b>System</b>.</li>
+</ol>
+<div class="hg-note"><b>Tip.</b> Names differ by maker. On Xiaomi the item to tap is often called <b>OS version</b> or <b>MIUI version</b>; on OnePlus and Oppo it is under <b>About device</b>, then <b>Version</b>. If you get lost, type "Build number" in the Settings search box. The same trick finds "Developer options". The app also has an <b>Open Developer Options</b> button on the Wireless Debugging card.</div>
+
+<h4>Step 2: switch on Wireless debugging</h4>
+<ol class="hg-steps">
+<li>Connect to the Wi-Fi network you will use.</li>
+<li>Open <b>Developer options</b> and scroll to the <b>Debugging</b> section. Switch <b>Wireless debugging</b> on. Android asks "Allow wireless debugging on this network?". Tap <b>Allow</b> (tick "Always allow on this network" if you trust it).</li>
+<li>Tap the <i>words</i> "Wireless debugging", not just the switch. The Wireless debugging screen opens. It shows <b>IP address &amp; Port</b> (something like <code>192.168.1.20:37099</code>: the part before the colon is the phone's address on your Wi-Fi, and the number after it is the port, which picks one service on the phone to talk to), and the entries <b>Pair device with pairing code</b> (on some phones <b>Pair new device with pairing code</b>) and <b>Paired devices</b>.</li>
+</ol>
+<p>This screen has two different addresses, and mixing them up is the commonest mistake. The table below keeps them apart.</p>
+<table class="hg-table"><thead><tr><th>Address</th><th>Where Android shows it</th><th>Where it goes in the app</th></tr></thead><tbody>
+<tr><td>Pairing address and 6-digit code</td><td>In the small window that opens when you tap Pair device with pairing code. Changes every time the window opens.</td><td>Step 1 of the card: "Pairing address" and "Code".</td></tr>
+<tr><td>Connect address (IP address and Port)</td><td>On the main Wireless debugging screen. Changes whenever Wireless debugging is switched off and on, or the phone restarts.</td><td>Step 2 of the card: the IP and Port boxes.</td></tr>
+</tbody></table>
+
+<h4>Step 3: pair this app with your phone</h4>
+<p>Pairing is the one-time handshake in which Android learns to trust this app's key. The six-digit code only lives while Android's pairing window is on screen; if you switch to another app full screen, the window closes and the code stops working. The app gives you two ways around that.</p>
+<h5>Way A: split screen (the app's own tip)</h5>
+<ol class="hg-steps">
+<li>In this app, tap the badge to open <b>Working Modes &amp; ADB Setup</b> and find the <b>Wireless Debugging (Android 11+)</b> card.</li>
+<li>Put Developer options and this app side by side, using <b>Split Screen</b> or a <b>Pop-up Window</b> from your phone's recent apps view, so both stay visible.</li>
+<li>In Developer options, tap <b>Wireless debugging</b>, then <b>Pair device with pairing code</b>. A window shows a six-digit code and an address with a port.</li>
+<li>In the app, under <b>STEP 1: PAIR WITH CODE</b>, type the address into <b>Pairing address</b> (for example <code>192.168.1.20:38475</code>; typing only the port also works on many phones) and the six digits into <b>Code</b>. Tap <b>Pair Device</b>.</li>
+<li>A message shows adb's answer. Success reads "Successfully paired to ..." followed by an address.</li>
+</ol>
+<p>The <b>Auto-Detect Ports</b> button looks for the pairing and connect addresses for you while the pairing window is open and fills in the boxes it finds. If it says "Nothing found", keep the Wireless debugging screen open and type them yourself.</p>
+<h5>Way B: pair from a notification</h5>
+<ol class="hg-steps">
+<li>In the app, tap <b>Pair via Notification</b>. On Android 13 and newer you must allow notifications first; the app says "Allow notifications, then tap Pair via notification again."</li>
+<li>A notification titled <b>Pair over Wi-Fi</b> appears, with a <b>Pair</b> button that opens a reply box. Go to Developer options, tap <b>Wireless debugging</b>, then <b>Pair device with pairing code</b>, and leave the six-digit window open.</li>
+<li>Pull down the notification shade. If the notification says "Found pairing service at ...", tap <b>Pair</b> and type just the six digits. Otherwise tap <b>Pair</b> and type the port, a space, and the code, like <code>37123 123456</code>. When in doubt, type the port and the code.</li>
+<li>The notification changes to "Pairing...", then to "Paired with ... Open the app and connect." Failures are written there too, for example "That doesn't look like a 6-digit code".</li>
+</ol>
+<div class="hg-note"><b>Tip.</b> You only need to pair once for each key. Android lists this app under <b>Paired devices</b> on the Wireless debugging screen, usually with a name that starts with <code>adbmanager@</code> followed by your phone's model. Regenerating the app's key (<a href="#modes-overview">Working modes</a>) makes the old pairing useless, and you pair again.</div>
+
+<h4>Step 4: connect</h4>
+<ol class="hg-steps">
+<li>Back on the main Wireless debugging screen, read the <b>IP address &amp; Port</b>.</li>
+<li>In the app, under <b>STEP 2: CONNECT WIRELESS ADB</b>, fill in the IP box and the Port box. <b>Use My Wi-Fi IP</b> fills in this phone's Wi-Fi address for you; <b>Auto-Detect Ports</b> can fill in the port. If you leave the IP empty, the app uses <code>127.0.0.1</code>, which works on some phones; if it does not, use the Wi-Fi address.</li>
+<li>Tap <b>Connect Wireless ADB</b>. A message shows adb's answer, such as "connected to 192.168.1.20:37099".</li>
+<li>If the app finds the connection ready, it selects Wireless Debugging as your working mode.</li>
+</ol>
+
+<h4>What success looks like</h4>
+<ul>
+<li>The tag on the card changes to <b>CONNECTED</b>, and the button of the mode says <b>Selected</b>.</li>
+<li>The badge turns green and reads "Wireless ADB (37099)", with your port in brackets.</li>
+<li>The orange Read-Only banner on the Application Manager tab disappears, and buttons such as <b>Freeze</b> work instead of asking for a mode.</li>
+</ul>
+
+<h4>When the Wi-Fi changes or the phone restarts</h4>
+<p>Android picks a new random connect port every time Wireless debugging is switched off and on, and it often switches it off by itself when you leave the Wi-Fi network or restart the phone. The pairing stays; only the connect address changes.</p>
+<ol class="hg-steps">
+<li>The badge turns orange. If you chose Wireless Debugging yourself, it reads "Wireless ADB (37099) (not ready)"; on Auto it reads "Setup Mode (Read-Only)".</li>
+<li>Switch Wireless debugging back on in Developer options and read the new <b>IP address &amp; Port</b>.</li>
+<li>In the app, open the card, put the new numbers in the boxes (or tap <b>Auto-Detect Ports</b>) and tap <b>Connect Wireless ADB</b>. You do not pair again.</li>
+</ol>
+<p>When the app starts and Wireless Debugging is your chosen mode, it tries the last address once by itself. That works only if the port has not changed.</p>
+<div class="hg-note"><b>Tip.</b> Many phones let you add a <b>Wireless debugging</b> tile to the quick settings panel (Developer options, Quick settings developer tiles), which makes switching it on quick. If connecting is refused although the address and port are right, Android may have forgotten the pairing; pair again.</div>
+
+<h4>Common problems</h4>
+<ul>
+<li><b>Pairing says it failed.</b> The code is wrong, or the pairing window closed and the code expired. Open the window again, and use split screen or Way B so it stays open. Check that the pairing address is the one in the pairing window, not the connect address.</li>
+<li><b>"failed to connect", or a refused connection.</b> The port is out of date, you used the pairing port, Wireless debugging is off, or the phone is on a different Wi-Fi from the one you allowed. Re-read the connect address and try again.</li>
+<li><b>The message ends with "Target ... is not ready (check the authorization prompt on the device)".</b> Android is waiting for an approval. Look for a prompt or notification and accept it, then tap Connect again.</li>
+<li><b>Switch on Wireless debugging and it switches itself off.</b> You are not on Wi-Fi, or the Wi-Fi was lost. Join a network first.</li>
+<li><b>Auto-Detect Ports finds nothing.</b> The pairing window must be open for the pairing address to be found, and some phones or networks block the discovery. Type the numbers yourself.</li>
+<li><b>It worked, then stopped.</b> Look at the badge. If it is orange, follow the steps in the section above. If it is green but actions fail, tap <b>Connect Wireless ADB</b> again.</li>
+<li><b>Still stuck.</b> See <a href="#troubleshooting">Troubleshooting</a>. On a 32-bit phone, remember that the 32-bit build is new (<a href="#install-and-update">Installing and updating the app</a>).</li>
+</ul>
+</section>
+
+<section id="mode-tcp" data-title="ADB over TCP port 5555" data-group="Connect the app to your phone">
+<p class="hg-lead">ADB over TCP makes the phone's ADB service listen on a network port, 5555, so that the app's own copy of ADB can connect to it from the inside. It works on every Android version this app supports.</p>
+
+<h4>What it is</h4>
+<p>Normally ADB talks over a USB cable. The command <code>adb tcpip 5555</code> tells the phone to listen on TCP port 5555 as well (a port is a numbered entry point for network connections). The app then connects to <code>127.0.0.1:5555</code>, which is the phone talking to itself, so no computer is needed once the port is open. The app saves the address and tries it again when it starts, if Auto or ADB over TCP is your mode and the port is open.</p>
+
+<h4>Before you start</h4>
+<ul>
+<li>Developer options switched on, as in <a href="#mode-wireless">Wireless Debugging, step 1</a>.</li>
+<li>One of: a computer and a USB cable; or a Wireless Debugging connection on Android 11 or newer (see Way B below).</li>
+<li>The setting does not survive a restart (see below), so keep this page handy.</li>
+</ul>
+
+<h4>Way A: the one-time step from a computer</h4>
+<ol class="hg-steps">
+<li>On the computer, get Google's <b>SDK Platform-Tools</b>, a small download that contains the <code>adb</code> program (<a href="https://developer.android.com/tools/releases/platform-tools">download page</a>), and unpack the folder.</li>
+<li>On the phone, in Developer options, switch <b>USB debugging</b> on (it lets a computer send ADB commands over the cable). Plug the phone into the computer with a USB cable. If the phone asks "Allow USB debugging?", tick "Always allow" and tap <b>Allow</b>.</li>
+<li>On the computer, open a terminal or command window in the platform-tools folder (on Windows, Command Prompt or PowerShell; on a Mac or Linux, Terminal) and run <code>adb devices</code>. Your phone should be listed with the word "device" beside it.</li>
+<li>Run <code>adb tcpip 5555</code>. It answers "restarting in TCP mode port: 5555".</li>
+<li>Unplug the cable. On the phone, open this app, tap the badge and find the <b>ADB over TCP (Port 5555)</b> card.</li>
+<li>Leave the address <code>127.0.0.1</code> and the port <code>5555</code> as they are, and tap <b>Connect</b>. A message such as "connected to 127.0.0.1:5555" appears. If Android asks "Allow USB debugging?", compare the fingerprint with the one on the <b>This App's ADB Key</b> card at the top of the sheet, tick "Always allow" and tap <b>Allow</b>.</li>
+</ol>
+
+<h4>Way B: without a computer (Android 11 and newer)</h4>
+<ol class="hg-steps">
+<li>Connect with <a href="#mode-wireless">Wireless Debugging</a> first.</li>
+<li>On the <b>ADB over TCP (Port 5555)</b> card, tap <b>Switch to 5555 (tcpip)</b>. The app runs <code>adb tcpip 5555</code> through the Wireless Debugging connection, waits a moment and then connects by itself to the host and port in the boxes of the card (<code>127.0.0.1</code> and <code>5555</code> unless you changed them).</li>
+<li>The Wireless Debugging connection may drop. That is expected, because the ADB service restarted.</li>
+</ol>
+<p>If the message is an error such as "no devices/emulators found", there was no connection to switch from; connect with Wireless Debugging first. Some phones refuse the switch; the message then shows Android's reason.</p>
+<div class="hg-note"><b>Tip.</b> A few custom Android versions (for example LineageOS) have a switch named <b>ADB over network</b> in Developer options that does the same thing as <code>adb tcpip 5555</code>. If yours has it, switch it on and use <b>Connect</b>.</div>
+
+<h4>What the card's buttons do</h4>
+<ul>
+<li><b>Connect</b> connects to the host and port in the boxes. It also makes ADB over TCP your working mode if the connection is ready.</li>
+<li><b>Use This Mode</b> picks ADB over TCP as your working mode. If the app is not connected yet it tries to connect first; if that fails, the mode stays selected, and the badge says "(not ready)" when nothing is listening on the port.</li>
+<li><b>Switch to 5555 (tcpip)</b>: described in Way B.</li>
+<li><b>Disconnect</b> drops the ADB connection. If ADB over TCP or Wireless Debugging was your mode, the app falls back to Auto.</li>
+</ul>
+<div class="hg-warn"><b>Careful.</b> Leave the host box at <code>127.0.0.1</code> unless you know why not. The host box accepts another device's address too, but the app's commands would then go to that device while its list shows this phone's apps. To work with another phone or a watch, use <a href="#tab-devices">Connected Devices</a> instead.</div>
+
+<h4>Why it is not persistent</h4>
+<p>The phone forgets the setting when it restarts. After every restart, ADB goes back to USB only, and the card shows <b>DISCONNECTED</b>. Repeat Way A or Way B. On Android 8 to 10 that means a computer again after every restart, which is the main reason Wireless Debugging, Shizuku or Root is nicer where you can have them.</p>
+
+<h4>How to tell it works</h4>
+<ul>
+<li>The tag on the card turns <b>CONNECTED</b> (green). <b>PORT 5555 OPEN</b> in orange means the phone is listening but this app is not connected yet, often because an approval is waiting; tap <b>Connect</b>.</li>
+<li>The badge turns green and says "ADB TCP (5555)".</li>
+<li>The orange banner on the Application Manager tab is gone and <b>Freeze</b> and friends work.</li>
+</ul>
+
+<h4>If it does not connect</h4>
+<ul>
+<li><b>"Connection refused" or "failed to connect".</b> Nothing is listening on 5555: you have not done the one-time step yet, or the phone restarted since. Redo it.</li>
+<li><b>"Target ... is not ready (check the authorization prompt on the device)".</b> Approve the "Allow USB debugging?" prompt, then tap <b>Connect</b> again. If no prompt appears, in Developer options tap <b>Revoke USB debugging authorizations</b>, then try again.</li>
+<li><b>The prompt shows a fingerprint that does not match</b> the one in the app. Do not allow it; something other than this app is connecting. Tap Deny.</li>
+</ul>
+<div class="hg-warn"><b>Careful.</b> While port 5555 is open, the phone listens on the Wi-Fi too, not only on the inside. Another device on the same network could try to connect; it would still need your approval in the prompt, so never tick "Always allow" for a fingerprint you do not recognise. Use this mode only on a network you trust, and restart the phone when you are finished: that switches it off.</div>
+</section>
+
+<section id="mode-shizuku" data-title="Shizuku" data-group="Connect the app to your phone">
+<p class="hg-lead">Shizuku is a separate free app that starts a helper with ADB-level power and lets other apps, this one included, use it. If you already run Shizuku, using it here is a single approval.</p>
+
+<h4>What Shizuku is</h4>
+<p>Shizuku is not part of this app and is not made by the same person. It is a small program you install and start. Once it is running, any app you approve can ask it to run commands as the <b>shell</b> user, "UID 2000": the user that ADB runs as, which is allowed to do things an ordinary app cannot. If Shizuku was started with root, commands run as root instead. This app shows "Shizuku ADB (UID 2000)" in its badge when it is using it.</p>
+<p>The app also recognises an app called <b>Shizuku Plus</b>, which has its own package name.</p>
+
+<h4>Before you start</h4>
+<ul>
+<li>Android 8 or newer. Starting Shizuku on the phone itself, with no computer, needs Android 11 or newer.</li>
+<li>Shizuku installed. Its official site, <a href="https://shizuku.rikka.app/">shizuku.rikka.app</a>, explains where to get it (Google Play or GitHub). Install it like any other app.</li>
+<li>Shizuku must be running before this app can use it. It stops whenever the phone restarts.</li>
+</ul>
+
+<h4>Starting Shizuku</h4>
+<p>Open the Shizuku app. Its main screen offers three ways to start; the wording differs a little between versions. Pick one.</p>
+<h5>Method 1: Wireless debugging (Android 11 and newer, no computer)</h5>
+<ol class="hg-steps">
+<li>Switch on Developer options and join a Wi-Fi network (<a href="#mode-wireless">Wireless Debugging, steps 1 and 2</a>).</li>
+<li>In Shizuku, choose <b>Start via Wireless debugging</b>. Its own screen has a button to open Developer options and, on the first run, a <b>Pairing</b> step: Shizuku posts a notification where you type the pairing code from Android's pairing window. This is separate from the pairing this app uses.</li>
+<li>After pairing, tap <b>Start</b>. Shizuku shows a short log and then reports that it is running.</li>
+</ol>
+<h5>Method 2: from a computer</h5>
+<ol class="hg-steps">
+<li>Set up the computer and USB debugging as in <a href="#mode-tcp">ADB over TCP</a>, Way A.</li>
+<li>Run the command that Shizuku shows on its screen. It is normally <code>adb shell sh /sdcard/Android/data/moe.shizuku.privileged.api/start.sh</code>.</li>
+</ol>
+<h5>Method 3: root</h5>
+<ol class="hg-steps">
+<li>In Shizuku, choose the option for rooted phones and approve the root request from your root manager.</li>
+<li>Shizuku has a setting to start by itself when the phone starts, for rooted phones.</li>
+</ol>
+
+<h4>Connecting this app to Shizuku</h4>
+<ol class="hg-steps">
+<li>Check that Shizuku says it is running.</li>
+<li>In this app, tap the badge and find the <b>Shizuku ADB Service</b> card. Its tag tells you where things stand.</li>
+<li>Tap <b>Authorize &amp; Use Shizuku</b>. Shizuku shows its own question asking whether to allow ADB Application Manager Pro to use Shizuku. Tap the button that allows it (Shizuku's wording may differ a little between versions).</li>
+<li>A message says "Shizuku authorized. Using Shizuku mode.". The tag becomes <b>AUTHORIZED</b>, and the badge turns green and reads "Shizuku ADB (UID 2000)".</li>
+</ol>
+<p>The card also has <b>Open Shizuku</b>, which opens the Shizuku app, and <b>Check Status</b>, which looks again. Authorizing Shizuku makes Shizuku your working mode, and it works alongside ADB over TCP.</p>
+<table class="hg-table"><thead><tr><th>Tag</th><th>What it means</th><th>What to do</th></tr></thead><tbody>
+<tr><td>NOT INSTALLED</td><td>No Shizuku app was found.</td><td>Install Shizuku.</td></tr>
+<tr><td>NOT RUNNING</td><td>Shizuku is installed but stopped.</td><td>Start it (above), then tap <b>Authorize &amp; Use Shizuku</b>.</td></tr>
+<tr><td>RUNNING (UNAUTHORIZED)</td><td>Shizuku runs, but this app is not approved.</td><td>Tap <b>Authorize &amp; Use Shizuku</b> and allow the question.</td></tr>
+<tr><td>UPDATE SHIZUKU</td><td>The running Shizuku is too old for this app.</td><td>Update the Shizuku app and start it again.</td></tr>
+<tr><td>AUTHORIZED</td><td>Ready.</td><td>Nothing; you are using it.</td></tr>
+</tbody></table>
+<p>The app notices Shizuku starting while it is open and refreshes the card by itself. You can take the approval back at any time in the Shizuku app, under its list of authorized apps.</p>
+
+<h4>After a restart</h4>
+<p>Shizuku stops when the phone restarts, unless it was started with root and set to start by itself. After a restart the badge turns orange: "Shizuku ADB (UID 2000) (not ready)" if you chose Shizuku, or "Setup Mode (Read-Only)" on Auto. Open Shizuku, start it again by the same method, and the badge turns green again without any new approval. The ADB Console in the <a href="#tab-terminal">Command-Line Interface</a> tab also has a Shizuku-only <b>Rish</b> mode.</p>
+
+<h4>If it does not work</h4>
+<ul>
+<li><b>"Shizuku is not running. Start it in the Shizuku app, then tap again."</b> The app opens Shizuku for you; start it there.</li>
+<li><b>"This Shizuku version is too old. Please update Shizuku."</b> Update the Shizuku app.</li>
+<li><b>Nothing appears when you tap Authorize.</b> Check the notification shade, and that Shizuku has not been stopped by a battery saver.</li>
+<li><b>You denied it by mistake.</b> Tap the button again, or switch the approval on in the Shizuku app.</li>
+</ul>
+</section>
+
+<section id="mode-root" data-title="Root (Superuser)" data-group="Connect the app to your phone">
+<p class="hg-lead">Root means the phone has been modified so that apps can ask for full administrator rights. If your phone is already rooted, this mode is the simplest and the most lasting.</p>
+
+<h4>What root is</h4>
+<p>Android normally stops anyone from changing the system. <b>Rooting</b> adds a program called <code>su</code> (for "superuser") and a manager app that decides which apps may use it. The three managers this app names are Magisk, KernelSU and APatch. With root, a command runs as the all-powerful root user, one step above the shell user that ADB uses.</p>
+<div class="hg-danger"><b>Risky.</b> This app cannot root your phone, and it will not help you do it. Rooting is done with other tools, usually needs an unlocked bootloader (the program that starts Android, which is normally locked), normally erases the phone, usually voids the warranty and, on Samsung phones, permanently trips the Knox counter (a Samsung record that the phone was modified), which can disable Samsung Pay and Secure Folder. Do not root a phone just to use this app: Wireless Debugging or Shizuku does most of the same work on Android 11 and newer. If you root, back up everything first.</div>
+
+<h4>Before you start</h4>
+<ul>
+<li>The phone must already be rooted by you, with a root manager installed.</li>
+<li>Know where the root manager's list of apps is, so you can see and cancel what you approve.</li>
+</ul>
+
+<h4>Step by step</h4>
+<ol class="hg-steps">
+<li>Tap the badge to open <b>Working Modes &amp; ADB Setup</b> and find the <b>Root (Superuser - su)</b> card. The tag says <b>AVAILABLE</b> when the app can see a <code>su</code> program, or <b>NOT FOUND</b> when it cannot. The app looks in the usual places, such as <code>/system/bin/su</code>, <code>/sbin/su</code>, <code>/data/adb/ksu/bin/su</code> and <code>/data/adb/ap/bin/su</code>, and asks the shell to find <code>su</code>.</li>
+<li>Tap <b>Request Root Access</b>. The app runs a test command through <code>su</code> and waits up to fifteen seconds.</li>
+<li>Your root manager shows its own question. Tap <b>Grant</b> (or <b>Allow</b>). Choose "forever" only if you are happy to.</li>
+<li>If the answer comes back as root, the message says "Using Root (Superuser)". The tag becomes <b>ACTIVE</b>, and the badge turns violet and reads "Root (Superuser)".</li>
+</ol>
+<p>If the answer does not come back as root, the message reads "Root was denied or is not available". Root stays your chosen mode anyway, so the badge may still say Root; see "If it does not work" below.</p>
+<div class="hg-note"><b>Tip.</b> Auto never chooses Root. Its list is ADB over TCP, Wireless Debugging, then Shizuku. On a rooted phone, choose Root yourself with this button, once; the choice is remembered.</div>
+
+<h4>What root unlocks in this app</h4>
+<ul>
+<li><b>Every action runs as root.</b> Freeze, uninstall, permissions, app ops and the rest all go through <code>su</code>, so they are not limited to what the shell user may do. The <a href="#tab-installer">APK Installer</a>, the working-mode shell in the Terminal and the Debloater all work in this mode, and the Installer lets you choose Root as the authorizer.</li>
+<li><b>Backups of app data.</b> Backing up an app's APK, permissions and app ops works in any working mode, but including its <i>data</i> (logins, saved games, settings) is root-only. The Backup sheet says "Uses Root. The app is stopped while its data is copied." Without root, the switch is greyed out with the words "Needs Root, which was not found on this phone." Restoring data needs root too (<a href="#apps-backup">Backups</a>).</li>
+<li><b>Removing system apps directly.</b> With ADB or Shizuku, if Android refuses to remove a system app for your user, the app tries a fallback (a direct call to Android's package service); with root the app does not use that fallback. In every case the app's file stays in the system area.</li>
+<li>Root reaches places the shell user cannot, such as other apps' private folders. That is how data backup works.</li>
+</ul>
+
+<h4>Risks</h4>
+<ul>
+<li>Anything a root command can do, an app with root can do. Only grant root to apps you trust, and review the root manager's list now and then.</li>
+<li>Root makes it easier to damage the system by mistake, for instance with the <b>Unsafe</b> items of the Debloater or by editing hidden settings. Read <a href="#debloater-safety">Debloater safety</a> and <a href="#safety">Safety</a>.</li>
+<li>Some banking and payment apps refuse to run on a rooted phone.</li>
+</ul>
+
+<h4>If it does not work</h4>
+<ul>
+<li><b>Tag says NOT FOUND.</b> No <code>su</code> was found. The root manager may not be installed or may have been disabled. Fix that, then open the sheet again or tap <b>Check Status</b> on the Shizuku card, which re-checks everything.</li>
+<li><b>"Root was denied or is not available".</b> You tapped Deny, or the root manager did not answer in time. Tap <b>Request Root Access</b> again and approve it, or look for the app in the root manager's list and allow it there.</li>
+<li><b>The badge says Root but actions fail.</b> The app counts Root as ready as soon as it finds a <code>su</code> program, even if you denied the question. Allow ADB Application Manager Pro in your root manager, then tap <b>Request Root Access</b> again.</li>
+</ul>
+</section>
+
+<section id="mode-readonly" data-title="Auto mode and Read-Only mode" data-group="Connect the app to your phone">
+<p class="hg-lead">Auto picks the first working mode that is ready. Read-Only is what remains when none is: you can browse and inspect, but not change anything.</p>
+
+<h4>Auto mode</h4>
+<p>Auto is the default and is called <b>Automatic (Recommended)</b> on its card. It does not create a connection of its own; it looks at what is ready and uses the first of these, in this order:</p>
+<ol class="hg-steps">
+<li><b>ADB over TCP</b>, if the app is connected to <code>127.0.0.1:5555</code>.</li>
+<li><b>Wireless Debugging</b>, if the app is connected to the address you last used.</li>
+<li><b>Shizuku</b>, if it is running and this app has been approved.</li>
+<li><b>ADB over TCP again</b>, if port 5555 is open but the app has not connected yet: it connects quietly and uses it.</li>
+<li>Otherwise <b>Read-Only</b>.</li>
+</ol>
+<p>Root is never part of this list. The Automatic card lists only "ADB TCP, Wireless Debugging, Shizuku". When the app starts with Auto (or ADB over TCP) on and port 5555 open, it connects to it by itself.</p>
+<p>When Auto has found something, the badge reads "Auto" followed by a dot and the mode, for example "Auto &#8226; Wireless ADB (37099)". Auto changes its mind when things change: if the Wi-Fi drops, it falls back to the next ready mode, or to Read-Only. Pinning a specific mode instead stops that, and the badge goes orange with "(not ready)" if that mode is not available.</p>
+
+<h4>Read-Only mode</h4>
+<p>Read-Only is the safe mode. It is what the app starts in on a phone with nothing set up, and you can also choose it on purpose with <b>Continue in Read-Only</b>. The badge then says "Read-Only Mode" (chosen) or "Setup Mode (Read-Only)" (nothing ready), in orange.</p>
+<h5>What you can do</h5>
+<ul>
+<li>See every app, with search, sort, filters and the count boxes.</li>
+<li>Open an app's menu and read its permissions, app ops, components and its decoded manifest, and use <b>App Info</b> to open Android's own page for the app.</li>
+<li>Export the list or share it as a CSV file, copy package names, make saved lists.</li>
+<li><b>Extract APK</b>: copy an installed app's file out of the phone.</li>
+<li>Browse files that the app is allowed to read (see <a href="#app-permissions">permissions</a>), including added storage such as an SD card.</li>
+<li>Download the Debloater list and read its advice, check for updates, change themes and the app's own settings, and read the Device Specs in About.</li>
+</ul>
+<h5>What you cannot do</h5>
+<ul>
+<li>Freeze, enable, suspend, force stop, clear data, uninstall, reinstall, or launch an app through the menu.</li>
+<li>Run batch actions, apply profiles, or make or restore backups.</li>
+<li>Switch permissions, app ops or components on and off.</li>
+<li>Read the log in the Logcat Viewer, change Hidden Settings or overlays, or use the working-mode shell in the Terminal. The Task Manager works only in part: its CPU, RAM, battery and network views work, but its process list and GPU view need a working mode.</li>
+<li>Install silently. The <b>No privilege</b> choice of the APK Installer's <b>Authorizer</b> setting hands the file to Android's own installer, which asks you to confirm. This app is listed under Android's "Install unknown apps", and Android asks whether to allow it the first time an install is made this way.</li>
+</ul>
+
+<h4>The orange banner</h4>
+<p>At the top of the Application Manager tab, in Read-Only, an orange banner says "Active Mode: Read-Only (Unprivileged)" and "All installed apps are shown. To enable Freeze, Uninstall, or ADB commands, connect via ADB TCP 5555, Wireless Debugging, Shizuku, or Root."</p>
+<ul>
+<li><b>Set Up</b> opens the Working Modes sheet.</li>
+<li>The <b>X</b> in its top right corner puts the banner away until the app is started again or Read-Only mode returns. It comes back the next time the app starts, and also if a working mode comes on and later goes away, so Read-Only does not hide itself for good.</li>
+</ul>
+
+<h4>The lock symbol</h4>
+<p>In Read-Only, buttons that would change something show a small lock and look dimmed: the permission buttons (GRANTED, REVOKED, DENIED), the app-op mode buttons (the lock is on the mode that is set), and the ENABLE, DISABLE and STOP buttons of an app's components, and LAUNCH (SHELL) for components that are not exported. A tap still helps: instead of doing nothing it opens a sheet called <b>Working Mode Required</b>, which says which action needs one and offers <b>Set Up Working Mode</b> or <b>Cancel</b>. With a working mode on, the locks go away, except on <i>install-time</i> permissions, which nobody can change (<a href="#basics">Words you will see</a>).</p>
+<div class="hg-note"><b>Tip.</b> Starting in Read-Only costs nothing and risks nothing. You can look around, learn what your phone has, and set a working mode up when you are ready. See <a href="#modes-overview">Working modes</a> to choose.</div>
+</section>
+
+<section id="app-permissions" data-title="The permissions this app asks for" data-group="Connect the app to your phone">
+<p class="hg-lead">Every Android permission and special access the app asks for, what it is for, what stops working without it, and whether you can say no. Nearly all of them are optional.</p>
+
+<h4>Three kinds of permission</h4>
+<ul>
+<li><b>Ordinary permissions</b> are granted automatically when you install. You never see a question, and Android does not let you switch them off.</li>
+<li><b>Permissions with a pop-up</b> are asked about by Android when needed ("Allow notifications?"). You may say no.</li>
+<li><b>Special accesses</b> have no pop-up. Android keeps each on a screen in its Settings. The app offers them in a sheet.</li>
+</ul>
+
+<h4>The permissions sheet</h4>
+<p>The first time the app opens, a couple of seconds after the list appears, a sheet called <b>Allow a few permissions</b> slides up. You can open it again at any time from the <b>About</b> tab, with the <b>Permissions</b> button; there it is called <b>Permissions</b>, and it says "Allow what you like and skip the rest: every one can be changed later."</p>
+<ol class="hg-steps">
+<li>Each row has a name, a one-line reason, and either an <b>Allow</b> button or a tick and the word "Allowed".</li>
+<li>Tap <b>Allow</b> on a row to open the Android screen for it (switch it on, then press Back to return), or, for the ones the app can grant itself, to grant it at once.</li>
+<li><b>Allow all</b> walks through every missing one, one Android screen after another. Closing the sheet cancels the rest.</li>
+<li><b>Not now</b> closes the sheet. When everything is allowed, the same button says <b>Done</b>.</li>
+</ol>
+<p>On Android 10 and older there is no "All files" switch, so <b>Allow</b> shows Android's ordinary storage question instead.</p>
+<p>Separately, when you do something that needs file access and the app has neither that nor a working mode, it opens the same sheet with only that one row, headed "File access needed", and carries on once you allow it.</p>
+
+<h4>The special accesses</h4>
+<table class="hg-table"><thead><tr><th>On screen</th><th>What it is for</th><th>Without it</th><th>Optional?</th></tr></thead><tbody>
+<tr><td>All files access</td><td>Browse storage in the File Manager, find package files on it, install from it.</td><td>The File Manager and the Installer's search cannot read storage unless a working mode is on (a working mode reads it for you). Added storage, such as an SD card, and the file chooser still work.</td><td>Yes</td></tr>
+<tr><td>Usage access</td><td>Show how big each app is and when it was last used.</td><td>Sizes fall back to the app's file size, and the storage figures are missing.</td><td>Yes</td></tr>
+<tr><td>Display over other apps</td><td>Lets the app open another app's screen from the background, such as an app you have just installed.</td><td>That kind of "open it now" may not appear.</td><td>Yes</td></tr>
+<tr><td>Read/Write External Storage</td><td>The older storage permission that some apps still check. On Android 10 and older, it is the storage permission itself.</td><td>Nothing noticeable on Android 11 and newer.</td><td>Yes</td></tr>
+<tr><td>Write Secure Settings</td><td>Lets the app change a few protected system settings used by some advanced features.</td><td>Those advanced features. Nothing in everyday use is known to need it.</td><td>Yes</td></tr>
+<tr><td>Access Restricted Settings</td><td>Lifts Android's block on a few sensitive switches for apps installed from outside a store (Android 13 and newer).</td><td>Some switches for this app stay greyed out as "Restricted setting".</td><td>Yes</td></tr>
+</tbody></table>
+<p>The last three rows only appear in the sheet while a working mode is on, because the app grants them by running a command through that mode (most of them have no screen of their own in Android).</p>
+
+<h4>What the app can grant for itself</h4>
+<p>With a working mode on (ADB, Wireless Debugging, Shizuku or Root), five of these are switched on by the app itself, by running a command as the shell user (UID 2000) or as root. Only All files access always needs Android's own screen.</p>
+<table class="hg-table"><thead><tr><th>Access</th><th>Command the app runs</th></tr></thead><tbody>
+<tr><td>Usage access</td><td><code>appops set com.bloatware.bingblop GET_USAGE_STATS allow</code></td></tr>
+<tr><td>Display over other apps</td><td><code>appops set com.bloatware.bingblop SYSTEM_ALERT_WINDOW allow</code></td></tr>
+<tr><td>Read/Write External Storage</td><td><code>pm grant com.bloatware.bingblop android.permission.READ_EXTERNAL_STORAGE</code>, and the same with WRITE_EXTERNAL_STORAGE</td></tr>
+<tr><td>Write Secure Settings</td><td><code>pm grant com.bloatware.bingblop android.permission.WRITE_SECURE_SETTINGS</code></td></tr>
+<tr><td>Access Restricted Settings</td><td><code>appops set com.bloatware.bingblop android:read_write_restricted_settings allow</code></td></tr>
+</tbody></table>
+<p>If the grant does not take, the app opens the matching Android screen (or the app's own info page) instead. Write Secure Settings has no screen at all, so for that one nothing opens.</p>
+
+<h4>Permissions that come with a pop-up</h4>
+<table class="hg-table"><thead><tr><th>On screen</th><th>What it is for</th><th>Without it</th><th>Optional?</th></tr></thead><tbody>
+<tr><td>Notifications (Android 13 and newer)</td><td>The code box for <b>Pair via Notification</b>; progress and a Cancel button for long file jobs; a reminder after a system update if you are Watching a profile.</td><td><b>Pair via Notification</b> cannot be used (the app asks again). The update reminder is skipped, though the banner inside the app still tells you.</td><td>Yes</td></tr>
+<tr><td>Nearby devices (Bluetooth, Android 12 and newer)</td><td>In <a href="#tab-devices">Connected Devices</a>, lists the Bluetooth devices this phone is paired with, to find a Wear OS watch, and sends files to one.</td><td>The Bluetooth part of Connected Devices cannot list devices. The Wi-Fi part works.</td><td>Yes</td></tr>
+<tr><td>Run commands in Termux</td><td>The Terminal tab's shell that uses your own Termux. Termux itself must also allow it (the setting <code>allow-external-apps</code> in its properties file).</td><td>That one shell is unavailable. The other shells work.</td><td>Yes</td></tr>
+<tr><td>Storage (Android 10 and older)</td><td>Android's ordinary storage question, the same as All files access above.</td><td>As All files access.</td><td>Yes</td></tr>
+</tbody></table>
+<p>On Android 11 and older, the Bluetooth permission is an ordinary one, and no question is asked.</p>
+
+<h4>The Shizuku permission</h4>
+<table class="hg-table"><thead><tr><th>On screen</th><th>What it is for</th><th>Without it</th></tr></thead><tbody>
+<tr><td>A question from the Shizuku app: allow ADB Application Manager Pro to use Shizuku?</td><td>Lets the app run commands through Shizuku. The Android names are <code>moe.shizuku.manager.permission.API_V23</code> and <code>rikka.shizuku.permission.USE_SHIZUKU</code>. It is asked when you tap <b>Authorize &amp; Use Shizuku</b> (<a href="#mode-shizuku">Shizuku</a>).</td><td>Shizuku mode is not available. Every other mode still works.</td></tr>
+</tbody></table>
+
+<h4>Install unknown apps</h4>
+<p>The app declares the permission that Android calls <b>Install unknown apps</b> (its code name is <code>REQUEST_INSTALL_PACKAGES</code>). It is not in the app's own permissions sheet. It is used only when the app hands an APK file to Android's own installer, which happens when an install is made without a working mode (for example the APK Installer's <b>No privilege</b> choice, or the app's own update without a working mode). Android lists this app under Install unknown apps, in its Settings, and asks whether to allow it the first time. If you say no, those installs are refused; installs through a working mode are not affected.</p>
+
+<h4>Ordinary permissions you are never asked about</h4>
+<table class="hg-table"><thead><tr><th>Permission</th><th>What it is for</th></tr></thead><tbody>
+<tr><td>Internet; network state; Wi-Fi state</td><td>Downloads (the Debloater list, update checks, app catalogs, the app's own update), knowing whether Wi-Fi is on, and finding this phone's Wi-Fi address for <b>Use My Wi-Fi IP</b>. Nothing is sent to a server of ours.</td></tr>
+<tr><td>Query all packages</td><td>Seeing the full list of installed apps. Without it, Android 11 and newer would hide most of them.</td></tr>
+<tr><td>Vibrate</td><td>The short tap you feel on many buttons and on a long press.</td></tr>
+<tr><td>Wake lock; foreground service (data sync)</td><td>A long file job (copy, extract) keeps running, with a notification and a Cancel button, when you leave the app.</td></tr>
+<tr><td>Receive boot completed</td><td>After a restart, notice that the system was updated, so a watched profile can be checked. It only compares the build number and posts a reminder; it changes nothing.</td></tr>
+</tbody></table>
+
+<h4>What it does not ask for</h4>
+<p>The app has no permission for the camera, the microphone, your location, contacts, calendar, messages, call log or accounts. It is not an accessibility service or a device administrator.</p>
+<div class="hg-note"><b>Tip.</b> Do not mix up the two uses of "Install unknown apps". When you download this app, the switch that matters is the one for the app you download <i>with</i>, such as your browser (<a href="#install-and-update">Installing and updating the app</a>). The switch for this app itself only matters when it hands a file to Android's installer. Setting up a working mode avoids that step, because the app then installs the file itself.</div>
+<p>To take anything back, open Android's Settings, then <b>Apps</b>, then <b>ADB Application Manager Pro</b>, and look under <b>Permissions</b>. Special accesses are under Settings, Apps, <b>Special app access</b> (the names vary by phone), or just use the sheet in About again. See also <a href="#privacy">Privacy</a>.</p>
+</section>

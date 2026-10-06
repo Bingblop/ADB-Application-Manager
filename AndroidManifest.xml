@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.bloatware.bingblop"
-    android:versionCode="813"
-    android:versionName="7.9.23-Pro">
+    android:versionCode="820"
+    android:versionName="7.10.0-Pro">
 
     <uses-sdk
         android:minSdkVersion="26"
@@ -26,6 +26,7 @@
     <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Connected Devices: the Bluetooth devices this phone is paired with (Android 12+ asks), and sending files to one -->
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />

@@ -1,5 +1,42 @@
 # Changelog
 
+## v7.10.0-Pro (versionCode 820)
+
+- **A new tab: Connected Devices.** Manage another Android device from this phone, a Wear OS watch first (a tablet or another
+  phone works too), through the adb this app already carries. It sits after Task Manager (move it in Settings, Feature List).
+  - **Add device**: pair with the code (Wi-Fi), connect to an address and port, scan the network for devices that offer
+    wireless debugging, or link a Wear OS watch over Bluetooth (through this phone's own ADB and the Wear OS app's
+    adb-hub). Recent addresses are kept. A device that has not allowed this phone yet, or is offline, says what to do.
+  - **Apps**: the main list's look, simpler: filters (3rd Party, System, Enabled, Disabled, Uninstalled, with counts and
+    Clear filters), search, Enable / Disable / Uninstall / Reinstall on one app or a selection, Open, Force stop, Clear
+    data, Pull APK, Details. Names and icons come from this phone when it has the same app.
+  - **Send**: install APK, APKS, APKM and XAPK files on the device, or an app this phone already has (with its splits); the
+    splits that fit the device are chosen (its ABIs, density and language), XAPK game data is copied, there is a progress
+    bar with Stop and a result for every package. Bluetooth sharing is there too, for devices that accept files that way.
+  - **Console**: a small shell for the device, or adb itself (a line that starts with "adb "), with history, command chips,
+    Copy, Share and Stop. Commands that would stop this app's own adb are not sent.
+  - **Logcat**: the device's log, drawn like the Logcat Viewer, with level, filter, Play, Clear, Copy and Share.
+  - **Files**: browse the device, view a text file, pull a file or folder to this phone (Download/ADB App Manager/Devices),
+    send a file here, rename, delete, new folder.
+  - **Hidden Settings**: the device's global, secure and system settings: search, edit, add, delete.
+  - **Display**: a density drop-down from 120 to 640 in steps of 5, minus and plus, your own number, Reset; a screen size box.
+    A change comes with Keep / Put it back and goes back on its own after 15 seconds, so a screen that cannot be read is not stuck.
+- **Three APKs for every release.** arm64-v8a (64-bit phones, the same as before), armeabi-v7a (32-bit phones) and a universal
+  one that holds both. The self-update picks the one that fits the phone. The 32-bit build carries a 32-bit adb and its libraries
+  (see native/armeabi-v7a/README.md); it has not been tried on every 32-bit phone.
+- **A Help Guide** (About tab, next to GitHub): a complete guide for someone who has never used ADB, with a table of contents, a
+  search box, a topic for every tab and setting, step-by-step recipes, safety advice, troubleshooting, a glossary and an FAQ. It
+  is English only and opens without a network. The search lists the topics that hold your words, with a snippet, best first;
+  the Working Modes sheet links straight to the topic that explains the modes.
+- **The header** has no icon any more and starts with the title at the left edge, "Full ADB/Root System Manager", in the logo's
+  two lines and colours; the settings gear and the working-mode badge stay where they were (the badge wraps on a narrow phone).
+- **The Read-Only banner can be put away** with the X in its top right corner. It is not remembered: it comes back the next time
+  the app starts in read-only mode.
+- **Small refinements across the app**: thin scrollbars, visible keyboard / switch focus, figures that keep their width, a soft
+  edge on cards, a grab handle on bottom sheets and a short fade when a tab opens. Nothing was moved, hidden or made smaller.
+- **Fixes**: the Coding Agents status now also reports the keys of Perplexity, Grok, Muse and Deepseek; the manifest declares
+  REQUEST_INSTALL_PACKAGES, which an install without a working mode (and the app's own update without one) needs.
+
 ## v7.9.23-Pro (versionCode 813)
 
 - **The lock on everything that cannot be changed right now.** Without a working mode (ADB, Wireless Debugging, Shizuku or

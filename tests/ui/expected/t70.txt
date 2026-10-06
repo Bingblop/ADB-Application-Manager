@@ -1,6 +1,6 @@
-1. the settings button is a good tap target (at least 44 x 36, it was 40 x 25): true {"w":44,"h":36}
+1. the settings button is a good tap target (at least 44 x 36, it was 40 x 25): true {"w":46,"h":36}
    its emoji is bigger (19px, it was 11px): true 19px
-   it fits in the header (no taller than the header) and the tab bar still starts where the header ends: true header 87px, tab bar at 87, header ends 87
+   it fits in the header (no taller than the header) and the tab bar still starts where the header ends: true header 78px, tab bar at 78, header ends 78
    it still opens Settings: true
 2. on opening, "Total installed" is lit (the list shows every app, like the All pill): true all:true
    a lit card looks different (its own border colour and a glow), the others do not: true {"lit":true,"borderDiffers":true,"shadow":true}

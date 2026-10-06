@@ -1,0 +1,318 @@
+<!-- Start here: welcome, quick start, install and update, the words you will see, a tour of the screen. -->
+
+<section id="welcome" data-title="Welcome" data-group="Start here">
+<p class="hg-lead">ADB Application Manager Pro shows you every app on your Android phone and lets you take charge of them: freeze the ones you never use, remove the ones the phone maker pre-installed, install new ones, and keep backups. It runs on the phone itself, with no account and no ads.</p>
+
+<h4>What the app is</h4>
+<p>Android is careful about one app changing another. The phone's own Settings app can turn off some apps, but it hides many of the apps that run in the background, it works on one app at a time, and it will not let you turn off many of the apps your phone maker added. Developers get around this with a tool called <b>ADB</b> (Android Debug Bridge), normally used from a computer. This app brings that kind of power onto the phone, so for everyday use you do not need a computer.</p>
+<p>To get that power, the app connects to your phone in one of a few ways, called <b>working modes</b>. You pick one, and the app shows its name in a badge at the top right of the screen. <a href="#modes-overview">Working modes: what they are and which to pick</a> explains each one and helps you choose. Until a working mode is set up, the app is in <b>Read-Only</b> mode: you can look at everything and change nothing (see <a href="#mode-readonly">Auto mode and Read-Only mode</a>).</p>
+<p>The title at the top of the screen reads "Full ADB/Root System Manager" (on two lines). The name under the icon on your home screen, and in Android's list of apps, is "ADB Application Manager Pro". They are the same app.</p>
+
+<h4>What it can do</h4>
+<ul>
+<li>List every app on the phone, including system apps and ones that were already removed, with search, sort and filters (<a href="#tab-apps">Application Manager</a>).</li>
+<li>Freeze (disable) an app, suspend it, stop it, clear its data, uninstall it for your user, or bring a removed system app back. One app at a time, or many together (<a href="#apps-menu">an app's menu</a>, <a href="#apps-batch">batch actions</a>).</li>
+<li>Suggest which pre-installed apps are safe to remove, using the community UAD-NG list (Universal Android Debloater Next Generation), with a review step before anything runs and an Undo afterwards (<a href="#tab-debloater">UAD-NG Debloater</a>).</li>
+<li>Install .apk files (the files that Android apps are installed from) and the split-file bundles (.apks, .apkm, .xapk) (<a href="#tab-installer">APK Installer</a>).</li>
+<li>Back up an app, and save "profiles" that remember which apps you turned off (<a href="#apps-backup">backups</a>, <a href="#apps-profiles">profiles</a>).</li>
+<li>Look inside an app: its permissions, its app ops, its components and its decoded manifest.</li>
+<li>Browse and manage files, and open zip, 7z, rar and tar archives without unpacking them (<a href="#tab-files">File Manager</a>).</li>
+<li>Run a terminal, with optional AI coding helpers that ask your permission before they run anything (<a href="#tab-terminal">Command-Line Interface</a>).</li>
+<li>Change Android's hidden settings and recolour the system (<a href="#tab-settings">Hidden Settings</a>, <a href="#tab-overlays">RRO/Monet Customization</a>).</li>
+<li>Check for app updates, browse app catalogs, read the device log, watch running processes, and talk to a Wear OS watch (<a href="#tab-updates">App Updater</a>, <a href="#tab-store">App Stores</a>, <a href="#tab-logcat">Logcat Viewer</a>, <a href="#tab-taskmgr">Task Manager</a>, <a href="#tab-devices">Connected Devices</a>).</li>
+</ul>
+
+<h4>What it cannot do</h4>
+<ul>
+<li>It cannot change other apps until a working mode is on. Without one it is a viewer.</li>
+<li>It cannot root your phone or unlock it. If you want <a href="#mode-root">Root</a>, the phone must already be rooted (given full administrator access, which you do with other tools).</li>
+<li>It cannot delete a system app from the phone for good. "Uninstall" on a system app removes it for your user only; the file stays in the system area, and a factory reset (and sometimes a system update) brings the app back.</li>
+<li>It cannot override the phone maker's locks. A few protected apps refuse to be disabled or removed even in a working mode, and Android's own error message is shown when that happens.</li>
+<li>It does not update Google Play apps itself. Those keep updating through the Play Store or Aurora Store (another app for downloading Play apps) (<a href="#tab-updates">App Updater</a>).</li>
+<li>It cannot read other apps' private data, except with Root, which is what lets it back up an app's data (<a href="#apps-backup">Backups</a>).</li>
+<li>It cannot make a risky change safe. It warns you and offers Undo wherever it can, but you decide. Read <a href="#safety">Safety</a> before you remove system apps.</li>
+</ul>
+
+<h4>Who it is for</h4>
+<p>It is for anyone who wants to tidy their phone: people who are tired of apps they never chose, who want to stop an app running in the background, or who want a second opinion on what an app is allowed to do. You do not have to know what ADB, Shizuku or root mean. This guide explains every word the first time it comes up, and the <a href="#basics">Words you will see</a> topic collects them in one place, with a longer <a href="#glossary">glossary</a> at the end.</p>
+<p>Be honest with yourself about one thing: the app is powerful. It is possible to turn off something your phone needs. Almost everything the app does can be undone, freezing most of all, and the guide marks the exceptions. Work in small steps, one change at a time.</p>
+
+<h4>What you need</h4>
+<ul>
+<li><b>Android 8.0 or newer.</b> The app will not install on older versions.</li>
+<li><b>An ARM phone</b>, which is nearly every phone. There are three downloads; <a href="#install-and-update">Installing and updating the app</a> says which one to take.</li>
+<li><b>A working mode</b>, for anything beyond looking. You do not need a computer if the phone runs Android 11 or newer (use Wireless Debugging, Android's way of connecting over Wi-Fi, which needs no cable) or if it is rooted (use Root). On Android 8 to 10 without root, you need a computer to switch on ADB over TCP (a setting that lets the app talk to the phone's own ADB service), and you must repeat that after every restart of the phone. <a href="#modes-overview">Working modes</a> lays this out in a table.</li>
+<li><b>Internet</b>, but only when you open something that needs it: the debloat list, update checks, app catalogs, the app's own update, and a VirusTotal lookup if you add your own key. Nothing is sent to a server of ours, and there is no account (<a href="#privacy">Privacy</a>).</li>
+</ul>
+
+<h4>A map of this guide</h4>
+<ul>
+<li><b>Start here</b> (this group): the welcome, a five-minute <a href="#quick-start">Quick start</a>, <a href="#install-and-update">installing and updating</a>, <a href="#basics">the words you will see</a> and <a href="#screen-tour">a tour of the screen</a>.</li>
+<li><b>Connect the app to your phone</b>: every working mode, step by step, starting with <a href="#modes-overview">the overview</a>, then <a href="#mode-wireless">Wireless Debugging</a>, <a href="#mode-tcp">ADB over TCP</a>, <a href="#mode-shizuku">Shizuku</a>, <a href="#mode-root">Root</a>, <a href="#mode-readonly">Auto and Read-Only</a>, and <a href="#app-permissions">the permissions the app asks for</a>.</li>
+<li><b>The tabs</b>: one topic for each tab in the tab bar, in the same order, beginning with <a href="#tab-apps">Application Manager</a>.</li>
+<li><b>Settings and looks</b>: <a href="#prefs">Settings</a>, <a href="#feature-list">turning tabs on and off</a> and <a href="#themes">themes</a>.</li>
+<li><b>How do I...?</b>: short recipes for common jobs, each pointing into the topics above.</li>
+<li><b>Safety and help</b>: <a href="#safety">safety</a>, <a href="#troubleshooting">troubleshooting</a>, <a href="#faq">questions and answers</a>, the <a href="#glossary">glossary</a>, <a href="#privacy">privacy</a> and <a href="#credits">credits</a>.</li>
+</ul>
+
+<h4>How to use this guide</h4>
+<ol class="hg-steps">
+<li><b>Open it.</b> Go to the <b>About</b> tab (the last tab) and tap <b>Help Guide</b>, one of the buttons in the card at the top, between <b>GitHub</b> and <b>What's new</b>. A tall sheet slides up. The first time, the guide takes a moment to load; after that it opens at once, and if you close it and open it again it carries on where you stopped.</li>
+<li><b>Find a topic.</b> At the top of the sheet is a table of contents, grouped like the map above. Tap a topic to jump to it. The <b>Contents</b> button in the top bar, and the <b>Back to the contents</b> link at the end of every topic, bring you back to this list.</li>
+<li><b>Search.</b> Type in the box at the top, for example "freeze", "pairing code" or "density". Only the topics that contain every word you typed stay on the screen, and the words are highlighted when twelve topics or fewer match. Clear the box to get the whole guide back.</li>
+<li><b>Follow links.</b> Underlined words jump to another topic. When one does, a <b>Back to where I was</b> button appears at the bottom for about fifteen seconds; tap it to return to the place you left.</li>
+<li><b>Close it.</b> Tap the X at the top right, tap the dim area outside the sheet, or use your phone's Back button or gesture.</li>
+</ol>
+<div class="hg-note"><b>Tip.</b> Button and tab names are written in bold exactly as the English app spells them, and commands and file names look like <code>this</code>. The app itself can be shown in many languages (Settings, Language), but this guide is English only, so if you changed the language, the names you see on screen will differ from the names here.</div>
+<div class="hg-note"><b>Tip.</b> If you are new to all of this, read <a href="#quick-start">Quick start</a> next. It takes you from the first launch to one safe, reversible change.</div>
+</section>
+
+<section id="quick-start" data-title="Quick start in five minutes" data-group="Start here">
+<p class="hg-lead">From the first launch to your first safe action: set the app up, look around, freeze one app you do not need, and bring it back. You will know where Undo is before you ever need it.</p>
+
+<h4>Before you start</h4>
+<ul>
+<li>The app must be installed. If it is not, see <a href="#install-and-update">Installing and updating the app</a>.</li>
+<li>Steps 1 to 3, 6 and 8 need no working mode and change nothing on your phone. Step 4 sets a working mode up, and steps 5 and 7 need it. If you cannot set one up right now, stop after step 3 (or go on to step 6); you have lost nothing.</li>
+<li>Allow ten minutes the first time, mostly for setting up the working mode. Wireless Debugging in particular has several steps the first time and far fewer after that.</li>
+</ul>
+
+<h4>Step by step</h4>
+<ol class="hg-steps">
+<li><b>Open the app.</b> It starts on the <b>Application Manager</b> tab. For a moment the list says "Querying system packages...", then every app appears. On a first launch Android may also show its own question about notifications (Android 13 and newer) or about storage (Android 10 and older). Notifications are only used for the pairing-code box, for progress of long file jobs and for one reminder after a system update, so either answer is fine for now. See <a href="#app-permissions">The permissions this app asks for</a>.</li>
+<li><b>Meet the permissions sheet.</b> A couple of seconds later a sheet (a panel that slides up over the screen) called <b>Allow a few permissions</b> appears. It lists <b>All files access</b>, <b>Usage access</b> and <b>Display over other apps</b>, each with an <b>Allow</b> button and a one-line reason. All are optional. <b>Allow all</b> takes you through the Android screen for each one; <b>Not now</b> skips them. For a first run, <b>Not now</b> is fine. The same sheet is under <b>About</b>, then <b>Permissions</b>, whenever you want it. If another sheet is open when the permissions sheet is due, it waits until that one is closed.</li>
+<li><b>Look at the list.</b> Near the top is an orange banner, "Active Mode: Read-Only (Unprivileged)", with a <b>Set Up</b> button and an X in its top right corner (the X puts the banner away until the app is started again, or until Read-Only mode comes back). It means the app can only look for now. Below it are boxes that count your apps (<b>Total Installed</b>, <b>Running</b>, <b>Bloatware (Uninstalled)</b>, <b>Enabled</b>, <b>Frozen</b>, <b>3rd Party</b>, <b>System</b>), a <b>Sort</b> box, a row of filter pills that scrolls sideways, a search box, and then the apps. Try three things: type a few letters in the search box; tap the <b>3rd Party</b> pill to show only apps you installed yourself; tap it again to turn the filter off. Each row has a coloured tag such as <b>USER</b> or <b>SYSTEM</b>. Nothing you have done so far changes any app.</li>
+<li><b>Pick a working mode.</b> Tap the badge at the top right, which now reads "Setup Mode (Read-Only)" in orange. (The <b>Set Up</b> button on the banner opens the same sheet.) The sheet <b>Working Modes &amp; ADB Setup</b> slides up with a card for each mode (below a first card about the app's own ADB key). Choose by phone:
+<ul>
+<li>Your phone is rooted: use <a href="#mode-root">Root</a>.</li>
+<li>Not rooted, Android 11 or newer: use <a href="#mode-wireless">Wireless Debugging</a>. No computer is needed.</li>
+<li>Not rooted, Android 8 to 10: use <a href="#mode-tcp">ADB over TCP</a>, which needs a computer once, or <a href="#mode-shizuku">Shizuku</a> if you already use it.</li>
+</ul>
+Not sure? <a href="#modes-overview">Working modes: what they are and which to pick</a> has a short decision list.</li>
+<li><b>Check that it worked.</b> Close the sheet. The badge turns green (violet for Root) and names the mode, for example "Wireless ADB (37099)" or "ADB TCP (5555)". The orange banner on the Application Manager tab disappears. If it did not, open <a href="#troubleshooting">Troubleshooting</a>.</li>
+<li><b>Look inside an app (no change).</b> On any row, tap the three-dots button (<b>&#8943;</b>) at the right end, or press and hold the row for about half a second. A sheet slides up with the app's name, its package name (its unique ID, explained in <a href="#basics">Words you will see</a>) and its version, a grid of buttons (<b>Launch</b>, <b>Force Stop</b>, <b>Freeze</b>, <b>Suspend</b>, <b>Clear Data</b>, <b>Uninstall</b>, <b>Rem Updates</b>, <b>App Info</b>, <b>Extract APK</b>, <b>Backup</b>, <b>Optimize</b>, <b>Logs</b>) and below them the tabs <b>Permissions</b>, <b>App Ops</b>, <b>Components</b>, <b>Manifest</b> and <b>Raw</b>. Tap through the five tabs only; with a working mode on, the grid buttons act at once, so leave them for step 7. Inside the tabs, a small lock on a button means "needs a working mode". The grid buttons carry no lock: in Read-Only mode, the ones that change something open a sheet called <b>Working Mode Required</b> instead (see step 7). Close the sheet with the X, by tapping outside it, or with Back. Nothing has changed.</li>
+<li><b>Freeze one app, then bring it back.</b> Pick an app you installed yourself, do not need, and recognise: an old game is ideal. Use the <b>3rd Party</b> pill to find it. Open its menu (step 6) and tap <b>Freeze</b>.
+<ul>
+<li>A short message at the bottom says "Action executed". The <b>Freeze</b> button turns into <b>Enable</b>.</li>
+<li>After a moment the row gets a <b>FROZEN</b> tag, and the app disappears from your home screen and app drawer. Tap the <b>Frozen</b> pill to see it listed.</li>
+<li>Now tap <b>Enable</b>. The <b>FROZEN</b> tag goes and the app is back, exactly as it was. Nothing was deleted at any point.</li>
+</ul>
+If you are still in Read-Only mode, tapping <b>Freeze</b> opens a sheet called <b>Working Mode Required</b> instead, with a <b>Set Up Working Mode</b> button. That is the app protecting you, not an error.</li>
+<li><b>Know where Undo is.</b> See the list below. You now have all you need to start using the app.</li>
+</ol>
+
+<div class="hg-warn"><b>Careful.</b> For your first changes, choose an app marked <b>USER</b> that you recognise. Do not freeze anything marked <b>SYSTEM</b> yet, and never your keyboard, your home screen (launcher), the phone or messages app, Settings, or System UI (the part of Android that draws the status bar and the pull-down panel). Leave <b>Clear Data</b> and <b>Uninstall</b> alone until you have read <a href="#apps-menu">An app's menu</a> and <a href="#safety">Safety</a>: clearing data cannot be undone.</div>
+
+<h4>Where to find Undo</h4>
+<ul>
+<li><b>Right where you did it.</b> In the app's menu, <b>Freeze</b> turns into <b>Enable</b>, <b>Suspend</b> into <b>Unsuspend</b>, and <b>Uninstall</b> into <b>Reinstall</b> (that last one brings back a system app you removed for your user).</li>
+<li><b>History.</b> In the <b>UAD-NG Debloater</b> tab, the <b>History</b> button opens a list called <b>Debloat History</b>. It records every Freeze, Enable, Suspend, Unsuspend, Uninstall and Reinstall done from the Debloater, from an app's menu and from batch actions, with an <b>Undo</b> button on each entry. See <a href="#debloater-safety">Debloater safety</a>.</li>
+<li><b>Backups and profiles.</b> The <b>Backups</b> and <b>Profiles</b> buttons above the list keep copies of apps and of which apps you turned off (<a href="#apps-backup">Backups</a>, <a href="#apps-profiles">Profiles</a>).</li>
+<li><b>Settings changes</b> made in Hidden Settings and in the Overlays tab have their own Undo, described in those tabs.</li>
+<li><b>The last resort</b> for a system app removed for your user is a factory reset, which restores it. Back up what you care about first.</li>
+</ul>
+<div class="hg-note"><b>Tip.</b> Freezing is the gentlest change: the app keeps all its files and settings, it just cannot run. When you are unsure, freeze instead of uninstalling. You can always uninstall later, after a week of living without the app.</div>
+
+<h4>What next</h4>
+<ul>
+<li>Learn the screen: <a href="#screen-tour">A tour of the screen</a> and <a href="#tab-apps">Application Manager</a>.</li>
+<li>Tidy up many apps safely: <a href="#tab-debloater">UAD-NG Debloater</a> and <a href="#debloater-safety">Debloater safety</a>.</li>
+<li>Install an app from a file: <a href="#tab-installer">APK Installer</a>.</li>
+<li>Make the connection more convenient: <a href="#quick-tiles">Quick Settings tiles and widget</a> switch the working mode without opening the app.</li>
+<li>Something did not work: <a href="#troubleshooting">Troubleshooting</a>.</li>
+</ul>
+</section>
+
+<section id="install-and-update" data-title="Installing and updating the app" data-group="Start here">
+<p class="hg-lead">The app comes as a single APK file from its GitHub releases page, in three flavours for different phone processors. Install it from your browser, and later update it by installing the next version over it, or from inside the app.</p>
+
+<h4>Before you start</h4>
+<ul>
+<li>You need Android 8.0 or newer and some free space on the phone.</li>
+<li>The app is not on Google Play. It is downloaded from <a href="https://github.com/Bingblop/ADB-Application-Manager/releases/latest">its releases page on GitHub</a>.</li>
+<li>Take the download only from that page. Every official release is signed with the same key, which is how you can trust an update, and why a copy from anywhere else is a risk.</li>
+</ul>
+
+<h4>The three downloads</h4>
+<p>Each release has three APK files, whose names end in <code>arm64-v8a.apk</code>, <code>armeabi-v7a.apk</code> or <code>universal.apk</code>, plus a small file called <code>SHA256SUMS.txt</code> that lists a checksum (a fingerprint) for each APK. The file names look like <code>ADB_Application_Manager_Pro-v(version)-arm64-v8a.apk</code>, where (version) is the release number.</p>
+<table class="hg-table"><thead><tr><th>Name ends with</th><th>For</th><th>Notes</th></tr></thead><tbody>
+<tr><td><code>arm64-v8a.apk</code></td><td>64-bit phones: nearly every phone made in the last several years</td><td>The usual choice.</td></tr>
+<tr><td><code>armeabi-v7a.apk</code></td><td>32-bit phones: older or very cheap ones, and phones running a 32-bit version of Android</td><td>New, see the note at the end of this topic.</td></tr>
+<tr><td><code>universal.apk</code></td><td>Either kind</td><td>Carries both versions of the built-in ADB tool, so it is larger. The safe choice if you are unsure.</td></tr>
+</tbody></table>
+<p>The difference is the small ADB program that the app carries inside it and starts to talk to your phone. A 64-bit phone needs the 64-bit program, a 32-bit phone needs the 32-bit one, and the universal file has both. Everything you see on screen is the same in all three.</p>
+
+<h4>Which one does my phone need?</h4>
+<ol class="hg-steps">
+<li><b>If you have no idea, take the universal file.</b> It works on both kinds of phone.</li>
+<li><b>If a recent version of this app is already installed</b>, open the <b>About</b> tab. In the <b>This build</b> card, the <b>CPU</b> row shows the first processor type your phone reports. <code>arm64-v8a</code> means take the 64-bit file; <code>armeabi-v7a</code> (or <code>armeabi</code>) means take the 32-bit file. The <b>Device Specs</b> card lower down also lists <b>CPU architecture</b>.</li>
+<li><b>Otherwise</b>, a hardware-information app from your app store usually lists the processor type, often under "Architecture" or "Supported ABIs" (ABI means processor type). Look for <code>arm64</code> (64-bit) or <code>armeabi</code> / <code>armv7</code> (32-bit).</li>
+</ol>
+<div class="hg-note"><b>Tip.</b> It is the Android system that counts, not just the chip. Some budget phones have a 64-bit chip but ship a 32-bit Android, and they report a 32-bit type. That is why the answer in the <b>CPU</b> row is better than guessing from the phone's age. Phones with an Intel (x86) processor are not what any of the three files was made for.</div>
+<p>If you install the wrong one, Android usually refuses with a message such as "App not installed" or that the app is not compatible with your phone. Nothing is harmed; download the other file and try again. Note that a few very recent phones can run 64-bit apps only, so on those the 32-bit file will not install at all.</p>
+
+<h4>Installing from your browser</h4>
+<ol class="hg-steps">
+<li><b>Download the file.</b> On your phone, open the releases page in your browser and scroll to the list of files at the bottom of the newest release. Tap the APK you chose. The browser may warn that this type of file can harm your device; that warning appears for every APK, so tap <b>OK</b> or <b>Download anyway</b>.</li>
+<li><b>Open it.</b> When the download finishes, tap <b>Open</b> in the browser's message, or open your Downloads folder in a file manager and tap the file.</li>
+<li><b>Allow installs from this source, once.</b> Android may say your phone is not allowed to install unknown apps from this source, with a <b>Settings</b> button. Tap it, switch on <b>Allow from this source</b> for the app you used (your browser or your file manager), then press Back. Android calls this "Install unknown apps", and the switch belongs to the app you downloaded <i>with</i>, not to this app. (This app has a switch of its own too, but it only matters later, when this app hands a file to Android's installer; see "Updating from inside the app" below.)</li>
+<li><b>Install.</b> Tap <b>Install</b>. Google Play Protect (Google's built-in app scanner) may offer to scan the app or warn that it is not from a store. Choose <b>More details</b>, then <b>Install anyway</b> (the wording varies a little between phones).</li>
+<li><b>Open it.</b> Tap <b>Open</b>. The first launch is described in <a href="#quick-start">Quick start</a>.</li>
+</ol>
+<div class="hg-note"><b>Tip.</b> After installing you can switch "Allow from this source" off again for your browser. It is safer to leave it off until you need it.</div>
+<div class="hg-warn"><b>Careful.</b> On some recent Samsung phones, a feature called <b>Auto Blocker</b> can block installs that do not come from a store, and nothing else tells you why. If the install is refused with no clear reason, look under Settings, Security and privacy, Auto Blocker.</div>
+<p>To check what you installed, open the <b>About</b> tab. The line under <b>This build</b> says "Signed with the official release key" when the app is the real release. If it says "Not signed with the official release key (a debug, fork or modified build)", it is a build someone else made.</p>
+
+<h4>If Android says "App not installed"</h4>
+<ul>
+<li><b>Wrong file for your phone.</b> Try the universal file.</li>
+<li><b>Different signing key.</b> A copy you built yourself, or got from elsewhere, is signed with another key and cannot replace an official install. You would have to uninstall the old app first, which deletes its saved lists, profiles and settings. Export what you need first (<a href="#apps-profiles">Profiles</a>).</li>
+<li><b>The download broke off.</b> Download it again.</li>
+<li><b>Not enough space.</b> Free some and retry.</li>
+</ul>
+
+<h4>Updating in place</h4>
+<p>You never need to uninstall to update. Install the new APK over the old app, the same way as above. Android keeps your settings, saved lists, profiles and permissions, because the new file has the same package name and the same signing key. You can usually go from one flavour to another this way too, for example from <code>universal</code> to <code>arm64-v8a</code>. After an update, a <b>What's new</b> sheet opens once with the changes.</p>
+
+<h4>Updating from inside the app</h4>
+<ol class="hg-steps">
+<li>Open the <b>About</b> tab and tap <b>Check for update</b>. The app opens the <b>App Updater</b> tab at its <b>App update</b> card and asks GitHub for the newest release. (If the <b>App Updater</b> tab is turned off, you get a message saying where to turn it on: <b>Settings</b>, <b>Feature List</b>.)</li>
+<li>The card says either "You're on the latest version" or "Update available", with the old and new numbers. Buttons: <b>Check for app update</b>, <b>Update now</b> and <b>Release notes</b>.</li>
+<li>Tap <b>Update now</b>. A progress bar shows the download. The app picks the right file for your phone by itself: the one named for your processor, else the universal one.</li>
+<li>Before installing, the app checks that the file is this app, is newer, and is signed with the same key. If one check fails it stops and says why.</li>
+<li>With a working mode on, the update installs quietly and the app restarts. Without one, the file is handed to Android's own installer, and the card says "Confirm the install to update". The first time, Android asks whether to allow this app to install apps (it lists this app under "Install unknown apps"); allow it and follow Android's prompts. If Android still refuses, install the APK from your browser as described above, or set up a working mode and try again.</li>
+</ol>
+
+<h4>What the App Updater tab does for other apps</h4>
+<p>The same tab has more cards. <b>Updates Available</b> checks the Galaxy Store for Samsung apps, and checks sideloaded open-source apps (apps installed from a file instead of a store) against GitHub, Codeberg, F-Droid, IzzyOnDroid and the Obtainium catalog, with an <b>Update All</b> button. Every download is checked to be the same app, a newer version and signed with the same key before it installs. Google Play apps are not updated here; there is a card that sends you to the Play Store or Aurora Store. See <a href="#tab-updates">App Updater</a> and <a href="#tab-store">App Stores</a>.</p>
+
+<h4>About the 32-bit build</h4>
+<div class="hg-warn"><b>Careful.</b> The 32-bit build (<code>armeabi-v7a</code>, and the 32-bit half of the universal file) is new, added in version 7.10.0. It carries a different copy of the ADB tool, taken from Termux's package for 32-bit ARM, together with a set of helper libraries that the app, on a 32-bit phone, unpacks into its private folder when it starts after an install or an update. It has seen far less use than the 64-bit build and has not been tried on every 32-bit phone. If a working mode will not connect on such a phone, it may be the build and not you. Please report it with the details from <b>About</b>, <b>Copy debug info</b> (the <b>Report a bug or idea</b> button is in the same tab), so it can be fixed.</div>
+<p>Installing is the same for all three files, and the app itself behaves the same. If the phone gives trouble and it is really a 64-bit phone, the 64-bit file is the better-tested choice; otherwise see <a href="#troubleshooting">Troubleshooting</a>.</p>
+</section>
+
+<section id="basics" data-title="Words you will see" data-group="Start here">
+<p class="hg-lead">The words this app uses, in plain language, with an example of each. If a word is not here, look in the <a href="#glossary">glossary</a>.</p>
+
+<h4>App</h4>
+<p>Anything you can open from your home screen, such as a game, a camera or a bank. The phone also has many apps that run in the background and have no icon at all. The <a href="#tab-apps">Application Manager</a> lists all of them.</p>
+
+<h4>System app and 3rd Party (user) app</h4>
+<p>A <b>system app</b> came with the phone: the dialer, the clock, the manufacturer's extras, and many pieces of Android itself. A <b>3rd Party</b> app, also called a <b>user</b> app, is one you (or someone setting up the phone) installed afterwards. In the app list each row carries a <b>SYSTEM</b> or <b>USER</b> tag, and there are <b>System</b> and <b>3rd Party</b> filters. A system app that you update from the Play Store is still a system app. Removing system apps is where most of the risk is, so start with user apps.</p>
+
+<h4>Package name</h4>
+<p>The unique ID of an app, shown in small type under its name. It looks like <code>com.google.android.youtube</code>. Two apps can share a display name but never a package name. Search works on both, and a menu has <b>Copy package</b> chips. When the guide or the app talks about "a package", it means an app.</p>
+
+<h4>APK and split APKs</h4>
+<p>An <b>APK</b> is the file an app is installed from, with the ending <code>.apk</code>. Many modern apps come as several files that work together: a base file plus small "split" files for your processor, your screen density and your language. Those arrive as one bundle with the endings <code>.apks</code>, <code>.apkm</code> or <code>.xapk</code>. The <a href="#tab-installer">APK Installer</a> reads all of them and ticks the splits that fit your phone (<a href="#installer-splits">Splits</a>). <b>Extract APK</b> in an app's menu copies an installed app's file out of the phone.</p>
+
+<h4>Freeze (disable)</h4>
+<p>Freezing turns an app off without removing it. Android calls this "disabling". A frozen app cannot run, does not appear in your launcher, and uses no battery, but all its files and settings stay, and one tap brings it back. In this app the button is <b>Freeze</b> (and <b>Enable</b> to undo it); the Debloater calls it <b>Disable</b>, and the history log says "Disabled" and "Enabled". Frozen apps carry a <b>FROZEN</b> tag. Example: freeze a shopping app you only use at Christmas.</p>
+
+<h4>Suspend</h4>
+<p>Suspending is a lighter pause. The app stays enabled, but Android greys out its icon, will not open it, and hides its notifications. Use <b>Suspend</b> and <b>Unsuspend</b> when you want an app out of reach for a while. Suspended apps carry a <b>SUSPENDED</b> tag.</p>
+
+<h4>Uninstall, and uninstall for the current user only</h4>
+<p>For an app you installed, <b>Uninstall</b> removes it. For a <b>system</b> app, the app can only remove it <b>for the current user</b>, which is you: it disappears from your phone, but its file stays in the protected system area. Such an app is listed under <b>Uninstalled</b> (the <b>Bloatware (Uninstalled)</b> box counts them), and <b>Reinstall</b> in its menu brings it back. A factory reset also restores it, and a big system update sometimes does. <b>Rem Updates</b> is different again: it removes the updates of a system app and returns it to the version the phone shipped with.</p>
+
+<h4>Clear data</h4>
+<p>Wipes everything the app saved: logins, settings, downloads kept inside it. Afterwards the app behaves as if you had just installed it. It cannot be undone, except from a backup that was made with Root. Example: clear the data of a misbehaving app before giving up on it.</p>
+
+<h4>Force stop</h4>
+<p>Ends an app's running processes right now. It is harmless: nothing is deleted and the app can start again. Use it on an app that is stuck or draining battery.</p>
+
+<h4>Permissions</h4>
+<p>What an app is allowed to do: use the camera, see your location, read your contacts. Some are asked about when you use the app ("runtime" permissions) and can be switched on and off. Others are fixed when the app is installed ("install-time") and cannot be changed by anyone; the app shows a lock on those. An app's menu has a <b>Permissions</b> tab that lists them.</p>
+
+<h4>App ops</h4>
+<p>A finer set of switches that Android keeps behind the permissions, such as "run in the background" or "show over other apps". Each can be set to allow, ignore, deny, foreground-only or default. They live in the <b>App Ops</b> tab of an app's menu, and changing them needs a working mode.</p>
+
+<h4>Debloat and bloatware</h4>
+<p><b>Bloatware</b> means apps that were pre-installed by the phone's maker or your carrier, that many people never use and cannot easily remove. <b>Debloating</b> is turning them off or removing them for your user. The <a href="#tab-debloater">UAD-NG Debloater</a> shows a community list that rates each app as <b>Recommended</b>, <b>Advanced</b>, <b>Expert</b> or <b>Unsafe</b> to remove. Never remove anything rated <b>Unsafe</b>. See <a href="#debloater-safety">Debloater safety</a>.</p>
+
+<h4>ADB</h4>
+<p>Short for Android Debug Bridge, the tool developers use to send commands to a phone, normally from a computer. It runs commands as a special Android user called "shell", whose user number is 2000, and that user is allowed to do things an ordinary app is not. This app carries its own copy of ADB and uses it on the phone itself. See <a href="#mode-tcp">ADB over TCP</a> and <a href="#mode-wireless">Wireless Debugging</a>.</p>
+
+<h4>Shizuku</h4>
+<p>A separate free app that starts a background helper with ADB-level power, and lets other apps use it once you approve them. If you already use Shizuku, this app can use it as its working mode. See <a href="#mode-shizuku">Shizuku</a>.</p>
+
+<h4>Root</h4>
+<p>Full administrator access to the phone, beyond what even ADB can do. It is not on by default: the phone must be rooted by you with other tools, which usually voids the warranty. If your phone is rooted, this app can use it. See <a href="#mode-root">Root</a>.</p>
+
+<h4>Working mode</h4>
+<p>The way this app gets the power to change other apps: ADB over TCP, Wireless Debugging, Shizuku or Root, or <b>Auto</b>, which uses the first of the first three that is ready (Auto never picks Root; you choose Root yourself). Without one, the app is in <b>Read-Only</b> mode. The current mode is the badge at the top right. See <a href="#modes-overview">Working modes</a>.</p>
+
+<h4>Backup</h4>
+<p>A saved copy of an app: its APK files, its permissions and its app ops, and, with Root, its data. It is a single file you can keep or share, and restoring it puts the app back. See <a href="#apps-backup">Backups</a>.</p>
+
+<h4>Profile</h4>
+<p>A saved list of which apps are frozen, suspended or removed on your phone. You can apply it again later, share it with another phone, and ask the app to <b>Watch</b> it: after a system update it tells you if apps you removed have come back. See <a href="#apps-profiles">Profiles</a>.</p>
+
+<div class="hg-note"><b>Tip.</b> The words "package", "app" and "application" mean the same thing in this app. Likewise "freeze" and "disable".</div>
+</section>
+
+<section id="screen-tour" data-title="A tour of the screen" data-group="Start here">
+<p class="hg-lead">What is on the screen, what the coloured badge at the top means, how the tab bar works, what Back does, and how to select and open apps.</p>
+
+<h4>The header</h4>
+<p>The header is the strip at the top. From left to right:</p>
+<ul>
+<li><b>The title</b>, "Full ADB/Root System Manager", and under it the <b>device line</b>: your phone's maker, model and Android version, for example "samsung SM-S938B &#8226; Android 15". (For a split second after launch it shows placeholder text.)</li>
+<li><b>The Settings gear.</b> Tap it for Settings: language, appearance, colours, font, icon pack, the Action Button, the Feature List, a press-and-hold guide and more. It is not a tab. See <a href="#prefs">Settings</a>.</li>
+<li><b>The working-mode badge</b>, a small rounded label with a coloured dot. It names the mode in use, and tapping it opens the <b>Working Modes &amp; ADB Setup</b> sheet.</li>
+</ul>
+
+<h4>What the badge says and what its colour means</h4>
+<table class="hg-table"><thead><tr><th>Badge</th><th>Colour</th><th>Meaning</th></tr></thead><tbody>
+<tr><td>ADB TCP (5555)</td><td>Green</td><td>Connected through ADB over TCP; the number is the port.</td></tr>
+<tr><td>Wireless ADB (37099)</td><td>Green</td><td>Connected through Wireless Debugging; the number is the connect port.</td></tr>
+<tr><td>Shizuku ADB (UID 2000)</td><td>Green</td><td>Using Shizuku, which runs commands as the shell user.</td></tr>
+<tr><td>Root (Superuser)</td><td>Violet</td><td>Using root.</td></tr>
+<tr><td>Auto &#8226; plus one of the above</td><td>Green</td><td>Auto mode is on and has found a mode that is ready.</td></tr>
+<tr><td>Read-Only Mode</td><td>Orange</td><td>You chose Read-Only on purpose.</td></tr>
+<tr><td>Setup Mode (Read-Only)</td><td>Orange</td><td>No mode is ready yet. Tap the badge to set one up.</td></tr>
+<tr><td>A mode name followed by "(not ready)"</td><td>Orange</td><td>You chose that mode but it is not connected right now, for example Wireless ADB after the Wi-Fi changed.</td></tr>
+<tr><td>Checking Mode...</td><td>-</td><td>The app is still looking. It lasts a moment.</td></tr>
+</tbody></table>
+<p>Green and violet mean the app can change things. Orange means it cannot, yet. The colours follow your theme, so on an unusual theme they may differ a little; the words stay the same. <a href="#modes-overview">Working modes</a> explains how to move from orange to green.</p>
+
+<h4>The tab bar</h4>
+<p>Under the header is a row of tab buttons, most of them with a two-line label. It scrolls sideways: swipe it left and right to reach the others, and the tab you open slides to the middle. From left to right, the tabs are:</p>
+<ul>
+<li><b>Application Manager</b> (always first; <a href="#tab-apps">details</a>) and <b>Saved Applications</b> (<a href="#tab-saved-lists">details</a>).</li>
+<li><b>UAD-NG Debloater</b> (<a href="#tab-debloater">details</a>), <b>APK Installer</b> (<a href="#tab-installer">details</a>) and <b>File Manager</b> (<a href="#tab-files">details</a>).</li>
+<li><b>Command-Line Interface</b> (<a href="#tab-terminal">details</a>).</li>
+<li><b>Hidden Settings</b> (<a href="#tab-settings">details</a>) and <b>RRO/Monet Customization</b> (<a href="#tab-overlays">details</a>).</li>
+<li><b>App Updater</b> (<a href="#tab-updates">details</a>) and <b>App Stores</b> (<a href="#tab-store">details</a>). When updates are waiting, the App Updater label shows their number in brackets.</li>
+<li><b>Logcat Viewer</b> (<a href="#tab-logcat">details</a>), <b>Task Manager</b> (<a href="#tab-taskmgr">details</a>) and <b>Connected Devices</b> (<a href="#tab-devices">details</a>).</li>
+<li><b>About</b> (always last; <a href="#tab-about">details</a>).</li>
+</ul>
+<p>You can turn tabs off and move them. Open Settings with the gear, find the <b>Feature List</b> card, and use its switches and up and down arrows; <b>Reset to Default</b> puts everything back. Application Manager and About cannot be moved or turned off. See <a href="#feature-list">Feature List</a>. If a link in the app points to a tab you turned off, you get a message saying "... is turned off. Turn it on in Settings, Feature List."</p>
+
+<h4>The Application Manager tab</h4>
+<p>From the top: the orange Read-Only banner when no mode is on (it has a <b>Set Up</b> button, and an X in its top right corner that puts it away until the app is started again or Read-Only mode returns), the count boxes (tap one to filter the list by it), a <b>Sort</b> box with <b>Export</b>, <b>Share CSV</b>, <b>Profiles</b> and <b>Backups</b> buttons, the filter pills, the search box (the three dots at its right end open options for what is searched), and the list of apps.</p>
+<p>Each row shows the app's icon, its name, its package name and tags (<b>RUNNING</b>, <b>FROZEN</b>, <b>SUSPENDED</b>, <b>UNINSTALLED</b>, <b>SYSTEM</b> or <b>USER</b>). At the right end are an action button (an icon; you choose what it does in Settings), the three-dots menu button (<b>&#8943;</b>) and a small square checkbox.</p>
+
+<h4>Selecting apps and opening an app's menu</h4>
+<ul>
+<li><b>Tap the checkbox</b>, or the name area of the row, to select the app. The row gets a coloured edge and a tick. A floating round button with a tick and the number of selected apps appears; tap it to open the batch panel (<a href="#apps-batch">batch actions</a>, a panel of buttons that act on all the selected apps at once).</li>
+<li><b>Tap the three-dots button</b> (<b>&#8943;</b>), or <b>press and hold the row</b> for about half a second, to open that app's menu. You feel a short tap when the hold works. The hold does not also select the row.</li>
+<li><b>Press and hold the app's icon</b> to save the icon as a picture. <b>Press and hold the floating button</b> to clear the whole selection at once.</li>
+<li>Settings has a card called <b>Press and hold guide</b> that lists everything in the app that reacts to a long press.</li>
+</ul>
+
+<h4>Messages: toasts and sheets</h4>
+<p>A <b>toast</b> is a small rounded message that slides up from the bottom of the screen and fades after a couple of seconds, for example "Action executed". It is only a confirmation and cannot be tapped. When something fails, the app also shows a <b>sheet</b> with the full details, which stays until you close it. A sheet is a panel that slides up over the screen: the app's menu, Working Modes, Permissions and this guide are all sheets. Close any sheet with its X, by tapping the dim area outside it, or with Back.</p>
+
+<h4>What Back does</h4>
+<p>The Back button (or gesture) is careful, so you do not leave the app by accident. Each press does the first thing on this list that applies:</p>
+<ol>
+<li>Closes an open drop-down list or the search options menu.</li>
+<li>Closes the sheet that is on top, if any.</li>
+<li>Folds the open batch panel, then clears the selection of apps.</li>
+<li>Inside some tabs, steps back inside the tab: clears a Debloater selection, leaves search or selection mode in the File Manager, and so on. When you are looking inside an archive (a zip, 7z or similar file opened in the File Manager), it goes up one folder of the archive at a time and leaves the archive at the top. Back does not go up a folder of the phone's own storage: in the File Manager, tap the ".." row (labelled "Up one folder") at the top of the list for that.</li>
+<li>Returns to the tab you came from. The app remembers the last eight tabs you visited, and Back retraces them, ending at <b>Application Manager</b>.</li>
+<li>On Application Manager with nothing left to close, the first press shows "Press back again to exit". A second press leaves, but only if it is a real second press: at least about three quarters of a second after the first, and within three and a half seconds. A quick double tap does not count.</li>
+</ol>
+<div class="hg-note"><b>Tip.</b> If something is still running (an install, an app update download, a file job, a backup, a terminal command, a settings change), the message becomes "Press back again to leave" followed by what is running, and the second press asks "Leave now?" with a warning that the job would be cut off. Answer Cancel to stay.</div>
+</section>

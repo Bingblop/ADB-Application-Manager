@@ -47,7 +47,7 @@ Debugging, Shizuku or Root**.
 ## Download &amp; install
 
 1. Open the [**Releases** page](https://github.com/Bingblop/ADB-Application-Manager/releases/latest) and download
-   the signed APK there, together with that release's `SHA256SUMS.txt`. (Builds up to v5.1 are also kept in
+   the signed APK there (`-arm64-v8a` for 64-bit phones, `-armeabi-v7a` for 32-bit phones, `-universal` for both), together with that release's `SHA256SUMS.txt`. (Builds up to v5.1 are also kept in
    [`release/`](../release/); newer ones live only on the Releases page.)
 2. Allow installing from your browser or file manager when Android asks, then open the APK.
 3. Pick a [working mode](#working-modes). The easiest is **ADB over TCP**: run `adb tcpip 5555` once from a
@@ -109,13 +109,14 @@ Left to right, with the **settings gear** (it opens Settings: language, appearan
 | **App Stores** | ShizuStore, GitHub, F-Droid and Orion |
 | **Logcat Viewer** | A color-coded device log you can limit to one app, save or share |
 | **Task Manager** | Processes, CPU, RAM, GPU, battery and network, live, each with a graph ([details](#new-in-v75)) |
+| **Connected Devices** | Another Android device (a Wear OS watch first) over adb: add by pairing code, address, network scan or Bluetooth link; its apps (enable, disable, uninstall, reinstall, pull), send APK / APKS / APKM / XAPK, console, logcat, files, hidden settings, screen density and size |
 | **About** | Who made it, which build and key you have, debug info, the Permissions sheet, and the coffee button |
 
 Every tab except Application Manager and About can be switched off or moved in **Settings → Feature List**.
 
 ## New in v7.9
 
-**v7.9.23 is the latest build.** Everything from v7.9 through v7.9.15 is below; the full, dated list is in
+**v7.10.0 is the latest build** (Connected Devices, 32-bit and universal APKs, the Help Guide: see [CHANGELOG.md](../CHANGELOG.md)). Everything from v7.9 through v7.9.15 is below; the full, dated list is in
 [CHANGELOG.md](../CHANGELOG.md) (and inside the app, under About).
 
 **Newest (v7.9.12 to v7.9.15)**

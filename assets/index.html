@@ -143,12 +143,18 @@
             justify-content: space-between;
         }
 
+        /* the title starts at the left edge (no icon before it) and may take two lines; the settings and mode buttons keep their place on the right */
         .brand-box {
             display: flex;
             align-items: center;
-            gap: 12px;
+            flex: 1 1 auto;
+            min-width: 0;
+            padding-right: 10px;
         }
 
+        .app-header > div:last-child { flex: 0 0 auto; }
+
+        /* (the header no longer has one; the app rows' icons start from this look and refine it below) */
         .app-icon {
             width: 40px;
             height: 40px;
@@ -162,13 +168,32 @@
             color: var(--on-accent);
         }
 
+        .brand-text { min-width: 0; }
+
+        /* on a narrow phone the mode badge shares the width: its words wrap onto a second line instead of pushing the title out */
+        #execModeBadge { max-width: 38vw; }
+        @media (max-width: 400px) { #execModeBadge { padding: 5px 9px; gap: 5px; } }
+        #execModeBadge #execModeText { white-space: normal; line-height: 1.15; }
+        #execModeBadge .status-dot { flex: 0 0 auto; }
+
+        /* the title as the logo has it: "Full ADB/Root" over "System Manager", the first word of each line white and the rest a pale-to-bright cyan, heavy and tight */
         .brand-text h1 {
-            font-size: 17px;
-            font-weight: 800;
-            letter-spacing: -0.4px;
+            font-size: clamp(12.5px, 4.1vw, 18px);
+            line-height: 1.04;
+            font-weight: 900;
+            letter-spacing: -0.035em;
+            color: var(--text-main);
+        }
+
+        .brand-text h1 .bt-line { display: block; }
+
+        .brand-text h1 .bt-c {
             background: linear-gradient(90deg, var(--text-main), var(--accent));
+            background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 22%, var(--text-main)), var(--accent));
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
+            color: transparent;
         }
 
         .brand-text p {
@@ -2421,6 +2446,28 @@
             opacity: 0.85;
         }
 
+        /* the Read-Only banner (Application Manager) can be put away with the X in its top right corner; it comes back the next time the app starts in read-only mode */
+        #modeAlertCard { position: relative; }
+        #modeAlertCard .mode-alert-btn { margin-top: 16px; }
+        .mode-alert-x {
+            position: absolute;
+            top: 6px;
+            right: 8px;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 0;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 15px;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .mode-alert-x:active { background: rgba(var(--ov), 0.12); color: var(--text-main); }
+
         /* Working Modes Modal Styles */
         .mode-card {
             background: rgba(var(--ov), 0.03);
@@ -3187,6 +3234,32 @@
         .about-list li { margin-bottom: 5px; }
         .about-list code { background: rgba(var(--ov), 0.1); padding: 1px 5px; border-radius: 5px; font-size: 10.5px; }
         .about-tip { font-size: 11.5px; line-height: 1.5; margin: 8px 0 0; }
+
+        /* ---- Polish (v7.10): small refinements only. Nothing here hides, moves or shrinks anything that was there before. ---- */
+        /* thin scrollbars that follow the theme, where the browser draws any */
+        * { scrollbar-width: thin; scrollbar-color: rgba(var(--ov), 0.28) transparent; }
+        .tab-bar, .cd-tabs, .cd-chips { scrollbar-width: none; }
+        /* a keyboard, a switch or a TalkBack focus can always be seen */
+        :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+        input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offset: 0; }
+        .tab-btn:focus-visible { outline-offset: -2px; }
+        /* figures keep their width, so a count that changes does not make its neighbours jump */
+        .stat-num, .stat-label, .tag-badge, .about-ver, .cd-count, .lc-n, .hg-toc li a b { font-variant-numeric: tabular-nums; }
+        /* cards: a hairline of light along the top edge and a soft shadow, so they sit a little above the page */
+        .color-card { box-shadow: 0 1px 0 rgba(var(--ov), 0.05) inset, 0 6px 18px rgba(0, 0, 0, 0.16); }
+        .mode-action-btn.primary, .batch-grid-btn.accent { box-shadow: 0 2px 10px var(--accent-glow); }
+        /* a bottom sheet shows its grab handle (drawn behind the content, so nothing moves) */
+        .modal-sheet {
+            background-image: linear-gradient(rgba(var(--ov), 0.22), rgba(var(--ov), 0.22));
+            background-size: 38px 4px;
+            background-position: center 6px;
+            background-repeat: no-repeat;
+        }
+        /* a tab fades in instead of appearing at once (opacity only: no transform, so nothing that is fixed inside it is disturbed) */
+        @media (prefers-reduced-motion: no-preference) {
+            .view-content.active { animation: viewFadeIn 0.22s ease-out; }
+            @keyframes viewFadeIn { from { opacity: 0; } to { opacity: 1; } }
+        }
     </style>
 </head>
 <body>
@@ -3194,9 +3267,8 @@
     <!-- Header -->
     <header class="app-header">
         <div class="brand-box">
-            <div class="app-icon"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path fill="currentColor" d="M13.2 2 4.5 13.4h5.6l-1.1 8.6 9-11.9h-5.7z"/></svg></div>
             <div class="brand-text">
-                <h1>ADB App Manager</h1>
+                <h1 translate="no"><span class="bt-line"><span class="bt-w">Full</span> <span class="bt-c">ADB/Root</span> </span><span class="bt-line"><span class="bt-w">System</span> <span class="bt-c">Manager</span></span></h1>
                 <p id="deviceInfoSubtitle">Samsung One UI 9.0</p>
             </div>
         </div>
@@ -3224,6 +3296,7 @@
                     <div class="mode-alert-desc" id="modeAlertDesc">All installed apps are shown. To enable Freeze, Uninstall, or ADB commands, connect via ADB TCP 5555, Wireless Debugging, Shizuku, or Root.</div>
                 </div>
                 <button class="mode-alert-btn" onclick="openWorkingModesModal()">Set Up</button>
+                <button class="mode-alert-x" type="button" onclick="dismissModeAlert()" title="Dismiss" aria-label="Dismiss">&#10005;</button>
             </div>
             
             <!-- A watched profile has drifted (e.g. bloatware came back after a system update) -->
@@ -3787,6 +3860,339 @@
                 <div class="lc-key" id="logcatKey" aria-label="Log level color key"></div>
             </div>
             <div class="logcat-box" id="logcatOutput"><div class="lc-meta">Open this tab to read the log.</div></div>
+        </section>
+
+        <!-- VIEW: CONNECTED DEVICES (adb to another device: a Wear OS watch first, any Android device works) -->
+        <section id="view-devices" class="view-content">
+            <style>
+                .cd-pickrow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 10px 0 2px; }
+                .cd-pickrow .op-select { flex: 1 1 150px; min-width: 0; font-size: 13px; padding: 9px 8px; }
+                .cd-info { margin-top: 10px; }
+                #cdDeviceSel:disabled { opacity: 1; color: var(--text-muted); }
+                .cd-dev { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: var(--radius-md); border: 1px solid var(--border-glass); background: rgba(var(--ov), 0.04); }
+                .cd-dev-ico { flex: 0 0 auto; width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 900;
+                    background: linear-gradient(135deg, var(--accent), var(--secondary)); color: var(--on-accent); }
+                .cd-dev-main { flex: 1 1 auto; min-width: 0; }
+                .cd-dev-name { font-size: 15px; font-weight: 800; overflow-wrap: anywhere; line-height: 1.2; }
+                .cd-dev-sub { font-size: 11px; color: var(--text-muted); margin-top: 3px; overflow-wrap: anywhere; line-height: 1.4; }
+                .cd-dev-badges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+                .cd-dev-more { flex: 0 0 auto; }
+                .cd-empty { text-align: center; padding: 26px 18px 22px; border: 1px dashed var(--border-glass); border-radius: var(--radius-lg); background: rgba(var(--ov), 0.03); margin-top: 6px; }
+                .cd-empty-ico { width: 56px; height: 56px; margin: 0 auto 10px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 900;
+                    background: linear-gradient(135deg, var(--accent), var(--secondary)); color: var(--on-accent); }
+                .cd-empty h3 { font-size: 16px; font-weight: 800; margin-bottom: 6px; }
+                .cd-empty p { font-size: 12px; line-height: 1.55; color: var(--text-muted); max-width: 420px; margin: 0 auto 12px; }
+                .cd-tabs { display: flex; gap: 6px; overflow-x: auto; padding: 2px 0 8px; margin: 10px 0 4px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+                .cd-tabs::-webkit-scrollbar { display: none; }
+                .cd-tab { flex: 0 0 auto; border: 1px solid var(--border-glass); background: rgba(var(--ov), 0.05); color: var(--text-muted); border-radius: 999px; padding: 8px 15px; font-size: 13px; font-weight: 800; cursor: pointer; white-space: nowrap; transition: background .15s, color .15s; }
+                .cd-tab.active { background: linear-gradient(135deg, var(--accent), var(--secondary)); color: var(--on-accent); border-color: transparent; box-shadow: 0 2px 12px var(--accent-glow); }
+                .cd-pane { display: none; }
+                .cd-pane.active { display: block; }
+                .cd-note { font-size: 11.5px; line-height: 1.5; color: var(--text-muted); margin: 6px 0; overflow-wrap: anywhere; }
+                .cd-note.is-err, .cd-note .is-err { color: var(--status-bloat); }
+                .cd-note b { color: var(--text-main); }
+                .cd-count { font-size: 11px; color: var(--text-muted); margin: 2px 2px 8px; }
+                .cd-row { display: flex; align-items: center; gap: 10px; }
+                .cd-row > .list-search, .cd-row > .modal-text-input { flex: 1 1 auto; min-width: 0; margin: 0; }
+                .cd-head-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
+                .cd-links { display: flex; flex-wrap: wrap; gap: 14px; margin: 6px 0; }
+                /* apps: the main list's rows, without the icon pack */
+                #cdAppList .app-card { margin-bottom: 8px; }
+                .cd-icon { flex: 0 0 auto; width: 40px; height: 40px; border-radius: 10px; margin-right: 10px; display: flex; align-items: center; justify-content: center; overflow: hidden;
+                    background: var(--bg-surface); color: var(--accent); font-weight: 900; font-size: 16px; }
+                .cd-icon img { width: 100%; height: 100%; object-fit: contain; }
+                .cd-row-act { border: 1px solid var(--accent); color: var(--accent); background: transparent; border-radius: 999px; padding: 6px 12px; font-size: 11px; font-weight: 800; cursor: pointer; white-space: nowrap; }
+                .cd-row-act:active { background: var(--accent); color: var(--on-accent); }
+                .cd-row-act:disabled { opacity: 0.45; }
+                .cd-row-act.danger { border-color: var(--status-bloat); color: var(--status-bloat); }
+                .cd-batch { position: sticky; bottom: 10px; z-index: 30; display: none; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 10px; padding: 8px 10px; border-radius: var(--radius-lg);
+                    background: var(--bg-sheet); border: 1px solid var(--accent); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.55), 0 0 18px var(--accent-glow); }
+                .cd-batch.show { display: flex; }
+                .cd-batch b { font-size: 12px; margin-right: auto; }
+                .cd-batch .cd-row-act { padding: 6px 10px; }
+                /* send */
+                .cd-queue-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; margin-top: 6px; border: 1px solid var(--border-glass); border-radius: 10px; background: rgba(var(--ov), 0.04); }
+                .cd-queue-main { flex: 1 1 auto; min-width: 0; }
+                .cd-queue-name { font-size: 12.5px; font-weight: 800; overflow-wrap: anywhere; }
+                .cd-queue-sub { font-size: 10.5px; color: var(--text-muted); margin-top: 2px; }
+                .cd-queue-row.ok .cd-queue-sub { color: var(--status-running); }
+                .cd-queue-row.bad .cd-queue-sub { color: var(--status-bloat); white-space: pre-wrap; }
+                .cd-x { flex: 0 0 auto; width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--border-glass); background: rgba(var(--ov), 0.06); color: var(--text-main); cursor: pointer; font-size: 14px; }
+                .cd-progress-line { font-size: 11.5px; color: var(--text-muted); margin-top: 8px; overflow-wrap: anywhere; }
+                .cd-bt-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 0; border-bottom: 1px solid rgba(var(--ov), 0.06); font-size: 12.5px; }
+                .cd-bt-row b { overflow-wrap: anywhere; }
+                .cd-bt-row span { color: var(--text-muted); font-size: 10.5px; flex: 0 0 auto; }
+                /* console */
+                .cd-term { background: #000; color: #e6e6e6; border: 1px solid #232323; border-radius: 12px; padding: 10px 10px 14px; height: 44vh; min-height: 220px; overflow-y: auto; white-space: pre-wrap; word-break: break-word;
+                    font-family: 'DejaVu Sans Mono', 'Roboto Mono', 'Droid Sans Mono', monospace; font-size: 12.5px; line-height: 1.45; -webkit-user-select: text; user-select: text; }
+                .cd-term .cd-cmd { color: #29b8db; font-weight: 700; }
+                .cd-term .cd-err { color: #ff6b6b; }
+                .cd-term .cd-dim { color: #8c8c8c; }
+                .cd-input-line { display: flex; gap: 6px; align-items: flex-end; margin-top: 8px; }
+                .cd-mode { flex: 0 0 auto; height: 44px; min-width: 62px; border-radius: 10px; background: #000; color: #23d18b; font-family: monospace; font-weight: 800; font-size: 13px; border: 1px solid #333; cursor: pointer; }
+                .cd-input { flex: 1 1 auto; min-width: 0; min-height: 44px; max-height: 140px; resize: none; background: #000; color: #fff; border: 1px solid #333; border-radius: 10px; font-family: 'DejaVu Sans Mono', 'Roboto Mono', monospace;
+                    font-size: 14.5px; line-height: 1.4; padding: 11px 10px; box-sizing: border-box; }
+                .cd-input:focus { outline: none; border-color: var(--accent); }
+                .cd-send { flex: 0 0 auto; height: 44px; min-width: 64px; border-radius: 10px; border: none; background: linear-gradient(135deg, var(--accent), var(--secondary)); color: var(--on-accent); font-weight: 800; font-size: 13px; cursor: pointer; }
+                .cd-send.stop { background: #c62828; color: #fff; }
+                .cd-chips { display: flex; gap: 6px; overflow-x: auto; padding: 8px 0 2px; scrollbar-width: none; }
+                .cd-chips::-webkit-scrollbar { display: none; }
+                .cd-chip { flex: 0 0 auto; border: 1px solid var(--border-glass); background: rgba(var(--ov), 0.05); color: var(--text-main); border-radius: 999px; padding: 5px 11px; font-size: 11.5px; font-weight: 700; cursor: pointer; font-family: monospace; }
+                .cd-chip:active { background: var(--accent); color: var(--on-accent); }
+                /* files */
+                .cd-path { font-family: monospace; font-size: 12px; padding: 8px 10px; border: 1px solid var(--border-glass); border-radius: 10px; background: var(--input-bg); overflow-wrap: anywhere; flex: 1 1 auto; min-width: 0; color: var(--text-main); }
+                .cd-fm-row { display: flex; align-items: center; gap: 10px; padding: 8px 6px; border-bottom: 1px solid rgba(var(--ov), 0.06); cursor: pointer; }
+                .cd-fm-row:active { background: rgba(var(--ov), 0.06); }
+                .cd-fm-ico { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; background: rgba(var(--ov), 0.08); color: var(--text-muted); }
+                .cd-fm-row.dir .cd-fm-ico { background: var(--accent-glow); color: var(--accent); }
+                .cd-fm-main { flex: 1 1 auto; min-width: 0; }
+                .cd-fm-name { font-size: 13px; font-weight: 700; overflow-wrap: anywhere; line-height: 1.25; }
+                .cd-fm-meta { font-size: 10px; color: var(--text-muted); margin-top: 2px; font-family: monospace; }
+                /* hidden settings */
+                .cd-set-row { display: flex; align-items: center; gap: 10px; padding: 8px 4px; border-bottom: 1px solid rgba(var(--ov), 0.06); cursor: pointer; }
+                .cd-set-row:active { background: rgba(var(--ov), 0.06); }
+                .cd-set-key { font-size: 12px; font-weight: 800; overflow-wrap: anywhere; }
+                .cd-set-val { font-size: 11px; color: var(--accent); margin-top: 2px; font-family: monospace; overflow-wrap: anywhere; max-height: 3.2em; overflow: hidden; }
+                /* display */
+                .cd-dens-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 10px 0 4px; }
+                .cd-dens-row .op-select { flex: 1 1 130px; min-width: 0; font-size: 14px; padding: 10px 8px; }
+                .cd-dens-row .modal-text-input { flex: 1 1 110px; min-width: 0; margin: 0; }
+                .cd-step { flex: 0 0 auto; width: 42px; height: 42px; border-radius: 10px; border: 1px solid var(--border-glass); background: var(--bg-card); color: var(--text-main); font-size: 18px; font-weight: 800; cursor: pointer; }
+                .cd-keep { margin-top: 10px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--status-suspended); background: rgba(255, 196, 0, 0.1); font-size: 12.5px; line-height: 1.5; }
+                .cd-keep .mode-btn-row { margin-top: 8px; }
+                .cd-big { font-size: 22px; font-weight: 900; }
+                /* add device */
+                .cd-add-tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+                .cd-add-tabs .cd-tab { flex: 1 1 0; padding: 8px 6px; text-align: center; }
+                .cd-add-pane { display: none; }
+                .cd-add-pane.active { display: block; }
+                .cd-add-pane label { display: block; font-size: 10.5px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: .3px; margin: 10px 0 4px; }
+                .cd-found { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; margin-top: 6px; border: 1px solid var(--border-glass); border-radius: 10px; background: rgba(var(--ov), 0.04); }
+                .cd-found-main { min-width: 0; font-size: 12.5px; font-weight: 800; overflow-wrap: anywhere; }
+                .cd-found-main span { display: block; font-size: 10.5px; font-weight: 600; color: var(--text-muted); margin-top: 2px; }
+                .cd-steps { margin: 6px 0 4px 18px; font-size: 12px; line-height: 1.6; color: var(--text-muted); }
+                .cd-steps b { color: var(--text-main); }
+                .cd-log { margin-top: 10px; padding: 8px 10px; border-radius: 10px; background: var(--input-bg); border: 1px solid var(--border-glass); font-family: monospace; font-size: 11.5px; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 30vh; overflow: auto; }
+                .cd-log:empty { display: none; }
+                .cd-sheet-grid { grid-template-columns: repeat(2, 1fr); }
+                .cd-sheet-grid .batch-grid-btn { height: auto; min-height: 44px; padding: 8px 6px; text-align: center; line-height: 1.2; }
+                .cd-pick-row { display: flex; align-items: center; gap: 10px; padding: 8px 6px; border-bottom: 1px solid rgba(var(--ov), 0.06); cursor: pointer; }
+                .cd-pick-row.on { background: var(--accent-glow); }
+                .cd-pick-row .app-meta { flex: 1 1 auto; min-width: 0; }
+                #cdPhoneList .app-name, #cdPhoneList .app-pkg { text-align: left; }
+                @media (max-width: 360px) { .cd-dev-ico { width: 38px; height: 38px; } }
+            </style>
+
+            <div class="color-card" id="cdTop">
+                <div class="color-card-title">Connected Devices</div>
+                <div class="color-card-subtitle">Look after a watch, a tablet or another phone from this phone. Built for Wear OS.</div>
+                <div class="cd-pickrow">
+                    <select class="op-select" id="cdDeviceSel" onchange="cdSelect(this.value)" aria-label="Device"></select>
+                    <button class="mode-action-btn primary" id="cdAddBtn" onclick="cdAddOpen()">+ Add device</button>
+                    <button class="mode-action-btn" id="cdRefreshBtn" onclick="cdRefreshDevices(true)">Refresh</button>
+                </div>
+                <div class="cd-info" id="cdInfo"></div>
+            </div>
+
+            <div class="cd-empty" id="cdEmpty">
+                <div class="cd-empty-ico">+</div>
+                <h3>No device connected</h3>
+                <p id="cdEmptyText">Pair and connect a Wear OS watch or any Android device over Wi-Fi or Bluetooth. Then you can manage its apps, send apps to it, read its log, browse its files and change its settings from here.</p>
+                <div class="mode-btn-row" style="justify-content:center;">
+                    <button class="mode-action-btn primary" onclick="cdAddOpen()">+ Add device</button>
+                </div>
+                <div class="cd-note" id="cdRecentWrap" style="display:none; margin-top:14px;"></div>
+            </div>
+
+            <div id="cdWork" style="display:none;">
+                <div class="cd-tabs" id="cdTabs" role="tablist"></div>
+
+                <!-- Apps -->
+                <div class="cd-pane" id="cdPane-apps">
+                    <div class="color-card">
+                        <div class="cd-row">
+                            <input type="text" class="list-search" id="cdAppSearch" placeholder="Search apps on the device" autocomplete="off" autocapitalize="off" spellcheck="false" oninput="cdAppsRender()">
+                            <button class="mode-action-btn" onclick="cdAppsLoad(true)">Reload</button>
+                        </div>
+                        <div class="chip-row" id="cdAppFilters" style="margin-top:8px;"></div>
+                        <div class="filter-summary-row" id="cdAppSummary" style="display:none; font-size:11px; color:var(--text-muted); margin-bottom:6px;"></div>
+                        <div class="cd-count" id="cdAppCount"></div>
+                        <div id="cdAppList"></div>
+                    </div>
+                    <div class="cd-batch" id="cdBatch">
+                        <b id="cdBatchCount">0 selected</b>
+                        <button class="cd-row-act" onclick="cdBatch('enable')">Enable</button>
+                        <button class="cd-row-act" onclick="cdBatch('disable')">Disable</button>
+                        <button class="cd-row-act danger" onclick="cdBatch('uninstall')">Uninstall</button>
+                        <button class="cd-row-act" onclick="cdBatch('reinstall')">Reinstall</button>
+                        <button class="cd-x" onclick="cdSelClear()" aria-label="Clear selection">&#10005;</button>
+                    </div>
+                </div>
+
+                <!-- Send -->
+                <div class="cd-pane" id="cdPane-send">
+                    <div class="color-card">
+                        <div class="color-card-title">Send apps to this device</div>
+                        <div class="color-card-subtitle">Install APK, APKS, APKM or XAPK files on it, or send an app this phone already has. It goes over the connection the device uses now (Wi-Fi, USB or the Bluetooth link).</div>
+                        <div class="mode-btn-row" style="margin-top:10px;">
+                            <button class="mode-action-btn primary" onclick="cdPickFiles()">Choose package files</button>
+                            <button class="mode-action-btn" onclick="cdPhoneOpen()">From this phone</button>
+                        </div>
+                        <div id="cdQueue"></div>
+                        <label class="switch-row">
+                            <div><div class="switch-title">Replace an app that is already there</div><div class="switch-sub">Keeps its data (install -r)</div></div>
+                            <input type="checkbox" class="switch-input" id="cdOptReinstall" checked><span class="switch-track"></span>
+                        </label>
+                        <label class="switch-row">
+                            <div><div class="switch-title">Allow an older version</div><div class="switch-sub">Downgrade (install -d)</div></div>
+                            <input type="checkbox" class="switch-input" id="cdOptDowngrade"><span class="switch-track"></span>
+                        </label>
+                        <label class="switch-row">
+                            <div><div class="switch-title">Grant every permission</div><div class="switch-sub">Install -g</div></div>
+                            <input type="checkbox" class="switch-input" id="cdOptGrant"><span class="switch-track"></span>
+                        </label>
+                        <label class="switch-row">
+                            <div><div class="switch-title">Allow test apps</div><div class="switch-sub">Install -t</div></div>
+                            <input type="checkbox" class="switch-input" id="cdOptTest"><span class="switch-track"></span>
+                        </label>
+                        <div class="backup-bar" id="cdSendBarWrap" style="display:none;"><div id="cdSendBar"></div></div>
+                        <div class="cd-progress-line" id="cdSendLine"></div>
+                        <div class="mode-btn-row" style="margin-top:12px;">
+                            <button class="mode-action-btn primary" id="cdSendBtn" style="flex:1; justify-content:center;" onclick="cdSend()">Send to device</button>
+                            <button class="mode-action-btn" id="cdSendStop" style="display:none;" onclick="cdSendStop()">Stop</button>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-card-title">Send with Bluetooth</div>
+                        <div class="color-card-subtitle">Hands the queued files to Android's Bluetooth sharing, which asks which paired device gets them. Most watches, Wear OS included, cannot receive files this way: for a Wear OS watch use the Bluetooth link under Add device and send over ADB instead.</div>
+                        <div id="cdBtList" style="margin-top:8px;"></div>
+                        <div class="mode-btn-row" style="margin-top:10px;">
+                            <button class="mode-action-btn" onclick="cdBtLoad()">Show paired devices</button>
+                            <button class="mode-action-btn" onclick="cdBtSend()">Send queued files</button>
+                            <button class="mode-action-btn" onclick="cdAddOpen('bt')">Bluetooth link</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Console -->
+                <div class="cd-pane" id="cdPane-console">
+                    <div class="color-card">
+                        <div class="cd-head-row">
+                            <div class="color-card-title" style="margin:0;">ADB console</div>
+                            <div class="cd-links">
+                                <button class="batch-tool-link" onclick="cdTermCopy()">Copy</button>
+                                <button class="batch-tool-link" onclick="cdTermShare()">Share</button>
+                                <button class="batch-tool-link" onclick="cdTermClear()">Clear</button>
+                            </div>
+                        </div>
+                        <div class="cd-term" id="cdTerm" translate="no"><span class="cd-dim">Type a command for the device and press Run. A line that starts with "adb " goes to adb itself (adb pull, adb forward ...).</span></div>
+                        <div class="cd-input-line">
+                            <button class="cd-mode" id="cdModeBtn" onclick="cdModeToggle()" title="Shell on the device, or adb itself">$</button>
+                            <textarea class="cd-input" id="cdInput" rows="1" placeholder="getprop ro.product.model" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" onkeydown="cdInputKey(event)"></textarea>
+                            <button class="cd-send" id="cdRunBtn" onclick="cdRunOrStop()">Run</button>
+                        </div>
+                        <div class="cd-links" style="margin-top:6px;">
+                            <button class="batch-tool-link" onclick="cdHistStep(-1)">Previous</button>
+                            <button class="batch-tool-link" onclick="cdHistStep(1)">Next</button>
+                        </div>
+                        <div class="cd-chips" id="cdChips"></div>
+                    </div>
+                </div>
+
+                <!-- Logcat -->
+                <div class="cd-pane" id="cdPane-logcat">
+                    <div class="color-card">
+                        <div class="color-card-title">Logcat</div>
+                        <div class="color-card-subtitle">The device's own log.</div>
+                        <div class="batch-sheet-tools" style="margin:8px 0; gap:10px; flex-wrap:wrap; align-items:center;">
+                            <select class="op-select" id="cdLcLevel" onchange="cdLcRefresh()">
+                                <option value="V">Verbose</option><option value="D">Debug</option><option value="I" selected>Info</option>
+                                <option value="W">Warn</option><option value="E">Error</option><option value="F">Fatal</option>
+                            </select>
+                            <select class="op-select" id="cdLcLines" onchange="cdLcRefresh()">
+                                <option value="200">200</option><option value="500" selected>500</option><option value="1000">1000</option>
+                            </select>
+                            <input type="text" class="list-search" id="cdLcFilter" placeholder="filter text / tag" style="flex:1; min-width:120px;" autocomplete="off" autocapitalize="off" spellcheck="false" oninput="cdLcDraw(false)">
+                        </div>
+                        <div class="batch-sheet-tools" style="margin-bottom:4px; gap:14px; flex-wrap:wrap;">
+                            <button class="batch-tool-link" id="cdLcPlay" onclick="cdLcTogglePlay()" style="color:#4ADE80;">Play</button>
+                            <button class="batch-tool-link" onclick="cdLcRefresh()">Refresh</button>
+                            <button class="batch-tool-link" onclick="cdLcClear()">Clear</button>
+                            <button class="batch-tool-link" onclick="cdLcCopy()">Copy</button>
+                            <button class="batch-tool-link" onclick="cdLcShare()">Share</button>
+                        </div>
+                    </div>
+                    <div class="logcat-box" id="cdLcOut"><div class="lc-meta">Press Play, or Refresh, to read the log.</div></div>
+                </div>
+
+                <!-- Files -->
+                <div class="cd-pane" id="cdPane-files">
+                    <div class="color-card">
+                        <div class="cd-row">
+                            <button class="mode-action-btn" onclick="cdFmUp()" aria-label="Up one folder">&#8593; Up</button>
+                            <div class="cd-path" id="cdFmPath" translate="no">/sdcard</div>
+                        </div>
+                        <div class="cd-chips" id="cdFmPlaces"></div>
+                        <div class="batch-sheet-tools" style="margin:6px 0 2px; gap:14px; flex-wrap:wrap;">
+                            <button class="batch-tool-link" onclick="cdFmRefresh()">Refresh</button>
+                            <button class="batch-tool-link" onclick="cdFmPush()">Send a file here</button>
+                            <button class="batch-tool-link" onclick="cdFmNewFolder()">New folder</button>
+                            <button class="batch-tool-link" onclick="cdFmGoto()">Go to...</button>
+                        </div>
+                        <div class="cd-count" id="cdFmCount"></div>
+                        <div id="cdFmList"></div>
+                    </div>
+                </div>
+
+                <!-- Hidden Settings -->
+                <div class="cd-pane" id="cdPane-settings">
+                    <div class="color-card">
+                        <div class="color-card-title">Hidden Settings</div>
+                        <div class="color-card-subtitle">The device's system, secure and global settings. A wrong value can make a device misbehave: change one at a time.</div>
+                        <div class="chip-row" id="cdSetNs" style="margin-top:8px;"></div>
+                        <div class="cd-row">
+                            <input type="text" class="list-search" id="cdSetSearch" placeholder="Search keys and values" autocomplete="off" autocapitalize="off" spellcheck="false" oninput="cdSetRender()">
+                            <button class="mode-action-btn" onclick="cdSetNew()">+ New</button>
+                            <button class="mode-action-btn" onclick="cdSetLoad(true)">Reload</button>
+                        </div>
+                        <div class="cd-count" id="cdSetCount" style="margin-top:8px;"></div>
+                        <div id="cdSetList"></div>
+                    </div>
+                </div>
+
+                <!-- Display -->
+                <div class="cd-pane" id="cdPane-display">
+                    <div class="cd-keep" id="cdKeep" style="display:none;"></div>
+                    <div class="color-card">
+                        <div class="color-card-title">Screen density</div>
+                        <div class="color-card-subtitle">Dots per inch. Lower makes everything smaller and shows more; higher makes it larger. Pick a value, or type your own.</div>
+                        <div class="cd-note" id="cdDensNow"></div>
+                        <div class="cd-dens-row">
+                            <button class="cd-step" onclick="cdDensStep(-5)" aria-label="Lower by 5">&minus;</button>
+                            <select class="op-select" id="cdDensSel" onchange="cdDensPicked()" aria-label="Density"></select>
+                            <button class="cd-step" onclick="cdDensStep(5)" aria-label="Higher by 5">+</button>
+                        </div>
+                        <div class="cd-dens-row">
+                            <input type="text" inputmode="numeric" class="modal-text-input" id="cdDensManual" placeholder="Your own number" autocomplete="off" onkeydown="if(event.key==='Enter') cdDensApply(true)">
+                            <button class="mode-action-btn primary" onclick="cdDensApply(true)">Apply number</button>
+                        </div>
+                        <div class="mode-btn-row" style="margin-top:6px;">
+                            <button class="mode-action-btn primary" onclick="cdDensApply(false)">Apply selected</button>
+                            <button class="mode-action-btn" onclick="cdDensReset()">Reset to default</button>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-card-title">Screen size</div>
+                        <div class="color-card-subtitle">The resolution the device draws at, width x height in pixels.</div>
+                        <div class="cd-note" id="cdSizeNow"></div>
+                        <div class="cd-dens-row">
+                            <input type="text" class="modal-text-input" id="cdSizeInput" placeholder="450x450" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter') cdSizeApply()">
+                            <button class="mode-action-btn primary" onclick="cdSizeApply()">Apply</button>
+                            <button class="mode-action-btn" onclick="cdSizeReset()">Reset</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </section>
 
         <!-- VIEW: TASK MANAGER (processes, CPU, RAM, GPU, battery, network - a live look with no root needed, best with ADB / Shizuku / Root) -->
@@ -4704,6 +5110,7 @@
                 <div class="about-blurb">Freeze, debloat, install, back up and inspect every app on your phone, straight from the phone: through ADB, Wireless Debugging, Shizuku or Root. No computer, no account, no ads.</div>
                 <div class="mode-btn-row">
                     <button class="mode-action-btn primary" onclick="aboutOpenRepo()">GitHub</button>
+                    <button class="mode-action-btn" id="aboutHelpBtn" onclick="openHelpGuide()">Help Guide</button>
                     <button class="mode-action-btn" onclick="openWhatsNew({ max: 3 })">What's new</button>
                     <button class="mode-action-btn" onclick="openPermSheet('manual')">Permissions</button>
                     <button class="mode-action-btn" onclick="aboutCheckUpdate()">Check for update</button>
@@ -6370,6 +6777,7 @@ Type any command below (e.g. pm list packages -d)
                 </div>
                 <div style="font-size:20px; cursor:pointer;" onclick="closeWorkingModesModal()">✕</div>
             </div>
+            <div class="modal-helper" style="margin-bottom:10px;">New to this? The <a href="#" style="color:var(--accent); font-weight:800;" onclick="closeWorkingModesModal(); openHelpGuide('modes-overview'); return false;">Help Guide</a> explains each mode and how to set it up, step by step.</div>
 
             <!-- ADB key (per install) -->
             <div class="mode-card" id="adbKeyCard">
@@ -6573,6 +6981,202 @@ Type any command below (e.g. pm list packages -d)
     </div>
 
     <!-- Privilege Required Modal -->
+    <!-- Help Guide (About tab): the guide itself is assets/guide.js, built from docs/guide/*.html and loaded the first time this opens -->
+    <style>
+        .hg-sheet { max-width: 760px; height: 94vh; max-height: 94vh; padding: 0 16px 28px; }
+        .hg-bar { position: sticky; top: 0; z-index: 5; background: var(--bg-sheet); padding: 14px 0 10px; margin: 0 -16px 6px; padding-left: 16px; padding-right: 16px; border-bottom: 1px solid var(--border-glass); }
+        .hg-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .hg-bar-title { flex: 1 1 auto; font-size: 18px; font-weight: 900; letter-spacing: -0.3px; }
+        .hg-bar-btn { flex: 0 0 auto; border: 1px solid var(--accent); color: var(--accent); background: transparent; border-radius: 999px; padding: 6px 14px; font-size: 12px; font-weight: 800; cursor: pointer; }
+        .hg-bar-btn:active { background: var(--accent); color: var(--on-accent); }
+        .hg-x { flex: 0 0 auto; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; border-radius: 50%; }
+        .hg-x:active { background: rgba(var(--ov), 0.12); }
+        #hgSearch { width: 100%; }
+        .hg-status { font-size: 11px; color: var(--text-muted); margin-top: 6px; min-height: 14px; }
+        .hg-body { font-size: 14px; line-height: 1.65; padding-top: 8px; overflow-wrap: break-word; }
+        .hg-intro { font-size: 13px; color: var(--text-muted); line-height: 1.6; margin: 6px 0 14px; }
+        .hg-toc { margin-bottom: 8px; scroll-margin-top: 110px; }
+        .hg-toc details { border: 1px solid var(--border-glass); border-radius: var(--radius-md); background: rgba(var(--ov), 0.03); margin-bottom: 8px; }
+        .hg-toc summary { cursor: pointer; padding: 11px 14px; font-weight: 800; font-size: 14px; list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .hg-toc summary::-webkit-details-marker { display: none; }
+        .hg-toc summary span { font-size: 11px; font-weight: 700; color: var(--text-muted); }
+        .hg-toc summary::after { content: '\25BE'; color: var(--accent); margin-left: 6px; transition: transform .2s; }
+        .hg-toc details[open] > summary::after { transform: rotate(180deg); }
+        .hg-toc ol { list-style: none; margin: 0; padding: 0 6px 8px; }
+        .hg-toc li a { display: block; padding: 9px 10px; border-radius: 10px; color: var(--text-main); text-decoration: none; font-size: 13.5px; font-weight: 600; }
+        .hg-toc li a:active { background: var(--accent-glow); }
+        .hg-toc li a b { color: var(--accent); font-weight: 800; margin-right: 8px; font-variant-numeric: tabular-nums; }
+        .hg-sec { padding: 6px 0 6px; }
+        .hg-sec.hg-flash { animation: hgFlash 1.4s ease; }
+        @keyframes hgFlash { 0%, 40% { background: var(--accent-glow); } 100% { background: transparent; } }
+        .hg-sec-group { font-size: 10.5px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; color: var(--accent); }
+        .hg-sec h3 { font-size: 20px; line-height: 1.25; font-weight: 900; letter-spacing: -0.3px; margin: 4px 0 10px; }
+        .hg-sec h4 { font-size: 15px; font-weight: 800; margin: 18px 0 6px; color: var(--text-main); }
+        .hg-sec h5 { font-size: 13px; font-weight: 800; margin: 12px 0 4px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .3px; }
+        .hg-sec p { margin: 0 0 10px; }
+        .hg-sec p.hg-lead { font-size: 15px; color: var(--text-muted); line-height: 1.55; }
+        .hg-sec ul, .hg-sec ol { margin: 0 0 12px 22px; }
+        .hg-sec li { margin-bottom: 5px; }
+        .hg-sec code { font-family: 'DejaVu Sans Mono', 'Roboto Mono', monospace; font-size: 12.5px; background: rgba(var(--ov), 0.1); padding: 1px 5px; border-radius: 5px; overflow-wrap: anywhere; }
+        .hg-sec a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+        .hg-sec ol.hg-steps { list-style: none; margin-left: 0; counter-reset: hgstep; }
+        .hg-sec ol.hg-steps > li { counter-increment: hgstep; position: relative; padding-left: 38px; min-height: 28px; margin-bottom: 10px; }
+        .hg-sec ol.hg-steps > li::before { content: counter(hgstep); position: absolute; left: 0; top: 0; width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--secondary)); color: var(--on-accent); font-size: 13px; font-weight: 900; display: flex; align-items: center; justify-content: center; }
+        .hg-note, .hg-warn, .hg-danger { margin: 12px 0; padding: 10px 12px; border-radius: 10px; border-left: 4px solid var(--accent); background: var(--accent-glow); font-size: 13.5px; line-height: 1.55; }
+        .hg-note { background: rgba(0, 229, 255, 0.1); }
+        .hg-warn { border-left-color: #FFA726; background: rgba(255, 145, 0, 0.12); }
+        .hg-danger { border-left-color: #FF5252; background: rgba(255, 82, 82, 0.13); }
+        .hg-note p:last-child, .hg-warn p:last-child, .hg-danger p:last-child { margin-bottom: 0; }
+        .hg-tablewrap { overflow-x: auto; margin: 10px 0 14px; border: 1px solid var(--border-glass); border-radius: 10px; -webkit-overflow-scrolling: touch; }
+        .hg-table { border-collapse: collapse; width: 100%; font-size: 12.5px; line-height: 1.45; }
+        .hg-table th { text-align: left; background: rgba(var(--ov), 0.08); font-weight: 800; }
+        .hg-table th, .hg-table td { padding: 8px 10px; border-bottom: 1px solid var(--border-glass); vertical-align: top; min-width: 90px; }
+        .hg-table tr:last-child td { border-bottom: 0; }
+        .hg-nav { display: flex; gap: 10px; margin: 22px 0 8px; }
+        .hg-nav > * { flex: 1 1 0; min-width: 0; }
+        .hg-nav a { display: block; padding: 11px 13px; border: 1px solid var(--border-glass); border-radius: var(--radius-md); background: rgba(var(--ov), 0.04); color: var(--text-main); text-decoration: none; font-size: 13.5px; font-weight: 800; line-height: 1.3; }
+        .hg-nav a:active { background: var(--accent-glow); }
+        .hg-nav a span { display: block; font-size: 10px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; color: var(--accent); margin-bottom: 2px; }
+        .hg-nav-next { text-align: right; }
+        .hg-toc li a.hg-flash { animation: hgFlash 1.4s ease; }
+        .hg-top { display: inline-block; margin: 6px 0 10px; font-size: 12px; font-weight: 800; color: var(--accent); cursor: pointer; text-decoration: none; }
+        .hg-sec mark, .hg-hit { background: rgba(255, 196, 0, 0.45); color: inherit; border-radius: 3px; padding: 0 1px; }
+        .hg-results { display: flex; flex-direction: column; gap: 8px; }
+        .hg-hit-card { display: block; padding: 11px 13px; border: 1px solid var(--border-glass); border-radius: var(--radius-md); background: rgba(var(--ov), 0.04); color: var(--text-main); text-decoration: none; }
+        .hg-hit-card:active { background: var(--accent-glow); }
+        .hg-hit-group { display: block; font-size: 10px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; color: var(--accent); }
+        .hg-hit-card b { display: block; font-size: 15px; font-weight: 800; margin: 2px 0 4px; }
+        .hg-hit-snip { display: block; font-size: 12.5px; line-height: 1.5; color: var(--text-muted); }
+        .hg-empty { text-align: center; color: var(--text-muted); padding: 30px 10px; font-size: 13px; }
+        .hg-back { position: sticky; bottom: 12px; z-index: 6; display: none; margin: 0 auto; width: max-content; max-width: 90%; padding: 9px 18px; border-radius: 999px; border: 0; background: linear-gradient(135deg, var(--accent), var(--secondary)); color: var(--on-accent); font-weight: 800; font-size: 13px; cursor: pointer; box-shadow: 0 6px 22px rgba(0, 0, 0, 0.5); }
+        .hg-back.show { display: block; }
+    </style>
+    <div class="modal-overlay" id="helpGuideModal" onclick="if(event.target===this) hgBackStep()">
+        <div class="modal-sheet hg-sheet" role="dialog" aria-labelledby="hgTitle">
+            <div class="hg-bar">
+                <div class="hg-bar-row">
+                    <div class="hg-bar-title" id="hgTitle">Help Guide</div>
+                    <button class="hg-bar-btn" id="hgContentsBtn" type="button" onclick="hgContents()" style="display:none;">Contents</button>
+                    <div class="hg-x" role="button" tabindex="0" onclick="closeHelpGuide()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();closeHelpGuide();}" aria-label="Close">&#10005;</div>
+                </div>
+                <input type="search" class="list-search" id="hgSearch" placeholder="Search the guide (try: freeze, pairing code, density)" autocomplete="off" autocapitalize="off" spellcheck="false" oninput="hgSearchInput()">
+                <div class="hg-status" id="hgStatus"></div>
+            </div>
+            <div class="hg-body" id="hgBody" translate="no" lang="en" dir="ltr"></div>
+            <button class="hg-back" id="hgBack" type="button" onclick="hgBackToPlace()">Back to where I was</button>
+        </div>
+    </div>
+
+    <!-- Connected Devices: a menu for one thing (a device, an app, a file, a setting), the Add device sheet, the phone's apps to send, and a question -->
+    <div class="modal-overlay" id="cdSheet" onclick="if(event.target===this) cdSheetClose()">
+        <div class="modal-sheet" style="max-width:520px;" role="dialog" aria-labelledby="cdSheetTitle">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-title">
+                        <h3 id="cdSheetTitle"></h3>
+                        <p id="cdSheetSub" translate="no" style="word-break:break-all;"></p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="cdSheetClose()" role="button" aria-label="Close">&#10005;</div>
+            </div>
+            <div id="cdSheetBody"></div>
+            <div class="batch-actions-grid cd-sheet-grid" id="cdSheetBtns" style="margin-top:10px;"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="cdAddModal" onclick="if(event.target===this) cdAddClose()">
+        <div class="modal-sheet" style="max-width:520px;" role="dialog" aria-labelledby="cdAddTitle">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-title">
+                        <h3 id="cdAddTitle">Add a device</h3>
+                        <p>Pair and connect over Wi-Fi, or link a watch over Bluetooth</p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="cdAddClose()" role="button" aria-label="Close">&#10005;</div>
+            </div>
+            <div class="cd-add-tabs" id="cdAddTabs">
+                <button class="cd-tab" data-t="wifi" onclick="cdAddTab('wifi')">Wi-Fi</button>
+                <button class="cd-tab" data-t="scan" onclick="cdAddTab('scan')">Nearby</button>
+                <button class="cd-tab" data-t="bt" onclick="cdAddTab('bt')">Bluetooth</button>
+            </div>
+
+            <div class="cd-add-pane" id="cdAddPane-wifi">
+                <div class="cd-note">On the device open <b>Developer options</b> and turn on <b>Wireless debugging</b> (on a Wear OS watch: <b>ADB debugging</b>, then <b>Debug over Wi-Fi</b>). Both must be on the same Wi-Fi network.</div>
+                <label for="cdPairAddr">1. Pair (first time only): address and port from Pair new device with pairing code</label>
+                <input class="modal-text-input" id="cdPairAddr" placeholder="192.168.1.20:37215" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false">
+                <label for="cdPairCode">Pairing code</label>
+                <input class="modal-text-input" id="cdPairCode" placeholder="123456" inputmode="numeric" maxlength="6" autocomplete="off" onkeydown="if(event.key==='Enter') cdPair()">
+                <button class="mode-action-btn primary" style="width:100%; justify-content:center; margin-top:10px;" id="cdPairBtn" onclick="cdPair()">Pair</button>
+                <label for="cdConnAddr">2. Connect: address and port on the Wireless debugging screen</label>
+                <input class="modal-text-input" id="cdConnAddr" placeholder="192.168.1.20:5555" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter') cdConnect()">
+                <button class="mode-action-btn primary" style="width:100%; justify-content:center; margin-top:10px;" id="cdConnBtn" onclick="cdConnect()">Connect</button>
+            </div>
+
+            <div class="cd-add-pane" id="cdAddPane-scan">
+                <div class="cd-note">Looks on this Wi-Fi network for devices that offer wireless debugging. A device that waits for a pairing code shows up with Pair, one that is already paired shows up with Connect.</div>
+                <button class="mode-action-btn primary" style="width:100%; justify-content:center;" id="cdScanBtn" onclick="cdScan()">Scan the network</button>
+                <div id="cdScanList"></div>
+            </div>
+
+            <div class="cd-add-pane" id="cdAddPane-bt">
+                <div class="cd-note">A Wear OS watch can be reached over its Bluetooth link to the phone, with no Wi-Fi. This phone then talks to the watch through its own ADB.</div>
+                <ol class="cd-steps">
+                    <li>On the watch: <b>Settings, Developer options, ADB debugging</b> on, then <b>Debug over Bluetooth</b> on.</li>
+                    <li>In the Wear OS app on this phone: <b>Watch settings, Advanced, Debugging over Bluetooth</b> on.</li>
+                    <li>Turn on <b>ADB</b> in this app's Working mode, so this phone can reach itself.</li>
+                    <li>Tap the button below, then allow the connection on the watch.</li>
+                </ol>
+                <label for="cdBtPort">Local port</label>
+                <input class="modal-text-input" id="cdBtPort" value="4444" inputmode="numeric" maxlength="5" autocomplete="off">
+                <button class="mode-action-btn primary" style="width:100%; justify-content:center; margin-top:10px;" id="cdBtConnBtn" onclick="cdBtConnect()">Connect over Bluetooth</button>
+            </div>
+
+            <div class="cd-log" id="cdAddLog" translate="no"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="cdPhoneModal" onclick="if(event.target===this) cdPhoneClose()">
+        <div class="modal-sheet" style="max-width:520px;" role="dialog" aria-labelledby="cdPhoneTitle">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-title">
+                        <h3 id="cdPhoneTitle">Apps on this phone</h3>
+                        <p>Choose the ones to send to the device</p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="cdPhoneClose()" role="button" aria-label="Close">&#10005;</div>
+            </div>
+            <input type="text" class="list-search" id="cdPhoneSearch" placeholder="Search" autocomplete="off" autocapitalize="off" spellcheck="false" oninput="cdPhoneRender()" style="width:100%; margin-bottom:8px;">
+            <div class="chip-row" id="cdPhoneFilters"></div>
+            <div id="cdPhoneList" style="max-height:44vh; overflow-y:auto;"></div>
+            <div class="mode-btn-row" style="margin-top:12px;">
+                <button class="mode-action-btn primary" id="cdPhoneAddBtn" style="flex:1; justify-content:center;" onclick="cdPhoneAdd()">Add to the list</button>
+                <button class="mode-action-btn" onclick="cdPhoneClose()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="cdAskModal" style="z-index:330;" onclick="if(event.target===this) cdAskDone(false)">
+        <div class="modal-sheet" style="max-width:480px;" role="dialog" aria-labelledby="cdAskTitle">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-title">
+                        <h3 id="cdAskTitle"></h3>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="cdAskDone(false)" role="button" aria-label="Close">&#10005;</div>
+            </div>
+            <div id="cdAskText" style="font-size:13px; line-height:1.55; overflow-wrap:anywhere;"></div>
+            <input class="modal-text-input" id="cdAskInput" style="display:none; margin-top:10px;" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter') cdAskDone(true)">
+            <input class="modal-text-input" id="cdAskInput2" style="display:none; margin-top:8px;" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter') cdAskDone(true)">
+            <div class="mode-btn-row" style="margin-top:14px;">
+                <button class="mode-action-btn primary" id="cdAskOk" style="flex:1; justify-content:center;" onclick="cdAskDone(true)">OK</button>
+                <button class="mode-action-btn" onclick="cdAskDone(false)">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="uadInfoModal" onclick="if(event.target===this) closeUadInfo()">
         <div class="modal-sheet" style="max-width:480px;" role="dialog" aria-labelledby="uadInfoTitle">
             <div class="sheet-header">
@@ -6636,6 +7240,7 @@ Type any command below (e.g. pm list packages -d)
         let inspectedPkg = null;
         let currentWorkingMode = 'unprivileged';
         let isPrivilegedActive = false;
+        let modeAlertDismissed = false;               // the Read-Only banner put away with its X: for now only, it is back the next time the app starts in read-only mode
         let lastModesData = null;
 
         // Rish mode state (the terminal's persistent Shizuku shell; see toggleRishMode below)
@@ -6850,6 +7455,7 @@ Type any command below (e.g. pm list packages -d)
             { key: 'store', label: 'App\nStores', name: 'App Stores' },
             { key: 'logcat', label: 'Logcat\nViewer', name: 'Logcat Viewer' },
             { key: 'taskmgr', label: 'Task\nManager', name: 'Task Manager' },
+            { key: 'devices', label: 'Connected\nDevices', name: 'Connected Devices' },
             { key: 'about', label: 'About', name: 'About', fixed: true }
         ];
         const TAB_MOVABLE = TAB_DEFS.filter(t => !t.fixed).map(t => t.key);          // the default order of the tabs that can move
@@ -6940,12 +7546,14 @@ Type any command below (e.g. pm list packages -d)
             }
             if (viewName !== 'logcat' && typeof logcatStop === 'function') logcatStop();
             if (viewName !== 'taskmgr' && typeof tmStop === 'function') tmStop();
+            if (viewName !== 'devices' && typeof cdLeave === 'function') cdLeave();
             if (viewName === 'debloater') onDebloaterShown();
             if (viewName === 'updates') { onUpdatesShown(); refreshStoreStatus(); }
             if (viewName === 'installer') onInstallerShown();
             if (viewName === 'files') onFilesShown();
             if (viewName === 'logcat') onLogcatShown();
             if (viewName === 'taskmgr') onTaskMgrShown();
+            if (viewName === 'devices') onDevicesShown();
             if (viewName === 'terminal' && typeof onTerminalShown === 'function') onTerminalShown();
             if (typeof sdbSnackHide === 'function' && !(sdbSnackView ? viewName === sdbSnackView : (viewName === 'settings' || viewName === 'overlays'))) sdbSnackHide();      // its Undo only makes sense next to what it undoes
             if (viewName === 'settings') onSettingsShown();
@@ -6983,7 +7591,8 @@ Type any command below (e.g. pm list packages -d)
             '.saved-list-title', '.profile-item h4', '.backup-item h4', '.hist-title',
             '#termOutput', '.term-row-cmd', '.cheat-cmd', '#logcatOutput', '.lc-msg', '#storeDetailName',
             '.tm-row-name', '.tm-row-sub', '.tm-stat-raw',
-            '.tx-screen', '.tx-key-input', '.tx-sheet-code', '.tx-row-sub[translate="no"]', '#txHelpModal code'
+            '.tx-screen', '.tx-key-input', '.tx-sheet-code', '.tx-row-sub[translate="no"]', '#txHelpModal code',
+            '#hgBody', '.cd-dev-name', '.cd-dev-sub', '.cd-term', '.cd-fm-name', '.cd-fm-meta', '.cd-path', '.cd-set-key', '.cd-set-val', '.cd-queue-name', '.cd-log', '.cd-found-main', '#cdSheetSub', '.cd-chip', '#cdDeviceSel', '#cdLcOut', '.cd-bt-row b'
         ].join(', '));
         function initLanguageUi() {
             const sel = document.getElementById('langSelect');
@@ -7221,6 +7830,7 @@ Type any command below (e.g. pm list packages -d)
             if (typeof ovlBusy !== 'undefined' && (ovlBusy || ovlRowBusy.size)) return 'an overlay or theme change is being applied';
             if ((typeof termShellRun !== 'undefined' && termShellRun) || (typeof rishRunning !== 'undefined' && rishRunning)) return 'a terminal command is running';
             if (typeof txChat !== 'undefined' && txChat.busy) return 'a coding agent is working';
+            if (typeof cdBusyReason === 'function' && cdBusyReason()) return cdBusyReason();
             if (typeof txRuns !== 'undefined' && Object.keys(txRuns).some(k => txRuns[k] && txRuns[k].kind !== 'quiet')) return 'a terminal command is running';
             return '';
         }
@@ -7659,6 +8269,13 @@ Type any command below (e.g. pm list packages -d)
             return true;
         }
 
+        function dismissModeAlert() {
+            haptic();
+            modeAlertDismissed = true;
+            const c = document.getElementById('modeAlertCard');
+            if (c) c.style.display = 'none';
+        }
+
         function openPrivilegeRequiredModal(actionName) {
             haptic();
             document.getElementById('privilegeModalActionText').innerText = actionName ? `Action "${actionName}" requires working mode` : 'Privileged access required';
@@ -7785,8 +8402,9 @@ Type any command below (e.g. pm list packages -d)
 
                 // Update Alert Banner in view-apps
                 const alertCard = document.getElementById('modeAlertCard');
+                if (isPrivilegedActive) modeAlertDismissed = false;           // a working mode came on: read-only shows the banner again whenever it returns
                 if (alertCard) {
-                    alertCard.style.display = isPrivilegedActive ? 'none' : 'flex';
+                    alertCard.style.display = isPrivilegedActive || modeAlertDismissed ? 'none' : 'flex';
                 }
 
                 // Update Terminal Card Header
@@ -11299,7 +11917,8 @@ Type any command below (e.g. pm list packages -d)
                     timer = null;
                     fired = true;
                     haptic();
-                    openInspector(card.dataset.pkg);
+                    if (card.closest('#cdAppList')) cdAppMenu(card.dataset.pkg);          // a row of the Connected Devices list opens that device app's menu
+                    else openInspector(card.dataset.pkg);
                 }, 550);
             });
             let dragged = false;
@@ -15441,6 +16060,1498 @@ Type any command below (e.g. pm list packages -d)
             haptic();
             document.getElementById('signModal').classList.remove('show');
             signTarget = null;
+        }
+
+        // ---------- Help Guide ----------
+        // The About tab's Help Guide button. The guide is assets/guide.js (built from docs/guide/*.html, English only): it is loaded the first time the button is
+        // pressed. The sheet shows the table of contents, or ONE topic at a time (drawn when it is opened, so there is nothing slow to wait for however long the
+        // guide is), or the results of a search. Closing and opening again continues with the same view.
+        const hg = { data: null, built: false, loading: false, cur: null, prev: null, query: '', timer: null, text: {}, raw: {}, plain: false, tops: {}, order: [] };
+
+        function hgLoad(then) {
+            if (window.HELP_GUIDE) { hg.data = window.HELP_GUIDE; then(); return; }
+            if (hg.loading) return;
+            hg.loading = true;
+            const s = document.createElement('script');
+            s.src = 'guide.js';
+            window.onHelpGuideLoaded = () => { hg.loading = false; hg.data = window.HELP_GUIDE; then(); };
+            s.onerror = () => { hg.loading = false; document.getElementById('hgBody').innerHTML = '<div class="hg-empty">The guide could not be loaded. Close this and try again.</div>'; };
+            document.head.appendChild(s);
+        }
+
+        // id: a topic to open straight at (for a link from elsewhere in the app)
+        function openHelpGuide(id) {
+            haptic();
+            document.getElementById('helpGuideModal').classList.add('show');
+            if (!hg.built) document.getElementById('hgBody').innerHTML = '<div class="hg-empty">Loading the guide...</div>';
+            hgLoad(() => { hgBuild(); if (id) hgShow(id); });
+        }
+        function closeHelpGuide() {
+            document.getElementById('helpGuideModal').classList.remove('show');
+            hgBackHide();
+        }
+        // Back (and a tap outside the sheet) steps back inside the guide first: out of a search, then out of a topic to the contents; from the contents it closes
+        function hgBackStep() {
+            if (hg.query) { document.getElementById('hgSearch').value = ''; hgSearchApply(''); return; }
+            if (hg.cur) { hgContents(); return; }
+            closeHelpGuide();
+        }
+
+        function hgBuild() {
+            if (hg.built) return;
+            const d = hg.data, body = document.getElementById('hgBody');
+            let n = 0;
+            const num = {};
+            d.sections.forEach(s => { num[s.id] = ++n; hg.order.push(s.id); });
+            hg.num = num;
+            body.innerHTML = '<div class="hg-toc" id="hgToc"><p class="hg-intro">Tap a topic to open it. Tap <b>Contents</b> at the top, or <b>Back to the contents</b> under a topic, to come back here. ' +
+                'Type in the search box to find a word anywhere in the guide. This guide is in English.' + (d.version ? ' It was written for version ' + escapeHtml(d.version) + '.' : '') + '</p>' +
+                d.groups.map(g => {
+                    const secs = d.sections.filter(s => s.group === g);
+                    return '<details open><summary>' + escapeHtml(g) + '<span>' + secs.length + (secs.length === 1 ? ' topic' : ' topics') + '</span></summary><ol>' +
+                        secs.map(s => '<li><a href="#' + s.id + '" data-hg="' + s.id + '"><b>' + num[s.id] + '</b>' + escapeHtml(s.title) + '</a></li>').join('') + '</ol></details>';
+                }).join('') + '</div>' +
+                '<div class="hg-results" id="hgResults" style="display:none;"></div><div id="hgTopic" style="display:none;"></div>' +
+                '<div class="hg-empty" id="hgNone" style="display:none;">Nothing in the guide matches that. Try fewer or different words.</div>';
+            body.addEventListener('click', hgClick);
+            hg.built = true;
+        }
+
+        function hgClick(e) {
+            const a = e.target.closest ? e.target.closest('a[data-hg], a[href^="#"]') : null;
+            if (!a) return;
+            e.preventDefault();
+            const id = a.dataset.hg || String(a.getAttribute('href') || '').slice(1);
+            if (id === '__toc') hgContents();
+            else hgShow(id, !!(a.closest('#hgTopic') && !a.closest('.hg-nav')));          // a link in the text offers a way back; Previous and Next do not
+        }
+
+        function hgScroller() { return document.querySelector('#helpGuideModal .modal-sheet'); }
+        function hgSecById(id) { return hg.data.sections.find(s => s.id === id); }
+
+        // Shows one topic. remember: the reader came from another topic through a link, so offer a way back to it
+        function hgShow(id, remember, top) {
+            const sec = hgSecById(id);
+            if (!sec) { showToast('That part of the guide is not there.'); return; }
+            const sc = hgScroller();
+            if (hg.query) { document.getElementById('hgSearch').value = ''; hg.query = ''; document.getElementById('hgStatus').innerText = ''; }
+            if (remember && hg.cur) { hg.prev = { id: hg.cur, top: sc.scrollTop }; hgBackShow(); } else hgBackHide();
+            if (hg.cur) hg.tops[hg.cur] = sc.scrollTop;
+            haptic();
+            const i = hg.order.indexOf(id), before = i > 0 ? hgSecById(hg.order[i - 1]) : null, after = i < hg.order.length - 1 ? hgSecById(hg.order[i + 1]) : null;
+            const box = document.getElementById('hgTopic');
+            box.innerHTML = '<section class="hg-sec" id="hg-' + id + '" data-id="' + id + '"><div class="hg-sec-group">' + escapeHtml(sec.group) + ' &middot; topic ' + hg.num[id] + ' of ' + hg.order.length + '</div><h3>' + escapeHtml(sec.title) + '</h3>' + sec.html +
+                '<div class="hg-nav">' + (before ? '<a href="#' + before.id + '" data-hg="' + before.id + '" class="hg-nav-prev"><span>Previous</span>' + escapeHtml(before.title) + '</a>' : '<span></span>') +
+                (after ? '<a href="#' + after.id + '" data-hg="' + after.id + '" class="hg-nav-next"><span>Next</span>' + escapeHtml(after.title) + '</a>' : '<span></span>') + '</div>' +
+                '<a class="hg-top" href="#" data-hg="__toc">Back to the contents</a></section>';
+            box.querySelectorAll('table').forEach(t => { const w = document.createElement('div'); w.className = 'hg-tablewrap'; t.parentNode.insertBefore(w, t); w.appendChild(t); });
+            ['hgToc', 'hgResults', 'hgNone'].forEach(x => { document.getElementById(x).style.display = 'none'; });
+            box.style.display = '';
+            hg.cur = id;
+            hgUpdateBar();
+            sc.scrollTo({ top: top || 0 });
+        }
+        function hgContents() {
+            haptic();
+            const sc = hgScroller();
+            if (hg.query) { document.getElementById('hgSearch').value = ''; hg.query = ''; document.getElementById('hgStatus').innerText = ''; }
+            const was = hg.cur;
+            hg.cur = null;
+            ['hgTopic', 'hgResults', 'hgNone'].forEach(x => { document.getElementById(x).style.display = 'none'; });
+            document.getElementById('hgToc').style.display = '';
+            hgBackHide();
+            hgUpdateBar();
+            // the contents are where the reader left them; the topic they came from is lit for a moment
+            sc.scrollTo({ top: hg.tops.__toc || 0 });
+            const link = was && document.querySelector('#hgToc a[data-hg="' + was + '"]');
+            if (link) { link.scrollIntoView({ block: 'center' }); link.classList.remove('hg-flash'); void link.offsetWidth; link.classList.add('hg-flash'); }
+        }
+        function hgUpdateBar() {
+            const b = document.getElementById('hgContentsBtn');
+            if (b) b.style.display = hg.cur || hg.query ? '' : 'none';
+        }
+        function hgBackShow() {
+            const b = document.getElementById('hgBack');
+            b.classList.add('show');
+            clearTimeout(hg.backTimer);
+            hg.backTimer = setTimeout(hgBackHide, 15000);
+        }
+        function hgBackHide() { clearTimeout(hg.backTimer); const b = document.getElementById('hgBack'); if (b) b.classList.remove('show'); }
+        function hgBackToPlace() {
+            haptic();
+            const p = hg.prev;
+            hgBackHide();
+            if (p) hgShow(p.id, false, p.top);
+        }
+
+        // ---- search: the topics that hold every word, best first, each with a snippet; a tap opens the topic ----
+        function hgPlainText() {
+            if (hg.plain) return;
+            const ta = document.createElement('textarea');
+            hg.data.sections.forEach(s => {
+                ta.innerHTML = s.html.replace(/<\/(p|li|td|th|tr|div|h4|h5|ul|ol|table)>/gi, ' ').replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '');
+                const t = ta.value.replace(/\s+/g, ' ').trim();
+                hg.raw[s.id] = t;
+                hg.text[s.id] = (s.title + ' ' + s.group + ' ' + t).toLowerCase();
+            });
+            hg.plain = true;
+        }
+        function hgSearchInput() { clearTimeout(hg.timer); hg.timer = setTimeout(() => hgSearchApply(document.getElementById('hgSearch').value), 140); }
+        function hgSnippet(raw, words) {
+            const low = raw.toLowerCase();
+            let at = -1;
+            words.forEach(w => { const i = low.indexOf(w); if (i >= 0 && (at < 0 || i < at)) at = i; });
+            if (at < 0) at = 0;
+            let from = Math.max(0, at - 70), to = Math.min(raw.length, at + 150);
+            if (from > 0) { const sp = raw.indexOf(' ', from); if (sp >= 0 && sp < at) from = sp + 1; }
+            if (to < raw.length) { const sp = raw.lastIndexOf(' ', to); if (sp > at) to = sp; }
+            const rx = new RegExp('(' + words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')', 'gi');
+            return (from > 0 ? '... ' : '') + raw.slice(from, to).split(rx).map((p, i) => i % 2 ? '<mark class="hg-hit">' + escapeHtml(p) + '</mark>' : escapeHtml(p)).join('') + (to < raw.length ? ' ...' : '');
+        }
+        function hgSearchApply(q) {
+            if (!hg.built) return;
+            q = String(q || '').trim().toLowerCase();
+            const had = hg.query;
+            hg.query = q;
+            const words = q.split(/\s+/).filter(Boolean);
+            const status = document.getElementById('hgStatus'), none = document.getElementById('hgNone'), box = document.getElementById('hgResults');
+            const sc = hgScroller();
+            if (!words.length) {                                    // back to what was open before the search
+                hg.query = '';
+                box.style.display = 'none'; box.innerHTML = ''; none.style.display = 'none'; status.innerText = '';
+                if (hg.cur) document.getElementById('hgTopic').style.display = ''; else document.getElementById('hgToc').style.display = '';
+                hgUpdateBar();
+                if (had) sc.scrollTo({ top: hg.cur ? (hg.tops[hg.cur] || 0) : (hg.tops.__toc || 0) });
+                return;
+            }
+            if (!had) hg.tops[hg.cur || '__toc'] = sc.scrollTop;
+            hgPlainText();
+            const hits = [];
+            hg.data.sections.forEach(sec => {
+                const low = hg.text[sec.id];
+                if (!words.every(w => low.includes(w))) return;
+                const tl = sec.title.toLowerCase();
+                let score = 0;
+                words.forEach(w => { if (tl.includes(w)) score += 40; let n = 0, i = -1; while (n < 25 && (i = low.indexOf(w, i + 1)) >= 0) n++; score += n; });
+                hits.push({ sec, score });
+            });
+            hits.sort((a, b) => b.score - a.score);
+            document.getElementById('hgToc').style.display = 'none';
+            document.getElementById('hgTopic').style.display = 'none';
+            none.style.display = hits.length ? 'none' : '';
+            box.style.display = hits.length ? '' : 'none';
+            box.innerHTML = hits.map(h => '<a class="hg-hit-card" href="#' + h.sec.id + '" data-hg="' + h.sec.id + '"><span class="hg-hit-group">' + escapeHtml(h.sec.group) + '</span><b>' + escapeHtml(h.sec.title) + '</b><span class="hg-hit-snip">' + hgSnippet(hg.raw[h.sec.id], words) + '</span></a>').join('');
+            status.innerText = hits.length ? hits.length + (hits.length === 1 ? ' topic matches' : ' topics match') + ' - tap one to open it' : '';
+            hgUpdateBar();
+            sc.scrollTo({ top: 0 });
+        }
+
+        // ---------- Connected Devices ----------
+        // adb for ANOTHER device, through the adb this app carries: a Wear OS watch first, any Android device works. Every call goes out as
+        // AndroidBridge.cdAdb(tag, serial, args, timeout) and comes back as window.onCdResult({tag, out, ms}). Output is plain text; a failure starts with "Error:".
+        const CD_SUBS = [['apps', 'Apps'], ['send', 'Send'], ['console', 'Console'], ['logcat', 'Logcat'], ['files', 'Files'], ['settings', 'Hidden Settings'], ['display', 'Display']];
+        const CD_FILTERS = [['user', '3rd Party'], ['system', 'System'], ['enabled', 'Enabled'], ['disabled', 'Disabled'], ['uninstalled', 'Uninstalled']];
+        const CD_FILTER_GROUPS = [['user', 'system'], ['enabled', 'disabled']];
+        const CD_CHIPS = ['getprop ro.product.model', 'pm list packages -3', 'dumpsys battery', 'dumpsys activity activities | grep mResumedActivity', 'df -h /data', 'ps -A | head -25', 'wm size', 'wm density',
+            'settings list global', 'ip addr show wlan0', 'cat /proc/meminfo | head -6', 'logcat -d -t 40', 'input keyevent 26', 'adb devices -l', 'adb pull /sdcard/Download/'];
+        const CD_PLACES = [['Storage', '/sdcard'], ['Download', '/sdcard/Download'], ['Temp', '/data/local/tmp'], ['All storage', '/storage'], ['System', '/system'], ['Root', '/']];
+        const CD_INFO_CMD = [
+            'for p in ro.product.manufacturer ro.product.model ro.product.name ro.build.version.release ro.build.version.sdk ro.product.cpu.abilist ro.sf.lcd_density ro.build.characteristics persist.sys.locale ro.product.locale; do echo "$p=$(getprop $p)"; done',
+            'echo "wmsize=$(wm size | tr \'\\n\' \' \')"',
+            'echo "wmdens=$(wm density | tr \'\\n\' \' \')"',
+            'echo "batt=$(dumpsys battery | grep -E \'^ *(level|status):\' | tr \'\\n\' \' \')"'
+        ].join('; ');
+        const CD_APPS_CMD = "echo '#ALL'; pm list packages -f -u; echo '#INST'; pm list packages; echo '#DIS'; pm list packages -d; echo '#SYS'; pm list packages -s -u";
+        const CD_APP_CMDS = {
+            enable: p => 'pm enable ' + cdQ(p),
+            disable: p => 'pm disable-user --user 0 ' + cdQ(p),
+            uninstall: p => 'pm uninstall --user 0 ' + cdQ(p),
+            reinstall: p => 'cmd package install-existing ' + cdQ(p),
+            stop: p => 'am force-stop ' + cdQ(p),
+            clear: p => 'pm clear ' + cdQ(p),
+            launch: p => 'monkey -p ' + cdQ(p) + ' -c android.intent.category.LAUNCHER 1'
+        };
+        const CD_GLOBAL_ADB = /^(devices|connect|disconnect|pair|mdns|version|help|reconnect|keys)$/;
+        const CD_BLOCKED_ADB = /^(kill-server|start-server|server|nodaemon)$/;
+
+        const cd = {
+            ready: false, devices: [], selfDevs: [], self: [], serial: '', sub: 'apps', info: null, names: {}, sig: '', lastKey: '', poll: null, refreshing: false,
+            apps: null, appsBusy: false, filters: new Set(), sel: new Set(), batchBusy: false,
+            queue: [], sending: null,
+            mode: 'shell', hist: [], histAt: -1, term: [], termRun: '',
+            lcTimer: null, lcBusy: false, lcText: '', lcEntries: [],
+            fm: { path: '/sdcard', entries: null, busy: false },
+            set: { ns: 'global', data: {}, loaded: {}, busy: false },
+            keep: null, bt: new Set(), scan: [], addTab: 'wifi', ask: null, acts: [],
+            phone: { sel: new Set(), filter: 'user' }
+        };
+        const cdWait = {};
+        let cdSeq = 0;
+
+        // quoted for the shell on the device
+        function cdQ(s) { return "'" + String(s).replace(/'/g, "'\\''") + "'"; }
+        function cdBridge() { return window.AndroidBridge && window.AndroidBridge.cdAdb ? window.AndroidBridge : null; }
+        function cdCur() { return cd.devices.find(d => d.serial === cd.serial) || null; }
+        function cdReady() { const d = cdCur(); return !!d && d.state === 'device'; }
+        function cdBase(p) { return String(p).replace(/\/+$/, '').split('/').pop(); }
+
+        window.onCdResult = function (r) { const w = r && cdWait[r.tag]; if (w) { delete cdWait[r.tag]; w(r); } };
+        window.onCdProgress = function (p) { if (cd.sending && p && p.tag === cd.sending.tag) cdSendProgress(p); };
+        window.onCdPicked = function (r) { cdPicked(r || {}); };
+
+        // adb with its arguments; resolves to the output text and never rejects. o: { serial (default: the chosen device, '' for adb's own commands), timeout, tag }
+        function cdRun(args, o) {
+            o = o || {};
+            return new Promise(res => {
+                const b = cdBridge();
+                if (!b) { res('Error: Connected Devices works in the app, not in a plain browser.'); return; }
+                const tag = o.tag || ('cd' + (++cdSeq));
+                cdWait[tag] = r => res(String(r.out == null ? '' : r.out));
+                try { b.cdAdb(tag, o.serial === undefined ? cd.serial : o.serial, JSON.stringify(args), o.timeout || 20000); }
+                catch (e) { delete cdWait[tag]; res('Error: ' + (e && e.message || e)); }
+            });
+        }
+        function cdSh(cmd, o) {
+            if (!cd.serial && !(o && o.serial)) return Promise.resolve('Error: choose a device first');
+            return cdRun(['shell', cmd], o);
+        }
+        function cdStop(tag) { try { if (tag && window.AndroidBridge && window.AndroidBridge.cdCancel) window.AndroidBridge.cdCancel(tag); } catch (e) {} }
+
+        // '' when the output is fine, otherwise the problem in words (adb's own complaints come as the whole output)
+        function cdFail(out) {
+            const t = String(out || '').trim();
+            if (/^Error:/.test(t)) return t.replace(/^Error:\s*/, '');
+            if (/^(adb(\.exe)?: |error: )/i.test(t)) return t.split('\n')[0].replace(/^(adb(\.exe)?: |error: )+/i, '');
+            return '';
+        }
+
+        // ---- devices ----
+        function cdTransport(serial) {
+            if (cd.bt.has(serial) || /^(127\.0\.0\.1|localhost):\d+$/.test(serial)) return 'Bluetooth link';
+            if (/^adb-.*_adb-tls-connect/.test(serial) || /^[^\s:]+:\d+$/.test(serial)) return 'Wi-Fi';
+            return 'USB';
+        }
+        function cdParseDevices(out) {
+            const res = [];
+            String(out || '').split('\n').forEach(line => {
+                const m = /^(\S+)\s+(device|offline|unauthorized|authorizing|connecting|recovery|sideload|bootloader|rescue|no permissions)\b(.*)$/.exec(line.trim());
+                if (!m) return;
+                const kv = {};
+                (m[3].match(/\w+:\S+/g) || []).forEach(t => { const i = t.indexOf(':'); kv[t.slice(0, i)] = t.slice(i + 1); });
+                res.push({ serial: m[1], state: m[2], model: (kv.model || '').replace(/_/g, ' '), product: kv.product || '' });
+            });
+            return res;
+        }
+        function cdDevLabel(d) {
+            const st = d.state === 'device' ? '' : d.state === 'unauthorized' ? ' (not allowed yet)' : ' (' + d.state + ')';
+            return (cd.names[d.serial] || d.model || d.serial) + st;
+        }
+
+        async function cdRefreshDevices(manual) {
+            if (cd.refreshing) return;
+            cd.refreshing = true;
+            try { cd.self = JSON.parse((window.AndroidBridge && window.AndroidBridge.cdSelfSerials && window.AndroidBridge.cdSelfSerials()) || '[]'); } catch (e) { cd.self = []; }
+            const out = await cdRun(['devices', '-l'], { serial: '', timeout: 12000 });
+            cd.refreshing = false;
+            const f = cdFail(out);
+            const text = document.getElementById('cdEmptyText');
+            if (f) {
+                if (text) text.innerText = f;
+                if (manual) showToast(f);
+                return;
+            }
+            const all = cdParseDevices(out);
+            cd.selfDevs = all.filter(d => cd.self.includes(d.serial));
+            cd.devices = all.filter(d => !cd.self.includes(d.serial));
+            if (text) text.innerText = 'Pair and connect a Wear OS watch or any Android device over Wi-Fi or Bluetooth. Then you can manage its apps, send apps to it, read its log, browse its files and change its settings from here.';
+            let moved = false;
+            if (!cd.devices.some(d => d.serial === cd.serial)) {
+                const last = kvGet('cd_ui', {}).serial;
+                const pick = cd.devices.find(d => d.serial === last && d.state === 'device') || cd.devices.find(d => d.state === 'device') || cd.devices[0];
+                cd.serial = pick ? pick.serial : '';
+                moved = true;
+            }
+            const d = cdCur();
+            const key = d ? d.serial + ':' + d.state : '';
+            const sig = cd.devices.map(x => x.serial + ':' + x.state + ':' + cdDevLabel(x)).join('|') + '#' + cd.serial;
+            if (sig !== cd.sig) { cd.sig = sig; cdRenderDevices(); }
+            if (key !== cd.lastKey) {
+                cd.lastKey = key;
+                if (moved) cdResetDevice();
+                cdRenderInfo();
+                if (d && d.state === 'device') { await cdLoadInfo(); cdSub(cd.sub); }
+            }
+            if (manual) showToast(cd.devices.length ? cd.devices.length + (cd.devices.length === 1 ? ' device' : ' devices') : 'No device found');
+        }
+
+        function cdRenderDevices() {
+            const sel = document.getElementById('cdDeviceSel');
+            if (!sel) return;
+            sel.innerHTML = cd.devices.length ? cd.devices.map(d => '<option value="' + escapeHtml(d.serial) + '"' + (d.serial === cd.serial ? ' selected' : '') + '>' + escapeHtml(cdDevLabel(d)) + '</option>').join('') : '<option value="">No device</option>';
+            sel.disabled = !cd.devices.length;
+            const d = cdCur();
+            document.getElementById('cdEmpty').style.display = d ? 'none' : '';
+            document.getElementById('cdWork').style.display = d && d.state === 'device' ? '' : 'none';
+            cdRenderRecent();
+        }
+
+        function cdSelect(serial) {
+            if (!serial || serial === cd.serial) return;
+            cdStopWork();
+            cd.serial = serial;
+            cd.lastKey = '';
+            cdResetDevice();
+            kvSet('cd_ui', { serial: serial, sub: cd.sub });
+            cd.sig = '';
+            cdRenderDevices();
+            cdRenderInfo();
+            cdRefreshDevices(false);
+        }
+
+        // what was read from one device is not the next one's
+        function cdResetDevice() {
+            cd.info = null; cd.apps = null; cd.sel.clear(); cd.filters.clear(); cd.lcText = ''; cd.lcEntries = [];
+            cd.fm = { path: '/sdcard', entries: null, busy: false };
+            cd.set = { ns: cd.set.ns, data: {}, loaded: {}, busy: false };
+            cd.termRun = '';
+            cdBatchBar();
+            const l = document.getElementById('cdAppList'); if (l) l.innerHTML = '';
+            const o = document.getElementById('cdLcOut'); if (o) o.innerHTML = '<div class="lc-meta">Press Play, or Refresh, to read the log.</div>';
+            const f = document.getElementById('cdFmList'); if (f) f.innerHTML = '';
+            const s = document.getElementById('cdSetList'); if (s) s.innerHTML = '';
+        }
+
+        function cdStopWork() { cdLcStop(); }
+
+        function cdParseInfo(out, serial) {
+            const kv = {};
+            String(out).split('\n').forEach(l => { const i = l.indexOf('='); if (i > 0) kv[l.slice(0, i).trim()] = l.slice(i + 1).trim(); });
+            const sz = (re) => { const m = re.exec(kv.wmsize || ''); return m ? m[1] : ''; };
+            const dn = (re) => { const m = re.exec(kv.wmdens || ''); return m ? parseInt(m[1], 10) : 0; };
+            const physDpi = dn(/Physical density:\s*(\d+)/) || parseInt(kv['ro.sf.lcd_density'], 10) || 0;
+            const ovrDpi = dn(/Override density:\s*(\d+)/);
+            const lvl = /level:\s*(\d+)/.exec(kv.batt || ''), st = /status:\s*(\d+)/.exec(kv.batt || '');
+            const lang = String(kv['persist.sys.locale'] || kv['ro.product.locale'] || '').slice(0, 2).toLowerCase();
+            return {
+                serial: serial, maker: kv['ro.product.manufacturer'] || '', model: kv['ro.product.model'] || '', product: kv['ro.product.name'] || '',
+                release: kv['ro.build.version.release'] || '', sdk: kv['ro.build.version.sdk'] || '',
+                abis: String(kv['ro.product.cpu.abilist'] || '').split(',').map(s => s.trim()).filter(Boolean),
+                wear: /watch/i.test(kv['ro.build.characteristics'] || ''),
+                physDpi: physDpi, ovrDpi: ovrDpi, dpi: ovrDpi || physDpi, physSize: sz(/Physical size:\s*(\d+x\d+)/), ovrSize: sz(/Override size:\s*(\d+x\d+)/),
+                size: sz(/Override size:\s*(\d+x\d+)/) || sz(/Physical size:\s*(\d+x\d+)/),
+                lang: lang, battery: lvl ? parseInt(lvl[1], 10) : -1, charging: !!st && (st[1] === '2' || st[1] === '5')
+            };
+        }
+
+        async function cdLoadInfo() {
+            const d = cdCur();
+            if (!d || d.state !== 'device') { cd.info = null; cdRenderInfo(); return; }
+            const serial = d.serial;
+            const out = await cdSh(CD_INFO_CMD, { timeout: 25000 });
+            if (serial !== cd.serial) return;
+            const f = cdFail(out);
+            if (f) { cd.info = null; cdRenderInfo(f); return; }
+            cd.info = cdParseInfo(out, serial);
+            const mk = cd.info.maker ? cd.info.maker.charAt(0).toUpperCase() + cd.info.maker.slice(1) : '';
+            const nm = ((mk && cd.info.model && cd.info.model.toLowerCase().indexOf(mk.toLowerCase()) !== 0 ? mk + ' ' : '') + cd.info.model).trim();
+            if (nm) cd.names[serial] = nm;
+            cd.sig = '';
+            cdRenderDevices();
+            cdRenderInfo();
+            if (cd.sub === 'display') cdDensRender();
+        }
+
+        function cdRenderInfo(problem) {
+            const el = document.getElementById('cdInfo');
+            if (!el) return;
+            const d = cdCur();
+            if (!d) { el.innerHTML = ''; return; }
+            const i = cd.info && cd.info.serial === d.serial ? cd.info : null;
+            const name = cd.names[d.serial] || d.model || d.serial;
+            let badges = '<span class="tag-badge ' + (d.state === 'device' ? 'tag-running' : 'tag-suspended') + '">' + escapeHtml(d.state === 'device' ? 'Connected' : d.state === 'unauthorized' ? 'Not allowed yet' : d.state) + '</span>';
+            badges += '<span class="tag-badge tag-system">' + escapeHtml(cdTransport(d.serial)) + '</span>';
+            if (i && i.wear) badges += '<span class="tag-badge tag-user">Wear OS</span>';
+            if (i && i.battery >= 0) badges += '<span class="tag-badge tag-frozen">Battery ' + i.battery + '%' + (i.charging ? ' charging' : '') + '</span>';
+            const bits = [];
+            if (i) {
+                if (i.release) bits.push('Android ' + i.release + (i.sdk ? ' (API ' + i.sdk + ')' : ''));
+                if (i.abis[0]) bits.push(i.abis[0]);
+                if (i.size) bits.push(i.size);
+                if (i.dpi) bits.push(i.dpi + ' dpi');
+            }
+            let note = '';
+            if (problem) note = '<div class="cd-note is-err">' + escapeHtml(problem) + '</div>';
+            else if (d.state === 'unauthorized') note = '<div class="cd-note">This device has not allowed this phone yet. Look at its screen and tap <b>Allow</b> (tick Always allow), then press Refresh.</div>';
+            else if (d.state === 'offline') note = '<div class="cd-note">The device does not answer. <button class="batch-tool-link" onclick="cdReconnect()">Reconnect</button></div>';
+            else if (d.state !== 'device') note = '<div class="cd-note">The device is in ' + escapeHtml(d.state) + ' mode. Most tools need it started normally.</div>';
+            el.innerHTML = '<div class="cd-dev"><div class="cd-dev-ico">' + (i && i.wear ? 'W' : 'A') + '</div><div class="cd-dev-main"><div class="cd-dev-name" translate="no">' + escapeHtml(name) + '</div>' +
+                '<div class="cd-dev-sub" translate="no">' + escapeHtml(bits.join(' \u00b7 ') || d.serial) + (bits.length ? '<br>' + escapeHtml(d.serial) : '') + '</div>' +
+                '<div class="cd-dev-badges">' + badges + '</div></div><button class="btn-mini cd-dev-more" title="Device menu" onclick="cdDeviceMenu()">\u22ef</button></div>' + note;
+        }
+
+        async function cdReconnect() {
+            const d = cdCur(); if (!d) return;
+            showToast('Reconnecting...');
+            if (/^[^\s:]+:\d+$/.test(d.serial)) { await cdRun(['disconnect', d.serial], { serial: '', timeout: 10000 }); await cdRun(['connect', d.serial], { serial: '', timeout: 15000 }); }
+            else await cdRun(['reconnect'], { timeout: 10000 });
+            cd.lastKey = '';
+            cdRefreshDevices(true);
+        }
+
+        function cdDeviceMenu() {
+            const d = cdCur(); if (!d) return;
+            const net = /^[^\s:]+:\d+$/.test(d.serial);
+            const run = (label, args, text) => ({ label: label, cls: 'danger', fn: async () => { if (!(await cdAsk({ title: label + '?', text: text, ok: label, danger: true }))) return; const out = await cdRun(args); const f = cdFail(out); showToast(f || (label + ': sent')); setTimeout(() => cdRefreshDevices(false), 4000); } });
+            const b = [
+                { label: 'Reload details', fn: () => { cd.lastKey = ''; cdLoadInfo(); showToast('Reading the device...'); } },
+                run('Reboot', ['reboot'], 'The device restarts and the connection drops for a moment.'),
+                run('Reboot to recovery', ['reboot', 'recovery'], 'The device restarts into recovery mode.'),
+                run('Reboot to bootloader', ['reboot', 'bootloader'], 'The device restarts into the bootloader.'),
+                { label: 'Power off', cls: 'danger', fn: async () => { if (!(await cdAsk({ title: 'Power off?', text: 'The device turns off. It has to be started by hand.', ok: 'Power off', danger: true }))) return; const out = await cdSh('reboot -p'); showToast(cdFail(out) || 'Power off: sent'); } },
+                { label: 'Copy address', fn: () => copyText(d.serial) }
+            ];
+            if (net) b.push({ label: 'Disconnect', fn: async () => { const out = await cdRun(['disconnect', d.serial], { serial: '', timeout: 10000 }); showToast(cdFail(out) || 'Disconnected'); cd.lastKey = ''; cdRefreshDevices(false); } });
+            cdSheetOpen({ title: cd.names[d.serial] || d.model || 'Device', sub: d.serial, buttons: b });
+        }
+
+        // ---- the sub-tabs ----
+        function cdRenderTabs() {
+            document.getElementById('cdTabs').innerHTML = CD_SUBS.map(s => '<button class="cd-tab' + (s[0] === cd.sub ? ' active' : '') + '" role="tab" data-sub="' + s[0] + '" onclick="cdSub(\'' + s[0] + '\')">' + s[1] + '</button>').join('');
+        }
+        function cdSub(key) {
+            if (!CD_SUBS.some(s => s[0] === key)) key = 'apps';
+            if (cd.sub !== key) cdLcStop();
+            cd.sub = key;
+            document.querySelectorAll('#cdTabs .cd-tab').forEach(b => b.classList.toggle('active', b.dataset.sub === key));
+            document.querySelectorAll('#view-devices .cd-pane').forEach(p => p.classList.toggle('active', p.id === 'cdPane-' + key));
+            const ui = kvGet('cd_ui', {}); ui.sub = key; if (cd.serial) ui.serial = cd.serial; kvSet('cd_ui', ui);
+            if (!cdReady()) return;
+            if (key === 'apps' && !cd.apps) cdAppsLoad();
+            if (key === 'send') cdQueueRender();
+            if (key === 'console') cdChipsRender();
+            if (key === 'logcat' && !cd.lcText) cdLcRefresh();
+            if (key === 'files' && !cd.fm.entries) cdFmGo(cd.fm.path);
+            if (key === 'settings') { cdSetRenderNs(); if (!cd.set.loaded[cd.set.ns]) cdSetLoad(); }
+            if (key === 'display') cdDensRender();
+        }
+
+        function cdInit() {
+            cd.ready = true;
+            const ui = kvGet('cd_ui', {});
+            if (ui.sub && CD_SUBS.some(s => s[0] === ui.sub)) cd.sub = ui.sub;
+            cd.hist = kvGet('cd_hist', []);
+            if (!Array.isArray(cd.hist)) cd.hist = [];
+            cd.bt = new Set(kvGet('cd_bt', []));
+            cdRenderTabs();
+            cdSub(cd.sub);
+        }
+
+        function onDevicesShown() {
+            if (!cd.ready) cdInit();
+            cdRefreshDevices(false);
+            cdPollStop();
+            cd.poll = setInterval(() => { if (!document.hidden && !cd.refreshing) cdRefreshDevices(false); }, 6000);
+        }
+        function cdPollStop() { if (cd.poll) { clearInterval(cd.poll); cd.poll = null; } }
+        function cdLeave() { cdPollStop(); cdLcStop(); }
+
+        // what is still going on, in words ('' when nothing is): leaving would cut it off
+        function cdBusyReason() {
+            if (cd.sending) return 'apps are being sent to a device';
+            if (cd.termRun) return 'a device command is running';
+            if (cd.batchBusy) return 'a change on a device is being applied';
+            return '';
+        }
+
+        // ---- a sheet of buttons for one thing, and a question ----
+        function cdSheetOpen(o) {
+            document.getElementById('cdSheetTitle').innerText = o.title || '';
+            const sub = document.getElementById('cdSheetSub');
+            sub.innerText = o.sub || '';
+            sub.style.display = o.sub ? '' : 'none';
+            document.getElementById('cdSheetBody').innerHTML = o.body || '';
+            cd.acts = o.buttons || [];
+            document.getElementById('cdSheetBtns').innerHTML = cd.acts.map((b, i) => '<button class="batch-grid-btn' + (b.cls ? ' ' + b.cls : '') + '" onclick="cdSheetAct(' + i + ')">' + escapeHtml(b.label) + '</button>').join('');
+            document.getElementById('cdSheet').classList.add('show');
+        }
+        function cdSheetAct(i) {
+            const b = cd.acts[i];
+            if (!b) return;
+            haptic();
+            if (!b.keep) cdSheetClose();
+            b.fn();
+        }
+        function cdSheetClose() { document.getElementById('cdSheet').classList.remove('show'); }
+
+        // Resolves to true (a question), { a, b } (when it asks for text) or false/null when it is turned down
+        function cdAsk(o) {
+            return new Promise(resolve => {
+                if (cd.ask) cd.ask.resolve(false);
+                cd.ask = { resolve: resolve, input: !!o.input, input2: !!o.input2 };
+                document.getElementById('cdAskTitle').innerText = o.title || '';
+                document.getElementById('cdAskText').innerText = o.text || '';
+                const a = document.getElementById('cdAskInput'), b = document.getElementById('cdAskInput2');
+                a.style.display = o.input ? '' : 'none'; a.value = o.value || ''; a.placeholder = o.input || '';
+                b.style.display = o.input2 ? '' : 'none'; b.value = o.value2 || ''; b.placeholder = o.input2 || '';
+                const ok = document.getElementById('cdAskOk');
+                ok.innerText = o.ok || 'OK';
+                ok.style.background = o.danger ? '#c62828' : '';
+                ok.style.color = o.danger ? '#fff' : '';
+                document.getElementById('cdAskModal').classList.add('show');
+                if (o.input) setTimeout(() => a.focus(), 120);
+            });
+        }
+        function cdAskDone(ok) {
+            const k = cd.ask;
+            if (!k) { document.getElementById('cdAskModal').classList.remove('show'); return; }
+            cd.ask = null;
+            document.getElementById('cdAskModal').classList.remove('show');
+            if (!ok) { k.resolve(false); return; }
+            k.resolve(k.input || k.input2 ? { a: document.getElementById('cdAskInput').value, b: document.getElementById('cdAskInput2').value } : true);
+        }
+
+        // ---- Apps ----
+        function cdSplitPkgLine(l) {
+            const s = l.slice(8).trim(), i = s.lastIndexOf('=');                  // the path can hold "=" itself, the package name cannot
+            return i < 0 ? { pkg: s, path: '' } : { pkg: s.slice(i + 1), path: s.slice(0, i) };
+        }
+        function cdDerivedName(pkg) {
+            const parts = String(pkg).split('.').filter(Boolean);
+            let w = parts[parts.length - 1] || pkg;
+            if (/^(app|apps|android|mobile|wear|watch|release|prod)$/i.test(w) && parts.length > 1) w = parts[parts.length - 2] + ' ' + w;
+            w = w.replace(/[_-]+/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2');
+            return w.charAt(0).toUpperCase() + w.slice(1);
+        }
+        function cdParseApps(out) {
+            const sec = { ALL: [], INST: new Set(), DIS: new Set(), SYS: new Set() };
+            let cur = '';
+            String(out).split('\n').forEach(raw => {
+                const l = raw.replace(/\r$/, '').trim();
+                const h = /^#(ALL|INST|DIS|SYS)$/.exec(l);
+                if (h) { cur = h[1]; return; }
+                if (!cur || !l.startsWith('package:')) return;
+                const p = cdSplitPkgLine(l);
+                if (cur === 'ALL') sec.ALL.push(p); else sec[cur].add(p.pkg);
+            });
+            const phone = new Map();
+            try { (typeof allApps !== 'undefined' ? allApps : []).forEach(a => phone.set(a.pkg, a)); } catch (e) {}
+            const seen = new Set(), apps = [];
+            sec.ALL.forEach(p => {
+                if (!p.pkg || seen.has(p.pkg)) return;
+                seen.add(p.pkg);
+                const same = phone.get(p.pkg);
+                apps.push({ pkg: p.pkg, name: same && same.name ? same.name : cdDerivedName(p.pkg), system: sec.SYS.has(p.pkg), disabled: sec.DIS.has(p.pkg), uninstalled: sec.INST.size ? !sec.INST.has(p.pkg) : false });
+            });
+            apps.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()) || a.pkg.localeCompare(b.pkg));
+            return apps;
+        }
+
+        async function cdAppsLoad(force) {
+            if (cd.appsBusy || !cdReady()) return;
+            const serial = cd.serial;
+            cd.appsBusy = true;
+            document.getElementById('cdAppCount').innerText = 'Reading the apps of the device...';
+            const out = await cdSh(CD_APPS_CMD, { timeout: 90000 });
+            cd.appsBusy = false;
+            if (serial !== cd.serial) return;
+            const f = cdFail(out);
+            if (f) { document.getElementById('cdAppCount').innerHTML = '<span class="is-err">' + escapeHtml(f) + '</span>'; return; }
+            cd.apps = cdParseApps(out);
+            cd.sel.clear();
+            cdAppsRender();
+            if (force) showToast(cd.apps.length + ' apps');
+        }
+
+        // An uninstalled app counts towards "Uninstalled" only; with that filter on, 3rd Party / System narrow it
+        function cdAppMatches(a, f) {
+            if (!f.size) return true;
+            if (a.uninstalled) {
+                if (!f.has('uninstalled') || f.has('enabled') || f.has('disabled')) return false;
+                return !(f.has('user') && a.system) && !(f.has('system') && !a.system);
+            }
+            if (f.has('uninstalled')) return false;
+            if (f.has('user') && a.system) return false;
+            if (f.has('system') && !a.system) return false;
+            if (f.has('enabled') && a.disabled) return false;
+            if (f.has('disabled') && !a.disabled) return false;
+            return true;
+        }
+        function cdFilter(k) {
+            haptic();
+            toggleFilterIn(cd.filters, k, CD_FILTER_GROUPS);
+            cdAppsRender();
+        }
+        function cdAppsRender() {
+            const list = document.getElementById('cdAppList');
+            if (!list || !cd.apps) return;
+            const q = (document.getElementById('cdAppSearch').value || '').trim().toLowerCase();
+            const rows = cd.apps.filter(a => cdAppMatches(a, cd.filters) && (!q || a.pkg.toLowerCase().includes(q) || a.name.toLowerCase().includes(q)));
+            const n = { user: 0, system: 0, enabled: 0, disabled: 0, uninstalled: 0 };
+            cd.apps.forEach(a => { if (a.uninstalled) n.uninstalled++; else { if (a.system) n.system++; else n.user++; if (a.disabled) n.disabled++; else n.enabled++; } });
+            document.getElementById('cdAppFilters').innerHTML = '<span class="filter-chip' + (cd.filters.size ? '' : ' active') + '" role="button" tabindex="0" onclick="cdFilter(\'all\')">All ' + cd.apps.length + '</span>' +
+                CD_FILTERS.map(f => '<span class="filter-chip' + (cd.filters.has(f[0]) ? ' active' : '') + '" role="button" tabindex="0" onclick="cdFilter(\'' + f[0] + '\')">' + f[1] + ' ' + n[f[0]] + '</span>').join('');
+            const sum = document.getElementById('cdAppSummary');
+            sum.style.display = cd.filters.size > 1 ? '' : 'none';
+            sum.innerHTML = '<span class="filter-summary-text">Showing apps that are ' + escapeHtml(Array.from(cd.filters).map(k => (CD_FILTERS.find(f => f[0] === k) || [0, k])[1]).join(' + ')) + '.</span><button class="filter-clear-chip" type="button" onclick="cdFilter(\'all\')">Clear filters</button>';
+            document.getElementById('cdAppCount').innerText = rows.length + (rows.length === 1 ? ' app' : ' apps') + (rows.length !== cd.apps.length ? ' of ' + cd.apps.length : '');
+            const shown = rows.slice(0, 600);
+            list.innerHTML = shown.map(cdAppCardHtml).join('') + (rows.length > shown.length ? '<div class="cd-note">' + (rows.length - shown.length) + ' more: search or filter to find them.</div>' : '') +
+                (!rows.length ? '<div class="cd-note">No app matches.</div>' : '');
+            cdBatchBar();
+        }
+        function cdAppCardHtml(a) {
+            const pk = escapeHtml(a.pkg), sel = cd.sel.has(a.pkg);
+            let badges = '';
+            if (a.uninstalled) badges += '<span class="tag-badge tag-bloat">UNINSTALLED</span>';
+            else if (a.disabled) badges += '<span class="tag-badge tag-frozen">DISABLED</span>';
+            badges += a.system ? '<span class="tag-badge tag-system">SYSTEM</span>' : '<span class="tag-badge tag-user">USER</span>';
+            const act = a.uninstalled ? ['reinstall', 'Reinstall'] : a.disabled ? ['enable', 'Enable'] : ['disable', 'Disable'];
+            const icon = typeof appIconCache !== 'undefined' && appIconCache[a.pkg] ? '<img alt="" draggable="false" src="' + appIconCache[a.pkg] + '">' : escapeHtml(a.name.charAt(0).toUpperCase());
+            return '<div class="app-card' + (sel ? ' selected' : '') + '" id="cdcard_' + pk + '" data-pkg="' + pk + '">' +
+                '<div class="cd-icon">' + icon + '</div>' +
+                '<div class="app-meta" onclick="cdToggleSel(this.parentElement.dataset.pkg)"><div class="app-name">' + escapeHtml(a.name) + '</div><div class="app-pkg">' + pk + '</div><div class="badge-row">' + badges + '</div></div>' +
+                '<div class="app-actions"><button class="cd-row-act" onclick="cdAppAct(this.closest(\'.app-card\').dataset.pkg, \'' + act[0] + '\')">' + act[1] + '</button>' +
+                '<button class="btn-mini" title="Menu" onclick="cdAppMenu(this.closest(\'.app-card\').dataset.pkg)">\u22ef</button></div>' +
+                '<div class="app-left" onclick="cdToggleSel(this.parentElement.dataset.pkg)"><div class="app-checkbox">' + (sel ? '\u2713' : '') + '</div></div></div>';
+        }
+        function cdApp(pkg) { return (cd.apps || []).find(a => a.pkg === pkg) || { pkg: pkg, name: cdDerivedName(pkg), system: false, disabled: false, uninstalled: false }; }
+
+        function cdToggleSel(pkg) {
+            if (isSelectingText()) return;
+            if (cd.sel.has(pkg)) cd.sel.delete(pkg); else cd.sel.add(pkg);
+            haptic();
+            const c = document.getElementById('cdcard_' + pkg);
+            if (c) { c.classList.toggle('selected', cd.sel.has(pkg)); c.querySelector('.app-checkbox').innerText = cd.sel.has(pkg) ? '\u2713' : ''; }
+            cdBatchBar();
+        }
+        function cdSelClear() { cd.sel.clear(); cdAppsRender(); }
+        function cdBatchBar() {
+            const bar = document.getElementById('cdBatch');
+            if (!bar) return;
+            bar.classList.toggle('show', cd.sel.size > 0);
+            document.getElementById('cdBatchCount').innerText = cd.sel.size + ' selected';
+        }
+
+        // Runs one change on the device. Resolves { ok, out }; on success the list is updated in place
+        async function cdDo(act, pkg) {
+            let out = await cdSh(CD_APP_CMDS[act](pkg), { timeout: 60000 });
+            let ok = cdActOk(out);
+            if (act === 'reinstall' && !ok) { out = await cdSh('pm install-existing ' + cdQ(pkg), { timeout: 60000 }); ok = cdActOk(out); }
+            if (ok) {
+                const a = (cd.apps || []).find(x => x.pkg === pkg);
+                if (a) {
+                    if (act === 'enable') a.disabled = false;
+                    if (act === 'disable') a.disabled = true;
+                    if (act === 'uninstall') { a.uninstalled = true; a.disabled = false; }
+                    if (act === 'reinstall') { a.uninstalled = false; a.disabled = false; }
+                }
+            }
+            return { ok: ok, out: String(out || '').trim() };
+        }
+        function cdActOk(out) {
+            const t = String(out || '');
+            if (cdFail(t)) return false;
+            return !/Failure|Exception|Unknown package|not found|Error|error:|No activities found|Permission Denial|Operation not allowed|not allowed/i.test(t);
+        }
+        const CD_ACT_DONE = { enable: 'Enabled', disable: 'Disabled', uninstall: 'Uninstalled', reinstall: 'Reinstalled', stop: 'Stopped', clear: 'Data cleared', launch: 'Opened' };
+
+        async function cdAppAct(pkg, act) {
+            const a = cdApp(pkg);
+            if (act === 'uninstall' && !(await cdAsk({ title: 'Uninstall ' + a.name + '?', text: pkg + '\n\nIt is removed for the device\'s user. A system app can be put back with Reinstall.', ok: 'Uninstall', danger: true }))) return;
+            if (act === 'clear' && !(await cdAsk({ title: 'Clear the data of ' + a.name + '?', text: 'Its settings, accounts and files on the device are deleted.', ok: 'Clear data', danger: true }))) return;
+            showToast((CD_ACT_DONE[act] || act).replace(/ed$/, 'ing').replace(/^Data clearing$/, 'Clearing data') + ' ' + a.name + '...');
+            const r = await cdDo(act, pkg);
+            if (r.ok) { showToast(CD_ACT_DONE[act] + ': ' + a.name); cdAppsRender(); }
+            else cdSheetOpen({ title: 'That did not work', sub: a.name + ' \u00b7 ' + act, body: '<div class="cd-log" translate="no">' + escapeHtml(r.out || 'No answer from the device') + '</div>' });
+        }
+
+        async function cdBatch(act) {
+            if (cd.batchBusy || !cd.sel.size) return;
+            const pkgs = Array.from(cd.sel);
+            if ((act === 'uninstall' || (act === 'disable' && pkgs.length > 1)) && !(await cdAsk({
+                title: (act === 'uninstall' ? 'Uninstall ' : 'Disable ') + pkgs.length + (pkgs.length === 1 ? ' app?' : ' apps?'), text: pkgs.map(p => cdApp(p).name).join(', '),
+                ok: act === 'uninstall' ? 'Uninstall' : 'Disable', danger: act === 'uninstall' }))) return;
+            cd.batchBusy = true;
+            const failed = [];
+            let done = 0;
+            for (const p of pkgs) {
+                document.getElementById('cdBatchCount').innerText = (done + 1) + ' of ' + pkgs.length + '...';
+                const r = await cdDo(act, p);
+                if (!r.ok) failed.push(cdApp(p).name + ': ' + (r.out.split('\n')[0] || 'no answer'));
+                done++;
+            }
+            cd.batchBusy = false;
+            cd.sel.clear();
+            cdAppsRender();
+            if (!failed.length) showToast(CD_ACT_DONE[act] + ' ' + done + (done === 1 ? ' app' : ' apps'));
+            else cdSheetOpen({ title: failed.length + ' of ' + done + ' did not work', body: '<div class="cd-log" translate="no">' + escapeHtml(failed.join('\n')) + '</div>' });
+        }
+
+        function cdAppMenu(pkg) {
+            const a = cdApp(pkg);
+            const b = [];
+            if (!a.uninstalled) {
+                b.push({ label: 'Open', fn: () => cdAppAct(pkg, 'launch') });
+                b.push({ label: 'Force stop', fn: () => cdAppAct(pkg, 'stop') });
+                b.push({ label: 'Clear data', cls: 'danger', fn: () => cdAppAct(pkg, 'clear') });
+                b.push(a.disabled ? { label: 'Enable', cls: 'accent', fn: () => cdAppAct(pkg, 'enable') } : { label: 'Disable', fn: () => cdAppAct(pkg, 'disable') });
+                b.push({ label: 'Uninstall', cls: 'danger', fn: () => cdAppAct(pkg, 'uninstall') });
+                b.push({ label: 'Pull APK', fn: () => cdPullApk(pkg) });
+                b.push({ label: 'Details', fn: () => cdAppInfo(pkg) });
+                b.push({ label: 'App page on device', fn: async () => { const o = await cdSh('am start -a android.settings.APPLICATION_DETAILS_SETTINGS -d package:' + cdQ(pkg)); showToast(cdFail(o) || 'Opened on the device'); } });
+            } else {
+                b.push({ label: 'Reinstall', cls: 'accent', fn: () => cdAppAct(pkg, 'reinstall') });
+            }
+            b.push({ label: cd.sel.has(pkg) ? 'Deselect' : 'Select', fn: () => cdToggleSel(pkg) });
+            b.push({ label: 'Copy package', fn: () => copyText(pkg) });
+            cdSheetOpen({ title: a.name, sub: pkg, buttons: b });
+        }
+        async function cdAppInfo(pkg) {
+            cdSheetOpen({ title: cdApp(pkg).name, sub: pkg, body: '<div class="cd-note">Reading...</div>', buttons: [{ label: 'Close', fn: () => {} }] });
+            const out = await cdSh('dumpsys package ' + cdQ(pkg) + ' | grep -E "versionCode|versionName|firstInstallTime|lastUpdateTime|installerPackageName|targetSdk|minSdk|userId=|codePath|pkgFlags=" | head -24', { timeout: 30000 });
+            const f = cdFail(out);
+            document.getElementById('cdSheetBody').innerHTML = '<div class="cd-log" translate="no" style="margin-top:0;">' + escapeHtml(f || out.trim().replace(/^\s+/gm, '') || 'No details') + '</div>';
+        }
+        async function cdPullApk(pkg) {
+            const out = await cdSh('pm path ' + cdQ(pkg));
+            const paths = String(out).split('\n').map(l => l.trim()).filter(l => l.startsWith('package:')).map(l => l.slice(8));
+            if (!paths.length) { showToast(cdFail(out) || 'The device did not give the APK path'); return; }
+            const dir = cdDownloadDir();
+            if (!dir) return;
+            showToast('Pulling ' + paths.length + (paths.length === 1 ? ' file...' : ' files...'));
+            let okCount = 0, last = '';
+            for (const p of paths) {
+                const base = cdBase(p);
+                const o = await cdRun(['pull', p, dir + '/' + (base === 'base.apk' ? pkg + '.apk' : pkg + '_' + base)], { timeout: 1800000 });
+                last = o;
+                if (/pulled/i.test(o) && !cdFail(o)) okCount++;
+            }
+            if (okCount === paths.length) showToast('Saved to ' + cdShortDir(dir));
+            else showToast(cdFail(last) || String(last).trim().split('\n')[0] || 'The pull did not finish');
+        }
+        function cdDownloadDir() {
+            const dir = window.AndroidBridge && window.AndroidBridge.cdDownloadDir ? window.AndroidBridge.cdDownloadDir(cd.serial) : '';
+            if (!dir || /^Error:/.test(dir)) { showToast(dir ? dir.replace(/^Error:\s*/, '') : 'Saving files works in the app'); return ''; }
+            return dir;
+        }
+        function cdShortDir(p) { return String(p).replace(/^\/storage\/emulated\/0\//, '').replace(/^\/sdcard\//, ''); }
+
+        // ---- Send ----
+        function cdPickFiles() {
+            if (!window.AndroidBridge || !window.AndroidBridge.cdPickPackages) { showToast('Choosing files works in the app'); return; }
+            window.AndroidBridge.cdPickPackages('send');
+        }
+        function cdPicked(r) {
+            const files = r.files || [];
+            if (r.tag === 'push') { cdFmPushPicked(files); return; }
+            const bad = [];
+            const isApk = f => /\.apk$/i.test(String(f.name || ''));
+            const apks = files.filter(f => !f.error && isApk(f));
+            // several APKs that are a base and its splits are one app; otherwise each is its own
+            const group = apks.length > 1 && apks.some(f => /(^|[._-])(split|config)[._-]|^base\.apk$/i.test(f.name));
+            let grouped = false;
+            files.forEach(f => {
+                if (f.error) { bad.push(f.name + ': ' + f.error); return; }
+                const n = String(f.name || 'file');
+                if (/\.(apks|apkm|xapk|zip)$/i.test(n)) cd.queue.push({ name: n, sub: 'Package file \u00b7 ' + formatBytes(f.size || 0), archive: f.path, sendFiles: [{ path: f.path, name: n }] });
+                else if (isApk(f)) {
+                    if (group) {
+                        if (grouped) return;
+                        grouped = true;
+                        const first = apks.find(x => /^base\.apk$/i.test(x.name)) || apks[0];
+                        cd.queue.push({ name: first.name + ' + ' + (apks.length - 1) + ' more', sub: 'Split APK \u00b7 ' + apks.length + ' files', paths: apks.map(x => x.path), sendFiles: apks.map(x => ({ path: x.path, name: x.name })) });
+                    } else cd.queue.push({ name: n, sub: 'APK \u00b7 ' + formatBytes(f.size || 0), paths: [f.path], sendFiles: [{ path: f.path, name: n }] });
+                } else bad.push(n + ': not an APK, APKS, APKM or XAPK file');
+            });
+            cdQueueRender();
+            if (bad.length) showToast(bad[0]);
+        }
+        function cdQueueRender() {
+            const el = document.getElementById('cdQueue');
+            if (!el) return;
+            el.innerHTML = cd.queue.length ? cd.queue.map((q, i) => '<div class="cd-queue-row ' + (q.state || '') + '"><div class="cd-queue-main"><div class="cd-queue-name" translate="no">' + escapeHtml(q.name) + '</div><div class="cd-queue-sub">' +
+                escapeHtml(q.msg || q.sub) + '</div></div><button class="cd-x" onclick="cdQueueDrop(' + i + ')" aria-label="Remove"' + (cd.sending ? ' disabled' : '') + '>\u2715</button></div>').join('') +
+                '<div class="cd-links"><button class="batch-tool-link" onclick="cdQueueClear()"' + (cd.sending ? ' disabled' : '') + '>Clear list</button></div>' : '<div class="cd-note">Nothing chosen yet.</div>';
+        }
+        function cdQueueDrop(i) { if (cd.sending) return; cd.queue.splice(i, 1); cdQueueRender(); }
+        function cdQueueClear() { if (cd.sending) return; cd.queue = []; cdQueueRender(); }
+
+        function cdPhoneOpen() {
+            cd.phone.sel.clear();
+            document.getElementById('cdPhoneSearch').value = '';
+            document.getElementById('cdPhoneModal').classList.add('show');
+            cdPhoneRender();
+        }
+        function cdPhoneClose() { document.getElementById('cdPhoneModal').classList.remove('show'); }
+        function cdPhoneFilter(f) { cd.phone.filter = f; cdPhoneRender(); }
+        function cdPhoneRender() {
+            const q = (document.getElementById('cdPhoneSearch').value || '').trim().toLowerCase(), f = cd.phone.filter;
+            const apps = (typeof allApps !== 'undefined' ? allApps : []).filter(a => !a.isUninstalled && (f === 'all' || (f === 'user' ? !a.isSystem : a.isSystem)) && (!q || a.pkg.toLowerCase().includes(q) || String(a.name).toLowerCase().includes(q)))
+                .sort((a, b) => String(a.name).toLowerCase().localeCompare(String(b.name).toLowerCase()));
+            document.getElementById('cdPhoneFilters').innerHTML = [['user', '3rd Party'], ['system', 'System'], ['all', 'All']].map(x => '<span class="filter-chip' + (f === x[0] ? ' active' : '') + '" role="button" tabindex="0" onclick="cdPhoneFilter(\'' + x[0] + '\')">' + x[1] + '</span>').join('');
+            const shown = apps.slice(0, 300);
+            document.getElementById('cdPhoneList').innerHTML = shown.map(a => {
+                const on = cd.phone.sel.has(a.pkg), pk = escapeHtml(a.pkg);
+                const icon = typeof appIconCache !== 'undefined' && appIconCache[a.pkg] ? '<img alt="" draggable="false" src="' + appIconCache[a.pkg] + '">' : escapeHtml(String(a.name || '?').charAt(0).toUpperCase());
+                return '<div class="cd-pick-row' + (on ? ' on' : '') + '" data-pkg="' + pk + '" onclick="cdPhoneToggle(this.dataset.pkg)"><div class="cd-icon">' + icon + '</div><div class="app-meta"><div class="app-name">' + escapeHtml(a.name) + '</div><div class="app-pkg">' + pk + '</div></div><div class="app-checkbox" style="' + (on ? 'background:var(--accent);border-color:var(--accent);' : '') + '">' + (on ? '\u2713' : '') + '</div></div>';
+            }).join('') + (apps.length > shown.length ? '<div class="cd-note">' + (apps.length - shown.length) + ' more: search to find them.</div>' : '') + (!apps.length ? '<div class="cd-note">No app matches.</div>' : '');
+            document.getElementById('cdPhoneAddBtn').innerText = cd.phone.sel.size ? 'Add ' + cd.phone.sel.size + ' to the list' : 'Add to the list';
+        }
+        function cdPhoneToggle(pkg) { if (cd.phone.sel.has(pkg)) cd.phone.sel.delete(pkg); else cd.phone.sel.add(pkg); haptic(); cdPhoneRender(); }
+        function cdPhoneAdd() {
+            if (!cd.phone.sel.size) { showToast('Tick the apps to send'); return; }
+            if (!window.AndroidBridge || !window.AndroidBridge.cdPhoneApk) { showToast('This works in the app'); return; }
+            const bad = [];
+            cd.phone.sel.forEach(pkg => {
+                let r = null;
+                try { r = JSON.parse(window.AndroidBridge.cdPhoneApk(pkg)); } catch (e) {}
+                if (!r || !r.ok) { bad.push(pkg); return; }
+                const name = r.label || pkg;
+                cd.queue.push({ name: name, sub: 'From this phone \u00b7 ' + r.paths.length + (r.paths.length === 1 ? ' file' : ' files (splits made for this phone, they may not fit the device)'), paths: r.paths,
+                    sendFiles: r.paths.map((p, i) => ({ path: p, name: i === 0 ? pkg + '.apk' : pkg + '_' + cdBase(p) })) });
+            });
+            cdPhoneClose();
+            cdQueueRender();
+            if (bad.length) showToast('Not found on this phone: ' + bad.join(', '));
+        }
+
+        async function cdSend() {
+            if (cd.sending) return;
+            if (!cdReady()) { showToast('Choose a connected device first'); return; }
+            if (!cd.queue.length) { showToast('Choose something to send first'); return; }
+            if (!window.AndroidBridge || !window.AndroidBridge.cdInstall) { showToast('Sending works in the app'); return; }
+            const chk = id => !!document.getElementById(id).checked;
+            const items = cd.queue.map(q => q.archive ? { name: q.name, archive: q.archive } : { name: q.name, paths: q.paths });
+            const opts = { reinstall: chk('cdOptReinstall'), downgrade: chk('cdOptDowngrade'), grantAll: chk('cdOptGrant'), testOk: chk('cdOptTest') };
+            const i = cd.info || {};
+            const profile = { abis: i.abis || [], dpi: i.dpi || 0, lang: i.lang || '' };
+            const tag = 'cdsend' + (++cdSeq);
+            cd.queue.forEach(q => { q.state = ''; q.msg = ''; });
+            cd.sending = { tag: tag, serial: cd.serial };
+            cdSendUi(true);
+            cdWait[tag] = r => {
+                cd.sending = null;
+                cdSendUi(false);
+                const res = r.install;
+                if (!res) { document.getElementById('cdSendLine').innerText = cdFail(r.out) || String(r.out || 'No answer'); cdQueueRender(); return; }
+                (res.results || []).forEach((x, k) => {
+                    const q = cd.queue[k]; if (!q) return;
+                    q.state = x.ok ? 'ok' : 'bad';
+                    const lines = String(x.out || '').trim().split('\n').filter(Boolean);
+                    q.msg = x.ok ? 'Installed' : (lines.slice(-3).join('\n') || 'Failed');
+                });
+                const okN = (res.results || []).filter(x => x.ok).length, total = (res.results || []).length;
+                document.getElementById('cdSendLine').innerText = res.error ? res.error : okN + ' of ' + total + (total === 1 ? ' package' : ' packages') + ' installed';
+                document.getElementById('cdSendBar').style.width = '100%';
+                cdQueueRender();
+                showToast(res.ok ? 'Sent to the device' : (res.error || 'Some packages did not install'));
+            };
+            try { window.AndroidBridge.cdInstall(tag, cd.serial, JSON.stringify(items), JSON.stringify(opts), JSON.stringify(profile)); }
+            catch (e) { delete cdWait[tag]; cd.sending = null; cdSendUi(false); showToast('Could not start: ' + (e && e.message || e)); }
+        }
+        function cdSendUi(on) {
+            document.getElementById('cdSendBtn').style.display = on ? 'none' : '';
+            document.getElementById('cdSendStop').style.display = on ? '' : 'none';
+            document.getElementById('cdSendBarWrap').style.display = on || document.getElementById('cdSendBar').style.width ? '' : 'none';
+            if (on) { document.getElementById('cdSendBar').style.width = '3%'; document.getElementById('cdSendLine').innerText = 'Starting...'; }
+            cdQueueRender();
+        }
+        function cdSendProgress(p) {
+            const total = Math.max(1, p.total || 1);
+            document.getElementById('cdSendBar').style.width = Math.max(3, Math.min(97, Math.round(((p.index || 0) + 0.4) / total * 100))) + '%';
+            document.getElementById('cdSendLine').innerText = (p.index + 1) + ' of ' + total + ' \u00b7 ' + (p.name || '') + ' \u00b7 ' + (p.line || '');
+        }
+        function cdSendStop() { if (cd.sending) { cdStop(cd.sending.tag); document.getElementById('cdSendLine').innerText = 'Stopping...'; } }
+
+        function cdBtLoad() {
+            const el = document.getElementById('cdBtList');
+            if (!window.AndroidBridge || !window.AndroidBridge.cdBtDevices) { el.innerHTML = '<div class="cd-note">Bluetooth works in the app.</div>'; return; }
+            let r = {};
+            try { r = JSON.parse(window.AndroidBridge.cdBtDevices()); } catch (e) {}
+            if (r.available === false) { el.innerHTML = '<div class="cd-note">This phone has no Bluetooth.</div>'; return; }
+            if (r.needsPermission) { el.innerHTML = '<div class="cd-note">Allow Bluetooth in the box that just opened, then press Show paired devices again.</div>'; return; }
+            if (r.enabled === false) { el.innerHTML = '<div class="cd-note">Bluetooth is off. Turn it on, then press Show paired devices again.</div>'; return; }
+            const devs = r.devices || [];
+            el.innerHTML = devs.length ? devs.map(d => '<div class="cd-bt-row"><b translate="no">' + escapeHtml(d.name) + '</b><span>' + escapeHtml(d.kind === 'wearable' ? 'watch or wearable' : d.kind) + '</span></div>').join('') : '<div class="cd-note">No paired Bluetooth devices. Pair one in Android\'s Bluetooth settings first.</div>';
+        }
+        function cdBtSend() {
+            if (!cd.queue.length) { showToast('Choose something to send first'); return; }
+            if (!window.AndroidBridge || !window.AndroidBridge.cdBtSend) { showToast('Bluetooth works in the app'); return; }
+            const files = [];
+            cd.queue.forEach(q => (q.sendFiles || []).forEach(f => files.push(f)));
+            const allApk = files.every(f => /\.apk$/i.test(f.name));
+            const err = window.AndroidBridge.cdBtSend(JSON.stringify(files), allApk ? 'application/vnd.android.package-archive' : 'application/octet-stream');
+            if (err) showToast(String(err).replace(/^Error:\s*/, ''));
+        }
+
+        // ---- Console ----
+        function cdChipsRender() {
+            const el = document.getElementById('cdChips');
+            if (el && !el.firstChild) el.innerHTML = CD_CHIPS.map((c, i) => '<button class="cd-chip" translate="no" onclick="cdChip(' + i + ')">' + escapeHtml(c) + '</button>').join('');
+            cdTermRender();
+        }
+        function cdChip(i) { const inp = document.getElementById('cdInput'); inp.value = CD_CHIPS[i]; inp.focus(); haptic(); }
+        function cdModeToggle() {
+            cd.mode = cd.mode === 'shell' ? 'adb' : 'shell';
+            document.getElementById('cdModeBtn').innerText = cd.mode === 'shell' ? '$' : 'adb';
+            document.getElementById('cdInput').placeholder = cd.mode === 'shell' ? 'getprop ro.product.model' : 'pull /sdcard/Download/a.txt /sdcard/';
+            haptic();
+        }
+        function cdInputKey(e) {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); cdRunOrStop(); }
+            else if (e.key === 'ArrowUp' && !e.target.value.includes('\n')) { e.preventDefault(); cdHistStep(-1); }
+            else if (e.key === 'ArrowDown' && !e.target.value.includes('\n')) { e.preventDefault(); cdHistStep(1); }
+        }
+        function cdHistStep(d) {
+            if (!cd.hist.length) return;
+            if (cd.histAt < 0) cd.histAt = cd.hist.length;
+            cd.histAt = Math.max(0, Math.min(cd.hist.length, cd.histAt + d));
+            document.getElementById('cdInput').value = cd.histAt >= cd.hist.length ? '' : cd.hist[cd.histAt];
+        }
+        function cdSplitArgs(s) {
+            const out = [];
+            let cur = '', q = '', has = false;
+            for (let i = 0; i < s.length; i++) {
+                const c = s[i];
+                if (q) { if (c === q) q = ''; else if (c === '\\' && q === '"' && i + 1 < s.length) cur += s[++i]; else cur += c; }
+                else if (c === '"' || c === "'") { q = c; has = true; }
+                else if (/\s/.test(c)) { if (cur || has) { out.push(cur); cur = ''; has = false; } }
+                else cur += c;
+            }
+            if (cur || has) out.push(cur);
+            return out;
+        }
+        function cdRunOrStop() { if (cd.termRun) { cdStop(cd.termRun); return; } cdTermGo(); }
+        async function cdTermGo() {
+            const inp = document.getElementById('cdInput');
+            const line = inp.value.trim();
+            if (!line) return;
+            if (!cdReady()) { showToast('Choose a connected device first'); return; }
+            if (cd.hist[cd.hist.length - 1] !== line) { cd.hist.push(line); if (cd.hist.length > 100) cd.hist.shift(); kvSet('cd_hist', cd.hist); }
+            cd.histAt = -1;
+            inp.value = '';
+            const adbLine = cd.mode === 'adb' ? line : (/^adb\s+/.test(line) ? line.replace(/^adb\s+/, '') : null);
+            let args, serial, shown, timeout;
+            if (adbLine !== null) {
+                const bare = adbLine.replace(/^adb\s+/, '');
+                args = cdSplitArgs(bare);
+                shown = 'adb ' + bare;
+                if (!args.length) return;
+                const sh = args.findIndex(a => a === 'shell' || a === 'exec-out');
+                const head = sh < 0 ? args : args.slice(0, sh);                  // what comes after "shell" is for the device, not adb
+                if (head.some(a => CD_BLOCKED_ADB.test(a)) || /^-[PLH]/.test(args[0])) { cdTermAdd(shown, 'That one would stop the adb this app runs on, so it is not sent.', true); return; }
+                serial = args[0] === '-s' || CD_GLOBAL_ADB.test(args[0]) ? '' : cd.serial;
+                timeout = 600000;
+            } else {
+                args = ['shell', line]; shown = '$ ' + line; serial = cd.serial; timeout = 120000;
+            }
+            const tag = 'cdterm' + (++cdSeq);
+            cd.termRun = tag;
+            const entry = { cmd: shown, out: '', pending: true };
+            cd.term.push(entry);
+            if (cd.term.length > 60) cd.term.shift();
+            cdTermRender();
+            cdRunBtn();
+            const out = await cdRun(args, { serial: serial, timeout: timeout, tag: tag });
+            cd.termRun = '';
+            entry.pending = false;
+            entry.out = String(out).length > 60000 ? String(out).slice(0, 60000) + '\n... (the rest is cut)' : String(out);
+            entry.err = !!cdFail(out);
+            cdTermRender();
+            cdRunBtn();
+        }
+        function cdTermAdd(cmd, out, err) { cd.term.push({ cmd: cmd, out: out, err: !!err }); cdTermRender(); }
+        function cdRunBtn() { const b = document.getElementById('cdRunBtn'); b.innerText = cd.termRun ? 'Stop' : 'Run'; b.classList.toggle('stop', !!cd.termRun); }
+        function cdTermRender() {
+            const el = document.getElementById('cdTerm');
+            if (!el) return;
+            if (!cd.term.length) { el.innerHTML = '<span class="cd-dim">Type a command for the device and press Run. Start a line with "adb " to send it to adb itself (adb pull, adb forward ...). The $ button switches to adb for every line.</span>'; return; }
+            el.innerHTML = cd.term.map(e => '<span class="cd-cmd">' + escapeHtml(e.cmd) + '</span>\n' + (e.pending ? '<span class="cd-dim">running ...</span>' : (e.err ? '<span class="cd-err">' + escapeHtml(e.out) + '</span>' : escapeHtml(e.out.replace(/\s+$/, '')))) ).join('\n\n');
+            el.scrollTop = el.scrollHeight;
+        }
+        function cdTermText() { return cd.term.map(e => e.cmd + '\n' + (e.pending ? '' : e.out)).join('\n'); }
+        function cdTermCopy() { if (!cd.term.length) { showToast('Nothing to copy'); return; } copyText(cdTermText()); }
+        function cdTermShare() { if (!cd.term.length) { showToast('Nothing to share'); return; } shareFileViaBridge('device_console.txt', cdTermText(), 'text/plain'); }
+        function cdTermClear() { cd.term = []; cdTermRender(); }
+
+        // ---- Logcat ----
+        async function cdLcFetch(live) {
+            if (cd.lcBusy || !cdReady()) return;
+            const serial = cd.serial;
+            cd.lcBusy = true;
+            const lvl = document.getElementById('cdLcLevel').value;
+            let n = parseInt(document.getElementById('cdLcLines').value, 10) || 500;
+            if (live) n = Math.min(n, 300);
+            const out = await cdSh('logcat -d -v threadtime -t ' + n + ' \'*:' + lvl + '\'', { timeout: 40000 });
+            cd.lcBusy = false;
+            if (serial !== cd.serial || cd.sub !== 'logcat') return;
+            const f = cdFail(out);
+            if (f) { cdLcNote(f); cdLcStop(); return; }
+            if (out === cd.lcText && cd.lcEntries.length) return;
+            cd.lcText = out;
+            cd.lcEntries = logcatParse(out);
+            cdLcDraw(!live);
+        }
+        function cdLcRefresh() { cd.lcText = ''; cdLcFetch(false); }
+        function cdLcNote(msg) { document.getElementById('cdLcOut').innerHTML = '<div class="lc-meta">' + escapeHtml(msg) + '</div>'; }
+        function cdLcDraw(toBottom) {
+            const el = document.getElementById('cdLcOut');
+            if (!el) return;
+            const needle = (document.getElementById('cdLcFilter').value || '').trim(), low = needle.toLowerCase();
+            const rx = needle ? new RegExp(needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'ig') : null;
+            const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
+            let entries = cd.lcEntries.filter(e => e.kind === 'entry' && (!low || (e.tag + '\n' + e.lines.join('\n')).toLowerCase().includes(low)));
+            const total = entries.length;
+            if (entries.length > 700) entries = entries.slice(-700);
+            if (!entries.length) { cdLcNote(cd.lcEntries.length ? 'Nothing matches the filter.' : 'No log lines.'); return; }
+            el.innerHTML = (total > entries.length ? '<div class="lc-meta">' + (total - entries.length) + ' earlier entries not shown</div>' : '') + entries.map(e =>
+                '<div class="lc-row lvl-' + e.lvl + '"><div class="lc-badge" title="' + e.lvl + '">' + e.lvl + '</div><div class="lc-main"><div class="lc-head"><span class="lc-tag">' + lcHighlight(e.tag, rx) + '</span><span class="lc-time">' + e.time +
+                '</span><span class="lc-pid">' + e.pid + '/' + e.tid + '</span></div><div class="lc-msg">' + e.lines.map(l => lcHighlight(l, rx)).join('\n') + '</div></div></div>').join('');
+            if (toBottom || atBottom) el.scrollTop = el.scrollHeight;
+        }
+        function cdLcTogglePlay() {
+            if (cd.lcTimer) { cdLcStop(); return; }
+            if (!cdReady()) { showToast('Choose a connected device first'); return; }
+            const b = document.getElementById('cdLcPlay');
+            b.innerText = 'Pause'; b.style.color = '#FFA726';
+            cdLcFetch(false);
+            cd.lcTimer = setInterval(() => { if (!document.hidden) cdLcFetch(true); }, 2500);
+        }
+        function cdLcStop() {
+            if (cd.lcTimer) { clearInterval(cd.lcTimer); cd.lcTimer = null; }
+            const b = document.getElementById('cdLcPlay');
+            if (b) { b.innerText = 'Play'; b.style.color = '#4ADE80'; }
+        }
+        async function cdLcClear() {
+            const out = await cdSh('logcat -c');
+            const f = cdFail(out);
+            cd.lcText = ''; cd.lcEntries = [];
+            cdLcNote(f || 'Log cleared on the device.');
+        }
+        function cdLcPlain() { return cd.lcEntries.map(e => e.raws.join('\n')).join('\n'); }
+        function cdLcCopy() { if (!cd.lcEntries.length) { showToast('Nothing to copy'); return; } copyText(cdLcPlain()); }
+        function cdLcShare() { if (!cd.lcEntries.length) { showToast('Nothing to share'); return; } shareFileViaBridge('device_logcat.txt', cdLcPlain(), 'text/plain'); }
+
+        // ---- Files ----
+        function cdNormPath(p) {
+            const out = [];
+            String(p || '/').split('/').forEach(x => { if (!x || x === '.') return; if (x === '..') out.pop(); else out.push(x); });
+            return '/' + out.join('/');
+        }
+        function cdFmPlacesRender() {
+            document.getElementById('cdFmPlaces').innerHTML = CD_PLACES.map((p, i) => '<button class="cd-chip" onclick="cdFmGo(CD_PLACES[' + i + '][1])">' + p[0] + '</button>').join('');
+        }
+        async function cdFmGo(path) {
+            if (cd.fm.busy || !cdReady()) return;
+            path = cdNormPath(path);
+            const serial = cd.serial, list = document.getElementById('cdFmList');
+            cdFmPlacesRender();
+            cd.fm.busy = true;
+            document.getElementById('cdFmCount').innerText = 'Reading...';
+            const out = await cdSh('ls -la ' + cdQ(path === '/' ? '/' : path + '/'), { timeout: 40000 });
+            cd.fm.busy = false;
+            if (serial !== cd.serial) return;
+            const f = cdFail(out);
+            if (f) { document.getElementById('cdFmCount').innerHTML = '<span class="is-err">' + escapeHtml(f) + '</span>'; return; }
+            const r = parseLsOutput(out);
+            if (r.error && !r.entries.length && !/total 0/.test(out) && String(out).trim() && !/^total/m.test(out)) { document.getElementById('cdFmCount').innerHTML = '<span class="is-err">' + escapeHtml(r.error) + '</span>'; list.innerHTML = ''; cd.fm.path = path; document.getElementById('cdFmPath').innerText = path; return; }
+            cd.fm.path = path;
+            cd.fm.entries = r.entries.slice().sort((a, b) => (b.isDir || b.isLink ? 1 : 0) - (a.isDir || a.isLink ? 1 : 0) || a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
+            cdFmRender();
+        }
+        function cdFmRender() {
+            document.getElementById('cdFmPath').innerText = cd.fm.path;
+            const es = cd.fm.entries || [];
+            document.getElementById('cdFmCount').innerText = es.length + (es.length === 1 ? ' item' : ' items');
+            document.getElementById('cdFmList').innerHTML = es.length ? es.map((e, i) => '<div class="cd-fm-row' + (e.isDir ? ' dir' : '') + '" onclick="cdFmTap(' + i + ')"><div class="cd-fm-ico">' + (e.isDir ? 'DIR' : e.isLink ? 'LNK' : 'FILE') + '</div>' +
+                '<div class="cd-fm-main"><div class="cd-fm-name" translate="no">' + escapeHtml(e.name) + '</div><div class="cd-fm-meta" translate="no">' + escapeHtml(e.perms) + (e.isDir ? '' : ' \u00b7 ' + formatBytes(e.size || 0)) + (e.link ? ' \u2192 ' + escapeHtml(e.link) : '') + '</div></div>' +
+                '<button class="btn-mini" title="Menu" onclick="event.stopPropagation(); cdFmMenu(' + i + ')">\u22ef</button></div>').join('') : '<div class="cd-note">This folder is empty.</div>';
+        }
+        function cdFmPathOf(e) { return (cd.fm.path === '/' ? '' : cd.fm.path) + '/' + e.name; }
+        async function cdFmTap(i) {
+            const e = (cd.fm.entries || [])[i];
+            if (!e) return;
+            const p = cdFmPathOf(e);
+            if (e.isDir) { cdFmGo(p); return; }
+            if (e.isLink) {
+                const o = await cdSh('[ -d ' + cdQ(p) + ' ] && echo dir || echo file');
+                if (/dir/.test(o)) { cdFmGo(p); return; }
+            }
+            cdFmMenu(i);
+        }
+        function cdFmUp() { cdFmGo(cd.fm.path.replace(/\/[^/]*$/, '') || '/'); }
+        function cdFmRefresh() { cdFmGo(cd.fm.path); }
+        async function cdFmGoto() {
+            const r = await cdAsk({ title: 'Go to a folder', text: 'The full path on the device.', input: '/sdcard/Download', value: cd.fm.path, ok: 'Go' });
+            if (r && r.a.trim()) cdFmGo(r.a.trim());
+        }
+        function cdFmMenu(i) {
+            const e = (cd.fm.entries || [])[i];
+            if (!e) return;
+            const p = cdFmPathOf(e);
+            const b = [];
+            if (e.isDir) b.push({ label: 'Open', fn: () => cdFmGo(p) });
+            else b.push({ label: 'View as text', fn: () => cdFmView(p, e) });
+            b.push({ label: e.isDir ? 'Pull folder to this phone' : 'Pull to this phone', cls: 'accent', fn: () => cdFmPull(p) });
+            b.push({ label: 'Rename', fn: () => cdFmRename(p, e) });
+            b.push({ label: 'Delete', cls: 'danger', fn: () => cdFmDelete(p, e) });
+            b.push({ label: 'Copy path', fn: () => copyText(p) });
+            cdSheetOpen({ title: e.name, sub: p, body: '<div class="cd-note" translate="no">' + escapeHtml(e.perms) + (e.isDir ? '' : ' \u00b7 ' + formatBytes(e.size || 0)) + '</div>', buttons: b });
+        }
+        async function cdFmView(p, e) {
+            if (e.size > 5 * 1024 * 1024) { showToast('A file this large is better pulled to this phone'); return; }
+            cdSheetOpen({ title: e.name, sub: p, body: '<div class="cd-note">Reading...</div>', buttons: [{ label: 'Close', fn: () => {} }] });
+            const out = await cdSh('head -c 40000 ' + cdQ(p), { timeout: 40000 });
+            const f = cdFail(out);
+            const bin = /[\u0000-\u0008\u000e-\u001f]/.test(String(out).slice(0, 2000));
+            document.getElementById('cdSheetBody').innerHTML = '<div class="cd-log" translate="no" style="margin-top:0; max-height:46vh;">' + escapeHtml(f || (bin ? 'This looks like a binary file. Pull it to this phone instead.' : (out || '(empty)'))) + '</div>' +
+                (e.size > 40000 && !bin ? '<div class="cd-note">Showing the first 40 KB.</div>' : '');
+        }
+        async function cdFmPull(p) {
+            const dir = cdDownloadDir();
+            if (!dir) return;
+            showToast('Pulling ' + cdBase(p) + '...');
+            const out = await cdRun(['pull', p, dir + '/'], { timeout: 3600000 });
+            if (/pulled/i.test(out) && !cdFail(out)) showToast('Saved to ' + cdShortDir(dir));
+            else showToast(cdFail(out) || String(out).trim().split('\n').pop() || 'The pull did not finish');
+        }
+        async function cdFmRename(p, e) {
+            const r = await cdAsk({ title: 'Rename', text: p, input: 'New name', value: e.name, ok: 'Rename' });
+            if (!r || !r.a.trim() || r.a.trim() === e.name) return;
+            if (/\//.test(r.a)) { showToast('A name cannot hold a slash'); return; }
+            const out = await cdSh('mv ' + cdQ(p) + ' ' + cdQ(p.replace(/[^/]*$/, '') + r.a.trim()));
+            showToast(String(out).trim() ? String(out).trim().split('\n')[0] : 'Renamed');
+            cdFmRefresh();
+        }
+        async function cdFmDelete(p, e) {
+            if (!(await cdAsk({ title: 'Delete ' + e.name + '?', text: p + (e.isDir ? '\n\nThe folder and everything in it is removed from the device.' : ''), ok: 'Delete', danger: true }))) return;
+            const out = await cdSh((e.isDir ? 'rm -r ' : 'rm ') + cdQ(p));
+            showToast(String(out).trim() ? String(out).trim().split('\n')[0] : 'Deleted');
+            cdFmRefresh();
+        }
+        async function cdFmNewFolder() {
+            const r = await cdAsk({ title: 'New folder', text: 'In ' + cd.fm.path, input: 'Folder name', ok: 'Create' });
+            if (!r || !r.a.trim()) return;
+            if (/\//.test(r.a)) { showToast('A name cannot hold a slash'); return; }
+            const out = await cdSh('mkdir -p ' + cdQ((cd.fm.path === '/' ? '' : cd.fm.path) + '/' + r.a.trim()));
+            showToast(String(out).trim() ? String(out).trim().split('\n')[0] : 'Folder made');
+            cdFmRefresh();
+        }
+        function cdFmPush() {
+            if (!window.AndroidBridge || !window.AndroidBridge.cdPickPackages) { showToast('Choosing files works in the app'); return; }
+            window.AndroidBridge.cdPickPackages('push');
+        }
+        async function cdFmPushPicked(files) {
+            const dest = cd.fm.path, good = files.filter(f => !f.error);
+            if (!good.length) { if (files[0] && files[0].error) showToast(files[0].error); return; }
+            let okN = 0, last = '';
+            for (const f of good) {
+                showToast('Sending ' + f.name + '...');
+                const out = await cdRun(['push', f.path, (dest === '/' ? '' : dest) + '/'], { timeout: 3600000 });
+                last = out;
+                if (/pushed/i.test(out) && !cdFail(out)) okN++;
+            }
+            showToast(okN === good.length ? okN + (okN === 1 ? ' file sent to ' : ' files sent to ') + dest : (cdFail(last) || String(last).trim().split('\n').pop() || 'The push did not finish'));
+            cdFmRefresh();
+        }
+
+        // ---- Hidden Settings ----
+        function cdSetRenderNs() {
+            document.getElementById('cdSetNs').innerHTML = ['global', 'secure', 'system'].map(ns => '<span class="filter-chip' + (cd.set.ns === ns ? ' active' : '') + '" role="button" tabindex="0" onclick="cdSetNs(\'' + ns + '\')">' + ns + '</span>').join('');
+        }
+        function cdSetNs(ns) {
+            cd.set.ns = ns; haptic();
+            cdSetRenderNs();
+            if (cd.set.loaded[ns]) cdSetRender(); else cdSetLoad();
+        }
+        async function cdSetLoad(force) {
+            if (cd.set.busy || !cdReady()) return;
+            const ns = cd.set.ns, serial = cd.serial;
+            cd.set.busy = true;
+            document.getElementById('cdSetCount').innerText = 'Reading ' + ns + ' settings...';
+            const out = await cdSh('settings list ' + ns, { timeout: 40000 });
+            cd.set.busy = false;
+            if (serial !== cd.serial) return;
+            const f = cdFail(out);
+            if (f) { document.getElementById('cdSetCount').innerHTML = '<span class="is-err">' + escapeHtml(f) + '</span>'; return; }
+            const data = {};
+            let last = '';
+            String(out).split('\n').forEach(raw => {
+                const l = raw.replace(/\r$/, '');
+                const i = l.indexOf('=');
+                if (i > 0 && /^[\w.:\-]+$/.test(l.slice(0, i))) { last = l.slice(0, i); data[last] = l.slice(i + 1); }
+                else if (last && l) data[last] += '\n' + l;
+            });
+            cd.set.data[ns] = data;
+            cd.set.loaded[ns] = true;
+            cdSetRender();
+            if (force) showToast(Object.keys(data).length + ' settings');
+        }
+        function cdSetRender() {
+            const ns = cd.set.ns, data = cd.set.data[ns] || {};
+            const q = (document.getElementById('cdSetSearch').value || '').trim().toLowerCase();
+            const keys = Object.keys(data).sort().filter(k => !q || k.toLowerCase().includes(q) || String(data[k]).toLowerCase().includes(q));
+            document.getElementById('cdSetCount').innerText = keys.length + (keys.length === 1 ? ' setting' : ' settings') + (q ? ' match' : ' in ' + ns);
+            const shown = keys.slice(0, 400);
+            document.getElementById('cdSetList').innerHTML = shown.map(k => '<div class="cd-set-row" data-k="' + escapeHtml(k) + '" onclick="cdSetEdit(this.dataset.k)"><div style="min-width:0; flex:1;"><div class="cd-set-key" translate="no">' + escapeHtml(k) + '</div><div class="cd-set-val" translate="no">' + escapeHtml(data[k]) + '</div></div></div>').join('') +
+                (keys.length > shown.length ? '<div class="cd-note">' + (keys.length - shown.length) + ' more: search to find them.</div>' : '');
+        }
+        function cdSetEdit(key) {
+            const ns = cd.set.ns, val = (cd.set.data[ns] || {})[key];
+            cdSheetOpen({ title: key, sub: ns + ' setting', body: '<textarea class="modal-text-input" id="cdSetVal" rows="3" translate="no" autocomplete="off" autocapitalize="off" spellcheck="false" style="width:100%; font-family:monospace; resize:vertical;">' + escapeHtml(val == null ? '' : val) + '</textarea>' +
+                '<div class="cd-note">A wrong value can make the device misbehave. Delete takes the setting away so the system falls back to its default.</div>',
+                buttons: [
+                    { label: 'Save', cls: 'accent', fn: () => cdSetPut(ns, key, document.getElementById('cdSetVal').value) },
+                    { label: 'Delete', cls: 'danger', fn: () => cdSetDelete(ns, key) },
+                    { label: 'Copy value', fn: () => copyText(val == null ? '' : String(val)) }
+                ] });
+        }
+        async function cdSetPut(ns, key, value) {
+            const out = await cdSh('settings put ' + ns + ' ' + cdQ(key) + ' ' + cdQ(value));
+            const t = String(out).trim();
+            if (t && /Exception|Error|error:|denied|not allowed/i.test(t)) { cdSheetOpen({ title: 'That did not work', sub: ns + ' ' + key, body: '<div class="cd-log" translate="no">' + escapeHtml(t) + '</div>' }); return; }
+            (cd.set.data[ns] = cd.set.data[ns] || {})[key] = value;
+            cdSetRender();
+            showToast('Saved ' + key);
+        }
+        async function cdSetDelete(ns, key) {
+            if (!(await cdAsk({ title: 'Delete ' + key + '?', text: 'From the ' + ns + ' settings of the device.', ok: 'Delete', danger: true }))) return;
+            const out = await cdSh('settings delete ' + ns + ' ' + cdQ(key));
+            const t = String(out).trim();
+            if (/Exception|Error|error:|denied/i.test(t)) { showToast(t.split('\n')[0]); return; }
+            if (cd.set.data[ns]) delete cd.set.data[ns][key];
+            cdSetRender();
+            showToast('Deleted ' + key);
+        }
+        async function cdSetNew() {
+            const r = await cdAsk({ title: 'New ' + cd.set.ns + ' setting', text: 'A key and its value.', input: 'Key', input2: 'Value', ok: 'Add' });
+            if (!r || !r.a.trim()) return;
+            if (!/^[\w.:\-]+$/.test(r.a.trim())) { showToast('A key holds letters, digits and . _ : -'); return; }
+            cdSetPut(cd.set.ns, r.a.trim(), r.b);
+        }
+
+        // ---- Display ----
+        function cdDensOptions(extra) {
+            const set = new Set();
+            for (let v = 120; v <= 640; v += 5) set.add(v);
+            [cd.info && cd.info.dpi, cd.info && cd.info.physDpi, extra].forEach(v => { if (v) set.add(v); });
+            return Array.from(set).sort((a, b) => a - b);
+        }
+        function cdDensRender(keepValue) {
+            const i = cd.info;
+            const sel = document.getElementById('cdDensSel');
+            if (!sel) return;
+            if (!i) { document.getElementById('cdDensNow').innerText = 'Reading the device...'; return; }
+            const want = keepValue || i.dpi;
+            sel.innerHTML = cdDensOptions(want).map(v => '<option value="' + v + '">' + v + (v === i.physDpi ? ' (default)' : '') + (v === i.dpi ? ' (now)' : '') + '</option>').join('');
+            sel.value = String(want);
+            document.getElementById('cdDensNow').innerText = i.dpi ? 'Now ' + i.dpi + ' dpi' + (i.ovrDpi ? '. The device\'s own is ' + i.physDpi + '.' : ' (the device\'s own).') : 'The device did not say its density.';
+            document.getElementById('cdSizeNow').innerText = i.size ? 'Now ' + i.size + (i.ovrSize ? '. The device\'s own is ' + i.physSize + '.' : ' (the device\'s own).') : 'The device did not say its size.';
+        }
+        function cdDensPicked() { document.getElementById('cdDensManual').value = ''; }
+        function cdDensStep(d) {
+            const sel = document.getElementById('cdDensSel');
+            const v = Math.max(72, Math.min(1000, (parseInt(sel.value, 10) || (cd.info && cd.info.dpi) || 320) + d));
+            cdDensRender(v);
+            haptic();
+        }
+        async function cdDensApply(manual) {
+            if (!cd.info) { showToast('Reading the device...'); return; }
+            let v;
+            if (manual) {
+                const t = document.getElementById('cdDensManual').value.trim();
+                if (!/^\d{2,4}$/.test(t)) { showToast('Type a whole number, like 280'); return; }
+                v = parseInt(t, 10);
+            } else v = parseInt(document.getElementById('cdDensSel').value, 10);
+            if (!(v >= 72 && v <= 1000)) { showToast('Use a number from 72 to 1000'); return; }
+            if (v === cd.info.dpi) { showToast('That is the density now'); return; }
+            const back = cd.info.ovrDpi ? 'wm density ' + cd.info.ovrDpi : 'wm density reset';
+            const out = await cdSh('wm density ' + v);
+            const t = String(out).trim();
+            if (cdFail(t) || /Error|Invalid|Exception|Unknown/i.test(t)) { showToast(t.split('\n')[0] || 'The device refused that density'); return; }
+            cd.info.ovrDpi = v === cd.info.physDpi ? 0 : v; cd.info.dpi = v;
+            cdDensRender(v);
+            cdRenderInfo();
+            cdKeepStart('The density is now ' + v + ' dpi.', back);
+        }
+        async function cdDensReset() {
+            if (!cd.info) return;
+            const out = await cdSh('wm density reset');
+            if (cdFail(out)) { showToast(cdFail(out)); return; }
+            cd.info.ovrDpi = 0; cd.info.dpi = cd.info.physDpi;
+            cdDensRender();
+            cdRenderInfo();
+            showToast('Density is back to the device\'s own');
+        }
+        async function cdSizeApply() {
+            if (!cd.info) return;
+            const v = document.getElementById('cdSizeInput').value.trim().toLowerCase().replace(/\s+/g, '');
+            if (!/^\d{3,5}x\d{3,5}$/.test(v)) { showToast('Type it like 450x450'); return; }
+            const back = cd.info.ovrSize ? 'wm size ' + cd.info.ovrSize : 'wm size reset';
+            const out = await cdSh('wm size ' + v);
+            const t = String(out).trim();
+            if (cdFail(t) || /Error|Invalid|Exception|Unknown/i.test(t)) { showToast(t.split('\n')[0] || 'The device refused that size'); return; }
+            cd.info.ovrSize = v === cd.info.physSize ? '' : v; cd.info.size = v;
+            cdDensRender();
+            cdRenderInfo();
+            cdKeepStart('The screen size is now ' + v + '.', back);
+        }
+        async function cdSizeReset() {
+            if (!cd.info) return;
+            const out = await cdSh('wm size reset');
+            if (cdFail(out)) { showToast(cdFail(out)); return; }
+            cd.info.ovrSize = ''; cd.info.size = cd.info.physSize;
+            cdDensRender();
+            cdRenderInfo();
+            showToast('Screen size is back to the device\'s own');
+        }
+        // A density or size the screen cannot be read at is undone on its own unless it is kept, like Android's own display change
+        function cdKeepStart(text, backCmd) {
+            cdKeepEnd(false);
+            const el = document.getElementById('cdKeep');
+            const k = { left: 15, cmd: backCmd, serial: cd.serial, text: text, timer: null };
+            cd.keep = k;
+            const draw = () => {
+                el.style.display = '';
+                el.innerHTML = '<div>' + escapeHtml(text) + ' <b>Keep it?</b> It goes back by itself in ' + k.left + ' s.</div><div class="mode-btn-row"><button class="mode-action-btn primary" onclick="cdKeepEnd(false)">Keep</button><button class="mode-action-btn" onclick="cdKeepEnd(true)">Put it back</button></div>';
+            };
+            draw();
+            k.timer = setInterval(() => { k.left--; if (k.left <= 0) cdKeepEnd(true); else draw(); }, 1000);
+        }
+        async function cdKeepEnd(revert) {
+            const k = cd.keep;
+            if (!k) return;
+            clearInterval(k.timer);
+            cd.keep = null;
+            const el = document.getElementById('cdKeep');
+            if (el) { el.style.display = 'none'; el.innerHTML = ''; }
+            if (!revert) { showToast('Kept'); return; }
+            const out = await cdSh(k.cmd, { serial: k.serial });
+            showToast(cdFail(out) || 'Put back');
+            if (k.serial === cd.serial) { cd.lastKey = ''; cdLoadInfo(); }
+        }
+
+        // ---- Add a device ----
+        function cdAddOpen(tab) {
+            const recent = kvGet('cd_recent', []);
+            if (!document.getElementById('cdConnAddr').value && recent[0]) document.getElementById('cdConnAddr').value = recent[0].addr;
+            document.getElementById('cdAddLog').innerText = '';
+            document.getElementById('cdAddModal').classList.add('show');
+            cdAddTab(tab || cd.addTab || 'wifi');
+        }
+        function cdAddClose() { document.getElementById('cdAddModal').classList.remove('show'); }
+        function cdAddTab(t) {
+            cd.addTab = t;
+            document.querySelectorAll('#cdAddTabs .cd-tab').forEach(b => b.classList.toggle('active', b.dataset.t === t));
+            document.querySelectorAll('#cdAddModal .cd-add-pane').forEach(p => p.classList.toggle('active', p.id === 'cdAddPane-' + t));
+            document.getElementById('cdAddLog').innerText = '';
+        }
+        function cdAddLog(text) { document.getElementById('cdAddLog').innerText = String(text || '').trim(); }
+        function cdValidAddr(a) { return /^[A-Za-z0-9._\-\[\]:]+$/.test(a) && a.length <= 80; }
+
+        async function cdPair() {
+            const addr = document.getElementById('cdPairAddr').value.trim(), code = document.getElementById('cdPairCode').value.trim();
+            if (!cdValidAddr(addr) || !/:\d{2,5}$/.test(addr)) { showToast('Type the address and port, like 192.168.1.20:37215'); return; }
+            if (!/^\d{6}$/.test(code)) { showToast('The pairing code has 6 digits'); return; }
+            const btn = document.getElementById('cdPairBtn');
+            btn.disabled = true; cdAddLog('Pairing...');
+            const out = await cdRun(['pair', addr, code], { serial: '', timeout: 40000 });
+            btn.disabled = false;
+            cdAddLog(out);
+            if (/Successfully paired/i.test(out)) {
+                showToast('Paired. Now connect.');
+                const host = addr.replace(/:\d+$/, '');
+                const c = document.getElementById('cdConnAddr');
+                if (!c.value.trim()) c.value = host + ':';
+                c.focus();
+            }
+        }
+        async function cdConnect(addrOverride) {
+            const addr = String(addrOverride || document.getElementById('cdConnAddr').value || '').trim();
+            if (!cdValidAddr(addr)) { showToast('Type the address and port, like 192.168.1.20:5555'); return; }
+            const btn = document.getElementById('cdConnBtn');
+            if (btn) btn.disabled = true;
+            cdAddLog('Connecting...');
+            showToast('Connecting to ' + addr + '...');
+            const out = await cdRun(['connect', addr], { serial: '', timeout: 25000 });
+            if (btn) btn.disabled = false;
+            cdAddLog(out);
+            if (/connected to|already connected/i.test(out) && !/cannot|failed|unable/i.test(out)) {
+                const serial = /(?:connected to|already connected to)\s+(\S+)/i.exec(out);
+                cdRemember(addr);
+                cdAddClose();
+                cd.lastKey = ''; cd.sig = '';
+                await cdRefreshDevices(false);
+                const s = serial ? serial[1].replace(/[.,]$/, '') : addr;
+                if (cd.devices.some(d => d.serial === s)) cdSelect(s);
+                showToast('Connected to ' + s);
+            } else showToast(cdFail(out) || String(out).trim().split('\n')[0] || 'Could not connect');
+        }
+        function cdRemember(addr) {
+            let r = kvGet('cd_recent', []);
+            if (!Array.isArray(r)) r = [];
+            r = r.filter(x => x.addr !== addr);
+            r.unshift({ addr: addr, at: Date.now() });
+            kvSet('cd_recent', r.slice(0, 8));
+        }
+        function cdRenderRecent() {
+            const el = document.getElementById('cdRecentWrap');
+            if (!el) return;
+            const r = kvGet('cd_recent', []);
+            if (!Array.isArray(r) || !r.length || cdCur()) { el.style.display = 'none'; return; }
+            el.style.display = '';
+            el.innerHTML = 'Recent: ' + r.map(x => '<button class="cd-chip" translate="no" data-a="' + escapeHtml(x.addr) + '" onclick="cdConnect(this.dataset.a)">' + escapeHtml(x.addr) + '</button>').join(' ');
+        }
+        function cdParseMdns(out) {
+            const res = [];
+            String(out || '').split('\n').forEach(l => {
+                const m = /^(\S+)\s+(_adb-tls-(?:connect|pairing)\._tcp\.?)\s+(\S+)/.exec(l.trim());
+                if (m) res.push({ name: m[1], kind: /pairing/.test(m[2]) ? 'pair' : 'connect', addr: m[3] });
+            });
+            return res;
+        }
+        async function cdScan() {
+            const btn = document.getElementById('cdScanBtn'), list = document.getElementById('cdScanList');
+            btn.disabled = true; list.innerHTML = '<div class="cd-note">Looking...</div>';
+            const out = await cdRun(['mdns', 'services'], { serial: '', timeout: 15000 });
+            btn.disabled = false;
+            const f = cdFail(out);
+            if (f) { list.innerHTML = '<div class="cd-note is-err">' + escapeHtml(f) + '</div>'; return; }
+            cd.scan = cdParseMdns(out);
+            list.innerHTML = cd.scan.length ? cd.scan.map((s, i) => '<div class="cd-found"><div class="cd-found-main" translate="no">' + escapeHtml(s.addr) + '<span>' + escapeHtml(s.name) + ' \u00b7 ' + (s.kind === 'pair' ? 'waiting for a pairing code' : 'ready to connect') + '</span></div>' +
+                '<button class="cd-row-act" onclick="cdScanUse(' + i + ')">' + (s.kind === 'pair' ? 'Pair' : 'Connect') + '</button></div>').join('') :
+                '<div class="cd-note">Nothing found. Both devices must be on the same Wi-Fi network, with wireless debugging on. You can also type the address by hand under Wi-Fi.</div>';
+        }
+        function cdScanUse(i) {
+            const s = cd.scan[i];
+            if (!s) return;
+            if (s.kind === 'pair') { document.getElementById('cdPairAddr').value = s.addr; cdAddTab('wifi'); document.getElementById('cdPairCode').focus(); }
+            else cdConnect(s.addr);
+        }
+        async function cdBtConnect() {
+            const port = parseInt(document.getElementById('cdBtPort').value, 10);
+            if (!(port >= 1024 && port <= 65535)) { showToast('Use a port from 1024 to 65535'); return; }
+            if (cd.self.includes('127.0.0.1:' + port) || cd.self.includes('localhost:' + port)) { showToast('That port is used by this phone\'s own ADB. Use another, like 4444.'); return; }
+            const btn = document.getElementById('cdBtConnBtn');
+            btn.disabled = true; cdAddLog('Looking for this phone\'s own ADB...');
+            await cdRefreshDevices(false);
+            const me = cd.selfDevs.find(d => d.state === 'device');
+            if (!me) { btn.disabled = false; cdAddLog('This phone is not connected to its own ADB. Turn on ADB in this app\'s Working mode first (Working Mode button at the top), then try again.'); return; }
+            cdAddLog('Linking to the watch through Bluetooth...');
+            const fwd = await cdRun(['forward', 'tcp:' + port, 'localabstract:/adb-hub'], { serial: me.serial, timeout: 15000 });
+            if (cdFail(fwd) || /error|failed/i.test(fwd)) { btn.disabled = false; cdAddLog(fwd.trim() || 'The Bluetooth link could not be set up.'); return; }
+            const addr = '127.0.0.1:' + port;
+            const out = await cdRun(['connect', addr], { serial: '', timeout: 25000 });
+            btn.disabled = false;
+            cdAddLog(out + '\nIf nothing shows up, check that Debugging over Bluetooth is on in the Wear OS app and on the watch, then try again.');
+            if (/connected to|already connected/i.test(out) && !/cannot|failed|unable/i.test(out)) {
+                cd.bt.add(addr); kvSet('cd_bt', Array.from(cd.bt));
+                cdAddClose();
+                cd.lastKey = ''; cd.sig = '';
+                await cdRefreshDevices(false);
+                if (cd.devices.some(d => d.serial === addr)) cdSelect(addr);
+                showToast('Connected over Bluetooth. Allow it on the watch if it asks.');
+            }
         }
 
         // ---- Logcat ----

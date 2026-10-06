@@ -54,7 +54,6 @@ x: {
 "A whole number.": "عدد صحيح.",
 "ADB / Wireless Debugging": "ADB / تصحيح الأخطاء اللاسلكي",
 "ADB / shell": "ADB / shell",
-"ADB App Manager": "ADB App Manager",
 "ADB Application Manager": "ADB Application Manager",
 "ADB Application Manager Pro": "ADB Application Manager Pro",
 "ADB Application Manager Pro ? (build ?)": "ADB Application Manager Pro ? (رقم الإصدار ?)",

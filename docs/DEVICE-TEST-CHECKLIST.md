@@ -1,4 +1,4 @@
-# On-device test checklist (v7.9.14 to v7.9.23)
+# On-device test checklist (v7.9.14 to v7.10.0)
 
 The automated tests run the page in a browser with a pretend phone. They cannot prove the parts that talk to Android:
 icons, the file chooser, added storage, shell commands and the haptic feedback. This list is for those. Tick a box when
@@ -9,6 +9,34 @@ it works; write down what you saw when it does not.
 - [ ] Install the APK over the old version (it must keep your data). About shows the version you expect.
 - [ ] A working mode is on (ADB over TCP, Wireless Debugging, Shizuku or Root). Most items below need one.
 - [ ] Use a phone you do not mind changing: some items disable apps or change app ops. Everything can be undone from the same screens.
+
+## 0. New in v7.10.0
+
+**Header, banner, guide, looks**
+
+- [ ] The header has no icon: the title "Full ADB/Root System Manager" starts at the left edge in two lines (the first word of each line white, the rest cyan), the gear and the working-mode badge are where they were. On a narrow phone the badge wraps to two lines and nothing is cut off.
+- [ ] Without a working mode the orange Read-Only banner shows with an X in its top right corner; the X puts it away; closing the app completely and opening it again shows it again.
+- [ ] About, **Help Guide** (next to GitHub): opens at once with no network, the contents list shows six groups, tapping a topic scrolls to it, **Contents** at the top and **Back to the contents** at the end of a topic return to the list, the search box keeps only the topics that hold every word, Back closes the guide, opening it again continues where you were.
+- [ ] Bottom sheets show a small grab handle; scrollbars are thin; a tab fades in when opened. Nothing is cut off or moved.
+
+**APK variants (needs one 32-bit phone and one 64-bit phone)**
+
+- [ ] The release has three APKs and a `SHA256SUMS.txt` that lists them. `-arm64-v8a` installs on the 64-bit phone and its working modes work as before.
+- [ ] `-armeabi-v7a` installs on the 32-bit phone, ADB over TCP / Wireless Debugging connect (the 32-bit adb starts), and Connected Devices can list devices. Write down the model and Android version if it does not start.
+- [ ] `-universal` installs on both. The self-update (About, Check for update) offers the matching variant.
+- [ ] A phone without a working mode: **APK Installer**, Authorizer **No privilege**, installs a small APK (Android asks once to allow installs from this app).
+
+**Connected Devices** (needs a Wear OS watch, or a second Android phone, on the same Wi-Fi)
+
+- [ ] On the watch: Developer options, ADB debugging and Debug over Wi-Fi on. **Add device**, Wi-Fi tab: Pair (address:port and the 6-digit code from the watch), then Connect. The watch shows in the picker as Connected with its model, Android version, screen, battery and Wear OS.
+- [ ] **Nearby**: Scan lists the watch; Pair / Connect from the list work.
+- [ ] **Bluetooth** (a watch paired with the Wear OS app, Debugging over Bluetooth on in the app and on the watch, ADB on in this app): Connect over Bluetooth adds a device with the Bluetooth link badge; allow it on the watch.
+- [ ] A device that has not allowed this phone says so; after tapping Allow on it and Refresh it becomes Connected.
+- [ ] **Apps**: the list loads, filters and counts work, Disable then Enable a user app, Uninstall and Reinstall a system app you do not need (then put it back), Pull APK saves into Download/ADB App Manager/Devices.
+- [ ] **Send**: an APK, an APKS or XAPK, and "From this phone" install on the watch; the progress bar moves, Stop works, every package shows Installed or the reason. Bluetooth sharing opens the Bluetooth app's picker.
+- [ ] **Console**: `getprop ro.product.model` answers; `adb pull /sdcard/x /sdcard/Download/` runs through adb; `adb kill-server` is refused.
+- [ ] **Logcat**: Play follows the log, Clear empties it. **Files**: browse, view a text file, pull one, send one here, rename, delete a test file. **Hidden Settings**: read, change and put back one value you can see (screen_off_timeout).
+- [ ] **Display**: pick another density, Apply: the watch changes at once and Keep / Put it back counts down 15 s; leave it alone and it goes back by itself. Reset to default and the size box work.
 
 ## 1. Start and Apps list (v7.9.18, v7.9.19)
 

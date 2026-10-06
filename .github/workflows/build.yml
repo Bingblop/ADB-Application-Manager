@@ -30,6 +30,11 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Check that the Help Guide is built from its fragments
+        run: |
+          node docs/guide/build.js --strict
+          git diff --exit-code -- assets/guide.js || { echo "::error::assets/guide.js is out of date. Run: node docs/guide/build.js, and commit it."; exit 1; }
+
       - name: Locate Android SDK tools
         run: |
           SDK="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"

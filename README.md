@@ -14,7 +14,7 @@ recolor the whole system · run a real terminal with AI coding agents — **no c
 
 ## [⬇️ Get the latest APK](https://github.com/Bingblop/ADB-Application-Manager/releases/latest)
 
-`v7.9.23-Pro` · signed · installs over any earlier version · works with **ADB, Wireless Debugging, Shizuku or Root**
+`v7.10.0-Pro` · signed · installs over any earlier version · works with **ADB, Wireless Debugging, Shizuku or Root**
 
 <table>
   <tr>
@@ -53,13 +53,15 @@ recolor the whole system · run a real terminal with AI coding agents — **no c
 | **Files** | Privileged file manager · open APKs and archives (zip, 7z, rar, tar) without extracting · edit, sign, compare · add an SD card or USB drive |
 | **Command-Line Interface** | Terminal with three shells (sandbox, working mode, **your own Termux**) and AI agents · classic ADB Console with cheat sheet and Rish shell |
 | **Hidden Settings & Overlays** | Edit Android's settings tables · Material You color and style · switch overlays on and off |
+| **Connected Devices** | Manage a **Wear OS watch** (or another Android device) from your phone: pair over Wi-Fi or link over Bluetooth · apps (enable, disable, uninstall, reinstall) · send APK, APKS, APKM and XAPK · console, logcat, files, hidden settings, screen density |
+| **Help Guide** | A complete guide for beginners inside the app (About tab): table of contents, search, every tab explained, recipes, safety, troubleshooting |
 | **Monitoring** | Task Manager (processes, CPU, RAM, GPU, battery, network) · color-coded Logcat for one app · Device Specs |
 | **Quick actions** | Quick Settings tiles and a home-screen widget |
 | **Make it yours** | Material 3 and Material You themes · light, dark, schedule, pure black · **Expressive Animations** · 14 languages · custom font · reorder or hide tabs |
 
 ## Install in 30 seconds
 
-1. Download the APK from the [**Releases page**](https://github.com/Bingblop/ADB-Application-Manager/releases/latest) (check it against `SHA256SUMS.txt` if you like).
+1. Download the APK from the [**Releases page**](https://github.com/Bingblop/ADB-Application-Manager/releases/latest): `-arm64-v8a` for almost every phone made since 2016, `-armeabi-v7a` for an older 32-bit phone, or `-universal` if you are not sure (it holds both). Check it against `SHA256SUMS.txt` if you like.
 2. Open it and allow installs from your browser or file manager.
 3. Pick a [working mode](docs/FULL-GUIDE.md#working-modes). Easiest: **ADB over TCP** (run `adb tcpip 5555` once) or **Wireless Debugging** on Android 11+ with the in-app pairing flow.
 

@@ -8846,6 +8846,18 @@ public class MainActivity extends Activity {
             return res.toString();
         }
 
+        /** The folder files pulled from a device go to (Download/ADB App Manager/Devices/<device>), made if it is missing. Answer: the path, or "Error: ...". */
+        @JavascriptInterface
+        public String cdDownloadDir(String serial) {
+            try {
+                File dir = new File(new File(new File(android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS), "ADB App Manager"), "Devices"), cdSafeName(serial == null || serial.isEmpty() ? "device" : serial.replace(':', '_')));
+                if (!dir.isDirectory() && !dir.mkdirs()) return "Error: could not make " + dir.getAbsolutePath();
+                return dir.getAbsolutePath();
+            } catch (Exception e) {
+                return "Error: " + e.getMessage();
+            }
+        }
+
         /** The Bluetooth devices this phone is paired with: {available, enabled, needsPermission, devices:[{name, address, kind}]}. Asks for the Bluetooth permission on Android 12+. */
         @JavascriptInterface
         public String cdBtDevices() {

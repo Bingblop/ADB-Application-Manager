@@ -54,7 +54,6 @@ x: {
 "A whole number.": "Un número entero.",
 "ADB / Wireless Debugging": "ADB / Depuración inalámbrica",
 "ADB / shell": "ADB / shell",
-"ADB App Manager": "ADB App Manager",
 "ADB Application Manager": "ADB Application Manager",
 "ADB Application Manager Pro": "ADB Application Manager Pro",
 "ADB Application Manager Pro ? (build ?)": "ADB Application Manager Pro ? (build ?)",

@@ -41,8 +41,8 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
     const room85 = g85.vh - g85.listTop, room93 = g93.vh - g93.listTop;
     check(`2. [${tag}] the lists get 8% of the screen height more room`, Math.abs((room93 - room85) - 0.08 * g.vh) <= 2, `${Math.round(room85)}px -> ${Math.round(room93)}px`);
 
-    // only this sheet is taller
-    const others = await ev(() => Array.from(document.querySelectorAll('.modal-overlay')).filter(o => o.id !== 'inspectorModal').map(o => { const s = o.querySelector('.modal-sheet'); return s ? [o.id, parseFloat(getComputedStyle(s).maxHeight), window.innerHeight] : null; }).filter(Boolean));
+    // only this sheet is taller (the Help Guide is a reading sheet and takes 94%)
+    const others = await ev(() => Array.from(document.querySelectorAll('.modal-overlay')).filter(o => o.id !== 'inspectorModal' && o.id !== 'helpGuideModal').map(o => { const s = o.querySelector('.modal-sheet'); return s ? [o.id, parseFloat(getComputedStyle(s).maxHeight), window.innerHeight] : null; }).filter(Boolean));
     const wrong = others.filter(([id, mh, vh]) => Math.abs(mh - 0.85 * vh) >= 1);
     check(`3. [${tag}] the other sheets keep 85% (${others.length} checked)`, others.length >= 20 && wrong.length === 0, JSON.stringify(wrong));
 

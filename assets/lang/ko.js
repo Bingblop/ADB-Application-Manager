@@ -54,7 +54,6 @@ x: {
 "A whole number.": "정수입니다.",
 "ADB / Wireless Debugging": "ADB / 무선 디버깅",
 "ADB / shell": "ADB / 셸",
-"ADB App Manager": "ADB App Manager",
 "ADB Application Manager": "ADB Application Manager",
 "ADB Application Manager Pro": "ADB Application Manager Pro",
 "ADB Application Manager Pro ? (build ?)": "ADB Application Manager Pro ? (build ?)",

@@ -1,0 +1,634 @@
+<!-- How do I...?: short task recipes. Each one points into the full sections. Labels were checked against assets/index.html. -->
+
+<section id="recipe-first-debloat" data-title="Remove bloatware from a new phone, safely" data-group="How do I...?">
+<p class="hg-lead">At the end, your phone has lost a few pre-installed apps you never use, every step was reviewed before it ran, and you know how to put each one back.</p>
+
+<h4>What you need</h4>
+<ul>
+<li>A <a href="#modes-overview">working mode</a> that is ready: the badge at the top right is green or violet. Without one, the buttons below open a sheet called <b>Working Mode Required</b>.</li>
+<li>The <b>UAD-NG Debloater</b> tab, and internet the first time, to download the community list (about 1.6 MB).</li>
+<li>About an hour, and a battery above half.</li>
+</ul>
+
+<h4>Steps</h4>
+<ol class="hg-steps">
+<li><b>Save your own things first.</b> Copy photos, contacts and messages to your cloud account or a computer. Removing an app deletes that app's own data.</li>
+<li>Open <b>UAD-NG Debloater</b>. If the status line says the list has not been downloaded, tap <b>Update List</b>. When it finishes, the line says how many packages the list knows (a package is one app or system component) and how many are on your phone.</li>
+<li>Leave only the <b>Recommended</b> chip on, and <b>On device</b> under State. In the row of brand chips, tap your phone's own brand (it comes right after <b>All brands</b>) to shorten the list.</li>
+<li>Tap a row to read its whole description. Skip any app you cannot explain, and any with an orange <b>Needed by</b> line that lists apps you use.</li>
+<li>Tap the circle on the left of three to five apps. Do not use <b>Select shown</b> on a long list.</li>
+<li>Tap <b>Disable</b>, not <b>Uninstall</b>. A sheet called <b>Review: Disable Packages</b> lists every app it will touch. Nothing has happened yet. Read it, then tap the green button, for example <b>Disable 4</b>.</li>
+<li>A message says "Running on 4 packages...". Then <b>Debloater Results</b> shows <b>Success</b> or <b>Failed</b> for each app. <b>Failed</b> means the phone refused and nothing changed. Tap <b>Done</b>.</li>
+<li>Restart the phone and use it for a day: a call, a text, the camera, Wi-Fi, the keyboard, notifications. If all is well, do the next small batch.</li>
+</ol>
+<p>After a week without trouble, you may use <b>Uninstall</b> for the apps you are sure about. It uses the same review sheet. For a system app, neither Disable nor Uninstall frees much storage, because the file stays in the protected system area. What you gain is less background activity.</p>
+
+<div class="hg-warn"><b>Undo.</b> Open <b>History</b> (top card of the same tab) and tap <b>Undo</b> on the entry, or set State to <b>Disabled</b> or <b>Uninstalled</b>, tick the app and tap <b>Restore</b>. Never remove anything marked <b>Unsafe</b>, or the keyboard, launcher, phone, messages or Settings. If the phone will not start, see "If the phone will not start" in <a href="#debloater-safety">Debloating safely</a>.</div>
+
+<p><b>Read more:</b> <a href="#tab-debloater">UAD-NG Debloater</a>, <a href="#debloater-safety">Debloating safely</a>, <a href="#apps-profiles">Profiles and drift watch</a> (to be told when a system update brings apps back), <a href="#safety">Safety</a>.</p>
+</section>
+
+<section id="recipe-freeze-app" data-title="Freeze an app, and bring it back" data-group="How do I...?">
+<p class="hg-lead">At the end, one app is switched off without anything being deleted, and you know the single tap that switches it back on.</p>
+
+<h4>What you need</h4>
+<ul>
+<li>A <a href="#modes-overview">working mode</a>. In Read-Only mode, tapping <b>Freeze</b> opens <b>Working Mode Required</b> instead. That is the app protecting you, not an error.</li>
+<li>The <b>Application Manager</b> tab (the first tab).</li>
+</ul>
+
+<h4>Steps</h4>
+<ol class="hg-steps">
+<li>Type a few letters of the app's name in the search box (it says "Search by name or package"). The list shrinks as you type.</li>
+<li>Tap the <b>...</b> button at the right end of its row, or press and hold the row for about half a second. A sheet slides up with the app's name, package name, version and a grid of buttons.</li>
+<li>Check the name at the top, then tap <b>Freeze</b>. There is no question first. A message at the bottom says "Action executed", and the button turns into <b>Enable</b>.</li>
+<li>Close the sheet with the X. The row now has a <b>FROZEN</b> tag, the app has gone from your home screen and app drawer, and the <b>Frozen</b> count at the top went up by one. Tap the <b>Frozen</b> pill to see all frozen apps.</li>
+<li>To bring it back, use the <b>Frozen</b> pill to find the app, open its <b>...</b> menu and tap <b>Enable</b>. The <b>FROZEN</b> tag goes and the app returns exactly as it was, with its data and settings.</li>
+</ol>
+<p>If Android refuses, you see "Action reported a problem" and a <b>Command Result</b> box with Android's own words. Nothing was changed. Some system apps are protected and cannot be frozen.</p>
+<p><b>A lighter pause:</b> <b>Suspend</b> in the same menu keeps the app enabled but greys out its icon and stops it opening. <b>Unsuspend</b> undoes it. To freeze many apps at once, see <a href="#apps-batch">Selecting many apps and batch actions</a>.</p>
+
+<div class="hg-warn"><b>Undo.</b> <b>Enable</b> always works, and every Freeze is also listed under <b>History</b> in the <b>UAD-NG Debloater</b> tab, with an <b>Undo</b> button. Freeze only apps marked <b>USER</b> that you recognise until you have read <a href="#debloater-safety">Debloating safely</a>. Never freeze your keyboard, home screen, phone or messages app, Settings or System UI.</div>
+
+<p><b>Read more:</b> <a href="#tab-apps">Application Manager</a>, <a href="#apps-menu">The app menu</a>, <a href="#safety">Safety</a>.</p>
+</section>
+
+<section id="recipe-uninstall-restore" data-title="Uninstall a system app, and get it back" data-group="How do I...?">
+<p class="hg-lead">At the end, a pre-installed app is gone from your phone, and you have seen the ways to bring it back.</p>
+
+<h4>What you need</h4>
+<ul>
+<li>A <a href="#modes-overview">working mode</a>, and the <b>Application Manager</b> tab.</li>
+<li>To know what "uninstall" means for a system app: it is removed for your user only. Its file stays in the protected system area, so it can come back. A factory reset, and sometimes a system update, also bring it back.</li>
+<li>For an app you installed yourself, the rules are different: see the last warning below.</li>
+</ul>
+
+<h4>Steps</h4>
+<ol class="hg-steps">
+<li>Try <b>Freeze</b> first (<a href="#recipe-freeze-app">Freeze an app, and bring it back</a>) and live without the app for a few days. Only go on if nothing broke.</li>
+<li>Find the app and open its <b>...</b> menu. Check that its row says <b>SYSTEM</b>. If a <b>UAD-NG</b> chip shows, tap it and read the advice. Stop if it says <b>UNSAFE</b>.</li>
+<li>Tap <b>Uninstall</b>. There is no "Are you sure?" box. A message says "Action executed". The button turns into <b>Reinstall</b>, the row gets an <b>UNINSTALLED</b> tag, and the <b>Bloatware (Uninstalled)</b> count goes up by one.</li>
+<li>Restart the phone and use it normally for a day.</li>
+</ol>
+
+<h4>Getting it back</h4>
+<ol class="hg-steps">
+<li>Tap the <b>Uninstalled</b> pill (or the <b>Bloatware (Uninstalled)</b> box), open the app's <b>...</b> menu and tap <b>Reinstall</b>. The tag goes and the app returns as if freshly installed: its old data is gone and it may ask for permissions again.</li>
+<li>Other ways: in the <b>UAD-NG Debloater</b> tab set State to <b>Uninstalled</b>, tick the app and tap <b>Restore</b>; or open <b>History</b> there and tap <b>Undo</b> on the entry.</li>
+</ol>
+<p>If the result says "only root can delete system app for a particular user", Android would not allow it from the shell. The app already tried a second way. Use <b>Freeze</b> instead, or switch to <a href="#mode-root">Root</a>.</p>
+
+<div class="hg-danger"><b>Risky.</b> For an app you installed yourself, <b>Uninstall</b> removes it for good and <b>Reinstall</b> cannot bring it back. To get it back you need a backup (<a href="#recipe-restore-backup">Restore an app from a backup</a>) or its store. Make the backup before you uninstall (<a href="#recipe-backup-before">Back up an app before you change it</a>).</div>
+
+<p><b>Read more:</b> <a href="#apps-menu">The app menu</a>, <a href="#tab-debloater">UAD-NG Debloater</a>, <a href="#debloater-safety">Debloating safely</a>.</p>
+</section>
+
+<section id="recipe-backup-before" data-title="Back up an app before you change it" data-group="How do I...?">
+<p class="hg-lead">At the end, you have one backup file that holds an app, its permission choices and, with root, its data, saved in your Download folder.</p>
+
+<h4>What you need</h4>
+<ul>
+<li>A <a href="#modes-overview">working mode</a>. The app uses it to read the app's permission settings, so Read-Only mode refuses.</li>
+<li>For the app's <b>data</b> (logins, saved games, settings) you need <a href="#mode-root">Root</a> on the phone. The app asks your root manager itself, so your working mode does not have to be Root. Without root, the backup holds the app and its settings, not its data.</li>
+<li>One app at a time. There is no button to back up many apps at once. Make sure you have free storage.</li>
+</ul>
+
+<h4>Steps</h4>
+<ol class="hg-steps">
+<li>In the <b>Application Manager</b>, find the app and open its <b>...</b> menu.</li>
+<li>Tap <b>Backup</b>. The menu closes and a box opens. At the top is a card, "Back up (app name)", with its package name and version.</li>
+<li>Look at the switch <b>Include app data</b>. With root it says "Uses Root. The app is stopped while its data is copied." Without root it is greyed out and says "Needs Root, which was not found on this phone." Switch it on only if you need the data, and do not use the app meanwhile.</li>
+<li>Tap <b>Create backup</b>. A progress line and bar show "Reading (name)..." and "Saving the backup...".</li>
+<li>A note says "Saved (name) ((size)) to (path)". The file ends in <code>.adbbackup</code> and sits in <code>Download/ADB App Manager/Backups</code>, named like <code>Calculator_8.5_20261006-101530-123.adbbackup</code>.</li>
+</ol>
+<p>Read any warning under the note. For example, "Some data changed while it was being read; the backup may be incomplete". On Android 8 and 9 the file goes to the app's own storage instead, and it is removed if you uninstall this app, so tap <b>Share</b> in the backups list and keep a copy somewhere else.</p>
+
+<div class="hg-note"><b>Good to know.</b> A backup changes nothing on your phone. It does not hold files the app keeps in shared storage, your online accounts, or secrets kept in Android's Keystore, so a restored app may ask you to sign in again. A data backup holds private information, so keep the file safe.</div>
+
+<p><b>Read more:</b> <a href="#apps-backup">Backups and restore</a>, <a href="#recipe-restore-backup">Restore an app from a backup</a>.</p>
+</section>
+
+<section id="recipe-restore-backup" data-title="Restore an app from a backup" data-group="How do I...?">
+<p class="hg-lead">At the end, the app is installed again from your backup file, with its permissions and app ops put back, and with its data if you chose that.</p>
+
+<h4>What you need</h4>
+<ul>
+<li>A <a href="#modes-overview">working mode</a>, and a backup made by this app (a file ending in <code>.adbbackup</code>). See <a href="#recipe-backup-before">Back up an app before you change it</a>.</li>
+<li>To restore the app's <b>data</b> as well, the backup must contain data and the phone must have <a href="#mode-root">Root</a>.</li>
+<li>The <b>Application Manager</b> tab, and its <b>Backups</b> button (in the row above the filter pills).</li>
+</ul>
+
+<h4>Steps</h4>
+<ol class="hg-steps">
+<li>Tap <b>Backups</b>. The box lists every backup this app knows: the app name and version, the date, the size, and "with data" or "APK + settings".</li>
+<li>Tap <b>Restore</b> on the one you want. For a file that is not in the list (for example from another phone), tap <b>Choose backup file...</b> at the bottom and pick it. A file that is not a backup is refused with "Not a usable backup".</li>
+<li>A panel asks "Restore (name) (version)?" It says it installs the backed-up APK over the installed one, then puts back its permissions and app ops.</li>
+<li>If the backup has data and you have root, you may tick <b>Also restore app data</b>. It replaces the app's current data. Otherwise the box is greyed out and says "(needs Root)" or "(none in this backup)".</li>
+<li>Tap <b>Confirm restore</b>. A bar shows "Reading the backup...", "Installing...", "Restoring permissions..." and, with data, "Restoring data (Root)...".</li>
+<li>A note shows the result, for example "(name): installed 8.5" and "Permissions 5 of 6 granted, 2 app ops restored". The app list refreshes. An app you had deleted is back in it.</li>
+</ol>
+<p>If the same version is still installed, the install is skipped and only permissions, app ops and data are put back. A system app that was removed for you is brought back instead of installed.</p>
+
+<div class="hg-warn"><b>Careful.</b> Android refuses an older version over a newer one, and an app signed with a different key. The note then says to uninstall the app first, which deletes the data it holds. Restoring data replaces the current data, so if that matters, make a fresh backup first. Restore only files you made yourself or got from someone you trust. <b>Delete</b> in the backups list removes the file at once, with no undo.</div>
+
+<p><b>Read more:</b> <a href="#apps-backup">Backups and restore</a>, <a href="#recipe-new-phone">Move to a new phone and set everything up again</a>.</p>
+</section>
+
+<section id="recipe-update-apps" data-title="Update the apps on your phone" data-group="How do I...?">
+<p class="hg-lead">At the end, you know which of your apps have a newer version, and the ones this app can update are updated, each checked before it installs.</p>
+
+<h4>What you need</h4>
+<ul>
+<li>Internet, and the <b>App Updater</b> tab.</li>
+<li>A <a href="#modes-overview">working mode</a> to install updates. Without one, a sheet called <b>Working Mode Required</b> opens. Only this app's own update can use Android's install screen.</li>
+<li>To know what is not covered: Google Play apps. This app cannot tell whether a Play app has a newer version.</li>
+</ul>
+
+<h4>Steps</h4>
+<ol class="hg-steps">
+<li>Open <b>App Updater</b>. The first time it checks by itself. Later, tap <b>Check for Updates</b> in the card <b>Updates Available</b>.</li>
+<li>Watch the status line: "Checking sideloaded apps (GitHub, F-Droid, Obtainium)...", then "Checking the Galaxy Store...". It ends with something like "2 updates available &#8226; checked 12 Galaxy Store and 9 sideloaded apps", followed by the time of the check. The tab's name shows the number in brackets. With none, the list says "Everything is up to date."</li>
+<li>Each row shows the app, where the update comes from (for example <b>GitHub</b> or <b>Galaxy Store</b>), and the installed version, an arrow and the new version. Tap <b>Update</b>. The button changes to "Downloading 40%", then "Installing", then a tick and "Updated".</li>
+<li>For several, tap <b>Update All (N)</b> (it appears only when two or more apps can be updated) and confirm "Update N apps?". They go one after another. Waiting rows say "Queued".</li>
+<li>For this app itself, use the top card <b>App update</b>: <b>Check for app update</b>, then <b>Update now</b>.</li>
+<li>For Google Play apps, use the card <b>Play Store apps (via Aurora)</b>. <b>Open Aurora Store</b>, or tap <b>List installed apps</b> and then <b>Store</b> beside an app to open its store page. Or update them in the Play Store itself.</li>
+</ol>
+<p>A <b>Release</b> button instead of <b>Update</b> means the newest release has no file for your phone. It opens the release page. Apps under <b>Not tracked</b> have no known source: tap <b>+ Set source</b> and enter a GitHub, Codeberg or F-Droid link.</p>
+
+<div class="hg-warn"><b>Careful.</b> An update replaces the working version, and there is no one-tap way back. Before it installs, the app checks that the file is the same package, newer, and signed with the same key, and installs nothing if a check fails. For an app that matters, make a backup first (<a href="#recipe-backup-before">Back up an app before you change it</a>).</div>
+
+<p><b>Read more:</b> <a href="#tab-updates">App Updater</a>, <a href="#tab-store">App Stores</a>, <a href="#install-and-update">Installing and updating the app</a>.</p>
+</section>
+
+<section id="recipe-install-apk" data-title="Install an APK file" data-group="How do I...?">
+<p class="hg-lead">At the end, the app inside your APK file is installed, after you have seen what the file is and who signed it.</p>
+
+<h4>What you need</h4>
+<ul>
+<li>The APK file on your phone (an APK is the file an app is installed from; see <a href="#basics">Words you will see</a>), from a source you trust.</li>
+<li>The <b>APK Installer</b> tab. With a <a href="#modes-overview">working mode</a> you get every option. Without one, set the Authorizer to <b>No privilege</b>: Android's own install screen then asks you to confirm.</li>
+</ul>
+
+<h4>Steps</h4>
+<ol class="hg-steps">
+<li>Open <b>APK Installer</b> and tap <b>Choose APK / APKS / APKM / XAPK</b>. Pick the file in Android's file chooser. (Other ways: tap a row in the list after <b>Find APKs on this device</b>; or tap the file in the <b>File Manager</b> and then <b>Install</b>; or open the file from your browser and choose this app.)</li>
+<li>The hint says "Reading package...", then "Loaded APK - review and install below." The page scrolls to a card with the app's name, package name, <b>Version</b>, <b>Installed</b> (if it is already on the phone), <b>Min SDK</b> and <b>Size</b>.</li>
+<li>Read the signature line under it. Every app is signed by its maker with a key, like a seal, and an update must carry the same seal. "Signature matches the installed app." is good. "Signed with a different key than the installed app - Android will reject this as an update." means the file comes from someone else.</li>
+<li>Optional: in the <b>VirusTotal scan</b> card, paste your own free API key and tap <b>Scan this package</b>.</li>
+<li>Look at <b>Install options</b>. <b>Authorizer</b> (the working mode that carries out the install) is already your active mode. Leave <b>Block signature mismatch</b> and <b>Block unknown signature</b> on.</li>
+<li>Tap <b>Install</b>. A message says "Installing ...", and a grey line under the button shows the command, for example <code>pm install -r (1 file)</code>.</li>
+<li>A sheet opens, titled "Install" with the package name. On success it offers <b>Launch Application</b> and <b>Application Settings</b>. Tap <b>Done</b>.</li>
+</ol>
+<p>Installing over an installed copy of the same app keeps its data.</p>
+
+<div class="hg-warn"><b>Undo.</b> Open the app's <b>...</b> menu in the <b>Application Manager</b> and tap <b>Uninstall</b>. Its data is deleted. An APK can do anything a normal app can, so install only files you trust. If the install fails with <code>INSTALL_FAILED_UPDATE_INCOMPATIBLE</code>, the installed copy has another signing key and only uninstalling it first fixes that, which deletes its data: back it up first. Other messages are explained in <a href="#tab-installer">APK Installer</a>.</div>
+
+<p><b>Read more:</b> <a href="#tab-installer">APK Installer</a>, <a href="#recipe-install-bundle">Install a split bundle (APKS, APKM, XAPK)</a>.</p>
+</section>
+
+<section id="recipe-install-bundle" data-title="Install a split bundle (APKS, APKM, XAPK)" data-group="How do I...?">
+<p class="hg-lead">At the end, an app that came as several files is installed in one go, with only the parts your phone needs, and any game data is copied into place.</p>
+
+<h4>What you need</h4>
+<ul>
+<li>The bundle file on your phone: <b>.apks</b>, <b>.apkm</b> or <b>.xapk</b> (see <a href="#installer-splits">Split packages</a> for what these are).</li>
+<li>A <a href="#modes-overview">working mode</a> (ADB, Shizuku or Root) if the bundle has game data: on Android 11 and newer, only they can copy data into <code>Android/obb</code>.</li>
+<li>Free space of up to twice the file size, and the <b>APK Installer</b> tab.</li>
+</ul>
+
+<h4>Steps</h4>
+<ol class="hg-steps">
+<li>Open <b>APK Installer</b>. Tap <b>Choose APK / APKS / APKM / XAPK</b> and pick the file. For an XAPK with game data you may tap <b>Install XAPK (APK + OBB data)</b> instead.</li>
+<li>The hint says "Loaded APKS" (or APKM, or "Loaded XAPK with 2 game data files"). More cards appear: the package card, <b>Splits</b>, <b>Game data (OBB)</b> if the file has some, and <b>Install options</b>.</li>
+<li>In <b>Splits</b>, the <b>Base APK</b> row is always on. Tap <b>Match this phone</b>. It ticks the base and the parts that fit: one processor part, one screen-density part and the languages of your phone. Rows say "fits this phone (CPU arm64-v8a)" or "another CPU". If no processor row fits, the bundle may not support your phone.</li>
+<li>With game data, keep <b>Copy data files after install</b> on. The app installs first and copies the data only if the install worked.</li>
+<li>Tap <b>Install</b>. The grey line shows the command, for example <code>pm install-multiple -r (4 files)</code>. With game data, a line shows "Copying data file 1 of 2: ...". Keep the phone awake and plugged in: a big copy takes time.</li>
+<li>The result sheet says <b>Success</b>, and "Game data (OBB): 2 of 2 data files copied". Tap <b>Done</b>.</li>
+</ol>
+<p>If the app crashes at once, or the install says a split is missing, the app needs a part that was not ticked. Tap <b>Select all</b> and install again. If the install fails for another reason, the error table in <a href="#tab-installer">APK Installer</a> says what to do.</p>
+
+<div class="hg-warn"><b>Undo.</b> Uninstall the app from its <b>...</b> menu in the <b>Application Manager</b>. Its data is deleted. Every part of a bundle must be signed with the same key. Keep the <b>Block</b> switches on.</div>
+
+<p><b>Read more:</b> <a href="#installer-splits">Split packages, APKS, APKM, XAPK and game data</a>, <a href="#recipe-install-apk">Install an APK file</a>.</p>
+</section>
+
+<section id="recipe-find-big-apps" data-title="Find the apps that take the most space" data-group="How do I...?">
+<p class="hg-lead">At the end, you see your apps in order of size, biggest first, and you know what you can do about the big ones.</p>
+
+<h4>What you need</h4>
+<ul>
+<li>The <b>Application Manager</b> tab. Looking needs no <a href="#modes-overview">working mode</a>.</li>
+<li>Optional: <b>Usage access</b>. With it, the size counts the app, its data and its cache. Without it, the size is only the app's own file, and a message says "Sorted by APK size. Allow usage access in the app menu to include data."</li>
+</ul>
+
+<h4>Steps</h4>
+<ol class="hg-steps">
+<li>In the row above the filter pills, open the <b>Sort</b> menu and choose <b>Size</b>. A message says "Measuring app sizes...". The list is then biggest first, and each row shows its size after a dot, for example "&#8226; 1.4 GB".</li>
+<li>To include data and cache, open any app's <b>...</b> menu. The line under its name reads "APK 12 MB" and ends in a link, <b>Show data usage</b>. Tap it. With a working mode on, the app switches usage access on for you. Otherwise Android's Usage access screen opens: switch it on for this app and press Back.</li>
+<li>Close the app and open it again. The <b>Size</b> sort is remembered and the sizes are measured again. The line in an app's menu now reads like "APK 12 MB &#8226; Data 340 MB &#8226; Cache 80 MB".</li>
+<li>Tap the <b>3rd Party</b> pill to see only apps you installed yourself, or type in the search box.</li>
+</ol>
+
+<h4>What you can do about a big app</h4>
+<ul>
+<li><b>An app you do not use:</b> <b>Uninstall</b> in its menu. Its data is deleted, so back it up first if it matters.</li>
+<li><b>An app whose data or cache is big:</b> the <b>App Info</b> button opens Android's own screen for the app, where its storage options are. <b>Clear Data</b> in the app's menu deletes logins and settings and cannot be undone.</li>
+<li><b>A system app:</b> Uninstall and Freeze free almost nothing, because the file stays in the protected system area.</li>
+<li><b>Big files rather than apps:</b> in the <b>File Manager</b>, search for <code>size:&gt;100mb</code> (see <a href="#files-search">Searching files</a>).</li>
+</ul>
+
+<div class="hg-warn"><b>Careful.</b> Sorting and measuring change nothing on your phone. But <b>Uninstall</b> and <b>Clear Data</b> in an app's menu run at once, with no question first. <b>Clear Data</b> cannot be undone, and <b>Uninstall</b> of an app you installed yourself cannot be undone either, except from a backup (<a href="#recipe-backup-before">Back up an app before you change it</a>). Freeze is the undoable choice.</div>
+
+<p><b>Read more:</b> <a href="#tab-apps">Application Manager</a>, <a href="#apps-menu">The app menu</a>, <a href="#app-permissions">The permissions this app asks for</a>.</p>
+</section>
+
+<section id="recipe-stop-app" data-title="Stop an app that keeps running in the background" data-group="How do I...?">
+<p class="hg-lead">At the end, the app is stopped now and, if you choose, told not to run in the background again.</p>
+
+<h4>What you need</h4>
+<ul>
+<li>A <a href="#modes-overview">working mode</a>. The <b>RUNNING</b> tag and the <b>Running</b> filter also need one.</li>
+<li>The <b>Application Manager</b> tab.</li>
+</ul>
+
+<h4>Step 1: stop it now</h4>
+<ol class="hg-steps">
+<li>Tap the <b>Running</b> pill. The list shows apps that have a live process, each with a <b>RUNNING</b> tag.</li>
+<li>Open the app's <b>...</b> menu and tap <b>Force Stop</b>. A message says "Action executed" and the <b>RUNNING</b> tag goes.</li>
+</ol>
+<p>Another way: open <b>Task Manager</b>, then <b>Processes</b>, and tap the round <b>X</b> on the app's row. It stops at once, with no question first.</p>
+
+<h4>Step 2: ask Android not to let it run in the background</h4>
+<ol class="hg-steps">
+<li>Close the menu and tap the app's row to select it. A round button with a number appears at the bottom right. Tap it, then tap <b>Batch Ops</b>.</li>
+<li>In the sheet <b>Batch Ops (App Ops)</b>, tap the preset <b>Stop background activity</b>. An app op is a small Android switch that says whether an app may do one thing, such as run in the background. Three app ops are ticked, each set to <b>Ignore</b>: <code>RUN_IN_BACKGROUND</code>, <code>RUN_ANY_IN_BACKGROUND</code> and <code>WAKE_LOCK</code>. The button at the bottom says <b>Apply to 1 app</b>.</li>
+<li>Tap it and confirm "Set 3 app ops on 1 app?". <b>Batch Results</b> opens and the app shows <b>Success</b>.</li>
+<li>Use the phone for a while, then look at the <b>Running</b> pill again.</li>
+</ol>
+<p>Force Stop is only for now: the app can start again by itself, from an alarm or another app. How much the app ops hold back depends on the app and on your phone maker's own battery rules, and this has not been tried on every phone. If the app still comes back, <b>Freeze</b> is the firm answer (<a href="#recipe-freeze-app">Freeze an app, and bring it back</a>).</p>
+
+<div class="hg-warn"><b>Undo.</b> Open the app's <b>...</b> menu and the <b>App Ops</b> tab. In the field "Other op", type one of the three names, choose <b>default</b> in the list beside it and tap <b>Set</b>. Repeat for the other two. Force Stop needs no undo: just open the app again. Do not stop a system app you do not recognise.</div>
+
+<p><b>Read more:</b> <a href="#apps-batch">Batch Ops</a>, <a href="#tab-taskmgr">Task Manager</a>, <a href="#quick-tiles">Quick Settings tiles and widget</a> (a <b>Stop apps</b> tile stops a whole list in one tap).</p>
+</section>
+
+<section id="recipe-permission" data-title="Take a permission away from an app" data-group="How do I...?">
+<p class="hg-lead">At the end, one app no longer has a permission you chose, for example the camera, and you know how to give it back.</p>
+
+<h4>What you need</h4>
+<ul>
+<li>A <a href="#modes-overview">working mode</a>. Without one you can read the list, but the buttons show a padlock.</li>
+<li>The <b>Application Manager</b> tab.</li>
+<li>To know the limit: you can switch only <i>runtime</i> permissions, the kind Android asks you about (camera, location, contacts). Install-time permissions are fixed when the app is installed. They show a padlock and no one can change them.</li>
+</ul>
+
+<h4>Steps</h4>
+<ol class="hg-steps">
+<li>Open the app's <b>...</b> menu. It opens on the <b>Permissions</b> tab.</li>
+<li>Tap the <b>Changeable</b> chip, or type <code>camera</code> in the search box.</li>
+<li>Find the row, for example <b>CAMERA</b>. The button at the right says <b>GRANTED</b>. Tap it. It changes to <b>DENIED</b> and a message says "Revoked CAMERA".</li>
+<li>Android may close the app when you take a permission away. Open it and see how it behaves. If it needs the permission, it asks again.</li>
+</ol>
+<p>For finer control, the <b>App Ops</b> tab has the buttons <b>Allow</b>, <b>FG</b> (only while the app is on screen), <b>Ignore</b>, <b>Deny</b> and <b>Reset</b> for each op. For many apps at once, <b>Batch Ops</b> has presets such as <b>No location</b> and <b>Privacy lockdown</b> (see <a href="#apps-batch">batch actions</a>).</p>
+
+<div class="hg-note"><b>Undo.</b> Tap the same button again: it changes back and a message says "Granted CAMERA". Permission changes made one by one are not in the History, so note what you changed. In <b>Batch Ops</b>, the preset <b>Undo Privacy lockdown</b> sets those ops back to <b>Reset</b>. A padlock on a <b>GRANTED</b> or <b>DENIED</b> button means you have no working mode right now. A padlock with <b>NOT GRANTED</b> means an install-time permission.</div>
+
+<p><b>Read more:</b> <a href="#apps-menu">The app menu</a>, <a href="#basics">Words you will see</a>, <a href="#safety">Safety</a>.</p>
+</section>
+
+<section id="recipe-hidden-setting" data-title="Change a hidden Android setting, and undo it" data-group="How do I...?">
+<p class="hg-lead">At the end, you have changed one of Android's hidden settings, seen the effect, and put the old value back.</p>
+
+<h4>What you need</h4>
+<ul>
+<li>A <a href="#modes-overview">working mode</a>. Without one, the <b>Hidden Settings</b> tab shows a card, "Needs ADB, Wireless Debugging, Shizuku or Root", with a <b>Set Up</b> button.</li>
+<li>The <b>Hidden Settings</b> tab. The example here is the speed of window animations, <code>window_animation_scale</code> in the <b>Global</b> table. It is harmless, and 1 is the normal value.</li>
+</ul>
+
+<h4>Steps</h4>
+<ol class="hg-steps">
+<li>Open <b>Hidden Settings</b>. Grey bars show while the tables are read, then the buttons <b>Global</b>, <b>Secure</b> and <b>System</b> each show a count. Tap <b>Global</b>.</li>
+<li>Type <code>animation</code> in the box <b>Search settings...</b>. The list shrinks to the matches, with the matching letters highlighted.</li>
+<li>Tap the row <code>window_animation_scale</code>. A sheet slides up with its name, table, description and a <b>Value</b> box. First tap <b>Copy value</b>, to keep the old value on the clipboard.</li>
+<li>Replace the text in the <b>Value</b> box with <code>0.5</code>. A line under the box says what kind of value it looks like and what it was before. A red line means it cannot be saved yet.</li>
+<li>Tap <b>Save</b>. The sheet closes, the row shows the new value with a small dot, and an <b>Undo</b> bar appears at the bottom for about 7 seconds. Open an app: its windows should now move quicker. Some phone makers' software ignores some settings.</li>
+</ol>
+
+<h4>Undo it</h4>
+<ol class="hg-steps">
+<li>Within about 7 seconds, tap <b>Undo</b> on the bar. A message says "Put back: window_animation_scale".</li>
+<li>Later: tap <b>...</b> (the three dots next to the search box), then <b>Changes</b>. Each entry shows the old and new value. Tap <b>Revert</b> under the one you want to undo.</li>
+</ol>
+<p>A setting with an orange edge and the word "careful" asks for confirmation. Some of them can cut the connection the app uses (<code>adb_enabled</code>, <code>wifi_on</code>, <code>airplane_mode_on</code>) or lock you out of the keyboard. Leave those alone. A setting that is 1 or 0 can also be flipped by pressing and holding its row.</p>
+
+<div class="hg-warn"><b>Careful.</b> The history only knows about changes made with this app, keeps the last 150, and is lost if you clear the app's data. There is no backup or restore of a whole table: before you experiment widely, use <b>...</b>, <b>Copy shown</b> and paste the text into a note. Some values are owned by the system or the phone maker and come back by themselves.</div>
+
+<p><b>Read more:</b> <a href="#tab-settings">Hidden Settings</a>, <a href="#settings-journal">Undoing settings changes</a>, <a href="#safety">Safety</a>.</p>
+</section>
+
+<section id="recipe-colors" data-title="Change Android's colours (Monet and overlays)" data-group="How do I...?">
+<p class="hg-lead">At the end, the system screens and the apps that follow Material You (also called Monet) use a colour you picked, and you can go back with one tap.</p>
+
+<h4>What you need</h4>
+<ul>
+<li>Android 12 or newer for the colours. On older phones the tab opens on the <b>Overlays</b> half, <b>Apply theme</b> and <b>Default</b> are greyed out, and only overlays work.</li>
+<li>A <a href="#modes-overview">working mode</a> to change anything. The colours in use are shown without one.</li>
+<li>The <b>RRO/Monet Customization</b> tab. Phone makers differ: some add their own palette on top, so try one colour first.</li>
+<li>Save your work in other apps first: Android usually restarts apps when the colours change, this one included.</li>
+</ul>
+
+<h4>Steps</h4>
+<ol class="hg-steps">
+<li>Open <b>RRO/Monet Customization</b> and tap <b>Theme</b>. The top card, <b>Colors in use</b>, shows where the colours come from now, and five rows of squares (<b>Accent 1</b> to <b>Neutral 2</b>).</li>
+<li>Under <b>Color</b>, tap <b>Custom color</b> (<b>Wallpaper</b> is the default). A box appears with a big square and a code field.</li>
+<li>Pick the colour: type a six-digit code such as <code>6750A4</code>, move the <b>Hue</b>, <b>Saturation</b> and <b>Lightness</b> sliders, tap a recent colour, or open <b>Preset colors</b>, search by name and tap a round swatch.</li>
+<li>Under <b>Style</b>, choose one: <b>Tonal Spot</b> (the default), <b>Vibrant</b>, <b>Expressive</b>, <b>Fruit Salad</b>, <b>Rainbow</b> or <b>Spritz</b>.</li>
+<li>Tap <b>Apply theme</b>. It reads "Applying...", then Android repaints within a second or two and may restart apps. An <b>Undo</b> bar saying "Theme applied" waits for about 7 seconds. If Android restarted this app, it comes back to this tab with the bar still waiting. The squares update a few seconds later.</li>
+</ol>
+
+<h4>Overlays</h4>
+<ol class="hg-steps">
+<li>Tap <b>Overlays</b> (an overlay is a small package that changes how Android draws part of the system), and search by name or target. Tap the switch on a row, or press and hold the row.</li>
+<li>The list is read again and the row shows what Android reports. The <b>Undo</b> bar says "On: name" or "Off: name". An overlay marked <b>Unavailable</b> cannot be switched.</li>
+</ol>
+
+<div class="hg-warn"><b>Undo.</b> Tap <b>Undo</b> on the bar within about 7 seconds, or tap <b>Default</b> and confirm "Go back to the system default?". Later, <b>Hidden Settings</b>, <b>...</b>, <b>Changes</b> lists <code>theme_customization_overlay_packages</code> with a <b>Revert</b>. A wrong overlay can make the screen harder to use: switch it off again in the <b>Overlays</b> half. If the colours look unchanged, your phone maker's palette wins. This tab does not change the app's own colours: see <a href="#themes">Themes and colours</a>.</div>
+
+<p><b>Read more:</b> <a href="#tab-overlays">RRO/Monet Customization</a>, <a href="#settings-journal">Undoing settings changes</a>.</p>
+</section>
+
+<section id="recipe-read-crash" data-title="Find out why an app crashes" data-group="How do I...?">
+<p class="hg-lead">At the end, you have the app's crash report on screen, you know which lines give the cause, and you have a file to send to the developer.</p>
+
+<h4>What you need</h4>
+<ul>
+<li>A <a href="#modes-overview">working mode</a>. Without one, the <b>Logcat Viewer</b> tab says <b>Working Mode Required</b>.</li>
+<li>The <b>Logcat Viewer</b> tab switched on (the <b>Logs</b> button in an app's menu opens it).</li>
+</ul>
+
+<h4>Steps</h4>
+<ol class="hg-steps">
+<li>In the <b>Application Manager</b>, open the crashing app's <b>...</b> menu and tap <b>Logs</b>. The <b>Logcat Viewer</b> opens showing only that app's lines. (Or open the tab, tap <b>All apps</b> and pick the app.) The tab starts following the log by itself: the green <b>Play</b> button turns orange and says <b>Pause</b>.</li>
+<li>Set the level drop-down to <b>Warn</b> or <b>Error</b> (the level is how serious a line must be to show), and the lines drop-down to <b>2000</b>, so the crash does not scroll away.</li>
+<li>Optional: tap <b>Clear</b>, so the log holds only what comes next. This empties the phone's log for every app, and it also pauses the live reading: the screen says "(cleared)" and the button says <b>Play</b> again.</li>
+<li>If the button says <b>Play</b>, tap it. Use the app until it crashes. The log follows the newest line while the button says <b>Pause</b>.</li>
+<li>Tap <b>Pause</b>. Scroll to the end and look for red <b>E</b> or <b>F</b> rows. Type <code>AndroidRuntime</code> in the filter box and press Enter to see just the crash. A crash in native code shows "Fatal signal" instead.</li>
+<li>Read the lines. A row <b>FATAL EXCEPTION</b> starts the report. The line <b>Process:</b> names the app. The next line names the error, for example a null pointer. A <b>Caused by:</b> line gives the real cause. Lines starting with <b>at</b> say where in the code it happened.</li>
+<li>Tap <b>Share</b> and send the text to the developer, or tap <b>Save</b>: the file goes to <code>Download/ADB App Manager</code> as <code>logcat_all_date_time.txt</code> (with the app's package name when one app is picked).</li>
+</ol>
+
+<div class="hg-warn"><b>Careful.</b> A log can hold personal details: account names, addresses, the names of your apps. Read it before you share it, and filter to one app first. <b>Clear</b> cannot be undone, but it only empties the log, not your apps. For a Wear OS watch use <a href="#recipe-device-log">Read a watch's log</a>.</div>
+
+<p><b>Read more:</b> <a href="#tab-logcat">Logcat Viewer</a>, <a href="#apps-menu">The app menu</a>, <a href="#troubleshooting">Troubleshooting</a>.</p>
+</section>
+
+<section id="recipe-copy-files" data-title="Copy, move or unzip files" data-group="How do I...?">
+<p class="hg-lead">At the end, your files are in the folder you wanted, or the contents of a zip file are unpacked next to it.</p>
+
+<h4>What you need</h4>
+<ul>
+<li>The <b>File Manager</b> tab. For your own storage you need no <a href="#modes-overview">working mode</a>, but you need <b>All files access</b>. If a box says "Storage looks inaccessible", tap <b>Grant storage access</b>, switch it on in Android's screen and press Back.</li>
+<li>For an SD card or USB drive, add it once with <b>+ Add storage</b> (<a href="#files-storage">SD cards, USB drives and other storage</a>).</li>
+</ul>
+
+<h4>Copy or move</h4>
+<ol class="hg-steps">
+<li>Tap a folder to open it. The row <b>..</b> goes up one level. Or type a path in the box under the title and tap <b>Go</b>.</li>
+<li>Press and hold a row for half a second, or tap <b>Select</b>. A bar appears, "1 selected", with <b>All</b>, <b>Copy</b>, <b>Move</b>, <b>Compress</b> and <b>Delete</b>. Tap more rows to add them.</li>
+<li>Tap <b>Copy</b> (the original stays) or <b>Move</b>. The bar says "3 items to copy: open the target folder, then tap Paste".</li>
+<li>Open the target folder. The bar stays while you browse.</li>
+<li>Tap <b>Paste here</b>. If a name is already used there, a box titled "A name is already taken" offers <b>Replace</b>, <b>Skip</b> or <b>Keep both</b>. A progress line shows with a <b>Cancel</b> button, and at the end a message says, for example, "Copied 3 of 3".</li>
+</ol>
+
+<h4>Unzip</h4>
+<ol class="hg-steps">
+<li>Tap the archive (zip, 7z, rar, tar and more), then <b>Extract...</b>. To look first without unpacking, tap <b>View contents</b>.</li>
+<li>Under <b>Extract into</b> choose <b>This folder</b>, <b>A new folder named after the archive</b> (the starting choice) or <b>Another folder</b>. Under "If a file is already there" choose <b>Replace it</b>, <b>Skip it</b> or <b>Keep both</b> (the starting choice).</li>
+<li>Tap <b>Extract</b>. A message says, for example, "Extracted 12 files (3.4 MB) to /storage/emulated/0/Download/photos".</li>
+</ol>
+
+<div class="hg-warn"><b>Careful.</b> There is no recycle bin. <b>Delete</b> is final, and so is <b>Replace</b>. To undo a copy, delete the copy. To undo a move, move the items back. The <b>Copy</b> and <b>Move</b> buttons in a single file's sheet ask for a destination path and replace a file of the same name without asking, so use <b>Select</b> for anything important. Keep away from <code>/system</code> and <code>/data</code>.</div>
+
+<p><b>Read more:</b> <a href="#tab-files">File Manager</a>, <a href="#files-archives">Zip, 7z, rar, tar and other archives</a>, <a href="#files-search">Searching files</a>.</p>
+</section>
+
+<section id="recipe-run-command" data-title="Run an ADB command from the app" data-group="How do I...?">
+<p class="hg-lead">At the end, you have run a command on your phone from inside the app, with no computer, and read its answer.</p>
+
+<h4>What you need</h4>
+<ul>
+<li>A <a href="#modes-overview">working mode</a> for commands such as <code>pm</code> and <code>dumpsys</code>. Without one, the shell <b>This app (sandbox)</b> still runs file and text commands.</li>
+<li>The <b>Command-Line Interface</b> tab. Two big buttons at the top, <b>Terminal</b> and <b>ADB Console</b>, switch between its two panes. This recipe uses <b>Terminal</b>.</li>
+</ul>
+
+<h4>Steps</h4>
+<ol class="hg-steps">
+<li>Open <b>Command-Line Interface</b> and tap <b>Terminal</b>. A black screen prints a welcome.</li>
+<li>Next to <b>Shell</b>, choose <b>Working mode (ADB, Shizuku, Root)</b>. The screen prints a line such as "sh ready through ADB, running as the shell user (uid 2000)". (A uid is the account number Android runs the command under. 2000 is the shell user: it can do a lot, but it is not root.)</li>
+<li>Tap the box at the bottom, type <code>getprop ro.product.model</code> and tap <b>RUN</b>. Your line is echoed, and under it comes the answer: your phone's model name.</li>
+<li>Try a command that lists the apps you installed: <code>pm list packages -3</code>. It prints one <code>package:</code> line for each.</li>
+<li>For ready-made commands, tap <b>Cheat Sheet</b>. It lists them in groups such as Device info, Packages and App control. Tap one: it lands in the input box with its placeholder, such as <code>&lt;package&gt;</code>, selected so you can type over it. Nothing runs until you tap <b>RUN</b>.</li>
+<li>To end a command that is still running, tap <b>STOP</b> (the <b>RUN</b> button turns into it). <b>Copy</b> under the screen copies the output.</li>
+</ol>
+<p>To run commands on <i>another</i> device, such as a watch, use the <b>Console</b> sub-tab of <b>Connected Devices</b> instead (<a href="#devices-console">The device console</a>).</p>
+
+<div class="hg-danger"><b>Risky.</b> A command does exactly what it says, with the rights of the shell you chose, and most have no undo. <code>rm</code> deletes at once, and <code>pm clear</code> erases an app's data. Start with commands that only read (<code>list</code>, <code>get</code>, <code>ls</code>, <code>df</code>). Never paste a command you do not understand. Some pairs undo each other: <code>pm disable-user --user 0 name</code> is undone by <code>pm enable name</code>.</div>
+
+<p><b>Read more:</b> <a href="#tab-terminal">Command-Line Interface</a>, <a href="#safety">Safety</a>, <a href="#glossary">Glossary</a>.</p>
+</section>
+
+<section id="recipe-profile" data-title="Save your setup and apply it again later" data-group="How do I...?">
+<p class="hg-lead">At the end, you have a named profile that remembers which apps you turned off, you can apply it again in one reviewed step, and the app can warn you when a system update undoes it.</p>
+
+<h4>What you need</h4>
+<ul>
+<li>The <b>Application Manager</b> tab. Saving needs no working mode. <b>Applying</b> needs a <a href="#modes-overview">working mode</a>.</li>
+<li>To know what a profile holds: only apps that are <i>not</i> enabled (frozen, suspended or uninstalled). It does not hold permissions, app ops or settings.</li>
+</ul>
+
+<h4>Steps</h4>
+<ol class="hg-steps">
+<li>First freeze, suspend or uninstall the apps the way you like them.</li>
+<li>Tap <b>Profiles</b> (in the row under the count boxes, next to <b>Backups</b>). A box called "App Profiles" opens. A line says "Every app that is not enabled is saved." and how many apps that is. If you selected some apps first, it says "Only the selected apps are saved."</li>
+<li>Type a name in the box "Profile name (e.g. Lean Samsung)" and tap <b>Save</b>. A message says "Saved profile (name) ((number) apps)". The card shows a summary such as "12 apps, 8 disabled, 3 suspended, 1 uninstalled".</li>
+<li>Later, open <b>Profiles</b> and tap <b>Apply</b> on the card. A preview says what will change, for example "Will disable 4, suspend 2", then how many already match and how many are not on this phone and are skipped.</li>
+<li>Read it and tap <b>Confirm apply ((number))</b>. The button is greyed out if nothing needs changing. A box shows each app and a <b>Stop</b> button, then <b>Profile Results</b> lists <b>Success</b> or <b>Failed</b> for each app.</li>
+<li>Optional: tap <b>Watch</b> on a profile. The button changes to <b>Watching</b>. After a system update brings apps back, a card at the top of the Application Manager says, for example, "3 apps from "Lean Samsung" no longer match it". Tap <b>Review</b>. Nothing is applied until you tap <b>Confirm apply</b>.</li>
+</ol>
+
+<div class="hg-warn"><b>Undo.</b> Every run is written to the history: open <b>History</b> in the <b>UAD-NG Debloater</b> tab and tap <b>Undo</b>. A profile can disable and uninstall many apps in one go, including system apps, so read the preview every time. <b>Delete</b> on a profile removes it at once, with no question. Never apply a profile from someone else without checking its apps.</div>
+
+<p><b>Read more:</b> <a href="#apps-profiles">Profiles and drift watch</a>, <a href="#recipe-new-phone">Move to a new phone and set everything up again</a>.</p>
+</section>
+
+<section id="recipe-after-reboot" data-title="Get the app working again after a reboot" data-group="How do I...?">
+<p class="hg-lead">At the end, the badge at the top right is green (or violet for Root) again, and <b>Freeze</b> and the other buttons work.</p>
+
+<h4>What you need</h4>
+<ul>
+<li>To know which working mode you use. Android switches off some of the ways this app reaches your phone when it restarts. The app does not start by itself, so it connects when you open it.</li>
+<li>Your frozen and removed apps stay as they were. A restart does not undo them. A system update can bring removed apps back: that is what a watched profile is for (<a href="#recipe-profile">Save your setup and apply it again later</a>).</li>
+</ul>
+
+<h4>Steps</h4>
+<ol class="hg-steps">
+<li>Open the app. The badge is orange and says "(not ready)" after the mode's name, or "Setup Mode (Read-Only)". The Application Manager shows the orange banner "Active Mode: Read-Only (Unprivileged)". Its <b>Set Up</b> button opens the setup sheet. The X in its top right corner only hides the banner until the next start.</li>
+<li>Tap the badge. The sheet <b>Working Modes &amp; ADB Setup</b> opens. The line under its title shows "Selected" and "Active". Find the card of your mode and read its tag.</li>
+<li>Do the part for your mode:
+<ul>
+<li><b>Root:</b> usually nothing. If actions fail, tap <b>Request Root Access</b> and allow it.</li>
+<li><b>Wireless Debugging:</b> your pairing is kept. In Android's Developer options switch <b>Wireless debugging</b> on again and read the new <b>IP address &amp; Port</b>. In the app's card type the port (or tap <b>Auto-Detect Ports</b>, or <b>Use My Wi-Fi IP</b> for the address) and tap <b>Connect Wireless ADB</b>.</li>
+<li><b>ADB over TCP:</b> port 5555 is closed again. On Android 11 or newer, connect with Wireless Debugging first, then tap <b>Switch to 5555 (tcpip)</b>. On Android 8 to 10, a computer must run <code>adb tcpip 5555</code> once more, then tap <b>Connect</b>.</li>
+<li><b>Shizuku:</b> open the Shizuku app and start it again the way you did before. The card then shows <b>AUTHORIZED</b> by itself, or tap <b>Authorize &amp; Use Shizuku</b>.</li>
+<li><b>Auto:</b> it uses the first of ADB over TCP, Wireless Debugging and Shizuku that is ready, and never Root. Get one of those ready, as above.</li>
+</ul></li>
+<li>Close the sheet. The badge turns green, for example "Wireless ADB (37099)", the orange banner goes, and the list of apps reloads.</li>
+</ol>
+
+<div class="hg-note"><b>Tip.</b> The Quick Settings tile <b>Working mode</b> switches to the next ready mode without opening the app. Connecting only gives the app its power back. It changes none of your apps, and without a mode the app is simply Read-Only.</div>
+
+<p><b>Read more:</b> <a href="#mode-wireless">Wireless Debugging</a>, <a href="#mode-tcp">ADB over TCP port 5555</a>, <a href="#mode-shizuku">Shizuku</a>, <a href="#mode-root">Root</a>, <a href="#troubleshooting">Troubleshooting</a>.</p>
+</section>
+
+<section id="recipe-wear-debloat" data-title="Remove apps you do not need from a Wear OS watch" data-group="How do I...?">
+<p class="hg-lead">At the end, an app you do not use is switched off on your watch, and you have a one-tap way to bring it back.</p>
+
+<h4>What you need</h4>
+<ul>
+<li>The watch connected in the <b>Connected Devices</b> tab with the badge <b>Connected</b>. If you have not done that yet, follow <a href="#devices-wear">Wear OS, start to finish</a>. For the Wi-Fi way, this phone needs no working mode.</li>
+<li>The watch on its charger, and a few minutes. The reading of its apps can take up to 90 seconds.</li>
+</ul>
+
+<h4>Steps</h4>
+<ol class="hg-steps">
+<li>Open <b>Connected Devices</b> and pick the watch. Read the name in the device card: everything here happens on <i>that</i> device, not on this phone.</li>
+<li>Open the <b>Apps</b> sub-tab. The line above the list says "Reading the apps of the device..." until it is done. Tap <b>3rd Party</b> (apps added after the watch was made) or <b>System</b> (apps that came with it) to narrow the list, or type in <b>Search apps on the device</b>.</li>
+<li>Find an app you know. If its name means nothing to you, leave it alone and read <a href="#debloater-safety">Debloating safely</a>.</li>
+<li>Tap <b>Disable</b> on its row. A message says, for example, "Disabled: Fit". The row gets a <b>DISABLED</b> badge and the button becomes <b>Enable</b>. To do several, tap the boxes on the left and use <b>Disable</b> in the bar that appears. It asks first when more than one is selected.</li>
+<li>Use the watch for a few days. If anything breaks, find the app with the <b>Disabled</b> filter and tap <b>Enable</b>.</li>
+<li>Only if nothing broke and you want it gone: tap the three dots, then <b>Uninstall</b>, and confirm. A removed system app shows <b>UNINSTALLED</b>, and <b>Reinstall</b> brings it back from the copy still on the watch.</li>
+</ol>
+
+<div class="hg-danger"><b>Risky.</b> Never remove the watch face, <b>Settings</b>, the Google or Wear OS services, the keyboard, or the Bluetooth and phone-pairing apps. A watch that loses them may not work until a factory reset, which erases it. When unsure, <b>Disable</b>, and only that. If the device refuses, a sheet called <b>That did not work</b> shows its answer: leave that app alone.</div>
+
+<p><b>Read more:</b> <a href="#devices-apps">Managing the apps of the device</a>, <a href="#tab-devices">Connected Devices</a>.</p>
+</section>
+
+<section id="recipe-wear-install" data-title="Install an app on a watch" data-group="How do I...?">
+<p class="hg-lead">At the end, an app from an APK or bundle file on your phone is installed on your watch.</p>
+
+<h4>What you need</h4>
+<ul>
+<li>The watch connected in <b>Connected Devices</b>, showing <b>Connected</b> (<a href="#devices-wear">Wear OS, start to finish</a>).</li>
+<li>A file made for Wear OS on this phone: an <b>.apk</b>, <b>.apks</b>, <b>.apkm</b>, <b>.xapk</b> or a zip of APKs, from a source you trust. The app cannot download watch apps for you: <b>App Stores</b> installs on this phone only.</li>
+</ul>
+
+<h4>Steps</h4>
+<ol class="hg-steps">
+<li>Open the <b>Send</b> sub-tab. The card <b>Send apps to this device</b> says "Nothing chosen yet."</li>
+<li>Tap <b>Choose package files</b> and pick one or more files. Each becomes a row with its type and size. (To send an app this phone already has, tap <b>From this phone</b>, tick it and tap <b>Add to the list</b>. Those files are sent as they are. An app that this phone keeps in several parts says "splits made for this phone, they may not fit the device" in its row: it may not fit the watch.)</li>
+<li>Check the four switches. The defaults suit most files: <b>Replace an app that is already there</b> on, <b>Allow an older version</b>, <b>Grant every permission</b> and <b>Allow test apps</b> off.</li>
+<li>Tap <b>Send to device</b>. A bar and a line show progress, for example "1 of 3 &middot; face.apk &middot; Installing 2 files". A bundle is trimmed to the parts the watch needs. The button turns into <b>Stop</b> while it runs. Tapping <b>Stop</b> ends the one that is running and makes the rest of the list fail with "Error: stopped".</li>
+<li>Each row ends with <b>Installed</b> in green, or the end of the device's error in red. A line says "2 of 3 packages installed" and a message says "Sent to the device" or "Some packages did not install".</li>
+<li>Open the <b>Apps</b> sub-tab and tap <b>Reload</b>. The app is in the list.</li>
+</ol>
+<p>A red row quotes Android's own words. The table in <a href="#devices-send">Sending apps to the device</a> says what each one usually means. The card <b>Send with Bluetooth</b> does not work for Wear OS watches: they do not accept shared files that way. Use <b>Send to device</b>.</p>
+
+<div class="hg-warn"><b>Undo.</b> In the <b>Apps</b> sub-tab, tap the app's three dots, then <b>Uninstall</b>. Install only files you trust: the app runs with the same powers as any other. A phone app may install but be unusable on a small round screen.</div>
+
+<p><b>Read more:</b> <a href="#devices-send">Sending apps to the device</a>, <a href="#installer-splits">Split packages</a>.</p>
+</section>
+
+<section id="recipe-wear-density" data-title="Make a watch's screen show more (or less)" data-group="How do I...?">
+<p class="hg-lead">At the end, the watch draws everything smaller, so more fits (or larger, so it is easier to tap), and you either kept the change or it went back by itself.</p>
+
+<h4>What you need</h4>
+<ul>
+<li>The watch connected in <b>Connected Devices</b>, and in your hand with its screen on, so you can see the result.</li>
+<li>To know the idea: <b>density</b> is measured in dpi. A lower number draws things smaller and shows more. A higher number draws them larger and shows less. Sharpness does not change.</li>
+</ul>
+
+<h4>Steps</h4>
+<ol class="hg-steps">
+<li>Open the <b>Display</b> sub-tab (the last one). The card <b>Screen density</b> says, for example, "Now 320 dpi (the device's own)."</li>
+<li>Tap <b>&minus;</b> a few times. Each tap moves the drop-down 5 lower, to about 20 or 40 below the value marked <b>(default)</b>, for example 280 or 240. For bigger things, tap <b>+</b>. Nothing is applied yet.</li>
+<li>Tap <b>Apply selected</b>. The watch redraws at once and some apps restart.</li>
+<li>A yellow banner appears: "The density is now 280 dpi. Keep it? It goes back by itself in 15 s." It has two buttons, <b>Keep</b> and <b>Put it back</b>, and counts down every second.</li>
+<li>Look at the watch. Tap <b>Keep</b> (a message says "Kept") if you like it. Tap <b>Put it back</b>, or do nothing, if not: when the countdown ends the app puts it back and says "Put back".</li>
+</ol>
+<p>To use a number the list does not have, type it in <b>Your own number</b> and tap <b>Apply number</b>. It accepts 72 to 1000, but stay inside the list's range of 120 to 640.</p>
+
+<div class="hg-warn"><b>Undo.</b> <b>Reset to default</b> puts the device's own density back at once, with no countdown. If the screen becomes unreadable, wait 15 seconds, or open the <b>Console</b> sub-tab and run <code>wm density reset</code>. The 15-second countdown runs inside the app's page on this phone: if the app is paused or closed, or the connection drops, it may not happen, so use the console. The change normally stays after the watch restarts. Leave the <b>Screen size</b> card alone unless you know why: a wrong size can cut off a round screen.</div>
+
+<p><b>Read more:</b> <a href="#devices-display">Screen density and size</a>, <a href="#devices-console">The device console</a>.</p>
+</section>
+
+<section id="recipe-device-log" data-title="Read a watch's log" data-group="How do I...?">
+<p class="hg-lead">At the end, you have read the watch's own log, found the lines about one problem, and copied or shared them.</p>
+
+<h4>What you need</h4>
+<ul>
+<li>The watch connected in <b>Connected Devices</b>, showing <b>Connected</b>. No working mode is needed on this phone for the Wi-Fi way.</li>
+<li>To know that the log is a short circular buffer: when it is full, the oldest lines are overwritten, so an old problem may be gone.</li>
+</ul>
+
+<h4>Steps</h4>
+<ol class="hg-steps">
+<li>Open the <b>Logcat</b> sub-tab. Opening it reads the log once by itself.</li>
+<li>Set the level drop-down (it starts at <b>Info</b>) to <b>Error</b>, and the lines drop-down to <b>1000</b>. Changing either reads the log again.</li>
+<li>Tap <b>Clear</b>. A message says "Log cleared on the device." Only fresh lines will show from now on.</li>
+<li>Make the problem happen on the watch, for example open the app that crashes.</li>
+<li>Tap <b>Refresh</b>. A few red rows appear. (<b>Play</b> reads again every 2.5 seconds, but it keeps the watch's Wi-Fi busy and uses its battery: tap <b>Pause</b> when you have what you need.)</li>
+<li>Look for a row with the tag <b>AndroidRuntime</b> whose message starts with <b>FATAL EXCEPTION</b>. The lines joined under it are the crash report: <b>Process:</b> and the package name, the name of the error, and a <b>Caused by</b> line that is usually the real reason. Type the app's package name in the <b>filter text / tag</b> box to cut the noise. A native crash shows "Fatal signal".</li>
+<li>Tap <b>Copy</b>, or <b>Share</b> to send it as the file <code>device_logcat.txt</code>.</li>
+</ol>
+<p>This sub-tab is simpler than the <b>Logcat Viewer</b> tab for this phone: it has no per-app picker, no colour key to hide a level, no <b>Save</b> button and no 2000-line choice, and it draws at most 700 rows. Live reading stops by itself when you leave the sub-tab.</p>
+
+<div class="hg-warn"><b>Careful.</b> <b>Clear</b> empties the watch's log buffer, and the old lines cannot be brought back. A log can hold personal details: read it before you share it. If the area shows adb's complaint instead of rows, the watch dropped or went offline: fix the connection (<a href="#tab-devices">Connected Devices</a>) and tap <b>Refresh</b>.</div>
+
+<p><b>Read more:</b> <a href="#devices-logcat">The device's log</a>, <a href="#recipe-read-crash">Find out why an app crashes</a>.</p>
+</section>
+
+<section id="recipe-new-phone" data-title="Move to a new phone and set everything up again" data-group="How do I...?">
+<p class="hg-lead">At the end, the new phone has this app set up, the apps you used to turn off are turned off again, and the backups and lists you chose to carry over are in place.</p>
+
+<h4>What you need</h4>
+<ul>
+<li>The old phone, still working, and a way to send text and files to yourself (a message, a note or your cloud).</li>
+<li>A <a href="#modes-overview">working mode</a> on both phones for anything that changes apps. There is no "transfer everything" button, so this recipe moves the parts that can move. The table says which.</li>
+</ul>
+
+<table class="hg-table">
+<thead><tr><th>What</th><th>Moves?</th><th>How</th></tr></thead>
+<tbody>
+<tr><td>Which apps you turned off</td><td>Yes</td><td>A profile (copy and paste its text)</td></tr>
+<tr><td>Saved lists</td><td>Yes</td><td><b>Copy</b>, then <b>New List</b> and paste</td></tr>
+<tr><td>App backups</td><td>Yes, with limits</td><td><b>Share</b>, then <b>Choose backup file...</b></td></tr>
+<tr><td>Batch Ops presets, saved commands</td><td>Yes</td><td><b>Export presets</b>, then <b>Import...</b></td></tr>
+<tr><td>Hidden settings, colours, the app's own look</td><td>No</td><td>Do them again by hand</td></tr>
+</tbody>
+</table>
+
+<h4>On the old phone</h4>
+<ol class="hg-steps">
+<li>In the <b>Application Manager</b>, tap <b>Export</b>. It saves a CSV list of all your apps to <code>Download/ADB App Manager</code>, a useful checklist.</li>
+<li>Tap <b>Profiles</b>. If you have no profile yet, save one (<a href="#recipe-profile">Save your setup and apply it again later</a>). Tap <b>Copy</b> on it and paste the text into a note or message to yourself.</li>
+<li>In <b>Saved Applications</b>, tap <b>Copy</b> on each list and paste it into a note.</li>
+<li>For apps whose data matters, tap <b>Backups</b>, then <b>Share</b> on each backup, and keep the files (<a href="#recipe-backup-before">Back up an app before you change it</a>).</li>
+<li>If you made your own presets or commands: select any app, tap the round button, then <b>Batch Ops</b> and <b>Export presets</b>, or <b>Command</b> and <b>Export saved commands</b>. Send the files to yourself.</li>
+</ol>
+
+<h4>On the new phone</h4>
+<ol class="hg-steps">
+<li>Install the app (<a href="#install-and-update">Installing and updating the app</a>) and set up a working mode again. Pairing and the ADB key belong to each phone. When you open the app, the title at the top reads "Full ADB/Root System Manager". This guide is in the <b>About</b> tab, under <b>Help Guide</b>.</li>
+<li>Install your own apps first, from their stores. A profile skips apps that are not on the phone.</li>
+<li>Open <b>Profiles</b>, paste the text into "Paste a shared profile here to import it", tap <b>Import</b>, then <b>Apply</b>. Read the preview and tap <b>Confirm apply</b>.</li>
+<li>In <b>Saved Applications</b>, tap <b>New List</b>, paste the package names and tap <b>Save List</b>.</li>
+<li>To restore an app, tap <b>Backups</b>, then <b>Choose backup file...</b> and pick the file (<a href="#recipe-restore-backup">Restore an app from a backup</a>).</li>
+<li>For presets and commands, open the same <b>Batch Ops</b> or <b>Command</b> sheet and tap <b>Import...</b>. Then set your hidden settings, colours and the app's own look by hand.</li>
+</ol>
+
+<div class="hg-warn"><b>Careful.</b> Phones differ. A profile from another make may name system apps this phone does not have (they are skipped) or ones that matter more here, so read the preview. A backup of a system app is refused on a phone whose own copy is signed with a different key, and app data can only be restored with Root. Do not copy hidden-setting values from one phone to another.</div>
+
+<p><b>Read more:</b> <a href="#apps-profiles">Profiles and drift watch</a>, <a href="#apps-backup">Backups and restore</a>, <a href="#tab-saved-lists">Saved Applications</a>.</p>
+</section>

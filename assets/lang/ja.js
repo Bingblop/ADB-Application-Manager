@@ -54,7 +54,6 @@ x: {
 "A whole number.": "整数です。",
 "ADB / Wireless Debugging": "ADB / ワイヤレスデバッグ",
 "ADB / shell": "ADB / シェル",
-"ADB App Manager": "ADB App Manager",
 "ADB Application Manager": "ADB Application Manager",
 "ADB Application Manager Pro": "ADB Application Manager Pro",
 "ADB Application Manager Pro ? (build ?)": "ADB Application Manager Pro ? (build ?)",

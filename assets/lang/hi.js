@@ -54,7 +54,6 @@ x: {
 "A whole number.": "एक पूर्ण संख्या।",
 "ADB / Wireless Debugging": "ADB / वायरलेस डीबगिंग",
 "ADB / shell": "ADB / शेल",
-"ADB App Manager": "ADB ऐप मैनेजर",
 "ADB Application Manager": "ADB Application Manager",
 "ADB Application Manager Pro": "ADB Application Manager Pro",
 "ADB Application Manager Pro ? (build ?)": "ADB Application Manager Pro ? (बिल्ड ?)",
