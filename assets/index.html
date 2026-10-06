@@ -10751,7 +10751,7 @@ Type any command below (e.g. pm list packages -d)
                     const how = p.changeable ? 'You can grant or revoke it here.' : 'Install-time permission: fixed when the app was installed, it cannot be changed here.';
                     const btn = p.changeable
                         ? `<button class="perm-toggle-btn ${p.granted ? 'granted' : 'revoked'}" data-perm="${escapeHtml(p.name)}" data-granted="${p.granted}" onclick="togglePermission(this.getAttribute('data-perm'), this.getAttribute('data-granted') === 'true')">${p.granted ? 'GRANTED' : 'REVOKED'}</button>`
-                        : `<button class="perm-toggle-btn locked">${p.granted ? 'GRANTED' : 'NOT GRANTED'}</button>`;
+                        : `<button class="perm-toggle-btn locked" title="Install-time permission: cannot be changed with pm grant/revoke">🔒 ${p.granted ? 'GRANTED' : 'NOT GRANTED'}</button>`;
                     return `<div class="perm-row als-row"><div class="perm-info">
                         <div class="perm-name">${escapeHtml(p.label || short)}</div>
                         <div class="perm-sub"><span class="perm-kind">${escapeHtml(p.protection || 'unknown')}</span>${p.appOp ? '<span class="perm-kind">app op</span>' : ''}<span class="perm-kind">${state}</span></div>
@@ -16424,7 +16424,7 @@ Type any command below (e.g. pm list packages -d)
                 const sub = [p.label, p.name !== shortName ? p.name : ''].filter(Boolean).join(' • ');
                 const btn = p.changeable
                     ? `<button class="perm-toggle-btn ${p.granted ? 'granted' : 'revoked'}" data-perm="${escapeHtml(p.name)}" data-granted="${p.granted}" onclick="togglePermission(this.getAttribute('data-perm'), this.getAttribute('data-granted') === 'true')">${p.granted ? 'GRANTED' : 'DENIED'}</button>`
-                    : `<button class="perm-toggle-btn locked" title="Install-time permission: cannot be changed with pm grant/revoke">${p.granted ? 'GRANTED' : 'NOT GRANTED'}</button>`;
+                    : `<button class="perm-toggle-btn locked" title="Install-time permission: cannot be changed with pm grant/revoke">🔒 ${p.granted ? 'GRANTED' : 'NOT GRANTED'}</button>`;
                 return `
                     <div class="perm-row">
                         <div class="perm-info">

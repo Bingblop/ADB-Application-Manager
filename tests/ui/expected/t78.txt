@@ -1,6 +1,7 @@
 0. the scan reads symbols written as escapes too (\u26a1, a surrogate pair, \u{1F4A5}, &#x26A1;, &#9889;): true
 1. the page has no emoji but the gears (© is not an emoji and is left): true []
    exactly two gears are written in it: the header button and the Terminal settings button (the app row button is an SVG icon now): true
+   exactly two locks are written in it: the buttons of a permission that cannot be changed (the inspector and the Permission Manager): true
    the header gear is the first, the Terminal's the second: true
    the changelog the What's new screen shows has none: true []
    the layouts and resources (home-screen widget, tiles) have none: true

@@ -14,6 +14,8 @@
   closed.
 - **content: search works in added storage.** Looking for words inside text files now also reads files on an SD card,
   USB drive or another app's folder (text files up to 4 MB, as on the phone's own storage). archive: is still skipped there.
+- **The lock is back** on the button of a permission that cannot be toggled (an install-time permission), in the app's
+  Permissions list and in the Permission Manager of the Action Button, so it reads as locked at a glance.
 - **"3rd Party" can be translated**: the translation tool now sees labels that start with a number.
 
 ## v7.9.21-Pro (versionCode 811)

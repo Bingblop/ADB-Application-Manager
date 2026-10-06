@@ -1068,7 +1068,7 @@
 {"k":"Install updates","ctx":"built by the code of: update all ui"},
 {"k":"Install uv (Python tool manager) inside Debian","ctx":"built by the code of: top level"},
 {"k":"Install-time","ctx":"in a sheet (inspector)"},
-{"k":"Install-time permission: cannot be changed with pm grant/revoke","ctx":"built by the code of: render permissions list"},
+{"k":"Install-time permission: cannot be changed with pm grant/revoke","ctx":"built by the code of: als render"},
 {"k":"Install-time permission: fixed when the app was installed, it cannot be changed here.","ctx":"built by the code of: als render"},
 {"k":"Installed","ctx":"built by the code of: export app list"},
 {"k":"Installed by","ctx":"built by the code of: render inspector mods"},
