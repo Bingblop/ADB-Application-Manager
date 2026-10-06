@@ -31,7 +31,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.goto(PAGE); await page.waitForTimeout(900);
   const sleep = ms => page.waitForTimeout(ms);
   const btn = pkg => page.locator('#card_' + pkg.replace(/\./g, '\\.') + ' .ab-btn');
-  const info = async pkg => btn(pkg).evaluate(e => ({ ab: e.getAttribute('data-ab'), title: e.title, svg: !!e.querySelector('svg'), text: e.innerText.trim() }));
+  const info = async pkg => (await btn(pkg).count() === 0) ? { ab: 'none' } : btn(pkg).first().evaluate(e => ({ ab: e.getAttribute('data-ab'), title: e.title, svg: !!e.querySelector('svg'), text: e.innerText.trim() }));
   console.log('default is App Settings, as an icon:', JSON.stringify(await info('com.example.live')));
   await btn('com.example.live').click(); await sleep(100);
   console.log('tap runs app_settings:', JSON.stringify(await page.evaluate(() => window.__acts)));
@@ -42,8 +42,10 @@ const { chromium, PAGE } = require('./lib/pw');
   console.log('options:', JSON.stringify(await page.locator('#actionBtnSelect option').allInnerTexts()));
   const pick = async v => { await page.selectOption('#actionBtnSelect', v); await sleep(150); };
   const state = async () => JSON.stringify(await Promise.all(['com.example.live', 'com.example.frozen', 'com.example.gone'].map(async p => (await info(p)).ab)));
-  for (const v of ['forcestop', 'launch', 'toggle', 'uninstall', 'suspend', 'perms', 'acts', 'settings']) { await pick(v); console.log('icons for ' + v + ' (live, frozen, gone):', await state(), '| kept:', await page.evaluate(() => kvGet('action_btn', ''))); }
+  for (const v of ['forcestop', 'launch', 'toggle', 'uninstall', 'suspend', 'perms', 'acts', 'none', 'settings']) { await pick(v); console.log('icons for ' + v + ' (live, frozen, gone):', await state(), '| kept:', await page.evaluate(() => kvGet('action_btn', ''))); }
 
+  console.log('None: no button on any row, the ⋯ menu stays:', await page.evaluate(() => { actionBtn = 'none'; renderApps(); return [document.querySelectorAll('.ab-btn').length, document.querySelectorAll('.app-actions .btn-mini').length === document.querySelectorAll('.app-card').length]; }));
+  await page.evaluate(() => { actionBtn = 'settings'; renderApps(); });
   // each one does its thing
   await page.evaluate(() => switchView('apps')); await sleep(200);
   const run = async (v, pkg) => { await page.evaluate(() => { window.__acts.length = 0; }); await page.evaluate(v => { actionBtn = v; renderApps(); }, v); await sleep(120); await btn(pkg).click(); await sleep(150); return JSON.stringify(await page.evaluate(() => window.__acts)); };

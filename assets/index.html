@@ -10147,7 +10147,7 @@ Type any command below (e.g. pm list packages -d)
         const AB_OPTIONS = [
             ['settings', 'App Settings'], ['forcestop', 'Force Stop'], ['launch', 'App Launcher'],
             ['toggle', 'Enable / Disable (dynamic)'], ['uninstall', 'Install / Uninstall (dynamic)'], ['suspend', 'Unsuspend / Suspend (dynamic)'],
-            ['perms', 'Permission Manager'], ['acts', 'Activity Launcher']
+            ['perms', 'Permission Manager'], ['acts', 'Activity Launcher'], ['none', 'None (no button)']
         ];
         let actionBtn = kvGet('action_btn', 'settings') || 'settings';
         if (!AB_OPTIONS.some(o => o[0] === actionBtn)) actionBtn = 'settings';
@@ -10167,12 +10167,13 @@ Type any command below (e.g. pm list packages -d)
         }
         function abSvg(key) { return '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="' + AB_PATHS[key] + '"/></svg>'; }
         function actionBtnHtml(app) {
+            if (actionBtn === 'none') return '';
             const sp = actionBtnSpec(app);
             return `<button class="btn-mini ab-btn" data-ab="${sp.icon}" title="${sp.label}" aria-label="${sp.label}" onclick="actionBtnTap(this.closest('.app-card').dataset.pkg)">${abSvg(sp.icon)}</button>`;
         }
         function actionBtnTap(pkg) {
             const app = allApps.find(a => a.pkg === pkg);
-            if (!app) return;
+            if (!app || actionBtn === 'none') return;
             haptic();
             switch (actionBtn) {
                 case 'forcestop': quickAction('force_stop', pkg); break;
@@ -10196,7 +10197,8 @@ Type any command below (e.g. pm list packages -d)
             const pv = document.getElementById('actionBtnPreview');
             if (pv) {
                 const keys = actionBtn === 'toggle' ? ['disable', 'enable'] : actionBtn === 'uninstall' ? ['uninstall', 'install'] : actionBtn === 'suspend' ? ['suspend', 'unsuspend'] : [actionBtnSpec({}).icon];
-                pv.innerHTML = '<span class="ab-preview">' + keys.map(abSvg).join('<span class="ab-sep">→</span>') + '</span>';
+                if (actionBtn === 'none') pv.innerText = 'No extra button is shown on the rows.';
+                else pv.innerHTML = '<span class="ab-preview">' + keys.map(abSvg).join('<span class="ab-sep">→</span>') + '</span>';
             }
         }
         function setActionBtn(v) {
@@ -10205,7 +10207,7 @@ Type any command below (e.g. pm list packages -d)
             kvSet('action_btn', actionBtn);
             actionBtnRender();
             renderApps();
-            showToast('Action Button: ' + AB_OPTIONS.find(o => o[0] === actionBtn)[1].replace(/ \(dynamic\)/, ''));
+            showToast('Action Button: ' + AB_OPTIONS.find(o => o[0] === actionBtn)[1].replace(/ \(dynamic\)/, '').replace(/ \(no button\)/, ''));
         }
 
         // ---------- Permission Manager / Activity Launcher sheet ----------
