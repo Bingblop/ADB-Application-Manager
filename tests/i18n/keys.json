@@ -745,6 +745,7 @@
 {"k":"Enable components","ctx":"built by the code of: als bulk comp"},
 {"k":"Enable selected","ctx":"in a sheet (app list sheet)"},
 {"k":"Enabled","ctx":"in the UAD-NG Debloater tab"},
+{"k":"Enabled (","ctx":"in the Application Manager tab"},
 {"k":"Enabled accessibility services (separated by :)","ctx":"built by the code of: top level"},
 {"k":"Enabled keyboards","ctx":"built by the code of: top level"},
 {"k":"Enabled packages","ctx":"built by the code of: top level"},

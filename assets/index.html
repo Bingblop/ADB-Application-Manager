@@ -3267,6 +3267,7 @@
                 <div class="filter-pill" data-filter="running" onclick="setFilter('running', this)">Running (<span id="countRunning">0</span>)</div>
                 <div class="filter-pill" data-filter="user" onclick="setFilter('user', this)">3rd Party (<span id="countUser">0</span>)</div>
                 <div class="filter-pill" data-filter="system" onclick="setFilter('system', this)">System (<span id="countSystem">0</span>)</div>
+                <div class="filter-pill" data-filter="enabled" onclick="setFilter('enabled', this)">Enabled (<span id="countEnabled">0</span>)</div>
                 <div class="filter-pill" data-filter="frozen" onclick="setFilter('frozen', this)">Frozen (<span id="countFrozen">0</span>)</div>
                 <div class="filter-pill" data-filter="suspended" onclick="setFilter('suspended', this)">Suspended (<span id="countSuspended">0</span>)</div>
                 <div class="filter-pill" data-filter="patched" onclick="setFilter('patched', this)">Patched (<span id="countPatched">0</span>)</div>
@@ -10139,6 +10140,7 @@ Type any command below (e.g. pm list packages -d)
 
             filteredApps = allApps.filter(app => {
                 if (currentFilter === 'running' && !app.isRunning) return false;
+                if (currentFilter === 'enabled' && (app.isFrozen || app.isUninstalled)) return false;       // installed and not disabled (a suspended app is still enabled)
                 if (currentFilter === 'frozen' && !app.isFrozen) return false;
                 if (currentFilter === 'suspended' && !app.isSuspended) return false;
                 if (currentFilter === 'user' && (app.isSystem || app.isUninstalled)) return false;
@@ -10152,10 +10154,11 @@ Type any command below (e.g. pm list packages -d)
             sortApps(filteredApps);
 
             // Update stats counts (one pass over the list)
-            const n = { running: 0, frozen: 0, user: 0, system: 0, uninstalled: 0, recent: 0, suspended: 0, patched: 0 };
+            const n = { running: 0, enabled: 0, frozen: 0, user: 0, system: 0, uninstalled: 0, recent: 0, suspended: 0, patched: 0 };
             allApps.forEach(a => {
                 if (a.isRunning) n.running++;
                 if (a.isFrozen) n.frozen++;
+                if (!a.isFrozen && !a.isUninstalled) n.enabled++;
                 if (a.isUninstalled) n.uninstalled++;
                 else if (a.isSystem) n.system++;
                 else n.user++;
@@ -10174,6 +10177,7 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('countRunning').innerText = n.running;
             document.getElementById('countUser').innerText = n.user;
             document.getElementById('countSystem').innerText = n.system;
+            document.getElementById('countEnabled').innerText = n.enabled;
             document.getElementById('countFrozen').innerText = n.frozen;
             document.getElementById('countRecent').innerText = n.recent;
             document.getElementById('countSuspended').innerText = n.suspended;

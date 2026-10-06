@@ -1,5 +1,10 @@
 # Changelog
 
+## v7.9.20-Pro (versionCode 810)
+
+- **An Enabled filter** in the Application Manager tab, between System and Frozen: it lists the installed apps that are
+  not disabled (a suspended app is still enabled), with its own count, the same way Frozen lists the disabled ones.
+
 ## v7.9.19-Pro (versionCode 809)
 
 - **Presets and saved commands can be exported and imported.** Batch Ops has Export presets and Import..., Command has

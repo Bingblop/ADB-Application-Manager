@@ -14,7 +14,7 @@ recolor the whole system · run a real terminal with AI coding agents — **no c
 
 ## [⬇️ Get the latest APK](https://github.com/Bingblop/ADB-Application-Manager/releases/latest)
 
-`v7.9.19-Pro` · signed · installs over any earlier version · works with **ADB, Wireless Debugging, Shizuku or Root**
+`v7.9.20-Pro` · signed · installs over any earlier version · works with **ADB, Wireless Debugging, Shizuku or Root**
 
 <table>
   <tr>

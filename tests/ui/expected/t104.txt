@@ -1,0 +1,4 @@
+pills: ["All Apps (4)","Updated 7d (0)","Running (0)","3rd Party (3)","System (0)","Enabled (2)","Frozen (1)","Suspended (1)","Patched (0)","Uninstalled (1)"]
+Enabled shows installed apps that are not disabled (a suspended one counts): ["enabled","enabled",["On One","On Two"]]
+Frozen still works: ["Off"]
+errors: []
