@@ -1,5 +1,5 @@
 batch grid: buttons / rows / the new row: {"buttons":12,"rows":4,"labels":["Batch Ops","Show Apps","Command"]}
-batch arrow: {"w":64,"h":38,"centered":true,"border":"2px solid","svg":true}
+batch menu X (top right, no arrow): [ '✕', true, true, 0, '20px' ]
 sheet fits the screen: true
 Show Apps lists the selection: [ '3 apps selected', [ 'Alpha', 'Bravo', 'Charlie' ] ]
 Remove takes one out: [
@@ -45,6 +45,7 @@ with the list: only its apps that are on the phone, and the others noted: [
 ]
 Run sends the list apps: [["custom:pm trim-caches 1G; echo $package",["com.example.bravo"]]]
 a saved command can be deleted: [ 0, '[]' ]
-app menu arrow: {"w":64,"h":38,"centered":true,"border":"2px solid","svg":true}
-it closes the menu: true
+app menu has no arrow, its X closes it: 0
+closed: true
+the batch X minimizes the menu (selection kept): [ true, 1 ]
 errors: []

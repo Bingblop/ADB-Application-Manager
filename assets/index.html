@@ -750,10 +750,6 @@
         .als-cb.on { background: var(--accent); border-color: var(--accent); }
         .als-desc { color: var(--text-main); opacity: 0.85; }
 
-        /* The big outlined arrow at the top of the app menu and the batch menu, in the middle: it looks like the button it is */
-        .sheet-arrow-row { display: flex; justify-content: center; margin: -4px 0 10px; }
-        .sheet-arrow-btn { width: 64px; height: 38px; display: inline-flex; align-items: center; justify-content: center; background: var(--bg-surface); color: var(--accent); border: 2px solid var(--accent); border-radius: 14px; cursor: pointer; padding: 0; transition: background 0.15s, transform 0.12s; }
-        .sheet-arrow-btn:active { background: var(--accent); color: var(--on-accent); transform: scale(0.95); }
         .batch-bottom-sheet { max-height: 92vh; overflow-y: auto; }
         .batch-help { font-size: 12px; line-height: 1.5; color: var(--text-muted); background: rgba(var(--ov), 0.05); border: 1px solid var(--border-glass); border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; }
         .batch-help b { color: var(--text-main); }
@@ -887,11 +883,6 @@
             display: flex;
             align-items: center;
             justify-content: center;
-        }
-
-        .batch-collapse-btn {
-            font-size: 15px;
-            color: var(--text-muted);
         }
 
         /* Color Settings View */
@@ -4975,7 +4966,6 @@ Type any command below (e.g. pm list packages -d)
 
     <!-- DOCKED BATCH COMMANDS SHEET (One UI 2-Row Grid: Never Cut Off, No Side Scroll Needed!) -->
     <div class="batch-bottom-sheet" id="floatingBatchBar">
-        <div class="sheet-arrow-row"><button type="button" class="sheet-arrow-btn" onclick="collapseBatchPanel()" aria-label="Minimize the batch menu" title="Minimize"><svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/></svg></button></div>
         <div class="batch-sheet-header">
             <div class="batch-sheet-title">
                 <span id="batchCountText">0 Selected</span>
@@ -4983,6 +4973,7 @@ Type any command below (e.g. pm list packages -d)
             <div class="batch-sheet-tools">
                 <button class="batch-tool-link" onclick="selectAllFiltered()">Select All</button>
                 <button class="batch-tool-link" onclick="clearBatchSelection()" style="color:var(--text-muted);">✕ Clear</button>
+                <div style="font-size:20px; cursor:pointer; margin-left:6px;" role="button" tabindex="0" aria-label="Close the batch menu" onclick="collapseBatchPanel()">✕</div>
             </div>
         </div>
         <div class="batch-save-row">
@@ -5499,7 +5490,6 @@ Type any command below (e.g. pm list packages -d)
     <!-- Inspector Modal -->
     <div class="modal-overlay" id="inspectorModal" onclick="if(event.target===this) closeInspector()">
         <div class="modal-sheet">
-            <div class="sheet-arrow-row"><button type="button" class="sheet-arrow-btn" onclick="closeInspector()" aria-label="Close the app menu" title="Close"><svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/></svg></button></div>
             <div class="sheet-header">
                 <div class="sheet-app-hero">
                     <div class="sheet-avatar" id="sheetAvatar"></div>

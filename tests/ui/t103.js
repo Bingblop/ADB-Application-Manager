@@ -1,4 +1,4 @@
-// Batch menu: a taller sheet with a fourth row (Batch Ops, Show Apps, Command), a big outlined arrow in the middle of the top of the batch and app menus.
+// Batch menu: a taller sheet with a fourth row (Batch Ops, Show Apps, Command), and a close X at the top right like the app menu's.
 const { chromium, PAGE } = require('./lib/pw');
 (async () => {
   const b = await chromium.launch();
@@ -29,7 +29,7 @@ const { chromium, PAGE } = require('./lib/pw');
   const grid = await page.evaluate(() => { const g = document.querySelectorAll('#floatingBatchBar .batch-actions-grid .batch-grid-btn'); const tops = new Set(Array.from(g).map(x => Math.round(x.getBoundingClientRect().top))); return { buttons: g.length, rows: tops.size, labels: Array.from(g).slice(9).map(x => x.innerText.trim()) }; });
   console.log('batch grid: buttons / rows / the new row:', JSON.stringify(grid));
   const arrow = async sel => page.evaluate(sel => { const e = document.querySelector(sel); const r = e.getBoundingClientRect(); const sheet = e.closest('.batch-bottom-sheet, .modal-sheet').getBoundingClientRect(); const cs = getComputedStyle(e); return { w: Math.round(r.width), h: Math.round(r.height), centered: Math.abs((r.left + r.width / 2) - (sheet.left + sheet.width / 2)) < 2, border: cs.borderTopWidth + ' ' + cs.borderTopStyle, svg: !!e.querySelector('svg') }; }, sel);
-  console.log('batch arrow:', JSON.stringify(await arrow('#floatingBatchBar .sheet-arrow-btn')));
+  console.log('batch menu X (top right, no arrow):', await page.evaluate(() => { const x = document.querySelector('#floatingBatchBar [aria-label="Close the batch menu"]'); const sh = document.getElementById('floatingBatchBar').getBoundingClientRect(); const r = x.getBoundingClientRect(); return [x.innerText.trim(), r.right > sh.right - 40, r.top - sh.top < 50, document.querySelectorAll('.sheet-arrow-btn').length, getComputedStyle(x).fontSize]; }));
   console.log('sheet fits the screen:', await page.evaluate(() => { const r = document.getElementById('floatingBatchBar').getBoundingClientRect(); return r.top >= 0 && r.bottom <= window.innerHeight + 1; }));
 
   // Show Apps
@@ -100,9 +100,12 @@ const { chromium, PAGE } = require('./lib/pw');
 
   // The app menu's arrow
   await page.evaluate(() => { collapseBatchPanel(); openInspector('com.example.alpha'); }); await sleep(300);
-  console.log('app menu arrow:', JSON.stringify(await arrow('#inspectorModal .sheet-arrow-btn')));
-  await page.click('#inspectorModal .sheet-arrow-btn'); await sleep(200);
-  console.log('it closes the menu:', await page.evaluate(() => !document.getElementById('inspectorModal').classList.contains('show')));
+  console.log('app menu has no arrow, its X closes it:', await page.evaluate(() => document.querySelectorAll('#inspectorModal .sheet-arrow-btn').length));
+  await page.locator('#inspectorModal .sheet-header-actions div', { hasText: '✕' }).click(); await sleep(200);
+  console.log('closed:', await page.evaluate(() => !document.getElementById('inspectorModal').classList.contains('show')));
+  await page.evaluate(() => { expandBatchPanel(); }); await sleep(300);
+  await page.click('#floatingBatchBar [aria-label="Close the batch menu"]'); await sleep(300);
+  console.log('the batch X minimizes the menu (selection kept):', await page.evaluate(() => [!document.getElementById('floatingBatchBar').classList.contains('show'), selectedPkgs.size]));
   console.log('errors:', JSON.stringify(errors));
   await b.close();
 })();

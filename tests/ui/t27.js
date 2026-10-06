@@ -51,7 +51,7 @@ const appBatchMock = require('./lib/appbatch_mock');
   await page.evaluate(() => toggleSelectPkg('com.c'));
   console.log('4. selected a 3rd app while expanded -> stays expanded, count updates:', JSON.stringify(await state()));
 
-  await page.click('#floatingBatchBar .sheet-arrow-btn');
+  await page.click('#floatingBatchBar .batch-sheet-tools [aria-label="Close the batch menu"]');
   console.log('5. tapped collapse -> back to FAB, selection kept:', JSON.stringify(await state()));
 
   await page.click('#batchFab');
