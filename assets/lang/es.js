@@ -1,6 +1,7 @@
 // Español (es): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['es'] = {
 x: {
+"3rd Party": "De terceros",
 "Clear filters": "Borrar filtros",
 "\"Allow debugging?\"": "“¿Permitir la depuración?”",
 "'s catalog can be several MB — F-Droid's own is tens of MB. It's downloaded once and kept for 12 hours.": ": el catálogo puede pesar varios MB; el de F-Droid, decenas de MB. Se descarga una vez y se conserva 12 horas.",

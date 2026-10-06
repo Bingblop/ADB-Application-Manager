@@ -23,6 +23,7 @@
 {"k":"0 selected","ctx":"in the File Manager tab"},
 {"k":"127.0.0.1 or 192.168.1.20:5555","ctx":"in a sheet (modes)"},
 {"k":"38475 or 192.168.1.20:38475","ctx":"in a sheet (modes)"},
+{"k":"3rd Party","ctx":"in the Application Manager tab / Saved Applications tab"},
 {"k":"3rd Party (","ctx":"in the Application Manager tab"},
 {"k":"A GitHub token is saved.","ctx":"built by the code of: set github token ui"},
 {"k":"A GitHub token is saved. Optional GitHub token (no permissions needed) raises the limit from 60 to 5,000 checks an hour. Leave empty to remove it.","ctx":"built by the code of: set github token ui"},

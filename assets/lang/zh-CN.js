@@ -1,6 +1,7 @@
 // 简体中文 (zh-CN): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['zh-CN'] = {
 x: {
+"3rd Party": "第三方",
 "Clear filters": "清除筛选",
 "\"Allow debugging?\"": "“要允许调试吗？”",
 "'s catalog can be several MB — F-Droid's own is tens of MB. It's downloaded once and kept for 12 hours.": "的目录可能有几 MB，F-Droid 自己的则有数十 MB。目录只会下载一次，并保留 12 小时。",
