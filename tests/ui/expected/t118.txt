@@ -4,7 +4,9 @@ ok   the Action Button menu offers the same choices as Settings, the current one
 ok   choosing one changes the buttons on the rows at once
 ok   and Settings shows the same choice (and the other way round)
 ok   a change from Settings moves the one in the row
-ok   it is remembered the same way
+ok   it is saved in the native settings store
+ok   both menus restore the saved choice after a reload
+ok   the restored choice also restores the row action
 ok   no Versions pill, no version in any row
 ok   the rows of listed packages carry a chip with their level, the others none
 ok   the chips have the level colors

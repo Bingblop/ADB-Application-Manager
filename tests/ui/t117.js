@@ -27,7 +27,9 @@ const { chromium, PAGE } = require('./lib/pw');
         subWide: Math.max.apply(null, Array.from(sub.querySelectorAll('.bt-sub')).map(l => l.scrollWidth)), subBox: box.width };
     });
     check(label + ': no icon in the header, the title starts at the left (' + r.left + ' px)', !r.icon && r.left <= 14);
-    check(label + ': two title lines, as large as fits (' + r.font + ' px), the widest line inside the room', r.titleLines === 2 && r.widest <= r.room && r.widest >= r.room * 0.8 - 14 || r.font <= 13.01, JSON.stringify(r));
+    // Font metrics vary across Linux hosts. Check the layout, not an exact
+    // font size in the golden output, and never waive overflow for small text.
+    check(label + ': two title lines, as large as fits, the widest line inside the room', r.titleLines === 2 && r.widest <= r.room && (r.widest >= r.room * 0.8 - 14 || r.font <= 13.01), JSON.stringify(r));
     check(label + ': the subtitle is "' + want.replace('\n', '" and "') + '" in capitals', r.sub === want && r.subLines === 2 && r.upper === 'uppercase', JSON.stringify(r.sub));
     check(label + ': the subtitle is not wider than the room', r.subWide <= r.subBox + 1, r.subWide + ' > ' + r.subBox);
     check(label + ': the gear and the mode badge are the same height (' + r.gearH + ')', Math.abs(r.gearH - r.badgeH) < 0.6 && r.gearH >= 36, r.gearH + ' vs ' + r.badgeH);

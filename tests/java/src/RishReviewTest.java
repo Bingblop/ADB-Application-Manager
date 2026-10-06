@@ -59,6 +59,16 @@ public class RishReviewTest {
     }
   }
   static void sleepMs(long ms) { try { Thread.sleep(ms); } catch (InterruptedException e) { } }
+  // A shell may print its completion marker before its asynchronous child has
+  // exec'd sleep. Wait for the observable process, with a hard startup deadline.
+  static boolean awaitCount(String n, int expected, long timeoutMs) {
+    long deadline = System.nanoTime() + timeoutMs * 1000000L;
+    do {
+      if (count(n) == expected) return true;
+      sleepMs(20);
+    } while (System.nanoTime() < deadline);
+    return count(n) == expected;
+  }
   static RishShell.Result runStop(final RishShell shell, String cmd, long stopAfterMs, long timeout, RishShell.Sink sink) throws Exception {
     if (stopAfterMs >= 0) new Thread(() -> { sleepMs(stopAfterMs); shell.stop(); }).start();
     return shell.run(cmd, timeout, sink);
@@ -97,7 +107,7 @@ public class RishReviewTest {
     {
       RishShell s = new RishShell(SPAWNER); s.start();
       s.run("sleep 7771 &", 5000, null);
-      check("background job started", count("7771") == 1);
+      check("background job started", awaitCount("7771", 1, 2000), "found: " + count("7771"));
       long t0 = System.currentTimeMillis();
       RishShell.Result r = runStop(s, "sleep 30", 300, 60000, new Collect());
       long took = System.currentTimeMillis() - t0;

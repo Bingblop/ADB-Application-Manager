@@ -4,8 +4,8 @@ The checks the app is released with. None of this is part of the APK. There are 
 
 | | What it is | Needs |
 |---|---|---|
-| **UI** — `run.js`, `ui/` | 96 headless-Chromium scripts drive the real `assets/index.html` against a mock Android bridge: every tab, theme, filter, action, sheet and dialog | Node 18+, Playwright with its Chromium |
-| **Java** — `java/run.js`, `java/src/` | The parts of the app's Java that need no Android classes (settings and overlay rules, file rules, install hints, the archive engine, the Rish shell, the APK signer, the manifest decoder, the store parsers), compiled straight from `src/` and run with the JDK | JDK 8+; some suites also need Node, Python 3 with `zip`, `mksh` + `toybox`, `apksigner`, an APK, or the `org.json` jar |
+| **UI** — `run.js`, `ui/` | 118 headless-Chromium scripts drive the real `assets/index.html` against a mock Android bridge: every tab, theme, filter, action, sheet and dialog | Node 18+, Playwright with its Chromium |
+| **Java** — `java/run.js`, `java/src/` | 40 suites compile relevant classes straight from `src/` and run with the JDK (settings, overlays, files, installs, archives, shells, APK signing, device links, and parsers) | JDK 8+; some suites also need Node, Python 3 with `zip`, `mksh` + `toybox`, `apksigner`, an APK, `org.json`, or a real Android framework jar |
 | **Translations** — `i18n/` | The list of every string of the page, the translator's brief and the tools that check, cut and put together the dictionaries in `assets/lang/` | Node 18+ (acorn and Playwright to regenerate the list) |
 
 ## Run them
@@ -56,6 +56,12 @@ page as the script saw it.
 were recorded on Linux with its default fonts; on another system a few of those lines may differ. `--no-compare` still checks everything that is
 asserted, and `--update` re-records.
 
+Do not refresh golden files just to hide differences on another host: inspect the changed output first. New layout checks should assert fitting,
+overflow, and control alignment, keeping exact font-dependent measurements in failure diagnostics rather than successful output.
+
+Recent regression checks include native Action Button persistence across reload (`t118`), title fitting that never excuses overflow at a small
+font size (`t117`), and a bounded wait for asynchronous background-process startup (`rishreview`).
+
 Settings: `PAGE_URL` runs the scripts against another copy of the page (for example an older `index.html`, to see a script fail), `TEST_NOW`
 changes the starting time, `CHROMIUM_PATH` uses a browser you already have, `NODE_PATH` finds a Playwright that is not in `tests/node_modules`,
 `TEST_OUT` changes where one script writes.
@@ -100,6 +106,10 @@ Two things made scripts fail only on a busy machine, and what to do instead:
 | `jobticker` | The once-a-second report on its own thread: follows the meter, notices a stall while the worker is stuck, stops | — |
 | `apkflags` | Found package files: identical copies (hash) and older versions of a package, which one is kept | — |
 | `splitinfo` | What a split APK's manifest says about it (split name, the feature module it configures, the feature flag) | |
+| `abipick` | Selection of the APK variant appropriate to the phone's supported CPU types | |
+| `devicelink` | Connected-device serials, install verdicts, split selection, and APK/APKS/APKM/XAPK transfer rules against a fake adb | `org.json` |
+| `appextras` | Additional app-inspector information, One UI version parsing, signing certificates, and native-library metadata | `org.json` |
+| `devuninstall` | Connected-device system-app uninstall fallback, helper cleanup, and command validation against a fake adb | `org.json` |
 | `fdroid` | F-Droid index v1 / v2 parsing against real indexes | `org.json` |
 | `komi` | GitHub catalog (Komi) feeds: mapping, de-duplication, dates | `org.json` |
 | `ziptool` | The archive engine: read, edit and rewrite zips (bad, truncated, encrypted, huge, zip64, streamed), alignment, diff | Python 3, `zip`; an APK is optional |
@@ -140,7 +150,7 @@ checked by compilation, review and these simulations, not on a device.
 
 ## The UI scripts, one by one
 
-<details><summary>87 scripts</summary>
+<details><summary>Historical script reference through t96 (use node run.js --list for all 118)</summary>
 
 | Script | Covers |
 |---|---|

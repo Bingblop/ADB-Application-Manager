@@ -14,10 +14,17 @@ it works; write down what you saw when it does not.
 
 **Header, banner, guide, looks**
 
-- [ ] The header has no icon: the title "Full ADB/Root System Manager" starts at the left edge in two lines (the first word of each line white, the rest cyan), the gear and the working-mode badge are where they were. On a narrow phone the badge wraps to two lines and nothing is cut off.
+- [ ] The header has no icon: the title "Full ADB/Root System Manager" starts at the left edge in two fitted lines. Two smaller uppercase lines show the manufacturer/model and Android version, plus One UI on Samsung. The gear and working-mode badge have matching heights. Try a narrow screen and a larger system font: no title, subtitle, or button is cut off.
 - [ ] Without a working mode the orange Read-Only banner shows with an X in its top right corner; the X puts it away; closing the app completely and opening it again shows it again.
-- [ ] About, **Help Guide** (next to GitHub): opens at once with no network, the contents list shows six groups, tapping a topic scrolls to it, **Contents** at the top and **Back to the contents** at the end of a topic return to the list, the search box keeps only the topics that hold every word, Back closes the guide, opening it again continues where you were.
+- [ ] About, **Help Guide** (next to GitHub): opens without a network, with 80 topics in six groups. Tapping a topic opens it on its own; Previous/Next and Contents work. Search shows matching topics with snippets. Back closes the guide, and reopening continues where you were.
 - [ ] Bottom sheets show a small grab handle; scrollbars are thin; a tab fades in when opened. Nothing is cut off or moved.
+- [ ] **Granular Color Pickers**: all seven buttons open the popup. Both Colors and Custom have the fixed # prefix; typing or pasting `#00dfff` produces `00DFFF`. Hue/saturation/brightness sliders and both hex boxes stay in sync. Apply is disabled until six hex digits are present. Cancel and Android Back change nothing; Apply and Reset tweaks work in both light and dark mode.
+
+**Latest Application Manager changes**
+
+- [ ] The button row has Share CSV, Profiles, Backups, and the Action Button chooser, with no Export button. The Versions pill and versions on app rows are gone; version information is still available in the app menu.
+- [ ] Choose an Action Button in the Apps tab: row actions change and Settings shows the same choice. Change it in Settings and check the Apps chooser. Force-close and reopen the app: both choosers and the row actions restore the saved choice.
+- [ ] With the UAD-NG list downloaded, listed apps show their classification chip on the row. Tap one: its description and dependencies open without selecting the row or opening the app menu. An unlisted app has no chip, and the chip in the app menu still works.
 
 **The app menu and Settings**
 
@@ -55,7 +62,7 @@ it works; write down what you saw when it does not.
 - [ ] Tap a row's name: it selects. Tap the checkbox: it selects. Selecting shows the round checkmark button.
 - [ ] **Hold** a row (not the icon, not a button) for half a second: you feel a tap and that app's menu opens. Letting go does not also select the row. No text gets highlighted.
 - [ ] **Hold an icon**: "Icon saved to Download/ADB App Manager/Icons" and the PNG is there.
-- [ ] The Export, Share CSV, Profiles and Backups buttons have an outline and light up when pressed; every button gives a short vibration.
+- [ ] Share CSV, Profiles and Backups have an outline and light up when pressed; every button gives a short vibration. Export was removed in v7.10.0; the Action Button chooser is at the end of this row.
 - [ ] Hold the round checkmark button: the selection clears.
 
 ## 2. Icon pack (v7.9.17, v7.9.18)

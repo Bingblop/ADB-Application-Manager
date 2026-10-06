@@ -8,12 +8,17 @@ const { chromium, PAGE } = require('./lib/pw');
   const check = (name, ok, extra) => { if (!ok) { failed++; console.log('FAIL ' + name + (extra ? ' ' + extra : '')); } else console.log('ok   ' + name); };
   await page.addInitScript(() => {
     window.__kv = {}; window.__sel = [];
+    // Persist the native settings mock across a page reload, like Android's
+    // settings store. saveStore/loadStore are a different bridge API.
+    window.__settings = JSON.parse(sessionStorage.getItem('t118-settings') || '{}');
     const uad = { 'com.sec.hearingadjust': { found: true, pkg: 'com.sec.hearingadjust', list: 'Oem', removal: 'Advanced', description: 'Adapt sound\nTunes the sound to your hearing.', dependencies: ['com.sec.core'], neededBy: ['com.sec.audio'] },
       'com.danger': { found: true, pkg: 'com.danger', list: 'Aosp', removal: 'Unsafe', description: '', dependencies: [], neededBy: [] },
       'com.rec': { found: true, pkg: 'com.rec', list: 'Carrier', removal: 'Recommended', description: 'Carrier app', dependencies: [], neededBy: [] } };
     window.AndroidBridge = {
       vibrate() {}, loadPreferences() { return '{}'; }, loadCustomLists() { return '[]'; }, getSystemInfo() { return '{}'; }, isSystemDarkMode() { return true; }, setSystemBarColor() {},
       saveStore(k, v) { window.__kv[k] = v; return true; }, loadStore(k) { return window.__kv[k] || ''; },
+      saveSetting(k, v) { window.__settings[k] = v; sessionStorage.setItem('t118-settings', JSON.stringify(window.__settings)); },
+      loadSetting(k) { return window.__settings[k] || ''; },
       loadPackages() { return JSON.stringify([{ pkg: 'com.sec.hearingadjust', name: 'Adapt sound', isSystem: true, version: '1.2.3' }, { pkg: 'com.danger', name: 'Danger', isSystem: true, version: '9' }, { pkg: 'com.rec', name: 'Carrier thing', isSystem: true, version: '2' }, { pkg: 'com.plain', name: 'Plain', isSystem: false, version: '3.4' }]); },
       getWorkingMode() { return JSON.stringify({ adbTcp: { connected: true, port: 5555 }, adbWireless: {}, shizuku: {}, configuredMode: 'auto', activeMode: 'adb_tcp', modeAvailable: true, isPrivileged: true }); },
       getIconPacks() { return '[]'; }, loadAppIcons() { return 'started'; },
@@ -41,8 +46,13 @@ const { chromium, PAGE } = require('./lib/pw');
   check('and Settings shows the same choice (and the other way round)', await ev(() => { actionBtnRender(); return document.getElementById('actionBtnSelect').value === 'forcestop' && document.getElementById('appsActionBtnSelect').value === 'forcestop'; }));
   await ev(() => setActionBtn('toggle')); await wait(100);
   check('a change from Settings moves the one in the row', await ev(() => document.getElementById('appsActionBtnSelect').value === 'toggle'));
-  check('it is remembered the same way', await ev(() => /toggle/.test(JSON.stringify(window.__kv))) || true);
+  check('it is saved in the native settings store', await ev(() => window.__settings.action_btn === JSON.stringify('toggle')));
+  await page.reload();
+  await page.waitForFunction(() => document.getElementById('appsActionBtnSelect').value === 'toggle' && document.querySelector('#card_com\\.plain .ab-btn'));
+  check('both menus restore the saved choice after a reload', await ev(() => actionBtn === 'toggle' && document.getElementById('appsActionBtnSelect').value === 'toggle' && document.getElementById('actionBtnSelect').value === 'toggle'));
+  check('the restored choice also restores the row action', await ev(() => /Enable|Disable/.test(document.querySelector('#card_com\\.plain .ab-btn').outerHTML)));
   await ev(() => setActionBtn('settings'));
+  await page.waitForFunction(() => document.querySelectorAll('.uad-chip-row').length === 3);
 
   // versions are gone
   check('no Versions pill, no version in any row', (await ev(() => document.querySelectorAll('#versionTogglePill, .app-version').length)) === 0 && !(await ev(() => /v1\.2\.3|v9\b/.test(document.getElementById('appsListContainer').innerText))));
