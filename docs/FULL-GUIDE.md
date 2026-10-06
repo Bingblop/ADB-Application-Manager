@@ -115,7 +115,7 @@ Every tab except Application Manager and About can be switched off or moved in *
 
 ## New in v7.9
 
-**v7.9.20 is the latest build.** Everything from v7.9 through v7.9.15 is below; the full, dated list is in
+**v7.9.21 is the latest build.** Everything from v7.9 through v7.9.15 is below; the full, dated list is in
 [CHANGELOG.md](../CHANGELOG.md) (and inside the app, under About).
 
 **Newest (v7.9.12 to v7.9.15)**

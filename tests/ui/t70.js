@@ -63,7 +63,7 @@ for (let i = 0; i < 40; i++) apps.push({ pkg: 'com.example.app' + i, name: 'App 
   await page.keyboard.press(' ');
   check('   …and Space', (await active(page)) === 'running:true', await active(page));
   check('   each card is a button with a pressed state for a screen reader', await ev(page, () => Array.from(document.querySelectorAll('.stat-card')).every(c => c.getAttribute('role') === 'button' && c.hasAttribute('aria-pressed') && c.tabIndex === 0)));
-  check('   the highlight does not shrink the card or move the grid', await ev(page, () => { const r = Array.from(document.querySelectorAll('.stat-card')).map(c => Math.round(c.getBoundingClientRect().width)); return new Set(r).size === 1; }));
+  check('   the highlight does not shrink the card or move the grid', await ev(page, () => { const w = k => Math.round(document.querySelector('.stat-card[data-filter="' + k + '"]').getBoundingClientRect().width); return w('all') === w('running') && w('running') === w('uninstalled') && w('enabled') === w('frozen') && w('user') === w('system'); }));
   await page.close();
 
   // 3) a filter left on last time is not brought back: the app always opens on Total Installed ("all")

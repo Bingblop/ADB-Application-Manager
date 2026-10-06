@@ -289,10 +289,24 @@
         /* Stats Dashboard Strip */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(6, 1fr);
             gap: 8px;
             margin-bottom: 14px;
         }
+
+        .stats-grid > .stat-card { grid-column: span 2; }
+        /* a pair that is one filter (Enabled / Frozen, 3rd Party / System): two buttons in one box */
+        .stat-split { grid-column: span 3; display: grid; grid-template-columns: 1fr 1fr; gap: 0;
+            border: 1px solid var(--border-glass); border-radius: var(--radius-md); overflow: hidden; background: var(--bg-card); }
+        .stat-split .stat-card { border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+        .stat-split .stat-card + .stat-card { border-left: 1px solid var(--border-glass); }
+        .stat-split .stat-card.active { background: rgba(var(--ov), 0.1); box-shadow: inset 0 0 0 1px var(--accent); }
+        .stat-split:has(.stat-card.active) { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 2px 12px var(--accent-glow); }
+        .filter-summary-row { display: flex; align-items: center; gap: 8px; }
+        .filter-summary-row .filter-summary-text { flex: 1 1 auto; min-width: 0; }
+        .filter-clear-chip { flex: 0 0 auto; border: 1px solid var(--accent); color: var(--accent); background: transparent;
+            border-radius: 999px; padding: 4px 12px; font-size: 12px; font-weight: 700; cursor: pointer; }
+        .filter-clear-chip:active { transform: scale(0.96); }
 
         .stat-card {
             background: var(--bg-card);
@@ -3223,21 +3237,29 @@
                     <div class="stat-num" style="color:var(--status-running);" id="statRunning">--</div>
                     <div class="stat-label">Running</div>
                 </div>
-                <div class="stat-card" data-filter="frozen" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('frozen')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
-                    <div class="stat-num" style="color:var(--status-frozen);" id="statFrozen">--</div>
-                    <div class="stat-label">Frozen / Disabled</div>
-                </div>
-                <div class="stat-card" data-filter="user" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('user')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
-                    <div class="stat-num" style="color:var(--status-user);" id="statUser">--</div>
-                    <div class="stat-label">User Apps</div>
-                </div>
-                <div class="stat-card" data-filter="system" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('system')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
-                    <div class="stat-num" style="color:var(--status-system);" id="statSystem">--</div>
-                    <div class="stat-label">System Apps</div>
-                </div>
                 <div class="stat-card" data-filter="uninstalled" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('uninstalled')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
                     <div class="stat-num" style="color:var(--status-bloat);" id="statUninstalled">--</div>
                     <div class="stat-label">Bloatware (Uninstalled)</div>
+                </div>
+                <div class="stat-split">
+                    <div class="stat-card" data-filter="enabled" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('enabled')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
+                        <div class="stat-num" style="color:var(--status-running);" id="statEnabled">--</div>
+                        <div class="stat-label">Enabled</div>
+                    </div>
+                    <div class="stat-card" data-filter="frozen" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('frozen')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
+                        <div class="stat-num" style="color:var(--status-frozen);" id="statFrozen">--</div>
+                        <div class="stat-label">Frozen</div>
+                    </div>
+                </div>
+                <div class="stat-split">
+                    <div class="stat-card" data-filter="user" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('user')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
+                        <div class="stat-num" style="color:var(--status-user);" id="statUser">--</div>
+                        <div class="stat-label">3rd Party</div>
+                    </div>
+                    <div class="stat-card" data-filter="system" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('system')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
+                        <div class="stat-num" style="color:var(--status-system);" id="statSystem">--</div>
+                        <div class="stat-label">System</div>
+                    </div>
                 </div>
             </div>
 
@@ -3263,7 +3285,7 @@
                 <span class="filters-hint-x" role="button" tabindex="0" aria-label="Hide this tip" onclick="dismissFiltersHint()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dismissFiltersHint();}">✕</span>
             </div>
 
-            <div class="switch-sub" id="filterSummary" style="display:none; margin:-2px 2px 8px;"></div>
+            <div class="switch-sub filter-summary-row" id="filterSummary" style="display:none; margin:-2px 2px 8px;"><span class="filter-summary-text" id="filterSummaryText"></span><button class="filter-clear-chip" id="filterClearChip" type="button" onclick="setFilter('all')">Clear filters</button></div>
             <div class="filter-scroll" id="filterScroll" onscroll="filtersScrolled()">
                 <div class="filter-pill active" data-filter="all" onclick="setFilter('all', this)">All Apps (<span id="countAll">0</span>)</div>
                 <div class="filter-pill" data-filter="recent" onclick="setFilter('recent', this)">Updated 7d (<span id="countRecent">0</span>)</div>
@@ -10250,6 +10272,7 @@ Type any command below (e.g. pm list packages -d)
             });
             document.getElementById('statTotal').innerText = allApps.length;
             document.getElementById('statRunning').innerText = n.running;
+            document.getElementById('statEnabled').innerText = n.enabled;
             document.getElementById('statFrozen').innerText = n.frozen;
             document.getElementById('statUser').innerText = n.user;
             document.getElementById('statSystem').innerText = n.system;
@@ -11529,7 +11552,7 @@ Type any command below (e.g. pm list packages -d)
             const sum = document.getElementById('filterSummary');
             if (sum) {
                 sum.style.display = activeFilters.size > 1 ? '' : 'none';
-                sum.innerText = filterSummaryText(activeFilters).replace('Tap All to clear', 'Tap All Apps to clear');
+                document.getElementById('filterSummaryText').innerText = filterSummaryText(activeFilters).replace(' Tap All to clear.', '');
             }
         }
 
