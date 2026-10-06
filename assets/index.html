@@ -8059,7 +8059,6 @@ Type any command below (e.g. pm list packages -d)
         function saveUiState() {
             if (!uiStateLoaded) return; // don't overwrite saved filters with defaults during start-up
             saveStoreJson('ui_state', {
-                appsFilter: currentFilter,
                 showVersions: showListVersions,
                 appSort: appSort,
                 filtersHintDone: filtersHintDone,
