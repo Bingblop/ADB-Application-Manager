@@ -63,7 +63,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight)); await sleep(600);
   await page.locator('.filter-pill', { hasText: 'System' }).first().click(); await sleep(250);
   console.log('8. a filter tap draws that filter from its first page:', (await cards()) === 200, String(await cards()));
-  await page.locator('.filter-pill[data-filter="all"]').first().click(); await sleep(200);
+  await page.locator('#filterScroll .filter-pill[data-filter="all"]').first().click(); await sleep(200);
 
   // 5) Logcat: tail of 800, a hint row, unchanged polls cost nothing.
   await page.evaluate(() => switchView('logcat')); await sleep(500);

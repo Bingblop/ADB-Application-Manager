@@ -3,7 +3,7 @@
 [dark]    shows the ✓ mark; an unselected box is not filled: true {"on":"✓","offBg":"rgba(0, 0, 0, 0)"}
 [dark] 2. app rows have only ⚙️ App Settings and ⋯ Menu: true ["App Settings (hold for more)|","Menu|⋯"]
 [dark]    no force-stop control or handler left in the row: true
-[dark]    the freed room goes to the text (meta is 184px wide): true
+[dark]    the freed room goes to the text (meta is 174px wide): true
 [dark]    the row's own buttons and then the checkbox sit together on the right, text starts flush left: true
 [dark] 3. FAB shows the selection count: true {"shown":true,"badge":"3","sel":3,"panel":false}
 [dark]    tooltip/aria mention the hold gesture: true "Tap: batch actions · Hold: clear selection"
@@ -22,7 +22,7 @@
 [light]    shows the ✓ mark; an unselected box is not filled: true {"on":"✓","offBg":"rgba(0, 0, 0, 0)"}
 [light] 2. app rows have only ⚙️ App Settings and ⋯ Menu: true ["App Settings (hold for more)|","Menu|⋯"]
 [light]    no force-stop control or handler left in the row: true
-[light]    the freed room goes to the text (meta is 184px wide): true
+[light]    the freed room goes to the text (meta is 174px wide): true
 [light]    the row's own buttons and then the checkbox sit together on the right, text starts flush left: true
 [light] 3. FAB shows the selection count: true {"shown":true,"badge":"3","sel":3,"panel":false}
 [light]    tooltip/aria mention the hold gesture: true "Tap: batch actions · Hold: clear selection"

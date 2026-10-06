@@ -19,7 +19,7 @@ for (let i = 0; i < 40; i++) apps.push({ pkg: 'com.example.app' + i, name: 'App 
   };
   const ev = (page, fn, arg) => page.evaluate(fn, arg);
   const active = page => ev(page, () => Array.from(document.querySelectorAll('.stat-card.active')).map(c => c.getAttribute('data-filter') + ':' + c.getAttribute('aria-pressed')).join(',') || 'none');
-  const pill = page => ev(page, () => document.querySelector('.filter-pill.active').getAttribute('data-filter'));
+  const pill = page => ev(page, () => document.querySelector('#filterScroll .filter-pill.active').getAttribute('data-filter'));
 
   // 1) the theme button
   let page = await open();
@@ -38,21 +38,27 @@ for (let i = 0; i < 40; i++) apps.push({ pkg: 'com.example.app' + i, name: 'App 
   await page.click('.stat-card[data-filter="running"]');
   check('   tapping Running lights Running only, and the Running pill follows', (await active(page)) === 'running:true' && (await pill(page)) === 'running', await active(page));
   check('   the list below shows what the lit card counts', (await ev(page, () => document.querySelectorAll('#appsListContainer .app-card').length)) === Number(await page.locator('#statRunning').innerText()));
-  await page.click('.filter-pill[data-filter="system"]');
+  await page.click('.stat-card[data-filter="all"]');
+  await page.click('#filterScroll .filter-pill[data-filter="system"]');
   check('   choosing the System pill lights System', (await active(page)) === 'system:true', await active(page));
-  await page.click('.filter-pill[data-filter="suspended"]');
+  await page.click('.stat-card[data-filter="all"]');
+  await page.click('#filterScroll .filter-pill[data-filter="suspended"]');
   check('   a filter with no card (Suspended) lights none', (await active(page)) === 'none', await active(page));
-  await page.click('.filter-pill[data-filter="recent"]');
+  await page.click('.stat-card[data-filter="all"]');
+  await page.click('#filterScroll .filter-pill[data-filter="recent"]');
   check('   same for Updated 7d', (await active(page)) === 'none', await active(page));
   await page.click('.stat-card[data-filter="all"]');
   check('   tapping Total installed is back to the start', (await active(page)) === 'all:true' && (await pill(page)) === 'all', await active(page));
   for (const f of ['frozen', 'user', 'uninstalled']) {
+    await page.click('.stat-card[data-filter="all"]');
     await page.click('.stat-card[data-filter="' + f + '"]');
     check('   ' + f + ' card lights ' + f + ' and the pill follows', (await active(page)) === f + ':true' && (await pill(page)) === f, await active(page));
   }
+  await page.click('.stat-card[data-filter="all"]');
   await ev(page, () => document.querySelector('.stat-card[data-filter="system"]').focus());
   await page.keyboard.press('Enter');
   check('   a card can be used from the keyboard (Enter)', (await active(page)) === 'system:true', await active(page));
+  await page.click('.stat-card[data-filter="all"]');
   await ev(page, () => document.querySelector('.stat-card[data-filter="running"]').focus());
   await page.keyboard.press(' ');
   check('   …and Space', (await active(page)) === 'running:true', await active(page));

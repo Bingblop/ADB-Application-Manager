@@ -12,6 +12,7 @@
   Suspended, Patched) that works together with its own Removal, vendor and state rows, and Saved Applications has the
   full set of pills, applied to the apps inside each list (a list shows how many of its apps match, lists with no match
   are hidden, and Recall takes only the matching apps).
+- **A small gap** between the checkbox and the ... button on each Apps list row.
 
 ## v7.9.19-Pro (versionCode 809)
 

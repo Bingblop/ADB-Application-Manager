@@ -11521,7 +11521,7 @@ Type any command below (e.g. pm list packages -d)
         // The pills and the big boxes at the top light up for every filter that is on; All Apps / Total installed when none is
         function syncFilterUi() {
             const none = activeFilters.size === 0;
-            document.querySelectorAll('.filter-pill[data-filter]').forEach(p => {
+            document.querySelectorAll('#filterScroll .filter-pill[data-filter]').forEach(p => {
                 const k = p.getAttribute('data-filter');
                 p.classList.toggle('active', k === 'all' ? none : activeFilters.has(k));
             });

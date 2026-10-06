@@ -38,11 +38,11 @@ const { chromium, PAGE } = require('./lib/pw');
   // 2) The Patched filter count and filtering.
   const count = await page.locator('#countPatched').innerText();
   console.log('2. Patched count:', count, '(expect 2)');
-  await page.evaluate(() => setFilter('patched', document.querySelector('.filter-pill[data-filter="patched"]'))); await page.waitForTimeout(80);
+  await page.evaluate(() => setFilter('patched', document.querySelector('#filterScroll .filter-pill[data-filter="patched"]'))); await page.waitForTimeout(80);
   const shown = await page.locator('#appsListContainer .app-card').count();
   const shownHasChrome = await page.locator('#card_com\\.android\\.chrome').count();
   console.log('   filter shows only patched:', shown === 2, '| chrome hidden:', shownHasChrome === 0);
-  await page.evaluate(() => setFilter('all', document.querySelector('.filter-pill[data-filter="all"]'))); await page.waitForTimeout(80);
+  await page.evaluate(() => setFilter('all', document.querySelector('#filterScroll .filter-pill[data-filter="all"]'))); await page.waitForTimeout(80);
 
   // 3) Inspector shows the modifications breakdown with the installer.
   await page.evaluate(() => openInspector('app.revanced.android.youtube')); await page.waitForTimeout(120);

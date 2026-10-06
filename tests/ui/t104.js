@@ -19,12 +19,12 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.goto(PAGE); await page.waitForTimeout(900);
   console.log('pills:', JSON.stringify(await page.evaluate(() => Array.from(document.querySelectorAll('#filterScroll .filter-pill')).map(p => p.innerText.replace(/\s+/g, ' ').trim()))));
   await page.locator('#filterScroll .filter-pill[data-filter="enabled"]').click(); await page.waitForTimeout(250);
-  console.log('Enabled shows installed apps that are not disabled (a suspended one counts):', JSON.stringify(await page.evaluate(() => [Array.from(activeFilters), document.querySelector('.filter-pill.active').getAttribute('data-filter'), Array.from(document.querySelectorAll('#appsListContainer .app-card .app-name')).map(e => e.innerText).sort()])));
+  console.log('Enabled shows installed apps that are not disabled (a suspended one counts):', JSON.stringify(await page.evaluate(() => [Array.from(activeFilters), document.querySelector('#filterScroll .filter-pill.active').getAttribute('data-filter'), Array.from(document.querySelectorAll('#appsListContainer .app-card .app-name')).map(e => e.innerText).sort()])));
   await page.locator('#filterScroll .filter-pill[data-filter="frozen"]').click(); await page.waitForTimeout(250);
   console.log('Frozen still works:', JSON.stringify(await page.evaluate(() => Array.from(document.querySelectorAll('#appsListContainer .app-card .app-name')).map(e => e.innerText))));
   const names = () => page.evaluate(() => Array.from(document.querySelectorAll('#appsListContainer .app-card .app-name')).map(e => e.innerText).sort());
   const tap = f => page.locator('#filterScroll .filter-pill[data-filter="' + f + '"]').click().then(() => page.waitForTimeout(200));
-  const lit = () => page.evaluate(() => [Array.from(document.querySelectorAll('.filter-pill.active')).map(p => p.getAttribute('data-filter')), Array.from(document.querySelectorAll('.stat-card.active')).map(c => c.getAttribute('data-filter'))]);
+  const lit = () => page.evaluate(() => [Array.from(document.querySelectorAll('#filterScroll .filter-pill.active')).map(p => p.getAttribute('data-filter')), Array.from(document.querySelectorAll('.stat-card.active')).map(c => c.getAttribute('data-filter'))]);
   // several at once
   await tap('all'); await tap('running'); await tap('user');
   console.log('Running + 3rd Party (your running user apps):', JSON.stringify([await names(), await lit(), await page.evaluate(() => document.getElementById('filterSummary').innerText)]));
