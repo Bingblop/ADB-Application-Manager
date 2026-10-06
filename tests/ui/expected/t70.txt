@@ -19,6 +19,10 @@
    the highlight does not shrink the card or move the grid: true
 3. a remembered filter is ignored: the app opens on Total Installed: true all:true
    a remembered filter with no card is ignored too: true all:true
+3b. with "Remember my filters" on, the filters left on come back (running + user, unknown ones dropped): true running:true,user:true
+   the setting shows as on, and the Debloater and Saved rows come back too: true
+   it saves the change (tapping Total installed saves an empty set): true
+   with the setting off (the default), a saved filter set is ignored: true all:true
 4. a tip sits under the Export / Share CSV buttons and above the filters: true {"shown":true,"text":"Scroll the filters below sideways for more filters ✕","belowButtons":true,"aboveFilters":true,"width":328,"sticky":"relative"}
    it tells to scroll the filters sideways for more: true Scroll the filters below sideways for more filters ✕
    the filters really do scroll sideways (more pills than fit): true

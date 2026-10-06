@@ -1,6 +1,7 @@
 row buttons: App Settings (hold for more), Menu
 frozen app menu shows Enable: true Freeze: false
 perm rows: 4 | tab label: Permissions (4)
+locked buttons (a permission that cannot be toggled) carry the lock: [[false,"GRANTED"],[false,"DENIED"],[true,"🔒 GRANTED"],[true,"🔒 NOT GRANTED"]]
 changeable rows: 2
 camera after toggle: CAMERA
 RUNTIMEtake pictures and videos • android.permission.CAMERA

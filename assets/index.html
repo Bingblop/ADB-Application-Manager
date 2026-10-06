@@ -3707,6 +3707,8 @@
                     <span class="fm-count" id="fmSearchCount"></span>
                     <button class="batch-tool-link" onclick="fmSearchExit()">Back to the folder</button>
                 </div>
+                <div class="filter-scroll" id="fmSearchFilterRow" style="display:none;"></div>
+                <div class="switch-sub" id="fmSearchFilterSummary" style="display:none; margin:2px 2px 8px;"></div>
                 <div id="fmSearchList" style="display:none;"></div>
                 <div id="fmCurrentPath" class="color-card-subtitle" style="font-family:monospace; word-break:break-all; margin-bottom:6px;">/storage/emulated/0</div>
                 <div id="fmList"><div class="list-empty">Open this tab to browse files.</div></div>
@@ -4602,6 +4604,19 @@
                         <input type="color" value="#FF5252" onchange="updateCustomColor('bloat', this.value)">
                     </label>
                 </div>
+            </div>
+
+            <div class="color-card">
+                <div class="color-card-title">Lists</div>
+                <div class="color-card-subtitle">How the app lists start up</div>
+                <label class="switch-row">
+                    <div>
+                        <div class="switch-title">Remember my filters</div>
+                        <div class="switch-sub">Open the Application Manager, Debloater and Saved Applications with the filters you left on. Off: the Application Manager always opens on Total Installed.</div>
+                    </div>
+                    <input type="checkbox" class="switch-input" id="rememberFiltersToggle" onchange="setRememberFilters(this.checked)">
+                    <span class="switch-track"></span>
+                </label>
             </div>
 
             <div class="color-card">
@@ -6580,6 +6595,7 @@ Type any command below (e.g. pm list packages -d)
         // When on, a batch action (Freeze, Suspend, Uninstall, ...) leaves the selection as it is instead of
         // clearing it, so the same apps are ready for another action straight away. Remembered in ui_state.
         let batchKeepSelection = false;
+        let rememberFilters = false;   // off by default: the Apps tab opens on Total Installed unless the user asks for the filters to be kept
         // Filters combine: any number of pills / boxes can be on, and an app has to match every one of them (Running + 3rd Party = your running
         // user apps). None on is "All Apps". Two pairs can only have one member on, or none: 3rd Party / System, and Enabled / Frozen.
         const activeFilters = new Set();
@@ -7283,6 +7299,7 @@ Type any command below (e.g. pm list packages -d)
             toggleFilterIn(savedFilters, k);
             haptic();
             renderSavedLists();
+            if (rememberFilters) saveUiState();
         }
         // the packages of a list that pass the filters on (an app that is not on this phone passes none of them)
         function savedListShown(list) {
@@ -8074,6 +8091,7 @@ Type any command below (e.g. pm list packages -d)
             haptic();
             renderUadExtra();
             renderUadList();
+            if (rememberFilters) saveUiState();
         }
         function uadVisiblePackages(ignoreBrand) {
             const q = (document.getElementById('uadSearch').value || '').toLowerCase().trim();
@@ -8264,6 +8282,8 @@ Type any command below (e.g. pm list packages -d)
                 appSort: appSort,
                 filtersHintDone: filtersHintDone,
                 batchKeepSelection: batchKeepSelection,
+                rememberFilters: rememberFilters,
+                filters: rememberFilters ? { apps: Array.from(activeFilters), uad: Array.from(uadExtra), saved: Array.from(savedFilters) } : null,
                 search: { names: searchOpts.names, packages: searchOpts.packages, regex: searchOpts.regex },
                 uad: { removal: Array.from(uadFilters.removal), list: uadFilters.list, state: uadFilters.state, brand: uadFilters.brand }
             });
@@ -8278,6 +8298,11 @@ Type any command below (e.g. pm list packages -d)
                     if (sel) sel.value = appSort;
                 }
                 if (st.filtersHintDone === true) filtersHintDone = true;
+                if (st.rememberFilters === true) {
+                    rememberFilters = true;
+                    const rcb = document.getElementById('rememberFiltersToggle');
+                    if (rcb) rcb.checked = true;
+                }
                 if (typeof st.batchKeepSelection === 'boolean') {
                     batchKeepSelection = st.batchKeepSelection;
                     const kcb = document.getElementById('batchKeepSelectionToggle');
@@ -8295,6 +8320,12 @@ Type any command below (e.g. pm list packages -d)
                 // The Apps tab always opens on "Total Installed" (the "all" filter) after the app was gone from memory: a filter left on
                 // last time is not brought back, so the whole list is what you see first.
                 activeFilters.clear();
+                if (rememberFilters && st.filters && typeof st.filters === 'object') {
+                    const keep = (set, arr, allowed) => { set.clear(); if (Array.isArray(arr)) arr.forEach(k => { if (allowed.includes(k)) toggleFilterIn(set, k); }); };
+                    keep(activeFilters, st.filters.apps, Object.keys(FILTER_NAMES));
+                    keep(uadExtra, st.filters.uad, UAD_EXTRA_KEYS);
+                    keep(savedFilters, st.filters.saved, SAVED_FILTER_KEYS);
+                }
                 syncFilterUi();
                 if (st.uad) {
                     if (Array.isArray(st.uad.removal)) uadFilters.removal = new Set(st.uad.removal.filter(r => UAD_LEVEL_ORDER[r] !== undefined));
@@ -10218,7 +10249,7 @@ Type any command below (e.g. pm list packages -d)
         function appMatchesFilterSet(app, f) {
             if (f.has('running') && !app.isRunning) return false;
             if (f.has('enabled') && (app.isFrozen || app.isUninstalled)) return false;       // installed and not disabled (a suspended app is still enabled)
-            if (f.has('frozen') && !app.isFrozen) return false;
+            if (f.has('frozen') && (!app.isFrozen || (app.isUninstalled && !f.has('uninstalled')))) return false;       // an uninstalled app counts only as Uninstalled (it is Frozen again once it is back and still disabled)
             if (f.has('suspended') && !app.isSuspended) return false;
             if (f.has('user') && (app.isSystem || (app.isUninstalled && !f.has('uninstalled')))) return false;
             if (f.has('system') && (!app.isSystem || (app.isUninstalled && !f.has('uninstalled')))) return false;
@@ -10230,10 +10261,10 @@ Type any command below (e.g. pm list packages -d)
         function appMatchesFilters(app) { return appMatchesFilterSet(app, activeFilters); }
 
         // A tap on a filter turns it on or off in the set ("all" empties it); a pair (3rd Party / System, Enabled / Frozen) keeps one member
-        function toggleFilterIn(set, filter) {
+        function toggleFilterIn(set, filter, groups) {
             if (filter === 'all') { set.clear(); return; }
             if (set.has(filter)) { set.delete(filter); return; }
-            FILTER_GROUPS.forEach(g => { if (g.includes(filter)) g.forEach(x => set.delete(x)); });
+            (groups || FILTER_GROUPS).forEach(g => { if (g.includes(filter)) g.forEach(x => set.delete(x)); });
             set.add(filter);
         }
         // the line that names what is combined, with a Clear filters button, for the Debloater and Saved Applications rows
@@ -10268,7 +10299,7 @@ Type any command below (e.g. pm list packages -d)
             const n = { running: 0, enabled: 0, frozen: 0, user: 0, system: 0, uninstalled: 0, recent: 0, suspended: 0, patched: 0 };
             allApps.forEach(a => {
                 if (a.isRunning) n.running++;
-                if (a.isFrozen) n.frozen++;
+                if (a.isFrozen && !a.isUninstalled) n.frozen++;
                 if (!a.isFrozen && !a.isUninstalled) n.enabled++;
                 if (a.isUninstalled) n.uninstalled++;
                 else if (a.isSystem) n.system++;
@@ -10720,7 +10751,7 @@ Type any command below (e.g. pm list packages -d)
                     const how = p.changeable ? 'You can grant or revoke it here.' : 'Install-time permission: fixed when the app was installed, it cannot be changed here.';
                     const btn = p.changeable
                         ? `<button class="perm-toggle-btn ${p.granted ? 'granted' : 'revoked'}" data-perm="${escapeHtml(p.name)}" data-granted="${p.granted}" onclick="togglePermission(this.getAttribute('data-perm'), this.getAttribute('data-granted') === 'true')">${p.granted ? 'GRANTED' : 'REVOKED'}</button>`
-                        : `<button class="perm-toggle-btn locked">${p.granted ? 'GRANTED' : 'NOT GRANTED'}</button>`;
+                        : `<button class="perm-toggle-btn locked" title="Install-time permission: cannot be changed with pm grant/revoke">🔒 ${p.granted ? 'GRANTED' : 'NOT GRANTED'}</button>`;
                     return `<div class="perm-row als-row"><div class="perm-info">
                         <div class="perm-name">${escapeHtml(p.label || short)}</div>
                         <div class="perm-sub"><span class="perm-kind">${escapeHtml(p.protection || 'unknown')}</span>${p.appOp ? '<span class="perm-kind">app op</span>' : ''}<span class="perm-kind">${state}</span></div>
@@ -11303,6 +11334,11 @@ Type any command below (e.g. pm list packages -d)
             updateBatchBar();
         }
 
+        function setRememberFilters(on) {
+            rememberFilters = !!on;
+            saveUiState();
+        }
+
         function setBatchKeepSelection(on) {
             batchKeepSelection = !!on;
             saveUiState();
@@ -11543,6 +11579,7 @@ Type any command below (e.g. pm list packages -d)
             resetAppsWindow();
             haptic();
             syncFilterUi();
+            if (rememberFilters) saveUiState();
             if (el && filter !== 'all' && activeFilters.has(filter)) el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
             renderApps();
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -13592,6 +13629,7 @@ Type any command below (e.g. pm list packages -d)
             el.innerHTML = '<span id="fmSearchText">Searching…</span> <button class="batch-tool-link" onclick="fmSearchCancelTap()">Cancel</button>';
             document.getElementById('fmSearchBtn').innerText = 'Stop';
             document.getElementById('fmSearchCount').innerText = '';
+            ['fmSearchFilterRow', 'fmSearchFilterSummary'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = 'none'; });
             document.getElementById('fmSearchList').innerHTML = '';
         }
         function fmSearchCancelTap() { haptic(); try { window.AndroidBridge.fmSearchCancel(); } catch (e) {} const t = document.getElementById('fmSearchText'); if (t) t.innerText = 'Stopping…'; }
@@ -13610,6 +13648,8 @@ Type any command below (e.g. pm list packages -d)
             if (fmSearchRunning) { try { window.AndroidBridge.fmSearchCancel(); } catch (e) {} fmSearchRunning = false; document.getElementById('fmSearchBtn').innerText = 'Search'; }       // its late answer is dropped (the results are not on screen)
             fmSearchShow(false);
             fmSearchHits = [];
+            fmSearchFilters.clear();
+            fmSearchRender();
         }
         window.onFmSearchProgress = function (o) {
             const t = document.getElementById('fmSearchText');
@@ -13627,11 +13667,65 @@ Type any command below (e.g. pm list packages -d)
             fmSearchHits = r.hits || [];
             const n = fmSearchHits.length;
             // each piece is its own element: the count and the notes are text of the app, the time is a number
-            document.getElementById('fmSearchCount').innerHTML = '<span>' + n + ' found</span>' + (r.truncated ? ' · <span>stopped at the limit</span>' : '') + (r.cancelled ? ' · <span>stopped</span>' : '')
+            fmSearchCountHtml = '<span>' + n + ' found</span>' + (r.truncated ? ' · <span>stopped at the limit</span>' : '') + (r.cancelled ? ' · <span>stopped</span>' : '')
                 + ' · <span translate="no">' + ((r.ms || 0) / 1000).toFixed(1) + ' s</span>';
+            document.getElementById('fmSearchCount').innerHTML = fmSearchCountHtml;
             const notes = (r.problems && r.problems.length) ? '<div class="list-empty" style="padding:6px 0;">' + escapeHtml(r.problems.join('; ')) + '</div>' : '';
+            ['fmSearchFilterRow', 'fmSearchFilterSummary'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = 'none'; });
             if (!n) { document.getElementById('fmSearchList').innerHTML = notes + '<div class="list-empty">' + (r.empty ? 'Type something to search for.' : 'Nothing found.') + '</div>'; return; }
-            document.getElementById('fmSearchList').innerHTML = notes + fmSearchHits.map((h, i) => {
+            fmSearchNotes = notes;
+            fmSearchRender();
+        };
+        // ---- the filters of the results: kinds of file (any of them), size and age (one each, or none); together they all have to fit ----
+        const fmSearchFilters = new Set();
+        let fmSearchNotes = '', fmSearchShown = [], fmSearchCountHtml = '';
+        const FM_SF_TYPES = { images: 'Images', video: 'Video', audio: 'Audio', docs: 'Documents', apk: 'APKs', archives: 'Archives', folders: 'Folders' };
+        const FM_SF_GROUPS = [['big', 'huge'], ['week', 'month']];
+        const FM_SF_NAMES = Object.assign({}, FM_SF_TYPES, { big: 'Over 10 MB', huge: 'Over 100 MB', week: 'Last 7 days', month: 'Last 30 days' });
+        const FM_SF_EXT = {
+            images: 'jpg jpeg png gif webp bmp heic heif svg', video: 'mp4 mkv webm avi mov 3gp m4v', audio: 'mp3 m4a aac wav flac ogg opus',
+            docs: 'pdf doc docx xls xlsx ppt pptx txt md odt csv rtf', apk: 'apk apks xapk apkm', archives: 'zip 7z rar tar gz tgz bz2 xz zst lz4'
+        };
+        function fmSearchHitMatches(h, f) {
+            const isDir = !!(h.dir || (h.entry && /\/$/.test(h.entry)));
+            const nm = ((h.entry ? h.entry.replace(/\/$/, '') : h.path).split('/').pop() || '').toLowerCase();
+            const ext = nm.indexOf('.') >= 0 ? nm.split('.').pop() : '';
+            const kinds = Object.keys(FM_SF_TYPES).filter(k => f.has(k));
+            if (kinds.length && !kinds.some(k => k === 'folders' ? isDir : (!isDir && FM_SF_EXT[k].split(' ').includes(ext)))) return false;
+            if (f.has('huge') && !(h.size >= 100 * 1048576)) return false;
+            if (f.has('big') && !(h.size >= 10 * 1048576)) return false;
+            if (f.has('week') && !(h.mtime >= Date.now() - 7 * 864e5)) return false;
+            if (f.has('month') && !(h.mtime >= Date.now() - 30 * 864e5)) return false;
+            return true;
+        }
+        function fmSearchFilterSummary() {
+            const kinds = Object.keys(FM_SF_TYPES).filter(k => fmSearchFilters.has(k)).map(k => FM_SF_NAMES[k]);
+            const rest = ['big', 'huge', 'week', 'month'].filter(k => fmSearchFilters.has(k)).map(k => FM_SF_NAMES[k]);
+            return 'Showing ' + (kinds.length ? kinds.join(' or ') : 'everything') + (rest.length ? ', ' + rest.join(', ') : '') + '.';
+        }
+        function fmSearchSetFilter(k) {
+            toggleFilterIn(fmSearchFilters, k, FM_SF_GROUPS);
+            haptic();
+            fmSearchRender();
+        }
+        function fmSearchRender() {
+            const row = document.getElementById('fmSearchFilterRow'), sum = document.getElementById('fmSearchFilterSummary');
+            const hasHits = fmSearchMode && fmSearchHits.length > 0;
+            if (row) {
+                row.style.display = hasHits ? '' : 'none';
+                row.innerHTML = '<div class="filter-pill' + (fmSearchFilters.size ? '' : ' active') + '" data-filter="all" onclick="fmSearchSetFilter(\'all\')">All</div>'
+                    + Object.keys(FM_SF_NAMES).map(k => '<div class="filter-pill' + (fmSearchFilters.has(k) ? ' active' : '') + '" data-filter="' + k + '" onclick="fmSearchSetFilter(\'' + k + '\')">' + FM_SF_NAMES[k] + '</div>').join('');
+            }
+            if (sum) {
+                sum.style.display = hasHits && fmSearchFilters.size > 1 ? '' : 'none';
+                sum.classList.add('filter-summary-row');
+                sum.innerHTML = '<span class="filter-summary-text"></span><button class="filter-clear-chip" type="button" onclick="fmSearchSetFilter(\'all\')">Clear filters</button>';
+                sum.firstChild.innerText = fmSearchFilterSummary();
+            }
+            fmSearchShown = fmSearchHits.map((h, i) => ({ h, i })).filter(x => !fmSearchFilters.size || fmSearchHitMatches(x.h, fmSearchFilters));
+            const cnt = document.getElementById('fmSearchCount');
+            if (cnt) cnt.innerHTML = fmSearchCountHtml + (fmSearchFilters.size ? ' · <span>' + fmSearchShown.length + ' shown</span>' : '');
+            document.getElementById('fmSearchList').innerHTML = fmSearchNotes + (fmSearchShown.length ? fmSearchShown.map(({ h, i }) => {
                 const entry = h.entry ? h.entry.replace(/\/$/, '') : '';
                 const name = entry ? entry.split('/').pop() : h.path.split('/').pop();
                 const where = h.entry ? h.path + ' › ' + h.entry : h.path.slice(0, h.path.lastIndexOf('/')) || '/';
@@ -13643,8 +13737,8 @@ Type any command below (e.g. pm list packages -d)
                     + '<div class="perm-info"><div class="perm-name' + (h.dir ? ' fm-dir' : '') + '">' + escapeHtml(name) + (h.dir ? '/' : '') + '</div>'
                     + '<div class="perm-sub">' + escapeHtml(where) + '</div><div class="perm-sub">' + escapeHtml(meta) + '</div>' + line + '</div>'
                     + '<button class="perm-toggle-btn locked fm-more" style="width:auto; padding:0 10px;" aria-label="Show in the folder" onclick="event.stopPropagation(); fmSearchReveal(' + i + ')">In folder</button></div>';
-            }).join('');
-        };
+            }).join('') : '<div class="list-empty">No result matches these filters.</div>');
+        }
         function fmSearchOpen(i) {
             const h = fmSearchHits[i];
             if (!h) return;
@@ -16330,7 +16424,7 @@ Type any command below (e.g. pm list packages -d)
                 const sub = [p.label, p.name !== shortName ? p.name : ''].filter(Boolean).join(' • ');
                 const btn = p.changeable
                     ? `<button class="perm-toggle-btn ${p.granted ? 'granted' : 'revoked'}" data-perm="${escapeHtml(p.name)}" data-granted="${p.granted}" onclick="togglePermission(this.getAttribute('data-perm'), this.getAttribute('data-granted') === 'true')">${p.granted ? 'GRANTED' : 'DENIED'}</button>`
-                    : `<button class="perm-toggle-btn locked" title="Install-time permission: cannot be changed with pm grant/revoke">${p.granted ? 'GRANTED' : 'NOT GRANTED'}</button>`;
+                    : `<button class="perm-toggle-btn locked" title="Install-time permission: cannot be changed with pm grant/revoke">🔒 ${p.granted ? 'GRANTED' : 'NOT GRANTED'}</button>`;
                 return `
                     <div class="perm-row">
                         <div class="perm-info">

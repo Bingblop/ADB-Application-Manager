@@ -1,5 +1,23 @@
 # Changelog
 
+## v7.9.22-Pro (versionCode 812)
+
+- **Frozen and Uninstalled are kept apart.** An uninstalled app counts only as Uninstalled: it is no longer in the Frozen
+  box, the Frozen pill or the Frozen filter. When it is installed again and is still disabled, it counts as Frozen
+  again. With Frozen and Uninstalled both on, you see the uninstalled apps that were frozen.
+- **File Manager search has filters that combine.** Under the results there are pills for the kind of file (Images,
+  Video, Audio, Documents, APKs, Archives, Folders - any of the ones on), size (Over 10 MB or Over 100 MB) and age (Last
+  7 days or Last 30 days), one of each at most; they all have to fit. With two or more on, a Clear filters button
+  turns them off, and the count says how many are shown.
+- **Remember my filters** (Settings, Lists): off by default (the Application Manager still opens on Total Installed);
+  when on, the filters of the Application Manager, the Debloater and Saved Applications come back after the app was
+  closed.
+- **content: search works in added storage.** Looking for words inside text files now also reads files on an SD card,
+  USB drive or another app's folder (text files up to 4 MB, as on the phone's own storage). archive: is still skipped there.
+- **The lock is back** on the button of a permission that cannot be toggled (an install-time permission), in the app's
+  Permissions list and in the Permission Manager of the Action Button, so it reads as locked at a glance.
+- **"3rd Party" can be translated**: the translation tool now sees labels that start with a number.
+
 ## v7.9.21-Pro (versionCode 811)
 
 - **Split boxes at the top of the Application Manager tab.** Enabled | Frozen and 3rd Party | System are now two boxes of

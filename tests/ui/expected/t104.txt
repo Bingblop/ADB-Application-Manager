@@ -17,4 +17,5 @@ no chip with no filter: [false,true,"Clear filters"]
 no chip with one filter: [[false,true,"Clear filters"],["On One","On Two"]]
 Enabled box + System box (enabled system apps), chip shows: [[true,true,"Clear filters"],["On Two"],[["system","enabled"],["enabled","system"]]]
 Clear filters turns them all off: [[false,true,"Clear filters"],6,[["all"],["all"]]]
+uninstalled + frozen app: {"goneFrozen":false,"goneUninstalled":true,"goneBoth":true,"goneEnabled":false,"backFrozen":true,"backUninstalled":false}
 errors: []

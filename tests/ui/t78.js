@@ -10,6 +10,7 @@ let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL ') + label + ':', ok, extra === undefined ? '' : extra); }
 const EMOJI = /\p{Extended_Pictographic}|️|⃣/gu;
 const GEAR = /⚙️?/gu;
+const LOCK = /\u{1F512} /gu;           // v7.9.22 (asked for): the lock on the button of a permission that cannot be toggled
 
 function walk(dir, out) {
   for (const f of fs.readdirSync(dir)) {
@@ -30,9 +31,10 @@ const found = (text) => { const m = decode(text).match(EMOJI); return m ? Array.
   // 1) the sources
   check('0. the scan reads symbols written as escapes too (\\u26a1, a surrogate pair, \\u{1F4A5}, &#x26A1;, &#9889;)', found('a \\u26a1 b').length === 1 && found('\\uD83D\\uDE00').length === 1 && found('\\u{1F4A5}').length === 1 && found('&#x26A1;').length === 1 && found('&#9889;').length === 1 && found('plain \\u00a0 text &#233; &#8364;').length === 0);
   const page_src = fs.readFileSync(fileURLToPath(PAGE), 'utf8');                       // the page under test (assets/index.html unless PAGE_URL says otherwise)
-  const withoutGears = decode(page_src).replace(GEAR, '');
+  const withoutGears = decode(page_src).replace(GEAR, '').replace(LOCK, '');
   check('1. the page has no emoji but the gears (© is not an emoji and is left)', found(withoutGears.replace(/©/g, '')).length === 0, JSON.stringify(found(withoutGears.replace(/©/g, ''))));
   check('   exactly two gears are written in it: the header button and the Terminal settings button (the app row button is an SVG icon now)', (decode(page_src).match(GEAR) || []).length === 2);
+  check('   exactly two locks are written in it: the buttons of a permission that cannot be changed (the inspector and the Permission Manager)', (decode(page_src).match(LOCK) || []).length === 2 && (page_src.match(/perm-toggle-btn locked"[^`]*\u{1F512} /gu) || []).length === 2);
   check('   the header gear is the first, the Terminal\'s the second', /id="prefsHeaderBtn"[^>]*>⚙️<\/div>/u.test(page_src) && /id="txSettingsBtn"[^>]*>⚙️<\/button>/u.test(page_src));
   check('   the changelog the What\'s new screen shows has none', found(fs.readFileSync(path.join(REPO, 'CHANGELOG.md'), 'utf8')).length === 0, JSON.stringify(found(fs.readFileSync(path.join(REPO, 'CHANGELOG.md'), 'utf8'))));
   const res = walk(path.join(REPO, 'res'), []).filter(f => /\.(xml|txt)$/.test(f)).filter(f => found(fs.readFileSync(f, 'utf8')).length);
@@ -61,6 +63,7 @@ const found = (text) => { const m = decode(text).match(EMOJI); return m ? Array.
       if (!p || /^(SCRIPT|STYLE)$/.test(p.tagName)) continue;
       const t = n.nodeValue.trim();
       if (!t || !re.test(t)) continue;
+      if (/^\u{1F512} /u.test(t) && p.classList.contains('perm-toggle-btn') && p.classList.contains('locked')) continue;
       if (gear.test(t) && (p.id === 'prefsHeaderBtn' || p.id === 'txSettingsBtn' || (p.classList.contains('btn-mini') && p.getAttribute('title') === 'App Settings'))) continue;
       hits.push((p.id || p.className || p.tagName) + ': ' + t.slice(0, 40));
     }

@@ -180,7 +180,7 @@ if (seenArg) {
 }
 
 const uiLike = (s) => /^[A-Z\p{Lu}]/u.test(s) && /[a-z]/.test(s) && !/[{}=<>\\|]|^[a-z]+\.[a-z.]+/.test(s) && (/\s/.test(s) || /[.!?:…]$/.test(s));
-const label = (s) => /^[A-Z][A-Za-z0-9 ’'&\-–—,.:;!?()/+·…]*$/.test(s) && s.length <= 48 && !/[a-z][A-Z]/.test(s) && !/_/.test(s) && !/^[A-Z0-9 \-]+$/.test(s) && /[a-z]/.test(s);
+const label = (s) => /^(?:\d+(?:st|nd|rd|th) )?[A-Z][A-Za-z0-9 ’'&\-–—,.:;!?()/+·…]*$/.test(s) && s.length <= 48 && !/[a-z][A-Z]/.test(s) && !/_/.test(s) && !/^[A-Z0-9 \-]+$/.test(s) && /[a-z]/.test(s);
 // what is plainly not text for a person: a color code, a path, a package or a file name, a code with digits or underscores
 const isData = (k) => /^#?[0-9a-fA-F]{3,8}$/.test(k) || /^[\/~]/.test(k) || /^[a-z][a-z0-9_]*(\.[a-z0-9_]+)+$/.test(k) || /^[A-Z0-9_]+$/.test(k) && /[_0-9]/.test(k) || /^[\d\s.,:;%+\-–/×x*()]+$/.test(k) || /^[a-z]+[A-Z]\w*$/.test(k);
 

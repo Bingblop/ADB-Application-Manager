@@ -328,6 +328,21 @@ public final class FileSearch {
         return nameOk(q, name) && typeOk(q, name, dir) && metaOk(q, size, mtime, dir);
     }
 
+    /**
+     * Whether a file of this name can be looked into for content: (text up to Limits.contentMaxBytes, not a picture, video, sound or archive). A size below 0 is
+     * "not told" (some document providers give none) and is tried anyway, a size of 0 is an empty file.
+     */
+    public static boolean contentEligible(Limits lim, String name, long size) {
+        if (size == 0 || (size > 0 && size > lim.contentMaxBytes)) return false;
+        String e = ext(name);
+        return !(ARCHIVE.contains(e) || IMAGE.contains(e) || VIDEO.contains(e) || AUDIO.contains(e));
+    }
+
+    /** The first line of the stream that holds every content: word, as {lineNo, line}, or null (none, or not text). The caller closes the stream. */
+    public static Object[] findContent(Query q, Limits lim, InputStream in) throws IOException {
+        return findInText(in, q.content, lim.contentMaxBytes);
+    }
+
     private static boolean metaOk(Query q, long size, long mtime, boolean dir) {
         if (!dir && q.minSize >= 0 && size < q.minSize) return false;
         if (!dir && q.maxSize >= 0 && size > q.maxSize) return false;

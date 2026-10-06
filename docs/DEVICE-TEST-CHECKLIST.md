@@ -1,4 +1,4 @@
-# On-device test checklist (v7.9.14 to v7.9.21)
+# On-device test checklist (v7.9.14 to v7.9.22)
 
 The automated tests run the page in a browser with a pretend phone. They cannot prove the parts that talk to Android:
 icons, the file chooser, added storage, shell commands and the haptic feedback. This list is for those. Tick a box when
@@ -112,6 +112,11 @@ Select three or four apps you do not mind changing, open the round checkmark.
 - [ ] **Clear filters** turns every filter off and the Total installed box lights again. With only one filter on, the button is not shown.
 - [ ] Debloater: the "Also show only" row combines with Removal, vendor and state; with two or more on, **Clear filters** appears and clears that row only.
 - [ ] Saved Applications: pills apply inside each list (counts update, lists with no match hide); **Clear filters** shows with two or more on and brings every list back.
+
+- [ ] Freeze an app, then uninstall it (Debloater, Uninstall): it leaves the **Frozen** box and filter and shows under **Bloatware (Uninstalled)** only. Reinstall it: if it is still disabled it is **Frozen** again.
+- [ ] Files, search for a word (for example `jpg`), then tap **Images**, **Over 10 MB**, **Last 7 days**: the list narrows, the count says how many are shown, and **Clear filters** brings everything back.
+- [ ] Added storage (SD card or USB): search `content:word` finds text files that hold the word; `archive:` says it is skipped.
+- [ ] Settings, Lists, **Remember my filters** on: turn on Running + 3rd Party, force-close the app, open it again: the same filters are on. Off: it opens on Total Installed.
 
 ## Report
 

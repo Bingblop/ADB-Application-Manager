@@ -74,6 +74,17 @@ for (let i = 0; i < 40; i++) apps.push({ pkg: 'com.example.app' + i, name: 'App 
   check('   a remembered filter with no card is ignored too', (await active(page)) === 'all:true', await active(page));
   await page.close();
 
+  // 3b) the opt-in "Remember my filters" setting (Settings, Lists): off by default, and when on the filters come back
+  page = await open({ ui_state: JSON.stringify({ rememberFilters: true, filters: { apps: ['running', 'user', 'bogus'], uad: ['system'], saved: ['frozen'] } }) });
+  check('3b. with "Remember my filters" on, the filters left on come back (running + user, unknown ones dropped)', (await active(page)) === 'running:true,user:true', await active(page));
+  check('   the setting shows as on, and the Debloater and Saved rows come back too', await ev(page, () => document.getElementById('rememberFiltersToggle').checked && uadExtra.has('system') && savedFilters.has('frozen')));
+  await page.click('.stat-card[data-filter="all"]'); await ev(page, () => new Promise(r => setTimeout(r, 200)));
+  check('   it saves the change (tapping Total installed saves an empty set)', await ev(page, () => JSON.parse(window.AndroidBridge.loadStore('ui_state') || '{}').filters.apps.length === 0));
+  await page.close();
+  page = await open({ ui_state: JSON.stringify({ filters: { apps: ['running'] } }) });
+  check('   with the setting off (the default), a saved filter set is ignored', (await active(page)) === 'all:true' && await ev(page, () => !document.getElementById('rememberFiltersToggle').checked), await active(page));
+  await page.close();
+
   // 4) the tip under Export / Share CSV
   page = await open();
   const t = await ev(page, () => { const h = document.getElementById('filtersHint'), r = x => document.querySelector(x).getBoundingClientRect();

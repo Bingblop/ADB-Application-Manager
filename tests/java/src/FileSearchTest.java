@@ -164,6 +164,17 @@ public class FileSearchTest {
     };
     Object[] sm = FileSearch.findInText(shortReads, Collections.singletonList("milk"), 1 << 20);
     check("a stream that hands out 7 bytes at a time (like an inflater) is still read as text", sm != null && ((Integer) sm[0]) == 2 && ((String) sm[1]).equals("second line milk"));
+    // added storage (a content:// tree) reads a file through a stream: the same rules as on the phone's own storage, and a size the provider did not tell is tried
+    FileSearch.Limits csl = new FileSearch.Limits();
+    FileSearch.Query csq = FileSearch.parse("content:milk", NOW, UTC);
+    check("content: on a stream: text eligible, empty / too big / picture / video / sound / archive not, size not told (-1) is tried",
+        FileSearch.contentEligible(csl, "notes.txt", 100) && FileSearch.contentEligible(csl, "notes.txt", -1) && !FileSearch.contentEligible(csl, "notes.txt", 0)
+        && !FileSearch.contentEligible(csl, "big.txt", csl.contentMaxBytes + 1) && !FileSearch.contentEligible(csl, "a.jpg", 10) && !FileSearch.contentEligible(csl, "a.mp4", 10)
+        && !FileSearch.contentEligible(csl, "a.mp3", 10) && !FileSearch.contentEligible(csl, "a.zip", 10));
+    Object[] fc = FileSearch.findContent(csq, csl, new java.io.ByteArrayInputStream("first\nbuy Milk today\n".getBytes(StandardCharsets.UTF_8)));
+    check("content: on a stream finds the first line with the word (case ignored)", fc != null && ((Integer) fc[0]) == 2 && ((String) fc[1]).equals("buy Milk today"));
+    check("content: on a stream: no word, or a binary stream, is no hit", FileSearch.findContent(csq, csl, new java.io.ByteArrayInputStream("nothing here".getBytes(StandardCharsets.UTF_8))) == null
+        && FileSearch.findContent(csq, csl, new java.io.ByteArrayInputStream(new byte[]{0, 1, 2, 0, 0, 3, 'm', 'i', 'l', 'k'})) == null);
     File dots = Files.createTempDirectory("fs-dot").toFile(); write(new File(dots, ".gitignore"), "x"); write(new File(dots, ".bashrc"), "y"); write(new File(dots, "a.gitignore"), "z");
     check("a dot file is found by its name with the dot, and by ext:", names(FileSearch.run(Collections.singletonList(dots), FileSearch.parse(".gitignore", NOW, UTC), new FileSearch.Limits(), null), dots).equals(l(".gitignore", "a.gitignore")) && find(dots, ".bashrc", true, true, false).equals(l(".bashrc")));
     rm(dots);

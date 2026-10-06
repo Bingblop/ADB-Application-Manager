@@ -38,6 +38,7 @@ const manifest = fs.readFileSync(fixture('manifest.xml'), 'utf8').split('\n').sl
   await page.evaluate(() => closeInspector());
   await page.locator('#card_com\\.sec\\.android\\.app\\.camera .btn-mini[title="Menu"]').click(); await page.waitForTimeout(200);
   console.log('perm rows:', await page.locator('#permsContainer .perm-row').count(), '| tab label:', await page.locator('.sheet-tab-pill[data-tab="perms"]').innerText());
+  console.log('locked buttons (a permission that cannot be toggled) carry the lock:', JSON.stringify(await page.evaluate(() => Array.from(document.querySelectorAll('#permsContainer .perm-toggle-btn')).map(b => [b.classList.contains('locked'), b.innerText.trim()]))));
   await page.click('#permsFilterRow [data-filter="changeable"]');
   console.log('changeable rows:', await page.locator('#permsContainer .perm-row').count());
   await page.click('#permsFilterRow [data-filter="all"]');

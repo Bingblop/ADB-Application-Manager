@@ -1,6 +1,7 @@
 // 日本語 (ja): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ja'] = {
 x: {
+"3rd Party": "サードパーティ",
 "Clear filters": "フィルターを解除",
 "\"Allow debugging?\"": "「デバッグを許可しますか？」",
 "'s catalog can be several MB — F-Droid's own is tens of MB. It's downloaded once and kept for 12 hours.": "のカタログは数MBになることがあります（F-Droid自体のカタログは数十MB）。一度ダウンロードすると12時間保持されます。",
