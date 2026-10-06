@@ -542,6 +542,9 @@ public class MainActivity extends Activity {
     private static boolean rootChecked;
     private static boolean rootCached;
     private static long rootCheckedAt;
+    // Whether root was actually GRANTED to this app (su answers uid=0), not only that an su file exists. null: not asked yet. Asked only while Root is the chosen
+    // mode (a root manager shows a prompt for it), kept until the person checks again (the mode buttons) or switches to Root.
+    private static Boolean rootGrant;
 
     private static void invalidateModeCache() {
         synchronized (modeCacheLock) {
@@ -600,7 +603,11 @@ public class MainActivity extends Activity {
         if ("adb_tcp".equals(mode)) return isAdbTargetConnected(tcpTarget());
         if ("adb_wireless".equals(mode)) return adbWirelessPort > 0 && isAdbTargetConnected(wirelessTarget());
         if ("shizuku".equals(mode)) return isShizukuAuthorized();
-        if ("root".equals(mode)) return isRootAvailable();
+        if ("root".equals(mode)) {
+            Boolean g;
+            synchronized (modeCacheLock) { g = rootGrant; }
+            return isRootAvailable() && (g == null || g);                 // no prompt here: not asked yet counts as possible, a known refusal does not
+        }
         return false;
     }
 
@@ -1464,6 +1471,26 @@ public class MainActivity extends Activity {
             "/system/bin/su", "/system/xbin/su", "/sbin/su", "/su/bin/su",
             "/debug_ramdisk/su", "/data/adb/ksu/bin/su", "/data/adb/ap/bin/su", "/vendor/bin/su"
     };
+
+    /** Does su answer uid=0 for this app? Asked once (the root manager may show its prompt, so it waits a few seconds for an answer) and remembered. */
+    private boolean isRootGranted() {
+        synchronized (modeCacheLock) {
+            if (rootGrant != null) return rootGrant;
+        }
+        boolean ok;
+        try {
+            ProcessBuilder pb = new ProcessBuilder("su", "-c", "id");
+            pb.redirectErrorStream(true);
+            String out = runProcessWithTimeout(pb, 8000);
+            ok = out != null && out.contains("uid=0");
+        } catch (Exception e) {
+            ok = false;
+        }
+        synchronized (modeCacheLock) {
+            rootGrant = ok;
+        }
+        return ok;
+    }
 
     private boolean isRootAvailable() {
         for (String path : SU_PATHS) {
@@ -6143,6 +6170,15 @@ public class MainActivity extends Activity {
 
     /** "Allow restricted settings" - an app-op (android:read_write_restricted_settings), not a manifest
      *  permission, so there is nothing to declare in AndroidManifest.xml for this one. */
+    /** "Install unknown apps" for this app (Android 8+): whether it may start the installation of package files. Older phones have one global switch: nothing to ask. */
+    private boolean hasInstallUnknownAccess() {
+        try {
+            return Build.VERSION.SDK_INT < 26 || getPackageManager().canRequestPackageInstalls();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     private boolean hasRestrictedSettingsAccess() {
         try {
             android.app.AppOpsManager ops = (android.app.AppOpsManager) getSystemService(Context.APP_OPS_SERVICE);
@@ -6721,7 +6757,7 @@ public class MainActivity extends Activity {
             long gen;
             synchronized (modeCacheLock) {
                 gen = modeCacheGen;
-                if (recheckRoot) rootChecked = false;
+                if (recheckRoot) { rootChecked = false; rootGrant = null; }
             }
             String json = probeWorkingMode();
             synchronized (modeCacheLock) {
@@ -6760,6 +6796,9 @@ public class MainActivity extends Activity {
 
                 boolean rootAvailable = isRootAvailable();
                 obj.put("rootAvailable", rootAvailable);
+                // root counts as ready only when su really answers for this app, and that is asked only while Root is the chosen mode
+                boolean rootGrantedNow = rootAvailable && "root".equals(activeWorkingMode) && isRootGranted();
+                if (rootAvailable && "root".equals(activeWorkingMode)) obj.put("rootGranted", rootGrantedNow);
                 obj.put("deviceIp", deviceWifiIp());
 
                 String configured = activeWorkingMode;
@@ -6777,7 +6816,7 @@ public class MainActivity extends Activity {
                     if ("adb_tcp".equals(configured)) available = tcpConnected || tcpPortOpen;
                     else if ("adb_wireless".equals(configured)) available = wirelessConnected;
                     else if ("shizuku".equals(configured)) available = shizukuAuthorized;
-                    else if ("root".equals(configured)) available = rootAvailable;
+                    else if ("root".equals(configured)) available = rootGrantedNow;
                     else available = false;
                 }
 
@@ -6843,6 +6882,7 @@ public class MainActivity extends Activity {
                     pb.redirectErrorStream(true);
                     String out = runProcessWithTimeout(pb, 15000);
                     ok = out != null && out.contains("uid=0");
+                    synchronized (modeCacheLock) { rootGrant = ok; }
                     message = ok ? "Using Root (Superuser)" : "Root was denied or is not available";
                 } else if ("unprivileged".equals(mode)) {
                     message = "Switched to Read-Only Mode";
@@ -10585,6 +10625,7 @@ public class MainActivity extends Activity {
                 o.put("files", hasStorageAccess());
                 o.put("usage", hasUsageAccess());
                 o.put("overlay", hasOverlayAccess());
+                o.put("install_unknown", hasInstallUnknownAccess());
                 o.put("storage_legacy", hasLegacyStorageAccess());
                 o.put("secure_settings", hasWriteSecureSettingsAccess());
                 o.put("restricted_settings", hasRestrictedSettingsAccess());
@@ -10615,6 +10656,29 @@ public class MainActivity extends Activity {
                             i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                             startActivity(i);
                         } catch (Exception ignored) {}
+                    }
+                }
+            });
+            return "settings";
+        }
+
+        /** "Install unknown apps": granted straight through the privileged shell when there is one (appops REQUEST_INSTALL_PACKAGES), else this app's own switch in Settings. Answer: "granted" or "settings". */
+        @JavascriptInterface
+        public String requestInstallUnknownAccess() {
+            if (hasInstallUnknownAccess()) return "granted";
+            if (!"standard".equals(resolveExecMode())) {
+                executeShell("appops set " + getPackageName() + " REQUEST_INSTALL_PACKAGES allow");
+                if (hasInstallUnknownAccess()) return "granted";
+            }
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Intent i = new Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + getPackageName()));
+                        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(i);
+                    } catch (Exception e) {
+                        openOwnAppInfo();
                     }
                 }
             });

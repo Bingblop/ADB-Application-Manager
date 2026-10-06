@@ -1324,6 +1324,13 @@
             cursor: default;
         }
 
+        /* A small ? on the first card of each tab: opens the Help Guide at that tab's topic */
+        .color-card.has-help { position: relative; }
+        .color-card.has-help > .color-card-title { padding-right: 34px; }
+        .help-q { position: absolute; top: 10px; right: 10px; width: 26px; height: 26px; padding: 0; border-radius: 50%; border: 1px solid var(--border-glass); background: rgba(var(--ov), 0.06);
+            color: var(--accent); font-size: 13px; font-weight: 800; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; z-index: 2; }
+        .help-q:active { transform: scale(0.92); }
+
         /* Settings > Trim Caches: the explanation under the button */
         .trim-explain { margin-top: 12px; font-size: 11.5px; line-height: 1.5; color: var(--text-muted); }
         .trim-explain p { margin: 0 0 8px 0; }
@@ -8297,7 +8304,7 @@ Type any command below (e.g. pm list packages -d)
         function requestBatchConfirmation(action, pkgs) {
             pendingBatchAction = { action: action, pkgs: pkgs.slice() };
             const labels = {
-                freeze: ['Confirm Disable Selected Apps', 'Confirm Disable'],
+                freeze: ['Confirm Freeze Selected Apps', 'Confirm Freeze'],
                 uninstall: ['Confirm Uninstall Selected Apps', 'Confirm Uninstall'],
                 suspend: ['Confirm Suspend Selected Apps', 'Confirm Suspend']
             }[action] || ['Confirm Action', 'Confirm'];
@@ -8592,7 +8599,8 @@ Type any command below (e.g. pm list packages -d)
                 // Root Tag
                 if (d.rootAvailable) {
                     const rootActive = configured === 'root';
-                    setTag('statusTagRoot', rootActive ? 'active' : 'warning', rootActive ? 'ACTIVE' : 'AVAILABLE');
+                    if (rootActive && d.rootGranted === false) setTag('statusTagRoot', 'warning', 'DENIED');                // su is there, but the root manager did not grant it to this app
+                    else setTag('statusTagRoot', rootActive ? 'active' : 'warning', rootActive ? 'ACTIVE' : 'AVAILABLE');
                 } else {
                     setTag('statusTagRoot', 'inactive', 'NOT FOUND');
                 }
@@ -16168,6 +16176,34 @@ Type any command below (e.g. pm list packages -d)
             signTarget = null;
         }
 
+        // ---------- "?" on each tab: the Help Guide at the topic of that tab ----------
+        const HELP_LINKS = {
+            apps: 'tab-apps', 'saved-lists': 'tab-saved-lists', debloater: 'tab-debloater', installer: 'tab-installer', files: 'tab-files', terminal: 'tab-terminal', devices: 'tab-devices',
+            settings: 'tab-settings', overlays: 'tab-overlays', updates: 'tab-updates', store: 'tab-store', logcat: 'tab-logcat', taskmgr: 'tab-taskmgr', prefs: 'prefs'
+        };
+        function injectHelpLinks() {
+            Object.keys(HELP_LINKS).forEach(view => {
+                const sec = document.getElementById('view-' + view);
+                if (!sec || sec.querySelector(':scope > .color-card > .help-q, .help-q')) return;
+                const card = sec.querySelector('.color-card');
+                if (!card) return;
+                card.classList.add('has-help');
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'help-q';
+                b.setAttribute('translate', 'no');
+                b.setAttribute('aria-label', 'Help for this tab');
+                b.title = 'Help';
+                b.dataset.help = HELP_LINKS[view];
+                b.textContent = '?';
+                b.addEventListener('click', e => { e.stopPropagation(); openHelpGuide(b.dataset.help); });
+                const title = card.querySelector(':scope > .color-card-title');
+                if (title) title.after(b); else card.prepend(b);                       // next to the title, never inside it
+            });
+        }
+        injectHelpLinks();
+
+
         // ---------- Help Guide ----------
         // The About tab's Help Guide button. The guide is assets/guide.js (built from docs/guide/*.html, English only): it is loaded the first time the button is
         // pressed. The sheet shows the table of contents, or ONE topic at a time (drawn when it is opened, so there is nothing slow to wait for however long the
@@ -19352,10 +19388,21 @@ Type any command below (e.g. pm list packages -d)
             if (!silent) haptic();
         }
 
+        // The three buttons of the app menu that cannot be taken back with one tap ask first, in words that say what is lost
+        function singleConfirmText(action, name) {
+            if (action === 'uninstall') return 'Uninstall ' + name + '?\n\nIt is removed for you. A system app stays on the phone and can be brought back with Reinstall.';
+            if (action === 'clear_data') return 'Clear all data of ' + name + '?\n\nIts settings, accounts, saved games and the files in its own storage are deleted. This cannot be undone.';
+            if (action === 'uninstall_updates') return 'Remove the updates of ' + name + '?\n\nIt goes back to the version that came with the phone. An older version often cannot use the data of a newer one, so it may lose its data.';
+            return '';
+        }
+
         function singleAction(action) {
             if (!inspectedPkg) return;
             if (action === 'app_settings') { openAppSettings(inspectedPkg); return; }
             if (!guardPrivilege(action)) return;
+            const app = inspectedApp();
+            const ask = singleConfirmText(action, app && app.name ? app.name : inspectedPkg);
+            if (ask && !confirm(ask)) return;
             quickAction(action, inspectedPkg);
         }
 
@@ -19680,6 +19727,8 @@ Type any command below (e.g. pm list packages -d)
             { key: 'files', name: 'All files access', why: 'Browse storage, find packages on it and install from it.' },
             { key: 'usage', name: 'Usage access', why: 'Show how big each app is and when it was last used.' },
             { key: 'overlay', name: 'Display over other apps', why: "Lets this app open another app's screen from the background, such as an app you have just installed." },
+            // `known`: offered only when this build of the app reports it (an older one does not), so an older app never shows a row it cannot fill in
+            { key: 'install_unknown', name: 'Install unknown apps', why: 'Lets this app install the package files you choose, such as APK, APKS and XAPK files from your storage.', known: true },
             // The three below only have anything to grant while a working mode (ADB/Shizuku/root) is active - there is no
             // Settings switch for most of them, so they stay out of the sheet entirely until there is a privileged shell to grant them through.
             { key: 'storage_legacy', name: 'Read/Write External Storage', why: 'The older storage permission some apps still check for.', privOnly: true },
@@ -19687,8 +19736,8 @@ Type any command below (e.g. pm list packages -d)
             { key: 'restricted_settings', name: 'Access Restricted Settings', why: "Lifts Android's sideload block on a few sensitive toggles for this app.", privOnly: true }
         ];
         // A privOnly entry is only ever offered once isPrivilegedActive is true.
-        function visiblePermDefs() { return PERM_DEFS.filter(d => !d.privOnly || isPrivilegedActive); }
-        let permStatus = {};              // { files, usage, overlay, storage_legacy, secure_settings, restricted_settings }: true when allowed
+        function visiblePermDefs() { return PERM_DEFS.filter(d => (!d.privOnly || isPrivilegedActive) && (!d.known || permStatus[d.key] !== undefined)); }
+        let permStatus = {};              // { files, usage, overlay, install_unknown, storage_legacy, secure_settings, restricted_settings }: true when allowed
         let permMode = 'manual';          // 'intro' (first launch) | 'manual' (from About) | 'files' (an action needs file access)
         let permWalk = [];                // what "Allow all" still has to open, one Android screen after the other
         let permWaiting = '';             // the access whose Android screen was just opened
@@ -19751,6 +19800,7 @@ Type any command below (e.g. pm list packages -d)
                 if (key === 'files') { if (b.requestAllFilesAccess) b.requestAllFilesAccess(); }
                 else if (key === 'usage') { if (b.requestUsageAccess) answer = String(b.requestUsageAccess()); }
                 else if (key === 'overlay') { if (b.requestOverlayAccess) answer = String(b.requestOverlayAccess()); }
+                else if (key === 'install_unknown') { if (b.requestInstallUnknownAccess) answer = String(b.requestInstallUnknownAccess()); }
                 else if (key === 'storage_legacy') { if (b.requestLegacyStorageAccess) answer = String(b.requestLegacyStorageAccess()); }
                 else if (key === 'secure_settings') { if (b.requestWriteSecureSettings) answer = String(b.requestWriteSecureSettings()); }
                 else if (key === 'restricted_settings') { if (b.requestRestrictedSettingsAccess) answer = String(b.requestRestrictedSettingsAccess()); }
