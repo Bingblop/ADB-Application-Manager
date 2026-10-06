@@ -512,6 +512,8 @@
             flex-shrink: 0;
         }
 
+        .app-card { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }      /* a long press opens the app's menu, not a text selection */
+
         .app-card.selected .app-checkbox {
             background: var(--accent);
             border-color: var(--accent);
@@ -10090,6 +10092,33 @@ Type any command below (e.g. pm list packages -d)
             });
             document.addEventListener('pointermove', e => { if (timer && Math.hypot(e.clientX - startX, e.clientY - startY) > 10) clear(); });
             ['pointerup', 'pointercancel', 'scroll'].forEach(ev => document.addEventListener(ev, clear, true));
+        })();
+
+        // Press and hold anywhere on an app's row (the icon keeps its own hold, which saves the icon; the buttons and checkbox are left alone)
+        // opens that app's menu, and the lift of the finger that follows is not also taken as a tap that selects the row.
+        (function () {
+            let timer = null, startX = 0, startY = 0, fired = false;
+            const clear = () => { if (timer) { clearTimeout(timer); timer = null; } };
+            document.addEventListener('contextmenu', e => { if (e.target.closest && e.target.closest('.app-card')) e.preventDefault(); });
+            document.addEventListener('pointerdown', e => {
+                const t = e.target;
+                const card = t.closest ? t.closest('.app-card') : null;
+                fired = false;
+                if (!card || t.closest('img.app-icon, button, .app-left')) return;
+                startX = e.clientX; startY = e.clientY;
+                clear();
+                timer = setTimeout(() => {
+                    timer = null;
+                    fired = true;
+                    haptic();
+                    openInspector(card.dataset.pkg);
+                }, 550);
+            });
+            document.addEventListener('pointermove', e => { if (timer && Math.hypot(e.clientX - startX, e.clientY - startY) > 10) clear(); });
+            ['pointerup', 'pointercancel', 'scroll'].forEach(ev => document.addEventListener(ev, clear, true));
+            document.addEventListener('click', e => {
+                if (fired && e.target.closest && e.target.closest('.app-card')) { fired = false; e.stopPropagation(); e.preventDefault(); }
+            }, true);
         })();
 
         function appCardHtml(app) {

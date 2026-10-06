@@ -15,6 +15,8 @@
   selected, even if a filter was left on last time. In the Apps list the checkbox sits to the right of the "⋯" menu,
   and its top-bar buttons share the File Manager's new outlined look (the File Manager's Up button is gone, the ".."
   row does that) with a haptic tap on every button.
+- **Press and hold an app row to open its menu.** Holding anywhere on a row (the icon keeps saving itself, the buttons and
+  checkbox are left alone) opens that app's single-app menu. App rows no longer start a text selection.
 - **Fewer false "failed" results.** An app launch or app action is only reported as failed when the output says so at the
   start of a line ("Error: ...", "Error type 3", an exception, "No activities found"), so an app whose name or package
   contains "error" or "failed" no longer shows as a failure. The file manager's own commands now confirm success with a
