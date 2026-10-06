@@ -1,6 +1,7 @@
 // हिन्दी (hi): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['hi'] = {
 x: {
+"Clear filters": "फ़िल्टर साफ़ करें",
 "\"Allow debugging?\"": "“डीबगिंग की अनुमति दें?”",
 "'s catalog can be several MB — F-Droid's own is tens of MB. It's downloaded once and kept for 12 hours.": ": कैटलॉग कई MB का हो सकता है — F-Droid का अपना कैटलॉग दसियों MB का होता है। इसे एक बार डाउनलोड किया जाता है और 12 घंटे तक रखा जाता है।",
 "(--originating-uri)": "(--originating-uri)",
@@ -762,7 +763,6 @@ x: {
 "From your wallpaper": "आपके वॉलपेपर से",
 "Frozen": "फ़्रीज़",
 "Frozen (": "फ़्रीज़ (",
-"Frozen / Disabled": "फ़्रीज़ / अक्षम",
 "Frozen App Badge": "फ़्रीज़ ऐप बैज",
 "Fruit Salad": "Fruit Salad",
 "Full": "फ़ुल",
@@ -1744,7 +1744,6 @@ x: {
 "System": "System",
 "System (": "सिस्टम (",
 "System App Badge": "सिस्टम ऐप बैज",
-"System Apps": "सिस्टम ऐप्स",
 "System Statistics": "सिस्टम आँकड़े",
 "System default": "सिस्टम डिफ़ॉल्ट",
 "System font": "सिस्टम फ़ॉन्ट",
@@ -2027,7 +2026,6 @@ x: {
 "Use your own Termux (bash and everything installed with pkg) as the Terminal's shell": "अपने Termux (bash और pkg से इंस्टॉल की गई हर चीज़) को टर्मिनल के शेल के रूप में इस्तेमाल करें",
 "Used": "इस्तेमाल में",
 "User": "उपयोगकर्ता",
-"User Apps": "उपयोगकर्ता ऐप्स",
 "Uses Root. The app is stopped while its data is copied.": "Root इस्तेमाल करता है। डेटा कॉपी होते समय ऐप रोका जाता है।",
 "Uses the best backend that is ready: ADB TCP → Wireless Debugging → Shizuku. Pick a specific mode below to pin it instead.": "तैयार सबसे अच्छा बैकएंड इस्तेमाल करता है: ADB TCP → वायरलेस डीबगिंग → Shizuku। इसके बजाय किसी खास मोड को पिन करने के लिए नीचे उसे चुनें।",
 "Uses the system Shizuku service to execute commands under shell UID 2000 without root. Works alongside ADB TCP 5555 — authorizing Shizuku switches to it.": "Root के बिना शेल UID 2000 के तहत कमांड चलाने के लिए सिस्टम की Shizuku सेवा इस्तेमाल करता है। ADB TCP 5555 के साथ काम करता है — Shizuku को अधिकृत करने पर यह उसी पर स्विच हो जाता है।",

@@ -1,6 +1,7 @@
 // Français (fr): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['fr'] = {
 x: {
+"Clear filters": "Effacer les filtres",
 "\"Allow debugging?\"": "« Autoriser le débogage ? »",
 "'s catalog can be several MB — F-Droid's own is tens of MB. It's downloaded once and kept for 12 hours.": ": le catalogue peut peser plusieurs MB — celui de F-Droid en fait des dizaines. Il est téléchargé une seule fois et conservé 12 heures.",
 "(--originating-uri)": "(--originating-uri)",
@@ -762,7 +763,6 @@ x: {
 "From your wallpaper": "Depuis votre fond d’écran",
 "Frozen": "Gelée",
 "Frozen (": "Gelées (",
-"Frozen / Disabled": "Gelées / désactivées",
 "Frozen App Badge": "Badge d’application gelée",
 "Fruit Salad": "Fruit Salad",
 "Full": "Pleine",
@@ -1744,7 +1744,6 @@ x: {
 "System": "System",
 "System (": "Système (",
 "System App Badge": "Badge d’application système",
-"System Apps": "Applications système",
 "System Statistics": "Statistiques système",
 "System default": "Valeur par défaut du système",
 "System font": "Police du système",
@@ -2027,7 +2026,6 @@ x: {
 "Use your own Termux (bash and everything installed with pkg) as the Terminal's shell": "Utiliser votre propre Termux (bash et tout ce qui est installé avec pkg) comme shell du Terminal",
 "Used": "Utilisé",
 "User": "Utilisateur",
-"User Apps": "Applications utilisateur",
 "Uses Root. The app is stopped while its data is copied.": "Utilise Root. L’application est arrêtée pendant la copie de ses données.",
 "Uses the best backend that is ready: ADB TCP → Wireless Debugging → Shizuku. Pick a specific mode below to pin it instead.": "Utilise le meilleur backend prêt : ADB TCP → débogage sans fil → Shizuku. Choisissez un mode précis ci-dessous pour le fixer à la place.",
 "Uses the system Shizuku service to execute commands under shell UID 2000 without root. Works alongside ADB TCP 5555 — authorizing Shizuku switches to it.": "Utilise le service Shizuku du système pour exécuter des commandes sous l’UID shell 2000 sans root. Fonctionne avec ADB TCP 5555 — autoriser Shizuku bascule dessus.",

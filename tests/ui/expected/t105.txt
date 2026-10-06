@@ -1,6 +1,7 @@
 Saved: pills: ["All","Updated 7d","Running","3rd Party","System","Enabled","Frozen","Suspended","Patched","Uninstalled"]
 Saved: no filter shows everything: ["Mixed 5 apps [com.u.run,com.u.idle,com.s.run,com.s.off,com.not.here] Recall","Only idle 1 apps [com.u.idle] Recall"]
-Saved: Running + 3rd Party (lists without a match disappear): [["Mixed 1 of 5 apps [com.u.run] Recall 1"],["running","user"],"Showing apps that are Running + 3rd Party. Tap All to clear."]
+Saved: Running + 3rd Party (lists without a match disappear): [["Mixed 1 of 5 apps [com.u.run] Recall 1"],["running","user"],"Showing apps that are Running + 3rd Party.\nClear filters"]
+Saved: Clear filters button turns them all off: [["all"],["Mixed 5 apps [com.u.run,com.u.idle,com.s.run,com.s.off,com.not.here] Recall","Only idle 1 apps [com.u.idle] Recall"]]
 Saved: System + Frozen: [["Mixed 1 of 5 apps [com.s.off] Recall 1"],["system","frozen"]]
 Saved: Enabled replaces Frozen, System stays: [["Mixed 1 of 5 apps [com.s.run] Recall 1"],["system","enabled"]]
 Saved: Recall takes only the matching apps: [["com.s.run"],"Recalled 1 apps from Mixed (filtered)"]
@@ -8,6 +9,7 @@ Saved: nothing matches -> a message: No saved list has apps that match these fil
 Debloater: extra pills: ["All","Updated 7d","Running","3rd Party","System","Suspended","Patched"]
 Debloater: none on shows all five: ["Sys Gone","Sys Off","Sys Run","User Idle","User Run"]
 Debloater: Running + System: ["Sys Run"]
+Debloater: chip shows with two on, and clears them: [true,[false,["all"]]]
 Debloater: 3rd Party replaces System: [["User Run"],["running","user"]]
 Debloater: All clears them: 5
 errors: []

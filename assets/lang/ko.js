@@ -1,6 +1,7 @@
 // 한국어 (ko): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ko'] = {
 x: {
+"Clear filters": "필터 지우기",
 "\"Allow debugging?\"": "\"디버깅을 허용하시겠습니까?\"",
 "'s catalog can be several MB — F-Droid's own is tens of MB. It's downloaded once and kept for 12 hours.": "의 카탈로그는 수 MB에 이를 수 있습니다(F-Droid 자체 카탈로그는 수십 MB). 한 번만 다운로드하며 12시간 동안 보관됩니다.",
 "(--originating-uri)": "(--originating-uri)",
@@ -762,7 +763,6 @@ x: {
 "From your wallpaper": "배경화면에서",
 "Frozen": "동결됨",
 "Frozen (": "동결됨 (",
-"Frozen / Disabled": "동결됨 / 사용 중지됨",
 "Frozen App Badge": "동결된 앱 배지",
 "Fruit Salad": "Fruit Salad",
 "Full": "충전 완료",
@@ -1744,7 +1744,6 @@ x: {
 "System": "System",
 "System (": "시스템 (",
 "System App Badge": "시스템 앱 배지",
-"System Apps": "시스템 앱",
 "System Statistics": "시스템 통계",
 "System default": "시스템 기본값",
 "System font": "시스템 글꼴",
@@ -2027,7 +2026,6 @@ x: {
 "Use your own Termux (bash and everything installed with pkg) as the Terminal's shell": "내 Termux(bash 및 pkg로 설치한 모든 것)를 터미널의 셸로 사용",
 "Used": "사용 중",
 "User": "사용자",
-"User Apps": "사용자 앱",
 "Uses Root. The app is stopped while its data is copied.": "Root를 사용합니다. 데이터를 복사하는 동안 앱이 중지됩니다.",
 "Uses the best backend that is ready: ADB TCP → Wireless Debugging → Shizuku. Pick a specific mode below to pin it instead.": "준비된 가장 좋은 백엔드를 사용합니다: ADB TCP → 무선 디버깅 → Shizuku. 대신 고정하려면 아래에서 특정 모드를 선택하세요.",
 "Uses the system Shizuku service to execute commands under shell UID 2000 without root. Works alongside ADB TCP 5555 — authorizing Shizuku switches to it.": "시스템 Shizuku 서비스를 사용해 Root 없이 셸 UID 2000으로 명령어를 실행합니다. ADB TCP 5555와 함께 사용할 수 있으며, Shizuku를 승인하면 Shizuku로 전환됩니다.",

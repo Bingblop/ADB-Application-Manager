@@ -1,6 +1,7 @@
 // Bahasa Indonesia (id): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['id'] = {
 x: {
+"Clear filters": "Hapus filter",
 "\"Allow debugging?\"": "“Izinkan debugging?”",
 "'s catalog can be several MB — F-Droid's own is tens of MB. It's downloaded once and kept for 12 hours.": ": katalognya bisa berukuran beberapa MB — katalog F-Droid sendiri puluhan MB. Katalog diunduh sekali dan disimpan selama 12 jam.",
 "(--originating-uri)": "(--originating-uri)",
@@ -762,7 +763,6 @@ x: {
 "From your wallpaper": "Dari wallpaper Anda",
 "Frozen": "Dibekukan",
 "Frozen (": "Dibekukan (",
-"Frozen / Disabled": "Dibekukan / Nonaktif",
 "Frozen App Badge": "Lencana Aplikasi Dibekukan",
 "Fruit Salad": "Fruit Salad",
 "Full": "Penuh",
@@ -1744,7 +1744,6 @@ x: {
 "System": "System",
 "System (": "Sistem (",
 "System App Badge": "Lencana Aplikasi Sistem",
-"System Apps": "Aplikasi Sistem",
 "System Statistics": "Statistik Sistem",
 "System default": "Default sistem",
 "System font": "Font sistem",
@@ -2027,7 +2026,6 @@ x: {
 "Use your own Termux (bash and everything installed with pkg) as the Terminal's shell": "Gunakan Termux Anda sendiri (bash dan semua yang diinstal dengan pkg) sebagai shell Terminal",
 "Used": "Terpakai",
 "User": "Pengguna",
-"User Apps": "Aplikasi Pengguna",
 "Uses Root. The app is stopped while its data is copied.": "Menggunakan Root. Aplikasi dihentikan selama datanya disalin.",
 "Uses the best backend that is ready: ADB TCP → Wireless Debugging → Shizuku. Pick a specific mode below to pin it instead.": "Menggunakan backend terbaik yang siap: ADB TCP → Debugging nirkabel → Shizuku. Pilih mode tertentu di bawah untuk menyematkannya.",
 "Uses the system Shizuku service to execute commands under shell UID 2000 without root. Works alongside ADB TCP 5555 — authorizing Shizuku switches to it.": "Menggunakan layanan Shizuku sistem untuk menjalankan perintah di bawah UID shell 2000 tanpa root. Bekerja berdampingan dengan ADB TCP 5555 — mengotorisasi Shizuku akan langsung beralih ke Shizuku.",

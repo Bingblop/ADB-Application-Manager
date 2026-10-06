@@ -1,5 +1,14 @@
 # Changelog
 
+## v7.9.21-Pro (versionCode 811)
+
+- **Split boxes at the top of the Application Manager tab.** Enabled | Frozen and 3rd Party | System are now two boxes of
+  two buttons each (each pair is one filter: one on, or none), next to Total installed, Running and Bloatware
+  (Uninstalled). The Enabled button has its own count, and the boxes combine with each other and with the pills.
+- **A "Clear filters" button** appears under the Sort row whenever more than one filter is on, next to the line that
+  names what is combined. One tap turns them all off. The Debloater and Saved Applications filter rows have the same button,
+  and the new labels are translated.
+
 ## v7.9.20-Pro (versionCode 810)
 
 - **An Enabled filter, and filters that combine.** A new Enabled pill in the Application Manager tab (installed apps that

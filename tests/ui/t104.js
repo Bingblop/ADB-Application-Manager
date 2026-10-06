@@ -49,6 +49,17 @@ const { chromium, PAGE } = require('./lib/pw');
   console.log('a box and a pill together:', JSON.stringify([await names(), await lit()]));
   await page.locator('.stat-card[data-filter="all"]').click(); await page.waitForTimeout(200);
   console.log('Total installed clears them all:', JSON.stringify([(await names()).length, await lit()]));
+  // v7.9.21: the split boxes and the Clear filters chip
+  console.log('top boxes:', JSON.stringify(await page.evaluate(() => Array.from(document.querySelectorAll('.stats-grid .stat-card')).map(c => [c.getAttribute('data-filter'), c.querySelector('.stat-label').innerText, c.querySelector('.stat-num').innerText, c.parentElement.classList.contains('stat-split')]))));
+  console.log('pairs share a box:', JSON.stringify(await page.evaluate(() => Array.from(document.querySelectorAll('.stat-split')).map(b => Array.from(b.querySelectorAll('.stat-card')).map(c => c.getAttribute('data-filter'))))));
+  const chip = () => page.evaluate(() => { const r = document.getElementById('filterSummary'); const c = document.getElementById('filterClearChip'); return [getComputedStyle(r).display !== 'none', getComputedStyle(c).display !== 'none', c.innerText]; });
+  console.log('no chip with no filter:', JSON.stringify(await chip()));
+  await page.locator('.stat-card[data-filter="enabled"]').click(); await page.waitForTimeout(150);
+  console.log('no chip with one filter:', JSON.stringify([await chip(), await names()]));
+  await page.locator('.stat-card[data-filter="system"]').click(); await page.waitForTimeout(150);
+  console.log('Enabled box + System box (enabled system apps), chip shows:', JSON.stringify([await chip(), await names(), await lit()]));
+  await page.locator('#filterClearChip').click(); await page.waitForTimeout(200);
+  console.log('Clear filters turns them all off:', JSON.stringify([await chip(), (await names()).length, await lit()]));
   console.log('errors:', JSON.stringify(errors));
   await b.close();
 })();

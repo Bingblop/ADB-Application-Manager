@@ -1,6 +1,7 @@
 // Italiano (it): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['it'] = {
 x: {
+"Clear filters": "Cancella filtri",
 "\"Allow debugging?\"": "“Consentire il debug?”",
 "'s catalog can be several MB — F-Droid's own is tens of MB. It's downloaded once and kept for 12 hours.": ": il catalogo può pesare diversi MB, mentre quello di F-Droid ne pesa decine. Viene scaricato una volta e conservato per 12 ore.",
 "(--originating-uri)": "(--originating-uri)",
@@ -762,7 +763,6 @@ x: {
 "From your wallpaper": "Dal tuo sfondo",
 "Frozen": "Congelata",
 "Frozen (": "Congelate (",
-"Frozen / Disabled": "Congelate / Disattivate",
 "Frozen App Badge": "Badge app congelata",
 "Fruit Salad": "Fruit Salad",
 "Full": "Piena",
@@ -1744,7 +1744,6 @@ x: {
 "System": "System",
 "System (": "Sistema (",
 "System App Badge": "Badge app di sistema",
-"System Apps": "App di sistema",
 "System Statistics": "Statistiche di sistema",
 "System default": "Predefinito di sistema",
 "System font": "Carattere di sistema",
@@ -2027,7 +2026,6 @@ x: {
 "Use your own Termux (bash and everything installed with pkg) as the Terminal's shell": "Usa il tuo Termux (bash e tutto ciò che hai installato con pkg) come shell del Terminale",
 "Used": "Usato",
 "User": "Utente",
-"User Apps": "App utente",
 "Uses Root. The app is stopped while its data is copied.": "Usa Root. L’app viene arrestata mentre i suoi dati vengono copiati.",
 "Uses the best backend that is ready: ADB TCP → Wireless Debugging → Shizuku. Pick a specific mode below to pin it instead.": "Usa il miglior backend pronto: ADB TCP → Debug wireless → Shizuku. Scegli una modalità specifica qui sotto per fissarla.",
 "Uses the system Shizuku service to execute commands under shell UID 2000 without root. Works alongside ADB TCP 5555 — authorizing Shizuku switches to it.": "Usa il servizio Shizuku di sistema per eseguire comandi con UID shell 2000 senza Root. Funziona insieme a ADB TCP 5555 — autorizzando Shizuku si passa a esso.",

@@ -1,7 +1,7 @@
-1. the search bar is under all the filters (stat buttons, sort and export, the tip, the filter pills) and above the list: true {"sortBottom":334,"hintTop":344,"filterTop":384,"filterBottom":418,"searchTop":432,"searchBottom":478,"listTop":488,"statsBottom":294}
+1. the search bar is under all the filters (stat buttons, sort and export, the tip, the filter pills) and above the list: true {"sortBottom":324,"hintTop":334,"filterTop":374,"filterBottom":408,"searchTop":422,"searchBottom":468,"listTop":478,"statsBottom":284}
    nothing else sits between the filters and the search bar: true
    the box says what it searches: true Search by name or package
-2. a menu button (three dots) sits all the way to the right inside the search bar, at least 40 x 40: true {"box":{"l":16,"r":344,"t":432,"b":478,"w":328,"h":46},"input":{"l":16,"r":344,"t":432,"b":478,"w":328,"h":46},"btn":{"l":300,"r":340,"t":435,"b":475,"w":40,"h":40},"label":"Search options","text":"⋮","expanded":"false"}
+2. a menu button (three dots) sits all the way to the right inside the search bar, at least 40 x 40: true {"box":{"l":16,"r":344,"t":422,"b":468,"w":328,"h":46},"input":{"l":16,"r":344,"t":422,"b":468,"w":328,"h":46},"btn":{"l":300,"r":340,"t":425,"b":465,"w":40,"h":40},"label":"Search options","text":"⋮","expanded":"false"}
    it has a name for a screen reader and says it is closed: true
    the menu is closed at the start: true
    the clear button shows with text in the box and does not sit on the menu button: true {"clearShown":true,"apart":true}

@@ -1,6 +1,7 @@
 // العربية (ar): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ar'] = {
 x: {
+"Clear filters": "مسح عوامل التصفية",
 "\"Allow debugging?\"": "«السماح بتصحيح الأخطاء؟»",
 "'s catalog can be several MB — F-Droid's own is tens of MB. It's downloaded once and kept for 12 hours.": ": قد يبلغ حجم الفهرس عدة MB، أما فهرس F-Droid فيبلغ عشرات MB. يُنزَّل مرة واحدة ويُحفظ لمدة 12 ساعة.",
 "(--originating-uri)": "(--originating-uri)",
@@ -762,7 +763,6 @@ x: {
 "From your wallpaper": "من خلفية الشاشة",
 "Frozen": "مجمَّد",
 "Frozen (": "المجمّدة (",
-"Frozen / Disabled": "مجمَّد / معطَّل",
 "Frozen App Badge": "شارة التطبيق المجمَّد",
 "Fruit Salad": "Fruit Salad",
 "Full": "ممتلئة",
@@ -1744,7 +1744,6 @@ x: {
 "System": "System",
 "System (": "النظام (",
 "System App Badge": "شارة تطبيق النظام",
-"System Apps": "تطبيقات النظام",
 "System Statistics": "إحصاءات النظام",
 "System default": "الافتراضي للنظام",
 "System font": "خط النظام",
@@ -2027,7 +2026,6 @@ x: {
 "Use your own Termux (bash and everything installed with pkg) as the Terminal's shell": "استخدم Termux الخاص بك (bash وكل ما ثُبّت باستخدام pkg) بوصفه Shell للطرفية",
 "Used": "مستخدَم",
 "User": "المستخدم",
-"User Apps": "تطبيقات المستخدم",
 "Uses Root. The app is stopped while its data is copied.": "يستخدم Root. يتم إيقاف التطبيق أثناء نسخ بياناته.",
 "Uses the best backend that is ready: ADB TCP → Wireless Debugging → Shizuku. Pick a specific mode below to pin it instead.": "يستخدم أفضل واجهة خلفية جاهزة: ADB TCP ← تصحيح الأخطاء اللاسلكي ← Shizuku. اختر وضعًا محددًا أدناه لتثبيته بدلًا من ذلك.",
 "Uses the system Shizuku service to execute commands under shell UID 2000 without root. Works alongside ADB TCP 5555 — authorizing Shizuku switches to it.": "يستخدم خدمة Shizuku في النظام لتنفيذ الأوامر تحت shell UID 2000 دون Root. يعمل إلى جانب ADB TCP 5555 — وتفويض Shizuku ينقلك إليه.",

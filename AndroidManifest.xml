@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.bloatware.bingblop"
-    android:versionCode="810"
-    android:versionName="7.9.20-Pro">
+    android:versionCode="811"
+    android:versionName="7.9.21-Pro">
 
     <uses-sdk
         android:minSdkVersion="26"

@@ -1,6 +1,7 @@
 // 简体中文 (zh-CN): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['zh-CN'] = {
 x: {
+"Clear filters": "清除筛选",
 "\"Allow debugging?\"": "“要允许调试吗？”",
 "'s catalog can be several MB — F-Droid's own is tens of MB. It's downloaded once and kept for 12 hours.": "的目录可能有几 MB，F-Droid 自己的则有数十 MB。目录只会下载一次，并保留 12 小时。",
 "(--originating-uri)": "(--originating-uri)",
@@ -762,7 +763,6 @@ x: {
 "From your wallpaper": "来自壁纸",
 "Frozen": "已冻结",
 "Frozen (": "已冻结 (",
-"Frozen / Disabled": "已冻结 / 已停用",
 "Frozen App Badge": "已冻结应用标记",
 "Fruit Salad": "Fruit Salad",
 "Full": "已充满",
@@ -1744,7 +1744,6 @@ x: {
 "System": "System",
 "System (": "系统 (",
 "System App Badge": "系统应用标记",
-"System Apps": "系统应用",
 "System Statistics": "系统统计",
 "System default": "系统默认",
 "System font": "系统字体",
@@ -2027,7 +2026,6 @@ x: {
 "Use your own Termux (bash and everything installed with pkg) as the Terminal's shell": "将你自己的 Termux（bash 以及用 pkg 安装的一切）用作终端的 Shell",
 "Used": "已用",
 "User": "用户",
-"User Apps": "用户应用",
 "Uses Root. The app is stopped while its data is copied.": "使用 Root。复制数据期间会停止该应用。",
 "Uses the best backend that is ready: ADB TCP → Wireless Debugging → Shizuku. Pick a specific mode below to pin it instead.": "使用已就绪的最佳后端：ADB TCP → 无线调试 → Shizuku。也可在下方选择特定模式来固定使用它。",
 "Uses the system Shizuku service to execute commands under shell UID 2000 without root. Works alongside ADB TCP 5555 — authorizing Shizuku switches to it.": "使用系统的 Shizuku 服务，以 shell UID 2000 的身份执行命令，无需 Root。可与 ADB TCP 5555 同时使用——授权 Shizuku 后会切换到它。",
