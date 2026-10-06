@@ -2,8 +2,12 @@
 
 ## v7.9.20-Pro (versionCode 810)
 
-- **An Enabled filter** in the Application Manager tab, between System and Frozen: it lists the installed apps that are
-  not disabled (a suspended app is still enabled), with its own count, the same way Frozen lists the disabled ones.
+- **An Enabled filter, and filters that combine.** A new Enabled pill in the Application Manager tab (installed apps that
+  are not disabled; a suspended app is still enabled), and the pills and the big boxes at the top can now be used
+  together: tap more than one and the list shows the apps that match all of them, such as Running + 3rd Party for your
+  running user apps or Enabled + System for your enabled system apps. A tap on a filter that is on turns it off, All
+  Apps (or the Total installed box) turns them all off, a line under the buttons names what is combined, and 3rd
+  Party / System and Enabled / Frozen / Uninstalled can only have one of each on at a time.
 
 ## v7.9.19-Pro (versionCode 809)
 
