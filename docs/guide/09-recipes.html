@@ -166,7 +166,7 @@
 <h4>What you need</h4>
 <ul>
 <li>The APK file on your phone (an APK is the file an app is installed from; see <a href="#basics">Words you will see</a>), from a source you trust.</li>
-<li>The <b>APK Installer</b> tab. With a <a href="#modes-overview">working mode</a> you get every option. Without one, set the Authorizer to <b>No privilege</b>: Android's own install screen then asks you to confirm.</li>
+<li>The <b>APK Installer</b> tab. With a <a href="#modes-overview">working mode</a> you get every option. Without one, set the Authorizer to <b>No privilege</b>: Android's own install screen then asks you to confirm, and first it may ask you to allow this app to install apps (the row <b>Install unknown apps</b> in <b>About</b>, <b>Permissions</b> allows that in advance).</li>
 </ul>
 
 <h4>Steps</h4>
@@ -232,7 +232,7 @@
 <h4>What you can do about a big app</h4>
 <ul>
 <li><b>An app you do not use:</b> <b>Uninstall</b> in its menu. Its data is deleted, so back it up first if it matters.</li>
-<li><b>An app whose data or cache is big:</b> the <b>App Info</b> button opens Android's own screen for the app, where its storage options are. <b>Clear Data</b> in the app's menu deletes logins and settings and cannot be undone.</li>
+<li><b>An app whose data or cache is big:</b> the <b>App Info</b> button opens Android's own screen for the app, where its storage options are. <b>Clear Data</b> in the app's menu deletes logins and settings and cannot be undone. To clear only the cache of every app in one go, with no data lost, see <a href="#recipe-trim-caches">Free up space by clearing every app's cache</a>.</li>
 <li><b>A system app:</b> Uninstall and Freeze free almost nothing, because the file stays in the protected system area.</li>
 <li><b>Big files rather than apps:</b> in the <b>File Manager</b>, search for <code>size:&gt;100mb</code> (see <a href="#files-search">Searching files</a>).</li>
 </ul>
@@ -476,7 +476,7 @@
 <li>Tap the badge. The sheet <b>Working Modes &amp; ADB Setup</b> opens. The line under its title shows "Selected" and "Active". Find the card of your mode and read its tag.</li>
 <li>Do the part for your mode:
 <ul>
-<li><b>Root:</b> usually nothing. If actions fail, tap <b>Request Root Access</b> and allow it.</li>
+<li><b>Root:</b> usually nothing. If the Root tag says <b>DENIED</b> or actions fail, tap <b>Request Root Access</b> and allow it in your root manager's prompt (<a href="#mode-root">Root</a> says what to do if it stays DENIED).</li>
 <li><b>Wireless Debugging:</b> your pairing is kept. In Android's Developer options switch <b>Wireless debugging</b> on again and read the new <b>IP address &amp; Port</b>. In the app's card type the port (or tap <b>Auto-Detect Ports</b>, or <b>Use My Wi-Fi IP</b> for the address) and tap <b>Connect Wireless ADB</b>.</li>
 <li><b>ADB over TCP:</b> port 5555 is closed again. On Android 11 or newer, connect with Wireless Debugging first, then tap <b>Switch to 5555 (tcpip)</b>. On Android 8 to 10, a computer must run <code>adb tcpip 5555</code> once more, then tap <b>Connect</b>.</li>
 <li><b>Shizuku:</b> open the Shizuku app and start it again the way you did before. The card then shows <b>AUTHORIZED</b> by itself, or tap <b>Authorize &amp; Use Shizuku</b>.</li>
@@ -506,7 +506,7 @@
 <li>Find an app you know. If its name means nothing to you, leave it alone and read <a href="#debloater-safety">Debloating safely</a>.</li>
 <li>Tap <b>Disable</b> on its row. A message says, for example, "Disabled: Fit". The row gets a <b>DISABLED</b> badge and the button becomes <b>Enable</b>. To do several, tap the boxes on the left and use <b>Disable</b> in the bar that appears. It asks first when more than one is selected.</li>
 <li>Use the watch for a few days. If anything breaks, find the app with the <b>Disabled</b> filter and tap <b>Enable</b>.</li>
-<li>Only if nothing broke and you want it gone: tap the three dots, then <b>Uninstall</b>, and confirm. A removed system app shows <b>UNINSTALLED</b>, and <b>Reinstall</b> brings it back from the copy still on the watch.</li>
+<li>Only if nothing broke and you want it gone: tap the three dots, then <b>Uninstall</b>, and confirm. A removed system app shows <b>UNINSTALLED</b>, and <b>Reinstall</b> brings it back from the copy still on the watch. If the watch first answers that only root can remove a system app, the app sends a tiny helper file to it, runs it there and deletes it again by itself, so you have nothing extra to do (<a href="#devices-apps">Managing the apps of the device</a> explains it). If that fails too, the sheet <b>That did not work</b> shows the watch's words: <b>Disable</b> the app instead.</li>
 </ol>
 
 <div class="hg-danger"><b>Risky.</b> Never remove the watch face, <b>Settings</b>, the Google or Wear OS services, the keyboard, or the Bluetooth and phone-pairing apps. A watch that loses them may not work until a factory reset, which erases it. When unsure, <b>Disable</b>, and only that. If the device refuses, a sheet called <b>That did not work</b> shows its answer: leave that app alone.</div>
@@ -631,4 +631,44 @@
 <div class="hg-warn"><b>Careful.</b> Phones differ. A profile from another make may name system apps this phone does not have (they are skipped) or ones that matter more here, so read the preview. A backup of a system app is refused on a phone whose own copy is signed with a different key, and app data can only be restored with Root. Do not copy hidden-setting values from one phone to another.</div>
 
 <p><b>Read more:</b> <a href="#apps-profiles">Profiles and drift watch</a>, <a href="#apps-backup">Backups and restore</a>, <a href="#tab-saved-lists">Saved Applications</a>.</p>
+</section>
+
+<section id="recipe-trim-caches" data-title="Free up space by clearing every app's cache" data-group="How do I...?">
+<p class="hg-lead">At the end, the cache of every app on your phone has been cleared in one go, and you have seen how much free space it gave back. No app, setting, login or file is deleted.</p>
+
+<h4>What you need</h4>
+<ul>
+<li>A <a href="#modes-overview">working mode</a> that is ready: the badge at the top right is green or violet. Without one, the button shows a padlock and tapping it opens a sheet called <b>Working Mode Required</b>.</li>
+<li>A minute or two. The app stays usable while it works.</li>
+<li>To know what a cache is: temporary files that an app keeps to save time, such as downloaded thumbnails, web pages a browser kept, map tiles and video that was only buffered. Apps make them again when they need them (see <b>cache</b> in the <a href="#glossary">glossary</a>).</li>
+</ul>
+
+<h4>Steps</h4>
+<ol class="hg-steps">
+<li>Tap the <b>gear</b> in the header at the top right to open Settings, and scroll down to the last card, <b>Trim Caches</b>.</li>
+<li>Tap <b>Trim Caches in All Applications</b>. (The text under the button says what is trimmed and what is not.)</li>
+<li>A question opens: "Trim the caches of every app now? Only cache files are deleted. Apps, their data, logins and your files stay as they are." Tap <b>OK</b>. <b>Cancel</b> does nothing.</li>
+<li>The button turns grey and reads "Trimming caches&hellip;". A line under it says this can take up to a minute or two. You can keep using the app.</li>
+<li>A box titled <b>Trim Caches in All Applications</b> opens. <b>Caches trimmed</b> with <b>SUCCESS</b> means it worked, and a line such as "Free space on the phone: 120 GB before, 123 GB after (2.4 GB freed)." tells you the result. If nothing more could be freed, the line ends "(nothing more could be freed)" instead. Close the box.</li>
+</ol>
+<p>If the box says <b>It did not finish</b> with <b>FAILED</b>, Android refused and the words under it are its own. See <a href="#troubleshooting">Troubleshooting</a>, "Trim Caches says it did not finish".</p>
+
+<h4>What to expect</h4>
+<ul>
+<li>The button runs <code>pm trim-caches 128G</code>, the same as <code>adb shell pm trim-caches 128G</code> on a computer. It asks Android to delete app caches until the phone has 128 GB free. No phone has that much free space, so the target is never reached, and Android clears every cache it is allowed to clear, in every app. The order is Android's own choice.</li>
+<li>How much it frees depends on how much cache your apps hold. It can be a little or a lot, and the box shows the free space before and after.</li>
+<li>The first start of an app afterwards can be a little slower, and it may use mobile data to fetch images again.</li>
+<li>An app that keeps offline downloads in its cache folder (some music, video and map apps do) may need to download them again.</li>
+<li>Apps that are running right now may keep some of their cache until they close.</li>
+</ul>
+
+<h4>What it cannot do</h4>
+<ul>
+<li>It does not delete files, downloads, photos, videos or app data, and it uninstalls nothing. So it frees only what caches took up.</li>
+<li>For big amounts of space, find what is large and decide: <a href="#recipe-find-big-apps">Find the apps that take the most space</a>.</li>
+</ul>
+
+<div class="hg-warn"><b>Undo.</b> There is no undo: a cache that was cleared cannot be put back. That is safe, because apps make it again by themselves, but an app with offline music, videos or maps in its cache may need to download them again. If that worries you, do it on Wi-Fi.</div>
+
+<p><b>Read more:</b> <a href="#prefs">Settings (the gear)</a>, <a href="#modes-overview">Working modes</a>, <a href="#recipe-find-big-apps">Find the apps that take the most space</a>, <a href="#troubleshooting">Troubleshooting</a>.</p>
 </section>

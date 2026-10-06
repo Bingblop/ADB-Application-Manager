@@ -187,7 +187,7 @@
 
   <h4>Before you start</h4>
   <ul>
-    <li>Choosing and reading a file needs no working mode. Installing works in two ways: with <b>ADB</b>, <b>Shizuku</b> or <b>Root</b> (see <a href="#modes-overview">Working modes</a>) you get every option; with <b>No privilege</b> Android's own install screen asks you to confirm and most options are switched off. In that case Android can also ask you to allow installs from this app first (Android calls the setting <b>Install unknown apps</b>): switch it on for this app when asked, then press <b>Install</b> again if nothing happens.</li>
+    <li>Choosing and reading a file needs no working mode. Installing works in two ways: with <b>ADB</b>, <b>Shizuku</b> or <b>Root</b> (see <a href="#modes-overview">Working modes</a>) you get every option; with <b>No privilege</b> Android's own install screen asks you to confirm and most options are switched off. In that case Android can also ask you to allow installs from this app first (Android calls the setting <b>Install unknown apps</b>): switch it on for this app when asked, then press <b>Install</b> again if nothing happens. You can allow it beforehand: <b>About</b>, <b>Permissions</b>, then <b>Allow</b> on the row <b>Install unknown apps</b> (<a href="#app-permissions">The permissions this app asks for</a>).</li>
     <li>The app first copies the file into its private cache and unpacks the parts, so keep free space of up to twice the file size. The cache is emptied after the install.</li>
     <li>Only install files from sources you trust. An APK can do anything a normal app can.</li>
   </ul>
@@ -270,7 +270,7 @@
       <tr><td>"Install cancelled" (No privilege)</td><td>You pressed Cancel in Android's install dialog.</td></tr>
     </tbody>
   </table>
-  <div class="hg-note"><b>Tip.</b> No privilege hands the file to Android's own installer. This app has not been tried that way on every phone, and some phones block it. If Android asks to allow installs from this app (Install unknown apps), switch that on for this app. If you still see an install blocked message, switch the Authorizer to ADB, Shizuku or Root.</div>
+  <div class="hg-note"><b>Tip.</b> No privilege hands the file to Android's own installer. This app has not been tried that way on every phone, and some phones block it. If Android asks to allow installs from this app (Install unknown apps), switch that on for this app: the row <b>Install unknown apps</b> in <b>About</b>, <b>Permissions</b> does the same. If you still see an install blocked message, switch the Authorizer to ADB, Shizuku or Root.</div>
   <p><b>To undo an install:</b> in the Application Manager, open the app's menu and uninstall it. Its data is deleted, so back up first if it matters.</p>
 </section>
 
@@ -353,7 +353,7 @@
   <h4>Before you start</h4>
   <ul>
     <li>Checking needs the internet and no working mode.</li>
-    <li>Installing an update needs a working mode: ADB over TCP, Wireless Debugging, Shizuku or Root (see <a href="#modes-overview">Working modes</a>). Without one, a sheet <b>Working Mode Required</b> opens. The only exception is this app's own update, which can use Android's install screen. Android can then ask you to allow installs from this app first (Android calls the setting <b>Install unknown apps</b>): switch it on for this app when asked.</li>
+    <li>Installing an update needs a working mode: ADB over TCP, Wireless Debugging, Shizuku or Root (see <a href="#modes-overview">Working modes</a>). Without one, a sheet <b>Working Mode Required</b> opens. The only exception is this app's own update, which can use Android's install screen. Android can then ask you to allow installs from this app first (Android calls the setting <b>Install unknown apps</b>): switch it on for this app when asked, or beforehand in <b>About</b>, <b>Permissions</b> (see <a href="#app-permissions">The permissions this app asks for</a>).</li>
     <li>Play Store apps are not checked here (see the last card below).</li>
   </ul>
 
@@ -395,7 +395,7 @@
     <tbody>
       <tr><td><b>Import Obtainium List</b></td><td>Opens the file picker. Choose the export file from Obtainium (Obtainium, Settings, Export). The app uses each app's source from it and checks again.</td></tr>
       <tr><td><b>GitHub Token</b></td><td>Optional. A token is a long code that you create in your GitHub account settings. One with no permissions ticked is enough, and it raises GitHub's limit from 60 to 5,000 checks an hour. Empty the box to remove it. The button shows a tick when a token is saved.</td></tr>
-      <tr><td>Card <b>App update</b></td><td>Updates this app itself from its GitHub releases: <b>Check for app update</b>, <b>Update now</b>, <b>Release notes</b>. It checks that the file is this app, newer, and signed with the same key. With a working mode it installs by itself and says "The app will restart" (Android closes the app while it is replaced, so open it again if it does not come back). With none it opens Android's install screen, and Android can first ask you to allow installs from this app (Install unknown apps).</td></tr>
+      <tr><td>Card <b>App update</b></td><td>Updates this app itself from its GitHub releases: <b>Check for app update</b>, <b>Update now</b>, <b>Release notes</b>. It checks that the file is this app, newer, and signed with the same key. With a working mode it installs by itself and says "The app will restart" (Android closes the app while it is replaced, so open it again if it does not come back). With none it opens Android's install screen, and Android can first ask you to allow installs from this app (Install unknown apps; the Permissions sheet in About has a row for it).</td></tr>
       <tr><td>Card <b>Play Store apps (via Aurora)</b></td><td>The app cannot tell whether a Play Store app has an update. <b>Open Aurora Store</b> (an open-source Play Store client, shown if installed) and <b>List installed apps</b> give you a <b>Store</b> button per app, which opens its store page.</td></tr>
     </tbody>
   </table>
@@ -426,7 +426,7 @@
   <h4>Before you start</h4>
   <ul>
     <li>Browsing needs the internet only.</li>
-    <li>Installing uses your active working mode (ADB, Shizuku or Root, see <a href="#modes-overview">Working modes</a>). With none, the app hands the downloaded file to Android's install screen and you confirm there. Android can first ask you to allow installs from this app (Android calls the setting <b>Install unknown apps</b>). That route may be blocked on some phones; if it is, set up a working mode.</li>
+    <li>Installing uses your active working mode (ADB, Shizuku or Root, see <a href="#modes-overview">Working modes</a>). With none, the app hands the downloaded file to Android's install screen and you confirm there. Android can first ask you to allow installs from this app (Android calls the setting <b>Install unknown apps</b>; the Permissions sheet in <b>About</b> has a row for it). That route may be blocked on some phones; if it is, set up a working mode.</li>
     <li>Each install is one APK file. Apps that come only as bundles cannot be installed here; use the <a href="#tab-installer">APK Installer</a>.</li>
     <li>Galaxy Store is not a store in this tab. Samsung apps are checked in the <a href="#tab-updates">App Updater</a>.</li>
   </ul>

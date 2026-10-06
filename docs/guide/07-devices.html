@@ -203,7 +203,7 @@
   <ul>
     <li>The device must show <b>Connected</b> (see <a href="#tab-devices">Connected Devices</a>).</li>
     <li>Reading the list can take a while on a slow watch: up to 90 seconds are allowed. The line above the list says <b>Reading the apps of the device...</b> until it is done.</li>
-    <li>Nothing here needs root on the device. The device's own rules still apply, so it will refuse some changes (see "When the device refuses" below).</li>
+    <li>Nothing here needs root on the device, not even removing a system app (see "Uninstalling a system app" below). The device's own rules still apply, so it will refuse some changes (see "When the device refuses" below).</li>
   </ul>
   <div class="hg-warn"><b>Careful.</b> Removing the wrong system app from a watch can break its clock face, its notifications or its pairing with the phone. Read <a href="#debloater-safety">Debloater safety</a> before you remove anything you do not recognise, and <b>Disable</b> an app before you decide to uninstall it.</div>
 
@@ -260,7 +260,7 @@
       <tr><td><b>Force stop</b></td><td>Stops the app if it is running. Nothing is deleted.</td></tr>
       <tr><td><b>Clear data</b></td><td>Deletes the app's data (its settings, accounts and files) on the device. It asks first.</td></tr>
       <tr><td><b>Enable</b> / <b>Disable</b></td><td>Same as the row button.</td></tr>
-      <tr><td><b>Uninstall</b></td><td>Removes the app for the device's user. It asks first.</td></tr>
+      <tr><td><b>Uninstall</b></td><td>Removes the app for the device's user. It asks first. For a system app that the device first refuses, the app tries a second way by itself (see "Uninstalling a system app" below).</td></tr>
       <tr><td><b>Pull APK</b></td><td>Copies the app's file (and its split files) from the device to this phone. See below.</td></tr>
       <tr><td><b>Details</b></td><td>Shows what the device knows about the app: version, first install and last update times, the installer, the target and minimum Android versions, the user id, the app's folder and its flags. It is the device's own text, shortened to the first lines.</td></tr>
       <tr><td><b>App page on device</b></td><td>Opens that app's system settings page on the device's own screen.</td></tr>
@@ -281,17 +281,27 @@
   <p><b>Uninstall</b> always asks first. <b>Disable</b> asks first when more than one app is selected. The bar does not check the state of each app: tapping <b>Enable</b> on an app that is already enabled is harmless, but it is pointless.</p>
 
   <h4>What the commands really are</h4>
-  <p>The names on the buttons stand for these commands, which the app sends to the device. You can run any of them yourself in the <a href="#devices-console">console</a>.</p>
+  <p>The names on the buttons stand for these commands, which the app sends to the device. You can run the ordinary ones yourself in the <a href="#devices-console">console</a> (the file transfer of the second try is done by the app, not by you).</p>
   <table class="hg-table">
     <thead><tr><th>Button</th><th>Command on the device</th><th>Effect</th></tr></thead>
     <tbody>
       <tr><td>Disable</td><td><code>pm disable-user --user 0 PACKAGE</code></td><td>Switches the app off for the main user. Reversible.</td></tr>
       <tr><td>Enable</td><td><code>pm enable PACKAGE</code></td><td>Switches it back on.</td></tr>
       <tr><td>Uninstall</td><td><code>pm uninstall --user 0 PACKAGE</code></td><td>Removes the app for the main user. A system app's file stays in the device's system area.</td></tr>
+      <tr><td>Uninstall, second try (only when the device answers that only root can delete a system app)</td><td>A helper file is sent with <code>adb push</code> to <code>/data/local/tmp</code>, run with <code>app_process</code>, then deleted with <code>rm -f</code></td><td>The helper calls Android's package manager directly, with the delete-system-app flag. The result is the same as the first way: the app is gone for the main user.</td></tr>
       <tr><td>Reinstall</td><td><code>cmd package install-existing PACKAGE</code></td><td>Makes a removed app available again from the copy that is still on the device.</td></tr>
     </tbody>
   </table>
   <p>If <code>cmd package install-existing</code> fails, the app tries the older <code>pm install-existing</code> before it gives up.</p>
+
+  <h4>Uninstalling a system app</h4>
+  <p>Uninstall on the other device works the way it does on this phone. The app first runs <code>pm uninstall --user 0</code> on the device, and for most apps that is all it takes. Some devices answer a system app with <i>only root can delete system app for a particular user</i>. When that happens the app carries on by itself, with nothing more for you to tap:</p>
+  <ol class="hg-steps">
+    <li>It sends a tiny helper file (about 6 KB, built into this app) to the device's <code>/data/local/tmp</code> folder with <code>adb push</code>.</li>
+    <li>It runs the helper on the device with <code>app_process</code>. The helper calls Android's package manager directly, with the "delete system app" flag. It is the same trick this app uses on its own phone.</li>
+    <li>It deletes the helper from the device again, whatever the result was.</li>
+  </ol>
+  <p>You see what you saw before: a message such as <b>Uninstalled: Fit</b> and an <b>UNINSTALLED</b> badge when it worked. If it still fails, the sheet <b>That did not work</b> shows the device's own words and a note. The note says either to <b>Disable</b> the app instead, or, when the device reports it, that a device policy or a user restriction blocks removing apps, which cannot be changed from here. The question before <b>Uninstall</b> is the same as before. In a batch, each system app of this kind gets the helper sent, run and removed in turn, so a long list takes longer. A removed system app can be brought back with <b>Reinstall</b>.</p>
   <div class="hg-note"><b>Reinstall is for system apps.</b> A system app is only hidden by <b>Uninstall</b>, because its file lives in the part of the device you cannot erase, so <b>Reinstall</b> works for it. An app that a person installed is normally removed completely: it disappears from the list after a <b>Reload</b>, and <b>Reinstall</b> cannot bring it back. Until you press <b>Reload</b>, its row may still show <b>UNINSTALLED</b> and a <b>Reinstall</b> button, and tapping it will most likely fail. To get it back, send its APK again with the <a href="#devices-send">Send</a> sub-tab.</div>
   <div class="hg-note"><b>Tip.</b> <b>Disable</b> first. A disabled app does nothing and shows no icon, but all its data is kept. Live with it for a few days. If nothing breaks, you can <b>Uninstall</b>. If something does, <b>Enable</b> undoes it in one tap.</div>
 
@@ -308,6 +318,7 @@
   <ul>
     <li>Leave that app alone. It is protected on purpose, often because the device needs it to run.</li>
     <li>Try <b>Force stop</b> instead, which is allowed for most apps.</li>
+    <li>If a system app will not uninstall, the app has already tried its second way (the helper, described above) before the sheet opened. <b>Disable</b> the app instead: it stops running and is hidden, and <b>Enable</b> brings it back.</li>
     <li>For a batch, the others still went through. Select just the failed ones if you want to try again.</li>
     <li>If an app you disabled makes the device behave oddly, tap <b>Enable</b> on it. Use the <b>Disabled</b> filter to find it.</li>
   </ul>
@@ -819,7 +830,7 @@
     <li>Find the app. If its name means nothing to you, leave it: use <a href="#debloater-safety">Debloater safety</a> as a guide to what is safe.</li>
     <li>Tap <b>Disable</b> on its row. The row gets the <b>DISABLED</b> badge and the app is hidden from the watch's own app list.</li>
     <li>Use the watch for a few days. If anything breaks, tap <b>Enable</b>.</li>
-    <li>If nothing broke and you want the space, tap the three dots, then <b>Uninstall</b> and confirm. A system app now shows <b>UNINSTALLED</b>; <b>Reinstall</b> brings it back.</li>
+    <li>If nothing broke and you want the space, tap the three dots, then <b>Uninstall</b> and confirm. A system app now shows <b>UNINSTALLED</b>; <b>Reinstall</b> brings it back. If the watch first answers that only root can remove a system app, the app tries a second way by itself (<a href="#devices-apps">Managing the apps of the device</a> explains it).</li>
   </ol>
   <div class="hg-danger"><b>Risky.</b> Never remove the watch face, <b>Settings</b>, the Google or Wear OS services, the keyboard or the Bluetooth and phone-pairing apps. A watch that loses these may not work until it is factory reset, which erases it. When unsure, Disable, and only that.</div>
 

@@ -8,7 +8,7 @@
 <ul>
 <li><b>ADB over TCP</b> and <b>Wireless Debugging</b> let the app's own built-in copy of ADB talk to the phone's ADB service, from the inside, as the shell user.</li>
 <li><b>Shizuku</b> is a separate app that has already started a helper running as the shell user (or as root) and lets this app use it.</li>
-<li><b>Root</b> runs the commands as root through the phone's <code>su</code> program, which your root manager (Magisk, KernelSU or APatch) controls.</li>
+<li><b>Root</b> runs the commands as root through the phone's <code>su</code> program, which your root manager (Magisk, KernelSU or APatch) controls. The app counts Root as ready only when the root manager has really allowed it.</li>
 <li><b>Read-Only</b> is what you get when none of these is ready: the app can look, and cannot change.</li>
 <li><b>Auto</b> is not a route of its own. It tries some of the above in a fixed order, and uses the first that is ready.</li>
 </ul>
@@ -55,11 +55,11 @@
 <tr><td>ADB over TCP</td><td>CONNECTED, PORT 5555 OPEN, DISCONNECTED</td><td>Connected and ready; the port is open but the app is not connected (often a pending approval); nothing is listening.</td></tr>
 <tr><td>Wireless Debugging</td><td>CONNECTED or ANDROID 11+</td><td>Connected; or not connected, with a reminder of the Android version needed.</td></tr>
 <tr><td>Shizuku</td><td>AUTHORIZED, UPDATE SHIZUKU, RUNNING (UNAUTHORIZED), NOT RUNNING, NOT INSTALLED</td><td>Ready; Shizuku is running but too old; running but this app is not approved; installed but stopped; not on the phone.</td></tr>
-<tr><td>Root</td><td>ACTIVE, AVAILABLE, NOT FOUND</td><td>In use; a su program was found but Root is not your chosen mode; no su found.</td></tr>
+<tr><td>Root</td><td>ACTIVE, AVAILABLE, DENIED (orange), NOT FOUND</td><td>In use (Root is your chosen mode and was allowed); a su program was found but Root is not your chosen mode, so the app has not asked it anything yet; Root is your chosen mode but your root manager refused this app; no su found.</td></tr>
 <tr><td>Read-Only</td><td>Safe</td><td>Always safe: it changes nothing.</td></tr>
 </tbody></table>
 
-<div class="hg-note"><b>Tip.</b> If you choose a mode that is not ready, the badge turns orange and says "(not ready)" after the mode's name. Nothing is broken: open the sheet, read the tag on that card, and finish the setup.</div>
+<div class="hg-note"><b>Tip.</b> If you choose a mode that is not ready, the badge turns orange and says "(not ready)" after the mode's name. Nothing is broken: open the sheet, read the tag on that card, and finish the setup. For Root, "Root (Superuser) (not ready)" together with the tag <b>DENIED</b> means your root manager has not allowed this app (<a href="#mode-root">Root</a>).</div>
 <div class="hg-warn"><b>Careful.</b> A working mode lets this app run powerful commands. Only set one up on a phone you own, and only use an app you trust. Read <a href="#safety">Safety</a> before you remove or disable system apps.</div>
 <p>Next: <a href="#mode-wireless">Wireless Debugging</a>, <a href="#mode-tcp">ADB over TCP</a>, <a href="#mode-shizuku">Shizuku</a>, <a href="#mode-root">Root</a>, <a href="#mode-readonly">Auto and Read-Only</a>, and <a href="#app-permissions">the permissions the app asks for</a>.</p>
 </section>
@@ -290,12 +290,22 @@
 
 <h4>Step by step</h4>
 <ol class="hg-steps">
-<li>Tap the badge to open <b>Working Modes &amp; ADB Setup</b> and find the <b>Root (Superuser - su)</b> card. The tag says <b>AVAILABLE</b> when the app can see a <code>su</code> program, or <b>NOT FOUND</b> when it cannot. The app looks in the usual places, such as <code>/system/bin/su</code>, <code>/sbin/su</code>, <code>/data/adb/ksu/bin/su</code> and <code>/data/adb/ap/bin/su</code>, and asks the shell to find <code>su</code>.</li>
-<li>Tap <b>Request Root Access</b>. The app runs a test command through <code>su</code> and waits up to fifteen seconds.</li>
+<li>Tap the badge to open <b>Working Modes &amp; ADB Setup</b> and find the <b>Root (Superuser - su)</b> card. The tag says <b>AVAILABLE</b> when the app can see a <code>su</code> program and Root is not your chosen mode, or <b>NOT FOUND</b> when it cannot see one. (<b>ACTIVE</b> and <b>DENIED</b> come later, once Root is your chosen mode: see below.) The app looks in the usual places, such as <code>/system/bin/su</code>, <code>/sbin/su</code>, <code>/data/adb/ksu/bin/su</code> and <code>/data/adb/ap/bin/su</code>, and asks the shell to find <code>su</code>.</li>
+<li>Tap <b>Request Root Access</b>. The app runs a test command through <code>su</code> (it asks for <code>id</code>) and waits up to fifteen seconds.</li>
 <li>Your root manager shows its own question. Tap <b>Grant</b> (or <b>Allow</b>). Choose "forever" only if you are happy to.</li>
 <li>If the answer comes back as root, the message says "Using Root (Superuser)". The tag becomes <b>ACTIVE</b>, and the badge turns violet and reads "Root (Superuser)".</li>
 </ol>
-<p>If the answer does not come back as root, the message reads "Root was denied or is not available". Root stays your chosen mode anyway, so the badge may still say Root; see "If it does not work" below.</p>
+<p>If the answer does not come back as root, the message reads "Root was denied or is not available". Root stays your chosen mode anyway, but the app does not treat it as working: the tag turns orange and reads <b>DENIED</b>, the badge turns orange and reads "Root (Superuser) (not ready)", and no command that needs privileges runs. See "If it does not work" below.</p>
+
+<h4>How the app knows that root really works</h4>
+<p>Having a <code>su</code> program is not enough: your root manager may have refused this app. So, while Root is your chosen mode, the app asks <code>su</code> to run <code>id</code> and counts Root as working only when the answer says <code>uid=0</code> (the root user). The four tags mean:</p>
+<table class="hg-table"><thead><tr><th>Tag</th><th>Meaning</th></tr></thead><tbody>
+<tr><td><b>NOT FOUND</b></td><td>No <code>su</code> program on the phone.</td></tr>
+<tr><td><b>AVAILABLE</b></td><td>A <code>su</code> program exists, but Root is not your chosen mode. The app has not asked it anything, so no root prompt appears.</td></tr>
+<tr><td><b>ACTIVE</b></td><td>Root is your chosen mode and <code>su</code> answered <code>uid=0</code>. The badge is violet.</td></tr>
+<tr><td><b>DENIED</b> (orange)</td><td>Root is your chosen mode, but <code>su</code> did not answer <code>uid=0</code>: your root manager refused this app, or you did not answer in time. The badge reads "Root (Superuser) (not ready)".</td></tr>
+</tbody></table>
+<p>The question is asked only while Root is your chosen mode, and the answer is kept. It is asked again only when you check on purpose: <b>Request Root Access</b>, or <b>Check Status</b> on the Shizuku card. The app waits about eight seconds for you to tap <b>Allow</b> in your root manager's prompt (up to fifteen after you tap <b>Request Root Access</b>), so be ready to tap it. If Root is already your chosen mode when the app starts, the root manager may show that question the first time the app checks.</p>
 <div class="hg-note"><b>Tip.</b> Auto never chooses Root. Its list is ADB over TCP, Wireless Debugging, then Shizuku. On a rooted phone, choose Root yourself with this button, once; the choice is remembered.</div>
 
 <h4>What root unlocks in this app</h4>
@@ -317,7 +327,7 @@
 <ul>
 <li><b>Tag says NOT FOUND.</b> No <code>su</code> was found. The root manager may not be installed or may have been disabled. Fix that, then open the sheet again or tap <b>Check Status</b> on the Shizuku card, which re-checks everything.</li>
 <li><b>"Root was denied or is not available".</b> You tapped Deny, or the root manager did not answer in time. Tap <b>Request Root Access</b> again and approve it, or look for the app in the root manager's list and allow it there.</li>
-<li><b>The badge says Root but actions fail.</b> The app counts Root as ready as soon as it finds a <code>su</code> program, even if you denied the question. Allow ADB Application Manager Pro in your root manager, then tap <b>Request Root Access</b> again.</li>
+<li><b>Tag says DENIED, and the badge says "Root (Superuser) (not ready)".</b> <code>su</code> exists but did not answer as root for this app, so nothing privileged runs. Open your root manager (Magisk, KernelSU or APatch), find ADB Application Manager Pro in its list of apps, set it to allow, then choose Root again with <b>Request Root Access</b> in Working Modes. If you allowed it after the question had timed out, the tag stays DENIED until you do this.</li>
 </ul>
 </section>
 
@@ -353,7 +363,8 @@
 <li>Run batch actions, apply profiles, or make or restore backups.</li>
 <li>Switch permissions, app ops or components on and off.</li>
 <li>Read the log in the Logcat Viewer, change Hidden Settings or overlays, or use the working-mode shell in the Terminal. The Task Manager works only in part: its CPU, RAM, battery and network views work, but its process list and GPU view need a working mode.</li>
-<li>Install silently. The <b>No privilege</b> choice of the APK Installer's <b>Authorizer</b> setting hands the file to Android's own installer, which asks you to confirm. This app is listed under Android's "Install unknown apps", and Android asks whether to allow it the first time an install is made this way.</li>
+<li>Trim the caches of every app (<b>Trim Caches</b> in Settings, see <a href="#prefs">Settings</a>). The button shows a padlock.</li>
+<li>Install silently. The <b>No privilege</b> choice of the APK Installer's <b>Authorizer</b> setting hands the file to Android's own installer, which asks you to confirm. This app is listed under Android's "Install unknown apps" (it has its own row, <b>Install unknown apps</b>, in the <a href="#app-permissions">Permissions sheet</a>), and Android asks whether to allow it the first time an install is made this way.</li>
 </ul>
 
 <h4>The orange banner</h4>
@@ -394,17 +405,20 @@
 <tr><td>All files access</td><td>Browse storage in the File Manager, find package files on it, install from it.</td><td>The File Manager and the Installer's search cannot read storage unless a working mode is on (a working mode reads it for you). Added storage, such as an SD card, and the file chooser still work.</td><td>Yes</td></tr>
 <tr><td>Usage access</td><td>Show how big each app is and when it was last used.</td><td>Sizes fall back to the app's file size, and the storage figures are missing.</td><td>Yes</td></tr>
 <tr><td>Display over other apps</td><td>Lets the app open another app's screen from the background, such as an app you have just installed.</td><td>That kind of "open it now" may not appear.</td><td>Yes</td></tr>
+<tr><td>Install unknown apps</td><td>Lets the app install the package files you choose (APK, APKS and XAPK files).</td><td>When the app hands a file to Android's own installer, Android asks first, and refuses until you allow it. Installs made through a working mode are not affected.</td><td>Yes</td></tr>
 <tr><td>Read/Write External Storage</td><td>The older storage permission that some apps still check. On Android 10 and older, it is the storage permission itself.</td><td>Nothing noticeable on Android 11 and newer.</td><td>Yes</td></tr>
 <tr><td>Write Secure Settings</td><td>Lets the app change a few protected system settings used by some advanced features.</td><td>Those advanced features. Nothing in everyday use is known to need it.</td><td>Yes</td></tr>
 <tr><td>Access Restricted Settings</td><td>Lifts Android's block on a few sensitive switches for apps installed from outside a store (Android 13 and newer).</td><td>Some switches for this app stay greyed out as "Restricted setting".</td><td>Yes</td></tr>
 </tbody></table>
-<p>The last three rows only appear in the sheet while a working mode is on, because the app grants them by running a command through that mode (most of them have no screen of their own in Android).</p>
+<p>The first four rows are always in the sheet. The last three only appear while a working mode is on, because the app grants them by running a command through that mode (most of them have no screen of their own in Android).</p>
+<p><b>The Install unknown apps row.</b> Tap <b>Allow</b>. With a working mode on, the app grants it at once. Without one, Android's own <b>Install unknown apps</b> screen for this app opens: switch it on (the switch reads <b>Allow from this source</b> on most phones), press Back, and the row shows a tick. If your copy of the app is an old build that does not report this access, the row is not shown. On a phone older than Android 8 Android has one switch for all apps, so the row would simply say Allowed (this app itself needs Android 8 or newer).</p>
 
 <h4>What the app can grant for itself</h4>
-<p>With a working mode on (ADB, Wireless Debugging, Shizuku or Root), five of these are switched on by the app itself, by running a command as the shell user (UID 2000) or as root. Only All files access always needs Android's own screen.</p>
+<p>With a working mode on (ADB, Wireless Debugging, Shizuku or Root), six of these are switched on by the app itself, by running a command as the shell user (UID 2000) or as root. Only All files access always needs Android's own screen.</p>
 <table class="hg-table"><thead><tr><th>Access</th><th>Command the app runs</th></tr></thead><tbody>
 <tr><td>Usage access</td><td><code>appops set com.bloatware.bingblop GET_USAGE_STATS allow</code></td></tr>
 <tr><td>Display over other apps</td><td><code>appops set com.bloatware.bingblop SYSTEM_ALERT_WINDOW allow</code></td></tr>
+<tr><td>Install unknown apps</td><td><code>appops set com.bloatware.bingblop REQUEST_INSTALL_PACKAGES allow</code></td></tr>
 <tr><td>Read/Write External Storage</td><td><code>pm grant com.bloatware.bingblop android.permission.READ_EXTERNAL_STORAGE</code>, and the same with WRITE_EXTERNAL_STORAGE</td></tr>
 <tr><td>Write Secure Settings</td><td><code>pm grant com.bloatware.bingblop android.permission.WRITE_SECURE_SETTINGS</code></td></tr>
 <tr><td>Access Restricted Settings</td><td><code>appops set com.bloatware.bingblop android:read_write_restricted_settings allow</code></td></tr>
@@ -426,7 +440,7 @@
 </tbody></table>
 
 <h4>Install unknown apps</h4>
-<p>The app declares the permission that Android calls <b>Install unknown apps</b> (its code name is <code>REQUEST_INSTALL_PACKAGES</code>). It is not in the app's own permissions sheet. It is used only when the app hands an APK file to Android's own installer, which happens when an install is made without a working mode (for example the APK Installer's <b>No privilege</b> choice, or the app's own update without a working mode). Android lists this app under Install unknown apps, in its Settings, and asks whether to allow it the first time. If you say no, those installs are refused; installs through a working mode are not affected.</p>
+<p>The app declares the permission that Android calls <b>Install unknown apps</b> (its code name is <code>REQUEST_INSTALL_PACKAGES</code>), and the Permissions sheet has a row for it (see the table above). It is used only when the app hands an APK file to Android's own installer, which happens when an install is made without a working mode (for example the APK Installer's <b>No privilege</b> choice, or the app's own update without a working mode). Android lists this app under Install unknown apps, in its Settings, and asks whether to allow it the first time. If you say no, those installs are refused; installs through a working mode are not affected. Allowing it from the sheet beforehand avoids that question.</p>
 
 <h4>Ordinary permissions you are never asked about</h4>
 <table class="hg-table"><thead><tr><th>Permission</th><th>What it is for</th></tr></thead><tbody>
@@ -439,6 +453,6 @@
 
 <h4>What it does not ask for</h4>
 <p>The app has no permission for the camera, the microphone, your location, contacts, calendar, messages, call log or accounts. It is not an accessibility service or a device administrator.</p>
-<div class="hg-note"><b>Tip.</b> Do not mix up the two uses of "Install unknown apps". When you download this app, the switch that matters is the one for the app you download <i>with</i>, such as your browser (<a href="#install-and-update">Installing and updating the app</a>). The switch for this app itself only matters when it hands a file to Android's installer. Setting up a working mode avoids that step, because the app then installs the file itself.</div>
+<div class="hg-note"><b>Tip.</b> Do not mix up the two uses of "Install unknown apps". When you download this app, the switch that matters is the one for the app you download <i>with</i>, such as your browser (<a href="#install-and-update">Installing and updating the app</a>). The switch for this app itself (the row <b>Install unknown apps</b> in the Permissions sheet) only matters when it hands a file to Android's installer. Setting up a working mode avoids that step, because the app then installs the file itself.</div>
 <p>To take anything back, open Android's Settings, then <b>Apps</b>, then <b>ADB Application Manager Pro</b>, and look under <b>Permissions</b>. Special accesses are under Settings, Apps, <b>Special app access</b> (the names vary by phone), or just use the sheet in About again. See also <a href="#privacy">Privacy</a>.</p>
 </section>
