@@ -6550,9 +6550,9 @@ Type any command below (e.g. pm list packages -d)
         // clearing it, so the same apps are ready for another action straight away. Remembered in ui_state.
         let batchKeepSelection = false;
         // Filters combine: any number of pills / boxes can be on, and an app has to match every one of them (Running + 3rd Party = your running
-        // user apps). None on is "All Apps". Two groups can only have one member on: the kind (3rd Party / System) and the state (Enabled / Frozen / Uninstalled).
+        // user apps). None on is "All Apps". Two pairs can only have one member on, or none: 3rd Party / System, and Enabled / Frozen.
         const activeFilters = new Set();
-        const FILTER_GROUPS = [['user', 'system'], ['enabled', 'frozen', 'uninstalled']];
+        const FILTER_GROUPS = [['user', 'system'], ['enabled', 'frozen']];
         const FILTER_NAMES = { recent: 'Updated 7d', running: 'Running', user: '3rd Party', system: 'System', enabled: 'Enabled', frozen: 'Frozen', suspended: 'Suspended', patched: 'Patched', uninstalled: 'Uninstalled' };
         let inspectedPkg = null;
         let currentWorkingMode = 'unprivileged';
@@ -11444,7 +11444,7 @@ Type any command below (e.g. pm list packages -d)
             } else if (activeFilters.has(filter)) {
                 activeFilters.delete(filter);
             } else {
-                FILTER_GROUPS.forEach(g => { if (g.includes(filter)) g.forEach(x => activeFilters.delete(x)); });         // one kind, one state
+                FILTER_GROUPS.forEach(g => { if (g.includes(filter)) g.forEach(x => activeFilters.delete(x)); });         // each pair is one filter with two values: one on, or none
                 activeFilters.add(filter);
             }
             resetAppsWindow();

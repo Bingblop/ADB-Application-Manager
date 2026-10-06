@@ -7,7 +7,7 @@
   together: tap more than one and the list shows the apps that match all of them, such as Running + 3rd Party for your
   running user apps or Enabled + System for your enabled system apps. A tap on a filter that is on turns it off, All
   Apps (or the Total installed box) turns them all off, a line under the buttons names what is combined, and 3rd
-  Party / System and Enabled / Frozen / Uninstalled can only have one of each on at a time.
+  Party / System, and Enabled / Frozen, are each one filter with two values: one on, or none.
 
 ## v7.9.19-Pro (versionCode 809)
 
