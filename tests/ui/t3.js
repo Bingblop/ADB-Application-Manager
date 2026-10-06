@@ -49,7 +49,7 @@ const manifest = fs.readFileSync(fixture('manifest.xml'), 'utf8').split('\n').sl
   console.log('ops rows:', await page.locator('#opsContainer .perm-row').count());
   await page.click('#opsContainer .op-mode-btn.ignore[data-op="CAMERA"]'); await page.waitForTimeout(100);
   console.log('CAMERA mode now:', await page.locator('#opsContainer .op-mode-btn.on[data-op="CAMERA"]').innerText());
-  await page.fill('#opCustomName', 'run any in background'); await page.selectOption('#opCustomMode', 'deny'); await page.click('.op-custom-row button');
+  await page.fill('#opCustomName', 'run any in background'); await page.selectOption('#opCustomMode', 'deny'); await page.click('#sheetTabOps .op-custom-row button');
   await page.click('#opsFilterRow [data-filter="restricted"]');
   console.log('restricted ops:', await page.locator('#opsContainer .perm-name').allInnerTexts());
   await page.screenshot({ path: 'ops.png' });
