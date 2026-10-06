@@ -174,7 +174,7 @@ const { chromium, PAGE } = require('./lib/pw');
   // The app menu's arrow
   await page.evaluate(() => { collapseBatchPanel(); openInspector('com.example.alpha'); }); await sleep(300);
   console.log('app menu has no arrow, its X closes it:', await page.evaluate(() => document.querySelectorAll('#inspectorModal .sheet-arrow-btn').length));
-  await page.locator('#inspectorModal .sheet-header-actions div', { hasText: '✕' }).click(); await sleep(200);
+  await page.locator('#inspectorModal .sheet-header-top > div', { hasText: '✕' }).click(); await sleep(200);
   console.log('closed:', await page.evaluate(() => !document.getElementById('inspectorModal').classList.contains('show')));
   await page.evaluate(() => { ['com.example.alpha'].forEach(p => { if (!selectedPkgs.has(p)) toggleSelectPkg(p); }); expandBatchPanel(); }); await sleep(400);
   await page.click('#floatingBatchBar [aria-label="Close the batch menu"]'); await sleep(300);

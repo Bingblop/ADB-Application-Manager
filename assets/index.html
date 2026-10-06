@@ -1088,6 +1088,14 @@
             align-self: flex-start;
         }
 
+        #inspectorModal .sheet-header-actions { flex-direction: column; align-items: flex-end; gap: 10px; }
+        #inspectorModal .sheet-header-top { display: flex; align-items: center; gap: 46px; }
+        /* the UAD-NG classification of the app, under Share: tap for the project's full description */
+        .uad-chip { display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 11px; font-weight: 800; padding: 5px 10px; border-radius: 999px;
+            border: 1px solid currentColor; background: rgba(var(--ov), 0.06); cursor: pointer; max-width: 100%; }
+        .uad-chip:active { transform: scale(0.96); }
+        .uad-chip .uad-chip-src { font-size: 9px; font-weight: 700; letter-spacing: 0.4px; color: var(--text-muted); }
+        .uad-chip.uad-r-recommended, .uad-chip.uad-r-advanced, .uad-chip.uad-r-expert, .uad-chip.uad-r-unsafe { }
         .sheet-avatar:empty { display: none; }
         .perm-name.fm-dir { color: var(--accent); font-weight: 800; }
 
@@ -5570,8 +5578,11 @@ Type any command below (e.g. pm list packages -d)
                     </div>
                 </div>
                 <div class="sheet-header-actions">
-                    <span class="copy-chip" onclick="shareAppInfo()">Share</span>
-                    <div style="font-size:20px; cursor:pointer;" onclick="closeInspector()">✕</div>
+                    <div class="sheet-header-top">
+                        <span class="copy-chip" onclick="shareAppInfo()">Share</span>
+                        <div style="font-size:20px; cursor:pointer;" onclick="closeInspector()">✕</div>
+                    </div>
+                    <button class="uad-chip" id="sheetUad" type="button" style="display:none;" onclick="openUadInfo()" aria-haspopup="dialog"></button>
                 </div>
             </div>
 
@@ -6562,6 +6573,26 @@ Type any command below (e.g. pm list packages -d)
     </div>
 
     <!-- Privilege Required Modal -->
+    <div class="modal-overlay" id="uadInfoModal" onclick="if(event.target===this) closeUadInfo()">
+        <div class="modal-sheet" style="max-width:480px;" role="dialog" aria-labelledby="uadInfoTitle">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-title">
+                        <h3 id="uadInfoTitle">UAD-NG classification</h3>
+                        <p id="uadInfoApp"></p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="closeUadInfo()" role="button" aria-label="Close">✕</div>
+            </div>
+            <div id="uadInfoBody" style="font-size:13px; line-height:1.55;"></div>
+            <div class="uad-credit" style="margin-top:12px;">Levels and descriptions come from the UAD-NG project (GPL-3.0). The list is downloaded from their GitHub and cached on this phone.</div>
+            <div class="mode-btn-row" style="margin-top:12px;">
+                <button class="mode-action-btn" onclick="openUadWiki()">UAD-NG Wiki</button>
+                <button class="mode-action-btn" onclick="closeUadInfo()">Close</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="privilegeModal" onclick="if(event.target===this) closePrivilegeModal()">
         <div class="modal-sheet" style="max-width:440px;">
             <div class="sheet-header">
@@ -8114,6 +8145,52 @@ Type any command below (e.g. pm list packages -d)
             }).sort((a, b) => (UAD_LEVEL_ORDER[a.removal] - UAD_LEVEL_ORDER[b.removal]) || a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
         }
 
+        const UAD_LEVEL_TEXT = {
+            Recommended: 'Safe to remove for most people, including apps you can reinstall from an app store. Still worth a quick review, since everyone uses their phone differently.',
+            Advanced: 'Breaks minor or obscure features, overlays, or default apps (keyboard, gallery, launcher) that a better alternative can replace.',
+            Expert: "Breaks widespread or important features, but not basic operation. Shouldn't boot-loop the phone unless the description says so, with no guarantee.",
+            Unsafe: 'Can break vital parts of Android, or may be illegal to remove where you live (e.g. emergency alerts). High risk of a boot-loop.'
+        };
+        // The app menu's UAD-NG chip: what the project's list says about the open app (nothing shown when it is not in the list)
+        let sheetUadInfo = null;
+        function loadSheetUad(pkg) {
+            const chip = document.getElementById('sheetUad');
+            sheetUadInfo = null;
+            if (!chip) return;
+            chip.style.display = 'none';
+            const bridge = window.AndroidBridge;
+            if (!bridge || !bridge.getUadInfo) return;
+            let r = null;
+            try { r = JSON.parse(bridge.getUadInfo(pkg) || '{}'); } catch (e) { r = null; }
+            if (!r || !r.found || pkg !== inspectedPkg) return;
+            sheetUadInfo = r;
+            const lvl = String(r.removal || 'Expert');
+            chip.className = 'uad-chip uad-r-' + lvl.toLowerCase();
+            chip.innerHTML = '<span class="uad-chip-src">UAD-NG</span><span></span>';
+            chip.lastChild.innerText = lvl.toUpperCase();
+            chip.setAttribute('aria-label', 'UAD-NG classification ' + lvl + ': tap for the description');
+            chip.style.display = '';
+        }
+        function openUadInfo() {
+            const r = sheetUadInfo;
+            if (!r) return;
+            haptic();
+            const app = allApps.find(a => a.pkg === r.pkg);
+            document.getElementById('uadInfoApp').innerText = (app ? app.name + ' · ' : '') + r.pkg;
+            const lvl = String(r.removal || 'Expert');
+            const list = a => (a || []).map(x => '<code translate="no">' + escapeHtml(x) + '</code>').join(', ');
+            document.getElementById('uadInfoBody').innerHTML =
+                '<div>' + uadRemovalBadge(lvl) + '<span class="uad-badge uad-tag">' + escapeHtml(r.list || 'Misc') + '</span></div>'
+                + '<div class="uad-level" style="margin:8px 0;"><b>' + escapeHtml(lvl) + ':</b> ' + escapeHtml(UAD_LEVEL_TEXT[lvl] || '') + '</div>'
+                + (r.description && r.description.trim() ? '<div style="white-space:pre-wrap; margin:8px 0;">' + escapeHtml(r.description.trim()) + '</div>' : '<div class="list-empty" style="padding:8px 0;">The project gives no description for this package.</div>')
+                + ((r.neededBy || []).length ? '<div class="uad-warn">Needed by: ' + list(r.neededBy) + '</div>' : '')
+                + ((r.dependencies || []).length ? '<div class="uad-warn">Depends on: ' + list(r.dependencies) + '</div>' : '');
+            document.getElementById('uadInfoModal').classList.add('show');
+        }
+        function closeUadInfo() {
+            haptic();
+            document.getElementById('uadInfoModal').classList.remove('show');
+        }
         function uadRemovalBadge(r) {
             return `<span class="uad-badge uad-r-${String(r).toLowerCase()}">${escapeHtml(r)}</span>`;
         }
@@ -16192,6 +16269,7 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('sheetAvatar').innerText = app.name.charAt(0).toUpperCase();
 
             refreshInspectorButtons(pkg);
+            loadSheetUad(pkg);
 
             // Reset per-app state
             inspectorData = null;

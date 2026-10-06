@@ -1769,6 +1769,46 @@ public class MainActivity extends Activity {
         return res.toString();
     }
 
+    private volatile JSONObject uadListCache;
+    private volatile long uadListCacheStamp;
+
+    /** The cached UAD-NG list, read again only when its file changed (the single-app menu asks for one package at a time). */
+    private JSONObject uadListCached() {
+        try {
+            File f = uadCacheFile();
+            if (!f.exists()) return null;
+            long stamp = f.lastModified() * 31 + f.length();
+            JSONObject c = uadListCache;
+            if (c != null && stamp == uadListCacheStamp) return c;
+            c = new JSONObject(new String(AdbKeyManager.readFile(f), "UTF-8"));
+            uadListCache = c;
+            uadListCacheStamp = stamp;
+            return c;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** What the UAD-NG list says about one package: {found, pkg, list, removal, description, dependencies, neededBy}; {found:false} when it is not in the list or the list is not downloaded. */
+    private String uadInfo(String pkg) {
+        JSONObject res = new JSONObject();
+        try {
+            JSONObject list = uadListCached();
+            JSONObject e = (list == null || pkg == null) ? null : list.optJSONObject(pkg);
+            if (e == null) { res.put("found", false); res.put("downloaded", list != null); return res.toString(); }
+            res.put("found", true);
+            res.put("pkg", pkg);
+            res.put("list", e.optString("list", "Misc"));
+            res.put("removal", e.optString("removal", "Expert"));
+            res.put("description", e.optString("description", ""));
+            res.put("dependencies", e.optJSONArray("dependencies") != null ? e.optJSONArray("dependencies") : new JSONArray());
+            res.put("neededBy", e.optJSONArray("neededBy") != null ? e.optJSONArray("neededBy") : new JSONArray());
+        } catch (Exception ex) {
+            try { res = new JSONObject().put("found", false); } catch (Exception ignored) {}
+        }
+        return res.toString();
+    }
+
     // ---------------------------------------------------------------------------------------------
     // Updates tab: Galaxy Store (Samsung system / store apps) and this app's GitHub releases
     // ---------------------------------------------------------------------------------------------
@@ -8541,6 +8581,11 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public String getUadMatches() {
             return uadMatches();
+        }
+
+        @JavascriptInterface
+        public String getUadInfo(String pkg) {
+            return uadInfo(pkg);
         }
 
         @JavascriptInterface

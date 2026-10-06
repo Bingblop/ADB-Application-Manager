@@ -7,6 +7,10 @@
   (the lock is on the mode that is set), and Enable / Disable, Stop and Launch (of an unexported activity) for the
   activities, services, receivers and providers, in the app's menu and in the Activity Launcher and Permission Manager
   sheets. Tapping one still explains what is needed. With a working mode only the install-time permissions stay locked.
+- **The UAD-NG classification in an app's menu.** If the UAD-NG project lists the app, a chip under Share shows its level
+  (Recommended, Advanced, Expert or Unsafe). Tap it for a prompt with the project's full description, what the level
+  means, the category, and what the package needs or is needed by, with a link to the UAD-NG wiki. Apps the project
+  does not list show no chip. It needs the UAD-NG list to be downloaded once (Debloater tab).
 
 ## v7.9.22-Pro (versionCode 812)
 
