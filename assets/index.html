@@ -1308,6 +1308,7 @@
             cursor: pointer;
         }
 
+        .op-mode-btn.locked { opacity: 0.65; }
         .op-mode-btn.on.allow { background: rgba(0, 230, 118, 0.2); color: var(--status-running); border-color: transparent; }
         .op-mode-btn.on.ignore, .op-mode-btn.on.deny { background: rgba(255, 82, 82, 0.2); color: var(--status-bloat); border-color: transparent; }
         .op-mode-btn.on.foreground { background: rgba(255, 145, 0, 0.18); color: #FFA726; border-color: transparent; }
@@ -7613,6 +7614,12 @@ Type any command below (e.g. pm list packages -d)
             return guardPrivilege(actionName);
         }
 
+        // The lock on a button that cannot change anything in the current state: without a working mode nothing of an app can be changed
+        // (permissions, app ops, components); an install-time permission is locked whatever the mode is.
+        const LOCK_ICON = '🔒';
+        function lockedNow() { return !isPrivilegedActive; }
+        function lk(on) { return on ? LOCK_ICON + ' ' : ''; }
+        const NEEDS_MODE = 'Needs a working mode (ADB, Wireless Debugging, Shizuku or Root)';
         function guardPrivilege(actionName) {
             if (!isPrivilegedActive) {
                 openPrivilegeRequiredModal(actionName);
@@ -10724,7 +10731,7 @@ Type any command below (e.g. pm list packages -d)
                 });
                 list.innerHTML = rows.length ? rows.map(op => {
                     const sub = [op.uidOnly ? 'uid-level mode' : '', op.uidMode && !op.uidOnly ? 'uid: ' + op.uidMode : '', op.detail].filter(Boolean).join(' • ');
-                    const buttons = OP_MODES.map(([mode, label]) => `<button class="op-mode-btn ${mode} ${op.mode === mode ? 'on' : ''}" data-op="${escapeHtml(op.name)}" onclick="setAppOpMode(this.getAttribute('data-op'), '${mode}')">${label}</button>`).join('');
+                    const buttons = OP_MODES.map(([mode, label]) => `<button class="op-mode-btn ${mode} ${op.mode === mode ? 'on' : ''}${lockedNow() ? ' locked' : ''}"${lockedNow() ? ` title="${NEEDS_MODE}"` : ''} data-op="${escapeHtml(op.name)}" onclick="setAppOpMode(this.getAttribute('data-op'), '${mode}')">${lk(lockedNow() && op.mode === mode)}${label}</button>`).join('');
                     return `<div class="perm-row als-row" style="flex-direction:column; align-items:stretch; gap:6px;"><div class="perm-info"><div class="perm-name" translate="no">${escapeHtml(op.name)}</div>${sub ? `<div class="als-detail">${escapeHtml(sub)}</div>` : ''}</div><div class="op-modes">${buttons}</div></div>`;
                 }).join('') : '<div class="list-empty">' + (ops.length ? 'No app ops match.' : (isPrivilegedActive ? 'No app ops recorded for this app yet.' : 'App ops need ADB, Shizuku or Root. Set up a working mode first.')) + '</div>';
                 return;
@@ -10750,8 +10757,8 @@ Type any command below (e.g. pm list packages -d)
                     const state = p.granted ? 'Granted' : 'Not granted';
                     const how = p.changeable ? 'You can grant or revoke it here.' : 'Install-time permission: fixed when the app was installed, it cannot be changed here.';
                     const btn = p.changeable
-                        ? `<button class="perm-toggle-btn ${p.granted ? 'granted' : 'revoked'}" data-perm="${escapeHtml(p.name)}" data-granted="${p.granted}" onclick="togglePermission(this.getAttribute('data-perm'), this.getAttribute('data-granted') === 'true')">${p.granted ? 'GRANTED' : 'REVOKED'}</button>`
-                        : `<button class="perm-toggle-btn locked" title="Install-time permission: cannot be changed with pm grant/revoke">🔒 ${p.granted ? 'GRANTED' : 'NOT GRANTED'}</button>`;
+                        ? `<button class="perm-toggle-btn ${lockedNow() ? 'locked' : (p.granted ? 'granted' : 'revoked')}"${lockedNow() ? ` title="${NEEDS_MODE}"` : ''} data-perm="${escapeHtml(p.name)}" data-granted="${p.granted}" onclick="togglePermission(this.getAttribute('data-perm'), this.getAttribute('data-granted') === 'true')">${lk(lockedNow())}${p.granted ? 'GRANTED' : 'REVOKED'}</button>`
+                        : `<button class="perm-toggle-btn locked" title="Install-time permission: cannot be changed with pm grant/revoke">${LOCK_ICON} ${p.granted ? 'GRANTED' : 'NOT GRANTED'}</button>`;
                     return `<div class="perm-row als-row"><div class="perm-info">
                         <div class="perm-name">${escapeHtml(p.label || short)}</div>
                         <div class="perm-sub"><span class="perm-kind">${escapeHtml(p.protection || 'unknown')}</span>${p.appOp ? '<span class="perm-kind">app op</span>' : ''}<span class="perm-kind">${state}</span></div>
@@ -10783,8 +10790,8 @@ Type any command below (e.g. pm list packages -d)
                         ${a.permission ? `<div class="als-detail" translate="no">Needs permission: ${escapeHtml(a.permission)}</div>` : ''}
                         <div class="als-detail">${need}</div>
                     </div><div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">
-                        <button class="perm-toggle-btn ${a.exported ? 'granted' : 'locked'}" style="cursor:pointer;" data-comp="${escapeHtml(a.name)}" data-exported="${a.exported}" onclick="launchComponent(this.getAttribute('data-comp'), this.getAttribute('data-exported') === 'true')">LAUNCH</button>
-                        <button class="perm-toggle-btn ${a.enabled === false ? 'granted' : 'revoked'}" data-comp="${escapeHtml(a.name)}" onclick="toggleComponent(this.getAttribute('data-comp'), ${a.enabled === false ? 'true' : 'false'})">${a.enabled === false ? 'ENABLE' : 'DISABLE'}</button>
+                        <button class="perm-toggle-btn ${a.exported ? 'granted' : 'locked'}" style="cursor:pointer;" data-comp="${escapeHtml(a.name)}" data-exported="${a.exported}" onclick="launchComponent(this.getAttribute('data-comp'), this.getAttribute('data-exported') === 'true')">${lk(!a.exported && lockedNow())}LAUNCH</button>
+                        <button class="perm-toggle-btn ${lockedNow() ? 'locked' : (a.enabled === false ? 'granted' : 'revoked')}"${lockedNow() ? ` title="${NEEDS_MODE}"` : ''} style="cursor:pointer;" data-comp="${escapeHtml(a.name)}" onclick="toggleComponent(this.getAttribute('data-comp'), ${a.enabled === false ? 'true' : 'false'})">${lk(lockedNow())}${a.enabled === false ? 'ENABLE' : 'DISABLE'}</button>
                     </div></div>`;
                 }).join('') : '<div class="list-empty">' + (acts.length ? 'No activities match.' : 'No activities.') + '</div>';
                 const chosen = acts.filter(a => alsSel.has(a.name));
@@ -16275,9 +16282,9 @@ Type any command below (e.g. pm list packages -d)
                         (c.enabled === false ? '<span class="perm-kind" style="color:#FFA726;border-color:rgba(255,145,0,0.4);">disabled</span>' : '') +
                         (c.permission ? `<span class="perm-kind" title="${escapeHtml(c.permission)}">protected</span>` : '');
                     let btns = '';
-                    if (k.launch) btns += `<button class="perm-toggle-btn ${c.exported ? 'granted' : 'locked'}" style="cursor:pointer;" data-comp="${escapeHtml(c.name)}" data-exported="${c.exported}" onclick="launchComponent(this.getAttribute('data-comp'), this.getAttribute('data-exported') === 'true')">${c.exported ? 'LAUNCH' : 'LAUNCH (SHELL)'}</button>`;
-                    if (k.stop) btns += `<button class="perm-toggle-btn revoked" data-comp="${escapeHtml(c.name)}" onclick="stopComponentService(this.getAttribute('data-comp'))">STOP</button>`;
-                    btns += `<button class="perm-toggle-btn ${c.enabled === false ? 'granted' : 'revoked'}" data-comp="${escapeHtml(c.name)}" onclick="toggleComponent(this.getAttribute('data-comp'), ${c.enabled === false ? 'true' : 'false'})">${c.enabled === false ? 'ENABLE' : 'DISABLE'}</button>`;
+                    if (k.launch) btns += `<button class="perm-toggle-btn ${c.exported ? 'granted' : 'locked'}" style="cursor:pointer;" data-comp="${escapeHtml(c.name)}" data-exported="${c.exported}" onclick="launchComponent(this.getAttribute('data-comp'), this.getAttribute('data-exported') === 'true')">${lk(!c.exported && lockedNow())}${c.exported ? 'LAUNCH' : 'LAUNCH (SHELL)'}</button>`;
+                    if (k.stop) btns += `<button class="perm-toggle-btn ${lockedNow() ? 'locked' : 'revoked'}"${lockedNow() ? ` title="${NEEDS_MODE}"` : ''} style="cursor:pointer;" data-comp="${escapeHtml(c.name)}" onclick="stopComponentService(this.getAttribute('data-comp'))">${lk(lockedNow())}STOP</button>`;
+                    btns += `<button class="perm-toggle-btn ${lockedNow() ? 'locked' : (c.enabled === false ? 'granted' : 'revoked')}"${lockedNow() ? ` title="${NEEDS_MODE}"` : ''} style="cursor:pointer;" data-comp="${escapeHtml(c.name)}" onclick="toggleComponent(this.getAttribute('data-comp'), ${c.enabled === false ? 'true' : 'false'})">${lk(lockedNow())}${c.enabled === false ? 'ENABLE' : 'DISABLE'}</button>`;
                     html += `
                         <div class="perm-row">
                             <div class="perm-info">
@@ -16423,8 +16430,8 @@ Type any command below (e.g. pm list packages -d)
                 const kind = p.protection || 'unknown';
                 const sub = [p.label, p.name !== shortName ? p.name : ''].filter(Boolean).join(' • ');
                 const btn = p.changeable
-                    ? `<button class="perm-toggle-btn ${p.granted ? 'granted' : 'revoked'}" data-perm="${escapeHtml(p.name)}" data-granted="${p.granted}" onclick="togglePermission(this.getAttribute('data-perm'), this.getAttribute('data-granted') === 'true')">${p.granted ? 'GRANTED' : 'DENIED'}</button>`
-                    : `<button class="perm-toggle-btn locked" title="Install-time permission: cannot be changed with pm grant/revoke">🔒 ${p.granted ? 'GRANTED' : 'NOT GRANTED'}</button>`;
+                    ? `<button class="perm-toggle-btn ${lockedNow() ? 'locked' : (p.granted ? 'granted' : 'revoked')}"${lockedNow() ? ` title="${NEEDS_MODE}"` : ''} data-perm="${escapeHtml(p.name)}" data-granted="${p.granted}" onclick="togglePermission(this.getAttribute('data-perm'), this.getAttribute('data-granted') === 'true')">${lk(lockedNow())}${p.granted ? 'GRANTED' : 'DENIED'}</button>`
+                    : `<button class="perm-toggle-btn locked" title="Install-time permission: cannot be changed with pm grant/revoke">${LOCK_ICON} ${p.granted ? 'GRANTED' : 'NOT GRANTED'}</button>`;
                 return `
                     <div class="perm-row">
                         <div class="perm-info">
@@ -16505,7 +16512,7 @@ Type any command below (e.g. pm list packages -d)
             container.innerHTML = rows.map(op => {
                 const sub = [op.uidOnly ? 'uid-level mode' : '', op.uidMode && !op.uidOnly ? 'uid: ' + op.uidMode : '', op.detail].filter(Boolean).join(' • ');
                 const buttons = OP_MODES.map(([mode, label]) =>
-                    `<button class="op-mode-btn ${mode} ${op.mode === mode ? 'on' : ''}" data-op="${escapeHtml(op.name)}" onclick="setAppOpMode(this.getAttribute('data-op'), '${mode}')">${label}</button>`).join('');
+                    `<button class="op-mode-btn ${mode} ${op.mode === mode ? 'on' : ''}${lockedNow() ? ' locked' : ''}"${lockedNow() ? ` title="${NEEDS_MODE}"` : ''} data-op="${escapeHtml(op.name)}" onclick="setAppOpMode(this.getAttribute('data-op'), '${mode}')">${lk(lockedNow() && op.mode === mode)}${label}</button>`).join('');
                 return `
                     <div class="perm-row" style="flex-direction:column; align-items:stretch; gap:6px;">
                         <div class="perm-info">

@@ -10,7 +10,7 @@ let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL ') + label + ':', ok, extra === undefined ? '' : extra); }
 const EMOJI = /\p{Extended_Pictographic}|️|⃣/gu;
 const GEAR = /⚙️?/gu;
-const LOCK = /\u{1F512} /gu;           // v7.9.22 (asked for): the lock on the button of a permission that cannot be toggled
+const LOCK = /\u{1F512}/gu;           // v7.9.22 (asked for): the lock on the button of a permission that cannot be toggled
 
 function walk(dir, out) {
   for (const f of fs.readdirSync(dir)) {
@@ -34,7 +34,7 @@ const found = (text) => { const m = decode(text).match(EMOJI); return m ? Array.
   const withoutGears = decode(page_src).replace(GEAR, '').replace(LOCK, '');
   check('1. the page has no emoji but the gears (© is not an emoji and is left)', found(withoutGears.replace(/©/g, '')).length === 0, JSON.stringify(found(withoutGears.replace(/©/g, ''))));
   check('   exactly two gears are written in it: the header button and the Terminal settings button (the app row button is an SVG icon now)', (decode(page_src).match(GEAR) || []).length === 2);
-  check('   exactly two locks are written in it: the buttons of a permission that cannot be changed (the inspector and the Permission Manager)', (decode(page_src).match(LOCK) || []).length === 2 && (page_src.match(/perm-toggle-btn locked"[^`]*\u{1F512} /gu) || []).length === 2);
+  check('   exactly one lock is written in it (LOCK_ICON, used by every button that cannot change anything in the current state: permissions, app ops, activities, services, receivers, providers)', (decode(page_src).match(LOCK) || []).length === 1 && /const LOCK_ICON = '\u{1F512}';/u.test(page_src));
   check('   the header gear is the first, the Terminal\'s the second', /id="prefsHeaderBtn"[^>]*>⚙️<\/div>/u.test(page_src) && /id="txSettingsBtn"[^>]*>⚙️<\/button>/u.test(page_src));
   check('   the changelog the What\'s new screen shows has none', found(fs.readFileSync(path.join(REPO, 'CHANGELOG.md'), 'utf8')).length === 0, JSON.stringify(found(fs.readFileSync(path.join(REPO, 'CHANGELOG.md'), 'utf8'))));
   const res = walk(path.join(REPO, 'res'), []).filter(f => /\.(xml|txt)$/.test(f)).filter(f => found(fs.readFileSync(f, 'utf8')).length);
@@ -63,7 +63,7 @@ const found = (text) => { const m = decode(text).match(EMOJI); return m ? Array.
       if (!p || /^(SCRIPT|STYLE)$/.test(p.tagName)) continue;
       const t = n.nodeValue.trim();
       if (!t || !re.test(t)) continue;
-      if (/^\u{1F512} /u.test(t) && p.classList.contains('perm-toggle-btn') && p.classList.contains('locked')) continue;
+      if (/^\u{1F512} /u.test(t) && p.classList.contains('locked') && (p.classList.contains('perm-toggle-btn') || p.classList.contains('op-mode-btn'))) continue;
       if (gear.test(t) && (p.id === 'prefsHeaderBtn' || p.id === 'txSettingsBtn' || (p.classList.contains('btn-mini') && p.getAttribute('title') === 'App Settings'))) continue;
       hits.push((p.id || p.className || p.tagName) + ': ' + t.slice(0, 40));
     }

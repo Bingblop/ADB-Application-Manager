@@ -1,5 +1,13 @@
 # Changelog
 
+## v7.9.23-Pro (versionCode 813)
+
+- **The lock on everything that cannot be changed right now.** Without a working mode (ADB, Wireless Debugging, Shizuku or
+  Root), the buttons that would change something show the lock and look locked: the permission toggles, the App Ops modes
+  (the lock is on the mode that is set), and Enable / Disable, Stop and Launch (of an unexported activity) for the
+  activities, services, receivers and providers, in the app's menu and in the Activity Launcher and Permission Manager
+  sheets. Tapping one still explains what is needed. With a working mode only the install-time permissions stay locked.
+
 ## v7.9.22-Pro (versionCode 812)
 
 - **Frozen and Uninstalled are kept apart.** An uninstalled app counts only as Uninstalled: it is no longer in the Frozen
