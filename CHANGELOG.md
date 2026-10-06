@@ -13,7 +13,7 @@
   Settings, Icon pack also has a "Clear icon cache" button.
 - **Action Button setting.** A new "Action Button" card in Settings, right after Icon pack, chooses what the extra
   button on each Apps list row does: App Settings (as before), Force Stop, App Launcher, Enable / Disable, Install /
-  Uninstall, Unsuspend / Suspend, Permission Manager or Activity Launcher. It is always an icon, and the three
+  Uninstall, Unsuspend / Suspend, Permission Manager, Activity Launcher or None (no button). It is always an icon, and the three
   Enable / Disable, Install / Uninstall and Unsuspend / Suspend choices change their icon and action to match the
   app's current state. Permission Manager and Activity Launcher open a sheet like the app menu, listing every
   permission (with its label, description, group, protection level, whether it is granted and whether you can change it)
