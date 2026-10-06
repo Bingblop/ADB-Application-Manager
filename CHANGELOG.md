@@ -1,5 +1,15 @@
 # Changelog
 
+## v7.9.19-Pro (versionCode 809)
+
+- **Presets and saved commands can be exported and imported.** Batch Ops has Export presets and Import..., Command has
+  Export saved commands and Import...: an export is a small .json file you can share or keep, and Import... takes
+  such a file from Android's file chooser (what is already here is not added twice, a different item with the same name
+  comes in as "... (imported)", anything that is not valid is skipped).
+- **Rename** for saved presets and saved commands (the pencil next to the name; the built-in presets can be duplicated
+  and then renamed).
+- **An on-device test checklist** for the v7.9.14 to v7.9.19 features is in docs/DEVICE-TEST-CHECKLIST.md.
+
 ## v7.9.18-Pro (versionCode 808)
 
 - **Added storage (SD card, USB drive, another app's folder) does more.** Copy and Move now work there: pick them from a

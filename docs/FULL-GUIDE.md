@@ -115,7 +115,7 @@ Every tab except Application Manager and About can be switched off or moved in *
 
 ## New in v7.9
 
-**v7.9.18 is the latest build.** Everything from v7.9 through v7.9.15 is below; the full, dated list is in
+**v7.9.19 is the latest build.** Everything from v7.9 through v7.9.15 is below; the full, dated list is in
 [CHANGELOG.md](../CHANGELOG.md) (and inside the app, under About).
 
 **Newest (v7.9.12 to v7.9.15)**
@@ -1157,6 +1157,8 @@ CHANGELOG.md                   Release notes; the app shows them in What's new
 ```
 
 ## Testing
+
+Checking the new features on a real phone: [DEVICE-TEST-CHECKLIST.md](DEVICE-TEST-CHECKLIST.md).
 
 What is checked before each release, and what is not. The checks live in [`tests/`](../tests/) and can be re-run from a clone
 (`cd tests && npm install && npx playwright install chromium && node run.js && node java/run.js`; what each needs and how a

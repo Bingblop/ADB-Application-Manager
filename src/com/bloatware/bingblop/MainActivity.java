@@ -4802,6 +4802,8 @@ public class MainActivity extends Activity {
     // ---------------------------------------------------------------------------------------------
 
     private static final int REQ_PICK_FONT = 4204;
+    private static final int REQ_PICK_TEXT = 4290;       // a small text file for the page (presets and saved commands)
+    private volatile String pickTextTag = "";
     private volatile long fontScanProgressAt = 0;
     // numbers the searches, like the one for packages: an older search's progress and answer are dropped
     private final java.util.concurrent.atomic.AtomicInteger fontScanSeq = new java.util.concurrent.atomic.AtomicInteger();
@@ -5820,6 +5822,46 @@ public class MainActivity extends Activity {
             final Uri picked = (resultCode == RESULT_OK && data != null) ? data.getData() : null;
             if (picked == null) return;
             notifyJs("window.onInstallFilePicked && window.onInstallFilePicked(" + JSONObject.quote(picked.toString()) + ")");
+            return;
+        }
+        if (requestCode == REQ_PICK_TEXT) {
+            final String tag = pickTextTag;
+            final Uri textUri = (resultCode == RESULT_OK && data != null) ? data.getData() : null;
+            if (textUri == null) return;
+            executor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject res = new JSONObject();
+                    try {
+                        res.put("tag", tag);
+                        InputStream in = getContentResolver().openInputStream(textUri);
+                        if (in == null) throw new IllegalStateException("could not open the file");
+                        java.io.ByteArrayOutputStream buf = new java.io.ByteArrayOutputStream();
+                        try {
+                            byte[] b = new byte[16384];
+                            int n;
+                            while ((n = in.read(b)) > 0) {
+                                buf.write(b, 0, n);
+                                if (buf.size() > 1024 * 1024) throw new IllegalStateException("the file is over 1 MB, too big for this");
+                            }
+                        } finally {
+                            in.close();
+                        }
+                        String name = "";
+                        try {
+                            android.database.Cursor c = getContentResolver().query(textUri, new String[]{android.provider.OpenableColumns.DISPLAY_NAME}, null, null, null);
+                            if (c != null) {
+                                try { if (c.moveToFirst()) name = c.getString(0); } finally { c.close(); }
+                            }
+                        } catch (Exception ignored) {}
+                        res.put("name", name);
+                        res.put("text", buf.toString("UTF-8"));
+                    } catch (Exception e) {
+                        try { res.put("error", e.getMessage() == null ? "could not read the file" : e.getMessage()); } catch (Exception ignored) {}
+                    }
+                    notifyJs("window.onTextFilePicked && window.onTextFilePicked(" + res.toString() + ")");
+                }
+            });
             return;
         }
         if (requestCode == REQ_PICK_FONT) {
@@ -8678,6 +8720,21 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void scanFonts() {
             runFontScan();
+        }
+
+        /** Lets the user choose a small text file (up to 1 MB). Answer: window.onTextFilePicked({tag, name, text} or {tag, error}). */
+        @JavascriptInterface
+        public void pickTextFile(final String tag) {
+            pickTextTag = tag == null ? "" : tag;
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                    i.addCategory(Intent.CATEGORY_OPENABLE);
+                    i.setType("*/*");
+                    startActivityForResult(i, REQ_PICK_TEXT);
+                }
+            });
         }
 
         /** Lets the user choose a font file with Android's file chooser. Answer: window.onFontPicked(ref). */

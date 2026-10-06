@@ -14,6 +14,7 @@ const { chromium, PAGE } = require('./lib/pw');
       isSystemDarkMode() { return true; }, setSystemBarColor() {}, loadPackages() { return JSON.stringify(a); },
       getWorkingMode() { return JSON.stringify({ mode: 'adb_tcp', isPrivileged: true, status: 'connected', activeMode: 'adb_tcp', modeAvailable: true }); },
       getIconPacks() { return '[]'; }, loadAppIcons() { return 'started'; }, getAppDetails() { return '{}'; },
+      pickTextFile(tag) { setTimeout(() => window.onTextFilePicked(Object.assign({ tag }, window.__file)), 20); },
       shareTextFile(name, text, mime) { window.__share.push([name, text, mime]); return ''; },
       appActionBatch(action, pkgsJson) {
         const pk = JSON.parse(pkgsJson); window.__batch.push([action, pk]);
@@ -124,6 +125,50 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.evaluate(() => { window.__batch.length = 0; });
   await page.locator('#commandResultsActions button', { hasText: /^Run again$/ }).click(); await sleep(500);
   console.log('Run again repeats the run the dialog shows (here the retried one):', JSON.stringify(await page.evaluate(() => window.__batch)));
+  await page.evaluate(() => { document.querySelectorAll('.modal-overlay.show').forEach(m => m.classList.remove('show')); });
+
+  // Rename, export and import of presets and saved commands
+  await page.evaluate(() => { document.querySelectorAll('.modal-overlay.show').forEach(m => m.classList.remove('show')); ['com.example.alpha'].forEach(p => { if (!selectedPkgs.has(p)) toggleSelectPkg(p); }); expandBatchPanel(); }); await sleep(300);
+  await page.locator('#floatingBatchBar button', { hasText: 'Batch Ops' }).click(); await sleep(250);
+  console.log('saved presets before:', await page.evaluate(() => bopsSavedLoad().map(p => p.name)));
+  window_prompt = async v => page.evaluate(v => { window.__prompt = v; }, v);
+  await window_prompt('Quiet notifications');
+  await page.locator('#bopsPresets .preset-chip', { hasText: 'Silence notifications (copy 2)' }).locator('[title="Rename"]').click(); await sleep(120);
+  console.log('Rename a saved preset:', await page.evaluate(() => bopsSavedLoad().map(p => p.name)));
+  await window_prompt('My preset');
+  await page.locator('#bopsPresets .preset-chip', { hasText: 'Quiet notifications' }).locator('[title="Rename"]').click(); await sleep(120);
+  console.log('a taken name is refused:', await page.evaluate(() => [bopsSavedLoad().map(p => p.name), document.getElementById('toastMsg').innerText]));
+  console.log('built-in presets have no Rename:', await page.evaluate(() => Array.from(document.querySelectorAll('#bopsPresets .preset-chip')).filter(c => /^(Privacy lockdown|No location)/.test(c.innerText.trim())).map(c => c.querySelectorAll('[title="Rename"]').length)));
+  await page.evaluate(() => { window.__share.length = 0; });
+  await page.click('button[onclick="presetsExport(\'bops\')"]'); await sleep(150);
+  const ex = await page.evaluate(() => window.__share.slice(-1)[0]);
+  const exj = JSON.parse(ex[1]);
+  console.log('Export presets shares a JSON file:', JSON.stringify([ex[0].replace(/\d{4}-\d\d-\d\d/, 'DATE'), ex[2], exj.app, exj.format, exj.bopsPresets.map(p => p.name), 'batchCommands' in exj]));
+  // import: the same file again (nothing new), then a file with a clash, a new one, a command and junk
+  await page.evaluate(t => { window.__file = { name: 'p.json', text: t }; }, ex[1]);
+  await page.click('button[onclick="presetsImport(\'bops\')"]'); await sleep(200);
+  console.log('importing the same file again adds nothing:', await page.evaluate(() => [document.getElementById('toastMsg').innerText, bopsSavedLoad().length]));
+  const file = JSON.stringify({ app: 'adb-app-manager', format: 1,
+    bopsPresets: [{ name: 'My preset', ops: { CAMERA: 'deny' } }, { name: 'Fresh', ops: { RECORD_AUDIO: 'ignore', bad_name: 'deny', CAMERA: 'bogus' } }, { name: 'Empty', ops: { x: 'allow' } }, 5],
+    batchCommands: [{ name: 'Imported cmd', cmd: 'am force-stop $package' }, { name: '', cmd: 'x' }] });
+  await page.evaluate(t => { window.__file = { name: 'p.json', text: t }; }, file);
+  await page.click('button[onclick="presetsImport(\'bops\')"]'); await sleep(200);
+  console.log('Import brings in the good ones (a clash is kept as "(imported)", junk skipped):', JSON.stringify(await page.evaluate(() => [document.getElementById('toastMsg').innerText, bopsSavedLoad().map(p => p.name), bopsSavedLoad().find(p => p.name === 'Fresh').ops, bcSavedLoad().map(c => c.name)])));
+  await page.evaluate(() => { window.__file = { name: 'x.json', text: '{"hello":1}' }; });
+  await page.click('button[onclick="presetsImport(\'bops\')"]'); await sleep(200);
+  console.log('a file that is not ours is refused:', await page.evaluate(() => document.getElementById('toastMsg').innerText));
+  await page.evaluate(() => { window.__file = { error: 'the file is over 1 MB' }; });
+  await page.click('button[onclick="presetsImport(\'bops\')"]'); await sleep(200);
+  console.log('a read error is shown:', await page.evaluate(() => document.getElementById('toastMsg').innerText));
+  await page.evaluate(() => { document.querySelectorAll('.modal-overlay.show').forEach(m => m.classList.remove('show')); expandBatchPanel(); }); await sleep(250);
+  await page.locator('#floatingBatchBar button', { hasText: 'Command' }).click(); await sleep(250);
+  await window_prompt('Stop it');
+  await page.locator('#bcSaved .preset-chip', { hasText: 'Imported cmd' }).locator('[title="Rename"]').click(); await sleep(120);
+  console.log('Rename a saved command:', await page.evaluate(() => bcSavedLoad().map(c => c.name)));
+  await page.evaluate(() => { window.__share.length = 0; });
+  await page.click('button[onclick="presetsExport(\'cmds\')"]'); await sleep(150);
+  const ec = await page.evaluate(() => window.__share.slice(-1)[0]);
+  console.log('Export saved commands:', JSON.stringify([ec[0].replace(/\d{4}-\d\d-\d\d/, 'DATE'), JSON.parse(ec[1]).batchCommands.map(c => c.name + '=' + c.cmd)]));
   await page.evaluate(() => { document.querySelectorAll('.modal-overlay.show').forEach(m => m.classList.remove('show')); });
 
   // The app menu's arrow
