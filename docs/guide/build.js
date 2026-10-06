@@ -21,7 +21,7 @@ const GROUPS = [
   ['Connect the app to your phone', ['modes-overview', 'mode-wireless', 'mode-tcp', 'mode-shizuku', 'mode-root', 'mode-readonly', 'app-permissions']],
   ['The tabs', ['tab-apps', 'apps-menu', 'apps-batch', 'apps-profiles', 'apps-backup', 'quick-tiles', 'tab-saved-lists', 'tab-debloater', 'debloater-safety', 'tab-installer', 'installer-splits',
     'tab-files', 'files-search', 'files-archives', 'files-storage', 'tab-terminal', 'terminal-agents', 'tab-devices', 'devices-add', 'devices-apps', 'devices-send', 'devices-console', 'devices-logcat',
-    'devices-files', 'devices-settings', 'devices-display', 'devices-wear', 'tab-settings', 'settings-journal', 'tab-overlays', 'tab-updates', 'tab-store', 'tab-logcat', 'tab-taskmgr', 'tab-about']],
+    'devices-files', 'devices-settings', 'devices-display', 'devices-wear', 'tab-morphe', 'morphe-sources', 'morphe-community', 'morphe-patching', 'morphe-helper', 'morphe-patched', 'tab-sdm', 'sdm-review', 'sdm-exclusions', 'sdm-history', 'sdm-settings', 'tab-sysui', 'tab-settings', 'settings-journal', 'tab-overlays', 'tab-updates', 'tab-store', 'tab-logcat', 'tab-taskmgr', 'tab-about']],
   ['Settings and looks', ['prefs', 'feature-list', 'themes']],
   ['How do I...?', []],
   ['Safety and help', ['safety', 'troubleshooting', 'faq', 'glossary', 'privacy', 'credits']],

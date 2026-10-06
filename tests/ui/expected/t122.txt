@@ -1,0 +1,8 @@
+ok   tags are gone
+ok   entities are decoded
+ok   paragraphs and the line break are kept
+ok   lists have bullets and numbers
+ok   plain text is left alone
+ok   the details show readable text, not tags
+ok   the UAD-NG chip on a row reads only the level
+errors: []

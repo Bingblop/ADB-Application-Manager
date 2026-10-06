@@ -49,7 +49,7 @@ const { chromium, PAGE } = require('./lib/pw');
 
   // UAD-NG chips
   const chips = await ev(() => Array.from(document.querySelectorAll('.app-card')).map(c => c.dataset.pkg + ':' + (c.querySelector('.uad-chip-row') ? c.querySelector('.uad-chip-row').innerText.replace(/\s+/g, ' ').trim() : '-')));
-  check('the rows of listed packages carry a chip with their level, the others none', chips.sort().join('|') === 'com.danger:UAD-NG UNSAFE|com.plain:-|com.rec:UAD-NG RECOMMENDED|com.sec.hearingadjust:UAD-NG ADVANCED', chips.join('|'));
+  check('the rows of listed packages carry a chip with their level, the others none', chips.sort().join('|') === 'com.danger:UNSAFE|com.plain:-|com.rec:RECOMMENDED|com.sec.hearingadjust:ADVANCED', chips.join('|'));
   check('the chips have the level colors', await ev(() => ['recommended', 'advanced', 'unsafe'].every(l => document.querySelector('.uad-chip-row.uad-r-' + l))));
   await page.screenshot({ path: 'apps_uad.png', clip: { x: 0, y: 330, width: 400, height: 420 } });
   const selBefore = await ev(() => selectedPkgs.size);

@@ -150,7 +150,21 @@ runner_jar = os.path.join(work, 'obj', 'runner', 'uninstall_runner.jar')
 with zipfile.ZipFile(runner_jar, 'w', zipfile.ZIP_DEFLATED) as j:
     j.write(os.path.join(work, 'obj', 'runner', 'classes.dex'), 'classes.dex')
 with zipfile.ZipFile(apk, 'a', zipfile.ZIP_DEFLATED) as z:
-    z.write(os.path.join(work, 'bin', 'classes.dex'), 'classes.dex')
+    # The app's own dex files (d8 writes classes.dex, and classes2.dex ... when it needs more than one)
+    dex = sorted(f for f in os.listdir(os.path.join(work, 'bin')) if f.startswith('classes') and f.endswith('.dex'))
+    for f in dex:
+        z.write(os.path.join(work, 'bin', f), f)
+    # The Morphe engine (Morphe Patcher tab): its dex files follow the app's, so ART compiles them with the app and the patcher service
+    # (MorpheService, a process of its own) finds them. engine/build-engine.sh makes the zip; NO_ENGINE=1 leaves it out.
+    engine = os.path.join(work, 'engine', 'dist', 'morphe-engine-dex.zip')
+    if os.path.exists(engine) and os.environ.get('NO_ENGINE') != '1':
+        with zipfile.ZipFile(engine) as ez:
+            n = len(dex)
+            for name in sorted(ez.namelist(), key=lambda x: (len(x), x)):
+                if name.startswith('classes') and name.endswith('.dex'):
+                    n += 1
+                    z.writestr('classes%d.dex' % n, ez.read(name))
+        print('    + Morphe engine (%d extra dex files)' % (n - len(dex)))
     z.write(runner_jar, 'assets/uninstall_runner.jar')
     if abi in ('arm64-v8a', 'universal'):
         libadb = os.path.join(work, 'assets', 'libadb.so')

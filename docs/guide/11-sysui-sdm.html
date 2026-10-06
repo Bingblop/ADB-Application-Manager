@@ -1,0 +1,109 @@
+<section id="tab-sdm" data-title="SD Maid SE" data-group="The tabs">
+  <p class="hg-lead">Clean up what is not needed any more: <b>SystemCleaner</b> removes superfluous files, <b>AppCleaner</b> the expendable data of apps (caches and the like), <b>CorpseFinder</b> the leftovers of apps that are gone, and <b>Deduplicator</b> files that exist twice. Scan, look at the list, take out what you want to keep, then delete.</p>
+  <p>The tools are a port of the four tools of <b>SD Maid SE</b> by darken (GPL-3.0): the filters, the rules, the expendables databases and the automation steps are from there. This is not the SD Maid app, and it has none of its icons, logo or translations. If you want everything else SD Maid can do, the buttons in the card open <b>SD Maid SE on GitHub</b> and <b>on Google Play</b>.</p>
+  <p><b>Where to find it:</b> the tab bar, after <b>Morphe Patcher</b>. If it is not there, it has been switched off in the <a href="#feature-list">Feature List</a>.</p>
+
+  <div class="hg-warn"><b>Deleting is final.</b> There is no trash and no way back for what a tool deletes, except what you restore from your own backup. Always look at the list first, and exclude what matters (see <a href="#sdm-exclusions">Exclusions</a>).</div>
+
+  <h4>The top of the tab</h4>
+  <ul>
+    <li>The working mode, and the <b>data areas</b> this phone lets the tools read: public storage, public app media, public app data, public app resources, private app data and portable storage. An area marked <b>working mode</b> is read through ADB, Shizuku or Root; one marked <b>not available</b> is skipped, and the hint under your finger says what it needs. Android 11 and newer hide the other apps' folders in <code>Android/data</code> from normal apps, and private app data needs Root, so the more privileged your working mode is, the more the tools can find.</li>
+    <li><b>Scan all</b> starts every tool. <b>Delete all results</b> deletes what every tool found, after one question. <b>Cancel all</b> shows up while something works.</li>
+    <li><b>History</b>, <b>Exclusions</b> and <b>Settings</b> open the pages described below.</li>
+  </ul>
+
+  <h4>A tool's card</h4>
+  <table class="hg-table">
+    <thead><tr><th>What you see</th><th>What it means</th></tr></thead>
+    <tbody>
+      <tr><td><b>Scan</b></td><td>Looks for what the tool is made for. Nothing is deleted. While it works the card shows the step, a bar, how many are done, how much was found so far and the folder it is in. <b>Cancel</b> stops it and throws the partial result away.</td></tr>
+      <tr><td><b>Details</b></td><td>The list of what was found. See <a href="#sdm-review">Looking at the results</a>.</td></tr>
+      <tr><td><b>Delete</b></td><td>Deletes everything in the list that is still ticked, after a question. When it is done the card shows what was freed, with an X to dismiss it.</td></tr>
+      <tr><td><b>1-tap scan and delete</b></td><td>A checkbox, <b>off</b> by default. When it is on, the Scan button becomes <b>Scan and delete</b>: it scans and deletes everything it finds, with no list and no question. Turning it on asks once and says what it does. What you excluded is skipped, and everything deleted is written to History.</td></tr>
+      <tr><td>The gear</td><td>The settings of that tool. See <a href="#sdm-settings">Settings</a>.</td></tr>
+    </tbody>
+  </table>
+  <p><b>Two at a time.</b> At most two tools work at the same time; a third one waits and says <b>In queue</b>. The <b>live status</b> that stays at the top while anything works shows every tool that is working, its step, a bar and its path, and how many of the two places are in use.</p>
+  <div class="hg-note"><b>Tip.</b> The work goes on in the app's own process while you look at another tab. The results of a scan stay in memory, so rotating the phone or changing the theme does not lose them; closing the app does.</div>
+</section>
+
+<section id="sdm-review" data-title="SD Maid SE: looking at the results" data-group="The tabs">
+  <p class="hg-lead">Tap <b>Details</b> on a card to see what a scan found, and take out whatever you want to keep.</p>
+  <ol class="hg-steps">
+    <li>The first list shows the groups: the filters (SystemCleaner), the apps (AppCleaner), the remnants (CorpseFinder) or the sets of identical files (Deduplicator), each with its size. Every group starts ticked. Untick a group to leave all of it out. <b>All</b> and <b>None</b> tick or untick the whole list, and the search box narrows it.</li>
+    <li>Tap a group to see what is inside: every path with its size. Untick single items. In Deduplicator the copy that is kept is marked <b>Kept</b> and cannot be ticked; the others are the copies that will be deleted.</li>
+    <li>Tap <b>Delete selected</b>. The question says how many items and how much space, or, when nothing was taken out, the question of that tool ("Delete all app remnants?").</li>
+  </ol>
+  <p><b>Exclude</b> on a row is the lasting version of unticking: it adds an exclusion, takes the row out of the list at once and shows a bar with <b>Undo</b>. An app is excluded for AppCleaner as a whole; everything else by its path. What you untick is only remembered until the next scan or delete.</p>
+  <p>Before anything is deleted, every path is looked at again, because a scan can be hours old. A path that is already gone counts as deleted. A path that is not inside a data area, or that is a data area itself, is never deleted.</p>
+  <h4>What each tool does</h4>
+  <ul>
+    <li><b>SystemCleaner</b> walks storage once with its filters (log files, trash, thumbnails, empty folders, macOS and Windows leftovers, lost-and-found, temporary files, advertisements, analytics, usage and more) and groups what matches by filter. The filters you switch off in its settings are not used.</li>
+    <li><b>AppCleaner</b> finds the caches and other expendable data of every app, by the rules SD Maid ships (browser caches, thumbnails, logs, code caches, and the app-specific rules for many popular apps). It also sees the cache an app keeps in its private folder, as far as Android shows its size; the caches no file access can reach are cleared with a working mode (all apps at once) or with the accessibility service (one app after the other).</li>
+    <li><b>CorpseFinder</b> finds the folders and files of apps that are no longer installed, using the owner of each folder and a database of known leftovers. Each remnant shows how risky it is to delete.</li>
+    <li><b>Deduplicator</b> finds files with identical content: it groups by size, compares a first block, then the SHA-256 of the whole file. Small files below the minimum size are not looked at.</li>
+  </ul>
+</section>
+
+<section id="sdm-exclusions" data-title="SD Maid SE: exclusions" data-group="The tabs">
+  <p class="hg-lead">An exclusion keeps an app, a file or a folder out of the tools you choose, so it is never listed and never deleted.</p>
+  <p>Open it with <b>Exclusions</b>. The list shows every exclusion with the tools it applies to. The ones marked <b>default</b> come with the app and can be removed; <b>Restore defaults</b> brings them back.</p>
+  <table class="hg-table">
+    <thead><tr><th>Kind</th><th>What it matches</th></tr></thead>
+    <tbody>
+      <tr><td><b>App</b></td><td>One installed app. AppCleaner leaves its data alone; CorpseFinder does not call its folders remnants.</td></tr>
+      <tr><td><b>Path</b></td><td>One file or folder and everything inside it. Write the absolute path, for example <code>/storage/emulated/0/DCIM</code>.</td></tr>
+      <tr><td><b>Segment</b></td><td>A part of a path, like <code>DCIM/Camera</code>, wherever it is. <b>Allow partial matches</b> lets the first and last name be a part of a longer name; <b>Ignore casing</b> ignores capitals.</td></tr>
+    </tbody>
+  </table>
+  <p><b>Affected tools</b> chooses where it applies: <b>All tools</b>, or any of the four. A folder that contains an excluded item is not deleted either, so that the excluded item stays. <b>Export</b> copies all exclusions to the clipboard; <b>Import</b> reads them back (and the exclusion files of SD Maid SE).</p>
+</section>
+
+<section id="sdm-history" data-title="SD Maid SE: history" data-group="The tabs">
+  <p class="hg-lead">Everything the tools delete is written down: which tool, when, how much, and the paths.</p>
+  <p>Open <b>History</b>. Each report shows the tool, the time, <b>Done</b>, <b>Partial success</b> (for example, a run that stopped because the screen turned off) or <b>Failure</b>, and what it says on the card afterwards. Tap a report to see the paths that were deleted. Scans are never written, because nothing is deleted by them. The top shows how much space has been freed in all.</p>
+  <p>Reports are kept for 30 days and the paths for 7 days; both can be changed in the general <b>Settings</b> (0 keeps no paths). <b>Reset all</b> deletes all reports and sets the totals to zero.</p>
+</section>
+
+<section id="sdm-settings" data-title="SD Maid SE: settings and the accessibility service" data-group="The tabs">
+  <p class="hg-lead">Every tool has its own settings behind the gear on its card, and the tab has general settings behind <b>Settings</b>. They are the settings of SD Maid SE, with its texts; a change is used by the next scan.</p>
+  <ul>
+    <li>The filters of SystemCleaner and AppCleaner can be switched on and off one by one; some need Root, and say so.</li>
+    <li>CorpseFinder lets you choose which areas are searched and how careful it is with files that may belong to something.</li>
+    <li>Deduplicator has the minimum size and the kinds of files.</li>
+    <li><b>Dry run</b> in the general settings scans and reports as usual but deletes nothing. It is the safe way to try a tool the first time.</li>
+    <li><b>Reset to defaults</b> puts one screen back to what the app ships with.</li>
+  </ul>
+  <h4>The accessibility service</h4>
+  <p>Only AppCleaner uses it. Android does not let an app clear the cache of other apps, so SD Maid, and this tab, press the button for you: the service opens the <b>App info</b> screen of each app, finds <b>Storage</b> and taps <b>Clear cache</b>, while a cover over the screen shows what it is doing, with a way to cancel. It stops when the screen turns off or locks. Nothing is read or sent anywhere.</p>
+  <ol class="hg-steps">
+    <li>In the <b>Accessibility service</b> card, tap <b>Enable the service</b>. The card explains what it does and asks for your consent, then opens Android's accessibility settings. Turn the service on there.</li>
+    <li>On Android 13 and newer, an app installed from a file may be blocked from using an accessibility service: open this app's <b>App info</b>, the three dots, <b>Allow restricted settings</b>, and try again.</li>
+    <li>With a working mode you can also tap <b>Enable with the working mode</b>, which turns the service on for you.</li>
+    <li>Once the service is on and you gave consent, AppCleaner's Delete uses it after you confirm.</li>
+  </ol>
+  <p><b>Withdraw consent</b> in the card stops AppCleaner from using it. The automation follows the screen texts of the system settings, in the languages SD Maid has tables for; on some phone makers' systems it can fail, and then it says so and the rest of the cleanup still works.</p>
+</section>
+
+<section id="tab-sysui" data-title="System UI Tuner" data-group="The tabs">
+  <p class="hg-lead">Change how the status bar, the quick settings, the notifications and the system bars look and behave, without writing a single setting. Everything here ends by itself when System UI or the phone restarts.</p>
+  <p>The commands, the Demo Mode form and the three Quick Settings tiles follow the <b>System UI Tuner</b> app (<b>Tweaker</b>) by Zachary Wander, which is MIT-licensed. Most of what Tweaker offers writes Global, Secure and System settings. Those are not repeated here: the <b>Hidden Settings</b> tab does that, and the tab says so and has a button to open it. The other cards are additions of this app, not from Tweaker.</p>
+  <p><b>Where to find it:</b> the tab bar, after <b>SD Maid SE</b>. Everything but the tiles needs a working mode (ADB, Wireless Debugging, Shizuku or Root); without one the tab says so.</p>
+
+  <h4>The cards</h4>
+  <table class="hg-table">
+    <thead><tr><th>Card</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><b>Demo Mode</b></td><td>Forces the status bar into a fixed state, for screenshots: the clock, the battery, the Wi-Fi and mobile signal, the data type, the SIMs, and the icons (volume, Bluetooth, location, alarm, TTY, mute, speakerphone, airplane, Do Not Disturb, cast, hotspot). <b>Allow demo mode</b> writes the one flag Android needs for it (<code>sysui_demo_allowed</code>, a Global setting; it is the only setting this tab writes). <b>Enabled</b> sends the state; a change is sent by itself a moment later. The banner has <b>Exit</b>. Nothing else on the phone changes.</td></tr>
+      <tr><td><b>Quick Settings tiles</b></td><td>Three tiles: the battery level with the charging state, a clock with seconds, and a switch for Demo Mode. Turn a tile on, then <b>Add</b> it (Android 13 and newer asks you), or drag it in from the quick settings editor. These work without a working mode, except that the Demo tile needs one to do its job.</td></tr>
+      <tr><td><b>Status bar and shade</b></td><td>Open or close the notification shade and the quick settings, <b>hide</b> parts of the bars for now (search, home, recents, heads-up notifications, the pull-down, system icons, clock, notification icons) and list the icon slots System UI knows. Hiding Home, Recents or the pull-down asks first, because it can leave you without a way to navigate; it is put back after 15 seconds unless you keep it.</td></tr>
+      <tr><td><b>Notification lab</b></td><td>Sends test notifications (basic, big text, inbox, messaging) to see how they look, lists the ones showing and snoozes one. They are sent as the shell.</td></tr>
+      <tr><td><b>System actions</b></td><td>Press Back, Home, Recents, the power menu, Lock screen, Screenshot, Split screen and more, and <b>Restart System UI</b> when the bars misbehave.</td></tr>
+      <tr><td><b>Battery simulator</b></td><td>Makes the whole system believe the battery has another level, state, power source or temperature, to test low-battery warnings and charging screens. <b>Unplug</b> and <b>Reset</b> end it, and it is reset when you leave the tab.</td></tr>
+      <tr><td><b>Navigation mode</b></td><td>Switches between 3-button, 2-button and gesture navigation through the overlays Android ships; it asks first.</td></tr>
+      <tr><td><b>Display and windows</b></td><td>The screen density and size, ignore orientation requests and window scaling. A change to the density or the size is put back after 15 seconds unless you press <b>Keep</b>, so a wrong value cannot lock you out.</td></tr>
+      <tr><td><b>System UI information</b></td><td>Read-only reports about the bars, the status icons, the windows, the displays and the night mode, with Copy and Share. The report that lists notifications is left out on purpose: it prints their text.</td></tr>
+    </tbody>
+  </table>
+  <div class="hg-note"><b>Tip.</b> Demo Mode and the battery simulator are different things. Demo Mode only changes what the status bar shows; the simulator changes what the system believes, so apps and warnings react.</div>
+</section>

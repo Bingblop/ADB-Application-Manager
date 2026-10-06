@@ -157,9 +157,9 @@ const PKG = { type: 'apk', pkg: 'com.example.app', label: 'Example App', version
   // this mock - that never changes what these two scenarios are actually about (files/usage/overlay), just the count.
   await scenario({ kv: {}, mode: { priv: true }, grantUsageByShell: true, grantOverlayByShell: true }, async page => {
     await intro(page);
-    await allow(page, 2);
+    await allow(page, 3);                                    // the rows: All files access, Allow Restricted Settings (above Usage access), Usage access, Display over other apps ...
     let s = await sheet(page);
-    check('6. with a working mode, Usage access is allowed on the spot (no Android screen, no coming back)', (await perms(page)) === 'usage' && rowsOf(s) === '— ✓ — ✓ ✓ ✓', rowsOf(s));
+    check('6. with a working mode, Usage access is allowed on the spot (no Android screen, no coming back)', (await perms(page)) === 'usage' && rowsOf(s) === '— ✓ ✓ — ✓ ✓', rowsOf(s));
     await page.click('#permAllBtn');
     check('   "Allow all" then goes to the one that needs the screen (All files access)', (await perms(page)) === 'usage,files');
     await back(page, { files: true });
@@ -174,6 +174,33 @@ const PKG = { type: 'apk', pkg: 'com.example.app', label: 'Example App', version
     await back(page, { files: true });
     await page.waitForFunction(() => document.querySelectorAll('#permRows .pm-ok').length === 6);
     check('   from nothing, "Allow all" needs just the one screen: the other two are allowed by the mode in between', (await perms(page)) === 'files,usage,overlay' && (await sheet(page)).close === 'Done');
+  });
+
+  // v7.10: "Allow all" through a working mode grants everything that has a command (restricted settings first), then starts the app again at once;
+  // Usage access allowed by hand also gets the permission (pm grant) in the background; closing the first-launch sheet after something was allowed starts the app again
+  await scenario({ kv: {}, mode: { priv: true }, grantAll: true, perm: { files: false, usage: false, overlay: false, restricted_settings: false } }, async page => {
+    await intro(page);
+    await ev(page, () => { window.__order = Array.from(document.querySelectorAll('#permRows .pm-name')).map(n => n.innerText.trim()); });
+    check('9. the Allow Restricted Settings row sits above Usage access', await ev(page, () => { const o = window.__order; return o.indexOf('Allow Restricted Settings') > 0 && o.indexOf('Allow Restricted Settings') === o.indexOf('Usage access') - 1; }));
+    await page.click('#permAllBtn');
+    await settle(page);
+    check('   with a working mode "Allow all" grants through the mode (one call), closes the sheet and starts the app again', (await ev(page, () => window.__calls.grantAll)) === 1 && (await closed(page)) && (await ev(page, () => window.__calls.reload)) === 1 && (await saved(page)) === 1, JSON.stringify(await ev(page, () => [window.__calls.grantAll, window.__calls.reload, window.__calls.kv, window.__perm])));
+  });
+  await scenario({ kv: {}, perm: { files: false, usage: false, overlay: false } }, async page => {
+    await intro(page);
+    await back(page, { usage: true });
+    check('   Usage access allowed by hand in Settings is also granted as a permission in the background (once)', (await ev(page, () => window.__calls.sync)) === 1);
+    await back(page, {});
+    check('   and not again when nothing changed', (await ev(page, () => window.__calls.sync)) === 1);
+    await page.click('#permCloseBtn');
+    await settle(page);
+    check('   closing the first-launch sheet after something was allowed starts the app again', (await closed(page)) && (await ev(page, () => window.__calls.reload)) === 1);
+  });
+  await scenario({ kv: {}, perm: { files: false, usage: false, overlay: false } }, async page => {
+    await intro(page);
+    await page.click('#permCloseBtn');
+    await settle(page);
+    check('   closing it with nothing allowed does not start the app again', (await closed(page)) && !(await ev(page, () => window.__calls.reload)));
   });
 
   // ---------------------------------------------------------------------------------------------------------------------------------------------

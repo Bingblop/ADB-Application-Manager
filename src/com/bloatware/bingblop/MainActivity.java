@@ -574,6 +574,7 @@ public class MainActivity extends Activity {
                 try {
                     if (QuickActions.ACTION_CYCLE_MODE.equals(action)) message = quickCycleMode();
                     else if (QuickActions.ACTION_STOP_LIST.equals(action)) message = quickStopList();
+                    else if (QuickActions.ACTION_DEMO_TOGGLE.equals(action)) message = quickDemoToggle();
                     else message = "Unknown quick action";
                 } catch (Exception e) {
                     message = "Failed: " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
@@ -655,6 +656,59 @@ public class MainActivity extends Activity {
         }
         setConfiguredMode("auto");
         return "No other mode is ready. Using Automatic.";
+    }
+
+    // ---- SD Maid SE tab: the host of the four tools (see SdmHost) ----
+    private final java.util.concurrent.ExecutorService sdmCalls = java.util.concurrent.Executors.newFixedThreadPool(3);
+    private SdmHost sdmHostInstance;
+
+    private synchronized SdmHost sdmHost() {
+        if (sdmHostInstance == null) {
+            sdmHostInstance = new SdmHost(this, new SdmHost.Hooks() {
+                @Override public String mode() { return resolveExecMode(); }
+
+                @Override
+                public Process open(String script) throws IOException {
+                    String mode = resolveExecMode();
+                    try {
+                        if ("adb_tcp".equals(mode) || "adb_wireless".equals(mode)) {
+                            boolean tcp = "adb_tcp".equals(mode);
+                            String target = tcp ? tcpTarget() : wirelessTarget();
+                            if (!isAdbTargetConnected(target)) performConnect(tcp ? adbTcpHost : adbWirelessHost, tcp ? adbTcpPort : adbWirelessPort, null);
+                            ProcessBuilder pb = buildAdbProcess("-s", target, "shell", script);
+                            pb.redirectErrorStream(true);
+                            return pb.start();
+                        }
+                        if ("shizuku".equals(mode)) return rishSpawn(new String[]{"sh", "-c", "exec 2>&1; " + script});
+                        if ("root".equals(mode)) {
+                            ProcessBuilder pb = new ProcessBuilder("su", "-c", script);
+                            pb.redirectErrorStream(true);
+                            return pb.start();
+                        }
+                    } catch (IOException e) {
+                        throw e;
+                    } catch (Exception e) {
+                        throw new IOException(String.valueOf(e.getMessage()), e);
+                    }
+                    throw new IOException("Needs ADB, Shizuku or Root");
+                }
+
+                @Override public void js(String code) { notifyJs(code); }
+                @Override public boolean storage() { return new AndroidBridge().hasAllFilesAccess(); }
+                @Override public boolean usage() { return hasUsageAccess(); }
+            });
+        }
+        return sdmHostInstance;
+    }
+
+    /** The Demo mode Quick Settings tile: turns the status bar demo on (and allows it) or off. */
+    private String quickDemoToggle() {
+        if ("standard".equals(resolveExecMode())) return "Needs ADB, Shizuku or Root. Set up a working mode first.";
+        boolean on = !DemoTileService.isOn(this);
+        String out = new AndroidBridge().executeShell(on ? SysUiRules.demoAllowCommands(true) + "\n" + SysUiRules.demoEnter() : SysUiRules.demoExit());
+        if (out == null || !out.contains("Broadcast completed")) return "Demo mode: the device did not answer";
+        DemoTileService.setOn(this, on);
+        return on ? "Demo mode on" : "Demo mode off";
     }
 
     /** Force-stops every app in the quick list. */
@@ -5991,6 +6045,7 @@ public class MainActivity extends Activity {
             notifyJs("window.onInstallFilePicked && window.onInstallFilePicked(" + JSONObject.quote(picked.toString()) + ")");
             return;
         }
+        if (requestCode == REQ_PICK_MORPHE) { morphePicked(data, resultCode); return; }
         if (requestCode == REQ_PICK_CD) {
             final String tag = cdPickTag;
             final List<Uri> uris = new ArrayList<Uri>();
@@ -6206,11 +6261,22 @@ public class MainActivity extends Activity {
         }
     }
 
+    /** "Allow restricted settings" is the app-op ACCESS_RESTRICTED_SETTINGS (Android 13 and newer). Below that there is nothing to allow. A grant made through the working mode is remembered
+     *  here, because some phones do not report the op to the app itself. */
     private boolean hasRestrictedSettingsAccess() {
+        if (Build.VERSION.SDK_INT < 33) return true;
         try {
+            if (getSharedPreferences("perms", MODE_PRIVATE).getBoolean("restricted_granted", false)) return true;
             android.app.AppOpsManager ops = (android.app.AppOpsManager) getSystemService(Context.APP_OPS_SERVICE);
-            int mode = ops.checkOpNoThrow("android:read_write_restricted_settings", android.os.Process.myUid(), getPackageName());
-            return mode == android.app.AppOpsManager.MODE_ALLOWED;
+            for (String op : new String[]{"android:access_restricted_settings", "android:read_write_restricted_settings"}) {
+                try {
+                    int mode = ops.checkOpNoThrow(op, android.os.Process.myUid(), getPackageName());
+                    if (mode == android.app.AppOpsManager.MODE_ALLOWED) return true;
+                } catch (IllegalArgumentException unknown) {
+                    // this phone does not have that op: try the next name
+                }
+            }
+            return false;
         } catch (Exception e) {
             return false;
         }
@@ -6583,6 +6649,152 @@ public class MainActivity extends Activity {
         int id = getResources().getIdentifier(name, "color", "android");
         if (id == 0) throw new IllegalStateException("Missing system color " + name);
         return getColor(id);
+    }
+
+
+    // ---- Morphe Patcher tab: the bridge does the work, the activity gives it the picker, the installer, sharing and the network state ----
+    private static final int REQ_PICK_MORPHE = 4292;
+    private volatile String morphePickTag = "";
+    private MorpheBridge morpheBridge;
+
+    private synchronized MorpheBridge morphe() {
+        if (morpheBridge == null) morpheBridge = new MorpheBridge(new MorpheBridge.Host() {
+            @Override public Context context() { return MainActivity.this; }
+            @Override public void js(String script) { notifyJs(script); }
+            @Override public boolean pick(final String tag, String kind) {
+                morphePickTag = tag;
+                runOnUiThread(new Runnable() {
+                    @Override public void run() {
+                        try {
+                            Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                            i.addCategory(Intent.CATEGORY_OPENABLE);
+                            i.setType("*/*");
+                            startActivityForResult(i, REQ_PICK_MORPHE);
+                        } catch (Exception e) {
+                            morphe().pickDone(tag, new JSONArray());
+                        }
+                    }
+                });
+                return true;
+            }
+            @Override public JSONObject install(File apk, String pkg, boolean uninstallFirst) throws Exception { return morpheInstall(apk, pkg, uninstallFirst); }
+            @Override public void share(File f, String mime) { new AndroidBridge().shareStoredFile(f.getAbsolutePath(), mime, f.getName()); }
+            @Override public boolean privileged() { return isPrivilegedMode(resolveExecMode()); }
+            @Override public boolean connectionOk(String conn) { return morpheConnectionOk(conn); }
+            @Override public File downloadsDir() { return android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS); }
+        }, new File(getFilesDir(), "morphe"));
+        return morpheBridge;
+    }
+
+    private boolean morpheConnectionOk(String conn) {
+        if (conn == null || "both".equals(conn)) return true;
+        try {
+            android.net.ConnectivityManager cm = (android.net.ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+            android.net.Network n = cm.getActiveNetwork();
+            android.net.NetworkCapabilities nc = n == null ? null : cm.getNetworkCapabilities(n);
+            if (nc == null) return false;
+            boolean wifi = nc.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI) || nc.hasTransport(android.net.NetworkCapabilities.TRANSPORT_ETHERNET);
+            return "wifi".equals(conn) ? wifi : !wifi;
+        } catch (Exception e) {
+            return true;
+        }
+    }
+
+    /** Installs a patched app or a downloaded original: through the working mode when there is one (a bundle's splits together), else the system installer. */
+    private JSONObject morpheInstall(File apk, String pkg, boolean uninstallFirst) throws Exception {
+        JSONObject r = new JSONObject();
+        String mode = resolveExecMode();
+        if (!isPrivilegedMode(mode)) {
+            File copy = ShareProvider.newShareFile(this, apk.getName());
+            java.io.FileOutputStream out = new java.io.FileOutputStream(copy);
+            try { copyFile(apk, out); } finally { out.close(); }
+            final Uri uri = ShareProvider.uriFor(copy);
+            runOnUiThread(new Runnable() {
+                @Override public void run() {
+                    try {
+                        Intent i = new Intent(Intent.ACTION_VIEW).setDataAndType(uri, "application/vnd.android.package-archive")
+                                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(i);
+                    } catch (Exception e) { Log.e(TAG, "system installer failed", e); }
+                }
+            });
+            r.put("ok", true);
+            r.put("system", true);
+            r.put("output", "The system installer was opened. Confirm the install there. (Set up a working mode to install silently.)");
+            return r;
+        }
+        StringBuilder notes = new StringBuilder();
+        if (uninstallFirst) {
+            uninstallInstalledCopy(mode, pkg);
+            notes.append("The installed copy was uninstalled first.\n");
+        }
+        List<File> files = new ArrayList<File>();
+        File tmp = null;
+        String name = apk.getName().toLowerCase(java.util.Locale.ROOT);
+        if (name.endsWith(".apks") || name.endsWith(".apkm") || name.endsWith(".xapk")) {
+            tmp = new File(getCacheDir(), "morphe_inst/" + Long.toHexString(System.nanoTime()));
+            files.addAll(MorpheLibrary.unzipApks(apk, tmp));
+        } else {
+            files.add(apk);
+        }
+        String out;
+        try {
+            out = installApks(files);
+        } finally {
+            if (tmp != null) { File[] fs = tmp.listFiles(); if (fs != null) for (File f : fs) f.delete(); tmp.delete(); }
+        }
+        boolean ok = InstallHints.success(out);
+        r.put("ok", ok);
+        r.put("output", notes + (out == null ? "" : out.trim()));
+        if (!ok) {
+            r.put("advice", InstallHints.advice(out));
+            if (!uninstallFirst && InstallHints.updateIncompatible(out) && canUninstallFirst(pkg, mode)) r.put("retry", "uninstall");
+        }
+        return r;
+    }
+
+    /** A file the Morphe tab asked for: copied into this app's cache (the page works with those copies), then handed to the bridge. */
+    private void morphePicked(final Intent data, final int resultCode) {
+        final String tag = morphePickTag;
+        final List<Uri> uris = new ArrayList<Uri>();
+        if (resultCode == RESULT_OK && data != null) {
+            if (data.getClipData() != null) {
+                for (int i = 0; i < data.getClipData().getItemCount(); i++) uris.add(data.getClipData().getItemAt(i).getUri());
+            } else if (data.getData() != null) {
+                uris.add(data.getData());
+            }
+        }
+        if (uris.isEmpty()) { morphe().pickDone(tag, new JSONArray()); return; }
+        executor.submit(new Runnable() {
+            @Override public void run() {
+                JSONArray files = new JSONArray();
+                File root = new File(getCacheDir(), "morphe_pick");
+                root.mkdirs();
+                long old = System.currentTimeMillis() - 24L * 60 * 60 * 1000;
+                File[] dirs = root.listFiles();
+                if (dirs != null) for (File d : dirs) if (d.lastModified() < old) { File[] fs = d.listFiles(); if (fs != null) for (File f : fs) f.delete(); d.delete(); }
+                for (Uri u : uris) {
+                    try {
+                        String nm = cdSafeName(cdDisplayName(u));
+                        File dir = new File(root, Long.toHexString(System.nanoTime()));
+                        dir.mkdirs();
+                        File out = new File(dir, nm);
+                        InputStream in = getContentResolver().openInputStream(u);
+                        if (in == null) throw new IOException("could not open the file");
+                        java.io.OutputStream os = new java.io.FileOutputStream(out);
+                        try {
+                            byte[] buf = new byte[65536];
+                            int n;
+                            while ((n = in.read(buf)) > 0) os.write(buf, 0, n);
+                        } finally { os.close(); in.close(); }
+                        files.put(new JSONObject().put("name", nm).put("path", out.getAbsolutePath()).put("size", out.length()));
+                    } catch (Exception one) {
+                        try { files.put(new JSONObject().put("name", String.valueOf(u.getLastPathSegment())).put("error", String.valueOf(one.getMessage()))); } catch (Exception ignored) {}
+                    }
+                }
+                morphe().pickDone(tag, files);
+            }
+        });
     }
 
     private class AndroidBridge {
@@ -9104,6 +9316,72 @@ public class MainActivity extends Activity {
             }
         }
 
+        /** The Morphe Patcher tab: one call that answers through window.onMorphe({tag, ok, data | error}) (see MorpheBridge). */
+        @JavascriptInterface
+        public void morphe(String tag, String op, String argsJson) {
+            MainActivity.this.morphe().call(tag, op, argsJson);
+        }
+
+        /** The SD Maid SE tab: one call that answers through window.onSdmReply({tag, r}); what happens while a task runs comes through window.onSdm(event). See SdmBridge. */
+        @JavascriptInterface
+        public void sdm(final String tag, final String op, final String argsJson) {
+            sdmCalls.submit(new Runnable() {
+                @Override
+                public void run() {
+                    String r;
+                    try {
+                        r = sdmHost().bridge().call(op, argsJson);
+                    } catch (Throwable t) {
+                        r = "{\"ok\":false,\"error\":" + JSONObject.quote("SD Maid SE failed: " + t) + "}";
+                    }
+                    notifyJs("window.onSdmReply && window.onSdmReply({tag:" + JSONObject.quote(String.valueOf(tag)) + ",r:" + r + "})");
+                }
+            });
+        }
+
+        /** The System UI Tuner tab: the command (or the parsed answer) for one operation, {"ok":true,"cmd":...} | {"ok":true,"data":...} | {"ok":false,"error":...}. Nothing runs here. */
+        @JavascriptInterface
+        public String sysui(String op, String argsJson) {
+            return SysUiOps.run(op, argsJson);
+        }
+
+        /** The System UI Tuner's Quick Settings tiles: state, set (1 or 0), add (asks Android), demoFlag (the Demo tile's own memory). Answer: JSON. */
+        @JavascriptInterface
+        public String sysuiTile(String op, String name, String arg) {
+            try {
+                final Class<?> tile = "battery".equals(name) ? BatteryTileService.class : "clock".equals(name) ? ClockTileService.class : "demo".equals(name) ? DemoTileService.class : null;
+                if ("state".equals(op)) {
+                    JSONObject tiles = new JSONObject();
+                    tiles.put("battery", new JSONObject().put("enabled", TileSwitch.isEnabled(MainActivity.this, BatteryTileService.class)));
+                    tiles.put("clock", new JSONObject().put("enabled", TileSwitch.isEnabled(MainActivity.this, ClockTileService.class)));
+                    tiles.put("demo", new JSONObject().put("enabled", TileSwitch.isEnabled(MainActivity.this, DemoTileService.class)).put("on", DemoTileService.isOn(MainActivity.this)));
+                    return new JSONObject().put("ok", true).put("tiles", tiles).put("canAdd", Build.VERSION.SDK_INT >= 33).toString();
+                }
+                if ("demoFlag".equals(op)) {
+                    DemoTileService.setOn(MainActivity.this, "1".equals(arg));
+                    return "{\"ok\":true}";
+                }
+                if (tile == null) return "{\"ok\":false,\"error\":\"Unknown tile\"}";
+                if ("set".equals(op)) {
+                    boolean ok = TileSwitch.setEnabled(MainActivity.this, tile, "1".equals(arg));
+                    return new JSONObject().put("ok", ok).put("error", ok ? "" : "Android did not accept the change").toString();
+                }
+                if ("add".equals(op)) {
+                    if (Build.VERSION.SDK_INT < 33) return "{\"ok\":false,\"error\":\"Open the quick settings editor and drag the tile in (Android 13 and newer can ask for you)\"}";
+                    if (!TileSwitch.isEnabled(MainActivity.this, tile)) return "{\"ok\":false,\"error\":\"Turn the tile on first\"}";
+                    final String label = "battery".equals(name) ? "Battery" : "clock".equals(name) ? "Clock" : "Demo mode";
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() { TileSwitch.requestAdd(MainActivity.this, tile, label); }
+                    });
+                    return "{\"ok\":true}";
+                }
+                return "{\"ok\":false,\"error\":\"Unknown operation\"}";
+            } catch (Exception e) {
+                return "{\"ok\":false,\"error\":\"" + String.valueOf(e.getMessage()).replace("\\", " ").replace("\"", "'") + "\"}";
+            }
+        }
+
         /** Lets the user choose package files (APK, APKS, APKM, XAPK) to send. Answer: window.onCdPicked({tag, files:[{name, path, size} | {name, error}]}). */
         @JavascriptInterface
         public void cdPickPackages(final String tag) {
@@ -9327,7 +9605,7 @@ public class MainActivity extends Activity {
         public String requestUsageAccess() {
             if (hasUsageAccess()) return "granted";
             if (!"standard".equals(resolveExecMode())) {
-                executeShell("appops set " + getPackageName() + " GET_USAGE_STATS allow");
+                executeShell("appops set " + getPackageName() + " GET_USAGE_STATS allow; pm grant " + getPackageName() + " android.permission.PACKAGE_USAGE_STATS");
                 if (hasUsageAccess()) return "granted";
             }
             runOnUiThread(new Runnable() {
@@ -10740,18 +11018,85 @@ public class MainActivity extends Activity {
             return "settings"; // nothing to open - this one has no Settings screen at all without a shell
         }
 
-        /** The "Allow restricted settings" app-op Android 13+ blocks for a sideloaded app by default,
-         *  covering a handful of other sensitive toggles (accessibility, notification access, usage access
-         *  on some OEM builds) - granted straight through the privileged shell. */
+        /** "Allow restricted settings": the one way to do it by command is {@code appops set <package> ACCESS_RESTRICTED_SETTINGS allow} through the working mode.
+         *  When that passes the access counts as granted (and is remembered); without a working mode, or when the command fails, this app's own App info opens
+         *  (three dots, Allow restricted settings). Answer: "granted" or "settings". */
         @JavascriptInterface
         public String requestRestrictedSettingsAccess() {
             if (hasRestrictedSettingsAccess()) return "granted";
             if (!"standard".equals(resolveExecMode())) {
-                executeShell("appops set " + getPackageName() + " android:read_write_restricted_settings allow");
-                if (hasRestrictedSettingsAccess()) return "granted";
+                if (grantRestrictedSettings()) return "granted";
             }
             openOwnAppInfo();
             return "settings";
+        }
+
+        /** Runs the appops command and decides from what the phone answers whether it passed. */
+        private boolean grantRestrictedSettings() {
+            String out = executeShell("appops set " + getPackageName() + " ACCESS_RESTRICTED_SETTINGS allow");
+            String low = out == null ? "" : out.toLowerCase(java.util.Locale.ROOT);
+            boolean failed = low.contains("error") || low.contains("exception") || low.contains("unknown") || low.contains("not found") || low.contains("denied") || low.contains("inaccessible");
+            if (failed) return false;
+            String got = executeShell("appops get " + getPackageName() + " ACCESS_RESTRICTED_SETTINGS");
+            String g = got == null ? "" : got.toLowerCase(java.util.Locale.ROOT);
+            if (g.contains("ignore") || g.contains("deny") || g.contains("error")) return false;
+            getSharedPreferences("perms", MODE_PRIVATE).edit().putBoolean("restricted_granted", true).apply();
+            return true;
+        }
+
+        /**
+         * "Allow all" through the working mode: everything that has a command is granted at once ({@code appops set} and {@code pm grant}), restricted settings first,
+         * because Usage access needs it. Answer: the permission status ({@link #getPermissionStatus}) after it. What is still missing has no command and needs
+         * its Android screen.
+         */
+        @JavascriptInterface
+        public String grantAllPermissions() {
+            if (!"standard".equals(resolveExecMode())) {
+                String pkg = getPackageName();
+                if (!hasRestrictedSettingsAccess()) grantRestrictedSettings();
+                StringBuilder sb = new StringBuilder();
+                if (!hasStorageAccess()) {
+                    sb.append("appops set ").append(pkg).append(" MANAGE_EXTERNAL_STORAGE allow; ");
+                    sb.append("pm grant ").append(pkg).append(" android.permission.READ_EXTERNAL_STORAGE; ");
+                    sb.append("pm grant ").append(pkg).append(" android.permission.WRITE_EXTERNAL_STORAGE; ");
+                }
+                if (!hasUsageAccess()) {
+                    sb.append("appops set ").append(pkg).append(" GET_USAGE_STATS allow; ");
+                    sb.append("pm grant ").append(pkg).append(" android.permission.PACKAGE_USAGE_STATS; ");
+                }
+                if (!hasOverlayAccess()) sb.append("appops set ").append(pkg).append(" SYSTEM_ALERT_WINDOW allow; ");
+                if (!hasInstallUnknownAccess()) sb.append("appops set ").append(pkg).append(" REQUEST_INSTALL_PACKAGES allow; ");
+                if (!hasLegacyStorageAccess()) {
+                    sb.append("pm grant ").append(pkg).append(" android.permission.READ_EXTERNAL_STORAGE; ");
+                    sb.append("pm grant ").append(pkg).append(" android.permission.WRITE_EXTERNAL_STORAGE; ");
+                }
+                if (!hasWriteSecureSettingsAccess()) sb.append("pm grant ").append(pkg).append(" android.permission.WRITE_SECURE_SETTINGS; ");
+                if (sb.length() > 0) executeShell(sb.toString() + "true");
+            }
+            return getPermissionStatus();
+        }
+
+        /** Usage access was just allowed by hand in Settings: with a working mode, also {@code pm grant ... PACKAGE_USAGE_STATS}, in the background. */
+        @JavascriptInterface
+        public void syncUsageGrant() {
+            if ("standard".equals(resolveExecMode())) return;
+            executor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    try { executeShell("pm grant " + getPackageName() + " android.permission.PACKAGE_USAGE_STATS"); } catch (Exception ignored) {}
+                }
+            });
+        }
+
+        /** Starts the page again (the activity is made anew), so that what was just allowed takes effect everywhere. */
+        @JavascriptInterface
+        public void reloadApp() {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try { recreate(); } catch (Exception ignored) {}
+                }
+            });
         }
 
         private void openOwnAppInfo() {

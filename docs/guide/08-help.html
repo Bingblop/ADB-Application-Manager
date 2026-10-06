@@ -540,7 +540,7 @@
 <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
 <tbody>
 <tr><td><b>ABI</b></td><td>The kind of machine code a phone's processor runs, such as arm64-v8a (64-bit) or armeabi-v7a (32-bit). An app must match it. See <a href="#install-and-update">Installing and updating the app</a>.</td></tr>
-<tr><td><b>Access Restricted Settings</b></td><td>A special access that lifts Android's block on a few sensitive switches for apps installed from outside a store (Android 13 and newer). Optional. See <a href="#app-permissions">The permissions this app asks for</a>.</td></tr>
+<tr><td><b>Allow Restricted Settings</b></td><td>A special access that lifts Android's block on a few sensitive switches for apps installed from outside a store (Android 13 and newer). Optional. See <a href="#app-permissions">The permissions this app asks for</a>.</td></tr>
 <tr><td><b>activity</b></td><td>One screen of an app. The Activities tab of an app's menu lists them, and LAUNCH opens one. See <a href="#apps-menu">The app menu</a>.</td></tr>
 <tr><td><b>ADB</b></td><td>Android Debug Bridge, the developer tool that sends commands to a phone as the shell user (UID 2000). This app carries its own copy. See <a href="#basics">Words you will see</a>.</td></tr>
 <tr><td><b>ADB key</b></td><td>The key pair this app makes on its first start, which is how a phone recognises it. See <a href="#modes-overview">Working modes</a>.</td></tr>
@@ -962,6 +962,15 @@
 
 <h4>The Task Manager tab</h4>
 <p>The <a href="#tab-taskmgr">Task Manager</a> tab is modeled on <b>RohitKushvaha01/TaskManager</b> on GitHub, as the About tab says.</p>
+
+<h4>The Morphe Patcher tab</h4>
+<p>The <a href="#tab-morphe">Morphe Patcher</a> tab is built on the <b>Morphe</b> project by MorpheApp (<code>github.com/MorpheApp</code>, GPL-3.0). The engine that applies the patches is <b>morphe-patcher</b>, built into this app unchanged; the patch bundle format, patch sources, Simple and Advanced patching, the patch log and the list of patched apps follow <b>Morphe Manager</b>; the patching pipeline follows <b>morphe-cli</b>; and the patch bundles come from <b>Morphe Patches</b> and from the community sources listed by <code>morphe-patches.software</code>, each by its own authors. The APK download sources, Fast mode and the VirusTotal check of <a href="#morphe-helper">Morphe Helper</a> follow <b>Helper for Morphe</b> by rushiranpise (GPL-3.0). The engine's own libraries (Kotlin, Guava, Bouncy Castle, Google's apksig and apkzlib, smali, ARSCLib) keep their own licences; they are listed in the file NOTICE of the project. This app is independent of these projects and of the APK sites it can download from.</p>
+
+<h4>The SD Maid SE tab</h4>
+<p>The <a href="#tab-sdm">SD Maid SE</a> tab is a port of the four tools SystemCleaner, AppCleaner, CorpseFinder and Deduplicator of <b>SD Maid SE</b> by darken (<code>github.com/d4rken-org/sdmaid-se</code>, GPL-3.0): the filters and their defaults, the expendables databases, the CorpseFinder marker database, the Deduplicator rules and the accessibility steps for clearing caches follow the original, rewritten in Java for this app. SD Maid's icons, logo, mascot and translations are not used, and this tab is not the SD Maid app. SD Maid SE is on GitHub and on Google Play (the card in the tab has both links).</p>
+
+<h4>The System UI Tuner tab</h4>
+<p>The <a href="#tab-sysui">System UI Tuner</a> tab follows <b>System UI Tuner</b>, also called <b>Tweaker</b>, by Zachary Wander (<code>github.com/zacharee/Tweaker</code>, MIT licence, copyright 2023 Zachary Wander): Demo Mode with its form, and the Battery, Clock and Demo mode Quick Settings tiles. The other cards of the tab are additions of this app, not from Tweaker.</p>
 
 <h4>Update sources and catalogs</h4>
 <ul>

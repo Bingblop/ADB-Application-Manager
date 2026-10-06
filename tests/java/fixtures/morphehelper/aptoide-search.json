@@ -1,0 +1,4 @@
+{"info":{"status":"OK"},"datalist":{"total":2,"count":2,"offset":0,"limit":25,"next":2,"hidden":0,"loaded":true,"list":[
+{"id":777,"name":"Example App Lite","package":"com.example.app.lite","uname":"example-lite","file":{"vername":"3.0.0","vercode":300,"md5sum":"00000000000000000000000000000000","filesize":1,"path":"{{BASE}}/files/other.apk"}},
+{"id":1003,"name":"Example App","package":"com.example.app","uname":"example-app","file":{"vername":"1.0.3","vercode":103,"md5sum":"{{MD5_example-1.0.3.apk}}","filesize":4096,"path":"{{BASE}}/files/example-1.0.3.apk","hardware":{"cpus":["arm64-v8a"]}}}
+]}}

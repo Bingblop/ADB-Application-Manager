@@ -63,6 +63,10 @@ exports.initScript = function (opts) {
     requestOverlayAccess() { calls.perms.push('overlay'); if (window.__mode.priv && opts.grantOverlayByShell) { window.__perm.overlay = true; return 'granted'; } return 'settings'; },
     requestLegacyStorageAccess() { calls.perms.push('storage_legacy'); if (window.__mode.priv) { window.__perm.storage_legacy = true; return 'granted'; } return 'settings'; },
     requestWriteSecureSettings() { calls.perms.push('secure_settings'); if (window.__mode.priv) { window.__perm.secure_settings = true; return 'granted'; } return 'settings'; },
+    // "Allow all" through the working mode: opts.grantAll = the keys it manages to allow (true = every one); the page then starts the app again (reloadApp)
+    grantAllPermissions() { calls.grantAll = (calls.grantAll || 0) + 1; if (window.__mode.priv && opts.grantAll) { (opts.grantAll === true ? Object.keys(window.__perm) : opts.grantAll).forEach(k => { if (k !== 'sdk') window.__perm[k] = true; }); } return JSON.stringify(Object.assign({ sdk: window.__device.sdk }, window.__perm)); },
+    syncUsageGrant() { calls.sync = (calls.sync || 0) + 1; },
+    reloadApp() { calls.reload = (calls.reload || 0) + 1; },
     requestRestrictedSettingsAccess() { calls.perms.push('restricted_settings'); if (window.__mode.priv) { window.__perm.restricted_settings = true; return 'granted'; } return 'settings'; },
     // ---- the device, for the splits ----
     getDeviceProfile() { return JSON.stringify(window.__device); },

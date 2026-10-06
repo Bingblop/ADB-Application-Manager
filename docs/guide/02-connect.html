@@ -394,8 +394,8 @@
 <ol class="hg-steps">
 <li>Each row has a name, a one-line reason, and either an <b>Allow</b> button or a tick and the word "Allowed".</li>
 <li>Tap <b>Allow</b> on a row to open the Android screen for it (switch it on, then press Back to return), or, for the ones the app can grant itself, to grant it at once.</li>
-<li><b>Allow all</b> walks through every missing one, one Android screen after another. Closing the sheet cancels the rest.</li>
-<li><b>Not now</b> closes the sheet. When everything is allowed, the same button says <b>Done</b>.</li>
+<li><b>Allow all</b>: with a working mode on, the app grants at once everything that has a command (Allow Restricted Settings first, then the rest) and starts again so that it all takes effect. What has no command, or what the phone refused, is opened one Android screen after another; closing the sheet cancels the rest.</li>
+<li><b>Not now</b> closes the sheet. When everything is allowed, the same button says <b>Done</b>. If you allowed something while the first-launch sheet was open, closing it starts the app again so that the change takes effect everywhere.</li>
 </ol>
 <p>On Android 10 and older there is no "All files" switch, so <b>Allow</b> shows Android's ordinary storage question instead.</p>
 <p>Separately, when you do something that needs file access and the app has neither that nor a working mode, it opens the same sheet with only that one row, headed "File access needed", and carries on once you allow it.</p>
@@ -403,25 +403,25 @@
 <h4>The special accesses</h4>
 <table class="hg-table"><thead><tr><th>On screen</th><th>What it is for</th><th>Without it</th><th>Optional?</th></tr></thead><tbody>
 <tr><td>All files access</td><td>Browse storage in the File Manager, find package files on it, install from it.</td><td>The File Manager and the Installer's search cannot read storage unless a working mode is on (a working mode reads it for you). Added storage, such as an SD card, and the file chooser still work.</td><td>Yes</td></tr>
+<tr><td>Allow Restricted Settings</td><td>Lifts Android's block on a few sensitive switches, Usage access among them, for apps installed from outside a store (Android 13 and newer). It sits above Usage access in the sheet, because Usage access may need it first.</td><td>Some switches for this app, Usage access included, stay greyed out as "Restricted setting".</td><td>Yes</td></tr>
 <tr><td>Usage access</td><td>Show how big each app is and when it was last used.</td><td>Sizes fall back to the app's file size, and the storage figures are missing.</td><td>Yes</td></tr>
 <tr><td>Display over other apps</td><td>Lets the app open another app's screen from the background, such as an app you have just installed.</td><td>That kind of "open it now" may not appear.</td><td>Yes</td></tr>
 <tr><td>Install unknown apps</td><td>Lets the app install the package files you choose (APK, APKS and XAPK files).</td><td>When the app hands a file to Android's own installer, Android asks first, and refuses until you allow it. Installs made through a working mode are not affected.</td><td>Yes</td></tr>
 <tr><td>Read/Write External Storage</td><td>The older storage permission that some apps still check. On Android 10 and older, it is the storage permission itself.</td><td>Nothing noticeable on Android 11 and newer.</td><td>Yes</td></tr>
 <tr><td>Write Secure Settings</td><td>Lets the app change a few protected system settings used by some advanced features.</td><td>Those advanced features. Nothing in everyday use is known to need it.</td><td>Yes</td></tr>
-<tr><td>Access Restricted Settings</td><td>Lifts Android's block on a few sensitive switches for apps installed from outside a store (Android 13 and newer).</td><td>Some switches for this app stay greyed out as "Restricted setting".</td><td>Yes</td></tr>
 </tbody></table>
-<p>The first four rows are always in the sheet. The last three only appear while a working mode is on, because the app grants them by running a command through that mode (most of them have no screen of their own in Android).</p>
+<p>All files access, Usage access, Display over other apps and Install unknown apps are always in the sheet. The others (Allow Restricted Settings, Read/Write External Storage, Write Secure Settings) only appear while a working mode is on, because the app grants them by running a command through that mode (most of them have no screen of their own in Android).</p>
 <p><b>The Install unknown apps row.</b> Tap <b>Allow</b>. With a working mode on, the app grants it at once (if that does not take, Android's screen opens as below). Without one, Android's own <b>Install unknown apps</b> screen for this app opens: switch it on (the switch reads <b>Allow from this source</b> on most phones), press Back, and the row shows a tick. If your copy of the app is an old build that does not report this access, the row is not shown. On a phone older than Android 8 Android has one switch for all apps, so the row would simply say Allowed (this app itself needs Android 8 or newer).</p>
 
 <h4>What the app can grant for itself</h4>
-<p>With a working mode on (ADB, Wireless Debugging, Shizuku or Root), six of these are switched on by the app itself, by running a command as the shell user (UID 2000) or as root. Only All files access always needs Android's own screen.</p>
+<p>With a working mode on (ADB, Wireless Debugging, Shizuku or Root), all of these but All files access can be switched on by the app itself, by running a command as the shell user (UID 2000) or as root. Only All files access always needs Android's own screen.</p>
 <table class="hg-table"><thead><tr><th>Access</th><th>Command the app runs</th></tr></thead><tbody>
-<tr><td>Usage access</td><td><code>appops set com.bloatware.bingblop GET_USAGE_STATS allow</code></td></tr>
+<tr><td>Allow Restricted Settings</td><td><code>appops set com.bloatware.bingblop ACCESS_RESTRICTED_SETTINGS allow</code> (counts as allowed when the command passes)</td></tr>
+<tr><td>Usage access</td><td><code>appops set com.bloatware.bingblop GET_USAGE_STATS allow</code> and <code>pm grant com.bloatware.bingblop android.permission.PACKAGE_USAGE_STATS</code>. When you allow Usage access by hand in Android's settings, the app runs the <code>pm grant</code> in the background too.</td></tr>
 <tr><td>Display over other apps</td><td><code>appops set com.bloatware.bingblop SYSTEM_ALERT_WINDOW allow</code></td></tr>
 <tr><td>Install unknown apps</td><td><code>appops set com.bloatware.bingblop REQUEST_INSTALL_PACKAGES allow</code></td></tr>
 <tr><td>Read/Write External Storage</td><td><code>pm grant com.bloatware.bingblop android.permission.READ_EXTERNAL_STORAGE</code>, and the same with WRITE_EXTERNAL_STORAGE</td></tr>
 <tr><td>Write Secure Settings</td><td><code>pm grant com.bloatware.bingblop android.permission.WRITE_SECURE_SETTINGS</code></td></tr>
-<tr><td>Access Restricted Settings</td><td><code>appops set com.bloatware.bingblop android:read_write_restricted_settings allow</code></td></tr>
 </tbody></table>
 <p>If the grant does not take, the app opens the matching Android screen (or the app's own info page) instead. Write Secure Settings has no screen at all, so for that one nothing opens.</p>
 

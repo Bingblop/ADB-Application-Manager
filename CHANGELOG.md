@@ -2,6 +2,40 @@
 
 ## v7.10.0-Pro (versionCode 820)
 
+- **Permissions sheet**: **Allow Restricted Settings** now runs `appops set com.bloatware.bingblop ACCESS_RESTRICTED_SETTINGS allow` through the
+  working mode (counted as allowed when it passes) and sits above Usage access, which needs it. Usage access allowed by hand also gets
+  `pm grant ... PACKAGE_USAGE_STATS` in the background. **Allow all** grants everything that has a command through the working mode and
+  starts the app again at once; closing the first-launch sheet after something was allowed starts the app again too.
+- **App Stores**: descriptions that come as HTML are shown as readable text (paragraphs, lists, no tags). The UAD-NG chip on a row of the
+  Apps list reads just the level (ADVANCED, RECOMMENDED ...).
+- **A new tab: Morphe Patcher.** Patch apps with Morphe on the phone: the engine is the Morphe project's own morphe-patcher, built into the
+  app, running in a process of its own (the big heap a patch needs stays out of the app), with a notification and Cancel. It follows
+  Morphe Manager (MorpheApp, GPL-3.0) and Helper for Morphe (rushiranpise, GPL-3.0); the credits are in the tab, About, the Help Guide, the
+  README and NOTICE.
+  - **Sources**: the official Morphe Patches bundle and any more you add (a GitHub or GitLab address, a patches-bundle.json, a .mpp file),
+    with update checks, pre-releases, rename, turn off, delete.
+  - **Apps** and **Community**: the apps your sources patch, with **Installed** in a green glow for the ones on this phone, a Categories
+    drop-down, "find patches for my installed apps", and the community patch finder of morphe-patches.software with the same lists.
+  - **Morphe Helper**: finds and downloads the exact APK version a patch needs from ten sources (APKMirror, Uptodown, APKPure, APKCombo,
+    Aptoide, Evozi and more), with Fast mode and an optional VirusTotal scan with your API key (its rate limits are kept).
+  - **Simple** patching picks the patches for what is installed; **Advanced** lets you choose, with the universal patches and the ones that
+    fit the app, and their options. **Patch**, with **Install when finished** (on, silent through the working mode) and **Delete the APK
+    after installing** (off). A live log shows the progress the way Morphe Manager does, and a failed run shows its details.
+  - **Patched APKs** lists every APK you patched, with its log: install, share, export, delete.
+- **A new tab: SD Maid SE.** SystemCleaner, AppCleaner, CorpseFinder and Deduplicator, ported to Java from SD Maid SE by darken (d4rken-org,
+  GPL-3.0; the buttons in the tab open it on GitHub and Google Play).
+  - Each tool: Scan, a live status (step, bar, counts, path) that stays at the top, Cancel, **Details** to review the results and untick
+    what to keep, **Delete**, and a **1-tap scan and delete** checkbox that is off by default. At most two tools work at the same time; the
+    others say "In queue".
+  - An **exclusion manager** (apps, paths, segments, per tool, with the stock defaults), **Exclude** with Undo from the results,
+    **History** of everything deleted (paths kept for 7 days, reports for 30), and the settings of SD Maid for every tool.
+  - **AppCleaner** clears caches through the working mode and, with an accessibility service you enable and consent to, one app after the
+    other for the caches nothing else can reach. The folders the tools read follow the working mode (ADB, Shizuku and Root read
+    Android/data and, with Root, private app data).
+- **A new tab: System UI Tuner.** Demo Mode (the status bar in a fixed state, for screenshots), Battery, Clock and Demo mode Quick Settings
+  tiles, and a set of System UI tools: the shade and the bar flags, a notification lab, system actions, a battery simulator, navigation
+  mode, density, size and window options, and read-only reports. Demo Mode and the tiles follow Tweaker by Zachary Wander (MIT); the settings
+  that Tweaker writes (Global, Secure, System) are not repeated, the Hidden Settings tab does that.
 - **A new tab: Connected Devices.** Manage another Android device from this phone, a Wear OS watch first (a tablet or another
   phone works too), through the adb this app already carries. It sits after Task Manager (move it in Settings, Feature List).
   - **Add device**: pair with the code (Wi-Fi), connect to an address and port, scan the network for devices that offer
