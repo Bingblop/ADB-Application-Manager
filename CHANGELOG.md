@@ -29,7 +29,11 @@
   selected app; **Show Apps** lists the selected apps and lets you remove any of them from the selection; **Command**
   runs a shell command of your own on every selected app, one after another, replacing `$package` with each app's real
   package name (the instructions, a live preview for the first app and a few examples are on the sheet; it runs
-  exactly as typed and has no undo). The little arrow at the top of the batch menu and of the app menu is now a larger,
+  exactly as typed and has no undo). Batch Ops has presets (Privacy lockdown, No location, Stop background activity,
+  Silence notifications and an Undo for the lockdown) and lets you save your own sets of app ops by name. Command can
+  save commands under a name, run on the apps of a saved list instead of the selection (the ones not on the phone are
+  skipped and counted), and every batch result dialog has a Share CSV button (app, package, OK or failed, the
+  command's output, the time and the command that was run). The little arrow at the top of the batch menu and of the app menu is now a larger,
   outlined button in the middle.
 - **Press and hold guide.** A new card at the end of Settings lists everything that can be pressed and held (an app row,
   an app's icon, the Action Button, the selection checkmark, file rows, found APKs, Hidden Settings and overlay rows) and

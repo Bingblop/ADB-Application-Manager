@@ -763,6 +763,8 @@
         .bc-examples { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
         .bc-preview { font-size: 11.5px; color: var(--text-muted); margin-top: 8px; word-break: break-all; line-height: 1.5; }
         .bc-preview .bc-warn { color: #FFA726; }
+        .preset-chip { display: inline-flex; align-items: center; gap: 6px; }
+        .preset-x { opacity: 0.7; padding: 0 2px; cursor: pointer; }
         .bops-list { max-height: 44vh; overflow-y: auto; }
         .bops-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-top: 1px solid var(--border-glass); }
         .bops-row:first-child { border-top: none; }
@@ -5025,6 +5027,8 @@ Type any command below (e.g. pm list packages -d)
                 Pressing <b>Apply</b> sets every ticked op, to its own value, on every selected app, one app at a time.
                 <b>Allow</b>, <b>FG</b> (foreground only), <b>Ignore</b> and <b>Deny</b> set the mode; <b>Reset</b> puts it back to the system default.
             </div>
+            <div class="switch-sub" style="margin:2px 0 4px;">Presets (tap one to tick its app ops, then Apply):</div>
+            <div class="bc-examples" id="bopsPresets"></div>
             <div class="list-toolbar"><input type="text" class="list-search" id="bopsSearch" placeholder="Search app ops…" oninput="bopsRender()" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
             <div class="switch-sub" id="bopsSummary" style="margin:6px 0;"></div>
             <div id="bopsList" class="bops-list"></div>
@@ -5080,10 +5084,15 @@ Type any command below (e.g. pm list packages -d)
                 <span class="filter-chip" onclick="bcExample('cmd appops set $package RUN_ANY_IN_BACKGROUND ignore')"><code>appops … ignore</code></span>
                 <span class="filter-chip" onclick="bcExample('dumpsys package $package | grep versionName')"><code>dumpsys … versionName</code></span>
             </div>
+            <div class="switch-sub" style="margin:2px 0 4px;">Run it on:</div>
+            <select class="op-select" id="bcTarget" aria-label="Which apps to run the command on" onchange="bcPreview()" style="width:100%; margin-bottom:8px;"></select>
             <textarea id="bcInput" class="list-search" rows="3" style="width:100%; font-family:monospace;" placeholder="Example: pm clear $package" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" oninput="bcPreview()"></textarea>
             <div class="bc-preview" id="bcPreview"></div>
-            <div id="bcRecent" class="bc-examples" style="margin-top:8px;"></div>
+            <div class="switch-sub" style="margin:10px 0 2px;">Saved commands</div>
+            <div id="bcSaved" class="bc-examples"></div>
+            <div id="bcRecent" class="bc-examples" style="margin-top:4px;"></div>
             <div class="mode-btn-row" style="margin-top:12px;">
+                <button class="mode-action-btn" onclick="bcSave()">Save this command…</button>
                 <button class="mode-action-btn primary" id="bcRun" onclick="bcRun()">Run</button>
             </div>
         </div>
@@ -10688,6 +10697,63 @@ Type any command below (e.g. pm list packages -d)
         const BOPS_MODES = [['allow', 'Allow'], ['foreground', 'FG'], ['ignore', 'Ignore'], ['deny', 'Deny'], ['default', 'Reset']];
         const bopsPick = new Map();          // op -> mode, for every ticked op
         let bopsExtra = [];                  // ops typed in by hand
+        // Presets: ready-made sets of app ops and the ones you save (kept as "bops_presets": [{ name, ops: { OP: mode } }])
+        const BOPS_BUILTIN = [
+            { name: 'Privacy lockdown', ops: { COARSE_LOCATION: 'ignore', FINE_LOCATION: 'ignore', CAMERA: 'ignore', RECORD_AUDIO: 'ignore', READ_CONTACTS: 'ignore', READ_CALL_LOG: 'ignore', READ_SMS: 'ignore', READ_CLIPBOARD: 'ignore', READ_PHONE_STATE: 'ignore', GET_ACCOUNTS: 'ignore' } },
+            { name: 'No location', ops: { COARSE_LOCATION: 'ignore', FINE_LOCATION: 'ignore', MONITOR_LOCATION: 'ignore', MONITOR_HIGH_POWER_LOCATION: 'ignore', WIFI_SCAN: 'ignore' } },
+            { name: 'Stop background activity', ops: { RUN_IN_BACKGROUND: 'ignore', RUN_ANY_IN_BACKGROUND: 'ignore', WAKE_LOCK: 'ignore' } },
+            { name: 'Silence notifications', ops: { POST_NOTIFICATION: 'ignore' } },
+            { name: 'Undo Privacy lockdown', ops: { COARSE_LOCATION: 'default', FINE_LOCATION: 'default', CAMERA: 'default', RECORD_AUDIO: 'default', READ_CONTACTS: 'default', READ_CALL_LOG: 'default', READ_SMS: 'default', READ_CLIPBOARD: 'default', READ_PHONE_STATE: 'default', GET_ACCOUNTS: 'default' } },
+        ];
+        let bopsSaved = null;
+        function bopsSavedLoad() {
+            if (bopsSaved === null) {
+                const v = kvGet('bops_presets', []);
+                bopsSaved = (Array.isArray(v) ? v : []).filter(p => p && typeof p.name === 'string' && p.ops && typeof p.ops === 'object').slice(0, 30);
+            }
+            return bopsSaved;
+        }
+        function bopsPresetsRender() {
+            const box = document.getElementById('bopsPresets');
+            if (!box) return;
+            box.innerHTML = BOPS_BUILTIN.map((p, i) => `<span class="filter-chip" onclick="bopsLoadPreset('b', ${i})" title="${Object.keys(p.ops).length} app ops">${escapeHtml(p.name)}</span>`).join('')
+                + bopsSavedLoad().map((p, i) => `<span class="filter-chip preset-chip" title="${Object.keys(p.ops).length} app ops"><span onclick="bopsLoadPreset('s', ${i})">${escapeHtml(p.name)}</span><span class="preset-x" role="button" aria-label="Delete the preset ${escapeHtml(p.name)}" onclick="bopsDeletePreset(${i})">✕</span></span>`).join('')
+                + '<span class="filter-chip" onclick="bopsSavePreset()">＋ Save ticked as preset…</span>';
+        }
+        function bopsLoadPreset(kind, i) {
+            const p = (kind === 'b' ? BOPS_BUILTIN : bopsSavedLoad())[i];
+            if (!p) return;
+            haptic();
+            bopsPick.clear();
+            Object.keys(p.ops).forEach(op => {
+                if (!/^[A-Z][A-Z0-9_]+$/.test(op) || !BOPS_MODES.some(m => m[0] === p.ops[op])) return;
+                if (!BOPS_LIST.includes(op) && !bopsExtra.includes(op)) bopsExtra.push(op);
+                bopsPick.set(op, p.ops[op]);
+            });
+            bopsRender();
+            showToast(p.name + ': ' + bopsPick.size + ' app op' + (bopsPick.size === 1 ? '' : 's') + ' ticked');
+        }
+        function bopsSavePreset() {
+            if (!bopsPick.size) { showToast('Tick some app ops first'); return; }
+            const name = (prompt('Name for this preset:', 'My preset') || '').trim().slice(0, 40);
+            if (!name) return;
+            haptic();
+            const list = bopsSavedLoad().filter(p => p.name !== name);
+            const ops = {}; bopsPick.forEach((m, op) => { ops[op] = m; });
+            list.unshift({ name, ops });
+            bopsSaved = list.slice(0, 30);
+            kvSet('bops_presets', bopsSaved);
+            bopsPresetsRender();
+            showToast('Saved the preset ' + name);
+        }
+        function bopsDeletePreset(i) {
+            const p = bopsSavedLoad()[i];
+            if (!p || !confirm('Delete the preset ' + p.name + '?')) return;
+            haptic();
+            bopsSaved.splice(i, 1);
+            kvSet('bops_presets', bopsSaved);
+            bopsPresetsRender();
+        }
         function bopsAll() { return Array.from(new Set(BOPS_LIST.concat(bopsExtra))).sort(); }
         function openBatchOps() {
             if (!selectedPkgs.size) { showToast('Select apps first'); return; }
@@ -10695,6 +10761,7 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('bopsSub').innerText = 'Applies to ' + selectedPkgs.size + ' selected app' + (selectedPkgs.size === 1 ? '' : 's');
             document.getElementById('bopsSearch').value = '';
             document.getElementById('batchOpsModal').classList.add('show');
+            bopsPresetsRender();
             bopsRender();
         }
         function closeBatchOps() { haptic(); document.getElementById('batchOpsModal').classList.remove('show'); }
@@ -10762,11 +10829,29 @@ Type any command below (e.g. pm list packages -d)
             showAppsRender();
         }
 
-        let bcRecent = null;
+        let bcRecent = null, bcSaved = null;
+        // The apps a Command runs on: the selection, or the apps of a saved list that are on this phone
+        function bcTargets() {
+            const v = (document.getElementById('bcTarget') || {}).value || 'sel';
+            if (v === 'sel') return { pkgs: Array.from(selectedPkgs), skipped: 0, label: 'the selected apps' };
+            const l = customLists.find(x => x.id === v);
+            if (!l) return { pkgs: Array.from(selectedPkgs), skipped: 0, label: 'the selected apps' };
+            const have = new Set(allApps.map(a => a.pkg));
+            const pk = (l.packages || []).filter(p => have.has(p));
+            return { pkgs: pk, skipped: (l.packages || []).length - pk.length, label: 'the list ' + l.name };
+        }
+        function bcSavedLoad() {
+            if (bcSaved === null) {
+                const v = kvGet('batch_cmds', []);
+                bcSaved = (Array.isArray(v) ? v : []).filter(c => c && typeof c.name === 'string' && typeof c.cmd === 'string').slice(0, 40);
+            }
+            return bcSaved;
+        }
         function openBatchCmd() {
             if (!selectedPkgs.size) { showToast('Select apps first'); return; }
             haptic();
-            document.getElementById('bcSub').innerText = 'Runs once on each of the ' + selectedPkgs.size + ' selected app' + (selectedPkgs.size === 1 ? '' : 's');
+            const sel = document.getElementById('bcTarget');
+            sel.innerHTML = '<option value="sel">The selected apps (' + selectedPkgs.size + ')</option>' + customLists.map(l => '<option value="' + escapeHtml(l.id) + '">From a saved list: ' + escapeHtml(l.name) + ' (' + (l.packages || []).length + ')</option>').join('');
             document.getElementById('batchCmdModal').classList.add('show');
             bcRenderRecent();
             bcPreview();
@@ -10775,11 +10860,14 @@ Type any command below (e.g. pm list packages -d)
         function bcExample(cmd) { haptic(); document.getElementById('bcInput').value = cmd; bcPreview(); }
         function bcPreview() {
             const cmd = (document.getElementById('bcInput').value || '').trim();
-            const first = Array.from(selectedPkgs)[0] || 'com.example.app';
+            const t = bcTargets();
+            const first = t.pkgs[0] || 'com.example.app';
             const box = document.getElementById('bcPreview'), run = document.getElementById('bcRun');
-            const n = selectedPkgs.size;
-            run.disabled = !cmd;
+            const n = t.pkgs.length;
+            document.getElementById('bcSub').innerText = 'Runs once on each of the ' + n + ' app' + (n === 1 ? '' : 's') + ' in ' + t.label + (t.skipped ? ' (' + t.skipped + ' in the list are not on this phone and are skipped)' : '');
+            run.disabled = !cmd || !n;
             run.innerText = cmd ? 'Run on ' + n + ' app' + (n === 1 ? '' : 's') : 'Run';
+            if (!n) { box.innerHTML = '<span class="bc-warn">None of the apps in that list are on this phone.</span>'; return; }
             if (!cmd) { box.innerHTML = 'Preview: type a command above.'; return; }
             const shown = cmd.split('$package').join(first);
             box.innerHTML = 'For <b>' + escapeHtml(first) + '</b> it will run:<br><code>' + escapeHtml(shown) + '</code>'
@@ -10787,15 +10875,37 @@ Type any command below (e.g. pm list packages -d)
         }
         function bcRenderRecent() {
             if (bcRecent === null) { const v = kvGet('batch_cmd_recent', []); bcRecent = Array.isArray(v) ? v.filter(x => typeof x === 'string').slice(0, 6) : []; }
+            const saved = bcSavedLoad();
+            document.getElementById('bcSaved').innerHTML = saved.length ? saved.map((c, i) => `<span class="filter-chip preset-chip" title="${escapeHtml(c.cmd)}"><span onclick="bcLoadSaved(${i})">${escapeHtml(c.name)}</span><span class="preset-x" role="button" aria-label="Delete the saved command ${escapeHtml(c.name)}" onclick="bcDeleteSaved(${i})">✕</span></span>`).join('') : '<span class="switch-sub">None yet: type a command and tap Save this command.</span>';
             document.getElementById('bcRecent').innerHTML = bcRecent.length ? '<span class="switch-sub" style="width:100%;">Recent</span>' + bcRecent.map((c, i) => `<span class="filter-chip" data-i="${i}" onclick="bcExample(bcRecent[+this.dataset.i])"><code>${escapeHtml(c.length > 40 ? c.slice(0, 40) + '…' : c)}</code></span>`).join('') : '';
+        }
+        function bcLoadSaved(i) { const c = bcSavedLoad()[i]; if (c) bcExample(c.cmd); }
+        function bcSave() {
+            const cmd = (document.getElementById('bcInput').value || '').trim();
+            if (!cmd) { showToast('Type a command first'); return; }
+            const name = (prompt('Name for this command:', cmd.slice(0, 28)) || '').trim().slice(0, 40);
+            if (!name) return;
+            haptic();
+            bcSaved = [{ name, cmd }].concat(bcSavedLoad().filter(c => c.name !== name)).slice(0, 40);
+            kvSet('batch_cmds', bcSaved);
+            bcRenderRecent();
+            showToast('Saved the command ' + name);
+        }
+        function bcDeleteSaved(i) {
+            const c = bcSavedLoad()[i];
+            if (!c || !confirm('Delete the saved command ' + c.name + '?')) return;
+            haptic();
+            bcSaved.splice(i, 1);
+            kvSet('batch_cmds', bcSaved);
+            bcRenderRecent();
         }
         function bcRun() {
             const cmd = (document.getElementById('bcInput').value || '').trim();
-            const pkgs = Array.from(selectedPkgs);
+            const t = bcTargets(), pkgs = t.pkgs;
             if (!cmd || !pkgs.length) return;
             if (!guardPrivilege('Batch command')) return;
             const note = cmd.includes('$package') ? '' : '\n\nThere is no $package in it, so the same command runs ' + pkgs.length + ' times.';
-            if (!confirm('Run this on ' + pkgs.length + ' app' + (pkgs.length === 1 ? '' : 's') + '?\n\n' + cmd.split('$package').join(pkgs[0]) + '\n\n(shown for ' + pkgs[0] + '; the others get their own package name)' + note + '\n\nThere is no undo.')) return;
+            if (!confirm('Run this on ' + pkgs.length + ' app' + (pkgs.length === 1 ? '' : 's') + ' in ' + t.label + '?\n\n' + cmd.split('$package').join(pkgs[0]) + '\n\n(shown for ' + pkgs[0] + '; the others get their own package name)' + note + '\n\nThere is no undo.')) return;
             bcRecent = [cmd].concat((bcRecent || []).filter(c => c !== cmd)).slice(0, 6);
             kvSet('batch_cmd_recent', bcRecent);
             closeBatchCmd();
@@ -11075,13 +11185,27 @@ Type any command below (e.g. pm list packages -d)
             batchRunLabel = ''; batchRunHist = '';
             recordHistory('apps', label, rows.map(r => ({ pkg: r.pkg, name: r.name, action: histAction, success: r.success })));
             showToast(stopped ? `Stopped: ${success} succeeded, ${failed} failed, ${total - rows.length} not run` : `Batch Done: ${success} succeeded, ${failed} failed`);
-            showCommandResults('Batch Results', shownAction + ' • ' + rows.length + ' of ' + total + ' apps' + (stopped ? ' (stopped)' : ''), rows);
+            const csvAction = action.startsWith('custom:') ? action.slice(7) : action.startsWith('appops:') ? action.slice(7) : action;
+            showCommandResults('Batch Results', shownAction + ' • ' + rows.length + ' of ' + total + ' apps' + (stopped ? ' (stopped)' : ''), rows, [{
+                label: 'Share CSV',
+                onClick: () => batchResultsCsv(shownAction, csvAction, rows)
+            }]);
             // "Keep selection" leaves the apps selected (and the panel as it was) so another batch action
             // can run on the same set right away - the floating sheet sits behind the result dialog the
             // same way the single-app sheet does, and is there again once that dialog is dismissed.
             if (!batchKeepSelection) clearBatchSelection();
             setTimeout(loadPackageData, 400);
         };
+
+        // The results of a batch run as a CSV to share: one row per app, with the command (or action) that was run
+        function batchResultsCsv(kind, what, rows) {
+            haptic();
+            const out = [['App', 'Package', 'Result', 'Output', 'Run', 'Command or action']];
+            const ts = new Date().toISOString();
+            rows.forEach(r => out.push([r.name, r.pkg, r.success ? 'OK' : 'Failed', String(r.output || '').trim(), ts, what]));
+            const csv = out.map(r => r.map(csvCell).join(',')).join('\n') + '\n';
+            shareFileViaBridge('batch_' + String(kind).toLowerCase().replace(/[^a-z0-9]+/g, '_') + '_' + ts.slice(0, 10) + '.csv', csv, 'text/csv');
+        }
 
         // Opens Android's App Info screen. Works in every mode, including Read-Only.
         function openAppSettings(pkg) {
