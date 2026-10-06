@@ -7290,6 +7290,8 @@ Type any command below (e.g. pm list packages -d)
             container.innerHTML = shownLists.map(list => {
                 const all = Array.isArray(list.packages) ? list.packages : [];
                 const pkgs = savedListShown(list);
+                const metaText = (savedFilters.size ? pkgs.length + ' of ' + all.length : pkgs.length) + ' apps';
+                const recallText = savedFilters.size ? 'Recall ' + pkgs.length : 'Recall';
                 const desc = list.description ? `<div class="saved-list-desc">${escapeHtml(list.description)}</div>` : '';
                 const chips = pkgs.slice(0, 6).map(pkg => `<span class="saved-pkg-chip">${escapeHtml(pkg)}</span>`).join('');
                 const more = pkgs.length > 6 ? `<span class="saved-pkg-chip">+${pkgs.length - 6} more</span>` : '';
@@ -7298,7 +7300,7 @@ Type any command below (e.g. pm list packages -d)
                     <div class="saved-list-card">
                         <div class="saved-list-head">
                             <div class="saved-list-title">${escapeHtml(list.name || 'Untitled List')}</div>
-                            <div class="saved-list-meta">${savedFilters.size ? pkgs.length + ' of ' + all.length : pkgs.length} apps</div>
+                            <div class="saved-list-meta">${metaText}</div>
                         </div>
                         ${desc}
                         <div class="saved-list-pkgs">${chips || '<span class="saved-pkg-chip">No packages</span>'}${more}</div>
@@ -7306,7 +7308,7 @@ Type any command below (e.g. pm list packages -d)
                             <div class="tag-badge tag-system">Saved</div>
                         </div>
                         <div class="saved-list-actions">
-                            <button class="apps-tool-btn" data-list-id="${listId}" onclick="recallSavedList(this.getAttribute('data-list-id'))">${savedFilters.size ? 'Recall ' + pkgs.length : 'Recall'}</button>
+                            <button class="apps-tool-btn" data-list-id="${listId}" onclick="recallSavedList(this.getAttribute('data-list-id'))">${recallText}</button>
                             <button class="apps-tool-btn${quickListId === (list.id || '') ? ' active' : ''}" data-list-id="${listId}" onclick="toggleQuickList(this.getAttribute('data-list-id'))" title="Use this list for the Quick Settings tile and the widget">${quickListId === (list.id || '') ? 'Quick list ✓' : 'Quick list'}</button>
                             <button class="apps-tool-btn" data-list-id="${listId}" onclick="openListEditorModal(this.getAttribute('data-list-id'))">Edit</button>
                             <button class="apps-tool-btn" data-list-id="${listId}" onclick="copySavedList(this.getAttribute('data-list-id'))">Copy</button>
