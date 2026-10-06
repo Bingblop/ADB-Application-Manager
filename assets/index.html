@@ -185,7 +185,7 @@
             color: var(--text-main);
         }
 
-        .brand-text h1 .bt-line { display: block; }
+        .brand-text h1 .bt-line { display: block; white-space: nowrap; }
 
         .brand-text h1 .bt-c {
             background: linear-gradient(90deg, var(--text-main), var(--accent));
@@ -1129,6 +1129,9 @@
         .uad-chip:active { transform: scale(0.96); }
         .uad-chip .uad-chip-src { font-size: 9px; font-weight: 700; letter-spacing: 0.4px; color: var(--text-muted); }
         .uad-chip.uad-r-recommended, .uad-chip.uad-r-advanced, .uad-chip.uad-r-expert, .uad-chip.uad-r-unsafe { }
+        /* the same chip on an app's row: small, in the line of badges */
+        .uad-chip.uad-chip-row { font-size: 9px; padding: 1px 7px; gap: 4px; margin: 0 3px 3px 0; line-height: 1.5; vertical-align: middle; }
+        .uad-chip.uad-chip-row .uad-chip-src { font-size: 8px; }
         .sheet-avatar:empty { display: none; }
         .perm-name.fm-dir { color: var(--accent); font-weight: 800; }
 
@@ -3230,6 +3233,8 @@
             font-size: 10.5px;
         }
 
+        .apps-sort-select.apps-ab-select { width: 138px; flex: 0 0 auto; }
+
         .app-meta-line {
             font-size: 9.5px;
             color: var(--text-muted);
@@ -3422,10 +3427,11 @@
                     <option value="size">Size</option>
                     <option value="updates">Updates first</option>
                 </select>
-                <button class="mode-action-btn" onclick="exportAppList()">Export</button>
                 <button class="mode-action-btn" onclick="exportAppList(true)">Share CSV</button>
                 <button class="mode-action-btn" onclick="openProfiles()">Profiles</button>
                 <button class="mode-action-btn" onclick="openBackups()">Backups</button>
+                <label class="apps-sort-label" for="appsActionBtnSelect" style="margin-left:6px;">Action Button</label>
+                <select id="appsActionBtnSelect" class="op-select apps-sort-select apps-ab-select" aria-label="Action Button" onchange="setActionBtn(this.value)"></select>
             </div>
 
             <!-- Tooltip under the Export / Share CSV buttons: the filter chips below scroll sideways -->
@@ -3446,7 +3452,6 @@
                 <div class="filter-pill" data-filter="suspended" onclick="setFilter('suspended', this)">Suspended (<span id="countSuspended">0</span>)</div>
                 <div class="filter-pill" data-filter="patched" onclick="setFilter('patched', this)">Patched (<span id="countPatched">0</span>)</div>
                 <div class="filter-pill" data-filter="uninstalled" onclick="setFilter('uninstalled', this)">Uninstalled (<span id="countUninstalled">0</span>)</div>
-                <div class="toggle-pill" id="versionTogglePill" onclick="toggleListVersions()" title="Show app versions in the list">Versions</div>
             </div>
 
             <!-- Search bar: under the filters, with a menu for what is searched and how -->
@@ -8838,6 +8843,8 @@ Type any command below (e.g. pm list packages -d)
                 const r = JSON.parse(bridge.getUadMatches() || '{}');
                 uadPackages = (r.packages || []).map(p => Object.assign(p, { brand: uadBrandOf(p.pkg) }));
                 uadLoaded = true;
+                uadLevelByPkg = new Map(uadPackages.filter(p => p.removal).map(p => [p.pkg, p.removal]));
+                if (typeof renderApps === 'function' && allApps && allApps.length) renderApps();                       // the rows now carry their UAD-NG chips
                 const present = new Set(uadPackages.map(p => p.pkg));
                 Array.from(uadSelected).forEach(p => { if (!present.has(p)) uadSelected.delete(p); });
             } catch (e) {
@@ -8939,6 +8946,30 @@ Type any command below (e.g. pm list packages -d)
             Expert: "Breaks widespread or important features, but not basic operation. Shouldn't boot-loop the phone unless the description says so, with no guarantee.",
             Unsafe: 'Can break vital parts of Android, or may be illegal to remove where you live (e.g. emergency alerts). High risk of a boot-loop.'
         };
+        // The UAD-NG classification on an app's row (when the project lists the package): tap it for the same description box as the app menu's chip
+        let uadLevelByPkg = new Map();
+        function listUadChip(app) {
+            const lvl = uadLevelByPkg.get(app.pkg);
+            if (!lvl) return '';
+            const pk = escapeHtml(app.pkg);
+            return `<button type="button" class="uad-chip uad-chip-row uad-r-${escapeHtml(String(lvl).toLowerCase())}" data-uad="${pk}" aria-label="UAD-NG classification ${escapeHtml(lvl)}: tap for the description" onclick="event.stopPropagation(); openUadInfoFor(this.dataset.uad)"><span class="uad-chip-src">UAD-NG</span><span translate="no">${escapeHtml(String(lvl).toUpperCase())}</span></button>`;
+        }
+        // the levels of every package on this phone that the (downloaded) list knows, read once the Apps tab is up and again whenever the list changes
+        function uadEnsureForList() {
+            const bridge = uadBridge();
+            if (!bridge || uadLoaded) return;
+            let st = {};
+            try { st = JSON.parse(bridge.getUadStatus() || '{}'); } catch (e) {}
+            if (st.cached) loadUadMatches();
+        }
+        function openUadInfoFor(pkg) {
+            const bridge = window.AndroidBridge;
+            if (!bridge || !bridge.getUadInfo) return;
+            let r = null;
+            try { r = JSON.parse(bridge.getUadInfo(pkg) || '{}'); } catch (e) { r = null; }
+            if (!r || !r.found) { showToast('The UAD-NG list has nothing on this app'); return; }
+            openUadInfo(r);
+        }
         // The app menu's UAD-NG chip: what the project's list says about the open app (nothing shown when it is not in the list)
         let sheetUadInfo = null;
         function loadSheetUad(pkg) {
@@ -8959,8 +8990,8 @@ Type any command below (e.g. pm list packages -d)
             chip.setAttribute('aria-label', 'UAD-NG classification ' + lvl + ': tap for the description');
             chip.style.display = '';
         }
-        function openUadInfo() {
-            const r = sheetUadInfo;
+        function openUadInfo(info) {
+            const r = info || sheetUadInfo;
             if (!r) return;
             haptic();
             const app = allApps.find(a => a.pkg === r.pkg);
@@ -9150,7 +9181,6 @@ Type any command below (e.g. pm list packages -d)
         function saveUiState() {
             if (!uiStateLoaded) return; // don't overwrite saved filters with defaults during start-up
             saveStoreJson('ui_state', {
-                showVersions: showListVersions,
                 appSort: appSort,
                 filtersHintDone: filtersHintDone,
                 batchKeepSelection: batchKeepSelection,
@@ -9183,11 +9213,6 @@ Type any command below (e.g. pm list packages -d)
                 if (st.search && typeof st.search === 'object') {
                     ['names', 'packages', 'regex'].forEach(k => { if (typeof st.search[k] === 'boolean') searchOpts[k] = st.search[k]; });
                     if (!searchOpts.names && !searchOpts.packages) searchOpts.names = true;      // one of the two always searches
-                }
-                if (typeof st.showVersions === 'boolean') {
-                    showListVersions = st.showVersions;
-                    const pill = document.getElementById('versionTogglePill');
-                    if (pill) pill.classList.toggle('active', showListVersions);
                 }
                 // The Apps tab always opens on "Total Installed" (the "all" filter) after the app was gone from memory: a filter left on
                 // last time is not brought back, so the whole list is what you see first.
@@ -9704,7 +9729,6 @@ Type any command below (e.g. pm list packages -d)
         // Off by default now - a less cluttered list row. The single-app menu and command results always show the
         // version regardless of this; it only thins out the main list rows (see appVersionHtml() below, and the
         // "Versions" filter pill above the list, which stays in sync with it and can turn it back on).
-        let showListVersions = false;
 
         let bridgeUpdatesCache = { at: 0, list: [] };
 
@@ -9729,19 +9753,6 @@ Type any command below (e.g. pm list packages -d)
             return pr && pr.stage === 'done' ? null : u;
         }
 
-        function listVersionLabel(app) {
-            if (!showListVersions || !app.version) return '';
-            const u = knownUpdateFor(app.pkg);
-            return `<span class="app-version">v${escapeHtml(app.version)}${u ? ` <span class="upd-arrow">→ ${escapeHtml(u.availableVersion || '')}</span>` : ''}</span>`;
-        }
-
-        function toggleListVersions() {
-            showListVersions = !showListVersions;
-            document.getElementById('versionTogglePill').classList.toggle('active', showListVersions);
-            haptic();
-            saveUiState();
-            renderApps();
-        }
 
         function formatDate(ms) {
             if (!ms) return '';
@@ -10947,6 +10958,9 @@ Type any command below (e.g. pm list packages -d)
             let size = w10 > 0 ? 10 * room / w10 : 18;
             size = Math.max(13, Math.min(size, 26));
             h1.style.fontSize = size.toFixed(1) + 'px';
+            // the room next to the buttons moves a little as the title grows (it is one flex row): step down until both lines really fit
+            const widest = () => { lines.forEach(l => { l.style.display = 'inline-block'; }); const w = Math.max.apply(null, lines.map(l => l.getBoundingClientRect().width)); lines.forEach(l => { l.style.display = ''; }); return w; };
+            for (let i = 0; i < 14 && size > 11 && widest() > box.clientWidth - 10; i++) { size = Math.max(11, size * 0.95); h1.style.fontSize = size.toFixed(1) + 'px'; }
             if (p) {
                 // the subtitle may not be wider than the title: shrink it a little when a long model name would push past the room
                 p.style.fontSize = '10px';
@@ -10956,6 +10970,7 @@ Type any command below (e.g. pm list packages -d)
                 subs.forEach(l => { l.style.display = ''; });
                 if (sw > room) p.style.fontSize = Math.max(7.5, 10 * room / sw).toFixed(1) + 'px';
             }
+            if (typeof syncChromeVars === 'function') syncChromeVars();                   // the sticky bars below follow the header's new height
         }
         (function () {
             const run = () => fitHeaderTitle();
@@ -10967,6 +10982,7 @@ Type any command below (e.g. pm list packages -d)
         // Initialize App
         function initApp() {
             checkAllWorkingModes(false);
+            actionBtnRender();
             try {
                 if (window.AndroidBridge && window.AndroidBridge.getAdbKeyInfo && JSON.parse(window.AndroidBridge.getAdbKeyInfo() || '{}').noticePending) {
                     setTimeout(() => showToast('This app now has its own private ADB key. Tap the mode badge for details.'), 900);
@@ -10984,6 +11000,7 @@ Type any command below (e.g. pm list packages -d)
                 // Load packages immediately
                 loadPackageData();
                 setTimeout(maybeShowWhatsNew, 1200);
+                setTimeout(uadEnsureForList, 1600);
                 setTimeout(maybeShowPermIntro, 2300);
             } else {
                 // Mock packages for preview
@@ -11515,9 +11532,12 @@ Type any command below (e.g. pm list packages -d)
         })();
         function actionBtnRender() {
             abCfgRender();
+            const opts = AB_OPTIONS.map(o => '<option value="' + o[0] + '"' + (o[0] === actionBtn ? ' selected' : '') + '>' + escapeHtml(o[1]) + '</option>').join('');
+            const rowSel = document.getElementById('appsActionBtnSelect');            // the same choice sits at the end of the Apps tab's button row
+            if (rowSel) { rowSel.innerHTML = opts; rowSel.value = actionBtn; }
             const sel = document.getElementById('actionBtnSelect');
             if (!sel) return;
-            sel.innerHTML = AB_OPTIONS.map(o => '<option value="' + o[0] + '"' + (o[0] === actionBtn ? ' selected' : '') + '>' + escapeHtml(o[1]) + '</option>').join('');
+            sel.innerHTML = opts;
             sel.value = actionBtn;
             const pv = document.getElementById('actionBtnPreview');
             if (pv) {
@@ -12158,7 +12178,7 @@ Type any command below (e.g. pm list packages -d)
                     <div class="app-meta" onclick="toggleSelectPkg(this.parentElement.dataset.pkg)">
                         <div class="app-name">${escapeHtml(app.name)}</div>
                         <div class="app-pkg">${pk}</div>
-                        <div class="badge-row">${badges}${listVersionLabel(app)}${listSortMeta(app)}</div>
+                        <div class="badge-row">${badges}${listUadChip(app)}${listSortMeta(app)}</div>
                     </div>
                     <div class="app-actions">
                         ${actionBtnHtml(app)}

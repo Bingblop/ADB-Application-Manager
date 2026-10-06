@@ -44,7 +44,7 @@
     Delete opens the delete sheet for it: true
     Enter loads it: true
 27. the text of a found file is not selectable (the long press must not start Android's own text selection): true
-16. a tap loads the file and the page swipes down to the next box (the package info card), just below the header and tabs: true card top 143, tabs end 135
+16. a tap loads the file and the page swipes down to the next box (the package info card), just below the header and tabs: true card top 148, tabs end 140
     the card it landed on says what was picked: true
 17. choosing with the file picker swipes down the same way: true
 18. no swipe when the answer comes after the user went to another tab: true

@@ -58,12 +58,12 @@
     Enter on an arrow: the row moves to the top and the focus goes to the other arrow (the one pressed has nowhere to go): true {"row":"debloater","label":"Move UAD-NG Debloater down","first":"debloater"}
     and that one keeps working: true
     after a tap on an arrow the row is where it was on the screen (583 px, now 583 px), so the next tap moves the same row: true
-13. [320 px, scrolled] the tab bar sticks right under the header (header 85 px), and the top of its first line is not covered: true {"hdr":85,"tabs":57,"tabTop":85,"hdrBottom":85,"firstLineUncovered":true,"uadTop":"146px","pad":"150px"}
-    the Debloater action bar sticks right under the tab bar, and scroll-padding leaves room for both: true {"hdr":85,"tabs":57,"tabTop":85,"hdrBottom":85,"firstLineUncovered":true,"uadTop":"146px","pad":"150px"}
-13. [360 px, scrolled] the tab bar sticks right under the header (header 78 px), and the top of its first line is not covered: true {"hdr":78,"tabs":57,"tabTop":78,"hdrBottom":78,"firstLineUncovered":true,"uadTop":"139px","pad":"143px"}
-    the Debloater action bar sticks right under the tab bar, and scroll-padding leaves room for both: true {"hdr":78,"tabs":57,"tabTop":78,"hdrBottom":78,"firstLineUncovered":true,"uadTop":"139px","pad":"143px"}
-13. [412 px, scrolled] the tab bar sticks right under the header (header 82 px), and the top of its first line is not covered: true {"hdr":82,"tabs":57,"tabTop":82,"hdrBottom":82,"firstLineUncovered":true,"uadTop":"143px","pad":"147px"}
-    the Debloater action bar sticks right under the tab bar, and scroll-padding leaves room for both: true {"hdr":82,"tabs":57,"tabTop":82,"hdrBottom":82,"firstLineUncovered":true,"uadTop":"143px","pad":"147px"}
-14. without ResizeObserver the heights of the header and the tab bar are still followed (78px and 57px a second after the start): true {"hdr":"78px","real":"78px","tabs":"57px","realTabs":"57px","ro":"undefined"}
-    and again when the window changes (82px): true [{"hdr":"78px","real":"78px","tabs":"57px","realTabs":"57px","ro":"undefined"},{"hdr":"82px","real":"82px"}]
+13. [320 px, scrolled] the tab bar sticks right under the header (header 74 px), and the top of its first line is not covered: true {"hdr":74,"tabs":57,"tabTop":74,"hdrBottom":74,"firstLineUncovered":true,"uadTop":"135px","pad":"139px"}
+    the Debloater action bar sticks right under the tab bar, and scroll-padding leaves room for both: true {"hdr":74,"tabs":57,"tabTop":74,"hdrBottom":74,"firstLineUncovered":true,"uadTop":"135px","pad":"139px"}
+13. [360 px, scrolled] the tab bar sticks right under the header (header 83 px), and the top of its first line is not covered: true {"hdr":83,"tabs":57,"tabTop":83,"hdrBottom":83,"firstLineUncovered":true,"uadTop":"144px","pad":"148px"}
+    the Debloater action bar sticks right under the tab bar, and scroll-padding leaves room for both: true {"hdr":83,"tabs":57,"tabTop":83,"hdrBottom":83,"firstLineUncovered":true,"uadTop":"144px","pad":"148px"}
+13. [412 px, scrolled] the tab bar sticks right under the header (header 92 px), and the top of its first line is not covered: true {"hdr":92,"tabs":57,"tabTop":92,"hdrBottom":92,"firstLineUncovered":true,"uadTop":"153px","pad":"157px"}
+    the Debloater action bar sticks right under the tab bar, and scroll-padding leaves room for both: true {"hdr":92,"tabs":57,"tabTop":92,"hdrBottom":92,"firstLineUncovered":true,"uadTop":"153px","pad":"157px"}
+14. without ResizeObserver the heights of the header and the tab bar are still followed (83px and 57px a second after the start): true {"hdr":"83px","real":"83px","tabs":"57px","realTabs":"57px","ro":"undefined"}
+    and again when the window changes (98px): true [{"hdr":"83px","real":"83px","tabs":"57px","realTabs":"57px","ro":"undefined"},{"hdr":"98px","real":"98px"}]
 all checks passed

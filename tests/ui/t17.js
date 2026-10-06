@@ -1,4 +1,4 @@
-// Apps list: sort by name/updated/installed/size/updates, Recent filter, CSV export, menu sizes, saved sort
+// Apps list: sort by name/updated/installed/size/updates, Recent filter, CSV share, menu sizes, saved sort
 const { chromium, PAGE } = require('./lib/pw');
 (async () => {
   const b = await chromium.launch();
@@ -27,6 +27,7 @@ const { chromium, PAGE } = require('./lib/pw');
         requestUsageAccess() { st.calls.push('usageAccess'); st.access = true; return 'granted'; },
         extractApk(p) { st.calls.push('extract:' + p); setTimeout(() => window.onApkExtracted(JSON.stringify({ ok: true, pkg: p, path: 'Download/ADB App Manager/APKs/Samsung Internet_26.0.3.1.apks', bytes: 180e6, splits: 3 })), 50); },
         saveTextToDownloads(n, t) { st.saved = { name: n, text: t }; return 'Download/ADB App Manager/' + n; },
+        shareTextFile(n, t) { st.saved = { name: n, text: t }; return ''; },
       };
     }, [store, access]);
     await page.goto(PAGE); await page.waitForTimeout(600);
@@ -45,10 +46,10 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.click('#filterScroll .filter-pill[data-filter="recent"]');
   console.log('recent apps:', await names());
   await page.click('#filterScroll .filter-pill[data-filter="all"]');
-  // Export
-  await page.click('#view-apps >> text=Export');
+  // Share CSV (the Export button is gone)
+  await page.click('#view-apps >> text=Share CSV');
   const saved = await page.evaluate(() => window.__st.saved);
-  console.log('export file:', saved.name, '| toast:', await page.locator('#toastMsg').innerText());
+  console.log('shared file:', saved.name, '| Export button gone:', (await page.locator('#view-apps button', { hasText: /^Export$/ }).count()) === 0);
   console.log(saved.text.split('\n').filter(l => l.startsWith('"Whats')).join(''));
   // App menu sizes + usage access + extract
   await page.evaluate(() => openInspector('com.sec.android.app.sbrowser')); await page.waitForTimeout(100);

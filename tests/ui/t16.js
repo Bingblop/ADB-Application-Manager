@@ -1,4 +1,4 @@
-// Versions in app list and menu: update arrows, one bridge read, menu dates and Update hint, remembered toggle
+// Versions: none in the app list (no pill, no row version or update arrow), one bridge read, the app menu's dates and Update hint
 const { chromium, PAGE } = require('./lib/pw');
 (async () => {
   const b = await chromium.launch();
@@ -47,15 +47,14 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.evaluate(() => { closeInspector(); openInspector('org.fdroid.fdroid'); }); await page.waitForTimeout(100);
   console.log('hint shown for fdroid (no update):', await page.isVisible('#sheetUpdateHint'));
   await page.evaluate(() => closeInspector());
-  // Off by default (a less cluttered list row); toggle on + remember
-  console.log('pill starts off, no version in the row by default:', !(await page.locator('#versionTogglePill').evaluate(e => e.classList.contains('active'))));
-  await page.click('#versionTogglePill');
-  console.log('toggle on → row:', await label('org.fdroid.fdroid'));
+  // The list shows no versions at all (no "Versions" pill, no version in a row, nothing about it kept); the menu keeps them
+  console.log('no Versions pill any more:', (await page.locator('#versionTogglePill').count()) === 0, '| no version in any row:', (await page.locator('.app-version').count()) === 0, '| no update arrow in a row:', (await page.locator('.upd-arrow').count()) === 0);
   await page.click('#filterScroll .filter-pill[data-filter="system"]');
-  console.log('toggle still on after filter change:', await page.locator('#versionTogglePill').evaluate(e => e.classList.contains('active')));
+  console.log('after a filter change still none:', (await page.locator('.app-version').count()) === 0);
   const store = await page.evaluate(() => window.__st.store);
+  console.log('nothing about versions is kept:', !/showVersions/.test(JSON.stringify(store)));
   const errs1 = page.__errors;
   page = await mk(store);
-  console.log('RELAUNCH toggle:', await page.locator('#versionTogglePill').evaluate(e => e.classList.contains('active')) ? 'on' : 'off', '| row:', await page.locator('[id="card_com.sec.android.app.sbrowser"] .badge-row').innerText());
+  console.log('RELAUNCH row:', await page.locator('[id="card_com.sec.android.app.sbrowser"] .badge-row').innerText());
   console.log('errors:', JSON.stringify(errs1.concat(page.__errors)));
   await b.close(); })();
