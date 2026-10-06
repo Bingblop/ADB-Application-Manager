@@ -30,9 +30,9 @@ const { chromium, PAGE } = require('./lib/pw');
 
   await page.evaluate(() => openInspector('com.android.phone')); await page.waitForTimeout(150);
 
-  // 1) The unexported activity shows a LAUNCH button in the components list.
-  await page.evaluate(() => switchSheetTab('comps')); await page.waitForTimeout(80);
-  const launchBtns = await page.locator('#compsContainer button[data-comp]').count();
+  // 1) The unexported activity shows a LAUNCH button in the Activities tab.
+  await page.evaluate(() => switchSheetTab('acts')); await page.waitForTimeout(80);
+  const launchBtns = await page.locator('#actsContainer button[data-comp]').count();
   console.log('1. launch button rendered for the component:', launchBtns >= 1);
 
   // 2) Launching an unexported activity passes exported=false to the native bridge.

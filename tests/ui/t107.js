@@ -22,9 +22,9 @@ const { chromium, PAGE } = require('./lib/pw');
     await page.evaluate(p => { isPrivilegedActive = p; closeInspector(); openInspector('com.x'); }, priv);
     await page.waitForTimeout(400);
     const out = {};
-    for (const tab of ['perms', 'ops', 'comps']) {
+    for (const tab of ['perms', 'ops', 'acts', 'comps']) {
       await page.evaluate(t => switchSheetTab(t), tab); await page.waitForTimeout(250);
-      const sel = tab === 'perms' ? '#permsContainer .perm-toggle-btn' : tab === 'ops' ? '#opsContainer .op-mode-btn.on, #opsContainer .op-mode-btn.locked' : '#compsContainer .perm-toggle-btn';
+      const sel = tab === 'perms' ? '#permsContainer .perm-toggle-btn' : tab === 'ops' ? '#opsContainer .op-mode-btn.on, #opsContainer .op-mode-btn.locked' : tab === 'acts' ? '#actsContainer .perm-toggle-btn' : '#compsContainer .perm-toggle-btn';
       out[tab] = await page.evaluate(sel => Array.from(document.querySelectorAll(sel)).map(b => [b.classList.contains('locked'), b.innerText.trim()]), sel);
     }
     return out;

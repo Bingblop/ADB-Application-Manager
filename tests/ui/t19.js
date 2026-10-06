@@ -37,8 +37,9 @@ const appBatchMock = require('./lib/appbatch_mock');
   const calls = () => page.evaluate(() => window.__calls.slice());
   // copy chips in app menu
   await page.evaluate(() => openInspector('com.sec.android.app.sbrowser')); await page.waitForTimeout(300);
-  await page.evaluate(() => { copyAppField('pkg'); copyAppField('version'); shareAppInfo(); });
+  await page.evaluate(() => { copyAppField('pkg'); copyAppField('name'); shareAppInfo(); });
   console.log('menu copy/share:', JSON.stringify(await calls()));
+  console.log('menu copy chips (no Copy version):', JSON.stringify(await page.locator('.copy-row .copy-chip').allInnerTexts()));
   // the app menu has no Share APK button; Extract APK saves the file and shares nothing
   console.log('share apk button:', await page.locator('#sheetBtnShareApk').count(), '| any menu button saying Share APK:', await page.locator('.sheet-action-grid .sheet-btn', { hasText: 'Share APK' }).count(), '| visible menu buttons:', await page.evaluate(() => [...document.querySelectorAll('.sheet-action-grid .sheet-btn')].filter(b => b.offsetParent !== null).length));
   await page.click('#sheetBtnExtract'); await page.waitForTimeout(200);

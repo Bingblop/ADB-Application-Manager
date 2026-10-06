@@ -1324,6 +1324,26 @@
             cursor: default;
         }
 
+        /* App menu: the Features, Configurations, Signatures and Libraries tabs */
+        .ax-sec { font-weight: 800; font-size: 11px; margin: 12px 0 6px 0; color: var(--secondary); letter-spacing: 0.4px; text-transform: uppercase; }
+        .ax-note { font-size: 11px; color: var(--text-muted); line-height: 1.45; margin: 4px 0 8px 0; }
+        .ax-card { background: rgba(var(--ov), 0.04); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 6px 12px; margin-bottom: 10px; }
+        .ax-card-title { font-size: 11.5px; font-weight: 800; color: var(--accent); padding: 6px 0 2px 0; }
+        .ax-kv { display: flex; gap: 10px; padding: 6px 0; border-bottom: 1px solid rgba(var(--ov), 0.05); font-size: 11.5px; line-height: 1.35; }
+        .ax-kv:last-child { border-bottom: 0; }
+        .ax-k { flex: 0 0 36%; color: var(--text-muted); font-weight: 700; }
+        .ax-v { flex: 1; min-width: 0; font-weight: 600; word-break: break-word; }
+        .ax-mono { font-family: monospace; font-size: 10.5px; word-break: break-all; }
+        .ax-copy { cursor: pointer; }
+        .ax-copy:active { color: var(--accent); }
+        .ax-badges { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; flex-shrink: 0; max-width: 46%; }
+        .ax-badges .perm-kind { margin-right: 0; }
+        .ax-schemes { display: flex; flex-wrap: wrap; gap: 8px; padding: 6px 0 2px 0; }
+        .ax-scheme { font-size: 12px; font-weight: 800; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--border-glass); }
+        .ax-scheme.on { color: #4CAF50; border-color: rgba(76, 175, 80, 0.5); background: rgba(76, 175, 80, 0.1); }
+        .ax-scheme.off { color: var(--text-muted); }
+        .ax-abi { font-weight: 800; font-size: 10.5px; margin: 10px 0 2px 0; color: var(--accent); }
+
         .op-modes {
             display: flex;
             gap: 3px;
@@ -5975,7 +5995,6 @@ Type any command below (e.g. pm list packages -d)
                         <p id="sheetVersion" class="sheet-version"></p>
                         <div class="copy-row">
                             <span class="copy-chip" onclick="copyAppField('pkg')">Copy package</span>
-                            <span class="copy-chip" onclick="copyAppField('version')">Copy version</span>
                             <span class="copy-chip" onclick="copyAppField('name')">Copy name</span>
                         </div>
                         <p id="sheetDates" class="sheet-dates"></p>
@@ -6046,9 +6065,14 @@ Type any command below (e.g. pm list packages -d)
             <div class="sheet-tabs">
                 <div class="sheet-tab-pill active" data-tab="perms" onclick="switchSheetTab('perms')">Permissions <span class="tab-count" id="permsCount"></span></div>
                 <div class="sheet-tab-pill" data-tab="ops" onclick="switchSheetTab('ops')">App Ops <span class="tab-count" id="opsCount"></span></div>
-                <div class="sheet-tab-pill" data-tab="comps" onclick="switchSheetTab('comps')">Components</div>
+                <div class="sheet-tab-pill" data-tab="acts" onclick="switchSheetTab('acts')">Activities <span class="tab-count" id="actsCount"></span></div>
+                <div class="sheet-tab-pill" data-tab="comps" onclick="switchSheetTab('comps')">Components <span class="tab-count" id="compsCount"></span></div>
                 <div class="sheet-tab-pill" data-tab="manifest" onclick="switchSheetTab('manifest')">Manifest</div>
                 <div class="sheet-tab-pill" data-tab="raw" onclick="switchSheetTab('raw')">Raw</div>
+                <div class="sheet-tab-pill" data-tab="features" onclick="switchSheetTab('features')">Features <span class="tab-count" id="featuresCount"></span></div>
+                <div class="sheet-tab-pill" data-tab="configs" onclick="switchSheetTab('configs')">Configurations</div>
+                <div class="sheet-tab-pill" data-tab="sigs" onclick="switchSheetTab('sigs')">Signatures <span class="tab-count" id="sigsCount"></span></div>
+                <div class="sheet-tab-pill" data-tab="libs" onclick="switchSheetTab('libs')">Libraries <span class="tab-count" id="libsCount"></span></div>
             </div>
 
             <!-- Tab 1: Permissions -->
@@ -6096,10 +6120,25 @@ Type any command below (e.g. pm list packages -d)
                 </div>
             </div>
 
-            <!-- Tab 3: Components -->
+            <!-- Tab 3: Activities -->
+            <div id="sheetTabActs" class="sheet-tab-content">
+                <div class="list-toolbar">
+                    <input type="text" class="list-search" id="actsSearch" placeholder="Search activities..." oninput="renderActivitiesList()" autocomplete="off" autocapitalize="off" spellcheck="false">
+                </div>
+                <div class="chip-row" id="actsFilterRow">
+                    <span class="filter-chip active" data-filter="all" onclick="setActsFilter('all')">All</span>
+                    <span class="filter-chip" data-filter="exported" onclick="setActsFilter('exported')">Exported</span>
+                    <span class="filter-chip" data-filter="unexported" onclick="setActsFilter('unexported')">Unexported</span>
+                </div>
+                <div id="actsContainer">
+                    <div class="list-empty">Loading activities...</div>
+                </div>
+            </div>
+
+            <!-- Tab 4: Components (receivers, services, providers) -->
             <div id="sheetTabComps" class="sheet-tab-content">
                 <div class="list-toolbar">
-                    <input type="text" class="list-search" id="compsSearch" placeholder="Search activities, receivers, services, providers..." oninput="renderComponentsList()" autocomplete="off" autocapitalize="off" spellcheck="false">
+                    <input type="text" class="list-search" id="compsSearch" placeholder="Search receivers, services, providers..." oninput="renderComponentsList()" autocomplete="off" autocapitalize="off" spellcheck="false">
                 </div>
                 <div class="chip-row" id="compsFilterRow">
                     <span class="filter-chip active" data-filter="all" onclick="setCompsFilter('all')">All</span>
@@ -6128,9 +6167,49 @@ Type any command below (e.g. pm list packages -d)
                 <pre id="manifestContainer" class="manifest-view">Open this tab to load the manifest.</pre>
             </div>
 
-            <!-- Tab 5: Raw -->
+            <!-- Tab 6: Raw -->
             <div id="sheetTabRaw" class="sheet-tab-content">
                 <pre id="rawContainer" style="font-family:monospace; font-size:11px; color:var(--accent); white-space:pre-wrap;"></pre>
+            </div>
+
+            <!-- Tab 7: Features -->
+            <div id="sheetTabFeatures" class="sheet-tab-content">
+                <div class="list-toolbar">
+                    <input type="text" class="list-search" id="featuresSearch" placeholder="Search features..." oninput="renderFeatures()" autocomplete="off" autocapitalize="off" spellcheck="false">
+                </div>
+                <div class="chip-row" id="featuresFilterRow">
+                    <span class="filter-chip active" data-filter="all" onclick="setFeaturesFilter('all')">All</span>
+                    <span class="filter-chip" data-filter="required" onclick="setFeaturesFilter('required')">Required</span>
+                    <span class="filter-chip" data-filter="optional" onclick="setFeaturesFilter('optional')">Optional</span>
+                    <span class="filter-chip" data-filter="missing" onclick="setFeaturesFilter('missing')">Not on this phone</span>
+                </div>
+                <div id="featuresContainer">
+                    <div class="list-empty">Open this tab to load the features.</div>
+                </div>
+            </div>
+
+            <!-- Tab 8: Configurations -->
+            <div id="sheetTabConfigs" class="sheet-tab-content">
+                <div id="configsContainer">
+                    <div class="list-empty">Open this tab to load the configurations.</div>
+                </div>
+            </div>
+
+            <!-- Tab 9: Signatures -->
+            <div id="sheetTabSigs" class="sheet-tab-content">
+                <div id="sigsContainer">
+                    <div class="list-empty">Open this tab to load the signatures.</div>
+                </div>
+            </div>
+
+            <!-- Tab 10: Libraries -->
+            <div id="sheetTabLibs" class="sheet-tab-content">
+                <div class="list-toolbar">
+                    <input type="text" class="list-search" id="libsSearch" placeholder="Search libraries..." oninput="renderLibraries()" autocomplete="off" autocapitalize="off" spellcheck="false">
+                </div>
+                <div id="libsContainer">
+                    <div class="list-empty">Open this tab to load the libraries.</div>
+                </div>
             </div>
         </div>
     </div>
@@ -11538,7 +11617,7 @@ Type any command below (e.g. pm list packages -d)
             }
             alsBulkBusy = false;
             showToast((enable ? 'Enabled ' : 'Disabled ') + done + ' of ' + todo.length + (failed.length ? ' • ' + failed.length + ' failed' : ''));
-            renderComponentsList();
+            renderComponentTabs();
             alsRender();
             if (failed.length) showCommandResults('Activity Launcher', enable ? 'enable' : 'disable', failed);
         }
@@ -18387,9 +18466,15 @@ Type any command below (e.g. pm list packages -d)
             appOpsList = [];
             manifestText = '';
             manifestPkg = null;
-            ['permsSearch', 'opsSearch', 'manifestSearch', 'compsSearch'].forEach(id => { document.getElementById(id).value = ''; });
+            ['permsSearch', 'opsSearch', 'manifestSearch', 'actsSearch', 'compsSearch', 'featuresSearch', 'libsSearch'].forEach(id => { document.getElementById(id).value = ''; });
             compsFilter = 'all';
-            document.querySelectorAll('#compsFilterRow .filter-chip').forEach(c => c.classList.toggle('active', c.getAttribute('data-filter') === 'all'));
+            actsFilter = 'all';
+            featuresFilter = 'all';
+            appExtras = null;
+            appExtrasPkg = null;
+            ['actsFilterRow', 'compsFilterRow', 'featuresFilterRow'].forEach(rid => document.querySelectorAll('#' + rid + ' .filter-chip').forEach(c => c.classList.toggle('active', c.getAttribute('data-filter') === 'all')));
+            ['featuresContainer', 'configsContainer', 'sigsContainer', 'libsContainer'].forEach(cid => { document.getElementById(cid).innerHTML = '<div class="list-empty">Open this tab to load it.</div>'; });
+            ['featuresCount', 'sigsCount', 'libsCount'].forEach(cid => { document.getElementById(cid).innerText = ''; });
             document.getElementById('manifestContainer').innerText = 'Open this tab to load the manifest.';
             document.getElementById('manifestMeta').innerText = '';
             document.getElementById('permsContainer').innerHTML = '<div class="list-empty">Loading permissions...</div>';
@@ -18420,14 +18505,22 @@ Type any command below (e.g. pm list packages -d)
             renderPermissionsList();
             renderAppOpsList();
 
-            renderComponentsList();
+            renderComponentTabs();
             document.getElementById('rawContainer').innerText = JSON.stringify(d, null, 2);
             if (alsIsOpen()) alsRender();
         }
 
-        // ---------- Components list ----------
+        // ---------- Activities and Components lists ----------
+        // Activities have their own tab; Components holds the receivers, services and providers.
+        let actsFilter = 'all';
         let compsFilter = 'all';
 
+        function setActsFilter(f) {
+            actsFilter = f;
+            document.querySelectorAll('#actsFilterRow .filter-chip').forEach(c => c.classList.toggle('active', c.getAttribute('data-filter') === f));
+            haptic();
+            renderActivitiesList();
+        }
         function setCompsFilter(f) {
             compsFilter = f;
             document.querySelectorAll('#compsFilterRow .filter-chip').forEach(c => c.classList.toggle('active', c.getAttribute('data-filter') === f));
@@ -18435,21 +18528,65 @@ Type any command below (e.g. pm list packages -d)
             renderComponentsList();
         }
 
+        // Older bridge versions only return names, with no per-component exported/enabled/permission
+        // detail. Treat those as NOT exported (needs a working mode to launch) rather than assuming
+        // exported: a wrong "exported" guess can make launchComponent try an unverifiable plain Intent
+        // that silently does nothing, while a wrong "unexported" guess just asks for a working mode it
+        // may not have actually needed.
+        function compNorm(infoKey, namesKey) {
+            const d = inspectorData || {};
+            return (d[infoKey] && d[infoKey].length) ? d[infoKey]
+                : (d[namesKey] || []).map(n => ({ name: n, exported: false, enabled: true, permission: '' }));
+        }
+
+        function compRowHtml(c, k) {
+            const short = c.name.split('.').pop();
+            const badges = `<span class="perm-kind" style="${c.exported ? '' : 'color:#FFA726;border-color:rgba(255,145,0,0.4);'}">${c.exported ? 'exported' : 'unexported'}</span>` +
+                (c.enabled === false ? '<span class="perm-kind" style="color:#FFA726;border-color:rgba(255,145,0,0.4);">disabled</span>' : '') +
+                (c.permission ? `<span class="perm-kind" title="${escapeHtml(c.permission)}">protected</span>` : '');
+            let btns = '';
+            if (k.launch) btns += `<button class="perm-toggle-btn ${c.exported ? 'granted' : 'locked'}" style="cursor:pointer;" data-comp="${escapeHtml(c.name)}" data-exported="${c.exported}" onclick="launchComponent(this.getAttribute('data-comp'), this.getAttribute('data-exported') === 'true')">${lk(!c.exported && lockedNow())}${c.exported ? 'LAUNCH' : 'LAUNCH (SHELL)'}</button>`;
+            if (k.stop) btns += `<button class="perm-toggle-btn ${lockedNow() ? 'locked' : 'revoked'}"${lockedNow() ? ` title="${NEEDS_MODE}"` : ''} style="cursor:pointer;" data-comp="${escapeHtml(c.name)}" onclick="stopComponentService(this.getAttribute('data-comp'))">${lk(lockedNow())}STOP</button>`;
+            btns += `<button class="perm-toggle-btn ${lockedNow() ? 'locked' : (c.enabled === false ? 'granted' : 'revoked')}"${lockedNow() ? ` title="${NEEDS_MODE}"` : ''} style="cursor:pointer;" data-comp="${escapeHtml(c.name)}" onclick="toggleComponent(this.getAttribute('data-comp'), ${c.enabled === false ? 'true' : 'false'})">${lk(lockedNow())}${c.enabled === false ? 'ENABLE' : 'DISABLE'}</button>`;
+            return `
+                <div class="perm-row">
+                    <div class="perm-info">
+                        <div class="perm-name">${escapeHtml(short)}</div>
+                        <div class="perm-sub">${badges}${escapeHtml(c.name)}</div>
+                    </div>
+                    <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">${btns}</div>
+                </div>`;
+        }
+
+        // The Activities tab: every activity, exported ones first, with Launch / Enable / Disable
+        function renderActivitiesList() {
+            const container = document.getElementById('actsContainer');
+            const list = compNorm('activityInfo', 'activities');
+            const q = (document.getElementById('actsSearch').value || '').toLowerCase().trim();
+            const shown = list.filter(c => {
+                if (actsFilter === 'exported' && !c.exported) return false;
+                if (actsFilter === 'unexported' && c.exported) return false;
+                return !q || c.name.toLowerCase().includes(q);
+            }).sort((a, b) => (b.exported - a.exported) || a.name.localeCompare(b.name));
+            const unexp = list.filter(c => !c.exported).length;
+            const cnt = document.getElementById('actsCount');
+            if (cnt) cnt.innerText = list.length ? String(list.length) : '';
+            let html = '';
+            if (list.length) html += `<div style="font-weight:800; font-size:11px; margin:4px 0 6px 0; color:var(--accent);">ACTIVITIES (${list.length} • ${unexp} unexported)</div>`;
+            if (!list.length) html = '<div class="list-empty">This app has no activities.</div>';
+            else if (!shown.length) html += '<div class="list-empty">None match.</div>';
+            else shown.forEach(c => { html += compRowHtml(c, { launch: true }); });
+            container.innerHTML = html;
+            if (alsIsOpen()) alsRender();
+        }
+
+        // The Components tab: receivers, services (with Stop) and providers
         function renderComponentsList() {
             const container = document.getElementById('compsContainer');
-            const d = inspectorData || {};
-            // Older bridge versions only return names, with no per-component exported/enabled/permission
-            // detail. Treat those as NOT exported (needs a working mode to launch) rather than assuming
-            // exported: a wrong "exported" guess can make launchComponent try an unverifiable plain Intent
-            // that silently does nothing, while a wrong "unexported" guess just asks for a working mode it
-            // may not have actually needed.
-            const norm = (infoKey, namesKey) => (d[infoKey] && d[infoKey].length) ? d[infoKey]
-                : (d[namesKey] || []).map(n => ({ name: n, exported: false, enabled: true, permission: '' }));
             const kinds = [
-                { key: 'ACTIVITIES', color: 'var(--accent)', list: norm('activityInfo', 'activities'), launch: true },
-                { key: 'RECEIVERS', color: 'var(--secondary)', list: norm('receiverInfo', 'receivers') },
-                { key: 'SERVICES', color: 'var(--secondary)', list: norm('serviceInfo', 'services'), stop: true },
-                { key: 'PROVIDERS', color: 'var(--secondary)', list: norm('providerInfo', 'providers') },
+                { key: 'RECEIVERS', color: 'var(--secondary)', list: compNorm('receiverInfo', 'receivers') },
+                { key: 'SERVICES', color: 'var(--secondary)', list: compNorm('serviceInfo', 'services'), stop: true },
+                { key: 'PROVIDERS', color: 'var(--secondary)', list: compNorm('providerInfo', 'providers') },
             ];
             const q = (document.getElementById('compsSearch').value || '').toLowerCase().trim();
             const match = c => {
@@ -18457,36 +18594,22 @@ Type any command below (e.g. pm list packages -d)
                 if (compsFilter === 'unexported' && c.exported) return false;
                 return !q || c.name.toLowerCase().includes(q);
             };
+            const total = kinds.reduce((n, k) => n + k.list.length, 0);
+            const cnt = document.getElementById('compsCount');
+            if (cnt) cnt.innerText = total ? String(total) : '';
 
             let html = '';
             kinds.forEach(k => {
                 if (!k.list.length) return;
                 const shown = k.list.filter(match).sort((a, b) => (b.exported - a.exported) || a.name.localeCompare(b.name));
-                const unexp = k.list.filter(c => !c.exported).length;
-                html += `<div style="font-weight:800; font-size:11px; margin:12px 0 6px 0; color:${k.color};">${k.key} (${k.list.length}${k.key === 'ACTIVITIES' ? ' • ' + unexp + ' unexported' : ''})</div>`;
+                html += `<div style="font-weight:800; font-size:11px; margin:12px 0 6px 0; color:${k.color};">${k.key} (${k.list.length})</div>`;
                 if (!shown.length) { html += '<div class="list-empty">None match.</div>'; return; }
-                shown.forEach(c => {
-                    const short = c.name.split('.').pop();
-                    const badges = `<span class="perm-kind" style="${c.exported ? '' : 'color:#FFA726;border-color:rgba(255,145,0,0.4);'}">${c.exported ? 'exported' : 'unexported'}</span>` +
-                        (c.enabled === false ? '<span class="perm-kind" style="color:#FFA726;border-color:rgba(255,145,0,0.4);">disabled</span>' : '') +
-                        (c.permission ? `<span class="perm-kind" title="${escapeHtml(c.permission)}">protected</span>` : '');
-                    let btns = '';
-                    if (k.launch) btns += `<button class="perm-toggle-btn ${c.exported ? 'granted' : 'locked'}" style="cursor:pointer;" data-comp="${escapeHtml(c.name)}" data-exported="${c.exported}" onclick="launchComponent(this.getAttribute('data-comp'), this.getAttribute('data-exported') === 'true')">${lk(!c.exported && lockedNow())}${c.exported ? 'LAUNCH' : 'LAUNCH (SHELL)'}</button>`;
-                    if (k.stop) btns += `<button class="perm-toggle-btn ${lockedNow() ? 'locked' : 'revoked'}"${lockedNow() ? ` title="${NEEDS_MODE}"` : ''} style="cursor:pointer;" data-comp="${escapeHtml(c.name)}" onclick="stopComponentService(this.getAttribute('data-comp'))">${lk(lockedNow())}STOP</button>`;
-                    btns += `<button class="perm-toggle-btn ${lockedNow() ? 'locked' : (c.enabled === false ? 'granted' : 'revoked')}"${lockedNow() ? ` title="${NEEDS_MODE}"` : ''} style="cursor:pointer;" data-comp="${escapeHtml(c.name)}" onclick="toggleComponent(this.getAttribute('data-comp'), ${c.enabled === false ? 'true' : 'false'})">${lk(lockedNow())}${c.enabled === false ? 'ENABLE' : 'DISABLE'}</button>`;
-                    html += `
-                        <div class="perm-row">
-                            <div class="perm-info">
-                                <div class="perm-name">${escapeHtml(short)}</div>
-                                <div class="perm-sub">${badges}${escapeHtml(c.name)}</div>
-                            </div>
-                            <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">${btns}</div>
-                        </div>`;
-                });
+                shown.forEach(c => { html += compRowHtml(c, k); });
             });
-            container.innerHTML = html || '<div class="list-empty">No components.</div>';
-            if (alsIsOpen()) alsRender();
+            container.innerHTML = html || '<div class="list-empty">No receivers, services or providers.</div>';
         }
+        // both lists, after something changed in either
+        function renderComponentTabs() { renderActivitiesList(); renderComponentsList(); }
 
         // Enable or disable a component (pm enable/disable) and reflect the new state locally.
         function toggleComponent(name, enable) {
@@ -18501,7 +18624,7 @@ Type any command below (e.g. pm list packages -d)
                 ['activityInfo', 'receiverInfo', 'serviceInfo', 'providerInfo'].forEach(key => {
                     (inspectorData[key] || []).forEach(c => { if (c.name === name) c.enabled = enable; });
                 });
-                renderComponentsList();
+                renderComponentTabs();
             } else {
                 showCommandResults('Toggle component', name.split('.').pop(), [{ name: name.split('.').pop(), pkg: inspectedPkg + '/' + name, output: r.output, success: false }]);
             }
@@ -18913,7 +19036,7 @@ Type any command below (e.g. pm list packages -d)
         function copyAppField(field) {
             const a = inspectedApp();
             if (!a) return;
-            const value = field === 'pkg' ? a.pkg : field === 'name' ? a.name : (a.version || '');
+            const value = field === 'pkg' ? a.pkg : a.name;
             if (!value) { showToast('Not available for this app'); return; }
             copyText(value);
         }
@@ -18962,18 +19085,226 @@ Type any command below (e.g. pm list packages -d)
             showToast(res.startsWith('Error:') ? res : 'Saved to ' + res);
         }
 
+        // ---------- Features, Configurations, Signatures and Libraries tabs ----------
+        // One read of the package (AndroidBridge.getAppExtras) feeds all four tabs; it is made the first time one of them is opened for the app.
+        let appExtras = null, appExtrasPkg = null, appExtrasBusy = false, featuresFilter = 'all';
+
+        function axRow(k, v, opts) {
+            opts = opts || {};
+            if (v === '' || v === null || v === undefined) return '';
+            const cls = 'ax-v' + (opts.mono ? ' ax-mono' : '') + (opts.copy ? ' ax-copy' : '');
+            const attr = opts.copy ? ` data-copy="${escapeHtml(String(opts.copy))}" onclick="copyText(this.getAttribute('data-copy'))" title="Tap to copy"` : '';
+            return `<div class="ax-kv"><div class="ax-k">${k}</div><div class="${cls}"${opts.data ? ' translate="no"' : ''}${attr}>${escapeHtml(String(v))}</div></div>`;
+        }
+        function axYes(b) { return b ? 'Yes' : 'No'; }
+        function axAndroid(sdk) {
+            const n = { 21: '5.0', 22: '5.1', 23: '6', 24: '7.0', 25: '7.1', 26: '8.0', 27: '8.1', 28: '9', 29: '10', 30: '11', 31: '12', 32: '12L', 33: '13', 34: '14', 35: '15', 36: '16' }[sdk];
+            return sdk ? 'API ' + sdk + (n ? ' (Android ' + n + ')' : '') : '';
+        }
+        // "3.2" against "3.0": the OpenGL ES version the app asks for, and the one this phone has
+        function axGlAtLeast(have, need) {
+            const p = v => String(v || '0.0').split('.').map(x => parseInt(x, 10) || 0);
+            const a = p(have), b = p(need);
+            return a[0] > b[0] || (a[0] === b[0] && (a[1] || 0) >= (b[1] || 0));
+        }
+
+        // Make the read (once), then draw the four tabs
+        function loadAppExtras() {
+            if (appExtras && appExtrasPkg === inspectedPkg) { renderAppExtras(); return; }
+            if (appExtrasBusy) return;
+            if (!window.AndroidBridge || !window.AndroidBridge.getAppExtras) { appExtras = { error: 'This needs the app build.' }; appExtrasPkg = inspectedPkg; renderAppExtras(); return; }
+            const pkg = inspectedPkg;
+            appExtrasBusy = true;
+            setTimeout(() => {
+                let d;
+                try { d = JSON.parse(window.AndroidBridge.getAppExtras(pkg)); } catch (e) { d = { error: String(e && e.message || e) }; }
+                appExtrasBusy = false;
+                if (pkg !== inspectedPkg) { loadAppExtras(); return; }
+                appExtras = d; appExtrasPkg = pkg;
+                renderAppExtras();
+            }, 40);
+        }
+        function renderAppExtras() {
+            renderFeatures(); renderConfigs(); renderSigs(); renderLibraries();
+        }
+        function axFail(d, key) {
+            if (d.error) return `<div class="list-empty">Could not read this: ${escapeHtml(d.error)}</div>`;
+            if (d[key]) return `<div class="list-empty">Could not read this: ${escapeHtml(d[key])}</div>`;
+            return '';
+        }
+
+        // ---- Features ----
+        function setFeaturesFilter(f) {
+            featuresFilter = f;
+            document.querySelectorAll('#featuresFilterRow .filter-chip').forEach(c => c.classList.toggle('active', c.getAttribute('data-filter') === f));
+            haptic();
+            renderFeatures();
+        }
+        function renderFeatures() {
+            const box = document.getElementById('featuresContainer'), d = appExtras;
+            if (!d) return;
+            const fail = axFail(d, 'featuresError');
+            if (fail) { box.innerHTML = fail; return; }
+            const all = (d.features || []).map(f => {
+                const gl = !f.name;
+                return {
+                    name: gl ? 'OpenGL ES ' + (f.glEs || '') : f.name, gl, required: !!f.required,
+                    device: gl ? (d.deviceGlEs ? axGlAtLeast(d.deviceGlEs, f.glEs) : null) : f.device,
+                };
+            });
+            const cnt = document.getElementById('featuresCount');
+            if (cnt) cnt.innerText = all.length ? String(all.length) : '';
+            const q = (document.getElementById('featuresSearch').value || '').toLowerCase().trim();
+            const rows = all.filter(f => {
+                if (featuresFilter === 'required' && !(f.required || f.gl)) return false;
+                if (featuresFilter === 'optional' && (f.required || f.gl)) return false;
+                if (featuresFilter === 'missing' && f.device !== false) return false;
+                return !q || f.name.toLowerCase().includes(q);
+            }).sort((a, b) => (b.gl - a.gl) || (b.required - a.required) || a.name.localeCompare(b.name));
+            if (!all.length) { box.innerHTML = '<div class="list-empty">This app does not list any hardware or software features it needs (no uses-feature entries).</div>'; return; }
+            const missing = all.filter(f => f.device === false).length;
+            const reqMissing = all.filter(f => f.device === false && (f.required || f.gl)).length;
+            let html = `<div class="ax-note">${all.length} feature${all.length === 1 ? '' : 's'}. ${missing ? missing + ' not on this phone' + (reqMissing ? ' (' + reqMissing + ' of them required, so the Play Store would not list the app for this phone)' : ' (all optional)') : 'This phone has all of them.'}</div>`;
+            if (!rows.length) html += '<div class="list-empty">None match.</div>';
+            html += rows.map(f => `<div class="perm-row"><div class="perm-info"><div class="perm-name">${escapeHtml(f.name)}</div></div><div class="ax-badges">` +
+                (f.gl ? '' : `<span class="perm-kind"${f.required ? '' : ' style="color:var(--text-muted);"'}>${f.required ? 'required' : 'optional'}</span>`) +
+                (f.device === null ? '' : `<span class="perm-kind" style="${f.device ? 'color:#4CAF50;border-color:rgba(76,175,80,0.45);' : 'color:#FFA726;border-color:rgba(255,145,0,0.4);'}">${f.device ? 'on this phone' : 'not on this phone'}</span>`) +
+                '</div></div>').join('');
+            box.innerHTML = html;
+        }
+
+        // ---- Configurations ----
+        function renderConfigs() {
+            const box = document.getElementById('configsContainer'), d = appExtras;
+            if (!d) return;
+            const fail = axFail(d, 'configsError');
+            if (fail) { box.innerHTML = fail; return; }
+            const sc = d.screen || {};
+            let html = '<div class="ax-sec">Input and graphics it asks for</div>';
+            if ((d.configs || []).length) {
+                html += d.configs.map((c, i) => `<div class="ax-card">${(d.configs.length > 1 ? `<div class="ax-card-title">Configuration ${i + 1}</div>` : '')}` +
+                    axRow('Touch screen', c.touchScreen) + axRow('Keyboard', c.keyboard) + axRow('Navigation', c.navigation) + axRow('Input features', c.inputFeatures) + axRow('OpenGL ES', c.glEs || 'Not stated') + '</div>').join('');
+            } else {
+                html += '<div class="ax-note">This app does not ask for a particular touch screen, keyboard or navigation (it has no uses-configuration entry), so it runs with whatever this phone has.</div>';
+            }
+            html += '<div class="ax-sec">Screens</div><div class="ax-card">' +
+                axRow('Smallest width it needs', sc.requiresSmallestWidthDp ? sc.requiresSmallestWidthDp + ' dp' : 'Not stated') +
+                axRow('Largest width it supports', sc.largestWidthLimitDp ? sc.largestWidthLimitDp + ' dp' : 'No limit') +
+                axRow('Compatible width limit', sc.compatibleWidthLimitDp ? sc.compatibleWidthLimitDp + ' dp' : 'No limit') +
+                axRow('Small screens', axYes(sc.smallScreens)) + axRow('Normal screens', axYes(sc.normalScreens)) + axRow('Large screens', axYes(sc.largeScreens)) + axRow('Extra large screens', axYes(sc.xlargeScreens)) +
+                axRow('Any screen density', axYes(sc.anyDensity)) + axRow('Resizable', axYes(sc.resizeable)) + axRow('Right-to-left layouts', axYes(sc.supportsRtl)) + '</div>';
+            html += '<div class="ax-sec">Android versions</div><div class="ax-card">' +
+                axRow('Minimum', axAndroid(sc.minSdk)) + axRow('Target', axAndroid(sc.targetSdk)) + axRow('Compiled against', axAndroid(sc.compileSdk), { }) + '</div>';
+            html += '<div class="ax-sec">How it runs</div><div class="ax-card">' +
+                axRow('Hardware acceleration', axYes(sc.hardwareAccelerated)) + axRow('Large memory heap', axYes(sc.largeHeap)) + '</div>';
+            html += '<div class="ax-sec">This phone</div><div class="ax-card">' +
+                axRow('CPU types', (d.deviceAbis || []).join(', '), { data: true }) + axRow('OpenGL ES', d.deviceGlEs || '') + '</div>';
+            box.innerHTML = html;
+        }
+
+        // ---- Signatures ----
+        function axCert(c, label) {
+            if (c.error) return `<div class="ax-card"><div class="ax-card-title">${label}</div><div class="list-empty">Could not read this certificate: ${escapeHtml(c.error)}</div></div>`;
+            const now = Date.now();
+            const expired = c.notAfter && c.notAfter < now, notYet = c.notBefore && c.notBefore > now;
+            const badges = (c.selfSigned ? '<span class="perm-kind">self-signed</span>' : '') +
+                (expired ? '<span class="perm-kind" style="color:#FFA726;border-color:rgba(255,145,0,0.4);">expired</span>' : '') +
+                (notYet ? '<span class="perm-kind" style="color:#FFA726;border-color:rgba(255,145,0,0.4);">not valid yet</span>' : '');
+            const key = c.keyAlg ? c.keyAlg + (c.keyBits ? ', ' + c.keyBits + ' bits' : '') : '';
+            return `<div class="ax-card"><div class="ax-card-title">${label}${badges ? ' ' + badges : ''}</div>` +
+                axRow('Subject', c.subject, { data: true }) + axRow('Issuer', c.issuer, { data: true }) +
+                axRow('Serial number', c.serial, { data: true, mono: true }) +
+                axRow('Valid from', c.notBefore ? formatDate(c.notBefore) : '') + axRow('Valid until', c.notAfter ? formatDate(c.notAfter) : '') +
+                axRow('Signature algorithm', c.sigAlg, { data: true }) + axRow('Public key', key, { data: true }) + axRow('Version', c.version ? 'v' + c.version : '') +
+                axRow('MD5', c.md5, { data: true, mono: true, copy: c.md5 }) + axRow('SHA-1', c.sha1, { data: true, mono: true, copy: c.sha1 }) + axRow('SHA-256', c.sha256, { data: true, mono: true, copy: c.sha256 }) +
+                '</div>';
+        }
+        function renderSigs() {
+            const box = document.getElementById('sigsContainer'), d = appExtras;
+            if (!d) return;
+            const fail = axFail(d, 'signaturesError');
+            if (fail) { box.innerHTML = fail; return; }
+            const sg = d.signatures || {};
+            const have = new Set(sg.schemes || []);
+            const cnt = document.getElementById('sigsCount');
+            if (cnt) cnt.innerText = (sg.signers || []).length ? String(sg.signers.length) : '';
+            let html = '<div class="ax-sec">Signature schemes in the APK</div><div class="ax-card"><div class="ax-schemes">' +
+                ['v1', 'v2', 'v3', 'v3.1'].map(v => `<span class="ax-scheme ${have.has(v) ? 'on' : 'off'}">${v} ${have.has(v) ? '&#10003;' : '&ndash;'}</span>`).join('') + '</div>' +
+                '<div class="ax-note" style="margin:8px 0 0;">v1 is the old signature kept in the META-INF folder. v2, v3 and v3.1 sit in the APK signing block; v3 and v3.1 allow the signing key to be changed later. The base APK is the one read.</div></div>';
+            const signers = sg.signers || [];
+            html += `<div class="ax-sec">${sg.multiple ? 'Signers (' + signers.length + ')' : 'Signer'}</div>`;
+            html += signers.length ? signers.map((c, i) => axCert(c, sg.multiple ? 'Signer ' + (i + 1) : 'Current certificate')).join('') : '<div class="list-empty">Android reports no signing certificate for this app.</div>';
+            if ((sg.history || []).length) {
+                html += '<div class="ax-sec">Earlier certificates (the signing key was changed)</div>';
+                html += sg.history.map((c, i) => axCert(c, 'Earlier certificate ' + (i + 1))).join('');
+            }
+            if (signers.length) html += '<div class="chip-row"><span class="filter-chip" onclick="copySigsText()">Copy all</span></div>';
+            box.innerHTML = html;
+        }
+        function copySigsText() {
+            const sg = (appExtras && appExtras.signatures) || {};
+            const lines = [inspectedPkg];
+            (sg.signers || []).forEach((c, i) => {
+                lines.push('', 'Signer ' + (i + 1), 'Subject: ' + c.subject, 'Issuer: ' + c.issuer, 'Serial: ' + c.serial, 'Valid: ' + (c.notBefore ? formatDate(c.notBefore) : '') + ' - ' + (c.notAfter ? formatDate(c.notAfter) : ''),
+                    'MD5: ' + c.md5, 'SHA-1: ' + c.sha1, 'SHA-256: ' + c.sha256);
+            });
+            lines.push('', 'Schemes: ' + ((sg.schemes || []).join(', ') || 'none found'));
+            copyText(lines.join('\n'));
+        }
+
+        // ---- Libraries ----
+        function renderLibraries() {
+            const box = document.getElementById('libsContainer'), d = appExtras;
+            if (!d) return;
+            const fail = axFail(d, 'librariesError');
+            if (fail) { box.innerHTML = fail; return; }
+            const lb = d.libraries || {};
+            const q = (document.getElementById('libsSearch').value || '').toLowerCase().trim();
+            const hit = s => !q || String(s).toLowerCase().includes(q);
+            const declared = (lb.declared || []), shared = (lb.shared || []), nat = (lb.native || []);
+            const cnt = document.getElementById('libsCount');
+            if (cnt) cnt.innerText = (declared.length + shared.length + nat.length) ? String(declared.length + shared.length + nat.length) : '';
+            let html = '';
+            const dShown = declared.filter(l => hit(l.name));
+            html += `<div class="ax-sec">Libraries it asks for (${declared.length})</div>`;
+            html += !declared.length ? '<div class="ax-note">The manifest does not ask for any extra library (no uses-library entry).</div>'
+                : (dShown.length ? dShown.map(l => `<div class="perm-row"><div class="perm-info"><div class="perm-name">${escapeHtml(l.name)}</div>${l.version ? `<div class="perm-sub">version ${escapeHtml(l.version)}</div>` : ''}</div><div class="ax-badges"><span class="perm-kind">${l.kind === 'static' ? 'static' : l.kind === 'native' ? 'native' : 'shared'}</span><span class="perm-kind"${l.required ? '' : ' style="color:var(--text-muted);"'}>${l.required ? 'required' : 'optional'}</span></div></div>`).join('') : '<div class="list-empty">None match.</div>');
+            const sShown = shared.filter(hit);
+            html += `<div class="ax-sec">Shared libraries linked in (${shared.length})</div>`;
+            html += !shared.length ? '<div class="ax-note">No shared library files are linked into this app.</div>'
+                : (sShown.length ? sShown.map(p => `<div class="perm-row"><div class="perm-info"><div class="perm-name">${escapeHtml(String(p).split('/').pop())}</div><div class="perm-sub">${escapeHtml(p)}</div></div></div>`).join('') : '<div class="list-empty">None match.</div>');
+            const nShown = nat.filter(n => hit(n.name) || hit(n.abi));
+            html += `<div class="ax-sec">Native libraries inside the APK (${nat.length})</div>`;
+            if (lb.nativeDir) html += `<div class="ax-note" translate="no">${escapeHtml(lb.nativeDir)}${lb.primaryAbi ? ' &bull; primary CPU type ' + escapeHtml(lb.primaryAbi) : ''}</div>`;
+            if (!nat.length) html += '<div class="ax-note">No .so files in the APK, so this app runs on any CPU type, or loads its code another way.</div>';
+            else if (!nShown.length) html += '<div class="list-empty">None match.</div>';
+            else {
+                const byAbi = {};
+                const multiApk = nat.some(x => x.apk && x.apk !== nat[0].apk);
+                nShown.forEach(n => { (byAbi[n.abi] = byAbi[n.abi] || []).push(n); });
+                Object.keys(byAbi).sort().forEach(abi => {
+                    html += `<div class="ax-abi" translate="no">${escapeHtml(abi)} (${byAbi[abi].length})</div>`;
+                    html += byAbi[abi].sort((a, b) => a.name.localeCompare(b.name)).map(n => `<div class="perm-row"><div class="perm-info"><div class="perm-name">${escapeHtml(n.name)}</div>${multiApk ? `<div class="perm-sub">${escapeHtml(n.apk || '')}</div>` : ''}</div><div class="ax-badges"><span class="perm-kind" translate="no">${escapeHtml(formatBytes(n.size))}</span></div></div>`).join('');
+                });
+            }
+            box.innerHTML = html;
+        }
+
         function closeInspector() {
             document.getElementById('inspectorModal').classList.remove('show');
             haptic();
         }
 
         function switchSheetTab(tab, silent) {
-            const ids = { perms: 'sheetTabPerms', ops: 'sheetTabOps', comps: 'sheetTabComps', manifest: 'sheetTabManifest', raw: 'sheetTabRaw' };
+            const ids = { perms: 'sheetTabPerms', ops: 'sheetTabOps', acts: 'sheetTabActs', comps: 'sheetTabComps', manifest: 'sheetTabManifest', raw: 'sheetTabRaw', features: 'sheetTabFeatures', configs: 'sheetTabConfigs', sigs: 'sheetTabSigs', libs: 'sheetTabLibs' };
             document.querySelectorAll('.sheet-tab-pill').forEach(p => p.classList.toggle('active', p.getAttribute('data-tab') === tab));
             document.querySelectorAll('.sheet-tab-content').forEach(c => c.classList.remove('active'));
             const el = document.getElementById(ids[tab]);
             if (el) el.classList.add('active');
             if (tab === 'manifest') loadManifest();
+            if (tab === 'features' || tab === 'configs' || tab === 'sigs' || tab === 'libs') loadAppExtras();
+            const pill = document.querySelector('.sheet-tab-pill.active');
+            if (pill && pill.scrollIntoView) pill.scrollIntoView({ block: 'nearest', inline: 'nearest' });
             if (!silent) haptic();
         }
 

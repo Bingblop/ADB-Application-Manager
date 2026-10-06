@@ -1,4 +1,4 @@
-// Inspector Components tab: four sections, enable/disable, exported filter; single and batch dex optimization
+// Inspector Activities and Components tabs: activities on their own, receivers / services / providers together, enable/disable, exported filter; single and batch dex optimization
 // (async, off the page's thread, with a live progress bar - the single-app case shows a toast only on success,
 // matching toggleComponent's "modal only on failure" convention; the batch case keeps its per-app breakdown).
 const { chromium, PAGE } = require('./lib/pw');
@@ -36,10 +36,15 @@ const optimizeBatchMock = require('./lib/optimizebatch_mock');
   const resultsShown = () => page.evaluate(() => document.getElementById('commandResultsModal').classList.contains('show'));
 
   await page.evaluate(() => openInspector('com.x'));
+  await page.click('.sheet-tab-pill[data-tab="acts"]');
+  await page.waitForTimeout(150);
+  const actsTxt = await page.locator('#actsContainer').innerText();
   await page.click('.sheet-tab-pill[data-tab="comps"]');
   await page.waitForTimeout(150);
   const txt = await page.locator('#compsContainer').innerText();
-  console.log('headers present:', ['ACTIVITIES', 'RECEIVERS', 'SERVICES', 'PROVIDERS'].map(h => h + '=' + txt.includes(h)).join(' '));
+  console.log('headers present:', 'ACTIVITIES=' + actsTxt.includes('ACTIVITIES'), ['RECEIVERS', 'SERVICES', 'PROVIDERS'].map(h => h + '=' + txt.includes(h)).join(' '));
+  console.log('Activities tab holds only activities, Components tab none:', actsTxt.includes('Main') && !actsTxt.includes('Svc') && !actsTxt.includes('BootRcv') && !txt.includes('ACTIVITIES') && !txt.includes('Main'));
+  console.log('tab counts (activities, components):', await page.evaluate(() => [document.getElementById('actsCount').innerText, document.getElementById('compsCount').innerText].join(' / ')));
   console.log('provider authority row rendered:', txt.includes('Provider'));
   console.log('service shows disabled badge:', txt.toLowerCase().includes('disabled'));
 
@@ -57,7 +62,11 @@ const optimizeBatchMock = require('./lib/optimizebatch_mock');
   // enable an exported filter still works across kinds
   await page.click('#compsFilterRow [data-filter="exported"]'); await page.waitForTimeout(100);
   const expTxt = await page.locator('#compsContainer').innerText();
-  console.log('exported filter: shows Main(act) & Provider, hides Hidden & Svc:', expTxt.includes('Main') && expTxt.includes('Provider') && !expTxt.includes('Hidden') && !expTxt.includes('Svc'));
+  console.log('exported filter (Components): shows Provider, hides Svc and BootRcv:', expTxt.includes('Provider') && !expTxt.includes('Svc') && !expTxt.includes('BootRcv'));
+  await page.click('.sheet-tab-pill[data-tab="acts"]');
+  await page.click('#actsFilterRow [data-filter="exported"]'); await page.waitForTimeout(100);
+  const expActs = await page.locator('#actsContainer').innerText();
+  console.log('exported filter (Activities): shows Main, hides Hidden:', expActs.includes('Main') && !expActs.includes('Hidden'));
 
   // ---- Single-app dexopt: async (a progress bar shows while it runs), toast-only on success ----
   await page.evaluate(() => { window.__calls.length = 0; openOptimizeModal('single'); });

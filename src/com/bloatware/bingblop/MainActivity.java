@@ -8446,6 +8446,172 @@ public class MainActivity extends Activity {
         }
 
         /**
+         * What the app menu's Features, Configurations, Signatures and Libraries tabs show, in one JSON object:
+         * {features, configs, screen, signatures, libraries}. Every part is read on its own, so a part that cannot be read
+         * is left out (or carries an "error") and the others still arrive.
+         */
+        @JavascriptInterface
+        public String getAppExtras(String pkg) {
+            JSONObject out = new JSONObject();
+            try {
+                PackageManager pm = getPackageManager();
+                int sigFlags = Build.VERSION.SDK_INT >= 28 ? PackageManager.GET_SIGNING_CERTIFICATES : PackageManager.GET_SIGNATURES;
+                int flags = PackageManager.GET_CONFIGURATIONS | PackageManager.GET_SHARED_LIBRARY_FILES | PackageManager.MATCH_UNINSTALLED_PACKAGES | sigFlags;
+                PackageInfo info = pm.getPackageInfo(pkg, flags);
+                ApplicationInfo ai = info.applicationInfo;
+
+                // Features: <uses-feature> (the OpenGL ES version has no name), and whether this device has each one
+                try {
+                    JSONArray features = new JSONArray();
+                    if (info.reqFeatures != null) {
+                        for (android.content.pm.FeatureInfo f : info.reqFeatures) {
+                            JSONObject o = new JSONObject();
+                            boolean required = (f.flags & android.content.pm.FeatureInfo.FLAG_REQUIRED) != 0;
+                            o.put("required", required);
+                            if (f.name != null) {
+                                o.put("name", f.name);
+                                boolean has = false;
+                                try { has = pm.hasSystemFeature(f.name); } catch (Exception ignored) {}
+                                o.put("device", has);
+                            } else {
+                                o.put("name", "");
+                                o.put("glEs", AppExtras.glEs(f.reqGlEsVersion));
+                            }
+                            features.put(o);
+                        }
+                    }
+                    out.put("features", features);
+                    try {
+                        android.app.ActivityManager am = (android.app.ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+                        out.put("deviceGlEs", AppExtras.glEs(am.getDeviceConfigurationInfo().reqGlEsVersion));
+                    } catch (Exception ignored) {}
+                } catch (Exception e) {
+                    out.put("featuresError", String.valueOf(e.getMessage()));
+                }
+
+                // Configurations: <uses-configuration> and the screen the app says it needs
+                try {
+                    JSONArray configs = new JSONArray();
+                    if (info.configPreferences != null) {
+                        for (android.content.pm.ConfigurationInfo c : info.configPreferences) {
+                            JSONObject o = new JSONObject();
+                            o.put("touchScreen", AppExtras.touchScreen(c.reqTouchScreen));
+                            o.put("keyboard", AppExtras.keyboardType(c.reqKeyboardType));
+                            o.put("navigation", AppExtras.navigation(c.reqNavigation));
+                            o.put("inputFeatures", AppExtras.inputFeatures(c.reqInputFeatures));
+                            o.put("glEs", AppExtras.glEs(c.reqGlEsVersion));
+                            configs.put(o);
+                        }
+                    }
+                    out.put("configs", configs);
+                    JSONObject screen = new JSONObject();
+                    if (ai != null) {
+                        screen.put("requiresSmallestWidthDp", ai.requiresSmallestWidthDp);
+                        screen.put("compatibleWidthLimitDp", ai.compatibleWidthLimitDp);
+                        screen.put("largestWidthLimitDp", ai.largestWidthLimitDp);
+                        screen.put("targetSdk", ai.targetSdkVersion);
+                        screen.put("minSdk", ai.minSdkVersion);
+                        if (Build.VERSION.SDK_INT >= 31) screen.put("compileSdk", ai.compileSdkVersion);
+                        screen.put("largeHeap", (ai.flags & ApplicationInfo.FLAG_LARGE_HEAP) != 0);
+                        screen.put("hardwareAccelerated", (ai.flags & ApplicationInfo.FLAG_HARDWARE_ACCELERATED) != 0);
+                        screen.put("resizeable", (ai.flags & ApplicationInfo.FLAG_RESIZEABLE_FOR_SCREENS) != 0);
+                        screen.put("supportsRtl", (ai.flags & ApplicationInfo.FLAG_SUPPORTS_RTL) != 0);
+                        screen.put("smallScreens", (ai.flags & ApplicationInfo.FLAG_SUPPORTS_SMALL_SCREENS) != 0);
+                        screen.put("normalScreens", (ai.flags & ApplicationInfo.FLAG_SUPPORTS_NORMAL_SCREENS) != 0);
+                        screen.put("largeScreens", (ai.flags & ApplicationInfo.FLAG_SUPPORTS_LARGE_SCREENS) != 0);
+                        screen.put("xlargeScreens", (ai.flags & ApplicationInfo.FLAG_SUPPORTS_XLARGE_SCREENS) != 0);
+                        screen.put("anyDensity", (ai.flags & ApplicationInfo.FLAG_SUPPORTS_SCREEN_DENSITIES) != 0);
+                    }
+                    out.put("screen", screen);
+                    JSONArray abis = new JSONArray();
+                    for (String a : Build.SUPPORTED_ABIS) abis.put(a);
+                    out.put("deviceAbis", abis);
+                } catch (Exception e) {
+                    out.put("configsError", String.valueOf(e.getMessage()));
+                }
+
+                // Signatures: who signed it (current signers, and earlier certificates when the key was rotated) and which schemes the APK carries
+                try {
+                    JSONObject sig = new JSONObject();
+                    JSONArray signers = new JSONArray(), history = new JSONArray();
+                    boolean rotated = false, multi = false;
+                    if (Build.VERSION.SDK_INT >= 28 && info.signingInfo != null) {
+                        android.content.pm.SigningInfo si = info.signingInfo;
+                        multi = si.hasMultipleSigners();
+                        rotated = si.hasPastSigningCertificates();
+                        android.content.pm.Signature[] cur = multi ? si.getApkContentsSigners() : si.getSigningCertificateHistory();
+                        if (cur != null) {
+                            if (multi) { for (android.content.pm.Signature s : cur) signers.put(AppExtras.certInfo(s.toByteArray())); }
+                            else if (cur.length > 0) signers.put(AppExtras.certInfo(cur[cur.length - 1].toByteArray()));
+                            if (!multi && rotated) {
+                                for (int i = 0; i < cur.length - 1; i++) history.put(AppExtras.certInfo(cur[i].toByteArray()));
+                            }
+                        }
+                    } else if (info.signatures != null) {
+                        for (android.content.pm.Signature s : info.signatures) signers.put(AppExtras.certInfo(s.toByteArray()));
+                        multi = info.signatures.length > 1;
+                    }
+                    sig.put("signers", signers);
+                    sig.put("history", history);
+                    sig.put("rotated", rotated);
+                    sig.put("multiple", multi);
+                    JSONArray schemes = new JSONArray();
+                    if (ai != null && ai.sourceDir != null) {
+                        for (String s : AppExtras.sigSchemes(new File(ai.sourceDir))) schemes.put(s);
+                    }
+                    sig.put("schemes", schemes);
+                    out.put("signatures", sig);
+                } catch (Exception e) {
+                    out.put("signaturesError", String.valueOf(e.getMessage()));
+                }
+
+                // Libraries: what the manifest asks for, the shared libraries the system linked in, and the native libraries inside the APKs
+                try {
+                    JSONObject lib = new JSONObject();
+                    JSONArray declared = new JSONArray();
+                    try {
+                        Resources res = null;
+                        try { res = pm.getResourcesForApplication(ai); } catch (Exception ignored) {}
+                        String xml = ManifestDecoder.decodeApk(ai.sourceDir, res);
+                        declared = AppExtras.manifestLibraries(xml);
+                    } catch (Throwable ignored) {}
+                    lib.put("declared", declared);
+                    JSONArray shared = new JSONArray();
+                    if (ai != null && ai.sharedLibraryFiles != null) for (String s : ai.sharedLibraryFiles) shared.put(s);
+                    lib.put("shared", shared);
+                    JSONArray nat = new JSONArray();
+                    if (ai != null) {
+                        List<String> apks = new ArrayList<String>();
+                        if (ai.sourceDir != null) apks.add(ai.sourceDir);
+                        if (ai.splitSourceDirs != null) for (String s : ai.splitSourceDirs) if (s != null) apks.add(s);
+                        for (String p : apks) {
+                            JSONArray one = AppExtras.nativeLibs(new File(p));
+                            String from = new File(p).getName();
+                            for (int i = 0; i < one.length() && nat.length() < 600; i++) {
+                                JSONObject o = one.getJSONObject(i);
+                                o.put("apk", from);
+                                nat.put(o);
+                            }
+                        }
+                        lib.put("nativeDir", ai.nativeLibraryDir == null ? "" : ai.nativeLibraryDir);
+                        try {
+                            java.lang.reflect.Field f = ApplicationInfo.class.getField("primaryCpuAbi");
+                            Object v = f.get(ai);
+                            lib.put("primaryAbi", v == null ? "" : String.valueOf(v));
+                        } catch (Throwable ignored) {}
+                    }
+                    lib.put("native", nat);
+                    out.put("libraries", lib);
+                } catch (Exception e) {
+                    out.put("librariesError", String.valueOf(e.getMessage()));
+                }
+            } catch (Exception e) {
+                try { out.put("error", String.valueOf(e.getMessage())); } catch (Exception ignored) {}
+            }
+            return out.toString();
+        }
+
+        /**
          * Launches an activity using a privileged mode (ADB / Shizuku / Root). An EXPORTED activity is
          * started with `am start -W` (trustworthy "Status: ok"/denial, launched in a new task so it
          * surfaces). An UNEXPORTED activity can't be started that way from the shell - uid 2000 isn't its
