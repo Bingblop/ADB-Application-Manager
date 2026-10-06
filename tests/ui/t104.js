@@ -60,6 +60,12 @@ const { chromium, PAGE } = require('./lib/pw');
   console.log('Enabled box + System box (enabled system apps), chip shows:', JSON.stringify([await chip(), await names(), await lit()]));
   await page.locator('#filterClearChip').click(); await page.waitForTimeout(200);
   console.log('Clear filters turns them all off:', JSON.stringify([await chip(), (await names()).length, await lit()]));
+  // an uninstalled app counts only as Uninstalled; once it is back and still disabled it is Frozen again
+  console.log('uninstalled + frozen app:', JSON.stringify(await page.evaluate(() => {
+    const gone = { pkg: 'x.gone', isFrozen: true, isUninstalled: true }, back = { pkg: 'x.back', isFrozen: true, isUninstalled: false };
+    const m = (a, ...f) => appMatchesFilterSet(a, new Set(f));
+    return { goneFrozen: m(gone, 'frozen'), goneUninstalled: m(gone, 'uninstalled'), goneBoth: m(gone, 'frozen', 'uninstalled'), goneEnabled: m(gone, 'enabled'), backFrozen: m(back, 'frozen'), backUninstalled: m(back, 'uninstalled') };
+  })));
   console.log('errors:', JSON.stringify(errors));
   await b.close();
 })();

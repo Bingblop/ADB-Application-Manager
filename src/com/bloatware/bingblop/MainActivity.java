@@ -10183,7 +10183,7 @@ public class MainActivity extends Activity {
                             };
                             List<FileSearch.Hit> hits = roots.isEmpty() ? new ArrayList<FileSearch.Hit>() : FileSearch.run(roots, q, lim, sprog);
                             if (!safRoots.isEmpty()) {
-                                if (!q.content.isEmpty() || !q.archive.isEmpty()) res.getJSONArray("problems").put("content: and archive: look at file bytes, so they are skipped in added storage (names, sizes, dates and types are searched)");
+                                if (!q.archive.isEmpty()) res.getJSONArray("problems").put("archive: looks inside archives, so it is skipped in added storage (names, sizes, dates, types and content: are searched)");
                                 for (String sr : safRoots) {
                                     if (lim.cancelled || lim.hitLimit) break;
                                     searchSaf(Uri.parse(sr), q, lim, hits, sprog);
@@ -10306,8 +10306,26 @@ public class MainActivity extends Activity {
                         if (FileSearch.matchesListing(q, name, c.isNull(3) ? 0 : c.getLong(3), c.isNull(4) ? 0 : c.getLong(4), isDir)) {
                             FileSearch.Hit h = new FileSearch.Hit();
                             h.path = child.toString(); h.dir = isDir; h.size = c.isNull(3) ? 0 : c.getLong(3); h.mtime = c.isNull(4) ? 0 : c.getLong(4); h.why = "name";
-                            hits.add(h);
-                            if (hits.size() >= lim.maxResults) { lim.hitLimit = true; break; }
+                            boolean keep = true;
+                            if (!q.content.isEmpty()) {
+                                // content: reads the file through its provider (text files only, the same size limit as on the phone's own storage)
+                                keep = false;
+                                if (!isDir && FileSearch.contentEligible(lim, name, c.isNull(3) ? -1 : c.getLong(3))) {
+                                    java.io.InputStream in = null;
+                                    try {
+                                        in = getContentResolver().openInputStream(child);
+                                        Object[] m = in == null ? null : FileSearch.findContent(q, lim, in);
+                                        if (m != null) { h.lineNo = (Integer) m[0]; h.line = (String) m[1]; h.why = "content"; keep = true; }
+                                    } catch (Throwable ignored) {
+                                    } finally {
+                                        if (in != null) try { in.close(); } catch (IOException ignored) {}
+                                    }
+                                }
+                            }
+                            if (keep) {
+                                hits.add(h);
+                                if (hits.size() >= lim.maxResults) { lim.hitLimit = true; break; }
+                            }
                         }
                         if (isDir && q.recursive && depth < lim.maxDepth && lim.visited < lim.maxVisited) todo.add(new Object[]{child, depth + 1});
                     }

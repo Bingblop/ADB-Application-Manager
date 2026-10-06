@@ -10249,7 +10249,7 @@ Type any command below (e.g. pm list packages -d)
         function appMatchesFilterSet(app, f) {
             if (f.has('running') && !app.isRunning) return false;
             if (f.has('enabled') && (app.isFrozen || app.isUninstalled)) return false;       // installed and not disabled (a suspended app is still enabled)
-            if (f.has('frozen') && !app.isFrozen) return false;
+            if (f.has('frozen') && (!app.isFrozen || (app.isUninstalled && !f.has('uninstalled')))) return false;       // an uninstalled app counts only as Uninstalled (it is Frozen again once it is back and still disabled)
             if (f.has('suspended') && !app.isSuspended) return false;
             if (f.has('user') && (app.isSystem || (app.isUninstalled && !f.has('uninstalled')))) return false;
             if (f.has('system') && (!app.isSystem || (app.isUninstalled && !f.has('uninstalled')))) return false;
@@ -10299,7 +10299,7 @@ Type any command below (e.g. pm list packages -d)
             const n = { running: 0, enabled: 0, frozen: 0, user: 0, system: 0, uninstalled: 0, recent: 0, suspended: 0, patched: 0 };
             allApps.forEach(a => {
                 if (a.isRunning) n.running++;
-                if (a.isFrozen) n.frozen++;
+                if (a.isFrozen && !a.isUninstalled) n.frozen++;
                 if (!a.isFrozen && !a.isUninstalled) n.enabled++;
                 if (a.isUninstalled) n.uninstalled++;
                 else if (a.isSystem) n.system++;
@@ -13669,6 +13669,7 @@ Type any command below (e.g. pm list packages -d)
             // each piece is its own element: the count and the notes are text of the app, the time is a number
             fmSearchCountHtml = '<span>' + n + ' found</span>' + (r.truncated ? ' · <span>stopped at the limit</span>' : '') + (r.cancelled ? ' · <span>stopped</span>' : '')
                 + ' · <span translate="no">' + ((r.ms || 0) / 1000).toFixed(1) + ' s</span>';
+            document.getElementById('fmSearchCount').innerHTML = fmSearchCountHtml;
             const notes = (r.problems && r.problems.length) ? '<div class="list-empty" style="padding:6px 0;">' + escapeHtml(r.problems.join('; ')) + '</div>' : '';
             ['fmSearchFilterRow', 'fmSearchFilterSummary'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = 'none'; });
             if (!n) { document.getElementById('fmSearchList').innerHTML = notes + '<div class="list-empty">' + (r.empty ? 'Type something to search for.' : 'Nothing found.') + '</div>'; return; }
