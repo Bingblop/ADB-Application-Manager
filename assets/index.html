@@ -712,6 +712,18 @@
         #view-files .batch-tool-link:disabled { opacity: 0.45; }
         #view-files .fm-selbar, #view-files .fm-opts { gap: 8px; }
 
+        /* The Apps list's top bar and row buttons get the same outline and pressed state; its taps give haptic feedback too */
+        #view-apps .apps-sort-row .mode-action-btn {
+            background: var(--bg-surface);
+            border: 1px solid var(--accent);
+            border-radius: 10px;
+            color: var(--accent);
+            font-weight: 800;
+            transition: background 0.15s, transform 0.12s;
+        }
+        #view-apps .apps-sort-row .mode-action-btn:active:not(:disabled) { background: var(--accent); color: var(--on-accent); transform: scale(0.96); }
+        #view-apps .app-actions .btn-mini { border-color: var(--accent); }
+
         .batch-tool-link {
             background: none;
             border: none;
@@ -6644,8 +6656,8 @@ Type any command below (e.g. pm list packages -d)
             return true;
         }
 
-        // every File Manager button gives the tap of feedback, whatever its own handler does
-        document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('#view-files button'); if (b && !b.disabled) haptic(); }, true);
+        // every File Manager and Apps list button gives the tap of feedback, whatever its own handler does
+        document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('#view-files button, #view-apps button'); if (b && !b.disabled) haptic(); }, true);
 
         function haptic() {
             if (window.AndroidBridge && window.AndroidBridge.vibrate) {

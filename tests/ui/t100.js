@@ -93,7 +93,7 @@ const { chromium, PAGE } = require('./lib/pw');
   console.log('3. descending into Documents lists its own entries:', JSON.stringify(await rowNames()) === JSON.stringify(['notes.txt']));
   await page.click('#fmUpRow'); await sleep(100);
   console.log('   Up returns to the root listing:', JSON.stringify((await rowNames()).sort()) === JSON.stringify(['Documents', 'photo.jpg']));
-  await page.click('#fmUpRow'); await sleep(80);
+  await page.evaluate(() => fmUp()); await sleep(80);
   console.log('   Up again at the top of this storage does not error, just says so:', /top of this storage/.test(await toastText()));
 
   // 4) New folder and new file reach the SAF create method (not the POSIX mkdir/touch path) - with no working
