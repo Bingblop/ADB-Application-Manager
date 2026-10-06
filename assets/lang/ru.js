@@ -1038,7 +1038,6 @@ x: {
 "Midnight Slate": "Полночный сланец",
 "Min": "Мин.",
 "Min SDK": "Min SDK",
-"Minimize": "Свернуть",
 "Misc": "Разное",
 "Mitch (itch.io games)": "Mitch (игры с itch.io)",
 "Mobile data": "Мобильные данные",

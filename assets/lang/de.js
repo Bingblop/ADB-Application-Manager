@@ -1038,7 +1038,6 @@ x: {
 "Midnight Slate": "Midnight Slate",
 "Min": "Min",
 "Min SDK": "Min. SDK",
-"Minimize": "Minimieren",
 "Misc": "Sonstiges",
 "Mitch (itch.io games)": "Mitch (itch.io-Spiele)",
 "Mobile data": "Mobile Daten",

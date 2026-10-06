@@ -1038,7 +1038,6 @@ x: {
 "Midnight Slate": "午夜石板灰",
 "Min": "最小",
 "Min SDK": "最低 SDK",
-"Minimize": "最小化",
 "Misc": "其他",
 "Mitch (itch.io games)": "Mitch（itch.io 游戏）",
 "Mobile data": "移动数据",

@@ -17,7 +17,7 @@ const { chromium, PAGE } = require('./lib/pw');
       shareTextFile(name, text, mime) { window.__share.push([name, text, mime]); return ''; },
       appActionBatch(action, pkgsJson) {
         const pk = JSON.parse(pkgsJson); window.__batch.push([action, pk]);
-        setTimeout(() => window.onAppBatchDone(JSON.stringify({ ok: true, action, total: pk.length, done: pk.length, cancelled: false, rows: pk.map(p => ({ pkg: p, output: 'ran for ' + p, success: true })) })), 30);
+        setTimeout(() => window.onAppBatchDone(JSON.stringify({ ok: true, action, total: pk.length, done: pk.length, cancelled: false, rows: pk.map(p => ({ pkg: p, output: 'ran for ' + p, success: !(action.includes('failing') && p === 'com.example.charlie') })) })), 30);
         return 'started';
       },
     };
@@ -94,8 +94,36 @@ const { chromium, PAGE } = require('./lib/pw');
   console.log('Run sends the list apps:', JSON.stringify(await page.evaluate(() => window.__batch)));
   await page.evaluate(() => { document.querySelectorAll('.modal-overlay.show').forEach(m => m.classList.remove('show')); ['com.example.alpha'].forEach(p => { if (!selectedPkgs.has(p)) toggleSelectPkg(p); }); expandBatchPanel(); }); await sleep(300);
   await page.locator('#floatingBatchBar button', { hasText: 'Command' }).click(); await sleep(250);
-  await page.locator('#bcSaved .preset-x').first().click(); await sleep(120);
+  await page.locator('#bcSaved .preset-x[aria-label^="Delete"]').first().click(); await sleep(120);
   console.log('a saved command can be deleted:', await page.evaluate(() => [document.querySelectorAll('#bcSaved .preset-chip').length, JSON.stringify(kvGet('batch_cmds', null))]));
+  await page.evaluate(() => { document.querySelectorAll('.modal-overlay.show').forEach(m => m.classList.remove('show')); });
+
+  // Duplicate, dry run, Run again
+  await page.evaluate(() => { document.querySelectorAll('.modal-overlay.show').forEach(m => m.classList.remove('show')); ['com.example.alpha', 'com.example.charlie'].forEach(p => { if (!selectedPkgs.has(p)) toggleSelectPkg(p); }); expandBatchPanel(); window.__prompt = 'Wipe cache'; }); await sleep(300);
+  await page.locator('#floatingBatchBar button', { hasText: 'Batch Ops' }).click(); await sleep(250);
+  await page.locator('#bopsPresets .preset-chip', { hasText: /^Silence notifications/ }).locator('[title="Duplicate"]').click(); await sleep(100);
+  await page.locator('#bopsPresets .preset-chip', { hasText: /^Silence notifications/ }).locator('[title="Duplicate"]').first().click(); await sleep(100);
+  console.log('duplicating a built-in preset saves your own copy (and the next copy gets 2):', await page.evaluate(() => bopsSavedLoad().map(p => p.name)));
+  await page.evaluate(() => { document.querySelectorAll('.modal-overlay.show').forEach(m => m.classList.remove('show')); expandBatchPanel(); }); await sleep(250);
+  await page.locator('#floatingBatchBar button', { hasText: 'Command' }).click(); await sleep(250);
+  await page.fill('#bcInput', 'echo $package'); await page.click('button[onclick="bcSave()"]'); await sleep(100);
+    await page.locator('#bcSaved .preset-chip', { hasText: 'Wipe cache' }).locator('[title="Duplicate"]').click(); await sleep(100);
+  console.log('duplicating a saved command:', await page.evaluate(() => JSON.stringify(bcSavedLoad())));
+  await page.evaluate(() => { window.__batch.length = 0; });
+  await page.fill('#bcInput', 'echo $package'); await page.click('#batchCmdModal .switch-title'); await page.evaluate(() => { if (!document.getElementById('bcDry').checked) { document.getElementById('bcDry').checked = true; bcPreview(); } }); await sleep(100);
+  console.log('dry run changes the button:', await page.innerText('#bcRun'));
+  await page.click('#bcRun'); await sleep(300);
+  console.log('dry run lists what would run and runs nothing:', JSON.stringify(await page.evaluate(() => [document.getElementById('commandResultsTitle').innerText, Array.from(document.querySelectorAll('#commandResultsList .result-item')).map(r => r.innerText.replace(/\s+/g, ' ').trim()), window.__batch.length, Array.from(document.querySelectorAll('#commandResultsActions button')).map(b => b.innerText.trim())])));
+  await page.locator('#commandResultsActions button', { hasText: 'Run it for real' }).click(); await sleep(300);
+  console.log('Run it for real reopens the sheet with the command, dry run off:', await page.evaluate(() => [document.getElementById('batchCmdModal').classList.contains('show'), document.getElementById('bcInput').value, document.getElementById('bcDry').checked]));
+  await page.fill('#bcInput', 'failing $package'); await page.click('#bcRun'); await sleep(500);
+  console.log('results offer Run again and Run again on the failed:', JSON.stringify(await page.evaluate(() => Array.from(document.querySelectorAll('#commandResultsActions button')).map(b => b.innerText.trim()))), '| ran:', JSON.stringify(await page.evaluate(() => window.__batch)));
+  await page.evaluate(() => { window.__batch.length = 0; });
+  await page.locator('#commandResultsActions button', { hasText: /that failed/ }).click(); await sleep(500);
+  console.log('Run again on the failed sends only those:', JSON.stringify(await page.evaluate(() => window.__batch)));
+  await page.evaluate(() => { window.__batch.length = 0; });
+  await page.locator('#commandResultsActions button', { hasText: /^Run again$/ }).click(); await sleep(500);
+  console.log('Run again repeats the run the dialog shows (here the retried one):', JSON.stringify(await page.evaluate(() => window.__batch)));
   await page.evaluate(() => { document.querySelectorAll('.modal-overlay.show').forEach(m => m.classList.remove('show')); });
 
   // The app menu's arrow
@@ -103,7 +131,7 @@ const { chromium, PAGE } = require('./lib/pw');
   console.log('app menu has no arrow, its X closes it:', await page.evaluate(() => document.querySelectorAll('#inspectorModal .sheet-arrow-btn').length));
   await page.locator('#inspectorModal .sheet-header-actions div', { hasText: '✕' }).click(); await sleep(200);
   console.log('closed:', await page.evaluate(() => !document.getElementById('inspectorModal').classList.contains('show')));
-  await page.evaluate(() => { expandBatchPanel(); }); await sleep(300);
+  await page.evaluate(() => { ['com.example.alpha'].forEach(p => { if (!selectedPkgs.has(p)) toggleSelectPkg(p); }); expandBatchPanel(); }); await sleep(400);
   await page.click('#floatingBatchBar [aria-label="Close the batch menu"]'); await sleep(300);
   console.log('the batch X minimizes the menu (selection kept):', await page.evaluate(() => [!document.getElementById('floatingBatchBar').classList.contains('show'), selectedPkgs.size]));
   console.log('errors:', JSON.stringify(errors));

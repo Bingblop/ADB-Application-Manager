@@ -1038,7 +1038,6 @@ x: {
 "Midnight Slate": "Ardesia di mezzanotte",
 "Min": "Min",
 "Min SDK": "SDK minimo",
-"Minimize": "Riduci",
 "Misc": "Varie",
 "Mitch (itch.io games)": "Mitch (giochi di itch.io)",
 "Mobile data": "Dati mobili",

@@ -1038,7 +1038,6 @@ x: {
 "Midnight Slate": "Gece Yarısı Arduvazı",
 "Min": "Min",
 "Min SDK": "Min SDK",
-"Minimize": "Küçült",
 "Misc": "Çeşitli",
 "Mitch (itch.io games)": "Mitch (itch.io oyunları)",
 "Mobile data": "Mobil veri",

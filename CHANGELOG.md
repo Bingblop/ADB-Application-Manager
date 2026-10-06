@@ -33,7 +33,10 @@
   Silence notifications and an Undo for the lockdown) and lets you save your own sets of app ops by name. Command can
   save commands under a name, run on the apps of a saved list instead of the selection (the ones not on the phone are
   skipped and counted), and every batch result dialog has a Share CSV button (app, package, OK or failed, the
-  command's output, the time and the command that was run). The batch menu now has a ✕ at the top right, like the app menu's, that minimizes it.
+  command's output, the time and the command that was run). Presets and saved commands can be duplicated (the copy
+  is named "... (copy)"), Command has a Dry run switch that lists what would run for each app without running anything
+  (with Run it for real and Share CSV), and the batch results dialog has Run again, and Run again on the ones that
+  failed. The batch menu now has a ✕ at the top right, like the app menu's, that minimizes it.
 - **Press and hold guide.** A new card at the end of Settings lists everything that can be pressed and held (an app row,
   an app's icon, the Action Button, the selection checkmark, file rows, found APKs, Hidden Settings and overlay rows) and
   what each one does.

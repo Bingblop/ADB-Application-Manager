@@ -5082,6 +5082,10 @@ Type any command below (e.g. pm list packages -d)
             <div class="switch-sub" style="margin:10px 0 2px;">Saved commands</div>
             <div id="bcSaved" class="bc-examples"></div>
             <div id="bcRecent" class="bc-examples" style="margin-top:4px;"></div>
+            <label class="switch-row" style="margin-top:10px; padding-top:10px;">
+                <div><div class="switch-title">Dry run</div><div class="switch-sub">Only list what would run for each app. Nothing is run.</div></div>
+                <input type="checkbox" class="switch-input" id="bcDry" onchange="bcPreview()"><span class="switch-track"></span>
+            </label>
             <div class="mode-btn-row" style="margin-top:12px;">
                 <button class="mode-action-btn" onclick="bcSave()">Save this command…</button>
                 <button class="mode-action-btn primary" id="bcRun" onclick="bcRun()">Run</button>
@@ -7435,7 +7439,7 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('commandResultsModal').classList.toggle('has-actions', commandResultsActions.length > 0);
             document.getElementById('commandResultsTitle').innerText = title;
             document.getElementById('commandResultsSubtitle').innerText = subtitle;
-            document.getElementById('commandResultsList').innerHTML = rows.map(row => '<div class="result-item ' + (row.success ? 'success' : 'failed') + '"><div class="result-item-header"><div class="result-item-name">' + escapeHtml(row.name || row.pkg) + '</div><div class="tag-badge ' + (row.success ? 'tag-running' : 'tag-bloat') + '">' + (row.success ? 'Success' : 'Failed') + '</div></div><div class="result-item-pkg">' + escapeHtml(row.pkg || '') + '</div><div class="result-item-output">' + escapeHtml((row.output || '').trim() || 'No output returned') + '</div></div>').join('');
+            document.getElementById('commandResultsList').innerHTML = rows.map(row => '<div class="result-item ' + (row.success ? 'success' : 'failed') + '"><div class="result-item-header"><div class="result-item-name">' + escapeHtml(row.name || row.pkg) + '</div><div class="tag-badge ' + (row.success ? 'tag-running' : 'tag-bloat') + '">' + (row.label || (row.success ? 'Success' : 'Failed')) + '</div></div><div class="result-item-pkg">' + escapeHtml(row.pkg || '') + '</div><div class="result-item-output">' + escapeHtml((row.output || '').trim() || 'No output returned') + '</div></div>').join('');
             document.getElementById('commandResultsModal').classList.add('show');
         }
 
@@ -10706,8 +10710,9 @@ Type any command below (e.g. pm list packages -d)
         function bopsPresetsRender() {
             const box = document.getElementById('bopsPresets');
             if (!box) return;
-            box.innerHTML = BOPS_BUILTIN.map((p, i) => `<span class="filter-chip" onclick="bopsLoadPreset('b', ${i})" title="${Object.keys(p.ops).length} app ops">${escapeHtml(p.name)}</span>`).join('')
-                + bopsSavedLoad().map((p, i) => `<span class="filter-chip preset-chip" title="${Object.keys(p.ops).length} app ops"><span onclick="bopsLoadPreset('s', ${i})">${escapeHtml(p.name)}</span><span class="preset-x" role="button" aria-label="Delete the preset ${escapeHtml(p.name)}" onclick="bopsDeletePreset(${i})">✕</span></span>`).join('')
+            const dup = (k, i, name) => `<span class="preset-x" role="button" aria-label="Duplicate the preset ${escapeHtml(name)}" title="Duplicate" onclick="bopsDuplicate('${k}', ${i})"><svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false"><path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span>`;
+            box.innerHTML = BOPS_BUILTIN.map((p, i) => `<span class="filter-chip preset-chip" title="${Object.keys(p.ops).length} app ops"><span onclick="bopsLoadPreset('b', ${i})">${escapeHtml(p.name)}</span>${dup('b', i, p.name)}</span>`).join('')
+                + bopsSavedLoad().map((p, i) => `<span class="filter-chip preset-chip" title="${Object.keys(p.ops).length} app ops"><span onclick="bopsLoadPreset('s', ${i})">${escapeHtml(p.name)}</span>${dup('s', i, p.name)}<span class="preset-x" role="button" aria-label="Delete the preset ${escapeHtml(p.name)}" onclick="bopsDeletePreset(${i})">✕</span></span>`).join('')
                 + '<span class="filter-chip" onclick="bopsSavePreset()">＋ Save ticked as preset…</span>';
         }
         function bopsLoadPreset(kind, i) {
@@ -10735,6 +10740,23 @@ Type any command below (e.g. pm list packages -d)
             kvSet('bops_presets', bopsSaved);
             bopsPresetsRender();
             showToast('Saved the preset ' + name);
+        }
+        // a name that is not taken yet: "Name (copy)", "Name (copy 2)", ...
+        function uniqueCopyName(name, taken) {
+            const base = String(name).replace(/ \(copy( \d+)?\)$/, '');
+            let n = base + ' (copy)', k = 2;
+            while (taken.includes(n)) n = base + ' (copy ' + (k++) + ')';
+            return n.slice(0, 48);
+        }
+        function bopsDuplicate(kind, i) {
+            const src = (kind === 'b' ? BOPS_BUILTIN : bopsSavedLoad())[i];
+            if (!src) return;
+            haptic();
+            const name = uniqueCopyName(src.name, bopsSavedLoad().map(p => p.name));
+            bopsSaved = [{ name, ops: Object.assign({}, src.ops) }].concat(bopsSavedLoad()).slice(0, 30);
+            kvSet('bops_presets', bopsSaved);
+            bopsPresetsRender();
+            showToast('Duplicated as ' + name);
         }
         function bopsDeletePreset(i) {
             const p = bopsSavedLoad()[i];
@@ -10855,8 +10877,9 @@ Type any command below (e.g. pm list packages -d)
             const box = document.getElementById('bcPreview'), run = document.getElementById('bcRun');
             const n = t.pkgs.length;
             document.getElementById('bcSub').innerText = 'Runs once on each of the ' + n + ' app' + (n === 1 ? '' : 's') + ' in ' + t.label + (t.skipped ? ' (' + t.skipped + ' in the list are not on this phone and are skipped)' : '');
+            const dry = !!(document.getElementById('bcDry') || {}).checked;
             run.disabled = !cmd || !n;
-            run.innerText = cmd ? 'Run on ' + n + ' app' + (n === 1 ? '' : 's') : 'Run';
+            run.innerText = cmd ? (dry ? 'Show what would run on ' : 'Run on ') + n + ' app' + (n === 1 ? '' : 's') : (dry ? 'Show' : 'Run');
             if (!n) { box.innerHTML = '<span class="bc-warn">None of the apps in that list are on this phone.</span>'; return; }
             if (!cmd) { box.innerHTML = 'Preview: type a command above.'; return; }
             const shown = cmd.split('$package').join(first);
@@ -10866,7 +10889,7 @@ Type any command below (e.g. pm list packages -d)
         function bcRenderRecent() {
             if (bcRecent === null) { const v = kvGet('batch_cmd_recent', []); bcRecent = Array.isArray(v) ? v.filter(x => typeof x === 'string').slice(0, 6) : []; }
             const saved = bcSavedLoad();
-            document.getElementById('bcSaved').innerHTML = saved.length ? saved.map((c, i) => `<span class="filter-chip preset-chip" title="${escapeHtml(c.cmd)}"><span onclick="bcLoadSaved(${i})">${escapeHtml(c.name)}</span><span class="preset-x" role="button" aria-label="Delete the saved command ${escapeHtml(c.name)}" onclick="bcDeleteSaved(${i})">✕</span></span>`).join('') : '<span class="switch-sub">None yet: type a command and tap Save this command.</span>';
+            document.getElementById('bcSaved').innerHTML = saved.length ? saved.map((c, i) => `<span class="filter-chip preset-chip" title="${escapeHtml(c.cmd)}"><span onclick="bcLoadSaved(${i})">${escapeHtml(c.name)}</span><span class="preset-x" role="button" aria-label="Duplicate the saved command ${escapeHtml(c.name)}" title="Duplicate" onclick="bcDuplicate(${i})"><svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false"><path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></span><span class="preset-x" role="button" aria-label="Delete the saved command ${escapeHtml(c.name)}" onclick="bcDeleteSaved(${i})">✕</span></span>`).join('') : '<span class="switch-sub">None yet: type a command and tap Save this command.</span>';
             document.getElementById('bcRecent').innerHTML = bcRecent.length ? '<span class="switch-sub" style="width:100%;">Recent</span>' + bcRecent.map((c, i) => `<span class="filter-chip" data-i="${i}" onclick="bcExample(bcRecent[+this.dataset.i])"><code>${escapeHtml(c.length > 40 ? c.slice(0, 40) + '…' : c)}</code></span>`).join('') : '';
         }
         function bcLoadSaved(i) { const c = bcSavedLoad()[i]; if (c) bcExample(c.cmd); }
@@ -10881,6 +10904,16 @@ Type any command below (e.g. pm list packages -d)
             bcRenderRecent();
             showToast('Saved the command ' + name);
         }
+        function bcDuplicate(i) {
+            const c = bcSavedLoad()[i];
+            if (!c) return;
+            haptic();
+            const name = uniqueCopyName(c.name, bcSavedLoad().map(x => x.name));
+            bcSaved = [{ name, cmd: c.cmd }].concat(bcSavedLoad()).slice(0, 40);
+            kvSet('batch_cmds', bcSaved);
+            bcRenderRecent();
+            showToast('Duplicated as ' + name);
+        }
         function bcDeleteSaved(i) {
             const c = bcSavedLoad()[i];
             if (!c || !confirm('Delete the saved command ' + c.name + '?')) return;
@@ -10893,6 +10926,7 @@ Type any command below (e.g. pm list packages -d)
             const cmd = (document.getElementById('bcInput').value || '').trim();
             const t = bcTargets(), pkgs = t.pkgs;
             if (!cmd || !pkgs.length) return;
+            if (document.getElementById('bcDry').checked) { bcDryRun(cmd, pkgs, t.label); return; }
             if (!guardPrivilege('Batch command')) return;
             const note = cmd.includes('$package') ? '' : '\n\nThere is no $package in it, so the same command runs ' + pkgs.length + ' times.';
             if (!confirm('Run this on ' + pkgs.length + ' app' + (pkgs.length === 1 ? '' : 's') + ' in ' + t.label + '?\n\n' + cmd.split('$package').join(pkgs[0]) + '\n\n(shown for ' + pkgs[0] + '; the others get their own package name)' + note + '\n\nThere is no undo.')) return;
@@ -10902,6 +10936,21 @@ Type any command below (e.g. pm list packages -d)
             batchRunLabel = 'Ran a command on';
             batchRunHist = 'custom';
             runBatchAction('custom:' + cmd, pkgs);
+        }
+
+        // Dry run: the command as it would be run for every app, listed in the results dialog, nothing run
+        function bcDryRun(cmd, pkgs, label) {
+            haptic();
+            const rows = pkgs.map(pkg => {
+                const app = allApps.find(a => a.pkg === pkg) || { name: pkg };
+                return { name: app.name, pkg, output: cmd.split('$package').join(pkg), success: true, label: 'Would run' };
+            });
+            const tv = document.getElementById('bcTarget').value;
+            closeBatchCmd();
+            showCommandResults('Dry run: nothing was run', rows.length + ' app' + (rows.length === 1 ? '' : 's') + ' in ' + label + ' · what would run for each', rows, [
+                { label: 'Run it for real', onClick: () => { document.getElementById('commandResultsModal').classList.remove('show'); document.getElementById('bcDry').checked = false; openBatchCmd(); document.getElementById('bcTarget').value = tv; document.getElementById('bcInput').value = cmd; bcPreview(); } },
+                { label: 'Share CSV', onClick: () => batchResultsCsv('Dry run', cmd, rows) }
+            ]);
         }
 
         // Press and hold anywhere on an app's row (the icon keeps its own hold, which saves the icon; the buttons and checkbox are left alone)
@@ -11124,8 +11173,10 @@ Type any command below (e.g. pm list packages -d)
         // WebView's own, so nothing on it - including a repaint - runs while a call made from it is in flight.
         // Progress arrives as window.onAppBatchProgress, the end as window.onAppBatchDone, both below.
         let batchRunLabel = '', batchRunHist = '';        // a custom label (and history name) for a Batch Ops or Command run, whose "action" is the whole spec
+        let lastBatch = null;        // the batch that just ran, for "Run again" in its results dialog
         function runBatchAction(action, arr) {
             haptic();
+            lastBatch = { action, pkgs: arr.slice(), label: batchRunLabel, hist: batchRunHist };
             if (!window.AndroidBridge || !window.AndroidBridge.appActionBatch) return;
 
             document.getElementById('batchConfirmTitle').innerText = (batchRunLabel || ACTION_LABELS[action] || action) + ' ' + arr.length + ' app' + (arr.length === 1 ? '' : 's');
@@ -11176,10 +11227,12 @@ Type any command below (e.g. pm list packages -d)
             recordHistory('apps', label, rows.map(r => ({ pkg: r.pkg, name: r.name, action: histAction, success: r.success })));
             showToast(stopped ? `Stopped: ${success} succeeded, ${failed} failed, ${total - rows.length} not run` : `Batch Done: ${success} succeeded, ${failed} failed`);
             const csvAction = action.startsWith('custom:') ? action.slice(7) : action.startsWith('appops:') ? action.slice(7) : action;
-            showCommandResults('Batch Results', shownAction + ' • ' + rows.length + ' of ' + total + ' apps' + (stopped ? ' (stopped)' : ''), rows, [{
-                label: 'Share CSV',
-                onClick: () => batchResultsCsv(shownAction, csvAction, rows)
-            }]);
+            const failedPkgs = rows.filter(r => !r.success).map(r => r.pkg);
+            if (lastBatch) lastBatch.failed = failedPkgs;
+            const acts = [{ label: 'Run again', onClick: () => batchRunAgain(false) }];
+            if (failedPkgs.length && failedPkgs.length < (lastBatch ? lastBatch.pkgs.length : Infinity)) acts.push({ label: 'Run again on the ' + failedPkgs.length + ' that failed', onClick: () => batchRunAgain(true) });
+            acts.push({ label: 'Share CSV', onClick: () => batchResultsCsv(shownAction, csvAction, rows) });
+            showCommandResults('Batch Results', shownAction + ' • ' + rows.length + ' of ' + total + ' apps' + (stopped ? ' (stopped)' : ''), rows, acts);
             // "Keep selection" leaves the apps selected (and the panel as it was) so another batch action
             // can run on the same set right away - the floating sheet sits behind the result dialog the
             // same way the single-app sheet does, and is there again once that dialog is dismissed.
@@ -11187,12 +11240,32 @@ Type any command below (e.g. pm list packages -d)
             setTimeout(loadPackageData, 400);
         };
 
+        // "Run again" in the batch results: the same action on the same apps (or only the ones that failed). Risky ones ask first, as they did the first time.
+        function batchRunAgain(onlyFailed) {
+            const b = lastBatch;
+            if (!b) return;
+            const pkgs = onlyFailed ? (b.failed || []) : b.pkgs;
+            if (!pkgs.length) { showToast('Nothing to run again'); return; }
+            haptic();
+            document.getElementById('commandResultsModal').classList.remove('show');
+            if (!guardPrivilege('Run again')) return;
+            const spec = b.action.startsWith('custom:') || b.action.startsWith('appops:');
+            if (spec) {
+                if (!confirm('Run it again on ' + pkgs.length + ' app' + (pkgs.length === 1 ? '' : 's') + '?\n\n' + (b.action.startsWith('custom:') ? b.action.slice(7) : b.action.slice(7).split(',').join('\n')) + '\n\nThere is no undo.')) return;
+                batchRunLabel = b.label; batchRunHist = b.hist;
+                runBatchAction(b.action, pkgs);
+                return;
+            }
+            if (['freeze', 'uninstall', 'suspend'].includes(b.action)) { requestBatchConfirmation(b.action, pkgs); return; }
+            runBatchAction(b.action, pkgs);
+        }
+
         // The results of a batch run as a CSV to share: one row per app, with the command (or action) that was run
         function batchResultsCsv(kind, what, rows) {
             haptic();
             const out = [['App', 'Package', 'Result', 'Output', 'Run', 'Command or action']];
             const ts = new Date().toISOString();
-            rows.forEach(r => out.push([r.name, r.pkg, r.success ? 'OK' : 'Failed', String(r.output || '').trim(), ts, what]));
+            rows.forEach(r => out.push([r.name, r.pkg, r.label || (r.success ? 'OK' : 'Failed'), String(r.output || '').trim(), ts, what]));
             const csv = out.map(r => r.map(csvCell).join(',')).join('\n') + '\n';
             shareFileViaBridge('batch_' + String(kind).toLowerCase().replace(/[^a-z0-9]+/g, '_') + '_' + ts.slice(0, 10) + '.csv', csv, 'text/csv');
         }
