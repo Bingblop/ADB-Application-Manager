@@ -39,7 +39,7 @@ const { chromium, PAGE } = require('./lib/pw');
   console.log('list rows:', await p.locator('#backupsList .backup-item').count(), '|', (await p.locator('#backupsList .backup-item h4').first().innerText()));
   await p.screenshot({ path: 'backups_root.png' });
   await p.check('#backupIncludeData'); await p.click('#backupTarget button:has-text("Create backup")');
-  await p.waitForFunction(() => document.getElementById('backupProgressText').innerText.trim() !== '');          // the first progress report is in; the backup is held until released
+  await p.waitForFunction(() => document.getElementById('backupProgressText').innerText.trim() === 'Saving the backup...');          // the first progress report from the phone is in (not the page's own "Starting..." before it); the backup is held until released
   console.log('progress shown:', await p.locator('#backupProgress').isVisible(), '|', await p.innerText('#backupProgressText'), '| button disabled while running:', await p.locator('#backupTarget button').isDisabled());
   await p.evaluate(() => window.__finishBackup());
   await p.waitForFunction(() => /Saved/.test(document.getElementById('backupResult').innerText));
