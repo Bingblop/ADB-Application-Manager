@@ -55,7 +55,7 @@
 <tr><td>ADB over TCP</td><td>CONNECTED, PORT 5555 OPEN, DISCONNECTED</td><td>Connected and ready; the port is open but the app is not connected (often a pending approval); nothing is listening.</td></tr>
 <tr><td>Wireless Debugging</td><td>CONNECTED or ANDROID 11+</td><td>Connected; or not connected, with a reminder of the Android version needed.</td></tr>
 <tr><td>Shizuku</td><td>AUTHORIZED, UPDATE SHIZUKU, RUNNING (UNAUTHORIZED), NOT RUNNING, NOT INSTALLED</td><td>Ready; Shizuku is running but too old; running but this app is not approved; installed but stopped; not on the phone.</td></tr>
-<tr><td>Root</td><td>ACTIVE, AVAILABLE, DENIED (orange), NOT FOUND</td><td>In use (Root is your chosen mode and was allowed); a su program was found but Root is not your chosen mode, so the app has not asked it anything yet; Root is your chosen mode but your root manager refused this app; no su found.</td></tr>
+<tr><td>Root</td><td>ACTIVE, AVAILABLE, DENIED, NOT FOUND</td><td>In use (Root is your chosen mode and was allowed); a su program was found but Root is not your chosen mode, so the app has not asked it anything yet; Root is your chosen mode but your root manager refused this app; no su found.</td></tr>
 <tr><td>Read-Only</td><td>Safe</td><td>Always safe: it changes nothing.</td></tr>
 </tbody></table>
 
@@ -411,7 +411,7 @@
 <tr><td>Access Restricted Settings</td><td>Lifts Android's block on a few sensitive switches for apps installed from outside a store (Android 13 and newer).</td><td>Some switches for this app stay greyed out as "Restricted setting".</td><td>Yes</td></tr>
 </tbody></table>
 <p>The first four rows are always in the sheet. The last three only appear while a working mode is on, because the app grants them by running a command through that mode (most of them have no screen of their own in Android).</p>
-<p><b>The Install unknown apps row.</b> Tap <b>Allow</b>. With a working mode on, the app grants it at once. Without one, Android's own <b>Install unknown apps</b> screen for this app opens: switch it on (the switch reads <b>Allow from this source</b> on most phones), press Back, and the row shows a tick. If your copy of the app is an old build that does not report this access, the row is not shown. On a phone older than Android 8 Android has one switch for all apps, so the row would simply say Allowed (this app itself needs Android 8 or newer).</p>
+<p><b>The Install unknown apps row.</b> Tap <b>Allow</b>. With a working mode on, the app grants it at once (if that does not take, Android's screen opens as below). Without one, Android's own <b>Install unknown apps</b> screen for this app opens: switch it on (the switch reads <b>Allow from this source</b> on most phones), press Back, and the row shows a tick. If your copy of the app is an old build that does not report this access, the row is not shown. On a phone older than Android 8 Android has one switch for all apps, so the row would simply say Allowed (this app itself needs Android 8 or newer).</p>
 
 <h4>What the app can grant for itself</h4>
 <p>With a working mode on (ADB, Wireless Debugging, Shizuku or Root), six of these are switched on by the app itself, by running a command as the shell user (UID 2000) or as root. Only All files access always needs Android's own screen.</p>

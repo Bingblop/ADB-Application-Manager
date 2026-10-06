@@ -55,6 +55,12 @@ public class AppExtrasTest {
   static File write(File dir, String name, byte[] b) throws Exception { File f = new File(dir, name); Files.write(f.toPath(), b); return f; }
 
   public static void main(String[] args) throws Exception {
+    check("One UI 9.0", AppExtras.oneUi(90000).equals("9.0"));
+    check("One UI 6.1.1", AppExtras.oneUi(60101).equals("6.1.1"));
+    check("One UI 4.5", AppExtras.oneUi(40500).equals("4.5"));
+    check("One UI 8.0 / 7.0", AppExtras.oneUi(80000).equals("8.0") && AppExtras.oneUi(70000).equals("7.0"));
+    check("no One UI for 0, small and absurd numbers", AppExtras.oneUi(0).isEmpty() && AppExtras.oneUi(-5).isEmpty() && AppExtras.oneUi(999).isEmpty() && AppExtras.oneUi(5000000).isEmpty());
+
     // numbers to words
     check("OpenGL ES 0x00030002 is 3.2", AppExtras.glEs(0x00030002).equals("3.2"));
     check("OpenGL ES 0x00020000 is 2.0", AppExtras.glEs(0x00020000).equals("2.0"));

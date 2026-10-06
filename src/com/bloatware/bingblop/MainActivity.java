@@ -598,6 +598,33 @@ public class MainActivity extends Activity {
         });
     }
 
+    /**
+     * Samsung's One UI version as people write it ("9.0", "6.1.1"), or "" on a phone that is not a Samsung. It comes from ro.build.version.oneui
+     * (60101 = 6.1.1, 90000 = 9.0) and, on older One UI, from Build.VERSION.SEM_PLATFORM_INT (150000 = 6.0: take away 90000).
+     */
+    private String oneUiVersion() {
+        try {
+            if (!"samsung".equalsIgnoreCase(Build.MANUFACTURER) && !"samsung".equalsIgnoreCase(Build.BRAND)) return "";
+            int v = 0;
+            try {
+                Process p = Runtime.getRuntime().exec(new String[]{"getprop", "ro.build.version.oneui"});
+                BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                String line = r.readLine();
+                r.close();
+                if (line != null && line.trim().matches("\\d{4,7}")) v = Integer.parseInt(line.trim());
+            } catch (Throwable ignored) {}
+            if (v <= 0) {
+                try {
+                    int sem = Build.VERSION.class.getField("SEM_PLATFORM_INT").getInt(null);
+                    if (sem >= 100000) v = sem - 90000;
+                } catch (Throwable ignored) {}
+            }
+            return AppExtras.oneUi(v);
+        } catch (Throwable t) {
+            return "";
+        }
+    }
+
     /** Is this backend usable right now, without showing any prompt? */
     private boolean modeReadyQuiet(String mode) {
         if ("adb_tcp".equals(mode)) return isAdbTargetConnected(tcpTarget());
@@ -7837,6 +7864,7 @@ public class MainActivity extends Activity {
                 obj.put("release", Build.VERSION.RELEASE);
                 obj.put("materialYou", Build.VERSION.SDK_INT >= 31);
                 obj.put("buildChanged", buildChangedThisLaunch);
+                obj.put("oneUi", oneUiVersion());
                 return obj.toString();
             } catch (Exception e) {
                 return "{}";

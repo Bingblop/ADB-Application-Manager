@@ -80,6 +80,13 @@ public final class AppExtras {
         return sb.toString();
     }
 
+    /** One UI version number as people write it: 90000 -> "9.0", 60101 -> "6.1.1", 40500 -> "4.5"; "" for 0 or nonsense. */
+    public static String oneUi(int v) {
+        if (v < 10000 || v > 999999) return "";
+        int major = v / 10000, minor = (v / 100) % 100, patch = v % 100;
+        return major + "." + minor + (patch > 0 ? "." + patch : "");
+    }
+
     // ---- libraries named in a (decoded) manifest ----
 
     private static final Pattern LIB_TAG = Pattern.compile("<(uses-library|uses-static-library|uses-native-library)\\b([^>]*)>");

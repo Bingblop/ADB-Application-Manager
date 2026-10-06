@@ -137,7 +137,7 @@
             z-index: 100;
             background: var(--bg-base);
             border-bottom: 1px solid var(--border-glass);
-            padding: 12px 16px;
+            padding: 10px 14px 10px 12px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -196,13 +196,21 @@
             color: transparent;
         }
 
+        /* two lines right under the title: "SAMSUNG SM-S948U1" and "ANDROID 17 • ONE UI 9.0" */
         .brand-text p {
             font-size: 10px;
             color: var(--text-muted);
             font-weight: 700;
             letter-spacing: 0.5px;
             text-transform: uppercase;
+            margin-top: 2px;
+            line-height: 1.25;
         }
+
+        .brand-text p .bt-sub { display: block; white-space: nowrap; }
+
+        /* the gear and the mode badge share one height: whichever is taller (the badge when its words wrap) sets it for both */
+        .hdr-right { display: flex; align-items: stretch; gap: 8px; }
 
         .status-badge {
             display: flex;
@@ -226,11 +234,11 @@
         }
 
         #prefsHeaderBtn {
-            min-width: 44px;
-            height: 36px;
-            padding: 0 10px;
+            min-width: 46px;
+            min-height: 38px;
+            padding: 0 11px;
             justify-content: center;
-            font-size: 19px;
+            font-size: 22px;
             line-height: 1;
         }
 
@@ -1330,6 +1338,29 @@
         .help-q { position: absolute; top: 10px; right: 10px; width: 26px; height: 26px; padding: 0; border-radius: 50%; border: 1px solid var(--border-glass); background: rgba(var(--ov), 0.06);
             color: var(--accent); font-size: 13px; font-weight: 800; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; z-index: 2; }
         .help-q:active { transform: scale(0.92); }
+
+        /* The color picker popup: swatches or custom hue / saturation / brightness, and a hex box with a fixed # (capitals only) */
+        button.picker-bubble-btn { font: inherit; color: inherit; }
+        .cp-preview { height: 64px; border-radius: var(--radius-md); border: 1px solid var(--border-glass); margin: 4px 0 12px; display: flex; align-items: flex-end; justify-content: flex-end; padding: 8px 10px; font-family: monospace; font-weight: 800; font-size: 13px; }
+        .cp-tabs { display: flex; gap: 8px; margin: 0 0 12px; }
+        .cp-tab { flex: 1 1 0; text-align: center; padding: 8px 6px; border-radius: 999px; border: 1px solid var(--border-glass); font-size: 12px; font-weight: 800; color: var(--text-muted); cursor: pointer; background: transparent; font-family: inherit; }
+        .cp-tab.active { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
+        .cp-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 14px; }
+        .cp-sw { aspect-ratio: 1; border-radius: 50%; border: 2px solid var(--border-glass); cursor: pointer; padding: 0; }
+        .cp-sw.on { border-color: var(--text-main); box-shadow: 0 0 0 2px var(--accent); }
+        .cp-hexrow { display: flex; align-items: center; gap: 0; margin: 0 0 12px; border: 1px solid var(--border-glass); border-radius: var(--radius-md); background: var(--bg-surface); overflow: hidden; }
+        .cp-hexrow:focus-within { border-color: var(--accent); }
+        .cp-hash { padding: 0 2px 0 14px; font-family: monospace; font-weight: 900; font-size: 18px; color: var(--text-muted); user-select: none; }
+        .cp-hex { flex: 1; min-width: 0; background: transparent; border: 0; outline: none; color: var(--text-main); font-family: monospace; font-weight: 900; font-size: 18px; letter-spacing: 2px; padding: 11px 12px 11px 2px; text-transform: uppercase; }
+        .cp-hex::placeholder { color: var(--text-dim); opacity: 0.7; letter-spacing: 2px; }
+        .cp-hexnote { padding-right: 12px; font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+        .cp-hexrow.bad { border-color: #FF5252; }
+        .cp-hexrow.bad .cp-hexnote { color: #FF5252; }
+        .cp-slider { margin: 4px 0 14px; }
+        .cp-slider label { display: flex; justify-content: space-between; font-size: 11.5px; font-weight: 800; color: var(--text-muted); margin-bottom: 4px; }
+        .cp-slider input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 22px; border-radius: 11px; border: 1px solid var(--border-glass); outline: none; margin: 0; }
+        .cp-slider input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 26px; height: 26px; border-radius: 50%; background: #fff; border: 3px solid #333; box-shadow: 0 1px 4px rgba(0,0,0,.5); }
+        .cp-slider input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: #fff; border: 3px solid #333; }
 
         /* Settings > Trim Caches: the explanation under the button */
         .trim-explain { margin-top: 12px; font-size: 11.5px; line-height: 1.5; color: var(--text-muted); }
@@ -3305,10 +3336,10 @@
         <div class="brand-box">
             <div class="brand-text">
                 <h1 translate="no"><span class="bt-line"><span class="bt-w">Full</span> <span class="bt-c">ADB/Root</span> </span><span class="bt-line"><span class="bt-w">System</span> <span class="bt-c">Manager</span></span></h1>
-                <p id="deviceInfoSubtitle">Samsung One UI 9.0</p>
+                <p id="deviceInfoSubtitle"><span class="bt-sub" id="deviceInfoLine1">&nbsp;</span><span class="bt-sub" id="deviceInfoLine2">&nbsp;</span></p>
             </div>
         </div>
-        <div style="display:flex; align-items:center; gap:8px;">
+        <div class="hdr-right">
             <div class="status-badge" id="prefsHeaderBtn" role="button" tabindex="0" onclick="switchView('prefs')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();switchView('prefs');}" title="Settings" aria-label="Settings" style="cursor:pointer;">⚙️</div>
             <div class="status-badge" id="execModeBadge" onclick="openWorkingModesModal()" title="Working Modes & ADB Setup">
                 <div class="status-dot" id="execModeDot"></div>
@@ -4977,11 +5008,10 @@
                         <h4>Primary System Accent</h4>
                         <p>Buttons, active indicators, borders</p>
                     </div>
-                    <label class="picker-bubble-btn">
+                    <button type="button" class="picker-bubble-btn" onclick="openColorPicker('Accent', 'accent')" aria-haspopup="dialog">
                         <div class="bubble-circle" id="circAccent" style="background: #00E5FF;"></div>
                         <span class="bubble-hex" id="hexAccent">#00E5FF</span>
-                        <input type="color" value="#00E5FF" onchange="updateCustomColor('accent', this.value)">
-                    </label>
+                    </button>
                 </div>
 
                 <div class="color-row">
@@ -4989,11 +5019,10 @@
                         <h4>App Background</h4>
                         <p>True AMOLED Pitch Black (#000000) or Slate</p>
                     </div>
-                    <label class="picker-bubble-btn">
+                    <button type="button" class="picker-bubble-btn" onclick="openColorPicker('Bg', 'bg')" aria-haspopup="dialog">
                         <div class="bubble-circle" id="circBg" style="background: #080A0F;"></div>
                         <span class="bubble-hex" id="hexBg">#080A0F</span>
-                        <input type="color" value="#080A0F" onchange="updateCustomColor('bg', this.value)">
-                    </label>
+                    </button>
                 </div>
 
                 <div class="color-row">
@@ -5001,11 +5030,10 @@
                         <h4>Card Surface Color</h4>
                         <p>App cards and dialog containers</p>
                     </div>
-                    <label class="picker-bubble-btn">
+                    <button type="button" class="picker-bubble-btn" onclick="openColorPicker('Card', 'card')" aria-haspopup="dialog">
                         <div class="bubble-circle" id="circCard" style="background: #141A28;"></div>
                         <span class="bubble-hex" id="hexCard">#141A28</span>
-                        <input type="color" value="#141A28" onchange="updateCustomColor('card', this.value)">
-                    </label>
+                    </button>
                 </div>
 
                 <div class="color-row">
@@ -5013,11 +5041,10 @@
                         <h4>Running App Badge</h4>
                         <p>Active background process status indicator</p>
                     </div>
-                    <label class="picker-bubble-btn">
+                    <button type="button" class="picker-bubble-btn" onclick="openColorPicker('Running', 'running')" aria-haspopup="dialog">
                         <div class="bubble-circle" id="circRunning" style="background: #00E676;"></div>
                         <span class="bubble-hex" id="hexRunning">#00E676</span>
-                        <input type="color" value="#00E676" onchange="updateCustomColor('running', this.value)">
-                    </label>
+                    </button>
                 </div>
 
                 <div class="color-row">
@@ -5025,11 +5052,10 @@
                         <h4>Frozen App Badge</h4>
                         <p>Disabled or suspended packages</p>
                     </div>
-                    <label class="picker-bubble-btn">
+                    <button type="button" class="picker-bubble-btn" onclick="openColorPicker('Frozen', 'frozen')" aria-haspopup="dialog">
                         <div class="bubble-circle" id="circFrozen" style="background: #00E5FF;"></div>
                         <span class="bubble-hex" id="hexFrozen">#00E5FF</span>
-                        <input type="color" value="#00E5FF" onchange="updateCustomColor('frozen', this.value)">
-                    </label>
+                    </button>
                 </div>
 
                 <div class="color-row">
@@ -5037,11 +5063,10 @@
                         <h4>System App Badge</h4>
                         <p>Core framework & OEM system packages</p>
                     </div>
-                    <label class="picker-bubble-btn">
+                    <button type="button" class="picker-bubble-btn" onclick="openColorPicker('System', 'system')" aria-haspopup="dialog">
                         <div class="bubble-circle" id="circSystem" style="background: #7C4DFF;"></div>
                         <span class="bubble-hex" id="hexSystem">#7C4DFF</span>
-                        <input type="color" value="#7C4DFF" onchange="updateCustomColor('system', this.value)">
-                    </label>
+                    </button>
                 </div>
 
                 <div class="color-row">
@@ -5049,11 +5074,10 @@
                         <h4>Bloatware Badge</h4>
                         <p>Partitioned uninstalled system apps</p>
                     </div>
-                    <label class="picker-bubble-btn">
+                    <button type="button" class="picker-bubble-btn" onclick="openColorPicker('Bloat', 'bloat')" aria-haspopup="dialog">
                         <div class="bubble-circle" id="circBloat" style="background: #FF5252;"></div>
                         <span class="bubble-hex" id="hexBloat">#FF5252</span>
-                        <input type="color" value="#FF5252" onchange="updateCustomColor('bloat', this.value)">
-                    </label>
+                    </button>
                 </div>
             </div>
 
@@ -6013,6 +6037,38 @@ Type any command below (e.g. pm list packages -d)
             </div>
             <div class="switch-sub" id="alsSummary" style="margin:6px 0;"></div>
             <div id="alsList"></div>
+        </div>
+    </div>
+
+    <!-- Color picker popup (Settings > Granular Color Pickers) -->
+    <div class="modal-overlay" id="colorPickModal" onclick="if(event.target===this) closeColorPicker()">
+        <div class="modal-sheet" role="dialog" aria-modal="true" aria-labelledby="cpTitle">
+            <div class="sheet-header">
+                <div class="sheet-title">
+                    <h3 id="cpTitle">Color</h3>
+                    <p id="cpSub"></p>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="closeColorPicker()" role="button" aria-label="Close">&#10005;</div>
+            </div>
+            <div class="cp-preview" id="cpPreview"><span id="cpPreviewHex" translate="no"></span></div>
+            <div class="cp-tabs" role="tablist">
+                <button type="button" class="cp-tab active" id="cpTabSwatches" role="tab" onclick="cpTab('swatches')">Colors</button>
+                <button type="button" class="cp-tab" id="cpTabCustom" role="tab" onclick="cpTab('custom')">Custom</button>
+            </div>
+            <div id="cpPaneSwatches">
+                <div class="cp-hexrow" id="cpHexRow1"><span class="cp-hash" translate="no">#</span><input class="cp-hex" id="cpHex1" translate="no" inputmode="text" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="00DFFF" aria-label="Hex color, six characters" oninput="cpHexInput(this)"><span class="cp-hexnote" id="cpHexNote1"></span></div>
+                <div class="cp-grid" id="cpGrid"></div>
+            </div>
+            <div id="cpPaneCustom" style="display:none;">
+                <div class="cp-hexrow" id="cpHexRow2"><span class="cp-hash" translate="no">#</span><input class="cp-hex" id="cpHex2" translate="no" inputmode="text" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="00DFFF" aria-label="Hex color, six characters" oninput="cpHexInput(this)"><span class="cp-hexnote" id="cpHexNote2"></span></div>
+                <div class="cp-slider"><label><span>Hue</span><span id="cpHueV" translate="no"></span></label><input type="range" id="cpHue" min="0" max="360" step="1" aria-label="Hue" oninput="cpSlide()"></div>
+                <div class="cp-slider"><label><span>Saturation</span><span id="cpSatV" translate="no"></span></label><input type="range" id="cpSat" min="0" max="100" step="1" aria-label="Saturation" oninput="cpSlide()"></div>
+                <div class="cp-slider"><label><span>Brightness</span><span id="cpValV" translate="no"></span></label><input type="range" id="cpVal" min="0" max="100" step="1" aria-label="Brightness" oninput="cpSlide()"></div>
+            </div>
+            <div class="mode-btn-row" style="margin-top:6px;">
+                <button class="mode-action-btn" type="button" onclick="closeColorPicker()">Cancel</button>
+                <button class="mode-action-btn primary" type="button" id="cpApply" onclick="applyColorPicker()">Apply</button>
+            </div>
         </div>
     </div>
 
@@ -10868,6 +10924,46 @@ Type any command below (e.g. pm list packages -d)
             selectModeUI('unprivileged', () => closeWorkingModesModal());
         }
 
+        // The header's two small lines under the title: "SAMSUNG SM-S948U1" and "ANDROID 17 • ONE UI 9.0" (capitals come from the style; the One UI part is for Samsung phones)
+        function setHeaderSubtitle(info) {
+            const l1 = document.getElementById('deviceInfoLine1'), l2 = document.getElementById('deviceInfoLine2');
+            if (!l1 || !l2) return;
+            l1.textContent = [info.manufacturer, info.device].filter(Boolean).join(' ');
+            l2.textContent = (info.release ? 'Android ' + info.release : '') + (info.oneUi ? ' \u2022 One UI ' + info.oneUi : '');
+            fitHeaderTitle();
+        }
+
+        // The title is as big as the room next to the gear and the mode badge allows: two lines, flush left, the widest line (or subtitle line) just fitting
+        function fitHeaderTitle() {
+            const box = document.querySelector('.brand-box'), h1 = document.querySelector('.brand-text h1'), p = document.getElementById('deviceInfoSubtitle');
+            if (!box || !h1) return;
+            const room = box.clientWidth - 12;
+            if (room <= 40) return;
+            h1.style.fontSize = '10px';
+            const lines = Array.from(h1.querySelectorAll('.bt-line'));
+            lines.forEach(l => { l.style.display = 'inline-block'; });
+            const w10 = Math.max.apply(null, lines.map(l => l.getBoundingClientRect().width));
+            lines.forEach(l => { l.style.display = ''; });
+            let size = w10 > 0 ? 10 * room / w10 : 18;
+            size = Math.max(13, Math.min(size, 26));
+            h1.style.fontSize = size.toFixed(1) + 'px';
+            if (p) {
+                // the subtitle may not be wider than the title: shrink it a little when a long model name would push past the room
+                p.style.fontSize = '10px';
+                const subs = Array.from(p.querySelectorAll('.bt-sub'));
+                subs.forEach(l => { l.style.display = 'inline-block'; });
+                const sw = Math.max.apply(null, subs.map(l => l.getBoundingClientRect().width));
+                subs.forEach(l => { l.style.display = ''; });
+                if (sw > room) p.style.fontSize = Math.max(7.5, 10 * room / sw).toFixed(1) + 'px';
+            }
+        }
+        (function () {
+            const run = () => fitHeaderTitle();
+            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run); else run();
+            if (window.ResizeObserver) { const ro = new ResizeObserver(run); const b = document.querySelector('.brand-box'); const r = document.querySelector('.hdr-right'); if (b) ro.observe(b); if (r) ro.observe(r); }
+            window.addEventListener('resize', run);
+        })();
+
         // Initialize App
         function initApp() {
             checkAllWorkingModes(false);
@@ -10882,9 +10978,7 @@ Type any command below (e.g. pm list packages -d)
                     const sysInfoStr = window.AndroidBridge.getSystemInfo();
                     const info = JSON.parse(sysInfoStr);
                     buildChangedThisLaunch = !!info.buildChanged;
-                    if (info.device) {
-                        document.getElementById('deviceInfoSubtitle').innerText = `${info.manufacturer} ${info.device} • Android ${info.release}`;
-                    }
+                    if (info.device) setHeaderSubtitle(info);
                 } catch(e) {}
 
                 // Load packages immediately
@@ -19489,8 +19583,6 @@ Type any command below (e.g. pm list packages -d)
                 const hex = document.getElementById('hex' + id);
                 if (circ) circ.style.background = t[key];
                 if (hex) hex.innerText = String(t[key]).toUpperCase();
-                const input = circ ? circ.parentElement.querySelector('input[type="color"]') : null;
-                if (input) input.value = String(t[key]).toLowerCase();
             });
 
             markActivePreset(themeState.preset);
@@ -19673,6 +19765,91 @@ Type any command below (e.g. pm list packages -d)
             themeState.overrides[mode] = Object.assign({}, themeState.overrides[mode], { [key]: val });
             applyTheme();
             haptic();
+        }
+
+        // ---------- The color picker popup: tap a color in Granular Color Pickers ----------
+        // A grid of colors, or Custom (hue, saturation, brightness), and a hex box with the # already written: type 00DFFF (capitals only; a pasted #00dfff works too).
+        const CP_COLORS = ['#F44336', '#E91E63', '#9C27B0', '#673AB7', '#3F51B5', '#2196F3', '#03A9F4', '#00BCD4', '#009688', '#4CAF50', '#8BC34A', '#CDDC39',
+            '#FFEB3B', '#FFC107', '#FF9800', '#FF5722', '#795548', '#9E9E9E', '#607D8B', '#FFFFFF', '#000000', '#00E5FF', '#7C4DFF', '#00E676'];
+        const CP_NAMES = { accent: 'Primary System Accent', bg: 'App Background', card: 'Card Surface Color', running: 'Running App Badge', frozen: 'Frozen App Badge', system: 'System App Badge', bloat: 'Bloatware Badge' };
+        let cp = { key: '', hex: '000000', from: '000000', h: 0, s: 0, v: 0 };
+
+        function cpRgbToHsv(hex) {
+            const [r, g, b] = hexToRgb('#' + hex).map(x => x / 255);
+            const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+            let h = 0;
+            if (d) { h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4; h *= 60; if (h < 0) h += 360; }
+            return { h: Math.round(h), s: Math.round(max ? d / max * 100 : 0), v: Math.round(max * 100) };
+        }
+        function cpHsvToHex(h, s, v) {
+            s /= 100; v /= 100;
+            const c = v * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = v - c;
+            const [r, g, b] = h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
+            return rgbToHex([(r + m) * 255, (g + m) * 255, (b + m) * 255]).slice(1);
+        }
+        // only 0-9 and A-F, capitals, at most six: what is typed or pasted is cleaned as it comes
+        function cpClean(v) { return String(v || '').toUpperCase().replace(/[^0-9A-F]/g, '').slice(0, 6); }
+
+        function openColorPicker(id, key) {
+            const cur = (document.getElementById('hex' + id) || {}).innerText || '#000000';
+            cp = { key, hex: cpClean(cur), from: cpClean(cur), h: 0, s: 0, v: 0 };
+            Object.assign(cp, cpRgbToHsv(cp.hex));
+            document.getElementById('cpTitle').innerText = CP_NAMES[key] || 'Color';
+            document.getElementById('cpSub').innerText = 'Current color #' + cp.from + ' • applies to ' + (effectiveMode() === 'light' ? 'light' : 'dark') + ' mode';
+            cpTab('swatches');
+            cpRender(true);
+            document.getElementById('colorPickModal').classList.add('show');
+            haptic();
+        }
+        function closeColorPicker() { document.getElementById('colorPickModal').classList.remove('show'); haptic(); }
+        function cpTab(which) {
+            document.getElementById('cpPaneSwatches').style.display = which === 'swatches' ? '' : 'none';
+            document.getElementById('cpPaneCustom').style.display = which === 'custom' ? '' : 'none';
+            document.getElementById('cpTabSwatches').classList.toggle('active', which === 'swatches');
+            document.getElementById('cpTabCustom').classList.toggle('active', which === 'custom');
+        }
+        // Draws the popup from cp.hex; `sliders` false while a slider is being dragged (they are the thing being changed)
+        function cpRender(sliders, typing) {
+            const full = cp.hex.length === 6;
+            const col = '#' + (full ? cp.hex : cp.from);
+            const pv = document.getElementById('cpPreview');
+            pv.style.background = col;
+            const hx = document.getElementById('cpPreviewHex');
+            hx.innerText = col;
+            hx.style.color = contrastRatio(col, '#000000') >= contrastRatio(col, '#FFFFFF') ? '#000000' : '#FFFFFF';
+            ['1', '2'].forEach(n => {
+                const inp = document.getElementById('cpHex' + n);
+                if (inp !== typing) inp.value = cp.hex;                         // the box being typed in is left alone, the other follows
+                document.getElementById('cpHexRow' + n).classList.toggle('bad', !full && cp.hex.length > 0);
+                document.getElementById('cpHexNote' + n).innerText = full ? '' : (cp.hex.length ? cp.hex.length + ' of 6' : '');
+            });
+            document.getElementById('cpApply').disabled = !full;
+            document.getElementById('cpGrid').innerHTML = CP_COLORS.map(c => '<button type="button" class="cp-sw' + (full && c.slice(1) === cp.hex ? ' on' : '') + '" style="background:' + c + '" aria-label="' + c + '" onclick="cpPick(\'' + c.slice(1) + '\')"></button>').join('');
+            if (sliders) {
+                document.getElementById('cpHue').value = cp.h; document.getElementById('cpSat').value = cp.s; document.getElementById('cpVal').value = cp.v;
+            }
+            document.getElementById('cpHueV').innerText = cp.h + '°'; document.getElementById('cpSatV').innerText = cp.s + '%'; document.getElementById('cpValV').innerText = cp.v + '%';
+            document.getElementById('cpHue').style.background = 'linear-gradient(90deg,#F00,#FF0,#0F0,#0FF,#00F,#F0F,#F00)';
+            document.getElementById('cpSat').style.background = 'linear-gradient(90deg,#' + cpHsvToHex(cp.h, 0, cp.v) + ',#' + cpHsvToHex(cp.h, 100, cp.v) + ')';
+            document.getElementById('cpVal').style.background = 'linear-gradient(90deg,#000,#' + cpHsvToHex(cp.h, cp.s, 100) + ')';
+        }
+        function cpPick(hex) { cp.hex = hex; Object.assign(cp, cpRgbToHsv(hex)); cpRender(true); haptic(); }
+        function cpHexInput(el) {
+            const v = cpClean(el.value);
+            if (el.value !== v) el.value = v;                       // capitals only, nothing but hex digits
+            cp.hex = v;
+            if (v.length === 6) Object.assign(cp, cpRgbToHsv(v));
+            cpRender(v.length === 6, el);
+        }
+        function cpSlide() {
+            cp.h = +document.getElementById('cpHue').value; cp.s = +document.getElementById('cpSat').value; cp.v = +document.getElementById('cpVal').value;
+            cp.hex = cpHsvToHex(cp.h, cp.s, cp.v);
+            cpRender(false);
+        }
+        function applyColorPicker() {
+            if (cp.hex.length !== 6) { showToast('Enter six characters, like 00DFFF'); return; }
+            closeColorPicker();
+            if (cp.hex !== cp.from) updateCustomColor(cp.key, '#' + cp.hex.toLowerCase());
         }
 
         function resetColorTweaks() {
