@@ -445,7 +445,13 @@
   <p><b>What you will see:</b> the colours change at once and a message says <i>Applied Theme: ...</i>. Choosing a palette also clears every colour tweak you made with the colour pickers below. On a phone older than Android 12, choosing <b>Material You</b> shows <i>Material You needs Android 12+. Using Material 3 baseline.</i></p>
 
   <h4>Granular Color Pickers</h4>
-  <p>Under the palettes, a card for fine-tuning. <i>Tweaks apply to the current mode (light or dark)</i>: a colour you change in dark mode does not change light mode, and the other way round. Each row has a coloured circle and its code; tap it to open a colour chooser.</p>
+  <p>Under the palettes, a card for fine-tuning. <i>Tweaks apply to the current mode (light or dark)</i>: a colour you change in dark mode does not change light mode, and the other way round. Each row has a coloured circle and its code; tap it to open the <b>colour popup</b>:</p>
+  <ul>
+    <li><b>The hex box.</b> A <b>#</b> is already written in front of it, so you only type the six characters, for example <code>00DFFF</code>. Only the digits 0 to 9 and the letters A to F are accepted, and they always appear in capitals, even if you type small letters. You can also paste a code with or without a #. The preview above updates as you type. Under six characters the box turns red and says how many you have; <b>Apply</b> stays off until there are six.</li>
+    <li><b>Colors.</b> A grid of ready-made colours: tap one to put its code in the hex box.</li>
+    <li><b>Custom.</b> Three sliders, <b>Hue</b>, <b>Saturation</b> and <b>Brightness</b>, with the same hex box above them. Move a slider and the code changes; type a code and the sliders move. The two views share the colour, so you can switch between them.</li>
+    <li><b>Cancel</b> closes the popup and changes nothing. <b>Apply</b> sets the colour.</li>
+  </ul>
   <table class="hg-table">
     <thead><tr><th>Picker</th><th>What it colours</th><th>Notes</th></tr></thead>
     <tbody>
@@ -725,7 +731,7 @@
   </ul>
 
   <h4>Your own colours</h4>
-  <p>The <b>Granular Color Pickers</b> change single colours of the palette that is in use. The card says <i>Fine-tune the current palette. Tweaks apply to the current mode (light or dark).</i></p>
+  <p>The <b>Granular Color Pickers</b> change single colours of the palette that is in use. The card says <i>Fine-tune the current palette. Tweaks apply to the current mode (light or dark).</i> Tap a picker to open the colour popup (a grid of colours, or Custom with hue, saturation and brightness sliders, and a hex box that starts with a # and takes capitals only; see <a href="#themes">Themes and colours</a>).</p>
   <table class="hg-table">
     <thead><tr><th>Picker</th><th>What it colours</th></tr></thead>
     <tbody>

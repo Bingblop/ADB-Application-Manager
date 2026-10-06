@@ -52,7 +52,6 @@
       <tr><td><b>Suspended</b></td><td>...are paused with Suspend.</td></tr>
       <tr><td><b>Patched</b></td><td>...look patched or repackaged, for example by ReVanced, or Xposed/LSPosed modules. They carry a teal tag.</td></tr>
       <tr><td><b>Uninstalled</b></td><td>...are system apps removed for you (the UNINSTALLED badge).</td></tr>
-      <tr><td><b>Versions</b></td><td>This one is not a filter. It shows each app's version number in the row's line of badges, and an arrow to the newer version when the <a href="#tab-updates">App Updater</a> has found one.</td></tr>
     </tbody>
   </table>
   <p>Filters stack: an app has to match every filter that is on. Running and 3rd Party together show your own apps that are running now. System and Frozen show the system apps you have frozen. 3rd Party, System and Frozen leave out UNINSTALLED apps unless Uninstalled is on as well.</p>
@@ -70,23 +69,23 @@
   </table>
   <p>One of the first two always stays on: switching off the last one turns the other back on. A <b>regex</b> (regular expression) is a small pattern language that lets one search match many things. Plain words work as you would expect, and capital letters do not matter, so <code>cam</code> finds Camera. Special characters match more: <code>mail|chat</code> finds apps with either word, and <code>^com\.samsung</code> finds packages that start with <code>com.samsung</code>. You can ignore all of this and just type words. If a pattern is not valid, or could take too long, the app searches it as plain words and shows a note under the box. With regex off, <code>cam</code> finds nothing but <code>Camera</code> does. Your choices are remembered.</p>
 
-  <h4>Sort, Export, Share CSV, Profiles, Backups</h4>
-  <p>The row above the pills holds one menu and four buttons.</p>
+  <h4>Sort, Share CSV, Profiles, Backups, Action Button</h4>
+  <p>The row above the pills holds two menus and three buttons. It is wider than the screen on a small phone: swipe it sideways to reach the end.</p>
   <table class="hg-table">
     <thead><tr><th>Control</th><th>What it does</th></tr></thead>
     <tbody>
       <tr><td><b>Sort</b> (menu)</td><td>Orders the list: <b>Name (A-Z)</b>, <b>Last updated</b>, <b>Install date</b>, <b>Size</b> or <b>Updates first</b> (apps the App Updater has a newer version for come first). For Last updated, Install date and Size, each row also shows the value it is sorted by, such as "updated Mar 3, 2026". Size counts the app, its data and its cache once usage access is on, and only the app's file before that. Your choice is remembered.</td></tr>
-      <tr><td><b>Export</b></td><td>Saves a CSV file (a plain table that opens in any spreadsheet) of every app, not only the ones the filters show, named like <code>app_list_2026-10-06.csv</code>, in <code>Download/ADB App Manager</code>. A message names the saved file. On Android 8 and 9 it goes to the app's own storage instead, which is removed if you uninstall the app.</td></tr>
-      <tr><td><b>Share CSV</b></td><td>Builds the same file and opens Android's share sheet, so you can send it on.</td></tr>
+      <tr><td><b>Share CSV</b></td><td>Builds a CSV file (a plain table that opens in any spreadsheet) of every app, not only the ones the filters show, named like <code>app_list_2026-10-06.csv</code>, and opens Android's share sheet, so you can send it on or save it to a folder.</td></tr>
       <tr><td><b>Profiles</b></td><td>Opens the profile box. See <a href="#apps-profiles">Profiles and drift watch</a>.</td></tr>
       <tr><td><b>Backups</b></td><td>Opens the backup box. See <a href="#apps-backup">Backups and restore</a>.</td></tr>
+      <tr><td><b>Action Button</b> (menu, at the end of the row)</td><td>Chooses what the extra button on every row does: <b>App Settings</b>, <b>Force Stop</b>, <b>App Launcher</b>, <b>Enable / Disable</b>, <b>Install / Uninstall</b>, <b>Unsuspend / Suspend</b>, <b>Permission Manager</b>, <b>Activity Launcher</b>, or <b>None (no button)</b>. It is the same setting as the <b>Action Button</b> card in Settings: change it in either place and the other follows. The rows change at once, and a message names the choice.</td></tr>
     </tbody>
   </table>
   <p>The CSV columns are Name, Package, Version, Installed, Last updated, Type (system or user), State (enabled, disabled, suspended or uninstalled), APK size (bytes) and Update available.</p>
   <p>The list is drawn 250 rows at a time. More load as you scroll, or when you tap the <b>Show (number) more</b> button at the bottom.</p>
 
   <h4>What one row shows</h4>
-  <p>From left to right: the app's icon, its name, its package name in grey and a line of badges (plus the version when Versions is on, or the date or size you sort by), then the Action Button, the three-dot button and a checkbox. A suspended app has a greyed icon and a faded name.</p>
+  <p>From left to right: the app's icon, its name, its package name in grey and a line of badges (plus the date or size you sort by), then the Action Button, the three-dot button and a checkbox. A suspended app has a greyed icon and a faded name.</p>
   <table class="hg-table">
     <thead><tr><th>Badge</th><th>Means</th></tr></thead>
     <tbody>
@@ -96,6 +95,7 @@
       <tr><td>UNINSTALLED</td><td>A system app removed for you. It can be brought back with Reinstall. An uninstalled app never also shows FROZEN.</td></tr>
       <tr><td>SYSTEM</td><td>The app came with the phone.</td></tr>
       <tr><td>USER</td><td>You or a store installed it. This is what the filters call 3rd Party.</td></tr>
+      <tr><td>UAD-NG and a level (RECOMMENDED, ADVANCED, EXPERT or UNSAFE)</td><td>The UAD-NG community list knows this app and rates how safe it is to remove (see <a href="#tab-debloater">UAD-NG Debloater</a>). Tap it for the full description, exactly as in the app menu. It shows only after the list has been downloaded once, and only for apps the list contains.</td></tr>
       <tr><td>Teal tag (ReVanced, Morphe, LSPatch, NPatch, Xposed...)</td><td>The app looks patched or repackaged by that tool (the Patched filter finds them). The app menu checks deeper.</td></tr>
     </tbody>
   </table>

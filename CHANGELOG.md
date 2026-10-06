@@ -55,6 +55,15 @@
 - **Root counts as ready only when it was granted.** With Root chosen, the app asks su for `id` and needs uid=0; an su file that the
   root manager refused now shows DENIED and "not ready" (it showed ready). Nothing asks for root unless Root is the chosen mode.
 - **A small "?" on the first card of most tabs** opens the Help Guide at that tab's topic.
+- **The header**: the title is as large as the room next to the buttons allows, flush left on two lines, with two small lines of
+  capitals under it ("SAMSUNG SM-S948U1" and "ANDROID 17 • ONE UI 9.0", the One UI version for Samsung phones). The settings gear
+  is a little bigger and the same height as the working-mode badge.
+- **The color pickers** (Settings, Granular Color Pickers) open a popup: a grid of colors, or Custom (hue, saturation, brightness),
+  and a hex box with the # already in front of it that takes capitals only (type 00DFFF; a pasted #00dfff works too). The box is
+  in both views and they follow each other; Apply needs six characters.
+- **Application Manager tab**: the Export button is gone (Share CSV stays) and the button row ends with an Action Button menu, the
+  same setting as in Settings (they follow each other). The Versions pill and the versions in the rows are gone. A row shows the
+  UAD-NG level of its package when the list has it; tapping it opens the same description box as the app menu's chip.
 - **Fixes**: the Coding Agents status now also reports the keys of Perplexity, Grok, Muse and Deepseek; the manifest declares
   REQUEST_INSTALL_PACKAGES, which an install without a working mode (and the app's own update without one) needs.
 
