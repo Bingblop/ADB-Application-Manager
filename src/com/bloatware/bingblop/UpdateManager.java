@@ -471,6 +471,10 @@ public final class UpdateManager {
 
     /** {"version":"3.9","tag":"v3.9","url":"...apk","page":"...","notes":"..."} for the latest release */
     public static JSONObject githubLatest(String repo) throws Exception {
+        return githubLatest(repo, null);
+    }
+
+    public static JSONObject githubLatest(String repo, String[] abis) throws Exception {
         String json = new String(httpGet("https://api.github.com/repos/" + repo + "/releases/latest",
                 "application/vnd.github+json", 2 * 1024 * 1024), "UTF-8");
         JSONObject rel = new JSONObject(json);
@@ -484,13 +488,10 @@ public final class UpdateManager {
         JSONArray assets = rel.optJSONArray("assets");
         String apk = "";
         if (assets != null) {
-            for (int i = 0; i < assets.length(); i++) {
-                JSONObject a = assets.getJSONObject(i);
-                if (a.optString("name", "").toLowerCase().endsWith(".apk")) {
-                    apk = a.optString("browser_download_url", "");
-                    break;
-                }
-            }
+            java.util.List<String> names = new java.util.ArrayList<String>();
+            for (int i = 0; i < assets.length(); i++) names.add(assets.getJSONObject(i).optString("name", ""));
+            int pick = AbiPick.pickApk(names, abis);
+            if (pick >= 0) apk = assets.getJSONObject(pick).optString("browser_download_url", "");
         }
         o.put("url", apk);
         return o;

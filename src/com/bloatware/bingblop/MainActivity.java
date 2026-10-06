@@ -396,12 +396,15 @@ public class MainActivity extends Activity {
 
             // 2. ADB Native Library setup
             // Prefer extracted native library in nativeLibraryDir (standard for Android APKs)
+            // (on a 32-bit phone the adb is a dynamic build: its libraries are unpacked first and found through LD_LIBRARY_PATH)
+            AdbRuntime.prepare(this);
             File nativeAdb = new File(getApplicationInfo().nativeLibraryDir, "libadb.so");
             if (nativeAdb.exists() && nativeAdb.canExecute()) {
                 adbBinFile = nativeAdb;
             } else {
-                adbBinFile = new File(filesDir, "libadb.so");
-                extractAsset("libadb.so", adbBinFile);
+                String fallback = AdbRuntime.assetName(Build.SUPPORTED_ABIS);
+                adbBinFile = new File(filesDir, fallback);
+                extractAsset(fallback, adbBinFile);
                 adbBinFile.setExecutable(true, false);
                 adbBinFile.setReadable(true, false);
             }
@@ -660,6 +663,7 @@ public class MainActivity extends Activity {
             }
         }
         env.put("TMPDIR", getCacheDir().getAbsolutePath());
+        AdbRuntime.applyEnv(this, env);
         pb.redirectErrorStream(true);
         return pb;
     }
@@ -1883,7 +1887,7 @@ public class MainActivity extends Activity {
 
                     // 1. This app, from GitHub Releases
                     try {
-                        JSONObject rel = UpdateManager.githubLatest(UpdateManager.SELF_REPO);
+                        JSONObject rel = UpdateManager.githubLatest(UpdateManager.SELF_REPO, Build.SUPPORTED_ABIS);
                         String installed = currentVersionName();
                         if (UpdateManager.compareVersions(rel.optString("version"), installed) > 0) {
                             JSONObject o = new JSONObject();
@@ -2078,7 +2082,7 @@ public class MainActivity extends Activity {
                 String installed = currentVersionName();
                 try {
                     o.put("installedVersion", installed);
-                    JSONObject rel = UpdateManager.githubLatest(UpdateManager.SELF_REPO);
+                    JSONObject rel = UpdateManager.githubLatest(UpdateManager.SELF_REPO, Build.SUPPORTED_ABIS);
                     String latest = rel.optString("version");
                     o.put("latestVersion", latest);
                     o.put("page", rel.optString("page"));
@@ -2116,7 +2120,7 @@ public class MainActivity extends Activity {
                 try {
                     apk.getParentFile().mkdirs();
                     selfUpdateProgress("downloading", 0, "Getting the latest release...");
-                    JSONObject rel = UpdateManager.githubLatest(UpdateManager.SELF_REPO);
+                    JSONObject rel = UpdateManager.githubLatest(UpdateManager.SELF_REPO, Build.SUPPORTED_ABIS);
                     String url = rel.optString("url");
                     if (url == null || url.isEmpty()) throw new IllegalStateException("the latest release has no APK to download");
                     UpdateManager.download(url, apk, new UpdateManager.Progress() {
@@ -4843,6 +4847,56 @@ public class MainActivity extends Activity {
 
     private static final int REQ_PICK_FONT = 4204;
     private static final int REQ_PICK_TEXT = 4290;       // a small text file for the page (presets and saved commands)
+    // ---- Connected Devices: another device (a watch, a phone, a TV) driven through the app's own adb server ----
+    private static final int REQ_PICK_CD = 4291;         // package files to send to a connected device
+    private static final int REQ_BT_CONNECT = 9203;
+    private final ExecutorService cdExecutor = Executors.newFixedThreadPool(3);
+    private final java.util.concurrent.ConcurrentHashMap<String, Process> cdProcs = new java.util.concurrent.ConcurrentHashMap<String, Process>();
+    private final java.util.Set<String> cdCancelled = java.util.Collections.synchronizedSet(new HashSet<String>());
+    private volatile String cdPickTag = "";
+
+    /** Runs the app's adb with these arguments; the process is kept under the tag so Stop can end it. Answer: what it printed (stdout and stderr). */
+    private String cdExec(String tag, List<String> args, int timeoutMs) {
+        if (tag != null && cdCancelled.contains(tag)) return "Error: stopped";
+        try {
+            Process p = buildAdbProcess(args.toArray(new String[0])).start();
+            if (tag != null && !tag.isEmpty()) cdProcs.put(tag, p);
+            try {
+                return readProcessWithTimeout(p, timeoutMs);
+            } finally {
+                if (tag != null) cdProcs.remove(tag);
+            }
+        } catch (Exception e) {
+            return "Error: " + e.getMessage();
+        }
+    }
+
+    private static String cdErrorJson(String tag, String out) {
+        try {
+            return new JSONObject().put("tag", tag).put("out", out).toString();
+        } catch (Exception e) {
+            return "{}";
+        }
+    }
+
+    private static String cdSafeName(String name) {
+        String n = name == null ? "file" : name.replaceAll("[\\\\/:*?\"<>|\\p{Cntrl}]", "_").trim();
+        return n.isEmpty() ? "file" : (n.length() > 120 ? n.substring(n.length() - 120) : n);
+    }
+
+    private String cdDisplayName(Uri uri) {
+        android.database.Cursor c = null;
+        try {
+            c = getContentResolver().query(uri, new String[]{android.provider.OpenableColumns.DISPLAY_NAME}, null, null, null);
+            if (c != null && c.moveToFirst() && !c.isNull(0)) return c.getString(0);
+        } catch (Exception ignored) {
+        } finally {
+            if (c != null) c.close();
+        }
+        String last = uri.getLastPathSegment();
+        return last == null ? "file" : last.substring(last.lastIndexOf('/') + 1);
+    }
+
     private volatile String pickTextTag = "";
     private volatile long fontScanProgressAt = 0;
     // numbers the searches, like the one for packages: an older search's progress and answer are dropped
@@ -5862,6 +5916,60 @@ public class MainActivity extends Activity {
             final Uri picked = (resultCode == RESULT_OK && data != null) ? data.getData() : null;
             if (picked == null) return;
             notifyJs("window.onInstallFilePicked && window.onInstallFilePicked(" + JSONObject.quote(picked.toString()) + ")");
+            return;
+        }
+        if (requestCode == REQ_PICK_CD) {
+            final String tag = cdPickTag;
+            final List<Uri> uris = new ArrayList<Uri>();
+            if (resultCode == RESULT_OK && data != null) {
+                if (data.getClipData() != null) {
+                    for (int i = 0; i < data.getClipData().getItemCount(); i++) uris.add(data.getClipData().getItemAt(i).getUri());
+                } else if (data.getData() != null) {
+                    uris.add(data.getData());
+                }
+            }
+            if (uris.isEmpty()) { notifyJs("window.onCdPicked && window.onCdPicked({\"tag\":" + JSONObject.quote(tag) + ",\"files\":[]})"); return; }
+            cdExecutor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject res = new JSONObject();
+                    JSONArray files = new JSONArray();
+                    try {
+                        res.put("tag", tag);
+                        File root = new File(getCacheDir(), "cd_pick");
+                        root.mkdirs();
+                        long old = System.currentTimeMillis() - 60 * 60 * 1000L;
+                        File[] dirs = root.listFiles();
+                        if (dirs != null) for (File d : dirs) if (d.lastModified() < old) { File[] fs = d.listFiles(); if (fs != null) for (File f : fs) f.delete(); d.delete(); }
+                        for (Uri u : uris) {
+                            try {
+                                String name = cdSafeName(cdDisplayName(u));
+                                File dir = new File(root, Long.toHexString(System.nanoTime()));
+                                dir.mkdirs();
+                                File out = new File(dir, name);
+                                InputStream in = getContentResolver().openInputStream(u);
+                                if (in == null) throw new IOException("could not open the file");
+                                java.io.OutputStream os = new java.io.FileOutputStream(out);
+                                try {
+                                    byte[] buf = new byte[65536];
+                                    int n;
+                                    while ((n = in.read(buf)) > 0) os.write(buf, 0, n);
+                                } finally {
+                                    os.close();
+                                    in.close();
+                                }
+                                files.put(new JSONObject().put("name", name).put("path", out.getAbsolutePath()).put("size", out.length()));
+                            } catch (Exception one) {
+                                files.put(new JSONObject().put("name", String.valueOf(u.getLastPathSegment())).put("error", String.valueOf(one.getMessage())));
+                            }
+                        }
+                        res.put("files", files);
+                    } catch (Exception e) {
+                        try { res.put("error", e.getMessage()); res.put("files", files); } catch (Exception ignored) {}
+                    }
+                    notifyJs("window.onCdPicked && window.onCdPicked(" + res.toString() + ")");
+                }
+            });
             return;
         }
         if (requestCode == REQ_PICK_TEXT) {
@@ -8586,6 +8694,252 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public String getUadInfo(String pkg) {
             return uadInfo(pkg);
+        }
+
+        // ---- Connected Devices ------------------------------------------------------------------------------------------------------------------
+
+        /**
+         * Runs `adb [-s serial] args...` for the Connected Devices tab (the serial may be empty for adb's own commands: devices, pair, connect, mdns).
+         * Answer: window.onCdResult({tag, out, ms}). Stop ends it early (cdCancel).
+         */
+        @JavascriptInterface
+        public void cdAdb(final String tag, final String serial, final String argsJson, final int timeoutMs) {
+            final String t = tag == null ? "" : tag;
+            JSONObject early = null;
+            final List<String> args = new ArrayList<String>();
+            try {
+                JSONArray a = new JSONArray(argsJson);
+                if (a.length() == 0 || a.length() > 80) throw new IllegalArgumentException("no command");
+                if (serial != null && !serial.isEmpty()) {
+                    if (!DeviceLink.validSerial(serial)) throw new IllegalArgumentException("That device name is not valid.");
+                    args.add("-s");
+                    args.add(serial);
+                }
+                for (int i = 0; i < a.length(); i++) {
+                    String x = a.getString(i);
+                    if (x.indexOf('\u0000') >= 0) throw new IllegalArgumentException("bad argument");
+                    args.add(x);
+                }
+            } catch (Exception e) {
+                try { early = new JSONObject().put("tag", t).put("out", "Error: " + e.getMessage()).put("ms", 0); } catch (Exception ignored) {}
+            }
+            if (early != null) { notifyJs("window.onCdResult && window.onCdResult(" + early.toString() + ")"); return; }
+            final int limit = Math.max(1000, Math.min(timeoutMs <= 0 ? 15000 : timeoutMs, 3600000));
+            cdCancelled.remove(t);
+            try {
+                cdExecutor.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        long t0 = System.currentTimeMillis();
+                        String out = cdExec(t, args, limit);
+                        JSONObject res = new JSONObject();
+                        try { res.put("tag", t); res.put("out", out); res.put("ms", System.currentTimeMillis() - t0); } catch (Exception ignored) {}
+                        cdCancelled.remove(t);
+                        notifyJs("window.onCdResult && window.onCdResult(" + res.toString() + ")");
+                    }
+                });
+            } catch (java.util.concurrent.RejectedExecutionException closing) {
+                notifyJs("window.onCdResult && window.onCdResult(" + cdErrorJson(t, "Error: the app is closing") + ")");
+            }
+        }
+
+        /** Ends a Connected Devices command that is still running. */
+        @JavascriptInterface
+        public void cdCancel(String tag) {
+            if (tag == null) return;
+            cdCancelled.add(tag);
+            Process p = cdProcs.get(tag);
+            if (p != null) try { p.destroy(); } catch (Exception ignored) {}
+        }
+
+        /** The serials adb knows this phone by (its own ADB TCP and Wireless Debugging endpoints), so the tab leaves them out of the list of other devices. */
+        @JavascriptInterface
+        public String cdSelfSerials() {
+            JSONArray a = new JSONArray();
+            a.put(tcpTarget());
+            a.put(wirelessTarget());
+            a.put("localhost:" + adbTcpPort);
+            return a.toString();
+        }
+
+        /** Sends packages to a device: items [{name, paths:[...]} | {name, archive}], opts {reinstall, downgrade, grantAll, testOk}, profile {abis, dpi, lang}. Progress: window.onCdProgress; answer: window.onCdResult({tag, install:{ok, results}}). */
+        @JavascriptInterface
+        public void cdInstall(final String tag, final String serial, final String itemsJson, final String optsJson, final String profileJson) {
+            final String t = tag == null ? "" : tag;
+            if (!DeviceLink.validSerial(serial)) { notifyJs("window.onCdResult && window.onCdResult(" + cdErrorJson(t, "Error: choose a device first") + ")"); return; }
+            cdCancelled.remove(t);
+            try {
+                cdExecutor.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        JSONObject res = new JSONObject();
+                        try {
+                            res.put("tag", t);
+                            File stageRoot = new File(getCacheDir(), "cd_stage");
+                            stageRoot.mkdirs();
+                            JSONObject out = DeviceLink.install(stageRoot, new JSONArray(itemsJson), optsJson == null || optsJson.isEmpty() ? new JSONObject() : new JSONObject(optsJson),
+                                    profileJson == null || profileJson.isEmpty() ? new JSONObject() : new JSONObject(profileJson),
+                                    new DeviceLink.Adb() {
+                                        @Override
+                                        public String run(List<String> a, int timeoutMs) {
+                                            List<String> full = new ArrayList<String>();
+                                            full.add("-s");
+                                            full.add(serial);
+                                            full.addAll(a);
+                                            return cdExec(t, full, timeoutMs);
+                                        }
+                                    },
+                                    new DeviceLink.Progress() {
+                                        @Override
+                                        public void step(int index, int total, String name, String line) {
+                                            try {
+                                                notifyJs("window.onCdProgress && window.onCdProgress(" + new JSONObject().put("tag", t).put("index", index).put("total", total).put("name", name).put("line", line).toString() + ")");
+                                            } catch (Exception ignored) {}
+                                        }
+                                    });
+                            res.put("install", out);
+                        } catch (Exception e) {
+                            try { res.put("out", "Error: " + e.getMessage()); } catch (Exception ignored) {}
+                        }
+                        cdCancelled.remove(t);
+                        notifyJs("window.onCdResult && window.onCdResult(" + res.toString() + ")");
+                    }
+                });
+            } catch (java.util.concurrent.RejectedExecutionException closing) {
+                notifyJs("window.onCdResult && window.onCdResult(" + cdErrorJson(t, "Error: the app is closing") + ")");
+            }
+        }
+
+        /** Lets the user choose package files (APK, APKS, APKM, XAPK) to send. Answer: window.onCdPicked({tag, files:[{name, path, size} | {name, error}]}). */
+        @JavascriptInterface
+        public void cdPickPackages(final String tag) {
+            cdPickTag = tag == null ? "" : tag;
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                    i.addCategory(Intent.CATEGORY_OPENABLE);
+                    i.setType("*/*");
+                    i.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+                    startActivityForResult(i, REQ_PICK_CD);
+                }
+            });
+        }
+
+        /** The files of an app that is installed on this phone (the base and its splits), to send to another device: {ok, label, paths:[...]} or {ok:false, error}. */
+        @JavascriptInterface
+        public String cdPhoneApk(String pkg) {
+            JSONObject res = new JSONObject();
+            try {
+                ApplicationInfo ai = getPackageManager().getApplicationInfo(pkg, 0);
+                JSONArray paths = new JSONArray();
+                paths.put(ai.sourceDir);
+                if (ai.splitSourceDirs != null) for (String sp : ai.splitSourceDirs) paths.put(sp);
+                CharSequence label = getPackageManager().getApplicationLabel(ai);
+                res.put("ok", true);
+                res.put("pkg", pkg);
+                res.put("label", label == null ? pkg : label.toString());
+                res.put("paths", paths);
+            } catch (Exception e) {
+                try { res.put("ok", false); res.put("error", "This phone does not have " + pkg); } catch (Exception ignored) {}
+            }
+            return res.toString();
+        }
+
+        /** The Bluetooth devices this phone is paired with: {available, enabled, needsPermission, devices:[{name, address, kind}]}. Asks for the Bluetooth permission on Android 12+. */
+        @JavascriptInterface
+        public String cdBtDevices() {
+            JSONObject res = new JSONObject();
+            try {
+                android.bluetooth.BluetoothAdapter ad = android.bluetooth.BluetoothAdapter.getDefaultAdapter();
+                res.put("available", ad != null);
+                if (ad == null) return res.toString();
+                res.put("enabled", ad.isEnabled());
+                if (Build.VERSION.SDK_INT >= 31 && checkSelfPermission("android.permission.BLUETOOTH_CONNECT") != PackageManager.PERMISSION_GRANTED) {
+                    res.put("needsPermission", true);
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try { requestPermissions(new String[]{"android.permission.BLUETOOTH_CONNECT"}, REQ_BT_CONNECT); } catch (Exception ignored) {}
+                        }
+                    });
+                    return res.toString();
+                }
+                JSONArray devs = new JSONArray();
+                java.util.Set<android.bluetooth.BluetoothDevice> bonded = ad.getBondedDevices();
+                if (bonded != null) {
+                    for (android.bluetooth.BluetoothDevice d : bonded) {
+                        String kind = "other";
+                        try {
+                            int major = d.getBluetoothClass() == null ? 0 : d.getBluetoothClass().getMajorDeviceClass();
+                            if (major == android.bluetooth.BluetoothClass.Device.Major.WEARABLE) kind = "wearable";
+                            else if (major == android.bluetooth.BluetoothClass.Device.Major.PHONE) kind = "phone";
+                            else if (major == android.bluetooth.BluetoothClass.Device.Major.COMPUTER) kind = "computer";
+                            else if (major == android.bluetooth.BluetoothClass.Device.Major.AUDIO_VIDEO) kind = "audio";
+                        } catch (Exception ignored) {}
+                        devs.put(new JSONObject().put("name", d.getName() == null ? d.getAddress() : d.getName()).put("address", d.getAddress()).put("kind", kind));
+                    }
+                }
+                res.put("devices", devs);
+            } catch (Exception e) {
+                try { res.put("error", String.valueOf(e.getMessage())); } catch (Exception ignored) {}
+            }
+            return res.toString();
+        }
+
+        /** Sends files to a Bluetooth device with Android's Bluetooth sharing: opens the Bluetooth app's device picker. files: [{path, name}]. Answer: "" or "Error: ...". */
+        @JavascriptInterface
+        public String cdBtSend(final String filesJson, final String mime) {
+            try {
+                JSONArray a = new JSONArray(filesJson);
+                final ArrayList<Uri> uris = new ArrayList<Uri>();
+                for (int i = 0; i < a.length(); i++) {
+                    JSONObject o = a.getJSONObject(i);
+                    File src = new File(o.getString("path"));
+                    if (!src.isFile()) continue;
+                    File copy = ShareProvider.newShareFile(MainActivity.this, o.optString("name", src.getName()));
+                    java.io.FileOutputStream out = new java.io.FileOutputStream(copy);
+                    try { copyFile(src, out); } finally { out.close(); }
+                    uris.add(ShareProvider.uriFor(copy));
+                }
+                if (uris.isEmpty()) return "Error: nothing to send";
+                final String type = mime == null || mime.isEmpty() ? "application/vnd.android.package-archive" : mime;
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Intent send = new Intent(uris.size() > 1 ? Intent.ACTION_SEND_MULTIPLE : Intent.ACTION_SEND);
+                            send.setType(type);
+                            if (uris.size() > 1) send.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris); else send.putExtra(Intent.EXTRA_STREAM, uris.get(0));
+                            send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                            // straight to the Bluetooth app when the phone has one (its own device picker opens); the share sheet otherwise
+                            boolean direct = false;
+                            try {
+                                for (android.content.pm.ResolveInfo ri : getPackageManager().queryIntentActivities(send, 0)) {
+                                    String pk = ri.activityInfo.packageName == null ? "" : ri.activityInfo.packageName.toLowerCase(java.util.Locale.US);
+                                    if (pk.contains("bluetooth")) {
+                                        send.setClassName(ri.activityInfo.packageName, ri.activityInfo.name);
+                                        direct = true;
+                                        break;
+                                    }
+                                }
+                            } catch (Exception ignored) {}
+                            if (direct) {
+                                startActivity(send);
+                            } else {
+                                Intent chooser = Intent.createChooser(send, "Send with Bluetooth");
+                                chooser.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                                startActivity(chooser);
+                            }
+                        } catch (Exception e) {
+                            Log.e(TAG, "bluetooth send failed", e);
+                        }
+                    }
+                });
+                return "";
+            } catch (Exception e) {
+                return "Error: " + e.getMessage();
+            }
         }
 
         @JavascriptInterface

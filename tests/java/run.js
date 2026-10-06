@@ -57,6 +57,8 @@ const SUITES = [
   { name: 'netstats', title: '/proc/net/dev parsing: the two header lines skipped by shape, long interface names, wrong-field-count junk lines, find()/totals with and without loopback, and rate() across a counter reset', tests: ['NetStatsTest'], main: 'com.bloatware.bingblop.NetStatsTest' },
   { name: 'fontscan', title: 'Font search for the app font: which files are fonts, what a font calls itself (the name table in every encoding and shape), the bounded walk and its progress', tests: ['FontScanTest'], main: 'FontScanTest', needs: ['json'] },
   { name: 'splitinfo', title: 'What a split APK\'s manifest says about it (split name, the feature module it configures, feature flag)', tests: ['SplitInfoTest'], main: 'com.bloatware.bingblop.SplitInfoTest' },
+  { name: 'abipick', title: 'Which release file and which adb suit a phone: the file named for its ABI, else the universal one, else the first', tests: ['AbiPickTest'], main: 'AbiPickTest' },
+  { name: 'devicelink', title: 'Sending packages to another device: serials, install verdicts, the splits a device needs (CPU, density, language), APKS / APKM / XAPK with OBB, against a fake adb', tests: ['DeviceLinkTest'], main: 'DeviceLinkTest', needs: ['json'] },
   { name: 'installhints', title: 'What an install failure means (adb / pm install answers)', tests: ['InstallHintsTest'], main: 'com.bloatware.bingblop.InstallHintsTest' },
   { name: 'uninstallhints', title: 'What an uninstall failure means (pm uninstall answers: needs root, device policy, user restriction)', tests: ['UninstallHintsTest'], main: 'com.bloatware.bingblop.UninstallHintsTest' },
   { name: 'pure', title: 'Package-file scan output and XAPK data paths', tests: ['PureTest'], main: 'PureTest', needs: ['json'] },
