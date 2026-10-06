@@ -31,7 +31,7 @@ const manifest = fs.readFileSync(fixture('manifest.xml'), 'utf8').split('\n').sl
   await page.goto(PAGE);
   await page.waitForTimeout(300);
   console.log('row buttons:', await page.locator('#card_com\\.sec\\.android\\.app\\.camera .btn-mini').evaluateAll(els => els.map(e => e.title).join(', ')));
-  await page.locator('#card_com\\.sec\\.android\\.app\\.camera .btn-mini[title="App Settings"]').click();
+  await page.locator('#card_com\\.sec\\.android\\.app\\.camera .ab-btn').click();
   await page.screenshot({ path: 'list.png' });
   await page.locator('#card_com\\.facebook\\.katana .btn-mini[title="Menu"]').click(); await page.waitForTimeout(200);
   console.log('frozen app menu shows Enable:', await page.isVisible('#sheetBtnUnfreeze'), 'Freeze:', await page.isVisible('#sheetBtnFreeze'));
