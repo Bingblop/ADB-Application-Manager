@@ -1,7 +1,7 @@
 [dark] 1. Debloater selected box is filled with the accent color: true rgb(208, 188, 255) accent rgb(208, 188, 255)
 [dark]    identical to the Apps tab selected box (fill, border): true apps rgb(208, 188, 255)
 [dark]    shows the ✓ mark; an unselected box is not filled: true {"on":"✓","offBg":"rgba(0, 0, 0, 0)"}
-[dark] 2. app rows have only ⚙️ App Settings and ⋯ Menu: true ["App Settings|⚙️","Menu|⋯"]
+[dark] 2. app rows have only ⚙️ App Settings and ⋯ Menu: true ["App Settings|","Menu|⋯"]
 [dark]    no force-stop control or handler left in the row: true
 [dark]    the freed room goes to the text (meta is 184px wide): true
 [dark]    the row's own buttons and then the checkbox sit together on the right, text starts flush left: true
@@ -20,7 +20,7 @@
 [light] 1. Debloater selected box is filled with the accent color: true rgb(103, 80, 164) accent rgb(103, 80, 164)
 [light]    identical to the Apps tab selected box (fill, border): true apps rgb(103, 80, 164)
 [light]    shows the ✓ mark; an unselected box is not filled: true {"on":"✓","offBg":"rgba(0, 0, 0, 0)"}
-[light] 2. app rows have only ⚙️ App Settings and ⋯ Menu: true ["App Settings|⚙️","Menu|⋯"]
+[light] 2. app rows have only ⚙️ App Settings and ⋯ Menu: true ["App Settings|","Menu|⋯"]
 [light]    no force-stop control or handler left in the row: true
 [light]    the freed room goes to the text (meta is 184px wide): true
 [light]    the row's own buttons and then the checkbox sit together on the right, text starts flush left: true

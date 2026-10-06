@@ -1,0 +1,40 @@
+default is App Settings, as an icon: {"ab":"settings","title":"App Settings","svg":true,"text":""}
+tap runs app_settings: [["app_settings","com.example.live"]]
+card order: ["Icon pack","Action Button","Feature List"]
+options: ["App Settings","Force Stop","App Launcher","Enable / Disable (dynamic)","Install / Uninstall (dynamic)","Unsuspend / Suspend (dynamic)","Permission Manager","Activity Launcher"]
+icons for forcestop (live, frozen, gone): ["forcestop","forcestop","forcestop"] | kept: forcestop
+icons for launch (live, frozen, gone): ["launch","launch","launch"] | kept: launch
+icons for toggle (live, frozen, gone): ["disable","enable","disable"] | kept: toggle
+icons for uninstall (live, frozen, gone): ["uninstall","uninstall","install"] | kept: uninstall
+icons for suspend (live, frozen, gone): ["suspend","unsuspend","suspend"] | kept: suspend
+icons for perms (live, frozen, gone): ["perms","perms","perms"] | kept: perms
+icons for acts (live, frozen, gone): ["acts","acts","acts"] | kept: acts
+icons for settings (live, frozen, gone): ["settings","settings","settings"] | kept: settings
+force stop: [["force_stop","com.example.live"]]
+launch: [["launch","com.example.live"]]
+toggle live -> freeze: [["freeze","com.example.live"]]
+toggle frozen -> unfreeze: [["unfreeze","com.example.frozen"]]
+uninstall live (asks first) -> uninstall: [["uninstall","com.example.live"]] | asked: ["Uninstall Live?"]
+uninstall gone -> reinstall: [["reinstall","com.example.gone"]]
+suspend live -> suspend: [["suspend","com.example.live"]]
+suspend suspended -> unsuspend: [["unsuspend","com.example.frozen"]]
+Permission Manager sheet: [
+  true,
+  'Permission Manager',
+  '3 declared · 2 granted · 2 you can change',
+  3
+]
+  shows description, group and how it can change: true
+  Denied filter: 1
+  search camera: 1
+  revoking calls setPermission: [["com.example.live","android.permission.CAMERA",false]]
+Activity Launcher sheet: [
+  'Activity Launcher',
+  '2 activities · 1 exported · 1 disabled',
+  2,
+  true,
+  true
+]
+  Disabled filter: 1
+Back closes the sheet: true
+errors: []

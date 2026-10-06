@@ -11,6 +11,14 @@
 - **Icon packs now dress apps they do not cover.** When the pack ships a background, mask or overlay for apps it has no
   icon for, such an app's own icon is shown on that background, scaled the way the pack asks, so the list looks uniform.
   Settings, Icon pack also has a "Clear icon cache" button.
+- **Action Button setting.** A new "Action Button" card in Settings, right after Icon pack, chooses what the extra
+  button on each Apps list row does: App Settings (as before), Force Stop, App Launcher, Enable / Disable, Install /
+  Uninstall, Unsuspend / Suspend, Permission Manager or Activity Launcher. It is always an icon, and the three
+  Enable / Disable, Install / Uninstall and Unsuspend / Suspend choices change their icon and action to match the
+  app's current state. Permission Manager and Activity Launcher open a sheet like the app menu, listing every
+  permission (with its label, description, group, protection level, whether it is granted and whether you can change it)
+  or every activity (exported or not, enabled, the permission it needs, with Launch and Enable / Disable), each with a
+  search box and filters.
 - **A tidier start and buttons.** The app now always opens on the Application Manager tab with "Total Installed"
   selected, even if a filter was left on last time. In the Apps list the checkbox sits to the right of the "⋯" menu,
   and its top-bar buttons share the File Manager's new outlined look (the File Manager's Up button is gone, the ".."

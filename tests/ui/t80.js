@@ -46,7 +46,7 @@ const FILES = {
 
   // 1) the card: after the colors, before the Feature List; the system font is in use
   const order = await ev(page, () => Array.from(document.querySelectorAll('#view-prefs > .color-card')).map(c => c.querySelector('.color-card-title').innerText.trim()));
-  check('1. the Font card sits after the colors, then the Icon pack card, then the Feature List', order.indexOf('Font') > 1 && order.indexOf('Icon pack') === order.indexOf('Font') + 1 && order.indexOf('Icon pack') === order.indexOf('Feature List') - 1, JSON.stringify(order));
+  check('1. the Font card sits after the colors, then the Icon pack card, the Action Button card, then the Feature List', order.indexOf('Font') > 1 && order.indexOf('Icon pack') === order.indexOf('Font') + 1 && order.indexOf('Action Button') === order.indexOf('Icon pack') + 1 && order.indexOf('Action Button') === order.indexOf('Feature List') - 1, JSON.stringify(order));
   const sysW = await iiii(page);
   check('   the system font is in use (a narrow letter is narrow) and there is no button to go back to it', sysW < 40 && /system font/i.test(await ev(page, () => document.getElementById('fontCurrent').innerText)) && await ev(page, () => getComputedStyle(document.getElementById('fontSystemBtn')).display === 'none'), sysW);
 

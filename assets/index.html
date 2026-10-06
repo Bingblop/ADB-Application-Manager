@@ -726,6 +726,14 @@
         #view-apps .apps-sort-row .mode-action-btn:active:not(:disabled) { background: var(--accent); color: var(--on-accent); transform: scale(0.96); }
         #view-apps .app-actions .btn-mini { border-color: var(--accent); }
 
+        .ab-btn { color: var(--accent); }
+        .ab-preview { display: inline-flex; align-items: center; gap: 8px; color: var(--accent); }
+        .ab-sep { color: var(--text-muted); font-size: 12px; }
+        #appListSheet .modal-sheet { max-height: 90vh; }
+        .als-row { align-items: flex-start; }
+        .als-detail { font-size: 10.5px; color: var(--text-muted); margin-top: 3px; word-break: break-word; line-height: 1.4; }
+        .als-desc { color: var(--text-main); opacity: 0.85; }
+
         .batch-tool-link {
             background: none;
             border: none;
@@ -4567,6 +4575,13 @@
                 </div>
             </div>
 
+            <div class="color-card" id="actionBtnCard">
+                <div class="color-card-title">Action Button</div>
+                <div class="color-card-subtitle">Choose what the extra button on each row of the Apps list does. It is always an icon, and the ones that change with the app (Enable / Disable, Install / Uninstall, Unsuspend / Suspend) switch their icon and action to match the app's current state.</div>
+                <select class="op-select" id="actionBtnSelect" aria-label="Action Button" onchange="setActionBtn(this.value)"></select>
+                <div class="switch-sub" id="actionBtnPreview" style="margin-top:8px;"></div>
+            </div>
+
             <div class="color-card" id="featureCard">
                 <div class="color-card-title">Feature List</div>
                 <div class="color-card-subtitle">Turn a tab off to take it out of the tab bar and use the arrows to put the tabs in the order you like. Application Manager and About always stay where they are.</div>
@@ -5283,6 +5298,27 @@ Type any command below (e.g. pm list packages -d)
             <div class="mode-btn-row" style="margin-top:8px;">
                 <button class="mode-action-btn" onclick="importProfile()">Import</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Permission Manager / Activity Launcher: a list sheet for one app, opened from the Apps list's Action Button -->
+    <div class="modal-overlay" id="appListSheet" onclick="if(event.target===this) closeAppListSheet()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-title">
+                    <h3 id="alsTitle">Permissions</h3>
+                    <p id="alsSub"></p>
+                </div>
+                <div class="sheet-header-actions">
+                    <div style="font-size:20px; cursor:pointer;" onclick="closeAppListSheet()">✕</div>
+                </div>
+            </div>
+            <div class="list-toolbar">
+                <input type="text" class="list-search" id="alsSearch" placeholder="Search…" oninput="alsRender()" autocomplete="off" autocapitalize="off" spellcheck="false">
+            </div>
+            <div class="chip-row" id="alsFilterRow"></div>
+            <div class="switch-sub" id="alsSummary" style="margin:6px 0;"></div>
+            <div id="alsList"></div>
         </div>
     </div>
 
@@ -6630,7 +6666,7 @@ Type any command below (e.g. pm list packages -d)
             });
             const gear = document.getElementById('prefsHeaderBtn');
             if (gear) gear.classList.toggle('active', viewName === 'prefs');
-            if (viewName === 'prefs') iconPackRender();
+            if (viewName === 'prefs') { iconPackRender(); actionBtnRender(); }
 
             document.querySelectorAll('.view-content').forEach(v => {
                 v.classList.remove('active');
@@ -10094,6 +10130,172 @@ Type any command below (e.g. pm list packages -d)
             ['pointerup', 'pointercancel', 'scroll'].forEach(ev => document.addEventListener(ev, clear, true));
         })();
 
+        // ---------- Action Button: the extra button on each row of the Apps list ----------
+        const AB_PATHS = {
+            settings: 'M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z',
+            forcestop: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4 14H8V8h8v8z',
+            launch: 'M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z',
+            enable: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z',
+            disable: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM4 12c0-4.42 3.58-8 8-8 1.85 0 3.55.63 4.9 1.69L5.69 16.9A7.902 7.902 0 0 1 4 12zm8 8c-1.85 0-3.55-.63-4.9-1.69L18.31 7.1A7.902 7.902 0 0 1 20 12c0 4.42-3.58 8-8 8z',
+            uninstall: 'M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z',
+            install: 'M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z',
+            suspend: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z',
+            unsuspend: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z',
+            perms: 'M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z',
+            acts: 'M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z'
+        };
+        const AB_OPTIONS = [
+            ['settings', 'App Settings'], ['forcestop', 'Force Stop'], ['launch', 'App Launcher'],
+            ['toggle', 'Enable / Disable (dynamic)'], ['uninstall', 'Install / Uninstall (dynamic)'], ['suspend', 'Unsuspend / Suspend (dynamic)'],
+            ['perms', 'Permission Manager'], ['acts', 'Activity Launcher']
+        ];
+        let actionBtn = kvGet('action_btn', 'settings') || 'settings';
+        if (!AB_OPTIONS.some(o => o[0] === actionBtn)) actionBtn = 'settings';
+
+        // what the button looks like and does for one app: { icon, label, run }
+        function actionBtnSpec(app) {
+            switch (actionBtn) {
+                case 'forcestop': return { icon: 'forcestop', label: 'Force Stop' };
+                case 'launch': return { icon: 'launch', label: 'Launch app' };
+                case 'toggle': return app.isFrozen ? { icon: 'enable', label: 'Enable' } : { icon: 'disable', label: 'Disable' };
+                case 'uninstall': return app.isUninstalled ? { icon: 'install', label: 'Reinstall' } : { icon: 'uninstall', label: 'Uninstall' };
+                case 'suspend': return app.isSuspended ? { icon: 'unsuspend', label: 'Unsuspend' } : { icon: 'suspend', label: 'Suspend' };
+                case 'perms': return { icon: 'perms', label: 'Permission Manager' };
+                case 'acts': return { icon: 'acts', label: 'Activity Launcher' };
+                default: return { icon: 'settings', label: 'App Settings' };
+            }
+        }
+        function abSvg(key) { return '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="' + AB_PATHS[key] + '"/></svg>'; }
+        function actionBtnHtml(app) {
+            const sp = actionBtnSpec(app);
+            return `<button class="btn-mini ab-btn" data-ab="${sp.icon}" title="${sp.label}" aria-label="${sp.label}" onclick="actionBtnTap(this.closest('.app-card').dataset.pkg)">${abSvg(sp.icon)}</button>`;
+        }
+        function actionBtnTap(pkg) {
+            const app = allApps.find(a => a.pkg === pkg);
+            if (!app) return;
+            haptic();
+            switch (actionBtn) {
+                case 'forcestop': quickAction('force_stop', pkg); break;
+                case 'launch': installLaunchApp(pkg, app.name); break;
+                case 'toggle': quickAction(app.isFrozen ? 'unfreeze' : 'freeze', pkg); break;
+                case 'uninstall':
+                    if (!app.isUninstalled && !confirm('Uninstall ' + app.name + '?')) return;
+                    quickAction(app.isUninstalled ? 'reinstall' : 'uninstall', pkg);
+                    break;
+                case 'suspend': quickAction(app.isSuspended ? 'unsuspend' : 'suspend', pkg); break;
+                case 'perms': openAppListSheet('perms', pkg); break;
+                case 'acts': openAppListSheet('acts', pkg); break;
+                default: openAppSettings(pkg);
+            }
+        }
+        function actionBtnRender() {
+            const sel = document.getElementById('actionBtnSelect');
+            if (!sel) return;
+            sel.innerHTML = AB_OPTIONS.map(o => '<option value="' + o[0] + '"' + (o[0] === actionBtn ? ' selected' : '') + '>' + escapeHtml(o[1]) + '</option>').join('');
+            sel.value = actionBtn;
+            const pv = document.getElementById('actionBtnPreview');
+            if (pv) {
+                const keys = actionBtn === 'toggle' ? ['disable', 'enable'] : actionBtn === 'uninstall' ? ['uninstall', 'install'] : actionBtn === 'suspend' ? ['suspend', 'unsuspend'] : [actionBtnSpec({}).icon];
+                pv.innerHTML = '<span class="ab-preview">' + keys.map(abSvg).join('<span class="ab-sep">→</span>') + '</span>';
+            }
+        }
+        function setActionBtn(v) {
+            haptic();
+            actionBtn = AB_OPTIONS.some(o => o[0] === v) ? v : 'settings';
+            kvSet('action_btn', actionBtn);
+            actionBtnRender();
+            renderApps();
+            showToast('Action Button: ' + AB_OPTIONS.find(o => o[0] === actionBtn)[1].replace(/ \(dynamic\)/, ''));
+        }
+
+        // ---------- Permission Manager / Activity Launcher sheet ----------
+        let alsKind = '', alsFilter = 'all';
+        function alsIsOpen() { const m = document.getElementById('appListSheet'); return !!(m && m.classList.contains('show')); }
+        function openAppListSheet(kind, pkg) {
+            if (!window.AndroidBridge || !window.AndroidBridge.getAppDetails) { showToast('Needs the app build'); return; }
+            let d;
+            try { d = JSON.parse(window.AndroidBridge.getAppDetails(pkg)); } catch (e) { showToast('Could not read this app'); return; }
+            inspectedPkg = pkg;                       // the permission and component actions below work on the app named here
+            inspectorData = d;
+            alsKind = kind; alsFilter = 'all';
+            const app = allApps.find(a => a.pkg === pkg) || { name: pkg };
+            document.getElementById('alsTitle').innerText = kind === 'perms' ? 'Permission Manager' : 'Activity Launcher';
+            document.getElementById('alsSub').innerText = app.name + ' · ' + pkg;
+            document.getElementById('alsSearch').value = '';
+            document.getElementById('alsSearch').placeholder = kind === 'perms' ? 'Search permissions…' : 'Search activities…';
+            const chips = kind === 'perms' ? [['all', 'All'], ['granted', 'Granted'], ['denied', 'Denied'], ['changeable', 'Changeable'], ['locked', 'Locked']]
+                : [['all', 'All'], ['exported', 'Exported'], ['unexported', 'Unexported'], ['disabled', 'Disabled']];
+            document.getElementById('alsFilterRow').innerHTML = chips.map(c => `<span class="filter-chip${c[0] === 'all' ? ' active' : ''}" data-filter="${c[0]}" onclick="alsSetFilter('${c[0]}')">${c[1]}</span>`).join('');
+            document.getElementById('appListSheet').classList.add('show');
+            haptic();
+            alsRender();
+        }
+        function closeAppListSheet() { document.getElementById('appListSheet').classList.remove('show'); haptic(); }
+        function alsSetFilter(f) {
+            alsFilter = f;
+            document.querySelectorAll('#alsFilterRow .filter-chip').forEach(c => c.classList.toggle('active', c.getAttribute('data-filter') === f));
+            haptic();
+            alsRender();
+        }
+        function alsRender() {
+            if (!alsIsOpen()) return;
+            const d = inspectorData || {};
+            const q = (document.getElementById('alsSearch').value || '').toLowerCase().trim();
+            const list = document.getElementById('alsList');
+            const sum = document.getElementById('alsSummary');
+            if (alsKind === 'perms') {
+                const perms = d.permissions || [];
+                const granted = perms.filter(p => p.granted).length;
+                sum.innerText = perms.length + ' declared · ' + granted + ' granted · ' + perms.filter(p => p.changeable).length + ' you can change';
+                const rows = perms.filter(p => {
+                    if (alsFilter === 'granted' && !p.granted) return false;
+                    if (alsFilter === 'denied' && p.granted) return false;
+                    if (alsFilter === 'changeable' && !p.changeable) return false;
+                    if (alsFilter === 'locked' && p.changeable) return false;
+                    return !q || p.name.toLowerCase().includes(q) || String(p.label || '').toLowerCase().includes(q) || String(p.description || '').toLowerCase().includes(q);
+                }).sort((a, b) => (b.changeable - a.changeable) || a.name.localeCompare(b.name));
+                list.innerHTML = rows.length ? rows.map(p => {
+                    const short = p.name.replace(/^android\.permission\./, '');
+                    const state = p.granted ? 'Granted' : 'Not granted';
+                    const how = p.changeable ? 'You can grant or revoke it here.' : 'Install-time permission: fixed when the app was installed, it cannot be changed here.';
+                    const btn = p.changeable
+                        ? `<button class="perm-toggle-btn ${p.granted ? 'granted' : 'revoked'}" data-perm="${escapeHtml(p.name)}" data-granted="${p.granted}" onclick="togglePermission(this.getAttribute('data-perm'), this.getAttribute('data-granted') === 'true')">${p.granted ? 'GRANTED' : 'REVOKED'}</button>`
+                        : `<button class="perm-toggle-btn locked">${p.granted ? 'GRANTED' : 'NOT GRANTED'}</button>`;
+                    return `<div class="perm-row als-row"><div class="perm-info">
+                        <div class="perm-name">${escapeHtml(p.label || short)}</div>
+                        <div class="perm-sub"><span class="perm-kind">${escapeHtml(p.protection || 'unknown')}</span>${p.appOp ? '<span class="perm-kind">app op</span>' : ''}<span class="perm-kind">${state}</span></div>
+                        <div class="als-detail" translate="no">${escapeHtml(p.name)}</div>
+                        ${p.description ? `<div class="als-detail als-desc">${escapeHtml(p.description)}</div>` : ''}
+                        ${p.group ? `<div class="als-detail" translate="no">Group: ${escapeHtml(p.group.replace(/^android\.permission-group\./, ''))}</div>` : ''}
+                        <div class="als-detail">${how}</div>
+                    </div>${btn}</div>`;
+                }).join('') : '<div class="list-empty">' + (perms.length ? 'No permissions match.' : 'No permissions declared.') + '</div>';
+            } else {
+                const acts = (d.activityInfo && d.activityInfo.length) ? d.activityInfo : (d.activities || []).map(n => ({ name: n, exported: false, enabled: true, permission: '' }));
+                sum.innerText = acts.length + ' activities · ' + acts.filter(a => a.exported).length + ' exported · ' + acts.filter(a => a.enabled === false).length + ' disabled';
+                const rows = acts.filter(a => {
+                    if (alsFilter === 'exported' && !a.exported) return false;
+                    if (alsFilter === 'unexported' && a.exported) return false;
+                    if (alsFilter === 'disabled' && a.enabled !== false) return false;
+                    return !q || a.name.toLowerCase().includes(q);
+                }).sort((a, b) => (b.exported - a.exported) || a.name.localeCompare(b.name));
+                list.innerHTML = rows.length ? rows.map(a => {
+                    const short = a.name.split('.').pop();
+                    const need = a.exported ? 'Exported: other apps can open it, so it launches without a working mode.' : 'Not exported: only the app itself can open it normally, so launching it needs a working mode.';
+                    return `<div class="perm-row als-row"><div class="perm-info">
+                        <div class="perm-name" translate="no">${escapeHtml(short)}</div>
+                        <div class="perm-sub"><span class="perm-kind" style="${a.exported ? '' : 'color:#FFA726;border-color:rgba(255,145,0,0.4);'}">${a.exported ? 'exported' : 'unexported'}</span>${a.enabled === false ? '<span class="perm-kind" style="color:#FFA726;border-color:rgba(255,145,0,0.4);">disabled</span>' : '<span class="perm-kind">enabled</span>'}${a.permission ? '<span class="perm-kind">protected</span>' : ''}</div>
+                        <div class="als-detail" translate="no">${escapeHtml(a.name)}</div>
+                        ${a.permission ? `<div class="als-detail" translate="no">Needs permission: ${escapeHtml(a.permission)}</div>` : ''}
+                        <div class="als-detail">${need}</div>
+                    </div><div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">
+                        <button class="perm-toggle-btn ${a.exported ? 'granted' : 'locked'}" style="cursor:pointer;" data-comp="${escapeHtml(a.name)}" data-exported="${a.exported}" onclick="launchComponent(this.getAttribute('data-comp'), this.getAttribute('data-exported') === 'true')">LAUNCH</button>
+                        <button class="perm-toggle-btn ${a.enabled === false ? 'granted' : 'revoked'}" data-comp="${escapeHtml(a.name)}" onclick="toggleComponent(this.getAttribute('data-comp'), ${a.enabled === false ? 'true' : 'false'})">${a.enabled === false ? 'ENABLE' : 'DISABLE'}</button>
+                    </div></div>`;
+                }).join('') : '<div class="list-empty">' + (acts.length ? 'No activities match.' : 'No activities.') + '</div>';
+            }
+        }
+
         // Press and hold anywhere on an app's row (the icon keeps its own hold, which saves the icon; the buttons and checkbox are left alone)
         // opens that app's menu, and the lift of the finger that follows is not also taken as a tap that selects the row.
         (function () {
@@ -10143,7 +10345,7 @@ Type any command below (e.g. pm list packages -d)
                         <div class="badge-row">${badges}${listVersionLabel(app)}${listSortMeta(app)}</div>
                     </div>
                     <div class="app-actions">
-                        <button class="btn-mini" title="App Settings" aria-label="App Settings" onclick="openAppSettings(this.closest('.app-card').dataset.pkg)">⚙️</button>
+                        ${actionBtnHtml(app)}
                         <button class="btn-mini" title="Menu" onclick="openInspector(this.closest('.app-card').dataset.pkg)">⋯</button>
                     </div>
                     <div class="app-left" onclick="toggleSelectPkg(this.parentElement.dataset.pkg)">
@@ -15005,6 +15207,7 @@ Type any command below (e.g. pm list packages -d)
 
             renderComponentsList();
             document.getElementById('rawContainer').innerText = JSON.stringify(d, null, 2);
+            if (alsIsOpen()) alsRender();
         }
 
         // ---------- Components list ----------
@@ -15067,6 +15270,7 @@ Type any command below (e.g. pm list packages -d)
                 });
             });
             container.innerHTML = html || '<div class="list-empty">No components.</div>';
+            if (alsIsOpen()) alsRender();
         }
 
         // Enable or disable a component (pm enable/disable) and reflect the new state locally.

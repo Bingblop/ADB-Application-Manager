@@ -1569,8 +1569,15 @@ public class MainActivity extends Activity {
         boolean changeable = false;
         boolean appOp = false;
         String label = "";
+        String description = "";
+        String group = "";
         try {
             android.content.pm.PermissionInfo pi = pm.getPermissionInfo(permName, 0);
+            try {
+                CharSequence ds = pi.loadDescription(pm);
+                if (ds != null) description = ds.toString();
+            } catch (Throwable ignored) {}
+            if (pi.group != null) group = pi.group;
             int level = pi.protectionLevel;
             int base = level & android.content.pm.PermissionInfo.PROTECTION_MASK_BASE;
             boolean development = (level & android.content.pm.PermissionInfo.PROTECTION_FLAG_DEVELOPMENT) != 0;
@@ -1592,6 +1599,8 @@ public class MainActivity extends Activity {
         out.put("changeable", changeable);
         out.put("appOp", appOp);
         out.put("label", label);
+        out.put("description", description);
+        out.put("group", group);
     }
 
     /** Maps Android 12+ system tonal palettes to the app's color roles (Material 3 dark / light). */
