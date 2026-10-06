@@ -7296,7 +7296,7 @@ Type any command below (e.g. pm list packages -d)
             const row = document.getElementById('savedFilterRow');
             if (row) row.innerHTML = filterPillsHtml(savedFilters, 'setSavedFilter', SAVED_FILTER_KEYS);
             const sum = document.getElementById('savedFilterSummary');
-            if (sum) { sum.style.display = savedFilters.size > 1 ? '' : 'none'; sum.innerText = filterSummaryText(savedFilters); }
+            setFilterSummary(sum, savedFilters, 'setSavedFilter');
             if (!customLists.length) {
                 container.innerHTML = `
                     <div style="text-align:center; padding: 28px 20px; color: var(--text-muted);">
@@ -8067,8 +8067,7 @@ Type any command below (e.g. pm list packages -d)
             if (!row) return;
             row.innerHTML = filterPillsHtml(uadExtra, 'setUadExtra', UAD_EXTRA_KEYS);
             const sum = document.getElementById('uadExtraSummary');
-            sum.style.display = uadExtra.size > 1 ? '' : 'none';
-            sum.innerText = filterSummaryText(uadExtra);
+            setFilterSummary(sum, uadExtra, 'setUadExtra');
         }
         function setUadExtra(k) {
             toggleFilterIn(uadExtra, k);
@@ -10236,6 +10235,14 @@ Type any command below (e.g. pm list packages -d)
             if (set.has(filter)) { set.delete(filter); return; }
             FILTER_GROUPS.forEach(g => { if (g.includes(filter)) g.forEach(x => set.delete(x)); });
             set.add(filter);
+        }
+        // the line that names what is combined, with a Clear filters button, for the Debloater and Saved Applications rows
+        function setFilterSummary(el, set, fn) {
+            if (!el) return;
+            el.style.display = set.size > 1 ? '' : 'none';
+            el.classList.add('filter-summary-row');
+            el.innerHTML = '<span class="filter-summary-text"></span><button class="filter-clear-chip" type="button" onclick="' + fn + '(\'all\')">Clear filters</button>';
+            el.firstChild.innerText = filterSummaryText(set).replace(' Tap All to clear.', '');
         }
         function filterSummaryText(set) {
             return 'Showing apps that are ' + Array.from(set).map(k => FILTER_NAMES[k] || k).join(' + ') + '. Tap All to clear.';

@@ -1,4 +1,4 @@
-# On-device test checklist (v7.9.14 to v7.9.19)
+# On-device test checklist (v7.9.14 to v7.9.21)
 
 The automated tests run the page in a browser with a pretend phone. They cannot prove the parts that talk to Android:
 icons, the file chooser, added storage, shell commands and the haptic feedback. This list is for those. Tick a box when
@@ -102,6 +102,16 @@ Select three or four apps you do not mind changing, open the round checkmark.
 - [ ] **Termux** (Command-Line Interface, Termux shell): "Match my Termux environment" makes your aliases work; **Sync with Termux** opens a Termux session and grants storage access.
 - [ ] Batch actions (Freeze, Enable, Suspend, Force Stop...) show progress and Stop, and the page stays smooth.
 - [ ] The false "failed" fix: launch an app whose name contains "error" or "failed": no failure is reported.
+
+## 11. Filters (v7.9.20, v7.9.21)
+
+- [ ] The top of Application Manager has Total installed, Running and Bloatware on one row, then two boxes below: **Enabled | Frozen** and **3rd Party | System**. Each half shows its own count.
+- [ ] Tap **Running**, then **3rd Party**: the list shows your running user apps, both buttons are lit, and a line under Sort names the filters with a **Clear filters** button.
+- [ ] Tap **Enabled**, then **Frozen**: Frozen replaces Enabled (a pair is one filter); tap it again and neither is on.
+- [ ] Tap **Enabled** then **System** (and the pills in the row below): you see only your enabled system apps; boxes and pills light together.
+- [ ] **Clear filters** turns every filter off and the Total installed box lights again. With only one filter on, the button is not shown.
+- [ ] Debloater: the "Also show only" row combines with Removal, vendor and state; with two or more on, **Clear filters** appears and clears that row only.
+- [ ] Saved Applications: pills apply inside each list (counts update, lists with no match hide); **Clear filters** shows with two or more on and brings every list back.
 
 ## Report
 

@@ -1,6 +1,7 @@
 // Français (fr): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['fr'] = {
 x: {
+"Clear filters": "Effacer les filtres",
 "\"Allow debugging?\"": "« Autoriser le débogage ? »",
 "'s catalog can be several MB — F-Droid's own is tens of MB. It's downloaded once and kept for 12 hours.": ": le catalogue peut peser plusieurs MB — celui de F-Droid en fait des dizaines. Il est téléchargé une seule fois et conservé 12 heures.",
 "(--originating-uri)": "(--originating-uri)",

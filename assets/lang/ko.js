@@ -1,6 +1,7 @@
 // 한국어 (ko): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['ko'] = {
 x: {
+"Clear filters": "필터 지우기",
 "\"Allow debugging?\"": "\"디버깅을 허용하시겠습니까?\"",
 "'s catalog can be several MB — F-Droid's own is tens of MB. It's downloaded once and kept for 12 hours.": "의 카탈로그는 수 MB에 이를 수 있습니다(F-Droid 자체 카탈로그는 수십 MB). 한 번만 다운로드하며 12시간 동안 보관됩니다.",
 "(--originating-uri)": "(--originating-uri)",

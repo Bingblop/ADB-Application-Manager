@@ -1,6 +1,7 @@
 // Português (Brasil) (pt-BR): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['pt-BR'] = {
 x: {
+"Clear filters": "Limpar filtros",
 "\"Allow debugging?\"": "“Permitir a depuração?”",
 "'s catalog can be several MB — F-Droid's own is tens of MB. It's downloaded once and kept for 12 hours.": ": o catálogo pode ter vários MB — o do F-Droid tem dezenas de MB. É baixado uma vez e mantido por 12 horas.",
 "(--originating-uri)": "(--originating-uri)",

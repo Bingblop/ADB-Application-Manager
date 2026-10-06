@@ -6,7 +6,8 @@
   two buttons each (each pair is one filter: one on, or none), next to Total installed, Running and Bloatware
   (Uninstalled). The Enabled button has its own count, and the boxes combine with each other and with the pills.
 - **A "Clear filters" button** appears under the Sort row whenever more than one filter is on, next to the line that
-  names what is combined. One tap turns them all off.
+  names what is combined. One tap turns them all off. The Debloater and Saved Applications filter rows have the same button,
+  and the new labels are translated.
 
 ## v7.9.20-Pro (versionCode 810)
 

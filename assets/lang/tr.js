@@ -1,6 +1,7 @@
 // Türkçe (tr): the interface of the app. A key is the English text of the page (see tests/i18n/keys.json); {0} marks a changing part, <1>..</1> an element inside a sentence.
 (window.__LANGS = window.__LANGS || {})['tr'] = {
 x: {
+"Clear filters": "Filtreleri temizle",
 "\"Allow debugging?\"": "“Hata ayıklamaya izin verilsin mi?”",
 "'s catalog can be several MB — F-Droid's own is tens of MB. It's downloaded once and kept for 12 hours.": ": katalog birkaç MB olabilir — F-Droid’inki ise onlarca MB. Bir kez indirilir ve 12 saat saklanır.",
 "(--originating-uri)": "(--originating-uri)",
