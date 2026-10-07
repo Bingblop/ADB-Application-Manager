@@ -32,6 +32,10 @@ kotlin {
         jvmTarget.set(JvmTarget.JVM_11)
         // the upstream code is compiled as part of this project, the same flags as its own build use
         freeCompilerArgs.add("-Xskip-prerelease-check")
+        // The module name is part of the compiled name of every Kotlin `internal` member (BytecodePatchContext.getPatchClasses$morphe_patcher).
+        // Patch bundles reach some of them by reflection under the name morphe-patcher's own build gives them (the Gboard bundle does), so this
+        // project has to call its module the same, not after itself, or every patch that depends on such a call fails with NoSuchMethodException.
+        moduleName.set("morphe-patcher")
     }
     sourceSets.main {
         kotlin.srcDir("$patcherSrc/src/main/kotlin")

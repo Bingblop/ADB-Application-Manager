@@ -40,6 +40,25 @@ public class EngineZipTest {
             && names.contains("META-INF/services/kotlin.reflect.jvm.internal.impl.resolve.ExternalOverridabilityCondition"));
     check("the patcher's version file is in", names.contains("app/morphe/patcher/version.properties"));
     check("ARSCLib's framework files are in", names.contains("frameworks/android/android-34.apk"));
+    // the compiled names of morphe-patcher's internal members: patch bundles (Gboard's) reach them by reflection, and the name holds the Kotlin module name
+    byte[] dex = new byte[0];
+    ZipFile z2 = new ZipFile(zip);
+    try {
+      java.io.ByteArrayOutputStream all = new java.io.ByteArrayOutputStream();
+      for (java.util.Enumeration<? extends ZipEntry> e = z2.entries(); e.hasMoreElements(); ) {
+        ZipEntry en = e.nextElement();
+        if (!en.getName().endsWith(".dex")) continue;
+        java.io.InputStream in = z2.getInputStream(en);
+        byte[] buf = new byte[1 << 16]; int r;
+        while ((r = in.read(buf)) > 0) all.write(buf, 0, r);
+        in.close();
+      }
+      dex = all.toByteArray();
+    } finally { z2.close(); }
+    String text = new String(dex, "ISO-8859-1");
+    check("the internal members keep the names morphe-patcher's own build gives them (getPatchClasses$morphe_patcher, getOpcodes$morphe_patcher, addClass$morphe_patcher)",
+        text.contains("getPatchClasses$morphe_patcher") && text.contains("getOpcodes$morphe_patcher") && text.contains("addClass$morphe_patcher"));
+    check("no member is named after the engine's own module (a patch that reflects on one would fail with NoSuchMethodException)", !text.contains("$com_bloatware_bingblop_morphe_engine") && !text.contains("$morphe_engine"));
     System.out.println(fails == 0 ? "ALL PASSED (" + n + " checks)" : fails + " FAILED");
     System.exit(fails == 0 ? 0 : 1);
   }

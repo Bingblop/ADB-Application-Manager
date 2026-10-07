@@ -47,6 +47,8 @@ public final class MorpheBridge {
         /** "both", "wifi" or "mobile": whether the network now fits the choice. */
         boolean connectionOk(String conn);
         File downloadsDir();
+        /** Whether this app may read shared storage (All files access): without it the Downloads folder looks empty to it. */
+        boolean storageAccess();
     }
 
     private static final String ENGINE_CLASS = "com.bloatware.bingblop.morphe.EngineMain";
@@ -154,6 +156,8 @@ public final class MorpheBridge {
             case "helperSources": return new JSONObject().put("sources", MorpheHelper.sources()).put("defaults", MorpheHelper.settingsDefaults());
             case "helperManual": return new JSONObject().put("url", MorpheHelper.manualUrl(a.optString("source"), a.optString("pkg"), a.optString("version")));
             case "helperVersions": return MorpheHelper.versions(a.optString("source"), a.optString("pkg"));
+            case "helperDownloads": return helperDownloads(a);
+            case "helperAdopt": return helperAdopt(a);
             case "helperGet": return helperGet(a, false);
             case "helperFast": return helperGet(a, true);
             case "vtQuota": return new MorpheVirusTotal("", new File(base, "vt_state.json")).quota();
@@ -631,6 +635,38 @@ public final class MorpheBridge {
         });
         got.put("fileName", new File(got.optString("path")).getName());
         got.put("source", resolved.optString("source"));
+        try {
+            PackageManager pm = host.context().getPackageManager();
+            CharSequence l = pm.getApplicationLabel(pm.getApplicationInfo(got.optString("pkg"), 0));
+            if (l != null) got.put("label", l.toString());
+        } catch (Exception ignored) {}
+        return got;
+    }
+
+    /** The APK / APKM / APKS / XAPK files in Downloads (what the browser saved), for the package asked for: {access, items, ...}. */
+    private JSONObject helperDownloads(JSONObject a) throws Exception {
+        if (!host.storageAccess()) return new JSONObject().put("ok", true).put("access", false).put("items", new JSONArray());
+        File dir = host.downloadsDir();
+        JSONObject r = MorpheHelper.scanFolder(dir, a.optString("pkg"), Math.max(1, Math.min(40, a.optInt("limit", 12))));
+        r.put("access", true);
+        r.put("folder", dir.getAbsolutePath());
+        return r;
+    }
+
+    /** A file from Downloads becomes the Helper's result: copied (not moved) into the Helper's folder, then described like a download. */
+    private JSONObject helperAdopt(JSONObject a) throws Exception {
+        File src = new File(a.optString("path"));
+        File dl = host.downloadsDir();
+        if (!host.storageAccess() || !MorpheJobs.inside(src, java.util.Collections.singletonList(dl))) throw new IOException("that file is not one this app may read");
+        JSONObject info = MorpheHelper.inspect(src);
+        if (!info.optBoolean("ok")) throw new IOException(info.optString("error", "That is not an APK, APKS, APKM or XAPK file"));
+        File dir = helperDir(a.optString("save", "cache"));
+        dir.mkdirs();
+        File dest = new File(dir, src.getName());
+        if (!dest.getCanonicalPath().equals(src.getCanonicalPath())) MorpheLibrary.copy(src, dest);
+        JSONObject got = MorpheHelper.inspect(dest);
+        got.put("fileName", dest.getName());
+        got.put("source", "downloads");
         try {
             PackageManager pm = host.context().getPackageManager();
             CharSequence l = pm.getApplicationLabel(pm.getApplicationInfo(got.optString("pkg"), 0));

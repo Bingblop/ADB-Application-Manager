@@ -93,9 +93,12 @@
     <li><b>Fast mode</b> walks every source that is on until one delivers.</li>
     <li><b>This version</b> looks for exactly that version; <b>Newest</b> for the newest.</li>
     <li><b>All versions</b> lists what a source has, with format and size, and a Download button for each.</li>
-    <li><b>Open the site</b> opens the source in the browser, for the ones that cannot be downloaded from here (they say why); then <b>Pick a file</b>.</li>
+    <li><b>Open the site</b> opens the source in the browser, for the ones that cannot be downloaded from here (they say why). Save the file there; when you come back, Helper looks in Downloads by itself.</li>
+    <li><b>Find in Downloads</b> lists the APK, APKM, APKS and XAPK files in your Downloads folder (and the folders directly inside it) that hold the package you typed, newest first, each with its version, format and number of parts. Helper opens every file to read the package, so the name does not matter (<code>method.latin_18.0.3..._apkmirror.com.apkm</code> is found for <code>com.google.android.inputmethod.latin</code>). <b>Use</b> takes a file. This needs <b>All files access</b>; without it the list says so and offers to grant it.</li>
+    <li><b>Pick a file</b> opens Android's file picker, for a file anywhere else.</li>
   </ul>
-  <p>A downloaded file is checked: its hash against the one the source published, and its real manifest (package, version, build) against the request. A file that does not match is refused. You then get <b>Install this APK</b> (through the working mode), <b>Patch this file</b>, <b>Share</b>, and, when VirusTotal is on, <b>Scan with VirusTotal</b>.</p>
+  <p><b>Bundles.</b> Many sources hand out an app as a bundle: <b>APKM</b> (APKMirror), <b>APKS</b> and <b>XAPK</b>, a zip of the base APK and its split APKs. Helper downloads them like an APK (a source's list says which format each version has), reads the package and version from inside, and shows <i>APKM, 5 parts</i>. The patcher merges the parts itself, so <b>Patch this file</b> works on a bundle as it is. <b>Install all parts</b> puts every part on the phone in one session: through the working mode silently, or, without one, through Android's installer, which asks you once.</p>
+  <p>A downloaded file is checked: its hash against the one the source published, and its real manifest (package, version, build) against the request. A file that does not match is refused. You then get <b>Install this APK</b> (<b>Install all parts</b> for a bundle; through the working mode), <b>Patch this file</b>, <b>Share</b>, and, when VirusTotal is on, <b>Scan with VirusTotal</b>.</p>
   <h4>Settings</h4>
   <ul>
     <li><b>Sources</b>: switch each of the ten (APKMirror, Uptodown, APKPure, APKCombo, Aptoide, Evozi, Mi9, APK Downloader, Aurora, Play) on or off, and pick the default. Some can be downloaded directly; the others open in the browser.</li>

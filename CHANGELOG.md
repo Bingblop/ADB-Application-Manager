@@ -1,5 +1,20 @@
 # Changelog
 
+## v7.10.2-Pro (versionCode 822)
+
+- **Morphe Patcher: patches that reflect on the patcher's internals work again (Gboard: 41 of 43 failed).** The Gboard bundle failed with
+  `NoSuchMethodException: app.morphe.patcher.patch.BytecodePatchContext.getPatchClasses$morphe_patcher []`, and every patch that depended on
+  the one that raised it failed with it. The bundle's extension step reads an `internal` member of the patcher by reflection. Kotlin puts the
+  *module name* into the name of an `internal` member (`getPatchClasses$morphe_patcher`), and the engine was built as module
+  `com_bloatware_bingblop_morphe_engine`, so the name the bundle looked for did not exist. The engine is now compiled as module
+  `morphe-patcher`, as Morphe's own build is, and `engine/build-engine.sh` and the `enginezip` test refuse an engine without those names.
+- **Morphe Helper finds and installs bundles (APKM, APKS, XAPK) as well as APKs.** New **Find in Downloads** button: it lists the APK / APKM /
+  APKS / XAPK files in Downloads (and one folder level inside it) that hold the package, newest first, with version, format and number of
+  parts; the package is read from inside each file, so the file name does not matter. **Use** takes a file (a copy goes into the Helper's
+  folder). After **Open the site** the list appears by itself when you come back to the app. The result says *APKM, 5 parts* and offers
+  **Install all parts**; without a working mode the parts are installed in one Android installer session (the system asks once), where the
+  system installer used to be handed a bundle it cannot open. Texts say "app" or "bundle" where they said "APK".
+
 ## v7.10.1-Pro (versionCode 821)
 
 - **Hidden Settings: every setting says what it does and which values it takes.** Under each name the list shows a short description and a

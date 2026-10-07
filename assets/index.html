@@ -20805,6 +20805,7 @@ Type any command below (e.g. pm list packages -d)
 
         function onAppResume() {
             permOnChange();
+            if (typeof mpHResumed === 'function') { try { mpHResumed(); } catch (e) {} }
             // Material You follows the wallpaper: re-read the dynamic colors whenever the app comes back
             const before = JSON.stringify(materialYouCache);
             getMaterialYouSchemes(true);
@@ -28259,7 +28260,7 @@ Type any command below (e.g. pm list packages -d)
                 (t.fileName ? '<div class="mp-note" translate="no">' + escapeHtml(t.fileName) + '</div>' : '') +
                 (rec.stable.length ? '<div class="mp-note">The patches were made for: <b translate="no">' + escapeHtml(rec.stable.slice(0, 5).join(', ')) + '</b>' + (rec.experimental.length ? ' &middot; experimental: <b translate="no">' + escapeHtml(rec.experimental.slice(0, 3).join(', ')) + '</b>' : '') + '</div>' : '') +
                 (t.from && t.ver && rec.stable.length && !verOk ? '<div class="mp-note is-err">This version is not one the patches list. Patching may fail. Get a supported version with Morphe Helper, or patch anyway.</div>' : '') +
-                '<div class="mp-row"><button class="mode-action-btn" onclick="mpPickFile()">Choose an APK file</button><button class="mode-action-btn primary" onclick="mpHelperOpen(\'' + escapeHtml(t.pkg) + '\', \'' + escapeHtml((rec.stable[0]) || '') + '\')">Get the APK with Morphe Helper</button>' +
+                '<div class="mp-row"><button class="mode-action-btn" onclick="mpPickFile()">Choose an APK or bundle</button><button class="mode-action-btn primary" onclick="mpHelperOpen(\'' + escapeHtml(t.pkg) + '\', \'' + escapeHtml((rec.stable[0]) || '') + '\')">Get the APK with Morphe Helper</button>' +
                 (inst || t.from === 'file' ? '' : '') + '</div>';
             mpBarSync();
         }
@@ -28557,8 +28558,8 @@ Type any command below (e.g. pm list packages -d)
         }
         async function mpHelperOpen(pkg, version) {
             await mpHelperLoad();
-            mp.h = { tab: 'get', pkg: pkg || (mp.h && mp.h.pkg) || '', ver: version || '', abi: mp.cfg.hAbi || '', src: mp.cfg.hDefault, busy: false, msg: '', versions: null, got: null, vt: null, quota: null };
-            mpSheetOpen({ title: 'Morphe Helper', sub: 'Download the original APK the patches need', body: '', buttons: [{ label: 'Close' }], onClose: () => { mp.helperOpen = false; } });
+            mp.h = { tab: 'get', pkg: pkg || (mp.h && mp.h.pkg) || '', ver: version || '', abi: mp.cfg.hAbi || '', src: mp.cfg.hDefault, busy: false, msg: '', versions: null, got: null, vt: null, quota: null, found: null, watch: false };
+            mpSheetOpen({ title: 'Morphe Helper', sub: 'Get the original app the patches need (APK, APKM, APKS or XAPK)', body: '', buttons: [{ label: 'Close' }], onClose: () => { mp.helperOpen = false; } });
             mp.helperOpen = true;
             mpHelperRender();
         }
@@ -28585,11 +28586,11 @@ Type any command below (e.g. pm list packages -d)
                 '<label class="mp-note" style="display:block;margin:8px 0 2px;">Version (empty: the newest)</label><input class="modal-text-input" id="mpHVer" value="' + escapeHtml(h.ver) + '" placeholder="e.g. 20.21.37" autocomplete="off" autocapitalize="off" spellcheck="false">' +
                 '<div class="mp-row"><select class="op-select" id="mpHAbi" onchange="mp.h.abi=this.value;mp.cfg.hAbi=this.value;mpCfgSave();"><option value="">Any CPU</option><option value="arm64-v8a"' + (h.abi === 'arm64-v8a' ? ' selected' : '') + '>arm64-v8a</option><option value="armeabi-v7a"' + (h.abi === 'armeabi-v7a' ? ' selected' : '') + '>armeabi-v7a</option><option value="universal"' + (h.abi === 'universal' ? ' selected' : '') + '>Universal</option></select>' +
                 '<select class="op-select" id="mpHSrc" onchange="mp.h.src=this.value;">' + srcs.map(s => '<option value="' + escapeHtml(s.id) + '"' + (s.id === h.src ? ' selected' : '') + '>' + escapeHtml(s.name) + '</option>').join('') + '</select></div>' +
-                (cur ? '<div class="mp-note">' + (cur.direct ? 'Helper can download from ' + escapeHtml(cur.name) + ' directly.' : escapeHtml(cur.note || 'Open the site and download the APK yourself, then pick the file.')) + '</div>' : '<div class="mp-note is-err">Every source is off. Turn some on in Settings.</div>') +
-                '<div class="mp-row mp-hflows"><button class="mp-act" onclick="mpHGo(\'fast\')">Fast mode</button><button class="mp-act" onclick="mpHGo(\'requested\')">This version</button><button class="mp-act" onclick="mpHGo(\'latest\')">Newest</button><button class="mp-act" onclick="mpHGo(\'versions\')">All versions</button><button class="mp-act" onclick="mpHManual()">Open the site</button><button class="mp-act" onclick="mpHPick()">Pick a file</button></div>' +
+                (cur ? '<div class="mp-note">' + (cur.direct ? 'Helper can download from ' + escapeHtml(cur.name) + ' directly.' : escapeHtml(cur.note || 'Open the site and download the app yourself (APK, APKM, APKS or XAPK), then use Find in Downloads or Pick a file.')) + '</div>' : '<div class="mp-note is-err">Every source is off. Turn some on in Settings.</div>') +
+                '<div class="mp-row mp-hflows"><button class="mp-act" onclick="mpHGo(\'fast\')">Fast mode</button><button class="mp-act" onclick="mpHGo(\'requested\')">This version</button><button class="mp-act" onclick="mpHGo(\'latest\')">Newest</button><button class="mp-act" onclick="mpHGo(\'versions\')">All versions</button><button class="mp-act" onclick="mpHManual()">Open the site</button><button class="mp-act" onclick="mpHDownloads()">Find in Downloads</button><button class="mp-act" onclick="mpHPick()">Pick a file</button></div>' +
                 (h.busy ? '<div class="mp-bartrack"><i id="mpHBar" style="width:' + (h.pct || 0) + '%"></i></div>' : '') +
                 '<div class="mp-note ' + (h.err ? 'is-err' : '') + '" id="mpHMsg">' + escapeHtml(h.msg || '') + '</div>' +
-                (h.versions ? mpHVersionsHtml() : '') + (h.got ? mpHGotHtml() : '');
+                (h.found ? mpHFoundHtml() : '') + (h.versions ? mpHVersionsHtml() : '') + (h.got ? mpHGotHtml() : '');
         }
         function mpHVersionsHtml() {
             const v = mp.h.versions;
@@ -28599,11 +28600,11 @@ Type any command below (e.g. pm list packages -d)
         function mpHGotHtml() {
             const g = mp.h.got, vt = mp.h.vt;
             const verdict = vt && vt.verdict ? '<span class="mp-chip ' + (vt.verdict === 'clean' ? 'glow' : 'bad') + '">VirusTotal: ' + escapeHtml(vt.verdict) + '</span>' : '';
-            return '<div class="mp-result ok"><h3>Downloaded</h3><div class="mp-note" translate="no">' + escapeHtml(g.pkg || '') + ' ' + escapeHtml(g.versionName || '') + ' (' + escapeHtml(String(g.versionCode || '')) + ') &middot; ' + escapeHtml(g.format || '') + ' &middot; ' + escapeHtml(formatBytes(g.size)) + '</div>' +
+            return '<div class="mp-result ok"><h3>' + (g.source === 'downloads' ? 'Found in Downloads' : 'Downloaded') + '</h3><div class="mp-note" translate="no">' + escapeHtml(g.pkg || '') + ' ' + escapeHtml(g.versionName || '') + ' (' + escapeHtml(String(g.versionCode || '')) + ') &middot; ' + escapeHtml(mpHFormat(g)) + ' &middot; ' + escapeHtml(formatBytes(g.size)) + '</div>' +
                 '<div class="mp-note" translate="no" style="font-size:10px;">SHA-256 ' + escapeHtml(g.sha256 || '') + '</div><div class="mp-badges">' + verdict + '</div>' +
                 (vt && vt.found ? '<div class="mp-note">' + vt.malicious + ' malicious, ' + vt.suspicious + ' suspicious of ' + vt.total + ' engines' + (vt.cached ? ' (cached report)' : '') + '. <a href="#" style="color:var(--accent)" onclick="mpLink(\'' + escapeHtml(vt.permalink || '') + '\');return false;">Open in VirusTotal</a></div>' : '') +
                 (mp.h.vtBusy ? '<div class="mp-note">Scanning with VirusTotal...</div>' : '') +
-                '<div class="mp-row"><button class="mode-action-btn primary" onclick="mpHInstall()">Install this APK</button><button class="mode-action-btn" onclick="mpHUse()">Patch this file</button>' +
+                '<div class="mp-row"><button class="mode-action-btn primary" onclick="mpHInstall()">' + (mpHBundle(g) ? 'Install all parts' : 'Install this APK') + '</button><button class="mode-action-btn" onclick="mpHUse()">Patch this file</button>' +
                 (mp.cfg.hVt && !vt && !mp.h.vtBusy ? '<button class="mode-action-btn" onclick="mpHScan()">Scan with VirusTotal</button>' : '') + '<button class="mode-action-btn" onclick="mpHShare()">Share</button></div></div>';
         }
         function mpHRead() {
@@ -28617,7 +28618,7 @@ Type any command below (e.g. pm list packages -d)
             const h = mp.h;
             if (!mpHRead()) { mpHMsg('Enter the package name of the app.', true); return; }
             if (h.busy) return;
-            h.busy = true; h.got = null; h.vt = null; h.versions = null; h.err = false; h.msg = kind === 'versions' ? 'Looking for versions...' : 'Looking for the APK...';
+            h.busy = true; h.got = null; h.vt = null; h.versions = null; h.err = false; h.msg = kind === 'versions' ? 'Looking for versions...' : 'Looking for the file...';
             mpHelperRender();
             const args = { source: h.src, pkg: h.pkg, version: h.ver, abi: h.abi, policy: kind === 'latest' ? 'latest' : (kind === 'fast' ? (mp.cfg.hPolicy === 'latest' ? 'latest' : 'requested') : 'requested'), sources: mp.cfg.hSources, save: mp.cfg.hSave, conn: mp.cfg.hConn };
             let r;
@@ -28630,7 +28631,7 @@ Type any command below (e.g. pm list packages -d)
             r = await mpCall(kind === 'fast' ? 'helperFast' : 'helperGet', args);
             h.busy = false;
             if (!r.ok) { h.msg = r.error || 'Download failed'; h.err = true; mpHelperRender(); return; }
-            h.got = r.data; h.msg = 'The APK is ready.'; h.err = false;
+            h.got = r.data; h.msg = mpHBundle(r.data) ? 'The bundle is ready.' : 'The APK is ready.'; h.err = false;
             mpHelperRender();
             if (mp.cfg.hVt && mp.cfg.hVtKey && mp.cfg.hVtMode === 'always') mpHScan();
         }
@@ -28642,14 +28643,57 @@ Type any command below (e.g. pm list packages -d)
             h.busy = true; h.got = null; h.msg = 'Downloading ' + x.version + '...'; mpHelperRender();
             const r = await mpCall('helperGet', { source: h.src, pkg: h.pkg, version: x.version, abi: x.abi || h.abi, policy: 'requested', sources: [h.src], save: mp.cfg.hSave, conn: mp.cfg.hConn, url: x.url || '', page: x.page || '' });
             h.busy = false;
-            if (!r.ok) { h.msg = r.error || 'Download failed'; h.err = true; } else { h.got = r.data; h.msg = 'The APK is ready.'; h.err = false; }
+            if (!r.ok) { h.msg = r.error || 'Download failed'; h.err = true; } else { h.got = r.data; h.msg = mpHBundle(r.data) ? 'The bundle is ready.' : 'The APK is ready.'; h.err = false; }
             mpHelperRender();
             if (r.ok && mp.cfg.hVt && mp.cfg.hVtKey && mp.cfg.hVtMode === 'always') mpHScan();
         }
         function mpHManual() {
             mpHRead();
             mpCall('helperManual', { source: mp.h.src, pkg: mp.h.pkg, version: mp.h.ver }).then(r => { if (r.ok && r.data && r.data.url) mpLink(r.data.url); else showToast(r.error || 'No page for that'); });
-            mpHMsg('Download the APK in the browser, then come back and choose Pick a file.', false);
+            mp.h.watch = true;
+            mpHMsg('Download the APK or bundle (APKM, APKS, XAPK) in the browser, then come back: Helper looks in Downloads for it.', false);
+        }
+        // ---- files that are already on the phone: what the browser saved in Downloads ----
+        function mpHBundle(g) { return !!g && (g.format === 'apkm' || g.format === 'apks' || g.format === 'xapk'); }
+        function mpHFormat(g) { return mpHBundle(g) ? (g.format || '').toUpperCase() + (g.splits ? ', ' + g.splits + ' parts' : '') : (g.format || '').toUpperCase(); }
+        function mpHResumed() {
+            // back from the browser: look in Downloads once, quietly
+            if (!mp.helperOpen || !mp.h || !mp.h.watch || mp.h.busy) return;
+            mp.h.watch = false;
+            mpHDownloads(true);
+        }
+        async function mpHDownloads(quiet) {
+            const h = mp.h;
+            mpHRead();
+            if (!quiet) { h.found = null; mpHMsg('Looking in Downloads...', false); }
+            const r = await mpCall('helperDownloads', { pkg: h.pkg });
+            if (!mp.helperOpen) return;
+            const d = r.ok && r.data;
+            if (!d) { if (!quiet) mpHMsg((r && r.error) || 'Downloads could not be read', true); return; }
+            if (!d.access) { h.found = { access: false, items: [] }; mpHMsg('', false); mpHelperRender(); return; }
+            h.found = d;
+            if (quiet && !d.items.length) { h.found = null; return; }
+            mpHMsg('', false);
+            mpHelperRender();
+        }
+        function mpHFoundHtml() {
+            const f = mp.h.found;
+            if (!f.access) return '<div class="mp-note is-err">To look in Downloads this app needs <b>All files access</b>. <button class="batch-tool-link" onclick="requestStorageAccessForScan()">Grant access</button> or use Pick a file.</div>';
+            if (!f.items.length) return '<div class="mp-note">No APK, APKM, APKS or XAPK' + (mp.h.pkg ? ' for ' + escapeHtml(mp.h.pkg) : '') + ' in Downloads' + (f.other ? ' (' + f.other + ' for other apps)' : '') + '. Save one there, or use Pick a file.</div>';
+            return '<div class="mp-group"><span>In Downloads</span><span>' + f.items.length + ' found</span></div>' + f.items.map((x, i) =>
+                '<div class="mp-patch"><div class="mp-main"><div class="mp-name" translate="no">' + escapeHtml(x.versionName || x.name) + ' <span style="font-weight:600;color:var(--text-muted);">' + escapeHtml(mpHFormat(x)) + '</span></div>' +
+                '<div class="mp-patch-desc" translate="no">' + escapeHtml(x.pkg) + ' &middot; ' + escapeHtml(formatBytes(x.size)) + ' &middot; ' + escapeHtml(x.name) + '</div></div><button class="mp-act" onclick="mpHAdopt(' + i + ')">Use</button></div>').join('');
+        }
+        async function mpHAdopt(i) {
+            const x = mp.h.found && mp.h.found.items[i];
+            if (!x) return;
+            mpHMsg('Copying ' + x.name + '...', false);
+            const r = await mpCall('helperAdopt', { path: x.path, save: mp.cfg.hSave });
+            if (!r.ok || !r.data) { mpHMsg((r && r.error) || 'That file could not be used', true); return; }
+            mp.h.got = r.data; mp.h.pkg = r.data.pkg; mp.h.vt = null; mp.h.found = null; mp.h.err = false;
+            mpHMsg(mpHBundle(r.data) ? 'The bundle is ready.' : 'The APK is ready.', false);
+            mpHelperRender();
+            if (mp.cfg.hVt && mp.cfg.hVtKey && mp.cfg.hVtMode === 'always') mpHScan();
         }
         async function mpHPick() {
             const f = await mpCall('pick', { kind: 'apk' });

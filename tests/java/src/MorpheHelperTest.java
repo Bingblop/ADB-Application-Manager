@@ -498,6 +498,7 @@ public class MorpheHelperTest {
             testManualOnly();
             testFast();
             testInspect();
+            testScanFolder();
             testDownload();
         } catch (Throwable t) {
             fails++;
@@ -1215,6 +1216,44 @@ public class MorpheHelperTest {
             check("inspect: the repo's own APK (a real aapt2 manifest): package, a version, a build number, ABIs", real.getBoolean("ok") && real.getString("pkg").contains(".") && real.getLong("versionCode") > 0 && real.getString("versionName").length() > 0 && "apk".equals(real.getString("format")), real.toString());
             System.out.println("     " + real.getString("pkg") + " " + real.getString("versionName") + " (" + real.getLong("versionCode") + ") abis=" + real.getJSONArray("abis"));
         }
+        for (File f : dir.listFiles()) f.delete();
+        dir.delete();
+    }
+
+    static void testScanFolder() throws Exception {
+        File dir = tmpDir("scan");
+        File sub = new File(dir, "Browser");
+        sub.mkdirs();
+        File deep = new File(sub, "deeper");
+        deep.mkdirs();
+        File a = write(dir, "method.latin_18.0.3_apkmirror.com.apkm", bundle("apkm", PKG, 103, "1.0.3"));
+        File b = write(dir, "example.apk", apk(PKG, 101, "1.0.1"));
+        File c = write(sub, "saved.xapk", bundle("xapk", PKG, 102, "1.0.2"));
+        File d = write(dir, "other.apk", apk("com.other.app", 5, "5.0"));
+        write(dir, "page.apk", "<html>not a zip</html>".getBytes(StandardCharsets.UTF_8));
+        write(dir, "notes.txt", "hello".getBytes(StandardCharsets.UTF_8));
+        write(dir, ".hidden.apk", apk(PKG, 9, "9.0"));
+        write(deep, "toodeep.apk", apk(PKG, 8, "8.0"));
+        long now = System.currentTimeMillis();
+        a.setLastModified(now);
+        c.setLastModified(now - 60000);
+        b.setLastModified(now - 120000);
+        d.setLastModified(now - 180000);
+        JSONObject r = MorpheHelper.scanFolder(dir, PKG, 12);
+        JSONArray it = r.getJSONArray("items");
+        check("scan: the three files of the package are found (a bundle, a bundle in a subfolder, an APK), newest first", it.length() == 3 && it.getJSONObject(0).getString("name").endsWith(".apkm") && it.getJSONObject(1).getString("name").equals("saved.xapk") && it.getJSONObject(2).getString("name").equals("example.apk"), r.toString());
+        check("scan: the package inside is read, so the file name does not matter", it.getJSONObject(0).getString("pkg").equals(PKG) && it.getJSONObject(0).getString("versionName").equals("1.0.3") && "apkm".equals(it.getJSONObject(0).getString("format")) && it.getJSONObject(0).getLong("splits") == 3);
+        check("scan: the subfolder is named, a file in Downloads itself has no folder", "Browser".equals(it.getJSONObject(1).getString("folder")) && "".equals(it.getJSONObject(0).getString("folder")));
+        check("scan: other apps are counted, web pages saved as .apk are unreadable, hidden files and deeper folders are left", r.getInt("other") == 1 && r.getInt("unreadable") == 1 && r.getInt("scanned") == 5, r.toString());
+        check("scan: it does not compute SHA-256s (cheap)", !it.getJSONObject(0).has("sha256") && !it.getJSONObject(0).has("error"));
+        JSONObject all = MorpheHelper.scanFolder(dir, "", 12);
+        check("scan: without a package every readable file is listed", all.getJSONArray("items").length() == 4 && all.getInt("other") == 0);
+        check("scan: the limit is kept", MorpheHelper.scanFolder(dir, "", 2).getJSONArray("items").length() == 2);
+        check("scan: a folder that cannot be read is an empty list, not an error", MorpheHelper.scanFolder(new File(dir, "missing"), PKG, 12).getJSONArray("items").length() == 0);
+        for (File f : deep.listFiles()) f.delete();
+        deep.delete();
+        for (File f : sub.listFiles()) f.delete();
+        sub.delete();
         for (File f : dir.listFiles()) f.delete();
         dir.delete();
     }

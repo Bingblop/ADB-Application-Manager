@@ -6682,6 +6682,7 @@ public class MainActivity extends Activity {
             @Override public boolean privileged() { return isPrivilegedMode(resolveExecMode()); }
             @Override public boolean connectionOk(String conn) { return morpheConnectionOk(conn); }
             @Override public File downloadsDir() { return android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS); }
+            @Override public boolean storageAccess() { return hasStorageAccess(); }
         }, new File(getFilesDir(), "morphe"));
         return morpheBridge;
     }
@@ -6704,6 +6705,11 @@ public class MainActivity extends Activity {
     private JSONObject morpheInstall(File apk, String pkg, boolean uninstallFirst) throws Exception {
         JSONObject r = new JSONObject();
         String mode = resolveExecMode();
+        String lname = apk.getName().toLowerCase(java.util.Locale.ROOT);
+        if (!isPrivilegedMode(mode) && (lname.endsWith(".apks") || lname.endsWith(".apkm") || lname.endsWith(".xapk"))) {
+            // the system installer cannot open a bundle by itself: stage every split in one installer session and wait for the answer
+            return morpheInstallBundleNoPrivilege(apk);
+        }
         if (!isPrivilegedMode(mode)) {
             File copy = ShareProvider.newShareFile(this, apk.getName());
             java.io.FileOutputStream out = new java.io.FileOutputStream(copy);
@@ -6751,6 +6757,69 @@ public class MainActivity extends Activity {
             if (!uninstallFirst && InstallHints.updateIncompatible(out) && canUninstallFirst(pkg, mode)) r.put("retry", "uninstall");
         }
         return r;
+    }
+
+    /** Installs a bundle (.apkm/.apks/.xapk) without a working mode: all splits go into one PackageInstaller session, the system asks the
+     *  user to confirm, and this waits (up to ten minutes) for the verdict so the Helper can report it. */
+    private JSONObject morpheInstallBundleNoPrivilege(File bundle) throws Exception {
+        File tmp = new File(getCacheDir(), "morphe_inst/" + Long.toHexString(System.nanoTime()));
+        List<File> files = MorpheLibrary.unzipApks(bundle, tmp);
+        final java.util.concurrent.CountDownLatch done = new java.util.concurrent.CountDownLatch(1);
+        final int[] status = {-999};
+        final String[] message = {""};
+        android.content.BroadcastReceiver rcv = null;
+        android.content.pm.PackageInstaller.Session session = null;
+        try {
+            if (files.isEmpty()) throw new IOException("there is no APK inside " + bundle.getName());
+            android.content.pm.PackageInstaller pi = getPackageManager().getPackageInstaller();
+            final int sessionId = pi.createSession(new android.content.pm.PackageInstaller.SessionParams(android.content.pm.PackageInstaller.SessionParams.MODE_FULL_INSTALL));
+            session = pi.openSession(sessionId);
+            for (File f : files) {
+                OutputStream sout = session.openWrite(f.getName().replaceAll("[^A-Za-z0-9._-]", "_"), 0, f.length());
+                try { copyFile(f, sout); session.fsync(sout); } finally { sout.close(); }
+            }
+            final String action = getPackageName() + ".INSTALL_RESULT." + (installReceiverSeq++);
+            rcv = new android.content.BroadcastReceiver() {
+                @Override public void onReceive(Context c, Intent i) {
+                    int st = i.getIntExtra(android.content.pm.PackageInstaller.EXTRA_STATUS, -999);
+                    if (st == android.content.pm.PackageInstaller.STATUS_PENDING_USER_ACTION) {
+                        Intent confirm = (Intent) i.getParcelableExtra(Intent.EXTRA_INTENT);
+                        if (confirm != null) {
+                            confirm.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            try { startActivity(confirm); } catch (Exception ignored) {}
+                        }
+                        return;
+                    }
+                    status[0] = st;
+                    String m = i.getStringExtra(android.content.pm.PackageInstaller.EXTRA_STATUS_MESSAGE);
+                    message[0] = m == null ? "" : m;
+                    done.countDown();
+                }
+            };
+            android.content.IntentFilter filter = new android.content.IntentFilter(action);
+            if (Build.VERSION.SDK_INT >= 33) registerReceiver(rcv, filter, Context.RECEIVER_NOT_EXPORTED);
+            else registerReceiver(rcv, filter);
+            int piFlags = android.app.PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= 31 ? android.app.PendingIntent.FLAG_MUTABLE : 0);
+            android.app.PendingIntent sender = android.app.PendingIntent.getBroadcast(this, sessionId, new Intent(action).setPackage(getPackageName()), piFlags);
+            session.commit(sender.getIntentSender());
+            session.close();
+            session = null;
+            boolean answered = done.await(10, java.util.concurrent.TimeUnit.MINUTES);
+            JSONObject r = new JSONObject();
+            boolean ok = answered && status[0] == android.content.pm.PackageInstaller.STATUS_SUCCESS;
+            r.put("ok", ok);
+            r.put("system", true);
+            r.put("output", ok ? "Success" : !answered ? "The system installer did not answer in time."
+                    : "Install " + (status[0] == android.content.pm.PackageInstaller.STATUS_FAILURE_ABORTED ? "cancelled" : "failed") + (message[0].isEmpty() ? "" : ": " + message[0]));
+            if (!ok && answered) r.put("advice", InstallHints.advice(message[0]));
+            return r;
+        } finally {
+            if (session != null) { try { session.abandon(); } catch (Exception ignored) {} }
+            if (rcv != null) { try { unregisterReceiver(rcv); } catch (Exception ignored) {} }
+            File[] fs = tmp.listFiles();
+            if (fs != null) for (File f : fs) f.delete();
+            tmp.delete();
+        }
     }
 
     /** A file the Morphe tab asked for: copied into this app's cache (the page works with those copies), then handed to the bridge. */
