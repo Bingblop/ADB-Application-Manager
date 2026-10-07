@@ -9,6 +9,8 @@ import java.net.URI;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Saves what the in-app browser (HelperBrowser) was asked to download: the same request the browser would have made (its cookies, its user agent, the page it came from),
@@ -140,85 +142,307 @@ public final class BrowserDownload {
         return new File(dir, base + "-" + System.nanoTime() + ext);
     }
 
-    /** Downloads {@code url} into {@code dir} as the browser would. Throws IOException with a sentence for the person when it cannot. */
-    public static Result download(String url, String userAgent, Cookies cookies, String referer, File dir, Progress progress) throws IOException {
+    // ------------------------------------------------------------------------------------------------------------------------ resumable jobs
+
+    public enum State { QUEUED, RUNNING, PAUSED, FAILED, DONE, CANCELLED }
+
+    /**
+     * One download that can be paused, resumed and retried. What is already on disk stays in {@code name.part} when it is paused or breaks; a later {@link #run} asks the server
+     * for the rest (Range, with If-Range so a changed file starts over) and starts over when the server does not do ranges. Fields are written by the downloading thread and read by others.
+     */
+    public static final class Job {
+        public final String id;
+        public final String url;
+        public final String userAgent;
+        public final String referer;
+        public final File dir;
+        public volatile String name = "";
+        public volatile String resolvedUrl = "";
+        public volatile String etag = "";
+        public volatile String lastModified = "";
+        public volatile long done;
+        public volatile long total = -1;
+        public volatile State state = State.QUEUED;
+        public volatile String error = "";
+        public volatile String mime = "";
+        public volatile File file;
+        public volatile long updated = System.currentTimeMillis();
+        volatile boolean pauseRequested, cancelRequested;
+
+        public Job(String id, String url, String userAgent, String referer, File dir) {
+            this.id = id;
+            this.url = url;
+            this.userAgent = userAgent == null ? "" : userAgent;
+            this.referer = referer == null ? "" : referer;
+            this.dir = dir;
+        }
+
+        public File part() {
+            return name.isEmpty() ? null : new File(dir, name + ".part");
+        }
+
+        /** Stops after the bytes in hand and keeps the .part file: {@link #run} goes on from there. */
+        public void pause() {
+            pauseRequested = true;
+        }
+
+        /** Stops and removes the .part file. */
+        public void cancel() {
+            cancelRequested = true;
+        }
+
+        public boolean active() {
+            return state == State.RUNNING;
+        }
+    }
+
+    /** Called from the downloading thread, about every 150 ms while bytes arrive, and at every change of state. */
+    public interface Listener {
+        void onChange(Job job);
+    }
+
+    /**
+     * Runs {@code job} until it is whole, paused, cancelled or broken, and leaves the outcome in {@code job.state} (never throws for a download problem; {@code job.error} says what
+     * went wrong in words for the person). Calling it again on a PAUSED or FAILED job resumes it.
+     */
+    public static void run(Job job, Cookies cookies, Listener listener) {
+        if (job.state != State.QUEUED) {           // a job that was queued may already have been asked to pause or cancel: that stays
+            job.pauseRequested = false;
+            job.cancelRequested = false;
+        }
+        job.error = "";
+        job.state = State.RUNNING;
+        tell(listener, job);
+        try {
+            transfer(job, cookies, listener);
+        } catch (Cancelled c) {
+            File p = job.part();
+            if (p != null) p.delete();                 // the part goes before the state says so: whoever sees Cancelled sees the file gone
+            job.state = State.CANCELLED;
+        } catch (Paused p) {
+            job.state = State.PAUSED;
+        } catch (IOException e) {
+            job.error = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
+            job.state = State.FAILED;
+        } catch (RuntimeException e) {
+            job.error = String.valueOf(e.getMessage());
+            job.state = State.FAILED;
+        }
+        job.updated = System.currentTimeMillis();
+        tell(listener, job);
+    }
+
+    private static final class Paused extends IOException {
+        Paused() {
+            super("paused");
+        }
+    }
+
+    private static final class Cancelled extends IOException {
+        Cancelled() {
+            super("cancelled");
+        }
+    }
+
+    private static void tell(Listener l, Job j) {
+        if (l != null) {
+            try {
+                l.onChange(j);
+            } catch (RuntimeException ignored) {
+            }
+        }
+    }
+
+    private static void check(Job job) throws IOException {
+        if (job.cancelRequested) throw new Cancelled();
+        if (job.pauseRequested) throw new Paused();
+    }
+
+    private static final Pattern CONTENT_RANGE = Pattern.compile("bytes\\s+(\\d+)-(\\d+)/(\\d+|\\*)");
+
+    private static void transfer(Job job, Cookies cookies, Listener listener) throws IOException {
+        String url = job.url;
         if (url == null || !(url.startsWith("https://") || url.startsWith("http://"))) throw new IOException("only web addresses (http, https) can be downloaded here");
-        if (!dir.isDirectory() && !dir.mkdirs()) throw new IOException("cannot make the folder " + dir.getName());
-        String cur = url;
-        HttpURLConnection c = null;
-        for (int hop = 0; ; hop++) {
+        if (!job.dir.isDirectory() && !job.dir.mkdirs()) throw new IOException("cannot make the folder " + job.dir.getName());
+        File part = job.part();
+        long have = part != null && part.isFile() ? part.length() : 0;
+        // a validator is needed to trust what is on disk: without one (or without a known name) the file starts over
+        boolean canResume = have > 0 && (!job.etag.isEmpty() || !job.lastModified.isEmpty());
+        if (!canResume && part != null && part.exists()) {
+            part.delete();
+            have = 0;
+        }
+        // the address the last attempt ended at is tried first (a signed storage address outlives the page link that led to it), then the one the browser gave
+        String[] tries = canResume && !job.resolvedUrl.isEmpty() && !job.resolvedUrl.equals(url) ? new String[]{job.resolvedUrl, url} : new String[]{url};
+        IOException last = null;
+        for (int t = 0; t < tries.length; t++) {
+            try {
+                attempt(job, tries[t], cookies, listener, canResume ? have : 0);
+                return;
+            } catch (Paused | Cancelled stop) {
+                throw stop;
+            } catch (HttpFailure f) {
+                last = f;
+                if (!(f.code >= 400 && f.code < 500) || t == tries.length - 1) throw f;
+            }
+        }
+        if (last != null) throw last;
+    }
+
+    private static final class HttpFailure extends IOException {
+        final int code;
+
+        HttpFailure(int code, String m) {
+            super(m);
+            this.code = code;
+        }
+    }
+
+    private static void attempt(Job job, String startUrl, Cookies cookies, Listener listener, long from) throws IOException {
+        String cur = startUrl;
+        HttpURLConnection c;
+        int restarts = 0;
+        for (int hop = 0; ; ) {
+            check(job);
             c = (HttpURLConnection) new URL(cur).openConnection();
             c.setInstanceFollowRedirects(false);
             c.setConnectTimeout(20000);
             c.setReadTimeout(60000);
-            if (userAgent != null && !userAgent.isEmpty()) c.setRequestProperty("User-Agent", userAgent);
+            if (!job.userAgent.isEmpty()) c.setRequestProperty("User-Agent", job.userAgent);
             String ck = cookies == null ? null : cookies.forUrl(cur);
             if (ck != null && !ck.isEmpty()) c.setRequestProperty("Cookie", ck);
-            if (referer != null && !referer.isEmpty()) c.setRequestProperty("Referer", referer);
+            if (!job.referer.isEmpty()) c.setRequestProperty("Referer", job.referer);
             c.setRequestProperty("Accept", "*/*");
+            c.setRequestProperty("Accept-Encoding", "identity");     // a range is about the bytes of the file, not of a compressed copy
+            if (from > 0) {
+                c.setRequestProperty("Range", "bytes=" + from + "-");
+                c.setRequestProperty("If-Range", !job.etag.isEmpty() ? job.etag : job.lastModified);
+            }
             int code = c.getResponseCode();
             if (code == 301 || code == 302 || code == 303 || code == 307 || code == 308) {
                 String loc = c.getHeaderField("Location");
                 c.disconnect();
-                if (loc == null || hop >= MAX_REDIRECTS) throw new IOException("the site redirected too often");
+                if (loc == null || ++hop > MAX_REDIRECTS) throw new IOException("the site redirected too often");
                 cur = new URL(new URL(cur), loc).toString();
                 if (!(cur.startsWith("https://") || cur.startsWith("http://"))) throw new IOException("the site redirected to something that is not a web address");
                 continue;
             }
-            if (code != 200) {
+            if (code == 416 && from > 0 && restarts == 0) {
+                // what is on disk does not fit the file any more (or is all of it): start over once
                 c.disconnect();
-                throw new IOException("the site answered " + code + (code == 403 ? " (it wants the browser check first: open the page again in the browser and press its download button)" : ""));
+                File p = job.part();
+                if (p != null) p.delete();
+                job.done = 0;
+                from = 0;
+                restarts++;
+                continue;
+            }
+            if (code != 200 && code != 206) {
+                c.disconnect();
+                throw new HttpFailure(code, "the site answered " + code + (code == 403 ? " (it wants the browser check first: open the page again in the browser and press its download button)" : code == 410 || code == 404 ? " (the link has expired: open the page again in the browser and press its download button)" : ""));
             }
             break;
         }
-        String mime = c.getContentType() == null ? "" : c.getContentType();
-        if (mime.toLowerCase(Locale.ROOT).startsWith("text/html")) {
-            c.disconnect();
-            throw new IOException("the site sent a web page, not a file");
-        }
-        String name = fileName(cur, c.getHeaderField("Content-Disposition"), mime);
-        long total = c.getContentLengthLong();
-        File part = new File(dir, name + ".part");
-        long done = 0;
-        InputStream in = null;
-        FileOutputStream out = null;
-        boolean ok = false;
+        boolean partial = false;
+        long total;
         try {
-            in = c.getInputStream();
-            out = new FileOutputStream(part);
-            byte[] buf = new byte[65536];
-            int n;
-            long lastTick = 0;
-            while ((n = in.read(buf)) > 0) {
-                if (progress != null && progress.cancelled()) throw new IOException("cancelled");
-                out.write(buf, 0, n);
-                done += n;
-                long now = System.nanoTime() / 1000000L;
-                if (progress != null && now - lastTick >= 150) {
-                    lastTick = now;
-                    progress.onProgress(done, total);
+            String mime = c.getContentType() == null ? "" : c.getContentType();
+            if (mime.toLowerCase(Locale.ROOT).startsWith("text/html")) throw new HttpFailure(200, "the site sent a web page, not a file");
+            long len = c.getContentLengthLong();
+            if (c.getResponseCode() == 206) {
+                Matcher m = CONTENT_RANGE.matcher(String.valueOf(c.getHeaderField("Content-Range")));
+                if (!m.find() || Long.parseLong(m.group(1)) != from) throw new IOException("the site answered with a different part of the file than was asked for");
+                partial = true;
+                total = "*".equals(m.group(3)) ? -1 : Long.parseLong(m.group(3));
+            } else {
+                total = len;
+            }
+            job.mime = mime;
+            job.resolvedUrl = cur;
+            String name = job.name;
+            if (name.isEmpty() || !partial) {
+                if (name.isEmpty()) name = fileName(cur, c.getHeaderField("Content-Disposition"), mime);
+                job.name = name;
+            }
+            String et = c.getHeaderField("ETag");
+            String lm = c.getHeaderField("Last-Modified");
+            if (!partial) {
+                job.etag = et == null || et.startsWith("W/") ? "" : et;          // a weak validator does not allow a range
+                job.lastModified = lm == null ? "" : lm;
+            }
+            job.total = total;
+            File part = job.part();
+            long done = partial ? from : 0;
+            job.done = done;
+            tell(listener, job);
+            InputStream in = null;
+            FileOutputStream out = null;
+            try {
+                in = c.getInputStream();
+                out = new FileOutputStream(part, partial);
+                byte[] buf = new byte[65536];
+                int n;
+                long lastTick = 0;
+                while ((n = readChunk(in, buf, done, total)) > 0) {
+                    out.write(buf, 0, n);
+                    done += n;
+                    job.done = done;
+                    long now = System.nanoTime() / 1000000L;
+                    if (now - lastTick >= 150) {
+                        lastTick = now;
+                        job.updated = System.currentTimeMillis();
+                        tell(listener, job);
+                    }
+                    check(job);
+                }
+                out.getFD().sync();
+            } finally {
+                try {
+                    if (in != null) in.close();
+                } catch (IOException ignored) {
+                }
+                try {
+                    if (out != null) out.close();
+                } catch (IOException ignored) {
                 }
             }
-            out.getFD().sync();
-            out.close();
-            out = null;
-            if (total >= 0 && done != total) throw new IOException("the download ended early (" + done + " of " + total + " bytes)");
-            File dest = freeFile(dir, name);
-            if (!part.renameTo(dest)) throw new IOException("cannot save " + name);
-            ok = true;
-            if (progress != null) progress.onProgress(done, done);
-            return new Result(dest, done, mime);
+            if (total >= 0 && done != total) throw new IOException("the download ended early (" + done + " of " + total + " bytes): Retry goes on from there");
+            File dest = freeFile(job.dir, job.name);
+            if (!part.renameTo(dest)) throw new IOException("cannot save " + job.name);
+            job.file = dest;
+            job.done = done;
+            job.total = done;
+            job.state = State.DONE;
         } finally {
-            try {
-                if (in != null) in.close();
-            } catch (IOException ignored) {
-            }
-            try {
-                if (out != null) out.close();
-            } catch (IOException ignored) {
-            }
             c.disconnect();
-            if (!ok) part.delete();
         }
+    }
+
+    private static int readChunk(InputStream in, byte[] buf, long done, long total) throws IOException {
+        try {
+            return in.read(buf);
+        } catch (IOException e) {
+            throw new IOException("the connection broke after " + (done / 1048576) + (total > 0 ? " of " + (total / 1048576) : "") + " MB: Retry goes on from there");
+        }
+    }
+
+    /** Downloads {@code url} into {@code dir} as the browser would, in one go (no resuming: a part that is left behind is removed). Throws IOException with a sentence for the person when it cannot. */
+    public static Result download(String url, String userAgent, Cookies cookies, String referer, File dir, final Progress progress) throws IOException {
+        final Job job = new Job("one-shot", url, userAgent, referer, dir);
+        Listener l = new Listener() {
+            @Override
+            public void onChange(Job j) {
+                if (progress != null) {
+                    progress.onProgress(j.done, j.total);
+                    if (progress.cancelled()) j.pauseRequested = true;
+                }
+            }
+        };
+        run(job, cookies, l);
+        if (job.state == State.DONE) return new Result(job.file, job.done, job.mime);
+        File p = job.part();
+        if (p != null) p.delete();
+        if (job.state == State.PAUSED || job.state == State.CANCELLED) throw new IOException("cancelled");
+        throw new IOException(job.error.isEmpty() ? "the download failed" : job.error);
     }
 }

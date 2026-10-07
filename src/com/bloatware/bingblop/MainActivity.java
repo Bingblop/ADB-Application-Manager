@@ -6747,11 +6747,14 @@ public class MainActivity extends Activity {
             @Override public boolean connectionOk(String conn) { return morpheConnectionOk(conn); }
             @Override public File downloadsDir() { return android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS); }
             @Override public boolean storageAccess() { return hasStorageAccess(); }
-            @Override public Runnable openBrowser(final String url, final File dir, final BrowserDownload.Events events) {
+            @Override public BrowserDownload.Cookies cookies() {
+                return new BrowserDownload.Cookies() { @Override public String forUrl(String u) { try { return android.webkit.CookieManager.getInstance().getCookie(u); } catch (Throwable t) { return null; } } };
+            }
+            @Override public Runnable openBrowser(final String url, final File dir, final HelperDownloads downloads, final BrowserDownload.Events events) {
                 final HelperBrowser[] box = new HelperBrowser[1];
                 runOnUiThread(new Runnable() {
                     @Override public void run() {
-                        try { box[0] = HelperBrowser.show(MainActivity.this, url, dir, events); }
+                        try { box[0] = HelperBrowser.show(MainActivity.this, url, dir, downloads, events); }
                         catch (Throwable t) { Log.e(TAG, "in-app browser failed", t); events.onFailed("the browser could not be opened: " + t.getMessage()); events.onClosed(); }
                     }
                 });

@@ -28574,6 +28574,7 @@ Type any command below (e.g. pm list packages -d)
         }
         function mpOnEvent(e) {
             if (e && e.t === 'hb') { mpHBEvent(e); return; }
+            if (e && e.t === 'hd') { mpHDEvent(e.job); return; }
             if (e && e.t === 'dl') { if (mp.helperOpen && mp.h && mp.h.busy) mpHMsg(e.text || 'Downloading...', false, e.pct || 0); return; }
             const r = mp.run;
             if (!r || !e || (e.job && e.job !== r.job)) return;
@@ -28682,6 +28683,7 @@ Type any command below (e.g. pm list packages -d)
             mpSheetOpen({ title: 'Morphe Helper', sub: 'Get the original app the patches need (APK, APKM, APKS or XAPK)', body: '', buttons: [{ label: 'Close' }], onClose: () => { mp.helperOpen = false; } });
             mp.helperOpen = true;
             mpHelperRender();
+            mpHDLoad();
         }
         function mpHelperRender() {
             if (!mp.helperOpen) return;
@@ -28711,7 +28713,7 @@ Type any command below (e.g. pm list packages -d)
                 (h.busy ? '<div class="mp-bartrack"><i id="mpHBar" style="width:' + (h.pct || 0) + '%"></i></div>' : '') +
                 '<div class="mp-note ' + (h.err ? 'is-err' : '') + '" id="mpHMsg">' + escapeHtml(h.msg || '') + '</div>' +
                 (h.browse ? '<div class="mp-row"><button class="mode-action-btn primary" onclick="mpHBrowse(mp.h.browse)">Open it here, in the app</button></div>' : '') +
-                (h.found ? mpHFoundHtml() : '') + (h.versions ? mpHVersionsHtml() : '') + (h.got ? mpHGotHtml() : '');
+                (h.found ? mpHFoundHtml() : '') + (h.versions ? mpHVersionsHtml() : '') + (h.got ? mpHGotHtml() : '') + '<div id="mpHDl">' + mpHDlHtml() + '</div>';
         }
         function mpHVersionsHtml() {
             const v = mp.h.versions;
@@ -28782,6 +28784,75 @@ Type any command below (e.g. pm list packages -d)
             if (!r.ok) { h.msg = r.error || 'Download failed'; h.err = true; h.browse = r.browse || ''; } else { h.got = r.data; h.msg = mpHBundle(r.data) ? 'The bundle is ready.' : 'The APK is ready.'; h.err = false; }
             mpHelperRender();
             if (r.ok && mp.cfg.hVt && mp.cfg.hVtKey && mp.cfg.hVtMode === 'always') mpHScan();
+        }
+        // ---- the download list: what the in-app browser started goes on without it; pause, resume, retry, cancel ----
+        function mpHBytes(n) { n = Number(n) || 0; return n >= 1073741824 ? (n / 1073741824).toFixed(2) + ' GB' : n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : n >= 1024 ? Math.round(n / 1024) + ' KB' : n + ' B'; }
+        function mpHDSet(list) { mp.dl = (list || []).map(j => { const o = (mp.dl || []).find(x => x.id === j.id); return Object.assign({}, o || {}, j, { sp: o ? o.sp : 0, at: o ? o.at : 0, was: o ? o.was : j.done }); }); }
+        async function mpHDLoad() {
+            const r = await mpCall('helperDownloadList', {});
+            if (r.ok && r.data) { mpHDSet(r.data.jobs); mpHDRender(); }
+        }
+        function mpHDEvent(j) {
+            if (!j || !j.id) return;
+            mp.dl = mp.dl || [];
+            const o = mp.dl.find(x => x.id === j.id), now = Date.now();
+            let sp = o ? o.sp : 0;
+            if (o && j.state === 'running' && o.at && now > o.at && j.done >= o.was) { const inst = (j.done - o.was) * 1000 / (now - o.at); sp = sp ? sp * 0.7 + inst * 0.3 : inst; }
+            const n = Object.assign({}, o || {}, j, { sp: j.state === 'running' ? sp : 0, at: now, was: j.done });
+            if (o) mp.dl[mp.dl.indexOf(o)] = n; else mp.dl.push(n);
+            if (o && o.state !== j.state && j.state === 'done' && mp.helperOpen && mp.h && !mp.h.got) showToast((j.name || 'The download') + ' is saved: Use this file');
+            mpHDRender();
+        }
+        function mpHDRender() {
+            const el = document.getElementById('mpHDl');
+            if (el && mp.helperOpen) el.innerHTML = mpHDlHtml();
+        }
+        function mpHDText(j) {
+            const of = j.total > 0 ? mpHBytes(j.done) + ' of ' + mpHBytes(j.total) + ' (' + Math.min(100, Math.floor(100 * j.done / j.total)) + '%)' : mpHBytes(j.done);
+            switch (j.state) {
+                case 'queued': return 'Waiting for a free place';
+                case 'running': { const eta = j.sp > 0 && j.total > j.done ? ', ' + mpHDEta((j.total - j.done) / j.sp) + ' left' : ''; return 'Downloading ' + of + (j.sp > 0 ? ', ' + mpHBytes(j.sp) + '/s' : '') + eta; }
+                case 'paused': return 'Paused at ' + of;
+                case 'failed': return 'Stopped at ' + of + ': ' + (j.error || 'it failed');
+                case 'done': return 'Saved, ' + mpHBytes(j.total || j.done);
+                case 'cancelled': return 'Cancelled';
+            }
+            return '';
+        }
+        function mpHDEta(sec) { sec = Math.round(sec); return sec >= 3600 ? Math.floor(sec / 3600) + ' h ' + Math.floor(sec % 3600 / 60) + ' min' : sec >= 60 ? Math.floor(sec / 60) + ' min ' + (sec % 60) + ' s' : sec + ' s'; }
+        function mpHDlHtml() {
+            const list = mp.dl || [];
+            if (!list.length) return '';
+            const btn = (id, op, label, cls) => '<button class="mode-action-btn' + (cls ? ' ' + cls : '') + '" onclick="mpHDOp(\'' + id + '\', \'' + op + '\')">' + label + '</button>';
+            const rows = list.map(j => {
+                const pct = j.state === 'done' ? 100 : (j.total > 0 ? Math.min(100, Math.floor(100 * j.done / j.total)) : 0);
+                const b = j.state === 'running' || j.state === 'queued' ? btn(j.id, 'pause', 'Pause') + btn(j.id, 'cancel', 'Cancel')
+                    : j.state === 'paused' ? btn(j.id, 'resume', 'Resume', 'primary') + btn(j.id, 'cancel', 'Cancel')
+                    : j.state === 'failed' ? btn(j.id, 'resume', 'Retry', 'primary') + btn(j.id, 'cancel', 'Cancel')
+                    : j.state === 'done' ? (j.canUse ? btn(j.id, 'use', 'Use this file', 'primary') : '') + btn(j.id, 'remove', 'Remove')
+                    : btn(j.id, 'remove', 'Remove');
+                return '<div class="mp-patch mp-dlrow" data-dl="' + escapeHtml(j.id) + '"><div class="mp-main"><div class="mp-name" translate="no">' + escapeHtml(j.name || j.host || 'Download') + '</div>' +
+                    '<div class="mp-patch-desc ' + (j.state === 'failed' ? 'is-err' : '') + '">' + escapeHtml(mpHDText(j)) + (j.host && j.name ? ' · <span translate="no">' + escapeHtml(j.host) + '</span>' : '') + '</div>' +
+                    '<div class="mp-bartrack"><i style="width:' + pct + '%"></i></div><div class="mp-row">' + b + '</div></div></div>';
+            }).join('');
+            const clearable = list.some(j => j.state === 'done' || j.state === 'cancelled');
+            return '<div class="mp-group"><span>Downloads from the browser</span><span>' + list.length + '</span></div>' + rows +
+                (clearable ? '<div class="mp-row"><button class="mode-action-btn" onclick="mpHDOp(\'\', \'clear\')">Clear finished</button></div>' : '') +
+                '<div class="mp-note">They go on when the browser is closed. Pause keeps what was downloaded and Resume asks the site for the rest only (a site that cannot do that starts the file again).</div>';
+        }
+        async function mpHDOp(id, op) {
+            haptic();
+            const r = await mpCall('helperDownloadOp', { id, op });
+            if (!r.ok) { showToast(r.error || 'That did not work'); return; }
+            if (op === 'use') {
+                const h = mp.h, i = r.data.info;
+                h.got = i; h.pkg = i.pkg || h.pkg; h.vt = null; h.found = null; h.err = false; h.browse = '';
+                h.msg = (mpHBundle(i) ? 'The bundle' : 'The APK') + ' is ready (saved from the browser).';
+                mpHelperRender();
+                if (mp.cfg.hVt && mp.cfg.hVtKey && mp.cfg.hVtMode === 'always') mpHScan();
+                return;
+            }
+            mpHDSet(r.data.jobs); mpHDRender();
         }
         // ---- the browser inside the app: sites with a browser check (APKMirror) open here, and what is downloaded there is saved straight into the Helper ----
         async function mpHBrowse(url) {
