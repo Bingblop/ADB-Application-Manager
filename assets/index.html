@@ -4076,6 +4076,12 @@
                 .cd-steps b { color: var(--text-main); }
                 .cd-log { margin-top: 10px; padding: 8px 10px; border-radius: 10px; background: var(--input-bg); border: 1px solid var(--border-glass); font-family: monospace; font-size: 11.5px; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 30vh; overflow: auto; }
                 .cd-log:empty { display: none; }
+                .cd-lost { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 10px; margin-top: 8px; border: 1px solid var(--border-glass); border-left: 3px solid var(--status-bloat); border-radius: 10px; background: rgba(var(--ov), 0.04); }
+                .cd-lost-main { min-width: 0; font-size: 12.5px; font-weight: 800; overflow-wrap: anywhere; }
+                .cd-lost-main span { display: block; font-size: 10.5px; font-weight: 600; color: var(--text-muted); margin-top: 2px; }
+                .cd-lost-main span.is-err { color: var(--status-bloat); }
+                .cd-lost-btns { display: flex; gap: 6px; flex: 0 0 auto; }
+                .cd-lost-auto { margin-top: 8px; font-size: 11px; color: var(--text-muted); }
                 .cd-sheet-grid { grid-template-columns: repeat(2, 1fr); }
                 .cd-sheet-grid .batch-grid-btn { height: auto; min-height: 44px; padding: 8px 6px; text-align: center; line-height: 1.2; }
                 .cd-pick-row { display: flex; align-items: center; gap: 10px; padding: 8px 6px; border-bottom: 1px solid rgba(var(--ov), 0.06); cursor: pointer; }
@@ -4094,6 +4100,7 @@
                     <button class="mode-action-btn" id="cdRefreshBtn" onclick="cdRefreshDevices(true)">Refresh</button>
                 </div>
                 <div class="cd-info" id="cdInfo"></div>
+                <div id="cdLost"></div>
             </div>
 
             <div class="cd-empty" id="cdEmpty">
@@ -17229,7 +17236,8 @@ Type any command below (e.g. pm list packages -d)
             fm: { path: '/sdcard', entries: null, busy: false },
             set: { ns: 'global', data: {}, loaded: {}, busy: false },
             keep: null, bt: new Set(), scan: [], addTab: 'wifi', ask: null, acts: [],
-            phone: { sel: new Set(), filter: 'user' }
+            phone: { sel: new Set(), filter: 'user' },
+            up: new Set(), upKnown: false, dropped: {}, rc: {}
         };
         const cdWait = {};
         let cdSeq = 0;
@@ -17317,6 +17325,7 @@ Type any command below (e.g. pm list packages -d)
                 cd.serial = pick ? pick.serial : '';
                 moved = true;
             }
+            cdNoteDevices();
             const d = cdCur();
             const key = d ? d.serial + ':' + d.state : '';
             const sig = cd.devices.map(x => x.serial + ':' + x.state + ':' + cdDevLabel(x)).join('|') + '#' + cd.serial;
@@ -17339,6 +17348,7 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('cdEmpty').style.display = d ? 'none' : '';
             document.getElementById('cdWork').style.display = d && d.state === 'device' ? '' : 'none';
             cdRenderRecent();
+            cdRenderLost();
         }
 
         function cdSelect(serial) {
@@ -17435,13 +17445,164 @@ Type any command below (e.g. pm list packages -d)
                 '<div class="cd-dev-badges">' + badges + '</div></div><button class="btn-mini cd-dev-more" title="Device menu" onclick="cdDeviceMenu()">\u22ef</button></div>' + note;
         }
 
-        async function cdReconnect() {
-            const d = cdCur(); if (!d) return;
-            showToast('Reconnecting...');
-            if (/^[^\s:]+:\d+$/.test(d.serial)) { await cdRun(['disconnect', d.serial], { serial: '', timeout: 10000 }); await cdRun(['connect', d.serial], { serial: '', timeout: 15000 }); }
-            else await cdRun(['reconnect'], { timeout: 10000 });
-            cd.lastKey = '';
-            cdRefreshDevices(true);
+        // Reconnect: the selected device's own button (also under the device card when it is offline and in its menu)
+        function cdReconnect() { const d = cdCur(); if (d) cdReconnectSerial(d.serial, false); }
+
+        // ---- devices that dropped: remembered while they are connected, offered back with Reconnect (by hand, and once on its own) ----
+        const cdSleep = ms => new Promise(r => setTimeout(r, ms));
+        const CD_AUTO_WAITS = [0, 8000, 25000];            // when the automatic attempts are made after a drop
+        function cdKnown() { const k = kvGet('cd_known', {}); return k && typeof k === 'object' && !Array.isArray(k) ? k : {}; }
+        function cdAutoOn() { return kvGet('cd_autore', true) !== false; }
+        function cdKind(serial) {
+            if (cd.bt.has(serial) || /^(127\.0\.0\.1|localhost):\d+$/.test(serial)) return 'bt';
+            if (/^adb-.*_adb-tls-connect/.test(serial)) return 'tls';
+            if (/^[^\s:]+:\d+$/.test(serial)) return 'net';
+            return 'usb';
+        }
+        function cdIsUp(serial) { return cd.devices.some(d => d.serial === serial && d.state === 'device'); }
+
+        // after every list of devices: remember the ones that are connected, notice the ones that were and are not any more
+        function cdNoteDevices() {
+            const known = cdKnown(); let changed = false;
+            const now = new Set();
+            cd.devices.forEach(d => {
+                if (d.state !== 'device') return;
+                now.add(d.serial);
+                const nm = cd.names[d.serial] || d.model || d.serial;
+                if (!known[d.serial] || known[d.serial].name !== nm) { known[d.serial] = { name: nm, at: Date.now() }; changed = true; }
+                delete cd.dropped[d.serial];
+            });
+            if (changed) {
+                const keys = Object.keys(known);
+                if (keys.length > 8) keys.sort((a, b) => known[a].at - known[b].at).slice(0, keys.length - 8).forEach(k => { if (!now.has(k)) delete known[k]; });
+                kvSet('cd_known', known);
+            }
+            if (cd.upKnown) {
+                cd.up.forEach(serial => {
+                    if (now.has(serial) || !known[serial] || cd.dropped[serial]) return;
+                    cd.dropped[serial] = Date.now();
+                    showToast('Lost the connection to ' + known[serial].name);
+                    if (cdAutoOn() && cdKind(serial) !== 'usb') cdAutoReconnect(serial);
+                });
+            }
+            cd.up = now; cd.upKnown = true;
+            cdRenderLost();
+        }
+
+        function cdLostList() {
+            const known = cdKnown();
+            return Object.keys(known).filter(s => !cdIsUp(s) && !cd.devices.some(d => d.serial === s && d.state !== 'offline')).sort((a, b) => known[b].at - known[a].at).map(s => ({ serial: s, name: known[s].name, at: known[s].at }));
+        }
+        function cdAgo(ms) {
+            const m = Math.round((Date.now() - ms) / 60000);
+            return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' days ago';
+        }
+        function cdRenderLost() {
+            const el = document.getElementById('cdLost');
+            if (!el) return;
+            const lost = cdLostList();
+            if (!lost.length) { el.innerHTML = ''; return; }
+            el.innerHTML = lost.map(l => {
+                const rc = cd.rc[l.serial] || {};
+                const when = cd.dropped[l.serial] ? 'lost ' + cdAgo(cd.dropped[l.serial]) : 'last connected ' + cdAgo(l.at);
+                const line = rc.busy ? (rc.msg || 'Reconnecting...') : (rc.msg ? rc.msg : cdTransport(l.serial) + ' \u00b7 ' + when);
+                return '<div class="cd-lost" data-serial="' + escapeHtml(l.serial) + '"><div class="cd-lost-main"><span style="margin:0 0 2px;font-size:10px;text-transform:uppercase;letter-spacing:.3px;">Not connected</span><b translate="no">' + escapeHtml(l.name) + '</b><span class="' + (!rc.busy && rc.msg ? 'is-err' : '') + '">' + escapeHtml(line) + '</span></div>' +
+                    '<div class="cd-lost-btns"><button class="cd-row-act" data-s="' + escapeHtml(l.serial) + '" onclick="cdReconnectSerial(this.dataset.s, false)"' + (rc.busy ? ' disabled' : '') + '>' + (rc.busy ? 'Trying...' : 'Reconnect') + '</button>' +
+                    '<button class="cd-row-act" style="border-color:var(--border-glass);color:var(--text-muted);" data-s="' + escapeHtml(l.serial) + '" onclick="cdForget(this.dataset.s)"' + (rc.busy ? ' disabled' : '') + '>Forget</button></div></div>';
+            }).join('') + '<div class="cd-lost-auto">Reconnect on its own when a device drops: <button class="batch-tool-link" id="cdAutoBtn" onclick="cdAutoToggle()">' + (cdAutoOn() ? 'On' : 'Off') + '</button></div>';
+        }
+        function cdAutoToggle() { kvSet('cd_autore', !cdAutoOn()); cdRenderLost(); showToast('Reconnecting on its own: ' + (cdAutoOn() ? 'on' : 'off')); }
+        function cdForget(serial) {
+            const k = cdKnown(); delete k[serial]; kvSet('cd_known', k);
+            delete cd.dropped[serial]; delete cd.rc[serial]; cd.up.delete(serial);
+            cdRenderLost();
+        }
+
+        async function cdRefreshNow() { while (cd.refreshing) await cdSleep(60); await cdRefreshDevices(false); }
+
+        // the one attempt: what has to be done depends on how the device was connected. { ok, msg, serial }
+        async function cdReconnectTry(serial) {
+            const isConn = out => /connected to|already connected/i.test(out) && !/cannot|failed|unable/i.test(out);
+            const listUp = async () => cdParseDevices(await cdRun(['devices', '-l'], { serial: '', timeout: 12000 })).filter(d => d.state === 'device');
+            const kind = cdKind(serial);
+            let tried = [], last = '';
+            const connect = async addr => { tried.push(addr); last = await cdRun(['connect', addr], { serial: '', timeout: 15000 }); return isConn(last); };
+            if (kind === 'usb') {
+                await cdRun(['reconnect', 'offline'], { serial: '', timeout: 10000 });
+                const up = await listUp();
+                if (up.some(d => d.serial === serial)) return { ok: true, serial: serial };
+                return { ok: false, msg: 'Not found on USB. Check the cable, unlock the device and make sure USB debugging is on, then try again.' };
+            }
+            if (kind === 'bt') {
+                const port = parseInt(serial.split(':')[1], 10);
+                await cdRefreshNow();
+                const me = cd.selfDevs.find(d => d.state === 'device');
+                if (!me) return { ok: false, msg: 'This phone is not connected to its own ADB: turn on ADB in Working mode first.' };
+                const fwd = await cdRun(['forward', 'tcp:' + port, 'localabstract:/adb-hub'], { serial: me.serial, timeout: 15000 });
+                if (cdFail(fwd) || /error|failed/i.test(fwd)) return { ok: false, msg: fwd.trim().split('\n')[0] || 'The Bluetooth link could not be set up.' };
+                await cdRun(['disconnect', serial], { serial: '', timeout: 10000 });
+                if (await connect(serial) && (await listUp()).some(d => d.serial === serial)) return { ok: true, serial: serial };
+                return { ok: false, msg: 'No answer through Bluetooth. Check that Debugging over Bluetooth is on in the Wear OS app and on the watch.' };
+            }
+            if (kind === 'net') {
+                await cdRun(['disconnect', serial], { serial: '', timeout: 10000 });
+                if (await connect(serial) && (await listUp()).some(d => d.serial === serial)) return { ok: true, serial: serial };
+            }
+            // Wireless debugging announces itself by name and takes a new port every time it is switched on: look for it
+            const host = kind === 'net' ? serial.replace(/:\d+$/, '') : '';
+            const name = kind === 'tls' ? serial.replace(/\._adb-tls-connect.*$/, '') : '';
+            const mdns = await cdRun(['mdns', 'services'], { serial: '', timeout: 15000 });
+            const found = cdFail(mdns) ? [] : cdParseMdns(mdns).filter(x => x.kind === 'connect' && (kind === 'tls' ? x.name === name : x.addr.replace(/:\d+$/, '') === host && x.addr !== serial));
+            for (const f of found) {
+                if (await connect(f.addr)) {
+                    const up = await listUp();
+                    const hit = up.find(d => d.serial === serial || d.serial === f.addr || d.serial.indexOf(name || '\u0000') === 0);
+                    if (hit) return { ok: true, serial: hit.serial };
+                }
+            }
+            const first = String(last).trim().split('\n')[0];
+            const why = kind === 'tls' ? 'Wireless debugging is not announcing this device. Turn Wireless debugging off and on on the device (same Wi-Fi), then try again.'
+                : 'No answer from ' + serial + (first ? ' (' + first.replace(/^failed to connect to\s*/i, '') + ')' : '') + '. If the device uses Wireless debugging, its port changes whenever it is switched on: use Add device > Scan.';
+            return { ok: false, msg: why };
+        }
+
+        // the button, and the automatic attempts: shows what it is doing where the device is listed
+        async function cdReconnectSerial(serial, auto) {
+            const rc = cd.rc[serial] = cd.rc[serial] || {};
+            if (rc.busy) return false;
+            haptic();
+            rc.busy = true; rc.msg = auto ? 'Reconnecting on its own...' : 'Reconnecting...';
+            cdRenderLost(); if (!auto) showToast('Reconnecting...');
+            let r;
+            try { r = await cdReconnectTry(serial); } catch (e) { r = { ok: false, msg: String(e && e.message || e) }; }
+            rc.busy = false; rc.msg = r.ok ? '' : r.msg;
+            if (r.ok) {
+                delete cd.dropped[serial];
+                if (r.serial !== serial) {                     // it came back under another name (an address instead of its service name)
+                    const k = cdKnown(); k[r.serial] = k[serial] || { name: r.serial, at: Date.now() }; delete k[serial]; kvSet('cd_known', k);
+                    if (cd.serial === serial) cd.serial = r.serial;
+                }
+                cd.lastKey = ''; cd.sig = '';
+                await cdRefreshNow();
+                if (!auto) { if (cdIsUp(r.serial)) cdSelect(r.serial); showToast('Reconnected: ' + ((cdKnown()[r.serial] || {}).name || r.serial)); }
+            } else {
+                if (!auto) showToast(r.msg);
+                cdRenderLost();
+            }
+            return !!r.ok;
+        }
+        async function cdAutoReconnect(serial) {
+            const rc = cd.rc[serial] = cd.rc[serial] || {};
+            if (rc.auto) return;
+            rc.auto = true;
+            try {
+                for (const wait of CD_AUTO_WAITS) {
+                    await cdSleep(wait);
+                    for (let n = 0; document.hidden && n < 30; n++) await cdSleep(1000);
+                    if (!cdKnown()[serial] || cdIsUp(serial) || !cdAutoOn()) break;
+                    if (await cdReconnectSerial(serial, true)) break;
+                }
+            } finally { rc.auto = false; cdRenderLost(); }
         }
 
         function cdDeviceMenu() {
@@ -17449,6 +17610,7 @@ Type any command below (e.g. pm list packages -d)
             const net = /^[^\s:]+:\d+$/.test(d.serial);
             const run = (label, args, text) => ({ label: label, cls: 'danger', fn: async () => { if (!(await cdAsk({ title: label + '?', text: text, ok: label, danger: true }))) return; const out = await cdRun(args); const f = cdFail(out); showToast(f || (label + ': sent')); setTimeout(() => cdRefreshDevices(false), 4000); } });
             const b = [
+                { label: 'Reconnect', fn: () => cdReconnectSerial(d.serial, false) },
                 { label: 'Reload details', fn: () => { cd.lastKey = ''; cdLoadInfo(); showToast('Reading the device...'); } },
                 run('Reboot', ['reboot'], 'The device restarts and the connection drops for a moment.'),
                 run('Reboot to recovery', ['reboot', 'recovery'], 'The device restarts into recovery mode.'),
@@ -17456,7 +17618,7 @@ Type any command below (e.g. pm list packages -d)
                 { label: 'Power off', cls: 'danger', fn: async () => { if (!(await cdAsk({ title: 'Power off?', text: 'The device turns off. It has to be started by hand.', ok: 'Power off', danger: true }))) return; const out = await cdSh('reboot -p'); showToast(cdFail(out) || 'Power off: sent'); } },
                 { label: 'Copy address', fn: () => copyText(d.serial) }
             ];
-            if (net) b.push({ label: 'Disconnect', fn: async () => { const out = await cdRun(['disconnect', d.serial], { serial: '', timeout: 10000 }); showToast(cdFail(out) || 'Disconnected'); cd.lastKey = ''; cdRefreshDevices(false); } });
+            if (net) b.push({ label: 'Disconnect', fn: async () => { cdForget(d.serial); const out = await cdRun(['disconnect', d.serial], { serial: '', timeout: 10000 }); showToast(cdFail(out) || 'Disconnected'); cd.lastKey = ''; cdRefreshDevices(false); } });
             cdSheetOpen({ title: cd.names[d.serial] || d.model || 'Device', sub: d.serial, buttons: b });
         }
 

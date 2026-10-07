@@ -1,5 +1,16 @@
 # Changelog
 
+## v7.10.5-Pro (versionCode 825)
+
+- **Connected Devices: a device that dropped can be brought back.** Devices are remembered while they are connected. When one is gone (Wi-Fi asleep, cable out, Wireless
+  debugging switched off, restart) a toast says so and a **Not connected** card stays under the picker with its name, how it was connected and when it was lost, and two
+  buttons: **Reconnect** and **Forget**. Reconnect does what the kind of connection needs: an address is disconnected and connected again, and when that fails the same
+  address is searched by its Wireless debugging announcement (the port changes whenever it is switched on; the new port is used and the device keeps its place); a device
+  known by its service name is looked up by name; USB gets `adb reconnect offline` and advice (cable, unlock, USB debugging); the Bluetooth link is set up again through this
+  phone's own ADB. A failure is told in words under the card. When a device drops while the tab is open, three attempts are also made on their own (at once, after 8 and after
+  25 seconds; not for USB); the line under the card switches that off. **Reconnect** is also the first item of the device menu. **Disconnect** in the menu is a decision, not a
+  drop. Test: `t128`.
+
 ## v7.10.4-Pro (versionCode 824)
 
 - **Morphe Helper: a download list with Pause, Resume, Retry and Cancel.** What the in-app browser downloads is now a job of its own, not tied to the browser
