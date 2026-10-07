@@ -92,6 +92,15 @@ ok   a source that changed its page says what to do
 ok   Helper settings have "Try the other sources automatically", off by default
 ok   with it on, a source that fails hands over to the others (Fast mode, the chosen one first) and the file is delivered
 ok   with it off, a failure is just reported
+ok   Open the site opens the browser in the app (not the phone's browser) with the package and the save choice
+ok   it tells what to do there
+ok   a download in the browser shows its progress in the sheet
+ok   a file that is not an app is said so, with what to do
+ok   a good download becomes the result: the bundle with its parts, ready to install or patch
+ok   a source that needs a browser offers to open its page here
+ok   and that opens exactly the page the source named
+ok   with "The phone's browser" chosen in Settings it opens there as before
+ok   Helper settings offer the choice, in the app by default
 ok   Find in Downloads asks the app and lists the files of this package, newest first, with format and parts
 ok   it was asked for the package typed in the box
 ok   Use takes the bundle: Found in Downloads, APKM with its parts, and an Install all parts button
