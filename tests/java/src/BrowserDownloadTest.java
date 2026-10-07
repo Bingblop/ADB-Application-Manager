@@ -9,6 +9,7 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 
@@ -81,6 +82,7 @@ public class BrowserDownloadTest {
             BrowserDownload.Progress cancel = new BrowserDownload.Progress() { public void onProgress(long d, long tt) {} public boolean cancelled() { return true; } };
             t = err(() -> BrowserDownload.download(base + "/file", "UA", null, null, dir, cancel));
             is("cancelling stops and removes the part", t != null && t.getMessage().contains("cancelled") && dir.list().length == 2, String.valueOf(t) + Arrays.toString(dir.list()));
+            resumeTests(srv, base);
         } finally {
             srv.stop(0);
             for (File f : dir.listFiles()) f.delete();
@@ -88,6 +90,168 @@ public class BrowserDownloadTest {
         }
         System.out.println(fails == 0 ? "ALL PASS (" + n + " checks)" : fails + " FAILED");
         System.exit(fails == 0 ? 0 : 1);
+    }
+
+    // ---------------------------------------------------------------- pause, resume, retry
+    static final java.util.List<String> reqs = new CopyOnWriteArrayList<String>();
+    static volatile int cutAt = -1;                 // /ranged: end the connection after this many bytes of the answer (once)
+    static volatile String etagNow = "\"v1\"";
+    static volatile int slowMs = 0;
+
+    static void sendBody(HttpExchange ex, byte[] body, int from, int cut) throws IOException {
+        int len = body.length - from;
+        ex.sendResponseHeaders(from > 0 ? 206 : 200, len);
+        java.io.OutputStream o = ex.getResponseBody();
+        int step = 20000;
+        for (int p = 0; p < len; p += step) {
+            int n = Math.min(step, len - p);
+            if (cut >= 0 && p >= cut) { ex.close(); return; }
+            o.write(body, from + p, n);
+            o.flush();
+            if (slowMs > 0) try { Thread.sleep(slowMs); } catch (InterruptedException ignored) {}
+        }
+        ex.close();
+    }
+
+    static void resumeTests(HttpServer srv, String base) throws Exception {
+        final byte[] body = new byte[400000];
+        for (int i = 0; i < body.length; i++) body[i] = (byte) (i * 7 + 3);
+        srv.createContext("/ranged", ex -> {
+            String range = ex.getRequestHeaders().getFirst("Range"), ifr = ex.getRequestHeaders().getFirst("If-Range");
+            reqs.add("range=" + range + " if-range=" + ifr + " cookie=" + ex.getRequestHeaders().getFirst("Cookie"));
+            ex.getResponseHeaders().add("Content-Type", "application/octet-stream");
+            ex.getResponseHeaders().add("Content-Disposition", "attachment; filename=\"big.apkm\"");
+            ex.getResponseHeaders().add("ETag", etagNow);
+            ex.getResponseHeaders().add("Accept-Ranges", "bytes");
+            int from = 0;
+            if (range != null && range.startsWith("bytes=") && (ifr == null || ifr.equals(etagNow))) {
+                from = Integer.parseInt(range.substring(6, range.indexOf('-')));
+                if (from >= body.length) { ex.sendResponseHeaders(416, -1); ex.close(); return; }
+                ex.getResponseHeaders().add("Content-Range", "bytes " + from + "-" + (body.length - 1) + "/" + body.length);
+            }
+            int cut = cutAt; if (cut >= 0) cutAt = -1;
+            sendBody(ex, body, from, cut);
+        });
+        srv.createContext("/noranges", ex -> {
+            reqs.add("noranges range=" + ex.getRequestHeaders().getFirst("Range"));
+            ex.getResponseHeaders().add("Content-Type", "application/octet-stream");
+            ex.getResponseHeaders().add("Content-Disposition", "attachment; filename=\"plain.apks\"");
+            ex.getResponseHeaders().add("ETag", "\"p\"");
+            int cut = cutAt; if (cut >= 0) cutAt = -1;
+            sendBody(ex, body, 0, cut);
+        });
+        srv.createContext("/signed", ex -> {            // a link that works once (the page link), then sends to a storage address that keeps working
+            reqs.add("signed " + ex.getRequestURI().getPath());
+            ex.getResponseHeaders().add("Location", "/ranged");
+            ex.sendResponseHeaders(302, -1);
+            ex.close();
+        });
+        File dir = Files.createTempDirectory("bdr").toFile();
+        try {
+            // a connection that breaks leaves the part, and Retry goes on from there
+            cutAt = 100000; slowMs = 0; etagNow = "\"v1\""; reqs.clear();
+            BrowserDownload.Job j = new BrowserDownload.Job("a", base + "/ranged", "UA", "http://ref/", dir);
+            BrowserDownload.Cookies ck = u -> "sid=9";
+            BrowserDownload.run(j, ck, null);
+            is("resume: a broken connection is FAILED with words and the part is kept", j.state == BrowserDownload.State.FAILED && (j.error.contains("connection broke") || j.error.contains("ended early")) && j.error.contains("Retry") && new File(dir, "big.apkm.part").length() > 0 && new File(dir, "big.apkm.part").length() < body.length, j.state + " " + j.error);
+            long kept = new File(dir, "big.apkm.part").length();
+            is("resume: the job knows the name, size and validator", j.name.equals("big.apkm") && j.total == body.length && j.etag.equals("\"v1\"") && j.done == kept, j.name + " " + j.total + " " + j.etag + " " + j.done + "/" + kept);
+            BrowserDownload.run(j, ck, null);
+            is("resume: Retry asks for the rest only (Range from the bytes on disk, If-Range with the ETag, the cookies again)", reqs.size() == 2 && reqs.get(1).equals("range=bytes=" + kept + "- if-range=\"v1\" cookie=sid=9"), String.valueOf(reqs));
+            is("resume: the finished file is the whole file, byte for byte", j.state == BrowserDownload.State.DONE && j.file.getName().equals("big.apkm") && Arrays.equals(Files.readAllBytes(j.file.toPath()), body), j.state + " " + j.error);
+            is("resume: no .part is left", !new File(dir, "big.apkm.part").exists());
+            j.file.delete();
+
+            // pause keeps the part, resume completes
+            slowMs = 25; reqs.clear(); cutAt = -1;
+            final BrowserDownload.Job p = new BrowserDownload.Job("b", base + "/ranged", "UA", null, dir);
+            final boolean[] paused = {false};
+            BrowserDownload.Listener pauseAt = jj -> { if (!paused[0] && jj.done >= 100000) { paused[0] = true; jj.pause(); } };
+            BrowserDownload.run(p, null, pauseAt);
+            is("pause: stops with the bytes in hand, state PAUSED, no error", p.state == BrowserDownload.State.PAUSED && p.error.isEmpty() && p.done >= 100000 && p.done < body.length, p.state + " " + p.done);
+            is("pause: the part holds exactly what was read", new File(dir, "big.apkm.part").length() == p.done, new File(dir, "big.apkm.part").length() + " vs " + p.done);
+            slowMs = 0;
+            final long pausedAt = p.done;
+            BrowserDownload.run(p, null, null);
+            is("pause: resume finishes it, from where it stopped", p.state == BrowserDownload.State.DONE && Arrays.equals(Files.readAllBytes(p.file.toPath()), body) && reqs.get(1).startsWith("range=bytes=" + pausedAt + "-"), String.valueOf(reqs) + " pausedAt=" + pausedAt);
+            p.file.delete();
+
+            // cancel removes the part
+            slowMs = 25; reqs.clear();
+            final BrowserDownload.Job c = new BrowserDownload.Job("c", base + "/ranged", "UA", null, dir);
+            BrowserDownload.run(c, null, jj -> { if (jj.done >= 50000) jj.cancel(); });
+            is("cancel: state CANCELLED and the part is gone", c.state == BrowserDownload.State.CANCELLED && !new File(dir, "big.apkm.part").exists() && dir.list().length == 0, c.state + Arrays.toString(dir.list()));
+            slowMs = 0;
+
+            // the file changed on the server (the validator no longer matches): the answer is the whole new file, the old part is not mixed in
+            cutAt = 120000; etagNow = "\"v1\""; reqs.clear();
+            BrowserDownload.Job ch = new BrowserDownload.Job("d", base + "/ranged", "UA", null, dir);
+            BrowserDownload.run(ch, null, null);
+            is("changed: first try breaks", ch.state == BrowserDownload.State.FAILED);
+            etagNow = "\"v2\"";
+            BrowserDownload.run(ch, null, null);
+            is("changed: a new validator gives the whole file again (200), which replaces the old part", ch.state == BrowserDownload.State.DONE && Arrays.equals(Files.readAllBytes(ch.file.toPath()), body) && ch.etag.equals("\"v2\""), ch.state + " " + ch.error + " " + ch.etag);
+            ch.file.delete();
+
+            // a server that does not do ranges: Retry starts over, the result is still right
+            cutAt = 90000; reqs.clear();
+            BrowserDownload.Job nr = new BrowserDownload.Job("e", base + "/noranges", "UA", null, dir);
+            BrowserDownload.run(nr, null, null);
+            is("noranges: the break is FAILED, part kept", nr.state == BrowserDownload.State.FAILED && new File(dir, "plain.apks.part").exists());
+            BrowserDownload.run(nr, null, null);
+            is("noranges: Retry asked for a range, got the whole file, and the result is whole and not doubled", nr.state == BrowserDownload.State.DONE && nr.file.length() == body.length && Arrays.equals(Files.readAllBytes(nr.file.toPath()), body) && reqs.get(1).contains("range=bytes="), nr.state + " " + nr.file.length() + " " + reqs);
+            nr.file.delete();
+
+            // a part without a validator is not trusted
+            File lone = new File(dir, "big.apkm.part");
+            Files.write(lone.toPath(), new byte[5000]);
+            BrowserDownload.Job nv = new BrowserDownload.Job("f", base + "/ranged", "UA", null, dir);
+            nv.name = "big.apkm";
+            reqs.clear(); cutAt = -1;
+            BrowserDownload.run(nv, null, null);
+            is("a leftover part with no validator is not trusted: the file starts over", nv.state == BrowserDownload.State.DONE && Arrays.equals(Files.readAllBytes(nv.file.toPath()), body) && reqs.get(0).startsWith("range=null"), nv.state + " " + reqs);
+            nv.file.delete();
+
+            // 416: the part is longer than the file
+            Files.write(lone.toPath(), new byte[body.length + 10]);
+            BrowserDownload.Job big = new BrowserDownload.Job("g", base + "/ranged", "UA", null, dir);
+            big.name = "big.apkm"; big.etag = "\"v2\""; etagNow = "\"v2\""; reqs.clear();
+            BrowserDownload.run(big, null, null);
+            is("416: a part longer than the file starts over once and succeeds", big.state == BrowserDownload.State.DONE && Arrays.equals(Files.readAllBytes(big.file.toPath()), body), big.state + " " + big.error + " " + reqs);
+            big.file.delete();
+
+            // the page link works once; Retry uses the address it ended at
+            cutAt = 80000; etagNow = "\"v1\""; reqs.clear();
+            BrowserDownload.Job sg = new BrowserDownload.Job("h", base + "/signed", "UA", null, dir);
+            BrowserDownload.run(sg, null, null);
+            is("signed: the address it ended at is remembered", sg.state == BrowserDownload.State.FAILED && sg.resolvedUrl.endsWith("/ranged"), sg.state + " " + sg.resolvedUrl);
+            reqs.clear();
+            BrowserDownload.run(sg, null, null);
+            is("signed: Retry goes straight to that address (the page link is not asked again) and finishes", sg.state == BrowserDownload.State.DONE && reqs.size() == 1 && reqs.get(0).startsWith("range=bytes="), sg.state + " " + reqs);
+            sg.file.delete();
+
+            // a refusal on a retry says so and keeps the part
+            cutAt = 60000; reqs.clear(); etagNow = "\"v1\"";
+            BrowserDownload.Job rf = new BrowserDownload.Job("i", base + "/ranged", "UA", null, dir);
+            BrowserDownload.run(rf, null, null);
+            File keep = new File(dir, "big.apkm.part");
+            is("refusal: setup (part kept)", rf.state == BrowserDownload.State.FAILED && keep.exists());
+            BrowserDownload.Job ghost = new BrowserDownload.Job("j", base + "/forbidden", "UA", null, dir);
+            ghost.name = "big.apkm"; ghost.etag = "\"v1\"";
+            BrowserDownload.run(ghost, null, null);
+            is("refusal: 403 on a resume is FAILED with the browser-check advice and the part is kept for another try", ghost.state == BrowserDownload.State.FAILED && ghost.error.contains("browser check") && keep.exists(), ghost.state + " " + ghost.error);
+            keep.delete();
+
+            // a state listener sees RUNNING first and the end state last
+            final java.util.List<BrowserDownload.State> seenStates = new java.util.ArrayList<BrowserDownload.State>();
+            BrowserDownload.Job ls = new BrowserDownload.Job("k", base + "/file", "UA", null, dir);
+            BrowserDownload.run(ls, null, jj -> { if (seenStates.isEmpty() || seenStates.get(seenStates.size() - 1) != jj.state) seenStates.add(jj.state); });
+            is("listener: RUNNING, then DONE", seenStates.equals(Arrays.asList(BrowserDownload.State.RUNNING, BrowserDownload.State.DONE)), String.valueOf(seenStates));
+            ls.file.delete();
+        } finally {
+            for (File f : dir.listFiles()) f.delete();
+            dir.delete();
+        }
     }
 
     interface Call { void run() throws Exception; }

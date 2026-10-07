@@ -1,5 +1,18 @@
 # Changelog
 
+## v7.10.4-Pro (versionCode 824)
+
+- **Morphe Helper: a download list with Pause, Resume, Retry and Cancel.** What the in-app browser downloads is now a job of its own, not tied to the browser
+  window. Close the browser and it goes on; start several (three run at a time, the others wait). Each job shows its size, speed and time left, and offers
+  **Pause** (the bytes stay), **Resume**, **Retry** after a failure, **Cancel** (the part is removed), **Use this file** when it is saved and **Remove**; **Clear
+  finished** tidies the list. Resuming asks the site for the rest only (HTTP Range with If-Range, so a file that changed starts again; a site that cannot do
+  ranges, a 416 or a leftover part with no validator also start over, and the result is checked against the size the site named). Retry goes first to the
+  address the download had reached (a storage address often outlives the page link that led to it) and says plainly when the link has expired (open the page
+  again in the browser). The list is kept in a journal: a paused or broken download is still there after the app was closed or killed, and one that was running
+  then comes back as Paused. The journal is not trusted: only the Helper's two folders, only web addresses, and a name is never a path. A broken connection is
+  reported with how far it got and that Retry goes on from there. Tests: `BrowserDownloadTest` (41 checks, resuming against a real local server) and
+  `HelperDownloadsTest` (29 checks), `t119` for the list.
+
 ## v7.10.3-Pro (versionCode 823)
 
 - **System UI Tuner is gone.** Its tab, its code (SysUiOps, SysUiRules, the Battery, Clock and Demo mode Quick Settings tiles, their manifest entries and

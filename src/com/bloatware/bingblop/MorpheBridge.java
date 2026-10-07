@@ -50,7 +50,9 @@ public final class MorpheBridge {
         /** Whether this app may read shared storage (All files access): without it the Downloads folder looks empty to it. */
         boolean storageAccess();
         /** Opens the in-app browser at {@code url}; downloads go to {@code dir} and are reported to {@code events}. Returns a way to close it. */
-        Runnable openBrowser(String url, File dir, BrowserDownload.Events events);
+        Runnable openBrowser(String url, File dir, HelperDownloads downloads, BrowserDownload.Events events);
+        /** The cookies the in-app browser holds for an address (the Helper's downloads send them like the browser would). */
+        BrowserDownload.Cookies cookies();
     }
 
     private static final String ENGINE_CLASS = "com.bloatware.bingblop.morphe.EngineMain";
@@ -166,6 +168,8 @@ public final class MorpheBridge {
             case "helperManual": return new JSONObject().put("url", MorpheHelper.manualUrl(a.optString("source"), a.optString("pkg"), a.optString("version")));
             case "helperVersions": return MorpheHelper.versions(a.optString("source"), a.optString("pkg"));
             case "helperBrowse": return helperBrowse(a);
+            case "helperDownloadList": return new JSONObject().put("jobs", downloads().pageList());
+            case "helperDownloadOp": return helperDownloadOp(a);
             case "helperBrowseClose": if (browserCloser != null) { final Runnable c = browserCloser; browserCloser = null; c.run(); } return null;
             case "helperDownloads": return helperDownloads(a);
             case "helperAdopt": return helperAdopt(a);
@@ -687,10 +691,80 @@ public final class MorpheBridge {
     }
 
     private volatile Runnable browserCloser;
+    private HelperDownloads downloadList;
+    private final Map<String, long[]> lastPush = new ConcurrentHashMap<String, long[]>();
+
+    /** The Helper's download list (it outlives the browser window, and the journal outlives the app). */
+    private synchronized HelperDownloads downloads() {
+        if (downloadList == null) {
+            downloadList = new HelperDownloads(new File(base, "helper_downloads.json"), host.cookies(), new java.util.function.Predicate<File>() {
+                @Override public boolean test(File f) {
+                    try { return f.getCanonicalFile().equals(helperDir("cache").getCanonicalFile()) || f.getCanonicalFile().equals(helperDir("downloads").getCanonicalFile()); }
+                    catch (IOException e) { return false; }
+                }
+            });
+            downloadList.addListener(new HelperDownloads.Listener() {
+                @Override public void onChange(BrowserDownload.Job j) {
+                    long now = System.currentTimeMillis();
+                    long[] last = lastPush.get(j.id);
+                    long st = j.state.ordinal();
+                    if (last != null && last[1] == st && now - last[0] < 400) return;      // progress is passed on a few times a second, a change of state at once
+                    lastPush.put(j.id, new long[]{now, st});
+                    try { event(new JSONObject().put("t", "hd").put("job", HelperDownloads.forPage(j))); } catch (JSONException ignored) {}
+                }
+            });
+        }
+        return downloadList;
+    }
+
+    /** Pause, resume (also Retry), cancel, remove, use (the saved file becomes the Helper's result), clear (finished ones off the list). */
+    private JSONObject helperDownloadOp(JSONObject a) throws Exception {
+        HelperDownloads dl = downloads();
+        String op = a.optString("op"), id = a.optString("id");
+        switch (op) {
+            case "pause": dl.pause(id); break;
+            case "resume": dl.resume(id); break;
+            case "cancel": dl.cancel(id); break;
+            case "remove": dl.remove(id); break;
+            case "clear": dl.clearFinished(); break;
+            case "use": {
+                BrowserDownload.Job j = dl.get(id);
+                if (j == null || j.state != BrowserDownload.State.DONE || j.file == null || !j.file.isFile()) throw new IOException("that download is not finished");
+                JSONObject d = describeDownloaded(j.file);
+                if (!d.optBoolean("ok")) throw new IOException(d.optString("error"));
+                return new JSONObject().put("info", d.getJSONObject("info"));
+            }
+            default: throw new IOException("unknown download action");
+        }
+        return new JSONObject().put("jobs", dl.pageList());
+    }
+
+    /** {ok, info} for a saved file that is an APK / APKS / APKM / XAPK (info as for any Helper result), else {ok:false, error}. */
+    private JSONObject describeDownloaded(File f) {
+        JSONObject e = new JSONObject();
+        try {
+            JSONObject info = MorpheHelper.inspect(f);
+            if (info.optBoolean("ok")) {
+                info.put("fileName", f.getName());
+                info.put("source", "browser");
+                try {
+                    PackageManager pm = host.context().getPackageManager();
+                    CharSequence l = pm.getApplicationLabel(pm.getApplicationInfo(info.optString("pkg"), 0));
+                    if (l != null) info.put("label", l.toString());
+                } catch (Exception ignored) {}
+                e.put("ok", true).put("info", info);
+            } else {
+                e.put("ok", false).put("error", info.optString("error", "that is not an APK, APKS, APKM or XAPK file"));
+            }
+        } catch (Exception x) {
+            try { e.put("ok", false).put("error", String.valueOf(x.getMessage())); } catch (JSONException ignored) {}
+        }
+        return e;
+    }
 
     /**
      * The in-app browser for the sources that need a real browser (APKMirror's browser check): opens {@code url} (or the source's own page), and what the person
-     * downloads there is saved into the Helper's folder and described to the page as events {t:"hb", k:"status"|"done"|"failed"|"closed"}.
+     * downloads there is saved into the Helper's folder (as a job of the Helper's download list) and described to the page as events {t:"hb", k:"status"|"done"|"failed"|"closed"}.
      */
     private JSONObject helperBrowse(JSONObject a) throws Exception {
         String url = a.optString("url").trim();
@@ -699,34 +773,21 @@ public final class MorpheBridge {
         File dir = helperDir(a.optString("save", "cache"));
         dir.mkdirs();
         final File folder = dir;
-        browserCloser = host.openBrowser(url, folder, new BrowserDownload.Events() {
+        browserCloser = host.openBrowser(url, folder, downloads(), new BrowserDownload.Events() {
             @Override public void onStatus(String text, int pct) {
                 try { event(new JSONObject().put("t", "hb").put("k", "status").put("text", text).put("pct", pct)); } catch (JSONException ignored) {}
             }
             @Override public boolean onDownloaded(File f) {
+                JSONObject d = describeDownloaded(f);
                 JSONObject e = new JSONObject();
-                boolean good = false;
                 try {
                     e.put("t", "hb").put("k", "done").put("name", f.getName());
-                    JSONObject info = MorpheHelper.inspect(f);
-                    if (info.optBoolean("ok")) {
-                        good = true;
-                        info.put("fileName", f.getName());
-                        info.put("source", "browser");
-                        try {
-                            PackageManager pm = host.context().getPackageManager();
-                            CharSequence l = pm.getApplicationLabel(pm.getApplicationInfo(info.optString("pkg"), 0));
-                            if (l != null) info.put("label", l.toString());
-                        } catch (Exception ignored) {}
-                        e.put("ok", true).put("info", info);
-                    } else {
-                        e.put("ok", false).put("error", info.optString("error", "that is not an APK, APKS, APKM or XAPK file"));
-                    }
-                } catch (Exception x) {
-                    try { e.put("ok", false).put("error", String.valueOf(x.getMessage())); } catch (JSONException ignored) {}
-                }
+                    e.put("ok", d.optBoolean("ok"));
+                    if (d.has("info")) e.put("info", d.get("info"));
+                    if (d.has("error")) e.put("error", d.get("error"));
+                } catch (JSONException ignored) {}
                 event(e);
-                return good;
+                return d.optBoolean("ok");
             }
             @Override public void onFailed(String why) {
                 try { event(new JSONObject().put("t", "hb").put("k", "failed").put("error", why)); } catch (JSONException ignored) {}

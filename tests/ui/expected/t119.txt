@@ -101,6 +101,21 @@ ok   a source that needs a browser offers to open its page here
 ok   and that opens exactly the page the source named
 ok   with "The phone's browser" chosen in Settings it opens there as before
 ok   Helper settings offer the choice, in the app by default
+ok   Downloads from the browser: every job with its state, size and host
+ok   a running job offers Pause and Cancel; a failed one Retry and Cancel; a saved one Use this file and Remove
+ok   the bar of a job shows how far it is
+ok   Pause asks the app, and the row becomes Paused with Resume and Cancel
+ok   Resume goes on (running again)
+ok   Retry on a failed one is the same Resume, and its error is gone
+ok   a progress event updates just that row
+ok   a new job appears; one that has not started shows its host and says it waits
+ok   a size that is not known shows what is there, without a percentage
+ok   Use this file makes it the result: the bundle with its parts, ready to install or patch
+ok   Cancel: the row says Cancelled and offers Remove
+ok   Remove takes it off the list
+ok   Clear finished removes the saved ones and keeps the others
+ok   the list explains that downloads go on without the browser, and what Pause and Resume do
+ok   with no downloads the section is not there
 ok   Find in Downloads asks the app and lists the files of this package, newest first, with format and parts
 ok   it was asked for the package typed in the box
 ok   Use takes the bundle: Found in Downloads, APKM with its parts, and an Install all parts button

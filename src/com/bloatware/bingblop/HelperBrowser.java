@@ -35,30 +35,32 @@ final class HelperBrowser {
 
     private final Activity activity;
     private final File dir;
+    private final HelperDownloads downloads;
     private final BrowserDownload.Events events;
     private Dialog dialog;
     private WebView web;
     private TextView title, status;
     private ProgressBar bar;
     private Button back, forward;
-    private volatile boolean cancel;
     private String ua = "";
+    private String watching = "";
+    private HelperDownloads.Listener watcher;
 
-    private HelperBrowser(Activity a, File dir, BrowserDownload.Events e) {
+    private HelperBrowser(Activity a, File dir, HelperDownloads dl, BrowserDownload.Events e) {
         this.activity = a;
         this.dir = dir;
+        this.downloads = dl;
         this.events = e;
     }
 
     /** Opens the browser at {@code url} (an http or https address). Must be called on the UI thread. */
-    static HelperBrowser show(Activity a, String url, File dir, BrowserDownload.Events events) {
-        HelperBrowser b = new HelperBrowser(a, dir, events);
+    static HelperBrowser show(Activity a, String url, File dir, HelperDownloads dl, BrowserDownload.Events events) {
+        HelperBrowser b = new HelperBrowser(a, dir, dl, events);
         b.build(url);
         return b;
     }
 
     void close() {
-        cancel = true;
         if (dialog != null && dialog.isShowing()) dialog.dismiss();
     }
 
@@ -202,7 +204,7 @@ final class HelperBrowser {
         dialog.setOnDismissListener(new android.content.DialogInterface.OnDismissListener() {
             @Override
             public void onDismiss(android.content.DialogInterface d) {
-                cancel = true;
+                if (watcher != null) downloads.removeListener(watcher);     // a download that is still going goes on in the Helper's list
                 try {
                     web.stopLoading();
                     web.loadUrl("about:blank");
@@ -252,43 +254,49 @@ final class HelperBrowser {
             say("This download cannot be saved here (" + (url == null ? "" : url.split(":")[0]) + ")", true);
             return;
         }
-        final String referer = web.getUrl();
-        cancel = false;
-        say("Downloading...", false);
-        events.onStatus("Downloading...", 0);
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    BrowserDownload.Result r = BrowserDownload.download(url, ua.isEmpty() ? agent : ua, new BrowserDownload.Cookies() {
-                        @Override
-                        public String forUrl(String u) {
-                            return CookieManager.getInstance().getCookie(u);
-                        }
-                    }, referer, dir, new BrowserDownload.Progress() {
-                        @Override
-                        public void onProgress(long done, long total) {
-                            int pct = total > 0 ? (int) (100 * done / total) : 0;
-                            String t = "Downloading " + (done / 1048576) + (total > 0 ? " of " + (total / 1048576) + " MB (" + pct + "%)" : " MB");
+        if (watcher == null) {
+            watcher = new HelperDownloads.Listener() {
+                private BrowserDownload.State last;
+                @Override
+                public void onChange(final BrowserDownload.Job j) {
+                    if (!j.id.equals(watching)) return;
+                    BrowserDownload.State st = j.state;
+                    switch (st) {
+                        case RUNNING:
+                        case QUEUED: {
+                            int pct = j.total > 0 ? (int) (100 * j.done / j.total) : 0;
+                            String t = "Downloading " + (j.done / 1048576) + (j.total > 0 ? " of " + (j.total / 1048576) + " MB (" + pct + "%)" : " MB") + "  (also in the Helper's download list)";
                             say(t, false);
                             events.onStatus(t, pct);
+                            break;
                         }
-
-                        @Override
-                        public boolean cancelled() {
-                            return cancel;
-                        }
-                    });
-                    say("Saved " + r.file.getName(), false);
-                    if (events.onDownloaded(r.file)) activity.runOnUiThread(new Runnable() { @Override public void run() { close(); } });
-                } catch (Throwable t) {
-                    String m = t.getMessage() == null ? t.getClass().getSimpleName() : t.getMessage();
-                    if (!"cancelled".equals(m)) {
-                        say("Download failed: " + m, true);
-                        events.onFailed(m);
+                        case PAUSED:
+                            say("Paused: Resume it in the Helper's download list", false);
+                            break;
+                        case FAILED:
+                            if (last != st) {
+                                say("Download failed: " + j.error + " (Retry is in the Helper's download list)", true);
+                                events.onFailed(j.error);
+                            }
+                            break;
+                        case CANCELLED:
+                            say("Download cancelled", false);
+                            break;
+                        case DONE:
+                            if (last != st) {
+                                say("Saved " + (j.file == null ? "" : j.file.getName()), false);
+                                if (j.file != null && events.onDownloaded(j.file)) activity.runOnUiThread(new Runnable() { @Override public void run() { close(); } });
+                            }
+                            break;
                     }
+                    last = st;
                 }
-            }
-        }, "helper-browser-download").start();
+            };
+            downloads.addListener(watcher);
+        }
+        BrowserDownload.Job j = downloads.start(url, ua.isEmpty() ? agent : ua, web.getUrl(), dir);
+        watching = j.id;
+        say("Downloading...", false);
+        events.onStatus("Downloading...", 0);
     }
 }

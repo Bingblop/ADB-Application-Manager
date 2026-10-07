@@ -96,6 +96,18 @@ const { chromium, PAGE, fixture } = require('./lib/pw');
           case 'helperDownloads': return ok(M.dlAccess ? { ok: true, access: true, folder: '/storage/emulated/0/Download', items: a.pkg === 'com.google.android.youtube' ? M.dlItems : [], scanned: 4, other: a.pkg === 'com.google.android.youtube' ? 1 : 4, unreadable: 0 } : { ok: true, access: false, items: [] });
           case 'helperAdopt': { const x = M.dlItems.find(i => i.path === a.path); if (!x) return bad('that file is not one this app may read'); return ok({ ok: true, path: '/cache/h/' + x.name, fileName: x.name, pkg: x.pkg, versionName: x.versionName, versionCode: x.versionCode, format: x.format, splits: x.splits, size: x.size, sha256: 'ef'.repeat(32), source: 'downloads' }); }
           case 'helperBrowse': M.browseArgs = a; return ok({ url: a.url || 'https://www.apkmirror.com/?s=' + a.pkg });
+          case 'helperDownloadList': return ok({ jobs: M.dlJobs || [] });
+          case 'helperDownloadOp': {
+            (M.dlOps = M.dlOps || []).push([a.op, a.id]);
+            const J = M.dlJobs = M.dlJobs || [], j = J.find(x => x.id === a.id);
+            if (a.op === 'pause' && j) j.state = 'paused';
+            if (a.op === 'resume' && j) { j.state = 'running'; j.error = ''; }
+            if (a.op === 'cancel' && j) j.state = 'cancelled';
+            if (a.op === 'remove') M.dlJobs = J.filter(x => x.id !== a.id);
+            if (a.op === 'clear') M.dlJobs = J.filter(x => x.state !== 'done' && x.state !== 'cancelled');
+            if (a.op === 'use') { if (!j || j.state !== 'done') return bad('that download is not finished'); return ok({ info: { ok: true, path: '/cache/h/' + j.name, fileName: j.name, pkg: 'com.google.android.inputmethod.latin', versionName: '18.0.3.954559732', versionCode: 954559732, format: 'apkm', splits: 4, size: j.total, sha256: 'cd'.repeat(32), source: 'browser' } }); }
+            return ok({ jobs: M.dlJobs });
+          }
           case 'helperManual': return ok({ url: 'https://www.apkmirror.com/?s=' + a.pkg });
           case 'vtQuota': return ok({ perMinuteUsed: 1, perMinuteLimit: 4, perDayUsed: 12, perDayLimit: 500 });
           case 'vtValidate': return a.key === 'good' ? ok({}) : bad('VirusTotal refused the key (401)');
@@ -378,6 +390,40 @@ const { chromium, PAGE, fixture } = require('./lib/pw');
   check('with "The phone\'s browser" chosen in Settings it opens there as before', await ev(n => (window.__urls || []).length === n + 1, urls0));
   check('Helper settings offer the choice, in the app by default', await ev(() => { mpHTab('set'); const t = document.getElementById('mpSheetBody').innerText; const ok = /Open the sources in/.test(t) && MP_DEFAULTS.hBrowser === 'inapp'; mpHTab('get'); return ok; }));
   await ev(() => { mp.cfg.hBrowser = 'inapp'; mp.h.got = null; mp.h.msg = ''; mpHelperRender(); document.getElementById('mpHPkg').value = 'com.google.android.youtube'; mpHRead(); });
+
+  // ---- the download list: what the browser started goes on without it ----
+  await ev(() => { window.__mp.dlJobs = [{ id: 'j1', name: 'gboard.apkm', host: 'downloads.apkmirror.com', state: 'running', done: 30000000, total: 90000000, error: '', canUse: false }, { id: 'j2', name: 'youtube.apkm', host: 'cdn.example', state: 'failed', done: 5000000, total: 80000000, error: 'the connection broke after 4 of 76 MB: Retry goes on from there', canUse: false }, { id: 'j3', name: 'maps.apks', host: 'cdn.example', state: 'done', done: 50000000, total: 50000000, error: '', canUse: true }]; mp.h.got = null; mp.h.msg = ''; });
+  await ev(() => mpHDLoad()); await wait(100);
+  const dlText = () => text('#mpHDl');
+  check('Downloads from the browser: every job with its state, size and host', await ev(() => { const t = document.getElementById('mpHDl').innerText; return /downloads from the browser/i.test(t) && /gboard\.apkm/.test(t) && /Downloading 28\.6 MB of 85\.8 MB \(33%\)/.test(t) && /Stopped at 4\.8 MB of 76\.3 MB \(6%\): the connection broke/.test(t) && /Saved, 47\.7 MB/.test(t) && /downloads\.apkmirror\.com/.test(t); }));
+  check('a running job offers Pause and Cancel; a failed one Retry and Cancel; a saved one Use this file and Remove', await ev(() => { const r = id => [...document.querySelectorAll('#mpHDl [data-dl="' + id + '"] button')].map(b => b.textContent).join('|'); return r('j1') === 'Pause|Cancel' && r('j2') === 'Retry|Cancel' && r('j3') === 'Use this file|Remove'; }));
+  check('the bar of a job shows how far it is', await ev(() => document.querySelector('#mpHDl [data-dl="j1"] .mp-bartrack > i').style.width === '33%' && document.querySelector('#mpHDl [data-dl="j3"] .mp-bartrack > i').style.width === '100%'));
+  await page.click('#mpHDl [data-dl="j1"] button:has-text("Pause")'); await wait(150);
+  check('Pause asks the app, and the row becomes Paused with Resume and Cancel', await ev(() => window.__mp.dlOps.slice(-1)[0].join() === 'pause,j1' && /Paused at 28\.6 MB of 85\.8 MB/.test(document.querySelector('#mpHDl [data-dl="j1"]').innerText) && [...document.querySelectorAll('#mpHDl [data-dl="j1"] button')].map(b => b.textContent).join('|') === 'Resume|Cancel'));
+  await page.click('#mpHDl [data-dl="j1"] button:has-text("Resume")'); await wait(150);
+  check('Resume goes on (running again)', await ev(() => window.__mp.dlOps.slice(-1)[0].join() === 'resume,j1' && /Downloading/.test(document.querySelector('#mpHDl [data-dl="j1"]').innerText)));
+  await page.click('#mpHDl [data-dl="j2"] button:has-text("Retry")'); await wait(150);
+  check('Retry on a failed one is the same Resume, and its error is gone', await ev(() => window.__mp.dlOps.slice(-1)[0].join() === 'resume,j2' && !/connection broke/.test(document.querySelector('#mpHDl [data-dl="j2"]').innerText)));
+  // progress pushed by the app
+  await ev(() => window.onMorpheEvent({ t: 'hd', job: { id: 'j1', name: 'gboard.apkm', host: 'downloads.apkmirror.com', state: 'running', done: 45000000, total: 90000000, error: '', canUse: false } })); await wait(60);
+  check('a progress event updates just that row', await ev(() => /Downloading 42\.9 MB of 85\.8 MB \(50%\)/.test(document.querySelector('#mpHDl [data-dl="j1"]').innerText) && document.querySelector('#mpHDl [data-dl="j1"] .mp-bartrack > i').style.width === '50%'));
+  await ev(() => window.onMorpheEvent({ t: 'hd', job: { id: 'j4', name: '', host: 'dl.example', state: 'queued', done: 0, total: -1, error: '', canUse: false } })); await wait(60);
+  check('a new job appears; one that has not started shows its host and says it waits', await ev(() => { const t = document.querySelector('#mpHDl [data-dl="j4"]').innerText; return /dl\.example/.test(t) && /Waiting for a free place/.test(t); }));
+  await ev(() => window.onMorpheEvent({ t: 'hd', job: { id: 'j4', name: 'big.apkm', host: 'dl.example', state: 'running', done: 1048576, total: -1, error: '', canUse: false } })); await wait(60);
+  check('a size that is not known shows what is there, without a percentage', await ev(() => /Downloading 1\.0 MB$|Downloading 1\.0 MB[^(]*$/m.test(document.querySelector('#mpHDl [data-dl="j4"]').innerText.split('\n').find(l => /Downloading/.test(l)))));
+  await page.click('#mpHDl [data-dl="j3"] button:has-text("Use this file")'); await wait(250);
+  check('Use this file makes it the result: the bundle with its parts, ready to install or patch', await ev(() => { const t = document.getElementById('mpSheetBody').innerText; return /APKM, 4 parts/.test(t) && /saved from the browser/.test(t) && /Install all parts/.test(t); }));
+  await ev(() => { mp.h.got = null; mp.h.msg = ''; mpHelperRender(); });
+  await page.click('#mpHDl [data-dl="j2"] button:has-text("Cancel")'); await wait(150);
+  check('Cancel: the row says Cancelled and offers Remove', await ev(() => /Cancelled/.test(document.querySelector('#mpHDl [data-dl="j2"]').innerText) && [...document.querySelectorAll('#mpHDl [data-dl="j2"] button')].map(b => b.textContent).join('|') === 'Remove'));
+  await page.click('#mpHDl [data-dl="j2"] button:has-text("Remove")'); await wait(150);
+  check('Remove takes it off the list', await ev(() => !document.querySelector('#mpHDl [data-dl="j2"]')));
+  await page.click('#mpHDl button:has-text("Clear finished")'); await wait(150);
+  check('Clear finished removes the saved ones and keeps the others', await ev(() => !document.querySelector('#mpHDl [data-dl="j3"]') && !!document.querySelector('#mpHDl [data-dl="j1"]') && !/Clear finished/.test(document.getElementById('mpHDl').innerText)));
+  check('the list explains that downloads go on without the browser, and what Pause and Resume do', await ev(() => /go on when the browser is closed/.test(document.getElementById('mpHDl').innerText) && /Resume asks the site for the rest only/.test(document.getElementById('mpHDl').innerText)));
+  await ev(() => { window.__mp.dlJobs = []; mp.dl = []; mpHDRender(); });
+  check('with no downloads the section is not there', await ev(() => document.getElementById('mpHDl').innerText.trim() === ''));
+  await ev(() => { mp.h.got = null; mp.h.msg = ''; mp.h.pkg = 'com.google.android.youtube'; mpHelperRender(); });
 
   // ---- bundles (APKM / APKS / XAPK) saved by the browser are found in Downloads ----
   await ev(() => { window.__mp.helperFail = false; mp.h.got = null; mp.h.err = false; mp.h.msg = ''; mpHelperRender(); });
