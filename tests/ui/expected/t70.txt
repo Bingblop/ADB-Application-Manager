@@ -1,6 +1,6 @@
-1. the settings button is a good tap target (at least 44 x 36, it was 40 x 25): true {"w":44,"h":36}
-   its emoji is bigger (19px, it was 11px): true 19px
-   it fits in the header (no taller than the header) and the tab bar still starts where the header ends: true header 87px, tab bar at 87, header ends 87
+1. the settings button is a good tap target (at least 44 x 36, it was 40 x 25): true {"w":51,"h":38}
+   its emoji is bigger (22px, it was 11px): true 22px
+   it fits in the header (no taller than the header) and the tab bar still starts where the header ends: true header 83px, tab bar at 83, header ends 83
    it still opens Settings: true
 2. on opening, "Total installed" is lit (the list shows every app, like the All pill): true all:true
    a lit card looks different (its own border colour and a glow), the others do not: true {"lit":true,"borderDiffers":true,"shadow":true}
@@ -23,7 +23,7 @@
    the setting shows as on, and the Debloater and Saved rows come back too: true
    it saves the change (tapping Total installed saves an empty set): true
    with the setting off (the default), a saved filter set is ignored: true all:true
-4. a tip sits under the Export / Share CSV buttons and above the filters: true {"shown":true,"text":"Scroll the filters below sideways for more filters ✕","belowButtons":true,"aboveFilters":true,"width":328,"sticky":"relative"}
+4. a tip sits under the Share CSV / Profiles buttons and above the filters: true {"shown":true,"text":"Scroll the filters below sideways for more filters ✕","belowButtons":true,"aboveFilters":true,"width":328,"sticky":"relative"}
    it tells to scroll the filters sideways for more: true Scroll the filters below sideways for more filters ✕
    the filters really do scroll sideways (more pills than fit): true
    scrolling the filters sideways makes it go: true

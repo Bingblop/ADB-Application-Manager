@@ -25,10 +25,16 @@
    after the last it stops; the skipped one is still there to allow by hand: true ✓ — ✓
    its Allow button opens that screen again: true
 5. closing the sheet in the middle of "Allow all" cancels the rest (no Android screen opens behind the person's back): true
-6. with a working mode, Usage access is allowed on the spot (no Android screen, no coming back): true — ✓ — ✓ ✓ ✓
+6. with a working mode, Usage access is allowed on the spot (no Android screen, no coming back): true — ✓ ✓ — ✓ ✓
    "Allow all" then goes to the one that needs the screen (All files access): true
    and Display over other apps follows by itself: all three ✓ and "Done": true ✓ ✓ ✓ ✓ ✓ ✓
    from nothing, "Allow all" needs just the one screen: the other two are allowed by the mode in between: true
+9. the Allow Restricted Settings row sits above Usage access: true
+   with a working mode "Allow all" grants through the mode (one call), closes the sheet and starts the app again: true [1,1,["perm_intro_v62=1"],{"files":true,"usage":true,"overlay":true,"storage_legacy":true,"secure_settings":true,"restricted_settings":true}]
+   Usage access allowed by hand in Settings is also granted as a permission in the background (once): true
+   and not again when nothing changed: true
+   closing the first-launch sheet after something was allowed starts the app again: true
+   closing it with nothing allowed does not start the app again: true
 7. "Not now" closes the first-launch sheet and it is not offered again: true
    a second look finds it done: nothing opens: true
 7. the ✕ at the top closes the first-launch sheet and it is not offered again: true

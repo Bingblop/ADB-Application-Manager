@@ -30,6 +30,11 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Check that the Help Guide is built from its fragments
+        run: |
+          node docs/guide/build.js --strict
+          git diff --exit-code -- assets/guide.js || { echo "::error::assets/guide.js is out of date. Run: node docs/guide/build.js, and commit it."; exit 1; }
+
       - name: Locate Android SDK tools
         run: |
           SDK="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
@@ -58,8 +63,14 @@ jobs:
             echo "::warning::KEYSTORE_BASE64 secret not set - APK is signed with a throwaway test key and will not install over your existing app."
           fi
 
-      - name: Build
-        run: ./build.sh
+      - name: Build (64-bit, 32-bit and universal)
+        run: |
+          mkdir -p dist
+          for ABI in arm64-v8a armeabi-v7a universal; do
+            ABI=$ABI ./build.sh
+            case "$ABI" in arm64-v8a) F=bin/ADB_Application_Manager_Pro.apk ;; *) F="bin/ADB_Application_Manager_Pro-$ABI.apk" ;; esac
+            cp "$F" "dist/ADB_Application_Manager_Pro-$ABI.apk"
+          done
 
       - name: Name artifact
         id: meta
@@ -67,12 +78,15 @@ jobs:
           VERSION=$(sed -n 's/.*android:versionName="\([^"]*\)".*/\1/p' AndroidManifest.xml | head -1)
           SUFFIX=$([ "${{ steps.signing.outputs.kind }}" = "release" ] && echo "" || echo "-test-signed")
           NAME="ADB_Application_Manager_Pro-v${VERSION}${SUFFIX}"
-          cp bin/ADB_Application_Manager_Pro.apk "bin/$NAME.apk"
+          mkdir -p out
+          for ABI in arm64-v8a armeabi-v7a universal; do
+            cp "dist/ADB_Application_Manager_Pro-$ABI.apk" "out/$NAME-$ABI.apk"
+          done
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
           {
-            echo "### $NAME.apk"
+            echo "### $NAME"
             echo ""
-            echo "SHA-256: \`$(sha256sum "bin/$NAME.apk" | cut -d' ' -f1)\`"
+            ( cd out && sha256sum *.apk | sed 's/^\([0-9a-f]*\)  \(.*\)$/- `\2`: `\1`/' )
             if [ "${{ steps.signing.outputs.kind }}" != "release" ]; then
               echo ""
               echo "⚠️ Signed with a throwaway key. Add the KEYSTORE_BASE64 and KEYSTORE_PASSWORD secrets to sign with your release key."
@@ -82,5 +96,5 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.meta.outputs.name }}
-          path: bin/${{ steps.meta.outputs.name }}.apk
+          path: out/*.apk
           if-no-files-found: error

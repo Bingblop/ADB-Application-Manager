@@ -36,6 +36,9 @@ const SUITES = [
     tests: ['SettingsDbTest'], main: 'com.bloatware.bingblop.SettingsDbTest', utf8: true },
   { name: 'overlayrules', title: 'Overlays and Material You: cmd overlay output, names, the theme value and its merge, every verdict and the Samsung switch, against a fake phone',
     tests: ['OverlayRulesTest'], main: 'com.bloatware.bingblop.OverlayRulesTest', utf8: true },
+  { name: 'sysuirules', title: 'System UI Tuner: Demo Mode, shade and status-bar flag, notification, system action, battery, navigation, display and info commands (names, ranges, quoting, injection) and their readers, every command through a real sh -n',
+    tests: ['SysUiRulesTest'], main: 'com.bloatware.bingblop.SysUiRulesTest', utf8: true },
+  { name: 'sysuiops', title: 'System UI Tuner: what the page sends (demo state, notification, flags, battery, navigation, window) becomes a command or a parsed answer, refusals in words, the notification dump never offered', tests: ['SysUiOpsTest'], main: 'com.bloatware.bingblop.SysUiOpsTest', needs: ['json'] },
   { name: 'parity', title: 'The page and the Java rules give the same answer to the same names, values and colors (compares ~1,300 inputs)',
     kind: 'parity', needs: ['node'] },
   { name: 'filerules', title: 'File manager path rules: canonical form, protected folders', tests: ['FileRulesTest'], main: 'com.bloatware.bingblop.FileRulesTest' },
@@ -57,8 +60,12 @@ const SUITES = [
   { name: 'netstats', title: '/proc/net/dev parsing: the two header lines skipped by shape, long interface names, wrong-field-count junk lines, find()/totals with and without loopback, and rate() across a counter reset', tests: ['NetStatsTest'], main: 'com.bloatware.bingblop.NetStatsTest' },
   { name: 'fontscan', title: 'Font search for the app font: which files are fonts, what a font calls itself (the name table in every encoding and shape), the bounded walk and its progress', tests: ['FontScanTest'], main: 'FontScanTest', needs: ['json'] },
   { name: 'splitinfo', title: 'What a split APK\'s manifest says about it (split name, the feature module it configures, feature flag)', tests: ['SplitInfoTest'], main: 'com.bloatware.bingblop.SplitInfoTest' },
+  { name: 'abipick', title: 'Which release file and which adb suit a phone: the file named for its ABI, else the universal one, else the first', tests: ['AbiPickTest'], main: 'AbiPickTest' },
+  { name: 'devicelink', title: 'Sending packages to another device: serials, install verdicts, the splits a device needs (CPU, density, language), APKS / APKM / XAPK with OBB, against a fake adb', tests: ['DeviceLinkTest'], main: 'DeviceLinkTest', needs: ['json'] },
+  { name: 'appextras', title: 'App menu Features / Configurations / Signatures / Libraries tabs: the words for OpenGL ES, touch, keyboard and navigation numbers, the libraries a manifest names, a signing certificate against keytool, the v1 / v2 / v3 / v3.1 schemes of an APK, its native libraries', tests: ['AppExtrasTest'], main: 'AppExtrasTest', needs: ['json'] },
   { name: 'installhints', title: 'What an install failure means (adb / pm install answers)', tests: ['InstallHintsTest'], main: 'com.bloatware.bingblop.InstallHintsTest' },
   { name: 'uninstallhints', title: 'What an uninstall failure means (pm uninstall answers: needs root, device policy, user restriction)', tests: ['UninstallHintsTest'], main: 'com.bloatware.bingblop.UninstallHintsTest' },
+  { name: 'devuninstall', title: 'Removing an app on another device (Connected Devices): pm uninstall --user 0, the Binder helper pushed, run and taken off again when a system app needs it, what may go into the shell, against a fake adb', tests: ['DeviceUninstallTest'], main: 'com.bloatware.bingblop.DeviceUninstallTest', needs: ['json'] },
   { name: 'pure', title: 'Package-file scan output and XAPK data paths', tests: ['PureTest'], main: 'PureTest', needs: ['json'] },
   { name: 'fdroid', title: 'F-Droid index v1 / v2 parsing (real Seeker and WG Tunnel indexes)', tests: ['FdroidTest'], main: 'com.bloatware.bingblop.FdroidTest', needs: ['androidall', 'fixtures'] },
   { name: 'komi', title: 'GitHub catalog (Komi) feeds: mapping, de-duplication, dates', tests: ['KomiTest'], main: 'KomiTest', needs: ['json', 'fixtures'] },
@@ -67,7 +74,28 @@ const SUITES = [
   { name: 'rish', title: 'Rish shell: persistent shell, cd / export, output, STOP, restart (against this machine\'s sh)', tests: ['RishTest'], main: 'RishTest' },
   { name: 'termuxlink', title: 'Terminal sessions in Termux: the bridge script, the token check (impostors refused), a live bash over the loopback connection (bash syntax, cd / export, big output, UTF-8, STOP through helper commands, exit), and every way Termux can refuse or stay silent - with a local bash standing in for Termux', tests: ['TermuxLinkTest'], main: 'com.bloatware.bingblop.TermuxLinkTest', needs: ['bash'] },
   { name: 'agentrules', title: 'Coding agents\' keys: which address each provider\'s key may go to (look-alike hosts, ports, schemes, user info), own-server addresses, hints, redaction, reserved headers, AES-GCM sealing bound to the provider', tests: ['AgentRulesTest'], main: 'com.bloatware.bingblop.AgentRulesTest', utf8: true },
+  { name: 'morpheevents', title: 'Morphe Patcher: the engine\'s protocol lines (LOG, STEP, APP, PATCH, RESULT) and the tail that reads them from a growing file (half lines, UTF-8, restart, bursts)', tests: ['MorpheEventsTest'], main: 'com.bloatware.bingblop.MorpheEventsTest', needs: ['json'] },
+  { name: 'morphelibrary', title: 'Morphe Patcher: the Patched APKs folder (filing a run, list, delete, export with free names, the log, path safety) and the .apks bundle of a split app', tests: ['MorpheLibraryTest'], main: 'com.bloatware.bingblop.MorpheLibraryTest', needs: ['json'] },
+  { name: 'morphenet', title: 'Morphe Patcher: the small HTTP client against local servers: redirects inside a host and to another host (a key never follows), https only, the whole download or nothing', tests: ['MorpheNetTest'], main: 'com.bloatware.bingblop.MorpheNetTest' },
+  { name: 'sdmsieve', title: 'SD Maid SE port, shared sieve: segment helpers, every criterion (Anc/Start/End/Contain with partial and case modes, name criteria, And/Or), the crawler conjunction, distinct roots, the upstream edge cases', tests: ['SdmSieveTest'], main: 'com.bloatware.bingblop.SdmSieveTest', needs: ['json'] },
+  { name: 'sdmsystemcleaner', title: 'SD Maid SE port, SystemCleaner: the 22 filters on a real folder tree with fake data areas, settings and the root gate, exclusions and the nested rule, cancel, progress and result texts, delete (selection, distinct roots, re-verify, snapshot after the delete) and the safety rules', tests: ['SdmSystemCleanerTest'], main: 'com.bloatware.bingblop.SdmSystemCleanerTest', needs: ['json'] },
+  { name: 'sdmappcleaner', title: 'SD Maid SE port, AppCleaner: the 21 filters and the JSON sieves, apps and their exclusions, system apps, inaccessible caches, delete with a fake shell (trim-caches, force-stop) and a fake automation, the result lines', tests: ['SdmAppCleanerTest'], main: 'com.bloatware.bingblop.SdmAppCleanerTest', needs: ['json'] },
+  { name: 'sdmacsplan', title: 'SD Maid SE port, accessibility cache clearing: the step engine against a fake settings screen (AOSP, One UI, MIUI / HyperOS plans), labels, scrolling, timeouts, screen off, cancel, the failure budget', tests: ['SdmAcsPlanTest'], main: 'com.bloatware.bingblop.SdmAcsPlanTest', needs: ['json'] },
+  { name: 'sdmcorpse', title: 'SD Maid SE port, CorpseFinder: owner attribution per area, marker database, whitelist and blacklist rule, risk, exclusions, cancel, delete of whole remnants and chosen content paths', tests: ['SdmCorpseFinderTest'], main: 'com.bloatware.bingblop.SdmCorpseFinderTest', needs: ['json'] },
+  { name: 'sdmdedup', title: 'SD Maid SE port, Deduplicator: size buckets, prefix check, SHA-256, minimum size, links, arbiter, keep-one and delete-all, safety re-checks, cancel', tests: ['SdmDedupTest'], main: 'com.bloatware.bingblop.SdmDedupTest', needs: ['json'] },
+  { name: 'sdmengine', title: 'SD Maid SE port, task engine and bridge against fake tools: two tasks at a time with the rest in the queue, cancel, paged results, receipts, History, exclusions with Undo, one-click, settings, the bridge ops in JSON', tests: ['SdmEngineTest'], main: 'com.bloatware.bingblop.SdmEngineTest', needs: ['json'] },
+  { name: 'sdmexclusions', title: 'SD Maid SE port, exclusions: apps, paths and segments with tool tags, the stock defaults (remove and restore), matching, the nested rule, import and export', tests: ['SdmExclusionsTest'], main: 'com.bloatware.bingblop.SdmExclusionsTest', needs: ['json'] },
+  { name: 'sdmhistory', title: 'SD Maid SE port, History of what was deleted: reports and paths, retention, totals, reset', tests: ['SdmHistoryTest'], main: 'com.bloatware.bingblop.SdmHistoryTest', needs: ['json'] },
+  { name: 'sdmareas', title: 'SD Maid SE port, data areas and the shell file system: which areas are read with Java, through the working mode or not at all (and why), stat / list / walk / hash / delete through a real sh', tests: ['SdmAreasTest'], main: 'com.bloatware.bingblop.SdmAreasTest', needs: ['json'], utf8: true },
+  { name: 'morphejobs', title: 'Morphe Patcher: the job file of the engine (bundles, options, strip libraries, keystore, errors in words), which files the page may name, the words for a patcher that died', tests: ['MorpheJobsTest'], main: 'com.bloatware.bingblop.MorpheJobsTest', needs: ['json'] },
+  { name: 'morpheengine', title: 'The real Morphe engine on this computer: the job file the app writes, the engine listing the patches of the official bundle, patching a real APK with universal patches, the events read back and the result signed (needs engine/build-engine.sh run once, the official bundle and an APK)', tests: ['MorpheEngineTest'], main: 'com.bloatware.bingblop.MorpheEngineTest', needs: ['json', 'engine', 'mpp', 'apk', 'apksigner'] },
   { name: 'aihttp', title: 'Coding agents\' HTTPS calls against a local server: whole and error answers, streaming piece by piece, Cancel mid-stream, no redirects, UTF-8, kept headers, network failures in words', tests: ['AiHttpTest'], main: 'com.bloatware.bingblop.AiHttpTest', utf8: true },
+  { name: 'morphestore', title: 'Morphe patch sources against a local server: typed addresses and deep links, versions, bundle manifests, add from patches-bundle.json / releases / a file, updates that keep the old bundle when a download dies, the saved list, a damaged sources.json, hostile ids, the community cache',
+    tests: ['MorpheStoreTest'], main: 'com.bloatware.bingblop.MorpheStoreTest', needs: ['json'] },
+  { name: 'morphehelper', title: 'Morphe Helper (port of Helper for Morphe): the ten sources and their flags, every resolver against a local server with page fixtures (version lists, requested / latest, missing package, changed page, ABI and format, Cloudflare), Fast Mode, download with checksums, real-manifest check, atomic file and cancel, and APK / apks / xapk / apkm inspection',
+    tests: ['MorpheHelperTest'], main: 'com.bloatware.bingblop.MorpheHelperTest', needs: ['json', 'fixtures', 'stubs', 'apk?'], utf8: true },
+  { name: 'morphevt', title: 'Morphe Helper VirusTotal scan against a local server: lookup found / not found / wrong key / quota, cached report, upload and polling, upload_url above 32 MB, split bundles, the 4 per minute / 500 per day limiter with a fake clock and its saved counters, the key never in a message, Cancel',
+    tests: ['MorpheVirusTotalTest'], main: 'com.bloatware.bingblop.MorpheVirusTotalTest', needs: ['json'], utf8: true },
   { name: 'rishreview', title: 'Rish shell, review findings, against a real mksh with toybox applets (Android\'s shell)', tests: ['RishReviewTest'], main: 'RishReviewTest', needs: ['rish'] },
   { name: 'signer', title: 'In-app APK signer: v2 signatures checked with apksigner, RSA and EC keys, re-sign, edited and big APKs, tampering', tests: ['SignerTest'], main: 'SignerTest', needs: ['apk', 'apksigner', 'keys'] },
   { name: 'signmismatch', title: 'APK signer refuses a key that does not match its certificate', tests: ['SignMismatchTest'], main: 'SignMismatchTest', needs: ['apk', 'keys'] },
@@ -130,6 +158,25 @@ const NEEDS = {
     return err ? { skip: err } : { props: { keys: dir } };
   },
   bash: () => (which('bash') ? {} : { skip: 'needs bash' }),
+  // The Morphe engine built on this computer (engine/build-engine.sh leaves engine/build/engine-libs) and the official patch bundle (downloaded once into tests/.cache)
+  engine: () => {
+    const libs = path.join(REPO, 'engine', 'build', 'engine-libs');
+    return fs.existsSync(libs) ? { props: { enginelibs: libs } } : { skip: 'needs the Morphe engine: run engine/build-engine.sh (Gradle, JDK, d8)' };
+  },
+  mpp: () => {
+    const f = path.join(CACHE, 'official.mpp');
+    if (!fs.existsSync(f)) {
+      fs.mkdirSync(CACHE, { recursive: true });
+      const j = run('curl', ['-sSL', '--max-time', '60', 'https://raw.githubusercontent.com/MorpheApp/morphe-patches/main/patches-bundle.json']);
+      let url = '';
+      try { url = JSON.parse(j.stdout).download_url; } catch (e) {}
+      if (!url) return { skip: 'needs the official patch bundle (could not read its address from GitHub)' };
+      const d = run('curl', ['-sSL', '--max-time', '300', '-o', f + '.part', url]);
+      if (d.status !== 0 || !fs.existsSync(f + '.part') || fs.statSync(f + '.part').size < 1000000) return { skip: 'needs the official patch bundle (download failed)' };
+      fs.renameSync(f + '.part', f);
+    }
+    return { props: { mpp: f } };
+  },
   rish: () => {
     const mksh = which('mksh'), toybox = which('toybox');
     if (!mksh || !toybox) return { skip: 'needs mksh and toybox (apt install mksh toybox)' };

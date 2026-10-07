@@ -7,3 +7,7 @@ javac.*.args
 assets/adbkey
 assets/adbkey.pub
 assets/changelog.md
+engine/.upstream/
+engine/build/
+engine/.gradle/
+engine/.kotlin/

@@ -1,0 +1,777 @@
+<section id="tab-settings" data-title="Hidden Settings" data-group="The tabs">
+  <p class="hg-lead">Android keeps hundreds of small settings that its own Settings app never shows. This tab lists them, lets you read any one, change it, add your own or delete it, and puts the old value back when you change your mind.</p>
+  <p><b>Where to find it:</b> the tab named <b>Hidden Settings</b> (two lines on the tab bar: Hidden and Settings), between Command-Line Interface and RRO/Monet Customization in the default order. If it is missing, it has been switched off: see <a href="#feature-list">Turning tabs on and off and moving them</a>.</p>
+
+  <h4>Before you start</h4>
+  <ul>
+    <li><b>You need a working mode.</b> The app reads and changes these settings by running Android's own <code>settings</code> command through your working mode (ADB over TCP, Wireless Debugging, Shizuku or Root; see <a href="#modes-overview">Working modes</a> and the <a href="#glossary">glossary</a>). In Read-Only mode the tab cannot even show the list. With no mode ready, a card says <b>Needs ADB, Wireless Debugging, Shizuku or Root</b> and its <b>Set Up</b> button opens Working Modes. Connect one, come back, and the list loads.</li>
+    <li><b>No computer is needed</b>, and the tab does not use the app's own "Write Secure Settings" permission (see <a href="#app-permissions">App permissions</a>). What you can change is decided by the mode and by Android.</li>
+    <li>Which settings exist depends on your Android version and phone maker. One your phone does not have is not in the list.</li>
+  </ul>
+
+  <div class="hg-danger"><b>Risky.</b> These are the settings Android reads while it runs. A wrong value can cut the connection this app uses, lock you out of the keyboard or screen, or upset the system. The app marks the worst ones <b>careful</b> and asks first, but others can also cause trouble. If you do not know what a setting does, leave it alone. <b>Before you change one</b>, tap its row and use <b>Copy value</b> to keep the original in a note. Every change you make can be put back (see <a href="#settings-journal">Undoing settings changes</a>), but a lock-out can stop you reaching the app, so read "If you lose the connection" below first.</div>
+
+  <h4>The three tables</h4>
+  <p>A <b>setting</b> is a name with a value, such as <code>screen_off_timeout</code> with <code>60000</code>. Android keeps them in three groups called <b>tables</b>, and the tab has one sub-tab for each.</p>
+  <table class="hg-table">
+    <thead><tr><th>Table</th><th>What lives there</th><th>Examples</th></tr></thead>
+    <tbody>
+      <tr><td><b>Global</b></td><td>Settings for the whole phone.</td><td><code>adb_enabled</code>, <code>airplane_mode_on</code>, <code>window_animation_scale</code>, <code>device_name</code></td></tr>
+      <tr><td><b>Secure</b></td><td>Settings of the current user that only the system, or the shell, may change: keyboards, accessibility, location mode.</td><td><code>default_input_method</code>, <code>location_mode</code>, <code>ui_night_mode</code></td></tr>
+      <tr><td><b>System</b></td><td>The classic per-user settings: brightness, screen timeout, text size, rotation, volumes.</td><td><code>screen_off_timeout</code>, <code>font_scale</code>, <code>volume_music</code></td></tr>
+    </tbody>
+  </table>
+  <p>Android reads many settings only at certain moments, and some phone makers overwrite a few with their own, so a change that "does nothing" is not always a fault.</p>
+
+  <h4>What the screen shows</h4>
+  <ul>
+    <li><b>Global, Secure, System</b> (three wide buttons) choose the table. The number under each name is its count of settings: an ellipsis while loading, an exclamation mark if it could not be read, and "matches / total" while a search or filter is on.</li>
+    <li><b>Search settings...</b> (the box, with an x to clear it), <b>＋</b> (create a setting) and <b>⋯</b> (More: sort order, reload, your changes, copy and share).</li>
+    <li>Four chips: <b>All</b>; <b>Switches</b> (values such as 1 or 0, true or false, on or off, yes or no); <b>Described</b> (the roughly 130 settings the app can explain in plain English); <b>Edited</b> (the ones you changed with this app).</li>
+    <li>A status line: the count, the time it was read, and a <b>Refresh</b> link.</li>
+    <li>The list. Each row has the name, a short description if the app knows one, and the value (long values are cut after two lines). A dot after the name means you changed it. An orange edge and the word "careful" mark a risky one. <i>(empty)</i> means nothing is stored, <i>(blank)</i> only spaces. A switch at the right means the value is switch-like. The list shows 120 rows at a time; more load as you scroll or with <b>Show more</b>.</li>
+  </ul>
+
+  <h4>Find a setting</h4>
+  <ol class="hg-steps">
+    <li>Open <b>Hidden Settings</b>. Grey bars show while the tables are read; then each button shows its count.</li>
+    <li>Tap a table, or just search: the counts on all three buttons change to "matches / total".</li>
+    <li>Type in the search box. It looks in the <b>name</b>, the <b>value</b> and the <b>description</b>, ignores capitals, and every word you type must match. <code>timeout</code> finds <code>screen_off_timeout</code>.</li>
+    <li>Narrow the list with a chip, or tap <b>⋯</b> and choose <b>Sort by</b>: <b>Name A-Z</b> (default), <b>Name Z-A</b> or <b>Value</b>.</li>
+  </ol>
+  <p><b>What you will see:</b> the list shrinks to the matches, with the matching letters highlighted. If nothing matches, the page says <i>Nothing matches "text" in Global.</i> and offers <b>Create "text" in Global</b> (only when what you typed is one word that can be a setting name) and <b>Show everything</b>. Back clears the search first. The table, filter and sort order you used last are remembered; the search text is not.</p>
+
+  <h4>Read a value</h4>
+  <p>The value is on the row. To see all of it, tap the row: a sheet opens with the value in a box. The app also asks the phone for the real value while it opens, because the list may be a little old; if it differs, the box is updated and a message says <i>Showing the value the phone holds now</i>. The sheet's <b>Reload</b> link does the same on demand.</p>
+
+  <h4>Change a value</h4>
+  <ol class="hg-steps">
+    <li>Tap the row. A sheet slides up with the name, the table, the description and, for a risky setting, an orange box explaining the danger. Read it.</li>
+    <li>Type in the <b>Value</b> box, or tap a quick value: <b>0</b>, <b>1</b>, <b>true</b>, <b>false</b>, <b>null</b>, <b>(empty)</b>, <b>-1</b>. A line under the box says what kind of value it looks like and what it was before.</li>
+    <li>A red line means it cannot be saved yet. The limits are 20,000 characters, no control characters (invisible special codes, apart from a tab or a line break), and a size that fits in one command sent through ADB (about 62,000 bytes once quoted). <b>Save</b> stays grey until the problem is gone.</li>
+    <li>Tap <b>Save</b>. For a careful setting your phone first asks you to confirm.</li>
+  </ol>
+  <p><b>What you will see:</b> the sheet stays open while the phone applies the change, so a refusal never loses what you typed. On success it closes, the row shows the new value with a dot, and an <b>Undo</b> bar appears for about 7 seconds. Saving the same value says <i>No change</i>. The word <code>null</code> is stored as that text; use <b>(empty)</b> for nothing and <b>Delete</b> to remove the setting. The sheet's other links: <b>Copy name</b>, <b>Copy value</b> and <b>Copy command</b> (the exact <code>settings put</code> line, to paste in the ADB Console pane of the <a href="#tab-terminal">Command-Line Interface</a> tab).</p>
+
+  <h4>Flip a switch</h4>
+  <ol class="hg-steps">
+    <li><b>Tap the switch</b> at the end of a row, or <b>press and hold the row</b> for about half a second (you feel a short tap).</li>
+    <li>Confirm if it is a careful setting.</li>
+    <li>The switch moves and the Undo bar says, for example, <code>show_touches: 0 → 1</code>.</li>
+  </ol>
+  <p>Capitals are kept (True becomes False). Settings that look like switches but are really a choice among several values, such as <code>zen_mode</code>, <code>ui_night_mode</code> or <code>screen_off_timeout</code>, have no switch (holding one says <i>Not a switch: tap it to edit</i>). In the editor, a switch-like setting has a <b>Flip</b> button that only changes the box; you still tap <b>Save</b>.</p>
+
+  <h4>Add a new setting</h4>
+  <p>Android uses a setting only if something reads it by that exact name, so an invented one does nothing. Add settings you have a real name for, from a guide or an app's documentation.</p>
+  <ol class="hg-steps">
+    <li>Tap <b>＋</b>. A sheet titled <b>New setting</b> opens.</li>
+    <li>Choose <b>Global</b>, <b>Secure</b> or <b>System</b> (it starts on the table you were in).</li>
+    <li>Type the <b>Name</b>: up to 256 characters, not starting with a dash, with no equals sign, spaces or control characters. A red line says what is wrong.</li>
+    <li>Type the <b>Value</b>, or leave it empty to create the setting with nothing in it.</li>
+    <li>Tap <b>＋ Create</b>. If the name exists, the button reads <b>Replace</b>, a note shows the current value, and you must confirm. The app asks the phone first, so a name missing from an old list is still caught.</li>
+  </ol>
+  <p><b>What you will see:</b> the list jumps to that table with the name in the search box, and the Undo bar says "＋ Created name". Undo deletes it again.</p>
+
+  <h4>Delete a setting</h4>
+  <ol class="hg-steps">
+    <li>Tap the row, then <b>Delete</b> (red, at the bottom of the sheet).</li>
+    <li>Confirm. The box says Android and apps then behave as if it was never set.</li>
+    <li>The row disappears and the Undo bar says "Deleted name". <b>Undo</b> brings it back with its old value.</li>
+  </ol>
+
+  <h4>The settings marked "careful"</h4>
+  <p>Twelve settings carry the warning. The app asks before every change, flip, delete or revert of them.</p>
+  <table class="hg-table">
+    <thead><tr><th>Warning</th><th>Settings</th><th>Risk</th></tr></thead>
+    <tbody>
+      <tr><td>Cuts the connection</td><td><code>adb_enabled</code>, <code>adb_wifi_enabled</code>, <code>airplane_mode_on</code>, <code>wifi_on</code> (Global)</td><td>It can cut the ADB connection this app uses, so you may not be able to change it back from here.</td></tr>
+      <tr><td>Locks you out</td><td><code>accessibility_enabled</code>, <code>enabled_accessibility_services</code>, <code>touch_exploration_enabled</code>, <code>default_input_method</code>, <code>enabled_input_methods</code> (Secure)</td><td>It can lock you out of the screen, the keyboard or accessibility.</td></tr>
+      <tr><td>Breaks setup</td><td><code>device_provisioned</code> (Global), <code>user_setup_complete</code>, <code>android_id</code> (Secure)</td><td>It can break setup, apps or the system. Leave the two setup settings at 1.</td></tr>
+    </tbody>
+  </table>
+  <p>Other settings can also be dangerous. When in doubt, search the web for the exact name first.</p>
+
+  <h4>Harmless and useful examples</h4>
+  <p>Easy to see, easy to undo. Try one at a time; your phone maker's software may ignore some.</p>
+  <table class="hg-table">
+    <thead><tr><th>Setting (table)</th><th>What the app says</th><th>Try</th></tr></thead>
+    <tbody>
+      <tr><td><code>window_animation_scale</code>, <code>transition_animation_scale</code>, <code>animator_duration_scale</code> (Global)</td><td>1 = normal, 0 = off.</td><td><code>0.5</code> makes animations quicker; <code>0</code> turns them off.</td></tr>
+      <tr><td><code>screen_off_timeout</code> (System)</td><td>Screen timeout in milliseconds.</td><td><code>60000</code> is one minute.</td></tr>
+      <tr><td><code>stay_on_while_plugged_in</code> (Global)</td><td>1 AC, 2 USB, 4 wireless; 7 = all.</td><td><code>7</code> keeps the screen on while charging.</td></tr>
+      <tr><td><code>show_touches</code> (System)</td><td>Show taps (developer option).</td><td>Flip it on, then off.</td></tr>
+      <tr><td><code>font_scale</code> (System)</td><td>Text size (1.0 = normal).</td><td><code>1.15</code> for slightly larger text. Note the old value first.</td></tr>
+    </tbody>
+  </table>
+  <div class="hg-note"><b>Tip.</b> Tap <b>Described</b> to see only the settings the app can explain. It is a safe way to learn what is there.</div>
+
+  <h4>The ⋯ button</h4>
+  <p>The sheet <b>Hidden settings tools</b> has <b>Sort by</b>, <b>Reload all</b>, <b>Changes</b> (your history; see <a href="#settings-journal">Undoing settings changes</a>), <b>Copy shown</b> and <b>Share shown</b> (the rows currently shown, one <code>name=value</code> per line, by copy or by the share sheet), plus a short value guide. The lists can hold personal details such as the device name, Bluetooth address and Android ID, so do not post one without reading it.</p>
+
+  <h4>If a change is refused or nothing happens</h4>
+  <table class="hg-table">
+    <thead><tr><th>You see</th><th>Meaning and what to do</th></tr></thead>
+    <tbody>
+      <tr><td>Red box <b>Could not read the global settings</b>, and "!" on the button</td><td>No answer, or the list was cut short. Tap <b>Try again</b>, or <b>Working modes</b> to check the connection (<a href="#troubleshooting">Troubleshooting</a>).</td></tr>
+      <tr><td>A sheet <b>Change refused</b> (or <b>Could not delete</b>)</td><td>Android said no, in its own words, with advice. Some keys are locked by the system or maker. On Xiaomi, Redmi and POCO, turn on <b>USB debugging (Security settings)</b> in Developer options.</td></tr>
+      <tr><td>"No answer from the device (timed out)"</td><td>The change may still have been applied. The list is read again in a moment: check the row before you retry.</td></tr>
+      <tr><td>The old value comes back by itself</td><td>The app reads the value back after every change, so this is what the phone holds. The system or the maker's software owns that setting.</td></tr>
+      <tr><td>The new value shows but nothing looks different</td><td>Try turning the screen off and on, restarting the app that should react, or restarting the phone. The setting may not apply to your phone.</td></tr>
+    </tbody>
+  </table>
+
+  <h4>If you lose the connection</h4>
+  <p>If you switched off <code>adb_enabled</code> or <code>adb_wifi_enabled</code> (or Wi-Fi, or switched on airplane mode) while the app was using ADB, the app can no longer reach the phone to change them back. Open your phone's own Settings, go to <b>Developer options</b> (a hidden part of Android's Settings; if you cannot find it, search the Settings for its name), switch <b>USB debugging</b> or <b>Wireless debugging</b> back on (and Wi-Fi), then reconnect in <a href="#modes-overview">Working Modes</a>. If another mode (Shizuku or Root) still works, <b>Revert</b> the entry in <b>Changes</b> instead. If a keyboard or accessibility setting locks you out, use your phone's own Settings to choose a working keyboard and switch accessibility services back, then revert the entry.</p>
+</section>
+<section id="settings-journal" data-title="Undoing settings changes: the Undo bar and the history" data-group="The tabs">
+  <p class="hg-lead">Hidden Settings keeps two ways back: an <b>Undo</b> bar that appears right after a change, and a history called <b>Changes</b> where every change you made can be reverted later.</p>
+  <p><b>Where to find it:</b> the Undo bar appears at the bottom of the screen in the <a href="#tab-settings">Hidden Settings</a> and <a href="#tab-overlays">RRO/Monet Customization</a> tabs. The history is under the <b>⋯</b> button of Hidden Settings, in the <b>Changes</b> button.</p>
+
+  <h4>Before you start</h4>
+  <ul>
+    <li>Putting a value back is a change like any other, so it needs a working mode (see <a href="#modes-overview">Working modes</a>).</li>
+    <li>The history only knows about changes made <b>with this app</b>. If another app, Android itself or a computer changed a setting, it is not listed, and the app cannot tell you what the old value was.</li>
+    <li><b>The page has no backup and no restore for settings.</b> There is no button that saves a whole table to a file or loads one back. The history is the safety net, and the section "Keep your own copy" below shows a manual way to save a list before you experiment.</li>
+  </ul>
+
+  <h4>The Undo bar</h4>
+  <p>After a change, a small bar slides up from the bottom of the screen. It shows a short line in a typewriter font and an <b>Undo</b> button. It stays for about 7 seconds and then slides away.</p>
+  <table class="hg-table">
+    <thead><tr><th>You did this</th><th>The bar says</th><th>Undo does this</th></tr></thead>
+    <tbody>
+      <tr><td>Saved a value in the editor</td><td>Saved name</td><td>Writes the previous value back.</td></tr>
+      <tr><td>Flipped a switch</td><td>name: 1 → 0</td><td>Flips it back.</td></tr>
+      <tr><td>Created a setting</td><td>＋ Created name</td><td>Deletes the setting again.</td></tr>
+      <tr><td>Replaced an existing setting</td><td>Saved name</td><td>Writes the old value back.</td></tr>
+      <tr><td>Deleted a setting</td><td>Deleted name</td><td>Creates it again with its old value.</td></tr>
+      <tr><td>Applied or reset a theme (RRO/Monet tab)</td><td>Theme applied / Theme reset to the default</td><td>Puts the old theme setting back.</td></tr>
+      <tr><td>Switched an overlay on or off (RRO/Monet tab)</td><td>On: name / Off: name</td><td>Switches it back.</td></tr>
+    </tbody>
+  </table>
+  <ol class="hg-steps">
+    <li>Make a change.</li>
+    <li>Within about 7 seconds, tap <b>Undo</b> on the bar.</li>
+    <li>A message says <i>Put back: name</i> (or <i>Removed: name</i> when the setting did not exist before), and the row shows the old value again.</li>
+  </ol>
+  <p><b>What you will see:</b> the bar disappears when you tap Undo, when 7 seconds have passed, when a newer change takes its place (only the newest change has an Undo bar), or when you leave the Hidden Settings and RRO/Monet Customization tabs. After the bar is gone, use <b>Changes</b>.</p>
+  <div class="hg-note"><b>Tip.</b> If you change a theme and Android restarts the app (this happens when the colours change), the app comes back to the RRO/Monet tab by itself with the Undo bar waiting. This works for changes made in the last 20 seconds.</div>
+
+  <h4>The Changes history</h4>
+  <ol class="hg-steps">
+    <li>Open <b>Hidden Settings</b> and tap <b>⋯</b> next to the search box.</li>
+    <li>Tap <b>Changes</b>. A sheet titled <b>Changes</b> opens, with the line "Made with this app, newest first. Revert puts the old value back."</li>
+    <li>Each entry shows the setting name, the table and how long ago (for example "Global · 3 min ago"), and the change as <i>old value → new value</i>. A value that was not there before shows as <i>(not set)</i>; an empty one as <i>(empty)</i>.</li>
+    <li>Tap <b>Revert</b> under the entry you want to undo.</li>
+  </ol>
+  <p>If nothing has been changed yet, the sheet says <i>Nothing was changed with this app yet.</i> The same history is behind the <b>Edited</b> filter chip and the small dot after the name of every changed setting in the list.</p>
+
+  <h4>Revert one change</h4>
+  <ol class="hg-steps">
+    <li>In <b>Changes</b>, find the entry and tap <b>Revert</b>.</li>
+    <li>If the setting has changed again since (by you, by Android, or by another app), a box says <i>name has changed since: it is now ... (this change left it ...). Put the old value back anyway?</i> Choose OK only if you want the old value back regardless.</li>
+    <li>If the setting is marked careful, you are asked to confirm once more (see <a href="#tab-settings">Hidden Settings</a>).</li>
+    <li>The sheet closes and a message says <i>Put back: name</i> (or <i>Removed: name</i> when the entry was a setting you created, so there is nothing to put back).</li>
+  </ol>
+  <p>Reverting is recorded as a new change, so it appears at the top of the history and can itself be reverted.</p>
+  <p>If the old value was longer than 2,000 characters, the entry shows <i>(too long to keep)</i> in its place and has no Revert button, because the old text was not stored. For those, use the Undo bar right after the change, or fix the setting by hand.</p>
+
+  <h4>Revert many changes</h4>
+  <p>There is no "revert all" button. Revert the entries one at a time, <b>starting from the top (the newest)</b>, so that every entry finds the setting in the state it left it. Going out of order is allowed, but you will get the "has changed since" question for entries that depend on a later one.</p>
+  <ol class="hg-steps">
+    <li>Open <b>⋯ → Changes</b>.</li>
+    <li>Tap <b>Revert</b> on the first (newest) entry. The sheet closes after each revert.</li>
+    <li>Open <b>⋯ → Changes</b> again and repeat. Check your phone from time to time, so you stop as soon as it behaves normally.</li>
+  </ol>
+
+  <h4>What is kept, and where</h4>
+  <ul>
+    <li><b>The last 150 changes.</b> Older ones are forgotten as new ones arrive.</li>
+    <li><b>Where:</b> inside this app's own storage on the phone. The app does not write a file to Downloads or anywhere else, and nothing is sent to anyone. The history survives closing the app and restarting the phone. Because it lives in the app's own storage, clearing the app's data or uninstalling the app removes it (and with it your way back).</li>
+    <li><b>Theme changes too.</b> A Material You theme change made in the RRO/Monet tab is a change of the secure setting <code>theme_customization_overlay_packages</code>, and is listed here with that name. Reverting it puts the old theme setting back. Overlay on/off changes are not listed in Changes, only in the Undo bar.</li>
+    <li><b>What is in each entry:</b> the table, the name, when it happened, the old value and the new value.</li>
+  </ul>
+
+  <h4>Clear the history</h4>
+  <p>At the bottom of the <b>Changes</b> sheet, <b>Clear history</b> asks <i>Forget the history of changes? The settings themselves stay as they are.</i> If you confirm, the list is emptied, the small dots and the <b>Edited</b> filter forget everything, and nothing on the phone changes. You cannot get the entries back, so do this only when you are happy with how the phone behaves. The button only shows while there is something to clear.</p>
+
+  <h4>Keep your own copy before you experiment</h4>
+  <p>The history cannot restore a whole table, and it does not know settings you did not change. If you are about to try several things, save the original values first.</p>
+  <ol class="hg-steps">
+    <li>Open <b>Hidden Settings</b> and choose the table (<b>Global</b>, <b>Secure</b> or <b>System</b>).</li>
+    <li>Clear the search box and tap <b>All</b>, so that every setting is shown.</li>
+    <li>Tap <b>⋯</b>, then <b>Copy shown</b> (a message says <i>Copied 340 settings</i> or similar), and paste into a notes app. Or tap <b>Share shown</b> and send the text to yourself.</li>
+    <li>Do the same for the other tables if you want to.</li>
+  </ol>
+  <p>The copy is plain text with one <code>name=value</code> line per setting. To restore something later, find the line and set the value by hand (tap the row, type, <b>Save</b>), or create the setting with <b>＋</b> if it was deleted. The app cannot read that text back in for you.</p>
+  <div class="hg-warn"><b>Careful.</b> The lists can hold personal details, such as the device name, the Bluetooth name and address, and the Android ID. Keep the copy private. If a very long list does not go through the share sheet, narrow it with the search or a filter first.</div>
+
+  <h4>If something goes wrong</h4>
+  <ul>
+    <li><b>Revert says it could not change the setting.</b> A sheet shows Android's own answer, the same as for any change. Read it; see "If a change is refused or nothing happens" in <a href="#tab-settings">Hidden Settings</a>.</li>
+    <li><b>The history is empty but you know you changed things.</b> The changes were made outside this app, or the app's data was cleared since. Set the values back by hand from your own copy.</li>
+    <li><b>The phone is unusable after a change and you cannot reach the app.</b> Use your phone's own Settings (Developer options, language and input, accessibility) to undo what you can, reconnect in <a href="#modes-overview">Working Modes</a>, then revert the entry. See also <a href="#safety">Safety</a>.</li>
+  </ul>
+</section>
+<section id="tab-overlays" data-title="RRO/Monet Customization" data-group="The tabs">
+  <p class="hg-lead">Change the colours Android uses for its own screens and for apps that follow it (the "Material You" theme), and switch the system's look-changing add-ons, called overlays, on or off.</p>
+  <p><b>Where to find it:</b> the tab named <b>RRO/Monet Customization</b> (two lines on the tab bar), right after Hidden Settings. If it is missing, it is switched off: see <a href="#feature-list">Turning tabs on and off and moving them</a>.</p>
+
+  <h4>Two words first</h4>
+  <ul>
+    <li><b>Overlay (RRO).</b> RRO means Runtime Resource Overlay: a small package that changes the look of another app, or of Android itself (colours, icon shapes, fonts, the navigation bar), without touching that app. Each overlay is on or off. The app it changes is its <b>target</b>.</li>
+    <li><b>Material You, or "Monet".</b> From Android 12, Android builds all its system colours from <b>one source colour</b>: your wallpaper's, or one you choose. A <b>style</b> decides how vibrant the palette is. Google apps and apps that support Material You follow it. Monet is the name of that colour engine.</li>
+  </ul>
+  <p>The tab has two halves, chosen with the two buttons under the title: <b>Theme</b> (with "Material You" under it) and <b>Overlays</b> (with the number of overlays under it).</p>
+
+  <h4>Before you start</h4>
+  <ul>
+    <li><b>Changing anything needs a working mode</b> (ADB over TCP, Wireless Debugging, Shizuku or Root; see <a href="#modes-overview">Working modes</a>). Without one, a card says <b>Needs ADB, Wireless Debugging, Shizuku or Root</b> with a <b>Set Up</b> button. The <b>colours in use</b> are still shown, because the app reads them from Android directly.</li>
+    <li><b>The Theme half needs Android 12 or newer.</b> On Android 11 and older the tab opens on the Overlays half (unless you chose a half before), <b>Apply theme</b> and <b>Default</b> are greyed out, and the page says <i>Material You needs Android 12 or newer.</i></li>
+    <li><b>Phone makers differ.</b> The app writes the setting that Android's own wallpaper picker writes, so phones close to stock Android are the most likely to follow it. Some makers add their own palette on top (the page says so), and a few refuse changes from a shell. The app cannot tell in advance. Try one colour, and use <b>Undo</b> or <b>Default</b> if you do not like it.</li>
+    <li><b>Samsung.</b> If the phone has Samsung's "wallpaper colours" switch (a setting called <code>wallpapertheme_state</code>), <b>Apply theme</b> also sets it to match (off for a colour you chose, on for the wallpaper) and reads it back; <b>Undo</b> restores it. If it will not change, a message says the phone's own palette may still win. The app does not talk to Samsung's theme store or to Good Lock (Samsung's own customisation app); it only writes Android's standard theme setting and, where it exists, that one switch.</li>
+    <li>On Xiaomi, Redmi and POCO a change may need <b>USB debugging (Security settings)</b> switched on in Developer options.</li>
+  </ul>
+  <div class="hg-warn"><b>Careful.</b> A theme change repaints the whole system and Android usually <b>restarts apps</b>, this one included. Save your work elsewhere first. The app notices the restart and brings you back to this tab with the Undo bar waiting. Overlays can also change the navigation bar or system interface, so the wrong one can make the screen harder to use. Every change here can be undone.</div>
+
+  <h4>The Theme half</h4>
+  <h5>Colors in use</h5>
+  <p>The top card shows what Android uses now: a swatch and a title, either <b>System default</b>, <b>From your wallpaper</b> (with the style), <b>Custom color</b> (with a code such as <code>#6750A4 · Tonal Spot</code>) or <b>Another theme</b> (set by something else; applying here replaces it), plus a time such as "2 min ago". Below are five rows of squares, <b>Accent 1, Accent 2, Accent 3, Neutral 1</b> and <b>Neutral 2</b>, eleven shades each from light to dark. <b>Tap a square</b> to copy its code (<i>Copied #6750A4 (Accent 1 500)</i>). <b>Refresh</b> reads the colours again; after a change they redraw by themselves a few seconds later.</p>
+
+  <h5>Choose the colour source</h5>
+  <ol class="hg-steps">
+    <li>Under <b>Color</b>, tap <b>Wallpaper</b> (Android builds the palette from your home-screen wallpaper, its default) or <b>Custom color</b> (from one colour you choose).</li>
+    <li>With <b>Custom color</b> a box appears with a big square and a code field (a hex code is six letters and digits that name a colour). Pick the colour in one of the ways below.</li>
+  </ol>
+  <ul>
+    <li><b>Type the code:</b> <code>6750A4</code>, <code>#6750a4</code>, <code>#abc</code> or <code>FF6750A4</code> (the first two digits, transparency, are dropped). A red line says <i>Use six hex digits, like 6750A4</i> if it is invalid.</li>
+    <li><b>Move the sliders:</b> <b>Hue</b> (0 to 359), <b>Saturation</b> and <b>Lightness</b> (0 to 100). The code and the square follow.</li>
+    <li><b>Tap a Recent colour:</b> the last eight you applied.</li>
+    <li><b>Open the presets:</b> tap <b>Preset colors 657</b>, search by name or code, narrow with the chips <b>All, Neutral, Red, Orange, Yellow, Green, Teal, Blue, Purple, Pink</b>, and tap a round swatch. Its name and code show under the grid. The grid shows 96 at a time with a <b>Show more</b> button. Tapping a preset also switches the source to <b>Custom color</b>.</li>
+  </ul>
+
+  <h5>Choose a style</h5>
+  <p>Under <b>Style</b>, tap one of six options (a round button marks the active one):</p>
+  <table class="hg-table">
+    <thead><tr><th>Style</th><th>What the page says</th></tr></thead>
+    <tbody>
+      <tr><td><b>Tonal Spot</b> (Default)</td><td>Complementary colors in a balanced blend.</td></tr>
+      <tr><td><b>Vibrant</b></td><td>Vibrant complementary colors with a strong background tint.</td></tr>
+      <tr><td><b>Expressive</b></td><td>A colorful theme that pairs unexpected accent colors.</td></tr>
+      <tr><td><b>Fruit Salad</b></td><td>A saturated theme that uses a wide range of colors.</td></tr>
+      <tr><td><b>Rainbow</b></td><td>A strong accent that stands out against no background tint.</td></tr>
+      <tr><td><b>Spritz</b> (Muted)</td><td>A muted theme with a blend of desaturated colors.</td></tr>
+    </tbody>
+  </table>
+
+  <h5>Apply a colour scheme</h5>
+  <ol class="hg-steps">
+    <li>Choose the source, the colour (if custom) and the style.</li>
+    <li>Read the line under the buttons: <i>Android repaints in a moment, and apps may restart.</i> If it says <i>This is already what the phone uses.</i>, there is nothing to apply. With an invalid code, <b>Apply theme</b> stays grey.</li>
+    <li>Tap <b>Apply theme</b>. It reads <b>Applying...</b> while the app reads the current setting, writes the new one and reads it back.</li>
+    <li>Android repaints within a second or two and may restart the app. The Undo bar appears for about 7 seconds with <i>Theme applied</i>, and the colours in use update.</li>
+  </ol>
+  <p>The app keeps other choices stored in the same setting (a font, icon shape or icon pack on Pixel-like phones) and replaces only the colour entries. It writes one setting, the secure setting <code>theme_customization_overlay_packages</code>, and lists the change in <a href="#settings-journal">Changes</a> in Hidden Settings, with a Revert. <b>Default</b> asks <i>Go back to the system default?</i>; if you confirm, the theme setting is cleared (wallpaper colours, Tonal Spot) and Samsung's switch is left alone. The <b>How this works</b> card has <b>Copy the setting</b> (the raw setting text, for a bug report) and <b>Reload</b>.</p>
+  <div class="hg-note"><b>Tip.</b> The app's own look can follow these colours: the <b>Material You</b> palette in <a href="#themes">Themes and colours</a> uses them, so this app may change colour too.</div>
+
+  <h4>The Overlays half</h4>
+  <p>Tap <b>Overlays</b>. The page asks Android's overlay service for its list (what <code>cmd overlay list</code> prints) and shows it:</p>
+  <ul>
+    <li><b>Search overlays...</b> filters by name or target; <b>Reload</b> reads the list again. Chips: <b>All</b>, <b>On</b>, <b>Off</b> and <b>Theme</b> (names that look like theme, colour, icon pack, navigation bar, font or shape). Your chip is remembered.</li>
+    <li>A status line, such as <i>83 overlays · 21 on</i>, the time read, and <b>Refresh</b>.</li>
+    <li>Overlays are grouped under their target (such as <code>android</code> or <code>com.android.systemui</code>) with a count like "3 / 7 on"; those with no target are under <b>Other</b>. Each row shows the name, its state (<b>On</b>, <b>Off</b> or <b>Unavailable</b>) and a switch. Unavailable means Android lists it but it cannot be switched (its target app is missing, or it is not approved); the row is dimmed. 120 rows are drawn at a time.</li>
+  </ul>
+
+  <h5>Switch an overlay on or off</h5>
+  <ol class="hg-steps">
+    <li>Find the overlay (search or a chip).</li>
+    <li><b>Tap its switch</b>, or <b>press and hold the row</b> for about half a second (you feel a short tap).</li>
+    <li>The app runs the change and reads the whole list again, so the row shows what Android reports, not what was asked for.</li>
+    <li>The Undo bar says <i>On: name</i> or <i>Off: name</i>. Tap <b>Undo</b> within about 7 seconds to put it back.</li>
+  </ol>
+  <p><b>The detail sheet.</b> Tap a row (not the switch) to open a sheet with the full name, state and target, a note, <b>Switch on</b> or <b>Switch off</b>, and the links <b>Copy name</b>, <b>Copy target</b> and <b>Copy command</b> (the exact <code>cmd overlay</code> line).</p>
+  <p><b>When an overlay will not switch.</b> Some overlays are fixed on or off by the system or belong to another app. Android 12 and newer answer with a bare "commit failed", and the app says so: <i>Android refused the change and gave no reason</i>. A sheet titled <b>Could not switch it on</b> (or off) shows Android's words and advice. If no answer comes in time, the phone may still apply it and the list is read again shortly. Overlays are switched for the user the phone's shell uses by default, which is the owner on nearly every phone.</p>
+
+  <h4>If a colour looks bad: undo and recovery</h4>
+  <ol class="hg-steps">
+    <li><b>Tap Undo</b> on the bar (about 7 seconds). The old theme is written back and a message says <i>Theme put back</i>.</li>
+    <li><b>Or tap Default</b> and confirm: wallpaper colours and Tonal Spot again.</li>
+    <li><b>Or use the history:</b> <b>Hidden Settings</b>, <b>⋯</b>, <b>Changes</b>, find <code>theme_customization_overlay_packages</code>, <b>Revert</b> (see <a href="#settings-journal">Undoing settings changes</a>).</li>
+    <li><b>Or delete the setting:</b> in <b>Hidden Settings</b> open <b>Secure</b>, search <code>theme_customization</code>, tap the row and <b>Delete</b>. Android then uses its default.</li>
+    <li><b>An overlay is the problem:</b> in the Overlays half tap <b>On</b>, find it and switch it off.</li>
+    <li><b>The screen is hard to use:</b> use your phone's own wallpaper and style settings (if it has them) to choose a normal colour, restart the phone if the colours stay wrong, then revert the entry in Changes.</li>
+  </ol>
+  <p>The app needs a working mode to write, so reconnect in <a href="#modes-overview">Working Modes</a> first if it dropped.</p>
+
+  <h4>Troubleshooting</h4>
+  <table class="hg-table">
+    <thead><tr><th>You see</th><th>What to do</th></tr></thead>
+    <tbody>
+      <tr><td><b>Could not read the theme</b> / <b>Could not read the overlays</b></td><td>No answer, or this phone has no overlay manager. Tap <b>Try again</b> and check <a href="#modes-overview">Working Modes</a>.</td></tr>
+      <tr><td><b>Theme change refused</b></td><td>Android did not keep the new theme. Read the answer under it; on Xiaomi, Redmi and POCO turn on USB debugging (Security settings). Some phones do not allow it.</td></tr>
+      <tr><td>"No answer: the theme may still change"</td><td>The phone was slow, or the app restarted before the answer. Wait a few seconds: the tab reads the state again.</td></tr>
+      <tr><td>Applied, but the colours look the same</td><td>Your phone maker's own palette wins, or apps have not repainted. Reopen an app or restart the phone; if nothing helps, your phone does not follow this setting.</td></tr>
+    </tbody>
+  </table>
+</section>
+<section id="tab-about" data-title="About" data-group="The tabs">
+  <p class="hg-lead">The last tab. It tells you which version of the app you have, opens this guide, the project page and the release notes, lets you support the developer if you wish, and shows what your phone says about itself.</p>
+  <p><b>Where to find it:</b> the <b>About</b> tab, always the last one on the tab bar. Like Application Manager, it cannot be switched off or moved (see <a href="#feature-list">Turning tabs on and off and moving them</a>).</p>
+
+  <h4>Before you start</h4>
+  <p>Nothing here needs a working mode, a computer or an account. The buttons that open web pages (GitHub, Releases, PayPal) open them in your phone's browser, so they need an internet connection. The rest works offline.</p>
+
+  <h4>The top card</h4>
+  <p>The card shows the app's name, <b>ADB Application Manager Pro</b>, its version and build number (for example "Version 7.10.0-Pro · build 820"; yours will differ), and a one-paragraph description. Under it are the main buttons:</p>
+  <table class="hg-table">
+    <thead><tr><th>Button</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><b>GitHub</b></td><td>Opens the project page, <code>github.com/Bingblop/ADB-Application-Manager</code>, in your browser. Source code, releases and the issue tracker are there.</td></tr>
+      <tr><td><b>Help Guide</b></td><td>Opens this guide in a sheet: a table of contents (the <b>Contents</b> button at the top brings it back), a search box, and every tab and button explained. After you follow a link inside the guide, a button <b>Back to where I was</b> shows for about 15 seconds and takes you back to the spot you left. The guide is English only, and it is loaded the first time you open it. Most other tabs, and Settings, have a small round <b>?</b> button on their first card that opens the guide at their topic; <b>Application Manager</b> and <b>Command-Line Interface</b> have none, so this button is how you reach the guide from them.</td></tr>
+      <tr><td><b>What's new</b></td><td>Opens a sheet titled <b>What's New</b> with the release notes of the newest three versions. At the bottom, <b>Full changelog</b> opens the whole file on GitHub and <b>Got it</b> closes the sheet. The same sheet also opens once by itself after the app has been updated. If the build has no notes, a message says <i>No release notes in this build</i>.</td></tr>
+      <tr><td><b>Permissions</b></td><td>Opens the <b>Permissions</b> sheet: All files access, Usage access, Display over other apps, Install unknown apps and, while a working mode is active, three more. Each row has an <b>Allow</b> button or shows "Allowed". Allow what you like and skip the rest. See <a href="#app-permissions">App permissions</a>.</td></tr>
+      <tr><td><b>Check for update</b></td><td>Jumps to the <a href="#tab-updates">App Updater</a> tab, scrolled to the card that checks this app's own releases. The first visit checks by itself; if it was already checked, it checks again. If the App Updater tab is switched off, a message says <i>App Updater is turned off. Turn it on in Settings, Feature List.</i> and nothing else happens.</td></tr>
+    </tbody>
+  </table>
+  <p>To update the app, see <a href="#install-and-update">Installing and updating</a>.</p>
+
+  <h4>Buy me a coffee</h4>
+  <p>The app is free, and the card says it stays that way. If it saved you time, you can give a small amount to the developer. The card says the app stays free and that giving is <b>totally optional</b>. It has:</p>
+  <ul>
+    <li><b>Buy me a coffee · $1</b> opens PayPal's donation page in your browser for one US dollar.</li>
+    <li><b>or choose your own amount:</b> type an amount in the box with the <b>$</b> sign (the box suggests <code>5.00</code>) and tap <b>Donate</b>. You can type 5, 5.5, 5,50 or $ 12.00. Amounts from 0.01 to 100,000 with at most two decimals are accepted. If the amount is not valid, the box turns red and a message says <i>Enter an amount like 5 or 2.50</i>.</li>
+    <li>The money goes to the PayPal address <code>bingblop@yahoo.com</code>, in US dollars, as a one-time payment. PayPal lets you change the amount on its own page. <b>Copy the PayPal address</b> copies the address if you would rather send it yourself.</li>
+  </ul>
+  <p>The app does not handle any payment itself: it only opens the PayPal page in your browser, where you can check the address and amount and simply close the page if you change your mind.</p>
+
+  <h4>Developer &amp; project</h4>
+  <p>Shows the developer (<b>Bingblop</b>), the project address, and these buttons:</p>
+  <ul>
+    <li><b>Releases</b>: the page with the latest APK files (the ones to install or update from).</li>
+    <li><b>Report a bug or idea</b>: opens GitHub's page for a new issue. You need a GitHub account to post. Before you report a problem, tap <b>Copy debug info</b> (below) and paste it into the report.</li>
+    <li><b>Star on GitHub</b>: the project page, where you can star it. <b>Bingblop on GitHub</b>: the developer's profile.</li>
+    <li><b>Share the app</b>: opens Android's share sheet with the app's name and the link to its latest release.</li>
+  </ul>
+
+  <h4>This build</h4>
+  <p>The card says <i>Handy when you report a problem, or want to be sure the APK is the real one.</i> It lists:</p>
+  <table class="hg-table">
+    <thead><tr><th>Line</th><th>What it tells you</th></tr></thead>
+    <tbody>
+      <tr><td>Version, Package, Build type</td><td>Version name and build number; the app's package name; "release" or "debug".</td></tr>
+      <tr><td>Installed from</td><td>The store or app that installed it, or "sideloaded (no store)".</td></tr>
+      <tr><td>Updated</td><td>When the app was last updated.</td></tr>
+      <tr><td>Android, Device, CPU, WebView</td><td>Your Android version and API level, the phone model, the processor type, and the version of the web engine that draws the app.</td></tr>
+      <tr><td>Working mode</td><td>The mode in use right now.</td></tr>
+    </tbody>
+  </table>
+  <p>Under the list, a line either says <b>Signed with the official release key</b> or <b>Not signed with the official release key (a debug, fork or modified build)</b>, followed by the signature's SHA-256 fingerprint (a long code that identifies the key the app was signed with). The official key's fingerprint begins <code>94:61:87:0F</code>. The second message is not automatically a danger (a copy you built yourself, or a fork, also shows it), but if you meant to install the official app, reinstall from the project's Releases page (see <a href="#install-and-update">Installing and updating</a>). Three buttons: <b>Copy debug info</b> (a short text with version, package, Android, device, WebView, working mode and fingerprint), <b>Share it</b> (the same text through the share sheet) and <b>Copy fingerprint</b>.</p>
+
+  <h4>Handy to know</h4>
+  <p>A short list of tips: how Back works, press and hold, File Manager View, installs from File Manager, the Rish shell in the ADB Console, and the per-app log in Logcat. Each tip is explained in its own section of this guide.</p>
+
+  <h4>Device Specs</h4>
+  <p>Everything the phone will say about itself, <b>with no working mode needed</b>. It is read when the tab opens, and the <b>Refresh</b> button reads it again. A line appears only when your phone reports it. The groups are:</p>
+  <ul>
+    <li><b>Hardware:</b> model, brand, chipset (SoC), CPU architecture, number of cores and clock range, RAM, Vulkan and OpenGL ES, screen resolution, density and refresh rate, storage free and total.</li>
+    <li><b>Software:</b> Android version, security patch, build ID, bootloader, kernel.</li>
+    <li><b>System:</b> uptime, language, time zone.</li>
+    <li><b>Battery:</b> level, status, power source, technology, health, charge cycles.</li>
+    <li><b>Network:</b> connection type and network interfaces.</li>
+    <li><b>Camera:</b> each camera, which way it faces, megapixels and flash.</li>
+    <li><b>Sensors:</b> the count, then each sensor's name and maker.</li>
+  </ul>
+  <p>If it says <i>Could not read the device specs</i>, tap <b>Refresh</b>.</p>
+
+  <h4>Privacy and Credits</h4>
+  <p>The <b>Privacy</b> card says: no account, no ads, no analytics and no server of the developer's; everything runs on your phone; the app goes online only for something you open or ask for (update checks, App Stores, the debloat list, and a VirusTotal lookup if you add your own key); the ADB key and the APK-signing key are made on your phone and never leave it. The full text is in <a href="#privacy">Privacy</a>. The <b>Credits</b> card thanks the projects the app builds on; see <a href="#credits">Credits</a>.</p>
+
+  <h4>If something does not work</h4>
+  <ul>
+    <li><b>A web button does nothing.</b> Your phone has no browser, or no internet. Check both.</li>
+    <li><b>Check for update only shows a message.</b> The App Updater tab is switched off. Turn it on in the gear (Settings), under <b>Feature List</b>.</li>
+  </ul>
+</section>
+<section id="prefs" data-title="Settings (the gear)" data-group="Settings and looks">
+  <p class="hg-lead">The Settings screen decides how the app looks and behaves: its language, light or dark, colours, font, app icons, the extra button on each app row, and which tabs are shown. Nearly everything here changes only this app. The one exception is the last card, <b>Trim Caches</b>, which clears the cache of every app on your phone.</p>
+  <p><b>Where to find it:</b> tap the <b>gear icon</b> in the header at the top right, to the left of the working-mode badge. Settings is not a tab: it has no place on the tab bar and cannot be switched off. The gear lights up while the screen is open. Press <b>Back</b> to return to the tab you came from.</p>
+
+  <h4>Before you start</h4>
+  <ul>
+    <li>No permission and no computer are needed, and no working mode either, except for <b>Trim Caches</b> (the last card), which needs one. Every control works at once; there is no Save button, and what you choose is kept on the phone.</li>
+    <li>These settings are about this app only. The font, the colours and the language do not change the rest of your phone. <b>Trim Caches</b> is the exception: it clears the temporary files of the other apps.</li>
+    <li>The cards come in this order: <b>Language</b>, <b>Appearance</b>, <b>Curated Theme Palettes</b> (with the <b>Granular Color Pickers</b> inside it), <b>Lists</b>, <b>Motion</b>, <b>Font</b>, <b>Icon pack</b>, <b>Action Button</b>, <b>Feature List</b>, <b>Press and hold guide</b> and, last, <b>Trim Caches</b>. Below, each card has its own part, with every control, its default and when to change it.</li>
+  </ul>
+  <div class="hg-note"><b>Not in this screen.</b> There is no switch here for the short vibration the app gives when you tap buttons, for keeping the screen on, for update checks, for backups or for logs. Update checks live in <a href="#tab-updates">App Updater</a>, backups in the <a href="#apps-backup">apps backup</a> section, logs in <a href="#tab-logcat">Logcat Viewer</a>. The Command-Line Interface has its own gear (<a href="#tab-terminal">Command-Line Interface</a>), and the <b>Keep selection after running</b> switch is inside the batch panel (see <a href="#apps-batch">batch actions</a>).</div>
+
+  <h4>Language</h4>
+  <p>A drop-down list, under the words "The text of this app. Names of apps, files and commands are not translated."</p>
+  <table class="hg-table">
+    <thead><tr><th>Control</th><th>What it does</th><th>Default</th><th>When to change it</th></tr></thead>
+    <tbody>
+      <tr><td><b>Language</b> (drop-down)</td><td>Chooses the language of the app's buttons and messages. The list has English, Español, Français, Deutsch, Português (Brasil), Italiano, Русский, 简体中文, 日本語, 한국어, العربية, हिन्दी, Türkçe and Bahasa Indonesia. Arabic is shown right to left. App names, file names, commands and what Android itself prints stay as they are.</td><td>English</td><td>If you read another language more easily. This guide is English only and uses the English button names, so switch back to English if you cannot find a button it describes.</td></tr>
+    </tbody>
+  </table>
+  <p><b>What you will see:</b> the whole app is redrawn in the new language and a message says <i>Language: ...</i>. If the language file cannot be loaded, a message says <i>That language could not be loaded. The text stays in</i> and the name of the language you had, and the list returns to that language.</p>
+
+  <h4>Appearance</h4>
+  <p>Light, dark, or follow your phone. Details and the colour rules are in <a href="#themes">Themes and colours</a>.</p>
+  <table class="hg-table">
+    <thead><tr><th>Control</th><th>What it does</th><th>Default</th><th>When to change it</th></tr></thead>
+    <tbody>
+      <tr><td><b>Light</b></td><td>Always light.</td><td>-</td><td>Bright rooms, or if dark is hard to read.</td></tr>
+      <tr><td><b>Dark</b></td><td>Always dark.</td><td>-</td><td>Dim rooms, or if you simply prefer it.</td></tr>
+      <tr><td><b>System</b></td><td>Follows your phone's dark mode setting. A line under the buttons says what it is now, for example "Following your phone's setting (currently Dark)".</td><td>Selected</td><td>Leave it unless you want a fixed look.</td></tr>
+      <tr><td><b>Schedule</b></td><td>Switches by the clock. Two time boxes appear when it is selected.</td><td>-</td><td>If you want light by day and dark by night regardless of the phone.</td></tr>
+      <tr><td><b>Light from</b> and <b>Dark from</b> (time boxes, only with Schedule)</td><td>The time the app turns light, and the time it turns dark. It follows the clock while the app is open, and it works across midnight.</td><td>07:00 and 19:00</td><td>To match your own day. If both times are equal, the app stays light.</td></tr>
+      <tr><td><b>Pure black in dark mode</b> (switch)</td><td>Makes the dark backgrounds true black (#000000) for AMOLED screens, with cards lifted just enough to stay visible. It applies only while dark mode is active.</td><td>Off</td><td>On an OLED or AMOLED screen (a screen type where black pixels are switched off), to save some battery and get deeper blacks.</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Curated Theme Palettes</h4>
+  <p>Eight ready-made colour schemes. Tap a card to use it. Each has a light and a dark version, and the little strip of four swatches shows how it looks in the mode you are in now. The active card has a highlight.</p>
+  <table class="hg-table">
+    <thead><tr><th>Palette</th><th>What it looks like</th><th>Default</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr><td><b>Material 3</b> (badge M3 BASELINE)</td><td>Google's baseline purple scheme.</td><td>-</td><td>The fallback on Android 11 and older.</td></tr>
+      <tr><td><b>Material You</b> (badge M3 DYNAMIC • WALLPAPER)</td><td>Colours taken from your wallpaper, through Android's system palette.</td><td>Selected for new installs</td><td>Needs Android 12 or newer. On older phones the badge says <i>NEEDS ANDROID 12+ • USES M3 BASELINE</i>.</td></tr>
+      <tr><td><b>AMOLED Cyan</b></td><td>Cyan on black.</td><td>-</td><td>Made for OLED screens.</td></tr>
+      <tr><td><b>Cyberpunk Violet</b></td><td>Pink-red accent on a deep violet background.</td><td>-</td><td></td></tr>
+      <tr><td><b>Nordic Emerald</b></td><td>Green accent on a very dark green.</td><td>-</td><td></td></tr>
+      <tr><td><b>Sunset Amber</b></td><td>Orange accent on a dark brown.</td><td>-</td><td></td></tr>
+      <tr><td><b>Midnight Slate</b></td><td>Blue accent on dark slate.</td><td>-</td><td></td></tr>
+      <tr><td><b>Blood Moon</b></td><td>Red accent on black.</td><td>-</td><td></td></tr>
+    </tbody>
+  </table>
+  <p><b>What you will see:</b> the colours change at once and a message says <i>Applied Theme: ...</i>. Choosing a palette also clears every colour tweak you made with the colour pickers below. On a phone older than Android 12, choosing <b>Material You</b> shows <i>Material You needs Android 12+. Using Material 3 baseline.</i></p>
+
+  <h4>Granular Color Pickers</h4>
+  <p>Under the palettes, a card for fine-tuning. <i>Tweaks apply to the current mode (light or dark)</i>: a colour you change in dark mode does not change light mode, and the other way round. Each row has a coloured circle and its code; tap it to open the <b>colour popup</b>:</p>
+  <ul>
+    <li><b>The hex box.</b> A <b>#</b> is already written in front of it, so you only type the six characters, for example <code>00DFFF</code>. Only the digits 0 to 9 and the letters A to F are accepted, and they always appear in capitals, even if you type small letters. You can also paste a code with or without a #. The preview above updates as you type. Under six characters the box turns red and says how many you have; <b>Apply</b> stays off until there are six.</li>
+    <li><b>Colors.</b> A grid of ready-made colours: tap one to put its code in the hex box.</li>
+    <li><b>Custom.</b> Three sliders, <b>Hue</b>, <b>Saturation</b> and <b>Brightness</b>, with the same hex box above them. Move a slider and the code changes; type a code and the sliders move. The two views share the colour, so you can switch between them.</li>
+    <li><b>Cancel</b> closes the popup and changes nothing. <b>Apply</b> sets the colour.</li>
+  </ul>
+  <table class="hg-table">
+    <thead><tr><th>Picker</th><th>What it colours</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><b>Primary System Accent</b></td><td>Buttons, active indicators and borders.</td><td>The main colour of the app.</td></tr>
+      <tr><td><b>App Background</b></td><td>The page behind everything.</td><td>With <b>Pure black</b> on, the background in dark mode is black whatever you pick here.</td></tr>
+      <tr><td><b>Card Surface Color</b></td><td>Cards and dialog containers.</td><td></td></tr>
+      <tr><td><b>Running App Badge</b></td><td>The marker for an app that is running in the background.</td><td></td></tr>
+      <tr><td><b>Frozen App Badge</b></td><td>Disabled or suspended packages.</td><td></td></tr>
+      <tr><td><b>System App Badge</b></td><td>Core framework and maker system packages.</td><td></td></tr>
+      <tr><td><b>Bloatware Badge</b></td><td>System apps that were uninstalled.</td><td></td></tr>
+      <tr><td><b>Reset tweaks</b> (button, shown only while the current mode has tweaks)</td><td>Removes your colour tweaks for the current mode (light or dark) and goes back to the palette's own colours. A message says <i>Color tweaks reset</i>.</td><td>Does not touch the other mode.</td></tr>
+    </tbody>
+  </table>
+  <p>The default of each picker is whatever the selected palette uses. There is no "save"; the tweak is kept as soon as you pick the colour.</p>
+
+  <h4>Lists</h4>
+  <table class="hg-table">
+    <thead><tr><th>Control</th><th>What it does</th><th>Default</th><th>When to change it</th></tr></thead>
+    <tbody>
+      <tr><td><b>Remember my filters</b> (switch)</td><td>On: the Application Manager, the UAD-NG Debloater and Saved Applications open with the filters you left switched on. Off: the Application Manager always opens on <b>Total Installed</b>.</td><td>Off</td><td>Turn it on if you always look at the same slice, such as "3rd Party" apps. Leave it off if you want a fresh start every time (see <a href="#tab-apps">Application Manager</a>).</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Motion</h4>
+  <table class="hg-table">
+    <thead><tr><th>Control</th><th>What it does</th><th>Default</th><th>When to change it</th></tr></thead>
+    <tbody>
+      <tr><td><b>Expressive Animations</b> (switch)</td><td>Material 3 Expressive's bouncier, springier motion throughout the app, instead of a plain fade or slide. A message says <i>Expressive animations on</i> or <i>off</i>.</td><td>On</td><td>Turn it off if the motion bothers you or you prefer plain movement.</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Font</h4>
+  <p>The font of the text in this app only. A line shows what is in use: <i>In use: the system font</i>, or <i>In use: Name (file name, size)</i>.</p>
+  <table class="hg-table">
+    <thead><tr><th>Control</th><th>What it does</th><th>Default</th><th>When to change it</th></tr></thead>
+    <tbody>
+      <tr><td><b>Use system font</b></td><td>Goes back to your phone's own font. It only shows while a custom font is in use.</td><td>System font in use</td><td>To undo a font you chose.</td></tr>
+      <tr><td><b>Find fonts on this phone</b></td><td>Searches your storage for <code>.ttf</code> and <code>.otf</code> font files (up to 12 MB each) and lists them. A progress bar and a count show while it works. A <b>Filter found fonts...</b> box appears when more than eight are found. Needs <b>All files access</b>; if it is not allowed, the app asks (see <a href="#app-permissions">App permissions</a>).</td><td>-</td><td>When you have font files on the phone and want to see them.</td></tr>
+      <tr><td><b>Choose a file...</b></td><td>Opens Android's file chooser so you pick one font file by hand. Needs no extra access.</td><td>-</td><td>When you know where the file is, or do not want to give file access.</td></tr>
+    </tbody>
+  </table>
+  <ol class="hg-steps">
+    <li>Tap <b>Find fonts on this phone</b> (or <b>Choose a file...</b>). If you used the search, tap a font in the list.</li>
+    <li>A sheet opens with a sample ("Aa Bb 123", a sentence and "ADB Application Manager") in that font, and the note <i>Only the text of this app changes; names, paths and commands in code-style boxes keep their own font.</i></li>
+    <li>Tap <b>Use this font</b>, or <b>Cancel</b> to look at another. A message says <i>Font: ...</i> and the whole app changes.</li>
+  </ol>
+  <p>If a file is not a usable font, a message says <i>Could not use that file</i> with a reason. If your chosen font cannot be loaded the next time the app starts (for example the file was damaged), the app uses the system font again and says so.</p>
+
+  <h4>Icon pack</h4>
+  <p>Draws the app icons in the lists with an icon pack you have installed (ADW, Nova, Apex and Go packs). Apps the pack does not cover get the pack's background and shape when it has one, and otherwise keep their own icon.</p>
+  <table class="hg-table">
+    <thead><tr><th>Control</th><th>What it does</th><th>Default</th><th>When to change it</th></tr></thead>
+    <tbody>
+      <tr><td><b>Icon pack</b> (drop-down)</td><td>Lists <b>Default icons</b> and each icon pack found on the phone. Choosing one redraws the icons; a message says <i>Icon pack applied</i> or <i>Default icons</i>. If a chosen pack is uninstalled, the app falls back to default icons.</td><td>Default icons</td><td>If you use an icon pack and like the look in the app too. With none installed, only Default icons is offered.</td></tr>
+      <tr><td><b>Clear icon cache</b></td><td>The icons are drawn once and kept on disk. This throws the saved ones away so they are drawn again. A message says <i>Icon cache cleared, icons are being redrawn</i>, or that it was already empty.</td><td>-</td><td>If an icon looks wrong or old after you updated an app or changed pack.</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Action Button</h4>
+  <p>The extra button on each row of the Apps list and the Debloater. It is always an icon. You choose what a tap on it does, and, with a press and hold, which actions its sheet offers.</p>
+  <table class="hg-table">
+    <thead><tr><th>Control</th><th>What it does</th><th>Default</th><th>When to change it</th></tr></thead>
+    <tbody>
+      <tr><td><b>Action Button</b> (drop-down)</td><td>Nine choices: <b>App Settings</b> (opens Android's settings page for the app), <b>Force Stop</b>, <b>App Launcher</b> (opens the app), <b>Enable / Disable (dynamic)</b>, <b>Install / Uninstall (dynamic)</b>, <b>Unsuspend / Suspend (dynamic)</b>, <b>Permission Manager</b>, <b>Activity Launcher</b> and <b>None (no button)</b>. The dynamic ones change their icon and action with the app's state: a frozen app shows Enable, an uninstalled app shows Reinstall, a suspended app shows Unsuspend. Uninstall asks <i>Uninstall name?</i> first. A line under the list previews the icon(s).</td><td>App Settings</td><td>Choose the action you use most. Choose <b>None</b> for plainer rows.</td></tr>
+      <tr><td><b>Hold menu</b> (list)</td><td>Press and hold the Action Button on a row and a sheet lists actions for that app. This list decides which actions the sheet offers and in what order. Each row has an up arrow, a down arrow and a switch. At least one action must stay on (otherwise <i>Keep at least one action in the hold menu</i>). Tapping an entry in the sheet runs it; the one that is also your Action Button is highlighted.</td><td>All eight on, in this order: App Settings, App Launcher, Force Stop, Enable / Disable, Install / Uninstall, Unsuspend / Suspend, Permission Manager, Activity Launcher</td><td>To remove actions you never use, or to put your favourites first.</td></tr>
+      <tr><td><b>Reset to Default</b></td><td>Puts the hold menu back to all eight actions in the default order. A message says <i>Hold menu reset</i>. It does not change which action the button itself performs.</td><td>-</td><td>If you made a mess of the order.</td></tr>
+    </tbody>
+  </table>
+  <div class="hg-warn"><b>Careful.</b> Force Stop, Disable, Uninstall and Suspend change real apps on your phone when you tap the button. If you keep one of them as the Action Button, a stray tap does something. App Settings (the default) is the safest choice. For the actions themselves see <a href="#apps-menu">the app menu</a>.</div>
+
+  <h4>Feature List</h4>
+  <p>Which tabs are on the tab bar, and in what order. It has its own section, <a href="#feature-list">Turning tabs on and off and moving them</a>.</p>
+  <table class="hg-table">
+    <thead><tr><th>Control</th><th>What it does</th><th>Default</th><th>When to change it</th></tr></thead>
+    <tbody>
+      <tr><td>A <b>switch</b> on each of the 12 movable tabs</td><td>On: the tab is on the bar. Off: it is taken off the bar.</td><td>All on</td><td>To hide tabs you do not use.</td></tr>
+      <tr><td>The <b>up</b> and <b>down arrows</b> on each row</td><td>Move the tab one place earlier or later on the bar.</td><td>The default order</td><td>To put your favourite tabs first.</td></tr>
+      <tr><td><b>Reset to Default</b></td><td>Switches every tab on and puts them back in the default order. A message says <i>Tabs are back in their default order, all turned on</i>.</td><td>-</td><td>To start over.</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Press and hold guide</h4>
+  <p>This card has no controls. It lists what responds to a press and hold of about half a second (you feel a short tap when it works):</p>
+  <table class="hg-table">
+    <thead><tr><th>What you hold</th><th>Where</th><th>What happens</th></tr></thead>
+    <tbody>
+      <tr><td>An app row</td><td>Apps</td><td>Opens that app's menu (the same as tapping the three dots). Tap the checkbox to select instead.</td></tr>
+      <tr><td>An app's icon</td><td>Apps</td><td>Saves the icon as a PNG to Download/ADB App Manager/Icons.</td></tr>
+      <tr><td>The Action Button</td><td>Apps, Debloater</td><td>Opens the sheet with the actions you chose for the hold menu.</td></tr>
+      <tr><td>The round checkmark button (when apps are selected)</td><td>Apps</td><td>Clears every selection at once.</td></tr>
+      <tr><td>A file or folder row</td><td>File Manager</td><td>Starts selecting. Tap more rows to add them, then Copy, Move or Delete.</td></tr>
+      <tr><td>A file the APK search found</td><td>Installer</td><td>Deletes it from the phone, with an Undo right after.</td></tr>
+      <tr><td>A setting that is 1 or 0</td><td>Hidden Settings</td><td>Flips it. See <a href="#tab-settings">Hidden Settings</a>.</td></tr>
+      <tr><td>An overlay row</td><td>Overlays</td><td>Switches that overlay on or off. See <a href="#tab-overlays">RRO/Monet Customization</a>.</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Trim Caches</h4>
+  <p>The last card of Settings, and the one control here that works on your phone and not only on this app. It has one button, <b>Trim Caches in All Applications</b>, and a long explanation under it. The button clears the cache of every app in one go, to free some storage.</p>
+  <p><b>What it needs.</b> A <a href="#modes-overview">working mode</a> (ADB over TCP, Wireless Debugging, Shizuku or Root). Without one the button shows a padlock, and tapping it opens the sheet <b>Working Mode Required</b>.</p>
+  <ol class="hg-steps">
+    <li>Tap the gear, scroll to the bottom of Settings and find the card <b>Trim Caches</b>.</li>
+    <li>Tap <b>Trim Caches in All Applications</b>. A question opens: "Trim the caches of every app now? Only cache files are deleted. Apps, their data, logins and your files stay as they are." Tap <b>OK</b> to go on, or <b>Cancel</b> and nothing happens.</li>
+    <li>The app runs <code>pm trim-caches 128G</code> through your working mode, which is the same as typing <code>adb shell pm trim-caches 128G</code> on a computer. The button turns grey and reads "Trimming caches&hellip;", and a line under it says that this can take up to a minute or two. The app stays usable while it runs.</li>
+    <li>When it ends, a box titled <b>Trim Caches in All Applications</b> opens. On success it says <b>Caches trimmed</b>, shows the command tagged <b>SUCCESS</b>, and gives a line such as "Free space on the phone: 120 GB before, 123 GB after (2.4 GB freed)." When nothing more could be freed, the line ends "(nothing more could be freed)" instead. The command prints nothing when it works, so the box also says "Done. The command printed nothing, which is what it does when it works."</li>
+    <li>If it did not work, the box says <b>It did not finish</b>, shows the command tagged <b>FAILED</b>, and quotes Android's own words. See <a href="#troubleshooting">Troubleshooting</a>, "Trim Caches says it did not finish".</li>
+  </ol>
+
+  <h5>What it does</h5>
+  <p><code>pm trim-caches</code> asks Android to free storage by deleting app caches until the phone has the amount of free space you give it. 128 GB is more free space than any phone has, so the target can never be reached. Android therefore keeps going and clears every cache it is allowed to clear, in every app, instead of stopping after the first few. Which apps it starts with, and in what order, is Android's own choice.</p>
+
+  <h5>What is trimmed</h5>
+  <p>Only cache: the temporary files that each app keeps in its own <i>cache</i> folder and its <i>code cache</i> folder, on the phone's internal storage and in the app's folder under <code>Android/data</code>. That means things like downloaded thumbnails and images, web pages a browser kept for next time, map tiles, video and music that was only buffered, and temporary files an app made while working. Android treats all of it as safe to throw away, and the app makes it again when it needs it. (<a href="#glossary">Glossary</a>: cache.)</p>
+
+  <h5>What is not touched</h5>
+  <p>Your apps themselves, their data and settings, logins and accounts, saved games, photos, videos, downloads and every other file in your folders. Nothing is uninstalled and no app is reset.</p>
+
+  <h5>What you may notice</h5>
+  <ul>
+    <li>The first start of an app afterwards can be a little slower, and it may use mobile data to fetch images again.</li>
+    <li>An app that keeps offline downloads in its cache folder (some music, video and map apps do) may need to download them again.</li>
+    <li>Apps that are running right now may keep some of their cache until they close.</li>
+    <li>How much it frees depends on how much cache your apps hold. The box shows the free space before and after, so you can see what it did.</li>
+  </ul>
+  <div class="hg-note"><b>Tip.</b> This does not delete files, downloads or app data, so it will not free a lot on a phone whose space is used by big apps or files. For that, see <a href="#recipe-find-big-apps">Find the apps that take the most space</a>. The steps again, in short: <a href="#recipe-trim-caches">Free up space by clearing every app's cache</a>.</div>
+
+  <h4>If something here does not work</h4>
+  <ul>
+    <li><b>I cannot find a button the guide mentions.</b> You may have chosen another language. Switch to English under <b>Language</b>.</li>
+    <li><b>A tab has disappeared.</b> It is switched off in the <b>Feature List</b>. Switch it on or use <b>Reset to Default</b>.</li>
+    <li><b>The colours look wrong.</b> Tap <b>Reset tweaks</b>, or tap a palette card to clear every tweak.</li>
+    <li><b>An app icon is missing or wrong.</b> Tap <b>Clear icon cache</b>, or pick <b>Default icons</b>.</li>
+    <li><b>The text is hard to read after a font change.</b> Tap <b>Use system font</b>.</li>
+    <li><b>The Trim Caches button has a padlock.</b> No working mode is on. Tap it and then <b>Set Up Working Mode</b> (<a href="#modes-overview">Working modes</a>).</li>
+    <li><b>Trim Caches says "It did not finish".</b> Read the words Android gave in the box; <a href="#troubleshooting">Troubleshooting</a> explains the usual ones.</li>
+  </ul>
+</section>
+<section id="feature-list" data-title="Turning tabs on and off and moving them" data-group="Settings and looks">
+  <p class="hg-lead">The tab bar has fourteen tabs, and you may not use them all. The Feature List lets you take tabs off the bar and put the rest in the order you like.</p>
+  <p><b>Where to find it:</b> tap the gear icon in the header to open <a href="#prefs">Settings</a>, then scroll to the card named <b>Feature List</b> (after the Action Button card).</p>
+
+  <h4>Before you start</h4>
+  <ul>
+    <li>No working mode and no permission are needed. Every change shows on the tab bar at once, and it is kept when you close the app and when you restart the phone.</li>
+    <li>The Feature List only decides what is <b>shown</b>. Switching a tab off does not delete anything: the tab's own settings and saved things stay where they are, and the tab comes back exactly as you left it when you switch it on again.</li>
+    <li>It affects the tab bar only. The <a href="#prefs">Settings</a> screen is opened by the gear, is not a tab, and cannot be switched off, so you can always get back to this card.</li>
+  </ul>
+
+  <h4>What stays fixed</h4>
+  <p><b>Application Manager</b> is always the first tab and <b>About</b> is always the last. They have no switch or arrows in the list because they cannot be turned off or moved. Everything between them can be switched off and moved.</p>
+
+  <h4>The list and the default order</h4>
+  <p>The card says: <i>Turn a tab off to take it out of the tab bar and use the arrows to put the tabs in the order you like. Application Manager and About always stay where they are.</i> Each of the twelve movable tabs has a row with its name, an up arrow, a down arrow and a switch. The first row's up arrow and the last row's down arrow are greyed out because they have nowhere to go. A row whose switch is off has a dimmed name. This is the default order, which is also what <b>Reset to Default</b> gives you:</p>
+  <table class="hg-table">
+    <thead><tr><th>#</th><th>Name in the list</th><th>What it is</th></tr></thead>
+    <tbody>
+      <tr><td></td><td><b>Application Manager</b> (fixed, always first)</td><td><a href="#tab-apps">Application Manager</a></td></tr>
+      <tr><td>1</td><td><b>Saved Applications</b></td><td><a href="#tab-saved-lists">Saved Applications</a></td></tr>
+      <tr><td>2</td><td><b>UAD-NG Debloater</b></td><td><a href="#tab-debloater">UAD-NG Debloater</a></td></tr>
+      <tr><td>3</td><td><b>APK Installer</b></td><td><a href="#tab-installer">APK Installer</a></td></tr>
+      <tr><td>4</td><td><b>File Manager</b></td><td><a href="#tab-files">File Manager</a></td></tr>
+      <tr><td>5</td><td><b>Command-Line Interface</b></td><td><a href="#tab-terminal">Command-Line Interface</a> (with the ADB Console)</td></tr>
+      <tr><td>6</td><td><b>Hidden Settings</b></td><td><a href="#tab-settings">Hidden Settings</a></td></tr>
+      <tr><td>7</td><td><b>RRO/Monet Customization</b></td><td><a href="#tab-overlays">RRO/Monet Customization</a></td></tr>
+      <tr><td>8</td><td><b>App Updater</b></td><td><a href="#tab-updates">App Updater</a></td></tr>
+      <tr><td>9</td><td><b>App Stores</b></td><td><a href="#tab-store">App Stores</a></td></tr>
+      <tr><td>10</td><td><b>Logcat Viewer</b></td><td><a href="#tab-logcat">Logcat Viewer</a></td></tr>
+      <tr><td>11</td><td><b>Task Manager</b></td><td><a href="#tab-taskmgr">Task Manager</a></td></tr>
+      <tr><td>12</td><td><b>Connected Devices</b></td><td><a href="#tab-devices">Connected Devices</a></td></tr>
+      <tr><td></td><td><b>About</b> (fixed, always last)</td><td><a href="#tab-about">About</a></td></tr>
+    </tbody>
+  </table>
+  <p>On the tab bar, long names break into two lines (for example Hidden / Settings). The names in the list are the full names.</p>
+
+  <h4>Switch a tab off</h4>
+  <ol class="hg-steps">
+    <li>Tap the gear icon, then scroll to <b>Feature List</b>.</li>
+    <li>Tap the switch at the right end of the tab's row, so it turns off. The tab's name in the list turns dim.</li>
+    <li>Look at the tab bar under the header: the tab is gone. The tabs that were after it move up to take its place.</li>
+  </ol>
+  <p><b>What happens to a tab you switch off:</b></p>
+  <ul>
+    <li>It leaves the tab bar at once, and Back no longer goes to it.</li>
+    <li>Anything inside the app that points at it does not open it. A message says, for example, <i>App Updater is turned off. Turn it on in Settings, Feature List.</i> and nothing else happens: no sheet closes and no download starts. Examples are <b>Check for update</b> in About (App Updater), the update button in an app's menu (App Updater) and <b>Logs</b> in an app's menu (Logcat Viewer).</li>
+    <li>One exception: if you open an APK file from outside the app (for example from your file manager or a download, choosing this app to install it), the app switches <b>APK Installer</b> back on by itself, because you asked for it. A message says <i>APK Installer was turned off. It is on again to open this file.</i></li>
+    <li>You can switch off every one of the twelve if you like. The bar then shows only Application Manager and About.</li>
+  </ul>
+
+  <h4>Get a tab back</h4>
+  <ol class="hg-steps">
+    <li>Open Settings with the gear icon and scroll to <b>Feature List</b>.</li>
+    <li>Turn the tab's switch on. It returns to the bar in the position its row has in the list.</li>
+    <li>If you cannot remember which tab you hid, or want everything as it was, tap <b>Reset to Default</b>.</li>
+  </ol>
+
+  <h4>Move a tab</h4>
+  <ol class="hg-steps">
+    <li>In the Feature List, tap the <b>up arrow</b> on a row to move that tab one place earlier, or the <b>down arrow</b> to move it one place later.</li>
+    <li>The row moves and the tab bar follows at once. The screen scrolls so the row stays under your thumb, so you can tap the same arrow again to keep moving it.</li>
+    <li>Repeat for other tabs until the order suits you.</li>
+  </ol>
+  <p>A tab that is switched off still keeps its place in the list. If you switch it on again later, it returns to that place. Moving a tab never changes the position of Application Manager or About.</p>
+
+  <h4>Reset to Default</h4>
+  <p>The <b>Reset to Default</b> button under the list switches all twelve tabs on and puts them back in the default order shown above. A message says <i>Tabs are back in their default order, all turned on</i>. There is no question first, and it does not touch anything else in Settings.</p>
+
+  <h4>When the app is updated</h4>
+  <p>Your choice is checked against the tabs the new version has. A tab that no longer exists is dropped from your choice. A tab the update adds is placed after the tab that comes before it in the default order, so your saved order keeps working.</p>
+
+  <div class="hg-note"><b>Tip.</b> If you use only a few tabs, hide the rest and put the ones you use most right after Application Manager. The tab bar then shows more of what you need at once, without sideways scrolling.</div>
+
+  <h4>If something goes wrong</h4>
+  <ul>
+    <li><b>"... is turned off. Turn it on in Settings, Feature List."</b> You tried to open a tab that is off. Switch it on as described above.</li>
+    <li><b>A tab is missing and I do not know why.</b> Open the Feature List: a row with a dimmed name and its switch off is a hidden tab.</li>
+    <li><b>I pressed an arrow and the row did not move.</b> It is already first or last; its arrow is greyed out.</li>
+    <li><b>The order looks wrong after an update.</b> Tap <b>Reset to Default</b> and arrange it again.</li>
+  </ul>
+</section>
+<section id="themes" data-title="Themes and colours" data-group="Settings and looks">
+  <p class="hg-lead">Choose how the app looks: light or dark, one of eight ready-made colour schemes, or your own colours. These choices change only this app, not the rest of your phone.</p>
+  <p><b>Where to find it:</b> tap the gear icon in the header to open <a href="#prefs">Settings</a>. Three cards are about looks: <b>Appearance</b>, <b>Curated Theme Palettes</b> and, inside the same card below the palettes, <b>Granular Color Pickers</b>.</p>
+
+  <h4>Before you start</h4>
+  <ul>
+    <li>No working mode, permission or computer is needed, and there is no Save button: each choice applies at once and is remembered.</li>
+    <li>The <b>Material You</b> palette needs Android 12 or newer. On older phones it falls back to the Material 3 baseline colours.</li>
+    <li>To change the colours of Android itself (the whole phone), see <a href="#tab-overlays">RRO/Monet Customization</a> instead. This section is only about the app's own look.</li>
+  </ul>
+
+  <h4>How the app chooses its colours</h4>
+  <p>Four things work together, in this order:</p>
+  <ol class="hg-steps">
+    <li><b>The mode:</b> light or dark. <b>Appearance</b> decides which one is in use now.</li>
+    <li><b>The palette:</b> one of the eight cards. A palette has a dark version and a light version.</li>
+    <li><b>Your tweaks:</b> any colours you changed with the colour pickers. They are saved for one mode only, so a tweak made in dark mode does not change light mode.</li>
+    <li><b>Pure black:</b> if it is on, then in dark mode the backgrounds become black whatever the palette and your tweaks say.</li>
+  </ol>
+  <p>The text colour on buttons is chosen automatically, black or white, whichever is easier to read on the accent colour. The phone's status bar takes the colour of the app's background.</p>
+
+  <h4>Light, dark or system</h4>
+  <p>In the <b>Appearance</b> card, tap one of four buttons. The active one is highlighted, and a message says what you chose (for example <i>Appearance: dark</i>).</p>
+  <table class="hg-table">
+    <thead><tr><th>Button</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><b>Light</b></td><td>Always the light version.</td></tr>
+      <tr><td><b>Dark</b></td><td>Always the dark version.</td></tr>
+      <tr><td><b>System</b> (the default)</td><td>Follows your phone's dark mode. When the phone switches, the app switches with it. A line under the buttons says, for example, <i>Following your phone's setting (currently Dark)</i>.</td></tr>
+      <tr><td><b>Schedule</b></td><td>Switches by the clock. Two boxes appear: <b>Light from</b> (default 07:00) and <b>Dark from</b> (default 19:00). Tap a box and choose a time. The line under the buttons says, for example, <i>Light from 07:00, dark from 19:00 (currently Dark)</i>. It works across midnight and updates while the app is open. If you set both times the same, the app stays light.</td></tr>
+    </tbody>
+  </table>
+  <p>With <b>Light</b> or <b>Dark</b>, the line under the buttons says <i>Dark mode • color tweaks are saved separately for light and dark</i> (or Light mode).</p>
+  <p><b>Pure black in dark mode</b> (a switch below the line): gives true black (#000000) backgrounds on AMOLED screens, which the card says saves battery. Cards and panels are lifted just enough to stay visible. If you switch it on while the app is light, a message says <i>Pure black applies whenever dark mode is active</i>. It is off by default.</p>
+
+  <h4>The eight palettes</h4>
+  <p>Under <b>Curated Theme Palettes</b> ("Every palette has a light and a dark version") there are eight cards. Each card shows a name and a strip of four small swatches: the accent colour, the background, the card colour and the system-app colour. The swatches are a preview of how that palette looks in the mode you are in now, so they change when you switch between light and dark. <b>They are not buttons of their own; tap the card.</b></p>
+  <ol class="hg-steps">
+    <li>Tap a card, for example <b>Midnight Slate</b>.</li>
+    <li>The app changes colour at once. The card is highlighted and a message says <i>Applied Theme: Midnight Slate</i>.</li>
+    <li>Any colour tweaks you made before are cleared, for both light and dark. The palette's own colours are used.</li>
+  </ol>
+  <table class="hg-table">
+    <thead><tr><th>Palette</th><th>Where its colours come from</th></tr></thead>
+    <tbody>
+      <tr><td><b>Material 3</b> (M3 BASELINE)</td><td>Google's baseline purple scheme, with an official light version and an official dark version.</td></tr>
+      <tr><td><b>Material You</b> (M3 DYNAMIC • WALLPAPER)</td><td>The colours your phone builds from the wallpaper (Android 12 and newer), for both light and dark. The default for new installs.</td></tr>
+      <tr><td><b>AMOLED Cyan</b>, <b>Cyberpunk Violet</b>, <b>Nordic Emerald</b>, <b>Sunset Amber</b>, <b>Midnight Slate</b>, <b>Blood Moon</b></td><td>Six dark schemes made for the app. Their light version is made from the dark one: lighter backgrounds, and the accent and badge colours darkened until they are easy to read on white.</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Material You</h4>
+  <p>Material You is Android 12's way of building the phone's colours from one source colour, normally your wallpaper. When you choose this palette, the app borrows the phone's accent and neutral colours, so it matches the rest of the phone.</p>
+  <ul>
+    <li>When you change your wallpaper, or come back to the app after changing the system colours, the app reads the colours again and updates itself.</li>
+    <li>If you change the phone's colours with the <a href="#tab-overlays">RRO/Monet Customization</a> tab, this app's Material You palette follows them too. Pick another palette if you want the app to keep its own colours regardless.</li>
+    <li>On a phone older than Android 12 the card's badge says <i>NEEDS ANDROID 12+ • USES M3 BASELINE</i>, and choosing it gives the Material 3 baseline with the message <i>Material You needs Android 12+. Using Material 3 baseline.</i></li>
+  </ul>
+
+  <h4>Your own colours</h4>
+  <p>The <b>Granular Color Pickers</b> change single colours of the palette that is in use. The card says <i>Fine-tune the current palette. Tweaks apply to the current mode (light or dark).</i> Tap a picker to open the colour popup (a grid of colours, or Custom with hue, saturation and brightness sliders, and a hex box that starts with a # and takes capitals only; see <a href="#themes">Themes and colours</a>).</p>
+  <table class="hg-table">
+    <thead><tr><th>Picker</th><th>What it colours</th></tr></thead>
+    <tbody>
+      <tr><td><b>Primary System Accent</b></td><td>Buttons, active indicators and borders.</td></tr>
+      <tr><td><b>App Background</b></td><td>The page behind everything. Ignored in dark mode while Pure black is on.</td></tr>
+      <tr><td><b>Card Surface Color</b></td><td>App cards and dialog containers.</td></tr>
+      <tr><td><b>Running App Badge</b></td><td>The marker for apps that are running in the background.</td></tr>
+      <tr><td><b>Frozen App Badge</b></td><td>Disabled or suspended packages.</td></tr>
+      <tr><td><b>System App Badge</b></td><td>Core framework and maker system packages.</td></tr>
+      <tr><td><b>Bloatware Badge</b></td><td>System apps that were uninstalled.</td></tr>
+    </tbody>
+  </table>
+  <ol class="hg-steps">
+    <li>Choose the mode you want to tweak first: <b>Light</b> or <b>Dark</b> in Appearance (with System or Schedule, tweak whatever mode is showing now).</li>
+    <li>Tap the coloured circle (or its code) in the row of the colour you want to change. A colour chooser opens.</li>
+    <li>Pick a colour and confirm. The app changes at once, and the circle and the code (such as <code>#00E5FF</code>) show the new colour.</li>
+    <li>Repeat for other colours. To tweak the other mode as well, switch the mode and do it again.</li>
+  </ol>
+  <p><b>What you will see:</b> a <b>Reset tweaks</b> button appears at the top right of the pickers card while the current mode has tweaks.</p>
+
+  <h4>Undo a colour change and reset</h4>
+  <ul>
+    <li><b>Reset tweaks</b> removes your tweaks for the mode that is showing. A message says <i>Color tweaks reset</i>. The other mode's tweaks stay.</li>
+    <li><b>Tap a palette card</b> (even the one already in use) to clear the tweaks for both modes.</li>
+    <li>There is no single "reset everything" button. To return to the starting point, set <b>Appearance</b> to <b>System</b>, tap the <b>Material You</b> card, switch <b>Pure black in dark mode</b> off and, if you used it, leave Schedule at its default times 07:00 and 19:00.</li>
+  </ul>
+
+  <h4>Tips</h4>
+  <div class="hg-note"><b>Tip.</b> Pick the accent first, then the background. Keep the background and card colours clearly different from the text colour. Very light text on a very light background is hard to read.</div>
+  <div class="hg-warn"><b>Careful.</b> It is possible to pick colours that are hard to read, for example text-coloured cards on a similar background. Nothing is lost: tap <b>Reset tweaks</b> (top right of the pickers card), or tap any palette card to clear all tweaks. The gear icon in the header always stays reachable.</div>
+
+  <h4>If something looks wrong</h4>
+  <table class="hg-table">
+    <thead><tr><th>You see</th><th>Why</th><th>What to do</th></tr></thead>
+    <tbody>
+      <tr><td>The app is dark and I chose Light</td><td>You may have System or Schedule selected, not Light.</td><td>Tap <b>Light</b>.</td></tr>
+      <tr><td>Pure black seems to do nothing</td><td>It only applies while dark mode is active.</td><td>Switch to Dark, or wait for the schedule to turn dark.</td></tr>
+      <tr><td>My tweak vanished</td><td>Tweaks are kept per mode and per palette, and choosing a palette clears them.</td><td>Make the tweak again after choosing the palette.</td></tr>
+      <tr><td>Material You looks like Material 3</td><td>The phone is older than Android 12, so the app uses the Material 3 baseline (the card's badge says so).</td><td>Choose another palette.</td></tr>
+      <tr><td>The colours changed by themselves</td><td>Material You, System or Schedule is selected and the phone's colours or dark mode changed.</td><td>Choose a fixed palette and Light or Dark.</td></tr>
+    </tbody>
+  </table>
+</section>

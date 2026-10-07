@@ -1,5 +1,5 @@
 header: ACTIVITIES (3 • 2 unexported)
-unexported rows: [ 'Hidden$Debug', 'TestingSettings', 'SettingsService$Inner' ]
+unexported rows: [ 'Hidden$Debug', 'TestingSettings' ]
 result 1 (unexported, passes): dialog shown: false | toast: Activity launched
 result 2 (unexported, refused): dialog shown: true | toast: Launch failed
    title: Launch Activity | subtitle: Unexported • via shizuku

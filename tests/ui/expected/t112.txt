@@ -1,0 +1,34 @@
+tabs in order: ["Permissions","App Ops","Activities 2","Components 3","Manifest","Raw","Features","Configurations","Signatures","Libraries"]
+copy chips (no Copy version): ["Copy package","Copy name"]
+nothing read yet for the new tabs: []
+activities: ["Main","Settings"] | count: 2
+components: ["Boot","Sync","Files"] | count: 3
+read once for the app: ["com.x"]
+features tab count: 5
+features: ["OpenGL ES 3.2 ON THIS PHONE","android.hardware.camera REQUIRED NOT ON THIS PHONE","android.hardware.bluetooth_le OPTIONAL NOT ON THIS PHONE","android.hardware.touchscreen OPTIONAL ON THIS PHONE","android.software.leanback OPTIONAL NOT ON THIS PHONE"]
+summary: 5 features. 3 not on this phone (1 of them required, so the Play Store would not list the app for this phone)
+features, required: ["OpenGL ES 3.2","android.hardware.camera"]
+features, optional: ["android.hardware.bluetooth_le","android.hardware.touchscreen","android.software.leanback"]
+features, missing: ["android.hardware.camera","android.hardware.bluetooth_le","android.software.leanback"]
+features, search "blue": ["android.hardware.bluetooth_le"]
+configurations: ["Touch screen Finger","Keyboard Any","Navigation Any","Input features None","OpenGL ES 2.0","Smallest width it needs 320 dp","Largest width it supports No limit","Compatible width limit No limit","Small screens Yes","Normal screens Yes","Large screens Yes","Extra large screens Yes","Any screen density Yes","Resizable Yes","Right-to-left layouts Yes","Minimum API 26 (Android 8.0)","Target API 34 (Android 14)","Compiled against API 35 (Android 15)","Hardware acceleration Yes","Large memory heap No","CPU types arm64-v8a, armeabi-v7a, armeabi","OpenGL ES 3.2"]
+configuration headings: ["INPUT AND GRAPHICS IT ASKS FOR","SCREENS","ANDROID VERSIONS","HOW IT RUNS","THIS PHONE"]
+schemes: ["v1 ✓:on","v2 ✓:on","v3 ✓:on","v3.1 –:off"]
+signature headings: ["SIGNATURE SCHEMES IN THE APK","SIGNER","EARLIER CERTIFICATES (THE SIGNING KEY WAS CHANGED)"]
+first certificate: ["Subject CN=Example Release, O=Example, C=US","Issuer CN=Example Release, O=Example, C=US","Serial number 4A1F9C03","Valid from Jan 15, 2019","Valid until Jan 15, 2049","Signature algorithm SHA256withRSA","Public key RSA, 2048 bits","Version v3","MD5 0A:1B:2C:3D:4E:5F:<clock>:93:A4:B5:C6:D7:E8:F9","SHA-1 AA:BB:CC:DD:EE:FF:<clock>:<clock>:<clock>:99:AA:BB:CC:DD","SHA-256 AA:BB:CC:DD:EE:FF:<clock>:<clock>:<clock>:99:AA:BB:CC:DD:EE:FF:<clock>:<clock>:<clock>:99"]
+badges: ["SELF-SIGNED","SELF-SIGNED"]
+a fingerprint copies on tap: ["AA:BB:CC:DD:EE:FF:<clock>:<clock>:<clock>:99:AA:BB:CC:DD:EE:FF:<clock>:<clock>:<clock>:99"]
+Copy all: ["com.x","","Signer 1","Subject: CN=Example Release, O=Example, C=US","Issuer: CN=Example Release, O=Example, C=US","Serial: 4A1F9C03"]
+library headings: ["LIBRARIES IT ASKS FOR (3)","SHARED LIBRARIES LINKED IN (1)","NATIVE LIBRARIES INSIDE THE APK (3)"]
+libraries: ["org.apache.http.legacy SHARED OPTIONAL","androidx.window.extensions SHARED OPTIONAL","com.example.static version 12 STATIC REQUIRED","org.apache.http.legacy.jar /system/framework/org.apache.http.legacy.jar","libapp.so 9.0 MB","libflutter.so 11.0 MB","libapp.so 7.0 MB"]
+CPU groups: ["arm64-v8a (2)","armeabi-v7a (1)"]
+libraries, search "flutter": ["libflutter.so"]
+libraries, nothing found: ["None match.","None match.","None match."]
+still one read after opening all four: ["com.x"]
+another app, failing read: "Could not read this: package not found"
+reads: ["com.x","com.y"]
+reset when the menu is opened again (features pane): "Open this tab to load it."
+reads after reopening: ["com.x","com.y","com.x"]
+no bridge method: "Could not read this: This needs the app build."
+narrow phone (pane fits, tab in view): {"acts":{"fits":true,"pillInView":true},"comps":{"fits":true,"pillInView":true},"features":{"fits":true,"pillInView":true},"configs":{"fits":true,"pillInView":true},"sigs":{"fits":true,"pillInView":true},"libs":{"fits":true,"pillInView":true}}
+errors: []

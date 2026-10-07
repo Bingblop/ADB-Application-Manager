@@ -1,4 +1,4 @@
-1. App Stores comes right before Logcat Viewer, then Task Manager, then About: true
+1. App Stores comes right before Logcat Viewer, then Task Manager, then Connected Devices, then About: false
    catalog requested: true
    app cards rendered: 2
 2. default sort most-starred, Bravo first: true

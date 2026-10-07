@@ -21,11 +21,7 @@ public final class AdbPair {
     private AdbPair() {}
 
     static File adbBin(Context ctx) {
-        try {
-            File nativeAdb = new File(ctx.getApplicationInfo().nativeLibraryDir, "libadb.so");
-            if (nativeAdb.exists()) return nativeAdb;
-        } catch (Exception ignored) {}
-        return new File(ctx.getFilesDir(), "libadb.so");
+        return AdbRuntime.adbBin(ctx);
     }
 
     static File adbHome(Context ctx) {
@@ -48,6 +44,7 @@ public final class AdbPair {
             File key = new File(new File(home, ".android"), "adbkey");
             if (key.exists()) env.put("ADB_VENDOR_KEYS", key.getAbsolutePath());
             env.put("TMPDIR", ctx.getCacheDir().getAbsolutePath());
+            AdbRuntime.applyEnv(ctx, env);
             pb.redirectErrorStream(true);
             final Process p = pb.start();
             Thread killer = new Thread(new Runnable() {

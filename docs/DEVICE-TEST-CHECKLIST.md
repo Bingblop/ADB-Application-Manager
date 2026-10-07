@@ -1,4 +1,4 @@
-# On-device test checklist (v7.9.14 to v7.9.22)
+# On-device test checklist (v7.9.14 to v7.10.0)
 
 The automated tests run the page in a browser with a pretend phone. They cannot prove the parts that talk to Android:
 icons, the file chooser, added storage, shell commands and the haptic feedback. This list is for those. Tick a box when
@@ -10,6 +10,89 @@ it works; write down what you saw when it does not.
 - [ ] A working mode is on (ADB over TCP, Wireless Debugging, Shizuku or Root). Most items below need one.
 - [ ] Use a phone you do not mind changing: some items disable apps or change app ops. Everything can be undone from the same screens.
 
+## 0. New in v7.10.0
+
+**Header, banner, guide, looks**
+
+- [ ] The header has no icon: the title "Full ADB/Root System Manager" starts at the left edge in two fitted lines. Two smaller uppercase lines show the manufacturer/model and Android version, plus One UI on Samsung. The gear and working-mode badge have matching heights. Try a narrow screen and a larger system font: no title, subtitle, or button is cut off.
+- [ ] Without a working mode the orange Read-Only banner shows with an X in its top right corner; the X puts it away; closing the app completely and opening it again shows it again.
+- [ ] About, **Help Guide** (next to GitHub): opens without a network, with 80 topics in six groups. Tapping a topic opens it on its own; Previous/Next and Contents work. Search shows matching topics with snippets. Back closes the guide, and reopening continues where you were.
+- [ ] Bottom sheets show a small grab handle; scrollbars are thin; a tab fades in when opened. Nothing is cut off or moved.
+- [ ] **Granular Color Pickers**: all seven buttons open the popup. Both Colors and Custom have the fixed # prefix; typing or pasting `#00dfff` produces `00DFFF`. Hue/saturation/brightness sliders and both hex boxes stay in sync. Apply is disabled until six hex digits are present. Cancel and Android Back change nothing; Apply and Reset tweaks work in both light and dark mode.
+
+**Latest Application Manager changes**
+
+- [ ] The button row has Share CSV, Profiles, Backups, and the Action Button chooser, with no Export button. The Versions pill and versions on app rows are gone; version information is still available in the app menu.
+- [ ] Choose an Action Button in the Apps tab: row actions change and Settings shows the same choice. Change it in Settings and check the Apps chooser. Force-close and reopen the app: both choosers and the row actions restore the saved choice.
+- [ ] With the UAD-NG list downloaded, listed apps show their classification chip on the row. Tap one: its description and dependencies open without selecting the row or opening the app menu. An unlisted app has no chip, and the chip in the app menu still works.
+
+**The app menu and Settings**
+
+- [ ] Open an app's menu: the pills are Permissions, App Ops, Activities, Components, Manifest, Raw, Features, Configurations, Signatures, Libraries (swipe the row sideways; the picked pill slides into view). No "Copy version" chip. **Activities** lists the screens (LAUNCH, DISABLE / ENABLE); **Components** lists receivers, services (STOP) and providers.
+- [ ] **Features**: a game shows OpenGL ES with "on this phone"; the Not on this phone chip lists what the phone lacks. **Configurations**: minimum / target / compiled Android versions are right for an app you know. **Signatures**: v2 / v3 are lit for a recent app; the SHA-256 matches what `apksigner verify --print-certs` (or the app's maker) says; tapping it copies it. **Libraries**: a Flutter or game app lists its .so files under arm64-v8a.
+- [ ] Uninstall, Clear Data and Rem Updates in the app menu ask first (Cancel changes nothing); Freeze and the others do not. The batch Freeze question reads "Confirm Freeze Selected Apps".
+- [ ] Settings, last card: **Trim Caches in All Applications**. Without a working mode it shows a padlock. With one: the question, then "Trimming caches…", then a report with free space before and after (a heavily used phone frees a few hundred MB or more). Apps, logins and files are intact.
+- [ ] The permissions sheet has **Install unknown apps** (Allow opens Android's screen, or grants at once with a working mode). Working Modes, Root: with Magisk / KernelSU set to deny this app the tag reads DENIED and the badge says "not ready"; after allowing it and re-selecting Root it reads ACTIVE.
+- [ ] The small **?** on the first card of a tab (Debloater, Installer, Files, Connected Devices, Settings, ...) opens the Help Guide at that tab's topic.
+- [ ] **Connected Devices**: Uninstall a system app on a watch that refuses with "only root can delete system app" (a Samsung watch, for example): the app is removed anyway and `/data/local/tmp` has no `adbam_unin_*.jar` left (`adb shell ls /data/local/tmp`). Reinstall brings it back.
+
+**APK variants (needs one 32-bit phone and one 64-bit phone)**
+
+- [ ] The release has three APKs and a `SHA256SUMS.txt` that lists them. `-arm64-v8a` installs on the 64-bit phone and its working modes work as before.
+- [ ] `-armeabi-v7a` installs on the 32-bit phone, ADB over TCP / Wireless Debugging connect (the 32-bit adb starts), and Connected Devices can list devices. Write down the model and Android version if it does not start.
+- [ ] `-universal` installs on both. The self-update (About, Check for update) offers the matching variant.
+- [ ] A phone without a working mode: **APK Installer**, Authorizer **No privilege**, installs a small APK (Android asks once to allow installs from this app).
+
+**Morphe Patcher** (the engine runs in a process of its own, `:morphe`, and has only been run on a computer so far: this is its first test on a phone. A phone with 6 GB or more is best)
+
+- [ ] The tab Morphe Patcher is in the tab bar after Connected Devices. The card says it is powered by Morphe, Morphe Manager and Helper for Morphe (GPL-3.0). The yellow note "does not contain the Morphe engine" is NOT shown (it is shown by a build without the engine).
+- [ ] Apps page: **Download Morphe Patches** (about 11 MB) downloads, "Reading the patches..." appears for a few seconds, then YouTube, YouTube Music and Reddit are listed (the ones installed here marked Installed). If it stays empty, Sources shows the reason on the card ("Could not be read": copy it).
+- [ ] Open an app that is installed and has patches. The patch page shows its version with "Supported version" when the version is one of the listed ones. Simple lists the default patches; Advanced lists App-specific and Universal patches, the gear of a patch with options opens its options.
+- [ ] **Patch** an app with one or two small patches (try a universal one on a small app of yours first, for example "Change installer source"). The steps run, the log scrolls like logcat, a notification "Patching ..." with Cancel stays while the app is in the background, and it ends with "is patched" and a file name. Write down: the time it took, the heap line of the log ("Heap limit: N MB") and whether the phone stayed responsive.
+- [ ] With **Install when finished** on and a working mode: the app installs silently. If the patched app has the same package as an installed one, Android refuses (another signature): the question "Uninstall the installed copy first?" appears, and after OK it installs. With no working mode the system installer opens.
+- [ ] **Delete the APK after installing** (try it once): the patched APK is gone from Patched APKs and from Download/Morphe Patcher after the install; with it off both copies stay (Keep patched APKs in: Both).
+- [ ] A big app (YouTube, about 150 MB) with its supported version: it either finishes or says that it ran out of memory (not a silent crash). Cancel in the notification and in the page stops it and nothing is saved.
+- [ ] A split app (one installed from Play with config splits): the log says "Bundling N split APKs" and the patch works on it.
+- [ ] **Morphe Helper**: Aptoide or Uptodown, package of a small app, version empty: Newest downloads, shows the SHA-256 and the install and patch buttons. All versions lists versions. A source that cannot be downloaded says so and Open the site opens the browser. With a VirusTotal key (Settings, Test): Scan shows clean or the engine counts.
+- [ ] **Community**: the finder loads (about 2 MB), By app and Bundles list, a category filters, "only installed apps" keeps your apps, **Add** on a bundle asks first and then the bundle shows Installed in green. **Sources** lists it, Turn off removes its apps from the Apps page, Delete removes it.
+- [ ] **Patched APKs**: the run is listed with its patches; Install, Share, Save to Downloads and Log work; Delete removes the file.
+
+**SD Maid SE** (the tools have only been run on a computer against test folders: this is their first test on a phone. Start with the general setting **Dry run** on)
+
+- [ ] The tab SD Maid SE is in the tab bar after Morphe Patcher. The card names the working mode and lists the data areas (Public storage, Public app media, Public app data, Public app resources, Private app data, Portable storage) as available, through the working mode, or not available. With Root, Private app data is available; with ADB or Shizuku, Public app data is available through the working mode on Android 11 and newer (without any mode it is not).
+- [ ] **SystemCleaner** Scan (with Dry run on): the progress shows the step, a bar, a count and the folder; the result says "N filter match(es)" and a size; Details lists the filters, a filter opens to its paths, unticking an item changes the number the Delete question asks about. Delete with Dry run on reports and deletes nothing (the files are still there). Turn Dry run off, make a file called `test.log` in a folder in Download, scan again: the Log files filter lists it and Delete removes it; it is in History with its path.
+- [ ] **AppCleaner** Scan: apps are listed by size with a System tag where it applies. Delete without the accessibility service clears what file access reaches and, with a working mode, trims all caches ("Deleting caches using ADB access"). Then enable the accessibility service (the card: Enable the service, consent, turn it on in Android's settings; on Android 13 and newer first "Allow restricted settings" in this app's App info) and Delete again: the screen is covered, App info of the apps opens one after the other and Clear cache is tapped; Cancel on the cover stops it; turning the screen off stops it with "stopped because the screen was off or locked". Write down the phone, the Android version and the language for every run: the steps follow the system's settings texts and may fail on a maker's skin.
+- [ ] **CorpseFinder** Scan: uninstall a test app that left its folder in Android/data or Download, then scan: its remnant is listed with its area and a risk. An installed app's folder is NOT listed.
+- [ ] **Deduplicator** Scan: copy a file of more than 512 KB twice into Download; the set is listed with one copy marked Kept. Delete keeps exactly one copy.
+- [ ] **Two at a time**: Scan all starts all four; two work, two say In queue; the live status at the top follows them while you scroll; Cancel on one stops only that one. The notification "SD Maid SE" shows the progress with a Cancel button while the app is in the background.
+- [ ] **1-tap scan and delete**: the checkbox of a tool asks before it turns on; with it on, Scan scans and deletes without a list and History has the run. (Use it on SystemCleaner with Dry run on first.)
+- [ ] **Exclusions**: exclude a path from a result with Exclude (Undo works), create an app, a path and a segment exclusion in the manager, remove one, Restore defaults, Export (clipboard) and Import. An excluded folder is never listed or deleted by the tools you chose.
+- [ ] **History**: shows the reports and, for a report, the deleted paths; Reset all asks and clears it.
+
+**System UI Tuner** (the commands have been checked as text and against a shell on a computer, never on a phone: this is their first test)
+
+- [ ] The tab System UI Tuner is in the tab bar after SD Maid SE. Without a working mode the note says what needs one; the Quick Settings tiles card still works.
+- [ ] **Demo Mode**: Allow demo mode, then Enabled: the status bar shows 12:00, the battery, the signal and the icons you chose; a change of the form is applied a moment later; Exit restores the bar. Write down which rows do nothing on this phone and the One UI / Android version.
+- [ ] **Quick Settings tiles**: turn the Battery, Clock and Demo mode tiles on, Add each (Android 13 and newer asks, older versions: drag from the editor): the Battery tile shows the level, the Clock tile ticks every second and opens the alarms, the Demo mode tile turns demo mode on and off (and the switch in the tab follows).
+- [ ] **Status bar and shade**: Open notifications, Open quick settings and Close the shade work. Hide the clock: it disappears and Restore everything brings it back. Hide Home: the question appears and it comes back after 15 seconds.
+- [ ] **Notification lab**: a basic, a big text, an inbox and a messaging notification are shown by the system; List shows keys (Android 11 and newer); Snooze hides one for a minute.
+- [ ] **System actions**: Back, Home, Recents, Notifications, Quick settings, Power menu, Lock screen and Screenshot do what they say (Samsung: write down which do not). **Restart System UI** restarts the bars.
+- [ ] **Battery simulator**: Apply level 15, discharging: the low-battery warning appears; Unplug and Reset end it; leaving the tab resets it.
+- [ ] **Navigation mode**: lists the modes of this phone (a phone may not have the overlays); Use switches and the question is asked first; switch back.
+- [ ] **Display and windows**: a density of 480 with Keep it counting down 15 seconds and Put it back; Reset to default; Ignore orientation requests and window scaling run without an error.
+
+**Connected Devices** (needs a Wear OS watch, or a second Android phone, on the same Wi-Fi)
+
+- [ ] On the watch: Developer options, ADB debugging and Debug over Wi-Fi on. **Add device**, Wi-Fi tab: Pair (address:port and the 6-digit code from the watch), then Connect. The watch shows in the picker as Connected with its model, Android version, screen, battery and Wear OS.
+- [ ] **Nearby**: Scan lists the watch; Pair / Connect from the list work.
+- [ ] **Bluetooth** (a watch paired with the Wear OS app, Debugging over Bluetooth on in the app and on the watch, ADB on in this app): Connect over Bluetooth adds a device with the Bluetooth link badge; allow it on the watch.
+- [ ] A device that has not allowed this phone says so; after tapping Allow on it and Refresh it becomes Connected.
+- [ ] **Apps**: the list loads, filters and counts work, Disable then Enable a user app, Uninstall and Reinstall a system app you do not need (then put it back), Pull APK saves into Download/ADB App Manager/Devices.
+- [ ] **Send**: an APK, an APKS or XAPK, and "From this phone" install on the watch; the progress bar moves, Stop works, every package shows Installed or the reason. Bluetooth sharing opens the Bluetooth app's picker.
+- [ ] **Console**: `getprop ro.product.model` answers; `adb pull /sdcard/x /sdcard/Download/` runs through adb; `adb kill-server` is refused.
+- [ ] **Logcat**: Play follows the log, Clear empties it. **Files**: browse, view a text file, pull one, send one here, rename, delete a test file. **Hidden Settings**: read, change and put back one value you can see (screen_off_timeout).
+- [ ] **Display**: pick another density, Apply: the watch changes at once and Keep / Put it back counts down 15 s; leave it alone and it goes back by itself. Reset to default and the size box work.
+
 ## 1. Start and Apps list (v7.9.18, v7.9.19)
 
 - [ ] Force-close the app, open it again: it is on **Application Manager** with the **Total Installed** card lit, even if you had left another filter on.
@@ -17,7 +100,7 @@ it works; write down what you saw when it does not.
 - [ ] Tap a row's name: it selects. Tap the checkbox: it selects. Selecting shows the round checkmark button.
 - [ ] **Hold** a row (not the icon, not a button) for half a second: you feel a tap and that app's menu opens. Letting go does not also select the row. No text gets highlighted.
 - [ ] **Hold an icon**: "Icon saved to Download/ADB App Manager/Icons" and the PNG is there.
-- [ ] The Export, Share CSV, Profiles and Backups buttons have an outline and light up when pressed; every button gives a short vibration.
+- [ ] Share CSV, Profiles and Backups have an outline and light up when pressed; every button gives a short vibration. Export was removed in v7.10.0; the Action Button chooser is at the end of this row.
 - [ ] Hold the round checkmark button: the selection clears.
 
 ## 2. Icon pack (v7.9.17, v7.9.18)
@@ -117,6 +200,8 @@ Select three or four apps you do not mind changing, open the round checkmark.
 - [ ] Files, search for a word (for example `jpg`), then tap **Images**, **Over 10 MB**, **Last 7 days**: the list narrows, the count says how many are shown, and **Clear filters** brings everything back.
 - [ ] Added storage (SD card or USB): search `content:word` finds text files that hold the word; `archive:` says it is skipped.
 - [ ] Settings, Lists, **Remember my filters** on: turn on Running + 3rd Party, force-close the app, open it again: the same filters are on. Off: it opens on Total Installed.
+
+- [ ] With no working mode on, open an app's menu: the permission toggles, the App Ops modes (on the mode that is set) and every Enable / Disable, Stop and Launch button of activities, services, receivers and providers show the lock and look dimmed. Turn a working mode on and open the menu again: only install-time permissions keep the lock.
 
 ## Report
 

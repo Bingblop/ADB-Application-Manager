@@ -25,17 +25,17 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.evaluate(() => {
     inspectedPkg = 'com.legacy.app';
     inspectorData = { activities: ['com.legacy.app.MainActivity', 'com.legacy.app.HiddenActivity'] };
-    renderComponentsList();
+    renderActivitiesList();
   });
   const dataExported = await page.evaluate(() =>
-    Array.from(document.querySelectorAll('#compsContainer [data-exported]')).map(el => el.getAttribute('data-exported')));
+    Array.from(document.querySelectorAll('#actsContainer [data-exported]')).map(el => el.getAttribute('data-exported')));
   console.log('legacy-shape activities data-exported attrs:', JSON.stringify(dataExported));
   console.log('all default to false (unexported, safe):', dataExported.length === 2 && dataExported.every(v => v === 'false'));
 
   // tapping LAUNCH on a legacy-shape (now unexported-by-default) activity with no privileged mode must be
   // blocked by guardPrivilege, never reaching the bridge at all
   await page.evaluate(() => { window.__calls.length = 0; isPrivilegedActive = false; });
-  await page.evaluate(() => document.querySelector('#compsContainer [data-exported="false"]').click());
+  await page.evaluate(() => document.querySelector('#actsContainer [data-exported="false"]').click());
   console.log('blocked by guardPrivilege (bridge not called):', await page.evaluate(() => window.__calls.length === 0));
   const modalShown = await page.evaluate(() => document.getElementById('privilegeModal') ? document.getElementById('privilegeModal').classList.contains('show') : null);
   console.log('privilege-required modal shown instead:', modalShown);
@@ -48,10 +48,10 @@ const { chromium, PAGE } = require('./lib/pw');
       { name: 'com.real.app.InternalActivity', exported: false, enabled: true, permission: '' },
     ] };
     inspectedPkg = 'com.real.app';
-    renderComponentsList();
+    renderActivitiesList();
   });
   const realExported = await page.evaluate(() =>
-    Array.from(document.querySelectorAll('#compsContainer [data-exported]')).map(el => el.getAttribute('data-exported')));
+    Array.from(document.querySelectorAll('#actsContainer [data-exported]')).map(el => el.getAttribute('data-exported')));
   console.log('real activityInfo data-exported attrs (true, false expected):', JSON.stringify(realExported));
   console.log('real per-activity detail respected, not overridden:', realExported[0] === 'true' && realExported[1] === 'false');
 

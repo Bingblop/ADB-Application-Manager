@@ -1,4 +1,4 @@
-// App inspector Components: exported filter, search, activity launch (dialog only if refused), read-only guard
+// App inspector Activities tab: exported filter, search, activity launch (dialog only if refused), read-only guard
 const { chromium, PAGE } = require('./lib/pw');
 (async () => {
   const b = await chromium.launch(); const page = await b.newPage({ viewport: { width: 400, height: 860 } });
@@ -23,39 +23,39 @@ const { chromium, PAGE } = require('./lib/pw');
   });
   await page.goto(PAGE); await page.waitForTimeout(300);
   await page.evaluate(() => openInspector('com.android.settings'));
-  await page.click('.sheet-tab-pill[data-tab="comps"]');
-  console.log('header:', await page.locator('#compsContainer > div').first().innerText());
-  await page.click('#compsFilterRow [data-filter="unexported"]');
-  console.log('unexported rows:', await page.locator('#compsContainer .perm-name').allInnerTexts());
-  await page.screenshot({ path: 'comps.png' });
+  await page.click('.sheet-tab-pill[data-tab="acts"]');
+  console.log('header:', await page.locator('#actsContainer > div').first().innerText());
+  await page.click('#actsFilterRow [data-filter="unexported"]');
+  console.log('unexported rows:', await page.locator('#actsContainer .perm-name').allInnerTexts());
+  await page.screenshot({ path: 'acts.png' });
   // A launch that passes opens no result dialog (the activity opening is the answer, a toast says so); one Android refuses shows its answer.
   const dialogShown = () => page.isVisible('#commandResultsModal.show');
   const toast = () => page.locator('#toastMsg').innerText();
-  await page.locator('#compsContainer button[data-comp="com.android.settings.TestingSettings"][onclick^="launchComponent"]').click(); await page.waitForTimeout(300);
+  await page.locator('#actsContainer button[data-comp="com.android.settings.TestingSettings"][onclick^="launchComponent"]').click(); await page.waitForTimeout(300);
   console.log('result 1 (unexported, passes): dialog shown:', await dialogShown(), '| toast:', await toast());
-  await page.locator('#compsContainer button[data-comp="com.android.settings.Hidden$Debug"][onclick^="launchComponent"]').click(); await page.waitForTimeout(300);
+  await page.locator('#actsContainer button[data-comp="com.android.settings.Hidden$Debug"][onclick^="launchComponent"]').click(); await page.waitForTimeout(300);
   console.log('result 2 (unexported, refused): dialog shown:', await dialogShown(), '| toast:', await toast());
   console.log('   title:', await page.locator('#commandResultsTitle').innerText(), '| subtitle:', await page.locator('#commandResultsSubtitle').innerText());
   console.log('   answer:', (await page.locator('#commandResultsList').innerText()).replace(/\n/g, ' | '));
   await page.screenshot({ path: 'launch_fail.png' });
   await page.evaluate(() => closeCommandResultsModal());
-  await page.click('#compsFilterRow [data-filter="exported"]');
-  await page.locator('#compsContainer button[data-comp="com.android.settings.Settings"][onclick^="launchComponent"]').click(); await page.waitForTimeout(300);
+  await page.click('#actsFilterRow [data-filter="exported"]');
+  await page.locator('#actsContainer button[data-comp="com.android.settings.Settings"][onclick^="launchComponent"]').click(); await page.waitForTimeout(300);
   console.log('result 3 (exported, intent, passes): dialog shown:', await dialogShown(), '| toast:', await toast());
   // after a refused launch, one that passes leaves no dialog behind
-  await page.click('#compsFilterRow [data-filter="unexported"]');
-  await page.locator('#compsContainer button[data-comp="com.android.settings.Hidden$Debug"][onclick^="launchComponent"]').click(); await page.waitForTimeout(300);
+  await page.click('#actsFilterRow [data-filter="unexported"]');
+  await page.locator('#actsContainer button[data-comp="com.android.settings.Hidden$Debug"][onclick^="launchComponent"]').click(); await page.waitForTimeout(300);
   await page.evaluate(() => closeCommandResultsModal());
-  await page.locator('#compsContainer button[data-comp="com.android.settings.TestingSettings"][onclick^="launchComponent"]').click(); await page.waitForTimeout(300);
+  await page.locator('#actsContainer button[data-comp="com.android.settings.TestingSettings"][onclick^="launchComponent"]').click(); await page.waitForTimeout(300);
   console.log('a passing launch after a refused one: dialog shown:', await dialogShown());
   // Read-only mode: unexported launch must be blocked by the privilege guard
   await page.evaluate(() => { window.__st.privileged = false; checkAllWorkingModes(false); });
-  await page.click('#compsFilterRow [data-filter="unexported"]');
-  await page.locator('#compsContainer button[data-comp="com.android.settings.TestingSettings"][onclick^="launchComponent"]').click(); await page.waitForTimeout(200);
+  await page.click('#actsFilterRow [data-filter="unexported"]');
+  await page.locator('#actsContainer button[data-comp="com.android.settings.TestingSettings"][onclick^="launchComponent"]').click(); await page.waitForTimeout(200);
   console.log('read-only guard shown:', await page.isVisible('#privilegeModal.show'));
   await page.evaluate(() => closePrivilegeModal());
-  await page.fill('#compsSearch', 'debug'); await page.click('#compsFilterRow [data-filter="all"]');
-  console.log('search debug:', await page.locator('#compsContainer .perm-name').allInnerTexts());
+  await page.fill('#actsSearch', 'debug'); await page.click('#actsFilterRow [data-filter="all"]');
+  console.log('search debug:', await page.locator('#actsContainer .perm-name').allInnerTexts());
   console.log('calls:', JSON.stringify(await page.evaluate(() => window.__st.calls)));
   console.log('errors:', JSON.stringify(errors));
   await b.close(); })();

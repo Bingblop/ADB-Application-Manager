@@ -1,0 +1,621 @@
+<section id="tab-files" data-title="File Manager" data-group="The tabs">
+<p class="hg-lead">Browse the files and folders on your phone, read and edit text files, copy, move, rename, delete and share things, and look inside zip files. You do not need a computer.</p>
+<p><b>Where to find it:</b> the tab named <b>File Manager</b>, next to <b>APK Installer</b> (you can move or hide tabs in <a href="#feature-list">Feature List</a>).</p>
+
+<h4>Before you start</h4>
+<p>Most of this tab works on your own storage and needs no <a href="#modes-overview">working mode</a> (a way for this app to run commands with more rights than an ordinary app: ADB, Wireless Debugging, Shizuku or Root). It needs permission to see your files instead.</p>
+<table class="hg-table">
+<thead><tr><th>Place</th><th>What it needs</th><th>What you can do</th></tr></thead>
+<tbody>
+<tr><td>Your storage, <code>/storage/emulated/0</code> (Download, Pictures, DCIM and so on)</td><td><b>All-files access</b> (a switch in Android's settings that lets an app see all your files; Android 11 and later) or the storage permission (Android 10 and earlier)</td><td>Everything on this page</td></tr>
+<tr><td>System places such as <code>/system</code> or <code>/data/local/tmp</code></td><td>A working mode</td><td>Look, read, and change what that mode is allowed to change</td></tr>
+<tr><td>An SD card, a USB drive or another app's folder</td><td>Nothing extra</td><td>Added with <b>+ Add storage</b>: see <a href="#files-storage">SD cards, USB drives and other storage</a></td></tr>
+</tbody>
+</table>
+<p>With no working mode (<a href="#mode-readonly">Read-Only</a>) the tab still works on your own storage once All-files access is on. See <a href="#app-permissions">Permissions</a>.</p>
+
+<h4>Open the tab and find your way</h4>
+<ol class="hg-steps">
+<li>Tap <b>File Manager</b>. The list shows your storage folder. If a box says <i>Storage looks inaccessible</i>, tap <b>Grant storage access</b>. Android opens its <i>All files access</i> screen for this app (on Android 10 and older it shows a storage permission box instead): switch it on or allow it, press Back, and the list fills in by itself.</li>
+<li>Tap a folder to open it. Folders come first, then files. The row at the very top, <b>..</b> with the words <i>Up one folder</i>, goes one level back up.</li>
+<li>To jump somewhere, type a path in the box under the title (it starts as <code>/storage/emulated/0</code>) and tap <b>Go</b>. <code>/sdcard</code> works too. The small path above the list shows where you are.</li>
+<li>Tap a file to see what you can do with it, or press and hold a row to select things (both below).</li>
+</ol>
+<p>Each row has an icon (a small picture for photos and videos), the name (folder names end with a slash) and a grey line such as <i>-rw- • 1.2 MB</i>. A first letter <b>d</b> means a folder. The other letters say what this app may do with it: r read, w write, x run (for a folder: enter). For system places listed through a working mode you see the longer form that the <code>ls</code> command prints, such as <i>drwxrwx--x</i>. The button with three dots at the right of a row opens the same actions as tapping a file, for folders too.</p>
+<p>Under the path box are shortcuts: <b>Storage</b>, <b>/data/local/tmp</b> and <b>/system</b> (these two need a working mode), <b>+ Folder</b> and <b>+ File</b> (make a new one here), <b>Refresh</b> and <b>Select</b>. Storages you add appear in the row above them.</p>
+
+<h4>What you can do with a file or folder</h4>
+<p>Tap a file, or the three-dot button on any row. A sheet opens with the name, the path and these buttons (only the ones that fit are shown):</p>
+<table class="hg-table">
+<thead><tr><th>Button</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td><b>Install</b>, <b>Sign...</b></td><td>For .apk, .apks, .apkm and .xapk files: hand the file to the <a href="#tab-installer">APK Installer</a>, or sign an .apk with this app's own key</td></tr>
+<tr><td><b>View</b> or <b>View contents</b></td><td>Show the file in a viewer. For an archive, <b>View contents</b> opens it like a folder (see <a href="#files-archives">archives</a>)</td></tr>
+<tr><td><b>Edit</b></td><td>Open a text file in the built-in editor</td></tr>
+<tr><td><b>Open with...</b></td><td>Ask Android which app should open the file (files up to 400 MB)</td></tr>
+<tr><td><b>Share</b></td><td>Send a copy of the file with Android's share sheet</td></tr>
+<tr><td><b>Extract...</b> or <b>Open as archive</b></td><td>Unpack an archive, or try to read any other file as one</td></tr>
+<tr><td><b>Compress...</b></td><td>Pack the item into a zip, 7z or tar file</td></tr>
+<tr><td><b>Rename</b>, <b>Copy</b>, <b>Move</b>, <b>Delete</b></td><td>Change the name, put a copy or the item itself in another folder, or remove it</td></tr>
+</tbody>
+</table>
+
+<h4>Viewing and editing</h4>
+<ul>
+<li><b>Text.</b> View shows the first 128 KB in the sheet, with colours for code and settings files (.xml, .json, .py, .sh, .prop and more). A file that is not text shows as unreadable characters: use Open with... instead.</li>
+<li><b>Pictures</b> (jpg, png, gif, webp, bmp, heic, heif, avif) open with <b>Fit / actual size</b>. <b>PDF</b> files show one page at a time with <b>Previous</b> and <b>Next</b>. <b>Fonts</b> (.ttf, .otf, up to about 6 MB) show a sample sentence.</li>
+<li><b>Video and music</b> have no player in this app: View hands them to <b>Open with...</b>.</li>
+</ul>
+<p>To change a text file:</p>
+<ol class="hg-steps">
+<li>Tap the file, then <b>Edit</b>. A tall editor sheet opens. A file over 2 MB is refused (<i>too big to edit here</i>), and so is one that is not text.</li>
+<li>Type your changes. The line at the bottom says <i>Unsaved changes</i>, counts characters and shows your line and column.</li>
+<li>Tap <b>Save</b>. The line says <i>Saved</i>. The text goes to a temporary file first and is swapped in only when that worked, so a failure keeps the old text. Line endings are kept.</li>
+<li>Tap <b>Close</b>. If you have not saved, the app asks <i>Close without saving your changes?</i></li>
+</ol>
+<p><b>Wrap lines</b> and <b>Colors</b> are two tick boxes at the top of the editor (both on). If something else changed the file while you were editing, Save asks whether to save your version over it. A new text file made with <b>+ File</b> opens here at once.</p>
+
+<h4>Copy, move or delete several things</h4>
+<ol class="hg-steps">
+<li>Press and hold one row for half a second, or tap <b>Select</b>. A bar appears: <i>1 selected</i>, with <b>All</b>, <b>Copy</b>, <b>Move</b>, <b>Compress</b>, <b>Delete</b> and a close button. Tap rows to add or remove them. <b>All</b> picks everything in the folder; tap it again to clear.</li>
+<li>Tap <b>Copy</b> or <b>Move</b>. A bar says <i>3 items to copy: open the target folder, then tap Paste</i>.</li>
+<li>Open the target folder. The bar stays while you browse.</li>
+<li>Tap <b>Paste here</b>. If a name is already used there, a box titled <i>A name is already taken</i> asks what to do. Tapping outside it cancels the paste.</li>
+</ol>
+<table class="hg-table">
+<thead><tr><th>Choice</th><th>A name that is already taken</th></tr></thead>
+<tbody>
+<tr><td><b>Replace</b></td><td>The new item goes over the old one. Two folders with the same name are merged.</td></tr>
+<tr><td><b>Skip</b></td><td>The old one stays. The item counts as skipped.</td></tr>
+<tr><td><b>Keep both</b></td><td>The new one gets another name, such as <code>photo (1).jpg</code>.</td></tr>
+</tbody>
+</table>
+<p>For <b>Delete</b>, tap it in the selection bar and confirm in the box that lists the first names. Folders go with everything in them.</p>
+
+<h4>Progress, the notification and Cancel</h4>
+<p>While a job runs, a line above the list shows where it is, for example <i>Copying 2 of 5: movie.mp4 - 45% · 4.2 MB/s · 8 s left</i>, with a <b>Cancel</b> button. The same text is in a notification called <i>Copying 5 items</i>, with a progress bar and its own <b>Cancel</b>. The notification keeps the job alive if you leave the app (on Android 13 and later, allow notifications to see it). If nothing moves for 20 seconds the line says so.</p>
+<p>Cancel stops the job soon and the result says <i>stopped</i>. A copy that is stopped never leaves a half-written file under the real name. Only one file job runs at a time (<i>A file job is still running</i>). At the end you get a message such as <i>Copied 5 of 5</i>, with counts of skipped and failed items, and a box lists each failure with its reason. Moving inside one storage is instant; moving to another storage copies first and then removes the original. Jobs on places this app cannot write itself go through the working mode and show no speed or time left.</p>
+
+<h4>New folder, new file, rename</h4>
+<ul>
+<li><b>+ Folder</b> and <b>+ File</b> ask for a name. A name cannot be empty, hold a slash, or be <code>.</code> or <code>..</code>, and names that differ only in capital letters count as the same (<i>That name is already used here</i>).</li>
+<li><b>Rename</b> shows the name in a box: change it and tap <b>Confirm</b>. The ending (such as .txt) is just part of the name: changing it does not convert the file.</li>
+<li><b>Copy</b> and <b>Move</b> in the sheet ask for a destination path, filled in with the item's own path. Change it to a folder that already exists, for example <code>/storage/emulated/0/Download</code>. A same-named item already there is replaced without asking, so for anything important use Select, Copy and Paste here (it asks what to do when a name is taken).</li>
+</ul>
+
+<h4>Options and order</h4>
+<ul>
+<li><b>Show hidden files</b> (off): also lists names that start with a dot (file managers usually hide these). While it is off, a line at the end of the list says how many hidden items are not shown. The search uses this switch too.</li>
+<li><b>Show thumbnails</b> (on): small pictures for photos and videos on your storage (none for pictures over 80 MB or for added storage). They are cached, up to 48 MB; <b>Clear thumbnail cache</b> empties it.</li>
+<li>The list is always folders first, then files, each in alphabetical order. There is no sort menu and no Properties screen. The size is under each name; to find the biggest or newest files use <a href="#files-search">search</a> with <code>size:</code> and <code>date:</code>.</li>
+</ul>
+
+<div class="hg-warn"><b>Careful.</b> There is no recycle bin. Delete removes a file, or a folder with everything in it, at once. In a file's sheet, <b>Delete</b> shows a red button <i>Delete NAME?</i> (with the real name), and one tap on that button deletes at once. There is no undo: the only way back is a copy you made earlier. Before deleting something you did not make, open it and check what it is.</div>
+<div class="hg-danger"><b>Risky.</b> With a working mode you can reach folders that belong to Android itself (<code>/system</code>, <code>/data</code>, <code>/vendor</code>). Renaming, moving or deleting things there can stop the phone from starting or make apps crash. First copy anything you might need to a safe folder. The app refuses to delete or move the root, a top-level folder, a whole storage or a system tree (<i>System location: not touched</i>), but the files inside them are not protected. If the phone no longer starts normally, you may need a computer or a factory reset: see <a href="#troubleshooting">Troubleshooting</a>.</div>
+
+<h4>If something does not work</h4>
+<table class="hg-table">
+<thead><tr><th>You see</th><th>What it means</th></tr></thead>
+<tbody>
+<tr><td><i>Can't read this folder...</i>, or a folder that looks empty though it is not</td><td>All-files access is off, or it is a system folder and no working mode is connected. Grant the access, or set up a <a href="#modes-overview">working mode</a>.</td></tr>
+<tr><td><i>The app cannot write here...</i></td><td>This folder is not writable for the app: grant All-files access, or connect a working mode.</td></tr>
+<tr><td><i>A folder cannot go inside itself</i></td><td>You tried to copy or move a folder into itself.</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="files-search" data-title="Searching files" data-group="The tabs">
+<p class="hg-lead">Find a file by part of its name, its ending, size, date or kind, by words inside it, or by the names inside zip files. The search is part of the <a href="#tab-files">File Manager</a>.</p>
+<p><b>Where to find it:</b> in the File Manager, the box that says <i>Search files and folders</i> (under the path box), with the <b>Search</b> button next to it.</p>
+
+<h4>Before you start</h4>
+<p>The search is done by this app itself, not through a <a href="#modes-overview">working mode</a>. It therefore needs All-files access to see your storage (the app asks when it is missing, unless a working mode is on); a working mode alone does not help, because the search reads the files itself. In storage you added yourself (see <a href="#files-storage">SD cards and other storage</a>) it needs nothing extra.</p>
+
+<h4>Step by step</h4>
+<ol class="hg-steps">
+<li>Choose where to look in the drop-down next to the tick boxes. It starts as <b>This folder</b>. The other choices are <b>Internal storage</b>, <b>Downloads</b>, <b>Camera and photos</b>, <b>Pictures</b>, <b>Documents</b>, <b>Music</b> and <b>Movies</b> (only those folders that exist), <b>SD card or drive</b> with a code when the phone shows one, and <b>Whole phone</b>.</li>
+<li>Set the two tick boxes. <b>Include subfolders</b> (on) looks in every folder below; off, it looks only at what is directly in the folder. <b>Search inside archives</b> (off) also looks at names inside zip files.</li>
+<li>Type what you look for and tap <b>Search</b> (or press Enter). If the box is empty you see <i>Type what to search for</i>.</li>
+<li>Watch the line <i>Searching /storage/emulated/0/Download · 1200 looked at · 3 found</i>. The Search button becomes <b>Stop</b>, and the line has a <b>Cancel</b> button.</li>
+<li>The results replace the folder list. A line says how many were found and how long it took, for example <i>12 found · 0.8 s</i>. Tap <b>Back to the folder</b> to return.</li>
+</ol>
+
+<h4>What you can type</h4>
+<p>You can type plain words, or add the special words below. Several parts together all have to fit: <code>report ext:pdf date:30d size:&gt;1mb</code>. Tap <b>Search help</b> for a short reminder on screen.</p>
+<table class="hg-table">
+<thead><tr><th>You type</th><th>It finds</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td>Words</td><td>Names that contain every word. Capital letters do not matter.</td><td><code>holiday beach</code></td></tr>
+<tr><td>* and ?</td><td>* stands for any run of letters, ? for exactly one</td><td><code>IMG_20*.jpg</code></td></tr>
+<tr><td>"quoted words"</td><td>The words together, with the space</td><td><code>"my notes"</code></td></tr>
+<tr><td>-word</td><td>Leaves out names that contain the word</td><td><code>report -draft</code></td></tr>
+<tr><td>ext: or a dot</td><td>Files that end in one of these endings</td><td><code>ext:jpg,png</code> or <code>.pdf</code></td></tr>
+<tr><td>type:</td><td>image, video, audio, text, doc, archive, apk, font, folder or file (several with commas)</td><td><code>type:video</code></td></tr>
+<tr><td>size:</td><td>Bigger, smaller or between. Units: b, k, m, g, t (k is 1024 bytes). A folder never matches a size.</td><td><code>size:&gt;10mb</code>, <code>size:1k..5m</code></td></tr>
+<tr><td>date:</td><td>When it was last changed: today, yesterday, week, month, year; 7d, 2w, 3m, 1y (days, weeks, months, years back); a day; a range; before or after a day</td><td><code>date:7d</code>, <code>date:2025-03-01..2025-03-31</code>, <code>date:&lt;2024-01-01</code></td></tr>
+<tr><td>content:</td><td>Text files that contain the word. With several content: words, all must be in the same file.</td><td><code>content:invoice</code></td></tr>
+<tr><td>archive:</td><td>Entries inside zip-type archives whose name contains the word</td><td><code>archive:classes.dex</code></td></tr>
+</tbody>
+</table>
+<p>A part the app cannot understand (for example <code>size:abc</code>) is reported in a note above the results, and the rest of the search still runs.</p>
+
+<h4>Reading the results</h4>
+<p>Each result shows the name, where it is (for an archive entry: the archive, then the entry), the size and the date, and, for a <code>content:</code> search, the first matching line with its line number. Tap a result:</p>
+<ul>
+<li>a file opens the same sheet as in the folder list (View, Edit, Share, Rename...);</li>
+<li>a folder opens that folder;</li>
+<li>an archive entry opens the archive and puts the entry's name in its search box.</li>
+</ul>
+<p>The <b>In folder</b> button at the right of a result closes the results and shows the folder that holds it. After you rename or delete something from the results, the search runs again by itself.</p>
+
+<h4>The pills above the results</h4>
+<p>A row of pills sorts the results: <b>All</b>, <b>Images</b>, <b>Video</b>, <b>Audio</b>, <b>Documents</b>, <b>APKs</b>, <b>Archives</b>, <b>Folders</b>, <b>Over 10 MB</b>, <b>Over 100 MB</b>, <b>Last 7 days</b>, <b>Last 30 days</b>. They work on the results you already have, by the ending of each name.</p>
+<ul>
+<li>The kinds combine with "or": Images and Video together show both.</li>
+<li>Size (10 or 100 MB) and age (7 or 30 days) take one choice each: tapping the other one swaps it.</li>
+<li>A kind, a size and an age all have to fit at once.</li>
+<li>With two or more pills on, a line says what is shown, for example <i>Showing Images or Video, Over 10 MB.</i>, with a <b>Clear filters</b> button. The count adds how many are shown. <b>All</b> turns every pill off.</li>
+</ul>
+
+<h4>Searching an SD card or other added storage</h4>
+<p>Open the added storage first, then leave the drop-down on <b>This folder</b>. Names, endings, kinds, sizes, dates and <code>content:</code> (text files up to 4 MB) all work there. <code>archive:</code> is skipped, with a note saying so, and <b>Search inside archives</b> does nothing there.</p>
+
+<h4>What is not searched, and how long it takes</h4>
+<ul>
+<li>Names inside archives are searched only with <code>archive:</code> or the <b>Search inside archives</b> tick box, and only in zip-type files (zip, apk, apks, apkm, xapk, jar, aar, epub, docx, xlsx, pptx and similar). The inside of 7z, rar and tar files is never searched. With that tick box on, <code>content:</code> also reads text entries up to 1 MB.</li>
+<li><code>content:</code> reads only text files up to 4 MB. Pictures, videos, music, archives, empty files and files that are not text are skipped.</li>
+<li>Names that start with a dot are skipped unless <b>Show hidden files</b> is on. Links to folders are not followed, and the system folders <code>/proc</code>, <code>/sys</code> and <code>/dev</code> are skipped.</li>
+<li>Files and folders this app is not allowed to read are skipped without a message.</li>
+</ul>
+<p>The search does not go deeper than 40 folder levels. It stops by itself at 1000 results, after 400,000 files and folders looked at, or after 90 seconds, and the line then says <i>stopped at the limit</i>. Tap <b>Stop</b> (or <b>Cancel</b>) to stop earlier: the line says <i>stopped</i> and the results found so far stay. Only one search runs at a time (<i>A search is still running</i>).</p>
+<div class="hg-note"><b>Tip.</b> Name searches are quick. <code>content:</code> and <code>archive:</code> searches open files and are slow on a big storage. Make them smaller: choose a folder in the drop-down instead of <b>Whole phone</b>, and add <code>ext:</code>, <code>type:</code>, <code>size:</code> or <code>date:</code> to cut down the files that have to be opened.</div>
+<div class="hg-note"><b>Nothing found?</b> Check the drop-down (the folder you are looking at, or all of storage), whether the word is in a hidden name (turn on <b>Show hidden files</b>), and whether All-files access is on. Capital letters never matter, but spelling does.</div>
+</section>
+
+<section id="files-archives" data-title="Zip, 7z, rar, tar and other archives" data-group="The tabs">
+<p class="hg-lead">An archive is one file that holds many files (a zip file is the best known). The <a href="#tab-files">File Manager</a> can look inside one without unpacking it, unpack all or part of it, make new ones, and change what is inside some of them.</p>
+<p><b>Where to find it:</b> tap an archive in the File Manager, then <b>View contents</b>, <b>Extract...</b> or <b>Open as archive</b>. To make one, select files and tap <b>Compress</b>.</p>
+
+<h4>Before you start</h4>
+<p>This works on files the app can read itself (your storage with All-files access) and, through a copy, on added storage. Changing an archive needs a folder this app can write to. No <a href="#modes-overview">working mode</a> is needed for your own storage.</p>
+
+<h4>Which formats work</h4>
+<table class="hg-table">
+<thead><tr><th>Format</th><th>Open and extract</th><th>Make new</th><th>Change inside</th></tr></thead>
+<tbody>
+<tr><td>Zip and its relatives: .zip, .apk, .apks, .apkm, .xapk, .jar, .aar, .aab, .war, .epub, .docx, .xlsx, .pptx, .odt, .ods, .odp, .ipa, .xpi, .crx, .kmz, .cbz, .whl, .nupkg, .vsix and more</td><td>Yes</td><td>As .zip</td><td>Yes</td></tr>
+<tr><td>7z (.7z, .cb7)</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
+<tr><td>rar (.rar, .cbr: RAR4 and RAR5)</td><td>Yes</td><td>No</td><td>No</td></tr>
+<tr><td>tar: .tar, .tar.gz (.tgz), .tar.bz2 (.tbz, .tbz2), .tar.xz (.txz), .tar.zst (.tzst), .tar.lz4 (.tlz4)</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
+<tr><td>One compressed file: .gz, .bz2, .xz, .zst, .lz4</td><td>Yes (shown as the one file inside)</td><td>Yes, one file only</td><td>No</td></tr>
+</tbody>
+</table>
+<p>Passwords work for zip (ZipCrypto and AES), 7z (AES-256) and for opening rar. A rar split into several parts is not supported. Reading rar files is new and was tested mostly with test files, not with many real archives: if one will not open, unpack it on a computer. The zst formats depend on the phone: if the phone refuses them, a file of that kind may not open, and Compress says <i>This format isn't available in this build yet</i>.</p>
+
+<h4>Look inside an archive</h4>
+<ol class="hg-steps">
+<li>In the File Manager tap the archive. In the sheet tap <b>View contents</b>. For a file that does not look like an archive, tap <b>Open as archive</b>; if it is not one you see <i>Not a readable archive</i>.</li>
+<li>The folder list is replaced by an archive card. At the top: the name, and a line such as <i>12 files • 3.4 MB • 7Z (solid: files are packed together) • password-protected</i>, then where the archive is. Under it: a search box (<i>Search inside the archive...</i>), a path trail you can tap, and the buttons <b>Up</b>, <b>Extract this folder</b>, <b>+ Add file</b>, <b>+ Folder</b>, <b>Compare</b> (and <b>Sign</b> for an .apk).</li>
+<li>Tap a folder to go in. Each row says the size and, for files, <i>42% packed</i> (or <i>stored</i>, or <i>encrypted</i>) and the date. Long lists show 400 rows; tap <b>Show more</b> for the rest. A search shows at most 5000 matches.</li>
+<li>Tap a file for its sheet. <b>View</b> shows text with colours (first 256 KB), a picture (up to 4 MB), an app's compiled XML turned back into readable XML (read only), or, for anything else, the first 512 bytes as hexadecimal numbers (a plain way of writing raw data). A line shows size, packed size, CRC (a check code for the contents) and date.</li>
+<li>Tap <b>Close</b> at the top right to go back to the folders. <b>Open inside</b> opens an archive that is inside this one; that one is view only.</li>
+</ol>
+
+<h4>Extract</h4>
+<ol class="hg-steps">
+<li>Tap <b>Extract...</b> in a file's sheet (the whole archive), in an entry's sheet (that file or folder), or <b>Extract this folder</b> in the archive card.</li>
+<li>In <b>Extract into</b> choose <b>This folder</b> (where the archive is), <b>A new folder named after the archive</b> (the starting choice), or <b>Another folder</b> (type its full path).</li>
+<li>Under <b>If a file is already there</b> choose <b>Replace it</b>, <b>Skip it</b> or <b>Keep both</b> (the starting choice: the new file becomes <code>name (1).ext</code>).</li>
+<li>Optionally tick <b>Delete the archive afterwards</b> (whole archives on your storage only). The app asks again, and deletes it only if every file was extracted with nothing skipped.</li>
+<li>Tap <b>Extract</b>. A progress line with <b>Cancel</b> and a notification show speed and time left. At the end: <i>Extracted 12 files (3.4 MB) to /storage/emulated/0/Download/photos</i>. Names that are unsafe (for example ones that climb out of the folder) are skipped and listed.</li>
+</ol>
+<p>If the folder is not writable for the app you see <i>This app can't write to ...</i>: choose a folder on shared storage.</p>
+
+<h4>Passwords</h4>
+<p>A box called <b>Password needed</b> asks when an archive or one file in it is locked. Type it (tick <b>Show the password</b> to check it) and tap <b>Open</b>, <b>Extract</b> or <b>Unlock</b>. A wrong one gives <i>That password did not work. Try again.</i> The box says the password is used only for this archive, only while it is open, and is never saved. A zip opens without a password; only the locked files ask. A 7z or rar with locked names asks before it opens.</p>
+
+<h4>Make an archive</h4>
+<ol class="hg-steps">
+<li>Select the files and folders (see <a href="#tab-files">File Manager</a>) and tap <b>Compress</b>, or tap <b>Compress...</b> in the sheet of one item. Added storage does not offer it.</li>
+<li>In the <b>Compress</b> box set the name, the <b>Format</b> (Zip opens everywhere; 7z packs smallest; the tar formats; the single-file formats appear only when one file is picked), and <b>Packing</b>: Store (none, fastest), Fast, Normal (starting choice) or Maximum.</li>
+<li>For zip or 7z you can add a <b>Password</b>. For zip choose <b>Protection</b>: AES-256 (strong, the starting choice), AES-128 or ZipCrypto (weak but opens everywhere). 7z always uses AES-256 and hides the file names too.</li>
+<li>Choose <b>Save into</b> (this folder or another full path) and what to do if the name is taken (<b>Keep both</b> or <b>Replace it</b>), then tap <b>Compress</b>.</li>
+<li>The result reads like <i>Created photos.zip (12 files, 3.4 MB to 2.1 MB, password-protected)</i>.</li>
+</ol>
+<div class="hg-warn"><b>Careful.</b> If you lose the password of an archive, the files cannot be recovered. Write it down somewhere safe.</div>
+
+<h4>Change what is inside</h4>
+<p>For zip, 7z and tar archives, the entry sheet has <b>Edit text</b> (plain UTF-8 text up to 256 KB, with the same kind of line ending all through), <b>Rename / move</b> (change the folder part of the path to move it) and <b>Delete</b>; the card has <b>+ Add file</b> (type the path of a file on storage, then the name to give it inside) and <b>+ Folder</b>. The archive is rewritten next to the original and swapped in only when that worked and the result can be read back, so a failure keeps the original.</p>
+<p>It is refused for installed and system packages (under <code>/system</code>, <code>/vendor</code>, <code>/data/app</code> and similar: copy the file to storage first), for archives opened from inside another archive, and for files with extra data in front of the archive (such as self-extracting ones). rar and single compressed files cannot be changed: if the buttons show, an attempt ends with <i>This archive can't be edited here</i>. Compare lets you check two archives, or an archive and an installed app, entry by entry.</p>
+<div class="hg-warn"><b>Careful.</b> Changing an .apk breaks its signature, so Android will not install it until it is signed again. The app asks before the first change and then shows a red banner with <b>Sign it now...</b>. The signature uses a key made on this phone; an installed app signed by someone else cannot be updated with it, and removing the installed one first deletes its data. There is no undo for an edit: copy the archive first.</div>
+
+<h4>Big archives</h4>
+<ul>
+<li>Opening reads only the list of names, so it is quick even for a big file.</li>
+<li>In a solid 7z or rar, or a compressed tar, reading one file means unpacking the ones before it. Extracting everything is faster than many single files.</li>
+<li>One archive job runs at a time (<i>Another archive job is still running</i>). Make sure there is free space for the result.</li>
+<li>A file on added storage is first copied into the app's cache (up to 300 MB). <b>Open inside</b> and <b>Install</b> refuse a single entry over 2 GB: extract it instead.</li>
+<li>If the app cannot read the file itself, it copies it through the working mode first (up to 3 GB).</li>
+</ul>
+<div class="hg-note"><b>If it fails.</b> <i>Not a readable archive</i>: the file is damaged, cut short, or not an archive. <i>That password did not work</i>: type it again (a damaged archive gives the same message). <i>This file changed after it was opened</i>: close the archive, open it again and repeat the change.</div>
+</section>
+
+<section id="files-storage" data-title="SD cards, USB drives and other storage" data-group="The tabs">
+<p class="hg-lead">Add an SD card, a USB drive or a folder that another app shares (Termux, or a cloud app that offers its files to Android, for example), so the <a href="#tab-files">File Manager</a> can work on it. You do it once, through Android's own picker.</p>
+<p><b>Where to find it:</b> File Manager, the row of links under the options, button <b>+ Add storage</b>.</p>
+
+<h4>Why Android asks you to pick the folder</h4>
+<p>Android does not let an app open any folder it likes on a card, a drive or another app's space. It must be given a folder by you, in a system screen (the Storage Access Framework). The app then holds that one folder only. This needs no <a href="#modes-overview">working mode</a>, no root and no All-files access.</p>
+<div class="hg-note"><b>Tip.</b> On some phones, once All-files access is on, a card can also be opened by typing its path, <code>/storage/</code> followed by a code like <code>1A2B-3C4D</code>, in the path box. The search drop-down lists such a card as <b>SD card or drive</b>. If that works for you, you may not need <b>+ Add storage</b>. If it does not work, or you want to reach a drive or another app's folder, add it as below.</div>
+
+<h4>Add a storage</h4>
+<ol class="hg-steps">
+<li>Plug in or insert the card or drive. In the File Manager tap <b>+ Add storage</b>.</li>
+<li>Android shows its own file picker (its look differs from phone to phone). Open its side menu, choose the card or drive, then use its button that allows access to this folder (often <i>Use this folder</i> and then <i>Allow</i>).</li>
+<li>The File Manager opens the storage and a button with its name appears in the row, with an X next to it. The grant stays after you restart the app.</li>
+<li>Tap the name button at any time to come back to the top of that storage. Inside a folder, the <b>..</b> row goes one level up; the top of a storage has no such row. The name on the button is the one Android gives the storage (for a card it can be a code such as <code>1A2B-3C4D</code>).</li>
+</ol>
+
+<h4>What works on added storage</h4>
+<table class="hg-table">
+<thead><tr><th>Task</th><th>Works?</th><th>How</th></tr></thead>
+<tbody>
+<tr><td>Browse, new folder, new file, rename, delete</td><td>Yes</td><td>As on the phone's storage</td></tr>
+<tr><td>Copy and move</td><td>Yes</td><td>Copy or Move, open the target folder, <b>Paste here</b>: into, out of and between storages, with the name choices and Cancel</td></tr>
+<tr><td>Select several items</td><td>Yes</td><td>Press and hold, or <b>Select</b></td></tr>
+<tr><td>View and edit text</td><td>Yes</td><td>In place, up to 2 MB</td></tr>
+<tr><td>Pictures, PDF, fonts, archives, Open with, Share, Extract</td><td>Yes</td><td>The file is copied once into the app's cache (up to 300 MB) and reused until the original changes. You see <i>Getting the file...</i></td></tr>
+<tr><td>Search</td><td>Mostly</td><td>Names, endings, kinds, sizes, dates and <code>content:</code>; not <code>archive:</code></td></tr>
+<tr><td>Compress, Install, Sign, thumbnails</td><td>No</td><td>Copy the file to your phone's storage first</td></tr>
+</tbody>
+</table>
+<p>These tasks work on a copy, so a change made to an archive that sits on a card may not reach the original. To change one, copy it to the phone's storage, change it there, and copy it back with Copy and Paste here.</p>
+
+<h4>Remove a storage</h4>
+<ol class="hg-steps">
+<li>Tap the X next to the storage's name.</li>
+<li>Confirm the question <i>Remove "name" from the file manager? This only takes away this app's access to it - nothing on it is deleted.</i></li>
+<li>The button goes away. If you were inside it, the File Manager goes back to your storage. To use it again, tap <b>+ Add storage</b> and pick it again.</li>
+</ol>
+
+<h4>Find APKs is somewhere else</h4>
+<p>The <b>Find APKs on this device</b> button is not here. It lives in the <a href="#tab-installer">APK Installer</a> tab and searches the phone's own storage by path, not storages added here.</p>
+
+<div class="hg-warn"><b>Careful.</b> Delete on a card or drive is just as final as on the phone: there is no recycle bin. Before you take a card or drive out, let Android eject it (in its own settings) so a copy that is still being written is not cut off.</div>
+<div class="hg-note"><b>If it fails.</b> The picker does not show the card: remove and re-insert it, or look in the picker's side menu. A folder lists as empty or gives an error: the card may be out or locked; put it back and tap its button again. <i>This file is over 300 MB, too big to open from added storage here</i>: copy it to the phone with Copy and Paste here instead. <i>Could not read this file</i>: the provider refused it; try again, or copy it first.</div>
+</section>
+
+<section id="tab-terminal" data-title="Command-Line Interface" data-group="The tabs">
+<p class="hg-lead">Type commands to your phone and read the answers, in one of three shells. A second pane, the <b>ADB Console</b>, is the older command box of this app. Coding assistants are covered in <a href="#terminal-agents">Coding agents in the terminal</a>.</p>
+<p><b>Where to find it:</b> the tab named <b>Command-Line Interface</b>. Two big buttons at the top, <b>Terminal</b> and <b>ADB Console</b>, switch between the panes; the tab remembers the one you used last.</p>
+
+<h4>Before you start</h4>
+<p>A command is a line of text that tells the phone to do one thing. A shell is the program that reads your lines and runs them. Which shell you pick decides what the commands may do. Pick it with <b>Shell</b> above the screen. Words such as ADB and root are explained in the <a href="#glossary">Glossary</a>.</p>
+<table class="hg-table">
+<thead><tr><th>Shell</th><th>Runs as</th><th>Needs</th><th>Good for</th></tr></thead>
+<tbody>
+<tr><td><b>This app (sandbox)</b></td><td>This app, in its private home folder</td><td>Nothing</td><td>File and text commands. It cannot touch other apps, and <code>pm</code> or <code>dumpsys</code> usually do not work</td></tr>
+<tr><td><b>Working mode (ADB, Shizuku, Root)</b></td><td>The ADB shell user, or root with Root</td><td>A <a href="#modes-overview">working mode</a></td><td><code>pm</code>, <code>am</code>, <code>dumpsys</code>, <code>settings</code>, <code>cmd</code>, logcat</td></tr>
+<tr><td><b>Termux (bash and packages)</b></td><td>The Termux app, in its home folder</td><td>Termux from F-Droid or GitHub, and a one-time setup</td><td>Real bash, <code>pkg install</code>, git, python</td></tr>
+</tbody>
+</table>
+<p>Termux is a separate free app that gives you a full command line (bash is its shell, and <code>pkg</code> installs programs into it). The first time, the tab picks Termux if it is set up, otherwise the working mode if one is connected, otherwise the sandbox (you can change that in the gear, under <b>Shell when the Terminal opens</b>). Each shell has its own screen and stays open while you use other tabs, so <code>cd</code> (change folder) and variables carry over. <b>Restart shell</b> starts a fresh one.</p>
+<p>Next to the drop-downs at the top (<b>Coding Agents</b>, <b>Model</b>, <b>Effort</b>) are three small buttons: the gear (<b>Terminal settings</b>, which holds your keys and defaults), <b>MCP</b> and <b>Help</b> (a short explanation of the Terminal inside the app).</p>
+
+<h4>Run your first command</h4>
+<ol class="hg-steps">
+<li>Open the <b>Terminal</b> pane. The black screen prints a welcome and a line saying which shell is ready, for example <i>sh ready through ADB, running as the shell user (uid 2000) in</i> and a folder. The uid is the user number: 2000 is the ADB shell user, 0 is root.</li>
+<li>Tap the box at the bottom, type <code>getprop ro.product.model</code> and tap <b>RUN</b> (or Enter on the keyboard).</li>
+<li>Your line is echoed as <i>folder $ command</i> and the answer appears under it: the model name of your phone. The prompt shows <i>#</i> instead of <i>$</i> when the shell is root.</li>
+</ol>
+<p>Harmless commands to start with (they only read):</p>
+<table class="hg-table">
+<thead><tr><th>Command</th><th>Shows</th><th>Best in</th></tr></thead>
+<tbody>
+<tr><td><code>getprop ro.build.version.release</code></td><td>The Android version</td><td>Any shell</td></tr>
+<tr><td><code>id</code></td><td>Which user the shell runs as</td><td>Any shell</td></tr>
+<tr><td><code>df -h</code></td><td>Free space on each storage</td><td>Any shell</td></tr>
+<tr><td><code>date</code></td><td>The date and time</td><td>Any shell</td></tr>
+<tr><td><code>pm list packages -3</code></td><td>Package names of the apps you installed</td><td>Working mode</td></tr>
+</tbody>
+</table>
+
+<h4>Typing, keys and history</h4>
+<ul>
+<li><b>RUN</b> sends the line. While a command runs it turns into <b>STOP</b>. The small button at its left shows <b>$</b> (or <b>#</b>): it switches between commands and the AI chat of an agent, and is dim until you pick one.</li>
+<li>The key rows under the box work like Termux's: <b>ESC</b> clears the line, <b>TAB</b> completes a file name (several matches are listed), <b>CTRL</b> stops what is running, the up and down arrow keys go through earlier commands (the last 120 are remembered), the left and right arrow keys, <b>HOME</b> and <b>END</b> move the cursor, and | / - ~ are there because phone keyboards hide them. <b>SHIFT</b> swaps the row for a second row of symbols: backtick, $ ; : " ' \ { } ( ) * &amp; #. Tap SHIFT again to go back.</li>
+<li><code>clear</code> empties the screen. <code>exit</code> ends the shell; press Enter to start a new one.</li>
+<li>Programs that need the whole screen (nano, vim, top, a Python prompt, ssh) cannot run here. The screen says it needs a real terminal and offers <b>Open in Termux</b> or <b>Run here anyway</b>.</li>
+</ul>
+
+<h4>Stop a command, copy the output</h4>
+<ul>
+<li>Tap <b>STOP</b>, or the <b>CTRL</b> key, to end a running command. A command is stopped by itself after 30 minutes. If a command prints more than 2,000,000 characters the screen says <i>output cut off here</i>; the command keeps running until you stop it. The screen keeps about the last 300,000 characters (<i>older output trimmed</i>).</li>
+<li>Below the screen: <b>Clear</b> empties it, <b>Copy</b> copies the text you selected or, with nothing selected, the whole screen, <b>Cheat Sheet</b>, <b>Open in Termux</b>, <b>New chat</b> (only with an agent) and <b>Restart shell</b>. Press and hold on the screen text to select part of it.</li>
+</ul>
+
+<h4>The cheat sheets</h4>
+<p><b>Cheat Sheet</b> opens a searchable list of ready-made commands that depends on the shell. Tap one: it lands in the input box, and the first part in angle brackets such as <code>&lt;package&gt;</code> is selected so you can type over it. Nothing runs until you tap RUN.</p>
+<table class="hg-table">
+<thead><tr><th>Shell</th><th>Title</th><th>Groups</th></tr></thead>
+<tbody>
+<tr><td>This app</td><td>Sandbox Cheat Sheet</td><td>Files, Text, Process / system</td></tr>
+<tr><td>Termux</td><td>Termux Cheat Sheet</td><td>Packages, Files, Text, Git, Network, Process / system</td></tr>
+<tr><td>Working mode, and the ADB Console</td><td>ADB Cheat Sheet</td><td>Device info, Current app / focus, Packages, App control, Permissions, Activity Manager / intents, Input, Key events, Screen, Connectivity, Battery (testing), Logs, Files, Reboot</td></tr>
+</tbody>
+</table>
+<p>The ADB sheet also has a button, <b>Load the full reference from the gist</b>, that loads a longer list live from a public page on GitHub (Pulimet's ADB gist). Pressing it contacts GitHub.</p>
+
+<h4>Set up Termux</h4>
+<p>Open the gear, then <b>Termux setup</b> (it also opens by itself when you pick Termux and it is not ready). It lists five steps and puts a tick on each one that is done (the second step never gets a tick):</p>
+<ol class="hg-steps">
+<li><b>Install Termux</b> from F-Droid (a free app store for open-source apps) or GitHub. The old Google Play build is not suitable.</li>
+<li><b>Open Termux once</b>, so it finishes installing itself.</li>
+<li><b>Let Termux take commands from other apps</b>: tap <b>Copy</b>, open Termux, paste and run the line shown (it adds <code>allow-external-apps=true</code> to Termux's settings).</li>
+<li><b>Allow this app</b>: Android asks whether this app may <i>Run commands in Termux environment</i>.</li>
+<li><b>Test the connection</b>: <b>Test</b> sends a harmless command and says <i>Termux answered</i>.</li>
+</ol>
+<p>Then tap <b>Use Termux as the shell</b>. <b>Sync with Termux</b> makes this shell match your own Termux (it reads your aliases from <code>~/.bashrc</code>) and opens Termux to run <code>termux-setup-storage</code>, which lets Termux see your phone's files (Android may ask you to allow it).</p>
+
+<h4>The ADB Console pane</h4>
+<ul>
+<li>A card shows the active working mode, with <b>Configure</b> and <b>Working Modes</b>, and buttons <b>Rish mode</b> (a long-lived Shizuku shell where <code>cd</code> sticks), <b>UID (id)</b>, <b>Connect 5555</b>, <b>tcpip 5555</b>, <b>Dev Options</b> and <b>Cheat Sheet</b>. See <a href="#modes-overview">Working modes</a>.</li>
+<li>Each command is run on its own through the active mode, so <code>cd</code> does not carry over (Rish mode does). Without a working mode the commands run as this app, like the sandbox.</li>
+<li><b>Find in output...</b> highlights matches (<i>2 / 7 matches</i>) with arrows to jump; <b>Copy</b> puts the whole output on the clipboard and <b>Share</b> sends it as a text file.</li>
+<li><b>History</b> lists the last 80 commands (tap one to edit it, <b>Run</b>, <b>Save</b>, or the X). <b>Saved</b> keeps named commands or several-line scripts; <b>Pin</b> turns up to six into one-tap buttons.</li>
+</ul>
+
+<h4>Safety: what some commands do</h4>
+<table class="hg-table">
+<thead><tr><th>Command</th><th>What it does</th><th>Undo</th></tr></thead>
+<tbody>
+<tr><td><code>rm file</code></td><td>Deletes the file at once. There is no recycle bin.</td><td>None</td></tr>
+<tr><td><code>rm -r folder</code></td><td>Deletes the folder and everything in it</td><td>None</td></tr>
+<tr><td><code>pm uninstall --user 0 name</code></td><td>Removes an app for you</td><td><code>pm install-existing name</code> for a system app; other apps must be installed again</td></tr>
+<tr><td><code>pm clear name</code></td><td>Erases the app's data: logins, saves, settings</td><td>None</td></tr>
+<tr><td><code>pm disable-user --user 0 name</code></td><td>Freezes an app</td><td><code>pm enable name</code></td></tr>
+<tr><td><code>pm list packages</code></td><td>Only lists. Harmless.</td><td>Not needed</td></tr>
+</tbody>
+</table>
+<div class="hg-warn"><b>Careful.</b> A command does exactly what it says, with the rights of the shell you picked. Never paste a command you do not understand, even from a friendly website. Start with commands that only read (<code>list</code>, <code>get</code>, <code>ls</code>, <code>df</code>).</div>
+<div class="hg-danger"><b>Risky.</b> In the working mode shell, and above all as root, commands such as <code>rm -r</code> on a system folder, <code>settings put</code>, <code>setprop</code> or <code>reboot</code> can stop the phone from starting or lose your data. Back up first (<a href="#apps-backup">App backups</a>) and read <a href="#safety">Safety</a>. If an app stops working after a command, undo it with the matching command above.</div>
+
+<h4>If it fails</h4>
+<ul>
+<li><i>No working mode is connected: connect ADB, Shizuku or Root first</i>: tap <b>Working Modes</b> in the message, or choose another shell.</li>
+<li><i>Termux is not installed</i> or <i>This app may not run commands in Termux yet</i>: follow <b>Termux setup</b> above.</li>
+<li><i>The shell is still busy with an earlier command: CTRL-C ends it</i>: tap STOP.</li>
+<li><i>The shell is not running: press Enter to start it again</i>, or tap <b>Restart shell</b>.</li>
+</ul>
+</section>
+
+<section id="terminal-agents" data-title="Coding agents in the terminal" data-group="The tabs">
+<p class="hg-lead">A coding agent is an AI assistant you chat with inside the Terminal. It can suggest commands, read files and propose changes to files. You approve each step before anything runs.</p>
+<p><b>Where to find it:</b> <a href="#tab-terminal">Command-Line Interface</a>, <b>Terminal</b> pane, the drop-down <b>Coding Agents</b> at the top. Choose <b>None</b> to use the Terminal on your own.</p>
+
+<div class="hg-danger"><b>Risky.</b> An agent can be wrong, and it runs commands with the rights of the shell you chose. In the working mode shell or as root, one command can remove apps, erase data or change settings. Read every command and every file change before you press <b>Run</b> or <b>Apply</b>. Do not press <b>Always allow in this chat</b> unless you are ready to accept whatever follows. Before you start, make a backup (<a href="#apps-backup">App backups</a>). Commands cannot be undone; only file changes can (<code>/undo</code>).</div>
+
+<h4>Before you start</h4>
+<ul>
+<li>You need the internet and an account with the provider (to get an API key), or the provider's own tool in Termux, or a server of your own. Providers bill the key's account for what you use.</li>
+<li>What you chat about is sent to that provider (see Privacy below).</li>
+<li>The agent works in the shell you picked. The sandbox is the safest to try.</li>
+</ul>
+
+<h4>The agents in the list</h4>
+<table class="hg-table">
+<thead><tr><th>Agent (as named in the list)</th><th>How it connects</th><th>Note</th></tr></thead>
+<tbody>
+<tr><td>Gemini (Google), Claude (Anthropic), ChatGPT (OpenAI)</td><td>An API key, or the provider's own tool (Gemini CLI, Claude Code, Codex) in Termux</td><td>A subscription works only through the provider's own tool</td></tr>
+<tr><td>Cursor (SpaceX)</td><td>An API key for Cursor's cloud agents, or Cursor CLI in Termux</td><td>Cloud agents work in Cursor's cloud on a Git repository you may name. They cannot see your phone's files</td></tr>
+<tr><td>Copilot (GitHub)</td><td>GitHub's Copilot CLI in Termux, signed in with GitHub or with a token</td><td>Needs a Copilot plan</td></tr>
+<tr><td>Perplexity, Grok (SpaceX), Muse (Meta), Deepseek</td><td>An API key only</td><td>Same steps as below. Their saved keys show in the gear like the others</td></tr>
+<tr><td>Jan.ai, AnythingLLM, Ollama (on-device)</td><td>The address of your own server. Jan.ai and Ollama need a key only if the server asks for one; AnythingLLM needs a key from its own settings</td><td>Free. Jan.ai and AnythingLLM run on a computer; Ollama runs on the phone through Termux</td></tr>
+<tr><td>OpenCode</td><td>Installed in Termux from its sheet</td><td>Signs in to a provider of your choice</td></tr>
+<tr><td>DroidMind, Kilo Code, Leon.ai</td><td>Not chat agents</td><td>Choosing one opens a sheet that explains what it is (DroidMind's sheet also has an install button for Termux)</td></tr>
+</tbody>
+</table>
+
+<h4>Add an API key</h4>
+<ol class="hg-steps">
+<li>Open the <b>Coding Agents</b> drop-down and choose an agent under <b>API Key Required</b>. If it is not connected yet, a sheet named after the agent opens (for Gemini, Claude, ChatGPT and Cursor it has two tabs: <b>API key</b> and <b>Sign in with subscription</b>; stay on <b>API key</b> for these steps).</li>
+<li>Tap <b>Get a key</b>. The provider's website opens. Create a key there (a long secret text, like a password). The provider may ask for billing details.</li>
+<li>Come back, tap the key box and paste the key. Tap <b>Show</b> to check it.</li>
+<li>Tap <b>Test and save</b>. The status says <i>Testing...</i>. The app sends one small request to the provider with your key, asking for its list of models. If it works, the key is saved, the sheet closes and the screen prints <i>[Claude (Anthropic): it works, 8 models]</i>.</li>
+<li>If it fails, a sheet titled with the agent's name and <i>the test failed</i> gives the reason (for example <i>The key was not accepted</i>) and the exact reply, with <b>Try again</b>, <b>Save anyway</b> and <b>Copy details</b>. Use Save anyway only if you are sure the key is right and the test itself failed.</li>
+<li>To remove a key later: open the agent's sheet and tap <b>Forget the key</b>, then confirm. The gear lists every key as <i>key sk-ant-...a1b2</i>, with <b>Change</b>.</li>
+</ol>
+<p><b>How the key is kept.</b> Each key is encrypted with AES-256-GCM (a strong standard way of scrambling data) under a key held in the Android Keystore (Android's protected store for secrets), and kept in this app's private settings. App backups are off, so the key is not copied into a phone backup. The screen you see never gets the key back; only the start and the last four characters are shown. The app adds the key to a request itself, and only when the request goes to that provider's own address (or, for your own server, the address you saved with the key). If the Keystore is reset, the sheet says <i>it can no longer be read: enter it again</i>.</p>
+
+<h4>Model and effort</h4>
+<p><b>Model</b> lists the provider's models. The list is read from the provider after a key works (at most once a day, or when you type <code>/models</code>); until then a short built-in list is shown. <b>Effort</b> is <b>Low</b>, <b>Balanced</b> (the starting choice) or <b>High</b>: how hard the agent is asked to think. Higher is slower and uses more of your paid quota. It changes anything only for Claude, ChatGPT, Gemini and Grok chatting through a key.</p>
+
+<h4>Chat with an agent</h4>
+<ol class="hg-steps">
+<li>Pick the agent. The small button left of the input switches to <b>AI</b> and the button says <b>SEND</b>. The state line under the Shell box shows the agent and, after a reply, how many tokens (pieces of text) were sent and received, for example <i>1.2k in / 300 out</i>.</li>
+<li>Type a request, such as <i>Which of my apps use the most storage?</i>, and tap <b>SEND</b>. The answer streams in after <i>claude ›</i> (the agent's name).</li>
+<li>Start a line with <code>!</code> to run it yourself as a command (<code>!ls</code>). Lines starting with <code>/</code> are chat commands: <code>/help</code>, <code>/new</code> (start over), <code>/undo</code>, <code>/stop</code>, <code>/agent name</code>, <code>/model name</code>, <code>/models</code>, <code>/effort high</code> and <code>/settings</code>.</li>
+<li>Tap <b>STOP</b> to end the reply, and the command it started. <b>New chat</b> forgets the conversation.</li>
+</ol>
+
+<h4>How approvals work</h4>
+<p>The agent works through four kinds of step: run a command, read a file, write a file, change part of a file. The app shows a card for the ones that matter and waits for your tap.</p>
+<table class="hg-table">
+<thead><tr><th>The card says</th><th>Buttons</th><th>What a tap does</th></tr></thead>
+<tbody>
+<tr><td><i>Claude wants to run this in Working mode (/folder):</i> and the command</td><td><b>Run</b>, <b>Skip</b>, <b>Always allow in this chat</b></td><td>Run executes it and the output goes back to the agent. Skip runs nothing; the agent waits for you.</td></tr>
+<tr><td><i>wants to change</i> (or <i>replace</i>, or <i>create</i>) a file, with the changed lines, red for removed and green for added</td><td><b>Apply</b>, <b>Skip</b>, <b>Always allow in this chat</b></td><td>Apply writes the file. You can take it back with <code>/undo</code>.</td></tr>
+<tr><td><i>wants to read a file outside the working folder:</i> and the path</td><td><b>Allow</b>, <b>Skip</b></td><td>Allow lets it read that one file.</td></tr>
+</tbody>
+</table>
+<ul>
+<li>Reading files inside the folder you are in needs no OK.</li>
+<li><b>Always allow in this chat</b> stops the questions for the rest of the chat. For commands it is remembered per shell and user, so allowing in the sandbox does not allow commands as root. <b>New chat</b> ends it.</li>
+<li>After a Skip the screen says <i>[tell Claude what to do instead]</i>. After 25 steps (you can choose 10, 25, 50 or 100) it pauses; send <i>go on</i> to continue.</li>
+<li>The gear holds the switches <b>Ask before running commands</b> (on), <b>Ask before changing files</b> (on) and <b>Read files outside the working folder without asking</b> (off). Turning the first two off lets the agent act with no question at all. Leave them on.</li>
+</ul>
+<p>The agent is told not to run destructive commands (<code>rm -r</code>, <code>pm uninstall</code>, <code>pm clear</code>, <code>settings put</code>, <code>setprop</code>, <code>reboot</code>) unless you asked for exactly that. That is a request to the AI, not a lock.</p>
+
+<h4>Agents that sign in through Termux</h4>
+<p>For the tools that run in Termux (Claude Code, Gemini CLI, Codex CLI, Copilot CLI, Cursor CLI, OpenCode), the app sends your message to the tool and shows its answer. The approval cards above do not apply: the tool follows its own rules. The switch <b>Let them act without asking</b> (in the gear, under <i>Sign-in tools in Termux</i>, off by default) passes each tool's own option to skip its approvals (Claude Code, Gemini CLI, Codex CLI, Copilot CLI and Cursor CLI have one; OpenCode does not). With it off, a tool only does what needs no approval. Leave it off. Its sheet has the steps <b>Termux</b>, <b>Install</b>, <b>Sign in</b> and <b>Chat here</b> under <b>Sign in with subscription</b>. Installing takes several minutes and up to about 1 GB. The providers do not support Android officially, so a tool may not run on every phone; the Terminal then shows its exact message. The <b>MCP</b> button adds extra tools (such as access to files or the web) to these agents; MCP is a standard way of giving an AI assistant such tools.</p>
+
+<h4>The AI button in the ADB Console</h4>
+<p>In the ADB Console pane, the small <b>$</b> button switches to <b>AI</b> and asks the same agent, model and effort for help with a command. It cannot read or change files. A reply may propose one command, shown with <b>Run</b> and <b>Skip</b>; Run sends it through the console's working mode (with <b>Ask before running commands</b> switched off it runs at once). It needs an agent that is connected with a key or server, set up in the Terminal pane first (<i>Pick a Coding Agent in the Terminal first</i>).</p>
+
+<h4>Privacy: what leaves the phone</h4>
+<ul>
+<li>Every message you type, and the earlier messages of the conversation.</li>
+<li>A short description of your phone: Android version, make and model, processor type, the folder you are in, and today's date.</li>
+<li>What the agent reads or runs: the lines of files it reads and the output of commands it runs. Long output is shortened, and text that looks like an API key is hidden.</li>
+<li>Nothing else of your files is sent unless a step reads it. The requests go from the phone straight to the provider; this app has no server in between.</li>
+<li>Gemini's free tier: Google may use what you send to improve its products. Cursor's cloud agents receive your last few messages. An address that starts with <code>http://</code> is not encrypted on your network. Ollama on the phone stays on the phone.</li>
+<li>The conversation is kept on the phone (the last 60 messages) so it survives a restart. Turn <b>Keep the conversation between launches</b> off, or tap <b>Clear the conversation</b>, to remove it.</li>
+</ul>
+<p>See also <a href="#privacy">Privacy</a>. Never ask an agent to read files that hold passwords or private data.</p>
+
+<h4>If it fails</h4>
+<ul>
+<li><i>not connected</i> after the agent's name in the state line: open the agent's sheet and add the key or sign in.</li>
+<li><i>The key was not accepted</i>: check the key, or make a new one. <i>The account has no credit left</i>: add credit with the provider. <i>Not found: the model may not exist</i>: pick another model, or tap <b>Reload models</b>. <i>The conversation is too long</i>: tap <b>New chat</b>.</li>
+<li><i>No connection</i>: check the internet. <b>Details</b> shows the exact reply.</li>
+</ul>
+</section>
+
+<section id="tab-logcat" data-title="Logcat Viewer" data-group="The tabs">
+<p class="hg-lead">Logcat is the phone's running diary. Android and every app write short notes into it all the time: what they are doing, warnings and errors. The Logcat Viewer lets you read it, filter it and save or share it, which is the best way to find out why an app crashes.</p>
+<p><b>Where to find it:</b> the tab named <b>Logcat Viewer</b>. An app's own menu also has a <b>Logs</b> button that opens this tab for that app (see <a href="#apps-menu">The app menu</a>). For the log of another device, such as a watch, see <a href="#tab-devices">Connected Devices</a>.</p>
+
+<h4>Before you start</h4>
+<p>Reading the log needs a <a href="#modes-overview">working mode</a> (ADB, Wireless Debugging, Shizuku or Root). Without one you see <i>Working Mode Required</i> (<a href="#mode-readonly">Read-Only mode</a> cannot read it). Opening the tab starts reading right away.</p>
+
+<h4>How to read a line</h4>
+<p>Each entry is a row with a coloured square at the left holding one letter, the level, then:</p>
+<ul>
+<li>the <b>tag</b> in bold: who wrote it (an app part or a system part, for example <i>AndroidRuntime</i>);</li>
+<li>the <b>time</b>, as hours, minutes, seconds and thousandths;</li>
+<li>two numbers such as <i>1234/1250</i>: the process id and the thread id (who ran the code; a process is one running program);</li>
+<li>the <b>message</b> underneath. A message of several lines, such as the list of steps in a crash, stays together as one entry.</li>
+</ul>
+<table class="hg-table">
+<thead><tr><th>Letter</th><th>Level</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>V</td><td>Verbose</td><td>Every little detail. Very noisy.</td></tr>
+<tr><td>D</td><td>Debug</td><td>Notes for developers</td></tr>
+<tr><td>I</td><td>Info</td><td>Normal events</td></tr>
+<tr><td>W</td><td>Warn</td><td>Something odd, probably not serious</td></tr>
+<tr><td>E</td><td>Error</td><td>Something failed</td></tr>
+<tr><td>F</td><td>Fatal</td><td>A failure so bad the program stopped</td></tr>
+</tbody>
+</table>
+
+<h4>The controls</h4>
+<table class="hg-table">
+<thead><tr><th>Control</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td>Level drop-down</td><td>Starts at <b>Info</b>. Shows this level and every more serious one. <b>Error</b> shows E and F; <b>Verbose</b> shows everything.</td></tr>
+<tr><td>Lines drop-down</td><td>How many recent lines to read: 200, <b>500</b> (starting choice), 1000 or 2000. While Playing, up to 300 are read each second.</td></tr>
+<tr><td>Filter box</td><td>Type a word or a tag and press Enter. Only lines that contain it (capital letters ignored, anywhere in the line) stay, and the word is highlighted.</td></tr>
+<tr><td><b>All apps</b></td><td>Opens <i>Log of one app</i>: a search box and a list, running apps first. Tap an app to see only the lines written by it. The button then shows the app's name and <b>Show all apps</b> appears to go back. An app that shares its user id with others shows their lines too, with a note.</td></tr>
+<tr><td><b>Play</b> / <b>Pause</b></td><td>Play reads the log once a second and follows the newest line. It starts by itself when you open the tab. Pause stops it. It also stops when you leave the tab, and it does not read while the app is in the background.</td></tr>
+<tr><td><b>Refresh</b></td><td>Reads once, and jumps to the newest line.</td></tr>
+<tr><td><b>Clear</b></td><td>Empties the phone's log buffer and the screen (<i>Log cleared</i>). It clears it for every app, not only the one you chose.</td></tr>
+<tr><td><b>Copy</b>, <b>Save</b>, <b>Share</b></td><td>Copy the lines as text; save them as a text file in <code>Download/ADB App Manager/</code> (on Android 9 and older, in the app's own folder instead), named <code>logcat_all_</code> plus the date and time, with the app's package name in place of <code>all</code> when you picked one app; or share that file with Android's share sheet. Lines of hidden levels are left out, and a short header says the filters used.</td></tr>
+</tbody>
+</table>
+<p>Scrolling up stops the view from jumping to new lines. Scroll back to the bottom to follow the log again.</p>
+
+<h4>The colour key</h4>
+<p>Above the log is a row of six chips, one per level, each with a coloured dot, its letter and name, and how many lines of that level were read: for example <i>E · Error 12</i>. Tap a chip to hide that level (it turns dim); tap again to show it. If you hide all of them, the screen says <i>Every level is hidden - tap the color key above to show some.</i></p>
+<p>To keep the screen quick, only the newest 800 entries are drawn. A line at the top says <i>N earlier entries not shown · tap to show them</i>; tap it to show up to 2500. The phone itself keeps only a limited amount of log, so older lines are gone.</p>
+
+<h4>Example: why does my app crash?</h4>
+<ol class="hg-steps">
+<li>Open the app's menu (<a href="#tab-apps">Application Manager</a>) and tap <b>Logs</b>, or open Logcat Viewer and use <b>All apps</b> to pick it. The log is now only that app's.</li>
+<li>Set the <b>Level</b> to <b>Warn</b> or <b>Error</b>, and <b>Lines</b> to 2000 so the crash does not scroll away.</li>
+<li>Optional: tap <b>Clear</b> so the log only holds what comes next. This empties the log for every app.</li>
+<li>Use the app until it crashes.</li>
+<li>Tap <b>Pause</b>. Scroll to the end and look for red <b>E</b> or <b>F</b> rows. A crash of an app written in Java or Kotlin has a row <i>FATAL EXCEPTION</i>, and all its lines have the tag <i>AndroidRuntime</i>: type <code>AndroidRuntime</code> in the filter and press Enter to see just the crash. (Filtering for <i>FATAL EXCEPTION</i> itself would hide the lines under it.) A crash of native code shows <i>Fatal signal</i>.</li>
+<li>Read the lines under it: <i>Process:</i> names the app, the next line names the error (for example a null pointer), and <i>Caused by:</i> lines name the real cause. The lines starting with <i>at</i> are where in the code it happened.</li>
+<li>Tap <b>Share</b> or <b>Save</b> and send the file to the app's developer.</li>
+</ol>
+<div class="hg-warn"><b>Careful.</b> A log can hold personal details: account names, addresses, the names of your apps. Read it before you share it, or filter it to one app first.</div>
+
+<h4>If it fails</h4>
+<ul>
+<li><i>Working Mode Required</i> or <i>reading logcat needs ADB, Shizuku or Root</i>: set up a working mode.</li>
+<li><i>(no matching log lines)</i> or <i>(no output)</i>: lower the Level to Verbose, empty the filter, or choose <b>All apps</b>.</li>
+<li><i>(name is not running, so there are no log lines to show)</i>: on an older Android the app has to be running; start it.</li>
+</ul>
+</section>
+
+<section id="tab-taskmgr" data-title="Task Manager" data-group="The tabs">
+<p class="hg-lead">See what your phone is doing right now: the apps and processes that are running, how busy the processor is, how much memory is used, and the state of the graphics chip, the battery and the network.</p>
+<p><b>Where to find it:</b> the tab named <b>Task Manager</b>. Six buttons at the top choose the page: <b>Processes</b>, <b>CPU</b>, <b>RAM</b>, <b>GPU</b>, <b>Battery</b> and <b>Network</b>.</p>
+
+<h4>Before you start</h4>
+<table class="hg-table">
+<thead><tr><th>Page</th><th>Needs a working mode?</th></tr></thead>
+<tbody>
+<tr><td>Processes, GPU</td><td>Yes. Without one the page says <i>Needs ADB, Wireless Debugging, Shizuku or Root</i> and a <b>Set Up</b> button opens <a href="#modes-overview">Working Modes</a>.</td></tr>
+<tr><td>CPU, RAM, Network</td><td>Best with one. The tab's own note says Processes, CPU and network read from the shell. Without a mode the app tries to read CPU, RAM and network itself, which Android allows on some phones only, so a page may show nothing.</td></tr>
+<tr><td>Battery</td><td>No. It works in <a href="#mode-readonly">Read-Only mode</a>.</td></tr>
+</tbody>
+</table>
+<p>The tab measures only while it is open. When you leave it, measuring stops.</p>
+
+<h4>The settings box</h4>
+<ul>
+<li><b>Auto-refresh</b>: how often to measure: Off, 1 s, 2 s, <b>3 s</b> (starting choice), 5 s or 10 s. <b>Refresh now</b> measures once. A longer time uses less battery.</li>
+<li><b>Graph speed</b>: a slider from 150 to 1000 ms (starting at 300 ms). It only changes how often the graph is redrawn, not how often the phone is measured.</li>
+<li><b>Units</b> (only on the Battery page): temperature in <b>&deg;F</b> or <b>&deg;C</b> (starting at F), and current in <b>mA</b> or <b>µA</b>.</li>
+</ul>
+<p>The graphs keep the last 120 readings. Your choices are remembered.</p>
+
+<h4>Processes</h4>
+<p>A process is one running program. The list shows the busiest first. <b>Sort by CPU</b> (starting choice) orders by how much processor each uses; <b>Sort by memory</b> by how much memory each holds. A line above says how many processes were read (200 are shown at most).</p>
+<ol class="hg-steps">
+<li>Open <b>Processes</b>. Each row shows the app's name and a line such as <i>com.example.app • PID 4821 • 182 MB • 1.5% CPU</i>. PID is the process's number; the memory is what it holds in RAM now.</li>
+<li>Rows for system and kernel work (names that are not an app) have no button. Rows for apps have a round <b>X</b>. Tap it to <b>Force Stop</b> that app: <i>Stopped com.example.app</i>. There is no question first.</li>
+<li>The list refreshes by itself. An app that restarts at once (a messenger, a clock) comes back.</li>
+</ol>
+<div class="hg-warn"><b>Careful.</b> Force Stop ends the app at once: anything not saved in it is lost, and its alarms and notifications may stop until you open it again. Its data is not erased. Do not stop a system app you do not recognise (the launcher, the keyboard, the phone app): the phone may misbehave until Android starts it again. To undo, open the app again. See <a href="#apps-menu">The app menu</a> for the same Force Stop.</div>
+
+<h4>CPU</h4>
+<p>The CPU is the phone's processor. The big number is how busy it was since the last reading, over all its cores (a core is one processing unit). The first reading shows 0% because two readings are needed. Under the graph:</p>
+<ul>
+<li>One box per core with its own percentage.</li>
+<li><b>Processor Information</b>: SoC (the chip's name), Architecture, ABI (the kind of code it runs), Governor (the rule that picks the speed) and Temperature (<i>estimated</i>, from a sensor the app thinks belongs to the CPU).</li>
+<li><b>System Statistics</b>: Processes and Threads (only with a working mode) and Uptime (time since the phone started).</li>
+<li><b>Cluster</b> boxes: cores are grouped by speed range (fast cores and slow, thrifty ones). Each group shows <b>Min</b>, <b>Current</b> and <b>Max</b> frequency in MHz or GHz. A high Current close to Max means the group is working hard; it drops when idle.</li>
+</ul>
+
+<h4>RAM</h4>
+<p>RAM is the working memory. The big number is the share in use; the line under it reads for example <i>Using 4.1 GB of 7.5 GB</i>. The boxes show:</p>
+<ul>
+<li><b>Used</b>: total minus Available.</li>
+<li><b>Available</b>: what apps could get right now, counting cache that Android can give back. This is the number to watch.</li>
+<li><b>Swap used</b> and <b>Swap total</b>: extra memory made from storage or by compression.</li>
+<li>Under <b>Memory Information</b>: <b>Free</b> (memory doing nothing), <b>Buffers</b> and <b>Cached</b> (kept to speed things up), <b>Swap free</b>, <b>Swap cached</b> and <b>Page size</b>.</li>
+</ul>
+<div class="hg-note"><b>Tip.</b> Android keeps memory busy on purpose. A high Used and a small Free are normal. Worry only when Available gets very low and the phone is slow.</div>
+
+<h4>GPU</h4>
+<p>The GPU draws the picture on your screen. The big number is its load. Phones do not all expose it, so you may see <i>Not available on this phone</i>. Some show <i>~40% (by clock speed)</i>, a rough guess from the chip's speed. Under it, <b>GPU Information</b> says whether <b>Vulkan</b> is supported (and its API version) and the <b>OpenGL ES</b> version (Vulkan and OpenGL ES are the two ways apps draw graphics on the chip).</p>
+<p>The <b>Renderer</b> drop-down (working mode needed) offers <b>OpenGL</b>, and <b>Vulkan</b> if the phone supports it (plus <b>Default</b> until you pick one). Choosing one sets the system's drawing engine and restarts System UI (the status and navigation bars) to apply it, with a visible flicker. To go back, choose the other one, or restart the phone (a setting made this way normally does not survive a restart).</p>
+<div class="hg-warn"><b>Careful.</b> Change the renderer only if you know why, for example to test an app. Some apps and games behave differently or look wrong with the other engine.</div>
+
+<h4>Battery</h4>
+<p>The big number is the charge. Under it: the state (<i>Charging</i>, <i>Discharging</i>, <i>Not charging</i>, <i>Full</i>) and the source (<i>AC</i>, <i>USB</i>, <i>Wireless</i>). The boxes: <b>Temperature</b>, <b>Current</b>, <b>Voltage</b> and <b>Health</b> (Good, Overheat, Dead, Over voltage, Failure, Cold, or Unknown). Some phones show current as negative while the battery is in use, others as positive. <b>Battery Information</b> adds Technology, Source, Power in watts, Charge in mAh, <b>Capacity (estimated)</b>, <b>Time left (estimated)</b> (only while discharging) and <b>Charge cycles</b> (<i>N/A</i> unless Android 14 or later reports it). The estimates are rough.</p>
+
+<h4>Network</h4>
+<p>The big number is the speed now, down and up added together; the line under it shows each: <i>down 1.2 MB/s up 80 KB/s</i> (with arrows on screen). Below are the active connections, busiest first, for example <i>wlan0</i> (Wi-Fi) or <i>rmnet</i> (mobile data), then <b>Network Statistics</b>: <b>Total received</b> and <b>Total sent</b> since the phone started.</p>
+
+<h4>Why the numbers differ from other apps</h4>
+<ul>
+<li>Each app measures at its own moments and over its own span, so figures never match exactly.</li>
+<li>The per-app CPU percentage comes from the phone's own <code>ps</code> command (the command that lists running programs), which may be an average over the whole time the process has run, so it can look low or high compared with what happens this second.</li>
+<li>RAM here counts what Android says is Available. Apps that report only Free show smaller numbers.</li>
+<li>Temperature is estimated from a sensor, and GPU load is not available on every phone.</li>
+</ul>
+<div class="hg-note"><b>If it fails.</b> <i>No processes read</i>: connect a working mode, or press <b>Refresh now</b>. <i>Waiting for data...</i>: wait one refresh. <i>reduced ps output on this device</i>: this phone's process list lacks some columns, so the numbers may be missing. <i>Could not stop</i>: the app could not be stopped; try again from <a href="#apps-menu">The app menu</a>.</div>
+</section>

@@ -5,7 +5,7 @@ size:      Samsung Internet, WhatsApp, "Messenger", DuckDuckGo, F-Droid, Bixby |
 updates:   DuckDuckGo, Bixby, F-Droid, Samsung Internet, WhatsApp, "Messenger" |
 recent pill: Updated 7d (3)
 recent apps: F-Droid, Samsung Internet, WhatsApp, "Messenger"
-export file: app_list_2026-10-03.csv | toast: Exported 5 apps to Download/ADB App Manager/app_list_2026-10-03.csv
+shared file: app_list_2026-10-03.csv | Export button gone: true
 "WhatsApp, ""Messenger""",com.whatsapp,2.24.1,2025-08-29,2026-10-02,user,suspended,90000000,
 sizes (no access): APK 172 MB (3 parts) • Show data usage
 sizes (granted):   APK 172 MB (3 parts) • Data 488 MB • Cache 32.4 MB

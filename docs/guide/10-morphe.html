@@ -1,0 +1,115 @@
+<section id="tab-morphe" data-title="Morphe Patcher" data-group="The tabs">
+  <p class="hg-lead">Patch apps with <b>Morphe</b> on this phone: pick the patches, let the app build and sign the APK, and install it. The patcher is the Morphe project's own engine, built into this app, and everything works the way <b>Morphe Manager</b> works: patch sources, a community finder, Simple and Advanced patching, a live log, and a list of patched APKs.</p>
+  <p><b>Where to find it:</b> the tab bar, after <b>Connected Devices</b> and before <b>About</b>. If it is not there, it has been switched off in the <a href="#feature-list">Feature List</a>.</p>
+
+  <div class="hg-warn"><b>Careful.</b> A patched app is not the app from the store. It is signed with a key made on this phone, so Android will not install it over the original unless the original is removed first (the app asks, and says that its data goes with it). Patches belong to their authors: only add sources you trust.</div>
+
+  <h4>The top of the tab</h4>
+  <table class="hg-table">
+    <thead><tr><th>Button</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><b>Sources</b></td><td>The patch bundles you have, and where to add more. See <a href="#morphe-sources">Patch sources</a>.</td></tr>
+      <tr><td><b>Morphe Helper</b></td><td>Finds and downloads the original APK a patch needs, with an optional VirusTotal check. See <a href="#morphe-helper">Morphe Helper</a>.</td></tr>
+      <tr><td><b>Patched APKs</b></td><td>Every APK you have patched, with its log. See <a href="#morphe-patched">Patched APKs</a>.</td></tr>
+      <tr><td><b>Settings</b></td><td>Simple or Advanced by default, what happens after a patch, where patched APKs are kept, the signing key. See <a href="#morphe-patching">Patching an app</a>.</td></tr>
+    </tbody>
+  </table>
+  <p>Under the card there are two pages: <b>Apps</b> lists the apps your sources have patches for, <b>Community</b> is the finder for more sources. The credit line on the card names the people whose work this is; the same names are in <a href="#credits">Credits and licences</a>.</p>
+
+  <h4>The first time</h4>
+  <ol class="hg-steps">
+    <li>Open the tab. The Apps page offers <b>Download Morphe Patches</b>, the official source (about 11 MB). Tap it.</li>
+    <li>The app reads the patches (a few seconds, in a process of its own). The apps they fit appear, the ones installed on this phone marked <b>Installed</b>.</li>
+    <li>Tap an app, choose the patches, tap <b>Patch</b>.</li>
+  </ol>
+  <div class="hg-note"><b>Tip.</b> If a card at the top says this build of the app does not contain the Morphe engine, patching is switched off in that build. Sources, the finder and downloads still work. A release build has the engine.</div>
+</section>
+
+<section id="morphe-sources" data-title="Patch sources" data-group="The tabs">
+  <p class="hg-lead">A patch source is a bundle of patches, a <code>.mpp</code> file. Morphe Patches, the official one, is there from the start; you can add as many more as you like.</p>
+  <p>Open <b>Sources</b>. Each card shows the name, the repository, the version, the number of patches, when it was updated and its size, with badges: <b>Pre-installed</b>, <b>Local file</b>, <b>Off</b>, <b>Not downloaded</b>, <b>Needs a newer Morphe</b> (the bundle was made for a newer patcher than this app carries), <b>Metadata not available</b> (the address could not be read, the bundle you have still works) and <b>Update</b> followed by a version.</p>
+  <table class="hg-table">
+    <thead><tr><th>Button</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><b>Update</b> / <b>Download</b></td><td>Fetches the newest version of a remote source.</td></tr>
+      <tr><td><b>Turn off</b> / <b>Turn on</b></td><td>Keeps the source without using its patches.</td></tr>
+      <tr><td><b>Pre-releases</b></td><td>Switches between stable and early releases for that source. Press Update to move to the other channel.</td></tr>
+      <tr><td><b>Rename</b>, <b>Delete</b></td><td>For sources you added. The official source can be neither renamed nor deleted. Apps you already patched stay as they are.</td></tr>
+      <tr><td><b>Open</b></td><td>Opens the repository.</td></tr>
+    </tbody>
+  </table>
+  <h4>Adding a source</h4>
+  <p>Tap <b>+ Add a source</b>. On <b>Remote</b> paste the address of a GitHub or GitLab repository, or of a <code>.json</code> metadata file: <code>github.com/owner/repo</code>, <code>gitlab.com/owner/repo</code>, <code>example.com/patches-bundle.json</code>. The box tells you at once whether the address is usable. A link from the finder, <code>morphe.software/add-source?github=owner/repo</code>, works too. Tick <b>Pre-release patches</b> to follow the early releases. On <b>Local file</b> pick a <code>.mpp</code> from storage; a local source never updates on its own.</p>
+  <div class="hg-danger"><b>Only add sources you trust.</b> A patch source decides what ends up inside your patched apps. The app downloads the bundle over https only and refuses a file that is not a patch bundle, but it cannot tell you what a patch does.</div>
+  <p><b>Check for updates</b> asks every remote source whether a newer version exists and marks the ones that have one.</p>
+</section>
+
+<section id="morphe-community" data-title="Community patch finder" data-group="The tabs">
+  <p class="hg-lead">The <b>Community</b> page lists the patch bundles other people publish for Morphe. It shows what <a href="https://morphe-patches.software">morphe-patches.software</a>, the finder of the Morphe project, publishes, loaded when you open the page and kept for six hours (offline, the last copy is shown and says so).</p>
+  <ul>
+    <li><b>By app</b> lists apps that have community patches, with their category and how many bundles patch them. Tap one for its description, the versions the patches name and the bundles that patch it. The <b>featured</b> apps are along the top.</li>
+    <li><b>Bundles</b> lists the bundles: name, repository, author, stars, number of patches, the apps they patch.</li>
+    <li><b>Search</b>, the <b>category</b> drop-down and the sort (<b>Popular</b>, <b>Most stars</b>, <b>Recently updated</b>, <b>Name A-Z</b>) narrow the list.</li>
+    <li><b>Only patches for apps installed on this phone</b> keeps what fits the apps you have.</li>
+    <li>A bundle you have already added shows <b>Installed</b> in green with a glow. An app on this phone shows <b>On this phone</b>.</li>
+  </ul>
+  <p>Tap <b>Add</b> on a bundle (or <b>Add this source</b> in its sheet). The app asks first, downloads it and lists it under <b>Sources</b>. The finder is community-maintained: its bundles are not checked by the Morphe project or by this app.</p>
+</section>
+
+<section id="morphe-patching" data-title="Patching an app" data-group="The tabs">
+  <p class="hg-lead">Tap an app on the Apps page (or <b>Patch a file</b> to patch an APK, APKS, APKM or XAPK you have) to open its patch page.</p>
+  <h4>The APK</h4>
+  <p>The top card shows the app, whether it is <b>Installed on this phone</b> or <b>From a file</b>, its version, and whether the version is one the patches were made for (<b>Supported version</b> in green, or <b>Other version</b>). Most patches work with only the versions they list. If yours is not one, use <b>Get the APK with Morphe Helper</b> (see <a href="#morphe-helper">Morphe Helper</a>) or <b>Choose an APK file</b>.</p>
+  <h4>Simple and Advanced</h4>
+  <ul>
+    <li><b>Simple</b> chooses for you: the patches of the first source that has some for this app which are on by default and fit the version. You see the list and the Patch button.</li>
+    <li><b>Advanced</b> lists every patch with a tick box: <b>App-specific</b> patches for this app and <b>Universal</b> patches that fit any app, with a search box and <b>All</b>, <b>None</b> and <b>Defaults</b>. A patch with options has a gear: text, numbers, switches, choices, sliders, colors and files. With more than one source, each has its own tab.</li>
+  </ul>
+  <h4>Patch</h4>
+  <p>The <b>Patch</b> button has two boxes next to it. <b>Install when finished</b> (on) installs the patched app through the working mode, silently over ADB, Shizuku or Root; with none, the system installer asks you. <b>Delete the APK after installing</b> (off) removes the patched APK once the install worked.</p>
+  <p>While it runs you see the steps (Preparing, Loading, Unpacking, Patching, Rebuilding, Signing, Saving, Installing), a progress bar and a log in the style of logcat, with a level filter, <b>Follow</b>, <b>Copy</b> and <b>Share</b>. A notification keeps it going if you leave the app and has Cancel. When it is done you get the file name and size and <b>Install</b>, <b>Share</b>, <b>Save to Downloads</b>.</p>
+  <h4>When it fails</h4>
+  <p>The result card names the step and the patch that failed, shows its full details (the error and stack trace), says in plain words what usually causes it, and offers <b>Back to the patches</b>, <b>Copy the log</b>, <b>Share the log</b> and <b>Retry, skipping failed patches</b>. The usual causes: the version is not supported, the phone ran out of memory (try <b>Strip unused native libraries</b>), or the bundle needs a newer Morphe.</p>
+  <h4>Settings</h4>
+  <table class="hg-table">
+    <thead><tr><th>Setting</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><b>Patching mode</b></td><td>Simple or Advanced when a patch page opens.</td></tr>
+      <tr><td><b>Install when finished</b>, <b>Delete the APK after installing</b></td><td>The two boxes next to Patch.</td></tr>
+      <tr><td><b>Keep patched APKs in</b></td><td>The app folder (private), <b>Downloads</b> (<code>Download/Morphe Patcher</code>, easy to reach), or both.</td></tr>
+      <tr><td><b>Strip unused native libraries</b></td><td>Keeps only the libraries for this phone's CPU: less memory, a smaller APK.</td></tr>
+      <tr><td><b>Stop when a patch fails</b></td><td>Off: the patches that work are applied and the failed ones are reported.</td></tr>
+      <tr><td><b>Patch unsupported versions</b></td><td>Applies patches even to a version they do not list. It may fail or break the app.</td></tr>
+      <tr><td><b>Signer name</b>, <b>Signing key</b></td><td>Patched apps are signed with a key made on this phone the first time. Keep using the same key to update a patched app in place: <b>Export the key</b>, <b>Import a key</b> or make <b>New key</b>.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="morphe-helper" data-title="Morphe Helper" data-group="The tabs">
+  <p class="hg-lead">Most patches need one exact version of the original app. <b>Morphe Helper</b> finds that APK on the sources you choose, downloads it, checks it, and lets you install it or patch it. It follows the open-source app <b>Helper for Morphe</b> by rushiranpise, built into this app.</p>
+  <h4>Download</h4>
+  <p>Enter the package and the version (empty: the newest), choose the CPU and the source, then:</p>
+  <ul>
+    <li><b>Fast mode</b> walks every source that is on until one delivers.</li>
+    <li><b>This version</b> looks for exactly that version; <b>Newest</b> for the newest.</li>
+    <li><b>All versions</b> lists what a source has, with format and size, and a Download button for each.</li>
+    <li><b>Open the site</b> opens the source in the browser, for the ones that cannot be downloaded from here (they say why); then <b>Pick a file</b>.</li>
+  </ul>
+  <p>A downloaded file is checked: its hash against the one the source published, and its real manifest (package, version, build) against the request. A file that does not match is refused. You then get <b>Install this APK</b> (through the working mode), <b>Patch this file</b>, <b>Share</b>, and, when VirusTotal is on, <b>Scan with VirusTotal</b>.</p>
+  <h4>Settings</h4>
+  <ul>
+    <li><b>Sources</b>: switch each of the ten (APKMirror, Uptodown, APKPure, APKCombo, Aptoide, Evozi, Mi9, APK Downloader, Aurora, Play) on or off, and pick the default. Some can be downloaded directly; the others open in the browser.</li>
+    <li><b>Connection</b>: Wi-Fi and mobile data, Wi-Fi only, or mobile data only. <b>Save downloads</b>: the app's cache or <code>Download/Helper for Morphe</code>. <b>Clear after use</b>. <b>Fast mode: version</b>.</li>
+    <li><b>VirusTotal</b>: optional. Paste your API key (a free one allows 4 lookups a minute and 500 a day), press <b>Test</b>, and choose <b>Never</b>, <b>Ask</b> or <b>Always</b>. A file VirusTotal already knows is looked up by its SHA-256 and not uploaded again (a cached report). Bundles are opened and each APK inside is checked. The quota bars show what is used. The key is kept on this phone and is sent only to VirusTotal.</li>
+  </ul>
+  <div class="hg-note"><b>Good to know.</b> Helper is independent of the sites it uses. Their pages, versions and formats can change at any time, and a source that changed says so and sends you to the browser.</div>
+</section>
+
+<section id="morphe-patched" data-title="Patched APKs" data-group="The tabs">
+  <p class="hg-lead">The <b>Patched APKs</b> button lists every APK you have patched, newest first, with the app, the version, the date, the size, the patches that were applied, and <b>Installed</b> once it was installed.</p>
+  <ul>
+    <li><b>Install</b> installs it again. If Android refuses because the installed app has another signature, the app offers to uninstall the installed copy first and says that its data goes with it.</li>
+    <li><b>Share</b> sends the APK to another app. <b>Save to Downloads</b> copies it to <code>Download/Morphe Patcher</code>.</li>
+    <li><b>Log</b> shows the log of that run. <b>Delete</b> removes the APK and its log; the app on the phone is not touched.</li>
+  </ul>
+</section>

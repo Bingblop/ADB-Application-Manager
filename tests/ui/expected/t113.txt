@@ -1,0 +1,23 @@
+the card is the last one in Settings: trimCachesCard
+button text: "🔒\nTrim Caches in All Applications"
+explanation is below the button: true
+explanation parts: ["What it runs=true","What it does=true","What is trimmed=true","What is not touched=true","What you may notice=true","How long it takes=true"]
+names the command (both forms): true | words: 349
+locked without a working mode: true | lock shown: true
+privilege modal: true | asked: 0 | ran: 0
+lock gone with a working mode: true
+declined: asked 1 time, ran 0
+the question: "Trim the caches of every app now? Only cache files are deleted. Apps, their data, logins and your files stay as they are."
+ran once: 1 | the command: "df -k /data | tail -n 1; echo __TRIM_BEGIN__; pm trim-caches 128G; echo __TRIM_RC__$?; df -k /data | tail -n 1"
+busy: button "Trimming caches…" disabled true | status: true
+a second tap while it runs starts nothing: 1
+report shown: true | title: Trim Caches in All Applications | subtitle: Caches trimmed
+report text: "pm trim-caches 128G | SUCCESS | Free space on the phone: 120 GB before, 123 GB after (2.4 GB freed). | Done. The command printed nothing, which is what it does when it works."
+marked success: 1
+button back: "Trim Caches in All Applications" enabled true | status hidden: true
+failure report: true | subtitle: It did not finish | failed rows: 1 | text: "pm trim-caches 128G | FAILED | Error: java.lang.SecurityException: Neither user 2000 nor current process has android.permission.CLEAR_APP_CACHE"
+nothing to free: "pm trim-caches 128G | SUCCESS | Free space on the phone: 120 GB before, 120 GB after (nothing more could be freed). | Done. The command printed nothing, which is what it does when it works."
+free space unreadable: "pm trim-caches 128G | SUCCESS | Done. The command printed nothing, which is what it does when it works. (The free space could not be read.)" | success rows: 1
+an answer for another run is ignored: true
+could not start: true | subtitle: It did not finish | button enabled again: true
+errors: []

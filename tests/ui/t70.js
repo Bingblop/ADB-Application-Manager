@@ -26,7 +26,7 @@ for (let i = 0; i < 40; i++) apps.push({ pkg: 'com.example.app' + i, name: 'App 
   const m = await ev(page, () => { const r = id => { const b = document.querySelector(id).getBoundingClientRect(); return { w: Math.round(b.width), h: Math.round(b.height) }; };
     return { colors: r('#prefsHeaderBtn'), mode: r('#execModeBadge'), header: r('.app-header'), tabTop: Math.round(document.querySelector('.tab-bar').getBoundingClientRect().top), headerBottom: Math.round(document.querySelector('.app-header').getBoundingClientRect().bottom), fs: getComputedStyle(document.getElementById('prefsHeaderBtn')).fontSize }; });
   check('1. the settings button is a good tap target (at least 44 x 36, it was 40 x 25)', m.colors.w >= 44 && m.colors.h >= 36, JSON.stringify(m.colors));
-  check('   its emoji is bigger (19px, it was 11px)', m.fs === '19px', m.fs);
+  check('   its emoji is bigger (22px, it was 11px)', m.fs === '22px', m.fs);
   check('   it fits in the header (no taller than the header) and the tab bar still starts where the header ends', m.colors.h < m.header.h && m.tabTop === m.headerBottom, 'header ' + m.header.h + 'px, tab bar at ' + m.tabTop + ', header ends ' + m.headerBottom);
   check('   it still opens Settings', await (async () => { await page.click('#prefsHeaderBtn'); return (await ev(page, () => currentViewName())) === 'prefs'; })());
   await ev(page, () => switchView('apps'));
@@ -89,11 +89,11 @@ for (let i = 0; i < 40; i++) apps.push({ pkg: 'com.example.app' + i, name: 'App 
   page = await open();
   const t = await ev(page, () => { const h = document.getElementById('filtersHint'), r = x => document.querySelector(x).getBoundingClientRect();
     const btns = Array.from(document.querySelectorAll('.apps-sort-row .mode-action-btn')); const lastBtn = btns[btns.length - 1].getBoundingClientRect();
-    const exp = btns.find(x => /Export/.test(x.innerText)).getBoundingClientRect(), csv = btns.find(x => /Share CSV/.test(x.innerText)).getBoundingClientRect();
+    const exp = btns.find(x => /Profiles/.test(x.innerText)).getBoundingClientRect(), csv = btns.find(x => /Share CSV/.test(x.innerText)).getBoundingClientRect();
     const hr = h.getBoundingClientRect(), fr = r('#filterScroll');
     return { shown: getComputedStyle(h).display !== 'none', text: h.innerText.replace(/\s+/g, ' ').trim(), belowButtons: hr.top >= Math.max(exp.bottom, csv.bottom, lastBtn.bottom) - 1, aboveFilters: hr.bottom <= fr.top + 1, width: Math.round(hr.width), sticky: getComputedStyle(h).position };
   });
-  check('4. a tip sits under the Export / Share CSV buttons and above the filters', t.shown && t.belowButtons && t.aboveFilters, JSON.stringify(t));
+  check('4. a tip sits under the Share CSV / Profiles buttons and above the filters', t.shown && t.belowButtons && t.aboveFilters, JSON.stringify(t));
   check('   it tells to scroll the filters sideways for more', /scroll/i.test(t.text) && /sideways/i.test(t.text) && /more filters/i.test(t.text), t.text);
   check('   the filters really do scroll sideways (more pills than fit)', await ev(page, () => { const f = document.getElementById('filterScroll'); return f.scrollWidth > f.clientWidth + 20; }));
   await ev(page, () => { document.getElementById('filterScroll').scrollLeft = 200; });

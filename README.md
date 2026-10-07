@@ -14,7 +14,7 @@ recolor the whole system · run a real terminal with AI coding agents — **no c
 
 ## [⬇️ Get the latest APK](https://github.com/Bingblop/ADB-Application-Manager/releases/latest)
 
-`v7.9.22-Pro` · signed · installs over any earlier version · works with **ADB, Wireless Debugging, Shizuku or Root**
+`v7.10.0-Pro` · signed · installs over any earlier version · works with **ADB, Wireless Debugging, Shizuku or Root**
 
 <table>
   <tr>
@@ -49,17 +49,23 @@ recolor the whole system · run a real terminal with AI coding agents — **no c
 | **Apps** | Search, sort and filter every package · freeze, suspend, uninstall (even system apps), clear data, reinstall · batch actions · saved lists · profiles you can share to another phone · CSV export |
 | **Installer** | `.apk`, `.apks`, `.apkm`, `.xapk` (with OBB) · every `pm install` flag · splits that fit your phone pre-ticked · optional VirusTotal check |
 | **Updates & stores** | Update the app itself, Galaxy Store apps, and open-source apps from GitHub, Codeberg, F-Droid and IzzyOnDroid · ShizuStore, GitHub, F-Droid and Orion catalogs |
-| **Inspector** | Permissions, App Ops, activities, services, receivers, providers (enable or disable any) · decoded manifest · launch unexported activities |
+| **Inspector** | Ten tabs per app: permissions, App Ops, activities, components (services, receivers, providers; enable or disable any) · decoded manifest · features, configurations (screens, Android versions), signatures (v1-v3.1, certificates, SHA-256) and libraries (native .so by CPU) · launch unexported activities |
 | **Files** | Privileged file manager · open APKs and archives (zip, 7z, rar, tar) without extracting · edit, sign, compare · add an SD card or USB drive |
 | **Command-Line Interface** | Terminal with three shells (sandbox, working mode, **your own Termux**) and AI agents · classic ADB Console with cheat sheet and Rish shell |
 | **Hidden Settings & Overlays** | Edit Android's settings tables · Material You color and style · switch overlays on and off |
+| **Connected Devices** | Manage a **Wear OS watch** (or another Android device) from your phone: pair over Wi-Fi or link over Bluetooth · apps (enable, disable, uninstall, reinstall) · send APK, APKS, APKM and XAPK · console, logcat, files, hidden settings, screen density |
+| **Morphe Patcher** | Patch apps with [Morphe](https://github.com/MorpheApp) on the phone: patch sources and the community finder · **Installed** apps marked · Morphe Helper downloads the right APK version (ten sources, optional VirusTotal) · Simple and Advanced patching · install when finished · live log · Patched APKs |
+| **SD Maid SE** | SystemCleaner, AppCleaner, CorpseFinder and Deduplicator, ported from [SD Maid SE](https://github.com/d4rken-org/sdmaid-se) · scan, review and untick, delete · optional 1-tap scan and delete · exclusion manager · history · accessibility cache clearing |
+| **System UI Tuner** | Demo Mode and Quick Settings tiles after [Tweaker](https://github.com/zacharee/Tweaker) · shade and bar flags · notification lab · system actions · battery simulator · navigation mode · density, size and window options |
+| **Help Guide** | A complete guide for beginners inside the app (About tab): table of contents, search, every tab explained, recipes, safety, troubleshooting |
 | **Monitoring** | Task Manager (processes, CPU, RAM, GPU, battery, network) · color-coded Logcat for one app · Device Specs |
 | **Quick actions** | Quick Settings tiles and a home-screen widget |
+| **Free up space** | One button in Settings runs `pm trim-caches 128G` to clear every app's cache, with a plain explanation of what is and is not touched |
 | **Make it yours** | Material 3 and Material You themes · light, dark, schedule, pure black · **Expressive Animations** · 14 languages · custom font · reorder or hide tabs |
 
 ## Install in 30 seconds
 
-1. Download the APK from the [**Releases page**](https://github.com/Bingblop/ADB-Application-Manager/releases/latest) (check it against `SHA256SUMS.txt` if you like).
+1. Download the APK from the [**Releases page**](https://github.com/Bingblop/ADB-Application-Manager/releases/latest): `-arm64-v8a` for almost every phone made since 2016, `-armeabi-v7a` for an older 32-bit phone, or `-universal` if you are not sure (it holds both). Check it against `SHA256SUMS.txt` if you like.
 2. Open it and allow installs from your browser or file manager.
 3. Pick a [working mode](docs/FULL-GUIDE.md#working-modes). Easiest: **ADB over TCP** (run `adb tcpip 5555` once) or **Wireless Debugging** on Android 11+ with the in-app pairing flow.
 
@@ -129,4 +135,7 @@ Found a bug? [Open an issue](https://github.com/Bingblop/ADB-Application-Manager
 Debloat data from [UAD-NG](https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation) (GPL-3.0, downloaded at runtime) ·
 shell access via [Shizuku](https://github.com/RikkaApps/Shizuku-API) ·
 update sources: Galaxy Store, GitHub, Codeberg, [F-Droid](https://f-droid.org), [IzzyOnDroid](https://apt.izzysoft.de/fdroid) and the [Obtainium](https://github.com/ImranR98/Obtainium) catalog ·
-the Task Manager tab is modeled on [RohitKushvaha01/TaskManager](https://github.com/RohitKushvaha01/TaskManager).
+the Task Manager tab is modeled on [RohitKushvaha01/TaskManager](https://github.com/RohitKushvaha01/TaskManager) ·
+the Morphe Patcher tab is built on the [Morphe](https://github.com/MorpheApp) project: the engine is [morphe-patcher](https://github.com/MorpheApp/morphe-patcher), the workflow follows [Morphe Manager](https://github.com/MorpheApp/morphe-manager) and [morphe-cli](https://github.com/MorpheApp/morphe-cli), the APK downloads and VirusTotal check follow [Helper for Morphe](https://github.com/rushiranpise/helper-for-morphe) (all GPL-3.0); patches belong to their authors. ·
+the SD Maid SE tab is a port of the four tools of [SD Maid SE](https://github.com/d4rken-org/sdmaid-se) by darken (GPL-3.0; also on [Google Play](https://play.google.com/store/apps/details?id=eu.darken.sdmse)) ·
+the System UI Tuner tab follows [Tweaker](https://github.com/zacharee/Tweaker) (System UI Tuner) by Zachary Wander (MIT)

@@ -1,0 +1,1010 @@
+<!-- Safety and help: staying safe, troubleshooting, frequently asked questions, glossary, privacy, credits. -->
+
+<section id="safety" data-title="Staying safe: what can go wrong and how to undo it" data-group="Safety and help">
+<p class="hg-lead">This app can change things that Android normally protects. Almost every change can be undone, and a few cannot. This page tells you which is which, how to work in small safe steps, and what to do if the phone stops behaving.</p>
+
+<h4>The idea in a few lines</h4>
+<p>Android keeps apps apart from each other and from the system on purpose. A <a href="#modes-overview">working mode</a> lets this app reach across that line, so it can switch off, remove or change things that Android's own Settings will not touch. The Debloater and the batch actions that remove or switch off apps show a list and ask first, and the app keeps a history with Undo for the common changes. But the buttons in one app's menu act at once, and the app cannot know which apps <i>your</i> phone needs. You decide, so it pays to go slowly. Looking never harms anything: reading the app list, permissions, manifests and logs changes nothing. Trouble starts only when you change something.</p>
+
+<h4>The four golden rules</h4>
+<ol class="hg-steps">
+<li><b>Change little.</b> Touch a few things at a time, and start with the safest: apps marked <b>USER</b>, apps the <a href="#tab-debloater">UAD-NG Debloater</a> rates <b>Recommended</b>, a setting you can explain. If you cannot say in one sentence what an app or a setting does, leave it alone. Prefer the gentlest tool: <b>Force Stop</b>, <b>Suspend</b> and <b>Freeze</b> delete nothing, and Suspend and Freeze are undone with one tap. <b>Uninstall</b> and <b>Clear Data</b> are the heavy ones.</li>
+<li><b>Back up first.</b> Copy your photos, contacts and messages somewhere else, the way you normally do. In the app, make a <a href="#apps-backup">backup</a> of an app before you remove or clear it, and save a <a href="#apps-profiles">profile</a> or a <a href="#tab-saved-lists">saved list</a> so you remember what you changed. Before you edit a <a href="#tab-settings">hidden setting</a>, use <b>Copy value</b> to keep the old value. Know your screen lock and Google account password: after a factory reset you will need them.</li>
+<li><b>One change at a time.</b> Change one app, one setting, one overlay or one density step, then look at the phone. If you change five things and something breaks, you will not know which did it. Keep batches short (three to five apps) and read the confirmation list.</li>
+<li><b>Test, then wait.</b> After a change, restart the phone and try what you use every day: a call, a text, the camera, Wi-Fi and mobile data, Bluetooth, the keyboard, unlocking, notifications, an alarm, charging. Live with the change for a day before the next one, because a problem can show up later.</li>
+</ol>
+<div class="hg-note"><b>Tip.</b> Freeze first, uninstall later. A frozen app keeps its data, costs one tap to bring back, and shows you whether anything breaks. For a system app, neither action frees much storage (its file stays on the protected system part), so there is rarely a reason to hurry.</div>
+
+<h4>What can go wrong, and how to undo it</h4>
+<p>"How likely" is a rough guide for someone who follows the four rules, not a promise: the same action can be harmless on one phone and a problem on another.</p>
+<table class="hg-table">
+<thead><tr><th>Action</th><th>How likely to cause trouble</th><th>How to undo</th><th>Read more</th></tr></thead>
+<tbody>
+<tr><td><b>Force Stop</b>, <b>Suspend</b> or <b>Freeze</b> an app you installed</td><td>Very unlikely. Nothing is deleted; unsaved work in a stopped app is lost.</td><td>Force Stop needs no undo: open the app again. For Suspend or Freeze, tap <b>Unsuspend</b> or <b>Enable</b> in the app's menu or in a batch, or use Undo in the History.</td><td><a href="#apps-menu">The app menu</a></td></tr>
+<tr><td><b>Freeze</b> (disable) a system app</td><td>Unlikely for an app you can explain. Possible for a core part: a missing feature is usual, and a vital part can cause a boot loop.</td><td>The same ways. Android's own Settings, Apps, can often switch it on too.</td><td><a href="#debloater-safety">Debloating safely</a></td></tr>
+<tr><td><b>Uninstall</b> a system app (for your user)</td><td>Possible. Its data for you is deleted, and a vital one can cause a boot loop.</td><td><b>Reinstall</b>, <b>Restore</b>, or Undo in the History. A factory reset also brings it back.</td><td><a href="#debloater-safety">Debloating safely</a></td></tr>
+<tr><td><b>Uninstall</b> an app you installed</td><td>Possible. It goes with its data, and Reinstall cannot bring it back.</td><td>Install it again; restore a backup if you made one.</td><td><a href="#tab-installer">APK Installer</a></td></tr>
+<tr><td><b>Clear Data</b>, or restoring app data</td><td>Likely to hurt if the app held things you need. On a contacts, messages or phone app it can delete what is kept only on the phone.</td><td>No undo, except a backup that included the data (that needs Root).</td><td><a href="#apps-backup">Backups</a></td></tr>
+<tr><td><b>Rem Updates</b> (takes a system app's updates off), a <b>permission</b> or <b>app op</b>, disabling a <b>component</b></td><td>Unlikely to possible. The app may stop working or close.</td><td>Tap the same button again, press ENABLE, or update the app from its store.</td><td><a href="#apps-menu">The app menu</a></td></tr>
+<tr><td><b>Batch actions</b> and applying a <b>profile</b></td><td>Higher: one wrong tick reaches many apps.</td><td><b>Stop</b> ends a batch (apps not reached yet stay as they were). <b>Undo</b> in the Debloater's History covers Freeze, Enable, Suspend, Unsuspend, Uninstall and Reinstall. Clear Data, Force Stop and typed commands cannot be undone.</td><td><a href="#apps-batch">Batch actions</a>, <a href="#apps-profiles">Profiles</a></td></tr>
+<tr><td><b>Hidden Settings</b></td><td>Unlikely for ordinary ones. Real for those marked "careful": they can cut the connection this app uses or lock you out of the keyboard or screen.</td><td>The Undo bar (about 7 seconds), then <b>Changes</b> and <b>Revert</b>. If locked out, use the phone's own Settings, or a computer (below).</td><td><a href="#tab-settings">Hidden Settings</a>, <a href="#settings-journal">Undoing settings changes</a></td></tr>
+<tr><td><b>Overlays</b> and system colours</td><td>Unlikely to possible. The wrong overlay can make the screen harder to use.</td><td>The Undo bar, <b>Default</b>, or switch the overlay off.</td><td><a href="#tab-overlays">RRO/Monet Customization</a></td></tr>
+<tr><td>Screen <b>density or size</b></td><td>Unlikely on a connected device (it undoes itself after 15 seconds unless you tap Keep). Real on this phone typed in a terminal: no safety net, and it normally survives a restart.</td><td><b>Put it back</b>, <b>Reset to default</b>, or <code>wm density reset</code> and <code>wm size reset</code>.</td><td><a href="#devices-display">Screen density and size</a></td></tr>
+<tr><td><b>Commands</b> typed in a terminal or console</td><td>From none (commands that only read) to severe (<code>rm</code>, <code>pm clear</code>, <code>settings put</code>, <code>reboot</code>). No undo.</td><td>The opposite command, if there is one. Otherwise only a backup.</td><td><a href="#tab-terminal">Command-Line Interface</a></td></tr>
+<tr><td><b>Coding agents</b></td><td>Depends on what you approve. What you type goes to the provider.</td><td>File changes: <code>/undo</code>. Commands cannot be undone.</td><td><a href="#terminal-agents">Coding agents</a></td></tr>
+<tr><td><b>Delete</b> in the File Manager</td><td>No recycle bin. Serious in system folders: the app refuses to delete a storage's root or a top-level system folder, but the files inside them are not protected.</td><td>Only a copy made earlier.</td><td><a href="#tab-files">File Manager</a></td></tr>
+<tr><td>Installing an <b>APK file</b></td><td>Possible: an APK can do whatever an app can. The Block switches stop look-alikes.</td><td>Uninstall it. Keep both Block switches on.</td><td><a href="#tab-installer">APK Installer</a></td></tr>
+<tr><td><b>Reboot to recovery</b>, <b>Reboot to bootloader</b> or <b>Power off</b> on a connected device</td><td>Low, but this phone cannot bring that device back.</td><td>Restart the device by hand.</td><td><a href="#tab-devices">Connected Devices</a></td></tr>
+</tbody>
+</table>
+<div class="hg-warn"><b>Careful.</b> <a href="#mode-root">Root</a> raises every risk above, because each action then runs with full rights. Do not root a phone just to use this app: Wireless Debugging or Shizuku does most of the same work on Android 11 and newer.</div>
+
+<h4>If the phone will not start: a boot loop and the recovery ladder</h4>
+<p>A <b>boot loop</b> is when the phone restarts again and again, or sits on its logo, and never reaches the home screen. It happens when something Android needs at start-up is missing or broken. With this app, removing or disabling a vital system app is the usual cause. It is rare if you follow the four rules, and you will know which few apps to blame.</p>
+<div class="hg-danger"><b>Risky.</b> If the phone is looping, stop. Do not try random things or keep removing apps. Work down this ladder one step at a time and stop at the first step that works. The steps are in the order of what they cost you.</div>
+<table class="hg-table">
+<thead><tr><th>Step</th><th>What to do</th><th>What it loses</th></tr></thead>
+<tbody>
+<tr><td><b>1. Undo the last change</b></td><td>If the phone starts, or reaches the home screen even for a moment, switch back on what you changed: <b>Enable</b>, <b>Reinstall</b>, <b>Restore</b>, Undo in the History. Android's own Settings can switch a frozen app on too.</td><td>Nothing.</td></tr>
+<tr><td><b>2. Restart</b></td><td>Hold the power button until the phone switches off, wait ten seconds, switch it on.</td><td>Nothing.</td></tr>
+<tr><td><b>3. Safe mode</b></td><td>Starts the phone with only the apps that came with it. How to start it differs by maker: often you hold Volume Down while the logo shows, or press and hold <b>Power off</b> on the power menu. If it starts, an app you installed is probably the problem: remove it in Android's own Settings, then restart normally.</td><td>Nothing is deleted. It does not undo a removal, and this app does not run there.</td></tr>
+<tr><td><b>4. Recovery mode: wipe cache partition</b></td><td>With the phone off, hold your maker's key combination to open the recovery menu, and look for "wipe cache partition". Not every phone has it.</td><td>Only temporary system files. It does not bring back a removed app, so it rarely cures this, but it costs nothing to try.</td></tr>
+<tr><td><b>5. A computer</b></td><td>If debugging was on beforehand and the phone answers adb: <code>adb shell pm install-existing PACKAGE</code> brings back a removed app, <code>adb shell pm enable PACKAGE</code> a frozen one.</td><td>Nothing. A phone stuck on its logo often does not answer.</td></tr>
+<tr><td><b>6. Factory reset (last resort)</b></td><td>In the recovery menu choose the entry that wipes data or resets to factory settings.</td><td>Everything on the phone: installed apps and their data, photos and files not copied elsewhere, messages, accounts, settings, and every change this app made. It puts back system apps you removed for your user, because they never left the system part. Afterwards you need your screen lock and account passwords.</td></tr>
+<tr><td><b>7. The maker's own software</b></td><td>Reinstalling the official software for your exact model from a computer, with the maker's tool (flashing).</td><td>Usually everything. Steps and risks differ by maker, and this guide does not cover them.</td></tr>
+</tbody>
+</table>
+<div class="hg-note"><b>Tip.</b> Look up now, while the phone works, how to start safe mode and recovery mode on your exact model. The key combinations differ and are hard to find in a panic.</div>
+
+<h4>Things that need a computer to fix</h4>
+<p>A computer helps only if you prepared for it: <b>USB debugging</b> must have been on before the trouble, and the phone must already trust the computer (the "Allow USB debugging?" question, answered with Always allow). The computer needs Google's SDK Platform-Tools, which contain <code>adb</code> (<a href="https://developer.android.com/tools/releases/platform-tools">download page</a>; <a href="#mode-tcp">ADB over TCP</a> has the first steps). If you plan big changes, do both first, and switch USB debugging off afterwards.</p>
+<table class="hg-table">
+<thead><tr><th>Problem</th><th>Run on the computer</th><th>Note</th></tr></thead>
+<tbody>
+<tr><td>ADB over TCP is off after a restart (Android 8 to 10)</td><td><code>adb tcpip 5555</code></td><td>On Android 11 and newer, use Wireless Debugging instead.</td></tr>
+<tr><td>A removed system app or a frozen app must come back</td><td><code>adb shell pm install-existing PACKAGE</code> or <code>adb shell pm enable PACKAGE</code></td><td>The phone must start far enough to answer.</td></tr>
+<tr><td>The screen is too small or too large</td><td><code>adb shell wm density reset</code> and <code>adb shell wm size reset</code></td><td>A restart alone will not fix it.</td></tr>
+<tr><td>A hidden setting locked you out</td><td><code>adb shell settings put TABLE NAME OLDVALUE</code>, or <code>settings delete TABLE NAME</code> for one you created</td><td>TABLE is global, secure or system. This is why you copy the old value first.</td></tr>
+<tr><td>An overlay made the screen hard to use</td><td><code>adb shell cmd overlay disable OVERLAYNAME</code></td><td>The overlay's detail sheet has <b>Copy command</b>.</td></tr>
+<tr><td>The phone will not start and adb does not answer</td><td>Nothing from this app</td><td>Steps 6 and 7 of the ladder.</td></tr>
+</tbody>
+</table>
+
+<h4>Before a phone update</h4>
+<p>A system update replaces parts of Android. It can bring back apps you removed, switch frozen apps on again, and leave you with working modes that must be set up again after the restart.</p>
+<ul>
+<li><b>Save what you did.</b> In <a href="#apps-profiles">Profiles</a>, save a profile and tap <b>Watch</b>. After the update the app tells you if apps came back. <b>Review</b> shows what would change, and <b>Confirm apply</b> removes them again. <b>Share</b> sends the profile as a file you can keep somewhere safe.</li>
+<li><b>Be careful with Advanced and Expert removals.</b> Nobody can promise how a maker's update copes with apps removed for your user. Before a big update (a new Android version), the cautious choice is to <b>Restore</b> anything removed above the Recommended level, and remove it again once the update works.</li>
+<li><b>Back up.</b> Copy your own data off the phone, and keep the app backups you care about (in <code>Download/ADB App Manager/Backups</code>).</li>
+<li><b>Charge and free space.</b> Keep the battery above half, preferably plugged in, with several gigabytes free.</li>
+<li><b>Expect to set up the working mode again.</b> After the restart ADB over TCP is off, Shizuku has stopped and the Wireless Debugging address may have changed. On a rooted phone an update may remove root: follow your root manager's instructions first.</li>
+<li><b>Afterwards,</b> check the <b>Frozen</b> and <b>Bloatware (Uninstalled)</b> counts at the top of the Application Manager, and the card that says apps no longer match your watched profile.</li>
+</ul>
+
+<h4>What never to do</h4>
+<ul>
+<li><b>Do not remove, freeze or clear the data of the parts the phone needs</b>, unless you know the consequences and have a replacement: the system interface (System UI, <code>com.android.systemui</code>), your launcher, the phone and dialer, contacts storage and messages, your keyboard, Settings, the permission controller and package installer, Google Play services and the Play Store (<code>com.android.vending</code>) if you use Google apps, the Android System WebView, and anything for emergency alerts, the SIM, mobile data, Wi-Fi, Bluetooth, fingerprint or face unlock and the camera. Clearing the data of a contacts or messages app deletes what it keeps on the phone.</li>
+<li><b>Never remove an app rated Unsafe</b>, and treat a "Needed by" line that names apps you use as a stop sign. Do not use <b>Select shown</b> on a long list you have not read.</li>
+<li><b>Do not paste a command you do not understand</b>, even from a friendly website, and do not press <b>Always allow in this chat</b> for a coding agent unless you accept whatever follows.</li>
+<li><b>Do not apply a profile, list or command preset from someone else</b> without reading it.</li>
+<li><b>Do not switch off the two Block switches</b> in the APK Installer, or tick "Always allow" for an ADB fingerprint you do not recognise.</li>
+<li><b>Do not change <code>adb_enabled</code>, <code>adb_wifi_enabled</code>, Wi-Fi or airplane mode</b> in Hidden Settings while the app uses ADB over that connection. You can cut yourself off.</li>
+<li><b>Do not delete in system folders</b> (<code>/system</code>, <code>/data</code>, <code>/vendor</code>) with the File Manager, or type extreme density or size numbers.</li>
+<li><b>Do not leave a door open.</b> Switch Wireless debugging off when you do not need it, and restart after using ADB over TCP: the port listens on your Wi-Fi while it is open.</li>
+</ul>
+
+<h4>When something goes wrong</h4>
+<ol class="hg-steps">
+<li><b>Stop.</b> Do not make another change.</li>
+<li><b>Undo the last thing you did,</b> using the table above. Read Android's own message first: it is in a <b>Command Result</b> box.</li>
+<li><b>Look in <a href="#troubleshooting">Troubleshooting</a></b> for the exact words on the screen, or in the <a href="#faq">questions and answers</a>.</li>
+<li><b>Ask for help</b> with the details collected at the end of <a href="#troubleshooting">Troubleshooting</a>.</li>
+</ol>
+</section>
+
+<section id="troubleshooting" data-title="Troubleshooting: it does not work" data-group="Safety and help">
+<p class="hg-lead">Find the area that matches your problem, then the words you see on the screen. Each row says what is usually going on and what to do. Nothing here needs a computer unless it says so. The last parts say how to reset the app and what to collect when you report a problem.</p>
+
+<h4>Three quick checks first</h4>
+<ol class="hg-steps">
+<li><b>Look at the badge</b> at the top right. Green or violet means a working mode is ready. Orange means it is not, and anything that changes an app will not work yet (<a href="#screen-tour">A tour of the screen</a>).</li>
+<li><b>Read the exact words.</b> When something fails, a sheet stays open with Android's own answer, which usually says what is wrong. Search this page for those words.</li>
+<li><b>Close the app and open it again.</b> Swipe it away from your recent apps and start it. This reads the app list, the mode and the connection again, which clears many stale screens. Nothing is lost.</li>
+</ol>
+
+<h4>It says Read-Only, or buttons are locked</h4>
+<table class="hg-table">
+<thead><tr><th>You see</th><th>Why</th><th>What to do</th></tr></thead>
+<tbody>
+<tr><td>Orange badge "Setup Mode (Read-Only)" and an orange banner</td><td>No working mode is ready. The app can look and cannot change.</td><td>Tap the badge, or <b>Set Up</b>, and pick a mode (<a href="#modes-overview">Working modes</a>).</td></tr>
+<tr><td>A sheet <b>Working Mode Required</b></td><td>The button you tapped changes something and needs a mode.</td><td>Tap <b>Set Up Working Mode</b>. Nothing was changed.</td></tr>
+<tr><td>Badge orange, ending "(not ready)"</td><td>You chose that mode but it is not connected now: Wireless Debugging went off with the Wi-Fi, Shizuku stopped, the phone restarted, or (for Root) your root manager has not allowed this app.</td><td>Open the badge sheet, read the tag on that card, finish the setup (below).</td></tr>
+<tr><td>A padlock on a button</td><td>No working mode. On an install-time permission the padlock is permanent.</td><td>Set up a mode. Install-time permissions stay locked.</td></tr>
+<tr><td>The orange banner has gone</td><td>You tapped its X (it returns at the next start), or a mode is on.</td><td>Nothing is wrong.</td></tr>
+<tr><td>It worked yesterday, orange today</td><td>A restart switches off ADB over TCP and stops Shizuku, and Wireless Debugging gets a new port.</td><td>See the table in <a href="#modes-overview">Working modes</a>. Root survives a restart.</td></tr>
+</tbody>
+</table>
+
+<h4>Wireless Debugging will not pair or connect</h4>
+<p>It needs Android 11 or newer and Wi-Fi. The <b>pairing</b> address and code go in step 1, the <b>connect</b> address (IP address &amp; Port on the main Wireless debugging screen) in step 2. Mixing them up is the commonest mistake (<a href="#mode-wireless">Wireless Debugging</a>).</p>
+<table class="hg-table">
+<thead><tr><th>You see</th><th>Why</th><th>What to do</th></tr></thead>
+<tbody>
+<tr><td>Pairing fails, or "Wrong password"</td><td>The code is wrong, or the pairing window closed and the code expired.</td><td>Open <b>Pair device with pairing code</b> again and keep it visible: split screen, a pop-up window, or <b>Pair via Notification</b>.</td></tr>
+<tr><td>"failed to connect", or refused</td><td>The port is old (it changes each time Wireless debugging is switched on), you used the pairing port, it is off, or the Wi-Fi differs.</td><td>Read <b>IP address &amp; Port</b> again and type it in step 2. <b>Auto-Detect Ports</b> can fill it in.</td></tr>
+<tr><td>"Target ... is not ready (check the authorization prompt on the device)"</td><td>Android is waiting for you to approve.</td><td>Accept the prompt or notification, then tap <b>Connect Wireless ADB</b> again.</td></tr>
+<tr><td>Wireless debugging switches itself off</td><td>The phone is not on Wi-Fi. It does not work over mobile data.</td><td>Join a Wi-Fi network (no internet needed). Another phone's hotspot often works.</td></tr>
+<tr><td>No <b>Wireless debugging</b> in Developer options</td><td>Android 10 or older.</td><td>Use <a href="#mode-tcp">ADB over TCP</a> or <a href="#mode-shizuku">Shizuku</a>.</td></tr>
+<tr><td>Green, then orange after a restart or Wi-Fi change</td><td>Android switched it off or chose a new port. The pairing is kept.</td><td>Switch it on, read the new address, connect. No new pairing.</td></tr>
+<tr><td>It asks to pair again</td><td><b>Regenerate Key</b> or cleared storage made the old pairing useless, or Android forgot it.</td><td>Pair again (step 1).</td></tr>
+</tbody>
+</table>
+
+<h4>ADB over TCP will not connect</h4>
+<table class="hg-table">
+<thead><tr><th>You see</th><th>Why</th><th>What to do</th></tr></thead>
+<tbody>
+<tr><td>"Connection refused", "failed to connect"</td><td>Nothing listens on port 5555: the one-time step was not done, or the phone restarted.</td><td>Repeat Way A or Way B in <a href="#mode-tcp">ADB over TCP</a>.</td></tr>
+<tr><td>"...not ready (check the authorization prompt...)"</td><td>An "Allow USB debugging?" question is waiting.</td><td>Approve it and tap <b>Connect</b>. If none appears, use <b>Revoke USB debugging authorizations</b> in Developer options, then retry.</td></tr>
+<tr><td>The prompt's fingerprint differs from the app's</td><td>Something else is connecting.</td><td>Tap Deny.</td></tr>
+<tr><td>Tag <b>PORT 5555 OPEN</b> in orange</td><td>The phone listens, but the app is not connected, often an approval pending.</td><td>Tap <b>Connect</b>.</td></tr>
+</tbody>
+</table>
+
+<h4>Shizuku stopped, or root was denied</h4>
+<table class="hg-table">
+<thead><tr><th>You see</th><th>Why</th><th>What to do</th></tr></thead>
+<tbody>
+<tr><td>Tag <b>NOT INSTALLED</b></td><td>No Shizuku app was found on the phone.</td><td>Install Shizuku, start it, then tap <b>Authorize &amp; Use Shizuku</b> (<a href="#mode-shizuku">Shizuku</a>).</td></tr>
+<tr><td>Tag <b>NOT RUNNING</b>, or "Shizuku is not running..."</td><td>Shizuku stops whenever the phone restarts, unless started with root and set to start itself.</td><td>Open Shizuku, start it the same way as before, then tap <b>Authorize &amp; Use Shizuku</b> (<a href="#mode-shizuku">Shizuku</a>).</td></tr>
+<tr><td>Tag <b>RUNNING (UNAUTHORIZED)</b></td><td>Shizuku runs but has not approved this app.</td><td>Tap <b>Authorize &amp; Use Shizuku</b> and <b>Allow</b>. If you denied it, switch the approval on in the Shizuku app.</td></tr>
+<tr><td>Tag <b>UPDATE SHIZUKU</b></td><td>The running Shizuku is too old.</td><td>Update the Shizuku app and start it again.</td></tr>
+<tr><td>Nothing appears when you tap Authorize</td><td>The question can hide in the notification shade, or a battery saver stopped Shizuku.</td><td>Check the shade, then tap <b>Check Status</b>.</td></tr>
+<tr><td>Root tag <b>NOT FOUND</b></td><td>No <code>su</code> program found: the root manager may be missing or off.</td><td>Fix that, then tap <b>Check Status</b> on the Shizuku card.</td></tr>
+<tr><td>"Root was denied or is not available"</td><td>You tapped Deny, or the root manager did not answer in about fifteen seconds. Root stays your chosen mode, and the Root tag turns to <b>DENIED</b>.</td><td>Tap <b>Request Root Access</b> again and approve, or allow the app in the root manager's list.</td></tr>
+<tr><td><b>Root shows DENIED</b>: the Root tag is orange and says DENIED, and the badge reads "Root (Superuser) (not ready)"</td><td>A <code>su</code> program exists, but it did not answer as root for this app: your root manager refused it, or you did not tap Allow in time (the app waits about eight seconds). Nothing privileged runs, and the app keeps that answer until you check again.</td><td>Open your root manager (Magisk, KernelSU or APatch), find ADB Application Manager Pro in its list of apps and set it to allow. Then choose Root again with <b>Request Root Access</b> in Working Modes (<a href="#mode-root">Root</a>).</td></tr>
+<tr><td>Badge says Root (violet), but actions fail</td><td>Root was working when the app last asked. If you have since taken the app off the allowed list in your root manager, the app does not know until it asks again. Otherwise Android refused that one action.</td><td>Tap <b>Request Root Access</b> (or <b>Check Status</b> on the Shizuku card) so the app asks again. If the tag turns to DENIED, allow the app in your root manager. If not, read the words in the Command Result box (next table).</td></tr>
+</tbody>
+</table>
+
+<h4>An action says "not allowed", "permission denied" or SecurityException</h4>
+<p>These words are Android's, not the app's. Android or the phone's maker said no, and nothing was changed. The app shows them in a <b>Command Result</b> box after "Action reported a problem".</p>
+<table class="hg-table">
+<thead><tr><th>You see</th><th>Why</th><th>What to do</th></tr></thead>
+<tbody>
+<tr><td>"Permission Denial", SecurityException or WRITE_SECURE_SETTINGS on a setting, theme or overlay</td><td>Android refused. Some keys are locked by the system or the maker.</td><td>On Xiaomi, Redmi and POCO, switch on <b>USB debugging (Security settings)</b> in Developer options. Otherwise leave it.</td></tr>
+<tr><td>"only root can delete system app for a particular user"</td><td>Android would not let a normal shell remove it. The app already tried a second way.</td><td>Use <b>Freeze</b> instead, or <a href="#mode-root">Root</a> if the phone has it. (On another device in <b>Connected Devices</b> the app tries a second way by itself too: see <a href="#devices-apps">Managing the apps of the device</a>.)</td></tr>
+<tr><td><code>DELETE_FAILED_DEVICE_POLICY_MANAGER</code> or <code>DELETE_FAILED_USER_RESTRICTED</code></td><td>A work profile, device owner, enterprise setup or parental control blocks removal.</td><td>It cannot be bypassed from here while it applies.</td></tr>
+<tr><td>"Operation not allowed", "Shell cannot change component state"</td><td>The app or component is protected on purpose.</td><td>Leave it. Try <b>Force Stop</b>.</td></tr>
+<tr><td>"Permission Denial: ... not exported" on launching a screen</td><td>The screen is not meant to be opened from outside.</td><td>Try <b>LAUNCH (SHELL)</b>; it does not work on every phone (<a href="#apps-menu">The app menu</a>).</td></tr>
+<tr><td>"Android refused the change and gave no reason" (overlays)</td><td>The system fixes that overlay, or it belongs to another app.</td><td>Leave it.</td></tr>
+</tbody>
+</table>
+
+<h4>The list of apps is empty, incomplete or out of date</h4>
+<p>The list is read when the app starts, after you change the working mode, and after the app changes an app itself. It shows the apps of the main user of the phone, which is normally you.</p>
+<table class="hg-table">
+<thead><tr><th>You see</th><th>Why</th><th>What to do</th></tr></thead>
+<tbody>
+<tr><td>"Querying system packages..." never ends, or "No Applications Loaded"</td><td>Android did not answer. The reason is printed under the message.</td><td>Tap <b>Reload Packages</b>. If it keeps failing, close and reopen the app.</td></tr>
+<tr><td>Fewer apps than you expect</td><td>A filter or search is on, perhaps from <b>Remember my filters</b>, or the search matched less than you meant (<b>Use regex matching</b> is on at first, so special characters count).</td><td>Tap <b>Clear filters</b> or <b>All Apps</b> and empty the search box (<a href="#tab-apps">Application Manager</a>).</td></tr>
+<tr><td>Running is 0 and nothing is UNINSTALLED</td><td>Both need a working mode.</td><td>Set one up (<a href="#modes-overview">Working modes</a>).</td></tr>
+<tr><td>Apps of a work profile, Secure Folder or second user are missing</td><td>They live in another user space.</td><td>Nothing to do here.</td></tr>
+<tr><td>Many apps missing on a phone with privacy features</td><td>The app asks Android for the full list of apps, and Android grants that when the app is installed. This guide cannot say whether some phone makers add a privacy switch of their own that hides apps.</td><td>Look in Android's Settings, Apps, ADB Application Manager Pro, Permissions for anything about apps or the installed apps list, and allow it. Close and reopen the app. If it is still short, report it (see the end of this page).</td></tr>
+<tr><td>An app you installed or removed elsewhere is wrong in the list</td><td>The list was read before the change.</td><td>Close the app and open it again.</td></tr>
+<tr><td>Icons are blank</td><td>They are drawn in the background, so they fill in later. An unreadable icon stays blank.</td><td>Wait, then use <b>Clear icon cache</b> or <b>Default icons</b> in <a href="#prefs">Settings</a>.</td></tr>
+</tbody>
+</table>
+
+<h4>Installing an app fails</h4>
+<p>The result sheet quotes Android's reply, and the app adds a "Note:" for the common ones. The full table of messages and options is in <a href="#tab-installer">APK Installer</a>.</p>
+<table class="hg-table">
+<thead><tr><th>You see</th><th>Why</th><th>What to do</th></tr></thead>
+<tbody>
+<tr><td>"App not installed" (Android's own installer)</td><td>Wrong file for the processor, a different signing key, a broken download or no space.</td><td>Try the universal file, download again, free space (<a href="#install-and-update">Installing and updating the app</a>).</td></tr>
+<tr><td><code>INSTALL_FAILED_UPDATE_INCOMPATIBLE</code>, "signatures do not match"</td><td>The installed copy has a different signing key.</td><td>Only uninstalling it first helps, and that deletes its data. Back it up first.</td></tr>
+<tr><td><code>INSTALL_PARSE_FAILED_NO_CERTIFICATES</code></td><td>The signature cannot be verified: edited after signing, or unsigned.</td><td>Install it from the <a href="#tab-files">File Manager</a>, which signs a copy with this app's key.</td></tr>
+<tr><td><code>INSTALL_FAILED_VERSION_DOWNGRADE</code>, <code>INSTALL_FAILED_TEST_ONLY</code>, <code>INSTALL_FAILED_DEPRECATED_SDK_VERSION</code></td><td>An older version, a test-only app, or an app built for a very old Android.</td><td>Turn on <b>Allow downgrade</b>, <b>Allow test packages</b> or <b>Bypass low target SDK block</b>.</td></tr>
+<tr><td><code>INSTALL_FAILED_OLDER_SDK</code>, <code>INSTALL_FAILED_NO_MATCHING_ABIS</code></td><td>The app needs a newer Android, or has no code for this processor.</td><td>Find another version or build.</td></tr>
+<tr><td><code>INSTALL_FAILED_INSUFFICIENT_STORAGE</code></td><td>Not enough space. The installer first copies the file, so allow up to twice its size.</td><td>Free some space.</td></tr>
+<tr><td><code>INSTALL_FAILED_VERIFICATION_FAILURE</code></td><td>Play Protect refused or timed out.</td><td>Turn off its app scanning, or "Verify apps over USB" in Developer options.</td></tr>
+<tr><td>"no APKs found inside this archive"</td><td>A damaged or incomplete download.</td><td>Download it again.</td></tr>
+<tr><td>The app crashes at once, or "a split is missing"</td><td>A part (feature module) was not ticked.</td><td>Press <b>Select all</b> and install again (<a href="#installer-splits">Split packages</a>).</td></tr>
+<tr><td>Game data: "Android doesn't let this app create that folder..."</td><td>OBB data needs a working mode on Android 11 and newer.</td><td>Set up a mode, or copy the data by hand.</td></tr>
+<tr><td>Android asks about "Install unknown apps" for this app, or an install without a working mode is refused at once</td><td>With no working mode, this app hands the file to Android's own installer. Android asks you the first time whether to allow that, and refuses until you do.</td><td>Tap <b>Allow</b> on the row <b>Install unknown apps</b> in <b>About</b>, <b>Permissions</b>: with a working mode it is granted at once, otherwise Android's own screen for this app opens, so switch it on there and come back. You can also find it in Android's Settings (Apps, ADB Application Manager Pro; the wording varies by phone). Or set up a working mode so the app installs by itself (<a href="#app-permissions">The permissions this app asks for</a>).</td></tr>
+<tr><td>Refused with no reason (No privilege)</td><td>Some phones block the system installer. Samsung's <b>Auto Blocker</b> can too.</td><td>Set the Authorizer to ADB, Shizuku or Root. For Auto Blocker see Settings, Security and privacy.</td></tr>
+</tbody>
+</table>
+
+<h4>An update check or an App Stores catalog fails</h4>
+<table class="hg-table">
+<thead><tr><th>You see</th><th>Why</th><th>What to do</th></tr></thead>
+<tbody>
+<tr><td>"N couldn't be checked (...)"</td><td>A site did not answer, or limited you. GitHub allows 60 checks an hour without a token.</td><td>Wait, or add a <b>GitHub Token</b> (5,000 an hour), then check again (<a href="#tab-updates">App Updater</a>).</td></tr>
+<tr><td>"signed with a different key than the installed app"</td><td>Another builder made that file. F-Droid, for example, signs its own builds.</td><td>Update from the source you installed from. Nothing was installed.</td></tr>
+<tr><td>"no APK for this phone in the latest release"</td><td>The newest release has no file for your processor.</td><td>Press <b>Release</b> and look by hand.</td></tr>
+<tr><td>"download failed: HTTP ...", "download incomplete"</td><td>The site or your connection failed.</td><td>Press <b>Retry</b>.</td></tr>
+<tr><td>"installing updates needs ADB, Shizuku or Root"</td><td>No mode is ready.</td><td>Set one up. Only this app's own update can use Android's install screen.</td></tr>
+<tr><td>"Confirm the install to update", then Android refuses</td><td>The phone blocked the system installer, or Install unknown apps is not allowed for this app.</td><td>Allow it with the row <b>Install unknown apps</b> in <b>About</b>, <b>Permissions</b> (or in Android's Settings, Apps, ADB Application Manager Pro, Install unknown apps), install the APK from your browser, or set up a working mode.</td></tr>
+<tr><td>A Play Store app is not listed</td><td>Play Store apps are not checked.</td><td>Use the card <b>Play Store apps (via Aurora)</b>.</td></tr>
+<tr><td>"Could not load the catalog: ...", "Stopped early after N apps"</td><td>No internet, the site did not answer, or the download broke off.</td><td>Check the connection and press <b>Refresh</b> (<a href="#tab-store">App Stores</a>).</td></tr>
+</tbody>
+</table>
+
+<h4>The debloater list will not download, or looks wrong</h4>
+<table class="hg-table">
+<thead><tr><th>You see</th><th>Why</th><th>What to do</th></tr></thead>
+<tbody>
+<tr><td>"The UAD-NG list has not been downloaded yet", "Waiting for the UAD-NG list..."</td><td>The first download did not work.</td><td>Connect to the internet and tap <b>Update List</b> (<a href="#tab-debloater">UAD-NG Debloater</a>).</td></tr>
+<tr><td>"UAD-NG list update failed: ... (using cached list)"</td><td>No internet, or GitHub could not be reached. Something on your network can block it, such as a VPN, a firewall, an ad blocker or a private DNS setting. The words after "failed" give the reason. A damaged download never replaces a good copy.</td><td>Try later, or on another network.</td></tr>
+<tr><td>"None of the packages on this phone are in the UAD-NG list."</td><td>The list loaded but nothing matches.</td><td>Tap <b>Update List</b>. If it stays, use the Application Manager.</td></tr>
+<tr><td>"No packages match these filters."</td><td>Your chips are too narrow.</td><td>Turn on more levels, or set State to All.</td></tr>
+<tr><td>An app is missing, or has no UAD-NG tag</td><td>Only apps in the list and on this phone appear.</td><td>Manage it in the <a href="#tab-apps">Application Manager</a>.</td></tr>
+</tbody>
+</table>
+
+<h4>Backups and restores</h4>
+<table class="hg-table">
+<thead><tr><th>You see</th><th>Why</th><th>What to do</th></tr></thead>
+<tbody>
+<tr><td><b>Working Mode Required</b> on Create backup or Confirm restore</td><td>The app needs a mode to read an app's permission settings.</td><td>Set one up (<a href="#apps-backup">Backups and restore</a>).</td></tr>
+<tr><td><b>Include app data</b> is grey: "Needs Root..."</td><td>Only root can read another app's data.</td><td>Without root a backup holds the app and its settings.</td></tr>
+<tr><td>"A newer version is installed than the one in the backup", or "signed with a different key"</td><td>Android refuses an older version, or an update signed by someone else.</td><td>Uninstall the app first, then restore. That deletes its data.</td></tr>
+<tr><td>"... it does not match this device"</td><td>A system-app backup is refused on a phone whose own copy has another key.</td><td>It mostly helps on the same phone model.</td></tr>
+<tr><td>"Not enough storage", "A split APK is missing", "Not a usable backup"</td><td>No space, a damaged file, or not a backup from this app.</td><td>Free space, or choose or make another backup.</td></tr>
+<tr><td>"Some data changed while it was being read"</td><td>The app was in use during the copy.</td><td>Back up again while you do not use it.</td></tr>
+<tr><td>You cannot find your backups</td><td>They are in <code>Download/ADB App Manager/Backups</code> (on Android 8 and 9, in the app's own storage).</td><td>Use <b>Choose backup file...</b> for a file you moved.</td></tr>
+</tbody>
+</table>
+
+<h4>The File Manager cannot see or open something</h4>
+<table class="hg-table">
+<thead><tr><th>You see</th><th>Why</th><th>What to do</th></tr></thead>
+<tbody>
+<tr><td>"Storage looks inaccessible", "Can't read this folder...", a folder that looks empty</td><td>All files access is off, or it is a system folder and no mode is connected.</td><td>Tap <b>Grant storage access</b>, or set up a mode (<a href="#tab-files">File Manager</a>).</td></tr>
+<tr><td>"The app cannot write here..."</td><td>That folder is not writable for the app.</td><td>Grant All files access, or connect a mode.</td></tr>
+<tr><td>An SD card or USB drive is not shown</td><td>Android gives an app only a folder you choose.</td><td>Tap <b>+ Add storage</b> (<a href="#files-storage">SD cards and other storage</a>).</td></tr>
+<tr><td>Search finds nothing</td><td>Wrong scope, a hidden name, or All files access is off. Search does not use a working mode.</td><td>Check the drop-down, turn on <b>Show hidden files</b> (<a href="#files-search">Searching files</a>).</td></tr>
+<tr><td>"A file job is still running"</td><td>Only one runs at a time.</td><td>Wait, or tap <b>Cancel</b>.</td></tr>
+<tr><td>"Not a readable archive", "That password did not work"</td><td>A damaged or cut-short file, not an archive, or a wrong password.</td><td>Check the file and retype the password (<a href="#files-archives">Archives</a>).</td></tr>
+</tbody>
+</table>
+
+<h4>Terminal commands hang or do not run</h4>
+<table class="hg-table">
+<thead><tr><th>You see</th><th>Why</th><th>What to do</th></tr></thead>
+<tbody>
+<tr><td>A command never ends</td><td>Some run until stopped: <code>logcat</code> without <code>-d</code>, <code>top</code> without <code>-n 1</code>, <code>ping</code> without a count.</td><td>Tap <b>STOP</b> or <b>CTRL</b>. A command stops itself after 30 minutes (<a href="#tab-terminal">Command-Line Interface</a>).</td></tr>
+<tr><td>"The shell is still busy with an earlier command"</td><td>An earlier command has not finished.</td><td>Tap <b>STOP</b>. If "The shell is not running", press Enter or tap <b>Restart shell</b>.</td></tr>
+<tr><td>"No working mode is connected: connect ADB, Shizuku or Root first"</td><td>You chose the working-mode shell with no mode ready.</td><td>Tap <b>Working Modes</b>, or choose another shell.</td></tr>
+<tr><td>"needs a real terminal" (nano, vim, top)</td><td>Full-screen programs cannot run here.</td><td>Tap <b>Open in Termux</b>.</td></tr>
+<tr><td>"Termux is not installed", "may not run commands in Termux yet"</td><td>The Termux shell is not set up.</td><td>Follow <b>Termux setup</b>. Use Termux from F-Droid or GitHub.</td></tr>
+<tr><td>A coding agent seems stuck</td><td>An approval card waits for your tap, or it paused after 25 steps.</td><td>Tap <b>Run</b>, <b>Apply</b> or <b>Skip</b>, or send "go on" (<a href="#terminal-agents">Coding agents</a>).</td></tr>
+<tr><td>"The key was not accepted", "no credit left", "model may not exist", "too long", "Too many requests", "No connection"</td><td>The provider's answers about your key, account, model, text size, quota or the network.</td><td>Check or renew the key, add credit, pick another model, tap <b>New chat</b>, wait, or check the connection. <b>Details</b> has the exact reply.</td></tr>
+</tbody>
+</table>
+
+<h4>Logcat or the Task Manager is empty</h4>
+<table class="hg-table">
+<thead><tr><th>You see</th><th>Why</th><th>What to do</th></tr></thead>
+<tbody>
+<tr><td><b>Working Mode Required</b>, "reading logcat needs ADB, Shizuku or Root"</td><td>Read-Only mode cannot read the log.</td><td>Set up a mode (<a href="#tab-logcat">Logcat Viewer</a>).</td></tr>
+<tr><td>"(no matching log lines)", "(no output)"</td><td>The level is too high, the filter matches nothing, or the app wrote nothing.</td><td>Set the level to Verbose, empty the filter, or choose <b>All apps</b>.</td></tr>
+<tr><td>Empty after <b>Clear</b></td><td>Clear empties the log for every app, and the log is short.</td><td>Make the problem happen again, then <b>Refresh</b>.</td></tr>
+<tr><td>Task Manager: "Needs ADB, Wireless Debugging, Shizuku or Root"</td><td>Processes and GPU need a mode. Battery needs none. CPU, RAM and Network work without one only on some phones.</td><td>Tap <b>Set Up</b> (<a href="#tab-taskmgr">Task Manager</a>).</td></tr>
+<tr><td>CPU shows 0%, GPU "Not available on this phone"</td><td>The CPU needs two readings, and many phones hide the GPU load.</td><td>Wait one refresh. Nothing is wrong.</td></tr>
+</tbody>
+</table>
+
+<h4>Hidden Settings will not save, or overlays and colours do nothing</h4>
+<table class="hg-table">
+<thead><tr><th>You see</th><th>Why</th><th>What to do</th></tr></thead>
+<tbody>
+<tr><td>"Needs ADB, Wireless Debugging, Shizuku or Root"</td><td>These tabs run Android's own commands through a working mode.</td><td>Tap <b>Set Up</b> and connect a mode (<a href="#tab-settings">Hidden Settings</a>, <a href="#tab-overlays">RRO/Monet Customization</a>).</td></tr>
+<tr><td>"Could not read the global settings", or "!" on a button</td><td>No answer, or the list was cut short.</td><td>Tap <b>Try again</b>, or <b>Working modes</b> to check the connection.</td></tr>
+<tr><td><b>Save</b> stays grey, with a red line</td><td>The value breaks a limit: 20,000 characters, no control characters, and a size ADB can carry.</td><td>Shorten the value.</td></tr>
+<tr><td><b>Change refused</b>, "Theme change refused", "Permission Denial"</td><td>Android said no, in its own words. Some keys and themes are locked by the system or the maker.</td><td>Read the advice. On Xiaomi, Redmi and POCO, switch on <b>USB debugging (Security settings)</b> in Developer options.</td></tr>
+<tr><td>"No answer from the device (timed out)", "No answer: the theme may still change"</td><td>The change may still have been applied.</td><td>Wait for the tab to read again, check, then retry only if needed.</td></tr>
+<tr><td>The old value comes back, or the new value shows but nothing looks different</td><td>The system or the maker's software owns that setting, or Android reads it only at certain moments.</td><td>Restart the app that should react, or the phone. If nothing helps, your phone does not use it.</td></tr>
+<tr><td>Colours applied but look the same</td><td>Your maker's own palette wins, or apps have not repainted.</td><td>Reopen an app or restart. Material You needs Android 12 or newer.</td></tr>
+<tr><td>"Could not switch it on" with "commit failed", or an overlay marked <b>Unavailable</b></td><td>The system fixes that overlay, it belongs to another app, or its target is missing.</td><td>Leave it.</td></tr>
+<tr><td>The Undo bar has gone</td><td>It stays about 7 seconds.</td><td>Use <b>Changes</b> and <b>Revert</b> (<a href="#settings-journal">Undoing settings changes</a>), or <b>Default</b> for the theme.</td></tr>
+<tr><td>You turned off ADB or Wi-Fi from here and lost the connection</td><td>The app can no longer reach the phone to change it back.</td><td>In Android's own Developer options switch USB debugging or Wireless debugging (and Wi-Fi) back on, then reconnect.</td></tr>
+</tbody>
+</table>
+
+<h4>Trim Caches says it did not finish</h4>
+<p>This is the card <b>Trim Caches</b> at the bottom of Settings (the gear). It runs <code>pm trim-caches 128G</code> through your working mode and then opens a box. If the box says <b>It did not finish</b>, with <b>FAILED</b> on the command, the words under it are Android's own (<a href="#prefs">Settings</a> describes the card).</p>
+<table class="hg-table">
+<thead><tr><th>You see</th><th>Why</th><th>What to do</th></tr></thead>
+<tbody>
+<tr><td>A padlock on the button, and a sheet <b>Working Mode Required</b></td><td>Trim Caches needs a working mode (ADB over TCP, Wireless Debugging, Shizuku or Root). Nothing ran.</td><td>Tap <b>Set Up Working Mode</b> and connect one (<a href="#modes-overview">Working modes</a>), then try again.</td></tr>
+<tr><td><b>It did not finish</b>, with words such as "Exception", "denied", "not allowed" or "Failure"</td><td>Android refused the command. Some phones do not let the shell user (the one ADB and Shizuku run as) trim caches, or the maker's security rules block it.</td><td>Read the words in the box. Try once more. If it refuses again, switch to another working mode (Root, if the phone has it) and try again. If every mode is refused, your phone does not allow it: Android's own Settings, Apps, then the app, Storage, <b>Clear cache</b>, does one app at a time.</td></tr>
+<tr><td>"The command gave no answer."</td><td>The working mode returned nothing, usually because the connection to the phone dropped while it ran (for example Wireless Debugging went off with the Wi-Fi).</td><td>Check that the badge is green or violet again, then try again.</td></tr>
+<tr><td>"Error: the command could not be started"</td><td>The app could not hand the command to the working mode.</td><td>Close the app and open it again, then try again.</td></tr>
+<tr><td><b>Caches trimmed</b>, but "nothing more could be freed"</td><td>There was little cache left to clear. This is not an error.</td><td>Nothing is wrong. To free a lot of space, see <a href="#recipe-find-big-apps">Find the apps that take the most space</a>.</td></tr>
+</tbody>
+</table>
+
+<h4>The Connected Devices tab cannot find or keep a watch</h4>
+<p>These rows fit a watch and any other device. See <a href="#devices-wear">Wear OS, start to finish</a>.</p>
+<table class="hg-table">
+<thead><tr><th>You see</th><th>Why</th><th>What to do</th></tr></thead>
+<tbody>
+<tr><td><b>No device</b>, or "Nothing found" after a scan</td><td>Debugging over Wi-Fi is off, the address is wrong, the devices are on different networks, or the router hides devices from each other (a guest network, client isolation).</td><td>Check debugging is on and both are on the same Wi-Fi. Type the address by hand under <b>Wi-Fi</b> (<a href="#devices-add">Adding a device</a>).</td></tr>
+<tr><td>"Wrong password"</td><td>The pairing code is wrong or expired.</td><td>Open <b>Pair new device</b> again and use the new code and address.</td></tr>
+<tr><td>Paired, but <b>Connect</b> fails, or "Connection refused"</td><td>You typed the pairing address, or debugging is off, or the port changed.</td><td>Use the address on the <b>Debug over Wi-Fi</b> screen.</td></tr>
+<tr><td>"Connection timed out", "No route to host"</td><td>The device is asleep, on another network, or blocked by the router.</td><td>Wake it and check the Wi-Fi.</td></tr>
+<tr><td><b>Not allowed yet</b></td><td>The device has not accepted this phone's key (also after <b>Regenerate Key</b>).</td><td>On the device tap <b>Allow</b> and tick <b>Always allow</b>, then <b>Refresh</b>. If no question comes, turn debugging off and on.</td></tr>
+<tr><td><b>offline</b></td><td>It stopped answering: Wi-Fi asleep, out of range, or restarted.</td><td>Tap <b>Reconnect</b>. If it stays offline, turn Wireless debugging off and on, then <b>Connect</b>.</td></tr>
+<tr><td>It drops after a while, or the address changed after a restart</td><td>Many watches turn Wi-Fi off to save battery. A restart can give a new address and port.</td><td>Use the charger, keep the screen on, read the new address or use <b>Nearby</b>. The old one under <b>Recent:</b> will not work.</td></tr>
+<tr><td>The Bluetooth link fails</td><td>Debugging over Bluetooth is off in the Wear OS app or on the watch, this phone has no ADB mode, or the watch does not support it.</td><td>Check both switches and the mode, or use Wi-Fi. It is the least tested part.</td></tr>
+<tr><td>A <b>That did not work</b> sheet, or a red row when sending</td><td>The device refused, or Android's own install message (for example <code>INSTALL_FAILED_OLDER_SDK</code>). For an Uninstall of a system app, the app has already tried its second way (a small helper sent to the device) before the sheet opened.</td><td>See <a href="#devices-apps">Managing the apps of the device</a> and <a href="#devices-send">Sending apps</a>. If a system app will not uninstall, <b>Disable</b> it instead.</td></tr>
+</tbody>
+</table>
+
+<h4>The screen became too small or too large</h4>
+<p>This follows a screen density (dpi) or size change, on a connected device or on this phone.</p>
+<ol class="hg-steps">
+<li><b>Wait 15 seconds</b> if you changed a connected device from its <b>Display</b> sub-tab. The change undoes itself unless you tapped <b>Keep</b>.</li>
+<li><b>Tap Put it back</b>, or <b>Reset to default</b> (<b>Reset</b> for the size). A reset has no countdown.</li>
+<li><b>Run the rescue command</b> in the device's Console sub-tab (or the ADB Console for this phone): <code>wm density reset</code> and, for the size, <code>wm size reset</code>. They work while the connection is up, even when you cannot read the screen.</li>
+<li><b>If the connection is gone,</b> connect again, then do step 3. If it is this phone and the screen is unusable, use a computer (<a href="#safety">Staying safe</a>).</li>
+</ol>
+<div class="hg-warn"><b>Careful.</b> A density or size change normally stays after a restart, so restarting does not fix it. If the app is closed during the 15 seconds, the automatic undo may not happen (<a href="#devices-display">Screen density and size</a>).</div>
+
+<h4>Android closed the app in the background</h4>
+<p>Android may close an app that is not on screen, some makers sooner than others. The connection it held is lost, anything still running (a backup, an install, a command) may be cut short, and the list is read again when you open it. Long file jobs continue, with a notification and a <b>Cancel</b> button.</p>
+<ul>
+<li>With Auto or ADB over TCP the app reconnects at start-up if port 5555 is open. With Wireless Debugging it tries the last address once, which works only if the port has not changed (<a href="#mode-readonly">Auto and Read-Only</a>).</li>
+<li>If Android keeps closing it, open its battery settings (Settings, Apps, ADB Application Manager Pro, Battery) and choose the option that does not restrict it. The names vary by maker.</li>
+</ul>
+
+<h4>How to reset the app's settings</h4>
+<p>Choose the smallest reset that does the job. None of them undo what the app already changed in Android: a frozen app stays frozen and a hidden setting keeps its value until you undo them (<a href="#safety">Staying safe</a>).</p>
+<table class="hg-table">
+<thead><tr><th>To reset</th><th>How</th><th>What it loses</th></tr></thead>
+<tbody>
+<tr><td>The tab bar, the hold menu</td><td>Settings (the gear): <b>Feature List</b> or <b>Action Button</b>, then <b>Reset to Default</b>.</td><td>Your tab order, hidden tabs, or hold-menu order (<a href="#feature-list">Turning tabs on and off</a>).</td></tr>
+<tr><td>Colours</td><td><b>Reset tweaks</b>, or tap a palette card. There is no single reset button (<a href="#themes">Themes and colours</a>).</td><td>Your colour tweaks.</td></tr>
+<tr><td>Hidden settings, the system theme</td><td><b>Changes</b> then <b>Revert</b>, newest first. <b>Default</b> for the theme.</td><td>Nothing, but each revert is a change too.</td></tr>
+<tr><td>The ADB key and every pairing</td><td>Badge sheet, <b>Regenerate Key</b>.</td><td>Every ADB connection drops, devices ask again, and Wireless Debugging must be paired again.</td></tr>
+<tr><td>Everything in the app</td><td>Android Settings, Apps, ADB Application Manager Pro, Storage, <b>Clear storage</b> (some phones say Clear data).</td><td>Saved lists, profiles, history, settings, saved tokens and keys, the downloaded debloat list and the ADB key. It starts like a first launch. On Android 10 and newer, files in <code>Download/ADB App Manager</code> are not part of this.</td></tr>
+<tr><td>A fresh start</td><td>Uninstall and install again (<a href="#install-and-update">Installing and updating the app</a>).</td><td>The same, plus the permissions you gave and the key that signs edited APKs. On Android 8 and 9 the saved files go too.</td></tr>
+</tbody>
+</table>
+
+<h4>How to report a problem</h4>
+<p>A report that says what you did, what you expected and what happened can be fixed. Collect these first:</p>
+<ol class="hg-steps">
+<li><b>The app's details.</b> In the <b>About</b> tab, <b>This build</b> card, tap <b>Copy debug info</b> (or <b>Share it</b>). It holds the app's version and package name, your Android version, the phone model and processor, the WebView version, the working mode and the signing fingerprint, but no names, accounts or app lists. Paste it into the report.</li>
+<li><b>The exact message.</b> Copy it, or screenshot the note or the <b>Command Result</b> box. Add your phone's make and which working mode was on.</li>
+<li><b>The steps.</b> Which tab and button, in what order, whether it happens every time, and what you expected.</li>
+<li><b>For a crash or restart,</b> the log: in the <b>Logcat Viewer</b> tap <b>All apps</b>, choose ADB Application Manager Pro, set the level to Error, make it happen again, then <b>Share</b> or <b>Save</b>. Read the file first: a log can hold personal details.</li>
+</ol>
+<p><b>Where to report.</b> In the About tab tap <b>Report a bug or idea</b>. It opens GitHub's page for a new issue on <code>github.com/Bingblop/ADB-Application-Manager</code>. You need a GitHub account to post. Look through the existing issues first.</p>
+<div class="hg-warn"><b>Careful.</b> Issues on GitHub are public. Never paste an API key, a token, a password or a pairing code, and remove personal details from screenshots and logs.</div>
+</section>
+
+<section id="faq" data-title="Frequently asked questions" data-group="Safety and help">
+<p class="hg-lead">Short, honest answers to the questions beginners ask most, with a link to the place that explains each one properly. If a word is new to you, the <a href="#glossary">glossary</a> has it.</p>
+
+<h4>The basics</h4>
+
+<h5>What does this app do?</h5>
+<p>It lists every app on your phone and lets you freeze, remove, back up and inspect them. It also installs app files, browses files, runs commands, changes Android's hidden settings and manages another Android device such as a watch. All of it runs on the phone, and in the usual case you need no computer. See <a href="#welcome">Welcome</a>.</p>
+
+<h5>Is it safe?</h5>
+<p>The app itself has no ads, no accounts and no analytics (<a href="#privacy">Privacy</a>). What matters is what you do with it. Freezing is easy to undo. Removing system apps and clearing data can hurt if you pick the wrong thing. Follow the four golden rules in <a href="#safety">Staying safe</a>, start with apps rated Recommended, and change a few things at a time. No guide can promise that a change is safe on every phone.</p>
+
+<h5>Is it free?</h5>
+<p>Yes. The About tab says the app is free and stays free, and this guide describes no paid feature. The <b>Buy me a coffee</b> card is optional and only opens PayPal in your browser. If you use a coding agent with your own key, the provider may bill that account, which is between you and the provider (<a href="#terminal-agents">Coding agents</a>).</p>
+
+<h5>Does it need root?</h5>
+<p>No. Root is one of four working modes, and the quickest if your phone already has it. Wireless Debugging (Android 11 and newer) and ADB over TCP need no root. Only a few things need it, mainly backing up and restoring an app's data (<a href="#apps-backup">Backups</a>). Without root you can still freeze, suspend, bring back apps and, on most phones, remove system apps for your user (<a href="#apps-menu">The app menu</a> says what to do when Android refuses). The app cannot root your phone (<a href="#mode-root">Root</a>).</p>
+
+<h5>Does it need a computer?</h5>
+<p>Often not. On Android 11 or newer, Wireless Debugging needs only Wi-Fi. On a rooted phone you need nothing. On Android 8 to 10 without root, you need a computer once to switch on ADB over TCP (or to start Shizuku), and again after every restart. The table in <a href="#modes-overview">Working modes</a> lays it out.</p>
+
+<h5>Which versions of Android does it work on?</h5>
+<p>Android 8.0 or newer. The app will not install on older versions. It declares Android 14 as the version it is built for, and this guide cannot promise that every feature behaves the same on newer versions. Some features need more than 8.0: Wireless Debugging needs Android 11, and the Material You theme needs Android 12.</p>
+
+<h5>Will it work on my Samsung, Pixel, Xiaomi or other phone?</h5>
+<p>It uses Android's own commands, so in principle it works on any phone with Android 8.0 or newer. Makers differ in small ways. On some recent Samsung phones, <b>Auto Blocker</b> can block installs that do not come from a store, and Samsung's own apps are checked through the Galaxy Store. On Xiaomi, Redmi and POCO, changes to hidden settings and themes may need <b>USB debugging (Security settings)</b> switched on in Developer options. Where you find Build number differs by maker (<a href="#mode-wireless">Wireless Debugging</a>, step 1). The app has not been tried on every phone. If something misbehaves on yours, report it (<a href="#troubleshooting">Troubleshooting</a>).</p>
+
+<h5>Will it void my warranty?</h5>
+<p>It depends on the phone maker and on your country, and nobody here can promise either way. Freezing, suspending and removing apps for your user go through Android's own commands. The app has no feature that unlocks the bootloader or flashes firmware. Rooting is different: the guide says it usually voids the warranty, and on Samsung phones it trips the Knox counter (<a href="#mode-root">Root</a>). Check your maker's terms. Before a repair, undo what you can (<b>Enable</b>, <b>Restore</b>); a factory reset also puts back system apps you removed for your user.</p>
+
+<h5>Can it brick my phone?</h5>
+<p>The app has no feature that flashes firmware or unlocks the bootloader. But removing or disabling a vital system app can leave the phone in a boot loop, and a factory reset normally cures that (<a href="#safety">Staying safe</a>). The Terminal, above all as root, can run any command, including harmful ones. That is why the guide asks you never to paste a command you do not understand.</p>
+
+<h5>Why do I have to switch on Developer options?</h5>
+<p>Android keeps ADB, USB debugging and Wireless debugging in a hidden menu, so people who do not need them do not stumble on them. Tapping <b>Build number</b> seven times makes the menu appear, and every option inside stays off until you switch it on (<a href="#mode-wireless">Wireless Debugging</a>, step 1).</p>
+
+<h4>Working modes and connections</h4>
+
+<h5>What is a working mode, and which one should I pick?</h5>
+<p>It is the way the app borrows enough power to change other apps: ADB over TCP, Wireless Debugging, Shizuku or Root, or Auto, which picks the first that is ready. Rooted phone: pick Root. Android 11 or newer, not rooted: Wireless Debugging. Android 8 to 10, not rooted: ADB over TCP with a computer once, or Shizuku. <a href="#modes-overview">Working modes</a> has the full decision list.</p>
+
+<h5>What is the difference between ADB over TCP and Wireless Debugging?</h5>
+<p>Both let the app talk to the phone's ADB service. Wireless Debugging is Android's own Wi-Fi feature (Android 11 and newer): you pair once with a code, and the connect port changes whenever it is switched off and on. ADB over TCP uses the fixed port 5555 and does not depend on the Wi-Fi once it is on, but a restart switches it off, and on Android 8 to 10 you need a computer to switch it on (<a href="#mode-tcp">ADB over TCP</a>).</p>
+
+<h5>Why does the Wireless Debugging address keep changing?</h5>
+<p>Android picks a new random connect port each time Wireless debugging is switched off and on, and it often switches it off itself when you leave the Wi-Fi or restart the phone. The pairing stays, so you only read the new <b>IP address &amp; Port</b> and tap Connect. To avoid this, you can switch on ADB over TCP from Wireless Debugging with one button, until the next restart (<a href="#mode-wireless">Wireless Debugging</a>).</p>
+
+<h5>Does it keep working after a restart?</h5>
+<p>It depends on the mode. Root: yes, nothing to redo. Shizuku: it stops, so start it again, unless it was started with root and set to start itself. ADB over TCP: switched off again, so repeat the one-time step. Wireless Debugging: the pairing is kept, but you switch it on again and connect to the new port. A freeze, a suspend or a removal is stored by Android and not by this app, so it normally stays after a restart (a system update can undo it).</p>
+
+<h5>Is it safe to leave Wireless debugging or ADB over TCP switched on?</h5>
+<p>Switch them off when you do not need them. While port 5555 is open, the phone listens on the Wi-Fi, and another device on the same network could try to connect. It would still need your approval in the "Allow USB debugging?" question, so never tick "Always allow" for a fingerprint you do not recognise. A restart switches ADB over TCP off (<a href="#mode-tcp">ADB over TCP</a>).</p>
+
+<h4>Freezing, removing and getting apps back</h4>
+
+<h5>What is the difference between freezing, suspending and uninstalling?</h5>
+<p><b>Freeze</b> (Android calls it disabling) keeps the app installed with its data, but it cannot run and disappears from your launcher. <b>Enable</b> undoes it. <b>Suspend</b> keeps the app enabled but paused: its icon is greyed out and it cannot be opened until you <b>Unsuspend</b>. <b>Uninstall</b> on a system app removes it for your user only and deletes its data for you; the file stays in the system, so <b>Reinstall</b> can bring it back. On an app you installed, uninstalling removes it for good. When unsure, freeze (<a href="#basics">Words you will see</a>, <a href="#tab-apps">Application Manager</a>).</p>
+
+<h5>Can I get an app back?</h5>
+<p>Usually. A frozen app: <b>Enable</b>. A suspended app: <b>Unsuspend</b>. A system app you removed: <b>Reinstall</b>, <b>Restore</b> in the Debloater, or Undo in the History. Such apps stay in the list with the UNINSTALLED badge so you can find them. A factory reset also restores them. An app you installed and removed must be installed again from a store or a file. Data you cleared is gone unless you have a backup that included it (that needs Root).</p>
+
+<h5>Can I undo everything at once?</h5>
+<p>There is no "undo all" button. Undo works one History entry or one batch at a time (the History keeps the last 150 entries), and the hidden settings have their own list of changes to revert. A saved <a href="#apps-profiles">profile</a> lets you apply a known state again. The only all-in-one undo is a factory reset, and that also erases your own data.</p>
+
+<h5>Which apps are safe to remove?</h5>
+<p>No list can say that for every phone. The <a href="#tab-debloater">UAD-NG Debloater</a> shows a community rating for each app (Recommended, Advanced, Expert or Unsafe) and describes it. Start with Recommended, read each description, change a few apps at a time, and never remove one rated Unsafe. The ratings are advice, not a promise (<a href="#debloater-safety">Debloating safely</a>).</p>
+
+<h5>Will it free up storage, save battery or make my phone faster?</h5>
+<p>Not by much for system apps: their file stays on the protected system part, so little space is freed. A frozen app does not run in the background, which can cut background activity, but whether you notice depends on the apps. Removing an app you installed does free its space, and <b>Trim Caches</b> in Settings clears the temporary files of every app, which frees some space too (see the next question). Do not expect miracles.</p>
+
+<h5>Does Trim Caches delete my data?</h5>
+<p>No. <b>Trim Caches</b>, the last card of Settings (the gear), deletes only cache: the temporary files each app keeps in its own cache folders, such as thumbnails, saved web pages, map tiles and buffered video. It does not touch apps, their data and settings, logins and accounts, saved games, photos, videos, downloads or your files, and nothing is uninstalled. Afterwards an app may start a little slower and may fetch images again over mobile data, and an app that keeps offline downloads in its cache (some music, video and map apps) may need to download them again. It needs a working mode, and it cannot be undone, though apps simply rebuild what they need (<a href="#recipe-trim-caches">Free up space by clearing every app's cache</a>, <a href="#prefs">Settings</a>).</p>
+
+<h5>Will a system update undo my changes?</h5>
+<p>It can. A big Android or phone-maker update can bring back apps you removed and switch frozen apps on again, and this differs from phone to phone. Save a profile and tap <b>Watch</b>: after an update the app tells you what came back and lets you review and remove it again (<a href="#apps-profiles">Profiles</a>, and the section "Before a phone update" in <a href="#safety">Staying safe</a>).</p>
+
+<h5>Why do some apps come back?</h5>
+<p>Most often because of a system update, as above. A factory reset restores system apps removed for your user, and <b>Reinstall</b>, <b>Restore</b>, Undo or restoring a backup brings one back on purpose. If an app returns with none of these, phones differ and this guide cannot cover every maker's software. Remove it again, and consider watching a profile.</p>
+
+<h4>Installing and updating</h4>
+
+<h5>What are APKS, APKM and XAPK?</h5>
+<p>They are bundles of several app files that belong together: a base file plus small parts for your processor, screen density and language. The <a href="#tab-installer">APK Installer</a> opens all of them and ticks the parts that fit your phone. XAPK may also carry game data (OBB), which is copied after the install (<a href="#installer-splits">Split packages, APKS, APKM, XAPK and game data</a>).</p>
+
+<h5>What is the 32-bit APK, and which download do I need?</h5>
+<p>Each release has three APK files: <code>arm64-v8a</code> for 64-bit phones (nearly all), <code>armeabi-v7a</code> for 32-bit phones, and <code>universal</code>, which carries both. A small <code>SHA256SUMS.txt</code> file lists their checksums. If you are not sure, take the universal one. The difference is the small ADB program inside the app. The 32-bit build is new and has been tried on far fewer phones (<a href="#install-and-update">Installing and updating the app</a>).</p>
+
+<h5>How do I update the app?</h5>
+<p>Install the new APK over the old one: your settings, lists and profiles are kept. Or open <b>About</b>, tap <b>Check for update</b>, then <b>Update now</b>. Either way the new file must be this app, newer, and signed with the same key (<a href="#install-and-update">Installing and updating the app</a>).</p>
+
+<h5>Can I install apps from Google Play with it?</h5>
+<p>No. The app does not download from Google Play. It installs app files you give it, and the <a href="#tab-store">App Stores</a> tab browses four open-source catalogs (ShizuStore, GitHub, F-Droid and Orion) and installs from them. Play Store apps keep updating through the Play Store or Aurora Store; the <a href="#tab-updates">App Updater</a> only points you there.</p>
+
+<h5>Can I move the app to the SD card?</h5>
+<p>No. By default Android keeps an app in internal storage unless the app allows otherwise, and this app does not ask for that. Your own files are different: the <a href="#files-storage">File Manager</a> can add an SD card or a USB drive, and you can move backups and downloads there with Copy and Paste.</p>
+
+<h4>Watches, tablets and other devices</h4>
+
+<h5>Can I use it on a watch?</h5>
+<p>Yes. The <a href="#tab-devices">Connected Devices</a> tab manages a Wear OS watch from your phone over adb (the developer tool, see the <a href="#glossary">glossary</a>), mostly through Wi-Fi, and also through a USB cable or a watch's Bluetooth link: apps, installs, a console, the log, files, hidden settings and screen density. The app itself is not installed on the watch. The Bluetooth link is the least tested part. <a href="#devices-wear">Wear OS, start to finish</a> walks through it.</p>
+
+<h5>Can I use it on a tablet or a TV, or on someone else's phone?</h5>
+<p>A tablet or a second phone is managed from the same tab, the same way as a watch. Installing the app on a tablet should work like on a phone, but this guide has not been checked on one. The app has no TV launcher entry. A TV that offers ADB over the network could be reached from Connected Devices, but that has not been tried. Use it only on devices you own or may manage: the other device must have debugging on and must approve your phone.</p>
+
+<h4>Privacy and money</h4>
+
+<h5>Does it collect data or show ads?</h5>
+<p>No ads, no account, no analytics and no server of the developer's. The app goes online only for things you open or ask for, such as the debloat list, update checks and the App Stores. <a href="#privacy">Privacy</a> lists every contact.</p>
+
+<h5>Are my AI keys safe?</h5>
+<p>A coding agent's key is sealed with AES-256-GCM using a key held in the Android Keystore, stored in the app's private settings, and sent only to that provider's own address. Android's backup is switched off for the app. The VirusTotal key and the GitHub token are kept in the app's private settings without that extra sealing, so leave them empty if that worries you (<a href="#privacy">Privacy</a>).</p>
+
+<h5>What does the donation do?</h5>
+<p><b>Buy me a coffee</b> opens PayPal's donation page in your browser, for a one-time amount in US dollars to the developer's PayPal address. The app handles no payment itself, and you can close the page and nothing happens (<a href="#tab-about">About</a>).</p>
+
+<h4>The app itself</h4>
+
+<h5>How do I change the language?</h5>
+<p>Tap the gear in the header, then <b>Language</b>. The list has 14 languages: English, Español, Français, Deutsch, Português (Brasil), Italiano, Русский, 简体中文, 日本語, 한국어, العربية, हिन्दी, Türkçe and Bahasa Indonesia. The whole app changes at once. App names, file names and commands are not translated (<a href="#prefs">Settings</a>).</p>
+
+<h5>Why is this guide in English only, and does it work offline?</h5>
+<p>The guide is written once, in English, and uses the English button names. If you switched the app to another language, the names on your screen will differ from the ones here, so switch back to English if you cannot find a button. The guide is stored inside the app and opens without internet: <b>About</b> tab, <b>Help Guide</b> button (<a href="#welcome">Welcome</a> says how to use it).</p>
+
+<h5>Can I hide tabs I do not use, or change their order?</h5>
+<p>Yes. Open Settings with the gear, find the <b>Feature List</b> card, and use its switches and arrows. Application Manager always stays first and About last. Switching a tab off deletes nothing, and <b>Reset to Default</b> puts everything back (<a href="#feature-list">Turning tabs on and off and moving them</a>).</p>
+
+<h5>Where do I report a bug or ask for a feature?</h5>
+<p>In the <b>About</b> tab, tap <b>Report a bug or idea</b>. It opens GitHub's page for a new issue, and you need a GitHub account to post. The end of <a href="#troubleshooting">Troubleshooting</a> says what to collect first.</p>
+
+<h5>Is the app on Google Play, and how do I know my copy is genuine?</h5>
+<p>It is not on Google Play. Download it only from its <a href="https://github.com/Bingblop/ADB-Application-Manager/releases/latest">releases page on GitHub</a>. In the About tab, the <b>This build</b> card should say "Signed with the official release key", and the fingerprint begins <code>94:61:87:0F</code>. Each release also has a <code>SHA256SUMS.txt</code> file (<a href="#install-and-update">Installing and updating the app</a>).</p>
+
+<h5>How do I remove the app, and what happens to my changes?</h5>
+<p>Uninstall it like any app in Android's Settings. Its saved lists, profiles and settings go with it. What it changed in Android does not: frozen apps stay frozen, hidden settings keep their values and overlays stay on until you undo them. Undo them first, and see "How to delete everything" in <a href="#privacy">Privacy</a>.</p>
+
+<h5>Is the source code open?</h5>
+<p>The project's GitHub page holds the source code, the releases and the issue tracker (the <b>GitHub</b> button in About opens it), so you can read it there. The app and the files this guide was written from state no licence for the app's own code, so this guide cannot say what you may do with it. If you need to know, ask the developer through <b>Report a bug or idea</b> in the About tab. See also <a href="#credits">Credits</a>.</p>
+</section>
+
+<section id="glossary" data-title="Glossary" data-group="Safety and help">
+<p class="hg-lead">Every technical word the app and this guide use, in plain language, in alphabetical order. Each entry points to the section that explains it. If you cannot find a word, try the search box at the top of the guide.</p>
+
+<h4>0-9</h4>
+<table class="hg-table">
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><b>3rd Party</b></td><td>The app list's name for an app that you or a store installed. Its row carries the tag USER. The opposite is a system app. See <a href="#basics">Words you will see</a>.</td></tr>
+</tbody>
+</table>
+
+<h4>A</h4>
+<table class="hg-table">
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><b>ABI</b></td><td>The kind of machine code a phone's processor runs, such as arm64-v8a (64-bit) or armeabi-v7a (32-bit). An app must match it. See <a href="#install-and-update">Installing and updating the app</a>.</td></tr>
+<tr><td><b>Allow Restricted Settings</b></td><td>A special access that lifts Android's block on a few sensitive switches for apps installed from outside a store (Android 13 and newer). Optional. See <a href="#app-permissions">The permissions this app asks for</a>.</td></tr>
+<tr><td><b>activity</b></td><td>One screen of an app. The Activities tab of an app's menu lists them, and LAUNCH opens one. See <a href="#apps-menu">The app menu</a>.</td></tr>
+<tr><td><b>ADB</b></td><td>Android Debug Bridge, the developer tool that sends commands to a phone as the shell user (UID 2000). This app carries its own copy. See <a href="#basics">Words you will see</a>.</td></tr>
+<tr><td><b>ADB key</b></td><td>The key pair this app makes on its first start, which is how a phone recognises it. See <a href="#modes-overview">Working modes</a>.</td></tr>
+<tr><td><b>ADB over TCP</b></td><td>Making the phone's ADB listen on port 5555, so the app can connect from the inside. A restart switches it off. See <a href="#mode-tcp">ADB over TCP</a>.</td></tr>
+<tr><td><b>AES</b></td><td>A strong encryption method. It locks 7z archives and zip archives (when you choose AES), and it seals the keys of coding agents. See <a href="#files-archives">Archives</a>.</td></tr>
+<tr><td><b>All files access</b></td><td>Android's special permission to see all files on storage. It is optional. See <a href="#app-permissions">The permissions this app asks for</a>.</td></tr>
+<tr><td><b>AOSP</b></td><td>The Android Open Source Project: the plain Android system, without a maker's additions. It is one of the list filters of the UAD-NG Debloater. See <a href="#tab-debloater">UAD-NG Debloater</a>.</td></tr>
+<tr><td><b>API key</b></td><td>A long secret text from an AI provider that lets the app use your account with them. It is stored sealed. See <a href="#terminal-agents">Coding agents</a>.</td></tr>
+<tr><td><b>API level</b></td><td>Android's version as a number: 26 is Android 8, 30 is Android 11, 34 is Android 14. See <a href="#tab-installer">APK Installer</a>.</td></tr>
+<tr><td><b>APK</b></td><td>The file an app is installed from, ending in .apk. See <a href="#basics">Words you will see</a>.</td></tr>
+<tr><td><b>APKM</b></td><td>The bundle format of APKMirror: a zip file of APK files that belong together. See <a href="#installer-splits">Split packages</a>.</td></tr>
+<tr><td><b>APKS</b></td><td>A bundle made by Google's bundletool and similar tools: a zip file of APK files. See <a href="#installer-splits">Split packages</a>.</td></tr>
+<tr><td><b>app op</b></td><td>A finer switch that Android keeps behind the permissions, such as running in the background. Its values are Allow, FG, Ignore, Deny and Reset. See <a href="#apps-menu">The app menu</a>.</td></tr>
+<tr><td><b>archive</b></td><td>One file that holds many files, such as zip, 7z, rar and tar. The File Manager can look inside one without unpacking it. See <a href="#files-archives">Archives</a>.</td></tr>
+<tr><td><b>Aurora Store</b></td><td>An open-source client for the Google Play catalog. The App Updater offers to open it for Play Store apps. See <a href="#tab-updates">App Updater</a>.</td></tr>
+<tr><td><b>authorization</b></td><td>A device's approval of this phone's key. Until given, it shows as unauthorized (Not allowed yet). See <a href="#tab-devices">Connected Devices</a>.</td></tr>
+<tr><td><b>Authorizer</b></td><td>In the APK Installer, how a file is installed: ADB, Shizuku, Root or No privilege. See <a href="#tab-installer">APK Installer</a>.</td></tr>
+<tr><td><b>Auto Blocker</b></td><td>A feature on some recent Samsung phones that can block installs that do not come from a store. See <a href="#troubleshooting">Troubleshooting</a>.</td></tr>
+<tr><td><b>Auto mode</b></td><td>The working mode that uses the first of ADB over TCP, Wireless Debugging or Shizuku that is ready. It never picks Root. See <a href="#mode-readonly">Auto and Read-Only mode</a>.</td></tr>
+</tbody>
+</table>
+
+<h4>B</h4>
+<table class="hg-table">
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><b>backup</b></td><td>A saved copy of one app in an .adbbackup file: its APK, permissions and app ops, and with Root its data. See <a href="#apps-backup">Backups and restore</a>.</td></tr>
+<tr><td><b>badge</b></td><td>A small coloured label. The one at the top right names the working mode, and app rows have tags such as FROZEN. See <a href="#screen-tour">A tour of the screen</a>.</td></tr>
+<tr><td><b>base APK</b></td><td>The core file of an app that comes in parts. It is always installed. See <a href="#installer-splits">Split packages</a>.</td></tr>
+<tr><td><b>bloatware</b></td><td>Apps added by the phone's maker or network that many people never use and cannot easily remove. See <a href="#basics">Words you will see</a>.</td></tr>
+<tr><td><b>Bluetooth link</b></td><td>A way to reach a Wear OS watch through its Bluetooth connection to the phone, with no Wi-Fi. See <a href="#devices-add">Adding a device</a>.</td></tr>
+<tr><td><b>boot loop</b></td><td>The phone restarts again and again, or sits on its logo, and never reaches the home screen. See <a href="#safety">Staying safe</a>.</td></tr>
+<tr><td><b>bootloader</b></td><td>The small program that runs before Android and is used for flashing. This app does not unlock it. See <a href="#faq">Questions and answers</a>.</td></tr>
+<tr><td><b>broadcast receiver</b></td><td>The part of an app that listens for events, such as the phone starting up. The Components tab of an app's menu lists them as Receivers, next to Services and Providers. See <a href="#apps-menu">The app menu</a>.</td></tr>
+<tr><td><b>build number</b></td><td>The line in About phone you tap seven times to unlock Developer options. The app has its own build number in About. See <a href="#mode-wireless">Wireless Debugging</a>.</td></tr>
+<tr><td><b>bundle</b></td><td>Several app files packed into one file (APKS, APKM or XAPK). See <a href="#installer-splits">Split packages</a>.</td></tr>
+</tbody>
+</table>
+
+<h4>C</h4>
+<table class="hg-table">
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><b>cache</b></td><td>Temporary files kept to save time, such as downloaded thumbnails or saved web pages. Each app has its own cache folder, and apps rebuild what they need if it is removed. This app also keeps an icon cache and a thumbnail cache, and <b>Trim Caches</b> in Settings clears the cache of every app (see <b>trim caches</b> below and <a href="#prefs">Settings</a>).</td></tr>
+<tr><td><b>certificate fingerprint</b></td><td>A short code, usually the SHA-256, worked out from the certificate that an app is signed with. It identifies the key the app was signed with, and it is shown in the Signatures tab of <a href="#apps-menu">the app menu</a>. See <b>signature</b> and <b>SHA-256</b> below.</td></tr>
+<tr><td><b>checksum</b></td><td>A short code, such as a SHA-256, that identifies the exact contents of a file. Downloads are checked with it. See <a href="#tab-store">App Stores</a>.</td></tr>
+<tr><td><b>chip</b></td><td>A small rounded button that turns a filter or an option on or off, or copies a piece of text. A row of them that scrolls sideways is also called a row of pills. See <a href="#tab-apps">Application Manager</a>.</td></tr>
+<tr><td><b>clear data</b></td><td>Wipes everything an app has saved: logins, settings and files kept inside it. It cannot be undone. See <a href="#apps-menu">The app menu</a>.</td></tr>
+<tr><td><b>cluster</b></td><td>On the Task Manager's CPU page, a group of processor cores of similar speed, with its own lowest, current and highest speed. See <a href="#tab-taskmgr">Task Manager</a>.</td></tr>
+<tr><td><b>Codeberg</b></td><td>A free website, like GitHub, where developers share code and app releases. The App Updater checks it for newer versions. See <a href="#tab-updates">App Updater</a>.</td></tr>
+<tr><td><b>coding agent</b></td><td>An AI assistant you chat with inside the Terminal. It can suggest commands, read files and propose changes, and you approve each step. See <a href="#terminal-agents">Coding agents</a>.</td></tr>
+<tr><td><b>component</b></td><td>One working part of an app: an activity, a receiver, a service or a provider. See <a href="#apps-menu">The app menu</a>.</td></tr>
+<tr><td><b>config split</b></td><td>A part of a split app made for one processor type, one screen density or one language. See <a href="#installer-splits">Split packages</a>.</td></tr>
+<tr><td><b>content provider</b></td><td>The part of an app that shares data with other apps. The Components tab of an app's menu lists them as Providers, next to Receivers and Services. See <a href="#apps-menu">The app menu</a>.</td></tr>
+<tr><td><b>core</b></td><td>One processing unit of the phone's processor. The Task Manager shows a box for each. See <a href="#tab-taskmgr">Task Manager</a>.</td></tr>
+<tr><td><b>CPU</b></td><td>The phone's processor, the part that runs programs. The Task Manager shows how busy it is, and the About tab names its type. See <a href="#tab-taskmgr">Task Manager</a>.</td></tr>
+<tr><td><b>CSV</b></td><td>A plain table file that opens in any spreadsheet. The app list can be exported as one. See <a href="#tab-apps">Application Manager</a>.</td></tr>
+</tbody>
+</table>
+
+<h4>D</h4>
+<table class="hg-table">
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><b>debloat</b></td><td>To turn off or remove bloatware. See <a href="#tab-debloater">UAD-NG Debloater</a>.</td></tr>
+<tr><td><b>Debug over Bluetooth</b></td><td>A setting on a Wear OS watch, and in the Wear OS app, that lets adb reach the watch through its phone link. See <a href="#devices-add">Adding a device</a>.</td></tr>
+<tr><td><b>Debug over Wi-Fi</b></td><td>The watch's setting that lets adb connect over Wi-Fi. It shows the watch's address and port. See <a href="#devices-wear">Wear OS, start to finish</a>.</td></tr>
+<tr><td><b>debug-signed</b></td><td>Signed with the common developer test key. It is a sign that an app was re-signed by a tool. See <a href="#apps-menu">The app menu</a>.</td></tr>
+<tr><td><b>density</b></td><td>Also called dpi (dots per inch): how big Android draws things. Lower draws smaller, so more fits. See <a href="#devices-display">Screen density and size</a>.</td></tr>
+<tr><td><b>Developer options</b></td><td>Android's hidden menu with debugging switches. You unlock it by tapping Build number seven times. See <a href="#mode-wireless">Wireless Debugging</a>.</td></tr>
+<tr><td><b>device owner</b></td><td>A work or school setup that controls a phone and can block removing apps. The app shows DELETE_FAILED_DEVICE_POLICY_MANAGER then. See <a href="#troubleshooting">Troubleshooting</a>.</td></tr>
+<tr><td><b>dex optimization</b></td><td>Recompiling an app's code for speed. It is what the Optimize button does. See <a href="#apps-menu">The app menu</a>.</td></tr>
+<tr><td><b>disable</b></td><td>Android's word for freeze. A disabled app cannot run. See <a href="#basics">Words you will see</a>.</td></tr>
+<tr><td><b>Display over other apps</b></td><td>A special access that lets this app open another app's screen from the background. Optional. See <a href="#app-permissions">The permissions this app asks for</a>.</td></tr>
+<tr><td><b>downgrade</b></td><td>Installing an older version of an app over a newer one. Android refuses unless <b>Allow downgrade</b> is on in the APK Installer. See <a href="#tab-installer">APK Installer</a>.</td></tr>
+<tr><td><b>dpi</b></td><td>Dots per inch, the way screen density is counted. See <b>density</b> above and <a href="#devices-display">Screen density and size</a>.</td></tr>
+<tr><td><b>drift</b></td><td>When the phone no longer matches a watched profile, usually because a system update brought apps back. See <a href="#apps-profiles">Profiles and drift watch</a>.</td></tr>
+<tr><td><b>dry run</b></td><td>A practice run of a batch command that only lists what it would do and runs nothing. See <a href="#apps-batch">Selecting many apps and batch actions</a>.</td></tr>
+</tbody>
+</table>
+
+<h4>E</h4>
+<table class="hg-table">
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><b>exported</b></td><td>A component that other apps may open. An unexported one is normally reachable only by the app itself. See <a href="#apps-menu">The app menu</a>.</td></tr>
+</tbody>
+</table>
+
+<h4>F</h4>
+<table class="hg-table">
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><b>factory reset</b></td><td>Erases everything on the phone and returns it to how it left the factory. It restores system apps you removed for your user. See <a href="#safety">Staying safe</a>.</td></tr>
+<tr><td><b>F-Droid</b></td><td>A catalog of free, open-source Android apps. The App Stores tab can browse it and many other repositories of the same kind, and the App Updater checks it. See <a href="#tab-store">App Stores</a>.</td></tr>
+<tr><td><b>feature module</b></td><td>An optional part of a split app. The installer does not tick it by default; if an app crashes at once after installing, try <b>Select all</b>. See <a href="#installer-splits">Split packages</a>.</td></tr>
+<tr><td><b>fingerprint</b></td><td>A short code that identifies a key, such as the ADB key or the key an app is signed with. See <a href="#tab-about">About</a>.</td></tr>
+<tr><td><b>firmware</b></td><td>The phone's own built-in system software, written by the maker. This app never changes it. See <a href="#safety">Staying safe</a>.</td></tr>
+<tr><td><b>flashing</b></td><td>Writing the maker's official software onto a phone from a computer. This guide does not cover it. See <a href="#safety">Staying safe</a>.</td></tr>
+<tr><td><b>force stop</b></td><td>Ends an app's running processes now. Nothing is deleted. See <a href="#basics">Words you will see</a>.</td></tr>
+<tr><td><b>foreground service</b></td><td>A background job that shows a notification, as long file jobs do. See <a href="#app-permissions">The permissions this app asks for</a>.</td></tr>
+<tr><td><b>freeze</b></td><td>Switch an app off without removing it. Its files and settings stay, and Enable brings it back. See <a href="#basics">Words you will see</a>.</td></tr>
+</tbody>
+</table>
+
+<h4>G</h4>
+<table class="hg-table">
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><b>Galaxy Store</b></td><td>Samsung's app store. The App Updater checks it for Samsung apps. See <a href="#tab-updates">App Updater</a>.</td></tr>
+<tr><td><b>gist</b></td><td>A small page on GitHub where someone shares a note or a list. The ADB Cheat Sheet can load Pulimet's gist of ADB commands. See <a href="#tab-terminal">Command-Line Interface</a>.</td></tr>
+<tr><td><b>GitHub</b></td><td>A website where developers keep their code and publish app releases. This app's own releases, the UAD-NG list and many update sources are there. See <a href="#privacy">Privacy</a>.</td></tr>
+<tr><td><b>GitHub token</b></td><td>An optional code that raises GitHub's limit for update checks from 60 to 5,000 an hour. See <a href="#tab-updates">App Updater</a>.</td></tr>
+<tr><td><b>GPU</b></td><td>The chip that draws the picture on your screen. See <a href="#tab-taskmgr">Task Manager</a>.</td></tr>
+</tbody>
+</table>
+
+<h4>H</h4>
+<table class="hg-table">
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><b>hidden settings</b></td><td>Android's settings tables (Global, Secure and System) that its own Settings app does not show. See <a href="#tab-settings">Hidden Settings</a>.</td></tr>
+<tr><td><b>History</b></td><td>The Debloater's list of what you did, from app menus and batches, with Undo on each entry. The last 150 are kept. See <a href="#debloater-safety">Debloating safely</a>.</td></tr>
+<tr><td><b>hotspot</b></td><td>A phone that shares its mobile data as a small Wi-Fi network for other devices. Wireless Debugging can use another phone's hotspot when no Wi-Fi is around. See <a href="#mode-wireless">Wireless Debugging</a>.</td></tr>
+<tr><td><b>HTTPS</b></td><td>The secure way a program talks to a website, so that others on the network cannot read the traffic. Plain <code>http</code> is not secure. See <a href="#privacy">Privacy</a>.</td></tr>
+</tbody>
+</table>
+
+<h4>I</h4>
+<table class="hg-table">
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><b>icon pack</b></td><td>An installed set of app icons that the app can draw in its lists. See <a href="#prefs">Settings</a>.</td></tr>
+<tr><td><b>install-time permission</b></td><td>A permission fixed when the app is installed. Nobody can change it, and the app shows a padlock on it. See <a href="#apps-menu">The app menu</a>.</td></tr>
+<tr><td><b>intent</b></td><td>A request one part of Android sends to another, such as "open this screen" or "install this file". See <a href="#tab-installer">APK Installer</a>.</td></tr>
+<tr><td><b>IP address</b></td><td>The number that identifies a device on a network, such as 192.168.1.20. A port follows after a colon. See <a href="#mode-wireless">Wireless Debugging</a>.</td></tr>
+<tr><td><b>IzzyOnDroid</b></td><td>A catalog that works like F-Droid, with many apps taken from developers' own GitHub releases. The App Updater and the App Stores tab use it. See <a href="#tab-store">App Stores</a>.</td></tr>
+</tbody>
+</table>
+
+<h4>K</h4>
+<table class="hg-table">
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><b>Keystore</b></td><td>Android's protected storage for keys. This app keeps its APK-signing key there, and the key that seals your agent keys. See <a href="#privacy">Privacy</a>.</td></tr>
+<tr><td><b>Knox</b></td><td>Samsung's security system. Rooting a Samsung phone trips a counter in it. See <a href="#mode-root">Root</a>.</td></tr>
+<tr><td><b>Komi Store</b></td><td>A community catalog of GitHub projects that publish an installable APK. The <b>GitHub</b> button in App Stores browses it. See <a href="#credits">Credits</a>.</td></tr>
+</tbody>
+</table>
+
+<h4>L</h4>
+<table class="hg-table">
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><b>launcher</b></td><td>The home screen app. Do not remove yours unless another is chosen. See <a href="#debloater-safety">Debloating safely</a>.</td></tr>
+<tr><td><b>logcat</b></td><td>The phone's running diary, in which Android and every app write short notes. See <a href="#tab-logcat">Logcat Viewer</a>.</td></tr>
+</tbody>
+</table>
+
+<h4>M</h4>
+<table class="hg-table">
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><b>Magisk</b></td><td>A root manager, an app that decides which apps may use root. KernelSU and APatch are the others the app names. See <a href="#mode-root">Root</a>.</td></tr>
+<tr><td><b>manifest</b></td><td>An app's own description of itself, in XML: its screens, permissions and parts. See <a href="#apps-menu">The app menu</a>.</td></tr>
+<tr><td><b>Material 3</b></td><td>Google's current design system for Android apps. The app's own look follows it, and its baseline purple palette is called Material 3. See <a href="#themes">Themes and colours</a>.</td></tr>
+<tr><td><b>Material You</b></td><td>Android 12's way of building all system colours from one source colour, normally your wallpaper. See <a href="#themes">Themes and colours</a>.</td></tr>
+<tr><td><b>MCP</b></td><td>Model Context Protocol: a standard way of giving an AI assistant extra tools, such as access to files or the web. The Terminal's <b>MCP</b> button adds them to agents that run in Termux. See <a href="#terminal-agents">Coding agents</a>.</td></tr>
+<tr><td><b>mDNS</b></td><td>The way devices announce themselves on a network. The Nearby scan and Auto-Detect Ports use it. See <a href="#devices-add">Adding a device</a>.</td></tr>
+<tr><td><b>metered connection</b></td><td>Mobile data or a hotspot, where downloads may cost money. The app asks before large ones. See <a href="#tab-store">App Stores</a>.</td></tr>
+<tr><td><b>model</b></td><td>In a coding agent, the particular AI model that answers you. The <b>Model</b> drop-down lists the ones the provider offers. See <a href="#terminal-agents">Coding agents</a>.</td></tr>
+<tr><td><b>Monet</b></td><td>The name of the colour engine behind Material You. See <a href="#tab-overlays">RRO/Monet Customization</a>.</td></tr>
+</tbody>
+</table>
+
+<h4>N</h4>
+<table class="hg-table">
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><b>native library (.so)</b></td><td>A file ending in .so that holds machine code made for one processor type, such as arm64-v8a or armeabi-v7a, instead of Java code. The Libraries tab of <a href="#apps-menu">the app menu</a> lists the ones inside an app's file.</td></tr>
+<tr><td><b>notification shade</b></td><td>The panel you pull down from the top of the screen to see notifications. The code box for <b>Pair via Notification</b> is there. See <a href="#mode-wireless">Wireless Debugging</a>.</td></tr>
+</tbody>
+</table>
+
+<h4>O</h4>
+<table class="hg-table">
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><b>OBB</b></td><td>Extra data files of a big game or app, kept under Android/obb. An XAPK can carry them. See <a href="#installer-splits">Split packages</a>.</td></tr>
+<tr><td><b>Obtainium</b></td><td>A separate open-source app that fetches updates from developers' pages. This app uses its community catalog. See <a href="#tab-updates">App Updater</a>.</td></tr>
+<tr><td><b>OEM</b></td><td>The phone's maker (original equipment manufacturer). It is one of the list filters of the UAD-NG Debloater, and shows the apps the maker added. See <a href="#tab-debloater">UAD-NG Debloater</a>.</td></tr>
+<tr><td><b>OpenGL ES</b></td><td>One of the two ways apps draw graphics on the GPU (the other is Vulkan). The Task Manager's GPU page shows which versions your phone supports. An app can also say which version it needs (see <b>uses-feature</b>), and the Features and Configurations tabs of <a href="#apps-menu">the app menu</a> compare that with your phone. See <a href="#tab-taskmgr">Task Manager</a>.</td></tr>
+<tr><td><b>Orion Store</b></td><td>A public catalog by RookieEnough that the <b>Orion</b> button in App Stores browses. See <a href="#credits">Credits</a>.</td></tr>
+<tr><td><b>overlay</b></td><td>Also called RRO (Runtime Resource Overlay): a small package that changes the look of another app or of Android. See <a href="#tab-overlays">RRO/Monet Customization</a>.</td></tr>
+</tbody>
+</table>
+
+<h4>P</h4>
+<table class="hg-table">
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><b>package name</b></td><td>The unique ID of an app, such as com.google.android.youtube. See <a href="#basics">Words you will see</a>.</td></tr>
+<tr><td><b>package visibility</b></td><td>Android 11 and newer limit which other apps an app can see. This app asks to see all, so its list should be complete. See <a href="#troubleshooting">Troubleshooting</a>.</td></tr>
+<tr><td><b>pairing code</b></td><td>The six-digit code Android shows when you pair for Wireless Debugging. It only works while that window is open. See <a href="#mode-wireless">Wireless Debugging</a>.</td></tr>
+<tr><td><b>patched app</b></td><td>An app changed or repackaged by a tool such as ReVanced. The Patched filter finds it. See <a href="#tab-apps">Application Manager</a>.</td></tr>
+<tr><td><b>permission</b></td><td>What an app is allowed to do, such as use the camera. See <a href="#basics">Words you will see</a>.</td></tr>
+<tr><td><b>pill</b></td><td>The same as a chip: one of the small rounded filter buttons under the count boxes at the top of the Application Manager. Tap it to turn that filter on or off. See <b>chip</b> above and <a href="#tab-apps">Application Manager</a>.</td></tr>
+<tr><td><b>Play Protect</b></td><td>Google's scanner for apps. It can refuse or delay an install. See <a href="#troubleshooting">Troubleshooting</a>.</td></tr>
+<tr><td><b>pm</b></td><td>Android's package manager command, behind many buttons: <code>pm disable-user</code>, <code>pm uninstall</code> and others. See <a href="#tab-terminal">Command-Line Interface</a>.</td></tr>
+<tr><td><b>port</b></td><td>The number after the colon in an address. It says which service on the device you are talking to. See <a href="#mode-tcp">ADB over TCP</a>.</td></tr>
+<tr><td><b>process</b></td><td>One running program. See <a href="#tab-taskmgr">Task Manager</a>.</td></tr>
+<tr><td><b>profile</b></td><td>A saved list of which apps are frozen, suspended or removed, which you can apply again later. See <a href="#apps-profiles">Profiles and drift watch</a>.</td></tr>
+<tr><td><b>pull</b></td><td>To copy a file or an app's APK from another device to this phone. The Connected Devices tab has <b>Pull</b> buttons; they save into <code>Download/ADB App Manager/Devices/</code>. See <a href="#devices-files">The device's files</a>.</td></tr>
+</tbody>
+</table>
+
+<h4>Q</h4>
+<table class="hg-table">
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><b>Quick Settings</b></td><td>The panel of buttons you pull down from the top of the screen (swipe down twice to see all of it). This app adds two tiles to it. See <a href="#quick-tiles">Quick Settings tiles</a>.</td></tr>
+</tbody>
+</table>
+
+<h4>R</h4>
+<table class="hg-table">
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><b>RAM</b></td><td>The phone's working memory. See <a href="#tab-taskmgr">Task Manager</a>.</td></tr>
+<tr><td><b>read-only mode</b></td><td>The state with no working mode: the app can look and cannot change anything. See <a href="#mode-readonly">Auto and Read-Only mode</a>.</td></tr>
+<tr><td><b>recovery mode</b></td><td>A small maintenance menu the phone can start instead of Android. It has the wipe options: wipe cache partition (temporary system files only) and factory reset. See <a href="#safety">Staying safe</a>.</td></tr>
+<tr><td><b>regex</b></td><td>A small pattern language for searching text. The search box can use it. See <a href="#tab-apps">Application Manager</a>.</td></tr>
+<tr><td><b>removal level</b></td><td>The UAD-NG rating of how risky it is to remove an app: Recommended, Advanced, Expert or Unsafe. See <a href="#debloater-safety">Debloating safely</a>.</td></tr>
+<tr><td><b>Rish</b></td><td>Shizuku's remote shell. The ADB Console's Rish mode keeps it open between commands. See <a href="#tab-terminal">Command-Line Interface</a>.</td></tr>
+<tr><td><b>root</b></td><td>Full administrator access to the phone, beyond what ADB can do. The phone must already be rooted. See <a href="#mode-root">Root</a>.</td></tr>
+<tr><td><b>root manager</b></td><td>The app on a rooted phone that decides which apps may use root, such as Magisk, KernelSU or APatch. See <b>Magisk</b> above and <a href="#mode-root">Root</a>.</td></tr>
+<tr><td><b>runtime permission</b></td><td>A permission Android asks you about, which can be switched on and off. See <a href="#apps-menu">The app menu</a>.</td></tr>
+</tbody>
+</table>
+
+<h4>S</h4>
+<table class="hg-table">
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><b>SAF</b></td><td>Storage Access Framework: Android's own file picker, through which you give an app one folder. See <a href="#files-storage">SD cards and other storage</a>.</td></tr>
+<tr><td><b>safe mode</b></td><td>Starts the phone with only the apps that came with it. This app does not run there. See <a href="#safety">Staying safe</a>.</td></tr>
+<tr><td><b>sandbox</b></td><td>In the Terminal, the shell that runs as this app in its private folder and cannot touch other apps. See <a href="#tab-terminal">Command-Line Interface</a>.</td></tr>
+<tr><td><b>SDK</b></td><td>Software development kit. In the APK Installer, <b>Min SDK</b> is the oldest Android an app runs on and <b>Target SDK</b> the one it was built for; both are API levels. See <b>API level</b> above and <a href="#tab-installer">APK Installer</a>.</td></tr>
+<tr><td><b>SDK Platform-Tools</b></td><td>Google's small download for a computer that contains the <code>adb</code> program. You need it only for the computer steps. See <a href="#mode-tcp">ADB over TCP</a>.</td></tr>
+<tr><td><b>SecurityException</b></td><td>Android's way of saying that an app was not allowed to do something. Nothing was changed. See <a href="#troubleshooting">Troubleshooting</a>.</td></tr>
+<tr><td><b>service</b></td><td>The part of an app that works in the background. See <a href="#apps-menu">The app menu</a>.</td></tr>
+<tr><td><b>SHA-256</b></td><td>A common kind of checksum: a long code worked out from a file's exact contents. Downloads, the VirusTotal lookup and signing fingerprints use it. See <b>checksum</b> above and <a href="#privacy">Privacy</a>.</td></tr>
+<tr><td><b>shared library</b></td><td>A piece of code that several apps use together instead of each carrying its own copy. Android links it into an app that asks for it. The Libraries tab of <a href="#apps-menu">the app menu</a> lists the ones an app asks for and the ones linked in.</td></tr>
+<tr><td><b>sheet</b></td><td>A panel that slides up over the screen. App menus, Working Modes and this guide are sheets. See <a href="#screen-tour">A tour of the screen</a>.</td></tr>
+<tr><td><b>shell</b></td><td>A program that reads your lines and runs them. Also the name of the Android user (UID 2000) that ADB runs as. See <a href="#tab-terminal">Command-Line Interface</a>.</td></tr>
+<tr><td><b>Shizuku</b></td><td>A separate free app that starts a helper with ADB-level power and lets other apps use it. See <a href="#mode-shizuku">Shizuku</a>.</td></tr>
+<tr><td><b>ShizuStore</b></td><td>A catalog by timschneeb of apps that work with Shizuku. The <b>ShizuStore</b> button in App Stores browses it. See <a href="#credits">Credits</a>.</td></tr>
+<tr><td><b>sideload</b></td><td>To install an app from a file instead of a store. An app installed that way is called sideloaded. See <a href="#install-and-update">Installing and updating the app</a>.</td></tr>
+<tr><td><b>signature (app signature)</b></td><td>The seal an app is signed with, made with its maker's key. Android accepts an update only if it has the same one. The Signatures tab of <a href="#apps-menu">the app menu</a> shows it. See also <b>certificate fingerprint</b> above and <a href="#tab-installer">APK Installer</a>.</td></tr>
+<tr><td><b>signature scheme (v1, v2, v3)</b></td><td>The way a signature is stored in the app's file: v1 is the old way (files in a META-INF folder), and v2, v3 and v3.1 are newer ones kept in a block inside the file, where v3 and later let the maker change the signing key. The Signatures tab of <a href="#apps-menu">the app menu</a> shows which ones an app has.</td></tr>
+<tr><td><b>SIM</b></td><td>The small card that identifies you to your mobile network. The app reads only its network codes (the country and operator numbers), and sends them only in a Samsung update check. See <a href="#privacy">Privacy</a>.</td></tr>
+<tr><td><b>SoC</b></td><td>System on a chip: the main chip of a phone, holding the processor, graphics and more. See <a href="#tab-taskmgr">Task Manager</a>.</td></tr>
+<tr><td><b>split APK</b></td><td>One part of an app that comes in several files that must be installed together. See <a href="#installer-splits">Split packages</a>.</td></tr>
+<tr><td><b>split screen</b></td><td>Two apps shown on the screen at the same time. It keeps Android's pairing code window visible while you type the code into this app. See <a href="#mode-wireless">Wireless Debugging</a>.</td></tr>
+<tr><td><b>su</b></td><td>The program on a rooted phone that gives root rights to an app. The Root card looks for it. See <a href="#mode-root">Root</a>.</td></tr>
+<tr><td><b>suspend</b></td><td>A lighter pause than freezing: the app stays enabled but cannot be opened, and its icon is greyed out. See <a href="#basics">Words you will see</a>.</td></tr>
+<tr><td><b>swap</b></td><td>Extra memory made from storage or by compression. It is shown on the Task Manager's RAM page. See <a href="#tab-taskmgr">Task Manager</a>.</td></tr>
+<tr><td><b>system app</b></td><td>An app that came with the phone. See <a href="#basics">Words you will see</a>.</td></tr>
+<tr><td><b>System UI</b></td><td>The part of Android that draws the status bar, the notification shade, the lock screen and the navigation. Never remove it. See <a href="#safety">Staying safe</a>.</td></tr>
+</tbody>
+</table>
+
+<h4>T</h4>
+<table class="hg-table">
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><b>table</b></td><td>In Hidden Settings, one of the three groups of settings: Global, Secure or System. See <a href="#tab-settings">Hidden Settings</a>.</td></tr>
+<tr><td><b>target</b></td><td>The app, or part of Android, that an overlay changes. See <a href="#tab-overlays">RRO/Monet Customization</a>.</td></tr>
+<tr><td><b>Termux</b></td><td>A terminal app for Android. The Terminal tab can use it as a shell. See <a href="#tab-terminal">Command-Line Interface</a>.</td></tr>
+<tr><td><b>tile</b></td><td>A button in Android's Quick Settings panel. This app adds two, Working mode and Stop apps. See <a href="#quick-tiles">Quick Settings tiles</a>.</td></tr>
+<tr><td><b>toast</b></td><td>A small message that slides up at the bottom of the screen and fades. See <a href="#screen-tour">A tour of the screen</a>.</td></tr>
+<tr><td><b>token</b></td><td>In a coding agent chat, a piece of text that the AI counts, and that the provider may bill for. The state line shows how many tokens were sent and received. A <b>GitHub token</b> is a different thing, see above. See <a href="#terminal-agents">Coding agents</a>.</td></tr>
+<tr><td><b>trim caches</b></td><td>The button <b>Trim Caches in All Applications</b> at the bottom of Settings. It runs <code>pm trim-caches 128G</code>, which asks Android to delete app caches until 128 GB is free. No phone has that much free space, so Android clears every cache it is allowed to. Only cache is deleted; apps, their data, logins and your files stay. See <a href="#prefs">Settings</a> and <a href="#recipe-trim-caches">Free up space by clearing every app's cache</a>.</td></tr>
+</tbody>
+</table>
+
+<h4>U</h4>
+<table class="hg-table">
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><b>UAD-NG</b></td><td>Universal Android Debloater Next Generation: the community list that rates how safe each pre-installed app is to remove. See <a href="#tab-debloater">UAD-NG Debloater</a>.</td></tr>
+<tr><td><b>UID 2000</b></td><td>The user number of the shell user that ADB runs as. Root is UID 0. See <a href="#basics">Words you will see</a>.</td></tr>
+<tr><td><b>unauthorized</b></td><td>What adb calls a device that has not accepted this phone's key. See <a href="#tab-devices">Connected Devices</a>.</td></tr>
+<tr><td><b>uninstall for user</b></td><td>Removing a system app for your user only. Its file stays in the system, so it can be brought back. See <a href="#basics">Words you will see</a>.</td></tr>
+<tr><td><b>usage access</b></td><td>A special access that lets this app read how big each app is and when it was last used. Optional. See <a href="#app-permissions">The permissions this app asks for</a>.</td></tr>
+<tr><td><b>USB debugging</b></td><td>A Developer options switch that lets a computer, or ADB over TCP, connect to the phone. See <a href="#mode-tcp">ADB over TCP</a>.</td></tr>
+<tr><td><b>user app</b></td><td>An app you or a store installed. The app list calls these 3rd Party. See <a href="#basics">Words you will see</a>.</td></tr>
+<tr><td><b>uses-feature</b></td><td>A line in an app's manifest that names hardware or software the app needs or can use, such as a camera, Bluetooth Low Energy or an OpenGL ES version. It is marked required or optional. The Features tab of <a href="#apps-menu">the app menu</a> lists these lines and says which ones your phone has.</td></tr>
+</tbody>
+</table>
+
+<h4>V</h4>
+<table class="hg-table">
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><b>VirusTotal</b></td><td>An online service that checks files against many virus scanners. The APK Installer can use it with your own key. See <a href="#tab-installer">APK Installer</a>.</td></tr>
+<tr><td><b>Vulkan</b></td><td>One of the two ways apps draw graphics on the GPU (the other is OpenGL ES). The Task Manager's GPU page says whether your phone supports it. See <a href="#tab-taskmgr">Task Manager</a>.</td></tr>
+</tbody>
+</table>
+
+<h4>W</h4>
+<table class="hg-table">
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><b>Wear OS</b></td><td>Google's version of Android for watches. See <a href="#tab-devices">Connected Devices</a>.</td></tr>
+<tr><td><b>WebView</b></td><td>The web engine that draws this app's screens. Its version is in the debug info. See <a href="#tab-about">About</a>.</td></tr>
+<tr><td><b>widget</b></td><td>A panel you place on the home screen. This app has one. See <a href="#quick-tiles">Quick Settings tiles</a>.</td></tr>
+<tr><td><b>Wireless Debugging</b></td><td>Android's built-in way to let an ADB tool connect over Wi-Fi (Android 11 and newer). See <a href="#mode-wireless">Wireless Debugging</a>.</td></tr>
+<tr><td><b>wm</b></td><td>Android's window-manager command. <code>wm density</code> and <code>wm size</code> change the screen density and size. See <a href="#devices-display">Screen density and size</a>.</td></tr>
+<tr><td><b>work profile</b></td><td>A separate space for work apps. Its apps are normally not in this app's list. See <a href="#troubleshooting">Troubleshooting</a>.</td></tr>
+<tr><td><b>working mode</b></td><td>The way this app gets the power to change other apps: ADB over TCP, Wireless Debugging, Shizuku, Root, or Auto. See <a href="#modes-overview">Working modes</a>.</td></tr>
+<tr><td><b>Write Secure Settings</b></td><td>A special permission that lets this app change a few protected system settings. With a working mode the app can grant it to itself. Optional. See <a href="#app-permissions">The permissions this app asks for</a>.</td></tr>
+</tbody>
+</table>
+
+<h4>X</h4>
+<table class="hg-table">
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><b>XAPK</b></td><td>A bundle: a zip file with one or more APKs, a manifest and usually game data (OBB). See <a href="#installer-splits">Split packages</a>.</td></tr>
+<tr><td><b>XML</b></td><td>A plain-text way of writing structured information. An app's manifest is written in it. See <b>manifest</b> above and <a href="#apps-menu">The app menu</a>.</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="privacy" data-title="Privacy and what the app contacts" data-group="Safety and help">
+<p class="hg-lead">The short version: no account, no ads, no analytics and no server of the developer's. Everything runs on your phone, and the app goes online only for something you open or ask for. This page lists every contact and says where your data lives and how to delete it.</p>
+
+<h4>In short</h4>
+<ul>
+<li><b>No account and no sign-up.</b></li>
+<li><b>No ads, no analytics, no crash reporting.</b> The libraries shipped with the app (named in <a href="#credits">Credits</a>) are for archives, text patterns, general helpers, Shizuku and logging.</li>
+<li><b>Nothing phones home in the background.</b> The app has no timer that contacts a server. Every contact below starts when you open a tab, press a button or send a chat message. (After a restart, the app compares the phone's build number with the last one. If you are watching a profile, it may post a reminder. It sends nothing.)</li>
+<li><b>The keys the app makes</b> (the ADB key and the APK-signing key) are created on your phone and never leave it. No key is shipped inside the app: every install makes its own.</li>
+<li><b>Android's own backup is switched off</b> for the app, so nothing of it goes to a cloud backup.</li>
+</ul>
+
+<h4>What the app can see on your phone</h4>
+<p>With a working mode and the permissions you give, the app can read your app list, files, logs and settings. It shows them to you and does not send them anywhere by itself. What leaves the phone is in the next table, and each item needs something you did. The app list is not sent as a whole, but an update check does name each app it looks up, as the table says.</p>
+
+<h4>What the app contacts, and when</h4>
+<p>Every website below can see your internet address, as any website can.</p>
+<table class="hg-table">
+<thead><tr><th>Who</th><th>When</th><th>What goes out</th></tr></thead>
+<tbody>
+<tr><td><b>GitHub</b> (<code>raw.githubusercontent.com</code>): the UAD-NG list</td><td>You open the <a href="#tab-debloater">UAD-NG Debloater</a> and the app has no list or one over a week old, or tap <b>Update List</b>.</td><td>A request for one file (about 1.6 MB comes back). Nothing about your apps.</td></tr>
+<tr><td><b>GitHub</b> (<code>api.github.com</code>, <code>github.com</code>): this app's own update</td><td>You open the <a href="#tab-updates">App Updater</a> for the first time after the app starts, or tap <b>Check for update</b>, <b>Check for app update</b>, <b>Check for Updates</b> or <b>Update now</b>.</td><td>A request for the newest release and, if you update, the download of the APK for your processor. GitHub may pass the download on to its own file servers.</td></tr>
+<tr><td><b>GitHub, Codeberg, F-Droid, IzzyOnDroid, the Obtainium catalog</b> (<code>api.github.com</code>, <code>github.com</code>, <code>codeberg.org</code>, <code>f-droid.org</code>, <code>apt.izzysoft.de</code>, <code>raw.githubusercontent.com</code>): update checks for sideloaded apps</td><td>The App Updater checks other apps: on its first visit after the app starts, when you tap <b>Check for Updates</b>, and again after you set a source or import an Obtainium list.</td><td>Lookups that name each app checked: its package name, or its GitHub or Codeberg project. A saved GitHub token goes to GitHub only.</td></tr>
+<tr><td><b>Samsung's update service</b> (<code>vas.samsungapps.com</code>)</td><td>The same check, for Samsung apps only.</td><td>Your phone model, SIM network codes, region code and Android version, with the package name and version of each Samsung app.</td></tr>
+<tr><td><b>App Stores catalogs</b>: ShizuStore (<code>shizustore.timschneeberger.me</code>), the GitHub catalog (<code>api.github-store.org</code>, with an offline copy on <code>raw.githubusercontent.com</code>, and <code>api.github.com</code> for a GitHub project you type in), the F-Droid repository you pick (F-Droid, IzzyOnDroid or one of about 40 others, each on its own server), Orion (<code>raw.githubusercontent.com</code>)</td><td>You open the <a href="#tab-store">App Stores</a> tab (it loads ShizuStore at first, or the catalog you used last since the app started), switch catalog, refresh, search the GitHub catalog or type a GitHub project.</td><td>Catalog requests, your search words (GitHub catalog only), and pictures such as app icons and GitHub owner photos (<code>github.com</code>, <code>avatars.githubusercontent.com</code>) from those servers.</td></tr>
+<tr><td><b>Developers' download sites</b> (GitHub, GitLab, F-Droid, Samsung's servers and others)</td><td>You press <b>Install</b> or <b>Update</b> in the App Stores or the App Updater.</td><td>A download request. For a Samsung app, your phone model, SIM network codes, region code and Android version go with it. The file is checked before it installs.</td></tr>
+<tr><td><b>VirusTotal</b> (<code>www.virustotal.com</code>)</td><td>Only if you paste your own key in the <a href="#tab-installer">APK Installer</a> and press <b>Scan this package</b>.</td><td>The file's SHA-256 fingerprint and your key. The whole file only if you then press <b>Upload it for analysis</b>.</td></tr>
+<tr><td><b>An AI provider</b> (<code>api.anthropic.com</code>, <code>api.openai.com</code>, <code>generativelanguage.googleapis.com</code>, <code>api.cursor.com</code>, <code>api.perplexity.ai</code>, <code>api.x.ai</code>, <code>api.llama.com</code>, <code>api.deepseek.com</code>, and <code>api.github.com</code> to test a GitHub token for Copilot), or your own server (Jan.ai, AnythingLLM, Ollama)</td><td>Only after you add a key or a server address in the Terminal, and then when you test it, chat, or load the provider's list of models (at most once a day). Your own server is contacted at the address you typed; Ollama on this phone stays on the phone.</td><td>Your key (to that provider only) and what <a href="#terminal-agents">Coding agents</a> lists: your messages, a short description of your phone, and what the agent reads or runs, with key-like text hidden.</td></tr>
+<tr><td><b>GitHub's gist of ADB commands</b> (<code>gist.github.com</code>)</td><td>Only if you press <b>Load the full reference from the gist</b> in the ADB Cheat Sheet.</td><td>An ordinary request to GitHub for that page. GitHub's reply is shown inside the app.</td></tr>
+<tr><td><b>Installers and downloads run by Termux</b> (<code>claude.ai</code>, <code>gh.io</code>, <code>cursor.com</code>, <code>opencode.ai</code>, <code>astral.sh</code>, <code>github.com</code>, and the package servers that Termux and the installed tools use)</td><td>Only if you tap an <b>Install</b> step of an agent, of DroidMind or of Ollama in the Terminal.</td><td>Termux runs the commands and does the downloading, not this app. They fetch the tool's installer and packages, whatever those then download, and for Ollama a model of about 1 GB.</td></tr>
+<tr><td><b>Your web browser, or this phone's store app</b></td><td>You tap <b>Buy me a coffee</b> or <b>Donate</b> (PayPal), <b>GitHub</b>, <b>Releases</b>, <b>Report a bug or idea</b>, <b>Star on GitHub</b>, <b>Bingblop on GitHub</b>, the UAD-NG Wiki, <b>Get a key</b>, <b>Make a token</b>, <b>Website</b>, <b>Page</b>, <b>Source</b>, <b>Release</b>, <b>Open in Obtainium</b> (without Obtainium installed, this opens <code>apps.obtainium.imranr.dev</code>), a <b>Store</b> button, a credit link (such as the ones under the App Stores catalogs), or the F-Droid or GitHub button in the Termux setup.</td><td>The app only opens the address. Your browser then talks to that site, which sees what the address carries, such as the PayPal address and amount. A <b>Store</b> button asks the Play Store or Aurora Store on this phone to open that app's page.</td></tr>
+</tbody>
+</table>
+<p>The built-in addresses all use <code>https</code>. The app allows plain <code>http</code> only so that you can reach an AI server of your own, and a key sent that way is not encrypted on your network.</p>
+<p>Two things are not this app's own contacts. Commands you run in the Terminal, above all in Termux, and the tools you install there can reach the internet if the command itself does. The <b>MCP</b> button writes server entries into the settings of an agent tool in Termux, and that tool, not this app, then contacts the server you chose (the GitHub preset points at <code>api.githubcopilot.com</code>).</p>
+
+<h4>What Connected Devices sends</h4>
+<p>Nothing goes through the internet. The tab uses the app's own adb to talk to the other device over your local network (Wi-Fi), a USB cable or, for a watch, its Bluetooth link. Its scan asks your own network, not the internet, which devices are announcing wireless debugging. <b>Send with Bluetooth</b> hands files to Android's own Bluetooth sharing. Files you pull are saved on this phone, in <code>Download/ADB App Manager/Devices/&lt;device&gt;/</code> (<a href="#tab-devices">Connected Devices</a>).</p>
+
+<h4>What stays on your phone, and where</h4>
+<table class="hg-table">
+<thead><tr><th>What</th><th>Where</th><th>Note</th></tr></thead>
+<tbody>
+<tr><td>Settings, filters, saved lists, profiles, the debloater history, the history of hidden-setting changes, the saved GitHub token and VirusTotal key</td><td>The app's private storage.</td><td>Other apps cannot read it without root. The token and key are not sealed: leave them empty if that worries you.</td></tr>
+<tr><td>The UAD-NG list, icon cache, thumbnails (up to 48 MB), installers and update downloads</td><td>The app's private storage and cache.</td><td>Installers and updates are deleted after use. Settings has <b>Clear icon cache</b>, and the File Manager <b>Clear thumbnail cache</b>.</td></tr>
+<tr><td>The ADB key</td><td>A private folder of the app.</td><td>Made on first start.</td></tr>
+<tr><td>The key that signs edited APKs</td><td>The Android Keystore.</td><td>Generated inside it, so it cannot be copied off the phone.</td></tr>
+<tr><td>The keys of coding agents</td><td>Sealed with AES-256-GCM under a key held in the Android Keystore, kept in the app's private settings.</td><td>The page never gets a key back, only its start and last four characters. The app adds a key to a request itself, and only when it goes to that provider's own address, or the server address you saved with it.</td></tr>
+<tr><td>The terminal's home folder and, if you keep it, the last 60 chat messages</td><td>The app's private storage.</td><td>Turn off <b>Keep the conversation between launches</b>, or tap <b>Clear the conversation</b>.</td></tr>
+<tr><td>Backups, saved APKs, icons, CSV lists, manifests, saved logs and files pulled from other devices</td><td><code>Download/ADB App Manager</code> and its folders (<code>Backups</code>, <code>APKs</code>, <code>Icons</code>, <code>Devices</code>).</td><td>Ordinary files in your Downloads. A backup can hold an app's data, so treat it like that data. On Android 8 and 9, all of these except the pulled device files are in the app's own storage instead and go with the app.</td></tr>
+</tbody>
+</table>
+
+<h4>The permissions the app holds, and does not</h4>
+<p>See <a href="#app-permissions">The permissions this app asks for</a> for the full table.</p>
+<ul>
+<li><b>It declares</b> internet, network state and Wi-Fi state, the list of all apps, usage access, display over other apps, storage and all files access, write secure settings, Install unknown apps, notifications, Bluetooth connection, vibration, keeping the phone awake during file jobs, boot completed, a foreground service for file jobs, running commands in Termux, and Shizuku's. The special ones stay off until you allow them, and you can take each back in Android's Settings.</li>
+<li><b>It does not ask for</b> the camera, the microphone, your location, contacts, calendar, messages, call log or accounts, and it is not an accessibility service or a device administrator.</li>
+</ul>
+<p>The text from <b>Copy debug info</b> in About holds only the app's version and package name, your Android version, the phone model and processor, the WebView version, the working mode and the signing fingerprint. It holds no names, accounts, app lists or files.</p>
+
+<h4>How to delete everything</h4>
+<ol class="hg-steps">
+<li><b>Undo what the app changed in Android first.</b> Frozen apps, removed system apps, hidden settings, overlays and themes are stored by Android, not by this app, and they stay when the app goes. Use <b>Enable</b>, <b>Restore</b>, <b>Changes</b>, <b>Revert</b> and <b>Default</b> (<a href="#safety">Staying safe</a>).</li>
+<li><b>Remove secrets inside the app.</b> <b>Forget the key</b> for each coding agent, <b>Clear the conversation</b>, and empty the VirusTotal key and GitHub token boxes.</li>
+<li><b>Delete the files you saved.</b> Open <code>Download/ADB App Manager</code> in the <a href="#tab-files">File Manager</a> and delete what you do not want.</li>
+<li><b>Clear the app's storage,</b> or uninstall it. In Android's Settings, Apps, ADB Application Manager Pro, Storage, tap <b>Clear storage</b>: this deletes everything in the app's private storage listed above. Uninstalling also removes its Keystore keys.</li>
+<li><b>Take back the trust you gave.</b> In Developer options tap <b>Revoke USB debugging authorizations</b>, and remove the pairing under <b>Wireless debugging</b>. Remove the app from Shizuku's and your root manager's lists, and switch off its special accesses (such as All files access and Install unknown apps) in Android's Settings.</li>
+<li><b>Outside the phone.</b> A provider keeps what you sent it, under its own rules. Delete your chats there and revoke the API keys on its site.</li>
+</ol>
+</section>
+
+<section id="credits" data-title="Credits and licences" data-group="Safety and help">
+<p class="hg-lead">ADB Application Manager Pro is made by Bingblop, and it stands on the work of many other people and projects. This page names the ones the app's own sources name. A licence is stated here only where those sources state it. If none is named, that does not mean there is none: look at the project itself.</p>
+
+<h4>The app</h4>
+<p>The developer is Bingblop. The project page, <code>github.com/Bingblop/ADB-Application-Manager</code>, holds the source code, the releases and the issue tracker; the <b>GitHub</b> button in the About tab opens it. The app does not show a licence text of its own, and the project files this guide was written from do not state one (there is no LICENSE file in the project's main folder). So this guide does not name a licence for the app's own code. To learn the terms, ask the developer through the project page.</p>
+
+<h4>The debloat list: UAD-NG</h4>
+<p>The ratings, descriptions and "needed by" lines in the <a href="#tab-debloater">UAD-NG Debloater</a> come from <b>Universal Android Debloater Next Generation</b>, a community project of the Universal-Debloater-Alliance. The About tab and the project's README give its licence as <b>GPL-3.0</b>. The list is not bundled in the app: it is downloaded when you ask for it (<a href="#privacy">Privacy</a>). The advice is that project's, and the <b>UAD-NG Wiki</b> button opens its wiki.</p>
+
+<h4>Shizuku</h4>
+<p>Shell access through Shizuku uses the <b>Shizuku API</b> by RikkaApps. The app ships the Shizuku API libraries (version 13.1.5) and two files named <code>rish</code> and <code>rish_shizuku.dex</code>, which it keeps as a fallback way to run commands through Shizuku. The Shizuku app itself is a separate project, not made by this app's developer (<a href="#mode-shizuku">Shizuku</a>).</p>
+
+<h4>The Task Manager tab</h4>
+<p>The <a href="#tab-taskmgr">Task Manager</a> tab is modeled on <b>RohitKushvaha01/TaskManager</b> on GitHub, as the About tab says.</p>
+
+<h4>The Morphe Patcher tab</h4>
+<p>The <a href="#tab-morphe">Morphe Patcher</a> tab is built on the <b>Morphe</b> project by MorpheApp (<code>github.com/MorpheApp</code>, GPL-3.0). The engine that applies the patches is <b>morphe-patcher</b>, built into this app unchanged; the patch bundle format, patch sources, Simple and Advanced patching, the patch log and the list of patched apps follow <b>Morphe Manager</b>; the patching pipeline follows <b>morphe-cli</b>; and the patch bundles come from <b>Morphe Patches</b> and from the community sources listed by <code>morphe-patches.software</code>, each by its own authors. The APK download sources, Fast mode and the VirusTotal check of <a href="#morphe-helper">Morphe Helper</a> follow <b>Helper for Morphe</b> by rushiranpise (GPL-3.0). The engine's own libraries (Kotlin, Guava, Bouncy Castle, Google's apksig and apkzlib, smali, ARSCLib) keep their own licences; they are listed in the file NOTICE of the project. This app is independent of these projects and of the APK sites it can download from.</p>
+
+<h4>The SD Maid SE tab</h4>
+<p>The <a href="#tab-sdm">SD Maid SE</a> tab is a port of the four tools SystemCleaner, AppCleaner, CorpseFinder and Deduplicator of <b>SD Maid SE</b> by darken (<code>github.com/d4rken-org/sdmaid-se</code>, GPL-3.0): the filters and their defaults, the expendables databases, the CorpseFinder marker database, the Deduplicator rules and the accessibility steps for clearing caches follow the original, rewritten in Java for this app. SD Maid's icons, logo, mascot and translations are not used, and this tab is not the SD Maid app. SD Maid SE is on GitHub and on Google Play (the card in the tab has both links).</p>
+
+<h4>The System UI Tuner tab</h4>
+<p>The <a href="#tab-sysui">System UI Tuner</a> tab follows <b>System UI Tuner</b>, also called <b>Tweaker</b>, by Zachary Wander (<code>github.com/zacharee/Tweaker</code>, MIT licence, copyright 2023 Zachary Wander): Demo Mode with its form, and the Battery, Clock and Demo mode Quick Settings tiles. The other cards of the tab are additions of this app, not from Tweaker.</p>
+
+<h4>Update sources and catalogs</h4>
+<ul>
+<li><b>Galaxy Store</b>, <b>GitHub</b>, <b>Codeberg</b>, <b>F-Droid</b> and <b>IzzyOnDroid</b>: where the <a href="#tab-updates">App Updater</a> looks for newer versions.</li>
+<li><b>Obtainium</b> by ImranR98, whose community catalog says where many apps' releases live, and whose export file the app can import.</li>
+<li><b>ShizuStore</b> by timschneeb, which indexes the awesome-shizuku list. The app reads its public catalog and installs from each app's own source.</li>
+<li><b>Komi Store</b> (komi-store/komi-store), whose catalog of GitHub projects with an installable APK is what the <b>GitHub</b> catalog in <a href="#tab-store">App Stores</a> browses.</li>
+<li><b>Orion Store</b> by RookieEnough, whose public catalog the <b>Orion</b> button in App Stores browses.</li>
+<li><b>Pulimet's ADB gist</b>, from which the ADB Cheat Sheet is compiled and which it can load live.</li>
+<li><b>Termux</b>, whose documented <code>RUN_COMMAND</code> feature the Terminal's Termux shell uses (<a href="#tab-terminal">Command-Line Interface</a>), and <b>Aurora Store</b>, which the App Updater offers to open for Play Store apps.</li>
+</ul>
+
+<h4>The 32-bit adb</h4>
+<p>The 32-bit and universal APKs carry the <code>adb</code> client of Termux's <b>android-tools</b> 37.0.0-2 for <code>arm</code> (from packages.termux.dev), with the 56 shared libraries it needs, taken from the same repository: protobuf 35.1, abseil 20260526.0, libc++ 30, brotli 1.2.0, fmt 11.2.0, lz4 1.10.0, zstd 1.5.7 and zlib 1.3.2. The notes kept with them in the project's source give these licences:</p>
+<table class="hg-table">
+<thead><tr><th>Component</th><th>Licence stated</th></tr></thead>
+<tbody>
+<tr><td>android-tools, abseil</td><td>Apache-2.0</td></tr>
+<tr><td>protobuf</td><td>BSD-3</td></tr>
+<tr><td>libc++</td><td>Apache-2.0 with the LLVM exception</td></tr>
+<tr><td>brotli, fmt</td><td>MIT</td></tr>
+<tr><td>lz4, zstd</td><td>BSD</td></tr>
+<tr><td>zlib</td><td>zlib (the licence is named after the library)</td></tr>
+</tbody>
+</table>
+<p>The 64-bit APK carries its own statically linked arm64 build of adb (the adb program, built so that it needs no other files). The project's files do not record where that build comes from or which licence it has, so this guide cannot say.</p>
+
+<h4>Libraries inside the app</h4>
+<p>The libraries the app is built with are <code>commons-compress</code> 1.27.1, <code>commons-io</code> 2.16.1, <code>commons-lang3</code> 3.16.0, <code>aircompressor</code> 0.27, <code>xz</code> 1.10, <code>junrar</code> 7.5.5, <code>re2j</code> 1.8, <code>slf4j-api</code> 1.7.36, and the four Shizuku libraries above (<code>shizuku-api</code>, <code>shizuku-aidl</code>, <code>shizuku-provider</code> and <code>shizuku-shared</code>, all 13.1.5). The project's notes name them Apache Commons Compress, Commons IO and Commons Lang3, Tukaani XZ, Aircompressor, junrar, RE2J and the SLF4J API. Commons Compress and its helpers (Commons IO, Commons Lang3, XZ and the SLF4J logging interface) handle 7z and tar archives, junrar reads rar archives, Aircompressor handles zstd, and RE2J matches text patterns that come from catalog data, in a safe way. The app's own files do not repeat their licences. Each project states its own.</p>
+
+<h4>Techniques borrowed</h4>
+<p>The code notes that its fallback for removing a stubborn system app uses the same technique as the App Manager and Canta apps. It also notes that launching a hidden screen is how Activity Manager does it over Shizuku, a technique that dedicated activity launchers use.</p>
+
+<h4>Design</h4>
+<p>The app's looks follow Google's Material 3 and Material You (the colours Android builds from your wallpaper), with Material 3 Expressive motion (<a href="#themes">Themes and colours</a>).</p>
+<div class="hg-note"><b>Tip.</b> If you think a project is missing here, or is credited wrongly, tell the developer: the About tab has a <b>Report a bug or idea</b> button.</div>
+</section>

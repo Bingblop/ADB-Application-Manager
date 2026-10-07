@@ -47,7 +47,7 @@ Debugging, Shizuku or Root**.
 ## Download &amp; install
 
 1. Open the [**Releases** page](https://github.com/Bingblop/ADB-Application-Manager/releases/latest) and download
-   the signed APK there, together with that release's `SHA256SUMS.txt`. (Builds up to v5.1 are also kept in
+   the signed APK there (`-arm64-v8a` for 64-bit phones, `-armeabi-v7a` for 32-bit phones, `-universal` for both), together with that release's `SHA256SUMS.txt`. (Builds up to v5.1 are also kept in
    [`release/`](../release/); newer ones live only on the Releases page.)
 2. Allow installing from your browser or file manager when Android asks, then open the APK.
 3. Pick a [working mode](#working-modes). The easiest is **ADB over TCP**: run `adb tcpip 5555` once from a
@@ -109,13 +109,17 @@ Left to right, with the **settings gear** (it opens Settings: language, appearan
 | **App Stores** | ShizuStore, GitHub, F-Droid and Orion |
 | **Logcat Viewer** | A color-coded device log you can limit to one app, save or share |
 | **Task Manager** | Processes, CPU, RAM, GPU, battery and network, live, each with a graph ([details](#new-in-v75)) |
+| **Connected Devices** | Another Android device (a Wear OS watch first) over adb: add by pairing code, address, network scan or Bluetooth link; its apps (enable, disable, uninstall, reinstall, pull), send APK / APKS / APKM / XAPK, console, logcat, files, hidden settings, screen density and size |
+| **Morphe Patcher** | Morphe patching on the phone: patch sources and the community finder, apps marked **Installed**, Morphe Helper (ten APK download sources, optional VirusTotal), Simple and Advanced patching, install when finished, live log, Patched APKs |
+| **SD Maid SE** | SystemCleaner, AppCleaner, CorpseFinder and Deduplicator ported from SD Maid SE: scan, review and untick, delete, optional 1-tap scan and delete, exclusions, history, accessibility cache clearing |
+| **System UI Tuner** | Demo Mode and Quick Settings tiles (after Tweaker), shade and bar flags, notification lab, system actions, battery simulator, navigation mode, density, size and window options |
 | **About** | Who made it, which build and key you have, debug info, the Permissions sheet, and the coffee button |
 
 Every tab except Application Manager and About can be switched off or moved in **Settings → Feature List**.
 
 ## New in v7.9
 
-**v7.9.22 is the latest build.** Everything from v7.9 through v7.9.15 is below; the full, dated list is in
+**v7.10.0 is the latest build** (Connected Devices, 32-bit and universal APKs, the Help Guide: see [CHANGELOG.md](../CHANGELOG.md)). Everything from v7.9 through v7.9.15 is below; the full, dated list is in
 [CHANGELOG.md](../CHANGELOG.md) (and inside the app, under About).
 
 **Newest (v7.9.12 to v7.9.15)**
@@ -796,7 +800,8 @@ switch that will not change is reported instead of hidden. **Default** leaves it
 Tap **⋯** on any app for its version, install and update dates, any available update, sizes (APK, data,
 cache; data and cache need *usage access*, which the app can grant through ADB/Shizuku/Root) and actions:
 Launch, Force Stop, Freeze/Enable, Suspend/Unsuspend, Clear Data, Uninstall, Reinstall, Remove Updates, App
-Info and **Extract APK** (a `.apk`, or an `.apks` bundle for split apps, saved to Downloads). Five tabs follow:
+Info and **Extract APK** (a `.apk`, or an `.apks` bundle for split apps, saved to Downloads). **Uninstall**, **Clear Data** and
+**Rem Updates** ask first. Ten tabs follow (the row scrolls sideways):
 
 **Uninstalling a system app for one user without root** (`pm uninstall --user 0` answering "only root can delete
 system app for a particular user"): the app automatically retries through a direct Binder call to
@@ -807,11 +812,31 @@ non-system app), and needs a working mode that isn't already Root (Root removes 
 
 - **Permissions**: searchable, filterable; toggle runtime and development permissions
 - **App Ops**: Allow / Foreground / Ignore / Deny / Reset per op, plus setting any op by name
-- **Components**: all activities (exported and unexported) with **Launch**, plus services. Unexported
+- **Activities**: all activities (exported and unexported) with **Launch**, **Enable / Disable** and an exported filter. Unexported
   activities launch through ADB / Shizuku / Root; a launch that goes through just opens the activity, and Android's answer is
   shown only if it refuses
+- **Components**: receivers, services (with **Stop**) and providers, each with its exported / enabled / permission state
 - **Manifest**: decoded `AndroidManifest.xml` with search, copy, share and save to Downloads
 - **Raw**: the full details JSON
+- **Features**: the `uses-feature` list, each marked required or optional and *on this phone* or not (the OpenGL ES version is
+  compared with the phone's); filters for Required, Optional and Not on this phone
+- **Configurations**: `uses-configuration` (touch screen, keyboard, navigation, input features, OpenGL ES), the screen sizes and
+  densities the app supports, minimum / target / compile Android version, hardware acceleration, large heap, and this phone's CPU types
+- **Signatures**: the APK signature schemes present (v1 from META-INF, v2 / v3 / v3.1 from the APK Signing Block) and, for each signer
+  (and the earlier certificates after a key rotation), the subject, issuer, serial number, validity, signature algorithm, public key and
+  the MD5, SHA-1 and SHA-256 fingerprints (tap one to copy)
+- **Libraries**: `uses-library` / `uses-static-library` / `uses-native-library` from the manifest, the shared library files linked
+  into the app, and the native `.so` files of the base APK and its splits by CPU type
+
+The four last tabs are read in one go by the bridge call `getAppExtras(pkg)` (`AppExtras.java` does the decoding; each part is read on
+its own, so one that cannot be read does not blank the others).
+
+**Trim Caches in All Applications** (the last card of Settings) runs `pm trim-caches 128G` through the working mode, off the page's
+thread, and reports the free space of `/data` before and after. Only caches are cleared.
+
+**Uninstalling on a connected device** follows the same steps: `pm uninstall --user 0`, then, for the root-only refusal, the helper
+`assets/uninstall_runner.jar` (the `SystemlessUninstallRunner` classes only, built by `build.sh`) is pushed to `/data/local/tmp` of the
+device, run with `app_process`, and deleted again (`DeviceUninstall.java`).
 
 App rows show only **App Settings** and the **⋯ menu** (Force Stop lives in the menu and the batch sheet), so the list stays clean.
 

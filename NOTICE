@@ -1,0 +1,53 @@
+ADB Application Manager Pro - third-party notices
+=================================================
+
+This file names the projects whose work is built into or followed by this app, with their licences. The app is independent of all of them.
+
+Morphe Patcher tab
+------------------
+* morphe-patcher (MorpheApp) - GPL-3.0 - https://github.com/MorpheApp/morphe-patcher
+  Built into the app unchanged (engine/build-engine.sh clones the tag named in engine/dist/ENGINE.txt and compiles it). The small launcher
+  next to it, engine/src/main/kotlin/com/bloatware/bingblop/morphe/EngineMain.kt, follows the patching pipeline of morphe-cli.
+* morphe-cli (MorpheApp) - GPL-3.0 - https://github.com/MorpheApp/morphe-cli - the patching pipeline (load patches, merge a split bundle, patch,
+  rebuild, sign) that EngineMain.kt follows.
+* Morphe Manager (MorpheApp) - GPL-3.0 - https://github.com/MorpheApp/morphe-manager - patch sources, Simple and Advanced patching, the patch log,
+  the list of patched apps, the way sources are resolved (patches-bundle.json, GitHub and GitLab releases) and the community finder.
+* Morphe Patches (MorpheApp) and the community patch bundles listed at https://morphe-patches.software - patches belong to their authors; the
+  app downloads them at run time and does not ship them.
+* Helper for Morphe (rushiranpise) - GPL-3.0 - https://github.com/rushiranpise/helper-for-morphe - the APK download sources, Fast mode, checks
+  of a downloaded file and the VirusTotal scan with its rate limits, ported to Java (MorpheHelper.java, MorpheVirusTotal.java).
+* Libraries the engine uses, each under its own licence: Kotlin and kotlinx (Apache-2.0), Guava (Apache-2.0), Bouncy Castle (MIT), Google apksig
+  and apkzlib (Apache-2.0), smali / baksmali / dexlib2 (BSD-3-Clause, the MorpheApp fork), ARSCLib by REAndroid (Apache-2.0, the MorpheApp
+  fork), ANTLR and StringTemplate (BSD-3-Clause), JCommander (Apache-2.0). Their exact versions are listed in engine/dist/ENGINE.txt.
+
+SD Maid SE tab
+--------------
+* SD Maid SE (darken / d4rken-org) - GPL-3.0 - https://github.com/d4rken-org/sdmaid-se - the four tools SystemCleaner, AppCleaner, CorpseFinder and
+  Deduplicator: the filters and their defaults, the expendables databases (assets/sdm/expendables/*.json), the CorpseFinder marker database
+  (assets/sdm/db_clutter_markers.json), the Deduplicator checks and the accessibility steps for clearing caches, ported to Java
+  (src/com/bloatware/bingblop/Sdm*.java). SD Maid's icons, logo, mascot, translations and store texts are not used. SD Maid SE is also on
+  Google Play: https://play.google.com/store/apps/details?id=eu.darken.sdmse
+
+System UI Tuner tab
+-------------------
+* Tweaker / System UI Tuner (Zachary Wander, zacharee) - MIT - https://github.com/zacharee/Tweaker - Demo Mode (the command protocol and the form),
+  the Battery, Clock and Demo mode Quick Settings tiles. The other cards of the tab (status bar and shade, notification lab, system actions,
+  battery simulator, navigation mode, display and windows, information) are additions of this app, not from Tweaker.
+  Copyright (c) 2023 Zachary Wander
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the
+  "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish,
+  distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to
+  the following conditions: The above copyright notice and this permission notice shall be included in all copies or substantial portions of
+  the Software. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+  OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+  CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+Other components
+----------------
+* Universal Android Debloater Next Generation (Universal-Debloater-Alliance) - GPL-3.0 - the debloat list, downloaded at run time.
+* Shizuku API (RikkaApps) - MIT/Apache-2.0 - shell access through Shizuku.
+* RohitKushvaha01/TaskManager - the Task Manager tab is modeled on it.
+* Apache Commons Compress, Commons IO, Commons Lang, XZ for Java, junrar, aircompressor, RE2/J, SLF4J - see libs/.
+

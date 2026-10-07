@@ -37,6 +37,15 @@ final class UninstallHints {
         return out != null && out.toUpperCase(java.util.Locale.US).contains("DELETE_FAILED_USER_RESTRICTED");
     }
 
+    /** The same for an app removed on ANOTHER device (Connected Devices), where "switch to Root mode" is not the way out. */
+    static String adviceForDevice(String out) {
+        if (out == null || success(out)) return "";
+        if (rootRequired(out)) {
+            return "That device only lets root remove a system app for one user. The direct Binder call this app tries as a fallback (a small helper sent to the device and run there) was not able to either; the reason is in the text above. Disable the app instead: it disappears from the launcher and stops running, but stays installed.";
+        }
+        return advice(out);
+    }
+
     /** One short line of advice for a failed uninstall / disable (empty when there is nothing useful to add). */
     static String advice(String out) {
         if (out == null || success(out)) return "";

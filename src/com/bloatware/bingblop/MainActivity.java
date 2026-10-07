@@ -396,12 +396,15 @@ public class MainActivity extends Activity {
 
             // 2. ADB Native Library setup
             // Prefer extracted native library in nativeLibraryDir (standard for Android APKs)
+            // (on a 32-bit phone the adb is a dynamic build: its libraries are unpacked first and found through LD_LIBRARY_PATH)
+            AdbRuntime.prepare(this);
             File nativeAdb = new File(getApplicationInfo().nativeLibraryDir, "libadb.so");
             if (nativeAdb.exists() && nativeAdb.canExecute()) {
                 adbBinFile = nativeAdb;
             } else {
-                adbBinFile = new File(filesDir, "libadb.so");
-                extractAsset("libadb.so", adbBinFile);
+                String fallback = AdbRuntime.assetName(Build.SUPPORTED_ABIS);
+                adbBinFile = new File(filesDir, fallback);
+                extractAsset(fallback, adbBinFile);
                 adbBinFile.setExecutable(true, false);
                 adbBinFile.setReadable(true, false);
             }
@@ -539,6 +542,9 @@ public class MainActivity extends Activity {
     private static boolean rootChecked;
     private static boolean rootCached;
     private static long rootCheckedAt;
+    // Whether root was actually GRANTED to this app (su answers uid=0), not only that an su file exists. null: not asked yet. Asked only while Root is the chosen
+    // mode (a root manager shows a prompt for it), kept until the person checks again (the mode buttons) or switches to Root.
+    private static Boolean rootGrant;
 
     private static void invalidateModeCache() {
         synchronized (modeCacheLock) {
@@ -568,6 +574,7 @@ public class MainActivity extends Activity {
                 try {
                     if (QuickActions.ACTION_CYCLE_MODE.equals(action)) message = quickCycleMode();
                     else if (QuickActions.ACTION_STOP_LIST.equals(action)) message = quickStopList();
+                    else if (QuickActions.ACTION_DEMO_TOGGLE.equals(action)) message = quickDemoToggle();
                     else message = "Unknown quick action";
                 } catch (Exception e) {
                     message = "Failed: " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
@@ -592,12 +599,43 @@ public class MainActivity extends Activity {
         });
     }
 
+    /**
+     * Samsung's One UI version as people write it ("9.0", "6.1.1"), or "" on a phone that is not a Samsung. It comes from ro.build.version.oneui
+     * (60101 = 6.1.1, 90000 = 9.0) and, on older One UI, from Build.VERSION.SEM_PLATFORM_INT (150000 = 6.0: take away 90000).
+     */
+    private String oneUiVersion() {
+        try {
+            if (!"samsung".equalsIgnoreCase(Build.MANUFACTURER) && !"samsung".equalsIgnoreCase(Build.BRAND)) return "";
+            int v = 0;
+            try {
+                Process p = Runtime.getRuntime().exec(new String[]{"getprop", "ro.build.version.oneui"});
+                BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                String line = r.readLine();
+                r.close();
+                if (line != null && line.trim().matches("\\d{4,7}")) v = Integer.parseInt(line.trim());
+            } catch (Throwable ignored) {}
+            if (v <= 0) {
+                try {
+                    int sem = Build.VERSION.class.getField("SEM_PLATFORM_INT").getInt(null);
+                    if (sem >= 100000) v = sem - 90000;
+                } catch (Throwable ignored) {}
+            }
+            return AppExtras.oneUi(v);
+        } catch (Throwable t) {
+            return "";
+        }
+    }
+
     /** Is this backend usable right now, without showing any prompt? */
     private boolean modeReadyQuiet(String mode) {
         if ("adb_tcp".equals(mode)) return isAdbTargetConnected(tcpTarget());
         if ("adb_wireless".equals(mode)) return adbWirelessPort > 0 && isAdbTargetConnected(wirelessTarget());
         if ("shizuku".equals(mode)) return isShizukuAuthorized();
-        if ("root".equals(mode)) return isRootAvailable();
+        if ("root".equals(mode)) {
+            Boolean g;
+            synchronized (modeCacheLock) { g = rootGrant; }
+            return isRootAvailable() && (g == null || g);                 // no prompt here: not asked yet counts as possible, a known refusal does not
+        }
         return false;
     }
 
@@ -618,6 +656,59 @@ public class MainActivity extends Activity {
         }
         setConfiguredMode("auto");
         return "No other mode is ready. Using Automatic.";
+    }
+
+    // ---- SD Maid SE tab: the host of the four tools (see SdmHost) ----
+    private final java.util.concurrent.ExecutorService sdmCalls = java.util.concurrent.Executors.newFixedThreadPool(3);
+    private SdmHost sdmHostInstance;
+
+    private synchronized SdmHost sdmHost() {
+        if (sdmHostInstance == null) {
+            sdmHostInstance = new SdmHost(this, new SdmHost.Hooks() {
+                @Override public String mode() { return resolveExecMode(); }
+
+                @Override
+                public Process open(String script) throws IOException {
+                    String mode = resolveExecMode();
+                    try {
+                        if ("adb_tcp".equals(mode) || "adb_wireless".equals(mode)) {
+                            boolean tcp = "adb_tcp".equals(mode);
+                            String target = tcp ? tcpTarget() : wirelessTarget();
+                            if (!isAdbTargetConnected(target)) performConnect(tcp ? adbTcpHost : adbWirelessHost, tcp ? adbTcpPort : adbWirelessPort, null);
+                            ProcessBuilder pb = buildAdbProcess("-s", target, "shell", script);
+                            pb.redirectErrorStream(true);
+                            return pb.start();
+                        }
+                        if ("shizuku".equals(mode)) return rishSpawn(new String[]{"sh", "-c", "exec 2>&1; " + script});
+                        if ("root".equals(mode)) {
+                            ProcessBuilder pb = new ProcessBuilder("su", "-c", script);
+                            pb.redirectErrorStream(true);
+                            return pb.start();
+                        }
+                    } catch (IOException e) {
+                        throw e;
+                    } catch (Exception e) {
+                        throw new IOException(String.valueOf(e.getMessage()), e);
+                    }
+                    throw new IOException("Needs ADB, Shizuku or Root");
+                }
+
+                @Override public void js(String code) { notifyJs(code); }
+                @Override public boolean storage() { return new AndroidBridge().hasAllFilesAccess(); }
+                @Override public boolean usage() { return hasUsageAccess(); }
+            });
+        }
+        return sdmHostInstance;
+    }
+
+    /** The Demo mode Quick Settings tile: turns the status bar demo on (and allows it) or off. */
+    private String quickDemoToggle() {
+        if ("standard".equals(resolveExecMode())) return "Needs ADB, Shizuku or Root. Set up a working mode first.";
+        boolean on = !DemoTileService.isOn(this);
+        String out = new AndroidBridge().executeShell(on ? SysUiRules.demoAllowCommands(true) + "\n" + SysUiRules.demoEnter() : SysUiRules.demoExit());
+        if (out == null || !out.contains("Broadcast completed")) return "Demo mode: the device did not answer";
+        DemoTileService.setOn(this, on);
+        return on ? "Demo mode on" : "Demo mode off";
     }
 
     /** Force-stops every app in the quick list. */
@@ -660,6 +751,7 @@ public class MainActivity extends Activity {
             }
         }
         env.put("TMPDIR", getCacheDir().getAbsolutePath());
+        AdbRuntime.applyEnv(this, env);
         pb.redirectErrorStream(true);
         return pb;
     }
@@ -1461,6 +1553,26 @@ public class MainActivity extends Activity {
             "/debug_ramdisk/su", "/data/adb/ksu/bin/su", "/data/adb/ap/bin/su", "/vendor/bin/su"
     };
 
+    /** Does su answer uid=0 for this app? Asked once (the root manager may show its prompt, so it waits a few seconds for an answer) and remembered. */
+    private boolean isRootGranted() {
+        synchronized (modeCacheLock) {
+            if (rootGrant != null) return rootGrant;
+        }
+        boolean ok;
+        try {
+            ProcessBuilder pb = new ProcessBuilder("su", "-c", "id");
+            pb.redirectErrorStream(true);
+            String out = runProcessWithTimeout(pb, 8000);
+            ok = out != null && out.contains("uid=0");
+        } catch (Exception e) {
+            ok = false;
+        }
+        synchronized (modeCacheLock) {
+            rootGrant = ok;
+        }
+        return ok;
+    }
+
     private boolean isRootAvailable() {
         for (String path : SU_PATHS) {
             if (new File(path).exists()) return true;
@@ -1769,6 +1881,46 @@ public class MainActivity extends Activity {
         return res.toString();
     }
 
+    private volatile JSONObject uadListCache;
+    private volatile long uadListCacheStamp;
+
+    /** The cached UAD-NG list, read again only when its file changed (the single-app menu asks for one package at a time). */
+    private JSONObject uadListCached() {
+        try {
+            File f = uadCacheFile();
+            if (!f.exists()) return null;
+            long stamp = f.lastModified() * 31 + f.length();
+            JSONObject c = uadListCache;
+            if (c != null && stamp == uadListCacheStamp) return c;
+            c = new JSONObject(new String(AdbKeyManager.readFile(f), "UTF-8"));
+            uadListCache = c;
+            uadListCacheStamp = stamp;
+            return c;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** What the UAD-NG list says about one package: {found, pkg, list, removal, description, dependencies, neededBy}; {found:false} when it is not in the list or the list is not downloaded. */
+    private String uadInfo(String pkg) {
+        JSONObject res = new JSONObject();
+        try {
+            JSONObject list = uadListCached();
+            JSONObject e = (list == null || pkg == null) ? null : list.optJSONObject(pkg);
+            if (e == null) { res.put("found", false); res.put("downloaded", list != null); return res.toString(); }
+            res.put("found", true);
+            res.put("pkg", pkg);
+            res.put("list", e.optString("list", "Misc"));
+            res.put("removal", e.optString("removal", "Expert"));
+            res.put("description", e.optString("description", ""));
+            res.put("dependencies", e.optJSONArray("dependencies") != null ? e.optJSONArray("dependencies") : new JSONArray());
+            res.put("neededBy", e.optJSONArray("neededBy") != null ? e.optJSONArray("neededBy") : new JSONArray());
+        } catch (Exception ex) {
+            try { res = new JSONObject().put("found", false); } catch (Exception ignored) {}
+        }
+        return res.toString();
+    }
+
     // ---------------------------------------------------------------------------------------------
     // Updates tab: Galaxy Store (Samsung system / store apps) and this app's GitHub releases
     // ---------------------------------------------------------------------------------------------
@@ -1843,7 +1995,7 @@ public class MainActivity extends Activity {
 
                     // 1. This app, from GitHub Releases
                     try {
-                        JSONObject rel = UpdateManager.githubLatest(UpdateManager.SELF_REPO);
+                        JSONObject rel = UpdateManager.githubLatest(UpdateManager.SELF_REPO, Build.SUPPORTED_ABIS);
                         String installed = currentVersionName();
                         if (UpdateManager.compareVersions(rel.optString("version"), installed) > 0) {
                             JSONObject o = new JSONObject();
@@ -2038,7 +2190,7 @@ public class MainActivity extends Activity {
                 String installed = currentVersionName();
                 try {
                     o.put("installedVersion", installed);
-                    JSONObject rel = UpdateManager.githubLatest(UpdateManager.SELF_REPO);
+                    JSONObject rel = UpdateManager.githubLatest(UpdateManager.SELF_REPO, Build.SUPPORTED_ABIS);
                     String latest = rel.optString("version");
                     o.put("latestVersion", latest);
                     o.put("page", rel.optString("page"));
@@ -2076,7 +2228,7 @@ public class MainActivity extends Activity {
                 try {
                     apk.getParentFile().mkdirs();
                     selfUpdateProgress("downloading", 0, "Getting the latest release...");
-                    JSONObject rel = UpdateManager.githubLatest(UpdateManager.SELF_REPO);
+                    JSONObject rel = UpdateManager.githubLatest(UpdateManager.SELF_REPO, Build.SUPPORTED_ABIS);
                     String url = rel.optString("url");
                     if (url == null || url.isEmpty()) throw new IllegalStateException("the latest release has no APK to download");
                     UpdateManager.download(url, apk, new UpdateManager.Progress() {
@@ -4803,6 +4955,75 @@ public class MainActivity extends Activity {
 
     private static final int REQ_PICK_FONT = 4204;
     private static final int REQ_PICK_TEXT = 4290;       // a small text file for the page (presets and saved commands)
+    // ---- Connected Devices: another device (a watch, a phone, a TV) driven through the app's own adb server ----
+    private static final int REQ_PICK_CD = 4291;         // package files to send to a connected device
+    private static final int REQ_BT_CONNECT = 9203;
+    private final ExecutorService cdExecutor = Executors.newFixedThreadPool(3);
+    private final java.util.concurrent.ConcurrentHashMap<String, Process> cdProcs = new java.util.concurrent.ConcurrentHashMap<String, Process>();
+    private final java.util.Set<String> cdCancelled = java.util.Collections.synchronizedSet(new HashSet<String>());
+    private volatile String cdPickTag = "";
+
+    /** Runs the app's adb with these arguments; the process is kept under the tag so Stop can end it. Answer: what it printed (stdout and stderr). */
+    private String cdExec(String tag, List<String> args, int timeoutMs) {
+        if (tag != null && cdCancelled.contains(tag)) return "Error: stopped";
+        try {
+            Process p = buildAdbProcess(args.toArray(new String[0])).start();
+            if (tag != null && !tag.isEmpty()) cdProcs.put(tag, p);
+            try {
+                return readProcessWithTimeout(p, timeoutMs);
+            } finally {
+                if (tag != null) cdProcs.remove(tag);
+            }
+        } catch (Exception e) {
+            return "Error: " + e.getMessage();
+        }
+    }
+
+    /**
+     * The file sent to another device to remove a system app there: the small jar built with the app (assets/uninstall_runner.jar, only the runner's
+     * classes), kept per app version; or, with a build that has none, this app's own APK, which holds the same class. Null when neither can be found.
+     */
+    private String cdUninstallHelperPath() {
+        try {
+            int ver = getPackageManager().getPackageInfo(getPackageName(), 0).versionCode;
+            File f = new File(getFilesDir(), "uninstall_runner_" + ver + ".jar");
+            extractAsset("uninstall_runner.jar", f);
+            if (f.length() > 0) return f.getAbsolutePath();
+            f.delete();
+        } catch (Exception ignored) {}
+        try {
+            return getPackageManager().getApplicationInfo(getPackageName(), 0).sourceDir;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static String cdErrorJson(String tag, String out) {
+        try {
+            return new JSONObject().put("tag", tag).put("out", out).toString();
+        } catch (Exception e) {
+            return "{}";
+        }
+    }
+
+    private static String cdSafeName(String name) {
+        String n = name == null ? "file" : name.replaceAll("[\\\\/:*?\"<>|\\p{Cntrl}]", "_").trim();
+        return n.isEmpty() ? "file" : (n.length() > 120 ? n.substring(n.length() - 120) : n);
+    }
+
+    private String cdDisplayName(Uri uri) {
+        android.database.Cursor c = null;
+        try {
+            c = getContentResolver().query(uri, new String[]{android.provider.OpenableColumns.DISPLAY_NAME}, null, null, null);
+            if (c != null && c.moveToFirst() && !c.isNull(0)) return c.getString(0);
+        } catch (Exception ignored) {
+        } finally {
+            if (c != null) c.close();
+        }
+        String last = uri.getLastPathSegment();
+        return last == null ? "file" : last.substring(last.lastIndexOf('/') + 1);
+    }
+
     private volatile String pickTextTag = "";
     private volatile long fontScanProgressAt = 0;
     // numbers the searches, like the one for packages: an older search's progress and answer are dropped
@@ -5824,6 +6045,61 @@ public class MainActivity extends Activity {
             notifyJs("window.onInstallFilePicked && window.onInstallFilePicked(" + JSONObject.quote(picked.toString()) + ")");
             return;
         }
+        if (requestCode == REQ_PICK_MORPHE) { morphePicked(data, resultCode); return; }
+        if (requestCode == REQ_PICK_CD) {
+            final String tag = cdPickTag;
+            final List<Uri> uris = new ArrayList<Uri>();
+            if (resultCode == RESULT_OK && data != null) {
+                if (data.getClipData() != null) {
+                    for (int i = 0; i < data.getClipData().getItemCount(); i++) uris.add(data.getClipData().getItemAt(i).getUri());
+                } else if (data.getData() != null) {
+                    uris.add(data.getData());
+                }
+            }
+            if (uris.isEmpty()) { notifyJs("window.onCdPicked && window.onCdPicked({\"tag\":" + JSONObject.quote(tag) + ",\"files\":[]})"); return; }
+            cdExecutor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject res = new JSONObject();
+                    JSONArray files = new JSONArray();
+                    try {
+                        res.put("tag", tag);
+                        File root = new File(getCacheDir(), "cd_pick");
+                        root.mkdirs();
+                        long old = System.currentTimeMillis() - 60 * 60 * 1000L;
+                        File[] dirs = root.listFiles();
+                        if (dirs != null) for (File d : dirs) if (d.lastModified() < old) { File[] fs = d.listFiles(); if (fs != null) for (File f : fs) f.delete(); d.delete(); }
+                        for (Uri u : uris) {
+                            try {
+                                String name = cdSafeName(cdDisplayName(u));
+                                File dir = new File(root, Long.toHexString(System.nanoTime()));
+                                dir.mkdirs();
+                                File out = new File(dir, name);
+                                InputStream in = getContentResolver().openInputStream(u);
+                                if (in == null) throw new IOException("could not open the file");
+                                java.io.OutputStream os = new java.io.FileOutputStream(out);
+                                try {
+                                    byte[] buf = new byte[65536];
+                                    int n;
+                                    while ((n = in.read(buf)) > 0) os.write(buf, 0, n);
+                                } finally {
+                                    os.close();
+                                    in.close();
+                                }
+                                files.put(new JSONObject().put("name", name).put("path", out.getAbsolutePath()).put("size", out.length()));
+                            } catch (Exception one) {
+                                files.put(new JSONObject().put("name", String.valueOf(u.getLastPathSegment())).put("error", String.valueOf(one.getMessage())));
+                            }
+                        }
+                        res.put("files", files);
+                    } catch (Exception e) {
+                        try { res.put("error", e.getMessage()); res.put("files", files); } catch (Exception ignored) {}
+                    }
+                    notifyJs("window.onCdPicked && window.onCdPicked(" + res.toString() + ")");
+                }
+            });
+            return;
+        }
         if (requestCode == REQ_PICK_TEXT) {
             final String tag = pickTextTag;
             final Uri textUri = (resultCode == RESULT_OK && data != null) ? data.getData() : null;
@@ -5976,11 +6252,31 @@ public class MainActivity extends Activity {
 
     /** "Allow restricted settings" - an app-op (android:read_write_restricted_settings), not a manifest
      *  permission, so there is nothing to declare in AndroidManifest.xml for this one. */
-    private boolean hasRestrictedSettingsAccess() {
+    /** "Install unknown apps" for this app (Android 8+): whether it may start the installation of package files. Older phones have one global switch: nothing to ask. */
+    private boolean hasInstallUnknownAccess() {
         try {
+            return Build.VERSION.SDK_INT < 26 || getPackageManager().canRequestPackageInstalls();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /** "Allow restricted settings" is the app-op ACCESS_RESTRICTED_SETTINGS (Android 13 and newer). Below that there is nothing to allow. A grant made through the working mode is remembered
+     *  here, because some phones do not report the op to the app itself. */
+    private boolean hasRestrictedSettingsAccess() {
+        if (Build.VERSION.SDK_INT < 33) return true;
+        try {
+            if (getSharedPreferences("perms", MODE_PRIVATE).getBoolean("restricted_granted", false)) return true;
             android.app.AppOpsManager ops = (android.app.AppOpsManager) getSystemService(Context.APP_OPS_SERVICE);
-            int mode = ops.checkOpNoThrow("android:read_write_restricted_settings", android.os.Process.myUid(), getPackageName());
-            return mode == android.app.AppOpsManager.MODE_ALLOWED;
+            for (String op : new String[]{"android:access_restricted_settings", "android:read_write_restricted_settings"}) {
+                try {
+                    int mode = ops.checkOpNoThrow(op, android.os.Process.myUid(), getPackageName());
+                    if (mode == android.app.AppOpsManager.MODE_ALLOWED) return true;
+                } catch (IllegalArgumentException unknown) {
+                    // this phone does not have that op: try the next name
+                }
+            }
+            return false;
         } catch (Exception e) {
             return false;
         }
@@ -6355,6 +6651,152 @@ public class MainActivity extends Activity {
         return getColor(id);
     }
 
+
+    // ---- Morphe Patcher tab: the bridge does the work, the activity gives it the picker, the installer, sharing and the network state ----
+    private static final int REQ_PICK_MORPHE = 4292;
+    private volatile String morphePickTag = "";
+    private MorpheBridge morpheBridge;
+
+    private synchronized MorpheBridge morphe() {
+        if (morpheBridge == null) morpheBridge = new MorpheBridge(new MorpheBridge.Host() {
+            @Override public Context context() { return MainActivity.this; }
+            @Override public void js(String script) { notifyJs(script); }
+            @Override public boolean pick(final String tag, String kind) {
+                morphePickTag = tag;
+                runOnUiThread(new Runnable() {
+                    @Override public void run() {
+                        try {
+                            Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                            i.addCategory(Intent.CATEGORY_OPENABLE);
+                            i.setType("*/*");
+                            startActivityForResult(i, REQ_PICK_MORPHE);
+                        } catch (Exception e) {
+                            morphe().pickDone(tag, new JSONArray());
+                        }
+                    }
+                });
+                return true;
+            }
+            @Override public JSONObject install(File apk, String pkg, boolean uninstallFirst) throws Exception { return morpheInstall(apk, pkg, uninstallFirst); }
+            @Override public void share(File f, String mime) { new AndroidBridge().shareStoredFile(f.getAbsolutePath(), mime, f.getName()); }
+            @Override public boolean privileged() { return isPrivilegedMode(resolveExecMode()); }
+            @Override public boolean connectionOk(String conn) { return morpheConnectionOk(conn); }
+            @Override public File downloadsDir() { return android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS); }
+        }, new File(getFilesDir(), "morphe"));
+        return morpheBridge;
+    }
+
+    private boolean morpheConnectionOk(String conn) {
+        if (conn == null || "both".equals(conn)) return true;
+        try {
+            android.net.ConnectivityManager cm = (android.net.ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+            android.net.Network n = cm.getActiveNetwork();
+            android.net.NetworkCapabilities nc = n == null ? null : cm.getNetworkCapabilities(n);
+            if (nc == null) return false;
+            boolean wifi = nc.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI) || nc.hasTransport(android.net.NetworkCapabilities.TRANSPORT_ETHERNET);
+            return "wifi".equals(conn) ? wifi : !wifi;
+        } catch (Exception e) {
+            return true;
+        }
+    }
+
+    /** Installs a patched app or a downloaded original: through the working mode when there is one (a bundle's splits together), else the system installer. */
+    private JSONObject morpheInstall(File apk, String pkg, boolean uninstallFirst) throws Exception {
+        JSONObject r = new JSONObject();
+        String mode = resolveExecMode();
+        if (!isPrivilegedMode(mode)) {
+            File copy = ShareProvider.newShareFile(this, apk.getName());
+            java.io.FileOutputStream out = new java.io.FileOutputStream(copy);
+            try { copyFile(apk, out); } finally { out.close(); }
+            final Uri uri = ShareProvider.uriFor(copy);
+            runOnUiThread(new Runnable() {
+                @Override public void run() {
+                    try {
+                        Intent i = new Intent(Intent.ACTION_VIEW).setDataAndType(uri, "application/vnd.android.package-archive")
+                                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(i);
+                    } catch (Exception e) { Log.e(TAG, "system installer failed", e); }
+                }
+            });
+            r.put("ok", true);
+            r.put("system", true);
+            r.put("output", "The system installer was opened. Confirm the install there. (Set up a working mode to install silently.)");
+            return r;
+        }
+        StringBuilder notes = new StringBuilder();
+        if (uninstallFirst) {
+            uninstallInstalledCopy(mode, pkg);
+            notes.append("The installed copy was uninstalled first.\n");
+        }
+        List<File> files = new ArrayList<File>();
+        File tmp = null;
+        String name = apk.getName().toLowerCase(java.util.Locale.ROOT);
+        if (name.endsWith(".apks") || name.endsWith(".apkm") || name.endsWith(".xapk")) {
+            tmp = new File(getCacheDir(), "morphe_inst/" + Long.toHexString(System.nanoTime()));
+            files.addAll(MorpheLibrary.unzipApks(apk, tmp));
+        } else {
+            files.add(apk);
+        }
+        String out;
+        try {
+            out = installApks(files);
+        } finally {
+            if (tmp != null) { File[] fs = tmp.listFiles(); if (fs != null) for (File f : fs) f.delete(); tmp.delete(); }
+        }
+        boolean ok = InstallHints.success(out);
+        r.put("ok", ok);
+        r.put("output", notes + (out == null ? "" : out.trim()));
+        if (!ok) {
+            r.put("advice", InstallHints.advice(out));
+            if (!uninstallFirst && InstallHints.updateIncompatible(out) && canUninstallFirst(pkg, mode)) r.put("retry", "uninstall");
+        }
+        return r;
+    }
+
+    /** A file the Morphe tab asked for: copied into this app's cache (the page works with those copies), then handed to the bridge. */
+    private void morphePicked(final Intent data, final int resultCode) {
+        final String tag = morphePickTag;
+        final List<Uri> uris = new ArrayList<Uri>();
+        if (resultCode == RESULT_OK && data != null) {
+            if (data.getClipData() != null) {
+                for (int i = 0; i < data.getClipData().getItemCount(); i++) uris.add(data.getClipData().getItemAt(i).getUri());
+            } else if (data.getData() != null) {
+                uris.add(data.getData());
+            }
+        }
+        if (uris.isEmpty()) { morphe().pickDone(tag, new JSONArray()); return; }
+        executor.submit(new Runnable() {
+            @Override public void run() {
+                JSONArray files = new JSONArray();
+                File root = new File(getCacheDir(), "morphe_pick");
+                root.mkdirs();
+                long old = System.currentTimeMillis() - 24L * 60 * 60 * 1000;
+                File[] dirs = root.listFiles();
+                if (dirs != null) for (File d : dirs) if (d.lastModified() < old) { File[] fs = d.listFiles(); if (fs != null) for (File f : fs) f.delete(); d.delete(); }
+                for (Uri u : uris) {
+                    try {
+                        String nm = cdSafeName(cdDisplayName(u));
+                        File dir = new File(root, Long.toHexString(System.nanoTime()));
+                        dir.mkdirs();
+                        File out = new File(dir, nm);
+                        InputStream in = getContentResolver().openInputStream(u);
+                        if (in == null) throw new IOException("could not open the file");
+                        java.io.OutputStream os = new java.io.FileOutputStream(out);
+                        try {
+                            byte[] buf = new byte[65536];
+                            int n;
+                            while ((n = in.read(buf)) > 0) os.write(buf, 0, n);
+                        } finally { os.close(); in.close(); }
+                        files.put(new JSONObject().put("name", nm).put("path", out.getAbsolutePath()).put("size", out.length()));
+                    } catch (Exception one) {
+                        try { files.put(new JSONObject().put("name", String.valueOf(u.getLastPathSegment())).put("error", String.valueOf(one.getMessage()))); } catch (Exception ignored) {}
+                    }
+                }
+                morphe().pickDone(tag, files);
+            }
+        });
+    }
+
     private class AndroidBridge {
 
         @JavascriptInterface
@@ -6554,7 +6996,7 @@ public class MainActivity extends Activity {
             long gen;
             synchronized (modeCacheLock) {
                 gen = modeCacheGen;
-                if (recheckRoot) rootChecked = false;
+                if (recheckRoot) { rootChecked = false; rootGrant = null; }
             }
             String json = probeWorkingMode();
             synchronized (modeCacheLock) {
@@ -6593,6 +7035,9 @@ public class MainActivity extends Activity {
 
                 boolean rootAvailable = isRootAvailable();
                 obj.put("rootAvailable", rootAvailable);
+                // root counts as ready only when su really answers for this app, and that is asked only while Root is the chosen mode
+                boolean rootGrantedNow = rootAvailable && "root".equals(activeWorkingMode) && isRootGranted();
+                if (rootAvailable && "root".equals(activeWorkingMode)) obj.put("rootGranted", rootGrantedNow);
                 obj.put("deviceIp", deviceWifiIp());
 
                 String configured = activeWorkingMode;
@@ -6610,7 +7055,7 @@ public class MainActivity extends Activity {
                     if ("adb_tcp".equals(configured)) available = tcpConnected || tcpPortOpen;
                     else if ("adb_wireless".equals(configured)) available = wirelessConnected;
                     else if ("shizuku".equals(configured)) available = shizukuAuthorized;
-                    else if ("root".equals(configured)) available = rootAvailable;
+                    else if ("root".equals(configured)) available = rootGrantedNow;
                     else available = false;
                 }
 
@@ -6676,6 +7121,7 @@ public class MainActivity extends Activity {
                     pb.redirectErrorStream(true);
                     String out = runProcessWithTimeout(pb, 15000);
                     ok = out != null && out.contains("uid=0");
+                    synchronized (modeCacheLock) { rootGrant = ok; }
                     message = ok ? "Using Root (Superuser)" : "Root was denied or is not available";
                 } else if ("unprivileged".equals(mode)) {
                     message = "Switched to Read-Only Mode";
@@ -7630,6 +8076,7 @@ public class MainActivity extends Activity {
                 obj.put("release", Build.VERSION.RELEASE);
                 obj.put("materialYou", Build.VERSION.SDK_INT >= 31);
                 obj.put("buildChanged", buildChangedThisLaunch);
+                obj.put("oneUi", oneUiVersion());
                 return obj.toString();
             } catch (Exception e) {
                 return "{}";
@@ -8298,6 +8745,172 @@ public class MainActivity extends Activity {
         }
 
         /**
+         * What the app menu's Features, Configurations, Signatures and Libraries tabs show, in one JSON object:
+         * {features, configs, screen, signatures, libraries}. Every part is read on its own, so a part that cannot be read
+         * is left out (or carries an "error") and the others still arrive.
+         */
+        @JavascriptInterface
+        public String getAppExtras(String pkg) {
+            JSONObject out = new JSONObject();
+            try {
+                PackageManager pm = getPackageManager();
+                int sigFlags = Build.VERSION.SDK_INT >= 28 ? PackageManager.GET_SIGNING_CERTIFICATES : PackageManager.GET_SIGNATURES;
+                int flags = PackageManager.GET_CONFIGURATIONS | PackageManager.GET_SHARED_LIBRARY_FILES | PackageManager.MATCH_UNINSTALLED_PACKAGES | sigFlags;
+                PackageInfo info = pm.getPackageInfo(pkg, flags);
+                ApplicationInfo ai = info.applicationInfo;
+
+                // Features: <uses-feature> (the OpenGL ES version has no name), and whether this device has each one
+                try {
+                    JSONArray features = new JSONArray();
+                    if (info.reqFeatures != null) {
+                        for (android.content.pm.FeatureInfo f : info.reqFeatures) {
+                            JSONObject o = new JSONObject();
+                            boolean required = (f.flags & android.content.pm.FeatureInfo.FLAG_REQUIRED) != 0;
+                            o.put("required", required);
+                            if (f.name != null) {
+                                o.put("name", f.name);
+                                boolean has = false;
+                                try { has = pm.hasSystemFeature(f.name); } catch (Exception ignored) {}
+                                o.put("device", has);
+                            } else {
+                                o.put("name", "");
+                                o.put("glEs", AppExtras.glEs(f.reqGlEsVersion));
+                            }
+                            features.put(o);
+                        }
+                    }
+                    out.put("features", features);
+                    try {
+                        android.app.ActivityManager am = (android.app.ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+                        out.put("deviceGlEs", AppExtras.glEs(am.getDeviceConfigurationInfo().reqGlEsVersion));
+                    } catch (Exception ignored) {}
+                } catch (Exception e) {
+                    out.put("featuresError", String.valueOf(e.getMessage()));
+                }
+
+                // Configurations: <uses-configuration> and the screen the app says it needs
+                try {
+                    JSONArray configs = new JSONArray();
+                    if (info.configPreferences != null) {
+                        for (android.content.pm.ConfigurationInfo c : info.configPreferences) {
+                            JSONObject o = new JSONObject();
+                            o.put("touchScreen", AppExtras.touchScreen(c.reqTouchScreen));
+                            o.put("keyboard", AppExtras.keyboardType(c.reqKeyboardType));
+                            o.put("navigation", AppExtras.navigation(c.reqNavigation));
+                            o.put("inputFeatures", AppExtras.inputFeatures(c.reqInputFeatures));
+                            o.put("glEs", AppExtras.glEs(c.reqGlEsVersion));
+                            configs.put(o);
+                        }
+                    }
+                    out.put("configs", configs);
+                    JSONObject screen = new JSONObject();
+                    if (ai != null) {
+                        screen.put("requiresSmallestWidthDp", ai.requiresSmallestWidthDp);
+                        screen.put("compatibleWidthLimitDp", ai.compatibleWidthLimitDp);
+                        screen.put("largestWidthLimitDp", ai.largestWidthLimitDp);
+                        screen.put("targetSdk", ai.targetSdkVersion);
+                        screen.put("minSdk", ai.minSdkVersion);
+                        if (Build.VERSION.SDK_INT >= 31) screen.put("compileSdk", ai.compileSdkVersion);
+                        screen.put("largeHeap", (ai.flags & ApplicationInfo.FLAG_LARGE_HEAP) != 0);
+                        screen.put("hardwareAccelerated", (ai.flags & ApplicationInfo.FLAG_HARDWARE_ACCELERATED) != 0);
+                        screen.put("resizeable", (ai.flags & ApplicationInfo.FLAG_RESIZEABLE_FOR_SCREENS) != 0);
+                        screen.put("supportsRtl", (ai.flags & ApplicationInfo.FLAG_SUPPORTS_RTL) != 0);
+                        screen.put("smallScreens", (ai.flags & ApplicationInfo.FLAG_SUPPORTS_SMALL_SCREENS) != 0);
+                        screen.put("normalScreens", (ai.flags & ApplicationInfo.FLAG_SUPPORTS_NORMAL_SCREENS) != 0);
+                        screen.put("largeScreens", (ai.flags & ApplicationInfo.FLAG_SUPPORTS_LARGE_SCREENS) != 0);
+                        screen.put("xlargeScreens", (ai.flags & ApplicationInfo.FLAG_SUPPORTS_XLARGE_SCREENS) != 0);
+                        screen.put("anyDensity", (ai.flags & ApplicationInfo.FLAG_SUPPORTS_SCREEN_DENSITIES) != 0);
+                    }
+                    out.put("screen", screen);
+                    JSONArray abis = new JSONArray();
+                    for (String a : Build.SUPPORTED_ABIS) abis.put(a);
+                    out.put("deviceAbis", abis);
+                } catch (Exception e) {
+                    out.put("configsError", String.valueOf(e.getMessage()));
+                }
+
+                // Signatures: who signed it (current signers, and earlier certificates when the key was rotated) and which schemes the APK carries
+                try {
+                    JSONObject sig = new JSONObject();
+                    JSONArray signers = new JSONArray(), history = new JSONArray();
+                    boolean rotated = false, multi = false;
+                    if (Build.VERSION.SDK_INT >= 28 && info.signingInfo != null) {
+                        android.content.pm.SigningInfo si = info.signingInfo;
+                        multi = si.hasMultipleSigners();
+                        rotated = si.hasPastSigningCertificates();
+                        android.content.pm.Signature[] cur = multi ? si.getApkContentsSigners() : si.getSigningCertificateHistory();
+                        if (cur != null) {
+                            if (multi) { for (android.content.pm.Signature s : cur) signers.put(AppExtras.certInfo(s.toByteArray())); }
+                            else if (cur.length > 0) signers.put(AppExtras.certInfo(cur[cur.length - 1].toByteArray()));
+                            if (!multi && rotated) {
+                                for (int i = 0; i < cur.length - 1; i++) history.put(AppExtras.certInfo(cur[i].toByteArray()));
+                            }
+                        }
+                    } else if (info.signatures != null) {
+                        for (android.content.pm.Signature s : info.signatures) signers.put(AppExtras.certInfo(s.toByteArray()));
+                        multi = info.signatures.length > 1;
+                    }
+                    sig.put("signers", signers);
+                    sig.put("history", history);
+                    sig.put("rotated", rotated);
+                    sig.put("multiple", multi);
+                    JSONArray schemes = new JSONArray();
+                    if (ai != null && ai.sourceDir != null) {
+                        for (String s : AppExtras.sigSchemes(new File(ai.sourceDir))) schemes.put(s);
+                    }
+                    sig.put("schemes", schemes);
+                    out.put("signatures", sig);
+                } catch (Exception e) {
+                    out.put("signaturesError", String.valueOf(e.getMessage()));
+                }
+
+                // Libraries: what the manifest asks for, the shared libraries the system linked in, and the native libraries inside the APKs
+                try {
+                    JSONObject lib = new JSONObject();
+                    JSONArray declared = new JSONArray();
+                    try {
+                        Resources res = null;
+                        try { res = pm.getResourcesForApplication(ai); } catch (Exception ignored) {}
+                        String xml = ManifestDecoder.decodeApk(ai.sourceDir, res);
+                        declared = AppExtras.manifestLibraries(xml);
+                    } catch (Throwable ignored) {}
+                    lib.put("declared", declared);
+                    JSONArray shared = new JSONArray();
+                    if (ai != null && ai.sharedLibraryFiles != null) for (String s : ai.sharedLibraryFiles) shared.put(s);
+                    lib.put("shared", shared);
+                    JSONArray nat = new JSONArray();
+                    if (ai != null) {
+                        List<String> apks = new ArrayList<String>();
+                        if (ai.sourceDir != null) apks.add(ai.sourceDir);
+                        if (ai.splitSourceDirs != null) for (String s : ai.splitSourceDirs) if (s != null) apks.add(s);
+                        for (String p : apks) {
+                            JSONArray one = AppExtras.nativeLibs(new File(p));
+                            String from = new File(p).getName();
+                            for (int i = 0; i < one.length() && nat.length() < 600; i++) {
+                                JSONObject o = one.getJSONObject(i);
+                                o.put("apk", from);
+                                nat.put(o);
+                            }
+                        }
+                        lib.put("nativeDir", ai.nativeLibraryDir == null ? "" : ai.nativeLibraryDir);
+                        try {
+                            java.lang.reflect.Field f = ApplicationInfo.class.getField("primaryCpuAbi");
+                            Object v = f.get(ai);
+                            lib.put("primaryAbi", v == null ? "" : String.valueOf(v));
+                        } catch (Throwable ignored) {}
+                    }
+                    lib.put("native", nat);
+                    out.put("libraries", lib);
+                } catch (Exception e) {
+                    out.put("librariesError", String.valueOf(e.getMessage()));
+                }
+            } catch (Exception e) {
+                try { out.put("error", String.valueOf(e.getMessage())); } catch (Exception ignored) {}
+            }
+            return out.toString();
+        }
+
+        /**
          * Launches an activity using a privileged mode (ADB / Shizuku / Root). An EXPORTED activity is
          * started with `am start -W` (trustworthy "Status: ok"/denial, launched in a new task so it
          * surfaces). An UNEXPORTED activity can't be started that way from the shell - uid 2000 isn't its
@@ -8544,6 +9157,376 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public String getUadInfo(String pkg) {
+            return uadInfo(pkg);
+        }
+
+        // ---- Connected Devices ------------------------------------------------------------------------------------------------------------------
+
+        /**
+         * Runs `adb [-s serial] args...` for the Connected Devices tab (the serial may be empty for adb's own commands: devices, pair, connect, mdns).
+         * Answer: window.onCdResult({tag, out, ms}). Stop ends it early (cdCancel).
+         */
+        @JavascriptInterface
+        public void cdAdb(final String tag, final String serial, final String argsJson, final int timeoutMs) {
+            final String t = tag == null ? "" : tag;
+            JSONObject early = null;
+            final List<String> args = new ArrayList<String>();
+            try {
+                JSONArray a = new JSONArray(argsJson);
+                if (a.length() == 0 || a.length() > 80) throw new IllegalArgumentException("no command");
+                if (serial != null && !serial.isEmpty()) {
+                    if (!DeviceLink.validSerial(serial)) throw new IllegalArgumentException("That device name is not valid.");
+                    args.add("-s");
+                    args.add(serial);
+                }
+                for (int i = 0; i < a.length(); i++) {
+                    String x = a.getString(i);
+                    if (x.indexOf('\u0000') >= 0) throw new IllegalArgumentException("bad argument");
+                    args.add(x);
+                }
+            } catch (Exception e) {
+                try { early = new JSONObject().put("tag", t).put("out", "Error: " + e.getMessage()).put("ms", 0); } catch (Exception ignored) {}
+            }
+            if (early != null) { notifyJs("window.onCdResult && window.onCdResult(" + early.toString() + ")"); return; }
+            final int limit = Math.max(1000, Math.min(timeoutMs <= 0 ? 15000 : timeoutMs, 3600000));
+            cdCancelled.remove(t);
+            try {
+                cdExecutor.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        long t0 = System.currentTimeMillis();
+                        String out = cdExec(t, args, limit);
+                        JSONObject res = new JSONObject();
+                        try { res.put("tag", t); res.put("out", out); res.put("ms", System.currentTimeMillis() - t0); } catch (Exception ignored) {}
+                        cdCancelled.remove(t);
+                        notifyJs("window.onCdResult && window.onCdResult(" + res.toString() + ")");
+                    }
+                });
+            } catch (java.util.concurrent.RejectedExecutionException closing) {
+                notifyJs("window.onCdResult && window.onCdResult(" + cdErrorJson(t, "Error: the app is closing") + ")");
+            }
+        }
+
+        /** Ends a Connected Devices command that is still running. */
+        @JavascriptInterface
+        public void cdCancel(String tag) {
+            if (tag == null) return;
+            cdCancelled.add(tag);
+            Process p = cdProcs.get(tag);
+            if (p != null) try { p.destroy(); } catch (Exception ignored) {}
+        }
+
+        /** The serials adb knows this phone by (its own ADB TCP and Wireless Debugging endpoints), so the tab leaves them out of the list of other devices. */
+        @JavascriptInterface
+        public String cdSelfSerials() {
+            JSONArray a = new JSONArray();
+            a.put(tcpTarget());
+            a.put(wirelessTarget());
+            a.put("localhost:" + adbTcpPort);
+            return a.toString();
+        }
+
+        /** Sends packages to a device: items [{name, paths:[...]} | {name, archive}], opts {reinstall, downgrade, grantAll, testOk}, profile {abis, dpi, lang}. Progress: window.onCdProgress; answer: window.onCdResult({tag, install:{ok, results}}). */
+        @JavascriptInterface
+        public void cdInstall(final String tag, final String serial, final String itemsJson, final String optsJson, final String profileJson) {
+            final String t = tag == null ? "" : tag;
+            if (!DeviceLink.validSerial(serial)) { notifyJs("window.onCdResult && window.onCdResult(" + cdErrorJson(t, "Error: choose a device first") + ")"); return; }
+            cdCancelled.remove(t);
+            try {
+                cdExecutor.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        JSONObject res = new JSONObject();
+                        try {
+                            res.put("tag", t);
+                            File stageRoot = new File(getCacheDir(), "cd_stage");
+                            stageRoot.mkdirs();
+                            JSONObject out = DeviceLink.install(stageRoot, new JSONArray(itemsJson), optsJson == null || optsJson.isEmpty() ? new JSONObject() : new JSONObject(optsJson),
+                                    profileJson == null || profileJson.isEmpty() ? new JSONObject() : new JSONObject(profileJson),
+                                    new DeviceLink.Adb() {
+                                        @Override
+                                        public String run(List<String> a, int timeoutMs) {
+                                            List<String> full = new ArrayList<String>();
+                                            full.add("-s");
+                                            full.add(serial);
+                                            full.addAll(a);
+                                            return cdExec(t, full, timeoutMs);
+                                        }
+                                    },
+                                    new DeviceLink.Progress() {
+                                        @Override
+                                        public void step(int index, int total, String name, String line) {
+                                            try {
+                                                notifyJs("window.onCdProgress && window.onCdProgress(" + new JSONObject().put("tag", t).put("index", index).put("total", total).put("name", name).put("line", line).toString() + ")");
+                                            } catch (Exception ignored) {}
+                                        }
+                                    });
+                            res.put("install", out);
+                        } catch (Exception e) {
+                            try { res.put("out", "Error: " + e.getMessage()); } catch (Exception ignored) {}
+                        }
+                        cdCancelled.remove(t);
+                        notifyJs("window.onCdResult && window.onCdResult(" + res.toString() + ")");
+                    }
+                });
+            } catch (java.util.concurrent.RejectedExecutionException closing) {
+                notifyJs("window.onCdResult && window.onCdResult(" + cdErrorJson(t, "Error: the app is closing") + ")");
+            }
+        }
+
+        /**
+         * Uninstalls an app on a connected device for its user 0 the way this phone does for itself: {@code pm uninstall --user 0}, and when that device
+         * says only root can remove a system app, the direct Binder helper sent there and run (see DeviceUninstall). Answer: window.onCdResult({tag, ok, out}).
+         */
+        @JavascriptInterface
+        public void cdUninstall(final String tag, final String serial, final String pkg) {
+            final String t = tag == null ? "" : tag;
+            if (!DeviceLink.validSerial(serial)) { notifyJs("window.onCdResult && window.onCdResult(" + cdErrorJson(t, "Error: choose a device first") + ")"); return; }
+            if (!DeviceUninstall.validPackage(pkg)) { notifyJs("window.onCdResult && window.onCdResult(" + cdErrorJson(t, "Error: that is not a package name") + ")"); return; }
+            cdCancelled.remove(t);
+            try {
+                cdExecutor.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        JSONObject res = new JSONObject();
+                        try {
+                            res.put("tag", t);
+                            DeviceUninstall.Result r = DeviceUninstall.run(pkg, new DeviceLink.Adb() {
+                                @Override
+                                public String run(List<String> a, int timeoutMs) {
+                                    List<String> full = new ArrayList<String>();
+                                    full.add("-s");
+                                    full.add(serial);
+                                    full.addAll(a);
+                                    return cdExec(t, full, timeoutMs);
+                                }
+                            }, cdUninstallHelperPath(), Long.toString(System.nanoTime(), 36));
+                            res.put("ok", r.ok);
+                            res.put("out", r.text);
+                        } catch (Exception e) {
+                            try { res.put("ok", false); res.put("out", "Error: " + e.getMessage()); } catch (Exception ignored) {}
+                        }
+                        cdCancelled.remove(t);
+                        notifyJs("window.onCdResult && window.onCdResult(" + res.toString() + ")");
+                    }
+                });
+            } catch (java.util.concurrent.RejectedExecutionException closing) {
+                notifyJs("window.onCdResult && window.onCdResult(" + cdErrorJson(t, "Error: the app is closing") + ")");
+            }
+        }
+
+        /** The Morphe Patcher tab: one call that answers through window.onMorphe({tag, ok, data | error}) (see MorpheBridge). */
+        @JavascriptInterface
+        public void morphe(String tag, String op, String argsJson) {
+            MainActivity.this.morphe().call(tag, op, argsJson);
+        }
+
+        /** The SD Maid SE tab: one call that answers through window.onSdmReply({tag, r}); what happens while a task runs comes through window.onSdm(event). See SdmBridge. */
+        @JavascriptInterface
+        public void sdm(final String tag, final String op, final String argsJson) {
+            sdmCalls.submit(new Runnable() {
+                @Override
+                public void run() {
+                    String r;
+                    try {
+                        r = sdmHost().bridge().call(op, argsJson);
+                    } catch (Throwable t) {
+                        r = "{\"ok\":false,\"error\":" + JSONObject.quote("SD Maid SE failed: " + t) + "}";
+                    }
+                    notifyJs("window.onSdmReply && window.onSdmReply({tag:" + JSONObject.quote(String.valueOf(tag)) + ",r:" + r + "})");
+                }
+            });
+        }
+
+        /** The System UI Tuner tab: the command (or the parsed answer) for one operation, {"ok":true,"cmd":...} | {"ok":true,"data":...} | {"ok":false,"error":...}. Nothing runs here. */
+        @JavascriptInterface
+        public String sysui(String op, String argsJson) {
+            return SysUiOps.run(op, argsJson);
+        }
+
+        /** The System UI Tuner's Quick Settings tiles: state, set (1 or 0), add (asks Android), demoFlag (the Demo tile's own memory). Answer: JSON. */
+        @JavascriptInterface
+        public String sysuiTile(String op, String name, String arg) {
+            try {
+                final Class<?> tile = "battery".equals(name) ? BatteryTileService.class : "clock".equals(name) ? ClockTileService.class : "demo".equals(name) ? DemoTileService.class : null;
+                if ("state".equals(op)) {
+                    JSONObject tiles = new JSONObject();
+                    tiles.put("battery", new JSONObject().put("enabled", TileSwitch.isEnabled(MainActivity.this, BatteryTileService.class)));
+                    tiles.put("clock", new JSONObject().put("enabled", TileSwitch.isEnabled(MainActivity.this, ClockTileService.class)));
+                    tiles.put("demo", new JSONObject().put("enabled", TileSwitch.isEnabled(MainActivity.this, DemoTileService.class)).put("on", DemoTileService.isOn(MainActivity.this)));
+                    return new JSONObject().put("ok", true).put("tiles", tiles).put("canAdd", Build.VERSION.SDK_INT >= 33).toString();
+                }
+                if ("demoFlag".equals(op)) {
+                    DemoTileService.setOn(MainActivity.this, "1".equals(arg));
+                    return "{\"ok\":true}";
+                }
+                if (tile == null) return "{\"ok\":false,\"error\":\"Unknown tile\"}";
+                if ("set".equals(op)) {
+                    boolean ok = TileSwitch.setEnabled(MainActivity.this, tile, "1".equals(arg));
+                    return new JSONObject().put("ok", ok).put("error", ok ? "" : "Android did not accept the change").toString();
+                }
+                if ("add".equals(op)) {
+                    if (Build.VERSION.SDK_INT < 33) return "{\"ok\":false,\"error\":\"Open the quick settings editor and drag the tile in (Android 13 and newer can ask for you)\"}";
+                    if (!TileSwitch.isEnabled(MainActivity.this, tile)) return "{\"ok\":false,\"error\":\"Turn the tile on first\"}";
+                    final String label = "battery".equals(name) ? "Battery" : "clock".equals(name) ? "Clock" : "Demo mode";
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() { TileSwitch.requestAdd(MainActivity.this, tile, label); }
+                    });
+                    return "{\"ok\":true}";
+                }
+                return "{\"ok\":false,\"error\":\"Unknown operation\"}";
+            } catch (Exception e) {
+                return "{\"ok\":false,\"error\":\"" + String.valueOf(e.getMessage()).replace("\\", " ").replace("\"", "'") + "\"}";
+            }
+        }
+
+        /** Lets the user choose package files (APK, APKS, APKM, XAPK) to send. Answer: window.onCdPicked({tag, files:[{name, path, size} | {name, error}]}). */
+        @JavascriptInterface
+        public void cdPickPackages(final String tag) {
+            cdPickTag = tag == null ? "" : tag;
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                    i.addCategory(Intent.CATEGORY_OPENABLE);
+                    i.setType("*/*");
+                    i.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+                    startActivityForResult(i, REQ_PICK_CD);
+                }
+            });
+        }
+
+        /** The files of an app that is installed on this phone (the base and its splits), to send to another device: {ok, label, paths:[...]} or {ok:false, error}. */
+        @JavascriptInterface
+        public String cdPhoneApk(String pkg) {
+            JSONObject res = new JSONObject();
+            try {
+                ApplicationInfo ai = getPackageManager().getApplicationInfo(pkg, 0);
+                JSONArray paths = new JSONArray();
+                paths.put(ai.sourceDir);
+                if (ai.splitSourceDirs != null) for (String sp : ai.splitSourceDirs) paths.put(sp);
+                CharSequence label = getPackageManager().getApplicationLabel(ai);
+                res.put("ok", true);
+                res.put("pkg", pkg);
+                res.put("label", label == null ? pkg : label.toString());
+                res.put("paths", paths);
+            } catch (Exception e) {
+                try { res.put("ok", false); res.put("error", "This phone does not have " + pkg); } catch (Exception ignored) {}
+            }
+            return res.toString();
+        }
+
+        /** The folder files pulled from a device go to (Download/ADB App Manager/Devices/<device>), made if it is missing. Answer: the path, or "Error: ...". */
+        @JavascriptInterface
+        public String cdDownloadDir(String serial) {
+            try {
+                File dir = new File(new File(new File(android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS), "ADB App Manager"), "Devices"), cdSafeName(serial == null || serial.isEmpty() ? "device" : serial.replace(':', '_')));
+                if (!dir.isDirectory() && !dir.mkdirs()) return "Error: could not make " + dir.getAbsolutePath();
+                return dir.getAbsolutePath();
+            } catch (Exception e) {
+                return "Error: " + e.getMessage();
+            }
+        }
+
+        /** The Bluetooth devices this phone is paired with: {available, enabled, needsPermission, devices:[{name, address, kind}]}. Asks for the Bluetooth permission on Android 12+. */
+        @JavascriptInterface
+        public String cdBtDevices() {
+            JSONObject res = new JSONObject();
+            try {
+                android.bluetooth.BluetoothAdapter ad = android.bluetooth.BluetoothAdapter.getDefaultAdapter();
+                res.put("available", ad != null);
+                if (ad == null) return res.toString();
+                res.put("enabled", ad.isEnabled());
+                if (Build.VERSION.SDK_INT >= 31 && checkSelfPermission("android.permission.BLUETOOTH_CONNECT") != PackageManager.PERMISSION_GRANTED) {
+                    res.put("needsPermission", true);
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try { requestPermissions(new String[]{"android.permission.BLUETOOTH_CONNECT"}, REQ_BT_CONNECT); } catch (Exception ignored) {}
+                        }
+                    });
+                    return res.toString();
+                }
+                JSONArray devs = new JSONArray();
+                java.util.Set<android.bluetooth.BluetoothDevice> bonded = ad.getBondedDevices();
+                if (bonded != null) {
+                    for (android.bluetooth.BluetoothDevice d : bonded) {
+                        String kind = "other";
+                        try {
+                            int major = d.getBluetoothClass() == null ? 0 : d.getBluetoothClass().getMajorDeviceClass();
+                            if (major == android.bluetooth.BluetoothClass.Device.Major.WEARABLE) kind = "wearable";
+                            else if (major == android.bluetooth.BluetoothClass.Device.Major.PHONE) kind = "phone";
+                            else if (major == android.bluetooth.BluetoothClass.Device.Major.COMPUTER) kind = "computer";
+                            else if (major == android.bluetooth.BluetoothClass.Device.Major.AUDIO_VIDEO) kind = "audio";
+                        } catch (Exception ignored) {}
+                        devs.put(new JSONObject().put("name", d.getName() == null ? d.getAddress() : d.getName()).put("address", d.getAddress()).put("kind", kind));
+                    }
+                }
+                res.put("devices", devs);
+            } catch (Exception e) {
+                try { res.put("error", String.valueOf(e.getMessage())); } catch (Exception ignored) {}
+            }
+            return res.toString();
+        }
+
+        /** Sends files to a Bluetooth device with Android's Bluetooth sharing: opens the Bluetooth app's device picker. files: [{path, name}]. Answer: "" or "Error: ...". */
+        @JavascriptInterface
+        public String cdBtSend(final String filesJson, final String mime) {
+            try {
+                JSONArray a = new JSONArray(filesJson);
+                final ArrayList<Uri> uris = new ArrayList<Uri>();
+                for (int i = 0; i < a.length(); i++) {
+                    JSONObject o = a.getJSONObject(i);
+                    File src = new File(o.getString("path"));
+                    if (!src.isFile()) continue;
+                    File copy = ShareProvider.newShareFile(MainActivity.this, o.optString("name", src.getName()));
+                    java.io.FileOutputStream out = new java.io.FileOutputStream(copy);
+                    try { copyFile(src, out); } finally { out.close(); }
+                    uris.add(ShareProvider.uriFor(copy));
+                }
+                if (uris.isEmpty()) return "Error: nothing to send";
+                final String type = mime == null || mime.isEmpty() ? "application/vnd.android.package-archive" : mime;
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Intent send = new Intent(uris.size() > 1 ? Intent.ACTION_SEND_MULTIPLE : Intent.ACTION_SEND);
+                            send.setType(type);
+                            if (uris.size() > 1) send.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris); else send.putExtra(Intent.EXTRA_STREAM, uris.get(0));
+                            send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                            // straight to the Bluetooth app when the phone has one (its own device picker opens); the share sheet otherwise
+                            boolean direct = false;
+                            try {
+                                for (android.content.pm.ResolveInfo ri : getPackageManager().queryIntentActivities(send, 0)) {
+                                    String pk = ri.activityInfo.packageName == null ? "" : ri.activityInfo.packageName.toLowerCase(java.util.Locale.US);
+                                    if (pk.contains("bluetooth")) {
+                                        send.setClassName(ri.activityInfo.packageName, ri.activityInfo.name);
+                                        direct = true;
+                                        break;
+                                    }
+                                }
+                            } catch (Exception ignored) {}
+                            if (direct) {
+                                startActivity(send);
+                            } else {
+                                Intent chooser = Intent.createChooser(send, "Send with Bluetooth");
+                                chooser.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                                startActivity(chooser);
+                            }
+                        } catch (Exception e) {
+                            Log.e(TAG, "bluetooth send failed", e);
+                        }
+                    }
+                });
+                return "";
+            } catch (Exception e) {
+                return "Error: " + e.getMessage();
+            }
+        }
+
+        @JavascriptInterface
         public void openUrl(final String url) {
             if (url == null || !url.startsWith("https://")) return;
             runOnUiThread(new Runnable() {
@@ -8622,7 +9605,7 @@ public class MainActivity extends Activity {
         public String requestUsageAccess() {
             if (hasUsageAccess()) return "granted";
             if (!"standard".equals(resolveExecMode())) {
-                executeShell("appops set " + getPackageName() + " GET_USAGE_STATS allow");
+                executeShell("appops set " + getPackageName() + " GET_USAGE_STATS allow; pm grant " + getPackageName() + " android.permission.PACKAGE_USAGE_STATS");
                 if (hasUsageAccess()) return "granted";
             }
             runOnUiThread(new Runnable() {
@@ -9948,6 +10931,7 @@ public class MainActivity extends Activity {
                 o.put("files", hasStorageAccess());
                 o.put("usage", hasUsageAccess());
                 o.put("overlay", hasOverlayAccess());
+                o.put("install_unknown", hasInstallUnknownAccess());
                 o.put("storage_legacy", hasLegacyStorageAccess());
                 o.put("secure_settings", hasWriteSecureSettingsAccess());
                 o.put("restricted_settings", hasRestrictedSettingsAccess());
@@ -9984,6 +10968,29 @@ public class MainActivity extends Activity {
             return "settings";
         }
 
+        /** "Install unknown apps": granted straight through the privileged shell when there is one (appops REQUEST_INSTALL_PACKAGES), else this app's own switch in Settings. Answer: "granted" or "settings". */
+        @JavascriptInterface
+        public String requestInstallUnknownAccess() {
+            if (hasInstallUnknownAccess()) return "granted";
+            if (!"standard".equals(resolveExecMode())) {
+                executeShell("appops set " + getPackageName() + " REQUEST_INSTALL_PACKAGES allow");
+                if (hasInstallUnknownAccess()) return "granted";
+            }
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Intent i = new Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + getPackageName()));
+                        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(i);
+                    } catch (Exception e) {
+                        openOwnAppInfo();
+                    }
+                }
+            });
+            return "settings";
+        }
+
         /** The older Read/Write External Storage permissions some apps still check for, granted straight
          *  through the privileged shell - only ever offered once a working mode is active, so there is no
          *  meaningful unprivileged fallback beyond this app's own permission screen. */
@@ -10011,18 +11018,85 @@ public class MainActivity extends Activity {
             return "settings"; // nothing to open - this one has no Settings screen at all without a shell
         }
 
-        /** The "Allow restricted settings" app-op Android 13+ blocks for a sideloaded app by default,
-         *  covering a handful of other sensitive toggles (accessibility, notification access, usage access
-         *  on some OEM builds) - granted straight through the privileged shell. */
+        /** "Allow restricted settings": the one way to do it by command is {@code appops set <package> ACCESS_RESTRICTED_SETTINGS allow} through the working mode.
+         *  When that passes the access counts as granted (and is remembered); without a working mode, or when the command fails, this app's own App info opens
+         *  (three dots, Allow restricted settings). Answer: "granted" or "settings". */
         @JavascriptInterface
         public String requestRestrictedSettingsAccess() {
             if (hasRestrictedSettingsAccess()) return "granted";
             if (!"standard".equals(resolveExecMode())) {
-                executeShell("appops set " + getPackageName() + " android:read_write_restricted_settings allow");
-                if (hasRestrictedSettingsAccess()) return "granted";
+                if (grantRestrictedSettings()) return "granted";
             }
             openOwnAppInfo();
             return "settings";
+        }
+
+        /** Runs the appops command and decides from what the phone answers whether it passed. */
+        private boolean grantRestrictedSettings() {
+            String out = executeShell("appops set " + getPackageName() + " ACCESS_RESTRICTED_SETTINGS allow");
+            String low = out == null ? "" : out.toLowerCase(java.util.Locale.ROOT);
+            boolean failed = low.contains("error") || low.contains("exception") || low.contains("unknown") || low.contains("not found") || low.contains("denied") || low.contains("inaccessible");
+            if (failed) return false;
+            String got = executeShell("appops get " + getPackageName() + " ACCESS_RESTRICTED_SETTINGS");
+            String g = got == null ? "" : got.toLowerCase(java.util.Locale.ROOT);
+            if (g.contains("ignore") || g.contains("deny") || g.contains("error")) return false;
+            getSharedPreferences("perms", MODE_PRIVATE).edit().putBoolean("restricted_granted", true).apply();
+            return true;
+        }
+
+        /**
+         * "Allow all" through the working mode: everything that has a command is granted at once ({@code appops set} and {@code pm grant}), restricted settings first,
+         * because Usage access needs it. Answer: the permission status ({@link #getPermissionStatus}) after it. What is still missing has no command and needs
+         * its Android screen.
+         */
+        @JavascriptInterface
+        public String grantAllPermissions() {
+            if (!"standard".equals(resolveExecMode())) {
+                String pkg = getPackageName();
+                if (!hasRestrictedSettingsAccess()) grantRestrictedSettings();
+                StringBuilder sb = new StringBuilder();
+                if (!hasStorageAccess()) {
+                    sb.append("appops set ").append(pkg).append(" MANAGE_EXTERNAL_STORAGE allow; ");
+                    sb.append("pm grant ").append(pkg).append(" android.permission.READ_EXTERNAL_STORAGE; ");
+                    sb.append("pm grant ").append(pkg).append(" android.permission.WRITE_EXTERNAL_STORAGE; ");
+                }
+                if (!hasUsageAccess()) {
+                    sb.append("appops set ").append(pkg).append(" GET_USAGE_STATS allow; ");
+                    sb.append("pm grant ").append(pkg).append(" android.permission.PACKAGE_USAGE_STATS; ");
+                }
+                if (!hasOverlayAccess()) sb.append("appops set ").append(pkg).append(" SYSTEM_ALERT_WINDOW allow; ");
+                if (!hasInstallUnknownAccess()) sb.append("appops set ").append(pkg).append(" REQUEST_INSTALL_PACKAGES allow; ");
+                if (!hasLegacyStorageAccess()) {
+                    sb.append("pm grant ").append(pkg).append(" android.permission.READ_EXTERNAL_STORAGE; ");
+                    sb.append("pm grant ").append(pkg).append(" android.permission.WRITE_EXTERNAL_STORAGE; ");
+                }
+                if (!hasWriteSecureSettingsAccess()) sb.append("pm grant ").append(pkg).append(" android.permission.WRITE_SECURE_SETTINGS; ");
+                if (sb.length() > 0) executeShell(sb.toString() + "true");
+            }
+            return getPermissionStatus();
+        }
+
+        /** Usage access was just allowed by hand in Settings: with a working mode, also {@code pm grant ... PACKAGE_USAGE_STATS}, in the background. */
+        @JavascriptInterface
+        public void syncUsageGrant() {
+            if ("standard".equals(resolveExecMode())) return;
+            executor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    try { executeShell("pm grant " + getPackageName() + " android.permission.PACKAGE_USAGE_STATS"); } catch (Exception ignored) {}
+                }
+            });
+        }
+
+        /** Starts the page again (the activity is made anew), so that what was just allowed takes effect everywhere. */
+        @JavascriptInterface
+        public void reloadApp() {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try { recreate(); } catch (Exception ignored) {}
+                }
+            });
         }
 
         private void openOwnAppInfo() {

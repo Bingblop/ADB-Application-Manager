@@ -1,0 +1,486 @@
+<section id="tab-debloater" data-title="UAD-NG Debloater" data-group="The tabs">
+  <p class="hg-lead">This tab lists the apps on your phone that a community project has studied, tells you in plain words how risky each one is to remove, and lets you uninstall, disable or restore them after a review step, with a history you can undo.</p>
+  <p><b>Where to find it:</b> the third tab in the usual order, named <b>UAD-NG Debloater</b>. If it is missing, it has been switched off: turn it on again in the <a href="#feature-list">Feature List</a>.</p>
+
+  <h4>What debloating is</h4>
+  <p><b>Bloatware</b> means apps that came with the phone but that you did not choose: extras from the phone maker, your mobile network or Google. Some are useful. Others you never open, yet they take space or run in the background. <b>Debloating</b> means removing or switching off the ones you do not want (see the <a href="#glossary">glossary</a>).</p>
+  <p>The danger is that some preinstalled apps are parts of Android itself. Removing the wrong one can break calls, the keyboard, or even the start-up of the phone. So this tab tells you, for each app, how safe it is to remove. Read <a href="#debloater-safety">Debloating safely, step by step</a> before you remove anything.</p>
+
+  <h4>What UAD-NG is</h4>
+  <p>UAD-NG stands for <b>Universal Android Debloater Next Generation</b>, a free community project. It keeps a long list of Android package names (a package name is an app's unique ID, such as <code>com.example.app</code>). For each package the list gives a short description, a <b>removal level</b> from safe to dangerous, the list it belongs to (phone maker, Google, mobile network and so on), and which other packages need it.</p>
+  <p>This app does not contain the list. It downloads it from the project's GitHub page, keeps a copy on your phone, and compares it with your apps. The levels and descriptions are the project's advice, not a promise that nothing will break on your phone.</p>
+
+  <h4>Before you start</h4>
+  <ul>
+    <li><b>Looking</b> at the list needs no working mode. <b>Uninstall, Disable, Restore and Undo</b> need one: ADB over TCP, Wireless Debugging, Shizuku or Root (see <a href="#modes-overview">Working modes</a>). In Read-Only mode, tapping one opens a sheet called <b>Working Mode Required</b> with a <b>Set Up Working Mode</b> button.</li>
+    <li>The list is downloaded the first time you open the tab (about 1.6 MB), so the first visit needs the internet. After that the tab works offline from the saved copy, and the app refreshes it when it is over a week old.</li>
+    <li>Make a backup first. Steps are in <a href="#debloater-safety">Debloating safely</a> and <a href="#apps-backup">Backups</a>.</li>
+  </ul>
+
+  <h4>The top card and the list file</h4>
+  <table class="hg-table">
+    <thead><tr><th>Control</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><b>Status line</b></td><td>Says what is happening ("Downloading the latest UAD-NG list (about 1.6 MB)...", "The UAD-NG list has not been downloaded yet."), or, when all is well, how many packages the list knows, when it was updated and how many are on this phone.</td></tr>
+      <tr><td><b>Update List</b></td><td>Downloads the list again now. The button is greyed out while a download runs.</td></tr>
+      <tr><td><b>Removal Levels</b></td><td>Opens or closes a panel that explains the four levels (also in <a href="#debloater-safety">Debloating safely</a>).</td></tr>
+      <tr><td><b>UAD-NG Wiki</b></td><td>Opens the project's wiki in your browser.</td></tr>
+      <tr><td><b>History</b></td><td>Opens the log of everything you did here, with Undo (see below).</td></tr>
+    </tbody>
+  </table>
+  <p>When you open the tab, the app downloads the list by itself if it has none or if the copy is over a week old. If a download fails (no internet, GitHub not reachable) you see "UAD-NG list update failed ... (using cached list)" and your old copy stays. A damaged or incomplete download is thrown away, so a bad file never replaces a good one. With no good copy yet, the list area says "Waiting for the UAD-NG list..." until a download works: connect to the internet and tap <b>Update List</b>.</p>
+  <p>Only apps that are both on your phone and in the project's list are shown. This includes apps that were already uninstalled for you, so you can bring them back. An app that is not in the list never appears here; you can still manage it in the <a href="#tab-apps">Application Manager</a>.</p>
+
+  <h4>Finding the apps you want</h4>
+  <p>Under the card are rows of filter chips. Tap a chip to switch it on or off.</p>
+  <table class="hg-table">
+    <thead><tr><th>Row</th><th>Choices</th><th>How it works</th></tr></thead>
+    <tbody>
+      <tr><td>Removal level</td><td><b>Recommended</b>, <b>Advanced</b>, <b>Expert</b>, <b>Unsafe</b></td><td>You can switch several on. Only Recommended is on at first. With all four off, every level is shown.</td></tr>
+      <tr><td>List</td><td><b>All vendors</b>, <b>OEM</b>, <b>Google</b>, <b>AOSP</b>, <b>Carrier</b>, <b>Misc</b></td><td>One at a time. OEM is the phone maker, Google is Google's own apps, AOSP is the plain Android system, Carrier is added by your mobile network, Misc is the rest. Anything the project files under another name shows only under All vendors.</td></tr>
+      <tr><td>Brand</td><td><b>All brands (n)</b>, then one chip per brand</td><td>One at a time. Your phone's brand comes first and is marked, then the others, biggest first. Tap your own brand to see only your maker's apps; nothing is filtered by brand until you tap a chip, and the chip you pick is remembered. The project has no brand field, so the app guesses the brand from the package name, and can be wrong now and then.</td></tr>
+      <tr><td>State</td><td><b>On device</b>, <b>Enabled</b>, <b>Disabled</b>, <b>Uninstalled</b>, <b>All</b></td><td>One at a time. On device (the start choice) means everything that is not uninstalled. Disabled means switched off. Uninstalled means removed for you.</td></tr>
+      <tr><td>Also show only</td><td><b>All</b>, <b>Updated 7d</b>, <b>Running</b>, <b>3rd Party</b>, <b>System</b>, <b>Suspended</b>, <b>Patched</b></td><td>Combine as many as you like. 3rd Party and System exclude each other. When two or more are on, a line "Showing apps that are ..." appears with a <b>Clear filters</b> chip.</td></tr>
+    </tbody>
+  </table>
+  <p>The search box ("Search package, name or description...") looks in the package name, the app name, the description and the brand. The line above the list says how many rows are shown and how many are ticked.</p>
+  <div class="hg-note"><b>Tip.</b> <b>Clear filters</b> clears only the "Also show only" pills; <b>Clear</b> next to <b>Select shown</b> clears your ticks. Level, list, state and brand are remembered between launches; the pills only if you turn on <b>Remember my filters</b> in <a href="#prefs">Settings</a>.</div>
+
+  <h4>Reading a row</h4>
+  <ul>
+    <li><b>Tick circle</b> on the left: tap it to select the app.</li>
+    <li><b>Name and package name</b>, then small tags: the removal level, the brand, the list (for example Oem), and the state if it is not Enabled ("disabled" or "uninstalled"). "suspended" means the app is paused.</li>
+    <li><b>Description</b> from the project. It shows two lines; tap the row to read it all. Tapping also shows <b>Depends on</b>, the packages this app needs.</li>
+    <li><b>Needed by</b> in orange lists installed apps that need this one. Take it as a warning.</li>
+    <li><b>The icon button on the right</b> is the Action Button: by default it opens the app's Android settings, and holding it lists more actions. Change it under Action Button in <a href="#prefs">Settings</a>.</li>
+  </ul>
+  <p>Rows are sorted from Recommended to Unsafe, then by name.</p>
+
+  <h4>Step by step: removing or switching off apps</h4>
+  <ol class="hg-steps">
+    <li>Check that the status line shows a list and that a working mode is active (the badge in the header). Leave Recommended on.</li>
+    <li>Read the description of each app you are thinking about, then tick a few. <b>Select shown</b> ticks every row that passes your filters, so use it only when you have read them all.</li>
+    <li>Tap <b>Uninstall</b>, <b>Disable</b> or <b>Restore</b>. A sheet called <b>Review: Uninstall Packages</b> (or Disable, or Restore) opens. It lists every app that the action will touch, with its level. Nothing has happened yet.</li>
+    <li>If the selection holds Expert or Unsafe apps, a red line warns that they can break important features and, for Unsafe, can make the phone boot-loop (restart again and again without ever finishing starting). Press <b>Cancel</b> if in doubt.</li>
+    <li>Press the main button at the bottom of the sheet, for example <b>Uninstall 3</b>. A message says "Running on 3 packages...". When it ends, a <b>Debloater Results</b> sheet shows each app as Success or Failed with the phone's own reply. Press <b>Done</b>.</li>
+    <li>Restart the phone and use it normally before you remove more.</li>
+  </ol>
+
+  <h4>What each button does</h4>
+  <table class="hg-table">
+    <thead><tr><th>Button</th><th>What happens</th><th>Skips</th></tr></thead>
+    <tbody>
+      <tr><td><b>Uninstall</b></td><td>Removes the app for your user only. A system app stays in the phone's protected storage, so it can come back with Restore. Its settings and data for you are deleted.</td><td>Apps already uninstalled</td></tr>
+      <tr><td><b>Disable</b></td><td>Switches the app off. It disappears from the app drawer and stops running, but stays installed.</td><td>Apps that are not Enabled</td></tr>
+      <tr><td><b>Restore</b></td><td>Brings back an Uninstalled app, or switches a Disabled app on again.</td><td>Apps already enabled</td></tr>
+      <tr><td><b>Save to List</b></td><td>Asks for a name (it suggests "Debloat" and the date) and saves the ticked apps as a list in <a href="#tab-saved-lists">Saved Applications</a>. It changes no app.</td><td>Needs at least one tick</td></tr>
+    </tbody>
+  </table>
+  <div class="hg-warn"><b>Careful.</b> <b>Uninstall</b> on an app that is not a system app (one installed like any other app) can remove it for good, and Restore may then have nothing to bring back. Install it again from its store if you want it.</div>
+
+  <h4>The log and Undo</h4>
+  <p>Press <b>History</b> to open <b>Debloat History</b>. Every action is listed, newest first, with the date, how many items worked, and a line for each app. The last 150 entries are kept on the phone. Batch actions from the Application Manager are logged here too.</p>
+  <ul>
+    <li><b>Undo</b> on an entry reverses what worked in it: uninstalled apps are restored, disabled apps are enabled again. You are asked to confirm ("N packages will be reverted"), and an <b>Undo Results</b> sheet follows. The undo itself is also logged. Undo needs a working mode.</li>
+    <li><b>Copy Log</b> copies the history as text. <b>Clear History</b> deletes it, after a question; after that, the old entries can no longer be undone.</li>
+  </ul>
+  <p>The app menu in the Application Manager shows a small <b>UAD-NG</b> tag for apps that are in the list; tap it for the same description (see <a href="#apps-menu">The app menu</a>).</p>
+
+  <h4>When something goes wrong</h4>
+  <table class="hg-table">
+    <thead><tr><th>You see</th><th>What it means and what to do</th></tr></thead>
+    <tbody>
+      <tr><td>"No packages match these filters."</td><td>Your chips are too narrow. Turn on more levels, or set State to All.</td></tr>
+      <tr><td>"The UAD-NG list has not been downloaded yet."</td><td>The first download did not work. Connect to the internet and tap <b>Update List</b>.</td></tr>
+      <tr><td>"Nothing to restore: the selected packages are already enabled"</td><td>Restore acts only on Uninstalled and Disabled apps. Set State to one of them.</td></tr>
+      <tr><td>Failed, with "only root can delete system app for a particular user"</td><td>Android would not let a normal shell remove a system app. The app already tried a second way. Use <b>Disable</b> instead, or switch to Root mode.</td></tr>
+      <tr><td>Failed, with a message about a device policy or a restriction</td><td>A work profile, device owner or parental control blocks removing apps. It cannot be bypassed from here while it is set.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="debloater-safety" data-title="Debloating safely, step by step" data-group="The tabs">
+  <p class="hg-lead">Removing the wrong app can make the phone behave oddly or even refuse to start. This page is the careful way to do it: back up, start with the safest group, change a few apps at a time, test, and know how to put things back.</p>
+  <p><b>Needs:</b> a working mode (ADB over TCP, Wireless Debugging, Shizuku or Root, see <a href="#modes-overview">Working modes</a>), a battery charged above half, and about an hour without hurry. Know your screen lock and your Google account password: after a factory reset you will need them.</p>
+
+  <div class="hg-danger"><b>Risky.</b> A mistake can leave the phone stuck on its logo (a boot loop). Work in small steps, back up first, and never remove an app you cannot explain. If you cannot tell what an app is for, leave it alone.</div>
+
+  <h4>What the four levels mean</h4>
+  <p>The levels come from the UAD-NG project. The text is the one the tab shows under <b>Removal Levels</b>.</p>
+  <table class="hg-table">
+    <thead><tr><th>Level</th><th>In plain words</th><th>What can go wrong</th></tr></thead>
+    <tbody>
+      <tr><td><b>Recommended</b></td><td>Safe to remove for most people, including apps you can reinstall from an app store. Still worth a quick review, since everyone uses their phone differently.</td><td>You lose an app you did use, such as a preinstalled game, video or social app.</td></tr>
+      <tr><td><b>Advanced</b></td><td>Breaks minor or obscure features, overlays, or default apps (keyboard, gallery, launcher) that a better alternative can replace.</td><td>Typing, photo viewing or the home screen stops working until you install another app for the job. A small setting stops working.</td></tr>
+      <tr><td><b>Expert</b></td><td>Breaks widespread or important features, but not basic operation. It should not boot-loop the phone unless the description says so, with no guarantee.</td><td>Features you rely on can stop: for example calling extras, backup, or the camera's extra modes. This is hard to track down later.</td></tr>
+      <tr><td><b>Unsafe</b></td><td>Can break vital parts of Android, or may be illegal to remove where you live (for example emergency alerts). High risk of a boot-loop.</td><td>The phone may not start, or may lose emergency functions. Do not remove these.</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Step by step</h4>
+  <ol class="hg-steps">
+    <li><b>Back up your own things.</b> Copy photos, contacts and messages to your cloud account or a computer, the way you normally do. Removing an app deletes that app's own data, and a factory reset (the last resort below) deletes everything on the phone.</li>
+    <li><b>Back up the apps you plan to touch.</b> In the Application Manager, the Backups box saves an app's APK (its installer file), its permissions and its app ops in any working mode; the app's data needs Root (see <a href="#apps-backup">Backups</a>).</li>
+    <li><b>Open the UAD-NG Debloater tab</b> and let the list update. Check that the header badge shows a working mode.</li>
+    <li><b>Keep only Recommended on.</b> Leave State on On device. Tap your phone's brand chip to shorten the list. You will see rows with the app name, the package name and a description.</li>
+    <li><b>Read every description.</b> Tap a row to read all of it and to see Depends on. Read the orange "Needed by" line. If the text is missing, strange, or mentions something you use, skip the app.</li>
+    <li><b>Tick only three to five apps.</b> A short batch is easy to test and to undo. Do not use Select shown on a long list.</li>
+    <li><b>Prefer Disable when unsure.</b> Disable keeps the app on the phone, only switched off, and is the lightest change. Uninstall for your user is stronger. Neither frees much storage for a system app (its file stays on the protected system part). The gain is less background activity and a tidier phone.</li>
+    <li><b>Read the review sheet</b> and confirm. Check the results are all Success.</li>
+    <li><b>Test the phone.</b> Restart it. Then check: a call, a text message, the camera, Wi-Fi and mobile data, Bluetooth, the keyboard, fingerprint or face unlock, notifications, an alarm, charging, and anything you use every day. Use the phone normally for a day.</li>
+    <li><b>Keep a record.</b> History lists what you did, and <b>Copy Log</b> copies it as text, which you can paste into a note. Before a batch you can also use <b>Save to List</b>, so you have the names later.</li>
+    <li><b>Repeat</b> with the next small batch. Only when you are comfortable with Recommended should you look at Advanced, and then one app at a time.</li>
+  </ol>
+
+  <h4>Putting one app back</h4>
+  <ol class="hg-steps">
+    <li>Open the UAD-NG Debloater tab. Set State to <b>Uninstalled</b> (for an uninstalled app) or <b>Disabled</b>, or to <b>All</b>. Turn all the level chips off, so that every level is shown.</li>
+    <li>Find the app (use the search box) and tick it.</li>
+    <li>Tap <b>Restore</b>, check the review sheet, and confirm. An uninstalled app is reinstalled from the phone's own storage, a disabled app is enabled.</li>
+    <li>Other ways: open <b>History</b> and tap <b>Undo</b> on the entry that removed it, or open the app's menu in the <a href="#tab-apps">Application Manager</a> (filter <b>Uninstalled</b> to find it), which offers <b>Reinstall</b> or <b>Enable</b>.</li>
+  </ol>
+  <p>A restored app acts like a freshly installed one: its old settings and data are usually gone, and it may ask for permissions again.</p>
+
+  <h4>Disable or uninstall for your user</h4>
+  <table class="hg-table">
+    <thead><tr><th></th><th>Disable</th><th>Uninstall (for your user)</th></tr></thead>
+    <tbody>
+      <tr><td>What it does</td><td>Switches the app off. It stays installed.</td><td>Removes the app for your user account only.</td></tr>
+      <tr><td>The app's data</td><td>Kept.</td><td>Deleted.</td></tr>
+      <tr><td>Undo with</td><td>Restore (or Enable).</td><td>Restore (reinstalls from the phone's own storage).</td></tr>
+      <tr><td>A system app</td><td>Stays on the phone, switched off.</td><td>Stays on the protected system part, hidden from you.</td></tr>
+      <tr><td>An app you installed</td><td>Works the same.</td><td>May be removed completely: reinstall from a store.</td></tr>
+    </tbody>
+  </table>
+  <div class="hg-warn"><b>Careful.</b> A big Android or phone-maker update can bring back apps you removed, and it can switch disabled apps on again. This differs from phone to phone. If it happens, remove them again. A saved list (<b>Save to List</b>) makes that quick.</div>
+
+  <h4>What never to remove</h4>
+  <p>There is no complete list, because every phone is different. These roles are essential on almost every phone. Do not remove, disable or uninstall an app that does one of these things unless the description clearly says it is safe and you have a replacement:</p>
+  <ul>
+    <li>The system interface: the status bar, notification shade, lock screen and navigation (often called System UI).</li>
+    <li>The phone and calling parts, contacts storage, and the messages app if you use texts.</li>
+    <li>Settings, the app installer, and the permission controller.</li>
+    <li>Your home screen app (launcher) and your keyboard, unless you have already installed and chosen another one.</li>
+    <li>Google Play services and the Play Store, if you use Google apps; the Android System WebView, which many apps use to show web pages.</li>
+    <li>Anything for emergency alerts, SIM card, mobile data, Wi-Fi, Bluetooth, fingerprint or face unlock, and the camera.</li>
+    <li>Every app tagged <b>Unsafe</b>, and any app with a "Needed by" line that lists apps you use.</li>
+  </ul>
+
+  <h4>If the phone will not start: boot loop</h4>
+  <p>A <b>boot loop</b> is when the phone restarts again and again, or stays on the logo, and never reaches the home screen. It happens when something the system needs at start-up is gone. Try these in order, and stop at the first one that works:</p>
+  <ol class="hg-steps">
+    <li><b>Wait and restart.</b> Hold the power button until the phone turns off, wait ten seconds, and start it again.</li>
+    <li><b>If it reaches the home screen, even for a moment,</b> open this app and use <b>History</b> then <b>Undo</b> on the last entry, or Restore the apps you removed.</li>
+    <li><b>Safe mode.</b> It starts the phone with only its built-in apps. How to start it depends on the phone: often you hold Volume Down while the logo shows, or press and hold <b>Power off</b> on the power menu. If the phone starts in safe mode, an app you installed is probably the trouble; restart normally afterwards. Safe mode does not undo a removal, and this app does not run in safe mode.</li>
+    <li><b>Computer with ADB (advanced).</b> If USB debugging was on, <code>adb shell pm install-existing PACKAGE</code> brings an app back. A phone stuck on its logo often does not allow this.</li>
+    <li><b>Factory reset, as the very last resort.</b> From the phone's recovery menu, choose to wipe data. This deletes everything stored on the phone but puts back the system apps you removed, because they never left the system part. You will need your screen lock and account passwords.</li>
+  </ol>
+  <div class="hg-note"><b>Tip.</b> Because you only change a few apps at a time and restart after each batch, a boot loop almost always points to those few apps. Tell them to whoever helps you.</div>
+
+  <h4>When a removal fails</h4>
+  <p>A <b>Failed</b> row means the phone refused. Nothing changed for that app. Read the reply on the Debloater Results sheet; the tab adds a note for the common refusals (system app needing root, a device policy, a restriction). Choose <b>Disable</b> instead, or leave the app.</p>
+</section>
+
+<section id="tab-installer" data-title="APK Installer" data-group="The tabs">
+  <p class="hg-lead">Install an app from a file on your phone: a plain <b>APK</b> (an Android app file), or a bundle (<b>APKS</b>, <b>APKM</b>, <b>XAPK</b>) made of several parts. The tab reads the file first and shows what it is, then lets you choose how to install it.</p>
+  <p><b>Where to find it:</b> the fourth tab in the usual order, named <b>APK Installer</b> (switch it on in the <a href="#feature-list">Feature List</a> if it is missing).</p>
+
+  <h4>Before you start</h4>
+  <ul>
+    <li>Choosing and reading a file needs no working mode. Installing works in two ways: with <b>ADB</b>, <b>Shizuku</b> or <b>Root</b> (see <a href="#modes-overview">Working modes</a>) you get every option; with <b>No privilege</b> Android's own install screen asks you to confirm and most options are switched off. In that case Android can also ask you to allow installs from this app first (Android calls the setting <b>Install unknown apps</b>): switch it on for this app when asked, then press <b>Install</b> again if nothing happens. You can allow it beforehand: <b>About</b>, <b>Permissions</b>, then <b>Allow</b> on the row <b>Install unknown apps</b> (<a href="#app-permissions">The permissions this app asks for</a>).</li>
+    <li>The app first copies the file into its private cache and unpacks the parts, so keep free space of up to twice the file size. The cache is emptied after the install.</li>
+    <li>Only install files from sources you trust. An APK can do anything a normal app can.</li>
+  </ul>
+
+  <h4>Step by step</h4>
+  <ol class="hg-steps">
+    <li>Open the tab. The first time, the app also searches your storage for package files (see Find APKs below).</li>
+    <li>Pick a file in one of three ways: <b>Choose APK / APKS / APKM / XAPK</b> (Android's file picker opens), a row in the found-files list (tap it), or <b>Install XAPK (APK + OBB data)</b> (the same picker, with a reminder that game data is copied afterwards). You can also open a package from another app and choose this app; press <b>Always</b> to make it the default installer. The tab then opens by itself, and switches itself back on if you had turned it off.</li>
+    <li>The hint under the buttons says "Reading package..." and then, for example, "Loaded APK - review and install below." The page scrolls to a card with the app's name. More cards appear: <b>VirusTotal scan</b>, <b>Splits</b> (bundles only), <b>Game data (OBB)</b> (only when the file has some), and <b>Install options</b>.</li>
+    <li>Read the package card (next table).</li>
+    <li>Optional: scan the file with VirusTotal (below).</li>
+    <li>Check <b>Install options</b>. The start values suit most files, and <b>Authorizer</b> (the part that carries out the install) is already set to your active mode. If no working mode is on, it starts on No privilege.</li>
+    <li>Press <b>Install</b>. A message says "Installing ...". Below the button, a grey line shows the command that will run, for example <code>pm install -r (1 file)</code>. With No privilege it says instead that a system install dialog will ask you to confirm.</li>
+    <li>A result sheet opens, titled "Install" plus the package name, with the method used. On success it offers <b>Launch Application</b>, <b>Application Settings</b> and, for a file on your storage (for example one loaded from the found-files list, and only while <b>Offer to delete the file afterwards</b> is on), <b>Delete the installer file</b>. Press <b>Done</b>.</li>
+  </ol>
+
+  <h4>The package card</h4>
+  <table class="hg-table">
+    <thead><tr><th>You see</th><th>It means</th></tr></thead>
+    <tbody>
+      <tr><td>Name and package name</td><td>The app's label, and its unique ID under it.</td></tr>
+      <tr><td><b>Version</b></td><td>Version name, and the version number in brackets. A bigger number is newer.</td></tr>
+      <tr><td><b>Installed</b></td><td>Shown only if the app is already on the phone: the version you have now.</td></tr>
+      <tr><td><b>Min SDK</b>, <b>Target SDK</b></td><td>The oldest Android the app runs on, and the one it was built for. 26 is Android 8, 29 is Android 10, 30 is Android 11, 33 is Android 13, 34 is Android 14.</td></tr>
+      <tr><td><b>Size</b>, <b>Splits</b></td><td>Total size of all parts, and how many files the package holds.</td></tr>
+      <tr><td>Signature line</td><td>Every app is signed with its maker's key, and Android only accepts an update signed with the same key. The line says one of: "Signed. Not currently installed."; "Signature matches the installed app."; "Signed with a different key than the installed app - Android will reject this as an update."; or a warning that Android cannot verify the signature (edited after signing, or unsigned).</td></tr>
+    </tbody>
+  </table>
+  <p>The card does not list the permissions the app asks for. After installing, you can check them in the <a href="#tab-apps">Application Manager</a>. The switches <b>Display SDK information</b>, <b>Display package size</b> and <b>Display package version</b> hide or show the chips.</p>
+  <p><b>VirusTotal scan (optional).</b> Paste your own free API key from virustotal.com, then press <b>Scan this package</b>. Only the file's SHA-256 fingerprint (a short code for its exact contents) is sent. The result says "Clean - no engine flagged this file", or how many engines flagged it as malicious or suspicious, with counts and a link to the full report. If VirusTotal has not seen the file, a button <b>Upload it for analysis</b> appears: that sends the whole file, so do not use it for anything private. The key is stored on this device only. For a bundle, only the base APK is checked.</p>
+
+  <h4>Install options</h4>
+  <p>The app always replaces an installed copy of the same app and keeps its data (the <code>-r</code> flag); there is no switch for that. The lines marked * are greyed out and cleared when the Authorizer is No privilege.</p>
+  <table class="hg-table">
+    <thead><tr><th>Option</th><th>What it does</th><th>Start</th></tr></thead>
+    <tbody>
+      <tr><td><b>Authorizer</b></td><td><b>ADB</b>: through the app's own ADB link (Wireless Debugging or TCP). <b>Shizuku</b> and <b>Root</b>: the same install through that backend. <b>No privilege</b>: Android's install dialog asks you; install reason and package source are passed on where Android allows.</td><td>Your active mode</td></tr>
+      <tr><td>*<b>Grant all permissions</b></td><td>Gives the app every permission it asks for.</td><td>Off</td></tr>
+      <tr><td>*<b>Bypass low target SDK block</b></td><td>Lets a very old app install on Android 14 or newer.</td><td>Off</td></tr>
+      <tr><td>*<b>Allow downgrade</b></td><td>Installs an older version over a newer one.</td><td>Off</td></tr>
+      <tr><td>*<b>Allow test packages</b></td><td>Accepts apps marked as test-only.</td><td>Off</td></tr>
+      <tr><td>*<b>Install for all users</b></td><td>Installs for every user of the phone.</td><td>Off</td></tr>
+      <tr><td>*<b>Request update ownership</b></td><td>Asks Android 14 to make this app the owner of future updates.</td><td>Off</td></tr>
+      <tr><td><b>Install reason</b>, <b>Package source</b></td><td>Labels the install (Default, Unknown, Policy, Device restore, Device setup, User; and Default, Unspecified, Store, Local file, Downloaded file, Other). Package source needs Android 13.</td><td>Default</td></tr>
+      <tr><td>*<b>Install source / installer package</b>, <b>Install requester / originating URI</b></td><td>Records which store or web address the app "came from". The arrow button lists common choices.</td><td>Empty</td></tr>
+      <tr><td>*<b>Manual dex optimization</b>, <b>Dex optimization mode</b>, *<b>Force optimization</b></td><td>Compiles the app after install (verify, speed-profile, speed, everything). Mostly for experts.</td><td>Off, mode speed</td></tr>
+      <tr><td><b>Block signature mismatch</b></td><td>Refuses an update signed with a different key than the installed copy.</td><td>On</td></tr>
+      <tr><td><b>Block unknown signature</b></td><td>Refuses a package that is unsigned or unreadable.</td><td>On</td></tr>
+      <tr><td><b>Auto-delete package after install</b></td><td>Deletes the chosen file once it installs. This is permanent and has no Undo.</td><td>Off</td></tr>
+      <tr><td><b>Offer to delete the file afterwards</b></td><td>After success, offers to delete the file; it goes to a hidden folder first, with an Undo.</td><td>On</td></tr>
+      <tr><td><b>Select all splits by default</b></td><td>Ticks every part of a bundle (see <a href="#installer-splits">Split packages</a>).</td><td>Off</td></tr>
+    </tbody>
+  </table>
+  <div class="hg-warn"><b>Careful.</b> Leave the two <b>Block</b> switches on. Turn them off only if you know why, because they stop you from replacing a real app with a look-alike signed by someone else.</div>
+
+  <h4>Find APKs on this device</h4>
+  <p>The tab can list the package files already on your phone. It runs by itself the first time you open the tab, and again whenever you press <b>Find APKs on this device</b>. It needs All-files access (<a href="#app-permissions">Permissions</a>) or a working mode; without them the status line offers a <b>Grant access</b> button. With a working mode it also looks in Android/data and Android/obb. It covers internal storage and SD cards, skips trash folders, and stops after about 2,000 files or 25 seconds, saying "search stopped early".</p>
+  <ul>
+    <li>Each row shows a badge (APK, APKS, APKM or XAPK), the file name, size, age, the folder, and for plain APKs the package and version. <b>Duplicate</b> means the same content as another found file; <b>Older version</b> means a newer one of the same app is also there.</li>
+    <li>Use the box <b>Filter found files...</b> and the type drop-down (All types, APK, APKS, APKM, XAPK). Tap a row to load that file into the installer.</li>
+    <li><b>Delete one file:</b> press and hold the row. A sheet <b>Delete ...?</b> shows the path; press <b>Delete from this device</b>. The file moves to a hidden folder and an Undo bar stays for a few seconds. After the bar goes, the file is gone for good.</li>
+    <li><b>Delete many:</b> press <b>Select</b>, tick rows, or use <b>Select duplicates and older versions</b> or <b>All</b>. Then <b>Delete selected</b> asks once and gives one Undo for the whole batch. <b>Done</b> leaves selection.</li>
+  </ul>
+
+  <h4>What happens during the install, and errors</h4>
+  <p>The app checks the signature gates, then installs all chosen files in one step through the Authorizer. With game data, a line shows "Copying data file 1 of 2: ..." afterwards. The result sheet quotes Android's own reply: <b>Success</b>, or a line starting with <code>Failure</code>. The app adds a "Note:" line for the common ones.</p>
+  <table class="hg-table">
+    <thead><tr><th>Message</th><th>Meaning and fix</th></tr></thead>
+    <tbody>
+      <tr><td><code>INSTALL_FAILED_UPDATE_INCOMPATIBLE</code>, "signatures do not match"</td><td>The installed copy has a different signing key. Only uninstalling it first fixes this, which deletes its data. Back it up first.</td></tr>
+      <tr><td><code>INSTALL_PARSE_FAILED_NO_CERTIFICATES</code> and similar</td><td>Android cannot verify the file's signature (edited, or unsigned). Installing it from the <a href="#tab-files">File Manager</a> signs a copy with this app's key for you.</td></tr>
+      <tr><td><code>INSTALL_FAILED_VERSION_DOWNGRADE</code></td><td>The file is older than the installed app. Turn on <b>Allow downgrade</b>.</td></tr>
+      <tr><td><code>INSTALL_FAILED_TEST_ONLY</code></td><td>A test-only app. Turn on <b>Allow test packages</b>.</td></tr>
+      <tr><td><code>INSTALL_FAILED_DEPRECATED_SDK_VERSION</code></td><td>An app built for a very old Android. Turn on <b>Bypass low target SDK block</b>.</td></tr>
+      <tr><td><code>INSTALL_FAILED_OLDER_SDK</code></td><td>The app needs a newer Android than yours.</td></tr>
+      <tr><td><code>INSTALL_FAILED_NO_MATCHING_ABIS</code></td><td>The app has no code for this phone's processor. Find another build.</td></tr>
+      <tr><td><code>INSTALL_FAILED_INSUFFICIENT_STORAGE</code></td><td>Not enough free space.</td></tr>
+      <tr><td><code>INSTALL_FAILED_VERIFICATION_FAILURE</code></td><td>Play Protect refused or timed out. Turn off its app scanning, or "Verify apps over USB" in Developer options, and try again.</td></tr>
+      <tr><td>"install files are no longer available - pick the package again"</td><td>The cache was cleared. Choose the file again.</td></tr>
+      <tr><td>"Install cancelled" (No privilege)</td><td>You pressed Cancel in Android's install dialog.</td></tr>
+    </tbody>
+  </table>
+  <div class="hg-note"><b>Tip.</b> No privilege hands the file to Android's own installer. This app has not been tried that way on every phone, and some phones block it. If Android asks to allow installs from this app (Install unknown apps), switch that on for this app: the row <b>Install unknown apps</b> in <b>About</b>, <b>Permissions</b> does the same. If you still see an install blocked message, switch the Authorizer to ADB, Shizuku or Root.</div>
+  <p><b>To undo an install:</b> in the Application Manager, open the app's menu and uninstall it. Its data is deleted, so back up first if it matters.</p>
+</section>
+
+<section id="installer-splits" data-title="Split packages, APKS, APKM, XAPK and game data" data-group="The tabs">
+  <p class="hg-lead">Many apps come as several files, not one. This page explains what that means, which file types the installer accepts, how it chooses the parts your phone needs, how game data is copied, and what to try when a bundle will not install.</p>
+  <p><b>Where to find it:</b> in the <a href="#tab-installer">APK Installer</a> tab, in the <b>Splits</b> and <b>Game data (OBB)</b> cards. They appear only when the file you picked has those parts.</p>
+
+  <h4>What a split APK is</h4>
+  <p>A simple app is one APK file. A <b>split</b> app is cut into parts: a <b>base APK</b> (the core of the app) and extra files for one thing each. Most extra files are <b>config splits</b>, made for one processor type (for example arm64-v8a), one screen density (for example xxhdpi) or one language (for example en). Others are <b>feature modules</b>, optional parts of the app. All parts of one app must be installed together, in a single step.</p>
+  <p>Developers do this to keep downloads small: Google Play sends each phone only the parts it needs. When you get an app outside Play, those parts are packed into one file called a <b>bundle</b>.</p>
+
+  <h4>Which files the installer accepts</h4>
+  <table class="hg-table">
+    <thead><tr><th>Type</th><th>What it is</th></tr></thead>
+    <tbody>
+      <tr><td><b>APK</b></td><td>One app file.</td></tr>
+      <tr><td><b>APKS</b></td><td>A bundle made by Google's bundletool and similar tools: a ZIP file of APKs.</td></tr>
+      <tr><td><b>APKM</b></td><td>The bundle format of APKMirror, also a ZIP file of APKs.</td></tr>
+      <tr><td><b>XAPK</b></td><td>A ZIP with one or more APKs, a manifest, and usually game data (OBB) files.</td></tr>
+    </tbody>
+  </table>
+  <p>The app decides by the file's content, not its name. If the file opens as an installable APK, it is an APK. If not, it is opened as a ZIP of APKs, and called XAPK if it has an XAPK manifest or game data, APKM if it carries APKMirror's info file, and APKS otherwise. After picking, the hint says "Loaded APKS", "Loaded XAPK with 2 game data files" and so on. A file with no APK inside shows "Could not read that package: no APKs found inside this archive". A very large file (over 8 GB) is refused as too large to be an app package.</p>
+
+  <h4>The Splits card</h4>
+  <p>Each part is a row with a switch. The first row is <b>Base APK</b>; it is always included and cannot be switched off. Under every name you see the file name, its size and a note about your phone. Three links sit above the list.</p>
+  <table class="hg-table">
+    <thead><tr><th>Link</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><b>Match this phone</b></td><td>Ticks the base and the parts that fit your phone (see below).</td></tr>
+      <tr><td><b>Select all</b></td><td>Ticks every part.</td></tr>
+      <tr><td><b>Only base</b></td><td>Leaves just the base.</td></tr>
+    </tbody>
+  </table>
+  <p>The switch <b>Select all splits by default</b> in Install options makes every package open with all parts ticked.</p>
+
+  <h4>How it picks the parts for your phone</h4>
+  <p>The app asks the phone for its processor types (best first), its screen density, and its language list. Then it ticks:</p>
+  <ul>
+    <li><b>CPU:</b> one split only, the first type on your phone's list that the bundle has. The note reads "fits this phone (CPU arm64-v8a)"; the others read "another CPU". If no CPU split fits, none is ticked, and you may need another build of the app.</li>
+    <li><b>Screen density:</b> the one Android itself would use for your screen, usually the closest. The rest read "another screen density".</li>
+    <li><b>Language:</b> every language in your phone's language list (Settings, Languages). The rest read "another language". English is not added if it is not on your list.</li>
+    <li><b>Feature modules and other extras</b> are not ticked: the note reads "feature module (optional)", "for a feature module" or "optional extra".</li>
+  </ul>
+  <p>The line under the Install button shows how many files will go in, for example <code>pm install-multiple -r (4 files)</code>.</p>
+  <div class="hg-warn"><b>Careful.</b> Some apps need a feature module just to start. If the app crashes at once, or the install says a split is missing, press <b>Select all</b> and install again.</div>
+  <p>When you send a bundle to another device in the Connected Devices tab, the app picks the parts for that device by its own rules, not these: it always sends the feature modules too, and it adds English. See <a href="#devices-send">Sending apps to the device</a>.</p>
+
+  <h4>Signing and splits</h4>
+  <p>Every part must be signed with the same key. A bundle you downloaded from its maker or from APKMirror already is. The signature line on the package card is read from the base APK. If you edited a bundle, its signature can no longer be checked; the card then says so, and Android may refuse it. Installing from the <a href="#tab-files">File Manager</a> signs a copy for you. See <a href="#tab-installer">APK Installer</a> for the two <b>Block</b> switches.</p>
+
+  <h4>Game data (OBB)</h4>
+  <p>Big games keep their data outside the APK. In a bundle, those files live in folders such as <code>Android/obb/PACKAGE/</code> (sometimes <code>Android/data/PACKAGE/</code>). When the file has some, the <b>Game data (OBB)</b> card lists each one with its destination, for example <code>/sdcard/Android/obb/PACKAGE/</code>, and its size.</p>
+  <ol class="hg-steps">
+    <li>Keep the switch <b>Copy data files after install</b> on (it is on at first).</li>
+    <li>Press <b>Install</b>. The app installs the parts first.</li>
+    <li>Only if the install succeeded, a line shows "Copying data file 1 of 2: ... (1.2 GB)..." for each file.</li>
+    <li>The result sheet adds "Game data (OBB):" with, for example, "2 of 2 data files copied (1.2 GB) to Android/obb/PACKAGE/".</li>
+  </ol>
+  <p>On Android 11 and newer, an app cannot write into Android/obb or Android/data itself, so the copy needs <b>ADB</b>, <b>Shizuku</b> or <b>Root</b>. With No privilege you may see "Android doesn't let this app create that folder without ADB, Shizuku or Root. Copy it by hand to ...". Only files whose folder names the same package as the app are copied, and unsafe paths are refused. A multi-gigabyte copy takes time: keep the phone awake and plugged in. Free space is needed twice: the app keeps a copy of the bundle in its own cache while it works, and then the final files are written as well.</p>
+  <p>If the data copy fails, the app is still installed, but the game may ask to download its data. You can open the file in the <a href="#tab-files">File Manager</a> without unpacking it and copy the data folder by hand (see <a href="#files-archives">Archives</a>).</p>
+
+  <h4>Several packages</h4>
+  <p>The installer takes one package at a time, but all its ticked parts go in together. To install many apps, load one, install it, then load the next from the found-files list. While an install runs, another cannot start ("An install is already running").</p>
+
+  <h4>If a bundle fails</h4>
+  <ol class="hg-steps">
+    <li>Read the result sheet and match it with the error table in <a href="#tab-installer">APK Installer</a>.</li>
+    <li>Press <b>Select all</b> and try again. If it works, the app needed a part that was not ticked.</li>
+    <li>Press <b>Match this phone</b> and look for a row marked "fits this phone (CPU ...)". If there is none, the bundle may not support your phone.</li>
+    <li>Check free space. Try a different Authorizer, for example ADB instead of No privilege.</li>
+    <li>"no APKs found inside this archive" or "could not read the base APK of this package" usually means a damaged or incomplete download. Download it again.</li>
+    <li>If the app is already installed with another signing key, uninstall it first. Back up what you need.</li>
+  </ol>
+</section>
+
+<section id="tab-updates" data-title="App Updater" data-group="The tabs">
+  <p class="hg-lead">This tab checks whether newer versions exist for the apps you installed outside the Play Store, and for Samsung's own apps. It can download and install them for you, after checking each file.</p>
+  <p><b>Where to find it:</b> the tab named <b>App Updater</b>. When updates are waiting, its name shows a number in brackets, for example "App Updater (3)".</p>
+
+  <h4>Before you start</h4>
+  <ul>
+    <li>Checking needs the internet and no working mode.</li>
+    <li>Installing an update needs a working mode: ADB over TCP, Wireless Debugging, Shizuku or Root (see <a href="#modes-overview">Working modes</a>). Without one, a sheet <b>Working Mode Required</b> opens. The only exception is this app's own update, which can use Android's install screen. Android can then ask you to allow installs from this app first (Android calls the setting <b>Install unknown apps</b>): switch it on for this app when asked, or beforehand in <b>About</b>, <b>Permissions</b> (see <a href="#app-permissions">The permissions this app asks for</a>).</li>
+    <li>Play Store apps are not checked here (see the last card below).</li>
+  </ul>
+
+  <h4>Where updates come from</h4>
+  <table class="hg-table">
+    <thead><tr><th>Source</th><th>Which apps</th></tr></thead>
+    <tbody>
+      <tr><td><b>Galaxy Store</b></td><td>Samsung system apps (package names starting com.samsung., com.sec. or com.osp.) and apps installed from the Galaxy Store. Only apps Samsung distributes appear.</td></tr>
+      <tr><td><b>GitHub</b>, <b>Codeberg</b></td><td>Sideloaded apps whose releases live on those sites (Codeberg is a website for sharing code, like GitHub). The app reads the newest release and picks the APK for your processor.</td></tr>
+      <tr><td><b>F-Droid</b>, <b>IzzyOnDroid</b></td><td>Sideloaded apps found by package name in these catalogs of free, open-source apps.</td></tr>
+      <tr><td><b>Obtainium</b></td><td>Obtainium is a separate open-source app that fetches updates from developers' pages. Its community catalog says where an app's releases live, and you can import your own Obtainium export.</td></tr>
+    </tbody>
+  </table>
+  <p>A <b>sideloaded</b> app is a normal (not system) app that was not installed by a store such as Google Play, Galaxy Store, Aurora, Amazon, Huawei, Xiaomi, OPPO or vivo. Each such app is looked up in this order, and the first source that knows it decides: your own source (set or imported), then the Obtainium catalog (skipped for apps installed by an F-Droid client), then IzzyOnDroid, then F-Droid (for apps installed by an F-Droid client, F-Droid comes first). This app's own update has its own card.</p>
+
+  <h4>Step by step</h4>
+  <ol class="hg-steps">
+    <li>Open the tab. The first time, it checks by itself. Later, press <b>Check for Updates</b>.</li>
+    <li>Watch the status line: "Checking sideloaded apps (GitHub, F-Droid, Obtainium)... 3/12", then "Checking the Galaxy Store... 8/30 apps". It ends with, for example, "2 updates available - checked 12 Galaxy Store and 9 sideloaded apps", and a time. If some could not be checked, it says how many and gives the last error.</li>
+    <li>Read the rows (next section). With none, the list says "Everything is up to date."</li>
+    <li>Press <b>Update</b> on one row. The button changes to "Downloading 40%", then "Installing", then a tick and "Updated". A thin bar follows the progress.</li>
+    <li>To update everything, press <b>Update All (N)</b> (it appears when two or more are ready) and confirm. They run one after another: waiting rows say "Queued".</li>
+  </ol>
+
+  <h4>Reading a row</h4>
+  <ul>
+    <li>The name, the package name, and badges: the source (for example GitHub or Galaxy Store), "system" for a system app, and where the source came from ("via Obtainium catalog", "via your Obtainium list", "your source").</li>
+    <li>The installed version, an arrow, and the new version in bold. Short release notes may follow.</li>
+    <li><b>Update</b> starts the update. After an error the button says <b>Retry</b> and a line gives the reason.</li>
+    <li><b>Release</b> replaces Update when the newest release has no APK for your phone; it opens the release page.</li>
+    <li><b>Page</b> opens the app's page; <b>Open in Obtainium</b> hands the app to Obtainium, if you have it.</li>
+  </ul>
+  <p>Under the list there may be two more groups. <b>Track in Obtainium (N)</b> holds apps whose releases are on sites this app cannot read (a company website, for example); use <b>Open in Obtainium</b> for them. <b>Not tracked (N)</b> holds sideloaded apps no source knows. Press <b>+ Set source</b>, then enter a GitHub link (github.com/owner/repo), a Codeberg link or an F-Droid package link. The app saves it and checks again.</p>
+  <p>You cannot ignore or pin a version, and there is no screen to edit a source you saved. A source you saved is tried first for that app.</p>
+
+  <h4>Other buttons and cards</h4>
+  <table class="hg-table">
+    <thead><tr><th>Control</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><b>Import Obtainium List</b></td><td>Opens the file picker. Choose the export file from Obtainium (Obtainium, Settings, Export). The app uses each app's source from it and checks again.</td></tr>
+      <tr><td><b>GitHub Token</b></td><td>Optional. A token is a long code that you create in your GitHub account settings. One with no permissions ticked is enough, and it raises GitHub's limit from 60 to 5,000 checks an hour. Empty the box to remove it. The button shows a tick when a token is saved.</td></tr>
+      <tr><td>Card <b>App update</b></td><td>Updates this app itself from its GitHub releases: <b>Check for app update</b>, <b>Update now</b>, <b>Release notes</b>. It checks that the file is this app, newer, and signed with the same key. With a working mode it installs by itself and says "The app will restart" (Android closes the app while it is replaced, so open it again if it does not come back). With none it opens Android's install screen, and Android can first ask you to allow installs from this app (Install unknown apps; the Permissions sheet in About has a row for it).</td></tr>
+      <tr><td>Card <b>Play Store apps (via Aurora)</b></td><td>The app cannot tell whether a Play Store app has an update. <b>Open Aurora Store</b> (an open-source Play Store client, shown if installed) and <b>List installed apps</b> give you a <b>Store</b> button per app, which opens its store page.</td></tr>
+    </tbody>
+  </table>
+  <p>The same information shows up in other places: the Application Manager's list can show the new version next to an app (turn on the <b>Versions</b> pill), can sort by <b>Updates first</b>, and the app menu shows an update line with an Update, Release or Download button (see <a href="#tab-apps">Application Manager</a> and <a href="#apps-menu">The app menu</a>).</p>
+
+  <h4>Checks before an update installs, and messages</h4>
+  <p>For every update the app downloads the file, then checks that it is the same package, a newer version, and signed with the same key as the installed app. If any check fails, nothing is installed. It then installs over the old version through your working mode, which keeps the app's data, and deletes the downloaded file.</p>
+  <table class="hg-table">
+    <thead><tr><th>Message</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td>"N couldn't be checked (...)"</td><td>A site did not answer, or limited you: GitHub allows only 60 checks an hour without a token. Wait, or add a <b>GitHub Token</b>, then check again.</td></tr>
+      <tr><td>"signed with a different key than the installed app ..."</td><td>The file comes from another builder than your copy (F-Droid signs its own builds). Update from the source you installed from.</td></tr>
+      <tr><td>"downloaded version ... is not newer than the installed one"</td><td>The source's version number is not higher than yours.</td></tr>
+      <tr><td>"no APK for this phone in the latest release"</td><td>Use <b>Release</b> to look for a build by hand.</td></tr>
+      <tr><td>"download failed: HTTP ..." or "download incomplete"</td><td>The site or your connection failed. Press <b>Retry</b>.</td></tr>
+      <tr><td>"installing updates needs ADB, Shizuku or Root"</td><td>Set up a working mode first.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="hg-note"><b>Privacy.</b> Checking contacts these sites: Samsung's update service (it receives your phone model, your SIM's network codes, your region code and Android version, with the package name and version of each Samsung app), api.github.com and github.com, codeberg.org, f-droid.org, apt.izzysoft.de and raw.githubusercontent.com (for the Obtainium catalog). The lookups name the apps being checked (their package names, or their GitHub project). Installing an update also downloads the file from the address the release gives. Nothing else leaves the phone. See <a href="#privacy">Privacy</a>.</div>
+  <div class="hg-warn"><b>Careful.</b> An update replaces the working version. If an app matters to you, back it up first (<a href="#apps-backup">Backups</a>). Every update, done or failed, is also written to the History (the button on the UAD-NG Debloater tab).</div>
+</section>
+
+<section id="tab-store" data-title="App Stores" data-group="The tabs">
+  <p class="hg-lead">Browse four catalogs of open-source Android apps and install from them: ShizuStore, GitHub, F-Droid and Orion. The apps are not stored by this app; each one is downloaded from its own developer's page.</p>
+  <p><b>Where to find it:</b> the tab named <b>App Stores</b>. Four buttons at its top switch between the catalogs: <b>ShizuStore</b>, <b>GitHub</b>, <b>F-Droid</b> and <b>Orion</b>.</p>
+
+  <h4>Before you start</h4>
+  <ul>
+    <li>Browsing needs the internet only.</li>
+    <li>Installing uses your active working mode (ADB, Shizuku or Root, see <a href="#modes-overview">Working modes</a>). With none, the app hands the downloaded file to Android's install screen and you confirm there. Android can first ask you to allow installs from this app (Android calls the setting <b>Install unknown apps</b>; the Permissions sheet in <b>About</b> has a row for it). That route may be blocked on some phones; if it is, set up a working mode.</li>
+    <li>Each install is one APK file. Apps that come only as bundles cannot be installed here; use the <a href="#tab-installer">APK Installer</a>.</li>
+    <li>Galaxy Store is not a store in this tab. Samsung apps are checked in the <a href="#tab-updates">App Updater</a>.</li>
+  </ul>
+
+  <h4>The four catalogs</h4>
+  <table class="hg-table">
+    <thead><tr><th>Catalog</th><th>What it holds</th><th>Sorting</th></tr></thead>
+    <tbody>
+      <tr><td><b>ShizuStore</b></td><td>The curated catalog of timschneeb: apps that work with <a href="#mode-shizuku">Shizuku</a>. Installed from each app's own source (GitHub, GitLab or F-Droid).</td><td>Most starred, Most downloaded, Recently updated, Recently added, Name (A-Z)</td></tr>
+      <tr><td><b>GitHub</b></td><td>Apps that publish an APK on GitHub Releases, from the Komi Store catalog (up to 5,000 apps).</td><td>Most starred, Recently released, Most downloaded, Name (A-Z)</td></tr>
+      <tr><td><b>F-Droid</b></td><td>Any app in F-Droid or in other known repositories. Pick a repository first.</td><td>Recently updated, Name (A-Z)</td></tr>
+      <tr><td><b>Orion</b></td><td>The public Orion catalog by RookieEnough: apps resolved from GitHub, Codeberg or direct links, including Morphe-built apps. Only entries that resolve to an installable APK are shown.</td><td>Name (A-Z), Name (Z-A)</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Step by step</h4>
+  <ol class="hg-steps">
+    <li>Open the tab and press the catalog you want. The grey line under the card says what it is doing: "Open to load the catalog.", "Loading the ShizuStore catalog...", "Loading the catalog...", "Loading more... 450 apps so far".</li>
+    <li>Type in <b>Search apps...</b>. The search looks at names, package names, descriptions and authors (the other three catalogs also look at categories). Use one drop-down for a category and the other for sorting.</li>
+    <li>Each row shows an icon, the name, two lines of description, and small chips such as stars, downloads, version, size and category (ShizuStore shows stars, version, category and a "root" chip when the app needs root). A count such as "12 / 340 apps" sits next to <b>Refresh</b> (called <b>Refresh catalog</b> in ShizuStore). Lists show 60 rows at a time; press <b>Show 60 more</b> for more.</li>
+    <li><b>ShizuStore:</b> tap a row to open a detail sheet with the description, stars, downloads, author, licence, the install source and size, screenshots and a collapsible <b>Permissions</b> list. Press <b>Install</b>, or <b>Source</b> to open the project's page. The button says <b>No APK</b> when none is available.</li>
+    <li><b>GitHub, F-Droid, Orion:</b> each row has its own <b>Install</b> button; no detail sheet.</li>
+    <li>Watch the status line: under the row for GitHub, F-Droid and Orion, and above the buttons of the detail sheet for ShizuStore. It shows "Starting...", "Finding the latest release of ...", "Downloading ..." (then the size so far and a percentage, such as "12 MB 40%"), "Checking the download's SHA-256..." (a code that proves the file was not changed on the way), "Installing ...", then "Installed ...". With the system installer: "Opening the installer..." and "Confirm the install of ...".</li>
+    <li>After a successful install through a working mode, a sheet offers <b>Launch Application</b> and <b>Application Settings</b>. With the system installer there is no sheet: Android's own screen tells you.</li>
+  </ol>
+
+  <h4>GitHub catalog extras</h4>
+  <ul>
+    <li>If the search does not find an app, press <b>Search</b> in the box "Not in the list? Search the whole catalog for ...". It needs at least two letters.</li>
+    <li>Type a GitHub project as <b>owner/repo</b> (the two parts of its web address after github.com/) to get a line "Install the latest APK release of this GitHub project" with an <b>Install</b> button. The app picks the APK for your processor. If the latest release has no APK you see "The latest release of ... has no APK asset."</li>
+    <li>If the catalog server cannot be reached, the app shows its offline copy, or a small built-in list, and says so. <b>Refresh</b> tries again. The list is kept for six hours.</li>
+    <li>A GitHub token saved in the <a href="#tab-updates">App Updater</a> lifts GitHub's limit on these requests.</li>
+  </ul>
+
+  <h4>F-Droid extras</h4>
+  <ul>
+    <li>The drop-down at the top chooses the repository. Press <b>Repos</b> to see the list: each entry has <b>Browse apps</b>, <b>Copy address</b> and <b>Copy fingerprint</b>. Press the same button again (it now says <b>&larr; Apps</b>) to come back. <b>Copy address &amp; fingerprint</b> copies both for the open repository.</li>
+    <li>A catalog can be several MB, F-Droid's own tens of MB. On mobile data or a hotspot the tab asks first ("You're on a metered connection") and waits for <b>Download</b>. A catalog is kept for 12 hours.</li>
+    <li>Apps with no build for your phone are hidden, and a note tells you how many.</li>
+    <li>When the repository publishes a SHA-256 for a file (F-Droid's index does), the download is checked against it. A mismatch stops the install.</li>
+  </ul>
+
+  <h4>What the status line says</h4>
+  <table class="hg-table">
+    <thead><tr><th>Message</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td>"Could not load the catalog: ..." or "Could not load: ..."</td><td>No internet, or the site did not answer. Check the connection and press <b>Refresh</b>.</td></tr>
+      <tr><td>"No apps match your search." or "No apps match your filters."</td><td>Clear the search box, set the category to All categories.</td></tr>
+      <tr><td>"Stopped early after N apps ..."</td><td>The catalog download broke off. Press <b>Refresh</b>.</td></tr>
+      <tr><td>"Install failed: ..."</td><td>The reason follows: for example "the download is X, not Y" (a wrong file was stopped), or Android's own message such as a signature mismatch.</td></tr>
+      <tr><td>"No matching APK in the latest release of ..."</td><td>The project's release has no APK that fits your phone.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="hg-warn"><b>Careful.</b> A catalog lists apps; it does not vouch for them. Open <b>Source</b> and read about a project you do not know, and look at the permissions. If the same app is already installed from another source with a different signing key, Android refuses the new one. Uninstall the old copy first (its data is deleted), or update from the same source.</div>
+  <p><b>To undo:</b> uninstall the app from the Application Manager. Its data is deleted. <b>Privacy:</b> browsing contacts the catalog's site, and an install contacts the developer's download site; both can see your internet address (see <a href="#privacy">Privacy</a>).</p>
+</section>

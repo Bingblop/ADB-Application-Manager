@@ -1,9 +1,12 @@
 headers present: ACTIVITIES=true RECEIVERS=true SERVICES=true PROVIDERS=true
+Activities tab holds only activities, Components tab none: true
+tab counts (activities, components): 2 / 3
 provider authority row rendered: true
 service shows disabled badge: true
 setComponentEnabled called: [ 'toggle:com.x.BootRcv:false' ]
 BootRcv buttons after disable (expect ENABLE present): ["ENABLE"]
-exported filter: shows Main(act) & Provider, hides Hidden & Svc: true
+exported filter (Components): shows Provider, hides Svc and BootRcv: true
+exported filter (Activities): shows Main, hides Hidden: true
 optimize modal shown (single): true
 a progress bar shows while it runs (not frozen, no indication it still works): true {"shown":true,"text":"1 of 1: X App (com.x)"}
 single optimize call: [ 'opt:com.x:everything:true' ]
