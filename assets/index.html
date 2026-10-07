@@ -3333,6 +3333,28 @@
             background-position: center 6px;
             background-repeat: no-repeat;
         }
+        /* The real terminal (full screen): xterm.js on a pseudo-terminal. It covers the whole app; its height follows the on-screen keyboard (--rt-vh). */
+        .rt-overlay { position: fixed; left: 0; top: 0; right: 0; height: var(--rt-vh, 100vh); z-index: 260; display: none; flex-direction: column; background: #000; color: #e6e6e6; padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px); box-sizing: border-box; }
+        .rt-overlay.show { display: flex; }
+        body.rt-open { overflow: hidden; }
+        .rt-bar { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; padding: 6px 8px; background: #101010; border-bottom: 1px solid #262626; overflow-x: auto; }
+        .rt-bar .op-select { flex: 0 0 auto; width: auto; max-width: 190px; font-size: 12px; padding: 7px 6px; }
+        .rt-bar button { flex: 0 0 auto; min-height: 34px; padding: 4px 10px; background: #1b1b1b; color: #e6e6e6; border: 1px solid #333; border-radius: 8px; font-size: 12px; font-weight: 700; }
+        .rt-bar button:active { background: #333; }
+        .rt-bar .rt-sp { flex: 1 1 auto; }
+        .rt-bar .rt-x { color: #ff8a80; font-size: 16px; padding: 4px 12px; }
+        .rt-term { flex: 1 1 auto; min-height: 0; padding: 4px 4px 0 6px; overflow: hidden; }
+        .rt-term .xterm { height: 100%; }
+        .rt-term .xterm-viewport { background-color: #000 !important; }
+        .rt-note { position: absolute; left: 10px; right: 10px; top: 56px; padding: 8px 10px; border-radius: 8px; background: rgba(255, 107, 107, 0.15); border: 1px solid #ff6b6b; color: #ffb4b4; font-size: 12px; display: none; }
+        .rt-keys { flex: 0 0 auto; background: #0b0b0b; border-top: 1px solid #262626; padding: 3px 4px 4px; }
+        .rt-keys .rt-row { display: flex; gap: 3px; margin-top: 3px; }
+        .rt-keys .rt-row.rt-scroll { overflow-x: auto; scrollbar-width: none; }
+        .rt-keys button { flex: 1 1 0; min-width: 0; min-height: 40px; background: #000; color: #e6e6e6; border: 0; border-radius: 6px; font-family: monospace; font-size: 13px; font-weight: 800; letter-spacing: -0.3px; padding: 0 2px; touch-action: manipulation; }
+        .rt-keys .rt-row.rt-scroll button { flex: 0 0 38px; }
+        .rt-keys button:active { background: #2a2a2a; }
+        .rt-keys button.on { background: var(--accent); color: var(--on-accent); }
+        .rt-keys button.lock { box-shadow: inset 0 -3px 0 var(--on-accent); }
         /* a bottom sheet pulled up by its handle: it takes (nearly) the whole screen */
         .modal-sheet.sheet-expanded, #inspectorModal .modal-sheet.sheet-expanded { max-height: calc(100vh - 14px); min-height: 72vh; }
         .modal-sheet.sheet-dragging { transition: none !important; }
@@ -5828,6 +5850,7 @@
                 </div>
                 <div class="tx-tools">
                     <button class="term-icon-btn" id="txFullBtn" onclick="txFullToggle()" aria-pressed="false">Full screen</button>
+                    <button class="term-icon-btn" id="txRealBtn" onclick="rtOpen()">Real terminal</button>
                     <button class="term-icon-btn" onclick="txClearScreen()">Clear</button>
                     <button class="term-icon-btn" onclick="txCopyScreen()">Copy</button>
                     <button class="term-icon-btn" onclick="openCheatSheet(true)">Cheat Sheet</button>
@@ -6372,6 +6395,36 @@ Type any command below (e.g. pm list packages -d)
             <div class="mode-btn-row" style="margin-top:8px;">
                 <button class="mode-action-btn" onclick="importProfile()">Import</button>
             </div>
+        </div>
+    </div>
+
+    <!-- The real terminal (full screen), opened from the Terminal tab: xterm.js on a pseudo-terminal (assets/xterm.js is loaded the first time) -->
+    <div class="rt-overlay" id="rtOverlay" role="dialog" aria-label="Terminal" aria-modal="true">
+        <div class="rt-bar">
+            <select id="rtShell" class="op-select" aria-label="Shell" onchange="rtPickShell(this.value)">
+                <option value="app">This app (sandbox)</option>
+                <option value="priv">Working mode (ADB, Shizuku, Root)</option>
+                <option value="termux">Termux (bash and packages)</option>
+            </select>
+            <button onclick="rtFont(-1)" aria-label="Smaller text">A&minus;</button>
+            <button onclick="rtFont(1)" aria-label="Bigger text">A+</button>
+            <button onclick="rtCopy()">Copy</button>
+            <button onclick="rtPaste()">Paste</button>
+            <button onclick="rtRestart()">Restart</button>
+            <span class="rt-sp"></span>
+            <button class="rt-x" onclick="rtHide()" aria-label="Close the terminal"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+        </div>
+        <div class="rt-note" id="rtNote"></div>
+        <div class="rt-term" id="rtTerm"></div>
+        <div class="rt-keys" id="rtKeys" role="toolbar" aria-label="Terminal keys">
+            <div class="rt-row">
+                <button translate="no" data-rk="esc">ESC</button><button translate="no" data-rk="/">/</button><button translate="no" data-rk="-">&minus;</button><button translate="no" data-rk="home">HOME</button><button translate="no" data-rk="up" aria-label="Up">&uarr;</button><button translate="no" data-rk="end">END</button><button translate="no" data-rk="pgup">PGUP</button><button translate="no" data-rk="fn">FN</button>
+            </div>
+            <div class="rt-row">
+                <button translate="no" data-rk="tab" aria-label="Tab">TAB</button><button translate="no" data-rk="ctrl" id="rtCtrl">CTRL</button><button translate="no" data-rk="alt" id="rtAlt">ALT</button><button translate="no" data-rk="left" aria-label="Left">&larr;</button><button translate="no" data-rk="down" aria-label="Down">&darr;</button><button translate="no" data-rk="right" aria-label="Right">&rarr;</button><button translate="no" data-rk="pgdn">PGDN</button><button translate="no" data-rk="kbd" aria-label="Show or hide the keyboard">KBD</button>
+            </div>
+            <div class="rt-row rt-scroll" id="rtSyms"></div>
+            <div class="rt-row rt-scroll" id="rtFn" style="display:none;"></div>
         </div>
     </div>
 
@@ -8193,6 +8246,7 @@ Type any command below (e.g. pm list packages -d)
             if (!tabNeed(viewName)) return false;                        // switched off in Settings > Feature List: nothing to open
             closeSearchMenu();
             if (txFullOn && viewName !== 'terminal') txFullToggle(false);
+            if (typeof rt === 'object' && rt && rt.open && viewName !== 'terminal') rtHide();
             const fromView = currentViewName();
             if (!navFromBack && fromView && fromView !== viewName) {
                 viewStack = viewStack.filter(v => v !== fromView);
@@ -8522,6 +8576,7 @@ Type any command below (e.g. pm list packages -d)
         function backNavigate() {
             if (typeof closeInstallCombo === 'function' && closeInstallCombo()) return true;
             if (closeSearchMenu()) return true;
+            if (typeof rt === 'object' && rt && rt.open && !document.querySelector('.modal-overlay.show')) { rtHide(); return true; }
             const sheets = document.querySelectorAll('.modal-overlay.show');
             if (sheets.length) {
                 // the sheet on top is the one painted at the centre of the screen (later in the page wins a tie)
@@ -30392,6 +30447,194 @@ Type any command below (e.g. pm list packages -d)
             renderSavedLists();
             setTimeout(ovlResume, 400);
         });
+
+        // ---------- The real terminal: full screen, on a pseudo-terminal (vim, nano, top, htop, ssh, less ...) ----------
+        // xterm.js (assets/xterm.js, loaded the first time) draws it; the app runs the program on a pty (PtyShell + the helper libptyexec.so) and sends the bytes both ways.
+        // Closing the screen (X or Back) leaves the session running; typing exit (or Restart) ends it.
+        var rt = { term: null, fit: null, loading: false, open: false, id: 'rt', backend: 'app', state: 'off', ctrl: 0, alt: 0, font: 14, started: false, ro: null, repeat: null };
+        const RT_SYMS = ['|', '~', '$', ';', ':', '"', "'", '\\', '`', '{', '}', '[', ']', '(', ')', '<', '>', '*', '&', '#', '=', '+', '_', '?', '!', '@', '%', '^', '.', ','];
+        function rtLoad(then) {
+            if (window.Terminal && window.FitAddon) { then(); return; }
+            if (rt.loading) return;
+            rt.loading = true;
+            const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = 'xterm.css'; document.head.appendChild(css);
+            const sc = document.createElement('script'); sc.src = 'xterm.js';
+            sc.onload = () => { rt.loading = false; then(); };
+            sc.onerror = () => { rt.loading = false; rtNote('The terminal could not be loaded. Close it and try again.'); };
+            document.head.appendChild(sc);
+        }
+        function rtNote(msg) { const n = document.getElementById('rtNote'); if (!n) return; n.textContent = msg || ''; n.style.display = msg ? 'block' : 'none'; }
+        function rtSize() {
+            const vv = window.visualViewport;
+            document.documentElement.style.setProperty('--rt-vh', (vv ? Math.round(vv.height) : window.innerHeight) + 'px');
+            if (rt.fit && rt.open) requestAnimationFrame(() => { try { rt.fit.fit(); } catch (e) {} });
+        }
+        function rtOpen(backend) {
+            if (!window.AndroidBridge || !window.AndroidBridge.ptyStart) { showToast('The full-screen terminal needs the app (not a plain browser)'); return; }
+            haptic();
+            if (txFullOn) txFullToggle(false);
+            rt.backend = backend || kvGet('rt_shell', '') || (typeof txCurShell === 'function' ? txCurShell() : 'app');
+            if (!['app', 'priv', 'termux'].includes(rt.backend)) rt.backend = 'app';
+            const sel = document.getElementById('rtShell'); if (sel) sel.value = rt.backend;
+            rt.font = Math.max(8, Math.min(28, parseInt(kvGet('rt_font', 14), 10) || 14));
+            document.getElementById('rtOverlay').classList.add('show');
+            document.body.classList.add('rt-open');
+            rt.open = true;
+            rtNote('');
+            rtSize();
+            if (window.visualViewport) window.visualViewport.addEventListener('resize', rtSize);
+            window.addEventListener('resize', rtSize);
+            rtLoad(() => { rtInit(); rtSize(); if (!rt.started) rtStart(); else rt.term.focus(); });
+        }
+        function rtHide() {
+            rt.open = false;
+            document.getElementById('rtOverlay').classList.remove('show');
+            document.body.classList.remove('rt-open');
+            if (window.visualViewport) window.visualViewport.removeEventListener('resize', rtSize);
+            window.removeEventListener('resize', rtSize);
+            document.documentElement.style.removeProperty('--rt-vh');
+            try { if (document.activeElement) document.activeElement.blur(); } catch (e) {}
+        }
+        function rtInit() {
+            if (rt.term) return;
+            const el = document.getElementById('rtTerm');
+            rt.term = new window.Terminal({ fontSize: rt.font, fontFamily: '"DejaVu Sans Mono","Roboto Mono","Droid Sans Mono",monospace', cursorBlink: true, scrollback: 5000, allowProposedApi: true,
+                theme: { background: '#000000', foreground: '#e6e6e6', cursor: '#e6e6e6' } });
+            rt.fit = new window.FitAddon.FitAddon();
+            rt.term.loadAddon(rt.fit);
+            rt.term.open(el);
+            rt.term.onData(rtOnData);
+            rt.term.onResize(e => { if (rt.started && window.AndroidBridge && window.AndroidBridge.ptyResize) window.AndroidBridge.ptyResize(rt.id, e.rows, e.cols); });
+            if (window.ResizeObserver) { rt.ro = new ResizeObserver(() => { if (rt.open) { try { rt.fit.fit(); } catch (e) {} } }); rt.ro.observe(el); }
+            // a tap on the screen brings the keyboard up
+            el.addEventListener('click', () => { if (rt.open) rt.term.focus(); });
+            rtKeysInit();
+        }
+        function rtStart() {
+            if (!rt.term) return;
+            try { rt.fit.fit(); } catch (e) {}
+            rt.started = true; rt.state = 'starting';
+            rtNote('');
+            let r = '';
+            try { r = String(window.AndroidBridge.ptyStart(rt.id, rt.backend, rt.term.rows || 24, rt.term.cols || 80) || ''); } catch (e) { r = 'error: ' + (e && e.message || e); }
+            if (r.indexOf('error') === 0) { rt.state = 'exited'; rtNote(r.replace(/^error:\s*/, '')); }
+            else rt.term.focus();
+        }
+        window.onPtyStarted = function (id, res) {
+            if (id !== rt.id) return;
+            if (res && res.ok) { rt.state = 'running'; return; }
+            rt.state = 'exited';
+            rtNote(String((res && res.message) || 'The terminal did not start'));
+        };
+        window.onPtyData = function (id, b64) {
+            if (id !== rt.id || !rt.term) return;
+            const bin = atob(b64), u = new Uint8Array(bin.length);
+            for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+            rt.term.write(u, () => { try { window.AndroidBridge.ptyAck(id, u.length); } catch (e) {} });
+        };
+        window.onPtyExit = function (id, code) {
+            if (id !== rt.id) return;
+            rt.state = 'exited';
+            if (rt.term) rt.term.write('\r\n\x1b[2m[process ended' + (code >= 0 ? ' (' + code + ')' : '') + ': press Enter to start a new one]\x1b[0m\r\n');
+        };
+        function rtSend(str) {
+            if (!str || !window.AndroidBridge || !window.AndroidBridge.ptyWrite) return;
+            const bytes = new TextEncoder().encode(str);
+            let bin = '';
+            for (let i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
+            window.AndroidBridge.ptyWrite(rt.id, btoa(bin));
+        }
+        function rtCtrlChar(ch) {
+            const c = ch.charCodeAt(0);
+            if (ch.length === 1) {
+                if (c >= 97 && c <= 122) return String.fromCharCode(c - 96);
+                if (c >= 65 && c <= 90) return String.fromCharCode(c - 64);
+                if (ch === '[') return '\x1b'; if (ch === '\\') return '\x1c'; if (ch === ']') return '\x1d'; if (ch === '^') return '\x1e'; if (ch === '_' || ch === '/') return '\x1f';
+                if (ch === ' ' || ch === '@' || ch === '2') return '\x00';
+                if (ch === '?') return '\x7f';
+            }
+            return ch;
+        }
+        function rtOnData(d) {
+            if (rt.state === 'exited') { if (d === '\r') { rt.term.reset(); rtStart(); } return; }
+            if (rt.ctrl && d.length === 1) { d = rtCtrlChar(d); if (rt.ctrl === 1) rtMod('ctrl', 0); }
+            if (rt.alt) { d = '\x1b' + d; if (rt.alt === 1) rtMod('alt', 0); }
+            rtSend(d);
+        }
+        function rtMod(which, v) {
+            rt[which] = v;
+            const b = document.getElementById(which === 'ctrl' ? 'rtCtrl' : 'rtAlt');
+            if (b) { b.classList.toggle('on', v > 0); b.classList.toggle('lock', v === 2); }
+        }
+        function rtKeySeq(k) {
+            const app = rt.term && rt.term.modes && rt.term.modes.applicationCursorKeysMode;
+            const cs = app ? '\x1bO' : '\x1b[';
+            const F = { f1: '\x1bOP', f2: '\x1bOQ', f3: '\x1bOR', f4: '\x1bOS', f5: '\x1b[15~', f6: '\x1b[17~', f7: '\x1b[18~', f8: '\x1b[19~', f9: '\x1b[20~', f10: '\x1b[21~', f11: '\x1b[23~', f12: '\x1b[24~' };
+            switch (k) {
+                case 'esc': return '\x1b'; case 'tab': return '\t';
+                case 'up': return cs + 'A'; case 'down': return cs + 'B'; case 'right': return cs + 'C'; case 'left': return cs + 'D';
+                case 'home': return cs + 'H'; case 'end': return cs + 'F'; case 'pgup': return '\x1b[5~'; case 'pgdn': return '\x1b[6~';
+                default: return F[k] || k;
+            }
+        }
+        function rtPress(k) {
+            if (k === 'ctrl' || k === 'alt') { rtMod(k, (rt[k] + 1) % 3); return; }          // once, locked, off
+            if (k === 'fn') { const f = document.getElementById('rtFn'), sy = document.getElementById('rtSyms'); const on = f.style.display === 'none'; f.style.display = on ? '' : 'none'; sy.style.display = on ? 'none' : ''; return; }
+            if (k === 'kbd') { const ta = rt.term && rt.term.textarea; if (ta && document.activeElement === ta) ta.blur(); else if (rt.term) rt.term.focus(); return; }
+            let d = rtKeySeq(k);
+            if (rt.ctrl && d.length === 1) { d = rtCtrlChar(d); if (rt.ctrl === 1) rtMod('ctrl', 0); }
+            if (rt.alt) { d = '\x1b' + d; if (rt.alt === 1) rtMod('alt', 0); }
+            if (rt.state === 'exited') { if (k === 'tab' || k === 'esc') return; }
+            rtSend(d);
+        }
+        function rtKeysInit() {
+            const syms = document.getElementById('rtSyms'), fn = document.getElementById('rtFn');
+            RT_SYMS.forEach(c => { const b = document.createElement('button'); b.textContent = c; b.setAttribute('translate', 'no'); b.setAttribute('data-rk', c); syms.appendChild(b); });
+            for (let i = 1; i <= 12; i++) { const b = document.createElement('button'); b.textContent = 'F' + i; b.setAttribute('translate', 'no'); b.setAttribute('data-rk', 'f' + i); fn.appendChild(b); }
+            const REP = new Set(['up', 'down', 'left', 'right', 'pgup', 'pgdn']);
+            const stop = () => { if (rt.repeat) { clearTimeout(rt.repeat.t); clearInterval(rt.repeat.i); rt.repeat = null; } };
+            // the keys never take the focus (the keyboard stays up); arrows repeat while held
+            document.getElementById('rtKeys').addEventListener('pointerdown', e => {
+                const b = e.target.closest && e.target.closest('button[data-rk]');
+                if (!b) return;
+                e.preventDefault();
+                const k = b.getAttribute('data-rk');
+                if (k === 'kbd') { haptic(); rtPress(k); return; }
+                rtPress(k);
+                stop();
+                if (REP.has(k)) rt.repeat = { t: setTimeout(() => { rt.repeat.i = setInterval(() => rtPress(k), 70); }, 380), i: null };
+            });
+            ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => document.getElementById('rtKeys').addEventListener(ev, stop));
+        }
+        function rtFont(d) {
+            rt.font = Math.max(8, Math.min(28, rt.font + d));
+            kvSet('rt_font', rt.font);
+            if (rt.term) { rt.term.options.fontSize = rt.font; try { rt.fit.fit(); } catch (e) {} }
+        }
+        function rtCopy() {
+            if (!rt.term) return;
+            let t = rt.term.getSelection();
+            if (!t) { rt.term.selectAll(); t = rt.term.getSelection(); rt.term.clearSelection(); }
+            t = t.replace(/[ \t]+$/gm, '').replace(/\n{3,}/g, '\n\n').trim();
+            if (window.AndroidBridge && window.AndroidBridge.copyToClipboard) window.AndroidBridge.copyToClipboard(t);
+        }
+        function rtPaste() {
+            let t = '';
+            try { t = String(window.AndroidBridge.getClipboardText() || ''); } catch (e) {}
+            if (!t) { showToast('The clipboard is empty'); return; }
+            if (rt.term) { rt.term.paste(t); rt.term.focus(); }
+        }
+        function rtEnd() { try { window.AndroidBridge.ptyClose(rt.id); } catch (e) {} rt.started = false; rt.state = 'off'; }
+        function rtRestart() {
+            haptic();
+            rtEnd();
+            if (rt.term) { rt.term.reset(); rtStart(); }
+        }
+        function rtPickShell(v) {
+            rt.backend = v;
+            kvSet('rt_shell', v);
+            rtRestart();
+        }
 
         // ---------- Bottom sheets: pull the handle at the top up for more room, down to make it smaller and then close it ----------
         (function () {

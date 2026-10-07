@@ -25,6 +25,12 @@
   phone storage is not set up (before, `termux-setup-storage` asked to rebuild `~/storage` each time).
 - **Terminal: Full screen.** A button below the screen makes the Terminal cover the whole app, with the screen taking the room above the input and the extra
   keys, following the on-screen keyboard. Back, the same button, or leaving the tab comes out of it.
+- **Terminal: a real terminal, full screen.** The new **Real terminal** button opens a full-screen terminal on a genuine pseudo-terminal: vim, nano, top,
+  htop, less, ssh, colours, the arrow keys, Ctrl-C and resizing work, with a Termux-style row of extra keys (ESC, TAB, sticky CTRL and ALT, arrows with repeat,
+  HOME/END, PGUP/PGDN, symbols, F1 to F12), text size, Copy and Paste. Shell: this app's sandbox, the working mode (ADB, Shizuku or Root) or Termux. Android
+  gives an app no way to open a pty, so the app carries a 4 KB helper (`native/pty/ptyexec.c`, built for arm64, 32-bit ARM and x86_64, no C library) that opens
+  the pty, runs the program and relays bytes; the screen is xterm.js (MIT). Closing the screen keeps the session. The helper is tested on a computer and,
+  for the phone's two architectures, under emulation (`native/pty/test.sh`); `PtyShellTest` and `t126` run the real thing.
 - Translation work is on hold until the feature set is finished.
 - **Morphe Patcher: a chain of failed patches is one error.** When a patch raises an exception, every patch that depends on it fails with
   "depends on ..., which raised an exception" (Gboard showed 41 of them). The result card now leads with the first error, details open, and

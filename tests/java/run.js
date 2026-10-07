@@ -54,6 +54,7 @@ const SUITES = [
   { name: 'gpustats', title: 'GPU load/frequency sysfs text parsing: Adreno gpubusy/gpu_busy_percentage, Mali utilization, the devfreq frequency-ratio fallback, combine() priority and the UI label', tests: ['GpuStatsTest'], main: 'com.bloatware.bingblop.GpuStatsTest' },
   { name: 'cpustats', title: '/proc/stat CPU-time parsing: the aggregate and per-core lines, tolerance for missing cores and extra kernel fields, and the busy-percentage math (counter resets, a core-count mismatch)', tests: ['CpuStatsTest'], main: 'com.bloatware.bingblop.CpuStatsTest' },
   { name: 'memstats', title: '/proc/meminfo parsing: the kept keys in any order, a kernel too old for MemAvailable, unknown extra keys, and the usedKb/swapUsedKb formulas', tests: ['MemStatsTest'], main: 'com.bloatware.bingblop.MemStatsTest' },
+  { name: 'ptyshell', title: 'The real terminal: the pty helper (native/pty) and PtyShell: a tty of the asked size, resize, Ctrl-C, UTF-8, status codes, hang-up, flow control, and the scripts that start it on the phone and in Termux', tests: ['PtyShellTest'], main: 'com.bloatware.bingblop.PtyShellTest', needs: ['pty'], utf8: true },
   { name: 'netstats', title: '/proc/net/dev parsing: the two header lines skipped by shape, long interface names, wrong-field-count junk lines, find()/totals with and without loopback, and rate() across a counter reset', tests: ['NetStatsTest'], main: 'com.bloatware.bingblop.NetStatsTest' },
   { name: 'fontscan', title: 'Font search for the app font: which files are fonts, what a font calls itself (the name table in every encoding and shape), the bounded walk and its progress', tests: ['FontScanTest'], main: 'FontScanTest', needs: ['json'] },
   { name: 'splitinfo', title: 'What a split APK\'s manifest says about it (split name, the feature module it configures, feature flag)', tests: ['SplitInfoTest'], main: 'com.bloatware.bingblop.SplitInfoTest' },
@@ -116,6 +117,7 @@ function newestFile(dir, re) {
 }
 
 const NEEDS = {
+  pty: () => ({ props: { ptyexec: path.join(REPO, 'native', 'pty', 'x86_64', 'ptyexec') } }),
   node: () => ({}),
   json: () => {
     const m2 = path.join(os.homedir(), '.m2', 'repository', 'org');

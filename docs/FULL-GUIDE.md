@@ -102,7 +102,7 @@ Left to right, with the **settings gear** (it opens Settings: language, appearan
 | **UAD-NG Debloater** | The UAD-NG list for your phone, a review step before anything runs, history with Undo |
 | **APK Installer** | Install `.apk` / `.apks` / `.apkm` / `.xapk` with full control of the options, plus the optional VirusTotal check |
 | **File Manager** | A privileged file manager that also opens packages and archives without extracting them, and can sign an edited APK |
-| **Command-Line Interface** | **Terminal**: a Termux-style terminal with coding agents ([details](#terminal-and-coding-agents)). **ADB Console**: a shell through the active mode, with history, saved scripts, a cheat sheet and a persistent Rish shell |
+| **Command-Line Interface** | **Terminal**: a Termux-style terminal with coding agents ([details](#terminal-and-coding-agents)), and a **Real terminal** button for a full-screen terminal on a genuine pty (vim, nano, top, htop, ssh). **ADB Console**: a shell through the active mode, with history, saved scripts, a cheat sheet and a persistent Rish shell |
 | **Hidden Settings** | Read, flip, edit and create Android's own Global, Secure and System settings ([details](#hidden-settings)) |
 | **RRO/Monet Customization** | Recolor Android (Material You: wallpaper or any color, six styles) and switch system overlays on or off ([details](#overlays-and-material-you)) |
 | **App Updater** | This app, Galaxy Store apps and sideloaded open-source apps (GitHub, Codeberg, F-Droid, IzzyOnDroid, Obtainium) |

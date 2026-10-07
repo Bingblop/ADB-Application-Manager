@@ -1451,6 +1451,68 @@ public class MainActivity extends Activity {
         return s.toString();
     }
 
+    // ---- The real terminal (a pseudo-terminal through libptyexec.so, see PtyShell): the full-screen Terminal's sessions ----
+    private final Map<String, PtyShell> ptySessions = new java.util.concurrent.ConcurrentHashMap<String, PtyShell>();
+
+    private File ptyHelper() {
+        return new File(getApplicationInfo().nativeLibraryDir, "libptyexec.so");
+    }
+
+    private static String shq(String s) {
+        return RishShell.quote(s);
+    }
+
+    /** The process that runs a shell on a pty for {@code backend}: app (this app's sandbox), priv (the working mode: Shizuku, Root or ADB) or termux. */
+    private Process ptyProcess(String backend, int rows, int cols) throws Exception {
+        File helper = ptyHelper();
+        if (!helper.isFile()) throw new IOException("this build of the app has no terminal helper for this phone's processor");
+        String h = helper.getAbsolutePath();
+        if ("termux".equals(backend)) {
+            checkTermuxReady();
+            return TermuxLink.openPtySession(TermuxBridge.launcher(this), h, rows, cols, TermuxBridge.BASH, "", 25000);
+        }
+        String kind = "app".equals(backend) ? "app" : termPrivKind();
+        if (kind == null) throw new IOException("There is no working mode that can open a terminal: set up ADB, Shizuku or Root first");
+        if ("app".equals(kind)) {
+            File home = new File(getFilesDir(), "home");
+            if (!home.isDirectory()) home.mkdirs();
+            ProcessBuilder pb = new ProcessBuilder(PtyShell.command(h, rows, cols, java.util.Collections.singletonList("/system/bin/sh")));
+            pb.directory(home);
+            Map<String, String> env = pb.environment();
+            env.put("HOME", home.getAbsolutePath());
+            env.put("TMPDIR", getCacheDir().getAbsolutePath());
+            env.put("TERM", "xterm-256color");
+            env.put("COLORTERM", "truecolor");
+            env.put("LANG", "en_US.UTF-8");
+            pb.redirectErrorStream(true);
+            return pb.start();
+        }
+        if ("adb".equals(kind)) {
+            // adb's own client gets the terminal: it then asks the phone for a terminal of the same size and follows resizes
+            String target = "adb_wireless".equals(resolveExecMode()) ? wirelessTarget() : tcpTarget();
+            ProcessBuilder adb = buildAdbProcess("-s", target, "shell");
+            ProcessBuilder pb = new ProcessBuilder(PtyShell.command(h, rows, cols, adb.command()));
+            pb.environment().putAll(adb.environment());
+            pb.environment().put("TERM", "xterm-256color");
+            pb.redirectErrorStream(true);
+            return pb.start();
+        }
+        // Shizuku and Root run the helper as the phone's shell user / root: a shell on a pty there
+        String script = "export TERM=xterm-256color COLORTERM=truecolor LANG=en_US.UTF-8 HOME=/data/local/tmp\ncd /data/local/tmp 2>/dev/null\n"
+                + PtyShell.launchScript(h, "/data/local/tmp/.adbmgr-ptyexec", rows, cols, "/system/bin/sh");
+        if ("root".equals(kind)) {
+            ProcessBuilder pb = new ProcessBuilder("su", "-c", script);
+            pb.redirectErrorStream(true);
+            return pb.start();
+        }
+        return rishSpawn(new String[]{"sh", "-c", script});
+    }
+
+    private void closePtySessions() {
+        for (PtyShell p : ptySessions.values()) p.close();
+        ptySessions.clear();
+    }
+
     private void closeTermSessions() {
         final List<RishShell> shells = new ArrayList<RishShell>();
         synchronized (termGate) {
@@ -7732,6 +7794,92 @@ public class MainActivity extends Activity {
             if (sh != null) sh.stop();
         }
 
+        /**
+         * The full-screen terminal: a real pseudo-terminal (vim, nano, top, htop, ssh ...). {@code backend}: "app", "priv" or "termux".
+         * Answers "started" or "error: ..."; then window.onPtyStarted(id, json{ok, message}), the output as window.onPtyData(id, base64) (the page tells
+         * what it has shown with ptyAck, so a runaway program cannot flood it) and the end as window.onPtyExit(id, code).
+         */
+        @JavascriptInterface
+        public String ptyStart(final String id, final String backend, final int rows, final int cols) {
+            if (id == null || id.isEmpty()) return "error: no id";
+            final String key = id;
+            PtyShell old = ptySessions.remove(key);
+            if (old != null) old.close();
+            executor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject res = new JSONObject();
+                    try {
+                        Process proc = ptyProcess(backend, rows, cols);
+                        PtyShell sh = new PtyShell(proc, new PtyShell.Listener() {
+                            @Override
+                            public void onData(byte[] data, int n) {
+                                notifyJs("window.onPtyData&&window.onPtyData(" + JSONObject.quote(key) + ",\"" + android.util.Base64.encodeToString(data, 0, n, android.util.Base64.NO_WRAP) + "\")");
+                            }
+
+                            @Override
+                            public void onExit(int code) {
+                                ptySessions.remove(key);
+                                notifyJs("window.onPtyExit&&window.onPtyExit(" + JSONObject.quote(key) + "," + code + ")");
+                            }
+                        });
+                        ptySessions.put(key, sh);
+                        res.put("ok", true);
+                    } catch (Throwable t) {
+                        try {
+                            res.put("ok", false);
+                            res.put("message", errMsg(t));
+                        } catch (Exception ignored) {}
+                    }
+                    notifyJs("window.onPtyStarted&&window.onPtyStarted(" + JSONObject.quote(key) + "," + res + ")");
+                }
+            });
+            return "started";
+        }
+
+        /** Keys for the terminal: base64 of the UTF-8 bytes (escape sequences included). */
+        @JavascriptInterface
+        public void ptyWrite(String id, String base64) {
+            PtyShell p = id == null ? null : ptySessions.get(id);
+            if (p == null || base64 == null) return;
+            try {
+                byte[] d = android.util.Base64.decode(base64, android.util.Base64.DEFAULT);
+                p.write(d, 0, d.length);
+            } catch (Exception ignored) {}
+        }
+
+        @JavascriptInterface
+        public void ptyResize(String id, int rows, int cols) {
+            PtyShell p = id == null ? null : ptySessions.get(id);
+            if (p == null) return;
+            try {
+                p.resize(rows, cols);
+            } catch (Exception ignored) {}
+        }
+
+        /** The page has shown {@code n} more bytes of output. */
+        @JavascriptInterface
+        public void ptyAck(String id, int n) {
+            PtyShell p = id == null ? null : ptySessions.get(id);
+            if (p != null) p.ack(n);
+        }
+
+        @JavascriptInterface
+        public void ptyClose(String id) {
+            PtyShell p = id == null ? null : ptySessions.remove(id);
+            if (p != null) p.close();
+        }
+
+        /** Whether this build can open a real terminal on this phone: {"helper":true|false}. */
+        @JavascriptInterface
+        public String ptyInfo() {
+            try {
+                return new JSONObject().put("helper", ptyHelper().isFile()).toString();
+            } catch (Exception e) {
+                return "{\"helper\":false}";
+            }
+        }
+
         /** Closes {@code backend}'s shell (the next termStart opens a new one). */
         @JavascriptInterface
         public void termClose(String backend) {
@@ -13672,6 +13820,19 @@ public class MainActivity extends Activity {
             });
         }
 
+        /** The text on the clipboard (the full-screen Terminal's Paste): the page cannot read it by itself in a web view. */
+        @JavascriptInterface
+        public String getClipboardText() {
+            try {
+                ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                if (cm == null || !cm.hasPrimaryClip() || cm.getPrimaryClip().getItemCount() == 0) return "";
+                CharSequence t = cm.getPrimaryClip().getItemAt(0).coerceToText(MainActivity.this);
+                return t == null ? "" : t.toString();
+            } catch (Exception e) {
+                return "";
+            }
+        }
+
         /** Tints the status and navigation bars to match the active theme background. */
         @JavascriptInterface
         public void setSystemBarColor(final String hex) {
@@ -13862,6 +14023,7 @@ public class MainActivity extends Activity {
         } catch (Throwable ignored) {}
         try {
             closeTermSessions();
+            closePtySessions();
             for (AiHttp c : aiCalls.values()) c.cancel();
             aiExecutor.shutdown();
         } catch (Throwable ignored) {}
