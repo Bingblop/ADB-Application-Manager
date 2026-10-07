@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.bloatware.bingblop"
-    android:versionCode="822"
-    android:versionName="7.10.2-Pro">
+    android:versionCode="823"
+    android:versionName="7.10.3-Pro">
 
     <uses-sdk
         android:minSdkVersion="26"
@@ -143,41 +143,6 @@
             android:name=".StopListTileService"
             android:exported="true"
             android:label="Stop apps"
-            android:icon="@drawable/ic_stat"
-            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
-            <intent-filter>
-                <action android:name="android.service.quicksettings.action.QS_TILE" />
-            </intent-filter>
-        </service>
-
-        <!-- The System UI Tuner tab's tiles (from the Tweaker app by Zachary Wander, MIT): off until the tab switches one on -->
-        <service
-            android:name=".BatteryTileService"
-            android:exported="true"
-            android:enabled="false"
-            android:label="Battery"
-            android:icon="@drawable/ic_stat"
-            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
-            <intent-filter>
-                <action android:name="android.service.quicksettings.action.QS_TILE" />
-            </intent-filter>
-        </service>
-        <service
-            android:name=".ClockTileService"
-            android:exported="true"
-            android:enabled="false"
-            android:label="Clock"
-            android:icon="@drawable/ic_stat"
-            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
-            <intent-filter>
-                <action android:name="android.service.quicksettings.action.QS_TILE" />
-            </intent-filter>
-        </service>
-        <service
-            android:name=".DemoTileService"
-            android:exported="true"
-            android:enabled="false"
-            android:label="Demo mode"
             android:icon="@drawable/ic_stat"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>

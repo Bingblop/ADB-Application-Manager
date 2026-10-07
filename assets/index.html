@@ -3234,6 +3234,12 @@
         }
 
         .apps-sort-select.apps-ab-select { width: 138px; flex: 0 0 auto; }
+        .ab-pick { display: inline-flex; align-items: center; justify-content: space-between; gap: 4px; text-align: left; cursor: pointer; }
+        .ab-pick #appsActionBtnPickLabel { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+        .ab-pick-chev { color: var(--text-muted); font-size: 10px; flex: 0 0 auto; }
+        .ab-sheet-row .ab-sheet-txt { display: flex; flex-direction: column; align-items: flex-start; text-align: left; gap: 2px; min-width: 0; }
+        .ab-sheet-row .ab-sheet-sub { font-size: 11px; font-weight: 500; color: var(--text-muted); line-height: 1.35; }
+        .ab-sheet-row:active .ab-sheet-sub { color: var(--on-accent); }
 
         .app-meta-line {
             font-size: 9.5px;
@@ -3327,6 +3333,31 @@
             background-position: center 6px;
             background-repeat: no-repeat;
         }
+        /* The real terminal (full screen): xterm.js on a pseudo-terminal. It covers the whole app; its height follows the on-screen keyboard (--rt-vh). */
+        .rt-overlay { position: fixed; left: 0; top: 0; right: 0; height: var(--rt-vh, 100vh); z-index: 260; display: none; flex-direction: column; background: #000; color: #e6e6e6; padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px); box-sizing: border-box; }
+        .rt-overlay.show { display: flex; }
+        body.rt-open { overflow: hidden; }
+        .rt-bar { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; padding: 6px 8px; background: #101010; border-bottom: 1px solid #262626; overflow-x: auto; }
+        .rt-bar .op-select { flex: 0 0 auto; width: auto; max-width: 190px; font-size: 12px; padding: 7px 6px; }
+        .rt-bar button { flex: 0 0 auto; min-height: 34px; padding: 4px 10px; background: #1b1b1b; color: #e6e6e6; border: 1px solid #333; border-radius: 8px; font-size: 12px; font-weight: 700; }
+        .rt-bar button:active { background: #333; }
+        .rt-bar .rt-sp { flex: 1 1 auto; }
+        .rt-bar .rt-x { color: #ff8a80; font-size: 16px; padding: 4px 12px; }
+        .rt-term { flex: 1 1 auto; min-height: 0; padding: 4px 4px 0 6px; overflow: hidden; }
+        .rt-term .xterm { height: 100%; }
+        .rt-term .xterm-viewport { background-color: #000 !important; }
+        .rt-note { position: absolute; left: 10px; right: 10px; top: 56px; padding: 8px 10px; border-radius: 8px; background: rgba(255, 107, 107, 0.15); border: 1px solid #ff6b6b; color: #ffb4b4; font-size: 12px; display: none; }
+        .rt-keys { flex: 0 0 auto; background: #0b0b0b; border-top: 1px solid #262626; padding: 3px 4px 4px; }
+        .rt-keys .rt-row { display: flex; gap: 3px; margin-top: 3px; }
+        .rt-keys .rt-row.rt-scroll { overflow-x: auto; scrollbar-width: none; }
+        .rt-keys button { flex: 1 1 0; min-width: 0; min-height: 40px; background: #000; color: #e6e6e6; border: 0; border-radius: 6px; font-family: monospace; font-size: 13px; font-weight: 800; letter-spacing: -0.3px; padding: 0 2px; touch-action: manipulation; }
+        .rt-keys .rt-row.rt-scroll button { flex: 0 0 38px; }
+        .rt-keys button:active { background: #2a2a2a; }
+        .rt-keys button.on { background: var(--accent); color: var(--on-accent); }
+        .rt-keys button.lock { box-shadow: inset 0 -3px 0 var(--on-accent); }
+        /* a bottom sheet pulled up by its handle: it takes (nearly) the whole screen */
+        .modal-sheet.sheet-expanded, #inspectorModal .modal-sheet.sheet-expanded { max-height: calc(100vh - 14px); min-height: 72vh; }
+        .modal-sheet.sheet-dragging { transition: none !important; }
         /* a tab fades in instead of appearing at once (opacity only: no transform, so nothing that is fixed inside it is disturbed) */
         @media (prefers-reduced-motion: no-preference) {
             .view-content.active { animation: viewFadeIn 0.22s ease-out; }
@@ -3430,8 +3461,7 @@
                 <button class="mode-action-btn" onclick="exportAppList(true)">Share CSV</button>
                 <button class="mode-action-btn" onclick="openProfiles()">Profiles</button>
                 <button class="mode-action-btn" onclick="openBackups()">Backups</button>
-                <label class="apps-sort-label" for="appsActionBtnSelect" style="margin-left:6px;">Action Button</label>
-                <select id="appsActionBtnSelect" class="op-select apps-sort-select apps-ab-select" aria-label="Action Button" onchange="setActionBtn(this.value)"></select>
+                <button type="button" id="appsActionBtnPick" class="op-select apps-sort-select apps-ab-select ab-pick" aria-label="Action Button" aria-haspopup="dialog" onclick="openActionBtnPicker()"><span id="appsActionBtnPickLabel"></span><span class="ab-pick-chev" aria-hidden="true">&#9662;</span></button>
             </div>
 
             <!-- Tooltip under the Export / Share CSV buttons: the filter chips below scroll sideways -->
@@ -5223,8 +5253,8 @@
                 .mp-count { font-size: 11px; color: var(--text-muted); margin: 6px 2px 8px; }
                 .mp-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; margin-bottom: 8px; border-radius: var(--radius-md); border: 1px solid var(--border-glass); background: rgba(var(--ov), 0.04); cursor: pointer; }
                 .mp-card:active { background: var(--accent-glow); }
-                .mp-ico { flex: 0 0 auto; width: 42px; height: 42px; border-radius: 11px; display: flex; align-items: center; justify-content: center; overflow: hidden; background: var(--bg-surface); color: var(--accent); font-weight: 900; font-size: 17px; }
-                .mp-ico img { width: 100%; height: 100%; object-fit: contain; }
+                .mp-ico { position: relative; flex: 0 0 auto; width: 42px; height: 42px; border-radius: 11px; display: flex; align-items: center; justify-content: center; overflow: hidden; background: var(--bg-surface); color: var(--accent); font-weight: 900; font-size: 17px; }
+                .mp-ico img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }          /* over the letter that stands in until it is loaded: never beside it */
                 .mp-main { flex: 1 1 auto; min-width: 0; }
                 .mp-name { font-size: 14px; font-weight: 800; line-height: 1.25; overflow-wrap: anywhere; }
                 .mp-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; overflow-wrap: anywhere; line-height: 1.4; }
@@ -5426,183 +5456,6 @@
         </section>
 
 <!-- MORPHE:VIEW:END -->
-<!-- SYSUI:VIEW:BEGIN -->
-        <section id="view-sysui" class="view-content">
-            <style>
-                .su-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-                .su-btns .mode-action-btn { flex: 1 1 auto; justify-content: center; min-width: 0; }
-                .su-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
-                .su-grid .mode-action-btn { justify-content: center; min-width: 0; text-align: center; }
-                .su-note { font-size: 11.5px; line-height: 1.5; color: var(--text-muted); margin: 6px 0; overflow-wrap: anywhere; }
-                .su-note b { color: var(--text-main); }
-                .su-note.is-err { color: var(--status-bloat); }
-                .su-credit { font-size: 11px; line-height: 1.5; color: var(--text-muted); margin-top: 10px; overflow-wrap: anywhere; }
-                .su-credit a { color: var(--accent); text-decoration: none; font-weight: 700; }
-                .su-lock { margin-top: 10px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--status-suspended); background: rgba(255, 196, 0, 0.1); font-size: 12px; line-height: 1.5; }
-                .su-banner { margin-top: 10px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--accent); background: var(--accent-glow); font-size: 12.5px; font-weight: 800; display: flex; align-items: center; gap: 10px; justify-content: space-between; flex-wrap: wrap; }
-                .su-banner.warn { border-color: var(--status-bloat); background: rgba(198, 40, 40, 0.18); }
-                .su-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; cursor: pointer; }
-                .su-head .color-card-title { margin: 0; }
-                .su-chev { font-size: 14px; color: var(--text-muted); transition: transform .15s; }
-                .su-card.open .su-chev { transform: rotate(90deg); }
-                .su-body { display: none; margin-top: 8px; }
-                .su-card.open .su-body { display: block; }
-                .su-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(var(--ov), 0.06); }
-                .su-row:last-child { border-bottom: 0; }
-                .su-row .su-lab { flex: 1 1 auto; min-width: 0; font-size: 13px; font-weight: 700; }
-                .su-row .su-sub { display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-top: 2px; line-height: 1.4; }
-                .su-row .op-select { flex: 0 0 150px; min-width: 0; font-size: 13px; padding: 8px 6px; }
-                .su-row .modal-text-input { flex: 0 0 120px; min-width: 0; margin: 0; }
-                .su-row input[type=range] { flex: 0 0 150px; accent-color: var(--accent); }
-                .su-row input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--accent); flex: 0 0 auto; }
-                .su-val { flex: 0 0 34px; text-align: right; font-size: 12px; font-weight: 800; color: var(--accent); }
-                .su-sub-h { font-size: 11px; font-weight: 900; letter-spacing: .4px; text-transform: uppercase; color: var(--text-muted); margin: 14px 0 2px; }
-                .su-tile { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid rgba(var(--ov), 0.06); }
-                .su-tile:last-child { border-bottom: 0; }
-                .su-tile .su-lab { flex: 1 1 auto; min-width: 0; font-size: 13px; font-weight: 700; }
-                .su-out { margin-top: 8px; padding: 8px 10px; border-radius: 10px; background: var(--input-bg); border: 1px solid var(--border-glass); font-family: monospace; font-size: 11px; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 40vh; overflow: auto; -webkit-user-select: text; user-select: text; }
-                .su-out:empty { display: none; }
-                .su-act { border: 1px solid var(--accent); color: var(--accent); background: transparent; border-radius: 999px; padding: 6px 12px; font-size: 11px; font-weight: 800; cursor: pointer; white-space: nowrap; }
-                .su-act:active { background: var(--accent); color: var(--on-accent); }
-                .su-act:disabled { opacity: 0.45; }
-                .su-act.danger { border-color: var(--status-bloat); color: var(--status-bloat); }
-                .su-slot { display: inline-block; margin: 2px 4px 2px 0; padding: 2px 8px; font-size: 11px; border-radius: 999px; border: 1px solid var(--border-glass); background: rgba(var(--ov), 0.05); }
-                .su-keep { margin-top: 10px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--status-suspended); background: rgba(255, 196, 0, 0.1); font-size: 12.5px; line-height: 1.5; }
-                .su-keep .mode-btn-row { margin-top: 8px; }
-                #view-sysui .mode-action-btn.danger { border-color: var(--status-bloat); color: var(--status-bloat); }
-                .su-action { min-height: 44px; font-size: 12.5px; padding: 6px; line-height: 1.2; }
-            </style>
-
-            <div class="color-card" id="suTop">
-                <div class="color-card-title">System UI Tuner</div>
-                <div class="color-card-subtitle">Change how the status bar, the quick settings, notifications and the system bars look and behave, without editing a single setting. Everything here ends by itself on a restart of System UI or of the phone.</div>
-                <div class="su-lock" id="suLock" style="display:none;"></div>
-                <div class="su-note">Most of what the System UI Tuner app by Zachary Wander (Tweaker) offers works by writing Global, Secure and System settings. Those are not repeated here: the <b>Hidden Settings</b> tab already edits every one of them. What is here does not write a setting.</div>
-                <div class="su-btns"><button class="mode-action-btn" onclick="switchView('settings')">Open Hidden Settings</button></div>
-                <div class="su-credit">Demo Mode and the three Quick Settings tiles come from <a href="#" onclick="openUrlExternal('https://github.com/zacharee/Tweaker');return false;">Tweaker</a> by Zachary Wander (MIT). The extra tools below it (status bar and shade, notification lab, system actions, battery simulator, navigation mode, display and window, info) are additions that use commands Android itself provides.</div>
-            </div>
-
-            <div class="color-card su-card" id="suCardDemo">
-                <div class="su-head" onclick="suToggle('suCardDemo')"><div class="color-card-title">Demo Mode</div><span class="su-chev">&#9656;</span></div>
-                <div class="color-card-subtitle">Forces the status bar into a fixed state: the clock, the battery, the signal, the icons. Made for screenshots. It changes nothing else, and it ends when System UI restarts or the phone restarts. From Tweaker.</div>
-                <div class="su-body">
-                    <div class="su-row"><div class="su-lab">Allow demo mode<span class="su-sub">Android only listens to demo commands while one flag is on (Global sysui_demo_allowed). This switch writes just that flag.</span></div><input type="checkbox" id="suDemoAllow" onchange="suDemoAllow(this.checked)"></div>
-                    <div class="su-row"><div class="su-lab">Enabled<span class="su-sub">Shows the demo state below in the status bar.</span></div><input type="checkbox" id="suDemoOn" onchange="suDemoOn(this.checked)"></div>
-                    <div class="su-banner warn" id="suDemoBanner" style="display:none;"><span>Demo mode is on. Screenshots show fake data.</span><button class="su-act" onclick="suDemoOnSet(false)">Exit</button></div>
-                    <div id="suDemoForm"></div>
-                    <div class="su-note" id="suDemoMsg"></div>
-                </div>
-            </div>
-
-            <div class="color-card su-card" id="suCardTiles">
-                <div class="su-head" onclick="suToggle('suCardTiles')"><div class="color-card-title">Quick Settings tiles</div><span class="su-chev">&#9656;</span></div>
-                <div class="color-card-subtitle">Three tiles for the quick settings panel: the battery level, a clock with seconds, and a Demo Mode switch. From Tweaker.</div>
-                <div class="su-body" id="suTiles"></div>
-            </div>
-
-            <div class="color-card su-card" id="suCardBar">
-                <div class="su-head" onclick="suToggle('suCardBar')"><div class="color-card-title">Status bar and shade</div><span class="su-chev">&#9656;</span></div>
-                <div class="color-card-subtitle">Open or close the notification shade, hide parts of the bars for a while, and see the icon slots System UI knows.</div>
-                <div class="su-body">
-                    <div class="su-grid">
-                        <button class="mode-action-btn" onclick="suShade('expand-notifications')">Open notifications</button>
-                        <button class="mode-action-btn" onclick="suShade('expand-settings')">Open quick settings</button>
-                        <button class="mode-action-btn" onclick="suShade('collapse')">Close the shade</button>
-                    </div>
-                    <div class="su-sub-h">Hide for now</div>
-                    <div class="su-note">These switch parts of the bars off in the system, without a setting, until you restore them or restart the phone. Each change replaces the last one.</div>
-                    <div id="suFlags"></div>
-                    <div class="su-btns"><button class="mode-action-btn primary" onclick="suFlagsApply()">Apply</button><button class="mode-action-btn" onclick="suFlagsRestore()">Restore everything</button><button class="mode-action-btn" onclick="suFlagsRead()">What is hidden now</button></div>
-                    <div class="su-note" id="suFlagsMsg"></div>
-                    <div class="su-keep" id="suKeep" style="display:none;"></div>
-                    <div class="su-sub-h">Status bar icon slots</div>
-                    <div class="su-note">The names System UI gives its status bar icons. The hiding itself is the Secure setting icon_blacklist, which Hidden Settings edits.</div>
-                    <div class="su-btns"><button class="mode-action-btn" onclick="suSlotsLoad()">Load the slots</button><button class="mode-action-btn" onclick="suSlotsCopy()">Copy</button><button class="mode-action-btn" onclick="switchView('settings')">Hidden Settings</button></div>
-                    <div id="suSlots" class="su-note" translate="no"></div>
-                </div>
-            </div>
-
-            <div class="color-card su-card" id="suCardNotif">
-                <div class="su-head" onclick="suToggle('suCardNotif')"><div class="color-card-title">Notification lab</div><span class="su-chev">&#9656;</span></div>
-                <div class="color-card-subtitle">Send test notifications to see how they look, list the ones that are showing, snooze one. They are sent as the shell, in a channel called Shell command.</div>
-                <div class="su-body">
-                    <input class="modal-text-input" id="suNTitle" placeholder="Title" value="Test notification" autocomplete="off" spellcheck="false" maxlength="80">
-                    <input class="modal-text-input" id="suNText" placeholder="Text" value="This is a test from System UI Tuner." autocomplete="off" spellcheck="false" maxlength="300" style="margin-top:6px;">
-                    <input class="modal-text-input" id="suNTag" placeholder="Tag" value="sysui_tuner" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="40" style="margin-top:6px;">
-                    <div class="su-row"><div class="su-lab">Style</div><select class="op-select" id="suNStyle"><option value="basic">Basic</option><option value="bigtext">Big text</option><option value="inbox">Inbox (lines)</option><option value="messaging">Messaging</option></select></div>
-                    <div class="su-btns"><button class="mode-action-btn primary" onclick="suNotifPost()">Send</button><button class="mode-action-btn" onclick="suNotifList()">List active</button></div>
-                    <div id="suNKeys"></div>
-                    <div class="su-note" id="suNMsg"></div>
-                </div>
-            </div>
-
-            <div class="color-card su-card" id="suCardActions">
-                <div class="su-head" onclick="suToggle('suCardActions')"><div class="color-card-title">System actions</div><span class="su-chev">&#9656;</span></div>
-                <div class="color-card-subtitle">Press the system's own buttons from here: Back, Home, Recents, the power menu, a screenshot and more. And restart System UI when the bars misbehave.</div>
-                <div class="su-body">
-                    <div class="su-grid" id="suActions"></div>
-                    <div class="su-btns"><button class="mode-action-btn danger" onclick="suRestartUi()">Restart System UI</button></div>
-                    <div class="su-note">Restarting System UI makes the bars and the shade flicker for a few seconds and ends demo mode. Nothing is lost.</div>
-                    <div class="su-note" id="suActMsg"></div>
-                </div>
-            </div>
-
-            <div class="color-card su-card" id="suCardBatt">
-                <div class="su-head" onclick="suToggle('suCardBatt')"><div class="color-card-title">Battery simulator</div><span class="su-chev">&#9656;</span></div>
-                <div class="color-card-subtitle">Makes the whole system believe the battery has another level or state, to test low battery warnings and charging screens. Different from Demo Mode, which only changes the icon.</div>
-                <div class="su-body">
-                    <div class="su-banner warn" id="suBattBanner" style="display:none;"><span>The battery is being simulated. The phone does not see the real charge.</span><button class="su-act" onclick="suBattReset()">Reset now</button></div>
-                    <div class="su-row"><div class="su-lab">Level</div><input type="range" id="suBLevel" min="0" max="100" value="50" oninput="document.getElementById('suBLevelV').textContent=this.value"><span class="su-val" id="suBLevelV">50</span></div>
-                    <div class="su-row"><div class="su-lab">State</div><select class="op-select" id="suBStatus"><option value="3">Discharging</option><option value="2">Charging</option><option value="4">Not charging</option><option value="5">Full</option><option value="1">Unknown</option></select></div>
-                    <div class="su-row"><div class="su-lab">Plugged into</div><select class="op-select" id="suBPlug"><option value="none">Nothing</option><option value="ac">AC</option><option value="usb">USB</option><option value="wireless">Wireless</option></select></div>
-                    <div class="su-row"><div class="su-lab">Temperature<span class="su-sub">in tenths of a degree (250 is 25.0)</span></div><input class="modal-text-input" type="number" id="suBTemp" value="250" inputmode="numeric"></div>
-                    <div class="su-btns"><button class="mode-action-btn primary" onclick="suBattApply()">Apply</button><button class="mode-action-btn" onclick="suBattUnplug()">Unplug</button><button class="mode-action-btn" onclick="suBattRead()">Read</button><button class="mode-action-btn danger" onclick="suBattReset()">Reset</button></div>
-                    <div class="su-out" id="suBattOut" translate="no"></div>
-                </div>
-            </div>
-
-            <div class="color-card su-card" id="suCardNav">
-                <div class="su-head" onclick="suToggle('suCardNav')"><div class="color-card-title">Navigation mode</div><span class="su-chev">&#9656;</span></div>
-                <div class="color-card-subtitle">Switch between 3-button, 2-button and gesture navigation through the overlays Android ships for it.</div>
-                <div class="su-body">
-                    <div id="suNav"></div>
-                    <div class="su-btns"><button class="mode-action-btn" onclick="suNavLoad()">Check this phone</button></div>
-                    <div class="su-note" id="suNavMsg"></div>
-                </div>
-            </div>
-
-            <div class="color-card su-card" id="suCardWin">
-                <div class="su-head" onclick="suToggle('suCardWin')"><div class="color-card-title">Display and windows</div><span class="su-chev">&#9656;</span></div>
-                <div class="color-card-subtitle">Screen density and size of this phone, and how windows behave. A change is put back by itself after 15 seconds unless you keep it.</div>
-                <div class="su-body">
-                    <div class="su-row"><div class="su-lab">Density<span class="su-sub" id="suDensCur"></span></div><input class="modal-text-input" type="number" id="suDens" placeholder="420" inputmode="numeric"></div>
-                    <div class="su-row"><div class="su-lab">Size<span class="su-sub" id="suSizeCur"></span></div><input class="modal-text-input" id="suSize" placeholder="1080x2400" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
-                    <div class="su-btns"><button class="mode-action-btn primary" onclick="suWinApply()">Apply</button><button class="mode-action-btn" onclick="suWinRead()">Read</button><button class="mode-action-btn danger" onclick="suWinReset()">Reset to default</button></div>
-                    <div class="su-row"><div class="su-lab">Ignore orientation requests<span class="su-sub">Apps that ask for a fixed orientation rotate with the screen (Android 12 and newer).</span></div><input type="checkbox" id="suIgnoreOri" onchange="suIgnoreOri(this.checked)"></div>
-                    <div class="su-row"><div class="su-lab">Window scaling<span class="su-sub">Auto lets the system scale windows; off draws them at their own size.</span></div><select class="op-select" id="suScaling" onchange="suScaling(this.value)"><option value="auto">Auto</option><option value="off">Off</option></select></div>
-                    <div class="su-keep" id="suWinKeep" style="display:none;"></div>
-                    <div class="su-note" id="suWinMsg"></div>
-                </div>
-            </div>
-
-            <div class="color-card su-card" id="suCardInfo">
-                <div class="su-head" onclick="suToggle('suCardInfo')"><div class="color-card-title">System UI information</div><span class="su-chev">&#9656;</span></div>
-                <div class="color-card-subtitle">Read-only reports about the bars, the windows, the displays and the night mode, with Copy and Share.</div>
-                <div class="su-body">
-                    <div class="su-grid">
-                        <button class="mode-action-btn" onclick="suInfo('statusbar')">Status bar</button>
-                        <button class="mode-action-btn" onclick="suInfo('status-icons')">Status icon slots</button>
-                        <button class="mode-action-btn" onclick="suInfo('window-displays')">Window displays</button>
-                        <button class="mode-action-btn" onclick="suInfo('display')">Displays</button>
-                        <button class="mode-action-btn" onclick="suInfo('uimode')">Night and car mode</button>
-                    </div>
-                    <div class="su-out" id="suInfoOut" translate="no"></div>
-                    <div class="su-btns" id="suInfoBtns" style="display:none;"><button class="mode-action-btn" onclick="copyText(document.getElementById('suInfoOut').textContent)">Copy</button><button class="mode-action-btn" onclick="shareFileViaBridge('system-ui-info.txt', document.getElementById('suInfoOut').textContent, 'text/plain')">Share</button></div>
-                </div>
-            </div>
-        </section>
-
-<!-- SYSUI:VIEW:END -->
 <!-- SDM:VIEW:BEGIN -->
         <section id="view-sdm" class="view-content">
             <style>
@@ -5807,7 +5660,6 @@
                 <div class="about-tip">Task Manager tab modeled on <a href="#" onclick="openUrlExternal('https://github.com/RohitKushvaha01/TaskManager'); return false;">RohitKushvaha01/TaskManager</a>.</div>
                 <div class="about-tip">Morphe Patcher tab: the patcher engine is <a href="#" onclick="openUrlExternal('https://github.com/MorpheApp/morphe-patcher'); return false;">morphe-patcher</a> and the way sources, patching and the community finder work follows <a href="#" onclick="openUrlExternal('https://github.com/MorpheApp/morphe-manager'); return false;">Morphe Manager</a>, both by <a href="#" onclick="openUrlExternal('https://github.com/MorpheApp'); return false;">MorpheApp</a> (GPL-3.0); the APK download sources and the VirusTotal check follow <a href="#" onclick="openUrlExternal('https://github.com/rushiranpise/helper-for-morphe'); return false;">Helper for Morphe</a> by rushiranpise (GPL-3.0). The patches belong to their authors.</div>
                 <div class="about-tip">SD Maid SE tab: a port of the four tools of <a href="#" onclick="openUrlExternal('https://github.com/d4rken-org/sdmaid-se'); return false;">SD Maid SE</a> by darken (d4rken-org, GPL-3.0), also on <a href="#" onclick="openUrlExternal('https://play.google.com/store/apps/details?id=eu.darken.sdmse'); return false;">Google Play</a>. Its icons, logo and translations are not used.</div>
-                <div class="about-tip">System UI Tuner tab: Demo Mode and the Quick Settings tiles follow <a href="#" onclick="openUrlExternal('https://github.com/zacharee/Tweaker'); return false;">Tweaker</a> (System UI Tuner) by Zachary Wander (MIT).</div>
                 <div class="about-tip">Hidden Settings: the descriptions of Android's own settings are taken in part from the documentation in the <a href="#" onclick="openUrlExternal('https://source.android.com/'); return false;">Android Open Source Project</a> (Apache-2.0).</div>
             </div>
         </section>
@@ -5831,6 +5683,16 @@
                 .tx-state { font-size: 11px; color: var(--text-muted); flex: 1 1 140px; min-width: 0; overflow-wrap: anywhere; }
                 .tx-state b { color: var(--text-main); }
                 .tx-screens { position: relative; }
+                /* Full screen: the Terminal pane covers the whole app (header and tabs included), the screen takes all the room above the input and the extra keys,
+                   and the height follows the on-screen keyboard (--tx-vh, set from visualViewport) so the input line is never hidden behind it */
+                #txPaneTerminal.tx-full { position: fixed; left: 0; top: 0; right: 0; height: var(--tx-vh, 100vh); z-index: 250; margin: 0; background: var(--bg-main); display: flex; flex-direction: column; padding: calc(env(safe-area-inset-top, 0px) + 6px) 8px calc(env(safe-area-inset-bottom, 0px) + 6px); overflow: hidden; box-sizing: border-box; }
+                #txPaneTerminal.tx-full > * { flex: 0 0 auto; }
+                #txPaneTerminal.tx-full .tx-screens { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+                #txPaneTerminal.tx-full .tx-screen { height: auto; min-height: 0; max-height: none; flex: 1 1 auto; font-size: var(--tx-full-font, 13px); }
+                #txPaneTerminal.tx-full .tx-keys { margin-top: 4px; }
+                #txPaneTerminal.tx-full .tx-tools { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 6px; padding: 4px 0 0; }
+                #txPaneTerminal.tx-full .tx-tools .term-icon-btn { flex: 0 0 auto; }
+                body.tx-full-on { overflow: hidden; }
                 .tx-screen { background: #000; color: #e6e6e6; font-family: 'DejaVu Sans Mono', 'Roboto Mono', 'Droid Sans Mono', monospace; font-size: 12.5px; line-height: 1.45; border-radius: 12px; padding: 10px 10px 14px; height: 50vh; min-height: 240px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; border: 1px solid #232323; -webkit-user-select: text; user-select: text; }
                 .tx-screen * { font-family: inherit; }
                 .tx-screen .tx-pp { color: #23d18b; }
@@ -5905,6 +5767,11 @@
                 .tx-step.fail .tx-step-dot { color: var(--status-bloat); }
                 .tx-step.run .tx-step-dot { color: var(--accent); }
                 .tx-step code { display: block; font-size: 10.5px; color: var(--text-muted); white-space: pre-wrap; word-break: break-all; margin-top: 2px; }
+                .tx-tool-row { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border-glass); }
+                .tx-tool-row input { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--accent); flex: 0 0 auto; }
+                .tx-tool-main { display: flex; flex-direction: column; font-size: 12.5px; min-width: 0; }
+                .tx-tool-main b { font-size: 13.5px; }
+                .tx-tool-main span { color: var(--text-muted); font-size: 11.5px; line-height: 1.4; }
                 .tx-help h4 { font-size: 13px; font-weight: 800; margin: 16px 0 6px; color: var(--accent); }
                 .tx-help p, .tx-help li { font-size: 12px; line-height: 1.55; color: var(--text-main); }
                 .tx-help ul { margin: 4px 0 4px 18px; padding: 0; }
@@ -5987,6 +5854,8 @@
                     <button translate="no" data-k="shift" class="tx-key-shift" title="More symbols" aria-label="Shift: more symbols">SHIFT</button>
                 </div>
                 <div class="tx-tools">
+                    <button class="term-icon-btn" id="txFullBtn" onclick="txFullToggle()" aria-pressed="false">Full screen</button>
+                    <button class="term-icon-btn" id="txRealBtn" onclick="rtOpen()">Real terminal</button>
                     <button class="term-icon-btn" onclick="txClearScreen()">Clear</button>
                     <button class="term-icon-btn" onclick="txCopyScreen()">Copy</button>
                     <button class="term-icon-btn" onclick="openCheatSheet(true)">Cheat Sheet</button>
@@ -6326,6 +6195,22 @@ Type any command below (e.g. pm list packages -d)
     </div>
 
     <!-- Termux setup checklist -->
+    <!-- Termux: which tools to install and which starter files to write -->
+    <div class="modal-overlay" id="txToolsModal" onclick="if(event.target===this) txCloseTools()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-title">
+                        <h3>Set up Termux</h3>
+                        <p>Choose what to install and which starter files to write</p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="txCloseTools()" role="button" aria-label="Close">&#10005;</div>
+            </div>
+            <div id="txToolsBody" style="max-height:70vh; overflow-y:auto;"></div>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="txTermuxModal" onclick="if(event.target===this) txCloseTermux()">
         <div class="modal-sheet">
             <div class="sheet-header">
@@ -6534,6 +6419,36 @@ Type any command below (e.g. pm list packages -d)
         </div>
     </div>
 
+    <!-- The real terminal (full screen), opened from the Terminal tab: xterm.js on a pseudo-terminal (assets/xterm.js is loaded the first time) -->
+    <div class="rt-overlay" id="rtOverlay" role="dialog" aria-label="Terminal" aria-modal="true">
+        <div class="rt-bar">
+            <select id="rtShell" class="op-select" aria-label="Shell" onchange="rtPickShell(this.value)">
+                <option value="app">This app (sandbox)</option>
+                <option value="priv">Working mode (ADB, Shizuku, Root)</option>
+                <option value="termux">Termux (bash and packages)</option>
+            </select>
+            <button onclick="rtFont(-1)" aria-label="Smaller text">A&minus;</button>
+            <button onclick="rtFont(1)" aria-label="Bigger text">A+</button>
+            <button onclick="rtCopy()">Copy</button>
+            <button onclick="rtPaste()">Paste</button>
+            <button onclick="rtRestart()">Restart</button>
+            <span class="rt-sp"></span>
+            <button class="rt-x" onclick="rtHide()" aria-label="Close the terminal"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+        </div>
+        <div class="rt-note" id="rtNote"></div>
+        <div class="rt-term" id="rtTerm"></div>
+        <div class="rt-keys" id="rtKeys" role="toolbar" aria-label="Terminal keys">
+            <div class="rt-row">
+                <button translate="no" data-rk="esc">ESC</button><button translate="no" data-rk="/">/</button><button translate="no" data-rk="-">&minus;</button><button translate="no" data-rk="home">HOME</button><button translate="no" data-rk="up" aria-label="Up">&uarr;</button><button translate="no" data-rk="end">END</button><button translate="no" data-rk="pgup">PGUP</button><button translate="no" data-rk="fn">FN</button>
+            </div>
+            <div class="rt-row">
+                <button translate="no" data-rk="tab" aria-label="Tab">TAB</button><button translate="no" data-rk="ctrl" id="rtCtrl">CTRL</button><button translate="no" data-rk="alt" id="rtAlt">ALT</button><button translate="no" data-rk="left" aria-label="Left">&larr;</button><button translate="no" data-rk="down" aria-label="Down">&darr;</button><button translate="no" data-rk="right" aria-label="Right">&rarr;</button><button translate="no" data-rk="pgdn">PGDN</button><button translate="no" data-rk="kbd" aria-label="Show or hide the keyboard">KBD</button>
+            </div>
+            <div class="rt-row rt-scroll" id="rtSyms"></div>
+            <div class="rt-row rt-scroll" id="rtFn" style="display:none;"></div>
+        </div>
+    </div>
+
     <!-- Hold the Action Button: every action for that app -->
     <div class="modal-overlay" id="abSheet" onclick="if(event.target===this) closeAbSheet()">
         <div class="modal-sheet">
@@ -6547,6 +6462,22 @@ Type any command below (e.g. pm list packages -d)
                 </div>
             </div>
             <div id="abSheetList" class="ab-sheet-list"></div>
+        </div>
+    </div>
+
+    <!-- A choice with a title and a few words about what it changes: opened from the Apps tab's Action Button menu -->
+    <div class="modal-overlay" id="choiceSheet" onclick="if(event.target===this) closeChoiceSheet()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-title">
+                    <h3 id="choiceTitle">Choose</h3>
+                    <p id="choiceDesc" style="white-space:normal;"></p>
+                </div>
+                <div class="sheet-header-actions">
+                    <div style="font-size:20px; cursor:pointer;" onclick="closeChoiceSheet()">✕</div>
+                </div>
+            </div>
+            <div id="choiceList" class="ab-sheet-list"></div>
         </div>
     </div>
 
@@ -8274,7 +8205,6 @@ Type any command below (e.g. pm list packages -d)
             { key: 'devices', label: 'Connected\nDevices', name: 'Connected Devices' },
             { key: 'morphe', label: 'Morphe\nPatcher', name: 'Morphe Patcher' },
             { key: 'sdm', label: 'SD Maid\nSE', name: 'SD Maid SE' },
-            { key: 'sysui', label: 'System UI\nTuner', name: 'System UI Tuner' },
             { key: 'about', label: 'About', name: 'About', fixed: true }
         ];
         const TAB_MOVABLE = TAB_DEFS.filter(t => !t.fixed).map(t => t.key);          // the default order of the tabs that can move
@@ -8336,6 +8266,8 @@ Type any command below (e.g. pm list packages -d)
             if (viewName !== 'prefs' && !tabDef(viewName)) return false;
             if (!tabNeed(viewName)) return false;                        // switched off in Settings > Feature List: nothing to open
             closeSearchMenu();
+            if (txFullOn && viewName !== 'terminal') txFullToggle(false);
+            if (typeof rt === 'object' && rt && rt.open && viewName !== 'terminal') rtHide();
             const fromView = currentViewName();
             if (!navFromBack && fromView && fromView !== viewName) {
                 viewStack = viewStack.filter(v => v !== fromView);
@@ -8377,8 +8309,6 @@ Type any command below (e.g. pm list packages -d)
             if (viewName === 'morphe' && typeof onMorpheShown === 'function') onMorpheShown();
             if (viewName === 'sdm' && typeof onSdmShown === 'function') onSdmShown();
             if (viewName === 'morphe' && typeof onMorpheShown === 'function') onMorpheShown();
-            if (viewName !== 'sysui' && typeof suLeave === 'function' && su.shown) suLeave();
-            if (viewName === 'sysui' && typeof onSysuiShown === 'function') onSysuiShown();
             if (viewName === 'morphe' && typeof onMorpheShown === 'function') onMorpheShown();
             if (viewName === 'morphe' && typeof onMorpheShown === 'function') onMorpheShown();
             if (viewName === 'morphe' && typeof onMorpheShown === 'function') onMorpheShown();
@@ -8667,6 +8597,7 @@ Type any command below (e.g. pm list packages -d)
         function backNavigate() {
             if (typeof closeInstallCombo === 'function' && closeInstallCombo()) return true;
             if (closeSearchMenu()) return true;
+            if (typeof rt === 'object' && rt && rt.open && !document.querySelector('.modal-overlay.show')) { rtHide(); return true; }
             const sheets = document.querySelectorAll('.modal-overlay.show');
             if (sheets.length) {
                 // the sheet on top is the one painted at the centre of the screen (later in the page wins a tie)
@@ -8675,6 +8606,7 @@ Type any command below (e.g. pm list packages -d)
                 top.click();                                                          // every sheet closes when its backdrop is tapped
                 return true;
             }
+            if (txFullOn) { txFullToggle(false); return true; }                        // the Terminal's full screen: Back comes out of it first
             if (batchPanelExpanded) { collapseBatchPanel(); return true; }
             if (selectedPkgs.size) { clearBatchSelection(); return true; }
             const cur = currentViewName();
@@ -10927,8 +10859,48 @@ Type any command below (e.g. pm list packages -d)
         window.onStoreApp = onStoreApp;
 
         // Store texts often come as HTML (tags, entities). This turns them into plain, readable text: paragraphs and line breaks kept, lists with bullets or numbers, links as their text.
+        // GitHub and F-Droid give a README or a Markdown text, not HTML: headings, badges, links and lists are turned into plain readable text
+        function looksMarkdown(t) {
+            return /^\s{0,3}#{1,6}\s+\S/m.test(t) || /!\[[^\]]*\]\([^)]*\)/.test(t) || /\[[^\]]+\]\([^)]*\)/.test(t) || /^\s*```/m.test(t) || /^\s*\[[^\]]+\]:\s*\S+/m.test(t);
+        }
+        function readmeToHtml(text) {
+            const esc = (x) => x.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            const inline = (x) => x
+                .replace(/\[!\[[^\]]*\]\([^)]*\)\]\([^)]*\)/g, '').replace(/\[!\[[^\]]*\]\[[^\]]*\]\]\([^)]*\)/g, '')
+                .replace(/!\[[^\]]*\]\([^)]*\)/g, '').replace(/!\[[^\]]*\]\[[^\]]*\]/g, '')
+                .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/\[([^\]]+)\]\[[^\]]*\]/g, '$1')
+                .replace(/<(https?:\/\/[^>\s]+)>/g, '$1')
+                .replace(/\*\*(\S(?:.*?\S)?)\*\*/g, '<b>$1</b>').replace(/(^|[^\w])__(\S(?:.*?\S)?)__(?!\w)/g, '$1<b>$2</b>')
+                .replace(/(^|[^\w*])\*(?!\s)([^*]+?)\*(?![\w*])/g, '$1<i>$2</i>').replace(/(^|[^\w])_(?!\s)([^_]+?)_(?!\w)/g, '$1<i>$2</i>')
+                .replace(/`([^`]+)`/g, '<code>$1</code>')
+                .replace(/~~(.+?)~~/g, '$1').replace(/\\([\\`*_{}\[\]()#+\-.!|])/g, '$1');
+            const out = []; let para = [], list = '', fence = false;
+            const flush = () => { if (para.length) { out.push('<p>' + inline(para.join(' ')) + '</p>'); para = []; } };
+            const endList = () => { if (list) { out.push('</' + list + '>'); list = ''; } };
+            text.replace(/<!--[\s\S]*?-->/g, '').split(/\r?\n/).forEach((line) => {
+                if (/^\s*```/.test(line)) { flush(); endList(); out.push(fence ? '</pre>' : '<pre>'); fence = !fence; return; }
+                if (fence) { out.push(esc(line) + '\n'); return; }
+                if (/^\s*\[[^\]]+\]:\s*\S+/.test(line)) return;
+                let m;
+                if ((m = /^\s{0,3}(#{1,6})\s+(.*?)\s*#*\s*$/.exec(line))) { flush(); endList(); out.push('<h3>' + inline(m[2]) + '</h3>'); return; }
+                if (/^\s*([-*_])(\s*\1){2,}\s*$/.test(line) || /^\s*={3,}\s*$/.test(line)) { flush(); endList(); return; }
+                if ((m = /^\s*[-*+]\s+(.*)$/.exec(line))) { flush(); if (list !== 'ul') { endList(); out.push('<ul>'); list = 'ul'; } out.push('<li>' + inline(m[1]) + '</li>'); return; }
+                if ((m = /^\s*\d+[.)]\s+(.*)$/.exec(line))) { flush(); if (list !== 'ol') { endList(); out.push('<ol>'); list = 'ol'; } out.push('<li>' + inline(m[1]) + '</li>'); return; }
+                if (/^\s*\|.*\|\s*$/.test(line)) {
+                    flush(); endList();
+                    if (/^[\s|:-]+$/.test(line)) return;
+                    out.push('<div>' + inline(line.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim()).filter(Boolean).join(' \u00b7 ')) + '</div>'); return;
+                }
+                if (/^\s*$/.test(line)) { flush(); endList(); return; }
+                if ((m = /^\s*>\s?(.*)$/.exec(line))) { flush(); endList(); out.push('<blockquote>' + inline(m[1]) + '</blockquote>'); return; }
+                endList(); para.push(line.trim());
+            });
+            flush(); endList();
+            return out.join('');
+        }
         function htmlToReadable(html) {
-            const src = String(html == null ? '' : html);
+            let src = String(html == null ? '' : html);
+            if (looksMarkdown(src)) src = readmeToHtml(src);
             if (!/[<&]/.test(src)) return src.trim();
             let doc = null;
             try { doc = new DOMParser().parseFromString('<!doctype html><body>' + src, 'text/html'); } catch (e) {}
@@ -10942,7 +10914,7 @@ Type any command below (e.g. pm list packages -d)
                 if (t === 'script' || t === 'style' || t === 'head' || t === 'iframe' || t === 'noscript') return;
                 if (t === 'br') { out.push('\n'); return; }
                 if (t === 'hr') { out.push('\n\n'); return; }
-                if (t === 'img') { const alt = n.getAttribute('alt'); if (alt) out.push(alt); return; }
+                if (t === 'img') return;
                 if (t === 'li') {
                     out.push('\n' + (ctx.ol ? (++ctx.n) + '. ' : '\u2022 '));
                     n.childNodes.forEach(c => walk(c, Object.assign({}, ctx, { n: 0, ol: false })));
@@ -10970,7 +10942,7 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('storeDetailSub').innerText = (a.packageName || '') + (a.versionName ? ' · v' + a.versionName : '');
             const parts = [];
             const desc = htmlToReadable(a.fullDescription || a.description || '');
-            if (desc) parts.push(`<div style="font-size:13px;color:var(--text-main);white-space:pre-wrap;margin-bottom:10px;">${esc(desc)}</div>`);
+            if (desc) parts.push(`<div style="font-size:13px;color:var(--text-main);white-space:pre-wrap;overflow-wrap:anywhere;margin-bottom:10px;">${esc(desc)}</div>`);
             const chips = [];
             if (a.stars != null) chips.push(esc(fmtCount(a.stars)) + ' stars');
             if (a.downloadTotal != null) chips.push(esc(fmtCount(a.downloadTotal)) + ' downloads');
@@ -12220,11 +12192,39 @@ Type any command below (e.g. pm list packages -d)
                 if (held && e.target.closest && e.target.closest('.ab-btn')) { held = false; e.stopPropagation(); e.preventDefault(); }
             }, true);
         })();
+        // what each choice does, for the menu of the Apps tab
+        const AB_DESC = {
+            settings: "Opens the app's page in Android's settings.", forcestop: 'Stops the app and everything it runs in the background.', launch: 'Opens the app.',
+            toggle: 'Disables an enabled app, enables a disabled one.', uninstall: 'Uninstalls an installed app, installs back one that was uninstalled.', suspend: 'Suspends an app, or lets a suspended one run again.',
+            perms: "Lists the app's permissions and lets you grant or revoke each.", acts: "Lists the app's screens (activities) so you can open or disable them.", none: 'Rows have no extra button.'
+        };
+        // a short name for the button itself ("Enable / Disable (dynamic)" does not fit in it)
+        function abShortName(k) { const o = AB_OPTIONS.find(x => x[0] === k); return o ? o[1].replace(/ \(dynamic\)/, '').replace(/ \(no button\)/, '') : ''; }
+        function openActionBtnPicker() {
+            openChoiceSheet({
+                title: 'Action Button',
+                desc: 'The extra button on every row of the Apps list. Choose what a tap on it does. Press and hold it on a row for a sheet with every action for that app.',
+                options: AB_OPTIONS.map(o => [o[0], abShortName(o[0]), AB_DESC[o[0]] || '']),
+                current: actionBtn,
+                onPick: (v) => setActionBtn(v)
+            });
+        }
+        let choiceCb = null;
+        function openChoiceSheet(o) {
+            choiceCb = o.onPick;
+            document.getElementById('choiceTitle').textContent = o.title;
+            document.getElementById('choiceDesc').textContent = o.desc || '';
+            document.getElementById('choiceList').innerHTML = o.options.map((x, i) =>
+                '<button class="ab-sheet-row' + (x[0] === o.current ? ' current' : '') + '" data-v="' + escapeHtml(x[0]) + '" onclick="choiceSheetPick(this.getAttribute(\'data-v\'))"><span class="ab-sheet-txt"><span>' + escapeHtml(x[1]) + '</span>' + (x[2] ? '<span class="ab-sheet-sub">' + escapeHtml(x[2]) + '</span>' : '') + '</span></button>').join('');
+            document.getElementById('choiceSheet').classList.add('show');
+        }
+        function closeChoiceSheet() { document.getElementById('choiceSheet').classList.remove('show'); }
+        function choiceSheetPick(v) { const cb = choiceCb; closeChoiceSheet(); if (cb) cb(v); }
         function actionBtnRender() {
             abCfgRender();
             const opts = AB_OPTIONS.map(o => '<option value="' + o[0] + '"' + (o[0] === actionBtn ? ' selected' : '') + '>' + escapeHtml(o[1]) + '</option>').join('');
-            const rowSel = document.getElementById('appsActionBtnSelect');            // the same choice sits at the end of the Apps tab's button row
-            if (rowSel) { rowSel.innerHTML = opts; rowSel.value = actionBtn; }
+            const rowLab = document.getElementById('appsActionBtnPickLabel');            // the same choice sits at the end of the Apps tab's button row
+            if (rowLab) rowLab.textContent = abShortName(actionBtn);
             const sel = document.getElementById('actionBtnSelect');
             if (!sel) return;
             sel.innerHTML = opts;
@@ -16983,7 +16983,7 @@ Type any command below (e.g. pm list packages -d)
         // ---------- "?" on each tab: the Help Guide at the topic of that tab ----------
         const HELP_LINKS = {
             apps: 'tab-apps', 'saved-lists': 'tab-saved-lists', debloater: 'tab-debloater', installer: 'tab-installer', files: 'tab-files', terminal: 'tab-terminal', devices: 'tab-devices',
-            settings: 'tab-settings', overlays: 'tab-overlays', updates: 'tab-updates', store: 'tab-store', logcat: 'tab-logcat', taskmgr: 'tab-taskmgr', morphe: 'tab-morphe', sdm: 'tab-sdm', sysui: 'tab-sysui', prefs: 'prefs'
+            settings: 'tab-settings', overlays: 'tab-overlays', updates: 'tab-updates', store: 'tab-store', logcat: 'tab-logcat', taskmgr: 'tab-taskmgr', morphe: 'tab-morphe', sdm: 'tab-sdm', prefs: 'prefs'
         };
         function injectHelpLinks() {
             Object.keys(HELP_LINKS).forEach(view => {
@@ -21332,6 +21332,7 @@ Type any command below (e.g. pm list packages -d)
         function txF(tpl) { const args = Array.prototype.slice.call(arguments, 1); return txT(tpl).replace(/\{(\d+)\}/g, (m, n) => (args[+n] !== undefined ? String(args[+n]) : m)); }
 
         function txShowPane(p) {
+            if (txFullOn && p === 'console') txFullToggle(false);
             txPane = p === 'console' ? 'console' : 'terminal';
             kvSet('term_subtab', txPane);
             const t = document.getElementById('txPaneTerminal'), c = document.getElementById('txPaneConsole');
@@ -21390,6 +21391,28 @@ Type any command below (e.g. pm list packages -d)
             txNote('', b);
         }
 
+        // ---- Full screen ----
+        let txFullOn = false;
+        function txFullSize() {
+            const vv = window.visualViewport;
+            document.documentElement.style.setProperty('--tx-vh', (vv ? Math.round(vv.height) : window.innerHeight) + 'px');
+        }
+        function txFullToggle(force) {
+            const on = typeof force === 'boolean' ? force : !txFullOn;
+            if (on === txFullOn) return;
+            haptic();
+            txFullOn = on;
+            const pane = document.getElementById('txPaneTerminal');
+            if (on && pane.style.display === 'none') return void (txFullOn = false);
+            pane.classList.toggle('tx-full', on);
+            document.body.classList.toggle('tx-full-on', on);
+            const b = document.getElementById('txFullBtn');
+            if (b) { b.textContent = on ? 'Exit full screen' : 'Full screen'; b.setAttribute('aria-pressed', on ? 'true' : 'false'); }
+            if (on) { txFullSize(); if (window.visualViewport) window.visualViewport.addEventListener('resize', txFullSize); window.addEventListener('resize', txFullSize); }
+            else { if (window.visualViewport) window.visualViewport.removeEventListener('resize', txFullSize); window.removeEventListener('resize', txFullSize); document.documentElement.style.removeProperty('--tx-vh'); }
+            const sc = pane.querySelector('.tx-screen:not([style*="display: none"])');
+            if (sc) sc.scrollTop = sc.scrollHeight;
+        }
         function txPickShell(b) {
             if (!TX_SHELLS[b]) return;
             haptic();
@@ -23756,6 +23779,81 @@ Type any command below (e.g. pm list packages -d)
             say(txT(ag.id === 'ollama' ? 'Ollama is not running on this phone yet. Install it below, or enter the address of a computer that runs it.' : 'Not found on this phone. Enter the address of the computer that runs it, then Connect.'));
         }
 
+        // ---------------------------------------------------------------- Termux: one-tap setup of the tools and a starter .bashrc
+        // Installs vim, nano, git, python and the rest through Termux's pkg (the steps run one by one in the Termux shell, visibly) and writes starter ~/.bashrc, ~/.vimrc and
+        // ~/.nanorc. Only a marked block is ever written, so what the person has in those files stays; running it again refreshes the block, it never adds a second.
+        const TX_STARTER = {
+         "bashrc": "# >>> ADB App Manager starter >>>\n# A starter for bash in Termux, written by ADB Application Manager (Terminal > Termux setup > Set up now).\n# Only the lines between the markers are managed: setting up again replaces them, anything above or below stays yours.\nexport EDITOR=vim VISUAL=vim PAGER=less LESS='-R -F -X'\nexport LANG=en_US.UTF-8\nexport HISTSIZE=50000 HISTFILESIZE=100000 HISTCONTROL=ignoreboth:erasedups\ncase $- in *i*)\n    shopt -s histappend checkwinsize cdspell globstar 2>/dev/null\n    # the prompt: folder, git branch, and a red $ when the last command failed\n    __adbmgr_branch() { local b; b=$(git symbolic-ref --short HEAD 2>/dev/null) && printf ' (%s)' \"$b\"; }\n    __adbmgr_prompt() { local rc=$? c='\\[\\e[32m\\]'; [ $rc -ne 0 ] && c='\\[\\e[31m\\]'; PS1=\"\\[\\e[36m\\]\\w\\[\\e[0m\\]\\[\\e[33m\\]$(__adbmgr_branch)\\[\\e[0m\\] ${c}\\$\\[\\e[0m\\] \"; }\n    PROMPT_COMMAND=__adbmgr_prompt\n    ;;\nesac\nalias ls='ls --color=auto' ll='ls -lh' la='ls -lAh' l='ls -CF'\nalias ..='cd ..' ...='cd ../..' ....='cd ../../..'\nalias grep='grep --color=auto' egrep='grep -E --color=auto' fgrep='grep -F --color=auto'\nalias df='df -h' du='du -h' free='free -h' cls='clear'\nalias gs='git status -sb' ga='git add' gc='git commit' gp='git push' gl='git log --oneline --graph --decorate -20' gd='git diff'\nalias py='python'\nalias sd='cd ~/storage/shared' dl='cd ~/storage/downloads'\nalias update='pkg update && pkg upgrade'\nmkcd() { mkdir -p -- \"$1\" && cd -- \"$1\"; }\nextract() {\n    case \"$1\" in\n        *.tar.gz|*.tgz) tar xzf \"$1\";; *.tar.bz2|*.tbz2) tar xjf \"$1\";; *.tar.xz|*.txz) tar xJf \"$1\";; *.tar) tar xf \"$1\";;\n        *.zip) unzip \"$1\";; *.gz) gunzip \"$1\";; *.bz2) bunzip2 \"$1\";; *.xz) unxz \"$1\";; *.7z) 7z x \"$1\";;\n        *) echo \"extract: do not know how to open: $1\" >&2; return 1;;\n    esac\n}\nserve() { python -m http.server \"${1:-8000}\"; }\nif [ -f ~/.bash_aliases ]; then . ~/.bash_aliases; fi\n# <<< ADB App Manager starter <<<\n",
+         "vimrc": "\" >>> ADB App Manager starter >>>\n\" A starter for vim in Termux. Only the lines between the markers are managed; your own lines above or below stay.\nset nocompatible\nsyntax on\nfiletype plugin indent on\nset number ruler showcmd wildmenu incsearch hlsearch ignorecase smartcase\nset tabstop=4 shiftwidth=4 expandtab autoindent\nset mouse=a\nset backspace=indent,eol,start\nset encoding=utf-8\nset background=dark\nset nobackup noswapfile\n\" <<< ADB App Manager starter <<<\n",
+         "nanorc": "# >>> ADB App Manager starter >>>\n# A starter for nano in Termux. Only the lines between the markers are managed; your own lines above or below stay.\nset linenumbers\nset mouse\nset tabsize 4\nset tabstospaces\nset autoindent\nset smooth\ninclude \"/data/data/com.termux/files/usr/share/nano/*.nanorc\"\n# <<< ADB App Manager starter <<<\n"
+        };
+        const TX_TOOL_PKGS = [
+            { id: 'vim', desc: 'Text editor', def: true }, { id: 'nano', desc: 'Simple text editor', def: true }, { id: 'git', desc: 'Version control', def: true },
+            { id: 'python', desc: 'Python and pip', def: true }, { id: 'openssh', desc: 'ssh, scp, sftp', def: true }, { id: 'curl', desc: 'Download tool', def: true },
+            { id: 'wget', desc: 'Download tool', def: true }, { id: 'htop', desc: 'Process viewer', def: true },
+            { id: 'tmux', desc: 'Several terminals in one', def: false }, { id: 'ripgrep', desc: 'Fast text search (rg)', def: false }, { id: 'jq', desc: 'Read JSON', def: false },
+            { id: 'zip', desc: 'Make zip files', def: false }, { id: 'unzip', desc: 'Open zip files', def: false }, { id: 'rsync', desc: 'Copy folders', def: false },
+            { id: 'nodejs', desc: 'Node.js and npm', def: false }, { id: 'clang', desc: 'C and C++ compiler', def: false }, { id: 'make', desc: 'Build tool', def: false },
+            { id: 'man', desc: 'Manual pages', def: false }
+        ];
+        const TX_TOOL_CMD = { openssh: 'ssh', python: 'python', ripgrep: 'rg', nodejs: 'node', clang: 'clang', man: 'man' };
+        let txTools = { pkgs: TX_TOOL_PKGS.filter(p => p.def).map(p => p.id), bashrc: true, vimrc: true, nanorc: true };
+        try { const sv = kvGet('tx_tools', null); if (sv && Array.isArray(sv.pkgs)) txTools = Object.assign(txTools, sv); } catch (e) {}
+
+        // The shell that writes one starter block into one file: the old block (between its markers) goes, the new one is appended, the rest of the file is untouched.
+        function txStarterCmd(file, text, cp) {
+            const start = cp + ' >>> ADB App Manager starter >>>', end = cp + ' <<< ADB App Manager starter <<<';
+            const b64 = btoa(unescape(encodeURIComponent(text)));
+            const f = '"$HOME/' + file + '"';
+            return 'f=' + f + '; touch "$f"; sed -i ' + txQ('/^' + start.replace(/[\/.*[\]^$]/g, '\\$&') + '/,/^' + end.replace(/[\/.*[\]^$]/g, '\\$&') + '/d') + ' "$f"; ' +
+                '[ -s "$f" ] && [ -n "$(tail -c1 "$f")" ] && echo >> "$f"; printf %s ' + txQ(b64) + ' | base64 -d >> "$f" && echo "wrote the starter block of ~/' + file + '"';
+        }
+        // login shells (the real terminal runs bash -l) read ~/.bash_profile, not ~/.bashrc: make that file pass on to ~/.profile and ~/.bashrc, unless the person has one
+        const TX_BASH_PROFILE_CMD = 'if [ ! -e "$HOME/.bash_profile" ] && [ ! -e "$HOME/.bash_login" ]; then printf \'%s\\n\' \'# ADB App Manager: a login shell reads ~/.profile and ~/.bashrc\' \'[ -f "$HOME/.profile" ] && . "$HOME/.profile"\' \'[ -f "$HOME/.bashrc" ] && . "$HOME/.bashrc"\' > "$HOME/.bash_profile" && echo "made ~/.bash_profile (it reads ~/.profile and ~/.bashrc)"; else echo "~/.bash_profile is yours: left as it is (make it read ~/.bashrc if you want the starter in login shells)"; fi';
+        function txToolsSteps(o) {
+            o = o || txTools;
+            const pk = (o.pkgs || []).filter(id => TX_TOOL_PKGS.some(p => p.id === id));
+            const steps = [{ label: 'Update the package lists', cmd: 'pkg update -y' }];
+            if (pk.length) steps.push({ label: 'Install ' + pk.join(', '), cmd: 'pkg install -y ' + pk.join(' ') });
+            if (o.bashrc) steps.push({ label: 'Write the starter ~/.bashrc', cmd: txStarterCmd('.bashrc', TX_STARTER.bashrc, '#') + '; ' + TX_BASH_PROFILE_CMD });
+            if (o.vimrc) steps.push({ label: 'Write the starter ~/.vimrc', cmd: txStarterCmd('.vimrc', TX_STARTER.vimrc, '"') });
+            if (o.nanorc) steps.push({ label: 'Write the starter ~/.nanorc', cmd: txStarterCmd('.nanorc', TX_STARTER.nanorc, '#') });
+            if (pk.length) steps.push({ label: 'Check what is installed', cmd: pk.map(id => { const c = TX_TOOL_CMD[id] || id; return 'printf "%-10s %s\\n" ' + txQ(c) + ' "$(command -v ' + c + ' >/dev/null 2>&1 && echo installed || echo MISSING)"'; }).join('; ') });
+            return steps;
+        }
+        async function txToolsRun(useSaved) {
+            haptic();
+            txCloseTools(); txCloseTermux(); txCloseSettings();
+            const o = useSaved ? txTools : { pkgs: TX_TOOL_PKGS.filter(p => p.def).map(p => p.id), bashrc: true, vimrc: true, nanorc: true };
+            const ok = await txRunSteps('Setting up Termux', txToolsSteps(o));
+            if (ok) {
+                txNote('[Termux is ready: vim, nano, git and python are installed and bash has its starter .bashrc. Open the real terminal for full-screen programs.]', 'termux', 'tx-ok');
+                txButtons('termux', [{ label: 'Open the real terminal', go: true, on: () => rtOpen('termux') }]);
+            }
+        }
+        function txToolsOpen() {
+            haptic();
+            txCloseTermux(); txCloseSettings();
+            txToolsRender();
+            document.getElementById('txToolsModal').classList.add('show');
+        }
+        function txCloseTools() { document.getElementById('txToolsModal').classList.remove('show'); }
+        function txToolsRender() {
+            const box = document.getElementById('txToolsBody');
+            if (!box) return;
+            const row = (id, label, sub, on, handler) => '<label class="tx-tool-row"><input type="checkbox" ' + (on ? 'checked ' : '') + 'onchange="' + handler + '"><span class="tx-tool-main"><b translate="no">' + escapeHtml(label) + '</b><span>' + escapeHtml(sub) + '</span></span></label>';
+            box.innerHTML = '<div class="tx-sheet-p muted">Installed with Termux\'s <code>pkg</code>. Tools already there are only updated.</div>' +
+                TX_TOOL_PKGS.map(p => row(p.id, p.id, p.desc, txTools.pkgs.includes(p.id), 'txToolPick(\'' + p.id + '\', this.checked)')).join('') +
+                '<div class="mp-group"><span>Starter files</span></div>' +
+                row('bashrc', '~/.bashrc', 'Colour prompt with the git branch, aliases, history, small helpers (mkcd, extract, serve)', txTools.bashrc, 'txToolFile(\'bashrc\', this.checked)') +
+                row('vimrc', '~/.vimrc', 'Syntax colours, line numbers, mouse, 4-space tabs', txTools.vimrc, 'txToolFile(\'vimrc\', this.checked)') +
+                row('nanorc', '~/.nanorc', 'Line numbers, mouse, syntax colours', txTools.nanorc, 'txToolFile(\'nanorc\', this.checked)') +
+                '<div class="tx-sheet-p muted">Only a marked block is written to these files; what you have in them stays, and running this again refreshes the block instead of adding another.</div>' +
+                '<div class="mode-btn-row" style="margin-top:12px;"><button class="mode-action-btn primary" onclick="txToolsRun(true)">Install</button><button class="mode-action-btn" onclick="txCloseTools()">Cancel</button></div>';
+        }
+        function txToolPick(id, on) { txTools.pkgs = txTools.pkgs.filter(x => x !== id); if (on) txTools.pkgs.push(id); kvSet('tx_tools', txTools); }
+        function txToolFile(k, on) { txTools[k] = !!on; kvSet('tx_tools', txTools); }
+
         async function txInstallOllama() {
             const ag = txAgentDef('ollama');
             txCloseConnect();
@@ -23879,7 +23977,9 @@ Type any command below (e.g. pm list packages -d)
                 + step(3, !!(txProbe && txProbe.ok), 'Let Termux take commands from other apps', 'In Termux, paste and run:<span class="tx-sheet-code" translate="no">' + escapeHtml(TX_TERMUX_ALLOW_CMD) + '</span>', '<button class="mode-action-btn primary" onclick="copyText(TX_TERMUX_ALLOW_CMD); showToast(\'Copied: paste it in Termux\')">Copy</button><button class="mode-action-btn" onclick="txLaunchTermuxApp()">Open Termux</button>')
                 + step(4, !!t.permission, 'Allow this app', t.permission ? 'Allowed: "Run commands in Termux environment".' : 'Android asks whether this app may "Run commands in Termux environment".', t.permission ? '' : '<button class="mode-action-btn primary" onclick="txTermuxAllow()"' + (t.installed ? '' : ' disabled') + '>Allow</button>')
                 + step(5, !!(txProbe && txProbe.ok), 'Test the connection', txProbe ? (txProbe.ok ? 'Termux answered. All set.' : '<span class="is-err">' + escapeHtml(txProbe.message || 'No answer') + '</span>') : 'Sends a harmless command to Termux and waits for the answer.', '<button class="mode-action-btn" id="txProbeBtn" onclick="txTermuxTest()"' + (t.installed && t.permission ? '' : ' disabled') + '>Test</button>')
-                + '<div class="mode-btn-row" style="margin-top:12px;"><button class="mode-action-btn primary" onclick="txUseTermuxShell()"' + (t.installed && t.permission ? '' : ' disabled') + '>Use Termux as the shell</button><button class="mode-action-btn" onclick="txSyncTermux()"' + (t.installed && t.permission ? '' : ' disabled') + '>Sync with Termux</button></div>'
+                + '<div class="mode-btn-row" style="margin-top:12px;"><button class="mode-action-btn primary" onclick="txUseTermuxShell()"' + (t.installed && t.permission ? '' : ' disabled') + '>Use Termux as the shell</button><button class="mode-action-btn" onclick="txSyncTermux()"' + (t.installed && t.permission ? '' : ' disabled') + '>Sync with Termux</button><button class="mode-action-btn" onclick="txTermuxStorage()"' + (t.installed && t.permission ? '' : ' disabled') + '>Set up storage in Termux</button></div>'
+                + '<div class="mode-btn-row"><button class="mode-action-btn primary" id="txToolsNow" onclick="txToolsRun(false)"' + (t.installed && t.permission ? '' : ' disabled') + '>Set up Termux now</button><button class="mode-action-btn" id="txToolsChoose" onclick="txToolsOpen()"' + (t.installed && t.permission ? '' : ' disabled') + '>Choose tools</button></div>'
+                + '<p class="tx-sheet-p muted">Set up Termux now installs vim, nano, git and python (plus ssh, curl, wget and htop) and writes a starter .bashrc, .vimrc and .nanorc. Choose tools lets you pick more, or leave some out.</p>'
                 + '<p class="tx-sheet-p muted">Commands run as Termux, in its home folder, with your Termux packages and (with Match my Termux environment on) your aliases and functions too. Sync with Termux also opens Termux so you can grant it access to shared storage.</p>';
         }
 
@@ -23907,21 +24007,27 @@ Type any command below (e.g. pm list packages -d)
         }
 
         // Sets up (or updates) the in-app Termux shell to match the real Termux app: turns on "Match my Termux
-        // environment" if it was off, restarts any already-running Termux session so the change applies right away,
-        // and opens termux-setup-storage in Termux so shared/phone storage access gets granted there too.
+        // environment" if it was off, starts the Termux shell afresh so the change applies right away, and prints what it took
+        // over from Termux (aliases, functions, home, packages, phone storage) so you can see that it worked. Termux itself is
+        // opened only by "Set up storage in Termux", and only when that is still needed.
+        const TX_STORAGE_CMD = 'if [ -d "$HOME/storage/shared" ] && [ -r /storage/emulated/0 ]; then echo "Phone storage is already set up. Nothing to do."; else termux-setup-storage; fi';
         function txSyncTermux() {
             haptic();
             txCloseSettings();          // harmless if it was not open; keeps a redirect into the setup modal from stacking on top of it
             txRefreshInfo();
             const t = txInfo && txInfo.termux || {};
-            if (!t.installed || !t.permission) { txOpenTermux('termux-setup-storage'); return; }
+            if (!t.installed || !t.permission) { txOpenTermux(''); return; }
             if (!txSettings.termuxMatchEnv) { txSettings.termuxMatchEnv = true; txSaveSettings(); }
             if (window.AndroidBridge && window.AndroidBridge.termClose) { try { window.AndroidBridge.termClose('termux'); } catch (e) {} }
             if (txSess.termux) txSess.termux.st = 'off';
-            showToast('Syncing with Termux - opening it to finish storage access');
-            txOpenTermux('termux-setup-storage');
-            if (txCurShell() === 'termux') txStartShell('termux');
+            txCloseTermux();
+            const sel = document.getElementById('txShell');
+            if (sel) sel.value = 'termux';
+            txPickShell('termux');                                   // starts it again, with the Termux environment on
+            txPending = { b: 'termux', cmd: 'adbmgr_sync_report' };  // and when it is up: what it took over
+            showToast('Syncing with Termux...');
         }
+        function txTermuxStorage() { haptic(); txCloseSettings(); txCloseTermux(); txOpenTermux(TX_STORAGE_CMD); }
 
         // ---------------------------------------------------------------- settings
         function txOpenSettings() {
@@ -23971,7 +24077,7 @@ Type any command below (e.g. pm list packages -d)
                 + '<div class="tx-row"><div class="tx-row-main"><div class="tx-row-name">Shell when the Terminal opens</div></div><select class="op-select" style="max-width:52vw;" onchange="txSet(\'defaultShell\', this.value)">' + shellOpts + '</select></div>'
                 + sw('termuxProfile', 'Use my Termux login profile', 'Termux shells read ~/.bash_profile or ~/.profile first (PATH and the like). Turn off if your profile starts another program.')
                 + sw('termuxMatchEnv', 'Match my Termux environment', 'Also sources ~/.bashrc, so aliases and functions from your own Termux shell work here too. Turn off if yours does something unexpected for a non-interactive shell.')
-                + '<div class="mode-btn-row" style="margin-top:10px;"><button class="mode-action-btn" onclick="txCloseSettings(); txOpenTermuxSetup()">Termux setup</button><button class="mode-action-btn primary" onclick="txSyncTermux()">Sync with Termux</button></div>'
+                + '<div class="mode-btn-row" style="margin-top:10px;"><button class="mode-action-btn" onclick="txCloseSettings(); txOpenTermuxSetup()">Termux setup</button><button class="mode-action-btn primary" onclick="txSyncTermux()">Sync with Termux</button><button class="mode-action-btn" onclick="txTermuxStorage()">Set up storage in Termux</button></div>'
                 + '<div class="tx-sheet-sec">What agents may do</div>'
                 + sw('askRun', 'Ask before running commands', 'Shows each command with Run, Skip and Always allow in this chat.')
                 + sw('askWrite', 'Ask before changing files', 'Shows what changes, line by line, with Apply, Skip and Always allow in this chat.')
@@ -27489,7 +27595,7 @@ Type any command below (e.g. pm list packages -d)
         const MP_DEFAULTS = {
             mode: 'simple', installAfter: true, deleteAfter: false, keepIn: 'both', stripLibs: false, forceCompat: false, failOnError: true, signer: 'Morphe',
             hSources: ['apkmirror', 'uptodown', 'apkpure', 'apkcombo', 'aptoide', 'evozi', 'mi9', 'apkdownloader', 'aurora', 'play'], hDefault: 'apkmirror', hConn: 'both',
-            hSave: 'cache', hClear: true, hFast: false, hPolicy: 'requested', hVt: false, hVtKey: '', hVtMode: 'ask', hLog: false, hAbi: ''
+            hSave: 'cache', hClear: true, hBrowser: 'inapp', hCycle: false, hFast: false, hPolicy: 'requested', hVt: false, hVtKey: '', hVtMode: 'ask', hLog: false, hAbi: ''
         };
         const mp = {
             cfg: Object.assign({}, MP_DEFAULTS), sub: 'apps', info: null, sources: [], catalogs: {}, catBusy: false, apps: new Map(), universal: {}, community: null, comView: 'apps',
@@ -27536,7 +27642,7 @@ Type any command below (e.g. pm list packages -d)
         function mpIcon(pkg, name, url) {
             const c = typeof appIconCache !== 'undefined' ? appIconCache[pkg] : null;
             if (c) return '<img alt="" draggable="false" src="' + c + '">';
-            if (url) return '<img alt="" draggable="false" loading="lazy" referrerpolicy="no-referrer" src="' + escapeHtml(url) + '" onerror="this.remove()">' + escapeHtml(String(name || pkg || '?').charAt(0).toUpperCase());
+            if (url) return '<img alt="" draggable="false" loading="lazy" referrerpolicy="no-referrer" src="' + escapeHtml(url) + '" onload="if(this.nextElementSibling)this.nextElementSibling.style.visibility=\'hidden\'" onerror="this.remove()"><span>' + escapeHtml(String(name || pkg || '?').charAt(0).toUpperCase()) + '</span>';
             return escapeHtml(String(name || pkg || '?').charAt(0).toUpperCase());
         }
 
@@ -28467,6 +28573,7 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('mpRunBar').style.width = Math.min(100, Math.round(frac * 100)) + '%';
         }
         function mpOnEvent(e) {
+            if (e && e.t === 'hb') { mpHBEvent(e); return; }
             if (e && e.t === 'dl') { if (mp.helperOpen && mp.h && mp.h.busy) mpHMsg(e.text || 'Downloading...', false, e.pct || 0); return; }
             const r = mp.run;
             if (!r || !e || (e.job && e.job !== r.job)) return;
@@ -28509,7 +28616,7 @@ Type any command below (e.g. pm list packages -d)
                 const ins = r.install;
                 el.innerHTML = '<div class="mp-result ok"><h3>' + escapeHtml(t.name || 'The app') + ' is patched</h3>' +
                     '<div class="mp-note">' + (res.applied || r.applied).length + ' patches applied' + (failed.length ? ', ' + failed.length + ' failed' : '') + '. <span translate="no">' + escapeHtml(it.fileName || '') + '</span>' + (it.size ? ' (' + escapeHtml(formatBytes(it.size)) + ')' : '') + '</div>' +
-                    (failed.length ? '<div class="mp-note is-err">Failed: <span translate="no">' + escapeHtml(failed.map(f => f.name).join(', ')) + '</span>. The rest was applied.</div>' : '') +
+                    (failed.length ? (() => { const sp = mpSplitFailed(failed); return '<div class="mp-note is-err">Failed: <span translate="no">' + escapeHtml(sp.roots.map(f => f.name).join(', ')) + '</span>' + (sp.deps.length ? ' and ' + sp.deps.length + ' that depend on ' + (sp.roots.length > 1 ? 'them' : 'it') : '') + '. The rest was applied.</div>'; })() : '') +
                     (ins ? '<div class="mp-note ' + (ins.ok ? '' : 'is-err') + '">' + (ins.ok ? 'Installed.' : 'The install did not work: ') + (ins.ok ? '' : '<span translate="no">' + escapeHtml((ins.output || '').split('\n')[0]) + '</span>') + '</div>' : '') +
                     (it.keptIn && it.keptIn.length ? '<div class="mp-note">Saved in <span translate="no">' + escapeHtml(it.keptIn.join(' and ')) + '</span>.</div>' : '') +
                     '<div class="mp-row">' + (it.id && !(ins && ins.ok) ? '<button class="mode-action-btn primary" onclick="mpRunInstall()">Install</button>' : '') + (it.id ? '<button class="mode-action-btn" onclick="mpPatchedShare(\'' + escapeHtml(it.id) + '\')">Share</button><button class="mode-action-btn" onclick="mpPatchedSave(\'' + escapeHtml(it.id) + '\')">Save to Downloads</button>' : '') +
@@ -28517,16 +28624,28 @@ Type any command below (e.g. pm list packages -d)
                 mpRunStatus('Done'); mpPatchedLoad();
                 return;
             }
-            const trace = (failed[0] && failed[0].error) || res.trace || '';
+            const split = mpSplitFailed(failed);
+            const trace = (split.roots[0] && split.roots[0].error) || (failed[0] && failed[0].error) || res.trace || '';
             const hint = mpFailHint(res, trace);
             el.innerHTML = '<div class="mp-result bad"><h3>Patching failed</h3><div class="mp-note is-err" translate="no">' + escapeHtml(res.error || 'The patcher stopped') + '</div>' +
                 (hint ? '<div class="mp-note">' + escapeHtml(hint) + '</div>' : '') +
                 ((res.steps || []).length ? '<div class="mp-note">' + res.steps.map(s => '<b translate="no">' + escapeHtml(s.name) + '</b>: ' + (s.ok ? 'ok' : 'failed' + (s.error ? ' (' + escapeHtml(String(s.error).split('\n')[0]) + ')' : ''))).join(' &middot; ') + '</div>' : '') +
-                failed.map((f, i) => '<div class="mp-group"><span translate="no">' + escapeHtml(f.name) + '</span><span><a href="#" style="color:var(--accent)" onclick="mpToggleTrace(' + i + ');return false;">Details</a></span></div><div class="mp-trace" id="mpTrace' + i + '" style="display:' + (i === 0 ? 'block' : 'none') + ';" translate="no">' + escapeHtml(f.error || '(no details)') + '</div>').join('') +
+                split.roots.map((f, k) => '<div class="mp-group"><span translate="no">' + escapeHtml(f.name) + '</span><span><a href="#" style="color:var(--accent)" onclick="mpToggleTrace(' + f.i + ');return false;">Details</a></span></div><div class="mp-trace" id="mpTrace' + f.i + '" style="display:' + (k === 0 ? 'block' : 'none') + ';" translate="no">' + escapeHtml(f.error || '(no details)') + '</div>').join('') +
+                (split.deps.length ? '<div class="mp-group"><span>' + split.deps.length + ' more failed only because a patch they need failed</span><span><a href="#" style="color:var(--accent)" onclick="mpToggleTrace(\'Deps\');return false;">Show</a></span></div><div class="mp-trace" id="mpTraceDeps" style="display:none;" translate="no">' + escapeHtml(split.deps.map(f => f.name).join(', ')) + '\nFix the first failure above and these go away.</div>' : '') +
                 (!failed.length && res.trace ? '<div class="mp-trace" translate="no">' + escapeHtml(res.trace) + '</div>' : '') +
                 '<div class="mp-row"><button class="mode-action-btn primary" onclick="mpBackToPatches()">Back to the patches</button><button class="mode-action-btn" onclick="mpLogCopy()">Copy the log</button><button class="mode-action-btn" onclick="mpLogShare()">Share the log</button>' +
                 (mp.cfg.failOnError ? '<button class="mode-action-btn" onclick="mpRetryContinue()">Retry, skipping failed patches</button>' : '') + '</div></div>';
             mpRunStatus('Failed');
+        }
+        // A patch that "depends on ... which raised an exception" failed because of another one: the first error is the one to read, the others are a count.
+        function mpSplitFailed(failed) {
+            const roots = [], deps = [];
+            (failed || []).forEach((f, i) => {
+                const item = Object.assign({}, f, { i });
+                if (/depends on\b[^]*?\bwhich (raised|threw|failed|did not)/i.test(String(f.error || '').split('\n')[0]) && (failed || []).length > 1) deps.push(item); else roots.push(item);
+            });
+            if (!roots.length && deps.length) { roots.push(deps.shift()); }
+            return { roots, deps };
         }
         function mpToggleTrace(i) { const e = document.getElementById('mpTrace' + i); if (e) e.style.display = e.style.display === 'none' ? 'block' : 'none'; }
         function mpFailHint(res, trace) {
@@ -28535,7 +28654,8 @@ Type any command below (e.g. pm list packages -d)
             if (/No patch is left|incompatible|does not patch|not support/i.test(s)) return 'The patches do not support this version of the app. Get a supported version with Morphe Helper, or turn on "Patch unsupported versions" in the patcher settings.';
             if (/Morphe engine|ClassNotFound/i.test(s)) return 'This build of the app does not contain the Morphe engine. Install a release build.';
             if (/Signing/i.test(s)) return 'Signing failed. Try making a new signing key in the patcher settings.';
-            if (/Patch bundle|corrupt|dex/i.test(s)) return 'The patch bundle may be damaged or made for a newer Morphe. Update the source in Sources.';
+            if (/NoSuchMethod|NoSuchField|NoSuchClass|AbstractMethodError/.test(s)) return 'A patch bundle asked the patcher for something this build of the app does not have, so it was made for a different Morphe version. Update the source in Sources; if it still happens, report it with the log.';
+            if (/Patch bundle|corrupt|\bdex\b/i.test(s)) return 'The patch bundle may be damaged or made for a newer Morphe. Update the source in Sources.';
             return 'A patch could not be applied. This usually means the patch does not fit this version of the app. Check the details below and the log.';
         }
         function mpBackToPatches() { mp.run = null; document.getElementById('mpRun').style.display = 'none'; document.getElementById('mpPrep').style.display = ''; mpPatchListRender(); }
@@ -28590,6 +28710,7 @@ Type any command below (e.g. pm list packages -d)
                 '<div class="mp-row mp-hflows"><button class="mp-act" onclick="mpHGo(\'fast\')">Fast mode</button><button class="mp-act" onclick="mpHGo(\'requested\')">This version</button><button class="mp-act" onclick="mpHGo(\'latest\')">Newest</button><button class="mp-act" onclick="mpHGo(\'versions\')">All versions</button><button class="mp-act" onclick="mpHManual()">Open the site</button><button class="mp-act" onclick="mpHDownloads()">Find in Downloads</button><button class="mp-act" onclick="mpHPick()">Pick a file</button></div>' +
                 (h.busy ? '<div class="mp-bartrack"><i id="mpHBar" style="width:' + (h.pct || 0) + '%"></i></div>' : '') +
                 '<div class="mp-note ' + (h.err ? 'is-err' : '') + '" id="mpHMsg">' + escapeHtml(h.msg || '') + '</div>' +
+                (h.browse ? '<div class="mp-row"><button class="mode-action-btn primary" onclick="mpHBrowse(mp.h.browse)">Open it here, in the app</button></div>' : '') +
                 (h.found ? mpHFoundHtml() : '') + (h.versions ? mpHVersionsHtml() : '') + (h.got ? mpHGotHtml() : '');
         }
         function mpHVersionsHtml() {
@@ -28618,19 +28739,34 @@ Type any command below (e.g. pm list packages -d)
             const h = mp.h;
             if (!mpHRead()) { mpHMsg('Enter the package name of the app.', true); return; }
             if (h.busy) return;
-            h.busy = true; h.got = null; h.vt = null; h.versions = null; h.err = false; h.msg = kind === 'versions' ? 'Looking for versions...' : 'Looking for the file...';
+            h.busy = true; h.got = null; h.vt = null; h.versions = null; h.err = false; h.browse = ''; h.msg = kind === 'versions' ? 'Looking for versions...' : 'Looking for the file...';
             mpHelperRender();
             const args = { source: h.src, pkg: h.pkg, version: h.ver, abi: h.abi, policy: kind === 'latest' ? 'latest' : (kind === 'fast' ? (mp.cfg.hPolicy === 'latest' ? 'latest' : 'requested') : 'requested'), sources: mp.cfg.hSources, save: mp.cfg.hSave, conn: mp.cfg.hConn };
             let r;
             if (kind === 'versions') {
                 r = await mpCall('helperVersions', args);
+                if (!r.ok && mp.cfg.hCycle) {
+                    // the chosen source did not work: the others in turn, until one lists versions
+                    for (const s2 of mpHSources().filter(x => x.id !== h.src && x.lists !== false)) {
+                        mpHMsg((r.error || 'That source did not answer') + ' Trying ' + s2.name + '...', false);
+                        const r2 = await mpCall('helperVersions', Object.assign({}, args, { source: s2.id }));
+                        if (r2.ok) { r = r2; h.src = s2.id; break; }
+                    }
+                }
                 h.busy = false;
                 if (!r.ok) { h.versions = null; h.msg = r.error || 'The versions could not be read'; h.err = true; } else { h.versions = r.data; h.msg = ''; }
                 mpHelperRender(); return;
             }
             r = await mpCall(kind === 'fast' ? 'helperFast' : 'helperGet', args);
+            if (!r.ok && kind !== 'fast' && mp.cfg.hCycle) {
+                // the chosen source did not work: Fast mode walks the others (the chosen one stays first)
+                mpHMsg((r.error || 'That source did not work') + ' Trying the other sources...', false);
+                const order = [h.src].concat(mpHSources().map(x => x.id).filter(id => id !== h.src));
+                const r2 = await mpCall('helperFast', Object.assign({}, args, { sources: order }));
+                if (r2.ok) r = r2; else r.error = (r.error ? r.error + ' ' : '') + (r2.error || '');
+            }
             h.busy = false;
-            if (!r.ok) { h.msg = r.error || 'Download failed'; h.err = true; mpHelperRender(); return; }
+            if (!r.ok) { h.msg = r.error || 'Download failed'; h.err = true; h.browse = r.browse || ''; mpHelperRender(); return; }
             h.got = r.data; h.msg = mpHBundle(r.data) ? 'The bundle is ready.' : 'The APK is ready.'; h.err = false;
             mpHelperRender();
             if (mp.cfg.hVt && mp.cfg.hVtKey && mp.cfg.hVtMode === 'always') mpHScan();
@@ -28643,11 +28779,41 @@ Type any command below (e.g. pm list packages -d)
             h.busy = true; h.got = null; h.msg = 'Downloading ' + x.version + '...'; mpHelperRender();
             const r = await mpCall('helperGet', { source: h.src, pkg: h.pkg, version: x.version, abi: x.abi || h.abi, policy: 'requested', sources: [h.src], save: mp.cfg.hSave, conn: mp.cfg.hConn, url: x.url || '', page: x.page || '' });
             h.busy = false;
-            if (!r.ok) { h.msg = r.error || 'Download failed'; h.err = true; } else { h.got = r.data; h.msg = mpHBundle(r.data) ? 'The bundle is ready.' : 'The APK is ready.'; h.err = false; }
+            if (!r.ok) { h.msg = r.error || 'Download failed'; h.err = true; h.browse = r.browse || ''; } else { h.got = r.data; h.msg = mpHBundle(r.data) ? 'The bundle is ready.' : 'The APK is ready.'; h.err = false; }
             mpHelperRender();
             if (r.ok && mp.cfg.hVt && mp.cfg.hVtKey && mp.cfg.hVtMode === 'always') mpHScan();
         }
+        // ---- the browser inside the app: sites with a browser check (APKMirror) open here, and what is downloaded there is saved straight into the Helper ----
+        async function mpHBrowse(url) {
+            const h = mp.h;
+            mpHRead();
+            if (mp.cfg.hBrowser === 'external' || !window.AndroidBridge || !window.AndroidBridge.morphe) {
+                const r = url ? { ok: true, data: { url } } : await mpCall('helperManual', { source: h.src, pkg: h.pkg, version: h.ver });
+                if (r.ok && r.data && r.data.url) { mpLink(r.data.url); h.watch = true; mpHMsg('Download the APK or bundle (APKM, APKS, XAPK) in the browser, then come back: Helper looks in Downloads for it.', false); }
+                else showToast((r && r.error) || 'No page for that');
+                return;
+            }
+            const r = await mpCall('helperBrowse', { url: url || '', source: h.src, pkg: h.pkg, version: h.ver, save: mp.cfg.hSave });
+            if (!r.ok) { mpHMsg(r.error || 'The browser did not open', true); return; }
+            h.browse = '';
+            mpHMsg('Find the app, choose the version and tap its download button (on APKMirror: Download APK Bundle or Download APK). The file is saved here and the browser closes by itself.', false);
+        }
+        function mpHBEvent(e) {
+            if (!mp.helperOpen || !mp.h) return;
+            const h = mp.h;
+            if (e.k === 'status') { mpHMsg(e.text || 'Downloading...', false, e.pct || 0); return; }
+            if (e.k === 'failed') { mpHMsg('The download failed: ' + (e.error || ''), true); return; }
+            if (e.k === 'done') {
+                if (e.ok && e.info) {
+                    h.got = e.info; h.pkg = e.info.pkg || h.pkg; h.vt = null; h.found = null; h.err = false; h.browse = '';
+                    h.msg = (mpHBundle(e.info) ? 'The bundle' : 'The APK') + ' is ready (saved from the browser).';
+                    mpHelperRender();
+                    if (mp.cfg.hVt && mp.cfg.hVtKey && mp.cfg.hVtMode === 'always') mpHScan();
+                } else mpHMsg((e.name || 'The file') + ' was saved, but it is not an app file (' + (e.error || 'unknown') + '). Choose another download in the browser.', true);
+            }
+        }
         function mpHManual() {
+            if (mp.cfg.hBrowser !== 'external') { mpHBrowse(''); return; }
             mpHRead();
             mpCall('helperManual', { source: mp.h.src, pkg: mp.h.pkg, version: mp.h.ver }).then(r => { if (r.ok && r.data && r.data.url) mpLink(r.data.url); else showToast(r.error || 'No page for that'); });
             mp.h.watch = true;
@@ -28747,9 +28913,11 @@ Type any command below (e.g. pm list packages -d)
             return '<div class="mp-group"><span>Sources</span></div>' + srcRows +
                 '<div class="mp-sw"><div class="mp-main"><div class="mp-name">Default source</div></div>' + sel('hDefault', (mp.helper && mp.helper.sources || []).map(s => [s.id, s.name])) + '</div>' +
                 '<div class="mp-group"><span>Downloads</span></div>' +
+                '<div class="mp-sw"><div class="mp-main"><div class="mp-name">Open the sources in</div><div class="mp-patch-desc">Sites with a browser check (APKMirror) work in the app\'s own browser, which saves the download straight into Helper.</div></div>' + sel('hBrowser', [['inapp', 'This app'], ['external', 'The phone\'s browser']]) + '</div>' +
                 '<div class="mp-sw"><div class="mp-main"><div class="mp-name">Connection</div></div>' + sel('hConn', [['both', 'Wi-Fi and mobile data'], ['wifi', 'Wi-Fi only'], ['mobile', 'Mobile data only']]) + '</div>' +
                 '<div class="mp-sw"><div class="mp-main"><div class="mp-name">Save downloads</div><div class="mp-patch-desc">In the app\'s cache, or a visible copy in Downloads/Helper for Morphe.</div></div>' + sel('hSave', [['cache', 'Cache'], ['downloads', 'Downloads']]) + '</div>' +
                 '<div class="mp-sw"><div class="mp-main"><div class="mp-name">Clear after use</div><div class="mp-patch-desc">Delete the downloaded file once the app is patched.</div></div><label class="mp-check"><input type="checkbox" ' + (c.hClear ? 'checked ' : '') + 'onchange="mp.cfg.hClear=this.checked;mpCfgSave();"></label></div>' +
+                '<div class="mp-sw"><div class="mp-main"><div class="mp-name">Try the other sources automatically</div><div class="mp-patch-desc">When the chosen source does not have the version or does not work, This version, Newest and All versions go on with the next source, in the order above, until one delivers.</div></div><label class="mp-check"><input type="checkbox" ' + (c.hCycle ? 'checked ' : '') + 'onchange="mp.cfg.hCycle=this.checked;mpCfgSave();"></label></div>' +
                 '<div class="mp-sw"><div class="mp-main"><div class="mp-name">Fast mode: version</div><div class="mp-patch-desc">Which version Fast mode looks for: the one the patches need, or the newest.</div></div>' + sel('hPolicy', [['requested', 'Requested'], ['latest', 'Newest']]) + '</div>' +
                 '<div class="mp-group"><span>VirusTotal</span></div><div class="mp-note">Check every downloaded file with VirusTotal before you use it. The free key allows 4 lookups a minute and 500 a day. Get a key at <a href="#" style="color:var(--accent)" onclick="mpLink(\'https://www.virustotal.com/gui/my-apikey\');return false;">virustotal.com</a>.</div>' +
                 '<div class="mp-sw"><div class="mp-main"><div class="mp-name">Scan with VirusTotal</div></div><label class="mp-check"><input type="checkbox" ' + (c.hVt ? 'checked ' : '') + 'onchange="mp.cfg.hVt=this.checked;mpCfgSave();mpHelperRender();if(this.checked)mpHelperQuota();"></label></div>' +
@@ -28775,311 +28943,6 @@ Type any command below (e.g. pm list packages -d)
         }
         async function mpHelperQuota() { const r = await mpCall('vtQuota', {}); if (r.ok && r.data) { mp.h.quota = r.data; if (mp.h.tab === 'set') mpHelperRender(); } }
         // MORPHE:JS:END
-        // SYSUI:JS:BEGIN
-        // ======================================================================================================================================
-        // System UI Tuner tab. Demo Mode and the three Quick Settings tiles come from Tweaker by Zachary Wander (MIT, github.com/zacharee/Tweaker); the rest
-        // (status bar and shade, notification lab, system actions, battery simulator, navigation mode, display and windows, information) are additions that
-        // use commands Android itself provides. Nothing here writes a Global, Secure or System setting (Hidden Settings does that), except the one flag
-        // Android needs before it listens to demo commands. The commands are built and checked by SysUiRules (Java); the page runs them through the working mode.
-        // ======================================================================================================================================
-        const su = { demo: null, demoOn: false, allowed: false, tiles: null, flags: [], keep: null, keepTimer: 0, slots: [], battSim: false, notifKeys: [], win: {}, timer: 0, shown: false };
-        const SU_FLAGS = [['search', 'Search'], ['home', 'Home button'], ['recents', 'Recents button'], ['notification-alerts', 'Heads-up notifications'], ['statusbar-expansion', 'Pulling down the shade'],
-            ['system-icons', 'System icons'], ['clock', 'Clock'], ['notification-icons', 'Notification icons']];
-        const SU_RISKY = ['home', 'recents', 'statusbar-expansion', 'quick-settings'];
-        const SU_ACTIONS = [[1, 'Back'], [2, 'Home'], [3, 'Recents'], [4, 'Notifications'], [5, 'Quick settings'], [6, 'Power menu'], [8, 'Lock screen'], [9, 'Screenshot'], [7, 'Split screen'], [15, 'Close the shade']];
-        const SU_DEMO_DEFAULT = { clock: '12:00', battery: 100, charging: false, powersave: false, bars: 'opaque', notifications: 'hide',
-            icons: { volume: 'hide', bluetooth: 'hide', location: 'hide', alarm: 'hide', tty: 'hide', mute: 'hide', speakerphone: 'hide', airplane: 'hide', zen: 'hide', cast: 'hide', hotspot: 'hide' },
-            wifi: { show: 'show', level: 4, fully: true, activity: 'none' }, mobile: { show: 'show', level: 4, fully: true, datatype: 'lte', roam: false, carrierchange: false, inflate: false, activity: 'none', sims: 1 } };
-        const SU_DEMO_ROWS = [
-            ['Status Bar Icons', [['icons.volume', 'Volume Visibility', 'sel', [['hide', 'Hide'], ['vibrate', 'Vibrate']]], ['icons.bluetooth', 'Bluetooth Visibility', 'sel', [['hide', 'Hide'], ['connected', 'Connected']]],
-                ['icons.location', 'Location Visibility', 'vis'], ['icons.alarm', 'Alarm Visibility', 'vis'], ['icons.tty', 'TTY Visibility', 'vis'], ['icons.mute', 'Mute Visibility', 'vis'],
-                ['icons.speakerphone', 'Speakerphone Visibility', 'vis'], ['icons.airplane', 'Airplane Visibility', 'vis'], ['icons.zen', 'Do Not Disturb', 'sel', [['hide', 'Hide'], ['dnd', 'Do Not Disturb']]],
-                ['icons.cast', 'Cast Visibility', 'vis'], ['icons.hotspot', 'Hotspot Visibility', 'vis']]],
-            ['Network States', [['wifi.show', 'WiFi Visibility', 'vis'], ['wifi.level', 'WiFi Level', 'rng', 0, 4], ['wifi.fully', 'WiFi Fully Connected', 'chk'], ['wifi.activity', 'WiFi Activity Type', 'sel', [['none', 'None'], ['in', 'In'], ['out', 'Out'], ['inout', 'In and out']]],
-                ['mobile.show', 'Mobile Visibility', 'vis'], ['mobile.level', 'Mobile Level', 'rng', 0, 4], ['mobile.fully', 'Mobile Fully Connected', 'chk'],
-                ['mobile.datatype', 'Mobile Data Type', 'sel', [['', 'None'], ['1x', '1x'], ['3g', '3G'], ['4g', '4G'], ['4g+', '4G+'], ['5g', '5G'], ['5ge', '5G E'], ['5g+', '5G+'], ['e', 'E'], ['g', 'G'], ['h', 'H'], ['h+', 'H+'], ['lte', 'LTE'], ['lte+', 'LTE+'], ['dis', 'Disabled'], ['not', 'Not Default Data'], ['roam', 'Roaming']]],
-                ['mobile.activity', 'Mobile Activity Type', 'sel', [['none', 'None'], ['in', 'In'], ['out', 'Out'], ['inout', 'In and out']]], ['mobile.roam', 'Mobile Roaming', 'chk'], ['mobile.carrierchange', 'Carrier Network Change', 'chk'],
-                ['mobile.inflate', 'Mobile Inflate Signal', 'chk'], ['mobile.sims', 'SIM cards', 'sel', [[1, '1'], [2, '2'], [3, '3'], [4, '4']]]]],
-            ['Miscellaneous', [['clock', 'Clock Time', 'time'], ['battery', 'Battery Level', 'rng', 0, 100], ['charging', 'Battery Charging', 'chk'], ['powersave', 'Battery saver icon', 'chk'],
-                ['bars', 'Status Bar Style', 'sel', [['opaque', 'Opaque'], ['semi-transparent', 'Semi-Transparent'], ['translucent', 'Translucent']]], ['notifications', 'Notification icons', 'sel', [['show', 'Show'], ['hide', 'Hide']]]]]];
-
-        // ---- the commands (built in Java) and how they run ----
-        function suOp(op, args) {
-            try {
-                const r = JSON.parse(window.AndroidBridge.sysui(op, JSON.stringify(args || {})));
-                return r;
-            } catch (e) { return { ok: false, error: 'System UI Tuner needs this build of the app (no bridge).' }; }
-        }
-        // Builds the command with SysUiRules and runs it through the working mode: {ok, output, error}
-        function suRun(op, args, needMode) {
-            if (needMode !== false && !isPrivilegedActive) { guardPrivilege('System UI Tuner'); return { ok: false, error: 'Needs a working mode' }; }
-            const c = suOp(op, args);
-            if (!c.ok) return { ok: false, error: c.error || 'That value is not allowed' };
-            const r = execShellOk(c.cmd);
-            return { ok: r.ok, output: r.output, cmd: c.cmd, error: r.ok ? '' : (r.output || 'The command failed').split('\n')[0] };
-        }
-        function suSay(id, text, err) { const e = document.getElementById(id); if (e) { e.textContent = text || ''; e.classList.toggle('is-err', !!err); } }
-        function suToggle(id) { document.getElementById(id).classList.toggle('open'); haptic(); }
-
-        function onSysuiShown() {
-            if (!su.shown) { su.shown = true; su.demo = JSON.parse(JSON.stringify(SU_DEMO_DEFAULT)); const k = kvGet('sysui_demo', null); if (k && typeof k === 'object') su.demo = Object.assign(su.demo, k); suFlagsRender(); suActionsRender(); suDemoRender(); }
-            const lock = document.getElementById('suLock');
-            lock.style.display = isPrivilegedActive ? 'none' : '';
-            lock.textContent = isPrivilegedActive ? '' : NEEDS_MODE + '. The Quick Settings tiles work without one; everything else needs it.';
-            suTilesLoad();
-            if (isPrivilegedActive) { suDemoReadAllowed(); suWinRead(true); suNavLoad(true); }
-        }
-        function suLeave() {
-            if (su.battSim) { suBattReset(true); }
-            if (su.keep) suKeepEnd(false);
-        }
-
-        // ---- Demo Mode ----
-        function suGet(path) { return path.split('.').reduce((o, k) => (o ? o[k] : undefined), su.demo); }
-        function suSet(path, v) { const ks = path.split('.'); let o = su.demo; for (let i = 0; i < ks.length - 1; i++) o = o[ks[i]]; o[ks[ks.length - 1]] = v; kvSet('sysui_demo', su.demo); if (su.demoOn) suDemoSoon(); }
-        function suDemoRender() {
-            const box = document.getElementById('suDemoForm');
-            if (!box) return;
-            box.innerHTML = SU_DEMO_ROWS.map(g => '<div class="su-sub-h">' + g[0] + '</div>' + g[1].map(r => {
-                const p = r[0], v = suGet(p), id = 'suD_' + p.replace(/\./g, '_');
-                let ctl;
-                if (r[2] === 'vis') ctl = '<select class="op-select" id="' + id + '" onchange="suSet(\'' + p + '\',this.value)"><option value="hide"' + (v === 'hide' ? ' selected' : '') + '>Hide</option><option value="show"' + (v === 'show' ? ' selected' : '') + '>Show</option></select>';
-                else if (r[2] === 'sel') ctl = '<select class="op-select" id="' + id + '" onchange="suSet(\'' + p + '\',' + (typeof r[3][0][0] === 'number' ? 'Number(this.value)' : 'this.value') + ')">' + r[3].map(o => '<option value="' + o[0] + '"' + (String(v) === String(o[0]) ? ' selected' : '') + '>' + o[1] + '</option>').join('') + '</select>';
-                else if (r[2] === 'chk') ctl = '<input type="checkbox" id="' + id + '"' + (v ? ' checked' : '') + ' onchange="suSet(\'' + p + '\',this.checked)">';
-                else if (r[2] === 'rng') ctl = '<input type="range" id="' + id + '" min="' + r[3] + '" max="' + r[4] + '" value="' + v + '" oninput="document.getElementById(\'' + id + 'V\').textContent=this.value" onchange="suSet(\'' + p + '\',Number(this.value))"><span class="su-val" id="' + id + 'V">' + v + '</span>';
-                else if (r[2] === 'time') ctl = '<input type="time" class="modal-text-input" id="' + id + '" value="' + escapeHtml(v) + '" onchange="suSet(\'' + p + '\',this.value||\'12:00\')">';
-                return '<div class="su-row"><div class="su-lab">' + r[1] + '</div>' + ctl + '</div>';
-            }).join('')).join('');
-            document.getElementById('suDemoOn').checked = su.demoOn;
-            document.getElementById('suDemoAllow').checked = su.allowed;
-            document.getElementById('suDemoBanner').style.display = su.demoOn ? '' : 'none';
-        }
-        function suDemoReadAllowed() {
-            const r = suRun('demo.allowedRead', {});
-            if (!r.ok) return;
-            const p = suOp('parse.demoAllowed', { text: r.output });
-            su.allowed = !!(p.ok && p.data && p.data.allowed);
-            document.getElementById('suDemoAllow').checked = su.allowed;
-        }
-        function suDemoAllow(on) {
-            const r = suRun('demo.allow', { allow: on });
-            if (!r.ok) { document.getElementById('suDemoAllow').checked = su.allowed; suSay('suDemoMsg', r.error, true); return; }
-            su.allowed = on;
-            if (!on && su.demoOn) suDemoOnSet(false);
-            suSay('suDemoMsg', on ? 'Demo mode is allowed. Turn on Enabled to use it.' : 'Demo mode is not allowed any more.');
-        }
-        function suDemoOn(on) { suDemoOnSet(on); }
-        function suDemoOnSet(on) {
-            if (on && !su.allowed) {
-                const r = suRun('demo.allow', { allow: true });
-                if (!r.ok) { document.getElementById('suDemoOn').checked = false; suSay('suDemoMsg', r.error, true); return; }
-                su.allowed = true; document.getElementById('suDemoAllow').checked = true;
-            }
-            const r = on ? suRun('demo.apply', suDemoArgs()) : suRun('demo.exit', {});
-            if (!r.ok) { document.getElementById('suDemoOn').checked = su.demoOn; suSay('suDemoMsg', r.error, true); return; }
-            su.demoOn = on;
-            kvSet('sysui_demo_on', on);
-            if (window.AndroidBridge && window.AndroidBridge.sysuiTile) window.AndroidBridge.sysuiTile('demoFlag', '', on ? '1' : '0');
-            document.getElementById('suDemoOn').checked = on;
-            document.getElementById('suDemoBanner').style.display = on ? '' : 'none';
-            suSay('suDemoMsg', on ? 'Demo mode is on. If the status bar did not change, this phone\'s System UI may not support some commands.' : 'Demo mode is off.');
-        }
-        function suDemoArgs() {
-            const d = su.demo, t = String(d.clock || '12:00').replace(':', '');
-            return { clock: t, battery: { level: d.battery, plugged: !!d.charging, powersave: !!d.powersave }, bars: d.bars, notifications: d.notifications, icons: d.icons,
-                wifi: d.wifi, mobile: { show: d.mobile.show, level: d.mobile.level, fully: d.mobile.fully, datatype: d.mobile.datatype, roam: d.mobile.roam ? 'show' : 'hide', carrierchange: d.mobile.carrierchange ? 'show' : 'hide', inflate: d.mobile.inflate, activity: d.mobile.activity }, sims: d.mobile.sims };
-        }
-        function suDemoSoon() { clearTimeout(su.timer); su.timer = setTimeout(() => { const r = suRun('demo.apply', suDemoArgs()); if (!r.ok) suSay('suDemoMsg', r.error, true); }, 250); }
-
-        // ---- Quick Settings tiles (Tweaker) ----
-        function suTilesLoad() {
-            const box = document.getElementById('suTiles');
-            let st = null;
-            try { st = JSON.parse(window.AndroidBridge.sysuiTile('state', '', '')); } catch (e) {}
-            su.tiles = st && st.tiles ? st : null;
-            if (!su.tiles) { box.innerHTML = '<div class="su-note">The tiles need this build of the app.</div>'; return; }
-            const names = { battery: ['Battery', 'Shows the battery level and whether it is charging.'], clock: ['Clock', 'The time with seconds, which the status bar clock does not show. Tap it to open the alarms.'], demo: ['Demo Mode', 'Turns demo mode on and off from the quick settings panel (needs a working mode).'] };
-            box.innerHTML = Object.keys(names).map(k => {
-                const t = su.tiles.tiles[k] || {};
-                return '<div class="su-tile"><div class="su-lab">' + names[k][0] + '<span class="su-sub">' + names[k][1] + '</span></div>' +
-                    (su.tiles.canAdd && t.enabled ? '<button class="su-act" onclick="suTileAdd(\'' + k + '\')">Add</button>' : '') +
-                    '<input type="checkbox" ' + (t.enabled ? 'checked ' : '') + 'onchange="suTileSet(\'' + k + '\',this.checked)" aria-label="' + names[k][0] + ' tile"></div>';
-            }).join('') + '<div class="su-note">Turn a tile on to make it available, then add it: tap Add (Android 13 and newer asks you), or open the quick settings panel, tap the pencil and drag it in.</div>';
-        }
-        function suTileSet(k, on) { try { window.AndroidBridge.sysuiTile('set', k, on ? '1' : '0'); } catch (e) {} suTilesLoad(); }
-        function suTileAdd(k) { let r = {}; try { r = JSON.parse(window.AndroidBridge.sysuiTile('add', k, '')); } catch (e) {} showToast(r.ok ? 'Android asks whether to add the tile' : (r.error || 'Open the quick settings editor and drag the tile in')); }
-
-        // ---- Status bar and shade ----
-        function suShade(which) { const r = suRun('shade', { which: which }); if (!r.ok) showToast(r.error); }
-        function suFlagsRender() {
-            document.getElementById('suFlags').innerHTML = SU_FLAGS.map(f => '<div class="su-row"><div class="su-lab">' + f[1] + '</div><input type="checkbox" data-f="' + f[0] + '" ' + (su.flags.includes(f[0]) ? 'checked' : '') + '></div>').join('');
-        }
-        function suFlagsChosen() { return Array.from(document.querySelectorAll('#suFlags input[data-f]')).filter(i => i.checked).map(i => i.dataset.f); }
-        async function suFlagsApply() {
-            const flags = suFlagsChosen();
-            if (!isPrivilegedActive) { guardPrivilege('System UI Tuner'); return; }
-            const risk = suOp('disableRisky', { flags: flags });
-            const bad = risk.ok && risk.data && risk.data.risky ? risk.data.risky : [];
-            if (bad.length && !await mpAsk({ title: 'Hide ' + bad.join(', ') + '?', text: 'Hiding these can leave you without a way to navigate or to pull the shade down. It is put back after 15 seconds unless you keep it, and "Restore everything" or a restart always fixes it.', ok: 'Hide them' })) return;
-            const prev = su.flags.slice();
-            const r = suRun('disable', { flags: flags });
-            if (!r.ok) { suSay('suFlagsMsg', r.error, true); return; }
-            su.flags = flags;
-            suSay('suFlagsMsg', flags.length ? 'Hidden: ' + flags.join(', ') : 'Nothing is hidden.');
-            if (flags.length) suKeepStart('Keep these parts hidden?', () => { const x = suRun('disable', { flags: prev }); su.flags = prev; suFlagsRender(); suSay('suFlagsMsg', 'Put back.'); return x; }, 'suKeep');
-        }
-        function suFlagsRestore() { const r = suRun('disable', { flags: [] }); if (r.ok) { su.flags = []; suFlagsRender(); suSay('suFlagsMsg', 'Everything is shown again.'); } else suSay('suFlagsMsg', r.error, true); }
-        function suFlagsRead() {
-            const r = suRun('info', { which: 'statusbar' });
-            if (!r.ok) { suSay('suFlagsMsg', r.error, true); return; }
-            const p = suOp('parse.disableState', { text: r.output });
-            const f = p.ok && p.data && p.data.flags ? p.data.flags : [];
-            suSay('suFlagsMsg', f.length ? 'Hidden now: ' + f.join(', ') : 'Nothing is hidden now.');
-        }
-        function suSlotsLoad() {
-            const r = suRun('icons', {});
-            if (!r.ok) { suSay('suSlots', r.error, true); return; }
-            const p = suOp('parse.slots', { text: r.output });
-            su.slots = p.ok && p.data && p.data.slots ? p.data.slots : [];
-            document.getElementById('suSlots').innerHTML = su.slots.length ? su.slots.map(s => '<span class="su-slot">' + escapeHtml(s) + '</span>').join('') : 'This phone did not list any slots.';
-        }
-        function suSlotsCopy() { if (su.slots.length) copyText(su.slots.join(',')); else showToast('Load the slots first'); }
-
-        // ---- the "keep it?" countdown ----
-        function suKeepStart(question, revert, boxId) {
-            suKeepEnd(false);
-            let left = 15;
-            const box = document.getElementById(boxId);
-            su.keep = { revert: revert, box: box };
-            const draw = () => { box.innerHTML = '<div>' + question + ' Putting it back in <b>' + left + '</b> seconds.</div><div class="mode-btn-row"><button class="mode-action-btn primary" onclick="suKeepEnd(true)">Keep it</button><button class="mode-action-btn" onclick="suKeepEnd(false)">Put it back</button></div>'; };
-            box.style.display = ''; draw();
-            su.keepTimer = setInterval(() => { left--; if (left <= 0) suKeepEnd(false); else draw(); }, 1000);
-        }
-        function suKeepEnd(keep) {
-            const k = su.keep;
-            clearInterval(su.keepTimer); su.keepTimer = 0; su.keep = null;
-            if (!k) return;
-            k.box.style.display = 'none'; k.box.innerHTML = '';
-            if (!keep) { try { k.revert(); } catch (e) {} }
-        }
-
-        // ---- Notification lab ----
-        function suNotifPost() {
-            const style = document.getElementById('suNStyle').value;
-            const title = document.getElementById('suNTitle').value, text = document.getElementById('suNText').value, tag = document.getElementById('suNTag').value;
-            const args = { style: style, title: title, text: text, tag: tag, lines: style === 'inbox' ? text.split(/\s*[|;]\s*/).filter(Boolean) : [], conversation: title,
-                messages: style === 'messaging' ? text.split(/\s*[|;]\s*/).filter(Boolean).map((m, i) => (i % 2 ? 'Me' : 'Ann') + ':' + m) : [] };
-            const r = suRun('notify.post', args);
-            suSay('suNMsg', r.ok ? 'Sent.' : r.error, !r.ok);
-        }
-        function suNotifList() {
-            const r = suRun('notify.list', {});
-            if (!r.ok) { suSay('suNMsg', r.error, true); return; }
-            const p = suOp('parse.notificationKeys', { text: r.output });
-            su.notifKeys = p.ok && p.data && p.data.keys ? p.data.keys : [];
-            document.getElementById('suNKeys').innerHTML = su.notifKeys.length ? su.notifKeys.slice(0, 40).map((k, i) => '<div class="su-tile"><div class="su-lab" translate="no" style="font-size:11px;word-break:break-all;">' + escapeHtml(k) + '</div><button class="su-act" onclick="suNotifSnooze(' + i + ')">Snooze 1 min</button><button class="su-act" onclick="suNotifUnsnooze(' + i + ')">Unsnooze</button></div>').join('') : '';
-            suSay('suNMsg', su.notifKeys.length ? su.notifKeys.length + ' active (Android 11 and newer lists them).' : 'No active notification was listed. This needs Android 11 or newer.');
-        }
-        function suNotifSnooze(i) { const r = suRun('notify.snooze', { key: su.notifKeys[i], ms: 60000 }); suSay('suNMsg', r.ok ? 'Snoozed for a minute.' : r.error, !r.ok); }
-        function suNotifUnsnooze(i) { const r = suRun('notify.unsnooze', { key: su.notifKeys[i] }); suSay('suNMsg', r.ok ? 'Unsnoozed.' : r.error, !r.ok); }
-
-        // ---- System actions ----
-        function suActionsRender() {
-            document.getElementById('suActions').innerHTML = SU_ACTIONS.map(a => '<button class="mode-action-btn su-action" onclick="suAction(' + a[0] + ')">' + a[1] + '</button>').join('');
-        }
-        function suAction(id) {
-            const r = suRun('action', { id: id });
-            if (!r.ok) { suSay('suActMsg', r.error, true); return; }
-            suSay('suActMsg', '');
-        }
-        async function suRestartUi() {
-            if (!isPrivilegedActive) { guardPrivilege('System UI Tuner'); return; }
-            if (!await mpAsk({ title: 'Restart System UI?', text: 'The status bar and the shade disappear for a few seconds and come back. Demo mode ends. Nothing is lost.', ok: 'Restart' })) return;
-            const r = suRun('restartUi', {});
-            if (r.ok) { su.demoOn = false; document.getElementById('suDemoOn').checked = false; document.getElementById('suDemoBanner').style.display = 'none'; }
-            suSay('suActMsg', r.ok ? 'System UI is restarting.' : r.error, !r.ok);
-        }
-
-        // ---- Battery simulator ----
-        function suBattApply() {
-            const level = Number(document.getElementById('suBLevel').value), status = Number(document.getElementById('suBStatus').value), plug = document.getElementById('suBPlug').value, temp = Number(document.getElementById('suBTemp').value);
-            if (!isPrivilegedActive) { guardPrivilege('System UI Tuner'); return; }
-            const steps = [['battery.set', { key: 'level', value: level }], ['battery.set', { key: 'status', value: status }], ['battery.set', { key: 'ac', value: plug === 'ac' ? 1 : 0 }], ['battery.set', { key: 'usb', value: plug === 'usb' ? 1 : 0 }],
-                ['battery.set', { key: 'wireless', value: plug === 'wireless' ? 1 : 0 }], ['battery.set', { key: 'temp', value: temp }]];
-            for (const s of steps) { const r = suRun(s[0], s[1]); if (!r.ok) { showToast(r.error); return; } }
-            su.battSim = true;
-            document.getElementById('suBattBanner').style.display = '';
-            suBattRead();
-        }
-        function suBattUnplug() { const r = suRun('battery.unplug', {}); if (!r.ok) { showToast(r.error); return; } su.battSim = true; document.getElementById('suBattBanner').style.display = ''; suBattRead(); }
-        function suBattReset(quiet) {
-            const r = suRun('battery.reset', {}, !quiet);
-            if (r.ok) { su.battSim = false; document.getElementById('suBattBanner').style.display = 'none'; if (!quiet) { showToast('The real battery state is back'); suBattRead(); } }
-            else if (!quiet) showToast(r.error);
-        }
-        function suBattRead() {
-            const r = suRun('battery.read', {});
-            if (!r.ok) { suSay('suBattOut', r.error, true); return; }
-            document.getElementById('suBattOut').textContent = r.output;
-            const p = suOp('parse.battery', { text: r.output });
-            if (p.ok && p.data && p.data.frozen) { su.battSim = true; document.getElementById('suBattBanner').style.display = ''; }
-        }
-
-        // ---- Navigation mode ----
-        const SU_NAV = [['threebutton', '3-button navigation'], ['twobutton', '2-button navigation'], ['gestural', 'Gesture navigation']];
-        function suNavLoad(quiet) {
-            if (!isPrivilegedActive) { if (!quiet) guardPrivilege('System UI Tuner'); return; }
-            const r = suRun('nav.list', {});
-            if (!r.ok) { suSay('suNavMsg', r.error, true); return; }
-            const p = suOp('parse.navModes', { text: r.output });
-            const m = p.ok && p.data ? p.data : { available: [], enabled: '' };
-            const box = document.getElementById('suNav');
-            if (!m.available.length) { box.innerHTML = ''; suSay('suNavMsg', 'This phone does not offer the system navigation overlays (some makers replace them).'); return; }
-            box.innerHTML = SU_NAV.filter(n => m.available.includes(n[0])).map(n => '<div class="su-row"><div class="su-lab">' + n[1] + (m.enabled === n[0] ? '<span class="su-sub">In use now</span>' : '') + '</div>' + (m.enabled === n[0] ? '' : '<button class="su-act" onclick="suNavSet(\'' + n[0] + '\')">Use</button>') + '</div>').join('');
-            suSay('suNavMsg', '');
-        }
-        async function suNavSet(mode) {
-            if (!await mpAsk({ title: 'Change the navigation mode?', text: 'The way you go back, home and to recents changes at once. If you get stuck, come back here and choose the old mode, or restart the phone.', ok: 'Change' })) return;
-            const r = suRun('nav.enable', { mode: mode });
-            suSay('suNavMsg', r.ok ? 'Done.' : r.error, !r.ok);
-            setTimeout(() => suNavLoad(true), 800);
-        }
-
-        // ---- Display and windows ----
-        function suWinRead(quiet) {
-            if (!isPrivilegedActive) return;
-            const d = suRun('wm.read', {});
-            const pw = d.ok ? suOp('parse.wm', { text: d.output }) : null, w = pw && pw.data ? pw.data : {};
-            su.win = { density: { physical: w.density || '', override: w.overrideDensity || '' }, size: { physical: w.size || '', override: w.overrideSize || '' } };
-            document.getElementById('suDensCur').textContent = su.win.density.physical ? 'Now ' + (su.win.density.override || su.win.density.physical) + ' (default ' + su.win.density.physical + ')' : '';
-            document.getElementById('suSizeCur').textContent = su.win.size.physical ? 'Now ' + (su.win.size.override || su.win.size.physical) + ' (default ' + su.win.size.physical + ')' : '';
-            if (!quiet && !d.ok) suSay('suWinMsg', d.error, true);
-        }
-        function suWinApply() {
-            const dens = document.getElementById('suDens').value.trim(), size = document.getElementById('suSize').value.trim();
-            if (!dens && !size) { suSay('suWinMsg', 'Enter a density, a size, or both.', true); return; }
-            const before = { density: (su.win.density && su.win.density.override) || '', size: (su.win.size && su.win.size.override) || '' };
-            if (dens) { const r = suRun('wm.density', { value: Number(dens) }); if (!r.ok) { suSay('suWinMsg', r.error, true); return; } }
-            if (size) { const m = /^(\d{3,5})x(\d{3,5})$/.exec(size); if (!m) { suSay('suWinMsg', 'Write the size like 1080x2400.', true); return; } const r = suRun('wm.size', { w: Number(m[1]), h: Number(m[2]) }); if (!r.ok) { suSay('suWinMsg', r.error, true); return; } }
-            suKeepStart('Keep this screen setting?', () => {
-                if (dens) { before.density ? suRun('wm.density', { value: Number(before.density) }) : suRun('wm.density.reset', {}); }
-                if (size) { const m = /^(\d+)x(\d+)$/.exec(before.size); m ? suRun('wm.size', { w: Number(m[1]), h: Number(m[2]) }) : suRun('wm.size.reset', {}); }
-                suWinRead(true);
-            }, 'suWinKeep');
-            suWinRead(true);
-        }
-        function suWinReset() { suRun('wm.density.reset', {}); suRun('wm.size.reset', {}); suWinRead(true); suSay('suWinMsg', 'Back to the phone\'s own density and size.'); }
-        function suIgnoreOri(on) { const r = suRun('wm.ignoreOrientation', { on: on }); if (!r.ok) { suSay('suWinMsg', r.error, true); document.getElementById('suIgnoreOri').checked = !on; } else suSay('suWinMsg', ''); }
-        function suScaling(v) { const r = suRun('wm.scaling', { mode: v }); suSay('suWinMsg', r.ok ? '' : r.error, !r.ok); }
-
-        // ---- Information ----
-        function suInfo(which) {
-            const r = suRun('info', { which: which });
-            const out = document.getElementById('suInfoOut');
-            out.textContent = r.ok || r.output ? (r.output || '(empty)') : r.error;
-            document.getElementById('suInfoBtns').style.display = '';
-        }
-        // SYSUI:JS:END
         // SDM:JS:BEGIN
         const SD_SCHEMA = {
          "systemcleaner": {
@@ -30715,6 +30578,253 @@ Type any command below (e.g. pm list packages -d)
             renderSavedLists();
             setTimeout(ovlResume, 400);
         });
+
+        // ---------- The real terminal: full screen, on a pseudo-terminal (vim, nano, top, htop, ssh, less ...) ----------
+        // xterm.js (assets/xterm.js, loaded the first time) draws it; the app runs the program on a pty (PtyShell + the helper libptyexec.so) and sends the bytes both ways.
+        // Closing the screen (X or Back) leaves the session running; typing exit (or Restart) ends it.
+        var rt = { term: null, fit: null, loading: false, open: false, id: 'rt', backend: 'app', state: 'off', ctrl: 0, alt: 0, font: 14, started: false, ro: null, repeat: null };
+        const RT_SYMS = ['|', '~', '$', ';', ':', '"', "'", '\\', '`', '{', '}', '[', ']', '(', ')', '<', '>', '*', '&', '#', '=', '+', '_', '?', '!', '@', '%', '^', '.', ','];
+        function rtLoad(then) {
+            if (window.Terminal && window.FitAddon) { then(); return; }
+            if (rt.loading) return;
+            rt.loading = true;
+            const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = 'xterm.css'; document.head.appendChild(css);
+            const sc = document.createElement('script'); sc.src = 'xterm.js';
+            sc.onload = () => { rt.loading = false; then(); };
+            sc.onerror = () => { rt.loading = false; rtNote('The terminal could not be loaded. Close it and try again.'); };
+            document.head.appendChild(sc);
+        }
+        function rtNote(msg) { const n = document.getElementById('rtNote'); if (!n) return; n.textContent = msg || ''; n.style.display = msg ? 'block' : 'none'; }
+        function rtSize() {
+            const vv = window.visualViewport;
+            document.documentElement.style.setProperty('--rt-vh', (vv ? Math.round(vv.height) : window.innerHeight) + 'px');
+            if (rt.fit && rt.open) requestAnimationFrame(() => { try { rt.fit.fit(); } catch (e) {} });
+        }
+        function rtOpen(backend) {
+            if (!window.AndroidBridge || !window.AndroidBridge.ptyStart) { showToast('The full-screen terminal needs the app (not a plain browser)'); return; }
+            haptic();
+            if (txFullOn) txFullToggle(false);
+            rt.backend = backend || kvGet('rt_shell', '') || (typeof txCurShell === 'function' ? txCurShell() : 'app');
+            if (!['app', 'priv', 'termux'].includes(rt.backend)) rt.backend = 'app';
+            const sel = document.getElementById('rtShell'); if (sel) sel.value = rt.backend;
+            rt.font = Math.max(8, Math.min(28, parseInt(kvGet('rt_font', 14), 10) || 14));
+            document.getElementById('rtOverlay').classList.add('show');
+            document.body.classList.add('rt-open');
+            rt.open = true;
+            rtNote('');
+            rtSize();
+            if (window.visualViewport) window.visualViewport.addEventListener('resize', rtSize);
+            window.addEventListener('resize', rtSize);
+            rtLoad(() => { rtInit(); rtSize(); if (!rt.started) rtStart(); else rt.term.focus(); });
+        }
+        function rtHide() {
+            rt.open = false;
+            document.getElementById('rtOverlay').classList.remove('show');
+            document.body.classList.remove('rt-open');
+            if (window.visualViewport) window.visualViewport.removeEventListener('resize', rtSize);
+            window.removeEventListener('resize', rtSize);
+            document.documentElement.style.removeProperty('--rt-vh');
+            try { if (document.activeElement) document.activeElement.blur(); } catch (e) {}
+        }
+        function rtInit() {
+            if (rt.term) return;
+            const el = document.getElementById('rtTerm');
+            rt.term = new window.Terminal({ fontSize: rt.font, fontFamily: '"DejaVu Sans Mono","Roboto Mono","Droid Sans Mono",monospace', cursorBlink: true, scrollback: 5000, allowProposedApi: true,
+                theme: { background: '#000000', foreground: '#e6e6e6', cursor: '#e6e6e6' } });
+            rt.fit = new window.FitAddon.FitAddon();
+            rt.term.loadAddon(rt.fit);
+            rt.term.open(el);
+            rt.term.onData(rtOnData);
+            rt.term.onResize(e => { if (rt.started && window.AndroidBridge && window.AndroidBridge.ptyResize) window.AndroidBridge.ptyResize(rt.id, e.rows, e.cols); });
+            if (window.ResizeObserver) { rt.ro = new ResizeObserver(() => { if (rt.open) { try { rt.fit.fit(); } catch (e) {} } }); rt.ro.observe(el); }
+            // a tap on the screen brings the keyboard up
+            el.addEventListener('click', () => { if (rt.open) rt.term.focus(); });
+            rtKeysInit();
+        }
+        function rtStart() {
+            if (!rt.term) return;
+            try { rt.fit.fit(); } catch (e) {}
+            rt.started = true; rt.state = 'starting';
+            rtNote('');
+            let r = '';
+            try { r = String(window.AndroidBridge.ptyStart(rt.id, rt.backend, rt.term.rows || 24, rt.term.cols || 80) || ''); } catch (e) { r = 'error: ' + (e && e.message || e); }
+            if (r.indexOf('error') === 0) { rt.state = 'exited'; rtNote(r.replace(/^error:\s*/, '')); }
+            else rt.term.focus();
+        }
+        window.onPtyStarted = function (id, res) {
+            if (id !== rt.id) return;
+            if (res && res.ok) { rt.state = 'running'; return; }
+            rt.state = 'exited';
+            rtNote(String((res && res.message) || 'The terminal did not start'));
+        };
+        window.onPtyData = function (id, b64) {
+            if (id !== rt.id || !rt.term) return;
+            const bin = atob(b64), u = new Uint8Array(bin.length);
+            for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+            rt.term.write(u, () => { try { window.AndroidBridge.ptyAck(id, u.length); } catch (e) {} });
+        };
+        window.onPtyExit = function (id, code) {
+            if (id !== rt.id) return;
+            rt.state = 'exited';
+            if (rt.term) rt.term.write('\r\n\x1b[2m[process ended' + (code >= 0 ? ' (' + code + ')' : '') + ': press Enter to start a new one]\x1b[0m\r\n');
+        };
+        function rtSend(str) {
+            if (!str || !window.AndroidBridge || !window.AndroidBridge.ptyWrite) return;
+            const bytes = new TextEncoder().encode(str);
+            let bin = '';
+            for (let i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
+            window.AndroidBridge.ptyWrite(rt.id, btoa(bin));
+        }
+        function rtCtrlChar(ch) {
+            const c = ch.charCodeAt(0);
+            if (ch.length === 1) {
+                if (c >= 97 && c <= 122) return String.fromCharCode(c - 96);
+                if (c >= 65 && c <= 90) return String.fromCharCode(c - 64);
+                if (ch === '[') return '\x1b'; if (ch === '\\') return '\x1c'; if (ch === ']') return '\x1d'; if (ch === '^') return '\x1e'; if (ch === '_' || ch === '/') return '\x1f';
+                if (ch === ' ' || ch === '@' || ch === '2') return '\x00';
+                if (ch === '?') return '\x7f';
+            }
+            return ch;
+        }
+        function rtOnData(d) {
+            if (rt.state === 'exited') { if (d === '\r') { rt.term.reset(); rtStart(); } return; }
+            if (rt.ctrl && d.length === 1) { d = rtCtrlChar(d); if (rt.ctrl === 1) rtMod('ctrl', 0); }
+            if (rt.alt) { d = '\x1b' + d; if (rt.alt === 1) rtMod('alt', 0); }
+            rtSend(d);
+        }
+        function rtMod(which, v) {
+            rt[which] = v;
+            const b = document.getElementById(which === 'ctrl' ? 'rtCtrl' : 'rtAlt');
+            if (b) { b.classList.toggle('on', v > 0); b.classList.toggle('lock', v === 2); }
+        }
+        function rtKeySeq(k) {
+            const app = rt.term && rt.term.modes && rt.term.modes.applicationCursorKeysMode;
+            const cs = app ? '\x1bO' : '\x1b[';
+            const F = { f1: '\x1bOP', f2: '\x1bOQ', f3: '\x1bOR', f4: '\x1bOS', f5: '\x1b[15~', f6: '\x1b[17~', f7: '\x1b[18~', f8: '\x1b[19~', f9: '\x1b[20~', f10: '\x1b[21~', f11: '\x1b[23~', f12: '\x1b[24~' };
+            switch (k) {
+                case 'esc': return '\x1b'; case 'tab': return '\t';
+                case 'up': return cs + 'A'; case 'down': return cs + 'B'; case 'right': return cs + 'C'; case 'left': return cs + 'D';
+                case 'home': return cs + 'H'; case 'end': return cs + 'F'; case 'pgup': return '\x1b[5~'; case 'pgdn': return '\x1b[6~';
+                default: return F[k] || k;
+            }
+        }
+        function rtPress(k) {
+            if (k === 'ctrl' || k === 'alt') { rtMod(k, (rt[k] + 1) % 3); return; }          // once, locked, off
+            if (k === 'fn') { const f = document.getElementById('rtFn'), sy = document.getElementById('rtSyms'); const on = f.style.display === 'none'; f.style.display = on ? '' : 'none'; sy.style.display = on ? 'none' : ''; return; }
+            if (k === 'kbd') { const ta = rt.term && rt.term.textarea; if (ta && document.activeElement === ta) ta.blur(); else if (rt.term) rt.term.focus(); return; }
+            let d = rtKeySeq(k);
+            if (rt.ctrl && d.length === 1) { d = rtCtrlChar(d); if (rt.ctrl === 1) rtMod('ctrl', 0); }
+            if (rt.alt) { d = '\x1b' + d; if (rt.alt === 1) rtMod('alt', 0); }
+            if (rt.state === 'exited') { if (k === 'tab' || k === 'esc') return; }
+            rtSend(d);
+        }
+        function rtKeysInit() {
+            const syms = document.getElementById('rtSyms'), fn = document.getElementById('rtFn');
+            RT_SYMS.forEach(c => { const b = document.createElement('button'); b.textContent = c; b.setAttribute('translate', 'no'); b.setAttribute('data-rk', c); syms.appendChild(b); });
+            for (let i = 1; i <= 12; i++) { const b = document.createElement('button'); b.textContent = 'F' + i; b.setAttribute('translate', 'no'); b.setAttribute('data-rk', 'f' + i); fn.appendChild(b); }
+            const REP = new Set(['up', 'down', 'left', 'right', 'pgup', 'pgdn']);
+            const stop = () => { if (rt.repeat) { clearTimeout(rt.repeat.t); clearInterval(rt.repeat.i); rt.repeat = null; } };
+            // the keys never take the focus (the keyboard stays up); arrows repeat while held
+            document.getElementById('rtKeys').addEventListener('pointerdown', e => {
+                const b = e.target.closest && e.target.closest('button[data-rk]');
+                if (!b) return;
+                e.preventDefault();
+                const k = b.getAttribute('data-rk');
+                if (k === 'kbd') { haptic(); rtPress(k); return; }
+                rtPress(k);
+                stop();
+                if (REP.has(k)) rt.repeat = { t: setTimeout(() => { rt.repeat.i = setInterval(() => rtPress(k), 70); }, 380), i: null };
+            });
+            ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => document.getElementById('rtKeys').addEventListener(ev, stop));
+        }
+        function rtFont(d) {
+            rt.font = Math.max(8, Math.min(28, rt.font + d));
+            kvSet('rt_font', rt.font);
+            if (rt.term) { rt.term.options.fontSize = rt.font; try { rt.fit.fit(); } catch (e) {} }
+        }
+        function rtCopy() {
+            if (!rt.term) return;
+            let t = rt.term.getSelection();
+            if (!t) { rt.term.selectAll(); t = rt.term.getSelection(); rt.term.clearSelection(); }
+            t = t.replace(/[ \t]+$/gm, '').replace(/\n{3,}/g, '\n\n').trim();
+            if (window.AndroidBridge && window.AndroidBridge.copyToClipboard) window.AndroidBridge.copyToClipboard(t);
+        }
+        function rtPaste() {
+            let t = '';
+            try { t = String(window.AndroidBridge.getClipboardText() || ''); } catch (e) {}
+            if (!t) { showToast('The clipboard is empty'); return; }
+            if (rt.term) { rt.term.paste(t); rt.term.focus(); }
+        }
+        function rtEnd() { try { window.AndroidBridge.ptyClose(rt.id); } catch (e) {} rt.started = false; rt.state = 'off'; }
+        function rtRestart() {
+            haptic();
+            rtEnd();
+            if (rt.term) { rt.term.reset(); rtStart(); }
+        }
+        function rtPickShell(v) {
+            rt.backend = v;
+            kvSet('rt_shell', v);
+            rtRestart();
+        }
+
+        // ---------- Bottom sheets: pull the handle at the top up for more room, down to make it smaller and then close it ----------
+        (function () {
+            const ZONE = 44;                           // px from the top of the sheet that count as the handle
+            let st = null, swallow = 0;
+            const sheetAt = (el) => { const sh = el && el.closest ? el.closest('.modal-sheet') : null; return sh && sh.closest('.modal-overlay.show') ? sh : null; };
+            const point = (e) => (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]) || e;
+            function begin(e) {
+                const sh = sheetAt(e.target);
+                if (!sh) return;
+                const pt = point(e), r = sh.getBoundingClientRect();
+                if (pt.clientY - r.top > ZONE) return;
+                st = { sh, y0: pt.clientY, dy: 0, t0: Date.now(), moved: false };
+                document.addEventListener('touchmove', move, { passive: false });      // only while the handle is held: a scroll anywhere else stays smooth
+            }
+            function move(e) {
+                if (!st) return;
+                const pt = point(e), dy = pt.clientY - st.y0;
+                if (!st.moved && Math.abs(dy) < 6) return;
+                st.moved = true; st.dy = dy;
+                if (e.cancelable) e.preventDefault();
+                st.sh.classList.add('sheet-dragging');
+                // down: the sheet follows the finger; up: it does not move, it grows when let go
+                st.sh.style.transform = dy > 0 ? 'translateY(' + dy + 'px)' : '';
+            }
+            function end() {
+                if (!st) return;
+                const { sh, dy, t0, moved } = st; st = null;
+                document.removeEventListener('touchmove', move, { passive: false });
+                sh.classList.remove('sheet-dragging');
+                sh.style.transform = '';
+                if (!moved) return;
+                const fast = Math.abs(dy) / Math.max(1, Date.now() - t0) > 0.6;
+                const far = Math.abs(dy) > 70 || fast;
+                const later = () => { swallow = Date.now(); };        // the click that follows a drag (it may land on the dark area) is not a tap
+                if (dy < 0 && far) { sh.classList.add('sheet-expanded'); later(); return; }
+                if (dy > 0 && far) {
+                    if (sh.classList.contains('sheet-expanded')) { sh.classList.remove('sheet-expanded'); later(); return; }
+                    const ov = sh.closest('.modal-overlay');
+                    if (ov) ov.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));      // the same as a tap outside the sheet: each sheet closes itself
+                    if (ov && ov.classList.contains('show') && !ov.getAttribute('onclick')) ov.classList.remove('show');
+                }
+                later();
+            }
+            document.addEventListener('touchstart', begin, { passive: true });
+            document.addEventListener('click', (e) => { if (swallow && Date.now() - swallow < 400) { swallow = 0; e.stopPropagation(); e.preventDefault(); } }, true);
+            document.addEventListener('touchend', end, { passive: true });
+            document.addEventListener('touchcancel', end, { passive: true });
+            document.addEventListener('mousedown', begin);
+            document.addEventListener('mousemove', move);
+            document.addEventListener('mouseup', end);
+            // a sheet that closes forgets that it was pulled up
+            new MutationObserver((list) => {
+                for (const m of list) {
+                    const t = m.target;
+                    if (t.classList && t.classList.contains('modal-overlay') && !t.classList.contains('show')) { const sh = t.querySelector('.modal-sheet'); if (sh) sh.classList.remove('sheet-expanded'); }
+                }
+            }).observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class'] });
+        })();
     </script>
 </body>
 </html>

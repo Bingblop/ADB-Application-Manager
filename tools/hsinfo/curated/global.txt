@@ -165,5 +165,5 @@ zen_mode | Do Not Disturb. | 0 = off; 1 = priority interruptions only; 2 = total
 zen_mode_config_etag | Version stamp of your Do Not Disturb rules. Android keeps this by itself. | number
 zen_mode_ringer_level | The ringer mode from before Do Not Disturb turned on. | 0 = silent; 1 = vibrate; 2 = normal
 zram_enabled | Compressed swap memory (zram). | 0 = off; 1 = on; takes effect after a restart
-sysui_demo_allowed | Allows System UI demo mode, which shows a clean status bar for screenshots (see the System UI Tuner tab). | 0 = off; 1 = on
-sysui_tuner_demo_on | Demo mode is on right now (System UI Tuner). | 0 = off; 1 = on
+sysui_demo_allowed | Allows System UI demo mode, which shows a clean status bar for screenshots. | 0 = off; 1 = on
+sysui_tuner_demo_on | Demo mode is on right now. | 0 = off; 1 = on

@@ -1,4 +1,4 @@
-tabs: Application Manager | Saved Applications | UAD-NG Debloater | APK Installer | File Manager | Command-Line Interface | Hidden Settings | RRO/Monet Customization | App Updater | App Stores | Logcat Viewer | Task Manager | Connected Devices | Morphe Patcher | SD Maid SE | System UI Tuner | About
+tabs: Application Manager | Saved Applications | UAD-NG Debloater | APK Installer | File Manager | Command-Line Interface | Hidden Settings | RRO/Monet Customization | App Updater | App Stores | Logcat Viewer | Task Manager | Connected Devices | Morphe Patcher | SD Maid SE | About
 saved ui_state: {"appSort":"name","filtersHintDone":true,"batchKeepSelection":false,"rememberFilters":false,"filters":null,"search":{"names":true,"packages":true,"regex":true},"uad":{"removal":["Recommended","Advanced"],"list":"Oem","state":"enabled","brand":"Samsung"}}
 history entries: 1 | Uninstalled 2 packages
 after undo: Undo: Uninstalled 2 packages / Uninstalled 2 packages

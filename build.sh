@@ -178,6 +178,13 @@ with zipfile.ZipFile(apk, 'a', zipfile.ZIP_DEFLATED) as z:
             z.write(libadb, 'lib/arm64-v8a/libadb.so')
     if abi in ('armeabi-v7a', 'universal'):
         z.write(os.path.join(work, 'native', 'armeabi-v7a', 'libadb.so'), 'lib/armeabi-v7a/libadb.so')
+    # the pty helper of the full-screen Terminal (native/pty/ptyexec.c, built by native/pty/build.sh and kept in the repository): run from the library folder like libadb.so
+    for a in ('arm64-v8a', 'armeabi-v7a'):
+        if abi in (a, 'universal'):
+            pty = os.path.join(work, 'native', 'pty', a, 'libptyexec.so')
+            if not os.path.exists(pty):
+                sys.exit('native/pty/%s/libptyexec.so is missing: run native/pty/build.sh' % a)
+            z.write(pty, 'lib/%s/libptyexec.so' % a)
 EOF
 
 # ---- Step 6: Keystore -------------------------------------------------------------------------

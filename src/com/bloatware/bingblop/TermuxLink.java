@@ -91,6 +91,41 @@ public final class TermuxLink {
         return s.toString();
     }
 
+    /**
+     * The script of a real-terminal session: the same connection back to the app as {@link #bridgeScript}, but what is on the other end is the pty helper
+     * (libptyexec.so, run from this app's library folder: Termux may execute it) with bash on a terminal, not a bash that reads commands.
+     * The connection carries the helper's framing in and the terminal's bytes out.
+     */
+    public static String ptyScript(String helper, int rows, int cols, String bash, int port, String token, String workdir) {
+        StringBuilder s = new StringBuilder();
+        s.append("exec 3<>/dev/tcp/127.0.0.1/").append(port).append(" || exit 97\n");
+        s.append("printf '").append(HELLO).append("%s\\n' '").append(token).append("' >&3\n");
+        if (workdir != null && !workdir.trim().isEmpty()) {
+            s.append("cd ").append(RishShell.quote(workdir.trim())).append(" 2>/dev/null || cd \"$HOME\" 2>/dev/null\n");
+        } else {
+            s.append("cd \"$HOME\" 2>/dev/null\n");
+        }
+        s.append("export TERM=xterm-256color COLORTERM=truecolor LANG=en_US.UTF-8\n");
+        // the helper runs bash on a terminal; its input and output are the connection (a copy of the helper in Termux's own folder if Termux may not run it where it is)
+        s.append(PtyShell.launchScript(helper, "\"$HOME/.cache/adbmgr-ptyexec\"", rows, cols, RishShell.quote(bash) + " -l 0<&3 1>&3 2>&3 3>&-"));
+        return s.toString();
+    }
+
+    /** A real-terminal session in Termux: {@link #openSession} with {@link #ptyScript} as the command Termux runs. */
+    public static Process openPtySession(Launcher launcher, String helper, int rows, int cols, String bash, String workdir, long timeoutMs) throws IOException {
+        return connect(launcher, timeoutMs, new ScriptMaker() {
+            private String h = helper;
+            @Override
+            public String make(int port, String token) {
+                return ptyScript(h, rows, cols, bash, port, token, workdir);
+            }
+        });
+    }
+
+    interface ScriptMaker {
+        String make(int port, String token);
+    }
+
     /** A spawner for {@link RishShell}: the session itself is a connected bash, helpers (ps, kill) are one-off commands. */
     public static RishShell.Spawner spawner(final Launcher launcher, final String bash, final String workdir, final boolean login,
                                             final long connectTimeoutMs) {
@@ -104,14 +139,23 @@ public final class TermuxLink {
     }
 
     /** Starts a session and waits (at most {@code timeoutMs}) for it to connect back. */
-    public static Process openSession(Launcher launcher, String bash, String workdir, boolean login, long timeoutMs) throws IOException {
+    public static Process openSession(final Launcher launcher, final String bash, final String workdir, final boolean login, long timeoutMs) throws IOException {
+        return connect(launcher, timeoutMs, new ScriptMaker() {
+            @Override
+            public String make(int port, String token) {
+                return bridgeScript(bash, port, token, workdir, login);
+            }
+        });
+    }
+
+    private static Process connect(Launcher launcher, long timeoutMs, ScriptMaker maker) throws IOException {
         ServerSocket server = new ServerSocket(0, 4, InetAddress.getByName("127.0.0.1"));
         final SessionProcess proc = new SessionProcess(launcher);
         Socket sock = null;
         try {
             server.setSoTimeout(250);
             String token = randomHex(16);
-            String script = bridgeScript(bash, server.getLocalPort(), token, workdir, login);
+            String script = maker.make(server.getLocalPort(), token);
             proc.launchId = launcher.launch(script, "ADB App Manager terminal", new Callback() {
                 @Override
                 public void onResult(Result r) {

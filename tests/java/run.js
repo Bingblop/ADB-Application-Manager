@@ -36,9 +36,6 @@ const SUITES = [
     tests: ['SettingsDbTest'], main: 'com.bloatware.bingblop.SettingsDbTest', utf8: true },
   { name: 'overlayrules', title: 'Overlays and Material You: cmd overlay output, names, the theme value and its merge, every verdict and the Samsung switch, against a fake phone',
     tests: ['OverlayRulesTest'], main: 'com.bloatware.bingblop.OverlayRulesTest', utf8: true },
-  { name: 'sysuirules', title: 'System UI Tuner: Demo Mode, shade and status-bar flag, notification, system action, battery, navigation, display and info commands (names, ranges, quoting, injection) and their readers, every command through a real sh -n',
-    tests: ['SysUiRulesTest'], main: 'com.bloatware.bingblop.SysUiRulesTest', utf8: true },
-  { name: 'sysuiops', title: 'System UI Tuner: what the page sends (demo state, notification, flags, battery, navigation, window) becomes a command or a parsed answer, refusals in words, the notification dump never offered', tests: ['SysUiOpsTest'], main: 'com.bloatware.bingblop.SysUiOpsTest', needs: ['json'] },
   { name: 'parity', title: 'The page and the Java rules give the same answer to the same names, values and colors (compares ~1,300 inputs)',
     kind: 'parity', needs: ['node'] },
   { name: 'filerules', title: 'File manager path rules: canonical form, protected folders', tests: ['FileRulesTest'], main: 'com.bloatware.bingblop.FileRulesTest' },
@@ -57,6 +54,8 @@ const SUITES = [
   { name: 'gpustats', title: 'GPU load/frequency sysfs text parsing: Adreno gpubusy/gpu_busy_percentage, Mali utilization, the devfreq frequency-ratio fallback, combine() priority and the UI label', tests: ['GpuStatsTest'], main: 'com.bloatware.bingblop.GpuStatsTest' },
   { name: 'cpustats', title: '/proc/stat CPU-time parsing: the aggregate and per-core lines, tolerance for missing cores and extra kernel fields, and the busy-percentage math (counter resets, a core-count mismatch)', tests: ['CpuStatsTest'], main: 'com.bloatware.bingblop.CpuStatsTest' },
   { name: 'memstats', title: '/proc/meminfo parsing: the kept keys in any order, a kernel too old for MemAvailable, unknown extra keys, and the usedKb/swapUsedKb formulas', tests: ['MemStatsTest'], main: 'com.bloatware.bingblop.MemStatsTest' },
+  { name: 'ptyshell', title: 'The real terminal: the pty helper (native/pty) and PtyShell: a tty of the asked size, resize, Ctrl-C, UTF-8, status codes, hang-up, flow control, and the scripts that start it on the phone and in Termux', tests: ['PtyShellTest'], main: 'com.bloatware.bingblop.PtyShellTest', needs: ['pty'], utf8: true },
+  { name: 'browserdownload', title: 'What the in-app browser saves: file names (Content-Disposition, address, type), the browser\'s cookies / agent / referer, redirects, refusals in words, a web page is not a file, no partial files left, cancel', tests: ['BrowserDownloadTest'], main: 'com.bloatware.bingblop.BrowserDownloadTest' },
   { name: 'netstats', title: '/proc/net/dev parsing: the two header lines skipped by shape, long interface names, wrong-field-count junk lines, find()/totals with and without loopback, and rate() across a counter reset', tests: ['NetStatsTest'], main: 'com.bloatware.bingblop.NetStatsTest' },
   { name: 'fontscan', title: 'Font search for the app font: which files are fonts, what a font calls itself (the name table in every encoding and shape), the bounded walk and its progress', tests: ['FontScanTest'], main: 'FontScanTest', needs: ['json'] },
   { name: 'splitinfo', title: 'What a split APK\'s manifest says about it (split name, the feature module it configures, feature flag)', tests: ['SplitInfoTest'], main: 'com.bloatware.bingblop.SplitInfoTest' },
@@ -119,6 +118,7 @@ function newestFile(dir, re) {
 }
 
 const NEEDS = {
+  pty: () => ({ props: { ptyexec: path.join(REPO, 'native', 'pty', 'x86_64', 'ptyexec') } }),
   node: () => ({}),
   json: () => {
     const m2 = path.join(os.homedir(), '.m2', 'repository', 'org');

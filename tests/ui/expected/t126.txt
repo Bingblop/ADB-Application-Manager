@@ -1,0 +1,30 @@
+ok   the Terminal tab has a Real terminal button
+ok   it opens full screen and loads xterm.js on the first use
+ok   the session starts with the terminal size of the screen
+ok   the shell prompt appears
+ok   typing on the keyboard reaches the shell and its answer is drawn
+ok   the program sees a terminal of exactly the screen size
+ok   a shorter window (the keyboard) resizes the terminal and tells the program
+ok   and the program now sees the new size
+ok   CTRL then c (extra key + keyboard) stops the running command
+ok   the up arrow key recalls the previous command
+ok   the left arrow key moves the cursor in the line
+ok   the TAB key completes (ech is completed to a command name)
+ok   the symbol row types its characters
+ok   tapping CTRL twice locks it (marked), a third tap frees it
+ok   vim opens on the alternate screen
+ok   what is typed in vim is drawn by it
+ok   ESC then :q! leaves vim and the shell screen is back
+ok   Paste types the clipboard into the terminal
+ok   Copy puts the screen text on the clipboard
+ok   A+ makes the text bigger and remembers it
+ok   the X hides the screen and the session goes on
+ok   opening it again shows the same session (the earlier output is still there)
+ok   Back closes the terminal screen first
+ok   exit ends the program and says how to start a new one
+ok   Enter starts a new shell
+ok   Restart ends the old session and starts another
+ok   choosing another shell restarts with that backend
+ok   the screen tells the app what it has shown (flow control)
+ok   a long output is all there in the scrollback
+errors: []

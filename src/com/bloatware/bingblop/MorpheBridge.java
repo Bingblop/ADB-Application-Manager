@@ -49,6 +49,8 @@ public final class MorpheBridge {
         File downloadsDir();
         /** Whether this app may read shared storage (All files access): without it the Downloads folder looks empty to it. */
         boolean storageAccess();
+        /** Opens the in-app browser at {@code url}; downloads go to {@code dir} and are reported to {@code events}. Returns a way to close it. */
+        Runnable openBrowser(String url, File dir, BrowserDownload.Events events);
     }
 
     private static final String ENGINE_CLASS = "com.bloatware.bingblop.morphe.EngineMain";
@@ -91,15 +93,22 @@ public final class MorpheBridge {
             reply(tag, true, data == null ? new JSONObject() : data, null);
         } catch (Throwable t) {
             String m = t.getMessage();
-            reply(tag, false, null, m == null || m.isEmpty() ? t.getClass().getSimpleName() : m);
+            String browse = t instanceof MorpheHelper.NeedsBrowser ? ((MorpheHelper.NeedsBrowser) t).page : null;
+            reply(tag, false, null, m == null || m.isEmpty() ? t.getClass().getSimpleName() : m, browse);
         }
     }
 
     private void reply(String tag, boolean ok, Object data, String error) {
+        reply(tag, ok, data, error, null);
+    }
+
+    /** {@code browse}: the page a source that needs a browser should be opened at (the page then offers to open it in the in-app browser). */
+    private void reply(String tag, boolean ok, Object data, String error, String browse) {
         try {
             JSONObject r = new JSONObject();
             r.put("tag", tag);
             r.put("ok", ok);
+            if (browse != null && !browse.isEmpty()) r.put("browse", browse);
             if (ok) r.put("data", data); else r.put("error", error == null ? "" : error);
             host.js("window.onMorphe && window.onMorphe(" + literal(r.toString()) + ")");
         } catch (JSONException ignored) {}
@@ -156,6 +165,8 @@ public final class MorpheBridge {
             case "helperSources": return new JSONObject().put("sources", MorpheHelper.sources()).put("defaults", MorpheHelper.settingsDefaults());
             case "helperManual": return new JSONObject().put("url", MorpheHelper.manualUrl(a.optString("source"), a.optString("pkg"), a.optString("version")));
             case "helperVersions": return MorpheHelper.versions(a.optString("source"), a.optString("pkg"));
+            case "helperBrowse": return helperBrowse(a);
+            case "helperBrowseClose": if (browserCloser != null) { final Runnable c = browserCloser; browserCloser = null; c.run(); } return null;
             case "helperDownloads": return helperDownloads(a);
             case "helperAdopt": return helperAdopt(a);
             case "helperGet": return helperGet(a, false);
@@ -673,6 +684,59 @@ public final class MorpheBridge {
             if (l != null) got.put("label", l.toString());
         } catch (Exception ignored) {}
         return got;
+    }
+
+    private volatile Runnable browserCloser;
+
+    /**
+     * The in-app browser for the sources that need a real browser (APKMirror's browser check): opens {@code url} (or the source's own page), and what the person
+     * downloads there is saved into the Helper's folder and described to the page as events {t:"hb", k:"status"|"done"|"failed"|"closed"}.
+     */
+    private JSONObject helperBrowse(JSONObject a) throws Exception {
+        String url = a.optString("url").trim();
+        if (url.isEmpty()) url = MorpheHelper.manualUrl(a.optString("source"), a.optString("pkg"), a.optString("version"));
+        if (!(url.startsWith("https://") || url.startsWith("http://"))) throw new IOException("only web addresses open in the browser");
+        File dir = helperDir(a.optString("save", "cache"));
+        dir.mkdirs();
+        final File folder = dir;
+        browserCloser = host.openBrowser(url, folder, new BrowserDownload.Events() {
+            @Override public void onStatus(String text, int pct) {
+                try { event(new JSONObject().put("t", "hb").put("k", "status").put("text", text).put("pct", pct)); } catch (JSONException ignored) {}
+            }
+            @Override public boolean onDownloaded(File f) {
+                JSONObject e = new JSONObject();
+                boolean good = false;
+                try {
+                    e.put("t", "hb").put("k", "done").put("name", f.getName());
+                    JSONObject info = MorpheHelper.inspect(f);
+                    if (info.optBoolean("ok")) {
+                        good = true;
+                        info.put("fileName", f.getName());
+                        info.put("source", "browser");
+                        try {
+                            PackageManager pm = host.context().getPackageManager();
+                            CharSequence l = pm.getApplicationLabel(pm.getApplicationInfo(info.optString("pkg"), 0));
+                            if (l != null) info.put("label", l.toString());
+                        } catch (Exception ignored) {}
+                        e.put("ok", true).put("info", info);
+                    } else {
+                        e.put("ok", false).put("error", info.optString("error", "that is not an APK, APKS, APKM or XAPK file"));
+                    }
+                } catch (Exception x) {
+                    try { e.put("ok", false).put("error", String.valueOf(x.getMessage())); } catch (JSONException ignored) {}
+                }
+                event(e);
+                return good;
+            }
+            @Override public void onFailed(String why) {
+                try { event(new JSONObject().put("t", "hb").put("k", "failed").put("error", why)); } catch (JSONException ignored) {}
+            }
+            @Override public void onClosed() {
+                browserCloser = null;
+                try { event(new JSONObject().put("t", "hb").put("k", "closed")); } catch (JSONException ignored) {}
+            }
+        });
+        return new JSONObject().put("url", url);
     }
 
     private JSONObject vtScan(JSONObject a) throws Exception {

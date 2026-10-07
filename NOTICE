@@ -28,21 +28,35 @@ SD Maid SE tab
   (src/com/bloatware/bingblop/Sdm*.java). SD Maid's icons, logo, mascot, translations and store texts are not used. SD Maid SE is also on
   Google Play: https://play.google.com/store/apps/details?id=eu.darken.sdmse
 
-System UI Tuner tab
--------------------
-* Tweaker / System UI Tuner (Zachary Wander, zacharee) - MIT - https://github.com/zacharee/Tweaker - Demo Mode (the command protocol and the form),
-  the Battery, Clock and Demo mode Quick Settings tiles. The other cards of the tab (status bar and shade, notification lab, system actions,
-  battery simulator, navigation mode, display and windows, information) are additions of this app, not from Tweaker.
-  Copyright (c) 2023 Zachary Wander
+Terminal tab: the full-screen real terminal
+-------------------------------------------
+* xterm.js 5.5.0 and its fit addon 0.10.0 (the xterm.js authors) - MIT - https://github.com/xtermjs/xterm.js - draws the terminal screen
+  (assets/xterm.js, assets/xterm.css; unchanged, loaded the first time the full-screen terminal opens).
 
-  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the
-  "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish,
-  distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to
-  the following conditions: The above copyright notice and this permission notice shall be included in all copies or substantial portions of
-  the Software. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-  OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-  CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+  Copyright (c) 2017-2019, The xterm.js authors (https://github.com/xtermjs/xterm.js)
+  Copyright (c) 2014-2016, SourceLair Private Company (https://www.sourcelair.com)
+  Copyright (c) 2012-2013, Christopher Jeffrey (https://github.com/chjj/)
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in
+  all copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+  THE SOFTWARE.
+
+* The pseudo-terminal helper (native/pty/ptyexec.c, run as libptyexec.so) and PtyShell.java were written for this app; no code from Termux or
+  any other terminal app. The extra-keys row follows the layout people know from Termux (ESC, CTRL, ALT, arrows, HOME/END, PGUP/PGDN).
 
 Other components
 ----------------

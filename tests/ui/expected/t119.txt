@@ -6,6 +6,8 @@ ok   it has a help "?"
 ok   the four buttons: Sources, Morphe Helper, Patched APKs, Settings
 ok   the engine warning is hidden when the engine is there
 ok   the Apps pane asks to download the official source first
+ok   an icon with an address is the image over its letter, and the letter goes when the image is there
+ok   an icon without an address is its letter
 ok   Download asks the app to download it and then reads its patches
 ok   YouTube and Instagram are listed (both on the phone: by name), with their patch counts
 ok   the recommended version is shown (the newest of the most patched)
@@ -39,6 +41,9 @@ ok   a failed run says so, names the patch and shows the details
 ok   the log has the warning and the error lines in color
 ok   the level filter keeps only the errors
 ok   Copy the log copies it
+ok   a chain of failures leads with the first error and counts the others
+ok   the dependent ones are named only after Show, with the advice to fix the first
+ok   independent failures are all listed as before
 ok   another version is flagged on the page
 ok   patching a patch that is not for this version asks first
 ok   Cancel keeps you on the patch page
@@ -84,6 +89,18 @@ ok   with a key and "ask" a Scan button appears
 ok   a clean file is shown as clean with the engine counts and a link
 ok   a flagged file is shown in red
 ok   a source that changed its page says what to do
+ok   Helper settings have "Try the other sources automatically", off by default
+ok   with it on, a source that fails hands over to the others (Fast mode, the chosen one first) and the file is delivered
+ok   with it off, a failure is just reported
+ok   Open the site opens the browser in the app (not the phone's browser) with the package and the save choice
+ok   it tells what to do there
+ok   a download in the browser shows its progress in the sheet
+ok   a file that is not an app is said so, with what to do
+ok   a good download becomes the result: the bundle with its parts, ready to install or patch
+ok   a source that needs a browser offers to open its page here
+ok   and that opens exactly the page the source named
+ok   with "The phone's browser" chosen in Settings it opens there as before
+ok   Helper settings offer the choice, in the app by default
 ok   Find in Downloads asks the app and lists the files of this package, newest first, with format and parts
 ok   it was asked for the package typed in the box
 ok   Use takes the bundle: Found in Downloads, APKM with its parts, and an Install all parts button

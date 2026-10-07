@@ -418,8 +418,8 @@ sys_free_storage_log_interval|The interval in minutes after which the amount of 
 sys_traced|traced global setting. This controls weather the deamons: traced and traced_probes run. This links the sys.traced system property.
 sys_uidcpupower|UidCpuPower global setting. This links the sys.uidcpupower system property.
 system_server_watchdog_timeout_ms|Timeout for the system server watchdog.
-sysui_demo_allowed|Allows System UI demo mode, which shows a clean status bar for screenshots (see the System UI Tuner tab).|0 = off; 1 = on
-sysui_tuner_demo_on|Demo mode is on right now (System UI Tuner).|0 = off; 1 = on
+sysui_demo_allowed|Allows System UI demo mode, which shows a clean status bar for screenshots.|0 = off; 1 = on
+sysui_tuner_demo_on|Demo mode is on right now.|0 = off; 1 = on
 tcp_default_init_rwnd|Used to select TCP's default initial receiver window size in segments - defaults to a build config value.
 tether_dun_apn|Used to hold a gservices-provisioned apn value for DUN. If set, or the corresponding build config values are set it will override the APN DB values.|a list, items separated by , or :
 tether_dun_required|Tethering needs the special DUN mobile connection.|0 = no; 1 = yes; -1 = decided by the carrier
@@ -665,7 +665,7 @@ charge_optimization_mode|Integer property that determines which charging optimiz
 charging_sounds_enabled|Plays a sound when charging starts.|0 = off; 1 = on
 charging_vibration_enabled|Vibrates when charging starts.|0 = off; 1 = on
 clipboard_show_access_notifications|Shows a message when an app reads what you copied.|0 = off; 1 = on
-clock_seconds|Shows seconds in the status bar clock (System UI Tuner).|0 = off; 1 = on
+clock_seconds|Shows seconds in the status bar clock.|0 = off; 1 = on
 cmas_additional_broadcast_pkg|Specifies additional package name for broadcasting the CMAS messages.
 communal_mode_enabled|Control whether communal mode is allowed on this device.
 communal_mode_trusted_networks|An array of SSIDs of Wi-Fi networks that, when connected, are considered safe to enable the communal mode.
@@ -759,7 +759,7 @@ high_text_contrast_enabled|High contrast text.|0 = off; 1 = on
 hinge_angle_lidevent_enabled|Whether hinge angle lidevent is enabled.|0 = off; 1 = on
 hub_mode_tutorial_state|Defines the user's current state of navigating through the hub mode tutorial. Some possible states are defined in HubModeTutorialState.
 hush_gesture_used|You have used the "hush" gesture once.|0 = no; 1 = yes
-icon_blacklist|Status bar icons that are hidden (System UI Tuner).|icon names separated by commas, e.g. rotate,headset; empty = none hidden
+icon_blacklist|Status bar icons that are hidden.|icon names separated by commas, e.g. rotate,headset; empty = none hidden
 immersive_mode_confirmations|Apps for which you accepted the "full screen" hint.|text, e.g. confirmed or a package list
 in_call_notification_enabled|Plays a sound during calls when a notification comes in.|0 = off; 1 = on
 incall_back_button_behavior|What the Back button does during a call.|0 = nothing; 1 = ends the call
@@ -943,7 +943,7 @@ suppress_doze|Prevents the phone from entering ambient display (doze).|0 = off; 
 swipe_bottom_to_notification_enabled|Swipe down on the bottom edge to open notifications.|0 = off; 1 = on
 sync_parent_sounds|Defines whether managed profile ringtones should be synced from it's parent profile 0 = ringtones are not synced 1 = ringtones are synced from the profile's parent (default) This value is only used for managed profiles.
 system_navigation_keys_enabled|Whether SystemUI navigation keys is enabled.|0 = off; 1 = on
-sysui_nav_bar|The buttons of the navigation bar and their order (System UI Tuner).|text, e.g. space;back,home;recent
+sysui_nav_bar|The buttons of the navigation bar and their order.|text, e.g. space;back,home;recent
 sysui_qs_tiles|Quick Settings tiles and their order.|list of tile names separated by commas, e.g. wifi,bt,dnd,flashlight
 tap_gesture|Tap to check the phone.|0 = off; 1 = on
 taps_app_to_exit|For user taps app to exit One-Handed Mode.

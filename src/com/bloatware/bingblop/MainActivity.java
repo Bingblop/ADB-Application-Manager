@@ -574,7 +574,6 @@ public class MainActivity extends Activity {
                 try {
                     if (QuickActions.ACTION_CYCLE_MODE.equals(action)) message = quickCycleMode();
                     else if (QuickActions.ACTION_STOP_LIST.equals(action)) message = quickStopList();
-                    else if (QuickActions.ACTION_DEMO_TOGGLE.equals(action)) message = quickDemoToggle();
                     else message = "Unknown quick action";
                 } catch (Exception e) {
                     message = "Failed: " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
@@ -699,16 +698,6 @@ public class MainActivity extends Activity {
             });
         }
         return sdmHostInstance;
-    }
-
-    /** The Demo mode Quick Settings tile: turns the status bar demo on (and allows it) or off. */
-    private String quickDemoToggle() {
-        if ("standard".equals(resolveExecMode())) return "Needs ADB, Shizuku or Root. Set up a working mode first.";
-        boolean on = !DemoTileService.isOn(this);
-        String out = new AndroidBridge().executeShell(on ? SysUiRules.demoAllowCommands(true) + "\n" + SysUiRules.demoEnter() : SysUiRules.demoExit());
-        if (out == null || !out.contains("Broadcast completed")) return "Demo mode: the device did not answer";
-        DemoTileService.setOn(this, on);
-        return on ? "Demo mode on" : "Demo mode off";
     }
 
     /** Force-stops every app in the quick list. */
@@ -1442,11 +1431,86 @@ public class MainActivity extends Activity {
                     .append("local c=\"$1\"; shift; command apt \"$c\" -y \"$@\";; *) command apt \"$@\";; esac; }; ");
             // "profile" (login shell) already reads ~/.bash_profile or ~/.profile; neither of those pulls in ~/.bashrc
             // unless the user's own profile chains to it, so without this, aliases/functions/exports a Termux user
-            // keeps in .bashrc would silently be missing here even with the login profile on.
-            if (matchEnv) s.append("[ -f \"$HOME/.bashrc\" ] && . \"$HOME/.bashrc\" >/dev/null 2>&1; ");
+            // keeps in .bashrc would silently be missing here even with the login profile on. Two things stop a plain
+            // "source ~/.bashrc" in this (non-interactive) shell: aliases are not expanded unless asked for, and the usual
+            // first lines of a .bashrc ("[[ $- != *i* ]] && return", "case $- in *i*) ;; *) return;; esac") end the file at once.
+            // So aliases are switched on and those guard lines are left out of the copy that is read.
+            if (matchEnv) {
+                s.append("if [ -f \"$HOME/.bashrc\" ]; then shopt -s expand_aliases 2>/dev/null; ")
+                        .append(". <(sed -e '/^[[:space:]]*\\[\\[ *\\$- *!= *\\*i\\* *\\]\\] *&& *return/d' -e '/^[[:space:]]*\\[ *-z *\"\\$PS1\" *\\] *&& *return/d' ")
+                        .append("-e '/^[[:space:]]*case *\\$- *in/,/^[[:space:]]*esac/d' \"$HOME/.bashrc\") >/dev/null 2>&1; fi; ");
+            }
+            // what "Sync with Termux" shows once the shell is up: the proof that this shell is Termux's, and what it took over
+            s.append("adbmgr_sync_report() { local a=0 f=0 n; while read -r _; do a=$((a+1)); done < <(alias 2>/dev/null); ")
+                    .append("while read -r _ _ n; do case \"$n\" in _*|pkg|apt|adbmgr_*) ;; *) f=$((f+1));; esac; done < <(declare -F 2>/dev/null); ")
+                    .append("printf 'Synced with Termux\\n  bash %s, home %s\\n  packages in %s\\n  taken from ~/.bashrc: %s aliases, %s functions\\n  phone storage: %s\\n' ")
+                    .append("\"$BASH_VERSION\" \"$HOME\" \"${PREFIX:-unknown}\" \"$a\" \"$f\" ")
+                    .append("\"$([ -d \"$HOME/storage/shared\" ] && echo 'set up' || echo 'not set up yet: Settings > Set up storage in Termux')\"; }; ");
         }
         s.append("true");
         return s.toString();
+    }
+
+    // ---- The real terminal (a pseudo-terminal through libptyexec.so, see PtyShell): the full-screen Terminal's sessions ----
+    private final Map<String, PtyShell> ptySessions = new java.util.concurrent.ConcurrentHashMap<String, PtyShell>();
+
+    private File ptyHelper() {
+        return new File(getApplicationInfo().nativeLibraryDir, "libptyexec.so");
+    }
+
+    private static String shq(String s) {
+        return RishShell.quote(s);
+    }
+
+    /** The process that runs a shell on a pty for {@code backend}: app (this app's sandbox), priv (the working mode: Shizuku, Root or ADB) or termux. */
+    private Process ptyProcess(String backend, int rows, int cols) throws Exception {
+        File helper = ptyHelper();
+        if (!helper.isFile()) throw new IOException("this build of the app has no terminal helper for this phone's processor");
+        String h = helper.getAbsolutePath();
+        if ("termux".equals(backend)) {
+            checkTermuxReady();
+            return TermuxLink.openPtySession(TermuxBridge.launcher(this), h, rows, cols, TermuxBridge.BASH, "", 25000);
+        }
+        String kind = "app".equals(backend) ? "app" : termPrivKind();
+        if (kind == null) throw new IOException("There is no working mode that can open a terminal: set up ADB, Shizuku or Root first");
+        if ("app".equals(kind)) {
+            File home = new File(getFilesDir(), "home");
+            if (!home.isDirectory()) home.mkdirs();
+            ProcessBuilder pb = new ProcessBuilder(PtyShell.command(h, rows, cols, java.util.Collections.singletonList("/system/bin/sh")));
+            pb.directory(home);
+            Map<String, String> env = pb.environment();
+            env.put("HOME", home.getAbsolutePath());
+            env.put("TMPDIR", getCacheDir().getAbsolutePath());
+            env.put("TERM", "xterm-256color");
+            env.put("COLORTERM", "truecolor");
+            env.put("LANG", "en_US.UTF-8");
+            pb.redirectErrorStream(true);
+            return pb.start();
+        }
+        if ("adb".equals(kind)) {
+            // adb's own client gets the terminal: it then asks the phone for a terminal of the same size and follows resizes
+            String target = "adb_wireless".equals(resolveExecMode()) ? wirelessTarget() : tcpTarget();
+            ProcessBuilder adb = buildAdbProcess("-s", target, "shell");
+            ProcessBuilder pb = new ProcessBuilder(PtyShell.command(h, rows, cols, adb.command()));
+            pb.environment().putAll(adb.environment());
+            pb.environment().put("TERM", "xterm-256color");
+            pb.redirectErrorStream(true);
+            return pb.start();
+        }
+        // Shizuku and Root run the helper as the phone's shell user / root: a shell on a pty there
+        String script = "export TERM=xterm-256color COLORTERM=truecolor LANG=en_US.UTF-8 HOME=/data/local/tmp\ncd /data/local/tmp 2>/dev/null\n"
+                + PtyShell.launchScript(h, "/data/local/tmp/.adbmgr-ptyexec", rows, cols, "/system/bin/sh");
+        if ("root".equals(kind)) {
+            ProcessBuilder pb = new ProcessBuilder("su", "-c", script);
+            pb.redirectErrorStream(true);
+            return pb.start();
+        }
+        return rishSpawn(new String[]{"sh", "-c", script});
+    }
+
+    private void closePtySessions() {
+        for (PtyShell p : ptySessions.values()) p.close();
+        ptySessions.clear();
     }
 
     private void closeTermSessions() {
@@ -6683,6 +6747,16 @@ public class MainActivity extends Activity {
             @Override public boolean connectionOk(String conn) { return morpheConnectionOk(conn); }
             @Override public File downloadsDir() { return android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS); }
             @Override public boolean storageAccess() { return hasStorageAccess(); }
+            @Override public Runnable openBrowser(final String url, final File dir, final BrowserDownload.Events events) {
+                final HelperBrowser[] box = new HelperBrowser[1];
+                runOnUiThread(new Runnable() {
+                    @Override public void run() {
+                        try { box[0] = HelperBrowser.show(MainActivity.this, url, dir, events); }
+                        catch (Throwable t) { Log.e(TAG, "in-app browser failed", t); events.onFailed("the browser could not be opened: " + t.getMessage()); events.onClosed(); }
+                    }
+                });
+                return new Runnable() { @Override public void run() { runOnUiThread(new Runnable() { @Override public void run() { if (box[0] != null) box[0].close(); } }); } };
+            }
         }, new File(getFilesDir(), "morphe"));
         return morpheBridge;
     }
@@ -7728,6 +7802,92 @@ public class MainActivity extends Activity {
                 sh = s == null ? null : s.shell;
             }
             if (sh != null) sh.stop();
+        }
+
+        /**
+         * The full-screen terminal: a real pseudo-terminal (vim, nano, top, htop, ssh ...). {@code backend}: "app", "priv" or "termux".
+         * Answers "started" or "error: ..."; then window.onPtyStarted(id, json{ok, message}), the output as window.onPtyData(id, base64) (the page tells
+         * what it has shown with ptyAck, so a runaway program cannot flood it) and the end as window.onPtyExit(id, code).
+         */
+        @JavascriptInterface
+        public String ptyStart(final String id, final String backend, final int rows, final int cols) {
+            if (id == null || id.isEmpty()) return "error: no id";
+            final String key = id;
+            PtyShell old = ptySessions.remove(key);
+            if (old != null) old.close();
+            executor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject res = new JSONObject();
+                    try {
+                        Process proc = ptyProcess(backend, rows, cols);
+                        PtyShell sh = new PtyShell(proc, new PtyShell.Listener() {
+                            @Override
+                            public void onData(byte[] data, int n) {
+                                notifyJs("window.onPtyData&&window.onPtyData(" + JSONObject.quote(key) + ",\"" + android.util.Base64.encodeToString(data, 0, n, android.util.Base64.NO_WRAP) + "\")");
+                            }
+
+                            @Override
+                            public void onExit(int code) {
+                                ptySessions.remove(key);
+                                notifyJs("window.onPtyExit&&window.onPtyExit(" + JSONObject.quote(key) + "," + code + ")");
+                            }
+                        });
+                        ptySessions.put(key, sh);
+                        res.put("ok", true);
+                    } catch (Throwable t) {
+                        try {
+                            res.put("ok", false);
+                            res.put("message", errMsg(t));
+                        } catch (Exception ignored) {}
+                    }
+                    notifyJs("window.onPtyStarted&&window.onPtyStarted(" + JSONObject.quote(key) + "," + res + ")");
+                }
+            });
+            return "started";
+        }
+
+        /** Keys for the terminal: base64 of the UTF-8 bytes (escape sequences included). */
+        @JavascriptInterface
+        public void ptyWrite(String id, String base64) {
+            PtyShell p = id == null ? null : ptySessions.get(id);
+            if (p == null || base64 == null) return;
+            try {
+                byte[] d = android.util.Base64.decode(base64, android.util.Base64.DEFAULT);
+                p.write(d, 0, d.length);
+            } catch (Exception ignored) {}
+        }
+
+        @JavascriptInterface
+        public void ptyResize(String id, int rows, int cols) {
+            PtyShell p = id == null ? null : ptySessions.get(id);
+            if (p == null) return;
+            try {
+                p.resize(rows, cols);
+            } catch (Exception ignored) {}
+        }
+
+        /** The page has shown {@code n} more bytes of output. */
+        @JavascriptInterface
+        public void ptyAck(String id, int n) {
+            PtyShell p = id == null ? null : ptySessions.get(id);
+            if (p != null) p.ack(n);
+        }
+
+        @JavascriptInterface
+        public void ptyClose(String id) {
+            PtyShell p = id == null ? null : ptySessions.remove(id);
+            if (p != null) p.close();
+        }
+
+        /** Whether this build can open a real terminal on this phone: {"helper":true|false}. */
+        @JavascriptInterface
+        public String ptyInfo() {
+            try {
+                return new JSONObject().put("helper", ptyHelper().isFile()).toString();
+            } catch (Exception e) {
+                return "{\"helper\":false}";
+            }
         }
 
         /** Closes {@code backend}'s shell (the next termStart opens a new one). */
@@ -9406,49 +9566,6 @@ public class MainActivity extends Activity {
                     notifyJs("window.onSdmReply && window.onSdmReply({tag:" + JSONObject.quote(String.valueOf(tag)) + ",r:" + r + "})");
                 }
             });
-        }
-
-        /** The System UI Tuner tab: the command (or the parsed answer) for one operation, {"ok":true,"cmd":...} | {"ok":true,"data":...} | {"ok":false,"error":...}. Nothing runs here. */
-        @JavascriptInterface
-        public String sysui(String op, String argsJson) {
-            return SysUiOps.run(op, argsJson);
-        }
-
-        /** The System UI Tuner's Quick Settings tiles: state, set (1 or 0), add (asks Android), demoFlag (the Demo tile's own memory). Answer: JSON. */
-        @JavascriptInterface
-        public String sysuiTile(String op, String name, String arg) {
-            try {
-                final Class<?> tile = "battery".equals(name) ? BatteryTileService.class : "clock".equals(name) ? ClockTileService.class : "demo".equals(name) ? DemoTileService.class : null;
-                if ("state".equals(op)) {
-                    JSONObject tiles = new JSONObject();
-                    tiles.put("battery", new JSONObject().put("enabled", TileSwitch.isEnabled(MainActivity.this, BatteryTileService.class)));
-                    tiles.put("clock", new JSONObject().put("enabled", TileSwitch.isEnabled(MainActivity.this, ClockTileService.class)));
-                    tiles.put("demo", new JSONObject().put("enabled", TileSwitch.isEnabled(MainActivity.this, DemoTileService.class)).put("on", DemoTileService.isOn(MainActivity.this)));
-                    return new JSONObject().put("ok", true).put("tiles", tiles).put("canAdd", Build.VERSION.SDK_INT >= 33).toString();
-                }
-                if ("demoFlag".equals(op)) {
-                    DemoTileService.setOn(MainActivity.this, "1".equals(arg));
-                    return "{\"ok\":true}";
-                }
-                if (tile == null) return "{\"ok\":false,\"error\":\"Unknown tile\"}";
-                if ("set".equals(op)) {
-                    boolean ok = TileSwitch.setEnabled(MainActivity.this, tile, "1".equals(arg));
-                    return new JSONObject().put("ok", ok).put("error", ok ? "" : "Android did not accept the change").toString();
-                }
-                if ("add".equals(op)) {
-                    if (Build.VERSION.SDK_INT < 33) return "{\"ok\":false,\"error\":\"Open the quick settings editor and drag the tile in (Android 13 and newer can ask for you)\"}";
-                    if (!TileSwitch.isEnabled(MainActivity.this, tile)) return "{\"ok\":false,\"error\":\"Turn the tile on first\"}";
-                    final String label = "battery".equals(name) ? "Battery" : "clock".equals(name) ? "Clock" : "Demo mode";
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() { TileSwitch.requestAdd(MainActivity.this, tile, label); }
-                    });
-                    return "{\"ok\":true}";
-                }
-                return "{\"ok\":false,\"error\":\"Unknown operation\"}";
-            } catch (Exception e) {
-                return "{\"ok\":false,\"error\":\"" + String.valueOf(e.getMessage()).replace("\\", " ").replace("\"", "'") + "\"}";
-            }
         }
 
         /** Lets the user choose package files (APK, APKS, APKM, XAPK) to send. Answer: window.onCdPicked({tag, files:[{name, path, size} | {name, error}]}). */
@@ -13713,6 +13830,19 @@ public class MainActivity extends Activity {
             });
         }
 
+        /** The text on the clipboard (the full-screen Terminal's Paste): the page cannot read it by itself in a web view. */
+        @JavascriptInterface
+        public String getClipboardText() {
+            try {
+                ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                if (cm == null || !cm.hasPrimaryClip() || cm.getPrimaryClip().getItemCount() == 0) return "";
+                CharSequence t = cm.getPrimaryClip().getItemAt(0).coerceToText(MainActivity.this);
+                return t == null ? "" : t.toString();
+            } catch (Exception e) {
+                return "";
+            }
+        }
+
         /** Tints the status and navigation bars to match the active theme background. */
         @JavascriptInterface
         public void setSystemBarColor(final String hex) {
@@ -13903,6 +14033,7 @@ public class MainActivity extends Activity {
         } catch (Throwable ignored) {}
         try {
             closeTermSessions();
+            closePtySessions();
             for (AiHttp c : aiCalls.values()) c.cancel();
             aiExecutor.shutdown();
         } catch (Throwable ignored) {}

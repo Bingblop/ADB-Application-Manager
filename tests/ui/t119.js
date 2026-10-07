@@ -92,9 +92,10 @@ const { chromium, PAGE, fixture } = require('./lib/pw');
             { id: 'apkcombo', name: 'APKCombo', direct: true }, { id: 'aptoide', name: 'Aptoide', direct: true }, { id: 'evozi', name: 'Evozi', direct: false }, { id: 'mi9', name: 'Mi9', direct: false },
             { id: 'apkdownloader', name: 'APK Downloader', direct: false }, { id: 'aurora', name: 'Aurora', direct: false }, { id: 'play', name: 'Play', direct: false }] });
           case 'helperVersions': return ok({ ok: true, pkg: a.pkg, name: 'YouTube', versions: [{ version: '20.51.39', format: 'apk', size: 123456789, url: 'https://x/y.apk' }, { version: '20.21.37', format: 'apks', abi: 'arm64-v8a', size: 99000000, url: 'https://x/z.apks' }] });
-          case 'helperGet': case 'helperFast': if (M.helperFail) return bad('Uptodown changed its page format, open it in the browser'); return ok({ ok: true, path: '/cache/h/youtube_20.21.37.apk', fileName: 'youtube_20.21.37.apk', pkg: a.pkg, versionName: a.version || '20.51.39', versionCode: 1546420000, format: 'apk', size: 123456789, sha256: 'ab'.repeat(32), tried: [] }, 30);
+          case 'helperGet': case 'helperFast': if (M.helperBrowseUrl) return setTimeout(() => window.onMorphe({ tag, ok: false, error: 'APKMirror: blocked by its browser check. Open it in the browser.', browse: M.helperBrowseUrl }), 5); if (M.helperFail && !(op === 'helperFast' && M.fastOk)) return bad('Uptodown changed its page format, open it in the browser'); return ok({ ok: true, path: '/cache/h/youtube_20.21.37.apk', fileName: 'youtube_20.21.37.apk', pkg: a.pkg, versionName: a.version || '20.51.39', versionCode: 1546420000, format: 'apk', size: 123456789, sha256: 'ab'.repeat(32), tried: [] }, 30);
           case 'helperDownloads': return ok(M.dlAccess ? { ok: true, access: true, folder: '/storage/emulated/0/Download', items: a.pkg === 'com.google.android.youtube' ? M.dlItems : [], scanned: 4, other: a.pkg === 'com.google.android.youtube' ? 1 : 4, unreadable: 0 } : { ok: true, access: false, items: [] });
           case 'helperAdopt': { const x = M.dlItems.find(i => i.path === a.path); if (!x) return bad('that file is not one this app may read'); return ok({ ok: true, path: '/cache/h/' + x.name, fileName: x.name, pkg: x.pkg, versionName: x.versionName, versionCode: x.versionCode, format: x.format, splits: x.splits, size: x.size, sha256: 'ef'.repeat(32), source: 'downloads' }); }
+          case 'helperBrowse': M.browseArgs = a; return ok({ url: a.url || 'https://www.apkmirror.com/?s=' + a.pkg });
           case 'helperManual': return ok({ url: 'https://www.apkmirror.com/?s=' + a.pkg });
           case 'vtQuota': return ok({ perMinuteUsed: 1, perMinuteLimit: 4, perDayUsed: 12, perDayLimit: 500 });
           case 'vtValidate': return a.key === 'good' ? ok({}) : bad('VirusTotal refused the key (401)');
@@ -124,6 +125,20 @@ const { chromium, PAGE, fixture } = require('./lib/pw');
   check('the engine warning is hidden when the engine is there', !(await show('#mpEngineWarn')));
   check('the Apps pane asks to download the official source first', /Get the Morphe patches/.test(await text('#mpAppList')) && /Download Morphe Patches/.test(await text('#mpAppList')));
   await page.screenshot({ path: 'morphe_empty.png' });
+
+  // an icon that has an address is the image over its letter (the letter used to sit beside it), and the letter goes away when the image is there
+  const ico = await ev(async () => {
+    const d = document.createElement('div'); d.className = 'mp-ico'; d.id = 'icoT';
+    d.innerHTML = mpIcon('no.such.pkg', 'Gboard', 'data:image/gif;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA=');
+    document.getElementById('mpAppList').appendChild(d);
+    await new Promise(r => setTimeout(r, 200));
+    const i = d.querySelector('img'), l = d.querySelector('span');
+    const out = { pos: i && getComputedStyle(i).position, hasLetter: !!l, letterHidden: !!l && getComputedStyle(l).visibility === 'hidden', imgW: i && Math.round(i.getBoundingClientRect().width), boxW: Math.round(d.getBoundingClientRect().width) };
+    d.remove(); return out;
+  });
+  check('an icon with an address is the image over its letter, and the letter goes when the image is there', ico.pos === 'absolute' && ico.hasLetter && ico.letterHidden && ico.imgW === ico.boxW, JSON.stringify(ico));
+  const ico2 = await ev(() => { const d = document.createElement('div'); d.innerHTML = mpIcon('no.such.pkg', 'Gboard', ''); return d.innerText; });
+  check('an icon without an address is its letter', ico2 === 'G', ico2);
 
   // ---- download the official source ----
   await page.click('#mpAppList .mode-action-btn.primary'); await wait(500);
@@ -199,6 +214,16 @@ const { chromium, PAGE, fixture } = require('./lib/pw');
   await page.click('#mpResult .mode-action-btn:nth-child(2)'); await wait(100);
   check('Copy the log copies it', await ev(() => /SponsorBlock failed/.test(window.__copied || '')));
   await page.screenshot({ path: 'morphe_failed.png' });
+  // patches that failed only because the one they need failed: the first error leads, the others are counted and folded
+  await ev(() => mpResultRender({ success: false, error: 'Patching failed', failed: [
+    { name: 'Gboard extension', error: 'java.lang.NoSuchMethodException: getPatchClasses$morphe_patcher []\n  at x.y.z' },
+    { name: 'Hide ads', error: '"Hide ads" depends on "Gboard extension", which raised an exception' },
+    { name: 'Dark theme', error: '"Dark theme" depends on "Gboard extension", which raised an exception' }] }));
+  const chain = await ev(() => ({ t: document.getElementById('mpResult').innerText, shown: Array.from(document.querySelectorAll('#mpResult .mp-trace')).filter(e => getComputedStyle(e).display !== 'none').map(e => e.innerText) }));
+  check('a chain of failures leads with the first error and counts the others', /Gboard extension/i.test(chain.t) && /NoSuchMethodException/.test(chain.shown[0] || '') && /2 more failed only because a patch they need failed/i.test(chain.t) && /different Morphe version/.test(chain.t) && chain.shown.length === 1, JSON.stringify(chain));
+  check('the dependent ones are named only after Show, with the advice to fix the first', await ev(() => { const e = document.getElementById('mpTraceDeps'); const hidden = getComputedStyle(e).display === 'none'; mpToggleTrace('Deps'); return hidden && getComputedStyle(e).display !== 'none' && /Hide ads, Dark theme/.test(e.innerText) && /Fix the first failure/.test(e.innerText); }));
+  await ev(() => mpResultRender({ success: false, error: 'x', failed: [{ name: 'A', error: 'boom' }, { name: 'B', error: 'boom too' }] }));
+  check('independent failures are all listed as before', await ev(() => !/only because/.test(document.getElementById('mpResult').innerText) && /boom too/.test(document.getElementById('mpResult').innerHTML)));
 
   // ---- an unsupported version ----
   await ev(() => { window.__mp.failNext = false; window.__mp.instVer = '19.9.9'; });
@@ -318,6 +343,41 @@ const { chromium, PAGE, fixture } = require('./lib/pw');
   await ev(() => { window.__mp.helperFail = true; mp.h.got = null; mp.h.vt = null; mpHelperRender(); });
   await page.click('#mpSheetBody .mp-hflows .mp-act:nth-child(1)'); await wait(300);
   check('a source that changed its page says what to do', /changed its page format/.test(await text('#mpHMsg')));
+  // the setting that goes on with the next source by itself
+  check('Helper settings have "Try the other sources automatically", off by default', await ev(() => { mpHTab('set'); const t = document.getElementById('mpSheetBody').innerText; mpHTab('get'); return /Try the other sources automatically/.test(t) && mp.cfg.hCycle === false; }));
+  await ev(() => { window.__mp.fastOk = true; mp.cfg.hCycle = true; mp.h.got = null; mp.h.err = false; mp.h.msg = ''; mpHelperRender(); });
+  const c0 = (await calls()).length;
+  await page.click('#mpSheetBody .mp-hflows .mp-act:nth-child(2)'); await wait(500);
+  const cyc = (await calls()).slice(c0);
+  check('with it on, a source that fails hands over to the others (Fast mode, the chosen one first) and the file is delivered', cyc.includes('helperGet') && cyc.includes('helperFast') && await ev(() => !!mp.h.got && !mp.h.err), cyc.join());
+  await ev(() => { mp.cfg.hCycle = false; mp.h.got = null; mp.h.err = false; mp.h.msg = ''; mpHelperRender(); });
+  const c1 = (await calls()).length;
+  await page.click('#mpSheetBody .mp-hflows .mp-act:nth-child(2)'); await wait(400);
+  check('with it off, a failure is just reported', !(await calls()).slice(c1).includes('helperFast') && await ev(() => !mp.h.got && mp.h.err));
+  await ev(() => { window.__mp.fastOk = false; });
+
+  // ---- the browser inside the app ----
+  await ev(() => { window.__mp.helperFail = false; mp.h.got = null; mp.h.err = false; mp.h.msg = ''; mp.h.browse = ''; mp.cfg.hBrowser = 'inapp'; document.getElementById('mpHPkg').value = 'com.google.android.inputmethod.latin'; mpHRead(); mpHelperRender(); });
+  await page.click('#mpSheetBody .mp-hflows .mp-act:has-text("Open the site")'); await wait(200);
+  check('Open the site opens the browser in the app (not the phone\'s browser) with the package and the save choice', (await calls()).includes('helperBrowse') && await ev(() => window.__mp.browseArgs.pkg === 'com.google.android.inputmethod.latin' && window.__mp.browseArgs.save === 'cache' && !(window.__urls || []).length));
+  check('it tells what to do there', /download button/.test(await text('#mpHMsg')));
+  await ev(() => window.onMorpheEvent({ t: 'hb', k: 'status', text: 'Downloading 3 of 90 MB (3%)', pct: 3 })); await wait(50);
+  check('a download in the browser shows its progress in the sheet', /Downloading 3 of 90 MB/.test(await text('#mpHMsg')));
+  await ev(() => window.onMorpheEvent({ t: 'hb', k: 'done', ok: false, name: 'page.apkm', error: 'there is no AndroidManifest.xml' })); await wait(50);
+  check('a file that is not an app is said so, with what to do', /page\.apkm was saved, but it is not an app file/.test(await text('#mpHMsg')) && !(await ev(() => !!mp.h.got)));
+  await ev(() => window.onMorpheEvent({ t: 'hb', k: 'done', ok: true, name: 'gboard.apkm', info: { ok: true, path: '/cache/h/gboard.apkm', fileName: 'gboard.apkm', pkg: 'com.google.android.inputmethod.latin', versionName: '18.0.3.954559732-release-arm64-v8a', versionCode: 954559732, format: 'apkm', splits: 4, size: 90000000, sha256: 'ab'.repeat(32), source: 'browser' } })); await wait(100);
+  check('a good download becomes the result: the bundle with its parts, ready to install or patch', await ev(() => { const t = document.getElementById('mpSheetBody').innerText; return /APKM, 4 parts/.test(t) && /saved from the browser/.test(t) && /Install all parts/.test(t) && /Patch this file/.test(t); }));
+  await ev(() => { window.__mp.helperBrowseUrl = 'https://www.apkmirror.com/apk/google-inc/gboard/'; mp.h.got = null; mp.h.msg = ''; mpHelperRender(); });
+  await page.click('#mpSheetBody .mp-hflows .mp-act:nth-child(2)'); await wait(300);
+  check('a source that needs a browser offers to open its page here', /Open it here, in the app/.test(await text('#mpSheetBody')) && /browser check/.test(await text('#mpHMsg')));
+  await page.click('#mpSheetBody button:has-text("Open it here, in the app")'); await wait(200);
+  check('and that opens exactly the page the source named', await ev(() => window.__mp.browseArgs.url === 'https://www.apkmirror.com/apk/google-inc/gboard/'));
+  await ev(() => { window.__mp.helperBrowseUrl = ''; mp.cfg.hBrowser = 'external'; mp.h.browse = ''; mpHelperRender(); });
+  const urls0 = await ev(() => (window.__urls || []).length);
+  await page.click('#mpSheetBody .mp-hflows .mp-act:has-text("Open the site")'); await wait(250);
+  check('with "The phone\'s browser" chosen in Settings it opens there as before', await ev(n => (window.__urls || []).length === n + 1, urls0));
+  check('Helper settings offer the choice, in the app by default', await ev(() => { mpHTab('set'); const t = document.getElementById('mpSheetBody').innerText; const ok = /Open the sources in/.test(t) && MP_DEFAULTS.hBrowser === 'inapp'; mpHTab('get'); return ok; }));
+  await ev(() => { mp.cfg.hBrowser = 'inapp'; mp.h.got = null; mp.h.msg = ''; mpHelperRender(); document.getElementById('mpHPkg').value = 'com.google.android.youtube'; mpHRead(); });
 
   // ---- bundles (APKM / APKS / XAPK) saved by the browser are found in Downloads ----
   await ev(() => { window.__mp.helperFail = false; mp.h.got = null; mp.h.err = false; mp.h.msg = ''; mpHelperRender(); });
