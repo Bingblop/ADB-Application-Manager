@@ -2,6 +2,30 @@
 
 ## v7.10.3-Pro (versionCode 823)
 
+- **System UI Tuner is gone.** Its tab, its code (SysUiOps, SysUiRules, the Battery, Clock and Demo mode Quick Settings tiles, their manifest entries and
+  the Demo toggle), its tests, its section of the Help Guide, its entries in README, FULL-GUIDE, the device checklist and NOTICE (Tweaker's MIT notice)
+  are removed. The Working mode and Stop apps tiles, the widget and everything else stay.
+- **App Stores: a README reads as text.** A GitHub app's description is Markdown (Mihon showed `# Mihon [App](#) ![badge](...)`). Headings, badges and
+  images (dropped), links (their text), bold, italics, code, lists, tables and quotes are now turned into plain text with its line breaks, and long
+  addresses wrap instead of running off the sheet.
+- **Bottom sheets work from their handle.** The small bar at the top of every sheet: pull it up for more room, pull it down to make a pulled-up sheet
+  small again and, from normal size, to close it (a short pull springs back).
+- **Morphe Helper: a version named with its build flavour is found.** Gboard's own version name is `18.0.3.954559732-release-arm64-v8a`, APKMirror lists
+  `18.0.3.954559732`, so "does not list version ..." appeared although the release (an APKM) exists. CPU and `release` words inside a version name no
+  longer make a difference when versions are compared, for every source.
+- **Morphe Helper setting: Try the other sources automatically.** Off by default. On, This version, Newest and All versions go on with the next source
+  when the chosen one does not have the version or does not work.
+- **Morphe community finder: icons.** An app's icon was drawn beside its first letter and stretched; it now covers the letter, which is shown only until the
+  picture is there.
+- **Apps tab: the Action Button menu.** No label before it; the menu sits where the label was and shows the current choice. Tapping it opens a sheet with a title,
+  a few words about what it edits and a line under every choice.
+- **Terminal: Sync with Termux says what it did.** It starts the Termux shell again and prints what it took over (bash version, home, package folder, aliases,
+  functions, phone storage). Aliases now work (they are off in a shell that has no keyboard until asked for), and a `~/.bashrc` that begins with the usual
+  "only for interactive shells" line is read anyway. Termux itself no longer opens on every sync: **Set up storage in Termux** does that, and only when
+  phone storage is not set up (before, `termux-setup-storage` asked to rebuild `~/storage` each time).
+- **Terminal: Full screen.** A button below the screen makes the Terminal cover the whole app, with the screen taking the room above the input and the extra
+  keys, following the on-screen keyboard. Back, the same button, or leaving the tab comes out of it.
+- Translation work is on hold until the feature set is finished.
 - **Morphe Patcher: a chain of failed patches is one error.** When a patch raises an exception, every patch that depends on it fails with
   "depends on ..., which raised an exception" (Gboard showed 41 of them). The result card now leads with the first error, details open, and
   folds the dependent ones into **N more failed only because a patch they need failed** (Show names them). A bundle that asks the patcher for

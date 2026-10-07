@@ -1068,6 +1068,10 @@ public class MorpheHelperTest {
         mirror.hits.clear();
         Throwable blocked = err(() -> MorpheHelper.resolve("apkmirror", PKG, "0.8.0", "arm64-v8a", "requested"));
         check("apkmirror resolve: uploads pages that are blocked leave the plain 'does not list' answer", has(blocked, "does not list version 0.8.0"), msg(blocked));
+        check("version names: the build flavour inside the name (Gboard's -release-arm64-v8a) is the same release", MorpheHelper.versionNameEquals("18.0.3.954559732", "18.0.3.954559732-release-arm64-v8a", false) && MorpheHelper.versionNameEquals("18.0.3.954559732-release-arm64-v8a", "18.0.3.954559732-release-arm64-v8a", false) && !MorpheHelper.versionNameEquals("18.0.3.954559732", "18.0.4.954559732-release-arm64-v8a", false) && !MorpheHelper.versionNameEquals("18.0.3.954559732", "18.0.3.954559733-release-arm64-v8a", false));
+        mirrorRoutes();
+        JSONObject flavour = MorpheHelper.resolve("apkmirror", PKG, "1.0.3-release-arm64-v8a", "arm64-v8a", "requested");
+        check("apkmirror resolve requested: a version named with its build flavour finds the release APKMirror lists without it", "1.0.3".equals(flavour.getString("version")), flavour.toString());
         check("apkmirror: the uploads page address for page n", "https://x.test/uploads/page/3/?appcategory=a".equals(MorpheHelper.mirrorUploadsPage("https://x.test/uploads/?appcategory=a", 3)));
 
     }

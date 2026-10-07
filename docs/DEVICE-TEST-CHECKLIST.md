@@ -18,6 +18,11 @@ it works; write down what you saw when it does not.
 - [ ] Morphe Helper: download the APKM of an app in the browser (Open the site), come back: it is listed under "In Downloads" with its parts; Use, then Patch this file, and Install all parts with and without a working mode (v7.10.2).
 - [ ] Morphe Helper > All versions on APKMirror for com.google.android.inputmethod.latin: versions older than the newest ten appear (and Gboard 18.0.3.954559732 with This version), or, if APKMirror blocks it, only the newest and no error (v7.10.3).
 - [ ] Morphe Patcher: a run where one patch fails: the card shows the first error open and "N more failed only because a patch they need failed" folded (v7.10.3).
+- [ ] Terminal > Settings > Sync with Termux: the Termux shell restarts and prints "Synced with Termux" with your aliases and functions counted (put `alias hi='echo hello'` in Termux's ~/.bashrc, sync, run `hi`); Termux does not open. Set up storage in Termux: opens Termux only when storage is not set up, otherwise says it is (v7.10.3).
+- [ ] Terminal > Full screen: covers the app, the screen fills the room, the on-screen keyboard does not hide the input line or the extra keys, Back comes out (v7.10.3).
+- [ ] Any bottom sheet: pull the bar at its top up (bigger), down (smaller, then closes) (v7.10.3).
+- [ ] Apps tab: the Action Button menu at the end of the row opens a sheet with a title and a line per choice; App Stores: Mihon's description reads as text; Morphe community finder: icons are clean (v7.10.3).
+- [ ] Morphe Helper: Settings > Try the other sources automatically; This version with `18.0.3.954559732-release-arm64-v8a` for Gboard finds the release (v7.10.3).
 
 **Header, banner, guide, looks**
 
@@ -75,18 +80,6 @@ it works; write down what you saw when it does not.
 - [ ] **1-tap scan and delete**: the checkbox of a tool asks before it turns on; with it on, Scan scans and deletes without a list and History has the run. (Use it on SystemCleaner with Dry run on first.)
 - [ ] **Exclusions**: exclude a path from a result with Exclude (Undo works), create an app, a path and a segment exclusion in the manager, remove one, Restore defaults, Export (clipboard) and Import. An excluded folder is never listed or deleted by the tools you chose.
 - [ ] **History**: shows the reports and, for a report, the deleted paths; Reset all asks and clears it.
-
-**System UI Tuner** (the commands have been checked as text and against a shell on a computer, never on a phone: this is their first test)
-
-- [ ] The tab System UI Tuner is in the tab bar after SD Maid SE. Without a working mode the note says what needs one; the Quick Settings tiles card still works.
-- [ ] **Demo Mode**: Allow demo mode, then Enabled: the status bar shows 12:00, the battery, the signal and the icons you chose; a change of the form is applied a moment later; Exit restores the bar. Write down which rows do nothing on this phone and the One UI / Android version.
-- [ ] **Quick Settings tiles**: turn the Battery, Clock and Demo mode tiles on, Add each (Android 13 and newer asks, older versions: drag from the editor): the Battery tile shows the level, the Clock tile ticks every second and opens the alarms, the Demo mode tile turns demo mode on and off (and the switch in the tab follows).
-- [ ] **Status bar and shade**: Open notifications, Open quick settings and Close the shade work. Hide the clock: it disappears and Restore everything brings it back. Hide Home: the question appears and it comes back after 15 seconds.
-- [ ] **Notification lab**: a basic, a big text, an inbox and a messaging notification are shown by the system; List shows keys (Android 11 and newer); Snooze hides one for a minute.
-- [ ] **System actions**: Back, Home, Recents, Notifications, Quick settings, Power menu, Lock screen and Screenshot do what they say (Samsung: write down which do not). **Restart System UI** restarts the bars.
-- [ ] **Battery simulator**: Apply level 15, discharging: the low-battery warning appears; Unplug and Reset end it; leaving the tab resets it.
-- [ ] **Navigation mode**: lists the modes of this phone (a phone may not have the overlays); Use switches and the question is asked first; switch back.
-- [ ] **Display and windows**: a density of 480 with Keep it counting down 15 seconds and Put it back; Reset to default; Ignore orientation requests and window scaling run without an error.
 
 **Connected Devices** (needs a Wear OS watch, or a second Android phone, on the same Wi-Fi)
 

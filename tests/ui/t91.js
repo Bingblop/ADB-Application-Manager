@@ -100,14 +100,21 @@ const tx = require('./lib/tx_mock');
   await page.locator('#txTermuxBody button', { hasText: 'Test' }).click(); await sleep(60);
   console.log('   and once it is set:', await steps());
   // Now that Termux is installed and allowed, Sync with Termux runs for real: re-enables "match my environment"
-  // (turned off earlier), closes any running Termux session so the next start picks that up, and opens
-  // termux-setup-storage in Termux so the user can grant it shared-storage access.
+  // (turned off earlier), closes any running Termux session, starts it again with that on and, once it is up, runs the report of what
+  // it took over. Termux itself is not opened for it (that is "Set up storage in Termux", and only when still needed).
   await page.evaluate(() => { txSettings.termuxMatchEnv = false; txSaveSettings(); window.__tx.closes.length = 0; window.__tx.opens.length = 0; });
-  await page.locator('#txTermuxBody button', { hasText: 'Sync with Termux' }).click(); await sleep(60);
-  console.log('   Sync with Termux, set up: re-enables matching, closes the session and opens termux-setup-storage:',
+  await page.evaluate(() => { window.__tx.runs.length = 0; });
+  await page.locator('#txTermuxBody button', { hasText: 'Sync with Termux' }).click(); await until(() => txSess.termux.st === 'ready'); await sleep(80);
+  console.log('   Sync with Termux, set up: re-enables matching, closes the session, starts it again, opens no Termux window, runs the report:',
     JSON.parse(await page.evaluate(() => window.__kv.tx_settings)).termuxMatchEnv,
     JSON.stringify(await page.evaluate(() => window.__tx.closes)),
-    JSON.stringify(await page.evaluate(() => window.__tx.opens)));
+    JSON.stringify(await page.evaluate(() => window.__tx.opens)),
+    JSON.stringify(await page.evaluate(() => window.__tx.runs.map(r => r.cmd))),
+    await shown('txTermuxModal'));
+  await page.evaluate(() => { window.__tx.opens.length = 0; });
+  await page.evaluate(() => txTermuxStorage());
+  console.log('   Set up storage in Termux opens Termux with a command that skips the question when storage is there:', JSON.stringify(await page.evaluate(() => window.__tx.opens.map(c => /storage\/shared/.test(c) && /termux-setup-storage/.test(c) && /already set up/.test(c)))));
+  await page.evaluate(() => txOpenTermuxSetup());
   await page.locator('#txTermuxBody button', { hasText: 'Use Termux as the shell' }).click(); await until(() => txSess.termux.st === 'ready');
   console.log('   starting it hands the native bridge matchEnv too:', JSON.stringify(await page.evaluate(() => window.__tx.starts.filter(s => s[0] === 'termux').pop())));
   console.log('   Use Termux as the shell:', await page.locator('#txShell').inputValue(), !(await shown('txTermuxModal')));

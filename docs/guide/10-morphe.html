@@ -89,7 +89,7 @@
 <section id="morphe-helper" data-title="Morphe Helper" data-group="The tabs">
   <p class="hg-lead">Most patches need one exact version of the original app. <b>Morphe Helper</b> finds that APK on the sources you choose, downloads it, checks it, and lets you install it or patch it. It follows the open-source app <b>Helper for Morphe</b> by rushiranpise, built into this app.</p>
   <h4>Download</h4>
-  <p>Enter the package and the version (empty: the newest), choose the CPU and the source, then:</p>
+  <p>Enter the package and the version (empty: the newest), choose the CPU and the source, then: (a version may carry its build flavour, such as Gboard's <code>18.0.3.954559732-release-arm64-v8a</code>; Helper finds the release the source lists as <code>18.0.3.954559732</code>)</p>
   <ul>
     <li><b>Fast mode</b> walks every source that is on until one delivers.</li>
     <li><b>This version</b> looks for exactly that version; <b>Newest</b> for the newest.</li>
@@ -103,7 +103,7 @@
   <h4>Settings</h4>
   <ul>
     <li><b>Sources</b>: switch each of the ten (APKMirror, Uptodown, APKPure, APKCombo, Aptoide, Evozi, Mi9, APK Downloader, Aurora, Play) on or off, and pick the default. Some can be downloaded directly; the others open in the browser.</li>
-    <li><b>Connection</b>: Wi-Fi and mobile data, Wi-Fi only, or mobile data only. <b>Save downloads</b>: the app's cache or <code>Download/Helper for Morphe</code>. <b>Clear after use</b>. <b>Fast mode: version</b>.</li>
+    <li><b>Connection</b>: Wi-Fi and mobile data, Wi-Fi only, or mobile data only. <b>Save downloads</b>: the app's cache or <code>Download/Helper for Morphe</code>. <b>Clear after use</b>. <b>Try the other sources automatically</b>: when the source you chose does not have the version or does not work, <b>This version</b>, <b>Newest</b> and <b>All versions</b> go on with the next source until one delivers (off by default). <b>Fast mode: version</b>.</li>
     <li><b>VirusTotal</b>: optional. Paste your API key (a free one allows 4 lookups a minute and 500 a day), press <b>Test</b>, and choose <b>Never</b>, <b>Ask</b> or <b>Always</b>. A file VirusTotal already knows is looked up by its SHA-256 and not uploaded again (a cached report). Bundles are opened and each APK inside is checked. The quota bars show what is used. The key is kept on this phone and is sent only to VirusTotal.</li>
   </ul>
   <div class="hg-note"><b>Good to know.</b> Helper is independent of the sites it uses. Their pages, versions and formats can change at any time, and a source that changed says so and sends you to the browser.</div>

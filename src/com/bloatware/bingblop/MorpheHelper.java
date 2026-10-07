@@ -753,6 +753,8 @@ public final class MorpheHelper {
     private static final Pattern TRAILING_CODE = Pattern.compile("\\s*\\(\\s*(\\d+)\\s*\\)\\s*$");
     private static final Pattern VARIANT_SUFFIX = Pattern.compile("(?i)(?<=\\d)[\\s._-]*(?:secondary)\\b");
     private static final Pattern NOISE_WORDS = Pattern.compile("\\b(version|ver|v|release|stable|apk|xapk|apkm|apks|bundle)\\b");
+    /** Some apps put the build flavour into the version name itself ("18.0.3.954559732-release-arm64-v8a" for Gboard): sources list the same release as "18.0.3.954559732". */
+    private static final Pattern ABI_IN_VERSION = Pattern.compile("(?i)[\\s._-]+(?:arm64-v8a|armeabi-v7a|arm64|armeabi|x86_64|x86|universal|nodpi)\\b");
     private static final Pattern DIGITS = Pattern.compile("\\d+");
 
     static String withoutTrailingVersionCode(String v) {
@@ -770,7 +772,7 @@ public final class MorpheHelper {
     }
 
     static String normalizedVersionName(String v) {
-        String s = withoutTrailingVersionCode(v).toLowerCase(Locale.ROOT);
+        String s = ABI_IN_VERSION.matcher(withoutTrailingVersionCode(v)).replaceAll("").toLowerCase(Locale.ROOT);
         s = NOISE_WORDS.matcher(s).replaceAll(" ");
         s = s.replaceAll("[^A-Za-z0-9]+", ".");
         int a = 0, b = s.length();

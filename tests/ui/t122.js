@@ -23,6 +23,16 @@ const { chromium, PAGE } = require('./lib/pw');
   await ev(h => { storeCurrent = storeCurrent || {}; renderStoreDetail({ slug: 'x', app: { name: 'App X', packageName: 'x.y', fullDescription: h }, download: null }); }, html);
   const body = await page.locator('#storeDetailBody').innerText();
   check('the details show readable text, not tags', /First bold & italic text\./.test(body) && !/<p>|<\/b>|&amp;/.test(body), body.slice(0, 200));
+  // a README (Markdown with badges and some HTML) is readable too
+  const md = '<p align="center"><img src="logo.png" alt="Mihon logo"></p>\n\n# Mihon [App](#)\n\n### Full-featured reader\nDiscover and read manga,\nwebtoons & comics.\n\n[![Discord server](https://img.shields.io/discord/1195734228319617024.svg?label=&labelColor=6A7EC2&color=7389D8&logo=discord)](https://discord.gg/mihon) [![CI](https://img.shields.io/github/actions/workflow/status/mihon.svg?labelColor=27303D)](https://github.com/x/y)\n\n## Download\n\n* **Stable** release, see [the site](https://mihon.app/download)\n* Beta with `code`\n1. First\n2. Second\n\n| Name | Value |\n|---|---|\n| a | b |\n\n```\nnpm run x\n```\n\n[ref]: https://example.org';
+  const mt = await ev(h => htmlToReadable(h), md);
+  check('a README: no Markdown marks, no badge addresses, no image names', !/[#*`]|!\[|\]\(|https?:|shields|Mihon logo|\[ref\]/.test(mt.replace(/webtoons & comics/, '')), JSON.stringify(mt));
+  check('a README keeps its text, the heading and the link text', /Mihon App/.test(mt) && /Full-featured reader/.test(mt) && /see the site/.test(mt) && /Stable release/.test(mt), JSON.stringify(mt));
+  check('a README keeps line structure: separate headings, bullets, numbers, table rows and code', /Full-featured reader\n\nDiscover and read manga, webtoons & comics\./.test(mt) && /\u2022 Stable release/.test(mt) && /1\. First\n2\. Second/.test(mt) && /Name \u00b7 Value/.test(mt) && /npm run x/.test(mt) && !/---/.test(mt), JSON.stringify(mt));
+  check('plain sentences with brackets are not mistaken for Markdown', (await ev(() => htmlToReadable('Use [1] or (2) and a_b_c, 2 * 3 * 4.'))) === 'Use [1] or (2) and a_b_c, 2 * 3 * 4.');
+  await ev(h => { renderStoreDetail({ slug: 'm', app: { name: 'Mihon', packageName: 'app.mihon', fullDescription: h }, download: null }); }, md);
+  const body2 = await page.locator('#storeDetailBody').innerText();
+  check('the details of a README app show clean text', /Full-featured reader/.test(body2) && !/!\[|\]\(|shields\.io/.test(body2), body2.slice(0, 300));
   const chip = await ev(() => { uadLevelByPkg.set('com.a', 'Advanced'); return listUadChip({ pkg: 'com.a' }); });
   check('the UAD-NG chip on a row reads only the level', /ADVANCED/.test(chip.replace(/<[^>]*>/g, '')) && !/UAD-NG<\/span>/.test(chip) && !/>UAD-NG</.test(chip), chip);
   console.log('errors:', JSON.stringify(errors));

@@ -6,6 +6,8 @@ ok   it has a help "?"
 ok   the four buttons: Sources, Morphe Helper, Patched APKs, Settings
 ok   the engine warning is hidden when the engine is there
 ok   the Apps pane asks to download the official source first
+ok   an icon with an address is the image over its letter, and the letter goes when the image is there
+ok   an icon without an address is its letter
 ok   Download asks the app to download it and then reads its patches
 ok   YouTube and Instagram are listed (both on the phone: by name), with their patch counts
 ok   the recommended version is shown (the newest of the most patched)
@@ -87,6 +89,9 @@ ok   with a key and "ask" a Scan button appears
 ok   a clean file is shown as clean with the engine counts and a link
 ok   a flagged file is shown in red
 ok   a source that changed its page says what to do
+ok   Helper settings have "Try the other sources automatically", off by default
+ok   with it on, a source that fails hands over to the others (Fast mode, the chosen one first) and the file is delivered
+ok   with it off, a failure is just reported
 ok   Find in Downloads asks the app and lists the files of this package, newest first, with format and parts
 ok   it was asked for the package typed in the box
 ok   Use takes the bundle: Found in Downloads, APKM with its parts, and an Install all parts button

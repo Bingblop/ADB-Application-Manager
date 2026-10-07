@@ -77,7 +77,7 @@ camera_lift_trigger_enabled | Opens the camera when you lift the phone. | 0 = of
 charging_sounds_enabled | Plays a sound when charging starts. | 0 = off; 1 = on
 charging_vibration_enabled | Vibrates when charging starts. | 0 = off; 1 = on
 clipboard_show_access_notifications | Shows a message when an app reads what you copied. | 0 = off; 1 = on
-clock_seconds | Shows seconds in the status bar clock (System UI Tuner). | 0 = off; 1 = on
+clock_seconds | Shows seconds in the status bar clock. | 0 = off; 1 = on
 content_capture_enabled | Content capture, which lets the system see on-screen text for suggestions. | 0 = off; 1 = on
 contextual_screen_timeout_enabled | Keeps the screen on longer when it is needed. | 0 = off; 1 = on
 contrast_level | Colour contrast of the system theme. | decimal, -1 (lowest) to 1 (highest); 0 = standard
@@ -126,7 +126,7 @@ hearing_aid_notification_routing | Where notification sound plays when a hearing
 hearing_aid_ringtone_routing | Where the ringtone plays when a hearing aid is connected. | 0 = default; 1 = hearing aid; 2 = phone speaker
 high_text_contrast_enabled | High contrast text. | 0 = off; 1 = on
 hush_gesture_used | You have used the "hush" gesture once. | 0 = no; 1 = yes
-icon_blacklist | Status bar icons that are hidden (System UI Tuner). | icon names separated by commas, e.g. rotate,headset; empty = none hidden
+icon_blacklist | Status bar icons that are hidden. | icon names separated by commas, e.g. rotate,headset; empty = none hidden
 immersive_mode_confirmations | Apps for which you accepted the "full screen" hint. | text, e.g. confirmed or a package list
 in_call_notification_enabled | Plays a sound during calls when a notification comes in. | 0 = off; 1 = on
 incall_back_button_behavior | What the Back button does during a call. | 0 = nothing; 1 = ends the call
@@ -209,7 +209,7 @@ stylus_buttons_enabled | Lets the stylus buttons do things. | 0 = off; 1 = on
 stylus_handwriting_enabled | Handwriting with a stylus in text fields. | 0 = off; 1 = on
 suppress_doze | Prevents the phone from entering ambient display (doze). | 0 = off; 1 = on
 swipe_bottom_to_notification_enabled | Swipe down on the bottom edge to open notifications. | 0 = off; 1 = on
-sysui_nav_bar | The buttons of the navigation bar and their order (System UI Tuner). | text, e.g. space;back,home;recent
+sysui_nav_bar | The buttons of the navigation bar and their order. | text, e.g. space;back,home;recent
 sysui_qs_tiles | Quick Settings tiles and their order. | list of tile names separated by commas, e.g. wifi,bt,dnd,flashlight
 tap_gesture | Tap to check the phone. | 0 = off; 1 = on
 touch_exploration_enabled | TalkBack touch exploration. | 0 = off; 1 = on | lock

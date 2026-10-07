@@ -574,7 +574,6 @@ public class MainActivity extends Activity {
                 try {
                     if (QuickActions.ACTION_CYCLE_MODE.equals(action)) message = quickCycleMode();
                     else if (QuickActions.ACTION_STOP_LIST.equals(action)) message = quickStopList();
-                    else if (QuickActions.ACTION_DEMO_TOGGLE.equals(action)) message = quickDemoToggle();
                     else message = "Unknown quick action";
                 } catch (Exception e) {
                     message = "Failed: " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
@@ -699,16 +698,6 @@ public class MainActivity extends Activity {
             });
         }
         return sdmHostInstance;
-    }
-
-    /** The Demo mode Quick Settings tile: turns the status bar demo on (and allows it) or off. */
-    private String quickDemoToggle() {
-        if ("standard".equals(resolveExecMode())) return "Needs ADB, Shizuku or Root. Set up a working mode first.";
-        boolean on = !DemoTileService.isOn(this);
-        String out = new AndroidBridge().executeShell(on ? SysUiRules.demoAllowCommands(true) + "\n" + SysUiRules.demoEnter() : SysUiRules.demoExit());
-        if (out == null || !out.contains("Broadcast completed")) return "Demo mode: the device did not answer";
-        DemoTileService.setOn(this, on);
-        return on ? "Demo mode on" : "Demo mode off";
     }
 
     /** Force-stops every app in the quick list. */
@@ -1442,8 +1431,21 @@ public class MainActivity extends Activity {
                     .append("local c=\"$1\"; shift; command apt \"$c\" -y \"$@\";; *) command apt \"$@\";; esac; }; ");
             // "profile" (login shell) already reads ~/.bash_profile or ~/.profile; neither of those pulls in ~/.bashrc
             // unless the user's own profile chains to it, so without this, aliases/functions/exports a Termux user
-            // keeps in .bashrc would silently be missing here even with the login profile on.
-            if (matchEnv) s.append("[ -f \"$HOME/.bashrc\" ] && . \"$HOME/.bashrc\" >/dev/null 2>&1; ");
+            // keeps in .bashrc would silently be missing here even with the login profile on. Two things stop a plain
+            // "source ~/.bashrc" in this (non-interactive) shell: aliases are not expanded unless asked for, and the usual
+            // first lines of a .bashrc ("[[ $- != *i* ]] && return", "case $- in *i*) ;; *) return;; esac") end the file at once.
+            // So aliases are switched on and those guard lines are left out of the copy that is read.
+            if (matchEnv) {
+                s.append("if [ -f \"$HOME/.bashrc\" ]; then shopt -s expand_aliases 2>/dev/null; ")
+                        .append(". <(sed -e '/^[[:space:]]*\\[\\[ *\\$- *!= *\\*i\\* *\\]\\] *&& *return/d' -e '/^[[:space:]]*\\[ *-z *\"\\$PS1\" *\\] *&& *return/d' ")
+                        .append("-e '/^[[:space:]]*case *\\$- *in/,/^[[:space:]]*esac/d' \"$HOME/.bashrc\") >/dev/null 2>&1; fi; ");
+            }
+            // what "Sync with Termux" shows once the shell is up: the proof that this shell is Termux's, and what it took over
+            s.append("adbmgr_sync_report() { local a=0 f=0 n; while read -r _; do a=$((a+1)); done < <(alias 2>/dev/null); ")
+                    .append("while read -r _ _ n; do case \"$n\" in _*|pkg|apt|adbmgr_*) ;; *) f=$((f+1));; esac; done < <(declare -F 2>/dev/null); ")
+                    .append("printf 'Synced with Termux\\n  bash %s, home %s\\n  packages in %s\\n  taken from ~/.bashrc: %s aliases, %s functions\\n  phone storage: %s\\n' ")
+                    .append("\"$BASH_VERSION\" \"$HOME\" \"${PREFIX:-unknown}\" \"$a\" \"$f\" ")
+                    .append("\"$([ -d \"$HOME/storage/shared\" ] && echo 'set up' || echo 'not set up yet: Settings > Set up storage in Termux')\"; }; ");
         }
         s.append("true");
         return s.toString();
@@ -9406,49 +9408,6 @@ public class MainActivity extends Activity {
                     notifyJs("window.onSdmReply && window.onSdmReply({tag:" + JSONObject.quote(String.valueOf(tag)) + ",r:" + r + "})");
                 }
             });
-        }
-
-        /** The System UI Tuner tab: the command (or the parsed answer) for one operation, {"ok":true,"cmd":...} | {"ok":true,"data":...} | {"ok":false,"error":...}. Nothing runs here. */
-        @JavascriptInterface
-        public String sysui(String op, String argsJson) {
-            return SysUiOps.run(op, argsJson);
-        }
-
-        /** The System UI Tuner's Quick Settings tiles: state, set (1 or 0), add (asks Android), demoFlag (the Demo tile's own memory). Answer: JSON. */
-        @JavascriptInterface
-        public String sysuiTile(String op, String name, String arg) {
-            try {
-                final Class<?> tile = "battery".equals(name) ? BatteryTileService.class : "clock".equals(name) ? ClockTileService.class : "demo".equals(name) ? DemoTileService.class : null;
-                if ("state".equals(op)) {
-                    JSONObject tiles = new JSONObject();
-                    tiles.put("battery", new JSONObject().put("enabled", TileSwitch.isEnabled(MainActivity.this, BatteryTileService.class)));
-                    tiles.put("clock", new JSONObject().put("enabled", TileSwitch.isEnabled(MainActivity.this, ClockTileService.class)));
-                    tiles.put("demo", new JSONObject().put("enabled", TileSwitch.isEnabled(MainActivity.this, DemoTileService.class)).put("on", DemoTileService.isOn(MainActivity.this)));
-                    return new JSONObject().put("ok", true).put("tiles", tiles).put("canAdd", Build.VERSION.SDK_INT >= 33).toString();
-                }
-                if ("demoFlag".equals(op)) {
-                    DemoTileService.setOn(MainActivity.this, "1".equals(arg));
-                    return "{\"ok\":true}";
-                }
-                if (tile == null) return "{\"ok\":false,\"error\":\"Unknown tile\"}";
-                if ("set".equals(op)) {
-                    boolean ok = TileSwitch.setEnabled(MainActivity.this, tile, "1".equals(arg));
-                    return new JSONObject().put("ok", ok).put("error", ok ? "" : "Android did not accept the change").toString();
-                }
-                if ("add".equals(op)) {
-                    if (Build.VERSION.SDK_INT < 33) return "{\"ok\":false,\"error\":\"Open the quick settings editor and drag the tile in (Android 13 and newer can ask for you)\"}";
-                    if (!TileSwitch.isEnabled(MainActivity.this, tile)) return "{\"ok\":false,\"error\":\"Turn the tile on first\"}";
-                    final String label = "battery".equals(name) ? "Battery" : "clock".equals(name) ? "Clock" : "Demo mode";
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() { TileSwitch.requestAdd(MainActivity.this, tile, label); }
-                    });
-                    return "{\"ok\":true}";
-                }
-                return "{\"ok\":false,\"error\":\"Unknown operation\"}";
-            } catch (Exception e) {
-                return "{\"ok\":false,\"error\":\"" + String.valueOf(e.getMessage()).replace("\\", " ").replace("\"", "'") + "\"}";
-            }
         }
 
         /** Lets the user choose package files (APK, APKS, APKM, XAPK) to send. Answer: window.onCdPicked({tag, files:[{name, path, size} | {name, error}]}). */

@@ -84,26 +84,3 @@
   </ol>
   <p><b>Withdraw consent</b> in the card stops AppCleaner from using it. The automation follows the screen texts of the system settings, in the languages SD Maid has tables for; on some phone makers' systems it can fail, and then it says so and the rest of the cleanup still works.</p>
 </section>
-
-<section id="tab-sysui" data-title="System UI Tuner" data-group="The tabs">
-  <p class="hg-lead">Change how the status bar, the quick settings, the notifications and the system bars look and behave, without writing a single setting. Everything here ends by itself when System UI or the phone restarts.</p>
-  <p>The commands, the Demo Mode form and the three Quick Settings tiles follow the <b>System UI Tuner</b> app (<b>Tweaker</b>) by Zachary Wander, which is MIT-licensed. Most of what Tweaker offers writes Global, Secure and System settings. Those are not repeated here: the <b>Hidden Settings</b> tab does that, and the tab says so and has a button to open it. The other cards are additions of this app, not from Tweaker.</p>
-  <p><b>Where to find it:</b> the tab bar, after <b>SD Maid SE</b>. Everything but the tiles needs a working mode (ADB, Wireless Debugging, Shizuku or Root); without one the tab says so.</p>
-
-  <h4>The cards</h4>
-  <table class="hg-table">
-    <thead><tr><th>Card</th><th>What it does</th></tr></thead>
-    <tbody>
-      <tr><td><b>Demo Mode</b></td><td>Forces the status bar into a fixed state, for screenshots: the clock, the battery, the Wi-Fi and mobile signal, the data type, the SIMs, and the icons (volume, Bluetooth, location, alarm, TTY, mute, speakerphone, airplane, Do Not Disturb, cast, hotspot). <b>Allow demo mode</b> writes the one flag Android needs for it (<code>sysui_demo_allowed</code>, a Global setting; it is the only setting this tab writes). <b>Enabled</b> sends the state; a change is sent by itself a moment later. The banner has <b>Exit</b>. Nothing else on the phone changes.</td></tr>
-      <tr><td><b>Quick Settings tiles</b></td><td>Three tiles: the battery level with the charging state, a clock with seconds, and a switch for Demo Mode. Turn a tile on, then <b>Add</b> it (Android 13 and newer asks you), or drag it in from the quick settings editor. These work without a working mode, except that the Demo tile needs one to do its job.</td></tr>
-      <tr><td><b>Status bar and shade</b></td><td>Open or close the notification shade and the quick settings, <b>hide</b> parts of the bars for now (search, home, recents, heads-up notifications, the pull-down, system icons, clock, notification icons) and list the icon slots System UI knows. Hiding Home, Recents or the pull-down asks first, because it can leave you without a way to navigate; it is put back after 15 seconds unless you keep it.</td></tr>
-      <tr><td><b>Notification lab</b></td><td>Sends test notifications (basic, big text, inbox, messaging) to see how they look, lists the ones showing and snoozes one. They are sent as the shell.</td></tr>
-      <tr><td><b>System actions</b></td><td>Press Back, Home, Recents, the power menu, Lock screen, Screenshot, Split screen and more, and <b>Restart System UI</b> when the bars misbehave.</td></tr>
-      <tr><td><b>Battery simulator</b></td><td>Makes the whole system believe the battery has another level, state, power source or temperature, to test low-battery warnings and charging screens. <b>Unplug</b> and <b>Reset</b> end it, and it is reset when you leave the tab.</td></tr>
-      <tr><td><b>Navigation mode</b></td><td>Switches between 3-button, 2-button and gesture navigation through the overlays Android ships; it asks first.</td></tr>
-      <tr><td><b>Display and windows</b></td><td>The screen density and size, ignore orientation requests and window scaling. A change to the density or the size is put back after 15 seconds unless you press <b>Keep</b>, so a wrong value cannot lock you out.</td></tr>
-      <tr><td><b>System UI information</b></td><td>Read-only reports about the bars, the status icons, the windows, the displays and the night mode, with Copy and Share. The report that lists notifications is left out on purpose: it prints their text.</td></tr>
-    </tbody>
-  </table>
-  <div class="hg-note"><b>Tip.</b> Demo Mode and the battery simulator are different things. Demo Mode only changes what the status bar shows; the simulator changes what the system believes, so apps and warnings react.</div>
-</section>

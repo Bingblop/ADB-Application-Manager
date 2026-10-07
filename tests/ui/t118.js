@@ -34,24 +34,29 @@ const { chromium, PAGE } = require('./lib/pw');
   const wait = ms => page.waitForTimeout(ms);
 
   // the button row
-  const row = await ev(() => Array.from(document.querySelectorAll('.apps-sort-row > *')).map(e => (e.tagName === 'SELECT' ? 'select#' + e.id : e.innerText.trim())));
-  check('the row: Sort, its menu, Share CSV, Profiles, Backups, Action Button and its menu (no Export)', row.join('|') === 'Sort|select#appSort|Share CSV|Profiles|Backups|Action Button|select#appsActionBtnSelect', row.join('|'));
+  const row = await ev(() => Array.from(document.querySelectorAll('.apps-sort-row > *')).map(e => (e.tagName === 'SELECT' ? 'select#' + e.id : e.id === 'appsActionBtnPick' ? 'pick#' + e.id : e.innerText.trim())));
+  check('the row: Sort, its menu, Share CSV, Profiles, Backups and the Action Button menu where its label was (no label, no Export)', row.join('|') === 'Sort|select#appSort|Share CSV|Profiles|Backups|pick#appsActionBtnPick', row.join('|'));
+  check('the menu shows the current choice by name', (await ev(() => document.getElementById('appsActionBtnPickLabel').innerText)) === 'App Settings');
   check('there is no Export CSV button', (await ev(() => Array.from(document.querySelectorAll('#view-apps button')).filter(b => b.innerText.trim() === 'Export').length)) === 0);
-  const opts = await ev(() => Array.from(document.querySelectorAll('#appsActionBtnSelect option')).map(o => o.value + (o.selected ? '*' : '')));
-  check('the Action Button menu offers the same choices as Settings, the current one picked', opts.join() === 'settings*,forcestop,launch,toggle,uninstall,suspend,perms,acts,none', opts.join());
+  await page.click('#appsActionBtnPick'); await wait(400);
+  const sheet = await ev(() => ({ shown: document.getElementById('choiceSheet').classList.contains('show'), title: document.getElementById('choiceTitle').innerText, desc: document.getElementById('choiceDesc').innerText, rows: Array.from(document.querySelectorAll('#choiceList .ab-sheet-row')).map(r => r.getAttribute('data-v') + (r.classList.contains('current') ? '*' : '') + '|' + r.querySelector('.ab-sheet-sub').innerText.length) }));
+  check('tapping it opens a sheet with a title and a few words about what it edits', sheet.shown && /Action Button/.test(sheet.title) && /extra button on every row/.test(sheet.desc), JSON.stringify(sheet));
+  check('the sheet offers the same choices as Settings, the current one marked, each with a line of explanation', sheet.rows.map(r => r.split('|')[0]).join() === 'settings*,forcestop,launch,toggle,uninstall,suspend,perms,acts,none' && sheet.rows.every(r => +r.split('|')[1] > 10), JSON.stringify(sheet.rows));
+  await page.screenshot({ path: 'apps_action_menu.png' });
   await page.screenshot({ path: 'apps_row.png', clip: { x: 0, y: 150, width: 400, height: 520 } });
   const abBefore = await ev(() => Array.from(document.querySelectorAll('#card_com\\.plain .ab-btn')).length);
-  await page.selectOption('#appsActionBtnSelect', 'forcestop'); await wait(200);
+  await page.click('#choiceList .ab-sheet-row[data-v=forcestop]'); await wait(450);
+  check('choosing closes the sheet', !(await ev(() => document.getElementById('choiceSheet').classList.contains('show'))));
   check('choosing one changes the buttons on the rows at once', await ev(() => document.querySelector('#card_com\\.plain .ab-btn').getAttribute('aria-label') || document.querySelector('#card_com\\.plain .ab-btn').title) !== null && (await ev(() => /Force Stop/i.test(document.querySelector('#card_com\\.plain .ab-btn').outerHTML))), await ev(() => document.querySelector('#card_com\\.plain .ab-btn').outerHTML.slice(0, 200)));
-  check('and Settings shows the same choice (and the other way round)', await ev(() => { actionBtnRender(); return document.getElementById('actionBtnSelect').value === 'forcestop' && document.getElementById('appsActionBtnSelect').value === 'forcestop'; }));
+  check('and Settings shows the same choice (and the other way round)', await ev(() => { actionBtnRender(); return document.getElementById('actionBtnSelect').value === 'forcestop' && document.getElementById('appsActionBtnPickLabel').innerText === 'Force Stop'; }));
   await ev(() => setActionBtn('toggle')); await wait(100);
-  check('a change from Settings moves the one in the row', await ev(() => document.getElementById('appsActionBtnSelect').value === 'toggle'));
+  check('a change from Settings moves the one in the row', await ev(() => document.getElementById('appsActionBtnPickLabel').innerText === 'Enable / Disable'));
   check('it is saved in the native settings store', await ev(() => window.__settings.action_btn === JSON.stringify('toggle')));
   const savedSettings = await ev(() => JSON.parse(JSON.stringify(window.__settings)));
   await page.addInitScript(saved => { Object.assign(window.__settings, saved); }, savedSettings);          // the native store survives a reload
   await page.reload();
-  await page.waitForFunction(() => document.getElementById('appsActionBtnSelect').value === 'toggle' && document.querySelector('#card_com\\.plain .ab-btn'));
-  check('both menus restore the saved choice after a reload', await ev(() => actionBtn === 'toggle' && document.getElementById('appsActionBtnSelect').value === 'toggle' && document.getElementById('actionBtnSelect').value === 'toggle'));
+  await page.waitForFunction(() => document.getElementById('appsActionBtnPickLabel').innerText === 'Enable / Disable' && document.querySelector('#card_com\\.plain .ab-btn'));
+  check('both menus restore the saved choice after a reload', await ev(() => actionBtn === 'toggle' && document.getElementById('appsActionBtnPickLabel').innerText === 'Enable / Disable' && document.getElementById('actionBtnSelect').value === 'toggle'));
   check('the restored choice also restores the row action', await ev(() => /Enable|Disable/.test(document.querySelector('#card_com\\.plain .ab-btn').outerHTML)));
   await ev(() => setActionBtn('settings'));
   await page.waitForFunction(() => document.querySelectorAll('.uad-chip-row').length === 3);

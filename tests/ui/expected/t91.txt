@@ -22,7 +22,8 @@
    allowed: ["✓ Install Termux","2 Open Termux once [Open Termux]","3 Let Termux take commands from other apps [Copy, Open Termux]","✓ Allow this app","5 Test the connection [Test]"]
    the test while Termux still refuses other apps: "Termux does not take commands from other apps yet: run the command of step 3 in Termux, then test again."
    and once it is set: ["✓ Install Termux","2 Open Termux once [Open Termux]","✓ Let Termux take commands from other apps [Copy, Open Termux]","✓ Allow this app","✓ Test the connection [Test]"]
-   Sync with Termux, set up: re-enables matching, closes the session and opens termux-setup-storage: true ["termux"] ["termux-setup-storage"]
+   Sync with Termux, set up: re-enables matching, closes the session, starts it again, opens no Termux window, runs the report: true ["termux"] [] ["adbmgr_sync_report"] false
+   Set up storage in Termux opens Termux with a command that skips the question when storage is there: [true]
    starting it hands the native bridge matchEnv too: ["termux",{"profile":true,"matchEnv":true,"cwd":""}]
    Use Termux as the shell: termux true
 5. Jan: looks on this phone by itself, finds it, saves the address and is ready: {"key":false,"hint":"","base":"http://127.0.0.1:1337/v1","savedAt":<epoch ms>,"readable":true} ["llama-4-8b","qwen3-coder-7b"]
@@ -30,7 +31,7 @@
 6. AnythingLLM: found, but it needs a key: "Found a server at http://127.0.0.1:3001/api/v1/openai that needs a key: enter it below and tap Connect."
    Connect tests the key at that address: {"id":"kt7","provider":"anythingllm","key":"ALLM-KEY-123456","base":"http://127.0.0.1:3001/api/v1/openai"} true
 7. Ollama not running here yet: "Ollama is not running on this phone yet. Install it below, or enter the address of a computer that runs it."
-   the steps, run one by one in the Termux shell: ["pkg install -y ollama","(pgrep -x ollama >/dev/null || nohup ollama serve >\"$HOME/.ollama-serve.log\" 2>&1 &); sleep 4; ollama --version","ollama pull qwen2.5-coder:1.5b"]
+   the steps, run one by one in the Termux shell: ["adbmgr_sync_report","pkg install -y ollama","(pgrep -x ollama >/dev/null || nohup ollama serve >\"$HOME/.ollama-serve.log\" 2>&1 &); sleep 4; ollama --version","ollama pull qwen2.5-coder:1.5b"]
    and on its screen: ["» Installing Ollama (3 steps, CTRL-C stops)","-- 1/3: Install Ollama (Termux package)","-- 2/3: Start the Ollama server in the background","-- 3/3: Download a small coding model (about 1 GB)","✓ Installing Ollama: done"]
 8. Claude by subscription: why it goes through Claude Code: "Anthropic does not allow other apps to sign in with a Claude Pro or Max account. Claude Code, Anthropic's own tool, can: it runs in Termux, and the Terminal chats through it. With an API key saved, Claude Code uses the key instead."
    the steps: ["✓ Termux","2 Install Claude Code","3 Sign in","4 Chat here"]

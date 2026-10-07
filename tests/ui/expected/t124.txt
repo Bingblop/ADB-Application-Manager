@@ -1,0 +1,9 @@
+ok   a drag that starts in the content does nothing
+ok   pulling the handle up makes the sheet bigger
+ok   pulling it down makes it smaller again first, it stays open
+ok   a small pull down does not close it
+ok   pulling it down closes it
+ok   after it, the sheet has no leftover offset
+ok   a sheet that was pulled up opens normal the next time
+ok   every bottom sheet is a modal-sheet inside a modal-overlay
+errors: []

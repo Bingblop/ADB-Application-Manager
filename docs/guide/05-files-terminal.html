@@ -331,7 +331,7 @@
 <h4>Stop a command, copy the output</h4>
 <ul>
 <li>Tap <b>STOP</b>, or the <b>CTRL</b> key, to end a running command. A command is stopped by itself after 30 minutes. If a command prints more than 2,000,000 characters the screen says <i>output cut off here</i>; the command keeps running until you stop it. The screen keeps about the last 300,000 characters (<i>older output trimmed</i>).</li>
-<li>Below the screen: <b>Clear</b> empties it, <b>Copy</b> copies the text you selected or, with nothing selected, the whole screen, <b>Cheat Sheet</b>, <b>Open in Termux</b>, <b>New chat</b> (only with an agent) and <b>Restart shell</b>. Press and hold on the screen text to select part of it.</li>
+<li>Below the screen: <b>Full screen</b> makes the Terminal cover the whole app: the screen takes all the room above the input line and the extra keys, and follows the on-screen keyboard so nothing hides behind it. Everything stays: the shell, agent, model and effort menus, settings, the cheat sheet and the extra keys. Tap <b>Exit full screen</b> or use Back to come out; leaving the tab does too. <b>Clear</b> empties it, <b>Copy</b> copies the text you selected or, with nothing selected, the whole screen, <b>Cheat Sheet</b>, <b>Open in Termux</b>, <b>New chat</b> (only with an agent) and <b>Restart shell</b>. Press and hold on the screen text to select part of it.</li>
 </ul>
 
 <h4>The cheat sheets</h4>
@@ -355,7 +355,7 @@
 <li><b>Allow this app</b>: Android asks whether this app may <i>Run commands in Termux environment</i>.</li>
 <li><b>Test the connection</b>: <b>Test</b> sends a harmless command and says <i>Termux answered</i>.</li>
 </ol>
-<p>Then tap <b>Use Termux as the shell</b>. <b>Sync with Termux</b> makes this shell match your own Termux (it reads your aliases from <code>~/.bashrc</code>) and opens Termux to run <code>termux-setup-storage</code>, which lets Termux see your phone's files (Android may ask you to allow it).</p>
+<p>Then tap <b>Use Termux as the shell</b>. <b>Sync with Termux</b> makes this shell match your own Termux: it starts the Termux shell again, reads your aliases, functions and exports from <code>~/.bashrc</code> (also when that file starts with the usual "only for interactive shells" line) and prints what it took over: the bash version, home folder, package folder, how many aliases and functions, and whether phone storage is set up. <b>Set up storage in Termux</b> opens Termux and runs <code>termux-setup-storage</code> only when phone storage is not set up yet (Android may ask you to allow it); when it is, Termux just says so and nothing is rebuilt.</p>
 
 <h4>The ADB Console pane</h4>
 <ul>

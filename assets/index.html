@@ -3234,6 +3234,12 @@
         }
 
         .apps-sort-select.apps-ab-select { width: 138px; flex: 0 0 auto; }
+        .ab-pick { display: inline-flex; align-items: center; justify-content: space-between; gap: 4px; text-align: left; cursor: pointer; }
+        .ab-pick #appsActionBtnPickLabel { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+        .ab-pick-chev { color: var(--text-muted); font-size: 10px; flex: 0 0 auto; }
+        .ab-sheet-row .ab-sheet-txt { display: flex; flex-direction: column; align-items: flex-start; text-align: left; gap: 2px; min-width: 0; }
+        .ab-sheet-row .ab-sheet-sub { font-size: 11px; font-weight: 500; color: var(--text-muted); line-height: 1.35; }
+        .ab-sheet-row:active .ab-sheet-sub { color: var(--on-accent); }
 
         .app-meta-line {
             font-size: 9.5px;
@@ -3327,6 +3333,9 @@
             background-position: center 6px;
             background-repeat: no-repeat;
         }
+        /* a bottom sheet pulled up by its handle: it takes (nearly) the whole screen */
+        .modal-sheet.sheet-expanded, #inspectorModal .modal-sheet.sheet-expanded { max-height: calc(100vh - 14px); min-height: 72vh; }
+        .modal-sheet.sheet-dragging { transition: none !important; }
         /* a tab fades in instead of appearing at once (opacity only: no transform, so nothing that is fixed inside it is disturbed) */
         @media (prefers-reduced-motion: no-preference) {
             .view-content.active { animation: viewFadeIn 0.22s ease-out; }
@@ -3430,8 +3439,7 @@
                 <button class="mode-action-btn" onclick="exportAppList(true)">Share CSV</button>
                 <button class="mode-action-btn" onclick="openProfiles()">Profiles</button>
                 <button class="mode-action-btn" onclick="openBackups()">Backups</button>
-                <label class="apps-sort-label" for="appsActionBtnSelect" style="margin-left:6px;">Action Button</label>
-                <select id="appsActionBtnSelect" class="op-select apps-sort-select apps-ab-select" aria-label="Action Button" onchange="setActionBtn(this.value)"></select>
+                <button type="button" id="appsActionBtnPick" class="op-select apps-sort-select apps-ab-select ab-pick" aria-label="Action Button" aria-haspopup="dialog" onclick="openActionBtnPicker()"><span id="appsActionBtnPickLabel"></span><span class="ab-pick-chev" aria-hidden="true">&#9662;</span></button>
             </div>
 
             <!-- Tooltip under the Export / Share CSV buttons: the filter chips below scroll sideways -->
@@ -5223,8 +5231,8 @@
                 .mp-count { font-size: 11px; color: var(--text-muted); margin: 6px 2px 8px; }
                 .mp-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; margin-bottom: 8px; border-radius: var(--radius-md); border: 1px solid var(--border-glass); background: rgba(var(--ov), 0.04); cursor: pointer; }
                 .mp-card:active { background: var(--accent-glow); }
-                .mp-ico { flex: 0 0 auto; width: 42px; height: 42px; border-radius: 11px; display: flex; align-items: center; justify-content: center; overflow: hidden; background: var(--bg-surface); color: var(--accent); font-weight: 900; font-size: 17px; }
-                .mp-ico img { width: 100%; height: 100%; object-fit: contain; }
+                .mp-ico { position: relative; flex: 0 0 auto; width: 42px; height: 42px; border-radius: 11px; display: flex; align-items: center; justify-content: center; overflow: hidden; background: var(--bg-surface); color: var(--accent); font-weight: 900; font-size: 17px; }
+                .mp-ico img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }          /* over the letter that stands in until it is loaded: never beside it */
                 .mp-main { flex: 1 1 auto; min-width: 0; }
                 .mp-name { font-size: 14px; font-weight: 800; line-height: 1.25; overflow-wrap: anywhere; }
                 .mp-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; overflow-wrap: anywhere; line-height: 1.4; }
@@ -5426,183 +5434,6 @@
         </section>
 
 <!-- MORPHE:VIEW:END -->
-<!-- SYSUI:VIEW:BEGIN -->
-        <section id="view-sysui" class="view-content">
-            <style>
-                .su-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-                .su-btns .mode-action-btn { flex: 1 1 auto; justify-content: center; min-width: 0; }
-                .su-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
-                .su-grid .mode-action-btn { justify-content: center; min-width: 0; text-align: center; }
-                .su-note { font-size: 11.5px; line-height: 1.5; color: var(--text-muted); margin: 6px 0; overflow-wrap: anywhere; }
-                .su-note b { color: var(--text-main); }
-                .su-note.is-err { color: var(--status-bloat); }
-                .su-credit { font-size: 11px; line-height: 1.5; color: var(--text-muted); margin-top: 10px; overflow-wrap: anywhere; }
-                .su-credit a { color: var(--accent); text-decoration: none; font-weight: 700; }
-                .su-lock { margin-top: 10px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--status-suspended); background: rgba(255, 196, 0, 0.1); font-size: 12px; line-height: 1.5; }
-                .su-banner { margin-top: 10px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--accent); background: var(--accent-glow); font-size: 12.5px; font-weight: 800; display: flex; align-items: center; gap: 10px; justify-content: space-between; flex-wrap: wrap; }
-                .su-banner.warn { border-color: var(--status-bloat); background: rgba(198, 40, 40, 0.18); }
-                .su-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; cursor: pointer; }
-                .su-head .color-card-title { margin: 0; }
-                .su-chev { font-size: 14px; color: var(--text-muted); transition: transform .15s; }
-                .su-card.open .su-chev { transform: rotate(90deg); }
-                .su-body { display: none; margin-top: 8px; }
-                .su-card.open .su-body { display: block; }
-                .su-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(var(--ov), 0.06); }
-                .su-row:last-child { border-bottom: 0; }
-                .su-row .su-lab { flex: 1 1 auto; min-width: 0; font-size: 13px; font-weight: 700; }
-                .su-row .su-sub { display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-top: 2px; line-height: 1.4; }
-                .su-row .op-select { flex: 0 0 150px; min-width: 0; font-size: 13px; padding: 8px 6px; }
-                .su-row .modal-text-input { flex: 0 0 120px; min-width: 0; margin: 0; }
-                .su-row input[type=range] { flex: 0 0 150px; accent-color: var(--accent); }
-                .su-row input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--accent); flex: 0 0 auto; }
-                .su-val { flex: 0 0 34px; text-align: right; font-size: 12px; font-weight: 800; color: var(--accent); }
-                .su-sub-h { font-size: 11px; font-weight: 900; letter-spacing: .4px; text-transform: uppercase; color: var(--text-muted); margin: 14px 0 2px; }
-                .su-tile { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid rgba(var(--ov), 0.06); }
-                .su-tile:last-child { border-bottom: 0; }
-                .su-tile .su-lab { flex: 1 1 auto; min-width: 0; font-size: 13px; font-weight: 700; }
-                .su-out { margin-top: 8px; padding: 8px 10px; border-radius: 10px; background: var(--input-bg); border: 1px solid var(--border-glass); font-family: monospace; font-size: 11px; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 40vh; overflow: auto; -webkit-user-select: text; user-select: text; }
-                .su-out:empty { display: none; }
-                .su-act { border: 1px solid var(--accent); color: var(--accent); background: transparent; border-radius: 999px; padding: 6px 12px; font-size: 11px; font-weight: 800; cursor: pointer; white-space: nowrap; }
-                .su-act:active { background: var(--accent); color: var(--on-accent); }
-                .su-act:disabled { opacity: 0.45; }
-                .su-act.danger { border-color: var(--status-bloat); color: var(--status-bloat); }
-                .su-slot { display: inline-block; margin: 2px 4px 2px 0; padding: 2px 8px; font-size: 11px; border-radius: 999px; border: 1px solid var(--border-glass); background: rgba(var(--ov), 0.05); }
-                .su-keep { margin-top: 10px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--status-suspended); background: rgba(255, 196, 0, 0.1); font-size: 12.5px; line-height: 1.5; }
-                .su-keep .mode-btn-row { margin-top: 8px; }
-                #view-sysui .mode-action-btn.danger { border-color: var(--status-bloat); color: var(--status-bloat); }
-                .su-action { min-height: 44px; font-size: 12.5px; padding: 6px; line-height: 1.2; }
-            </style>
-
-            <div class="color-card" id="suTop">
-                <div class="color-card-title">System UI Tuner</div>
-                <div class="color-card-subtitle">Change how the status bar, the quick settings, notifications and the system bars look and behave, without editing a single setting. Everything here ends by itself on a restart of System UI or of the phone.</div>
-                <div class="su-lock" id="suLock" style="display:none;"></div>
-                <div class="su-note">Most of what the System UI Tuner app by Zachary Wander (Tweaker) offers works by writing Global, Secure and System settings. Those are not repeated here: the <b>Hidden Settings</b> tab already edits every one of them. What is here does not write a setting.</div>
-                <div class="su-btns"><button class="mode-action-btn" onclick="switchView('settings')">Open Hidden Settings</button></div>
-                <div class="su-credit">Demo Mode and the three Quick Settings tiles come from <a href="#" onclick="openUrlExternal('https://github.com/zacharee/Tweaker');return false;">Tweaker</a> by Zachary Wander (MIT). The extra tools below it (status bar and shade, notification lab, system actions, battery simulator, navigation mode, display and window, info) are additions that use commands Android itself provides.</div>
-            </div>
-
-            <div class="color-card su-card" id="suCardDemo">
-                <div class="su-head" onclick="suToggle('suCardDemo')"><div class="color-card-title">Demo Mode</div><span class="su-chev">&#9656;</span></div>
-                <div class="color-card-subtitle">Forces the status bar into a fixed state: the clock, the battery, the signal, the icons. Made for screenshots. It changes nothing else, and it ends when System UI restarts or the phone restarts. From Tweaker.</div>
-                <div class="su-body">
-                    <div class="su-row"><div class="su-lab">Allow demo mode<span class="su-sub">Android only listens to demo commands while one flag is on (Global sysui_demo_allowed). This switch writes just that flag.</span></div><input type="checkbox" id="suDemoAllow" onchange="suDemoAllow(this.checked)"></div>
-                    <div class="su-row"><div class="su-lab">Enabled<span class="su-sub">Shows the demo state below in the status bar.</span></div><input type="checkbox" id="suDemoOn" onchange="suDemoOn(this.checked)"></div>
-                    <div class="su-banner warn" id="suDemoBanner" style="display:none;"><span>Demo mode is on. Screenshots show fake data.</span><button class="su-act" onclick="suDemoOnSet(false)">Exit</button></div>
-                    <div id="suDemoForm"></div>
-                    <div class="su-note" id="suDemoMsg"></div>
-                </div>
-            </div>
-
-            <div class="color-card su-card" id="suCardTiles">
-                <div class="su-head" onclick="suToggle('suCardTiles')"><div class="color-card-title">Quick Settings tiles</div><span class="su-chev">&#9656;</span></div>
-                <div class="color-card-subtitle">Three tiles for the quick settings panel: the battery level, a clock with seconds, and a Demo Mode switch. From Tweaker.</div>
-                <div class="su-body" id="suTiles"></div>
-            </div>
-
-            <div class="color-card su-card" id="suCardBar">
-                <div class="su-head" onclick="suToggle('suCardBar')"><div class="color-card-title">Status bar and shade</div><span class="su-chev">&#9656;</span></div>
-                <div class="color-card-subtitle">Open or close the notification shade, hide parts of the bars for a while, and see the icon slots System UI knows.</div>
-                <div class="su-body">
-                    <div class="su-grid">
-                        <button class="mode-action-btn" onclick="suShade('expand-notifications')">Open notifications</button>
-                        <button class="mode-action-btn" onclick="suShade('expand-settings')">Open quick settings</button>
-                        <button class="mode-action-btn" onclick="suShade('collapse')">Close the shade</button>
-                    </div>
-                    <div class="su-sub-h">Hide for now</div>
-                    <div class="su-note">These switch parts of the bars off in the system, without a setting, until you restore them or restart the phone. Each change replaces the last one.</div>
-                    <div id="suFlags"></div>
-                    <div class="su-btns"><button class="mode-action-btn primary" onclick="suFlagsApply()">Apply</button><button class="mode-action-btn" onclick="suFlagsRestore()">Restore everything</button><button class="mode-action-btn" onclick="suFlagsRead()">What is hidden now</button></div>
-                    <div class="su-note" id="suFlagsMsg"></div>
-                    <div class="su-keep" id="suKeep" style="display:none;"></div>
-                    <div class="su-sub-h">Status bar icon slots</div>
-                    <div class="su-note">The names System UI gives its status bar icons. The hiding itself is the Secure setting icon_blacklist, which Hidden Settings edits.</div>
-                    <div class="su-btns"><button class="mode-action-btn" onclick="suSlotsLoad()">Load the slots</button><button class="mode-action-btn" onclick="suSlotsCopy()">Copy</button><button class="mode-action-btn" onclick="switchView('settings')">Hidden Settings</button></div>
-                    <div id="suSlots" class="su-note" translate="no"></div>
-                </div>
-            </div>
-
-            <div class="color-card su-card" id="suCardNotif">
-                <div class="su-head" onclick="suToggle('suCardNotif')"><div class="color-card-title">Notification lab</div><span class="su-chev">&#9656;</span></div>
-                <div class="color-card-subtitle">Send test notifications to see how they look, list the ones that are showing, snooze one. They are sent as the shell, in a channel called Shell command.</div>
-                <div class="su-body">
-                    <input class="modal-text-input" id="suNTitle" placeholder="Title" value="Test notification" autocomplete="off" spellcheck="false" maxlength="80">
-                    <input class="modal-text-input" id="suNText" placeholder="Text" value="This is a test from System UI Tuner." autocomplete="off" spellcheck="false" maxlength="300" style="margin-top:6px;">
-                    <input class="modal-text-input" id="suNTag" placeholder="Tag" value="sysui_tuner" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="40" style="margin-top:6px;">
-                    <div class="su-row"><div class="su-lab">Style</div><select class="op-select" id="suNStyle"><option value="basic">Basic</option><option value="bigtext">Big text</option><option value="inbox">Inbox (lines)</option><option value="messaging">Messaging</option></select></div>
-                    <div class="su-btns"><button class="mode-action-btn primary" onclick="suNotifPost()">Send</button><button class="mode-action-btn" onclick="suNotifList()">List active</button></div>
-                    <div id="suNKeys"></div>
-                    <div class="su-note" id="suNMsg"></div>
-                </div>
-            </div>
-
-            <div class="color-card su-card" id="suCardActions">
-                <div class="su-head" onclick="suToggle('suCardActions')"><div class="color-card-title">System actions</div><span class="su-chev">&#9656;</span></div>
-                <div class="color-card-subtitle">Press the system's own buttons from here: Back, Home, Recents, the power menu, a screenshot and more. And restart System UI when the bars misbehave.</div>
-                <div class="su-body">
-                    <div class="su-grid" id="suActions"></div>
-                    <div class="su-btns"><button class="mode-action-btn danger" onclick="suRestartUi()">Restart System UI</button></div>
-                    <div class="su-note">Restarting System UI makes the bars and the shade flicker for a few seconds and ends demo mode. Nothing is lost.</div>
-                    <div class="su-note" id="suActMsg"></div>
-                </div>
-            </div>
-
-            <div class="color-card su-card" id="suCardBatt">
-                <div class="su-head" onclick="suToggle('suCardBatt')"><div class="color-card-title">Battery simulator</div><span class="su-chev">&#9656;</span></div>
-                <div class="color-card-subtitle">Makes the whole system believe the battery has another level or state, to test low battery warnings and charging screens. Different from Demo Mode, which only changes the icon.</div>
-                <div class="su-body">
-                    <div class="su-banner warn" id="suBattBanner" style="display:none;"><span>The battery is being simulated. The phone does not see the real charge.</span><button class="su-act" onclick="suBattReset()">Reset now</button></div>
-                    <div class="su-row"><div class="su-lab">Level</div><input type="range" id="suBLevel" min="0" max="100" value="50" oninput="document.getElementById('suBLevelV').textContent=this.value"><span class="su-val" id="suBLevelV">50</span></div>
-                    <div class="su-row"><div class="su-lab">State</div><select class="op-select" id="suBStatus"><option value="3">Discharging</option><option value="2">Charging</option><option value="4">Not charging</option><option value="5">Full</option><option value="1">Unknown</option></select></div>
-                    <div class="su-row"><div class="su-lab">Plugged into</div><select class="op-select" id="suBPlug"><option value="none">Nothing</option><option value="ac">AC</option><option value="usb">USB</option><option value="wireless">Wireless</option></select></div>
-                    <div class="su-row"><div class="su-lab">Temperature<span class="su-sub">in tenths of a degree (250 is 25.0)</span></div><input class="modal-text-input" type="number" id="suBTemp" value="250" inputmode="numeric"></div>
-                    <div class="su-btns"><button class="mode-action-btn primary" onclick="suBattApply()">Apply</button><button class="mode-action-btn" onclick="suBattUnplug()">Unplug</button><button class="mode-action-btn" onclick="suBattRead()">Read</button><button class="mode-action-btn danger" onclick="suBattReset()">Reset</button></div>
-                    <div class="su-out" id="suBattOut" translate="no"></div>
-                </div>
-            </div>
-
-            <div class="color-card su-card" id="suCardNav">
-                <div class="su-head" onclick="suToggle('suCardNav')"><div class="color-card-title">Navigation mode</div><span class="su-chev">&#9656;</span></div>
-                <div class="color-card-subtitle">Switch between 3-button, 2-button and gesture navigation through the overlays Android ships for it.</div>
-                <div class="su-body">
-                    <div id="suNav"></div>
-                    <div class="su-btns"><button class="mode-action-btn" onclick="suNavLoad()">Check this phone</button></div>
-                    <div class="su-note" id="suNavMsg"></div>
-                </div>
-            </div>
-
-            <div class="color-card su-card" id="suCardWin">
-                <div class="su-head" onclick="suToggle('suCardWin')"><div class="color-card-title">Display and windows</div><span class="su-chev">&#9656;</span></div>
-                <div class="color-card-subtitle">Screen density and size of this phone, and how windows behave. A change is put back by itself after 15 seconds unless you keep it.</div>
-                <div class="su-body">
-                    <div class="su-row"><div class="su-lab">Density<span class="su-sub" id="suDensCur"></span></div><input class="modal-text-input" type="number" id="suDens" placeholder="420" inputmode="numeric"></div>
-                    <div class="su-row"><div class="su-lab">Size<span class="su-sub" id="suSizeCur"></span></div><input class="modal-text-input" id="suSize" placeholder="1080x2400" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
-                    <div class="su-btns"><button class="mode-action-btn primary" onclick="suWinApply()">Apply</button><button class="mode-action-btn" onclick="suWinRead()">Read</button><button class="mode-action-btn danger" onclick="suWinReset()">Reset to default</button></div>
-                    <div class="su-row"><div class="su-lab">Ignore orientation requests<span class="su-sub">Apps that ask for a fixed orientation rotate with the screen (Android 12 and newer).</span></div><input type="checkbox" id="suIgnoreOri" onchange="suIgnoreOri(this.checked)"></div>
-                    <div class="su-row"><div class="su-lab">Window scaling<span class="su-sub">Auto lets the system scale windows; off draws them at their own size.</span></div><select class="op-select" id="suScaling" onchange="suScaling(this.value)"><option value="auto">Auto</option><option value="off">Off</option></select></div>
-                    <div class="su-keep" id="suWinKeep" style="display:none;"></div>
-                    <div class="su-note" id="suWinMsg"></div>
-                </div>
-            </div>
-
-            <div class="color-card su-card" id="suCardInfo">
-                <div class="su-head" onclick="suToggle('suCardInfo')"><div class="color-card-title">System UI information</div><span class="su-chev">&#9656;</span></div>
-                <div class="color-card-subtitle">Read-only reports about the bars, the windows, the displays and the night mode, with Copy and Share.</div>
-                <div class="su-body">
-                    <div class="su-grid">
-                        <button class="mode-action-btn" onclick="suInfo('statusbar')">Status bar</button>
-                        <button class="mode-action-btn" onclick="suInfo('status-icons')">Status icon slots</button>
-                        <button class="mode-action-btn" onclick="suInfo('window-displays')">Window displays</button>
-                        <button class="mode-action-btn" onclick="suInfo('display')">Displays</button>
-                        <button class="mode-action-btn" onclick="suInfo('uimode')">Night and car mode</button>
-                    </div>
-                    <div class="su-out" id="suInfoOut" translate="no"></div>
-                    <div class="su-btns" id="suInfoBtns" style="display:none;"><button class="mode-action-btn" onclick="copyText(document.getElementById('suInfoOut').textContent)">Copy</button><button class="mode-action-btn" onclick="shareFileViaBridge('system-ui-info.txt', document.getElementById('suInfoOut').textContent, 'text/plain')">Share</button></div>
-                </div>
-            </div>
-        </section>
-
-<!-- SYSUI:VIEW:END -->
 <!-- SDM:VIEW:BEGIN -->
         <section id="view-sdm" class="view-content">
             <style>
@@ -5807,7 +5638,6 @@
                 <div class="about-tip">Task Manager tab modeled on <a href="#" onclick="openUrlExternal('https://github.com/RohitKushvaha01/TaskManager'); return false;">RohitKushvaha01/TaskManager</a>.</div>
                 <div class="about-tip">Morphe Patcher tab: the patcher engine is <a href="#" onclick="openUrlExternal('https://github.com/MorpheApp/morphe-patcher'); return false;">morphe-patcher</a> and the way sources, patching and the community finder work follows <a href="#" onclick="openUrlExternal('https://github.com/MorpheApp/morphe-manager'); return false;">Morphe Manager</a>, both by <a href="#" onclick="openUrlExternal('https://github.com/MorpheApp'); return false;">MorpheApp</a> (GPL-3.0); the APK download sources and the VirusTotal check follow <a href="#" onclick="openUrlExternal('https://github.com/rushiranpise/helper-for-morphe'); return false;">Helper for Morphe</a> by rushiranpise (GPL-3.0). The patches belong to their authors.</div>
                 <div class="about-tip">SD Maid SE tab: a port of the four tools of <a href="#" onclick="openUrlExternal('https://github.com/d4rken-org/sdmaid-se'); return false;">SD Maid SE</a> by darken (d4rken-org, GPL-3.0), also on <a href="#" onclick="openUrlExternal('https://play.google.com/store/apps/details?id=eu.darken.sdmse'); return false;">Google Play</a>. Its icons, logo and translations are not used.</div>
-                <div class="about-tip">System UI Tuner tab: Demo Mode and the Quick Settings tiles follow <a href="#" onclick="openUrlExternal('https://github.com/zacharee/Tweaker'); return false;">Tweaker</a> (System UI Tuner) by Zachary Wander (MIT).</div>
                 <div class="about-tip">Hidden Settings: the descriptions of Android's own settings are taken in part from the documentation in the <a href="#" onclick="openUrlExternal('https://source.android.com/'); return false;">Android Open Source Project</a> (Apache-2.0).</div>
             </div>
         </section>
@@ -5831,6 +5661,16 @@
                 .tx-state { font-size: 11px; color: var(--text-muted); flex: 1 1 140px; min-width: 0; overflow-wrap: anywhere; }
                 .tx-state b { color: var(--text-main); }
                 .tx-screens { position: relative; }
+                /* Full screen: the Terminal pane covers the whole app (header and tabs included), the screen takes all the room above the input and the extra keys,
+                   and the height follows the on-screen keyboard (--tx-vh, set from visualViewport) so the input line is never hidden behind it */
+                #txPaneTerminal.tx-full { position: fixed; left: 0; top: 0; right: 0; height: var(--tx-vh, 100vh); z-index: 250; margin: 0; background: var(--bg-main); display: flex; flex-direction: column; padding: calc(env(safe-area-inset-top, 0px) + 6px) 8px calc(env(safe-area-inset-bottom, 0px) + 6px); overflow: hidden; box-sizing: border-box; }
+                #txPaneTerminal.tx-full > * { flex: 0 0 auto; }
+                #txPaneTerminal.tx-full .tx-screens { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+                #txPaneTerminal.tx-full .tx-screen { height: auto; min-height: 0; max-height: none; flex: 1 1 auto; font-size: var(--tx-full-font, 13px); }
+                #txPaneTerminal.tx-full .tx-keys { margin-top: 4px; }
+                #txPaneTerminal.tx-full .tx-tools { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 6px; padding: 4px 0 0; }
+                #txPaneTerminal.tx-full .tx-tools .term-icon-btn { flex: 0 0 auto; }
+                body.tx-full-on { overflow: hidden; }
                 .tx-screen { background: #000; color: #e6e6e6; font-family: 'DejaVu Sans Mono', 'Roboto Mono', 'Droid Sans Mono', monospace; font-size: 12.5px; line-height: 1.45; border-radius: 12px; padding: 10px 10px 14px; height: 50vh; min-height: 240px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; border: 1px solid #232323; -webkit-user-select: text; user-select: text; }
                 .tx-screen * { font-family: inherit; }
                 .tx-screen .tx-pp { color: #23d18b; }
@@ -5987,6 +5827,7 @@
                     <button translate="no" data-k="shift" class="tx-key-shift" title="More symbols" aria-label="Shift: more symbols">SHIFT</button>
                 </div>
                 <div class="tx-tools">
+                    <button class="term-icon-btn" id="txFullBtn" onclick="txFullToggle()" aria-pressed="false">Full screen</button>
                     <button class="term-icon-btn" onclick="txClearScreen()">Clear</button>
                     <button class="term-icon-btn" onclick="txCopyScreen()">Copy</button>
                     <button class="term-icon-btn" onclick="openCheatSheet(true)">Cheat Sheet</button>
@@ -6547,6 +6388,22 @@ Type any command below (e.g. pm list packages -d)
                 </div>
             </div>
             <div id="abSheetList" class="ab-sheet-list"></div>
+        </div>
+    </div>
+
+    <!-- A choice with a title and a few words about what it changes: opened from the Apps tab's Action Button menu -->
+    <div class="modal-overlay" id="choiceSheet" onclick="if(event.target===this) closeChoiceSheet()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-title">
+                    <h3 id="choiceTitle">Choose</h3>
+                    <p id="choiceDesc" style="white-space:normal;"></p>
+                </div>
+                <div class="sheet-header-actions">
+                    <div style="font-size:20px; cursor:pointer;" onclick="closeChoiceSheet()">✕</div>
+                </div>
+            </div>
+            <div id="choiceList" class="ab-sheet-list"></div>
         </div>
     </div>
 
@@ -8274,7 +8131,6 @@ Type any command below (e.g. pm list packages -d)
             { key: 'devices', label: 'Connected\nDevices', name: 'Connected Devices' },
             { key: 'morphe', label: 'Morphe\nPatcher', name: 'Morphe Patcher' },
             { key: 'sdm', label: 'SD Maid\nSE', name: 'SD Maid SE' },
-            { key: 'sysui', label: 'System UI\nTuner', name: 'System UI Tuner' },
             { key: 'about', label: 'About', name: 'About', fixed: true }
         ];
         const TAB_MOVABLE = TAB_DEFS.filter(t => !t.fixed).map(t => t.key);          // the default order of the tabs that can move
@@ -8336,6 +8192,7 @@ Type any command below (e.g. pm list packages -d)
             if (viewName !== 'prefs' && !tabDef(viewName)) return false;
             if (!tabNeed(viewName)) return false;                        // switched off in Settings > Feature List: nothing to open
             closeSearchMenu();
+            if (txFullOn && viewName !== 'terminal') txFullToggle(false);
             const fromView = currentViewName();
             if (!navFromBack && fromView && fromView !== viewName) {
                 viewStack = viewStack.filter(v => v !== fromView);
@@ -8377,8 +8234,6 @@ Type any command below (e.g. pm list packages -d)
             if (viewName === 'morphe' && typeof onMorpheShown === 'function') onMorpheShown();
             if (viewName === 'sdm' && typeof onSdmShown === 'function') onSdmShown();
             if (viewName === 'morphe' && typeof onMorpheShown === 'function') onMorpheShown();
-            if (viewName !== 'sysui' && typeof suLeave === 'function' && su.shown) suLeave();
-            if (viewName === 'sysui' && typeof onSysuiShown === 'function') onSysuiShown();
             if (viewName === 'morphe' && typeof onMorpheShown === 'function') onMorpheShown();
             if (viewName === 'morphe' && typeof onMorpheShown === 'function') onMorpheShown();
             if (viewName === 'morphe' && typeof onMorpheShown === 'function') onMorpheShown();
@@ -8675,6 +8530,7 @@ Type any command below (e.g. pm list packages -d)
                 top.click();                                                          // every sheet closes when its backdrop is tapped
                 return true;
             }
+            if (txFullOn) { txFullToggle(false); return true; }                        // the Terminal's full screen: Back comes out of it first
             if (batchPanelExpanded) { collapseBatchPanel(); return true; }
             if (selectedPkgs.size) { clearBatchSelection(); return true; }
             const cur = currentViewName();
@@ -10927,8 +10783,48 @@ Type any command below (e.g. pm list packages -d)
         window.onStoreApp = onStoreApp;
 
         // Store texts often come as HTML (tags, entities). This turns them into plain, readable text: paragraphs and line breaks kept, lists with bullets or numbers, links as their text.
+        // GitHub and F-Droid give a README or a Markdown text, not HTML: headings, badges, links and lists are turned into plain readable text
+        function looksMarkdown(t) {
+            return /^\s{0,3}#{1,6}\s+\S/m.test(t) || /!\[[^\]]*\]\([^)]*\)/.test(t) || /\[[^\]]+\]\([^)]*\)/.test(t) || /^\s*```/m.test(t) || /^\s*\[[^\]]+\]:\s*\S+/m.test(t);
+        }
+        function readmeToHtml(text) {
+            const esc = (x) => x.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            const inline = (x) => x
+                .replace(/\[!\[[^\]]*\]\([^)]*\)\]\([^)]*\)/g, '').replace(/\[!\[[^\]]*\]\[[^\]]*\]\]\([^)]*\)/g, '')
+                .replace(/!\[[^\]]*\]\([^)]*\)/g, '').replace(/!\[[^\]]*\]\[[^\]]*\]/g, '')
+                .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/\[([^\]]+)\]\[[^\]]*\]/g, '$1')
+                .replace(/<(https?:\/\/[^>\s]+)>/g, '$1')
+                .replace(/\*\*(\S(?:.*?\S)?)\*\*/g, '<b>$1</b>').replace(/(^|[^\w])__(\S(?:.*?\S)?)__(?!\w)/g, '$1<b>$2</b>')
+                .replace(/(^|[^\w*])\*(?!\s)([^*]+?)\*(?![\w*])/g, '$1<i>$2</i>').replace(/(^|[^\w])_(?!\s)([^_]+?)_(?!\w)/g, '$1<i>$2</i>')
+                .replace(/`([^`]+)`/g, '<code>$1</code>')
+                .replace(/~~(.+?)~~/g, '$1').replace(/\\([\\`*_{}\[\]()#+\-.!|])/g, '$1');
+            const out = []; let para = [], list = '', fence = false;
+            const flush = () => { if (para.length) { out.push('<p>' + inline(para.join(' ')) + '</p>'); para = []; } };
+            const endList = () => { if (list) { out.push('</' + list + '>'); list = ''; } };
+            text.replace(/<!--[\s\S]*?-->/g, '').split(/\r?\n/).forEach((line) => {
+                if (/^\s*```/.test(line)) { flush(); endList(); out.push(fence ? '</pre>' : '<pre>'); fence = !fence; return; }
+                if (fence) { out.push(esc(line) + '\n'); return; }
+                if (/^\s*\[[^\]]+\]:\s*\S+/.test(line)) return;
+                let m;
+                if ((m = /^\s{0,3}(#{1,6})\s+(.*?)\s*#*\s*$/.exec(line))) { flush(); endList(); out.push('<h3>' + inline(m[2]) + '</h3>'); return; }
+                if (/^\s*([-*_])(\s*\1){2,}\s*$/.test(line) || /^\s*={3,}\s*$/.test(line)) { flush(); endList(); return; }
+                if ((m = /^\s*[-*+]\s+(.*)$/.exec(line))) { flush(); if (list !== 'ul') { endList(); out.push('<ul>'); list = 'ul'; } out.push('<li>' + inline(m[1]) + '</li>'); return; }
+                if ((m = /^\s*\d+[.)]\s+(.*)$/.exec(line))) { flush(); if (list !== 'ol') { endList(); out.push('<ol>'); list = 'ol'; } out.push('<li>' + inline(m[1]) + '</li>'); return; }
+                if (/^\s*\|.*\|\s*$/.test(line)) {
+                    flush(); endList();
+                    if (/^[\s|:-]+$/.test(line)) return;
+                    out.push('<div>' + inline(line.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim()).filter(Boolean).join(' \u00b7 ')) + '</div>'); return;
+                }
+                if (/^\s*$/.test(line)) { flush(); endList(); return; }
+                if ((m = /^\s*>\s?(.*)$/.exec(line))) { flush(); endList(); out.push('<blockquote>' + inline(m[1]) + '</blockquote>'); return; }
+                endList(); para.push(line.trim());
+            });
+            flush(); endList();
+            return out.join('');
+        }
         function htmlToReadable(html) {
-            const src = String(html == null ? '' : html);
+            let src = String(html == null ? '' : html);
+            if (looksMarkdown(src)) src = readmeToHtml(src);
             if (!/[<&]/.test(src)) return src.trim();
             let doc = null;
             try { doc = new DOMParser().parseFromString('<!doctype html><body>' + src, 'text/html'); } catch (e) {}
@@ -10942,7 +10838,7 @@ Type any command below (e.g. pm list packages -d)
                 if (t === 'script' || t === 'style' || t === 'head' || t === 'iframe' || t === 'noscript') return;
                 if (t === 'br') { out.push('\n'); return; }
                 if (t === 'hr') { out.push('\n\n'); return; }
-                if (t === 'img') { const alt = n.getAttribute('alt'); if (alt) out.push(alt); return; }
+                if (t === 'img') return;
                 if (t === 'li') {
                     out.push('\n' + (ctx.ol ? (++ctx.n) + '. ' : '\u2022 '));
                     n.childNodes.forEach(c => walk(c, Object.assign({}, ctx, { n: 0, ol: false })));
@@ -10970,7 +10866,7 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('storeDetailSub').innerText = (a.packageName || '') + (a.versionName ? ' · v' + a.versionName : '');
             const parts = [];
             const desc = htmlToReadable(a.fullDescription || a.description || '');
-            if (desc) parts.push(`<div style="font-size:13px;color:var(--text-main);white-space:pre-wrap;margin-bottom:10px;">${esc(desc)}</div>`);
+            if (desc) parts.push(`<div style="font-size:13px;color:var(--text-main);white-space:pre-wrap;overflow-wrap:anywhere;margin-bottom:10px;">${esc(desc)}</div>`);
             const chips = [];
             if (a.stars != null) chips.push(esc(fmtCount(a.stars)) + ' stars');
             if (a.downloadTotal != null) chips.push(esc(fmtCount(a.downloadTotal)) + ' downloads');
@@ -12220,11 +12116,39 @@ Type any command below (e.g. pm list packages -d)
                 if (held && e.target.closest && e.target.closest('.ab-btn')) { held = false; e.stopPropagation(); e.preventDefault(); }
             }, true);
         })();
+        // what each choice does, for the menu of the Apps tab
+        const AB_DESC = {
+            settings: "Opens the app's page in Android's settings.", forcestop: 'Stops the app and everything it runs in the background.', launch: 'Opens the app.',
+            toggle: 'Disables an enabled app, enables a disabled one.', uninstall: 'Uninstalls an installed app, installs back one that was uninstalled.', suspend: 'Suspends an app, or lets a suspended one run again.',
+            perms: "Lists the app's permissions and lets you grant or revoke each.", acts: "Lists the app's screens (activities) so you can open or disable them.", none: 'Rows have no extra button.'
+        };
+        // a short name for the button itself ("Enable / Disable (dynamic)" does not fit in it)
+        function abShortName(k) { const o = AB_OPTIONS.find(x => x[0] === k); return o ? o[1].replace(/ \(dynamic\)/, '').replace(/ \(no button\)/, '') : ''; }
+        function openActionBtnPicker() {
+            openChoiceSheet({
+                title: 'Action Button',
+                desc: 'The extra button on every row of the Apps list. Choose what a tap on it does. Press and hold it on a row for a sheet with every action for that app.',
+                options: AB_OPTIONS.map(o => [o[0], abShortName(o[0]), AB_DESC[o[0]] || '']),
+                current: actionBtn,
+                onPick: (v) => setActionBtn(v)
+            });
+        }
+        let choiceCb = null;
+        function openChoiceSheet(o) {
+            choiceCb = o.onPick;
+            document.getElementById('choiceTitle').textContent = o.title;
+            document.getElementById('choiceDesc').textContent = o.desc || '';
+            document.getElementById('choiceList').innerHTML = o.options.map((x, i) =>
+                '<button class="ab-sheet-row' + (x[0] === o.current ? ' current' : '') + '" data-v="' + escapeHtml(x[0]) + '" onclick="choiceSheetPick(this.getAttribute(\'data-v\'))"><span class="ab-sheet-txt"><span>' + escapeHtml(x[1]) + '</span>' + (x[2] ? '<span class="ab-sheet-sub">' + escapeHtml(x[2]) + '</span>' : '') + '</span></button>').join('');
+            document.getElementById('choiceSheet').classList.add('show');
+        }
+        function closeChoiceSheet() { document.getElementById('choiceSheet').classList.remove('show'); }
+        function choiceSheetPick(v) { const cb = choiceCb; closeChoiceSheet(); if (cb) cb(v); }
         function actionBtnRender() {
             abCfgRender();
             const opts = AB_OPTIONS.map(o => '<option value="' + o[0] + '"' + (o[0] === actionBtn ? ' selected' : '') + '>' + escapeHtml(o[1]) + '</option>').join('');
-            const rowSel = document.getElementById('appsActionBtnSelect');            // the same choice sits at the end of the Apps tab's button row
-            if (rowSel) { rowSel.innerHTML = opts; rowSel.value = actionBtn; }
+            const rowLab = document.getElementById('appsActionBtnPickLabel');            // the same choice sits at the end of the Apps tab's button row
+            if (rowLab) rowLab.textContent = abShortName(actionBtn);
             const sel = document.getElementById('actionBtnSelect');
             if (!sel) return;
             sel.innerHTML = opts;
@@ -16983,7 +16907,7 @@ Type any command below (e.g. pm list packages -d)
         // ---------- "?" on each tab: the Help Guide at the topic of that tab ----------
         const HELP_LINKS = {
             apps: 'tab-apps', 'saved-lists': 'tab-saved-lists', debloater: 'tab-debloater', installer: 'tab-installer', files: 'tab-files', terminal: 'tab-terminal', devices: 'tab-devices',
-            settings: 'tab-settings', overlays: 'tab-overlays', updates: 'tab-updates', store: 'tab-store', logcat: 'tab-logcat', taskmgr: 'tab-taskmgr', morphe: 'tab-morphe', sdm: 'tab-sdm', sysui: 'tab-sysui', prefs: 'prefs'
+            settings: 'tab-settings', overlays: 'tab-overlays', updates: 'tab-updates', store: 'tab-store', logcat: 'tab-logcat', taskmgr: 'tab-taskmgr', morphe: 'tab-morphe', sdm: 'tab-sdm', prefs: 'prefs'
         };
         function injectHelpLinks() {
             Object.keys(HELP_LINKS).forEach(view => {
@@ -21332,6 +21256,7 @@ Type any command below (e.g. pm list packages -d)
         function txF(tpl) { const args = Array.prototype.slice.call(arguments, 1); return txT(tpl).replace(/\{(\d+)\}/g, (m, n) => (args[+n] !== undefined ? String(args[+n]) : m)); }
 
         function txShowPane(p) {
+            if (txFullOn && p === 'console') txFullToggle(false);
             txPane = p === 'console' ? 'console' : 'terminal';
             kvSet('term_subtab', txPane);
             const t = document.getElementById('txPaneTerminal'), c = document.getElementById('txPaneConsole');
@@ -21390,6 +21315,28 @@ Type any command below (e.g. pm list packages -d)
             txNote('', b);
         }
 
+        // ---- Full screen ----
+        let txFullOn = false;
+        function txFullSize() {
+            const vv = window.visualViewport;
+            document.documentElement.style.setProperty('--tx-vh', (vv ? Math.round(vv.height) : window.innerHeight) + 'px');
+        }
+        function txFullToggle(force) {
+            const on = typeof force === 'boolean' ? force : !txFullOn;
+            if (on === txFullOn) return;
+            haptic();
+            txFullOn = on;
+            const pane = document.getElementById('txPaneTerminal');
+            if (on && pane.style.display === 'none') return void (txFullOn = false);
+            pane.classList.toggle('tx-full', on);
+            document.body.classList.toggle('tx-full-on', on);
+            const b = document.getElementById('txFullBtn');
+            if (b) { b.textContent = on ? 'Exit full screen' : 'Full screen'; b.setAttribute('aria-pressed', on ? 'true' : 'false'); }
+            if (on) { txFullSize(); if (window.visualViewport) window.visualViewport.addEventListener('resize', txFullSize); window.addEventListener('resize', txFullSize); }
+            else { if (window.visualViewport) window.visualViewport.removeEventListener('resize', txFullSize); window.removeEventListener('resize', txFullSize); document.documentElement.style.removeProperty('--tx-vh'); }
+            const sc = pane.querySelector('.tx-screen:not([style*="display: none"])');
+            if (sc) sc.scrollTop = sc.scrollHeight;
+        }
         function txPickShell(b) {
             if (!TX_SHELLS[b]) return;
             haptic();
@@ -23879,7 +23826,7 @@ Type any command below (e.g. pm list packages -d)
                 + step(3, !!(txProbe && txProbe.ok), 'Let Termux take commands from other apps', 'In Termux, paste and run:<span class="tx-sheet-code" translate="no">' + escapeHtml(TX_TERMUX_ALLOW_CMD) + '</span>', '<button class="mode-action-btn primary" onclick="copyText(TX_TERMUX_ALLOW_CMD); showToast(\'Copied: paste it in Termux\')">Copy</button><button class="mode-action-btn" onclick="txLaunchTermuxApp()">Open Termux</button>')
                 + step(4, !!t.permission, 'Allow this app', t.permission ? 'Allowed: "Run commands in Termux environment".' : 'Android asks whether this app may "Run commands in Termux environment".', t.permission ? '' : '<button class="mode-action-btn primary" onclick="txTermuxAllow()"' + (t.installed ? '' : ' disabled') + '>Allow</button>')
                 + step(5, !!(txProbe && txProbe.ok), 'Test the connection', txProbe ? (txProbe.ok ? 'Termux answered. All set.' : '<span class="is-err">' + escapeHtml(txProbe.message || 'No answer') + '</span>') : 'Sends a harmless command to Termux and waits for the answer.', '<button class="mode-action-btn" id="txProbeBtn" onclick="txTermuxTest()"' + (t.installed && t.permission ? '' : ' disabled') + '>Test</button>')
-                + '<div class="mode-btn-row" style="margin-top:12px;"><button class="mode-action-btn primary" onclick="txUseTermuxShell()"' + (t.installed && t.permission ? '' : ' disabled') + '>Use Termux as the shell</button><button class="mode-action-btn" onclick="txSyncTermux()"' + (t.installed && t.permission ? '' : ' disabled') + '>Sync with Termux</button></div>'
+                + '<div class="mode-btn-row" style="margin-top:12px;"><button class="mode-action-btn primary" onclick="txUseTermuxShell()"' + (t.installed && t.permission ? '' : ' disabled') + '>Use Termux as the shell</button><button class="mode-action-btn" onclick="txSyncTermux()"' + (t.installed && t.permission ? '' : ' disabled') + '>Sync with Termux</button><button class="mode-action-btn" onclick="txTermuxStorage()"' + (t.installed && t.permission ? '' : ' disabled') + '>Set up storage in Termux</button></div>'
                 + '<p class="tx-sheet-p muted">Commands run as Termux, in its home folder, with your Termux packages and (with Match my Termux environment on) your aliases and functions too. Sync with Termux also opens Termux so you can grant it access to shared storage.</p>';
         }
 
@@ -23907,21 +23854,27 @@ Type any command below (e.g. pm list packages -d)
         }
 
         // Sets up (or updates) the in-app Termux shell to match the real Termux app: turns on "Match my Termux
-        // environment" if it was off, restarts any already-running Termux session so the change applies right away,
-        // and opens termux-setup-storage in Termux so shared/phone storage access gets granted there too.
+        // environment" if it was off, starts the Termux shell afresh so the change applies right away, and prints what it took
+        // over from Termux (aliases, functions, home, packages, phone storage) so you can see that it worked. Termux itself is
+        // opened only by "Set up storage in Termux", and only when that is still needed.
+        const TX_STORAGE_CMD = 'if [ -d "$HOME/storage/shared" ] && [ -r /storage/emulated/0 ]; then echo "Phone storage is already set up. Nothing to do."; else termux-setup-storage; fi';
         function txSyncTermux() {
             haptic();
             txCloseSettings();          // harmless if it was not open; keeps a redirect into the setup modal from stacking on top of it
             txRefreshInfo();
             const t = txInfo && txInfo.termux || {};
-            if (!t.installed || !t.permission) { txOpenTermux('termux-setup-storage'); return; }
+            if (!t.installed || !t.permission) { txOpenTermux(''); return; }
             if (!txSettings.termuxMatchEnv) { txSettings.termuxMatchEnv = true; txSaveSettings(); }
             if (window.AndroidBridge && window.AndroidBridge.termClose) { try { window.AndroidBridge.termClose('termux'); } catch (e) {} }
             if (txSess.termux) txSess.termux.st = 'off';
-            showToast('Syncing with Termux - opening it to finish storage access');
-            txOpenTermux('termux-setup-storage');
-            if (txCurShell() === 'termux') txStartShell('termux');
+            txCloseTermux();
+            const sel = document.getElementById('txShell');
+            if (sel) sel.value = 'termux';
+            txPickShell('termux');                                   // starts it again, with the Termux environment on
+            txPending = { b: 'termux', cmd: 'adbmgr_sync_report' };  // and when it is up: what it took over
+            showToast('Syncing with Termux...');
         }
+        function txTermuxStorage() { haptic(); txCloseSettings(); txCloseTermux(); txOpenTermux(TX_STORAGE_CMD); }
 
         // ---------------------------------------------------------------- settings
         function txOpenSettings() {
@@ -23971,7 +23924,7 @@ Type any command below (e.g. pm list packages -d)
                 + '<div class="tx-row"><div class="tx-row-main"><div class="tx-row-name">Shell when the Terminal opens</div></div><select class="op-select" style="max-width:52vw;" onchange="txSet(\'defaultShell\', this.value)">' + shellOpts + '</select></div>'
                 + sw('termuxProfile', 'Use my Termux login profile', 'Termux shells read ~/.bash_profile or ~/.profile first (PATH and the like). Turn off if your profile starts another program.')
                 + sw('termuxMatchEnv', 'Match my Termux environment', 'Also sources ~/.bashrc, so aliases and functions from your own Termux shell work here too. Turn off if yours does something unexpected for a non-interactive shell.')
-                + '<div class="mode-btn-row" style="margin-top:10px;"><button class="mode-action-btn" onclick="txCloseSettings(); txOpenTermuxSetup()">Termux setup</button><button class="mode-action-btn primary" onclick="txSyncTermux()">Sync with Termux</button></div>'
+                + '<div class="mode-btn-row" style="margin-top:10px;"><button class="mode-action-btn" onclick="txCloseSettings(); txOpenTermuxSetup()">Termux setup</button><button class="mode-action-btn primary" onclick="txSyncTermux()">Sync with Termux</button><button class="mode-action-btn" onclick="txTermuxStorage()">Set up storage in Termux</button></div>'
                 + '<div class="tx-sheet-sec">What agents may do</div>'
                 + sw('askRun', 'Ask before running commands', 'Shows each command with Run, Skip and Always allow in this chat.')
                 + sw('askWrite', 'Ask before changing files', 'Shows what changes, line by line, with Apply, Skip and Always allow in this chat.')
@@ -27489,7 +27442,7 @@ Type any command below (e.g. pm list packages -d)
         const MP_DEFAULTS = {
             mode: 'simple', installAfter: true, deleteAfter: false, keepIn: 'both', stripLibs: false, forceCompat: false, failOnError: true, signer: 'Morphe',
             hSources: ['apkmirror', 'uptodown', 'apkpure', 'apkcombo', 'aptoide', 'evozi', 'mi9', 'apkdownloader', 'aurora', 'play'], hDefault: 'apkmirror', hConn: 'both',
-            hSave: 'cache', hClear: true, hFast: false, hPolicy: 'requested', hVt: false, hVtKey: '', hVtMode: 'ask', hLog: false, hAbi: ''
+            hSave: 'cache', hClear: true, hCycle: false, hFast: false, hPolicy: 'requested', hVt: false, hVtKey: '', hVtMode: 'ask', hLog: false, hAbi: ''
         };
         const mp = {
             cfg: Object.assign({}, MP_DEFAULTS), sub: 'apps', info: null, sources: [], catalogs: {}, catBusy: false, apps: new Map(), universal: {}, community: null, comView: 'apps',
@@ -27536,7 +27489,7 @@ Type any command below (e.g. pm list packages -d)
         function mpIcon(pkg, name, url) {
             const c = typeof appIconCache !== 'undefined' ? appIconCache[pkg] : null;
             if (c) return '<img alt="" draggable="false" src="' + c + '">';
-            if (url) return '<img alt="" draggable="false" loading="lazy" referrerpolicy="no-referrer" src="' + escapeHtml(url) + '" onerror="this.remove()">' + escapeHtml(String(name || pkg || '?').charAt(0).toUpperCase());
+            if (url) return '<img alt="" draggable="false" loading="lazy" referrerpolicy="no-referrer" src="' + escapeHtml(url) + '" onload="if(this.nextElementSibling)this.nextElementSibling.style.visibility=\'hidden\'" onerror="this.remove()"><span>' + escapeHtml(String(name || pkg || '?').charAt(0).toUpperCase()) + '</span>';
             return escapeHtml(String(name || pkg || '?').charAt(0).toUpperCase());
         }
 
@@ -28637,11 +28590,26 @@ Type any command below (e.g. pm list packages -d)
             let r;
             if (kind === 'versions') {
                 r = await mpCall('helperVersions', args);
+                if (!r.ok && mp.cfg.hCycle) {
+                    // the chosen source did not work: the others in turn, until one lists versions
+                    for (const s2 of mpHSources().filter(x => x.id !== h.src && x.lists !== false)) {
+                        mpHMsg((r.error || 'That source did not answer') + ' Trying ' + s2.name + '...', false);
+                        const r2 = await mpCall('helperVersions', Object.assign({}, args, { source: s2.id }));
+                        if (r2.ok) { r = r2; h.src = s2.id; break; }
+                    }
+                }
                 h.busy = false;
                 if (!r.ok) { h.versions = null; h.msg = r.error || 'The versions could not be read'; h.err = true; } else { h.versions = r.data; h.msg = ''; }
                 mpHelperRender(); return;
             }
             r = await mpCall(kind === 'fast' ? 'helperFast' : 'helperGet', args);
+            if (!r.ok && kind !== 'fast' && mp.cfg.hCycle) {
+                // the chosen source did not work: Fast mode walks the others (the chosen one stays first)
+                mpHMsg((r.error || 'That source did not work') + ' Trying the other sources...', false);
+                const order = [h.src].concat(mpHSources().map(x => x.id).filter(id => id !== h.src));
+                const r2 = await mpCall('helperFast', Object.assign({}, args, { sources: order }));
+                if (r2.ok) r = r2; else r.error = (r.error ? r.error + ' ' : '') + (r2.error || '');
+            }
             h.busy = false;
             if (!r.ok) { h.msg = r.error || 'Download failed'; h.err = true; mpHelperRender(); return; }
             h.got = r.data; h.msg = mpHBundle(r.data) ? 'The bundle is ready.' : 'The APK is ready.'; h.err = false;
@@ -28763,6 +28731,7 @@ Type any command below (e.g. pm list packages -d)
                 '<div class="mp-sw"><div class="mp-main"><div class="mp-name">Connection</div></div>' + sel('hConn', [['both', 'Wi-Fi and mobile data'], ['wifi', 'Wi-Fi only'], ['mobile', 'Mobile data only']]) + '</div>' +
                 '<div class="mp-sw"><div class="mp-main"><div class="mp-name">Save downloads</div><div class="mp-patch-desc">In the app\'s cache, or a visible copy in Downloads/Helper for Morphe.</div></div>' + sel('hSave', [['cache', 'Cache'], ['downloads', 'Downloads']]) + '</div>' +
                 '<div class="mp-sw"><div class="mp-main"><div class="mp-name">Clear after use</div><div class="mp-patch-desc">Delete the downloaded file once the app is patched.</div></div><label class="mp-check"><input type="checkbox" ' + (c.hClear ? 'checked ' : '') + 'onchange="mp.cfg.hClear=this.checked;mpCfgSave();"></label></div>' +
+                '<div class="mp-sw"><div class="mp-main"><div class="mp-name">Try the other sources automatically</div><div class="mp-patch-desc">When the chosen source does not have the version or does not work, This version, Newest and All versions go on with the next source, in the order above, until one delivers.</div></div><label class="mp-check"><input type="checkbox" ' + (c.hCycle ? 'checked ' : '') + 'onchange="mp.cfg.hCycle=this.checked;mpCfgSave();"></label></div>' +
                 '<div class="mp-sw"><div class="mp-main"><div class="mp-name">Fast mode: version</div><div class="mp-patch-desc">Which version Fast mode looks for: the one the patches need, or the newest.</div></div>' + sel('hPolicy', [['requested', 'Requested'], ['latest', 'Newest']]) + '</div>' +
                 '<div class="mp-group"><span>VirusTotal</span></div><div class="mp-note">Check every downloaded file with VirusTotal before you use it. The free key allows 4 lookups a minute and 500 a day. Get a key at <a href="#" style="color:var(--accent)" onclick="mpLink(\'https://www.virustotal.com/gui/my-apikey\');return false;">virustotal.com</a>.</div>' +
                 '<div class="mp-sw"><div class="mp-main"><div class="mp-name">Scan with VirusTotal</div></div><label class="mp-check"><input type="checkbox" ' + (c.hVt ? 'checked ' : '') + 'onchange="mp.cfg.hVt=this.checked;mpCfgSave();mpHelperRender();if(this.checked)mpHelperQuota();"></label></div>' +
@@ -28788,311 +28757,6 @@ Type any command below (e.g. pm list packages -d)
         }
         async function mpHelperQuota() { const r = await mpCall('vtQuota', {}); if (r.ok && r.data) { mp.h.quota = r.data; if (mp.h.tab === 'set') mpHelperRender(); } }
         // MORPHE:JS:END
-        // SYSUI:JS:BEGIN
-        // ======================================================================================================================================
-        // System UI Tuner tab. Demo Mode and the three Quick Settings tiles come from Tweaker by Zachary Wander (MIT, github.com/zacharee/Tweaker); the rest
-        // (status bar and shade, notification lab, system actions, battery simulator, navigation mode, display and windows, information) are additions that
-        // use commands Android itself provides. Nothing here writes a Global, Secure or System setting (Hidden Settings does that), except the one flag
-        // Android needs before it listens to demo commands. The commands are built and checked by SysUiRules (Java); the page runs them through the working mode.
-        // ======================================================================================================================================
-        const su = { demo: null, demoOn: false, allowed: false, tiles: null, flags: [], keep: null, keepTimer: 0, slots: [], battSim: false, notifKeys: [], win: {}, timer: 0, shown: false };
-        const SU_FLAGS = [['search', 'Search'], ['home', 'Home button'], ['recents', 'Recents button'], ['notification-alerts', 'Heads-up notifications'], ['statusbar-expansion', 'Pulling down the shade'],
-            ['system-icons', 'System icons'], ['clock', 'Clock'], ['notification-icons', 'Notification icons']];
-        const SU_RISKY = ['home', 'recents', 'statusbar-expansion', 'quick-settings'];
-        const SU_ACTIONS = [[1, 'Back'], [2, 'Home'], [3, 'Recents'], [4, 'Notifications'], [5, 'Quick settings'], [6, 'Power menu'], [8, 'Lock screen'], [9, 'Screenshot'], [7, 'Split screen'], [15, 'Close the shade']];
-        const SU_DEMO_DEFAULT = { clock: '12:00', battery: 100, charging: false, powersave: false, bars: 'opaque', notifications: 'hide',
-            icons: { volume: 'hide', bluetooth: 'hide', location: 'hide', alarm: 'hide', tty: 'hide', mute: 'hide', speakerphone: 'hide', airplane: 'hide', zen: 'hide', cast: 'hide', hotspot: 'hide' },
-            wifi: { show: 'show', level: 4, fully: true, activity: 'none' }, mobile: { show: 'show', level: 4, fully: true, datatype: 'lte', roam: false, carrierchange: false, inflate: false, activity: 'none', sims: 1 } };
-        const SU_DEMO_ROWS = [
-            ['Status Bar Icons', [['icons.volume', 'Volume Visibility', 'sel', [['hide', 'Hide'], ['vibrate', 'Vibrate']]], ['icons.bluetooth', 'Bluetooth Visibility', 'sel', [['hide', 'Hide'], ['connected', 'Connected']]],
-                ['icons.location', 'Location Visibility', 'vis'], ['icons.alarm', 'Alarm Visibility', 'vis'], ['icons.tty', 'TTY Visibility', 'vis'], ['icons.mute', 'Mute Visibility', 'vis'],
-                ['icons.speakerphone', 'Speakerphone Visibility', 'vis'], ['icons.airplane', 'Airplane Visibility', 'vis'], ['icons.zen', 'Do Not Disturb', 'sel', [['hide', 'Hide'], ['dnd', 'Do Not Disturb']]],
-                ['icons.cast', 'Cast Visibility', 'vis'], ['icons.hotspot', 'Hotspot Visibility', 'vis']]],
-            ['Network States', [['wifi.show', 'WiFi Visibility', 'vis'], ['wifi.level', 'WiFi Level', 'rng', 0, 4], ['wifi.fully', 'WiFi Fully Connected', 'chk'], ['wifi.activity', 'WiFi Activity Type', 'sel', [['none', 'None'], ['in', 'In'], ['out', 'Out'], ['inout', 'In and out']]],
-                ['mobile.show', 'Mobile Visibility', 'vis'], ['mobile.level', 'Mobile Level', 'rng', 0, 4], ['mobile.fully', 'Mobile Fully Connected', 'chk'],
-                ['mobile.datatype', 'Mobile Data Type', 'sel', [['', 'None'], ['1x', '1x'], ['3g', '3G'], ['4g', '4G'], ['4g+', '4G+'], ['5g', '5G'], ['5ge', '5G E'], ['5g+', '5G+'], ['e', 'E'], ['g', 'G'], ['h', 'H'], ['h+', 'H+'], ['lte', 'LTE'], ['lte+', 'LTE+'], ['dis', 'Disabled'], ['not', 'Not Default Data'], ['roam', 'Roaming']]],
-                ['mobile.activity', 'Mobile Activity Type', 'sel', [['none', 'None'], ['in', 'In'], ['out', 'Out'], ['inout', 'In and out']]], ['mobile.roam', 'Mobile Roaming', 'chk'], ['mobile.carrierchange', 'Carrier Network Change', 'chk'],
-                ['mobile.inflate', 'Mobile Inflate Signal', 'chk'], ['mobile.sims', 'SIM cards', 'sel', [[1, '1'], [2, '2'], [3, '3'], [4, '4']]]]],
-            ['Miscellaneous', [['clock', 'Clock Time', 'time'], ['battery', 'Battery Level', 'rng', 0, 100], ['charging', 'Battery Charging', 'chk'], ['powersave', 'Battery saver icon', 'chk'],
-                ['bars', 'Status Bar Style', 'sel', [['opaque', 'Opaque'], ['semi-transparent', 'Semi-Transparent'], ['translucent', 'Translucent']]], ['notifications', 'Notification icons', 'sel', [['show', 'Show'], ['hide', 'Hide']]]]]];
-
-        // ---- the commands (built in Java) and how they run ----
-        function suOp(op, args) {
-            try {
-                const r = JSON.parse(window.AndroidBridge.sysui(op, JSON.stringify(args || {})));
-                return r;
-            } catch (e) { return { ok: false, error: 'System UI Tuner needs this build of the app (no bridge).' }; }
-        }
-        // Builds the command with SysUiRules and runs it through the working mode: {ok, output, error}
-        function suRun(op, args, needMode) {
-            if (needMode !== false && !isPrivilegedActive) { guardPrivilege('System UI Tuner'); return { ok: false, error: 'Needs a working mode' }; }
-            const c = suOp(op, args);
-            if (!c.ok) return { ok: false, error: c.error || 'That value is not allowed' };
-            const r = execShellOk(c.cmd);
-            return { ok: r.ok, output: r.output, cmd: c.cmd, error: r.ok ? '' : (r.output || 'The command failed').split('\n')[0] };
-        }
-        function suSay(id, text, err) { const e = document.getElementById(id); if (e) { e.textContent = text || ''; e.classList.toggle('is-err', !!err); } }
-        function suToggle(id) { document.getElementById(id).classList.toggle('open'); haptic(); }
-
-        function onSysuiShown() {
-            if (!su.shown) { su.shown = true; su.demo = JSON.parse(JSON.stringify(SU_DEMO_DEFAULT)); const k = kvGet('sysui_demo', null); if (k && typeof k === 'object') su.demo = Object.assign(su.demo, k); suFlagsRender(); suActionsRender(); suDemoRender(); }
-            const lock = document.getElementById('suLock');
-            lock.style.display = isPrivilegedActive ? 'none' : '';
-            lock.textContent = isPrivilegedActive ? '' : NEEDS_MODE + '. The Quick Settings tiles work without one; everything else needs it.';
-            suTilesLoad();
-            if (isPrivilegedActive) { suDemoReadAllowed(); suWinRead(true); suNavLoad(true); }
-        }
-        function suLeave() {
-            if (su.battSim) { suBattReset(true); }
-            if (su.keep) suKeepEnd(false);
-        }
-
-        // ---- Demo Mode ----
-        function suGet(path) { return path.split('.').reduce((o, k) => (o ? o[k] : undefined), su.demo); }
-        function suSet(path, v) { const ks = path.split('.'); let o = su.demo; for (let i = 0; i < ks.length - 1; i++) o = o[ks[i]]; o[ks[ks.length - 1]] = v; kvSet('sysui_demo', su.demo); if (su.demoOn) suDemoSoon(); }
-        function suDemoRender() {
-            const box = document.getElementById('suDemoForm');
-            if (!box) return;
-            box.innerHTML = SU_DEMO_ROWS.map(g => '<div class="su-sub-h">' + g[0] + '</div>' + g[1].map(r => {
-                const p = r[0], v = suGet(p), id = 'suD_' + p.replace(/\./g, '_');
-                let ctl;
-                if (r[2] === 'vis') ctl = '<select class="op-select" id="' + id + '" onchange="suSet(\'' + p + '\',this.value)"><option value="hide"' + (v === 'hide' ? ' selected' : '') + '>Hide</option><option value="show"' + (v === 'show' ? ' selected' : '') + '>Show</option></select>';
-                else if (r[2] === 'sel') ctl = '<select class="op-select" id="' + id + '" onchange="suSet(\'' + p + '\',' + (typeof r[3][0][0] === 'number' ? 'Number(this.value)' : 'this.value') + ')">' + r[3].map(o => '<option value="' + o[0] + '"' + (String(v) === String(o[0]) ? ' selected' : '') + '>' + o[1] + '</option>').join('') + '</select>';
-                else if (r[2] === 'chk') ctl = '<input type="checkbox" id="' + id + '"' + (v ? ' checked' : '') + ' onchange="suSet(\'' + p + '\',this.checked)">';
-                else if (r[2] === 'rng') ctl = '<input type="range" id="' + id + '" min="' + r[3] + '" max="' + r[4] + '" value="' + v + '" oninput="document.getElementById(\'' + id + 'V\').textContent=this.value" onchange="suSet(\'' + p + '\',Number(this.value))"><span class="su-val" id="' + id + 'V">' + v + '</span>';
-                else if (r[2] === 'time') ctl = '<input type="time" class="modal-text-input" id="' + id + '" value="' + escapeHtml(v) + '" onchange="suSet(\'' + p + '\',this.value||\'12:00\')">';
-                return '<div class="su-row"><div class="su-lab">' + r[1] + '</div>' + ctl + '</div>';
-            }).join('')).join('');
-            document.getElementById('suDemoOn').checked = su.demoOn;
-            document.getElementById('suDemoAllow').checked = su.allowed;
-            document.getElementById('suDemoBanner').style.display = su.demoOn ? '' : 'none';
-        }
-        function suDemoReadAllowed() {
-            const r = suRun('demo.allowedRead', {});
-            if (!r.ok) return;
-            const p = suOp('parse.demoAllowed', { text: r.output });
-            su.allowed = !!(p.ok && p.data && p.data.allowed);
-            document.getElementById('suDemoAllow').checked = su.allowed;
-        }
-        function suDemoAllow(on) {
-            const r = suRun('demo.allow', { allow: on });
-            if (!r.ok) { document.getElementById('suDemoAllow').checked = su.allowed; suSay('suDemoMsg', r.error, true); return; }
-            su.allowed = on;
-            if (!on && su.demoOn) suDemoOnSet(false);
-            suSay('suDemoMsg', on ? 'Demo mode is allowed. Turn on Enabled to use it.' : 'Demo mode is not allowed any more.');
-        }
-        function suDemoOn(on) { suDemoOnSet(on); }
-        function suDemoOnSet(on) {
-            if (on && !su.allowed) {
-                const r = suRun('demo.allow', { allow: true });
-                if (!r.ok) { document.getElementById('suDemoOn').checked = false; suSay('suDemoMsg', r.error, true); return; }
-                su.allowed = true; document.getElementById('suDemoAllow').checked = true;
-            }
-            const r = on ? suRun('demo.apply', suDemoArgs()) : suRun('demo.exit', {});
-            if (!r.ok) { document.getElementById('suDemoOn').checked = su.demoOn; suSay('suDemoMsg', r.error, true); return; }
-            su.demoOn = on;
-            kvSet('sysui_demo_on', on);
-            if (window.AndroidBridge && window.AndroidBridge.sysuiTile) window.AndroidBridge.sysuiTile('demoFlag', '', on ? '1' : '0');
-            document.getElementById('suDemoOn').checked = on;
-            document.getElementById('suDemoBanner').style.display = on ? '' : 'none';
-            suSay('suDemoMsg', on ? 'Demo mode is on. If the status bar did not change, this phone\'s System UI may not support some commands.' : 'Demo mode is off.');
-        }
-        function suDemoArgs() {
-            const d = su.demo, t = String(d.clock || '12:00').replace(':', '');
-            return { clock: t, battery: { level: d.battery, plugged: !!d.charging, powersave: !!d.powersave }, bars: d.bars, notifications: d.notifications, icons: d.icons,
-                wifi: d.wifi, mobile: { show: d.mobile.show, level: d.mobile.level, fully: d.mobile.fully, datatype: d.mobile.datatype, roam: d.mobile.roam ? 'show' : 'hide', carrierchange: d.mobile.carrierchange ? 'show' : 'hide', inflate: d.mobile.inflate, activity: d.mobile.activity }, sims: d.mobile.sims };
-        }
-        function suDemoSoon() { clearTimeout(su.timer); su.timer = setTimeout(() => { const r = suRun('demo.apply', suDemoArgs()); if (!r.ok) suSay('suDemoMsg', r.error, true); }, 250); }
-
-        // ---- Quick Settings tiles (Tweaker) ----
-        function suTilesLoad() {
-            const box = document.getElementById('suTiles');
-            let st = null;
-            try { st = JSON.parse(window.AndroidBridge.sysuiTile('state', '', '')); } catch (e) {}
-            su.tiles = st && st.tiles ? st : null;
-            if (!su.tiles) { box.innerHTML = '<div class="su-note">The tiles need this build of the app.</div>'; return; }
-            const names = { battery: ['Battery', 'Shows the battery level and whether it is charging.'], clock: ['Clock', 'The time with seconds, which the status bar clock does not show. Tap it to open the alarms.'], demo: ['Demo Mode', 'Turns demo mode on and off from the quick settings panel (needs a working mode).'] };
-            box.innerHTML = Object.keys(names).map(k => {
-                const t = su.tiles.tiles[k] || {};
-                return '<div class="su-tile"><div class="su-lab">' + names[k][0] + '<span class="su-sub">' + names[k][1] + '</span></div>' +
-                    (su.tiles.canAdd && t.enabled ? '<button class="su-act" onclick="suTileAdd(\'' + k + '\')">Add</button>' : '') +
-                    '<input type="checkbox" ' + (t.enabled ? 'checked ' : '') + 'onchange="suTileSet(\'' + k + '\',this.checked)" aria-label="' + names[k][0] + ' tile"></div>';
-            }).join('') + '<div class="su-note">Turn a tile on to make it available, then add it: tap Add (Android 13 and newer asks you), or open the quick settings panel, tap the pencil and drag it in.</div>';
-        }
-        function suTileSet(k, on) { try { window.AndroidBridge.sysuiTile('set', k, on ? '1' : '0'); } catch (e) {} suTilesLoad(); }
-        function suTileAdd(k) { let r = {}; try { r = JSON.parse(window.AndroidBridge.sysuiTile('add', k, '')); } catch (e) {} showToast(r.ok ? 'Android asks whether to add the tile' : (r.error || 'Open the quick settings editor and drag the tile in')); }
-
-        // ---- Status bar and shade ----
-        function suShade(which) { const r = suRun('shade', { which: which }); if (!r.ok) showToast(r.error); }
-        function suFlagsRender() {
-            document.getElementById('suFlags').innerHTML = SU_FLAGS.map(f => '<div class="su-row"><div class="su-lab">' + f[1] + '</div><input type="checkbox" data-f="' + f[0] + '" ' + (su.flags.includes(f[0]) ? 'checked' : '') + '></div>').join('');
-        }
-        function suFlagsChosen() { return Array.from(document.querySelectorAll('#suFlags input[data-f]')).filter(i => i.checked).map(i => i.dataset.f); }
-        async function suFlagsApply() {
-            const flags = suFlagsChosen();
-            if (!isPrivilegedActive) { guardPrivilege('System UI Tuner'); return; }
-            const risk = suOp('disableRisky', { flags: flags });
-            const bad = risk.ok && risk.data && risk.data.risky ? risk.data.risky : [];
-            if (bad.length && !await mpAsk({ title: 'Hide ' + bad.join(', ') + '?', text: 'Hiding these can leave you without a way to navigate or to pull the shade down. It is put back after 15 seconds unless you keep it, and "Restore everything" or a restart always fixes it.', ok: 'Hide them' })) return;
-            const prev = su.flags.slice();
-            const r = suRun('disable', { flags: flags });
-            if (!r.ok) { suSay('suFlagsMsg', r.error, true); return; }
-            su.flags = flags;
-            suSay('suFlagsMsg', flags.length ? 'Hidden: ' + flags.join(', ') : 'Nothing is hidden.');
-            if (flags.length) suKeepStart('Keep these parts hidden?', () => { const x = suRun('disable', { flags: prev }); su.flags = prev; suFlagsRender(); suSay('suFlagsMsg', 'Put back.'); return x; }, 'suKeep');
-        }
-        function suFlagsRestore() { const r = suRun('disable', { flags: [] }); if (r.ok) { su.flags = []; suFlagsRender(); suSay('suFlagsMsg', 'Everything is shown again.'); } else suSay('suFlagsMsg', r.error, true); }
-        function suFlagsRead() {
-            const r = suRun('info', { which: 'statusbar' });
-            if (!r.ok) { suSay('suFlagsMsg', r.error, true); return; }
-            const p = suOp('parse.disableState', { text: r.output });
-            const f = p.ok && p.data && p.data.flags ? p.data.flags : [];
-            suSay('suFlagsMsg', f.length ? 'Hidden now: ' + f.join(', ') : 'Nothing is hidden now.');
-        }
-        function suSlotsLoad() {
-            const r = suRun('icons', {});
-            if (!r.ok) { suSay('suSlots', r.error, true); return; }
-            const p = suOp('parse.slots', { text: r.output });
-            su.slots = p.ok && p.data && p.data.slots ? p.data.slots : [];
-            document.getElementById('suSlots').innerHTML = su.slots.length ? su.slots.map(s => '<span class="su-slot">' + escapeHtml(s) + '</span>').join('') : 'This phone did not list any slots.';
-        }
-        function suSlotsCopy() { if (su.slots.length) copyText(su.slots.join(',')); else showToast('Load the slots first'); }
-
-        // ---- the "keep it?" countdown ----
-        function suKeepStart(question, revert, boxId) {
-            suKeepEnd(false);
-            let left = 15;
-            const box = document.getElementById(boxId);
-            su.keep = { revert: revert, box: box };
-            const draw = () => { box.innerHTML = '<div>' + question + ' Putting it back in <b>' + left + '</b> seconds.</div><div class="mode-btn-row"><button class="mode-action-btn primary" onclick="suKeepEnd(true)">Keep it</button><button class="mode-action-btn" onclick="suKeepEnd(false)">Put it back</button></div>'; };
-            box.style.display = ''; draw();
-            su.keepTimer = setInterval(() => { left--; if (left <= 0) suKeepEnd(false); else draw(); }, 1000);
-        }
-        function suKeepEnd(keep) {
-            const k = su.keep;
-            clearInterval(su.keepTimer); su.keepTimer = 0; su.keep = null;
-            if (!k) return;
-            k.box.style.display = 'none'; k.box.innerHTML = '';
-            if (!keep) { try { k.revert(); } catch (e) {} }
-        }
-
-        // ---- Notification lab ----
-        function suNotifPost() {
-            const style = document.getElementById('suNStyle').value;
-            const title = document.getElementById('suNTitle').value, text = document.getElementById('suNText').value, tag = document.getElementById('suNTag').value;
-            const args = { style: style, title: title, text: text, tag: tag, lines: style === 'inbox' ? text.split(/\s*[|;]\s*/).filter(Boolean) : [], conversation: title,
-                messages: style === 'messaging' ? text.split(/\s*[|;]\s*/).filter(Boolean).map((m, i) => (i % 2 ? 'Me' : 'Ann') + ':' + m) : [] };
-            const r = suRun('notify.post', args);
-            suSay('suNMsg', r.ok ? 'Sent.' : r.error, !r.ok);
-        }
-        function suNotifList() {
-            const r = suRun('notify.list', {});
-            if (!r.ok) { suSay('suNMsg', r.error, true); return; }
-            const p = suOp('parse.notificationKeys', { text: r.output });
-            su.notifKeys = p.ok && p.data && p.data.keys ? p.data.keys : [];
-            document.getElementById('suNKeys').innerHTML = su.notifKeys.length ? su.notifKeys.slice(0, 40).map((k, i) => '<div class="su-tile"><div class="su-lab" translate="no" style="font-size:11px;word-break:break-all;">' + escapeHtml(k) + '</div><button class="su-act" onclick="suNotifSnooze(' + i + ')">Snooze 1 min</button><button class="su-act" onclick="suNotifUnsnooze(' + i + ')">Unsnooze</button></div>').join('') : '';
-            suSay('suNMsg', su.notifKeys.length ? su.notifKeys.length + ' active (Android 11 and newer lists them).' : 'No active notification was listed. This needs Android 11 or newer.');
-        }
-        function suNotifSnooze(i) { const r = suRun('notify.snooze', { key: su.notifKeys[i], ms: 60000 }); suSay('suNMsg', r.ok ? 'Snoozed for a minute.' : r.error, !r.ok); }
-        function suNotifUnsnooze(i) { const r = suRun('notify.unsnooze', { key: su.notifKeys[i] }); suSay('suNMsg', r.ok ? 'Unsnoozed.' : r.error, !r.ok); }
-
-        // ---- System actions ----
-        function suActionsRender() {
-            document.getElementById('suActions').innerHTML = SU_ACTIONS.map(a => '<button class="mode-action-btn su-action" onclick="suAction(' + a[0] + ')">' + a[1] + '</button>').join('');
-        }
-        function suAction(id) {
-            const r = suRun('action', { id: id });
-            if (!r.ok) { suSay('suActMsg', r.error, true); return; }
-            suSay('suActMsg', '');
-        }
-        async function suRestartUi() {
-            if (!isPrivilegedActive) { guardPrivilege('System UI Tuner'); return; }
-            if (!await mpAsk({ title: 'Restart System UI?', text: 'The status bar and the shade disappear for a few seconds and come back. Demo mode ends. Nothing is lost.', ok: 'Restart' })) return;
-            const r = suRun('restartUi', {});
-            if (r.ok) { su.demoOn = false; document.getElementById('suDemoOn').checked = false; document.getElementById('suDemoBanner').style.display = 'none'; }
-            suSay('suActMsg', r.ok ? 'System UI is restarting.' : r.error, !r.ok);
-        }
-
-        // ---- Battery simulator ----
-        function suBattApply() {
-            const level = Number(document.getElementById('suBLevel').value), status = Number(document.getElementById('suBStatus').value), plug = document.getElementById('suBPlug').value, temp = Number(document.getElementById('suBTemp').value);
-            if (!isPrivilegedActive) { guardPrivilege('System UI Tuner'); return; }
-            const steps = [['battery.set', { key: 'level', value: level }], ['battery.set', { key: 'status', value: status }], ['battery.set', { key: 'ac', value: plug === 'ac' ? 1 : 0 }], ['battery.set', { key: 'usb', value: plug === 'usb' ? 1 : 0 }],
-                ['battery.set', { key: 'wireless', value: plug === 'wireless' ? 1 : 0 }], ['battery.set', { key: 'temp', value: temp }]];
-            for (const s of steps) { const r = suRun(s[0], s[1]); if (!r.ok) { showToast(r.error); return; } }
-            su.battSim = true;
-            document.getElementById('suBattBanner').style.display = '';
-            suBattRead();
-        }
-        function suBattUnplug() { const r = suRun('battery.unplug', {}); if (!r.ok) { showToast(r.error); return; } su.battSim = true; document.getElementById('suBattBanner').style.display = ''; suBattRead(); }
-        function suBattReset(quiet) {
-            const r = suRun('battery.reset', {}, !quiet);
-            if (r.ok) { su.battSim = false; document.getElementById('suBattBanner').style.display = 'none'; if (!quiet) { showToast('The real battery state is back'); suBattRead(); } }
-            else if (!quiet) showToast(r.error);
-        }
-        function suBattRead() {
-            const r = suRun('battery.read', {});
-            if (!r.ok) { suSay('suBattOut', r.error, true); return; }
-            document.getElementById('suBattOut').textContent = r.output;
-            const p = suOp('parse.battery', { text: r.output });
-            if (p.ok && p.data && p.data.frozen) { su.battSim = true; document.getElementById('suBattBanner').style.display = ''; }
-        }
-
-        // ---- Navigation mode ----
-        const SU_NAV = [['threebutton', '3-button navigation'], ['twobutton', '2-button navigation'], ['gestural', 'Gesture navigation']];
-        function suNavLoad(quiet) {
-            if (!isPrivilegedActive) { if (!quiet) guardPrivilege('System UI Tuner'); return; }
-            const r = suRun('nav.list', {});
-            if (!r.ok) { suSay('suNavMsg', r.error, true); return; }
-            const p = suOp('parse.navModes', { text: r.output });
-            const m = p.ok && p.data ? p.data : { available: [], enabled: '' };
-            const box = document.getElementById('suNav');
-            if (!m.available.length) { box.innerHTML = ''; suSay('suNavMsg', 'This phone does not offer the system navigation overlays (some makers replace them).'); return; }
-            box.innerHTML = SU_NAV.filter(n => m.available.includes(n[0])).map(n => '<div class="su-row"><div class="su-lab">' + n[1] + (m.enabled === n[0] ? '<span class="su-sub">In use now</span>' : '') + '</div>' + (m.enabled === n[0] ? '' : '<button class="su-act" onclick="suNavSet(\'' + n[0] + '\')">Use</button>') + '</div>').join('');
-            suSay('suNavMsg', '');
-        }
-        async function suNavSet(mode) {
-            if (!await mpAsk({ title: 'Change the navigation mode?', text: 'The way you go back, home and to recents changes at once. If you get stuck, come back here and choose the old mode, or restart the phone.', ok: 'Change' })) return;
-            const r = suRun('nav.enable', { mode: mode });
-            suSay('suNavMsg', r.ok ? 'Done.' : r.error, !r.ok);
-            setTimeout(() => suNavLoad(true), 800);
-        }
-
-        // ---- Display and windows ----
-        function suWinRead(quiet) {
-            if (!isPrivilegedActive) return;
-            const d = suRun('wm.read', {});
-            const pw = d.ok ? suOp('parse.wm', { text: d.output }) : null, w = pw && pw.data ? pw.data : {};
-            su.win = { density: { physical: w.density || '', override: w.overrideDensity || '' }, size: { physical: w.size || '', override: w.overrideSize || '' } };
-            document.getElementById('suDensCur').textContent = su.win.density.physical ? 'Now ' + (su.win.density.override || su.win.density.physical) + ' (default ' + su.win.density.physical + ')' : '';
-            document.getElementById('suSizeCur').textContent = su.win.size.physical ? 'Now ' + (su.win.size.override || su.win.size.physical) + ' (default ' + su.win.size.physical + ')' : '';
-            if (!quiet && !d.ok) suSay('suWinMsg', d.error, true);
-        }
-        function suWinApply() {
-            const dens = document.getElementById('suDens').value.trim(), size = document.getElementById('suSize').value.trim();
-            if (!dens && !size) { suSay('suWinMsg', 'Enter a density, a size, or both.', true); return; }
-            const before = { density: (su.win.density && su.win.density.override) || '', size: (su.win.size && su.win.size.override) || '' };
-            if (dens) { const r = suRun('wm.density', { value: Number(dens) }); if (!r.ok) { suSay('suWinMsg', r.error, true); return; } }
-            if (size) { const m = /^(\d{3,5})x(\d{3,5})$/.exec(size); if (!m) { suSay('suWinMsg', 'Write the size like 1080x2400.', true); return; } const r = suRun('wm.size', { w: Number(m[1]), h: Number(m[2]) }); if (!r.ok) { suSay('suWinMsg', r.error, true); return; } }
-            suKeepStart('Keep this screen setting?', () => {
-                if (dens) { before.density ? suRun('wm.density', { value: Number(before.density) }) : suRun('wm.density.reset', {}); }
-                if (size) { const m = /^(\d+)x(\d+)$/.exec(before.size); m ? suRun('wm.size', { w: Number(m[1]), h: Number(m[2]) }) : suRun('wm.size.reset', {}); }
-                suWinRead(true);
-            }, 'suWinKeep');
-            suWinRead(true);
-        }
-        function suWinReset() { suRun('wm.density.reset', {}); suRun('wm.size.reset', {}); suWinRead(true); suSay('suWinMsg', 'Back to the phone\'s own density and size.'); }
-        function suIgnoreOri(on) { const r = suRun('wm.ignoreOrientation', { on: on }); if (!r.ok) { suSay('suWinMsg', r.error, true); document.getElementById('suIgnoreOri').checked = !on; } else suSay('suWinMsg', ''); }
-        function suScaling(v) { const r = suRun('wm.scaling', { mode: v }); suSay('suWinMsg', r.ok ? '' : r.error, !r.ok); }
-
-        // ---- Information ----
-        function suInfo(which) {
-            const r = suRun('info', { which: which });
-            const out = document.getElementById('suInfoOut');
-            out.textContent = r.ok || r.output ? (r.output || '(empty)') : r.error;
-            document.getElementById('suInfoBtns').style.display = '';
-        }
-        // SYSUI:JS:END
         // SDM:JS:BEGIN
         const SD_SCHEMA = {
          "systemcleaner": {
@@ -30728,6 +30392,65 @@ Type any command below (e.g. pm list packages -d)
             renderSavedLists();
             setTimeout(ovlResume, 400);
         });
+
+        // ---------- Bottom sheets: pull the handle at the top up for more room, down to make it smaller and then close it ----------
+        (function () {
+            const ZONE = 44;                           // px from the top of the sheet that count as the handle
+            let st = null, swallow = 0;
+            const sheetAt = (el) => { const sh = el && el.closest ? el.closest('.modal-sheet') : null; return sh && sh.closest('.modal-overlay.show') ? sh : null; };
+            const point = (e) => (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]) || e;
+            function begin(e) {
+                const sh = sheetAt(e.target);
+                if (!sh) return;
+                const pt = point(e), r = sh.getBoundingClientRect();
+                if (pt.clientY - r.top > ZONE) return;
+                st = { sh, y0: pt.clientY, dy: 0, t0: Date.now(), moved: false };
+                document.addEventListener('touchmove', move, { passive: false });      // only while the handle is held: a scroll anywhere else stays smooth
+            }
+            function move(e) {
+                if (!st) return;
+                const pt = point(e), dy = pt.clientY - st.y0;
+                if (!st.moved && Math.abs(dy) < 6) return;
+                st.moved = true; st.dy = dy;
+                if (e.cancelable) e.preventDefault();
+                st.sh.classList.add('sheet-dragging');
+                // down: the sheet follows the finger; up: it does not move, it grows when let go
+                st.sh.style.transform = dy > 0 ? 'translateY(' + dy + 'px)' : '';
+            }
+            function end() {
+                if (!st) return;
+                const { sh, dy, t0, moved } = st; st = null;
+                document.removeEventListener('touchmove', move, { passive: false });
+                sh.classList.remove('sheet-dragging');
+                sh.style.transform = '';
+                if (!moved) return;
+                const fast = Math.abs(dy) / Math.max(1, Date.now() - t0) > 0.6;
+                const far = Math.abs(dy) > 70 || fast;
+                const later = () => { swallow = Date.now(); };        // the click that follows a drag (it may land on the dark area) is not a tap
+                if (dy < 0 && far) { sh.classList.add('sheet-expanded'); later(); return; }
+                if (dy > 0 && far) {
+                    if (sh.classList.contains('sheet-expanded')) { sh.classList.remove('sheet-expanded'); later(); return; }
+                    const ov = sh.closest('.modal-overlay');
+                    if (ov) ov.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));      // the same as a tap outside the sheet: each sheet closes itself
+                    if (ov && ov.classList.contains('show') && !ov.getAttribute('onclick')) ov.classList.remove('show');
+                }
+                later();
+            }
+            document.addEventListener('touchstart', begin, { passive: true });
+            document.addEventListener('click', (e) => { if (swallow && Date.now() - swallow < 400) { swallow = 0; e.stopPropagation(); e.preventDefault(); } }, true);
+            document.addEventListener('touchend', end, { passive: true });
+            document.addEventListener('touchcancel', end, { passive: true });
+            document.addEventListener('mousedown', begin);
+            document.addEventListener('mousemove', move);
+            document.addEventListener('mouseup', end);
+            // a sheet that closes forgets that it was pulled up
+            new MutationObserver((list) => {
+                for (const m of list) {
+                    const t = m.target;
+                    if (t.classList && t.classList.contains('modal-overlay') && !t.classList.contains('show')) { const sh = t.querySelector('.modal-sheet'); if (sh) sh.classList.remove('sheet-expanded'); }
+                }
+            }).observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class'] });
+        })();
     </script>
 </body>
 </html>

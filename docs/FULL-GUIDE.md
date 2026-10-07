@@ -112,7 +112,6 @@ Left to right, with the **settings gear** (it opens Settings: language, appearan
 | **Connected Devices** | Another Android device (a Wear OS watch first) over adb: add by pairing code, address, network scan or Bluetooth link; its apps (enable, disable, uninstall, reinstall, pull), send APK / APKS / APKM / XAPK, console, logcat, files, hidden settings, screen density and size |
 | **Morphe Patcher** | Morphe patching on the phone: patch sources and the community finder, apps marked **Installed**, Morphe Helper (ten APK download sources, optional VirusTotal), Simple and Advanced patching, install when finished, live log, Patched APKs |
 | **SD Maid SE** | SystemCleaner, AppCleaner, CorpseFinder and Deduplicator ported from SD Maid SE: scan, review and untick, delete, optional 1-tap scan and delete, exclusions, history, accessibility cache clearing |
-| **System UI Tuner** | Demo Mode and Quick Settings tiles (after Tweaker), shade and bar flags, notification lab, system actions, battery simulator, navigation mode, density, size and window options |
 | **About** | Who made it, which build and key you have, debug info, the Permissions sheet, and the coffee button |
 
 Every tab except Application Manager and About can be switched off or moved in **Settings → Feature List**.

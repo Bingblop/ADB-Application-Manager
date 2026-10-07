@@ -150,41 +150,6 @@
             </intent-filter>
         </service>
 
-        <!-- The System UI Tuner tab's tiles (from the Tweaker app by Zachary Wander, MIT): off until the tab switches one on -->
-        <service
-            android:name=".BatteryTileService"
-            android:exported="true"
-            android:enabled="false"
-            android:label="Battery"
-            android:icon="@drawable/ic_stat"
-            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
-            <intent-filter>
-                <action android:name="android.service.quicksettings.action.QS_TILE" />
-            </intent-filter>
-        </service>
-        <service
-            android:name=".ClockTileService"
-            android:exported="true"
-            android:enabled="false"
-            android:label="Clock"
-            android:icon="@drawable/ic_stat"
-            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
-            <intent-filter>
-                <action android:name="android.service.quicksettings.action.QS_TILE" />
-            </intent-filter>
-        </service>
-        <service
-            android:name=".DemoTileService"
-            android:exported="true"
-            android:enabled="false"
-            android:label="Demo mode"
-            android:icon="@drawable/ic_stat"
-            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
-            <intent-filter>
-                <action android:name="android.service.quicksettings.action.QS_TILE" />
-            </intent-filter>
-        </service>
-
         <!-- The SD Maid SE tab's AppCleaner: taps Clear cache in the system settings, only after the person agreed in the app, with a cover and a Cancel -->
         <service
             android:name=".SdmAccessService"

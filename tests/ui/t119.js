@@ -92,7 +92,7 @@ const { chromium, PAGE, fixture } = require('./lib/pw');
             { id: 'apkcombo', name: 'APKCombo', direct: true }, { id: 'aptoide', name: 'Aptoide', direct: true }, { id: 'evozi', name: 'Evozi', direct: false }, { id: 'mi9', name: 'Mi9', direct: false },
             { id: 'apkdownloader', name: 'APK Downloader', direct: false }, { id: 'aurora', name: 'Aurora', direct: false }, { id: 'play', name: 'Play', direct: false }] });
           case 'helperVersions': return ok({ ok: true, pkg: a.pkg, name: 'YouTube', versions: [{ version: '20.51.39', format: 'apk', size: 123456789, url: 'https://x/y.apk' }, { version: '20.21.37', format: 'apks', abi: 'arm64-v8a', size: 99000000, url: 'https://x/z.apks' }] });
-          case 'helperGet': case 'helperFast': if (M.helperFail) return bad('Uptodown changed its page format, open it in the browser'); return ok({ ok: true, path: '/cache/h/youtube_20.21.37.apk', fileName: 'youtube_20.21.37.apk', pkg: a.pkg, versionName: a.version || '20.51.39', versionCode: 1546420000, format: 'apk', size: 123456789, sha256: 'ab'.repeat(32), tried: [] }, 30);
+          case 'helperGet': case 'helperFast': if (M.helperFail && !(op === 'helperFast' && M.fastOk)) return bad('Uptodown changed its page format, open it in the browser'); return ok({ ok: true, path: '/cache/h/youtube_20.21.37.apk', fileName: 'youtube_20.21.37.apk', pkg: a.pkg, versionName: a.version || '20.51.39', versionCode: 1546420000, format: 'apk', size: 123456789, sha256: 'ab'.repeat(32), tried: [] }, 30);
           case 'helperDownloads': return ok(M.dlAccess ? { ok: true, access: true, folder: '/storage/emulated/0/Download', items: a.pkg === 'com.google.android.youtube' ? M.dlItems : [], scanned: 4, other: a.pkg === 'com.google.android.youtube' ? 1 : 4, unreadable: 0 } : { ok: true, access: false, items: [] });
           case 'helperAdopt': { const x = M.dlItems.find(i => i.path === a.path); if (!x) return bad('that file is not one this app may read'); return ok({ ok: true, path: '/cache/h/' + x.name, fileName: x.name, pkg: x.pkg, versionName: x.versionName, versionCode: x.versionCode, format: x.format, splits: x.splits, size: x.size, sha256: 'ef'.repeat(32), source: 'downloads' }); }
           case 'helperManual': return ok({ url: 'https://www.apkmirror.com/?s=' + a.pkg });
@@ -124,6 +124,20 @@ const { chromium, PAGE, fixture } = require('./lib/pw');
   check('the engine warning is hidden when the engine is there', !(await show('#mpEngineWarn')));
   check('the Apps pane asks to download the official source first', /Get the Morphe patches/.test(await text('#mpAppList')) && /Download Morphe Patches/.test(await text('#mpAppList')));
   await page.screenshot({ path: 'morphe_empty.png' });
+
+  // an icon that has an address is the image over its letter (the letter used to sit beside it), and the letter goes away when the image is there
+  const ico = await ev(async () => {
+    const d = document.createElement('div'); d.className = 'mp-ico'; d.id = 'icoT';
+    d.innerHTML = mpIcon('no.such.pkg', 'Gboard', 'data:image/gif;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA=');
+    document.getElementById('mpAppList').appendChild(d);
+    await new Promise(r => setTimeout(r, 200));
+    const i = d.querySelector('img'), l = d.querySelector('span');
+    const out = { pos: i && getComputedStyle(i).position, hasLetter: !!l, letterHidden: !!l && getComputedStyle(l).visibility === 'hidden', imgW: i && Math.round(i.getBoundingClientRect().width), boxW: Math.round(d.getBoundingClientRect().width) };
+    d.remove(); return out;
+  });
+  check('an icon with an address is the image over its letter, and the letter goes when the image is there', ico.pos === 'absolute' && ico.hasLetter && ico.letterHidden && ico.imgW === ico.boxW, JSON.stringify(ico));
+  const ico2 = await ev(() => { const d = document.createElement('div'); d.innerHTML = mpIcon('no.such.pkg', 'Gboard', ''); return d.innerText; });
+  check('an icon without an address is its letter', ico2 === 'G', ico2);
 
   // ---- download the official source ----
   await page.click('#mpAppList .mode-action-btn.primary'); await wait(500);
@@ -328,6 +342,18 @@ const { chromium, PAGE, fixture } = require('./lib/pw');
   await ev(() => { window.__mp.helperFail = true; mp.h.got = null; mp.h.vt = null; mpHelperRender(); });
   await page.click('#mpSheetBody .mp-hflows .mp-act:nth-child(1)'); await wait(300);
   check('a source that changed its page says what to do', /changed its page format/.test(await text('#mpHMsg')));
+  // the setting that goes on with the next source by itself
+  check('Helper settings have "Try the other sources automatically", off by default', await ev(() => { mpHTab('set'); const t = document.getElementById('mpSheetBody').innerText; mpHTab('get'); return /Try the other sources automatically/.test(t) && mp.cfg.hCycle === false; }));
+  await ev(() => { window.__mp.fastOk = true; mp.cfg.hCycle = true; mp.h.got = null; mp.h.err = false; mp.h.msg = ''; mpHelperRender(); });
+  const c0 = (await calls()).length;
+  await page.click('#mpSheetBody .mp-hflows .mp-act:nth-child(2)'); await wait(500);
+  const cyc = (await calls()).slice(c0);
+  check('with it on, a source that fails hands over to the others (Fast mode, the chosen one first) and the file is delivered', cyc.includes('helperGet') && cyc.includes('helperFast') && await ev(() => !!mp.h.got && !mp.h.err), cyc.join());
+  await ev(() => { mp.cfg.hCycle = false; mp.h.got = null; mp.h.err = false; mp.h.msg = ''; mpHelperRender(); });
+  const c1 = (await calls()).length;
+  await page.click('#mpSheetBody .mp-hflows .mp-act:nth-child(2)'); await wait(400);
+  check('with it off, a failure is just reported', !(await calls()).slice(c1).includes('helperFast') && await ev(() => !mp.h.got && mp.h.err));
+  await ev(() => { window.__mp.fastOk = false; });
 
   // ---- bundles (APKM / APKS / XAPK) saved by the browser are found in Downloads ----
   await ev(() => { window.__mp.helperFail = false; mp.h.got = null; mp.h.err = false; mp.h.msg = ''; mpHelperRender(); });

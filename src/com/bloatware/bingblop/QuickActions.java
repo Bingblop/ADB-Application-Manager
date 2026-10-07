@@ -19,8 +19,6 @@ final class QuickActions {
     static final String EXTRA_ACTION = "quick_action";
     static final String ACTION_CYCLE_MODE = "cycle_mode";
     static final String ACTION_STOP_LIST = "stop_list";
-    /** The System UI Tuner's Demo Mode tile: turns demo mode on or off through the working mode. */
-    static final String ACTION_DEMO_TOGGLE = "demo_toggle";
 
     private QuickActions() {}
 

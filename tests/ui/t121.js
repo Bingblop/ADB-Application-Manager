@@ -1,4 +1,4 @@
-// SD Maid SE tab: in the tab bar between Morphe Patcher and System UI Tuner; the working mode and the data areas; the four tool cards (Scan, live progress, the two-at-a-time limit with "In queue", Cancel, the
+// SD Maid SE tab: in the tab bar after Morphe Patcher; the working mode and the data areas; the four tool cards (Scan, live progress, the two-at-a-time limit with "In queue", Cancel, the
 // result with its dismiss X, Details, Delete); the 1-tap scan and delete checkbox (off by default, asks before it is turned on, then Scan runs everything); the list of results with take-out checkboxes, items inside
 // a group, Exclude with Undo, the confirmation texts; Delete all results; the exclusion manager (create app / path / segment, remove, restore defaults); History with paths; the settings of a tool; the
 // accessibility service card; the credits with the GitHub and Google Play links. The tool side is a mock of AndroidBridge.sdm: the page is driven with the same events Java sends.
@@ -66,7 +66,7 @@ const { chromium, PAGE } = require('./lib/pw');
 
   // ---- the tab ----
   const tabs = await ev(() => tabsShown());
-  check('SD Maid SE is in the tab bar after Morphe Patcher and before System UI Tuner', tabs.indexOf('sdm') === tabs.indexOf('morphe') + 1 && tabs.indexOf('sysui') === tabs.indexOf('sdm') + 1, tabs.join());
+  check('SD Maid SE is in the tab bar after Morphe Patcher', tabs.indexOf('sdm') === tabs.indexOf('morphe') + 1, tabs.join());
   check('its label is on two lines', (await ev(() => tabDef('sdm').label)) === 'SD Maid\nSE');
   await ev(() => { switchView('sdm'); }); await wait(500);
   check('it has a help "?" that points to its guide topic', await ev(() => !!document.querySelector('#view-sdm .help-q') && document.querySelector('#view-sdm .help-q').dataset.help === 'tab-sdm'));
