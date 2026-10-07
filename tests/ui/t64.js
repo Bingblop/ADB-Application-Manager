@@ -243,7 +243,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   await ev(() => { window.sdbOnModeChange = window.__realSdbMode; });
 
   // 14) hints
-  check('14. the color correction hint has the values the right way round', await ev(() => /11 protanomaly, 12 deuteranomaly, 13 tritanomaly/.test(sdbHint('secure', 'accessibility_display_daltonizer').t)));
+  check('14. the color correction hint has the values the right way round', await ev(() => { const h = sdbHint('secure', 'accessibility_display_daltonizer'); return /11 protanomaly, 12 deuteranomaly, 13 tritanomaly/.test(h.t) || /11 = [^;]*protanomaly[^;]*; 12 = [^;]*deuteranomaly[^;]*; 13 = [^;]*tritanomaly/.test(h.v || ''); }));
 
   // 15) contrast: the red text follows the theme
   const reds = await ev(() => ({ prob: getComputedStyle(document.querySelector('.sdb-problem')).color, root: getComputedStyle(document.documentElement).getPropertyValue('--status-bloat').trim(), del: getComputedStyle(document.querySelector('#sdbEditModal .batch-tool-link[onclick="sdbEditDelete()"]')).color }));

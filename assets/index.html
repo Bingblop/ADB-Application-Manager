@@ -4469,11 +4469,25 @@
                 .sdb-snack span { flex:1; min-width:0; overflow-wrap:anywhere; font-family:ui-monospace,monospace; font-size:11.5px; }
                 .sdb-snack button { flex:0 0 auto; border:none; border-radius:10px; padding:8px 14px; font-weight:800; font-size:12px; background:var(--accent); color:var(--on-accent); cursor:pointer; }
                 .sdb-more { text-align:center; margin:10px 0 4px; }
+                .sdb-vals { font-size:10.5px; color:var(--text-muted); margin-top:2px; line-height:1.35; opacity:.9; }
+                .sdb-vals::before { content:'Values: '; font-weight:800; }
+                .sdb-cur { color:var(--text-main); font-weight:800; }
+                .sdb-about { border:1px solid var(--border-glass); background:rgba(var(--ov),0.04); border-radius:12px; padding:9px 11px; margin-bottom:10px; font-size:12px; line-height:1.45; }
+                .sdb-about-h { font-size:10px; font-weight:800; letter-spacing:.4px; text-transform:uppercase; color:var(--text-muted); margin:6px 0 2px; }
+                .sdb-about-h:first-child { margin-top:0; }
+                .sdb-about-t b { font-family:ui-monospace,'SF Mono','Roboto Mono',monospace; }
+                .sdb-about-now { margin-top:6px; color:var(--accent); color:color-mix(in srgb, var(--accent) 72%, var(--text-main)); font-weight:700; }
+                .sdb-about-now:empty { display:none; }
+                .sdb-help h4 { margin:12px 0 3px; font-size:13px; }
+                .sdb-help p, .sdb-help li { font-size:12px; line-height:1.5; margin:3px 0; }
+                .sdb-help ul { margin:3px 0 3px 18px; padding:0; }
+                .sdb-help code { font-family:ui-monospace,'SF Mono','Roboto Mono',monospace; font-size:11.5px; }
             </style>
 
             <div class="color-card" id="sdbTop">
                 <div class="color-card-title">Android’s hidden settings</div>
-                <div class="color-card-subtitle">Read and change the <b>Global</b>, <b>Secure</b> and <b>System</b> settings of this phone. <b>Tap</b> a setting to edit it; <b>press and hold</b> a 1 / 0 or true / false value to flip it.</div>
+                <div class="color-card-subtitle">Read and change the <b>Global</b>, <b>Secure</b> and <b>System</b> settings of this phone. <b>Tap</b> a setting to edit it; <b>press and hold</b> a 1 / 0 or true / false value to flip it. Under each name: what it does and which values it takes.</div>
+                <div style="margin:4px 0 0;"><button class="batch-tool-link" onclick="sdbOpenHelp()" style="padding:2px 0;">How to read this list</button></div>
 
                 <div class="mode-alert-card" id="sdbGate" style="display:none; margin:12px 0 0;">
                     <div class="mode-alert-body">
@@ -5794,6 +5808,7 @@
                 <div class="about-tip">Morphe Patcher tab: the patcher engine is <a href="#" onclick="openUrlExternal('https://github.com/MorpheApp/morphe-patcher'); return false;">morphe-patcher</a> and the way sources, patching and the community finder work follows <a href="#" onclick="openUrlExternal('https://github.com/MorpheApp/morphe-manager'); return false;">Morphe Manager</a>, both by <a href="#" onclick="openUrlExternal('https://github.com/MorpheApp'); return false;">MorpheApp</a> (GPL-3.0); the APK download sources and the VirusTotal check follow <a href="#" onclick="openUrlExternal('https://github.com/rushiranpise/helper-for-morphe'); return false;">Helper for Morphe</a> by rushiranpise (GPL-3.0). The patches belong to their authors.</div>
                 <div class="about-tip">SD Maid SE tab: a port of the four tools of <a href="#" onclick="openUrlExternal('https://github.com/d4rken-org/sdmaid-se'); return false;">SD Maid SE</a> by darken (d4rken-org, GPL-3.0), also on <a href="#" onclick="openUrlExternal('https://play.google.com/store/apps/details?id=eu.darken.sdmse'); return false;">Google Play</a>. Its icons, logo and translations are not used.</div>
                 <div class="about-tip">System UI Tuner tab: Demo Mode and the Quick Settings tiles follow <a href="#" onclick="openUrlExternal('https://github.com/zacharee/Tweaker'); return false;">Tweaker</a> (System UI Tuner) by Zachary Wander (MIT).</div>
+                <div class="about-tip">Hidden Settings: the descriptions of Android's own settings are taken in part from the documentation in the <a href="#" onclick="openUrlExternal('https://source.android.com/'); return false;">Android Open Source Project</a> (Apache-2.0).</div>
             </div>
         </section>
 
@@ -7294,6 +7309,7 @@ Type any command below (e.g. pm list packages -d)
                 </div>
                 <div style="font-size:20px; cursor:pointer;" onclick="sdbEditClose()" role="button" aria-label="Close">✕</div>
             </div>
+            <div class="sdb-about" id="sdbEditAbout" style="display:none;"></div>
             <div class="sdb-risk" id="sdbEditRisk" style="display:none;"></div>
             <div class="sdb-label"><span>Value</span><span id="sdbEditLen"></span></div>
             <textarea class="sdb-field" id="sdbEditText" rows="3" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="sdbEditInput()" aria-label="Value"></textarea>
@@ -7310,6 +7326,56 @@ Type any command below (e.g. pm list packages -d)
                 <button class="batch-tool-link" onclick="sdbEditCopy('cmd')">Copy command</button>
                 <button class="batch-tool-link" onclick="sdbEditReload()">Reload</button>
                 <button class="batch-tool-link" style="color:var(--status-bloat);" onclick="sdbEditDelete()">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Android settings: how to read the list -->
+    <div class="modal-overlay" id="sdbHelpModal" onclick="if(event.target===this) sdbCloseHelp()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-title">
+                        <h3>How to read the hidden settings</h3>
+                        <p style="word-break:normal;">What the rows, the values and the three tables mean</p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="sdbCloseHelp()" role="button" aria-label="Close">✕</div>
+            </div>
+            <div class="sdb-help">
+                <h4>The three tables</h4>
+                <ul>
+                    <li><b>Global</b>: the whole phone. Radios, Wi-Fi, battery, developer options and what the system keeps for itself.</li>
+                    <li><b>Secure</b>: what you choose but apps may not change. Keyboard, accessibility, lock screen, location, Night Light, dark theme.</li>
+                    <li><b>System</b>: everyday choices. Brightness, volume, screen timeout, text size, rotation, ringtones.</li>
+                </ul>
+                <h4>A row</h4>
+                <ul>
+                    <li>The name in code type is the key. It is the same on every phone that has the setting.</li>
+                    <li>The grey line says what it does. <b>Values:</b> says what it may hold.</li>
+                    <li>The coloured line is the value the phone holds now. After it, <i>= meaning</i> says what that value stands for.</li>
+                    <li>An orange edge and <b>careful</b> mean a wrong value can cut the connection, lock you out or break setup.</li>
+                </ul>
+                <h4>What a value can be</h4>
+                <ul>
+                    <li><b>0 / 1</b> (or <code>true</code> / <code>false</code>): off / on. Press and hold the row to flip it.</li>
+                    <li><b>A whole number</b>: a choice (0, 1, 2 ...), a level, or a time. Times are in <b>milliseconds</b>: 1000 is one second, 60000 one minute.</li>
+                    <li><b>A decimal</b>: a scale. 1.0 is normal; 0.5 is half; 2.0 is double.</li>
+                    <li><b>Text</b>: a package name (<code>com.example.app</code>), a component (<code>package/class</code>), a web address, or a list. Lists are joined with <code>,</code> or <code>:</code>.</li>
+                    <li><b>Empty</b>: the setting exists but holds nothing. <b>Delete</b> removes the setting, so Android uses its own default.</li>
+                </ul>
+                <h4>A setting without a description</h4>
+                <p>Android documents most of its own settings, but phone makers and apps add many more. For those the editor says what the name and value suggest, as a guess. If you cannot tell what a setting does, leave it alone.</p>
+                <h4>Changing one safely</h4>
+                <ul>
+                    <li>Change one setting at a time, then look at the phone.</li>
+                    <li>Use <b>Copy value</b> first to keep the old value.</li>
+                    <li>The Undo bar and <b>Changes</b> (under ⋯) put a value back.</li>
+                </ul>
+                <div style="display:flex; gap:10px; margin-top:12px;">
+                    <button class="mode-action-btn primary" style="flex:1; justify-content:center;" onclick="sdbCloseHelp(); openHelpGuide('tab-settings')">Open the Help Guide topic</button>
+                    <button class="mode-action-btn" onclick="sdbCloseHelp()">Close</button>
+                </div>
             </div>
         </div>
     </div>
@@ -18182,6 +18248,7 @@ Type any command below (e.g. pm list packages -d)
             cd.set.data[ns] = data;
             cd.set.loaded[ns] = true;
             cdSetRender();
+            hsLoad(cdSetRender);                                   // what each setting does (assets/hsinfo.js), then the list again with the text
             if (force) showToast(Object.keys(data).length + ' settings');
         }
         function cdSetRender() {
@@ -18190,12 +18257,12 @@ Type any command below (e.g. pm list packages -d)
             const keys = Object.keys(data).sort().filter(k => !q || k.toLowerCase().includes(q) || String(data[k]).toLowerCase().includes(q));
             document.getElementById('cdSetCount').innerText = keys.length + (keys.length === 1 ? ' setting' : ' settings') + (q ? ' match' : ' in ' + ns);
             const shown = keys.slice(0, 400);
-            document.getElementById('cdSetList').innerHTML = shown.map(k => '<div class="cd-set-row" data-k="' + escapeHtml(k) + '" onclick="cdSetEdit(this.dataset.k)"><div style="min-width:0; flex:1;"><div class="cd-set-key" translate="no">' + escapeHtml(k) + '</div><div class="cd-set-val" translate="no">' + escapeHtml(data[k]) + '</div></div></div>').join('') +
+            document.getElementById('cdSetList').innerHTML = shown.map(k => { const hn = sdbHint(ns, k); return '<div class="cd-set-row" data-k="' + escapeHtml(k) + '" onclick="cdSetEdit(this.dataset.k)"><div style="min-width:0; flex:1;"><div class="cd-set-key" translate="no">' + escapeHtml(k) + '</div>' + (hn ? '<div class="sdb-hint">' + escapeHtml(hn.t) + '</div>' + (hn.v ? '<div class="sdb-vals">' + escapeHtml(sdbClip(hn.v, 120)) + '</div>' : '') : '') + '<div class="cd-set-val" translate="no">' + escapeHtml(data[k]) + '</div></div></div>'; }).join('') +
                 (keys.length > shown.length ? '<div class="cd-note">' + (keys.length - shown.length) + ' more: search to find them.</div>' : '');
         }
         function cdSetEdit(key) {
             const ns = cd.set.ns, val = (cd.set.data[ns] || {})[key];
-            cdSheetOpen({ title: key, sub: ns + ' setting', body: '<textarea class="modal-text-input" id="cdSetVal" rows="3" translate="no" autocomplete="off" autocapitalize="off" spellcheck="false" style="width:100%; font-family:monospace; resize:vertical;">' + escapeHtml(val == null ? '' : val) + '</textarea>' +
+            cdSheetOpen({ title: key, sub: ns + ' setting', body: '<div class="sdb-about" style="margin-bottom:8px;">' + sdbAboutHtml(ns, key, val == null ? '' : String(val)) + '</div><textarea class="modal-text-input" id="cdSetVal" rows="3" translate="no" autocomplete="off" autocapitalize="off" spellcheck="false" style="width:100%; font-family:monospace; resize:vertical;">' + escapeHtml(val == null ? '' : val) + '</textarea>' +
                 '<div class="cd-note">A wrong value can make the device misbehave. Delete takes the setting away so the system falls back to its default.</div>',
                 buttons: [
                     { label: 'Save', cls: 'accent', fn: () => cdSetPut(ns, key, document.getElementById('cdSetVal').value) },
@@ -24905,6 +24972,129 @@ Type any command below (e.g. pm list packages -d)
                 vibrate_when_ringing: 'Vibrate when ringing'
             }
         };
+
+        // ---- what every setting does: assets/hsinfo.js (made by tools/hsinfo/build.py), loaded the first time a list of settings opens ----
+        // Without it the page still has the short SDB_HINTS above. A line of the file: name|what it does|values|risk
+        let hsInfo = null, hsLoading = false;
+        const hsWaiters = [];
+        function hsParse() {
+            const raw = window.HS_INFO;
+            if (!raw) return null;
+            const out = {};
+            SDB_TABLES.forEach(ns => {
+                const m = new Map();
+                String(raw[ns] || '').split('\n').forEach(line => {
+                    const f = line.split('|');
+                    if (f.length < 2 || !f[0]) return;
+                    m.set(f[0], { t: f[1], v: f[2] || '', r: f[3] || '' });
+                });
+                out[ns] = m;
+            });
+            return out;
+        }
+        function hsLoad(then) {
+            if (then) hsWaiters.push(then);
+            const done = () => { const w = hsWaiters.splice(0); w.forEach(f => { try { f(); } catch (e) { /* a list that is gone */ } }); };
+            if (hsInfo) { done(); return; }
+            if (window.HS_INFO) { hsInfo = hsParse(); done(); return; }
+            if (hsLoading) return;
+            hsLoading = true;
+            const el = document.createElement('script');
+            el.src = 'hsinfo.js';
+            el.onload = () => { hsLoading = false; hsInfo = hsParse(); done(); };
+            el.onerror = () => { hsLoading = false; hsWaiters.splice(0); };           // no file: the short hints stay
+            document.head.appendChild(el);
+        }
+        // the "N = meaning" parts of a values text, as [value, meaning] ("empty", "unset" and "null" name a state, not a value to type)
+        function hsPairs(v) {
+            const out = [];
+            String(v || '').split(';').forEach(part => {
+                const m = /^\s*(-?\d+(?:\.\d+)?|[A-Za-z][A-Za-z0-9_]*)\s=\s(.+?)\s*$/.exec(part);
+                if (m && !/^(empty|unset|null)$/i.test(m[1])) out.push([m[1], m[2]]);
+            });
+            return out;
+        }
+        // true when the values text says "0 = ...; 1 = ..." and nothing else, so flipping 1 and 0 is what the setting means
+        function hsBoolish(v) {
+            const p = hsPairs(v).map(x => x[0].toLowerCase());
+            if (p.length < 2) return false;
+            const ok = ['0', '1', 'true', 'false', 'on', 'off', 'yes', 'no'];
+            return p.every(x => ok.indexOf(x) >= 0);
+        }
+        // the values line of a row: the text of the values, the one the setting holds now in bold
+        function sdbValsHtml(hint, value, terms) {
+            const val = String(value).trim().toLowerCase();
+            const num = /^-?\d+(\.\d+)?$/.test(val) ? parseFloat(val) : null;
+            const text = String(hint.v).length > 240 ? String(hint.v).slice(0, 239) + '…' : String(hint.v);
+            return text.split(';').map(part => {
+                const m = /^\s*(-?\d+(?:\.\d+)?|[A-Za-z][A-Za-z0-9_]*)\s=\s/.exec(part);
+                const cur = m && (m[1].toLowerCase() === val || (num !== null && /^-?\d/.test(m[1]) && parseFloat(m[1]) === num));
+                const html = sdbMark(part.trim(), terms);
+                return cur ? '<span class="sdb-cur">' + html + '</span>' : html;
+            }).join('; ');
+        }
+        // what the value the setting holds now stands for ("2" -> "normal"), or ''
+        function sdbMeaning(hint, value) {
+            if (!hint || !hint.v) return '';
+            const val = String(value).trim().toLowerCase();
+            const num = /^-?\d+(\.\d+)?$/.test(val) ? parseFloat(val) : null;
+            const pairs = hsPairs(hint.v);
+            for (let i = 0; i < pairs.length; i++) {
+                const t = pairs[i][0].toLowerCase();
+                if (t === val || (num !== null && /^-?\d+(\.\d+)?$/.test(t) && parseFloat(t) === num)) return pairs[i][1];
+            }
+            return '';
+        }
+        // a settings no list describes: what its name and value suggest, said as a guess
+        function sdbGuess(ns, key, value) {
+            const k = String(key).toLowerCase(), v = String(value);
+            const maker = /^(sec_|samsung|knox|bixby|one_ui|oneui|sem_)|samsung/.test(k) ? 'Samsung'
+                : /^(miui|xiaomi|hyper_?os)/.test(k) ? 'Xiaomi'
+                : /^(oplus|oppo|coloros|realme|oneplus)/.test(k) ? 'Oppo, Realme or OnePlus'
+                : /^(huawei|hw_|emui|honor)/.test(k) ? 'Huawei or Honor'
+                : /^(vivo|funtouch)/.test(k) ? 'Vivo' : '';
+            const pkg = /^[a-z][a-z0-9_]*(\.[a-z0-9_]+){2,}/.test(k) ? k.split('.').slice(0, 3).join('.') : '';
+            let t = 'Android does not describe this setting.';
+            if (maker) t += ' Its name suggests that ' + maker + ' added it.';
+            else if (pkg) t += ' Its name suggests that the app ' + pkg + ' wrote it.';
+            else t += ' Phone makers and apps add settings of their own.';
+            let vals = '';
+            const sw = sdbSwitchInfo(v);
+            const num = /^-?\d+$/.test(v) ? parseInt(v, 10) : null;
+            const nameSwitch = /(_enabled|_enable|_on|_off|_disabled|_allowed|_active|^is_|^has_|^use_|^show_|^allow_|^enable_|^disable_)/.test(k);
+            if (sw && nameSwitch) { t += ' It looks like an on/off switch.'; vals = '0 = off; 1 = on'; }
+            else if (/_(ms|millis|milliseconds|timeout|delay|interval|duration)$/.test(k) && num !== null) { t += ' It looks like a time in milliseconds (1000 = 1 second).'; vals = 'milliseconds'; }
+            else if (/_(sec|secs|seconds)$/.test(k) && num !== null) { t += ' It looks like a time in seconds.'; vals = 'seconds'; }
+            else if (/_(percent|pct)$/.test(k) && num !== null) { t += ' It looks like a percentage.'; vals = 'percent, 0 to 100'; }
+            else if (/_(time|timestamp|date|last_run|last_update)$/.test(k) && num !== null && num > 1e12 && num < 4e12) { t += ' It looks like a date and time (milliseconds since 1970): ' + new Date(num).toLocaleString(langLocale()) + '.'; vals = 'milliseconds since 1970'; }
+            else if (/_(url|uri)$/.test(k) || /^[a-z][a-z0-9+.-]*:\/\//i.test(v)) { t += ' It looks like a web address.'; vals = 'web address'; }
+            else if (/_(packages?|apps?)$/.test(k)) { t += ' It looks like an app package name, or a list of them.'; vals = 'package name(s)'; }
+            else if (/_component$/.test(k) || (/\//.test(v) && /^[\w.]+\/[\w.$]+/.test(v))) { t += ' It looks like an app component (package/class).'; vals = 'package/class'; }
+            else if (sw) { t += ' Its value looks like an on/off switch (' + v + '), but the name does not say so.'; vals = '0 = off; 1 = on, if it is a switch'; }
+            else if (num !== null) { t += ' Its value is a whole number.'; vals = 'whole number'; }
+            else if (/^-?\d*\.\d+$/.test(v)) { t += ' Its value is a decimal number.'; vals = 'decimal number'; }
+            else if (v === '' || v === 'null') { t += ' It has no value right now.'; }
+            else { t += ' Its value is text.'; vals = 'text'; }
+            return { t: t, v: vals, guess: true };
+        }
+        // the "About this setting" box of the editor (and of the Connected Devices editor): description, values and what the value stands for now
+        function sdbAboutHtml(ns, key, value) {
+            const known = sdbHint(ns, key);
+            const h = known || sdbGuess(ns, key, value);
+            const e = escapeHtml;
+            let out = '<div class="sdb-about-h">' + (known ? 'What it does' : 'What it probably is') + '</div><div class="sdb-about-t">' + e(h.t) + '</div>';
+            if (h.v) {
+                const lines = String(h.v).split(';').map(x => x.trim()).filter(Boolean).map(part => {
+                    const m = /^(-?\d+(?:\.\d+)?|[A-Za-z][A-Za-z0-9_]*)\s=\s(.+)$/.exec(part);
+                    return m && !/^(empty|unset|null)$/i.test(m[1]) ? '<div><b>' + e(m[1]) + '</b> = ' + e(m[2]) + '</div>' : '<div>' + e(part) + '</div>';
+                });
+                out += '<div class="sdb-about-h">Values</div><div class="sdb-about-t">' + lines.join('') + '</div>';
+            }
+            const mean = known ? sdbMeaning(known, value) : '';
+            out += '<div class="sdb-about-now" data-now="1">' + (mean ? 'Now: <b>' + e(String(value)) + '</b> = ' + e(mean) : '') + '</div>';
+            return out;
+        }
+
         const SDB_VOLUMES = { music: 'Music', ring: 'Ringtone', alarm: 'Alarm', voice: 'Call', system: 'System', notification: 'Notification', bluetooth_sco: 'Bluetooth call', dtmf: 'Dial pad', tts: 'Speech', accessibility: 'Accessibility' };
 
         // [on, off] pairs a long press can flip
@@ -24977,7 +25167,11 @@ Type any command below (e.g. pm list packages -d)
         // like sdbSwitchInfo, but for a named setting: the ones that are a choice among several values are never a switch
         function sdbSwitchOf(ns, key, v) {
             if (SDB_CHOICES[ns] && SDB_CHOICES[ns].has(key)) return null;
-            return sdbSwitchInfo(v);
+            const sw = sdbSwitchInfo(v);
+            if (!sw) return null;
+            const h = sdbHint(ns, key);
+            if (h && h.v && !hsBoolish(h.v)) return null;                 // documented as something other than on / off: 1 and 0 are not its two states
+            return sw;
         }
 
         function sdbKeyProblem(key) {
@@ -25009,6 +25203,8 @@ Type any command below (e.g. pm list packages -d)
         function sdbHint(ns, key) {
             const tbl = SDB_HINTS[ns];
             const h = tbl && Object.prototype.hasOwnProperty.call(tbl, key) ? tbl[key] : null;       // a setting may be called "constructor"
+            const info = hsInfo && hsInfo[ns] ? hsInfo[ns].get(key) : null;
+            if (info) return { t: info.t, v: info.v, r: info.r || (h && Array.isArray(h) ? h[1] : '') };
             if (h) return Array.isArray(h) ? { t: h[0], r: h[1] } : { t: h, r: '' };
             if (ns === 'system') {
                 const m = /^volume_([a-z_]+?)(?:_(speaker|headset|headphone|earpiece|bt_sco|bluetooth_a2dp|hdmi|usb_headset|usb_device))?$/.exec(key);
@@ -25103,6 +25299,7 @@ Type any command below (e.g. pm list packages -d)
 
         function onSettingsShown() {
             sdbInit();
+            hsLoad(() => { sdbDirty(); if (currentViewName() === 'settings') sdbRender(); });
             if (!sdbUsable()) { sdbRender(); return; }
             const need = SDB_TABLES.filter(n => !sdbData[n] || sdbError[n] || (n === sdbNs && sdbStale(n)));
             [sdbNs].concat(SDB_TABLES.filter(n => n !== sdbNs)).filter(n => need.includes(n)).forEach(sdbReadTable);
@@ -25134,7 +25331,7 @@ Type any command below (e.g. pm list packages -d)
                 if (sdbFilter === 'known' && !hint) return;
                 if (sdbFilter === 'edited' && !sdbEdited.has(ns + '/' + k)) return;
                 if (terms.length) {
-                    const hay = (k + '\n' + v + '\n' + (hint ? hint.t : '')).toLowerCase();
+                    const hay = (k + '\n' + v + '\n' + (hint ? hint.t + '\n' + (hint.v || '') : '')).toLowerCase();
                     for (let i = 0; i < terms.length; i++) if (hay.indexOf(terms[i]) < 0) return;
                 }
                 out.push(k);
@@ -25194,6 +25391,7 @@ Type any command below (e.g. pm list packages -d)
             let h = '<div class="sdb-row' + (sdbBusy.has(id) ? ' busy' : '') + (hint && hint.r ? ' risky' : '') + '" role="listitem" tabindex="0" data-k="' + escapeHtml(key) + '">';
             h += '<div class="sdb-main"><div class="sdb-key">' + sdbMark(key, terms) + (sdbEdited.has(id) ? '<span class="sdb-dot" title="Changed with this app"></span>' : '') + '</div>';
             if (hint) h += '<div class="sdb-hint">' + sdbMark(hint.t, terms) + (hint.r ? ' · careful' : '') + '</div>';
+            if (hint && hint.v) h += '<div class="sdb-vals">' + sdbValsHtml(hint, value, terms) + '</div>';
             const blank = value === '' ? '(empty)' : /^\s+$/.test(value) ? '(blank)' : '';
             h += '<div class="sdb-val' + (blank ? ' empty' : '') + '">' + (blank || sdbMark(sdbClip(value), terms)) + '</div></div>';
             if (sw) h += '<button class="sdb-sw' + (sw.on ? ' on' : '') + '" role="switch" aria-checked="' + sw.on + '" aria-label="Flip ' + escapeHtml(key) + '"><span></span></button>';
@@ -25560,9 +25758,12 @@ Type any command below (e.g. pm list packages -d)
 
         // ---- the editor ----
 
-        function sdbQuickChips(boxId, targetId, onPick) {
-            const vals = [['0', '0'], ['1', '1'], ['true', 'true'], ['false', 'false'], ['null', 'null'], ['(empty)', ''], ['-1', '-1']];
-            document.getElementById(boxId).innerHTML = vals.map((p, i) => '<button type="button" data-v="' + escapeHtml(p[1]) + '">' + escapeHtml(p[0]) + '</button>').join('');
+        function sdbQuickChips(boxId, targetId, onPick, pairs) {
+            // the values the setting is documented to take come first (with what each one means), then the usual ones
+            const own = (pairs || []).slice(0, 8).map(p => [p[0] + ' · ' + (p[1].length > 24 ? p[1].slice(0, 23) + '…' : p[1]), p[0], p[1]]);
+            const usual = [['0', '0'], ['1', '1'], ['true', 'true'], ['false', 'false'], ['null', 'null'], ['(empty)', ''], ['-1', '-1']].filter(p => !own.some(o => o[1] === p[1]));
+            const vals = own.concat(usual);
+            document.getElementById(boxId).innerHTML = vals.map((p, i) => '<button type="button" data-v="' + escapeHtml(p[1]) + '"' + (p[2] ? ' title="' + escapeHtml(p[2]) + '"' : '') + '>' + escapeHtml(p[0]) + '</button>').join('');
             document.getElementById(boxId).onclick = e => {
                 const b = e.target.closest('button[data-v]');
                 if (!b) return;
@@ -25593,12 +25794,15 @@ Type any command below (e.g. pm list packages -d)
             const hint = sdbHint(ns, key);
             document.getElementById('sdbEditKey').innerText = key;
             document.getElementById('sdbEditSub').innerText = SDB_TITLES[ns] + (hint ? ' · ' + hint.t : '');
+            const about = document.getElementById('sdbEditAbout');
+            about.innerHTML = sdbAboutHtml(ns, key, v);
+            about.style.display = '';
             const risk = document.getElementById('sdbEditRisk');
             risk.style.display = hint && hint.r ? '' : 'none';
             risk.innerText = hint && hint.r ? SDB_RISKS[hint.r] : '';
             const t = document.getElementById('sdbEditText');
             t.value = v;
-            sdbQuickChips('sdbEditQuick', 'sdbEditText', sdbEditInput);
+            sdbQuickChips('sdbEditQuick', 'sdbEditText', sdbEditInput, hint && hint.v ? hsPairs(hint.v) : []);
             document.getElementById('sdbEditFlipBtn').style.display = sdbSwitchOf(ns, key, v) ? '' : 'none';
             sdbEditInput();
             document.getElementById('sdbEditModal').classList.add('show');
@@ -25626,6 +25830,11 @@ Type any command below (e.g. pm list packages -d)
 
         function sdbEditInput() {
             const t = document.getElementById('sdbEditText');
+            if (sdbEditing) {                                         // what the typed value stands for, in the About box
+                const now = document.querySelector('#sdbEditAbout [data-now]');
+                const h = sdbHint(sdbEditing.ns, sdbEditing.key), mean = h ? sdbMeaning(h, t.value) : '';
+                if (now) now.innerHTML = mean ? 'Now: <b>' + escapeHtml(t.value) + '</b> = ' + escapeHtml(mean) : '';
+            }
             const p = sdbValueProblem(t.value);
             document.getElementById('sdbEditProblem').innerText = p;
             const extraBreak = sdbEditing && /\n$/.test(t.value) && !/\n$/.test(sdbEditing.orig);
@@ -25633,6 +25842,9 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('sdbEditNote').innerText = sdbTypeNote(t.value) + (sdbEditing && t.value !== sdbEditing.orig ? ' · was ' + (sdbEditing.orig === '' ? '(empty)' : sdbClip(sdbEditing.orig, 40)) : '');
             document.getElementById('sdbEditSaveBtn').disabled = !!p;
         }
+
+        function sdbOpenHelp() { haptic(); document.getElementById('sdbHelpModal').classList.add('show'); }
+        function sdbCloseHelp() { document.getElementById('sdbHelpModal').classList.remove('show'); }
 
         function sdbEditClose() { document.getElementById('sdbEditModal').classList.remove('show'); sdbEditing = null; }
 

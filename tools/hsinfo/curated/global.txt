@@ -1,0 +1,169 @@
+# key | what it does | values | risk (conn, lock, break)
+activity_manager_constants | Hidden tuning values of the activity manager (how Android starts and keeps apps). | text: name=value pairs separated by commas; empty = built-in defaults
+adaptive_battery_management_enabled | Adaptive Battery: Android learns which apps you use and limits the ones you don't. | 0 = off; 1 = on
+adb_allowed_connection_time | How long a "Always allow from this computer" ADB approval stays valid before the phone asks again. | milliseconds; 0 = never expires; default 604800000 (7 days)
+adb_enabled | USB debugging: lets a computer, or this app, talk to the phone over ADB. | 0 = off; 1 = on | conn
+adb_wifi_enabled | Wireless debugging: ADB over Wi-Fi. | 0 = off; 1 = on | conn
+add_users_when_locked | Lets people add users or a guest from the lock screen. | 0 = no; 1 = yes
+airplane_mode_on | Airplane mode: switches the radios off. | 0 = off; 1 = on | conn
+airplane_mode_radios | The radios airplane mode switches off. | list separated by commas: cell, bluetooth, wifi, nfc, wimax
+airplane_mode_toggleable_radios | Radios you may switch back on by hand while airplane mode is on. | list separated by commas: bluetooth, wifi, nfc
+always_finish_activities | "Don't keep activities": destroys every screen of an app the moment you leave it (developer option). | 0 = off; 1 = on
+anomaly_detection_constants | Tuning values of the battery anomaly detector. | text: name=value pairs separated by commas
+animator_duration_scale | Speed of animations inside apps (developer option "Animator duration scale"). | decimal; 1 = normal; 0 = no animation; 0.5 = twice as fast; 2 = twice as slow
+transition_animation_scale | Speed of the animation between screens (developer option "Transition animation scale"). | decimal; 1 = normal; 0 = no animation; 0.5 = twice as fast; 2 = twice as slow
+window_animation_scale | Speed of window open and close animations (developer option "Window animation scale"). | decimal; 1 = normal; 0 = no animation; 0.5 = twice as fast; 2 = twice as slow
+app_auto_restriction_enabled | Settings restricts apps that drain the battery in the background by itself. | 0 = off; 1 = on
+app_standby_enabled | App Standby: limits the background work of apps you have not used for a while. | 0 = off; 1 = on
+assisted_gps_enabled | Assisted GPS: uses the network to find your position faster. | 0 = off; 1 = on
+auto_time | Sets the clock from the mobile network. | 0 = set by hand; 1 = automatic
+auto_time_zone | Sets the time zone from the mobile network. | 0 = set by hand; 1 = automatic
+automatic_power_save_mode | How Battery Saver turns on by itself. | 0 = at a battery level (low_power_trigger_level); 1 = when the phone predicts the battery will not last until your next charge
+battery_saver_constants | Hidden tuning values of Battery Saver, for example which features it switches off. | text: name=value pairs separated by commas; empty = defaults
+battery_saver_device_specific_constants | Battery Saver tuning values chosen by the phone maker. | text: name=value pairs separated by commas
+ble_scan_always_enabled | Lets apps scan for Bluetooth devices even while Bluetooth is off (helps location). | 0 = off; 1 = on
+bluetooth_on | Bluetooth. | 0 = off; 1 = on
+boot_count | How many times the phone has started. Android keeps this by itself. | whole number, counts up
+cached_apps_freezer | Freezes apps kept in the background so they use no processor time. | enabled = on; disabled = off; device_default = decided by the phone
+call_auto_retry | Calls again by itself when a call is dropped (CDMA networks). | 0 = off; 1 = on
+captive_portal_detection_enabled | Checks whether a Wi-Fi network needs a sign-in page. | 0 = off; 1 = on
+captive_portal_http_url | Address the phone opens to test for a Wi-Fi sign-in page (HTTP). | web address
+captive_portal_https_url | Address the phone opens to test for a Wi-Fi sign-in page (HTTPS). | web address
+captive_portal_mode | What to do when a Wi-Fi network shows a sign-in page. | 0 = ignore it; 1 = prompt for sign-in; 2 = avoid the network
+captive_portal_use_https | Uses HTTPS to check that a Wi-Fi network really has internet. | 0 = off; 1 = on
+car_dock_sound | Sound played when the phone is put into a car dock. | address of a sound file (URI)
+car_undock_sound | Sound played when the phone is taken out of a car dock. | address of a sound file (URI)
+charging_sounds_enabled | Plays a sound when charging starts. | 0 = off; 1 = on
+charging_started_sound | The sound played when wired charging starts. | address of a sound file (URI)
+charging_vibration_enabled | Vibrates when charging starts. | 0 = off; 1 = on
+compatibility_mode | Runs older apps in a compatibility mode. | 0 = off for all apps; 1 = on for older apps
+data_roaming | Mobile data while roaming (abroad). | 0 = off; 1 = on
+data_roaming1 | Mobile data while roaming, for the SIM with subscription number 1. | 0 = off; 1 = on
+data_roaming2 | Mobile data while roaming, for the SIM with subscription number 2. | 0 = off; 1 = on
+data_stall_recovery_on_bad_network | Tries to repair mobile data when the network is reported as bad. | 0 = off; 1 = on
+debug_app | The app that waits for a debugger when it starts (developer option "Select debug app"). | package name; empty = none
+debug_view_attributes | Lets views save their attributes so tools such as Layout Inspector can read them (developer option). | 0 = off; 1 = on
+default_install_location | Where new apps are installed. | 0 = let Android decide; 1 = internal storage; 2 = SD card
+default_restrict_background_data | Whether background data is restricted by default (Data Saver). | 0 = not restricted; 1 = restricted
+desk_dock_sound | Sound played when the phone is put into a desk dock. | address of a sound file (URI)
+desk_undock_sound | Sound played when the phone is taken out of a desk dock. | address of a sound file (URI)
+development_settings_enabled | Shows Developer options in Settings. | 0 = hidden; 1 = shown
+device_demo_mode | The phone is in retail demo mode. | 0 = no; 1 = yes
+device_idle_constants | Hidden tuning values of Doze (the deep sleep the phone enters when idle). | text: name=value pairs separated by commas; empty = defaults
+device_name | The name of this phone, shown to Bluetooth, the hotspot and the network. | text
+device_provisioned | The first-time setup of the phone is finished: leave this at 1. | 1 = finished; 0 = setup not finished | break
+disable_window_blurs | Turns off the blur effect behind windows (saves power, helps slow phones). | 0 = blur allowed; 1 = blur disabled
+dock_audio_media_enabled | Plays media on the dock's speakers while docked. | 0 = off; 1 = on
+dock_sounds_enabled | Plays sounds when the phone is docked or undocked. | 0 = off; 1 = on
+emergency_affordance_needed | Whether the phone should show an emergency call shortcut. Android sets this by itself. | 0 = no; 1 = yes
+emergency_tone | Tone played when an emergency call ends (CDMA). | 0 = off; 1 = alert; 2 = vibrate
+enable_adb_incremental_install_default | Installs apps over ADB in the faster incremental way by default. | 0 = off; 1 = on
+enable_back_animation | Shows the preview animation while you do a back gesture (developer option "Predictive back animations"). | 0 = off; 1 = on
+enable_freeform_support | Lets apps run in freeform windows that can be moved and resized (developer option). | 0 = off; 1 = on
+enable_gpu_debug_layers | Lets an app load GPU debug layers (developer option). | 0 = no; 1 = yes
+enable_non_resizable_multi_window | Lets apps that cannot be resized run in split screen (developer option). | 0 = off; 1 = on
+encoded_surround_output | Surround sound over HDMI. | 0 = automatic; 1 = never; 2 = always; 3 = manual (choose the formats)
+euicc_provisioned | A profile was once downloaded to the eSIM. Android keeps this by itself. | 0 = no; 1 = yes
+extra_low_power | Extreme battery saver is on. | 0 = off; 1 = on
+fancy_ime_animations | Animation when the keyboard opens and closes. | decimal; 1 = normal; 0 = no animation
+force_allow_on_external | Lets every app be moved to an SD card (developer option). | 0 = no; 1 = yes
+force_resizable_activities | Makes every app resizable for split screen and freeform (developer option). | 0 = no; 1 = yes
+fstrim_mandatory_interval | How long after the last trim the phone must trim storage at start (flash maintenance). | milliseconds
+global_http_proxy_host | Host name of the proxy all web traffic goes through. | host name; empty = no proxy
+global_http_proxy_port | Port of the global proxy. | port number, 1 to 65535
+global_http_proxy_exclusion_list | Addresses that skip the global proxy. | list of host names separated by commas
+hdr_conversion_mode | How the phone handles HDR video the screen cannot show. | 1 = pass it through; 2 = let the system convert it; 3 = force one HDR type
+heads_up_notifications_enabled | Pop-up (heads-up) notifications at the top of the screen. | 0 = off; 1 = on
+hearing_aid | Hearing aid compatibility. | 0 = off; 1 = on
+hidden_api_blacklist_exemptions | Hidden Android functions that apps may still use. | list separated by commas, or *
+hidden_api_policy | How strictly Android stops apps from using hidden (non-SDK) functions. | 0 = allow all; 1 = only warn; 2 = block; -1 = system default
+hide_error_dialogs | Hides crash and "app is not responding" dialogs. | 0 = show them; 1 = hide them
+http_proxy | Proxy for web traffic, written host:port. | host:port; empty or :0 = none
+install_non_market_apps | Allows installing apps from outside the store (older global switch). | 0 = no; 1 = yes
+lock_sound | Sound played when the phone locks. | address of a sound file (URI)
+low_battery_sound | Sound played at low battery. | address of a sound file (URI)
+low_power | Battery Saver is on right now. | 0 = off; 1 = on
+low_power_sticky | Keeps Battery Saver on after unplugging until you turn it off. | 0 = off; 1 = on
+low_power_sticky_auto_disable_enabled | Turns "sticky" Battery Saver off by itself once the battery has recharged. | 0 = off; 1 = on
+low_power_sticky_auto_disable_level | Battery level at which sticky Battery Saver turns off by itself. | percent, 0 to 100
+low_power_trigger_level | Battery level at which Battery Saver turns on by itself. | percent, 1 to 100; 0 = never
+low_power_trigger_level_max | Highest battery level you can pick for the Battery Saver trigger. | percent, 0 to 100
+low_power_standby_enabled | Low Power Standby: restricts apps while the phone sits idle and unplugged. | 0 = off; 1 = on
+lte_service_forced | Whether LTE can be switched on or off as a preferred network. | 0 = no; 1 = yes
+mobile_data | Mobile data. | 0 = off; 1 = on
+mobile_data1 | Mobile data, for the SIM with subscription number 1. | 0 = off; 1 = on
+mobile_data_always_on | Keeps mobile data connected while Wi-Fi is in use, for a quicker switch. | 0 = off; 1 = on
+mode_ringer | Ringer mode as Android holds it. | 0 = silent; 1 = vibrate; 2 = normal
+multi_sim_data_call | The SIM used for mobile data (subscription id). | subscription id; -1 = none chosen
+multi_sim_sms | The SIM used for text messages (subscription id). | subscription id; -1 = ask every time
+multi_sim_voice_call | The SIM used for calls (subscription id). | subscription id; -1 = ask every time
+multi_sim_sms_prompt | Asks which SIM to use for each text. | 0 = off; 1 = on
+multi_sim_voice_prompt | Asks which SIM to use for each call. | 0 = off; 1 = on
+mute_alarm_stream_with_ringer_mode | Alarms are silenced together with the ringer. | 0 = no; 1 = yes
+network_avoid_bad_wifi | Switches away from Wi-Fi that has no internet. | 0 = never avoid; 1 = ask; null or other = avoid
+network_metered_multipath_preference | Uses Wi-Fi and mobile data together on metered networks. | 0 = never; 1 = for a smooth handover; 2 = for reliability; 4 = for speed
+network_scoring_provisioned | The network scoring service has started once. Android keeps this by itself. | 0 = no; 1 = yes
+network_watchlist_enabled | Checks traffic against a watchlist of harmful hosts. | 0 = off; 1 = on
+nitz_update_diff | Smallest clock difference between two network time signals that is accepted. | milliseconds
+notification_bubbles | Chat bubbles for notifications. Now kept in the Secure table. | 0 = off; 1 = on
+nsd_on | Network service discovery: finds printers and other devices on the network. | 0 = off; 1 = on
+ntp_server | Network time server used to set the clock. | host name
+ntp_timeout | How long to wait for the network time server. | milliseconds
+overlay_display_devices | Simulated extra screens, to test apps with several displays (developer option). | text, e.g. 1280x720/320; empty = none
+package_verifier_enable | Checks apps for harm when they are installed. | 0 = off; 1 = on
+package_verifier_user_consent | Whether you agreed to the app verifier. | 1 = agreed; -1 = declined; 0 = not asked yet
+policy_control | Hides the status bar or navigation bar for chosen apps (immersive mode). | text, e.g. immersive.full=*; empty = none
+power_button_double_press | What a double press of the power button does (when the phone maker has overridden it). | a number picking the action; 0 = nothing; the other numbers depend on the Android version
+power_button_long_press | What a long press of the power button does (when the phone maker has overridden it). | a number picking the action; 0 = nothing; 1 = power menu; the other numbers depend on the Android version
+power_manager_constants | Hidden tuning values of the power manager. | text: name=value pairs separated by commas
+power_sounds_enabled | Plays sounds for low battery alerts. | 0 = off; 1 = on
+private_dns_mode | Private DNS (DNS over TLS), which hides which sites you look up. | off = off; opportunistic = automatic; hostname = use the host named in private_dns_specifier
+private_dns_specifier | Host name of the private DNS provider. | host name, e.g. dns.google; used when private_dns_mode is hostname
+restricted_networking_mode | Only apps on an allow list may use the network. | 0 = off; 1 = on
+safe_boot_disallowed | Stops the phone from starting in safe mode. | 0 = allowed; 1 = disallowed
+satellite_mode_enabled | Satellite mode: switches off radios that satellite use does not allow. | 0 = off; 1 = on
+secure_frp_mode | The phone is in a restricted factory-reset-protection state. | 0 = no; 1 = yes
+selinux_status | SELinux security mode. | 0 = permissive (only logs); 1 = enforcing
+send_action_app_error | Lets Android send the "app error" notice when an app crashes. | 0 = no; 1 = yes
+set_install_location | Lets you pick where apps are installed. | 0 = no; 1 = yes
+show_first_crash_dialog | Shows a dialog when an app in the foreground crashes. | 0 = no; 1 = yes
+show_notification_channel_warnings | Shows a toast when an app posts a notification without a valid channel (developer option). | 0 = off; 1 = on
+show_processes | Shows a CPU usage meter (older developer option). | 0 = off; 1 = on
+show_temperature_warning | Shows a notification when the phone gets too hot. | 0 = off; 1 = on
+show_usb_temperature_alarm | Shows a notification when the USB port gets too hot. | 0 = off; 1 = on
+stay_on_while_plugged_in | Keeps the screen on while charging (developer option "Stay awake"). | 0 = off; 1 = while on a charger; 2 = while on USB; 4 = while on wireless; 8 = while docked; add them for several, 15 = all
+sync_manager_constants | Hidden tuning values of background sync. | text: name=value pairs separated by commas
+tether_dun_required | Tethering needs the special DUN mobile connection. | 0 = no; 1 = yes; -1 = decided by the carrier
+tether_offload_disabled | Switches off hardware speed-up for tethering. | 0 = speed-up on; 1 = speed-up off
+tether_supported | Allows tethering (hotspot and USB sharing). | 0 = no; 1 = yes
+theater_mode_on | Theater mode. | 0 = off; 1 = on
+usb_mass_storage_enabled | USB mass storage mode (very old phones). | 0 = off; 1 = on
+use_google_mail | Shows "Google Mail" instead of "Gmail". | 0 or empty = no; any value = yes
+user_preferred_refresh_rate | Screen refresh rate you chose. | Hz, e.g. 60 or 120; 0 = automatic
+user_switcher_enabled | Shows the user switcher so people can switch accounts. | 0 = off; 1 = on
+uwb_enabled | Ultra-wideband radio (precise nearby device finding). | 0 = off; 1 = on
+verifier_verify_adb_installs | Checks apps installed over ADB for harm. | 0 = off; 1 = on
+wait_for_debugger | Makes the debug app wait for a debugger before it starts (developer option). | 0 = off; 1 = on
+warning_temperature | Battery temperature at which the "phone is hot" warning appears. | degrees Celsius, e.g. 45
+webview_multiprocess | Runs web content in its own process (developer option). | 0 = off; 1 = on
+webview_provider | The app that provides WebView, the engine apps use to show web pages. | package name; empty = the system default
+wifi_always_requested | Keeps Wi-Fi connected even when a better network such as Ethernet is available. | 0 = off; 1 = on
+wifi_country_code | The country the Wi-Fi radio uses to know which channels are allowed. | two letters, e.g. US
+wifi_display_on | Wireless display (screen casting). | 0 = off; 1 = on
+wifi_max_dhcp_retry_count | How many times to retry getting an address from the router. | whole number
+wifi_networks_available_notification_on | Notifies you when open Wi-Fi networks are nearby (older setting). | 0 = off; 1 = on
+wifi_on | Wi-Fi. | 0 = off; 1 = on; 2 = on although airplane mode is on; 3 = off because airplane mode is on
+wifi_scan_always_enabled | Lets apps scan for Wi-Fi even when Wi-Fi is off (improves location). | 0 = off; 1 = on
+wifi_scan_throttle_enabled | Limits how often apps may scan for Wi-Fi. | 0 = off; 1 = on
+wifi_sleep_policy | Whether Wi-Fi stays on while the screen is off (older phones). | 0 = turn off with the screen; 1 = stay on while charging; 2 = always stay on
+wifi_verbose_logging_enabled | More detailed Wi-Fi logs. | 0 = off; 1 = on
+wifi_wakeup_enabled | Turns Wi-Fi back on near networks you saved. | 0 = off; 1 = on
+wifi_watchdog_on | Watches Wi-Fi quality and leaves poor networks. | 0 = off; 1 = on
+wtf_is_fatal | Makes serious "should never happen" log messages crash the app (developer option). | 0 = no; 1 = yes
+zen_duration | How long Do Not Disturb stays on when you switch it on from Quick Settings. | minutes; 0 = until you turn it off; -1 = ask each time
+zen_mode | Do Not Disturb. | 0 = off; 1 = priority interruptions only; 2 = total silence; 3 = alarms only
+zen_mode_config_etag | Version stamp of your Do Not Disturb rules. Android keeps this by itself. | number
+zen_mode_ringer_level | The ringer mode from before Do Not Disturb turned on. | 0 = silent; 1 = vibrate; 2 = normal
+zram_enabled | Compressed swap memory (zram). | 0 = off; 1 = on; takes effect after a restart
+sysui_demo_allowed | Allows System UI demo mode, which shows a clean status bar for screenshots (see the System UI Tuner tab). | 0 = off; 1 = on
+sysui_tuner_demo_on | Demo mode is on right now (System UI Tuner). | 0 = off; 1 = on
