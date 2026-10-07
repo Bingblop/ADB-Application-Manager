@@ -23,6 +23,16 @@
     </tbody>
   </table>
   <p>You do not have to press Refresh to see changes. While you look at this tab the list is read again every 6 seconds, so a device that connects, drops or is allowed on its own screen shows up by itself. Leaving the tab stops this.</p>
+  <h4>A device that dropped</h4>
+  <p>Every device that was connected is remembered (up to eight). When one is no longer connected, because its Wi-Fi went to sleep, the cable came out, its Wireless debugging was switched off or it restarted, it does not just vanish: a toast says <b>Lost the connection to ...</b> and a card stays under the picker with the device's name, how it was connected (Wi-Fi, USB or Bluetooth link) and when it was lost. The card has two buttons:</p>
+  <table class="hg-table">
+    <thead><tr><th>Button</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><b>Reconnect</b></td><td>Does what that kind of connection needs. <b>Wi-Fi</b> (an address such as 192.168.1.20:5555): disconnects, connects again and, if that fails, looks for the device on the same address by its Wireless debugging announcement, because the port changes every time Wireless debugging is switched on; a new port is found and used by itself. <b>Wireless debugging by name</b>: looks the name up on the network and connects to the address it announces. <b>USB</b>: asks adb to reconnect offline devices; if the device does not answer, check the cable, unlock it and make sure USB debugging is on. <b>Bluetooth link</b>: sets the link up again through this phone's own ADB, then connects. When it cannot, the card says why in words. Nothing else changes, and you can press it again.</td></tr>
+      <tr><td><b>Forget</b></td><td>Takes the device off the list for good. You can add it again with Add device.</td></tr>
+    </tbody>
+  </table>
+  <p><b>On its own.</b> When a device drops while you look at the tab, the app also tries to bring it back by itself: right away, after 8 seconds and after 25 seconds (not for USB, and not while the app is in the background). If one attempt works it stops there; if all three fail the card tells why and waits for you. The line <b>Reconnect on its own when a device drops: On</b> under the card switches this off and on. <b>Reconnect</b> is also the first item in the device menu (the three dots on the device card) and the button in the note under the card of a device that is <b>offline</b>. <b>Disconnect</b> in the device menu is a decision, not a drop: the device is forgotten and nothing is tried.</p>
   <p><b>This phone is never in the list</b>, even when its own ADB or Wireless Debugging working mode is on. The tab leaves out this phone's own addresses on purpose, so you cannot manage the wrong device by mistake.</p>
 
   <h4>When no device is connected</h4>
@@ -85,7 +95,7 @@
     <tbody>
       <tr><td><b>Connected</b></td><td>The device answers and trusts this phone.</td><td>Nothing. Pick a sub-tab.</td></tr>
       <tr><td><b>Not allowed yet</b> (adb calls this "unauthorized")</td><td>The device has not accepted this phone's key. The tools stay hidden, and a note under the card says so.</td><td>Look at the device's own screen. Tap <b>Allow</b> and tick <b>Always allow</b>, then press <b>Refresh</b> here. If no question appears, turn debugging off and on again on the device and connect again. The same happens after you make a new ADB key in this app: every device has to trust the new key.</td></tr>
-      <tr><td><b>offline</b></td><td>adb knows the device but it does not answer: its Wi-Fi went to sleep, it moved out of range, or it restarted.</td><td>Tap <b>Reconnect</b> in the note under the card. If it stays offline, turn Wireless debugging (or Debug over Wi-Fi) off and on on the device, then use <b>Connect</b> in Add device.</td></tr>
+      <tr><td><b>offline</b></td><td>adb knows the device but it does not answer: its Wi-Fi went to sleep, it moved out of range, or it restarted.</td><td>Tap <b>Reconnect</b> in the note under the card (or in the device menu, or on the card of the dropped device). If it stays offline, turn Wireless debugging (or Debug over Wi-Fi) off and on on the device, then use <b>Connect</b> in Add device.</td></tr>
       <tr><td><b>authorizing</b> or <b>connecting</b></td><td>The connection is being set up. The note under the card words it like the next row ("Most tools need it started normally"), and the tools stay hidden until the card says <b>Connected</b>.</td><td>Wait a few seconds. The list updates by itself.</td></tr>
       <tr><td><b>recovery</b>, <b>sideload</b>, <b>bootloader</b></td><td>The device is not running Android normally. The note says "Most tools need it started normally."</td><td>Restart the device by hand.</td></tr>
       <tr><td>Not in the list at all</td><td>adb has forgotten it, or never knew it (for example after you disconnected, or after this phone's adb restarted).</td><td>Tap <b>+ Add device</b> and connect again, or tap its address under <b>Recent:</b>.</td></tr>
