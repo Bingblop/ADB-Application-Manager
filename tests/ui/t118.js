@@ -10,14 +10,14 @@ const { chromium, PAGE } = require('./lib/pw');
     window.__kv = {}; window.__sel = [];
     // Persist the native settings mock across a page reload, like Android's
     // settings store. saveStore/loadStore are a different bridge API.
-    window.__settings = JSON.parse(sessionStorage.getItem('t118-settings') || '{}');
+    window.__settings = {};                      // handed to the page again by the test itself before a reload (sessionStorage is not: a write just before a reload may not reach the new page)
     const uad = { 'com.sec.hearingadjust': { found: true, pkg: 'com.sec.hearingadjust', list: 'Oem', removal: 'Advanced', description: 'Adapt sound\nTunes the sound to your hearing.', dependencies: ['com.sec.core'], neededBy: ['com.sec.audio'] },
       'com.danger': { found: true, pkg: 'com.danger', list: 'Aosp', removal: 'Unsafe', description: '', dependencies: [], neededBy: [] },
       'com.rec': { found: true, pkg: 'com.rec', list: 'Carrier', removal: 'Recommended', description: 'Carrier app', dependencies: [], neededBy: [] } };
     window.AndroidBridge = {
       vibrate() {}, loadPreferences() { return '{}'; }, loadCustomLists() { return '[]'; }, getSystemInfo() { return '{}'; }, isSystemDarkMode() { return true; }, setSystemBarColor() {},
       saveStore(k, v) { window.__kv[k] = v; return true; }, loadStore(k) { return window.__kv[k] || ''; },
-      saveSetting(k, v) { window.__settings[k] = v; sessionStorage.setItem('t118-settings', JSON.stringify(window.__settings)); },
+      saveSetting(k, v) { window.__settings[k] = v; },
       loadSetting(k) { return window.__settings[k] || ''; },
       loadPackages() { return JSON.stringify([{ pkg: 'com.sec.hearingadjust', name: 'Adapt sound', isSystem: true, version: '1.2.3' }, { pkg: 'com.danger', name: 'Danger', isSystem: true, version: '9' }, { pkg: 'com.rec', name: 'Carrier thing', isSystem: true, version: '2' }, { pkg: 'com.plain', name: 'Plain', isSystem: false, version: '3.4' }]); },
       getWorkingMode() { return JSON.stringify({ adbTcp: { connected: true, port: 5555 }, adbWireless: {}, shizuku: {}, configuredMode: 'auto', activeMode: 'adb_tcp', modeAvailable: true, isPrivileged: true }); },
@@ -47,6 +47,8 @@ const { chromium, PAGE } = require('./lib/pw');
   await ev(() => setActionBtn('toggle')); await wait(100);
   check('a change from Settings moves the one in the row', await ev(() => document.getElementById('appsActionBtnSelect').value === 'toggle'));
   check('it is saved in the native settings store', await ev(() => window.__settings.action_btn === JSON.stringify('toggle')));
+  const savedSettings = await ev(() => JSON.parse(JSON.stringify(window.__settings)));
+  await page.addInitScript(saved => { Object.assign(window.__settings, saved); }, savedSettings);          // the native store survives a reload
   await page.reload();
   await page.waitForFunction(() => document.getElementById('appsActionBtnSelect').value === 'toggle' && document.querySelector('#card_com\\.plain .ab-btn'));
   check('both menus restore the saved choice after a reload', await ev(() => actionBtn === 'toggle' && document.getElementById('appsActionBtnSelect').value === 'toggle' && document.getElementById('actionBtnSelect').value === 'toggle'));
