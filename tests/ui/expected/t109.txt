@@ -88,7 +88,7 @@ ok   left alone, the change is undone on its own to the value before
 ok   Reset to default sends wm density reset
 ok   the size is set with wm size and also gets the undo
 ok   Put it back restores the earlier size
-ok   the device menu has Reboot, Recovery, Bootloader, Power off, Copy address and Disconnect
+ok   the device menu has Reconnect, Reload details, Reboot, Recovery, Bootloader, Power off, Copy address and Disconnect
 ok   a reboot asks first
 ok   and then sends adb reboot to the device
 ok   Disconnect drops the device and the empty state returns

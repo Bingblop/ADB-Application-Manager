@@ -94,6 +94,7 @@ const { chromium, PAGE } = require('./lib/pw');
     };
   });
   await page.goto(PAGE); await page.waitForTimeout(500);
+  await page.evaluate(() => kvSet('cd_autore', false));        // this script moves devices in and out by hand: no automatic reconnecting (t128 covers it)
   const ev = (fn, arg) => page.evaluate(fn, arg);
   const wait = ms => page.waitForTimeout(ms);
   const toast = () => ev(() => document.getElementById('toastMsg').innerText);
@@ -354,7 +355,7 @@ const { chromium, PAGE } = require('./lib/pw');
 
   // the device menu
   await ev(() => cdDeviceMenu()); await wait(150);
-  check('the device menu has Reboot, Recovery, Bootloader, Power off, Copy address and Disconnect', await ev(() => Array.from(document.querySelectorAll('#cdSheetBtns button')).map(b => b.innerText).join('|')) === 'Reload details|Reboot|Reboot to recovery|Reboot to bootloader|Power off|Copy address|Disconnect');
+  check('the device menu has Reconnect, Reload details, Reboot, Recovery, Bootloader, Power off, Copy address and Disconnect', await ev(() => Array.from(document.querySelectorAll('#cdSheetBtns button')).map(b => b.innerText).join('|')) === 'Reconnect|Reload details|Reboot|Reboot to recovery|Reboot to bootloader|Power off|Copy address|Disconnect');
   await ev(() => Array.from(document.querySelectorAll('#cdSheetBtns button')).find(b => b.innerText === 'Reboot').click()); await wait(150);
   check('a reboot asks first', await ev(() => document.getElementById('cdAskModal').classList.contains('show')) && !(await calls()).some(c => / reboot$/.test(c)));
   await page.click('#cdAskOk'); await wait(250);
