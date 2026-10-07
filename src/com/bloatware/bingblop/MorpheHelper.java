@@ -1945,7 +1945,64 @@ public final class MorpheHelper {
         return new ArrayList<String>(out);
     }
 
-    private static Listing listApkMirror(String pkg) throws IOException {
+    /** How many pages of "See more uploads" are read for older versions (an app page itself shows only the latest ten or so). */
+    private static final int MAX_MIRROR_UPLOAD_PAGES = 8;
+
+    /** The app page's link to the paged list of all its uploads ({@code /uploads/?appcategory=slug}), or null. */
+    private static String mirrorUploadsLink(Doc d) {
+        for (El a : d.select(null, "a", "")) {
+            String u = mirrorAbs(a.attr("href"));
+            if (u == null) continue;
+            String path = pathOf(u);
+            if ((path.equals("/uploads/") || path.equals("/uploads")) && u.contains("appcategory=")) return u;
+        }
+        return null;
+    }
+
+    /** The address of page {@code n} (2, 3 ...) of an uploads list whose first page is {@code first}. */
+    static String mirrorUploadsPage(String first, int n) {
+        int q = first.indexOf('?');
+        String head = (q < 0 ? first : first.substring(0, q)).replaceAll("/+$", "");
+        return head + "/page/" + n + "/" + (q < 0 ? "" : first.substring(q));
+    }
+
+    /**
+     * Older releases than the app page shows: the pages of its uploads list, until the wanted version is there (stopAt), a page adds nothing new,
+     * or one cannot be read (a block or a changed page keeps what was found: the newest versions are still good).
+     */
+    private static void mirrorMoreReleases(Listing l, Doc appDoc, String appPage, String stopAt, boolean exhaustive) {
+        if (!exhaustive && stopAt == null) return;
+        String first = mirrorUploadsLink(appDoc);
+        if (first == null) return;
+        Set<String> seen = new HashSet<String>();
+        for (Item i : l.items) seen.add(i.page);
+        for (int n = 1; n <= MAX_MIRROR_UPLOAD_PAGES; n++) {
+            if (stopAt != null) {
+                boolean have = false;
+                for (Item i : l.items) if (versionNameEquals(i.version, stopAt, hasVariantBuildMarker(stopAt))) { have = true; break; }
+                if (have) return;
+            }
+            int before = seen.size();
+            try {
+                Doc d = new Doc(getPage("apkmirror", n == 1 ? first : mirrorUploadsPage(first, n), appPage).text);
+                for (String rel : mirrorReleaseLinks(d, appPage)) {
+                    String v = mirrorVersionFromReleaseUrl(rel, appPage);
+                    if (v.isEmpty() || !seen.add(rel)) continue;
+                    Item it = new Item();
+                    it.version = v;
+                    it.page = rel;
+                    l.items.add(it);
+                }
+            } catch (IOException e) {
+                return;
+            } catch (RuntimeException e) {
+                return;
+            }
+            if (seen.size() == before) return;
+        }
+    }
+
+    private static Listing listApkMirror(String pkg, String stopAt, boolean exhaustive) throws IOException {
         String searchUrl = mirrorBase() + "/?post_type=app_release&searchtype=app&s=" + enc(pkg);
         Doc search;
         try {
@@ -1999,6 +2056,7 @@ public final class MorpheHelper {
                 l.items.add(it);
             }
             if (l.items.isEmpty()) throw changed("apkmirror");
+            mirrorMoreReleases(l, d, c, stopAt, exhaustive);
             return l;
         }
         throw notListed("apkmirror", pkg);
@@ -2304,7 +2362,7 @@ public final class MorpheHelper {
 
     private static Listing list(String id, String pkg, String stopAt, String abi, boolean exhaustive) throws IOException {
         switch (id) {
-            case "apkmirror": return listApkMirror(pkg);
+            case "apkmirror": return listApkMirror(pkg, stopAt, exhaustive);
             case "uptodown": return listUptodown(pkg, stopAt);
             case "apkpure": return listApkPure(pkg, abi, exhaustive, stopAt);
             case "apkcombo": return listApkCombo(pkg, stopAt);

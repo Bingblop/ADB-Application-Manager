@@ -28509,7 +28509,7 @@ Type any command below (e.g. pm list packages -d)
                 const ins = r.install;
                 el.innerHTML = '<div class="mp-result ok"><h3>' + escapeHtml(t.name || 'The app') + ' is patched</h3>' +
                     '<div class="mp-note">' + (res.applied || r.applied).length + ' patches applied' + (failed.length ? ', ' + failed.length + ' failed' : '') + '. <span translate="no">' + escapeHtml(it.fileName || '') + '</span>' + (it.size ? ' (' + escapeHtml(formatBytes(it.size)) + ')' : '') + '</div>' +
-                    (failed.length ? '<div class="mp-note is-err">Failed: <span translate="no">' + escapeHtml(failed.map(f => f.name).join(', ')) + '</span>. The rest was applied.</div>' : '') +
+                    (failed.length ? (() => { const sp = mpSplitFailed(failed); return '<div class="mp-note is-err">Failed: <span translate="no">' + escapeHtml(sp.roots.map(f => f.name).join(', ')) + '</span>' + (sp.deps.length ? ' and ' + sp.deps.length + ' that depend on ' + (sp.roots.length > 1 ? 'them' : 'it') : '') + '. The rest was applied.</div>'; })() : '') +
                     (ins ? '<div class="mp-note ' + (ins.ok ? '' : 'is-err') + '">' + (ins.ok ? 'Installed.' : 'The install did not work: ') + (ins.ok ? '' : '<span translate="no">' + escapeHtml((ins.output || '').split('\n')[0]) + '</span>') + '</div>' : '') +
                     (it.keptIn && it.keptIn.length ? '<div class="mp-note">Saved in <span translate="no">' + escapeHtml(it.keptIn.join(' and ')) + '</span>.</div>' : '') +
                     '<div class="mp-row">' + (it.id && !(ins && ins.ok) ? '<button class="mode-action-btn primary" onclick="mpRunInstall()">Install</button>' : '') + (it.id ? '<button class="mode-action-btn" onclick="mpPatchedShare(\'' + escapeHtml(it.id) + '\')">Share</button><button class="mode-action-btn" onclick="mpPatchedSave(\'' + escapeHtml(it.id) + '\')">Save to Downloads</button>' : '') +
@@ -28517,16 +28517,28 @@ Type any command below (e.g. pm list packages -d)
                 mpRunStatus('Done'); mpPatchedLoad();
                 return;
             }
-            const trace = (failed[0] && failed[0].error) || res.trace || '';
+            const split = mpSplitFailed(failed);
+            const trace = (split.roots[0] && split.roots[0].error) || (failed[0] && failed[0].error) || res.trace || '';
             const hint = mpFailHint(res, trace);
             el.innerHTML = '<div class="mp-result bad"><h3>Patching failed</h3><div class="mp-note is-err" translate="no">' + escapeHtml(res.error || 'The patcher stopped') + '</div>' +
                 (hint ? '<div class="mp-note">' + escapeHtml(hint) + '</div>' : '') +
                 ((res.steps || []).length ? '<div class="mp-note">' + res.steps.map(s => '<b translate="no">' + escapeHtml(s.name) + '</b>: ' + (s.ok ? 'ok' : 'failed' + (s.error ? ' (' + escapeHtml(String(s.error).split('\n')[0]) + ')' : ''))).join(' &middot; ') + '</div>' : '') +
-                failed.map((f, i) => '<div class="mp-group"><span translate="no">' + escapeHtml(f.name) + '</span><span><a href="#" style="color:var(--accent)" onclick="mpToggleTrace(' + i + ');return false;">Details</a></span></div><div class="mp-trace" id="mpTrace' + i + '" style="display:' + (i === 0 ? 'block' : 'none') + ';" translate="no">' + escapeHtml(f.error || '(no details)') + '</div>').join('') +
+                split.roots.map((f, k) => '<div class="mp-group"><span translate="no">' + escapeHtml(f.name) + '</span><span><a href="#" style="color:var(--accent)" onclick="mpToggleTrace(' + f.i + ');return false;">Details</a></span></div><div class="mp-trace" id="mpTrace' + f.i + '" style="display:' + (k === 0 ? 'block' : 'none') + ';" translate="no">' + escapeHtml(f.error || '(no details)') + '</div>').join('') +
+                (split.deps.length ? '<div class="mp-group"><span>' + split.deps.length + ' more failed only because a patch they need failed</span><span><a href="#" style="color:var(--accent)" onclick="mpToggleTrace(\'Deps\');return false;">Show</a></span></div><div class="mp-trace" id="mpTraceDeps" style="display:none;" translate="no">' + escapeHtml(split.deps.map(f => f.name).join(', ')) + '\nFix the first failure above and these go away.</div>' : '') +
                 (!failed.length && res.trace ? '<div class="mp-trace" translate="no">' + escapeHtml(res.trace) + '</div>' : '') +
                 '<div class="mp-row"><button class="mode-action-btn primary" onclick="mpBackToPatches()">Back to the patches</button><button class="mode-action-btn" onclick="mpLogCopy()">Copy the log</button><button class="mode-action-btn" onclick="mpLogShare()">Share the log</button>' +
                 (mp.cfg.failOnError ? '<button class="mode-action-btn" onclick="mpRetryContinue()">Retry, skipping failed patches</button>' : '') + '</div></div>';
             mpRunStatus('Failed');
+        }
+        // A patch that "depends on ... which raised an exception" failed because of another one: the first error is the one to read, the others are a count.
+        function mpSplitFailed(failed) {
+            const roots = [], deps = [];
+            (failed || []).forEach((f, i) => {
+                const item = Object.assign({}, f, { i });
+                if (/depends on\b[^]*?\bwhich (raised|threw|failed|did not)/i.test(String(f.error || '').split('\n')[0]) && (failed || []).length > 1) deps.push(item); else roots.push(item);
+            });
+            if (!roots.length && deps.length) { roots.push(deps.shift()); }
+            return { roots, deps };
         }
         function mpToggleTrace(i) { const e = document.getElementById('mpTrace' + i); if (e) e.style.display = e.style.display === 'none' ? 'block' : 'none'; }
         function mpFailHint(res, trace) {
@@ -28535,7 +28547,8 @@ Type any command below (e.g. pm list packages -d)
             if (/No patch is left|incompatible|does not patch|not support/i.test(s)) return 'The patches do not support this version of the app. Get a supported version with Morphe Helper, or turn on "Patch unsupported versions" in the patcher settings.';
             if (/Morphe engine|ClassNotFound/i.test(s)) return 'This build of the app does not contain the Morphe engine. Install a release build.';
             if (/Signing/i.test(s)) return 'Signing failed. Try making a new signing key in the patcher settings.';
-            if (/Patch bundle|corrupt|dex/i.test(s)) return 'The patch bundle may be damaged or made for a newer Morphe. Update the source in Sources.';
+            if (/NoSuchMethod|NoSuchField|NoSuchClass|AbstractMethodError/.test(s)) return 'A patch bundle asked the patcher for something this build of the app does not have, so it was made for a different Morphe version. Update the source in Sources; if it still happens, report it with the log.';
+            if (/Patch bundle|corrupt|\bdex\b/i.test(s)) return 'The patch bundle may be damaged or made for a newer Morphe. Update the source in Sources.';
             return 'A patch could not be applied. This usually means the patch does not fit this version of the app. Check the details below and the log.';
         }
         function mpBackToPatches() { mp.run = null; document.getElementById('mpRun').style.display = 'none'; document.getElementById('mpPrep').style.display = ''; mpPatchListRender(); }

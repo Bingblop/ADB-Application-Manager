@@ -69,6 +69,7 @@
   <p>The <b>Patch</b> button has two boxes next to it. <b>Install when finished</b> (on) installs the patched app through the working mode, silently over ADB, Shizuku or Root; with none, the system installer asks you. <b>Delete the APK after installing</b> (off) removes the patched APK once the install worked.</p>
   <p>While it runs you see the steps (Preparing, Loading, Unpacking, Patching, Rebuilding, Signing, Saving, Installing), a progress bar and a log in the style of logcat, with a level filter, <b>Follow</b>, <b>Copy</b> and <b>Share</b>. A notification keeps it going if you leave the app and has Cancel. When it is done you get the file name and size and <b>Install</b>, <b>Share</b>, <b>Save to Downloads</b>.</p>
   <h4>When it fails</h4>
+  <p>When one patch fails, the patches that need it fail too ("<i>depends on ..., which raised an exception</i>"). The card leads with the first error, whose details are open, and folds the others into one line, <b>N more failed only because a patch they need failed</b>, with <b>Show</b> to name them. Fix the first one and the rest go away.</p>
   <p>The result card names the step and the patch that failed, shows its full details (the error and stack trace), says in plain words what usually causes it, and offers <b>Back to the patches</b>, <b>Copy the log</b>, <b>Share the log</b> and <b>Retry, skipping failed patches</b>. The usual causes: the version is not supported, the phone ran out of memory (try <b>Strip unused native libraries</b>), or the bundle needs a newer Morphe.</p>
   <h4>Settings</h4>
   <table class="hg-table">
@@ -92,7 +93,7 @@
   <ul>
     <li><b>Fast mode</b> walks every source that is on until one delivers.</li>
     <li><b>This version</b> looks for exactly that version; <b>Newest</b> for the newest.</li>
-    <li><b>All versions</b> lists what a source has, with format and size, and a Download button for each.</li>
+    <li><b>All versions</b> lists what a source has, with format and size, and a Download button for each. For APKMirror, whose app page shows only the latest releases, Helper also reads the pages of its <i>See more uploads</i> list (up to eight) to reach older versions; <b>This version</b> does that too when the version is not on the app page. If APKMirror blocks those pages, you get the newest ones only: use <b>Open the site</b>.</li>
     <li><b>Open the site</b> opens the source in the browser, for the ones that cannot be downloaded from here (they say why). Save the file there; when you come back, Helper looks in Downloads by itself.</li>
     <li><b>Find in Downloads</b> lists the APK, APKM, APKS and XAPK files in your Downloads folder (and the folders directly inside it) that hold the package you typed, newest first, each with its version, format and number of parts. Helper opens every file to read the package, so the name does not matter (<code>method.latin_18.0.3..._apkmirror.com.apkm</code> is found for <code>com.google.android.inputmethod.latin</code>). <b>Use</b> takes a file. This needs <b>All files access</b>; without it the list says so and offers to grant it.</li>
     <li><b>Pick a file</b> opens Android's file picker, for a file anywhere else.</li>

@@ -1047,6 +1047,29 @@ public class MorpheHelperTest {
         mirror.on(MIRROR_SEARCH, 403, "text/html", fx("apkmirror-challenge.html"));
         t = err(() -> MorpheHelper.versions("apkmirror", PKG));
         check("apkmirror versions: a challenge on the search itself is a NeedsBrowser with the search page", t instanceof MorpheHelper.NeedsBrowser && ((MorpheHelper.NeedsBrowser) t).page.startsWith("https://www.apkmirror.com/?post_type=app_release"), msg(t));
+        // older releases: the app page shows only the latest ones, "See more uploads" has the rest in pages
+        mirrorRoutes();
+        mirror.page("GET /apk/example-org/example-app/", "apkmirror-app-more.html");
+        mirror.page("GET /uploads/?appcategory=example-app", "apkmirror-uploads-1.html");
+        mirror.page("GET /uploads/page/2/?appcategory=example-app", "apkmirror-uploads-2.html");
+        JSONObject more = MorpheHelper.versions("apkmirror", PKG);
+        check("apkmirror versions: the uploads pages add the older releases (once each, only this app's)", versionNames(more).containsAll(Arrays.asList("1.0.3", "1.0.2", "0.9.0", "0.8.0", "0.7.0")) && !versionNames(more).contains("9.9.8") && versionNames(more).stream().filter(x -> x.equals("1.0.3")).count() == 1, String.valueOf(versionNames(more)));
+        check("apkmirror versions: it stops when a page cannot be read (page 3 is missing)", mirror.hit("GET /uploads/page/3/?appcategory=example-app"));
+        mirror.hits.clear();
+        MorpheHelper.resolve("apkmirror", PKG, "1.0.3", "arm64-v8a", "requested");
+        check("apkmirror resolve: a version the app page already lists reads no uploads page", !mirror.hit("GET /uploads/?appcategory=example-app"), String.valueOf(mirror.hits));
+        mirror.page("GET /apk/example-org/example-app/example-app-0-8-0-release/", "apkmirror-release.html");
+        mirror.page("GET /apk/example-org/example-app/example-app-0-8-0-release/example-app-0-8-0-android-apk-download/", "apkmirror-variant.html");
+        mirror.page("GET /apk/example-org/example-app/example-app-0-8-0-release/example-app-0-8-0-android-apk-download/download/", "apkmirror-download.html");
+        mirror.hits.clear();
+        Throwable old08 = err(() -> MorpheHelper.resolve("apkmirror", PKG, "0.8.0", "arm64-v8a", "requested"));
+        check("apkmirror resolve: an older version is looked for in the uploads pages, and read from its release page", mirror.hit("GET /uploads/?appcategory=example-app") && mirror.hit("GET /uploads/page/2/?appcategory=example-app") && !mirror.hit("GET /uploads/page/3/?appcategory=example-app") && mirror.hit("GET /apk/example-org/example-app/example-app-0-8-0-release/"), String.valueOf(mirror.hits) + " " + msg(old08));
+        mirror.on("GET /uploads/?appcategory=example-app", 403, "text/html", fx("apkmirror-challenge.html"));
+        mirror.hits.clear();
+        Throwable blocked = err(() -> MorpheHelper.resolve("apkmirror", PKG, "0.8.0", "arm64-v8a", "requested"));
+        check("apkmirror resolve: uploads pages that are blocked leave the plain 'does not list' answer", has(blocked, "does not list version 0.8.0"), msg(blocked));
+        check("apkmirror: the uploads page address for page n", "https://x.test/uploads/page/3/?appcategory=a".equals(MorpheHelper.mirrorUploadsPage("https://x.test/uploads/?appcategory=a", 3)));
+
     }
 
     // ------------------------------------------------------------------------------------------------------------------------------

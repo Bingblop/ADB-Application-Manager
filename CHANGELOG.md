@@ -1,5 +1,17 @@
 # Changelog
 
+## v7.10.3-Pro (versionCode 823)
+
+- **Morphe Patcher: a chain of failed patches is one error.** When a patch raises an exception, every patch that depends on it fails with
+  "depends on ..., which raised an exception" (Gboard showed 41 of them). The result card now leads with the first error, details open, and
+  folds the dependent ones into **N more failed only because a patch they need failed** (Show names them). A bundle that asks the patcher for
+  something it does not have (`NoSuchMethodException`, `NoSuchFieldException`) gets its own advice, where the word "dex" inside
+  `NoSuchMethodException` used to make it say the bundle was damaged.
+- **Morphe Helper: older APKMirror versions are found.** APKMirror's app page lists only the latest releases, so a version such as Gboard 18.0.3
+  was "not listed". Helper now follows the page's **See more uploads** link and reads up to eight pages of it, for All versions and for This
+  version when the version is not on the app page yet; it stops when the version is found, a page adds nothing, or a page cannot be read
+  (APKMirror's bot check keeps what was found). Not tested against the live site (it blocks the build machine): see the checklist.
+
 ## v7.10.2-Pro (versionCode 822)
 
 - **Morphe Patcher: patches that reflect on the patcher's internals work again (Gboard: 41 of 43 failed).** The Gboard bundle failed with

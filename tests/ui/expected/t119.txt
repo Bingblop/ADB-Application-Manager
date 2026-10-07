@@ -39,6 +39,9 @@ ok   a failed run says so, names the patch and shows the details
 ok   the log has the warning and the error lines in color
 ok   the level filter keeps only the errors
 ok   Copy the log copies it
+ok   a chain of failures leads with the first error and counts the others
+ok   the dependent ones are named only after Show, with the advice to fix the first
+ok   independent failures are all listed as before
 ok   another version is flagged on the page
 ok   patching a patch that is not for this version asks first
 ok   Cancel keeps you on the patch page

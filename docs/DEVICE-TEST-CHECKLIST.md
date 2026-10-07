@@ -1,4 +1,4 @@
-# On-device test checklist (v7.9.14 to v7.10.2)
+# On-device test checklist (v7.9.14 to v7.10.3)
 
 The automated tests run the page in a browser with a pretend phone. They cannot prove the parts that talk to Android:
 icons, the file chooser, added storage, shell commands and the haptic feedback. This list is for those. Tick a box when
@@ -16,6 +16,8 @@ it works; write down what you saw when it does not.
 - [ ] Morphe Patcher > Patch sources: the official Morphe Patches and Gboard bundles show their patch count (no "Could not be read"), the Apps pane lists their apps (v7.10.1 fix).
 - [ ] Morphe Patcher > Gboard: patch the Gboard APK or APKM with all its patches: no "NoSuchMethodException" in the log, only patches that really do not fit are reported (v7.10.2 fix).
 - [ ] Morphe Helper: download the APKM of an app in the browser (Open the site), come back: it is listed under "In Downloads" with its parts; Use, then Patch this file, and Install all parts with and without a working mode (v7.10.2).
+- [ ] Morphe Helper > All versions on APKMirror for com.google.android.inputmethod.latin: versions older than the newest ten appear (and Gboard 18.0.3.954559732 with This version), or, if APKMirror blocks it, only the newest and no error (v7.10.3).
+- [ ] Morphe Patcher: a run where one patch fails: the card shows the first error open and "N more failed only because a patch they need failed" folded (v7.10.3).
 
 **Header, banner, guide, looks**
 

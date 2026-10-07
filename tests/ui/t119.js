@@ -199,6 +199,16 @@ const { chromium, PAGE, fixture } = require('./lib/pw');
   await page.click('#mpResult .mode-action-btn:nth-child(2)'); await wait(100);
   check('Copy the log copies it', await ev(() => /SponsorBlock failed/.test(window.__copied || '')));
   await page.screenshot({ path: 'morphe_failed.png' });
+  // patches that failed only because the one they need failed: the first error leads, the others are counted and folded
+  await ev(() => mpResultRender({ success: false, error: 'Patching failed', failed: [
+    { name: 'Gboard extension', error: 'java.lang.NoSuchMethodException: getPatchClasses$morphe_patcher []\n  at x.y.z' },
+    { name: 'Hide ads', error: '"Hide ads" depends on "Gboard extension", which raised an exception' },
+    { name: 'Dark theme', error: '"Dark theme" depends on "Gboard extension", which raised an exception' }] }));
+  const chain = await ev(() => ({ t: document.getElementById('mpResult').innerText, shown: Array.from(document.querySelectorAll('#mpResult .mp-trace')).filter(e => getComputedStyle(e).display !== 'none').map(e => e.innerText) }));
+  check('a chain of failures leads with the first error and counts the others', /Gboard extension/i.test(chain.t) && /NoSuchMethodException/.test(chain.shown[0] || '') && /2 more failed only because a patch they need failed/i.test(chain.t) && /different Morphe version/.test(chain.t) && chain.shown.length === 1, JSON.stringify(chain));
+  check('the dependent ones are named only after Show, with the advice to fix the first', await ev(() => { const e = document.getElementById('mpTraceDeps'); const hidden = getComputedStyle(e).display === 'none'; mpToggleTrace('Deps'); return hidden && getComputedStyle(e).display !== 'none' && /Hide ads, Dark theme/.test(e.innerText) && /Fix the first failure/.test(e.innerText); }));
+  await ev(() => mpResultRender({ success: false, error: 'x', failed: [{ name: 'A', error: 'boom' }, { name: 'B', error: 'boom too' }] }));
+  check('independent failures are all listed as before', await ev(() => !/only because/.test(document.getElementById('mpResult').innerText) && /boom too/.test(document.getElementById('mpResult').innerHTML)));
 
   // ---- an unsupported version ----
   await ev(() => { window.__mp.failNext = false; window.__mp.instVer = '19.9.9'; });
