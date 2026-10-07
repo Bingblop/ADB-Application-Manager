@@ -84,6 +84,13 @@ ok   with a key and "ask" a Scan button appears
 ok   a clean file is shown as clean with the engine counts and a link
 ok   a flagged file is shown in red
 ok   a source that changed its page says what to do
+ok   Find in Downloads asks the app and lists the files of this package, newest first, with format and parts
+ok   it was asked for the package typed in the box
+ok   Use takes the bundle: Found in Downloads, APKM with its parts, and an Install all parts button
+ok   another package finds nothing and says how many other apps were there
+ok   without All files access it says so and offers to grant it
+ok   coming back from the browser looks in Downloads by itself, once
+ok   a second return does not look again
 ok   the patcher settings: mode, install, delete, where to keep, strip libraries, stop on failure, force, signer, the key, About with credits
 ok   without the engine the card says patching is not available
 errors: []

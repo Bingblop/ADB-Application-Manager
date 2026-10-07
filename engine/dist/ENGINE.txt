@@ -1,6 +1,6 @@
 morphe-patcher v1.15.1
 launcher protocol 1
-c50bf450ba6a10f841021d1fe77751f0d12d3a8da938c0d13251421b2da11380  morphe-engine-dex.zip
+89ed9741eb4de9c0f14e2aa76a9808e18a1bb67ec94a856fe82f94f7fb4ec326  morphe-engine-dex.zip
   ARSCLib-9b742c412d.jar
   ST4-4.0.8.jar
   annotations-23.0.0.jar

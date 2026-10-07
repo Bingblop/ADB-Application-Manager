@@ -42,6 +42,24 @@ if [ "${SKIP_GRADLE:-}" != "1" ]; then
     "$GRADLE" --no-daemon -q engineLibs -PpatcherVersion="${PATCHER_TAG#v}" -PpatcherSrc="$UP"
 fi
 
+# Patch bundles reach some `internal` members of morphe-patcher by reflection under the compiled name morphe-patcher's own build gives them
+# (BytecodePatchContext.getPatchClasses$morphe_patcher: the Gboard bundle does). That name holds the Kotlin module name, so a build under another
+# module name makes every such patch fail with NoSuchMethodException. engine/build.gradle.kts sets moduleName; this makes sure it held.
+python3 -I - "$ENGINE_DIR/build/engine-libs" <<'PY' || { echo "Error: the engine was built under another Kotlin module name (see engine/build.gradle.kts)"; exit 1; }
+import sys, glob, zipfile
+need = [b'getPatchClasses$morphe_patcher', b'getOpcodes$morphe_patcher', b'addClass$morphe_patcher']
+found = set()
+for j in glob.glob(sys.argv[1] + '/morphe-engine-*.jar'):
+    with zipfile.ZipFile(j) as z:
+        for n in z.namelist():
+            if n.endswith('.class') and n.startswith('app/morphe/patcher/'):
+                d = z.read(n)
+                for k in need:
+                    if k in d: found.add(k)
+                if b'$com_bloatware_bingblop_morphe_engine' in d: sys.exit(1)
+sys.exit(0 if len(found) == len(need) else 1)
+PY
+
 echo "[*] Converting to dex (d8) ..."
 BOOT="${BOOTCLASSPATH:-${ANDROID_JAR:-}}"
 [ -n "$BOOT" ] && [ -f "$BOOT" ] || { echo "Error: set ANDROID_JAR (or BOOTCLASSPATH) to an android.jar"; exit 1; }

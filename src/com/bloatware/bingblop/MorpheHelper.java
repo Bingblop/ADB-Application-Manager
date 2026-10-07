@@ -2688,6 +2688,73 @@ public final class MorpheHelper {
         return inspectImpl(f, hint, null);
     }
 
+    /**
+     * The APK, APKM, APKS and XAPK files in a folder (and the folders directly inside it), newest first: what someone saved from a browser.
+     * Each is opened to read the package and version it holds, so the file name does not matter. With {@code pkg} only that package is listed.
+     * Result: {ok, items:[{path,name,folder,size,modified,format,pkg,versionName,versionCode,splits,abis}], scanned, other, unreadable}.
+     */
+    public static JSONObject scanFolder(File dir, String pkg, int limit) {
+        JSONObject out = new JSONObject();
+        JSONArray items = new JSONArray();
+        int scanned = 0, other = 0, unreadable = 0;
+        List<File> found = new ArrayList<File>();
+        collectPackages(dir, found, 0);
+        Collections.sort(found, new Comparator<File>() {
+            @Override public int compare(File a, File b) { return Long.compare(b.lastModified(), a.lastModified()); }
+        });
+        String want = pkg == null ? "" : pkg.trim();
+        for (File f : found) {
+            if (items.length() >= limit || scanned >= MAX_SCAN_FILES) break;
+            scanned++;
+            JSONObject r;
+            try {
+                String n = f.getName().toLowerCase(Locale.ROOT);
+                String hint = n.endsWith(".xapk") ? "xapk" : n.endsWith(".apks") ? "apks" : n.endsWith(".apkm") ? "apkm" : "apk";
+                r = inspectImpl(f, hint, "");
+            } catch (IOException e) {
+                unreadable++;
+                continue;
+            }
+            if (!r.optBoolean("ok")) { unreadable++; continue; }
+            if (!want.isEmpty() && !want.equalsIgnoreCase(r.optString("pkg"))) { other++; continue; }
+            put(r, "name", f.getName());
+            put(r, "folder", f.getParentFile().equals(dir) ? "" : f.getParentFile().getName());
+            put(r, "modified", f.lastModified());
+            remove(r, "sha256");
+            remove(r, "error");
+            items.put(r);
+        }
+        put(out, "ok", Boolean.TRUE);
+        put(out, "items", items);
+        put(out, "scanned", (long) scanned);
+        put(out, "other", (long) other);
+        put(out, "unreadable", (long) unreadable);
+        return out;
+    }
+
+    private static final int MAX_SCAN_FILES = 60;
+
+    private static void collectPackages(File dir, List<File> into, int depth) {
+        File[] kids = dir == null ? null : dir.listFiles();
+        if (kids == null) return;
+        for (File k : kids) {
+            String n = k.getName();
+            if (n.startsWith(".")) continue;
+            if (k.isDirectory()) {
+                if (depth == 0) collectPackages(k, into, 1);
+                continue;
+            }
+            String low = n.toLowerCase(Locale.ROOT);
+            for (String ext : FORMATS) {
+                if (low.endsWith("." + ext)) { into.add(k); break; }
+            }
+        }
+    }
+
+    private static void remove(JSONObject o, String key) {
+        o.remove(key);
+    }
+
     private static JSONObject inspectImpl(File f, String hint, String sha) throws IOException {
         JSONObject o = new JSONObject();
         put(o, "ok", Boolean.FALSE);

@@ -1,4 +1,4 @@
-# On-device test checklist (v7.9.14 to v7.10.1)
+# On-device test checklist (v7.9.14 to v7.10.2)
 
 The automated tests run the page in a browser with a pretend phone. They cannot prove the parts that talk to Android:
 icons, the file chooser, added storage, shell commands and the haptic feedback. This list is for those. Tick a box when
@@ -14,6 +14,8 @@ it works; write down what you saw when it does not.
 
 - [ ] Hidden Settings: under each name there is what the setting does and a Values line with the current value in bold (try zen_mode, screen_off_timeout, wifi_on); tap one: the About box and the value buttons show; an unknown name (a Samsung or app setting) says "What it probably is"; the "How to read this list" link opens the explanation; wifi_on and zen_mode are not flipped by a long press (v7.10.1).
 - [ ] Morphe Patcher > Patch sources: the official Morphe Patches and Gboard bundles show their patch count (no "Could not be read"), the Apps pane lists their apps (v7.10.1 fix).
+- [ ] Morphe Patcher > Gboard: patch the Gboard APK or APKM with all its patches: no "NoSuchMethodException" in the log, only patches that really do not fit are reported (v7.10.2 fix).
+- [ ] Morphe Helper: download the APKM of an app in the browser (Open the site), come back: it is listed under "In Downloads" with its parts; Use, then Patch this file, and Install all parts with and without a working mode (v7.10.2).
 
 **Header, banner, guide, looks**
 

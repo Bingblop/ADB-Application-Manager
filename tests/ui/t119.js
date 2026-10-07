@@ -26,7 +26,9 @@ const { chromium, PAGE, fixture } = require('./lib/pw');
         { key: 'logo', title: 'Logo file', description: '', required: false, type: 'string', default: null, kind: 'file' } ]),
       P('Old feature', 'Only for an old version.', true, OLD), P('Insta tweaks', 'Tweaks for Instagram.', true, IG),
       P('Change installer source', 'Makes the app think it came from the Play Store.', false, []), P('Spoof signature', 'Spoofs the signature.', false, [])] };
-    window.__mp = { calls: [], downloaded: false, added: [], enabled: true, instVer: '20.21.37', failNext: false, installRetry: false, patched: [], helperFail: false, vtVerdict: 'clean' };
+    window.__mp = { calls: [], downloaded: false, added: [], enabled: true, instVer: '20.21.37', failNext: false, installRetry: false, patched: [], helperFail: false, vtVerdict: 'clean', dlAccess: true, dlItems: [
+      { path: '/storage/emulated/0/Download/youtube_20.21.37_apkmirror.com.apkm', name: 'youtube_20.21.37_apkmirror.com.apkm', folder: '', size: 90000000, modified: 1791000000000, format: 'apkm', pkg: 'com.google.android.youtube', versionName: '20.21.37', versionCode: 1546420000, splits: 5, abis: ['arm64-v8a'] },
+      { path: '/storage/emulated/0/Download/yt-old.apk', name: 'yt-old.apk', folder: 'Browser', size: 120000000, modified: 1790000000000, format: 'apk', pkg: 'com.google.android.youtube', versionName: '19.0.0', versionCode: 1500000000, splits: 0, abis: [] }] };
     const M = window.__mp;
     const src = () => ({ id: 'morphe-official', name: 'Morphe Patches', kind: 'remote', host: 'github', repo: 'MorpheApp/morphe-patches', version: M.downloaded ? '1.46.0' : '', patchCount: M.downloaded ? 8 : -1, file: M.downloaded ? '/data/x/bundle.mpp' : '', size: M.downloaded ? 11282185 : 0, enabled: M.enabled, builtIn: true, prerelease: false, meta: null, error: '', needsNewerPatcher: false, updatedAt: 1791000000000 });
     const sources = () => [src()].concat(M.added.map(r => ({ id: 'gh-' + r.replace('/', '-'), name: r.split('/')[1], kind: 'remote', host: 'github', repo: r, version: '1.0.0', patchCount: 3, file: '/x', size: 1000, enabled: true, builtIn: false, prerelease: false, error: '' })));
@@ -91,6 +93,8 @@ const { chromium, PAGE, fixture } = require('./lib/pw');
             { id: 'apkdownloader', name: 'APK Downloader', direct: false }, { id: 'aurora', name: 'Aurora', direct: false }, { id: 'play', name: 'Play', direct: false }] });
           case 'helperVersions': return ok({ ok: true, pkg: a.pkg, name: 'YouTube', versions: [{ version: '20.51.39', format: 'apk', size: 123456789, url: 'https://x/y.apk' }, { version: '20.21.37', format: 'apks', abi: 'arm64-v8a', size: 99000000, url: 'https://x/z.apks' }] });
           case 'helperGet': case 'helperFast': if (M.helperFail) return bad('Uptodown changed its page format, open it in the browser'); return ok({ ok: true, path: '/cache/h/youtube_20.21.37.apk', fileName: 'youtube_20.21.37.apk', pkg: a.pkg, versionName: a.version || '20.51.39', versionCode: 1546420000, format: 'apk', size: 123456789, sha256: 'ab'.repeat(32), tried: [] }, 30);
+          case 'helperDownloads': return ok(M.dlAccess ? { ok: true, access: true, folder: '/storage/emulated/0/Download', items: a.pkg === 'com.google.android.youtube' ? M.dlItems : [], scanned: 4, other: a.pkg === 'com.google.android.youtube' ? 1 : 4, unreadable: 0 } : { ok: true, access: false, items: [] });
+          case 'helperAdopt': { const x = M.dlItems.find(i => i.path === a.path); if (!x) return bad('that file is not one this app may read'); return ok({ ok: true, path: '/cache/h/' + x.name, fileName: x.name, pkg: x.pkg, versionName: x.versionName, versionCode: x.versionCode, format: x.format, splits: x.splits, size: x.size, sha256: 'ef'.repeat(32), source: 'downloads' }); }
           case 'helperManual': return ok({ url: 'https://www.apkmirror.com/?s=' + a.pkg });
           case 'vtQuota': return ok({ perMinuteUsed: 1, perMinuteLimit: 4, perDayUsed: 12, perDayLimit: 500 });
           case 'vtValidate': return a.key === 'good' ? ok({}) : bad('VirusTotal refused the key (401)');
@@ -286,7 +290,7 @@ const { chromium, PAGE, fixture } = require('./lib/pw');
 
   // ---- Morphe Helper ----
   await page.click('#mpTop .mp-top-btns button:nth-child(2)'); await wait(300);
-  check('Morphe Helper opens on Download with the flows of Helper for Morphe', await ev(() => { const t = document.getElementById('mpSheetBody').innerText; return ['Fast mode', 'This version', 'Newest', 'All versions', 'Open the site', 'Pick a file'].every(w => t.includes(w)); }));
+  check('Morphe Helper opens on Download with the flows of Helper for Morphe', await ev(() => { const t = document.getElementById('mpSheetBody').innerText; return ['Fast mode', 'This version', 'Newest', 'All versions', 'Open the site', 'Find in Downloads', 'Pick a file'].every(w => t.includes(w)); }));
   await ev(() => { document.getElementById('mpHPkg').value = 'com.google.android.youtube'; document.getElementById('mpHVer').value = '20.21.37'; });
   await page.click('#mpSheetBody .mp-hflows .mp-act:nth-child(4)'); await wait(300);
   check('All versions lists the versions with their format and a Download button', await ev(() => { const t = document.getElementById('mpSheetBody').innerText; return /20\.51\.39/.test(t) && /apks arm64-v8a/.test(t) && document.querySelectorAll('#mpSheetBody .mp-patch .mp-act').length === 2; }));
@@ -314,6 +318,28 @@ const { chromium, PAGE, fixture } = require('./lib/pw');
   await ev(() => { window.__mp.helperFail = true; mp.h.got = null; mp.h.vt = null; mpHelperRender(); });
   await page.click('#mpSheetBody .mp-hflows .mp-act:nth-child(1)'); await wait(300);
   check('a source that changed its page says what to do', /changed its page format/.test(await text('#mpHMsg')));
+
+  // ---- bundles (APKM / APKS / XAPK) saved by the browser are found in Downloads ----
+  await ev(() => { window.__mp.helperFail = false; mp.h.got = null; mp.h.err = false; mp.h.msg = ''; mpHelperRender(); });
+  await page.click('#mpSheetBody .mp-hflows .mp-act:has-text("Find in Downloads")'); await wait(300);
+  check('Find in Downloads asks the app and lists the files of this package, newest first, with format and parts', await ev(() => { const t = document.getElementById('mpSheetBody').innerText; return /In Downloads/i.test(t) && /2 found/i.test(t) && /APKM, 5 parts/.test(t) && /youtube_20\.21\.37_apkmirror\.com\.apkm/.test(t) && t.indexOf('APKM, 5 parts') < t.indexOf('19.0.0'); }));
+  check('it was asked for the package typed in the box', (await calls()).includes('helperDownloads'));
+  await page.click('#mpSheetBody .mp-patch .mp-act:has-text("Use")'); await wait(300);
+  check('Use takes the bundle: Found in Downloads, APKM with its parts, and an Install all parts button', await ev(() => { const t = document.getElementById('mpSheetBody').innerText; return /Found in Downloads/i.test(t) && /APKM, 5 parts/.test(t) && /Install all parts/.test(t) && /Patch this file/.test(t) && /The bundle is ready/.test(t) && !/\d+ found/i.test(t); }));
+  await ev(() => { document.getElementById('mpHPkg').value = 'com.other.app'; mpHRead(); });
+  await page.click('#mpSheetBody .mp-hflows .mp-act:has-text("Find in Downloads")'); await wait(300);
+  check('another package finds nothing and says how many other apps were there', await ev(() => /No APK, APKM, APKS or XAPK for com\.other\.app in Downloads \(4 for other apps\)/.test(document.getElementById('mpSheetBody').innerText)));
+  await ev(() => { window.__mp.dlAccess = false; });
+  await page.click('#mpSheetBody .mp-hflows .mp-act:has-text("Find in Downloads")'); await wait(300);
+  check('without All files access it says so and offers to grant it', await ev(() => /needs All files access/.test(document.getElementById('mpSheetBody').innerText) && !!document.querySelector('#mpSheetBody .batch-tool-link')));
+  await ev(() => { window.__mp.dlAccess = true; document.getElementById('mpHPkg').value = 'com.google.android.youtube'; mpHRead(); mp.h.found = null; mp.h.got = null; mpHelperRender(); });
+  const before = (await calls()).filter(c => c === 'helperDownloads').length;
+  await ev(() => { mpHManual(); }); await wait(200);
+  await ev(() => { onAppResume(); }); await wait(400);
+  check('coming back from the browser looks in Downloads by itself, once', (await calls()).filter(c => c === 'helperDownloads').length === before + 1 && /2 found/i.test(await text('#mpSheetBody')));
+  await ev(() => { onAppResume(); }); await wait(300);
+  check('a second return does not look again', (await calls()).filter(c => c === 'helperDownloads').length === before + 1);
+  await page.screenshot({ path: 'morphe_helper_downloads.png' });
   await ev(() => mpSheetClose());
 
   // ---- Settings ----
