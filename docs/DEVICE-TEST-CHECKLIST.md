@@ -1,4 +1,4 @@
-# On-device test checklist (v7.9.14 to v7.10.0)
+# On-device test checklist (v7.9.14 to v7.10.1)
 
 The automated tests run the page in a browser with a pretend phone. They cannot prove the parts that talk to Android:
 icons, the file chooser, added storage, shell commands and the haptic feedback. This list is for those. Tick a box when
@@ -11,6 +11,8 @@ it works; write down what you saw when it does not.
 - [ ] Use a phone you do not mind changing: some items disable apps or change app ops. Everything can be undone from the same screens.
 
 ## 0. New in v7.10.0
+
+- [ ] Morphe Patcher > Patch sources: the official Morphe Patches and Gboard bundles show their patch count (no "Could not be read"), the Apps pane lists their apps (v7.10.1 fix).
 
 **Header, banner, guide, looks**
 

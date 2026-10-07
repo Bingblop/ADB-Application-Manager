@@ -37,8 +37,10 @@ if [ ! -f "$UP/build.gradle.kts" ]; then
     rm -rf "$UP"; mkdir -p "$(dirname "$UP")"
     git clone --depth 1 --branch "$PATCHER_TAG" https://github.com/MorpheApp/morphe-patcher "$UP"
 fi
-echo "[*] Building the engine with Gradle ..."
-"$GRADLE" --no-daemon -q engineLibs -PpatcherVersion="${PATCHER_TAG#v}" -PpatcherSrc="$UP"
+if [ "${SKIP_GRADLE:-}" != "1" ]; then
+    echo "[*] Building the engine with Gradle ..."
+    "$GRADLE" --no-daemon -q engineLibs -PpatcherVersion="${PATCHER_TAG#v}" -PpatcherSrc="$UP"
+fi
 
 echo "[*] Converting to dex (d8) ..."
 BOOT="${BOOTCLASSPATH:-${ANDROID_JAR:-}}"
@@ -49,7 +51,29 @@ rm -rf "$OUT"; mkdir -p "$OUT" "$ENGINE_DIR/dist"
 "${D8[@]}" --release --min-api "$MIN_SDK" --lib "$BOOT" --output "$OUT" build/engine-libs/*.jar 2>&1 | grep -v "^Info\|^Warning\|^Classes with missing\|^Superclass\|^Picked up" || true
 ls "$OUT"/classes*.dex >/dev/null
 
-( cd "$OUT" && rm -f "$ENGINE_DIR/dist/morphe-engine-dex.zip" && zip -q -9 "$ENGINE_DIR/dist/morphe-engine-dex.zip" classes*.dex )
+# d8 drops everything that is not a class. Kotlin reflection (the patcher reads every patch of a bundle with it) needs the built-in metadata
+# of kotlin-stdlib (kotlin/**/*.kotlin_builtins) and the service files of kotlin-reflect at run time: without them every bundle fails on
+# Android with "KotlinReflectionInternalError: Unresolved class: class java.lang.String" (it works on a JVM, where they are on the class path).
+# ARSCLib's framework APKs and the small .properties files are read the same way. build.sh puts these files into the APK next to the dex files.
+RES="$ENGINE_DIR/build/res"
+rm -rf "$RES"; mkdir -p "$RES"
+python3 -I - "$ENGINE_DIR/build/engine-libs" "$RES" <<'PY'
+import sys, zipfile, glob, os
+libs, out = sys.argv[1:3]
+def want(jar, n):
+    if n.endswith('/') or n.endswith('.class'): return False
+    if n.endswith('.kotlin_builtins'): return True
+    if n.startswith('META-INF/services/') and any(k in jar for k in ('kotlin-reflect', 'kotlin-stdlib', 'kotlinx-')): return True
+    if n.startswith('frameworks/'): return True
+    return n in ('arsclib.properties', 'smali.properties', 'app/morphe/patcher/version.properties')
+for j in sorted(glob.glob(libs + '/*.jar')):
+    with zipfile.ZipFile(j) as z:
+        for n in z.namelist():
+            if want(os.path.basename(j), n):
+                d = os.path.join(out, n); os.makedirs(os.path.dirname(d), exist_ok=True)
+                with open(d, 'wb') as f: f.write(z.read(n))
+PY
+( cd "$OUT" && rm -f "$ENGINE_DIR/dist/morphe-engine-dex.zip" && zip -q -9 "$ENGINE_DIR/dist/morphe-engine-dex.zip" classes*.dex && cd "$RES" && zip -q -9 -r "$ENGINE_DIR/dist/morphe-engine-dex.zip" . )
 {
     echo "morphe-patcher ${PATCHER_TAG}"
     echo "launcher protocol 1"

@@ -1,5 +1,14 @@
 # Changelog
 
+## v7.10.1-Pro (versionCode 821)
+
+- **Morphe Patcher: bundles are read again.** Every bundle (the official Morphe Patches, Gboard and the others) showed "Could not be read" with
+  `KotlinReflectionInternalError: Unresolved class: class java.lang.String`. The patcher reads the patches of a bundle with Kotlin
+  reflection, which needs Kotlin's built-in metadata (`kotlin/*.kotlin_builtins`) and its service files at run time. The dex conversion
+  had dropped them, and a computer's Java finds them on the class path, so only a phone failed. They are now part of the engine and of the
+  APK (together with ARSCLib's framework files for resource patches), and `build.sh` refuses to build an engine without them.
+  The same bundle that failed now lists 166 patches in the engine.
+
 ## v7.10.0-Pro (versionCode 820)
 
 - **Permissions sheet**: **Allow Restricted Settings** now runs `appops set com.bloatware.bingblop ACCESS_RESTRICTED_SETTINGS allow` through the
