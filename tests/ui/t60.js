@@ -23,6 +23,8 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   const switchOn = key => ev(k => { const r = Array.from(document.querySelectorAll('.sdb-row')).find(x => x.dataset.k === k); const s = r && r.querySelector('.sdb-sw'); return s ? s.classList.contains('on') : null; }, key);
   const find = async key => { await ev(() => sdbResetView()); await ev(k => { const i = document.getElementById('sdbSearch'); i.value = k; sdbSearchInput(); }, key); await sleep(260); };
   const hold = async (key, ms = 650) => {
+    await page.evaluate(k => { const r = Array.from(document.querySelectorAll('.sdb-row')).find(x => x.dataset.k === k); if (r) r.scrollIntoView({ block: 'center' }); }, key);       // out from under the Undo bar
+    await sleep(60);
     const box = await page.locator('.sdb-row[data-k="' + key + '"]').first().boundingBox();
     await page.mouse.move(box.x + 24, box.y + box.height / 2); await page.mouse.down(); await sleep(ms); await page.mouse.up(); await sleep(120);
   };
@@ -169,7 +171,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   await ev(() => sdbSetNs('system')); await sleep(200); await find('screen_brightness');
   await page.locator('.sdb-row[data-k="screen_brightness"]').click(); await sleep(150);
   const ed = await ev(() => ({ key: document.getElementById('sdbEditKey').innerText, sub: document.getElementById('sdbEditSub').innerText, val: document.getElementById('sdbEditText').value, flip: document.getElementById('sdbEditFlipBtn').style.display, note: document.getElementById('sdbEditNote').innerText, chips: document.querySelectorAll('#sdbEditQuick button').length }));
-  check('11. tapping a row opens the editor with its name, table, description and value', ed.key === 'screen_brightness' && /System · Brightness/.test(ed.sub) && ed.val === '128', JSON.stringify(ed));
+  check('11. tapping a row opens the editor with its name, table, description and value', ed.key === 'screen_brightness' && /System · .*[Bb]rightness/.test(ed.sub) && ed.val === '128', JSON.stringify(ed));
   check('    it hides Flip for a number, names its kind, and offers quick values', ed.flip === 'none' && /whole number/.test(ed.note) && ed.chips === 7, JSON.stringify(ed.note));
   await page.locator('#sdbEditText').fill('200'); await sleep(60);
   check('    changing the text notes what it was', /was 128/.test(await ev(() => document.getElementById('sdbEditNote').innerText)));

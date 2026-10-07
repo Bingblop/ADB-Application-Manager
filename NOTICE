@@ -48,6 +48,8 @@ Other components
 ----------------
 * Universal Android Debloater Next Generation (Universal-Debloater-Alliance) - GPL-3.0 - the debloat list, downloaded at run time.
 * Shizuku API (RikkaApps) - MIT/Apache-2.0 - shell access through Shizuku.
+* Android Open Source Project (Google) - Apache-2.0 - the descriptions of Android's own settings in the Hidden Settings tab (assets/hsinfo.js) are
+  taken in part from the documentation of Settings.java; tools/hsinfo/ holds the extract and the script that builds the file.
 * RohitKushvaha01/TaskManager - the Task Manager tab is modeled on it.
 * Apache Commons Compress, Commons IO, Commons Lang, XZ for Java, junrar, aircompressor, RE2/J, SLF4J - see libs/.
 

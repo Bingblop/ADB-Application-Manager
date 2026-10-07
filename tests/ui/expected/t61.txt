@@ -26,12 +26,12 @@
    a second flip of the same setting is refused until the first is done: true
    afterwards it is free again: true
 6. the tools sheet names the table and how many are shown: true
-   Copy shown copies name=value lines of what is on screen: true 26 lines
+   Copy shown copies name=value lines of what is on screen: true 27 lines
    Share shown hands the same text to the share sheet: true
    the sort is chosen there: true
    Reload all reads the three tables again, the shown one first: true
 7. a risky setting shows its warning in the editor: true
-   Delete asks about the risk first: true "Delete device_provisioned (Global)?\n\nSetup wizard finished: leave this at 1\n\nChanging this can break setup, apps or the system. Only change it if you know what it does."
+   Delete asks about the risk first: true "Delete device_provisioned (Global)?\n\nThe first-time setup of the phone is finished: leave this at 1.\n\nChanging this can break setup, apps or the system. Only change it if you know what it does."
    so does replacing one (first "already exists", then the risk): true
 8. losing the privileged mode shows the gate in place of the list: true
    and getting it back brings the list back: true

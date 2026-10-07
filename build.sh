@@ -164,7 +164,13 @@ with zipfile.ZipFile(apk, 'a', zipfile.ZIP_DEFLATED) as z:
                 if name.startswith('classes') and name.endswith('.dex'):
                     n += 1
                     z.writestr('classes%d.dex' % n, ez.read(name))
-        print('    + Morphe engine (%d extra dex files)' % (n - len(dex)))
+                elif not name.endswith('/'):
+                    # what the engine reads at run time (Kotlin reflection's built-in metadata, ARSCLib's frameworks ...): into the APK at its own path
+                    z.writestr(name, ez.read(name))
+        # Without Kotlin's built-in metadata every Morphe bundle fails to load on a phone (it still works on a JVM): never ship that
+        if 'kotlin/kotlin.kotlin_builtins' not in z.namelist():
+            sys.exit('the Morphe engine zip has no kotlin/kotlin.kotlin_builtins: run engine/build-engine.sh')
+        print('    + Morphe engine (%d extra dex files, %d resources)' % (n - len(dex), sum(1 for x in ez.namelist() if not x.endswith('/') and not x.endswith('.dex'))))
     z.write(runner_jar, 'assets/uninstall_runner.jar')
     if abi in ('arm64-v8a', 'universal'):
         libadb = os.path.join(work, 'assets', 'libadb.so')

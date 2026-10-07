@@ -1,4 +1,4 @@
-1. an open Changes sheet follows the journal when a change lands (rows were bluetooth_on,wifi_on): true mobile_data,bluetooth_on,wifi_on
+1. an open Changes sheet follows the journal when a change lands (rows were bluetooth_on): true mobile_data,bluetooth_on
    Revert on the bluetooth_on row changes bluetooth_on, not the newest entry: true [{"op":"put","ns":"global","key":"bluetooth_on","value":"1"}]
    every journal entry has its own id: true
 2. a refused create: the table still has the same number of settings: true

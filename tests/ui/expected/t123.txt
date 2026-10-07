@@ -1,0 +1,23 @@
+1. assets/hsinfo.js: every line is "name|what|values|risk", no name twice: true
+   it describes Android's own settings: global 450+, secure 450+, system 100+: true 513/490/119
+   it holds every curated text (run tools/hsinfo/build.py after editing one): true
+   the common settings all have values text: true
+2. the page loaded the descriptions when the tab opened: true
+   a row says what the setting does and its values: true "zen_mode\nDo Not Disturb.\n0 = off; 1 = priority interruptions only; 2 = total silence; 3 = alarms only\n0"
+   the value it holds now is in bold in the values line: true
+   a setting with several values is not a switch (zen_mode, wifi_on), an on / off one is (airplane_mode_on, adb_enabled): true
+   the search finds a setting by the words of its values: true
+   system settings too: a time says milliseconds: true "screen_off_timeout\nHow long the screen stays on without touch before it turns off.\nmilliseconds, e.g. 15000, 30000, 60000, 600000\n60000"
+3. the editor has an About box: what it does, the values, and what the value is now: true "WHAT IT DOES\nDo Not Disturb.\nVALUES\n0 = off\n1 = priority interruptions only\n2 = total silence\n3 = alarms only\nNow: 0 = off"
+   the documented values are buttons, with their meaning: true ["0 · off","1 · priority interruptions …","2 · total silence","3 · alarms only","true","false","null","(empty)","-1"]
+   typing a value updates what it stands for: true
+   a value button fills the box: true
+4. an undescribed setting says so and guesses from its name: a time in milliseconds: true "WHAT IT PROBABLY IS\nAndroid does not describe this setting. Phone makers and apps add settings of their own. It looks like a time in milliseconds (1000 = 1 second).\nVALUES\nmilliseconds"
+   an _enabled name with 1 or 0 looks like a switch: true
+   a name that looks like a package says which app wrote it: true
+   a sec_ name says Samsung may have added it: true
+5. a careful setting still shows its warning, with the new text: true
+6. "How to read this list" opens an explanation of the three tables, a row and the values: true "How to read the hidden settings\n\nWhat the rows, the values and the three tables mean\n\n✕\nThe three tables\nGlobal: the who"
+   its button opens the Help Guide at the Hidden Settings topic and closes the sheet: true
+7. without assets/hsinfo.js the tab still works with the short hints: true
+errors: []

@@ -27,9 +27,20 @@
   <ul>
     <li><b>Global, Secure, System</b> (three wide buttons) choose the table. The number under each name is its count of settings: an ellipsis while loading, an exclamation mark if it could not be read, and "matches / total" while a search or filter is on.</li>
     <li><b>Search settings...</b> (the box, with an x to clear it), <b>＋</b> (create a setting) and <b>⋯</b> (More: sort order, reload, your changes, copy and share).</li>
-    <li>Four chips: <b>All</b>; <b>Switches</b> (values such as 1 or 0, true or false, on or off, yes or no); <b>Described</b> (the roughly 130 settings the app can explain in plain English); <b>Edited</b> (the ones you changed with this app).</li>
+    <li>Four chips: <b>All</b>; <b>Switches</b> (values such as 1 or 0, true or false, on or off, yes or no); <b>Described</b> (every setting the app can describe: about 1,100 of Android's own; see "What a setting does and what its values mean" below); <b>Edited</b> (the ones you changed with this app).</li>
     <li>A status line: the count, the time it was read, and a <b>Refresh</b> link.</li>
-    <li>The list. Each row has the name, a short description if the app knows one, and the value (long values are cut after two lines). A dot after the name means you changed it. An orange edge and the word "careful" mark a risky one. <i>(empty)</i> means nothing is stored, <i>(blank)</i> only spaces. A switch at the right means the value is switch-like. The list shows 120 rows at a time; more load as you scroll or with <b>Show more</b>.</li>
+    <li>The list. Each row has the name, what the setting does and which values it takes when the app knows them, and the value (long values are cut after two lines). A dot after the name means you changed it. An orange edge and the word "careful" mark a risky one. <i>(empty)</i> means nothing is stored, <i>(blank)</i> only spaces. A switch at the right means the value is switch-like. The list shows 120 rows at a time; more load as you scroll or with <b>Show more</b>.</li>
+  </ul>
+
+  <h4>What a setting does and what its values mean</h4>
+  <p>Under the name of each setting the list says <b>what it does</b>, and below that <b>Values:</b> which values it takes. The value the setting holds now is in <b>bold</b> in that line, so <code>Values: <b>0 = off</b>; 1 = priority interruptions only; 2 = total silence; 3 = alarms only</code> tells you at a glance that Do Not Disturb is off. Tap a row and the sheet has an <b>About</b> box with the same, one value to a line, and a <b>Now:</b> line that follows what you type (type <code>2</code> and it says <i>Now: 2 = total silence</i>).</p>
+  <ul>
+    <li><b>Where the text comes from.</b> The app knows what about 1,100 of Android's own settings do (the Global, Secure and System tables of Android's source code). The ones people meet most often have been written out in plain words; the others carry the short text from Android's documentation.</li>
+    <li><b>Reading the values.</b> <code>0 = off; 1 = on</code> is a switch. A time is in <b>milliseconds</b> (1000 is one second, 60000 one minute). A decimal such as <code>1.0</code> is a scale: 1.0 normal, 0.5 half, 2.0 double. <code>percent</code>, <code>Hz</code> (refresh rate) and <code>kelvin</code> (colour warmth) are units. A list uses <code>,</code> or <code>:</code> between its items; <code>package/class</code> is an app component.</li>
+    <li><b>Only real switches flip.</b> A setting the app knows takes more than 0 and 1 (for example <code>wifi_on</code>, <code>zen_mode</code>) is never flipped by a press and hold: tap it and pick one of its values.</li>
+    <li><b>The search</b> also looks in the values text, so <code>milliseconds</code> or <code>total silence</code> finds settings.</li>
+    <li><b>A setting without a description.</b> Phone makers and apps add many settings of their own (a name starting <code>sec_</code> often comes from Samsung, <code>miui_</code> from Xiaomi, a name like <code>com.example.app.key</code> from that app). For these the editor says <i>What it probably is</i> and guesses from the name and the value: an on/off switch, a time in milliseconds, a web address, a package name. It is only a guess; if you cannot tell what a setting does, leave it alone.</li>
+    <li><b>The <b>How to read this list</b> link</b> under the title of the tab opens a short explanation of the three tables, a row and the kinds of value. The <b>?</b> next to the title opens this guide topic.</li>
   </ul>
 
   <h4>Find a setting</h4>
@@ -47,7 +58,7 @@
   <h4>Change a value</h4>
   <ol class="hg-steps">
     <li>Tap the row. A sheet slides up with the name, the table, the description and, for a risky setting, an orange box explaining the danger. Read it.</li>
-    <li>Type in the <b>Value</b> box, or tap a quick value: <b>0</b>, <b>1</b>, <b>true</b>, <b>false</b>, <b>null</b>, <b>(empty)</b>, <b>-1</b>. A line under the box says what kind of value it looks like and what it was before.</li>
+    <li>Type in the <b>Value</b> box, or tap a quick value. If the setting is documented, its own values come first, each with its meaning (for example <b>2 · total silence</b>); then <b>0</b>, <b>1</b>, <b>true</b>, <b>false</b>, <b>null</b>, <b>(empty)</b>, <b>-1</b>. A line under the box says what kind of value it looks like and what it was before.</li>
     <li>A red line means it cannot be saved yet. The limits are 20,000 characters, no control characters (invisible special codes, apart from a tab or a line break), and a size that fits in one command sent through ADB (about 62,000 bytes once quoted). <b>Save</b> stays grey until the problem is gone.</li>
     <li>Tap <b>Save</b>. For a careful setting your phone first asks you to confirm.</li>
   </ol>
