@@ -6747,6 +6747,16 @@ public class MainActivity extends Activity {
             @Override public boolean connectionOk(String conn) { return morpheConnectionOk(conn); }
             @Override public File downloadsDir() { return android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS); }
             @Override public boolean storageAccess() { return hasStorageAccess(); }
+            @Override public Runnable openBrowser(final String url, final File dir, final BrowserDownload.Events events) {
+                final HelperBrowser[] box = new HelperBrowser[1];
+                runOnUiThread(new Runnable() {
+                    @Override public void run() {
+                        try { box[0] = HelperBrowser.show(MainActivity.this, url, dir, events); }
+                        catch (Throwable t) { Log.e(TAG, "in-app browser failed", t); events.onFailed("the browser could not be opened: " + t.getMessage()); events.onClosed(); }
+                    }
+                });
+                return new Runnable() { @Override public void run() { runOnUiThread(new Runnable() { @Override public void run() { if (box[0] != null) box[0].close(); } }); } };
+            }
         }, new File(getFilesDir(), "morphe"));
         return morpheBridge;
     }

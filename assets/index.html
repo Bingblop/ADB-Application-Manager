@@ -5767,6 +5767,11 @@
                 .tx-step.fail .tx-step-dot { color: var(--status-bloat); }
                 .tx-step.run .tx-step-dot { color: var(--accent); }
                 .tx-step code { display: block; font-size: 10.5px; color: var(--text-muted); white-space: pre-wrap; word-break: break-all; margin-top: 2px; }
+                .tx-tool-row { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border-glass); }
+                .tx-tool-row input { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--accent); flex: 0 0 auto; }
+                .tx-tool-main { display: flex; flex-direction: column; font-size: 12.5px; min-width: 0; }
+                .tx-tool-main b { font-size: 13.5px; }
+                .tx-tool-main span { color: var(--text-muted); font-size: 11.5px; line-height: 1.4; }
                 .tx-help h4 { font-size: 13px; font-weight: 800; margin: 16px 0 6px; color: var(--accent); }
                 .tx-help p, .tx-help li { font-size: 12px; line-height: 1.55; color: var(--text-main); }
                 .tx-help ul { margin: 4px 0 4px 18px; padding: 0; }
@@ -6190,6 +6195,22 @@ Type any command below (e.g. pm list packages -d)
     </div>
 
     <!-- Termux setup checklist -->
+    <!-- Termux: which tools to install and which starter files to write -->
+    <div class="modal-overlay" id="txToolsModal" onclick="if(event.target===this) txCloseTools()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-title">
+                        <h3>Set up Termux</h3>
+                        <p>Choose what to install and which starter files to write</p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="txCloseTools()" role="button" aria-label="Close">&#10005;</div>
+            </div>
+            <div id="txToolsBody" style="max-height:70vh; overflow-y:auto;"></div>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="txTermuxModal" onclick="if(event.target===this) txCloseTermux()">
         <div class="modal-sheet">
             <div class="sheet-header">
@@ -23758,6 +23779,81 @@ Type any command below (e.g. pm list packages -d)
             say(txT(ag.id === 'ollama' ? 'Ollama is not running on this phone yet. Install it below, or enter the address of a computer that runs it.' : 'Not found on this phone. Enter the address of the computer that runs it, then Connect.'));
         }
 
+        // ---------------------------------------------------------------- Termux: one-tap setup of the tools and a starter .bashrc
+        // Installs vim, nano, git, python and the rest through Termux's pkg (the steps run one by one in the Termux shell, visibly) and writes starter ~/.bashrc, ~/.vimrc and
+        // ~/.nanorc. Only a marked block is ever written, so what the person has in those files stays; running it again refreshes the block, it never adds a second.
+        const TX_STARTER = {
+         "bashrc": "# >>> ADB App Manager starter >>>\n# A starter for bash in Termux, written by ADB Application Manager (Terminal > Termux setup > Set up now).\n# Only the lines between the markers are managed: setting up again replaces them, anything above or below stays yours.\nexport EDITOR=vim VISUAL=vim PAGER=less LESS='-R -F -X'\nexport LANG=en_US.UTF-8\nexport HISTSIZE=50000 HISTFILESIZE=100000 HISTCONTROL=ignoreboth:erasedups\ncase $- in *i*)\n    shopt -s histappend checkwinsize cdspell globstar 2>/dev/null\n    # the prompt: folder, git branch, and a red $ when the last command failed\n    __adbmgr_branch() { local b; b=$(git symbolic-ref --short HEAD 2>/dev/null) && printf ' (%s)' \"$b\"; }\n    __adbmgr_prompt() { local rc=$? c='\\[\\e[32m\\]'; [ $rc -ne 0 ] && c='\\[\\e[31m\\]'; PS1=\"\\[\\e[36m\\]\\w\\[\\e[0m\\]\\[\\e[33m\\]$(__adbmgr_branch)\\[\\e[0m\\] ${c}\\$\\[\\e[0m\\] \"; }\n    PROMPT_COMMAND=__adbmgr_prompt\n    ;;\nesac\nalias ls='ls --color=auto' ll='ls -lh' la='ls -lAh' l='ls -CF'\nalias ..='cd ..' ...='cd ../..' ....='cd ../../..'\nalias grep='grep --color=auto' egrep='grep -E --color=auto' fgrep='grep -F --color=auto'\nalias df='df -h' du='du -h' free='free -h' cls='clear'\nalias gs='git status -sb' ga='git add' gc='git commit' gp='git push' gl='git log --oneline --graph --decorate -20' gd='git diff'\nalias py='python'\nalias sd='cd ~/storage/shared' dl='cd ~/storage/downloads'\nalias update='pkg update && pkg upgrade'\nmkcd() { mkdir -p -- \"$1\" && cd -- \"$1\"; }\nextract() {\n    case \"$1\" in\n        *.tar.gz|*.tgz) tar xzf \"$1\";; *.tar.bz2|*.tbz2) tar xjf \"$1\";; *.tar.xz|*.txz) tar xJf \"$1\";; *.tar) tar xf \"$1\";;\n        *.zip) unzip \"$1\";; *.gz) gunzip \"$1\";; *.bz2) bunzip2 \"$1\";; *.xz) unxz \"$1\";; *.7z) 7z x \"$1\";;\n        *) echo \"extract: do not know how to open: $1\" >&2; return 1;;\n    esac\n}\nserve() { python -m http.server \"${1:-8000}\"; }\nif [ -f ~/.bash_aliases ]; then . ~/.bash_aliases; fi\n# <<< ADB App Manager starter <<<\n",
+         "vimrc": "\" >>> ADB App Manager starter >>>\n\" A starter for vim in Termux. Only the lines between the markers are managed; your own lines above or below stay.\nset nocompatible\nsyntax on\nfiletype plugin indent on\nset number ruler showcmd wildmenu incsearch hlsearch ignorecase smartcase\nset tabstop=4 shiftwidth=4 expandtab autoindent\nset mouse=a\nset backspace=indent,eol,start\nset encoding=utf-8\nset background=dark\nset nobackup noswapfile\n\" <<< ADB App Manager starter <<<\n",
+         "nanorc": "# >>> ADB App Manager starter >>>\n# A starter for nano in Termux. Only the lines between the markers are managed; your own lines above or below stay.\nset linenumbers\nset mouse\nset tabsize 4\nset tabstospaces\nset autoindent\nset smooth\ninclude \"/data/data/com.termux/files/usr/share/nano/*.nanorc\"\n# <<< ADB App Manager starter <<<\n"
+        };
+        const TX_TOOL_PKGS = [
+            { id: 'vim', desc: 'Text editor', def: true }, { id: 'nano', desc: 'Simple text editor', def: true }, { id: 'git', desc: 'Version control', def: true },
+            { id: 'python', desc: 'Python and pip', def: true }, { id: 'openssh', desc: 'ssh, scp, sftp', def: true }, { id: 'curl', desc: 'Download tool', def: true },
+            { id: 'wget', desc: 'Download tool', def: true }, { id: 'htop', desc: 'Process viewer', def: true },
+            { id: 'tmux', desc: 'Several terminals in one', def: false }, { id: 'ripgrep', desc: 'Fast text search (rg)', def: false }, { id: 'jq', desc: 'Read JSON', def: false },
+            { id: 'zip', desc: 'Make zip files', def: false }, { id: 'unzip', desc: 'Open zip files', def: false }, { id: 'rsync', desc: 'Copy folders', def: false },
+            { id: 'nodejs', desc: 'Node.js and npm', def: false }, { id: 'clang', desc: 'C and C++ compiler', def: false }, { id: 'make', desc: 'Build tool', def: false },
+            { id: 'man', desc: 'Manual pages', def: false }
+        ];
+        const TX_TOOL_CMD = { openssh: 'ssh', python: 'python', ripgrep: 'rg', nodejs: 'node', clang: 'clang', man: 'man' };
+        let txTools = { pkgs: TX_TOOL_PKGS.filter(p => p.def).map(p => p.id), bashrc: true, vimrc: true, nanorc: true };
+        try { const sv = kvGet('tx_tools', null); if (sv && Array.isArray(sv.pkgs)) txTools = Object.assign(txTools, sv); } catch (e) {}
+
+        // The shell that writes one starter block into one file: the old block (between its markers) goes, the new one is appended, the rest of the file is untouched.
+        function txStarterCmd(file, text, cp) {
+            const start = cp + ' >>> ADB App Manager starter >>>', end = cp + ' <<< ADB App Manager starter <<<';
+            const b64 = btoa(unescape(encodeURIComponent(text)));
+            const f = '"$HOME/' + file + '"';
+            return 'f=' + f + '; touch "$f"; sed -i ' + txQ('/^' + start.replace(/[\/.*[\]^$]/g, '\\$&') + '/,/^' + end.replace(/[\/.*[\]^$]/g, '\\$&') + '/d') + ' "$f"; ' +
+                '[ -s "$f" ] && [ -n "$(tail -c1 "$f")" ] && echo >> "$f"; printf %s ' + txQ(b64) + ' | base64 -d >> "$f" && echo "wrote the starter block of ~/' + file + '"';
+        }
+        // login shells (the real terminal runs bash -l) read ~/.bash_profile, not ~/.bashrc: make that file pass on to ~/.profile and ~/.bashrc, unless the person has one
+        const TX_BASH_PROFILE_CMD = 'if [ ! -e "$HOME/.bash_profile" ] && [ ! -e "$HOME/.bash_login" ]; then printf \'%s\\n\' \'# ADB App Manager: a login shell reads ~/.profile and ~/.bashrc\' \'[ -f "$HOME/.profile" ] && . "$HOME/.profile"\' \'[ -f "$HOME/.bashrc" ] && . "$HOME/.bashrc"\' > "$HOME/.bash_profile" && echo "made ~/.bash_profile (it reads ~/.profile and ~/.bashrc)"; else echo "~/.bash_profile is yours: left as it is (make it read ~/.bashrc if you want the starter in login shells)"; fi';
+        function txToolsSteps(o) {
+            o = o || txTools;
+            const pk = (o.pkgs || []).filter(id => TX_TOOL_PKGS.some(p => p.id === id));
+            const steps = [{ label: 'Update the package lists', cmd: 'pkg update -y' }];
+            if (pk.length) steps.push({ label: 'Install ' + pk.join(', '), cmd: 'pkg install -y ' + pk.join(' ') });
+            if (o.bashrc) steps.push({ label: 'Write the starter ~/.bashrc', cmd: txStarterCmd('.bashrc', TX_STARTER.bashrc, '#') + '; ' + TX_BASH_PROFILE_CMD });
+            if (o.vimrc) steps.push({ label: 'Write the starter ~/.vimrc', cmd: txStarterCmd('.vimrc', TX_STARTER.vimrc, '"') });
+            if (o.nanorc) steps.push({ label: 'Write the starter ~/.nanorc', cmd: txStarterCmd('.nanorc', TX_STARTER.nanorc, '#') });
+            if (pk.length) steps.push({ label: 'Check what is installed', cmd: pk.map(id => { const c = TX_TOOL_CMD[id] || id; return 'printf "%-10s %s\\n" ' + txQ(c) + ' "$(command -v ' + c + ' >/dev/null 2>&1 && echo installed || echo MISSING)"'; }).join('; ') });
+            return steps;
+        }
+        async function txToolsRun(useSaved) {
+            haptic();
+            txCloseTools(); txCloseTermux(); txCloseSettings();
+            const o = useSaved ? txTools : { pkgs: TX_TOOL_PKGS.filter(p => p.def).map(p => p.id), bashrc: true, vimrc: true, nanorc: true };
+            const ok = await txRunSteps('Setting up Termux', txToolsSteps(o));
+            if (ok) {
+                txNote('[Termux is ready: vim, nano, git and python are installed and bash has its starter .bashrc. Open the real terminal for full-screen programs.]', 'termux', 'tx-ok');
+                txButtons('termux', [{ label: 'Open the real terminal', go: true, on: () => rtOpen('termux') }]);
+            }
+        }
+        function txToolsOpen() {
+            haptic();
+            txCloseTermux(); txCloseSettings();
+            txToolsRender();
+            document.getElementById('txToolsModal').classList.add('show');
+        }
+        function txCloseTools() { document.getElementById('txToolsModal').classList.remove('show'); }
+        function txToolsRender() {
+            const box = document.getElementById('txToolsBody');
+            if (!box) return;
+            const row = (id, label, sub, on, handler) => '<label class="tx-tool-row"><input type="checkbox" ' + (on ? 'checked ' : '') + 'onchange="' + handler + '"><span class="tx-tool-main"><b translate="no">' + escapeHtml(label) + '</b><span>' + escapeHtml(sub) + '</span></span></label>';
+            box.innerHTML = '<div class="tx-sheet-p muted">Installed with Termux\'s <code>pkg</code>. Tools already there are only updated.</div>' +
+                TX_TOOL_PKGS.map(p => row(p.id, p.id, p.desc, txTools.pkgs.includes(p.id), 'txToolPick(\'' + p.id + '\', this.checked)')).join('') +
+                '<div class="mp-group"><span>Starter files</span></div>' +
+                row('bashrc', '~/.bashrc', 'Colour prompt with the git branch, aliases, history, small helpers (mkcd, extract, serve)', txTools.bashrc, 'txToolFile(\'bashrc\', this.checked)') +
+                row('vimrc', '~/.vimrc', 'Syntax colours, line numbers, mouse, 4-space tabs', txTools.vimrc, 'txToolFile(\'vimrc\', this.checked)') +
+                row('nanorc', '~/.nanorc', 'Line numbers, mouse, syntax colours', txTools.nanorc, 'txToolFile(\'nanorc\', this.checked)') +
+                '<div class="tx-sheet-p muted">Only a marked block is written to these files; what you have in them stays, and running this again refreshes the block instead of adding another.</div>' +
+                '<div class="mode-btn-row" style="margin-top:12px;"><button class="mode-action-btn primary" onclick="txToolsRun(true)">Install</button><button class="mode-action-btn" onclick="txCloseTools()">Cancel</button></div>';
+        }
+        function txToolPick(id, on) { txTools.pkgs = txTools.pkgs.filter(x => x !== id); if (on) txTools.pkgs.push(id); kvSet('tx_tools', txTools); }
+        function txToolFile(k, on) { txTools[k] = !!on; kvSet('tx_tools', txTools); }
+
         async function txInstallOllama() {
             const ag = txAgentDef('ollama');
             txCloseConnect();
@@ -23882,6 +23978,8 @@ Type any command below (e.g. pm list packages -d)
                 + step(4, !!t.permission, 'Allow this app', t.permission ? 'Allowed: "Run commands in Termux environment".' : 'Android asks whether this app may "Run commands in Termux environment".', t.permission ? '' : '<button class="mode-action-btn primary" onclick="txTermuxAllow()"' + (t.installed ? '' : ' disabled') + '>Allow</button>')
                 + step(5, !!(txProbe && txProbe.ok), 'Test the connection', txProbe ? (txProbe.ok ? 'Termux answered. All set.' : '<span class="is-err">' + escapeHtml(txProbe.message || 'No answer') + '</span>') : 'Sends a harmless command to Termux and waits for the answer.', '<button class="mode-action-btn" id="txProbeBtn" onclick="txTermuxTest()"' + (t.installed && t.permission ? '' : ' disabled') + '>Test</button>')
                 + '<div class="mode-btn-row" style="margin-top:12px;"><button class="mode-action-btn primary" onclick="txUseTermuxShell()"' + (t.installed && t.permission ? '' : ' disabled') + '>Use Termux as the shell</button><button class="mode-action-btn" onclick="txSyncTermux()"' + (t.installed && t.permission ? '' : ' disabled') + '>Sync with Termux</button><button class="mode-action-btn" onclick="txTermuxStorage()"' + (t.installed && t.permission ? '' : ' disabled') + '>Set up storage in Termux</button></div>'
+                + '<div class="mode-btn-row"><button class="mode-action-btn primary" id="txToolsNow" onclick="txToolsRun(false)"' + (t.installed && t.permission ? '' : ' disabled') + '>Set up Termux now</button><button class="mode-action-btn" id="txToolsChoose" onclick="txToolsOpen()"' + (t.installed && t.permission ? '' : ' disabled') + '>Choose tools</button></div>'
+                + '<p class="tx-sheet-p muted">Set up Termux now installs vim, nano, git and python (plus ssh, curl, wget and htop) and writes a starter .bashrc, .vimrc and .nanorc. Choose tools lets you pick more, or leave some out.</p>'
                 + '<p class="tx-sheet-p muted">Commands run as Termux, in its home folder, with your Termux packages and (with Match my Termux environment on) your aliases and functions too. Sync with Termux also opens Termux so you can grant it access to shared storage.</p>';
         }
 
@@ -27497,7 +27595,7 @@ Type any command below (e.g. pm list packages -d)
         const MP_DEFAULTS = {
             mode: 'simple', installAfter: true, deleteAfter: false, keepIn: 'both', stripLibs: false, forceCompat: false, failOnError: true, signer: 'Morphe',
             hSources: ['apkmirror', 'uptodown', 'apkpure', 'apkcombo', 'aptoide', 'evozi', 'mi9', 'apkdownloader', 'aurora', 'play'], hDefault: 'apkmirror', hConn: 'both',
-            hSave: 'cache', hClear: true, hCycle: false, hFast: false, hPolicy: 'requested', hVt: false, hVtKey: '', hVtMode: 'ask', hLog: false, hAbi: ''
+            hSave: 'cache', hClear: true, hBrowser: 'inapp', hCycle: false, hFast: false, hPolicy: 'requested', hVt: false, hVtKey: '', hVtMode: 'ask', hLog: false, hAbi: ''
         };
         const mp = {
             cfg: Object.assign({}, MP_DEFAULTS), sub: 'apps', info: null, sources: [], catalogs: {}, catBusy: false, apps: new Map(), universal: {}, community: null, comView: 'apps',
@@ -28475,6 +28573,7 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('mpRunBar').style.width = Math.min(100, Math.round(frac * 100)) + '%';
         }
         function mpOnEvent(e) {
+            if (e && e.t === 'hb') { mpHBEvent(e); return; }
             if (e && e.t === 'dl') { if (mp.helperOpen && mp.h && mp.h.busy) mpHMsg(e.text || 'Downloading...', false, e.pct || 0); return; }
             const r = mp.run;
             if (!r || !e || (e.job && e.job !== r.job)) return;
@@ -28611,6 +28710,7 @@ Type any command below (e.g. pm list packages -d)
                 '<div class="mp-row mp-hflows"><button class="mp-act" onclick="mpHGo(\'fast\')">Fast mode</button><button class="mp-act" onclick="mpHGo(\'requested\')">This version</button><button class="mp-act" onclick="mpHGo(\'latest\')">Newest</button><button class="mp-act" onclick="mpHGo(\'versions\')">All versions</button><button class="mp-act" onclick="mpHManual()">Open the site</button><button class="mp-act" onclick="mpHDownloads()">Find in Downloads</button><button class="mp-act" onclick="mpHPick()">Pick a file</button></div>' +
                 (h.busy ? '<div class="mp-bartrack"><i id="mpHBar" style="width:' + (h.pct || 0) + '%"></i></div>' : '') +
                 '<div class="mp-note ' + (h.err ? 'is-err' : '') + '" id="mpHMsg">' + escapeHtml(h.msg || '') + '</div>' +
+                (h.browse ? '<div class="mp-row"><button class="mode-action-btn primary" onclick="mpHBrowse(mp.h.browse)">Open it here, in the app</button></div>' : '') +
                 (h.found ? mpHFoundHtml() : '') + (h.versions ? mpHVersionsHtml() : '') + (h.got ? mpHGotHtml() : '');
         }
         function mpHVersionsHtml() {
@@ -28639,7 +28739,7 @@ Type any command below (e.g. pm list packages -d)
             const h = mp.h;
             if (!mpHRead()) { mpHMsg('Enter the package name of the app.', true); return; }
             if (h.busy) return;
-            h.busy = true; h.got = null; h.vt = null; h.versions = null; h.err = false; h.msg = kind === 'versions' ? 'Looking for versions...' : 'Looking for the file...';
+            h.busy = true; h.got = null; h.vt = null; h.versions = null; h.err = false; h.browse = ''; h.msg = kind === 'versions' ? 'Looking for versions...' : 'Looking for the file...';
             mpHelperRender();
             const args = { source: h.src, pkg: h.pkg, version: h.ver, abi: h.abi, policy: kind === 'latest' ? 'latest' : (kind === 'fast' ? (mp.cfg.hPolicy === 'latest' ? 'latest' : 'requested') : 'requested'), sources: mp.cfg.hSources, save: mp.cfg.hSave, conn: mp.cfg.hConn };
             let r;
@@ -28666,7 +28766,7 @@ Type any command below (e.g. pm list packages -d)
                 if (r2.ok) r = r2; else r.error = (r.error ? r.error + ' ' : '') + (r2.error || '');
             }
             h.busy = false;
-            if (!r.ok) { h.msg = r.error || 'Download failed'; h.err = true; mpHelperRender(); return; }
+            if (!r.ok) { h.msg = r.error || 'Download failed'; h.err = true; h.browse = r.browse || ''; mpHelperRender(); return; }
             h.got = r.data; h.msg = mpHBundle(r.data) ? 'The bundle is ready.' : 'The APK is ready.'; h.err = false;
             mpHelperRender();
             if (mp.cfg.hVt && mp.cfg.hVtKey && mp.cfg.hVtMode === 'always') mpHScan();
@@ -28679,11 +28779,41 @@ Type any command below (e.g. pm list packages -d)
             h.busy = true; h.got = null; h.msg = 'Downloading ' + x.version + '...'; mpHelperRender();
             const r = await mpCall('helperGet', { source: h.src, pkg: h.pkg, version: x.version, abi: x.abi || h.abi, policy: 'requested', sources: [h.src], save: mp.cfg.hSave, conn: mp.cfg.hConn, url: x.url || '', page: x.page || '' });
             h.busy = false;
-            if (!r.ok) { h.msg = r.error || 'Download failed'; h.err = true; } else { h.got = r.data; h.msg = mpHBundle(r.data) ? 'The bundle is ready.' : 'The APK is ready.'; h.err = false; }
+            if (!r.ok) { h.msg = r.error || 'Download failed'; h.err = true; h.browse = r.browse || ''; } else { h.got = r.data; h.msg = mpHBundle(r.data) ? 'The bundle is ready.' : 'The APK is ready.'; h.err = false; }
             mpHelperRender();
             if (r.ok && mp.cfg.hVt && mp.cfg.hVtKey && mp.cfg.hVtMode === 'always') mpHScan();
         }
+        // ---- the browser inside the app: sites with a browser check (APKMirror) open here, and what is downloaded there is saved straight into the Helper ----
+        async function mpHBrowse(url) {
+            const h = mp.h;
+            mpHRead();
+            if (mp.cfg.hBrowser === 'external' || !window.AndroidBridge || !window.AndroidBridge.morphe) {
+                const r = url ? { ok: true, data: { url } } : await mpCall('helperManual', { source: h.src, pkg: h.pkg, version: h.ver });
+                if (r.ok && r.data && r.data.url) { mpLink(r.data.url); h.watch = true; mpHMsg('Download the APK or bundle (APKM, APKS, XAPK) in the browser, then come back: Helper looks in Downloads for it.', false); }
+                else showToast((r && r.error) || 'No page for that');
+                return;
+            }
+            const r = await mpCall('helperBrowse', { url: url || '', source: h.src, pkg: h.pkg, version: h.ver, save: mp.cfg.hSave });
+            if (!r.ok) { mpHMsg(r.error || 'The browser did not open', true); return; }
+            h.browse = '';
+            mpHMsg('Find the app, choose the version and tap its download button (on APKMirror: Download APK Bundle or Download APK). The file is saved here and the browser closes by itself.', false);
+        }
+        function mpHBEvent(e) {
+            if (!mp.helperOpen || !mp.h) return;
+            const h = mp.h;
+            if (e.k === 'status') { mpHMsg(e.text || 'Downloading...', false, e.pct || 0); return; }
+            if (e.k === 'failed') { mpHMsg('The download failed: ' + (e.error || ''), true); return; }
+            if (e.k === 'done') {
+                if (e.ok && e.info) {
+                    h.got = e.info; h.pkg = e.info.pkg || h.pkg; h.vt = null; h.found = null; h.err = false; h.browse = '';
+                    h.msg = (mpHBundle(e.info) ? 'The bundle' : 'The APK') + ' is ready (saved from the browser).';
+                    mpHelperRender();
+                    if (mp.cfg.hVt && mp.cfg.hVtKey && mp.cfg.hVtMode === 'always') mpHScan();
+                } else mpHMsg((e.name || 'The file') + ' was saved, but it is not an app file (' + (e.error || 'unknown') + '). Choose another download in the browser.', true);
+            }
+        }
         function mpHManual() {
+            if (mp.cfg.hBrowser !== 'external') { mpHBrowse(''); return; }
             mpHRead();
             mpCall('helperManual', { source: mp.h.src, pkg: mp.h.pkg, version: mp.h.ver }).then(r => { if (r.ok && r.data && r.data.url) mpLink(r.data.url); else showToast(r.error || 'No page for that'); });
             mp.h.watch = true;
@@ -28783,6 +28913,7 @@ Type any command below (e.g. pm list packages -d)
             return '<div class="mp-group"><span>Sources</span></div>' + srcRows +
                 '<div class="mp-sw"><div class="mp-main"><div class="mp-name">Default source</div></div>' + sel('hDefault', (mp.helper && mp.helper.sources || []).map(s => [s.id, s.name])) + '</div>' +
                 '<div class="mp-group"><span>Downloads</span></div>' +
+                '<div class="mp-sw"><div class="mp-main"><div class="mp-name">Open the sources in</div><div class="mp-patch-desc">Sites with a browser check (APKMirror) work in the app\'s own browser, which saves the download straight into Helper.</div></div>' + sel('hBrowser', [['inapp', 'This app'], ['external', 'The phone\'s browser']]) + '</div>' +
                 '<div class="mp-sw"><div class="mp-main"><div class="mp-name">Connection</div></div>' + sel('hConn', [['both', 'Wi-Fi and mobile data'], ['wifi', 'Wi-Fi only'], ['mobile', 'Mobile data only']]) + '</div>' +
                 '<div class="mp-sw"><div class="mp-main"><div class="mp-name">Save downloads</div><div class="mp-patch-desc">In the app\'s cache, or a visible copy in Downloads/Helper for Morphe.</div></div>' + sel('hSave', [['cache', 'Cache'], ['downloads', 'Downloads']]) + '</div>' +
                 '<div class="mp-sw"><div class="mp-main"><div class="mp-name">Clear after use</div><div class="mp-patch-desc">Delete the downloaded file once the app is patched.</div></div><label class="mp-check"><input type="checkbox" ' + (c.hClear ? 'checked ' : '') + 'onchange="mp.cfg.hClear=this.checked;mpCfgSave();"></label></div>' +

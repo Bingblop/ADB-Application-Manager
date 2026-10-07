@@ -31,6 +31,17 @@
   gives an app no way to open a pty, so the app carries a 4 KB helper (`native/pty/ptyexec.c`, built for arm64, 32-bit ARM and x86_64, no C library) that opens
   the pty, runs the program and relays bytes; the screen is xterm.js (MIT). Closing the screen keeps the session. The helper is tested on a computer and,
   for the phone's two architectures, under emulation (`native/pty/test.sh`); `PtyShellTest` and `t126` run the real thing.
+- **Morphe Helper: a browser inside the app.** APKMirror's browser check stops a plain download, and the file then ended up in another app. **Open it here, in
+  the app** (and **Open the site**) now open a full-screen browser in the app that presents itself as Chrome, so the check passes as it does in a browser.
+  Whatever the page hands over as a file (.apkm, .apks, .xapk, .apk) is saved by the app itself, with the web view's cookies, straight into Helper's folder
+  and read like any other download (`BrowserDownload`: file name from the headers, redirects followed by hand, a page that is not a file is refused,
+  written to a `.part` file and renamed when complete). The pages get no way into the app (no JavaScript bridge, only http and https). New setting
+  **Open the sources in**: This app, or The phone's browser. Not tested against the live site (it blocks the build machine): see the checklist.
+- **Terminal: one-tap Termux setup.** In **Termux setup**, **Set up Termux now** updates the package lists, installs vim, nano, git, python, openssh, curl, wget
+  and htop with `pkg`, and writes a starter `~/.bashrc` (colour prompt with the git branch, history, aliases, `mkcd`, `extract`, `serve`), `~/.vimrc` and
+  `~/.nanorc`; **Choose tools** picks others (tmux, ripgrep, jq, zip, unzip, rsync, nodejs, clang, make, man) and which starter files. Only a marked block is
+  written: your own lines stay and a second run replaces the block. A `~/.bash_profile` is made only when there is none, so login shells read `~/.bashrc`.
+  The starter files are run for real in the tests (`t127`).
 - Translation work is on hold until the feature set is finished.
 - **Morphe Patcher: a chain of failed patches is one error.** When a patch raises an exception, every patch that depends on it fails with
   "depends on ..., which raised an exception" (Gboard showed 41 of them). The result card now leads with the first error, details open, and
