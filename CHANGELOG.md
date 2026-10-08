@@ -1,5 +1,41 @@
 # Changelog
 
+## v7.10.7-Pro (versionCode 827)
+
+- **Morphe Helper downloads keep going in the background.** What the in-app browser downloads is now held by a foreground service (`DownloadService`, type dataSync): leave the
+  app or let the screen go off and the downloads carry on. A notification shows how many files, how far (a bar and a percentage when every size is known), how fast and how
+  long is left, with **Pause all** (every download that is going or waiting is paused and stays in the list to Resume) and **Cancel** (they stop and the unfinished parts are
+  removed). The processor is kept awake (a partial wake lock, renewed while something downloads and given back the moment nothing does). When the last download is over
+  the notification gives way to a short note of how it went ("keyboard.apkm is saved", "2 downloads finished", "1 finished, 1 stopped. Open the app to retry") that opens the app
+  when tapped. The service starts with the first running download and stops itself with the last; on Android 15, whose six-hour limit for data-sync services ends it, what is
+  going is paused rather than lost. A switch under the download list, **Keep downloading in the background** (on by default), turns the service off for people who want the
+  old behaviour. A phone that refuses the foreground start only loses the notification: the downloads still run. Tests: `DownloadNoticeTest` (21 checks: the counts, the
+  percentage, the smoothed speed and time left, the unknown size, waiting and paused jobs, how it ended), `HelperDownloadsTest` (pause all, cancel all, the active count) and `t119`
+  (the switch).
+- **My Themes: save and switch your own looks.** A new **My Themes** card in Settings (under Palette Style) saves the look in use under a name (up to 40 characters, up to 30
+  themes, unique without regard to case): the palette or palette style, the source color, your color tweaks for light and dark, and Pure black. Tapping a theme wears it at once
+  (Appearance, light or dark or system, is not part of a theme and stays as it is); each theme shows four swatches in the mode in use, says what it is ("Vibrant · #E91E63",
+  "Midnight Slate · tweaked · pure black"), is highlighted while it is the look in use, and can be **Renamed**, **Updated** with the look in use now or **Deleted** (each asked
+  first where it replaces or removes something). Saving under a name that exists asks before replacing it. The saved list is checked every time it is read: entries that are not
+  themes, unknown palettes or styles, bad colors and repeated names are dropped or put right. Test: `t130`.
+
+## v7.10.6-Pro (versionCode 826)
+
+- **Palette Style in the Theme menu.** Settings has a new **Palette Style** card above the curated palettes: one **source color** turned into a whole theme (accent,
+  background, cards, text, in light and in dark) in one of nine styles: **Tonal Spot, Vibrant, Fidelity, Content, Neutral, Expressive, Fruit Salad, Rainbow** and
+  **Monotone**. Tap a style and the app is rebuilt from the source color at once; the tiles preview each style for the source color and the mode in use. The source
+  color is automatic (the wallpaper's main color on Android 12+, otherwise Material purple) or picked with the color popup; an **Automatic** button goes back. The
+  colors are worked out in the HCT color space with tonal palettes, the way Google's Material Color Utilities (Apache-2.0) does it, written again in a few lines
+  (checked against known HCT values; Tonal Spot of Material purple gives the Material 3 baseline). Text keeps 7:1 and the accent 4.5:1 against the background for any
+  source color, light and dark; Running stays green and Bloatware red in every style. Fidelity's and Content's third accent is an approximation of Google's. The
+  style, source color and palette are saved with the theme and restored (a damaged value falls back to Tonal Spot / automatic); a color tweak still works on top, and
+  choosing a style clears tweaks like choosing a palette does. Test: `t129`.
+- **Connected Devices: Reconnect all and your own retry timings.** With two or more devices not connected a line above the cards offers **Reconnect all**, which tries
+  each in turn and counts the result ("Reconnected 1 of 2"; a device that could not be reached keeps its card with the reason). Settings has a new **Reconnecting
+  devices** card with the **Reconnect on its own** switch (the same one as in the Devices tab) and **Retry timings**: the seconds to wait before each attempt, such as
+  `0, 8, 25` (the default), up to 8 attempts of 0 to 600 seconds; a box that is not valid says why and keeps the timings in use, and **Reset** goes back to the default.
+  Test: `t128`.
+
 ## v7.10.5-Pro (versionCode 825)
 
 - **Connected Devices: a device that dropped can be brought back.** Devices are remembered while they are connected. When one is gone (Wi-Fi asleep, cable out, Wireless

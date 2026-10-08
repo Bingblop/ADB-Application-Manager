@@ -122,7 +122,7 @@ const { chromium, PAGE } = require('./lib/pw');
   check('an offline device offers Reconnect in its card, and is also listed as not connected', await ev(() => /Reconnect/.test(document.getElementById('cdInfo').innerText) && !!document.querySelector('#cdLost [data-serial="R5CT1234"]')));
 
   // ---- automatic: one series of attempts after a drop, the setting turns it off ----
-  await ev(() => { kvSet('cd_autore', true); CD_AUTO_WAITS.splice(0, CD_AUTO_WAITS.length, 0, 60, 120); window.__st.up = { '127.0.0.1:5555': 'device' }; window.__st.up['192.168.1.20:5555'] = 'device'; window.__st.canConnect = {}; window.__st.calls.length = 0; cd.lastKey = ''; kvSet('cd_known', {}); cd.up = new Set(); cd.dropped = {}; cd.rc = {}; }); await refresh();
+  await ev(() => { kvSet('cd_autore', true); kvSet('cd_retry', [0, 0.1, 0.2]); window.__st.up = { '127.0.0.1:5555': 'device' }; window.__st.up['192.168.1.20:5555'] = 'device'; window.__st.canConnect = {}; window.__st.calls.length = 0; cd.lastKey = ''; kvSet('cd_known', {}); cd.up = new Set(); cd.dropped = {}; cd.rc = {}; }); await refresh();
   await ev(() => { delete window.__st.up['192.168.1.20:5555']; window.__st.calls.length = 0; }); await refresh(); await wait(900);
   const auto = (await calls()).filter(c => c === 'connect 192.168.1.20:5555').length;
   check('with the setting on, a drop is followed by three attempts on its own, and then it stops', auto === 3, String(auto));
@@ -136,6 +136,51 @@ const { chromium, PAGE } = require('./lib/pw');
   check('with the setting off, nothing is tried until the button is pressed', !(await calls()).some(c => /^connect /.test(c)), JSON.stringify(await calls()));
   await page.click('#cdAutoBtn'); await wait(100);
   check('the setting is switched in the card (and remembered)', await ev(() => kvGet('cd_autore', true) === true && document.getElementById('cdAutoBtn').innerText === 'On'));
+
+  // ---- Reconnect all ----
+  const five = '192.168.1.20:5555', six = '192.168.1.21:5555';
+  await ev(([a, b2]) => { kvSet('cd_autore', false); window.__st.up = { '127.0.0.1:5555': 'device' }; window.__st.up[a] = 'device'; window.__st.up[b2] = 'device'; window.__st.models[a] = 'SM_R930'; window.__st.models[b2] = 'Pixel_Tablet'; window.__st.canConnect = {}; cd.lastKey = ''; kvSet('cd_known', {}); cd.up = new Set(); cd.dropped = {}; cd.rc = {}; switchView('devices'); }, [five, six]); await refresh();
+  await ev(a => { delete window.__st.up[a]; }, five); await refresh();
+  check('with one device not connected there is no Reconnect all (its own Reconnect does that)', await ev(() => !document.getElementById('cdReconnectAllBtn') && document.querySelectorAll('#cdLost .cd-lost').length === 1));
+  await ev(b2 => { delete window.__st.up[b2]; }, six); await refresh();
+  check('with two it shows how many are not connected, and Reconnect all', /2 devices not connected/.test(await lostText()) && await ev(() => !!document.getElementById('cdReconnectAllBtn') && document.getElementById('cdReconnectAllBtn').innerText === 'Reconnect all'), await lostText());
+  await ev(([a]) => { window.__st.canConnect[a] = a; window.__st.calls.length = 0; }, [five]);
+  await page.click('#cdReconnectAllBtn'); await wait(1200);
+  const ra = await calls();
+  check('Reconnect all tries each device (both addresses)', ra.includes('connect ' + five) && ra.includes('connect ' + six), JSON.stringify(ra));
+  check('the one that answers is back, the other stays listed with the reason', await ev(([a, b2]) => cdIsUp(a) && !cdIsUp(b2) && !!document.querySelector('#cdLost [data-serial="' + b2 + '"]') && !document.querySelector('#cdLost [data-serial="' + a + '"]'), [five, six]) && /No answer from 192\.168\.1\.21/.test(await lostText()), await lostText());
+  check('and the toast counts: 1 of 2', /Reconnected 1 of 2/.test(await toast()), await toast());
+  check('the buttons are free again', await ev(() => ![...document.querySelectorAll('#cdLost button')].some(b => b.disabled)));
+  await ev(([a, b2]) => { delete window.__st.up[a]; window.__st.canConnect[a] = a; window.__st.canConnect[b2] = b2; }, [five, six]); await refresh();
+  await page.click('#cdReconnectAllBtn'); await wait(1200);
+  check('when both answer, both are back and the card is gone', await ev(([a, b2]) => cdIsUp(a) && cdIsUp(b2) && document.getElementById('cdLost').innerText.trim() === '', [five, six]) && /Reconnected 2 devices/.test(await toast()), await toast());
+
+  // ---- Settings: the switch and the timings ----
+  await ev(() => { kvSet('cd_retry', null); switchView('prefs'); cdSettingsRender(); }); await wait(200);
+  const sv = () => ev(() => ({ on: document.getElementById('cdAutoSwitch').checked, dis: document.getElementById('cdRetryInput').disabled, val: document.getElementById('cdRetryInput').value, note: document.getElementById('cdRetryNote').innerText, reset: getComputedStyle(document.getElementById('cdRetryReset')).display !== 'none', kv: kvGet('cd_retry', null), waits: cdWaitList() }));
+  let q = await sv();
+  check('Settings has the switch (off here, as set) and the timings box showing the default 0, 8, 25 with no Reset', !q.on && q.dis && q.val === '0, 8, 25' && !q.reset && q.kv === null && /Turned off/.test(q.note), JSON.stringify(q));
+  await page.click('#cdAutoSwitch + .switch-track'); await wait(100);
+  q = await sv();
+  check('turning it on in Settings is the same setting as in the Devices tab (and enables the box)', q.on && !q.dis && await ev(() => kvGet('cd_autore', false) === true) && /default timings/.test(q.note), JSON.stringify(q));
+  await page.fill('#cdRetryInput', '0, 5, 15, 40'); await page.dispatchEvent('#cdRetryInput', 'change'); await wait(100);
+  q = await sv();
+  check('your own timings are saved and used (seconds), and Reset appears', JSON.stringify(q.kv) === '[0,5,15,40]' && JSON.stringify(q.waits) === '[0,5,15,40]' && q.val === '0, 5, 15, 40' && q.reset && /5 s, 15 s, 40 s/.test(q.note) && /your timings/.test(q.note), JSON.stringify(q));
+  for (const [txt, re, label] of [['0, x', /"x" is not a number/, 'a word'], ['', /at least one/i, 'nothing'], ['1,2,3,4,5,6,7,8,9', /At most 8/, 'nine attempts'], ['0, 700', /600 seconds/, 'more than 10 minutes'], ['-5', /not a number/, 'a negative number']]) {
+    await page.fill('#cdRetryInput', txt); await page.dispatchEvent('#cdRetryInput', 'change'); await wait(80);
+    q = await sv();
+    check('invalid timings (' + label + ') are refused in words and the saved ones stay', /\S/.test(q.note) && re.test(q.note + ' ' + await toast()) && JSON.stringify(q.kv) === '[0,5,15,40]', JSON.stringify(q) + ' ' + await toast());
+  }
+  await page.fill('#cdRetryInput', '2 4 6'); await page.dispatchEvent('#cdRetryInput', 'change'); await wait(80);
+  check('spaces work as separators too', JSON.stringify((await sv()).kv) === '[2,4,6]');
+  await page.click('#cdRetryReset'); await wait(100);
+  q = await sv();
+  check('Reset goes back to 0, 8, 25 and hides itself', q.kv === null && q.val === '0, 8, 25' && !q.reset && JSON.stringify(q.waits) === '[0,8,25]', JSON.stringify(q));
+  await ev(() => { kvSet('cd_retry', 'junk'); }); 
+  check('a damaged saved value falls back to the default', JSON.stringify(await ev(() => cdWaitList())) === '[0,8,25]');
+  await ev(() => { kvSet('cd_retry', [0, 9999]); });
+  check('a saved value out of range falls back to the default too', JSON.stringify(await ev(() => cdWaitList())) === '[0,8,25]');
+  await ev(() => { kvSet('cd_retry', null); switchView('devices'); });
   await page.screenshot({ path: 'cd_lost.png' });
 
   console.log('errors:', JSON.stringify(errors));

@@ -96,7 +96,7 @@ const { chromium, PAGE, fixture } = require('./lib/pw');
           case 'helperDownloads': return ok(M.dlAccess ? { ok: true, access: true, folder: '/storage/emulated/0/Download', items: a.pkg === 'com.google.android.youtube' ? M.dlItems : [], scanned: 4, other: a.pkg === 'com.google.android.youtube' ? 1 : 4, unreadable: 0 } : { ok: true, access: false, items: [] });
           case 'helperAdopt': { const x = M.dlItems.find(i => i.path === a.path); if (!x) return bad('that file is not one this app may read'); return ok({ ok: true, path: '/cache/h/' + x.name, fileName: x.name, pkg: x.pkg, versionName: x.versionName, versionCode: x.versionCode, format: x.format, splits: x.splits, size: x.size, sha256: 'ef'.repeat(32), source: 'downloads' }); }
           case 'helperBrowse': M.browseArgs = a; return ok({ url: a.url || 'https://www.apkmirror.com/?s=' + a.pkg });
-          case 'helperDownloadList': return ok({ jobs: M.dlJobs || [] });
+          case 'helperDownloadList': return ok({ jobs: M.dlJobs || [], background: M.dlBg !== false });
           case 'helperDownloadOp': {
             (M.dlOps = M.dlOps || []).push([a.op, a.id]);
             const J = M.dlJobs = M.dlJobs || [], j = J.find(x => x.id === a.id);
@@ -105,6 +105,7 @@ const { chromium, PAGE, fixture } = require('./lib/pw');
             if (a.op === 'cancel' && j) j.state = 'cancelled';
             if (a.op === 'remove') M.dlJobs = J.filter(x => x.id !== a.id);
             if (a.op === 'clear') M.dlJobs = J.filter(x => x.state !== 'done' && x.state !== 'cancelled');
+            if (a.op === 'background') { M.dlBg = !!a.on; return ok({ background: M.dlBg }); }
             if (a.op === 'use') { if (!j || j.state !== 'done') return bad('that download is not finished'); return ok({ info: { ok: true, path: '/cache/h/' + j.name, fileName: j.name, pkg: 'com.google.android.inputmethod.latin', versionName: '18.0.3.954559732', versionCode: 954559732, format: 'apkm', splits: 4, size: j.total, sha256: 'cd'.repeat(32), source: 'browser' } }); }
             return ok({ jobs: M.dlJobs });
           }
@@ -420,6 +421,14 @@ const { chromium, PAGE, fixture } = require('./lib/pw');
   check('Remove takes it off the list', await ev(() => !document.querySelector('#mpHDl [data-dl="j2"]')));
   await page.click('#mpHDl button:has-text("Clear finished")'); await wait(150);
   check('Clear finished removes the saved ones and keeps the others', await ev(() => !document.querySelector('#mpHDl [data-dl="j3"]') && !!document.querySelector('#mpHDl [data-dl="j1"]') && !/Clear finished/.test(document.getElementById('mpHDl').innerText)));
+  // the background switch: downloads go on, with a notification, when the app is left (a foreground service in the app)
+  check('under the list: "Keep downloading in the background", on by default, saying what it does', await ev(() => { const i = document.getElementById('mpHDBg'); return !!i && i.checked && /notification/i.test(i.closest('label').innerText) && /Pause all and Cancel/.test(i.closest('label').innerText); }));
+  await page.click('#mpHDBg + .switch-track'); await wait(200);
+  check('turning it off asks the app, remembers it and says so', await ev(() => window.__mp.dlBg === false && !document.getElementById('mpHDBg').checked && /stop when the app is left/.test(document.getElementById('toastMsg').innerText)) && (await calls()).includes('helperDownloadOp'));
+  await ev(() => { mp.dl = []; mpHDLoad(); }); await wait(250);
+  check('the choice is read back when the list is opened again', await ev(() => mp.dlBg === false && !document.getElementById('mpHDBg').checked));
+  await page.click('#mpHDBg + .switch-track'); await wait(200);
+  check('and turning it on again', await ev(() => window.__mp.dlBg === true && document.getElementById('mpHDBg').checked && /go on in the background/.test(document.getElementById('toastMsg').innerText)));
   check('the list explains that downloads go on without the browser, and what Pause and Resume do', await ev(() => /go on when the browser is closed/.test(document.getElementById('mpHDl').innerText) && /Resume asks the site for the rest only/.test(document.getElementById('mpHDl').innerText)));
   await ev(() => { window.__mp.dlJobs = []; mp.dl = []; mpHDRender(); });
   check('with no downloads the section is not there', await ev(() => document.getElementById('mpHDl').innerText.trim() === ''));

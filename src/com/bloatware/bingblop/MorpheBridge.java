@@ -168,7 +168,7 @@ public final class MorpheBridge {
             case "helperManual": return new JSONObject().put("url", MorpheHelper.manualUrl(a.optString("source"), a.optString("pkg"), a.optString("version")));
             case "helperVersions": return MorpheHelper.versions(a.optString("source"), a.optString("pkg"));
             case "helperBrowse": return helperBrowse(a);
-            case "helperDownloadList": return new JSONObject().put("jobs", downloads().pageList());
+            case "helperDownloadList": return new JSONObject().put("jobs", downloads().pageList()).put("background", backgroundOn());
             case "helperDownloadOp": return helperDownloadOp(a);
             case "helperBrowseClose": if (browserCloser != null) { final Runnable c = browserCloser; browserCloser = null; c.run(); } return null;
             case "helperDownloads": return helperDownloads(a);
@@ -694,6 +694,16 @@ public final class MorpheBridge {
     private HelperDownloads downloadList;
     private final Map<String, long[]> lastPush = new ConcurrentHashMap<String, long[]>();
 
+    /** Downloads go on in the background, with a notification (a foreground service), unless the person switched that off: a marker file says so. */
+    private boolean backgroundOn() { return !new File(base, "hd_background_off").exists(); }
+
+    private void setBackground(boolean on) {
+        File f = new File(base, "hd_background_off");
+        if (on) f.delete();
+        else try { base.mkdirs(); f.createNewFile(); } catch (IOException ignored) {}
+        if (downloadList != null) { try { DownloadService.sync(host.context(), downloadList, true, on); } catch (RuntimeException ignored) {} }
+    }
+
     /** The Helper's download list (it outlives the browser window, and the journal outlives the app). */
     private synchronized HelperDownloads downloads() {
         if (downloadList == null) {
@@ -708,6 +718,7 @@ public final class MorpheBridge {
                     long now = System.currentTimeMillis();
                     long[] last = lastPush.get(j.id);
                     long st = j.state.ordinal();
+                    try { DownloadService.sync(host.context(), downloadList, last == null || last[1] != st, backgroundOn()); } catch (RuntimeException ignored) {}
                     if (last != null && last[1] == st && now - last[0] < 400) return;      // progress is passed on a few times a second, a change of state at once
                     lastPush.put(j.id, new long[]{now, st});
                     try { event(new JSONObject().put("t", "hd").put("job", HelperDownloads.forPage(j))); } catch (JSONException ignored) {}
@@ -727,6 +738,7 @@ public final class MorpheBridge {
             case "cancel": dl.cancel(id); break;
             case "remove": dl.remove(id); break;
             case "clear": dl.clearFinished(); break;
+            case "background": setBackground(a.optBoolean("on", true)); return new JSONObject().put("background", backgroundOn());
             case "use": {
                 BrowserDownload.Job j = dl.get(id);
                 if (j == null || j.state != BrowserDownload.State.DONE || j.file == null || !j.file.isFile()) throw new IOException("that download is not finished");

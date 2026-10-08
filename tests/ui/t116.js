@@ -16,7 +16,7 @@ const { chromium, PAGE } = require('./lib/pw');
   const wait = ms => page.waitForTimeout(ms);
   await ev(() => switchView('prefs')); await wait(300);
 
-  const rows = await ev(() => Array.from(document.querySelectorAll('.picker-bubble-btn')).map(b => b.tagName + ':' + b.querySelector('.bubble-hex').innerText));
+  const rows = await ev(() => Array.from(document.querySelectorAll('.picker-bubble-btn:not(#paletteStyleCard *)')).map(b => b.tagName + ':' + b.querySelector('.bubble-hex').innerText));
   check('seven pickers, buttons (no native color input any more)', rows.length === 7 && rows.every(r => r.startsWith('BUTTON:#')) && (await ev(() => document.querySelectorAll('input[type="color"]').length)) === 0, JSON.stringify(rows));
 
   await page.click('#hexAccent'); await wait(250);

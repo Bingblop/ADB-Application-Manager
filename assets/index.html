@@ -2708,6 +2708,16 @@
             border: 1px solid var(--border-glass);
             color: var(--text-muted);
         }
+        .ps-style-card .preset-name { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+        .mt-card { padding: 10px 12px 8px; }
+        .mt-main { cursor: pointer; border-radius: 8px; outline-offset: 3px; }
+        .mt-main:focus-visible { outline: 2px solid var(--accent); }
+        .mt-card .preset-name { overflow-wrap: anywhere; }
+        .mt-sub { font-size: 10.5px; line-height: 1.35; color: var(--text-muted); margin-top: 2px; font-weight: 600; overflow-wrap: anywhere; }
+        .mt-btns { display: flex; gap: 4px; margin-top: 8px; flex-wrap: wrap; }
+        .mt-btns button { flex: 1 1 0; min-width: 0; border: 1px solid var(--border-glass); background: transparent; color: var(--text-muted); border-radius: 999px; padding: 6px 4px; font-size: 10.5px; font-weight: 800; cursor: pointer; }
+        .mt-btns button.danger { color: var(--status-bloat); }
+        .ps-style-card .ps-desc { font-size: 10.5px; line-height: 1.35; color: var(--text-muted); margin-top: 3px; font-weight: 600; }
         .appearance-toggle {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -4082,6 +4092,9 @@
                 .cd-lost-main span.is-err { color: var(--status-bloat); }
                 .cd-lost-btns { display: flex; gap: 6px; flex: 0 0 auto; }
                 .cd-lost-auto { margin-top: 8px; font-size: 11px; color: var(--text-muted); }
+                .cd-lost-all { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; font-size: 11.5px; font-weight: 800; color: var(--text-muted); }
+                .cd-retry-line { display: flex; gap: 8px; align-items: center; margin: 4px 0 6px; }
+                .cd-retry-line .list-search { flex: 1 1 auto; min-width: 0; }
                 .cd-sheet-grid { grid-template-columns: repeat(2, 1fr); }
                 .cd-sheet-grid .batch-grid-btn { height: auto; min-height: 44px; padding: 8px 6px; text-align: center; line-height: 1.2; }
                 .cd-pick-row { display: flex; align-items: center; gap: 10px; padding: 8px 6px; border-bottom: 1px solid rgba(var(--ov), 0.06); cursor: pointer; }
@@ -4971,6 +4984,38 @@
                 </label>
             </div>
 
+            <div class="color-card" id="paletteStyleCard">
+                <div class="color-card-title">Palette Style</div>
+                <div class="color-card-subtitle">One source color, nine ways to turn it into a whole theme: the accent, the background, the cards and the text, in light and in dark. Choosing a style builds the theme from the source color below.</div>
+
+                <div class="color-row">
+                    <div class="color-meta">
+                        <h4>Source color</h4>
+                        <p id="psSeedNote">Automatic: your wallpaper's main color</p>
+                    </div>
+                    <button type="button" class="picker-bubble-btn" onclick="openColorPicker('Seed', 'seed')" aria-haspopup="dialog">
+                        <div class="bubble-circle" id="circSeed" style="background: #6750A4;"></div>
+                        <span class="bubble-hex" id="hexSeed">#6750A4</span>
+                    </button>
+                </div>
+                <div class="mode-btn-row" style="margin:2px 0 12px;">
+                    <button class="mode-action-btn" id="psAutoBtn" style="display:none;" onclick="setPaletteSeed(null)">Automatic</button>
+                </div>
+
+                <div class="palette-presets-grid" id="psStyleGrid"></div>
+                <div class="appearance-note" id="psNote"></div>
+            </div>
+
+            <div class="color-card" id="myThemesCard">
+                <div class="color-card-title">My Themes</div>
+                <div class="color-card-subtitle">Save the look you made (the palette or palette style, the source color, your color tweaks and Pure black) under a name, and switch between your themes with one tap. Light, dark or system stays as you set it in Appearance.</div>
+                <div class="mode-btn-row" style="margin:2px 0 12px;">
+                    <button class="mode-action-btn primary" id="mtSaveBtn" onclick="mtSave()">Save current theme…</button>
+                </div>
+                <div class="palette-presets-grid" id="mtGrid"></div>
+                <div class="appearance-note" id="mtNote"></div>
+            </div>
+
             <div class="color-card">
                 <div class="color-card-title">Curated Theme Palettes</div>
                 <div class="color-card-subtitle">Every palette has a light and a dark version</div>
@@ -5161,6 +5206,30 @@
                     <input type="checkbox" class="switch-input" id="expressiveAnimToggle" checked onchange="setExpressiveAnimations(this.checked)">
                     <span class="switch-track"></span>
                 </label>
+            </div>
+
+            <div class="color-card" id="cdReconnectCard">
+                <div class="color-card-title">Reconnecting devices</div>
+                <div class="color-card-subtitle">What the Devices tab does when a device you were connected to drops (Wi-Fi, Wireless debugging and Bluetooth devices; a cable is never retried on its own)</div>
+                <label class="switch-row">
+                    <div>
+                        <div class="switch-title">Reconnect on its own</div>
+                        <div class="switch-sub">Try to bring a dropped device back without you pressing anything.</div>
+                    </div>
+                    <input type="checkbox" class="switch-input" id="cdAutoSwitch" checked onchange="cdSetAuto(this.checked)">
+                    <span class="switch-track"></span>
+                </label>
+                <div class="color-row" style="align-items:flex-start;">
+                    <div class="color-meta">
+                        <h4>Retry timings</h4>
+                        <p>Seconds to wait before each attempt, separated by commas. <b>0, 8, 25</b> tries at once, again 8 seconds later and a last time 25 seconds after that. Up to 8 attempts, each wait 0 to 600.</p>
+                    </div>
+                </div>
+                <div class="cd-retry-line">
+                    <input type="text" class="list-search" id="cdRetryInput" inputmode="numeric" placeholder="0, 8, 25" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" aria-label="Seconds to wait before each reconnect attempt" onchange="cdRetrySave(this.value)">
+                    <button class="mode-action-btn" id="cdRetryReset" onclick="cdRetryReset()">Reset</button>
+                </div>
+                <div class="appearance-note" id="cdRetryNote"></div>
             </div>
 
             <div class="color-card" id="fontCard">
@@ -5667,6 +5736,7 @@
                 <div class="about-tip">Task Manager tab modeled on <a href="#" onclick="openUrlExternal('https://github.com/RohitKushvaha01/TaskManager'); return false;">RohitKushvaha01/TaskManager</a>.</div>
                 <div class="about-tip">Morphe Patcher tab: the patcher engine is <a href="#" onclick="openUrlExternal('https://github.com/MorpheApp/morphe-patcher'); return false;">morphe-patcher</a> and the way sources, patching and the community finder work follows <a href="#" onclick="openUrlExternal('https://github.com/MorpheApp/morphe-manager'); return false;">Morphe Manager</a>, both by <a href="#" onclick="openUrlExternal('https://github.com/MorpheApp'); return false;">MorpheApp</a> (GPL-3.0); the APK download sources and the VirusTotal check follow <a href="#" onclick="openUrlExternal('https://github.com/rushiranpise/helper-for-morphe'); return false;">Helper for Morphe</a> by rushiranpise (GPL-3.0). The patches belong to their authors.</div>
                 <div class="about-tip">SD Maid SE tab: a port of the four tools of <a href="#" onclick="openUrlExternal('https://github.com/d4rken-org/sdmaid-se'); return false;">SD Maid SE</a> by darken (d4rken-org, GPL-3.0), also on <a href="#" onclick="openUrlExternal('https://play.google.com/store/apps/details?id=eu.darken.sdmse'); return false;">Google Play</a>. Its icons, logo and translations are not used.</div>
+                <div class="about-tip">Palette Style: the nine styles and the way a source color becomes a whole theme (the HCT color space and its tonal palettes) follow Google's <a href="#" onclick="openUrlExternal('https://github.com/material-foundation/material-color-utilities'); return false;">Material Color Utilities</a> (Apache-2.0), written again for this app.</div>
                 <div class="about-tip">Hidden Settings: the descriptions of Android's own settings are taken in part from the documentation in the <a href="#" onclick="openUrlExternal('https://source.android.com/'); return false;">Android Open Source Project</a> (Apache-2.0).</div>
             </div>
         </section>
@@ -8042,6 +8112,8 @@ Type any command below (e.g. pm list packages -d)
             schedule: { lightAt: '07:00', darkAt: '19:00' },
             pureBlack: false,           // true black backgrounds in dark mode (AMOLED)
             expressiveAnimations: true, // Material 3 Expressive's springier, overshooting motion app-wide
+            style: 'TONAL_SPOT',        // palette style of the generated palette (see PS_STYLES)
+            seed: null,                 // its source color as '#RRGGBB'; null = automatic (the wallpaper's, else Material purple)
             overrides: { dark: {}, light: {} }
         };
 
@@ -8085,6 +8157,135 @@ Type any command below (e.g. pm list packages -d)
 
         function hexToRgba(hex, alpha) {
             return 'rgba(' + hexToRgb(hex).join(',') + ',' + alpha + ')';
+        }
+
+        // ---------- Palette styles: a whole scheme from one source color ----------
+        // The nine styles are Google's Material 3 "dynamic scheme" variants. A color is described as hue, chroma and tone (HCT: the CAM16
+        // appearance model's hue and chroma with L* as the tone), so a tone ladder of one palette always looks evenly lit. The method is the one
+        // of Google's Material Color Utilities (Apache License 2.0), written again here in a few lines. Colors that cannot exist in sRGB
+        // lose chroma until they can, the same way the original does.
+        const PS_WHITE = [95.047, 100.0, 108.883];
+        const PS_VC = (() => {
+            const la = 200 / Math.PI * psYFromLstar(50) / 100, f = 1.0, c = 0.69, nc = f;
+            const m = [[0.401288, 0.650173, -0.051461], [-0.250268, 1.204414, 0.045854], [-0.002079, 0.048952, 0.953127]];
+            const rgbW = m.map(r => r[0] * PS_WHITE[0] + r[1] * PS_WHITE[1] + r[2] * PS_WHITE[2]);
+            const d = Math.max(0, Math.min(1, f * (1 - (1 / 3.6) * Math.exp((-la - 42) / 92))));
+            const rgbD = rgbW.map(w => d * (100 / w) + 1 - d);
+            const k = 1 / (5 * la + 1), k4 = Math.pow(k, 4), k4f = 1 - k4;
+            const fl = k4 * la + 0.1 * k4f * k4f * Math.cbrt(5 * la);
+            const n = psYFromLstar(50) / PS_WHITE[1], z = 1.48 + Math.sqrt(n), nbb = 0.725 / Math.pow(n, 0.2);
+            const rgbA = rgbD.map((dd, i) => { const af = Math.pow(fl * dd * rgbW[i] / 100, 0.42); return 400 * af / (af + 27.13); });
+            const aw = (40 * rgbA[0] + 20 * rgbA[1] + rgbA[2]) / 20 * nbb;
+            return { n, aw, nbb, ncb: nbb, c, nc, fl, rgbD, z, m };
+        })();
+        function psYFromLstar(l) { const fy = (l + 16) / 116, f3 = fy * fy * fy; return 100 * (f3 > 216 / 24389 ? f3 : (116 * fy - 16) / (24389 / 27)); }
+        function psLstarFromY(y) { const yn = y / 100; return yn <= 216 / 24389 ? 24389 / 27 * yn : 116 * Math.cbrt(yn) - 16; }
+        function psLin(v) { v /= 255; return (v <= 0.040449936 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)) * 100; }
+        function psDelin(v) { v /= 100; const x = v <= 0.0031308 ? v * 12.92 : 1.055 * Math.pow(v, 1 / 2.4) - 0.055; return Math.max(0, Math.min(255, Math.round(x * 255))); }
+        function psDeg(d) { d = d % 360; return d < 0 ? d + 360 : d; }
+        // sRGB hex -> { h, c, t } (hue in degrees, chroma, tone 0..100)
+        function psHctFromHex(hex) {
+            const [r, g, b] = hexToRgb(hex).map(psLin);
+            const x = 0.41233895 * r + 0.35762064 * g + 0.18051042 * b, y = 0.2126 * r + 0.7152 * g + 0.0722 * b, zz = 0.01932141 * r + 0.11916382 * g + 0.95034478 * b;
+            const vc = PS_VC, m = vc.m;
+            const ad = [0, 1, 2].map(i => { const rc = m[i][0] * x + m[i][1] * y + m[i][2] * zz, rd = vc.rgbD[i] * rc, af = Math.pow(vc.fl * Math.abs(rd) / 100, 0.42); return Math.sign(rd) * 400 * af / (af + 27.13); });
+            const a = (11 * ad[0] - 12 * ad[1] + ad[2]) / 11, bb = (ad[0] + ad[1] - 2 * ad[2]) / 9, u = (20 * ad[0] + 20 * ad[1] + 21 * ad[2]) / 20, p2 = (40 * ad[0] + 20 * ad[1] + ad[2]) / 20;
+            const h = psDeg(Math.atan2(bb, a) * 180 / Math.PI), J = 100 * Math.pow(p2 * vc.nbb / vc.aw, vc.c * vc.z);
+            const eT = 0.25 * (Math.cos(h * Math.PI / 180 + 2) + 3.8), t = 50000 / 13 * eT * vc.nc * vc.ncb * Math.hypot(a, bb) / (u + 0.305), alpha = Math.pow(t, 0.9) * Math.pow(1.64 - Math.pow(0.29, vc.n), 0.73);
+            return { h: h, c: alpha * Math.sqrt(J / 100), t: psLstarFromY(y) };
+        }
+        // one try at hue/chroma/tone: the hex, or null when that color lies outside sRGB
+        function psSolve(hue, chroma, y) {
+            const vc = PS_VC, hr = hue / 180 * Math.PI;
+            const tInner = 1 / Math.pow(1.64 - Math.pow(0.29, vc.n), 0.73), eHue = 0.25 * (Math.cos(hr + 2) + 3.8), p1 = eHue * (50000 / 13) * vc.nc * vc.ncb;
+            const hs = Math.sin(hr), hc = Math.cos(hr);
+            const inv = a => Math.sign(a) * Math.pow(Math.max(0, 27.13 * Math.abs(a) / (400 - Math.abs(a))), 1 / 0.42);
+            const M = [[1373.2198709594231, -1100.4251190754821, -7.278681089101213], [-271.815969077903, 559.6580465940733, -32.46047482791194], [1.9622899599665666, -57.173814538844006, 308.7233197812385]];
+            let j = Math.sqrt(y) * 11;
+            for (let round = 0; round < 5; round++) {
+                const jn = j / 100, alpha = (chroma === 0 || j === 0) ? 0 : chroma / Math.sqrt(jn);
+                const t = Math.pow(alpha * tInner, 1 / 0.9), ac = vc.aw * Math.pow(jn, 1 / vc.c / vc.z), p2 = ac / vc.nbb;
+                const gamma = 23 * (p2 + 0.305) * t / (23 * p1 + 11 * t * hc + 108 * t * hs), a = gamma * hc, b = gamma * hs;
+                const sc = [inv((460 * p2 + 451 * a + 288 * b) / 1403), inv((460 * p2 - 891 * a - 261 * b) / 1403), inv((460 * p2 - 220 * a - 6300 * b) / 1403)];
+                const lin = M.map(r => r[0] * sc[0] + r[1] * sc[1] + r[2] * sc[2]);
+                if (lin[0] < 0 || lin[1] < 0 || lin[2] < 0) return null;
+                const fnj = 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2];
+                if (fnj <= 0) return null;
+                if (round === 4 || Math.abs(fnj - y) < 0.002) {
+                    if (lin[0] > 100.01 || lin[1] > 100.01 || lin[2] > 100.01) return null;
+                    return rgbToHex(lin.map(psDelin));
+                }
+                j = j - (fnj - y) * j / (2 * fnj);
+            }
+            return null;
+        }
+        // hue (degrees), chroma, tone -> '#RRGGBB'; too much chroma for that tone is taken down until the color exists
+        function psHex(hue, chroma, tone) {
+            tone = Math.max(0, Math.min(100, tone));
+            if (chroma < 0.0001 || tone < 0.0001 || tone > 99.9999) { const v = psDelin(psYFromLstar(tone)); return rgbToHex([v, v, v]); }
+            const y = psYFromLstar(tone); hue = psDeg(hue);
+            let hex = psSolve(hue, chroma, y);
+            if (hex) return hex;
+            let lo = 0, hi = chroma, best = null;
+            for (let i = 0; i < 14; i++) { const mid = (lo + hi) / 2, r = psSolve(hue, mid, y); if (r) { best = r; lo = mid; } else hi = mid; }
+            if (best) return best;
+            const v = psDelin(y); return rgbToHex([v, v, v]);
+        }
+        // a hue that moves by a different amount depending on where on the wheel it sits
+        function psRotated(h, hues, turns) {
+            if (turns.length === 1) return psDeg(h + turns[0]);
+            for (let i = 0; i < hues.length - 1; i++) if (hues[i] < h && h < hues[i + 1]) return psDeg(h + turns[i]);
+            return h;
+        }
+        const PS_STYLES = [
+            { id: 'TONAL_SPOT', name: 'Tonal Spot', desc: 'Calm and balanced: soft colors with a gentle tint. What Android uses by default.' },
+            { id: 'VIBRANT', name: 'Vibrant', desc: 'Strong, saturated colors with a clearly tinted background.' },
+            { id: 'FIDELITY', name: 'Fidelity', desc: 'Stays as close to your source color as it can, in its own strength.' },
+            { id: 'CONTENT', name: 'Content', desc: 'Like Fidelity, with neighbouring colors for the accents.' },
+            { id: 'NEUTRAL', name: 'Neutral', desc: 'Almost grey, with only a trace of your color.' },
+            { id: 'EXPRESSIVE', name: 'Expressive', desc: 'Playful: the accents are turned far from your color.' },
+            { id: 'FRUIT_SALAD', name: 'Fruit Salad', desc: 'A lively mix: the main color is turned back 50° and the accents are bold.' },
+            { id: 'RAINBOW', name: 'Rainbow', desc: 'A strong accent on a plain grey background.' },
+            { id: 'MONOTONE', name: 'Monotone', desc: 'Greys only. No color at all.' }
+        ];
+        const PS_IDS = PS_STYLES.map(s => s.id);
+        // [hue, chroma] of the five tonal palettes of a style, for a source color of hue h and chroma c
+        function psPalettes(style, h, c) {
+            const V = [0, 41, 61, 101, 131, 181, 251, 301, 360], E = [0, 21, 51, 121, 151, 191, 271, 321, 360];
+            switch (style) {
+                case 'VIBRANT': return { p: [h, 200], s: [psRotated(h, V, [18, 15, 10, 12, 15, 18, 15, 12, 12]), 24], t: [psRotated(h, V, [35, 30, 20, 25, 30, 35, 30, 25, 25]), 32], n: [h, 10], nv: [h, 12] };
+                case 'EXPRESSIVE': return { p: [psDeg(h + 240), 40], s: [psRotated(h, E, [45, 95, 45, 20, 45, 90, 45, 45, 45]), 24], t: [psRotated(h, E, [120, 120, 20, 45, 20, 15, 20, 120, 120]), 32], n: [psDeg(h + 15), 8], nv: [psDeg(h + 15), 12] };
+                case 'FIDELITY': return { p: [h, c], s: [h, Math.max(c - 32, c * 0.5)], t: [psDeg(h + 180), c], n: [h, c / 8], nv: [h, c / 8 + 4] };
+                case 'CONTENT': return { p: [h, c], s: [h, Math.max(c - 32, c * 0.5)], t: [psDeg(h + 40), c], n: [h, c / 8], nv: [h, c / 8 + 4] };
+                case 'NEUTRAL': return { p: [h, 12], s: [h, 8], t: [psDeg(h + 60), 16], n: [h, 2], nv: [h, 2] };
+                case 'FRUIT_SALAD': return { p: [psDeg(h - 50), 48], s: [psDeg(h - 50), 36], t: [h, 36], n: [h, 10], nv: [h, 16] };
+                case 'RAINBOW': return { p: [h, 48], s: [h, 16], t: [psDeg(h + 60), 24], n: [h, 0], nv: [h, 0] };
+                case 'MONOTONE': return { p: [h, 0], s: [h, 0], t: [h, 0], n: [h, 0], nv: [h, 0] };
+                default: return { p: [h, 36], s: [h, 16], t: [psDeg(h + 60), 24], n: [h, 6], nv: [h, 8] };      // TONAL_SPOT
+            }
+        }
+        // The app's colors for one source color, one style and light or dark: the roles Material 3 gives them (primary, secondary, surface containers,
+        // on-surface, error), put on the colors this app uses. Running stays green and Bloat stays red-ish in every style: they tell a state, not a taste.
+        function psScheme(seedHex, style, mode) {
+            const src = psHctFromHex(seedHex), P = psPalettes(PS_IDS.includes(style) ? style : 'TONAL_SPOT', src.h, src.c);
+            const dark = mode !== 'light', at = (p, tone) => psHex(p[0], p[1], tone);
+            const mono = style === 'MONOTONE';
+            const accent = at(P.p, dark ? (mono ? 90 : 80) : (mono ? 25 : 40));
+            const sec = at(P.s, dark ? 80 : 40);
+            return {
+                accent: accent,
+                bg: at(P.n, dark ? 6 : 98),
+                surface: at(P.n, dark ? 17 : 92),
+                card: at(P.n, dark ? 12 : 94),
+                sheet: at(P.n, dark ? 10 : 96),
+                text: at(P.n, dark ? 90 : 10),
+                muted: at(P.nv, dark ? 80 : 30),
+                secondary: sec,
+                system: dark ? at(P.s, 80) : at(P.s, 40),
+                frozen: at(P.t, dark ? 80 : 40),
+                running: psHex(142, 34, dark ? 80 : 36),
+                bloat: psHex(25, 84, dark ? 80 : 40)
+            };
         }
 
         // ---------- Scheme resolution ----------
@@ -8175,8 +8376,17 @@ Type any command below (e.g. pm list packages -d)
             });
         }
 
+        // The source color of the generated palette: the one chosen, else the wallpaper's main color (Android 12+), else Material purple
+        function psAutoSeed() {
+            const dyn = getMaterialYouSchemes();
+            if (dyn && dyn.dark && dyn.dark.accent) { const x = psHctFromHex(dyn.dark.accent); return psHex(x.h, Math.max(48, x.c), 40); }
+            return '#6750A4';
+        }
+        function psSeed() { return /^#[0-9a-f]{6}$/i.test(themeState.seed || '') ? themeState.seed.toUpperCase() : psAutoSeed(); }
+
         // Full color scheme for a preset in 'dark' or 'light' mode (without the user's color tweaks)
         function resolvePresetScheme(preset, mode) {
+            if (preset === 'generated') return psScheme(psSeed(), themeState.style, mode);
             if (preset === 'materialyou') {
                 const dyn = getMaterialYouSchemes();
                 if (dyn) return Object.assign({}, dyn[mode]);
@@ -17450,7 +17660,24 @@ Type any command below (e.g. pm list packages -d)
 
         // ---- devices that dropped: remembered while they are connected, offered back with Reconnect (by hand, and once on its own) ----
         const cdSleep = ms => new Promise(r => setTimeout(r, ms));
-        const CD_AUTO_WAITS = [0, 8000, 25000];            // when the automatic attempts are made after a drop
+        const CD_AUTO_WAITS = [0, 8, 25];                  // seconds before each automatic attempt after a drop (Settings > Reconnecting devices changes it)
+        const CD_RETRY_MAX = 8, CD_RETRY_TOP = 600;
+        // "0, 8, 25" or "0 8 25" -> { ok, list: [0, 8, 25] } or { ok: false, why }
+        function cdParseWaits(text) {
+            const parts = String(text || '').split(/[\s,;]+/).filter(Boolean);
+            if (!parts.length) return { ok: false, why: 'Write at least one number of seconds, like 0, 8, 25.' };
+            if (parts.length > CD_RETRY_MAX) return { ok: false, why: 'At most ' + CD_RETRY_MAX + ' attempts.' };
+            const list = [];
+            for (const p of parts) {
+                if (!/^\d{1,4}(\.\d)?$/.test(p)) return { ok: false, why: '"' + p + '" is not a number of seconds.' };
+                const n = parseFloat(p);
+                if (n > CD_RETRY_TOP) return { ok: false, why: 'Each wait is 600 seconds (10 minutes) at most.' };
+                list.push(n);
+            }
+            return { ok: true, list: list };
+        }
+        function cdWaitList() { const k = kvGet('cd_retry', null), r = cdParseWaits(Array.isArray(k) ? k.join(',') : ''); return r.ok ? r.list : CD_AUTO_WAITS.slice(); }
+        function cdWaitText(list) { return list.join(', '); }
         function cdKnown() { const k = kvGet('cd_known', {}); return k && typeof k === 'object' && !Array.isArray(k) ? k : {}; }
         function cdAutoOn() { return kvGet('cd_autore', true) !== false; }
         function cdKind(serial) {
@@ -17502,7 +17729,9 @@ Type any command below (e.g. pm list packages -d)
             if (!el) return;
             const lost = cdLostList();
             if (!lost.length) { el.innerHTML = ''; return; }
-            el.innerHTML = lost.map(l => {
+            const anyBusy = lost.some(l => (cd.rc[l.serial] || {}).busy);
+            const all = lost.length < 2 ? '' : '<div class="cd-lost-all"><span>' + lost.length + ' devices not connected</span><button class="cd-row-act" id="cdReconnectAllBtn" onclick="cdReconnectAll()"' + (anyBusy || cd.reAll ? ' disabled' : '') + '>' + (cd.reAll ? 'Trying...' : 'Reconnect all') + '</button></div>';
+            el.innerHTML = all + lost.map(l => {
                 const rc = cd.rc[l.serial] || {};
                 const when = cd.dropped[l.serial] ? 'lost ' + cdAgo(cd.dropped[l.serial]) : 'last connected ' + cdAgo(l.at);
                 const line = rc.busy ? (rc.msg || 'Reconnecting...') : (rc.msg ? rc.msg : cdTransport(l.serial) + ' \u00b7 ' + when);
@@ -17511,7 +17740,41 @@ Type any command below (e.g. pm list packages -d)
                     '<button class="cd-row-act" style="border-color:var(--border-glass);color:var(--text-muted);" data-s="' + escapeHtml(l.serial) + '" onclick="cdForget(this.dataset.s)"' + (rc.busy ? ' disabled' : '') + '>Forget</button></div></div>';
             }).join('') + '<div class="cd-lost-auto">Reconnect on its own when a device drops: <button class="batch-tool-link" id="cdAutoBtn" onclick="cdAutoToggle()">' + (cdAutoOn() ? 'On' : 'Off') + '</button></div>';
         }
-        function cdAutoToggle() { kvSet('cd_autore', !cdAutoOn()); cdRenderLost(); showToast('Reconnecting on its own: ' + (cdAutoOn() ? 'on' : 'off')); }
+        function cdAutoToggle() { kvSet('cd_autore', !cdAutoOn()); cdRenderLost(); cdSettingsRender(); showToast('Reconnecting on its own: ' + (cdAutoOn() ? 'on' : 'off')); }
+        function cdSetAuto(on) { kvSet('cd_autore', !!on); cdRenderLost(); cdSettingsRender(); haptic(); showToast('Reconnecting on its own: ' + (on ? 'on' : 'off')); }
+        // Settings > Reconnecting devices
+        function cdSettingsRender() {
+            const sw = document.getElementById('cdAutoSwitch'), inp = document.getElementById('cdRetryInput'), note = document.getElementById('cdRetryNote'), rst = document.getElementById('cdRetryReset');
+            if (!sw) return;
+            sw.checked = cdAutoOn();
+            const list = cdWaitList(), custom = cdWaitText(list) !== cdWaitText(CD_AUTO_WAITS);
+            if (inp) { inp.disabled = !cdAutoOn(); if (document.activeElement !== inp) inp.value = cdWaitText(list); }
+            if (rst) rst.style.display = custom ? '' : 'none';
+            if (note) {
+                note.innerText = cdAutoOn() ? 'Attempts after ' + list.map(n => n + ' s').join(', ') + (custom ? ' (your timings)' : ' (the default timings)') + '.' : 'Turned off: a dropped device waits for Reconnect.';
+            }
+        }
+        function cdRetrySave(text) {
+            const r = cdParseWaits(text), note = document.getElementById('cdRetryNote');
+            if (!r.ok) { errNote(note, r.why); showToast(r.why); return; }
+            kvSet('cd_retry', r.list);
+            cdSettingsRender(); haptic();
+            showToast('Retry timings saved');
+        }
+        function cdRetryReset() { kvSet('cd_retry', null); const inp = document.getElementById('cdRetryInput'); if (inp) inp.value = ''; cdSettingsRender(); haptic(); showToast('Retry timings: back to the default'); }
+        cdSettingsRender();
+        // every device in the list at once, one after the other (they share one adb)
+        async function cdReconnectAll() {
+            if (cd.reAll) return;
+            const todo = cdLostList().filter(l => !(cd.rc[l.serial] || {}).busy);
+            if (!todo.length) return;
+            cd.reAll = true; haptic(); cdRenderLost();
+            showToast('Reconnecting ' + todo.length + ' devices...');
+            let ok = 0;
+            try { for (const l of todo) { if (!cdKnown()[l.serial]) continue; if (cdIsUp(l.serial) || await cdReconnectSerial(l.serial, true)) ok++; } }
+            finally { cd.reAll = false; cdRenderLost(); }
+            showToast(ok === todo.length ? 'Reconnected ' + ok + (ok === 1 ? ' device' : ' devices') : 'Reconnected ' + ok + ' of ' + todo.length + '. The rest says why where it is listed.');
+        }
         function cdForget(serial) {
             const k = cdKnown(); delete k[serial]; kvSet('cd_known', k);
             delete cd.dropped[serial]; delete cd.rc[serial]; cd.up.delete(serial);
@@ -17596,8 +17859,8 @@ Type any command below (e.g. pm list packages -d)
             if (rc.auto) return;
             rc.auto = true;
             try {
-                for (const wait of CD_AUTO_WAITS) {
-                    await cdSleep(wait);
+                for (const wait of cdWaitList()) {
+                    await cdSleep(wait * 1000);
                     for (let n = 0; document.hidden && n < 30; n++) await cdSleep(1000);
                     if (!cdKnown()[serial] || cdIsUp(serial) || !cdAutoOn()) break;
                     if (await cdReconnectSerial(serial, true)) break;
@@ -20460,6 +20723,8 @@ Type any command below (e.g. pm list packages -d)
 
             markActivePreset(themeState.preset);
             renderPresetStrips(mode);
+            renderStyleCards(mode);
+            renderMyThemes(mode);
             renderAppearanceControls(mode);
 
             if (window.AndroidBridge) {
@@ -20474,7 +20739,7 @@ Type any command below (e.g. pm list packages -d)
 
         // Preset swatches show each palette as it looks in the current mode
         function renderPresetStrips(mode) {
-            document.querySelectorAll('.palette-preset-card').forEach(card => {
+            document.querySelectorAll('.palette-preset-card[data-preset]').forEach(card => {
                 const s = resolvePresetScheme(card.getAttribute('data-preset'), mode);
                 const strip = card.querySelector('.preset-strip');
                 if (strip) strip.innerHTML = [s.accent, s.bg, s.card, s.system].map(c => `<div class="preset-swatch" style="background:${c}"></div>`).join('');
@@ -20626,8 +20891,165 @@ Type any command below (e.g. pm list packages -d)
             showToast('Applied Theme: ' + label);
         }
 
+        // ---- My Themes: the look you made, saved under a name ----
+        // kv 'saved_themes': [{ name, preset, style, seed, pureBlack, overrides: { dark: {key: '#rrggbb'}, light: {...} } }], newest first, at most 30.
+        // Appearance (light / dark / system / schedule) is not part of a theme: it stays as it is.
+        const MT_MAX = 30, MT_KEYS = ['accent', 'bg', 'card', 'running', 'frozen', 'system', 'bloat', 'surface', 'text', 'muted', 'secondary', 'sheet'];
+        const MT_PRESET_NAMES = { material3: 'Material 3', materialyou: 'Material You', amoled: 'AMOLED Cyan', cyberpunk: 'Cyberpunk Violet', emerald: 'Nordic Emerald', amber: 'Sunset Amber', slate: 'Midnight Slate', crimson: 'Blood Moon', generated: 'Palette Style' };
+        function mtClean(t) {
+            if (!t || typeof t !== 'object') return null;
+            const name = String(t.name || '').trim().slice(0, 40);
+            const preset = String(t.preset || '');
+            if (!name || !(palettes[preset] && preset !== 'custom' || preset === 'materialyou' || preset === 'generated')) return null;
+            const ov = { dark: {}, light: {} };
+            ['dark', 'light'].forEach(m => { const src = t.overrides && t.overrides[m]; if (src && typeof src === 'object') MT_KEYS.forEach(k => { if (/^#[0-9a-f]{6}$/i.test(src[k] || '')) ov[m][k] = src[k].toLowerCase(); }); });
+            return { name: name, preset: preset, style: PS_IDS.includes(t.style) ? t.style : 'TONAL_SPOT', seed: /^#[0-9a-f]{6}$/i.test(t.seed || '') ? t.seed.toUpperCase() : null, pureBlack: !!t.pureBlack, overrides: ov };
+        }
+        function mtLoad() {
+            const raw = kvGet('saved_themes', []), out = [];
+            (Array.isArray(raw) ? raw : []).forEach(t => { const c = mtClean(t); if (c && !out.some(x => x.name.toLowerCase() === c.name.toLowerCase())) out.push(c); });
+            return out.slice(0, MT_MAX);
+        }
+        function mtStore(list) { kvSet('saved_themes', list.slice(0, MT_MAX)); }
+        function mtCurrent(name) {
+            return mtClean({ name: name || 'x', preset: themeState.preset, style: themeState.style, seed: themeState.seed, pureBlack: themeState.pureBlack, overrides: themeState.overrides });
+        }
+        function mtSame(a, b) {
+            return a.preset === b.preset && a.pureBlack === b.pureBlack && JSON.stringify(a.overrides) === JSON.stringify(b.overrides)
+                && (a.preset !== 'generated' || (a.style === b.style && a.seed === b.seed));
+        }
+        function mtSub(t) {
+            const bits = [t.preset === 'generated' ? (PS_STYLES.find(x => x.id === t.style) || PS_STYLES[0]).name + ' · ' + (t.seed || 'automatic') : (MT_PRESET_NAMES[t.preset] || t.preset)];
+            if (Object.keys(t.overrides.dark).length + Object.keys(t.overrides.light).length) bits.push('tweaked');
+            if (t.pureBlack) bits.push('pure black');
+            return bits.join(' · ');
+        }
+        function mtScheme(t, mode) {
+            const base = t.preset === 'generated' ? psScheme(/^#[0-9a-f]{6}$/i.test(t.seed || '') ? t.seed : psAutoSeed(), t.style, mode) : resolvePresetScheme(t.preset, mode);
+            return Object.assign(base, t.overrides[mode] || {});
+        }
+        function renderMyThemes(mode) {
+            const grid = document.getElementById('mtGrid');
+            if (!grid) return;
+            const list = mtLoad(), cur = mtCurrent();
+            grid.innerHTML = list.map((t, i) => {
+                const c = mtScheme(t, mode), on = cur && mtSame(cur, t), nm = escapeHtml(t.name);
+                return '<div class="palette-preset-card mt-card' + (on ? ' active' : '') + '" data-mt="' + i + '">'
+                    + '<div class="mt-main" role="button" tabindex="0" aria-pressed="' + !!on + '" aria-label="Use the theme ' + nm + '" onclick="mtApply(' + i + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();mtApply(' + i + ');}">'
+                    + '<div class="preset-strip">' + [c.accent, c.bg, c.card, c.secondary].map(x => '<div class="preset-swatch" style="background:' + x + '"></div>').join('') + '</div>'
+                    + '<div class="preset-name">' + nm + '</div><div class="mt-sub">' + escapeHtml(mtSub(t)) + '</div></div>'
+                    + '<div class="mt-btns"><button type="button" aria-label="Rename the theme ' + nm + '" onclick="mtRename(' + i + ')">Rename</button><button type="button" aria-label="Replace the theme ' + nm + ' with the look in use now" onclick="mtUpdate(' + i + ')">Update</button><button type="button" class="danger" aria-label="Delete the theme ' + nm + '" onclick="mtDelete(' + i + ')">Delete</button></div></div>';
+            }).join('');
+            const note = document.getElementById('mtNote');
+            if (note) note.innerText = list.length ? list.length + (list.length === 1 ? ' theme' : ' themes') + ' saved (up to ' + MT_MAX + '). Tap a theme to use it. Update puts the look in use now into it.' : 'None yet: set the look you want (a palette or a palette style, your colors), then tap Save current theme.';
+        }
+        function mtDefaultName() {
+            const t = mtCurrent();
+            if (!t) return 'My theme';
+            return t.preset === 'generated' ? (PS_STYLES.find(x => x.id === t.style) || PS_STYLES[0]).name + ' ' + psSeed() : (MT_PRESET_NAMES[t.preset] || 'My theme') + (Object.keys(t.overrides.dark).length + Object.keys(t.overrides.light).length ? ' tweaked' : '');
+        }
+        function mtSave() {
+            if (!mtCurrent()) { showToast('This look is an old custom palette: choose a palette or a palette style first'); return; }
+            const name = (prompt('Name for this theme:', mtDefaultName()) || '').trim().slice(0, 40);
+            if (!name) return;
+            const list = mtLoad(), at = list.findIndex(x => x.name.toLowerCase() === name.toLowerCase());
+            if (at >= 0 && !confirm('A theme called ' + list[at].name + ' is saved already. Replace it with the look in use now?')) return;
+            if (at < 0 && list.length >= MT_MAX) { showToast('Up to ' + MT_MAX + ' themes: delete one first'); return; }
+            haptic();
+            const t = mtCurrent(name);
+            if (at >= 0) list.splice(at, 1);
+            list.unshift(t);
+            mtStore(list);
+            renderMyThemes(effectiveMode());
+            showToast('Saved the theme ' + name);
+        }
+        function mtApply(i) {
+            const t = mtLoad()[i];
+            if (!t) return;
+            themeState.preset = t.preset;
+            themeState.style = t.style;
+            themeState.seed = t.seed;
+            themeState.pureBlack = t.pureBlack;
+            themeState.overrides = { dark: Object.assign({}, t.overrides.dark), light: Object.assign({}, t.overrides.light) };
+            applyTheme();
+            haptic();
+            showToast('Theme: ' + t.name);
+        }
+        function mtRename(i) {
+            const list = mtLoad(), t = list[i];
+            if (!t) return;
+            const name = (prompt('New name for this theme:', t.name) || '').trim().slice(0, 40);
+            if (!name || name === t.name) return;
+            if (list.some((x, j) => j !== i && x.name.toLowerCase() === name.toLowerCase())) { showToast('Another theme is already called ' + name); return; }
+            haptic();
+            t.name = name;
+            mtStore(list);
+            renderMyThemes(effectiveMode());
+            showToast('Renamed to ' + name);
+        }
+        function mtUpdate(i) {
+            const list = mtLoad(), t = list[i];
+            if (!t) return;
+            if (!mtCurrent()) { showToast('This look is an old custom palette: choose a palette or a palette style first'); return; }
+            if (!confirm('Replace the theme ' + t.name + ' with the look in use now?')) return;
+            haptic();
+            list[i] = mtCurrent(t.name);
+            mtStore(list);
+            renderMyThemes(effectiveMode());
+            showToast('Updated the theme ' + t.name);
+        }
+        function mtDelete(i) {
+            const list = mtLoad(), t = list[i];
+            if (!t || !confirm('Delete the theme ' + t.name + '?')) return;
+            haptic();
+            list.splice(i, 1);
+            mtStore(list);
+            renderMyThemes(effectiveMode());
+            showToast('Deleted the theme ' + t.name);
+        }
+
+        // ---- Palette Style: nine styles of one source color ----
+        function renderStyleCards(mode) {
+            const grid = document.getElementById('psStyleGrid');
+            if (!grid) return;
+            const seed = psSeed(), on = themeState.preset === 'generated';
+            grid.innerHTML = PS_STYLES.map(st => {
+                const c = psScheme(seed, st.id, mode);
+                return '<div class="palette-preset-card ps-style-card' + (on && themeState.style === st.id ? ' active' : '') + '" data-style="' + st.id + '" role="button" tabindex="0" aria-pressed="' + (on && themeState.style === st.id) + '" onclick="setPaletteStyle(\'' + st.id + '\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();setPaletteStyle(\'' + st.id + '\');}">'
+                    + '<div class="preset-strip">' + [c.accent, c.secondary, c.frozen, c.card].map(x => '<div class="preset-swatch" style="background:' + x + '"></div>').join('') + '</div>'
+                    + '<div class="preset-name"><span>' + escapeHtml(st.name) + '</span></div><div class="ps-desc">' + escapeHtml(st.desc) + '</div></div>';
+            }).join('');
+            const circ = document.getElementById('circSeed'), hex = document.getElementById('hexSeed'), note = document.getElementById('psSeedNote'), auto = document.getElementById('psAutoBtn'), pn = document.getElementById('psNote');
+            if (circ) circ.style.background = seed;
+            if (hex) hex.innerText = seed;
+            const custom = /^#[0-9a-f]{6}$/i.test(themeState.seed || '');
+            if (note) note.innerText = custom ? 'Your color' : (getMaterialYouSchemes() ? 'Automatic: your wallpaper\'s main color' : 'Automatic: Material purple (the wallpaper\'s colors need Android 12+)');
+            if (auto) auto.style.display = custom ? '' : 'none';
+            if (pn) pn.innerText = on ? PS_STYLES.find(x => x.id === themeState.style).name + ' from ' + seed + '. Light and dark follow the Appearance setting; color tweaks below are kept for each.' : 'Not in use: the theme above is a curated palette. Choose a style to build one from the source color.';
+        }
+
+        function setPaletteStyle(id) {
+            if (!PS_IDS.includes(id)) return;
+            themeState.preset = 'generated';
+            themeState.style = id;
+            themeState.overrides = { dark: {}, light: {} };
+            applyTheme();
+            haptic();
+            showToast('Palette style: ' + PS_STYLES.find(x => x.id === id).name);
+        }
+
+        // hex = '#RRGGBB' for a chosen source color, null for automatic; choosing one turns the generated palette on
+        function setPaletteSeed(hex) {
+            themeState.seed = hex && /^#[0-9a-f]{6}$/i.test(hex) ? hex.toUpperCase() : null;
+            themeState.preset = 'generated';
+            themeState.overrides = { dark: {}, light: {} };
+            applyTheme();
+            haptic();
+            showToast(themeState.seed ? 'Source color: ' + themeState.seed : 'Source color: automatic');
+        }
+
         function markActivePreset(name, el) {
-            document.querySelectorAll('.palette-preset-card').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.palette-preset-card[data-preset]').forEach(c => c.classList.remove('active'));
             const card = el || (name ? document.querySelector('.palette-preset-card[data-preset="' + name + '"]') : null);
             if (card) card.classList.add('active');
         }
@@ -20644,7 +21066,7 @@ Type any command below (e.g. pm list packages -d)
         // A grid of colors, or Custom (hue, saturation, brightness), and a hex box with the # already written: type 00DFFF (capitals only; a pasted #00dfff works too).
         const CP_COLORS = ['#F44336', '#E91E63', '#9C27B0', '#673AB7', '#3F51B5', '#2196F3', '#03A9F4', '#00BCD4', '#009688', '#4CAF50', '#8BC34A', '#CDDC39',
             '#FFEB3B', '#FFC107', '#FF9800', '#FF5722', '#795548', '#9E9E9E', '#607D8B', '#FFFFFF', '#000000', '#00E5FF', '#7C4DFF', '#00E676'];
-        const CP_NAMES = { accent: 'Primary System Accent', bg: 'App Background', card: 'Card Surface Color', running: 'Running App Badge', frozen: 'Frozen App Badge', system: 'System App Badge', bloat: 'Bloatware Badge' };
+        const CP_NAMES = { seed: 'Source Color', accent: 'Primary System Accent', bg: 'App Background', card: 'Card Surface Color', running: 'Running App Badge', frozen: 'Frozen App Badge', system: 'System App Badge', bloat: 'Bloatware Badge' };
         let cp = { key: '', hex: '000000', from: '000000', h: 0, s: 0, v: 0 };
 
         function cpRgbToHsv(hex) {
@@ -20668,7 +21090,7 @@ Type any command below (e.g. pm list packages -d)
             cp = { key, hex: cpClean(cur), from: cpClean(cur), h: 0, s: 0, v: 0 };
             Object.assign(cp, cpRgbToHsv(cp.hex));
             document.getElementById('cpTitle').innerText = CP_NAMES[key] || 'Color';
-            document.getElementById('cpSub').innerText = 'Current color #' + cp.from + ' • applies to ' + (effectiveMode() === 'light' ? 'light' : 'dark') + ' mode';
+            document.getElementById('cpSub').innerText = 'Current color #' + cp.from + (key === 'seed' ? ' • the palette style builds light and dark from it' : ' • applies to ' + (effectiveMode() === 'light' ? 'light' : 'dark') + ' mode');
             cpTab('swatches');
             cpRender(true);
             document.getElementById('colorPickModal').classList.add('show');
@@ -20722,7 +21144,8 @@ Type any command below (e.g. pm list packages -d)
         function applyColorPicker() {
             if (cp.hex.length !== 6) { showToast('Enter six characters, like 00DFFF'); return; }
             closeColorPicker();
-            if (cp.hex !== cp.from) updateCustomColor(cp.key, '#' + cp.hex.toLowerCase());
+            if (cp.key === 'seed') { if (cp.hex !== cp.from || !/^#[0-9a-f]{6}$/i.test(themeState.seed || '')) setPaletteSeed('#' + cp.hex); }
+            else if (cp.hex !== cp.from) updateCustomColor(cp.key, '#' + cp.hex.toLowerCase());
         }
 
         function resetColorTweaks() {
@@ -20741,13 +21164,15 @@ Type any command below (e.g. pm list packages -d)
                     if (saved.preset) themeState.preset = saved.preset;
                     if (['light', 'dark', 'system', 'schedule'].includes(saved.appearance)) themeState.appearance = saved.appearance;
                     if (saved.schedule && saved.schedule.lightAt && saved.schedule.darkAt) themeState.schedule = { lightAt: saved.schedule.lightAt, darkAt: saved.schedule.darkAt };
+                    if (PS_IDS.includes(saved.style)) themeState.style = saved.style;
+                    themeState.seed = /^#[0-9a-f]{6}$/i.test(saved.seed || '') ? saved.seed.toUpperCase() : null;
                     themeState.pureBlack = !!saved.pureBlack;
                     themeState.expressiveAnimations = saved.expressiveAnimations === undefined ? true : !!saved.expressiveAnimations;
                     themeState.overrides = {
                         dark: (saved.overrides && saved.overrides.dark) || {},
                         light: (saved.overrides && saved.overrides.light) || {}
                     };
-                    if (!palettes[themeState.preset] && themeState.preset !== 'materialyou') {
+                    if (!palettes[themeState.preset] && themeState.preset !== 'materialyou' && themeState.preset !== 'generated') {
                         themeState.preset = 'material3';
                     }
                 } else if (saved.accent) {
@@ -28952,7 +29377,15 @@ Type any command below (e.g. pm list packages -d)
         function mpHDSet(list) { mp.dl = (list || []).map(j => { const o = (mp.dl || []).find(x => x.id === j.id); return Object.assign({}, o || {}, j, { sp: o ? o.sp : 0, at: o ? o.at : 0, was: o ? o.was : j.done }); }); }
         async function mpHDLoad() {
             const r = await mpCall('helperDownloadList', {});
-            if (r.ok && r.data) { mpHDSet(r.data.jobs); mpHDRender(); }
+            if (r.ok && r.data) { mp.dlBg = r.data.background !== false; mpHDSet(r.data.jobs); mpHDRender(); }
+        }
+        // the downloads go on, with a notification, when the app is left (a foreground service); this is the switch
+        async function mpHDBackground(on) {
+            haptic();
+            mp.dlBg = !!on; mpHDRender();
+            const r = await mpCall('helperDownloadOp', { id: '', op: 'background', on: !!on });
+            if (!r.ok) { mp.dlBg = !on; mpHDRender(); showToast(r.error || 'That did not work'); return; }
+            showToast(on ? 'Downloads go on in the background' : 'Downloads stop when the app is left');
         }
         function mpHDEvent(j) {
             if (!j || !j.id) return;
@@ -29000,6 +29433,7 @@ Type any command below (e.g. pm list packages -d)
             const clearable = list.some(j => j.state === 'done' || j.state === 'cancelled');
             return '<div class="mp-group"><span>Downloads from the browser</span><span>' + list.length + '</span></div>' + rows +
                 (clearable ? '<div class="mp-row"><button class="mode-action-btn" onclick="mpHDOp(\'\', \'clear\')">Clear finished</button></div>' : '') +
+                '<label class="switch-row" style="margin-top:6px;"><div><div class="switch-title">Keep downloading in the background</div><div class="switch-sub">A notification shows how far they are, with Pause all and Cancel, and the downloads go on when you leave the app or the screen goes off.</div></div><input type="checkbox" class="switch-input" id="mpHDBg"' + (mp.dlBg === false ? '' : ' checked') + ' onchange="mpHDBackground(this.checked)"><span class="switch-track"></span></label>' +
                 '<div class="mp-note">They go on when the browser is closed. Pause keeps what was downloaded and Resume asks the site for the rest only (a site that cannot do that starts the file again).</div>';
         }
         async function mpHDOp(id, op) {

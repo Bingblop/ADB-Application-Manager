@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.bloatware.bingblop"
-    android:versionCode="825"
-    android:versionName="7.10.5-Pro">
+    android:versionCode="827"
+    android:versionName="7.10.7-Pro">
 
     <uses-sdk
         android:minSdkVersion="26"
@@ -125,6 +125,12 @@
         <service
             android:name=".MorpheService"
             android:process=":morphe"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
+        <!-- The Helper's downloads (started in the in-app browser) go on when the app is left, with a notification, Pause all and Cancel -->
+        <service
+            android:name=".DownloadService"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
 

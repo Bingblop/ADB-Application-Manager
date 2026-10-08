@@ -144,6 +144,31 @@ public final class HelperDownloads {
         }
     }
 
+    /** Pauses everything that is running or waiting (what the notification's Pause all does). Returns how many it touched. */
+    public int pauseAll() {
+        int n = 0;
+        for (BrowserDownload.Job j : list()) {
+            if (j.state == BrowserDownload.State.RUNNING || j.state == BrowserDownload.State.QUEUED) { pause(j.id); n++; }
+        }
+        return n;
+    }
+
+    /** Cancels everything that is running or waiting. Returns how many it touched. */
+    public int cancelAll() {
+        int n = 0;
+        for (BrowserDownload.Job j : list()) {
+            if (j.state == BrowserDownload.State.RUNNING || j.state == BrowserDownload.State.QUEUED) { cancel(j.id); n++; }
+        }
+        return n;
+    }
+
+    /** How many are running or waiting. */
+    public int activeCount() {
+        int n = 0;
+        for (BrowserDownload.Job j : list()) if (j.state == BrowserDownload.State.RUNNING || j.state == BrowserDownload.State.QUEUED) n++;
+        return n;
+    }
+
     /** Resume a paused job, or retry a failed one (the same thing: the rest is asked for, or the file starts over when the server cannot do that). */
     public void resume(String id) {
         BrowserDownload.Job j = get(id);

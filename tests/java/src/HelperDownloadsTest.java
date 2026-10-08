@@ -128,6 +128,20 @@ public class HelperDownloadsTest {
             dl.resume(waiting.id);
             is("queue: the paused one resumes and finishes", until(() -> waiting.state == BrowserDownload.State.DONE, 8000), waiting.state + "");
 
+            // ---- Pause all and Cancel in the notification: everything that is running or waiting
+            slowMs = 40;
+            is("active count: nothing is going on before", dl.activeCount() == 0, String.valueOf(dl.activeCount()));
+            BrowserDownload.Job[] four = new BrowserDownload.Job[4];
+            for (int i = 0; i < 4; i++) four[i] = dl.start(base + "/f?n=pa" + i, "UA", null, dir);
+            is("active count: four started, three run and one waits, all four count", until(() -> java.util.stream.Stream.of(four).filter(j -> j.state == BrowserDownload.State.RUNNING && j.done > 30000).count() == 3, 8000) && dl.activeCount() == 4, String.valueOf(dl.activeCount()));
+            is("pause all: touches all four", dl.pauseAll() == 4);
+            is("pause all: every one is PAUSED (bytes kept for the ones that ran), none is counted any more", until(() -> java.util.stream.Stream.of(four).allMatch(j -> j.state == BrowserDownload.State.PAUSED), 8000) && dl.activeCount() == 0 && dl.pauseAll() == 0, Arrays.toString(java.util.stream.Stream.of(four).map(j -> j.state).toArray()));
+            for (BrowserDownload.Job j : four) dl.resume(j.id);
+            is("pause all: they can all be resumed", until(() -> dl.activeCount() == 4, 3000));
+            is("cancel all: touches all four, and every one is CANCELLED with no part left", dl.cancelAll() == 4 && until(() -> java.util.stream.Stream.of(four).allMatch(j -> j.state == BrowserDownload.State.CANCELLED), 8000) && java.util.stream.Stream.of(four).noneMatch(j -> j.part() != null && j.part().exists()) && dl.activeCount() == 0, Arrays.toString(java.util.stream.Stream.of(four).map(j -> j.state).toArray()));
+            is("cancel all: the finished ones are untouched", a.state == BrowserDownload.State.DONE && a.file.isFile());
+            slowMs = 0;
+
             // ---- cancel and remove
             slowMs = 30;
             BrowserDownload.Job c = dl.start(base + "/f?n=cc", "UA", null, dir);
