@@ -22,7 +22,12 @@ final class BatchVerify {
         final Set<String> disabled;
         final Set<String> suspended;
         final Set<String> unknown;
+        final Set<String> running;
         State(Set<String> installed, Set<String> disabled, Set<String> suspended, Set<String> unknown) {
+            this(installed, disabled, suspended, unknown, null);
+        }
+        State(Set<String> installed, Set<String> disabled, Set<String> suspended, Set<String> unknown, Set<String> running) {
+            this.running = running == null ? new HashSet<String>() : running;
             this.installed = installed == null ? new HashSet<String>() : installed;
             this.disabled = disabled == null ? new HashSet<String>() : disabled;
             this.suspended = suspended == null ? new HashSet<String>() : suspended;
@@ -33,7 +38,32 @@ final class BatchVerify {
     /** Whether the result of this action can be read back from the phone (the package lists, or an app's suspended flag). */
     static boolean verifiable(String action) {
         return "uninstall".equals(action) || "uninstall_keep_data".equals(action) || "reinstall".equals(action)
-                || "freeze".equals(action) || "unfreeze".equals(action) || needsSuspended(action);
+                || "freeze".equals(action) || "unfreeze".equals(action) || needsSuspended(action) || needsRunning(action);
+    }
+
+    /** Whether the list of running processes is read (Force stop: the app's process should be gone). */
+    static boolean needsRunning(String action) {
+        return "force_stop".equals(action);
+    }
+
+    /** Whether the list of installed apps matters for this action (Force stop only looks at processes). */
+    static boolean needsInstalled(String action) {
+        return !needsRunning(action);
+    }
+
+    /** The package names of the processes in the output of {@code ps -A -o NAME} ("com.a.b" and "com.a.b:service" both give com.a.b); null when it lists nothing. */
+    static Set<String> parseProcessNames(String out) {
+        if (out == null) return null;
+        Set<String> set = new HashSet<String>();
+        int n = 0;
+        for (String line : out.split("\n")) {
+            line = line.trim();
+            if (line.isEmpty() || line.equals("NAME") || line.startsWith("ps:") || line.contains("not found") || line.contains("Usage")) continue;
+            n++;
+            int c = line.indexOf(':');
+            set.add(c > 0 ? line.substring(0, c) : line);
+        }
+        return n == 0 ? null : set;
     }
 
     /** Whether the disabled-packages list is needed too. */
@@ -74,6 +104,7 @@ final class BatchVerify {
         if ("uninstall".equals(action) || "uninstall_keep_data".equals(action)) return !st.installed.contains(pkg);
         if ("reinstall".equals(action)) return st.installed.contains(pkg);
         if ("freeze".equals(action)) return st.installed.contains(pkg) && st.disabled.contains(pkg);
+        if ("force_stop".equals(action)) return !st.running.contains(pkg);
         if ("suspend".equals(action)) return st.installed.contains(pkg) && st.suspended.contains(pkg);
         if ("unsuspend".equals(action)) return st.installed.contains(pkg) && !st.suspended.contains(pkg);
         return st.installed.contains(pkg) && !st.disabled.contains(pkg);
@@ -94,6 +125,7 @@ final class BatchVerify {
         if ("uninstall".equals(action) || "uninstall_keep_data".equals(action)) return real ? "Uninstalled" : "Still installed";
         if ("reinstall".equals(action)) return real ? "Installed" : "Not installed";
         if ("freeze".equals(action)) return real ? "Frozen" : "Not frozen";
+        if ("force_stop".equals(action)) return real ? "Stopped" : "Still running";
         if ("suspend".equals(action)) return real ? "Suspended" : "Not suspended";
         if ("unsuspend".equals(action)) return real ? "Not suspended" : "Still suspended";
         return real ? "Enabled" : "Still frozen";
@@ -113,6 +145,7 @@ final class BatchVerify {
             if (real && !cmdOk) note = "Checked afterwards: " + low + ". The command reported a failure, but the phone says it worked.\n\n";
             else if (!real && cmdOk) note = "Checked afterwards: " + low + ", although the command reported success.\n\n";
             else note = "Checked afterwards: " + low + ".\n\n";
+            if (!real && "force_stop".equals(action)) note = note.trim() + " It may have been started again at once by the system, one of its services or another app.\n\n";
             row.put("success", real);
             row.put("label", label);
             row.put("verified", true);
@@ -127,7 +160,11 @@ final class BatchVerify {
 
     /** The shell line that measures an app's private data folder: "KB=<size in KB>" and "FILES=<regular files>". */
     static String dataStatCmd(String pkg) {
-        String dir = "/data/user/0/" + pkg;
+        return dataStatCmd(pkg, "/data/user/0/" + pkg);
+    }
+
+    /** The same for any folder (the app's folder on the shared storage, for ADB and Shizuku). */
+    static String dataStatCmd(String pkg, String dir) {
         return "echo KB=$(du -sk " + dir + " 2>/dev/null | cut -f1); echo FILES=$(find " + dir + " -type f 2>/dev/null | wc -l | tr -d ' ')";
     }
 
@@ -146,19 +183,39 @@ final class BatchVerify {
         return kb + " KB";
     }
 
-    /** Rewrites a Clear data row from the counts before and after. Returns whether it succeeded. Nothing counted before: the command's answer stands. */
+    /** Rewrites a Clear data row from the counts before and after (internal folder, Root). */
     static boolean applyClear(JSONObject row, long[] before, long[] after) throws org.json.JSONException {
+        return applyClear(row, before, after, null, true, false);
+    }
+
+    /**
+     * Rewrites a Clear data row from what was counted: before, right after, and (after a pause) a second time, so files the app wrote again are seen.
+     * {@code internal} = the app's private folder (Root); otherwise its folder on the shared storage (Android/data/package), the only part ADB and Shizuku can see:
+     * there an empty folder before proves nothing, so the command's answer stands with a note. {@code running} = the app's process is up again.
+     * Returns whether the row succeeded.
+     */
+    static boolean applyClear(JSONObject row, long[] before, long[] after, long[] after2, boolean internal, boolean running) throws org.json.JSONException {
         boolean cmdOk = row.optBoolean("success", false);
+        long[] fin = after2 != null ? after2 : after;
+        long back = after2 != null && after2[1] > after[1] ? after2[1] - after[1] : 0;
+        String where = internal ? "the app's data folder" : "the app's folder on the shared storage (its private folder cannot be read in this mode)";
+        String counts = before[1] + " file" + (before[1] == 1 ? "" : "s") + " (" + fmtKb(before[0]) + ") before, " + fin[1] + " after (" + fmtKb(fin[0]) + ")";
+        if (before[1] == 0) {
+            String note = "Checked afterwards: " + where + " was empty before, so there was nothing to compare." + (running ? " The app is running again." : "");
+            row.put("output", (note + "\n\n" + row.optString("output", "")).trim());
+            if (internal) { row.put("success", cmdOk); row.put("label", "Nothing to clear"); row.put("verified", true); row.put("commandOk", cmdOk); }
+            return cmdOk;
+        }
         boolean real;
         String label;
-        if (before[1] == 0) { real = cmdOk; label = "Nothing to clear"; }
-        else if (after[1] == 0 || (after[1] < before[1] && after[0] * 10 <= before[0])) { real = true; label = "Data cleared"; }
-        else if (after[1] < before[1]) { real = false; label = "Partly cleared"; }
+        if (fin[1] == 0 || (fin[1] < before[1] && fin[0] * 10 <= before[0])) { real = true; label = back > 0 ? "Cleared, new files written" : "Data cleared"; }
+        else if (fin[1] < before[1]) { real = false; label = "Partly cleared"; }
         else { real = false; label = "Not cleared"; }
-        String counts = before[1] + " file" + (before[1] == 1 ? "" : "s") + " (" + fmtKb(before[0]) + ") before, " + after[1] + " after (" + fmtKb(after[0]) + ")";
-        String note = "Checked afterwards: " + counts + ".";
+        String note = "Checked afterwards (" + where + "): " + counts + ".";
+        if (back > 0) note += " " + back + " file" + (back == 1 ? "" : "s") + " appeared again after a moment: the app started again and wrote new data.";
+        else if (real && running) note += " The app is running again.";
         if (real && !cmdOk) note += " The command reported a failure, but the data is gone.";
-        else if (!real && cmdOk) note += " The command reported success, but the data is still there" + (after[1] < before[1] ? " (the app may have started again and written new files)." : ".");
+        else if (!real && cmdOk) note += " The command reported success, but the data is still there" + (fin[1] < before[1] ? " (the app may have started again and written new files)." : ".");
         row.put("success", real);
         row.put("label", label);
         row.put("verified", true);

@@ -1009,6 +1009,13 @@ public class MorpheHelperTest {
         check("apkmirror resolve requested: the bundle row's build number is 102", rb.getLong("versionCode") == 102);
         Throwable bm = err(() -> MorpheHelper.resolve("apkmirror", PKG, "1.0.3 (999)", "arm64-v8a", "requested"));
         check("apkmirror resolve requested: a build number that is only known from the file's page is still checked (build mismatch)", has(bm, "Build mismatch", "build 103", "build 999"), msg(bm));
+        // v7.10.17: the browser check stands in front of the variant page (as it does on the real site from many networks): the in-app browser is sent to THAT variant, the bundle for this phone
+        String vkey = "GET /apk/example-org/example-app/example-app-1-0-2-release/example-app-1-0-2-android-apk-download/";
+        mirror.on(vkey, 403, "text/html; charset=utf-8", "<html><head><title>Just a moment...</title></head><body>Checking your browser</body></html>");
+        Throwable wall = err(() -> MorpheHelper.resolve("apkmirror", PKG, "1.0.2", "arm64-v8a", "requested"));
+        check("apkmirror resolve requested: a bot wall on the variant page sends the browser to that bundle variant, not to the whole release",
+                wall instanceof MorpheHelper.NeedsBrowser && ((MorpheHelper.NeedsBrowser) wall).page.endsWith("/example-app-1-0-2-android-apk-download/") && has(wall, "bundle (split APKs)"), msg(wall));
+        mirror.page(vkey, "apkmirror-variant.html");
         JSONObject rs = MorpheHelper.resolve("apkmirror", PKG, "1.0.1", "arm64-v8a", "requested");
         check("apkmirror resolve requested: a release page with the button itself (no variants table) and a download.php link", rs.getString("url").endsWith("/download.php?id=77&key=k") && "".equals(rs.getString("sha256")) && "apk".equals(rs.getString("format")));
         Throwable t = err(() -> MorpheHelper.resolve("apkmirror", PKG, "1.0.4", "", "requested"));

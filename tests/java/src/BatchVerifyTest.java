@@ -26,7 +26,7 @@ public class BatchVerifyTest {
 
         check("what can be checked", BatchVerify.verifiable("uninstall") && BatchVerify.verifiable("uninstall_keep_data") && BatchVerify.verifiable("reinstall")
                 && BatchVerify.verifiable("freeze") && BatchVerify.verifiable("unfreeze")
-                && BatchVerify.verifiable("suspend") && BatchVerify.verifiable("unsuspend") && !BatchVerify.verifiable("clear_data") && !BatchVerify.verifiable("force_stop") && !BatchVerify.verifiable("custom:ls") && !BatchVerify.verifiable(null));
+                && BatchVerify.verifiable("suspend") && BatchVerify.verifiable("unsuspend") && !BatchVerify.verifiable("clear_data") && !BatchVerify.verifiable("custom:ls") && !BatchVerify.verifiable(null));
         check("only freeze and unfreeze need the disabled list", BatchVerify.needsDisabled("freeze") && BatchVerify.needsDisabled("unfreeze") && !BatchVerify.needsDisabled("uninstall"));
 
         // every command said "failed" but all three apps are gone: the phone's answer wins
@@ -93,7 +93,7 @@ public class BatchVerifyTest {
         check("sizes read as words", BatchVerify.fmtKb(4).equals("4 KB") && BatchVerify.fmtKb(3480).equals("3.4 MB") && BatchVerify.fmtKb(2L * 1024 * 1024).equals("2.0 GB"));
         JSONObject c1 = new JSONObject().put("pkg", "com.a").put("success", false).put("output", "Failed");
         check("emptied folder, command said failed: it worked", BatchVerify.applyClear(c1, new long[] { 3480, 12 }, new long[] { 4, 0 }) && c1.getString("label").equals("Data cleared") && c1.getBoolean("success")
-                && c1.getString("output").startsWith("Checked afterwards: 12 files (3.4 MB) before, 0 after (4 KB). The command reported a failure, but the data is gone."));
+                && c1.getString("output").startsWith("Checked afterwards (the app's data folder): 12 files (3.4 MB) before, 0 after (4 KB). The command reported a failure, but the data is gone."));
         JSONObject c2 = new JSONObject().put("pkg", "com.a").put("success", true).put("output", "Success");
         check("the files are all still there, command said success: not cleared", !BatchVerify.applyClear(c2, new long[] { 3480, 12 }, new long[] { 3480, 12 }) && c2.getString("label").equals("Not cleared") && c2.getString("output").contains("the data is still there."));
         JSONObject c3 = new JSONObject().put("pkg", "com.a").put("success", true).put("output", "Success");
@@ -104,6 +104,31 @@ public class BatchVerifyTest {
         check("nothing in the folder before: the command's answer stands", BatchVerify.applyClear(c5, new long[] { 4, 0 }, new long[] { 4, 0 }) && c5.getString("label").equals("Nothing to clear"));
         JSONObject c6 = new JSONObject().put("pkg", "com.a").put("success", false).put("output", "Failed");
         check("nothing before and the command failed: still a failure", !BatchVerify.applyClear(c6, new long[] { 4, 0 }, new long[] { 4, 0 }));
+
+
+        // Force stop: the process should be gone
+        Set<String> procs = BatchVerify.parseProcessNames("NAME\ncom.a\ncom.b:service\nsystem_server\n\n");
+        check("process names: the part before the colon, the header and blanks skipped", procs != null && procs.equals(set("com.a", "com.b", "system_server")));
+        check("no process list: null", BatchVerify.parseProcessNames("") == null && BatchVerify.parseProcessNames("ps: Unknown option") == null && BatchVerify.parseProcessNames(null) == null);
+        check("force_stop is read back from the processes only", BatchVerify.verifiable("force_stop") && BatchVerify.needsRunning("force_stop") && !BatchVerify.needsInstalled("force_stop") && BatchVerify.needsInstalled("uninstall"));
+        JSONArray r9 = rows(true, "com.a", "com.c");
+        ok = BatchVerify.apply("force_stop", r9, new BatchVerify.State(null, null, null, null, set("com.a")));
+        check("force stop: a process still there is 'Still running' with the why, one that is gone 'Stopped'", ok == 1 && r9.getJSONObject(0).getString("label").equals("Still running") && !r9.getJSONObject(0).getBoolean("success")
+                && r9.getJSONObject(0).getString("output").contains("started again at once") && r9.getJSONObject(1).getString("label").equals("Stopped") && r9.getJSONObject(1).getBoolean("success"));
+
+        // Clear data in ADB / Shizuku mode: only the app's folder on the shared storage can be counted, twice (files that come back)
+        JSONObject e1 = new JSONObject().put("pkg", "com.a").put("success", true).put("output", "Success");
+        check("storage folder emptied: cleared", BatchVerify.applyClear(e1, new long[] { 800, 6 }, new long[] { 0, 0 }, new long[] { 0, 0 }, false, false) && e1.getString("label").equals("Data cleared")
+                && e1.getString("output").contains("its private folder cannot be read in this mode"));
+        JSONObject e2 = new JSONObject().put("pkg", "com.a").put("success", true).put("output", "Success");
+        check("files appeared again after the pause: cleared, but the note says the app wrote new data", BatchVerify.applyClear(e2, new long[] { 800, 6 }, new long[] { 0, 0 }, new long[] { 12, 2 }, false, true)
+                && e2.getString("label").equals("Cleared, new files written") && e2.getString("output").contains("2 files appeared again"));
+        JSONObject e3 = new JSONObject().put("pkg", "com.a").put("success", true).put("output", "Success");
+        check("the folder is as full as before: not cleared although the command said success", !BatchVerify.applyClear(e3, new long[] { 800, 6 }, new long[] { 800, 6 }, new long[] { 800, 6 }, false, false) && e3.getString("label").equals("Not cleared"));
+        JSONObject e4 = new JSONObject().put("pkg", "com.a").put("success", true).put("output", "Success");
+        check("an empty storage folder proves nothing: the command's answer stands, no label, a note says why", BatchVerify.applyClear(e4, new long[] { 4, 0 }, new long[] { 4, 0 }, new long[] { 4, 0 }, false, true)
+                && !e4.has("label") && !e4.has("verified") && e4.getString("output").contains("nothing to compare") && e4.getString("output").contains("running again"));
+        check("the stat line can ask for any folder", BatchVerify.dataStatCmd("com.a", "/sdcard/Android/data/com.a").contains("/sdcard/Android/data/com.a"));
 
 
         System.out.println(fails == 0 ? "ALL PASS (" + n + " checks)" : fails + " of " + n + " FAILED");

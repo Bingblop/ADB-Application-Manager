@@ -118,7 +118,7 @@ Every tab except Application Manager and About can be switched off or moved in *
 
 ## New in v7.9
 
-**v7.10.16 is the latest build** (Connected Devices, 32-bit and universal APKs, the Help Guide: see [CHANGELOG.md](../CHANGELOG.md)). Everything from v7.9 through v7.9.15 is below; the full, dated list is in
+**v7.10.17 is the latest build** (Connected Devices, 32-bit and universal APKs, the Help Guide: see [CHANGELOG.md](../CHANGELOG.md)). Everything from v7.9 through v7.9.15 is below; the full, dated list is in
 [CHANGELOG.md](../CHANGELOG.md) (and inside the app, under About).
 
 **Newest (v7.9.12 to v7.9.15)**
@@ -1298,3 +1298,5 @@ Changes by version: [CHANGELOG.md](../CHANGELOG.md).
 **UAD-NG tag** (v7.10.15): tapping it opens the app's classification (level, group, the project's description, needed by / depends on). What the four levels mean is behind the **Removal Levels** button at the bottom of that sheet (the same lines as in the Debloater tab).
 
 **Clear Data from Uninstalled Apps** (SD Maid tab, above Trim Caches, v7.10.16): lists the apps that are uninstalled (in Root mode only those with a data folder left, with sizes), you tick and confirm, and each is cleared with `pm clear`, else (Root) by deleting its data folders, else by bringing it back with `pm install-existing` and removing it again without keeping the data. **Batch menu** (v7.10.16): grab handle (up = taller, down = smaller, down again = closes to the checkmark button), outlined **Select All** / **Clear All**, **Show Applications**, **Share List** in the grid, **Keep selection after running** on every time; leaving the Apps tab drops the selection; **Running** turns **Uninstalled** off; package names in a softer theme colour. **VirusTotal API key** (Settings): one key, tested once, used by the Installer and Morphe Helper.
+
+**Force stop and Clear data read back** (v7.10.17): Force stop shows *Stopped* / *Still running* from the process list; Clear data counts files (private folder in Root mode, the app's `Android/data` folder in ADB and Shizuku modes, twice, to see files that come back). A row shows a spinner and *Working…* / *Checking…* while its app is changed and checked. The opened row of the Debloater list has a **Removal Levels** button. Morphe Helper reads APKMirror's variants table (APK and BUNDLE rows) and, when the browser check blocks the variant page, opens that variant in the in-app browser.

@@ -1,5 +1,19 @@
 # Changelog
 
+## v7.10.17-Pro (versionCode 837)
+
+- **Force stop is read back.** After `am force-stop` the app lists the running processes (`ps -A -o NAME`, or `pidof` where that is missing) and says **Stopped** or **Still running** (with the reason an app can be
+  up again at once: the system, a service, another app); single app and batch. `BatchVerify.State.running`.
+- **Clear data is read back in ADB and Shizuku modes too.** The private folder cannot be read there, so the app counts the files and size of the app's folder on the shared storage (`/sdcard/Android/data/<package>`)
+  before and after, and once more after 1.5 s to see **files that were written again**: **Data cleared**, **Cleared, new files written**, **Partly cleared**, **Not cleared**. An empty folder before proves
+  nothing: the command's answer stands, with a note. Root mode still counts the private folder (and now also looks for recreated files). `BatchVerify.applyClear(…, after2, internal, running)`.
+- **A spinner on the row.** While an app is changed and checked, its row (Apps list, Debloater list, Connected Devices list) shows a small spinner and **Working…** then **Checking…** in its corner, whatever the
+  Progress messages switch says; a batch marks every selected row. Cleared when the result is in (or after 2 minutes). Test: `t140`.
+- **Debloater list: a Removal Levels button.** A row opened by tapping it has a **Removal Levels** button that opens the sheet with the four levels (the same as the classification sheet's). Test: `t140`.
+- **Morphe Helper and APKMirror's split files, checked against the live site.** The release page's variants table (APK and BUNDLE rows, architecture, DPI, build number) is read correctly on real pages
+  (YouTube, Photos). Fixed: the variant's type is now the APK/BUNDLE badge wherever it stands among the others (a NEW or signature badge in front no longer hides a bundle), and when APKMirror's browser
+  check stands in front of the variant page the in-app browser is sent to **that variant's page** (the bundle for the phone) instead of the whole release. Test: `MorpheHelperTest`.
+
 ## v7.10.16-Pro (versionCode 836)
 
 - **SD Maid > Clear Data from Uninstalled Apps.** A button in a card above Trim Caches, with the description "Clears the data of apps that were uninstalled from this device while the `DONT_DELETE_FLAG` flag was

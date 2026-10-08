@@ -8780,11 +8780,12 @@ public class MainActivity extends Activity {
                 public void run() {
                     JSONObject res = new JSONObject();
                     try {
-                        long[] dataBefore = clearIsChecked(action) ? dataStat(pkg) : null;
+                        String kind = clearKind(action);
+                        long[] dataBefore = kind != null ? dataStatFor(kind, pkg) : null;
                         String flagged = executeAppAction(action, pkg);
                         JSONArray rows = new JSONArray();
                         JSONObject first = new JSONObject().put("pkg", pkg).put("output", flagText(flagged)).put("success", flagOk(flagged));
-                        if (dataBefore != null) first.put("dataBefore", new JSONArray().put(dataBefore[0]).put(dataBefore[1]));
+                        if (dataBefore != null) { first.put("dataBefore", new JSONArray().put(dataBefore[0]).put(dataBefore[1])); first.put("dataKind", kind); }
                         rows.put(first);
                         verifyBatchRows(action, rows, 0, "window.onAppActionChecking && window.onAppActionChecking(" + JSONObject.quote(token) + ")");
                         res = rows.getJSONObject(0);
@@ -8831,13 +8832,14 @@ public class MainActivity extends Activity {
                             if (appBatchCancel) { cancelled = true; break; }
                             String pkg = pkgs.optString(i, "");
                             notifyJs("window.onAppBatchProgress && window.onAppBatchProgress(" + i + "," + total + "," + JSONObject.quote(pkg) + ")");
-                            long[] dataBefore = clearIsChecked(action) ? dataStat(pkg) : null;       // Clear data in Root mode: what is in the app's folder before
+                            String kind = clearKind(action);
+                            long[] dataBefore = kind != null ? dataStatFor(kind, pkg) : null;       // Clear data: what is in the app's folder before (private folder in Root mode, its storage folder otherwise)
                             String flagged = executeAppAction(action, pkg);
                             boolean ok = flagOk(flagged);
                             String out = flagText(flagged);
                             if (ok) done++;
                             JSONObject row = new JSONObject().put("pkg", pkg).put("output", out).put("success", ok);
-                            if (dataBefore != null) row.put("dataBefore", new JSONArray().put(dataBefore[0]).put(dataBefore[1]));
+                            if (dataBefore != null) { row.put("dataBefore", new JSONArray().put(dataBefore[0]).put(dataBefore[1])); row.put("dataKind", kind); }
                             rows.put(row);
                         }
                         done = verifyBatchRows(action, rows, done, "window.onAppBatchChecking && window.onAppBatchChecking(" + rows.length() + ")");
@@ -8896,30 +8898,58 @@ public class MainActivity extends Activity {
         }
 
         /** Clear data can be read back only where the app's data folder is readable: in Root mode. */
-        private boolean clearIsChecked(String action) { return ("clear_data".equals(action) || "clear_removed_data".equals(action)) && "root".equals(resolveExecMode()); }
+        private boolean clearIsChecked(String action) { return clearKind(action) != null; }
 
-        /** {size in KB, regular files} of an app's private data folder, or null (not Root, or the folder cannot be read). */
-        private long[] dataStat(String pkg) {
-            if (!BackupScripts.isPackageName(pkg)) return null;
-            try { return BatchVerify.parseDataStat(executeShell(BatchVerify.dataStatCmd(pkg))); } catch (Throwable t) { return null; }
+        /** What can be counted for Clear data: "internal" (the app's private folder: Root), "storage" (its folder under Android/data on the shared storage: ADB and Shizuku, where the private
+         *  folder cannot be read) or null (nothing to count: no working mode, or the leftover data of an uninstalled app without Root). */
+        private String clearKind(String action) {
+            if (!"clear_data".equals(action) && !"clear_removed_data".equals(action)) return null;
+            String m = resolveExecMode();
+            if ("root".equals(m)) return "internal";
+            if ("clear_data".equals(action) && !"standard".equals(m)) return "storage";
+            return null;
         }
 
-        /** After Clear data in Root mode: counts what is left in each app's folder and rewrites the row from that (see {@link BatchVerify#applyClear}). */
+        /** {size in KB, regular files} of the folder {@link #clearKind} says, or null when it cannot be read. */
+        private long[] dataStatFor(String kind, String pkg) {
+            if (!BackupScripts.isPackageName(pkg)) return null;
+            try {
+                String dir = "internal".equals(kind) ? "/data/user/0/" + pkg : "/sdcard/Android/data/" + pkg;
+                return BatchVerify.parseDataStat(executeShell(BatchVerify.dataStatCmd(pkg, dir)));
+            } catch (Throwable t) { return null; }
+        }
+
+        /** The base names of the running processes, from {@code ps -A -o NAME}; null when the phone does not answer with a list. */
+        private java.util.Set<String> readRunningProcs() {
+            try { return BatchVerify.parseProcessNames(executeShell("ps -A -o NAME 2>/dev/null")); } catch (Throwable t) { return null; }
+        }
+
+        /** After Clear data: counts what is left in each app's folder, once right away and once after a pause (files the app writes again show), asks whether the app is running again,
+         *  and rewrites the row from that (see {@link BatchVerify#applyClear}). */
         private int verifyClearRows(JSONArray rows, int done, String announce) {
             try {
                 boolean any = false;
                 for (int i = 0; i < rows.length(); i++) if (rows.getJSONObject(i).has("dataBefore")) any = true;
                 if (!any) return done;
                 if (announce != null) notifyJs(announce);
+                long[][] a1 = new long[rows.length()][];
+                for (int i = 0; i < rows.length(); i++) {
+                    JSONObject row = rows.getJSONObject(i);
+                    if (row.has("dataBefore")) a1[i] = dataStatFor(row.optString("dataKind", "internal"), row.optString("pkg", ""));
+                }
+                try { Thread.sleep(1500); } catch (InterruptedException ignored) {}          // a moment for an app that starts again to write its files
+                java.util.Set<String> procs = readRunningProcs();
                 int ok = 0;
                 for (int i = 0; i < rows.length(); i++) {
                     JSONObject row = rows.getJSONObject(i);
                     JSONArray b = row.optJSONArray("dataBefore");
-                    long[] after = b == null ? null : dataStat(row.optString("pkg", ""));
-                    if (b != null && after != null) {
-                        if (BatchVerify.applyClear(row, new long[] { b.getLong(0), b.getLong(1) }, after)) ok++;
+                    String kind = row.optString("dataKind", "internal"), pkg = row.optString("pkg", "");
+                    long[] after2 = b == null || a1[i] == null ? null : dataStatFor(kind, pkg);
+                    if (b != null && a1[i] != null) {
+                        boolean run = procs != null && procs.contains(pkg);
+                        if (BatchVerify.applyClear(row, new long[] { b.getLong(0), b.getLong(1) }, a1[i], after2, "internal".equals(kind), run)) ok++;
                     } else if (row.optBoolean("success", false)) ok++;
-                    row.remove("dataBefore");
+                    row.remove("dataBefore"); row.remove("dataKind");
                 }
                 return ok;
             } catch (Throwable t) {
@@ -8929,6 +8959,20 @@ public class MainActivity extends Activity {
 
         /** What the phone says now about the apps in rows: the installed list, the frozen list, and each app's suspended flag, as the action needs. */
         private BatchVerify.State readBatchState(String action, JSONArray rows) throws org.json.JSONException {
+            if (BatchVerify.needsRunning(action)) {
+                java.util.Set<String> procs = readRunningProcs();
+                if (procs == null) {                             // no ps -A -o NAME: ask for each app by itself
+                    procs = new java.util.HashSet<String>();
+                    for (int i = 0; i < rows.length(); i++) {
+                        String pkg = rows.getJSONObject(i).optString("pkg", "");
+                        if (!BackupScripts.isPackageName(pkg)) continue;
+                        String out = String.valueOf(executeShell("pidof " + pkg + " 2>&1; echo RC=$?")).trim();
+                        if (out.contains("RC=127") || out.contains("not found") || !out.contains("RC=")) return null;          // no pidof either: nothing can be proved
+                        if (out.replace("RC=0", "").replace("RC=1", "").trim().matches("[0-9 ]+")) procs.add(pkg);
+                    }
+                }
+                return new BatchVerify.State(new java.util.HashSet<String>(), null, null, null, procs);
+            }
             java.util.Set<String> installed = listPackageSet("");
             if (installed == null) return null;                 // not a real shell: nothing can be proved
             java.util.Set<String> disabled = BatchVerify.needsDisabled(action) ? listPackageSet("-d") : null;     // -d lists nothing when no app is frozen: null is fine

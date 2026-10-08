@@ -1,0 +1,16 @@
+ok   1. the row says "Working…" with a spinner as soon as the change starts: {"text":"Working…","cls":true,"spin":true,"shown":true}
+ok      the other row is left alone
+ok      then "Checking…" while the phone is asked: {"text":"Checking…","cls":true,"spin":true,"shown":true}
+ok      with the progress messages off no toast says so: []
+ok      the spinner survives the list being drawn again
+ok      gone when the result is in, and the result is shown: ["Alpha: Stopped"]
+ok   2. a batch marks every selected row "Working…"
+ok      and "Checking…" for the look at the phone
+ok      all gone when the results open
+ok   3. a row of the Debloater list that is closed has no extra button: {"rows":1,"btn":false}
+ok      opened, it shows the Removal Levels button: {"txt":["Removal Levels"],"expanded":true}
+ok      it opens the same sheet with the same four levels as the Debloater tab, and the row stays open: {"open":true,"n":4,"mine":"RECOMMENDED Safe to remove for most people, including apps you can reinstall from an app store. Still worth a quick review, since everyone uses their phone differently. ADVA
+ok   4. the Connected Devices list shows the spinner on the app being checked only: {"text":"Checking…","other":false}
+ok      and keeps it when the list is drawn again; the same package on this phone's list is not marked
+ok      no extra text leaks into the list after the cards ("undefined")
+ok   no page errors:

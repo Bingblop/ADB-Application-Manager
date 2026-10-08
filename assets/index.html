@@ -869,7 +869,16 @@
         .sa-info { flex: 1; min-width: 0; }
         .sa-name { font-size: 13px; font-weight: 800; word-break: break-word; }
         .sa-pkg { font-size: 10.5px; color: var(--pkg-color); word-break: break-all; }
-        .pkg-text { color: var(--pkg-color); }
+.pkg-text { color: var(--pkg-color); }
+        .uad-row-btns { margin-top: 8px; display: flex; gap: 8px; }
+        /* a row whose app is being worked on or checked: a spinner and a word in its top right corner */
+        .row-checking { position: relative; }
+        .row-chk { position: absolute; right: 10px; top: 8px; display: inline-flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 800; color: var(--accent); padding: 3px 9px; border-radius: 999px;
+            background: var(--bg-surface); border: 1px solid var(--accent); box-shadow: 0 2px 8px var(--accent-glow); z-index: 2; pointer-events: none; }
+        .row-chk i { width: 10px; height: 10px; border: 2px solid var(--accent); border-right-color: transparent; border-radius: 50%; display: inline-block; animation: rowChkSpin 0.8s linear infinite; }
+        .row-chk b { font-weight: 800; }
+        @keyframes rowChkSpin { to { transform: rotate(360deg); } }
+        @media (prefers-reduced-motion: reduce) { .row-chk i { animation-duration: 2.4s; } }
 
         .batch-tool-link {
             background: none;
@@ -10442,10 +10451,12 @@ Type any command below (e.g. pm list packages -d)
                             <div>${uadRemovalBadge(p.removal)}<span class="uad-badge uad-tag">${escapeHtml(p.brand)}</span><span class="uad-badge uad-tag">${escapeHtml(p.list)}</span>${state}${p.isSuspended ? '<span class="uad-badge" style="color:var(--status-suspended)">suspended</span>' : ''}</div>
                             ${p.description ? `<div class="uad-desc">${escapeHtml(p.description.trim())}</div>` : ''}
                             ${warn}
+                            ${exp ? `<div class="uad-row-btns"><button class="mode-action-btn" type="button" onclick="event.stopPropagation(); openUadLevels()">Removal Levels</button></div>` : ''}
                         </div>
                         ${abAppFor(p.pkg) ? `<div class="app-actions uad-actions">${actionBtnHtml(abAppFor(p.pkg))}</div>` : ''}
                     </div>`;
             }).join('');
+            rowBusyApply();
         }
 
         function toggleUadSelect(pkg) {
@@ -13079,6 +13090,7 @@ Type any command below (e.g. pm list packages -d)
             }
 
             container.innerHTML = filteredApps.slice(0, appsShown).map(appCardHtml).join('') + appsMoreHtml();
+            rowBusyApply();
             appsLoadIcons();
             appsWatchMore();
         }
@@ -14235,6 +14247,7 @@ Type any command below (e.g. pm list packages -d)
                 return;
             }
             batchRunActive = true;
+            rowBusySet(arr, 'Working…');
         }
 
         // Fires once before each app's own action runs natively. A profile applies several action groups through
@@ -14254,12 +14267,14 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('batchProgressBar').style.width = '100%';
             const stopBtn = document.getElementById('batchProgressStopBtn');
             if (stopBtn) stopBtn.disabled = true;
+            if (lastBatch) rowBusySet(lastBatch.pkgs, 'Checking…');
         };
 
         // Fires once the native run has finished (to completion, or stopped early).
         window.onAppBatchDone = function (resultJson) {
             if (profileRunActive) { profileOnBatchDone(resultJson); return; }
             batchRunActive = false;
+            if (lastBatch) rowBusySet(lastBatch.pkgs, '');
             let res; try { res = JSON.parse(resultJson); } catch (e) { res = null; }
             document.getElementById('batchConfirmModal').classList.remove('show');
             if (!res || !res.ok) { showToast('Batch action failed to run'); return; }
@@ -14358,14 +14373,37 @@ Type any command below (e.g. pm list packages -d)
 
         // Uninstall, Reinstall, Freeze, Unfreeze, Suspend and Unsuspend of one app are read back from the phone (natively, off this thread) and
         // the toast / result says what it found, not what the command printed: see BatchVerify.java. Anything else is judged by the command.
-        const CHECKED_ACTIONS = new Set(['uninstall', 'uninstall_keep_data', 'reinstall', 'freeze', 'unfreeze', 'suspend', 'unsuspend', 'clear_data']);       // (Clear data only in Root mode: the native side says "unsupported" otherwise and the plain way is taken)
+        const CHECKED_ACTIONS = new Set(['uninstall', 'uninstall_keep_data', 'reinstall', 'freeze', 'unfreeze', 'suspend', 'unsuspend', 'clear_data', 'force_stop']);       // (Clear data only in Root mode: the native side says "unsupported" otherwise and the plain way is taken)
         const pendingChecked = new Map();
+        // The row itself says it is being worked on / checked (a small spinner and a word in its corner), so the state is visible even with the toasts off.
+        // Keys: 'p:' + package for this phone's lists (Apps, Debloater), 'd:' + package for the Connected Devices list. Cleared when the result comes (or after 2 minutes).
+        const rowBusy = new Map();
+        let rowBusyTimer = null;
+        function rowBusySet(pkgs, label, scope) {
+            const sc = scope || 'p';
+            (Array.isArray(pkgs) ? pkgs : [pkgs]).forEach(p => { if (label) rowBusy.set(sc + ':' + p, label); else rowBusy.delete(sc + ':' + p); });
+            rowBusyApply();
+            clearTimeout(rowBusyTimer);
+            if (rowBusy.size) rowBusyTimer = setTimeout(() => { rowBusy.clear(); rowBusyApply(); }, 120000);
+        }
+        function rowBusyApply() {
+            document.querySelectorAll('.app-card[data-pkg], .uad-row[data-pkg]').forEach(el => {
+                const key = (el.id && el.id.indexOf('cdcard_') === 0 ? 'd:' : 'p:') + el.getAttribute('data-pkg');
+                const label = rowBusy.get(key);
+                el.classList.toggle('row-checking', !!label);
+                let chip = el.querySelector(':scope > .row-chk');
+                if (!label) { if (chip) chip.remove(); return; }
+                if (!chip) { chip = document.createElement('span'); chip.className = 'row-chk'; chip.setAttribute('translate', 'no'); chip.setAttribute('role', 'status'); chip.innerHTML = '<i></i><b></b>'; el.appendChild(chip); }
+                chip.lastChild.textContent = label;
+            });
+        }
         let checkedSeq = 0;
-        window.onAppActionChecking = function (token) { if (pendingChecked.has(token)) progressToast('Checking the phone…'); };
+        window.onAppActionChecking = function (token) { const p = pendingChecked.get(token); if (p) { progressToast('Checking the phone…'); rowBusySet(p.pkg, 'Checking…'); } };
         window.onAppActionChecked = function (token, r) {
             const p = pendingChecked.get(token);
             if (!p) return;
             pendingChecked.delete(token);
+            rowBusySet(p.pkg, '');
             r = r || {};
             const ok = !!r.success;
             showToast(ok ? (r.verified && r.label ? p.app.name + ': ' + r.label : 'Action executed') : (r.verified && r.label ? p.app.name + ': ' + r.label : 'Action reported a problem'));
@@ -14383,7 +14421,7 @@ Type any command below (e.g. pm list packages -d)
                     pendingChecked.set(token, { action, pkg, app });
                     let started = '';
                     try { started = window.AndroidBridge.appActionChecked(action, pkg, token); } catch (e) { started = ''; }
-                    if (started === 'started') { progressToast('Working on it…'); return; }
+                    if (started === 'started') { progressToast('Working on it…'); rowBusySet(pkg, 'Working…'); return; }
                     pendingChecked.delete(token);                 // not started: the plain way below
                 }
                 const { ok, output } = parseActionResult(window.AndroidBridge.executeAppAction(action, pkg));
@@ -19177,6 +19215,7 @@ Type any command below (e.g. pm list packages -d)
             const shown = rows.slice(0, 600);
             list.innerHTML = shown.map(cdAppCardHtml).join('') + (rows.length > shown.length ? '<div class="cd-note">' + (rows.length - shown.length) + ' more: search or filter to find them.</div>' : '') +
                 (!rows.length ? '<div class="cd-note">No app matches.</div>' : '');
+            rowBusyApply();
             cdBatchBar();
         }
         function cdAppCardHtml(a) {
@@ -19284,7 +19323,9 @@ Type any command below (e.g. pm list packages -d)
             }
             if (CD_CHECKED.has(act) && !(opt && opt.check === false)) {
                 progressToast('Checking the device…');
+                rowBusySet(pkg, 'Checking…', 'd');
                 const c = await cdCheckStates(act, [pkg]);
+                rowBusySet(pkg, '', 'd');
                 if (c) {
                     const r = c.get(pkg);
                     out = cdCheckNote(ok, r) + String(out || '');
@@ -19305,7 +19346,9 @@ Type any command below (e.g. pm list packages -d)
             if (act === 'uninstall' && !(await cdAsk({ title: 'Uninstall ' + a.name + '?', text: pkg + '\n\nIt is removed for the device\'s user. A system app can be put back with Reinstall.', ok: 'Uninstall', danger: true }))) return;
             if (act === 'clear' && !(await cdAsk({ title: 'Clear the data of ' + a.name + '?', text: 'Its settings, accounts and files on the device are deleted.', ok: 'Clear data', danger: true }))) return;
             progressToast((CD_ACT_DONE[act] || act).replace(/ed$/, 'ing').replace(/^Data clearing$/, 'Clearing data') + ' ' + a.name + '...');
+            rowBusySet(pkg, 'Working…', 'd');
             const r = await cdDo(act, pkg);
+            rowBusySet(pkg, '', 'd');
             cdAppsRender();
             if (r.ok) showToast(CD_ACT_DONE[act] + ': ' + a.name);
             else cdSheetOpen({ title: 'That did not work', sub: a.name + ' \u00b7 ' + act, body: '<div class="cd-log" translate="no">' + escapeHtml(r.out || 'No answer from the device') + '</div>' });
@@ -19321,6 +19364,7 @@ Type any command below (e.g. pm list packages -d)
             const failed = [];
             let done = 0;
             const results = [];
+            rowBusySet(pkgs, 'Working…', 'd');
             for (const p of pkgs) {
                 document.getElementById('cdBatchCount').innerText = (done + 1) + ' of ' + pkgs.length + '...';
                 const r = await cdDo(act, p, { check: false });
@@ -19332,8 +19376,11 @@ Type any command below (e.g. pm list packages -d)
             if (CD_CHECKED.has(act)) {
                 document.getElementById('cdBatchCount').innerText = 'Checking the device…';
                 progressToast('Checking the device…');
+                rowBusySet(pkgs, 'Checking…', 'd');
                 checked = await cdCheckStates(act, pkgs);
+                rowBusySet(pkgs, '', 'd');
             }
+            rowBusySet(pkgs, '', 'd');
             results.forEach(([p, r]) => {
                 const c = checked && checked.get(p);
                 if (c) { if (!c.ok) failed.push(cdApp(p).name + ': ' + (r.ok ? c.label + ' (the command said it worked)' : (r.out.split('\n')[0] || 'no answer') + ' [' + c.label + ']')); }

@@ -48,7 +48,9 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await ev(() => quickAction('suspend', 'com.example.alpha')); await sleep(200);
   check('   Suspend is read back too', /Alpha: Suspended/.test(await toast()) && await ev(() => window.__checked.length === 3), await toast());
   await ev(() => quickAction('force_stop', 'com.example.alpha')); await sleep(60);
-  check('   Force stop (not read back) takes the plain way', await ev(() => window.__sync.length === 1 && window.__sync[0][0] === 'force_stop' && window.__checked.length === 3));
+  check('   Force stop is read back too since v7.10.17 (the process should be gone)', await ev(() => window.__sync.length === 0 && window.__checked.length === 4 && window.__checked[3][0] === 'force_stop'));
+  await ev(() => quickAction('launch', 'com.example.alpha')); await sleep(60);
+  check('   an action with nothing to read back (Open) takes the plain way', await ev(() => window.__sync.length === 1 && window.__sync[0][0] === 'launch'));
 
   // ---- 2. a batch says it is checking the phone ----
   await ev(() => { window.AndroidBridge.appActionBatch = () => 'started'; });
