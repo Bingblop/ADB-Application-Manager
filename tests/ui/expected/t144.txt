@@ -1,0 +1,11 @@
+ok   1. an app the UAD-NG list knows shows its classification and no Ask chip
+ok   2. an app the list does not know shows the Ask chip instead: {"ask":true,"uad":false,"t":"UAD-NG Not listed · Ask"}
+ok   3. it opens a window with the app and the package, and asks nothing yet: {"open":true,"app":"Unknown One · com.example.unknown","wrap":"none"}
+ok   4. with no Coding Agent connected it says what to do first: To get an explanation, pick and connect a Coding Agent first (Command-Line Interface tab, Coding Agent). Open it. Web search works without one.
+ok   5. the agent gets the package name, the app name, that it is a system app and that it is disabled: {"system":"You help someone who is not a developer decide whether an Android app or system package can be disabled (frozen) or removed for the current user on their phone. Say briefly and in plain words: what the package is and what it does, what stops working if it is disabled, and a verdict: Safe, Caution or Do not touch. Mention that freezing can be undone, and what to check afterwards. Say plainly when you do not recognize the package name (many belong to the phone maker or are random) instead of guessing, and then say what the name suggests and that the person should leave it alone unless they know it. Short paragraphs, no headings. Do not invent details.","msgs":[{"role":"user","text":"Package name: com.example.unknown\nApp name: Unknown One\nType: system app\nState: disabled\nAndroid ?"}]}
+ok      and a system prompt that asks for a verdict and admits not knowing
+ok   6. the answer is shown, with a note of what was sent: {"t":"Asking Claude Code (claude-sonnet-5-5). The package name, the app's name, whether it is a system app and its state are sent to them.\nCaution: this is the Bixby-like helper.","wrap":""}
+ok   7. Web search opens a search for the package
+ok   8. closing leaves the window shut
+ok   no page errors:
+ALL PASSED

@@ -3,7 +3,7 @@
    a strip is left above it to tap and close (at least 4% of the height and 24px): true 56px
    nothing sticks out sideways: true
 2. [360x800] the lists get 8% of the screen height more room: true 118px -> 182px
-3. [360x800] the other sheets keep 85% (62 checked): true []
+3. [360x800] the other sheets keep 85% (63 checked): true []
 4. [360x800] the last of 45 permissions can be scrolled into view: true {"n":45,"lastTop":725,"lastBottom":781,"sheetTop":56,"sheetBottom":800,"tabTop":365,"tabBottom":781}
 5. [360x800] a tap on the strip above the sheet closes it: true tapped at y=28
 6. [360x800] com.facebook.appmanager: the sheet fits the screen: true top 56px, 744px high
@@ -14,7 +14,7 @@
    a strip is left above it to tap and close (at least 4% of the height and 24px): true 45px
    nothing sticks out sideways: true
 2. [320x640] the lists get 8% of the screen height more room: true -29px -> 22px
-3. [320x640] the other sheets keep 85% (62 checked): true []
+3. [320x640] the other sheets keep 85% (63 checked): true []
 4. [320x640] the last of 45 permissions can be scrolled into view: true {"n":45,"lastTop":565,"lastBottom":621,"sheetTop":45,"sheetBottom":640,"tabTop":288,"tabBottom":621}
 5. [320x640] a tap on the strip above the sheet closes it: true tapped at y=22
 6. [320x640] com.facebook.appmanager: the sheet fits the screen: true top 45px, 595px high
@@ -23,8 +23,8 @@
    and with this much in it, it does: true 851px
    a strip is left above it to tap and close (at least 4% of the height and 24px): true 64px
    nothing sticks out sideways: true
-2. [412x915] the lists get 8% of the screen height more room: true 278px -> 351px
-3. [412x915] the other sheets keep 85% (62 checked): true []
+2. [412x915] the lists get 8% of the screen height more room: true 244px -> 317px
+3. [412x915] the other sheets keep 85% (63 checked): true []
 4. [412x915] the last of 45 permissions can be scrolled into view: true {"n":45,"lastTop":851,"lastBottom":896,"sheetTop":64,"sheetBottom":915,"tabTop":420,"tabBottom":896}
 5. [412x915] a tap on the strip above the sheet closes it: true tapped at y=32
 6. [412x915] com.facebook.appmanager: the sheet fits the screen: true top 64px, 851px high
