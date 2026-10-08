@@ -1,5 +1,10 @@
 # Changelog
 
+## v7.11.2-Pro (versionCode 841)
+
+- **Ask the agent about an app the UAD-NG list does not know.** In the app menu, where the UAD-NG chip is missing, a chip **UAD-NG Not listed · Ask** opens **Is it safe to disable?**: a button asks the Coding Agent chosen in the Command-Line Interface tab what the package is, what stops working without it and whether it is Safe, Caution or Do not touch (`appAskRun`, same plumbing as the log-entry and Hidden Settings explanations). Only the package name, the app's name, system or user app and its state are sent. **Web search** works without an agent. Test: `t144`.
+- **Translations.** The 1,237 strings added since v7.10 (Morphe Patcher, SD Maid, Hidden Settings, Trackers, Connected Devices, ...) are now translated into German, Spanish, French, Italian, Portuguese (Brazil), Indonesian, Turkish, Russian, Arabic, Hindi, Japanese, Korean and Chinese (Simplified).
+
 ## v7.11.1-Pro (versionCode 840)
 
 - **Hidden Settings: back up and restore.** The **Changes** sheet has **Back up changes** (shares `hidden_settings_<date>.json`: for each setting changed with the app, its table, name, current value and

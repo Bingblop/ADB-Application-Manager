@@ -1,4 +1,4 @@
-# On-device test checklist (v7.1 to v7.11.1)
+# On-device test checklist (v7.1 to v7.11.2)
 
 The automated tests run the page in a browser with a pretend phone. They cannot prove the parts that talk to Android:
 icons, the file chooser, added storage, shell commands and the haptic feedback. This list is for those. Tick a box when
@@ -270,6 +270,11 @@ These came before the rest of this list and were only checked in the browser. Th
 - [ ] Hidden Settings: change two harmless settings (for example Global > `stay_on_while_plugged_in`), open **Changes**, tap **Back up changes**: the share sheet offers a .json file; save it. Change both settings again by hand, then **Restore…**, pick the file: the question names both settings; after Yes they have the backed-up values and appear in the Changes list again. Restoring the same file once more says everything already matches.
 - [ ] Open the file in a text app and break a name (put a space in it), restore: that setting is skipped, the others work. Pick a file that is not a backup (a photo, a presets file): a message says it is not a Hidden Settings backup.
 - [ ] Apps > any app > TRACKERS chip > **Update the list**: the button says Updating…, then "Tracker list updated: N trackers" (about 430), and the chip reads the app again. In airplane mode it says why it failed and the list keeps working.
+
+## 15. Ask the agent about an unlisted app (v7.11.2)
+
+- [ ] Open an app the UAD-NG list does not rate (a small vendor system package): under Share the chip reads **UAD-NG Not listed · Ask**. An app the list rates (Bixby, a Google app) still shows its level and no Ask chip.
+- [ ] Tap the chip, then **Ask the agent** with no Coding Agent connected: it tells you to connect one (with an Open link). With an agent connected: the answer streams in, ends in a verdict, and **Copy the answer** copies it. **Web search** opens a search for the package.
 
 ## Report
 
