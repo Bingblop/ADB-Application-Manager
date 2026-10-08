@@ -90,7 +90,7 @@
   <h5>How to use it</h5>
   <ol class="hg-steps">
     <li>Open the <b>SD Maid</b> tab and tap <b>Clear Data from Uninstalled Apps</b>. It needs a working mode; without one the button is locked.</li>
-    <li>A sheet lists the uninstalled apps, all ticked. In <b>Root</b> mode only the ones that still have a data folder are listed, each with its size. Without Root the app cannot look into other apps' folders, so every uninstalled app is listed and the note says that some may have nothing left. <b>Select All</b> and <b>Select None</b> change the ticks.</li>
+    <li>A sheet lists the uninstalled apps, all ticked. In <b>Root</b> mode only the ones that still have a data folder are listed, each with its size. Without Root the app cannot look into other apps' folders, so every uninstalled app is listed and the note says that some may have nothing left. The outlined <b>Select All</b> and <b>Clear All</b> buttons change the ticks. To clear just one app, use the bin button on its row in the Applications tab's Uninstalled filter.</li>
     <li>Tap <b>Clear data of N apps</b> and confirm the question: it cannot be undone. A progress sheet and then the usual results box follow.</li>
   </ol>
   <p><b>How each app is cleared.</b> First with <code>pm clear</code>. If that is refused, in Root mode the app's data folders are deleted directly; without Root the app is brought back for you with <code>pm install-existing</code> and removed again <i>without</i> keeping its data (an app whose APK is gone cannot be brought back and needs Root). In Root mode the result is checked by counting the files before and after. Installed apps and your own files are never touched.</p>

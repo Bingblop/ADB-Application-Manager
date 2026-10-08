@@ -1,5 +1,16 @@
 # Changelog
 
+## v7.10.18-Pro (versionCode 838)
+
+- **Select All / Clear All on the other list headers.** The Selected apps list (Show Applications) gets outlined **Select All** (adds every app the Apps list shows now) and **Clear All** (empties the selection and
+  closes the list); the Clear Data from Uninstalled Apps sheet's buttons are outlined too and **Select None** is now **Clear All**; **New List** in Saved Applications has the same outline.
+- **One app's leftover data from its row.** In the Uninstalled filter every row has a bin button: it asks, names the size in Root mode (or says the app has no data left), and clears just that app with the
+  read-back batch (`clear_removed_data`). Test: `t141`.
+- **The VirusTotal card shows today's quota.** Once the key is approved the card (and the Installer's VirusTotal card) says *377 of 500 lookups left today (123 used)* and when the UTC day ends, from VirusTotal's
+  own counters (`GET /users/current`, then `/users/<key>/overall_quotas`; the user's counter wins over the group's), so the Installer's and Morphe Helper's scans count together. If VirusTotal gives no counter
+  the app's own count is shown and labelled. Refresh button; read at most once a minute and after each scan. `MorpheVirusTotal.accountQuota`, `parseQuotas`; Java test `morphevt`, UI test `t141`.
+- Not changed: v7.10.9 to v7.10.16 were never released on their own; they went out inside v7.10.17.
+
 ## v7.10.17-Pro (versionCode 837)
 
 - **Force stop is read back.** After `am force-stop` the app lists the running processes (`ps -A -o NAME`, or `pidof` where that is missing) and says **Stopped** or **Still running** (with the reason an app can be

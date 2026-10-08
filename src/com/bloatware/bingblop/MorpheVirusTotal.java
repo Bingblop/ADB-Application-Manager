@@ -516,6 +516,87 @@ public final class MorpheVirusTotal {
         throw statusError(r);
     }
 
+    /**
+     * What is left of the key's quota, as VirusTotal itself counts it (so a scan made by the Installer counts too): GET /users/current, then /users/&lt;key&gt;/overall_quotas
+     * when that carries no quotas. The answer: {source "virustotal", dayAllowed, dayUsed, dayLeft, hourAllowed, hourUsed, monthAllowed, monthUsed, resetDayInMs}. When VirusTotal answers
+     * without any counter, this app's own count of the day is given instead ({source "local"}, the free key's 500 a day). A wrong key, a used-up quota and no connection are
+     * IOExceptions as in {@link #validateKey}.
+     */
+    public static JSONObject accountQuota(String key, File stateFile) throws IOException {
+        MorpheVirusTotal v = new MorpheVirusTotal(key, stateFile);
+        v.needKey();
+        JSONObject q = v.fetchQuota("/users/current");
+        if (q == null) q = v.fetchQuota("/users/" + v.key + "/overall_quotas");
+        long now = v.now();
+        if (q == null) {
+            JSONObject l = v.quota();
+            q = new JSONObject();
+            put(q, "source", "local");
+            put(q, "dayAllowed", lng(l, "perDayLimit"));
+            put(q, "dayUsed", lng(l, "perDayUsed"));
+        } else {
+            put(q, "source", "virustotal");
+        }
+        put(q, "dayLeft", Math.max(0, lng(q, "dayAllowed") - lng(q, "dayUsed")));
+        put(q, "resetDayInMs", DAY_MS - Math.floorMod(now, DAY_MS));
+        return q;
+    }
+
+    private JSONObject fetchQuota(String path) throws IOException {
+        MorpheNet.Response r;
+        try {
+            r = MorpheNet.request("GET", apiBase + path, headers(), null);
+        } catch (IOException e) {
+            throw new IOException(redact(e.getMessage() == null ? "network error" : e.getMessage()));
+        }
+        if (r.status == 404 || r.status == 405) return null;
+        if (r.status == 429) {
+            boolean daily = dailyQuota(r);
+            long wait = retryAfterMs(r, daily ? DAY_MS : MINUTE_MS);
+            throw new RateLimited(wait, daily, "VirusTotal's quota is used up right now (HTTP 429): try again in " + ((wait + 999) / 1000) + " s.");
+        }
+        if (r.status < 200 || r.status >= 300) throw statusError(r);
+        try {
+            return parseQuotas(new JSONObject(r.text == null ? "" : r.text.trim()));
+        } catch (JSONException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Reads the counters out of a user object (data.attributes.quotas) or an overall_quotas answer (data); each of api_requests_daily / _hourly / _monthly is {allowed, used} or
+     * {user: {allowed, used}, group: {...}} (the user's own counter wins). Null when there is no daily counter.
+     */
+    public static JSONObject parseQuotas(JSONObject root) {
+        JSONObject data = obj(root, "data");
+        JSONObject quotas = obj(obj(data, "attributes"), "quotas");
+        if (quotas == null) quotas = data;
+        JSONObject day = counter(quotas, "api_requests_daily");
+        if (day == null) return null;
+        JSONObject o = new JSONObject();
+        put(o, "dayAllowed", lng(day, "allowed"));
+        put(o, "dayUsed", lng(day, "used"));
+        JSONObject hour = counter(quotas, "api_requests_hourly");
+        if (hour != null) {
+            put(o, "hourAllowed", lng(hour, "allowed"));
+            put(o, "hourUsed", lng(hour, "used"));
+        }
+        JSONObject month = counter(quotas, "api_requests_monthly");
+        if (month != null) {
+            put(o, "monthAllowed", lng(month, "allowed"));
+            put(o, "monthUsed", lng(month, "used"));
+        }
+        return o;
+    }
+
+    private static JSONObject counter(JSONObject quotas, String name) {
+        JSONObject c = obj(quotas, name);
+        if (c == null) return null;
+        JSONObject u = obj(c, "user");
+        if (u != null) c = u;
+        return c.has("allowed") ? c : null;
+    }
+
     // ------------------------------------------------------------------------------------------------------------------------------
     // Results
     // ------------------------------------------------------------------------------------------------------------------------------
