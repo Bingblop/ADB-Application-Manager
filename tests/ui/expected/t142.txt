@@ -11,6 +11,9 @@ ok   5. an app with none says TRACKERS 0 (green); the list says none was found
 ok      the list says that no known tracker was found
 ok   6. an app whose code cannot be read says TRACKERS ? and does not claim zero
 ok   7. an uninstalled app has no chip
-ok   8. the results of an earlier run come back from the cache at the next start
+ok   9. Update the list asks the app and shows that it is working: {"t":"Updating…","d":true}
+ok      when it is done the toast says how many trackers the new list has, the old results are dropped and the open app is read again: {"toast":"Tracker list updated: 431 trackers","open":false,"btn":"Update the list","scans":2}
+ok   10. a failed update says why and keeps the button usable
+ok   8. the results of an earlier run come back from the cache at the next start, so nothing is left to scan
 ok   no page errors:
 ALL PASSED

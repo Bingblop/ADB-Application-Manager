@@ -205,6 +205,14 @@
   <h4>Clear the history</h4>
   <p>At the bottom of the <b>Changes</b> sheet, <b>Clear history</b> asks <i>Forget the history of changes? The settings themselves stay as they are.</i> If you confirm, the list is emptied, the small dots and the <b>Edited</b> filter forget everything, and nothing on the phone changes. You cannot get the entries back, so do this only when you are happy with how the phone behaves. The button only shows while there is something to clear.</p>
 
+  <h4>Back up the changes you made, and restore them</h4>
+  <p>Under the list in the <b>Changes</b> sheet there are two more buttons next to <b>Clear history</b>.</p>
+  <ul>
+    <li><b>Back up changes</b> opens Android's share sheet with a small file, <code>hidden_settings_(date).json</code>. It holds every setting you changed with this app: the table, the name, the value it has now, and the value it had before. Save it to Drive, send it to yourself, or keep it with your other backups. Settings whose value was too long to keep are left out.</li>
+    <li><b>Restore…</b> asks you to pick such a file. The app checks it (a name with spaces or strange characters, an unknown table or a value that is not text is left out), compares it with what the phone holds now, and asks <i>Put N hidden settings back from the backup?</i>, naming the first few and saying how many are marked risky. Settings that already match are skipped. If you agree, the values are put back one after the other (a value of <i>removed</i> deletes the setting), the progress is shown as <i>Restoring 3 of 12&hellip;</i>, and one message at the end says how many worked and which did not. Every restored setting is written to the history again, so it can be reverted.</li>
+  </ul>
+  <p>The file only knows the settings you changed here, not the whole phone, and it is for the same kind of device: a setting that another phone does not have is created, which it may ignore. A backup is not a reset button for settings the app never touched; for those, use the copy described next. Needs a working mode, like any change.</p>
+
   <h4>Keep your own copy before you experiment</h4>
   <p>The history cannot restore a whole table, and it does not know settings you did not change. If you are about to try several things, save the original values first.</p>
   <ol class="hg-steps">
@@ -213,7 +221,7 @@
     <li>Tap <b>⋯</b>, then <b>Copy shown</b> (a message says <i>Copied 340 settings</i> or similar), and paste into a notes app. Or tap <b>Share shown</b> and send the text to yourself.</li>
     <li>Do the same for the other tables if you want to.</li>
   </ol>
-  <p>The copy is plain text with one <code>name=value</code> line per setting. To restore something later, find the line and set the value by hand (tap the row, type, <b>Save</b>), or create the setting with <b>＋</b> if it was deleted. The app cannot read that text back in for you.</p>
+  <p>The copy is plain text with one <code>name=value</code> line per setting. To restore something later, find the line and set the value by hand (tap the row, type, <b>Save</b>), or create the setting with <b>＋</b> if it was deleted. That text cannot be read back in by the app; the file from <b>Back up changes</b> above can.</p>
   <div class="hg-warn"><b>Careful.</b> The lists can hold personal details, such as the device name, the Bluetooth name and address, and the Android ID. Keep the copy private. If a very long list does not go through the share sheet, narrow it with the search or a filter first.</div>
 
   <h4>If something goes wrong</h4>

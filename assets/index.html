@@ -7769,6 +7769,10 @@ Type any command below (e.g. pm list packages -d)
             <div style="display:flex; gap:10px; margin-top:8px;">
                 <button class="mode-action-btn" id="sdbJournalClear" onclick="sdbJournalClear()">Clear history</button>
             </div>
+            <div style="display:flex; gap:10px; margin-top:8px;">
+                <button class="mode-action-btn" id="sdbBackupBtn" onclick="sdbBackup()">Back up changes</button>
+                <button class="mode-action-btn" id="sdbRestoreBtn" onclick="sdbRestore()">Restore…</button>
+            </div>
         </div>
     </div>
 
@@ -8270,6 +8274,7 @@ Type any command below (e.g. pm list packages -d)
             <div class="uad-credit" id="trackersCredit" style="margin-top:12px;"></div>
             <div class="mode-btn-row" style="margin-top:12px;">
                 <button class="mode-action-btn" onclick="openUrlExternal('https://exodus-privacy.eu.org')">Exodus Privacy</button>
+                <button class="mode-action-btn" id="trackersUpdateBtn" onclick="trackersUpdateList()">Update the list</button>
                 <button class="mode-action-btn" onclick="closeTrackersInfo()">Close</button>
             </div>
         </div>
@@ -10469,6 +10474,26 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('trackersCredit').innerText = 'Found by reading the class names in the app\'s code on this phone; nothing is sent anywhere. Tracker list: Exodus Privacy' + (info.count ? ' (' + info.count + ' trackers, copied ' + info.retrieved + ')' : '') + ', licensed ODbL 1.0. Code renamed by a shrinker (R8, ProGuard) or loaded later can hide a tracker, so a low number is not proof that there are none.';
             document.getElementById('trackersModal').classList.add('show');
         }
+        // "Update the list": fetch the current Exodus list (a plain download, nothing sent), then look at every app again with it
+        function trackersUpdateList() {
+            const b = window.AndroidBridge, btn = document.getElementById('trackersUpdateBtn');
+            if (!b || !b.trackerUpdate) { showToast('Updating the list works in the app'); return; }
+            haptic();
+            if (btn) { btn.disabled = true; btn.innerText = 'Updating…'; }
+            if (b.trackerUpdate() !== 'started') { if (btn) { btn.disabled = false; btn.innerText = 'Update the list'; } showToast('Could not start the update'); }
+        }
+        window.onTrackerUpdate = function (r) {
+            const btn = document.getElementById('trackersUpdateBtn');
+            if (btn) { btn.disabled = false; btn.innerText = 'Update the list'; }
+            if (!r || !r.ok) { showToast('Tracker list not updated: ' + ((r && r.error) || 'no answer')); return; }
+            showToast('Tracker list updated: ' + r.count + ' trackers');
+            trackerMap = {}; trackerMeta = null;
+            trackersLoadCached();
+            if (document.getElementById('trackersModal').classList.contains('show')) { closeTrackersInfo(); }
+            renderApps();
+            if (activeFilters.has('trackers')) trackersEnsure(false);
+            if (inspectedPkg && document.getElementById('inspectorModal').classList.contains('show')) loadSheetTrackers(inspectedPkg);
+        };
         function closeTrackersInfo() { haptic(); document.getElementById('trackersModal').classList.remove('show'); }
 
         // The app menu's UAD-NG chip: what the project's list says about the open app (nothing shown when it is not in the list)
@@ -13845,6 +13870,7 @@ Type any command below (e.g. pm list packages -d)
         }
         window.onTextFilePicked = function (r) {
             if (r && r.tag === 'lists-file') { listsOnFile(r); return; }
+            if (r && r.tag === 'hs-restore') { if (r.error) showToast('Could not read that file: ' + r.error); else sdbRestoreFrom(r.text || ''); return; }
             if (!r || !String(r.tag || '').startsWith('presets-')) return;
             if (r.error) { showToast('Could not read that file: ' + r.error); return; }
             const got = presetsFromFile(r.text || '');
@@ -28003,7 +28029,7 @@ Type any command below (e.g. pm list packages -d)
         function sdbPut(ns, key, value, opts) {
             opts = opts || {};
             const id = ns + '/' + key;
-            if (sdbBusy.has(id)) { showToast('Still applying the last change…'); return; }
+            if (sdbBusy.has(id)) { if (opts.silent) { if (opts.after) opts.after({ ok: false, busy: true }); } else showToast('Still applying the last change…'); return; }
             const had = !!(sdbData[ns] && sdbData[ns].has(key));
             const before = had ? sdbData[ns].get(key) : null;
             sdbBusy.add(id);
@@ -28014,14 +28040,15 @@ Type any command below (e.g. pm list packages -d)
                     const now = r.value != null ? r.value : value;
                     if (sdbData[ns]) sdbData[ns].set(key, now); else sdbReadTable(ns);       // never make up a table out of one entry
                     sdbRecord(ns, key, had ? before : null, now);
-                    if (opts.quiet) showToast('Put back: ' + sdbClip(key, 40));
+                    if (opts.silent) { /* a restore reports once, at the end */ }
+                    else if (opts.quiet) showToast('Put back: ' + sdbClip(key, 40));
                     else {
                         const what = opts.verb === 'Flipped' ? key + ': ' + sdbClip(before, 20) + ' → ' + sdbClip(now, 20) : (opts.verb || 'Saved') + ' ' + key;
                         sdbSnack((opts.verb === 'Created' ? '＋ ' : '') + what, () => { had ? sdbPut(ns, key, before, { quiet: true }) : sdbDelete(ns, key, { quiet: true }); });
                     }
                 } else {
                     if (r.value != null && sdbData[ns] && (had || r.value !== 'null')) sdbData[ns].set(key, r.value);        // show what Android really holds ("null" for a name that was never there is not a value)
-                    sdbFailure(r, ns, key, 'put');
+                    if (!opts.silent) sdbFailure(r, ns, key, 'put');
                     if (r.timedOut || r.unknown) sdbRefreshLater(ns);
                 }
                 sdbDirty();
@@ -28033,7 +28060,7 @@ Type any command below (e.g. pm list packages -d)
         function sdbDelete(ns, key, opts) {
             opts = opts || {};
             const id = ns + '/' + key;
-            if (sdbBusy.has(id)) { showToast('Still applying the last change…'); return; }
+            if (sdbBusy.has(id)) { if (opts.silent) { if (opts.after) opts.after({ ok: false, busy: true }); } else showToast('Still applying the last change…'); return; }
             const had = !!(sdbData[ns] && sdbData[ns].has(key));
             const before = had ? sdbData[ns].get(key) : null;
             sdbBusy.add(id);
@@ -28043,11 +28070,12 @@ Type any command below (e.g. pm list packages -d)
                 if (r.ok) {
                     if (sdbData[ns]) sdbData[ns].delete(key);
                     if (had) sdbRecord(ns, key, before, null);
-                    if (opts.quiet) showToast('Removed: ' + sdbClip(key, 40));
+                    if (opts.silent) { /* a restore reports once, at the end */ }
+                    else if (opts.quiet) showToast('Removed: ' + sdbClip(key, 40));
                     else if (had) sdbSnack('Deleted ' + key, () => sdbPut(ns, key, before, { quiet: true }));
                     else showToast(key + ' was already gone');
                 } else {
-                    sdbFailure(r, ns, key, 'delete');
+                    if (!opts.silent) sdbFailure(r, ns, key, 'delete');
                     if (r.timedOut || r.unknown) sdbRefreshLater(ns);
                 }
                 sdbDirty();
@@ -28138,6 +28166,79 @@ Type any command below (e.g. pm list packages -d)
             sdbJournalClose();
             if (e.f === null) sdbDelete(e.ns, e.k, { quiet: true });
             else sdbPut(e.ns, e.k, e.f, { quiet: true });
+        }
+
+        // ---- back up what was changed with this app, and put it back (after a reset, or on another phone) ----
+        // A file { app: 'adb-app-manager', format: 1, kind: 'hidden-settings', exportedAt, settings: [{ ns, key, value (null = removed), original (null = was not set) }] } holds the value each changed setting has now.
+        function sdbBackupData() {
+            const by = new Map();
+            sdbJournal.slice().sort((a, b) => a.n - b.n).forEach(e => {
+                const id = e.ns + '/' + e.k;
+                const cur = by.get(id) || { ns: e.ns, key: e.k, original: e.lf ? undefined : e.f, value: undefined };
+                cur.value = e.lv ? undefined : e.v;               // the newest change decides; a value too long to keep cannot be saved
+                by.set(id, cur);
+            });
+            return Array.from(by.values()).filter(x => x.value !== undefined).map(x => ({ ns: x.ns, key: x.key, value: x.value, original: x.original === undefined ? null : x.original }));
+        }
+        function sdbBackup() {
+            sdbInit();
+            const list = sdbBackupData();
+            if (!list.length) { showToast('Nothing was changed with this app yet'); return; }
+            haptic();
+            shareFileViaBridge('hidden_settings_' + new Date().toISOString().slice(0, 10) + '.json', JSON.stringify({ app: 'adb-app-manager', format: 1, kind: 'hidden-settings', exportedAt: new Date().toISOString(), settings: list }, null, 2) + '\n', 'application/json');
+        }
+        function sdbRestore() {
+            if (!window.AndroidBridge || !window.AndroidBridge.pickTextFile) { showToast('Restoring needs the app build'); return; }
+            haptic();
+            window.AndroidBridge.pickTextFile('hs-restore');
+        }
+        // what a file may bring in: names and values are checked, like everything read back from storage
+        function sdbRestoreParse(text) {
+            let d;
+            try { d = JSON.parse(text); } catch (e) { return null; }
+            if (!d || d.app !== 'adb-app-manager' || d.kind !== 'hidden-settings' || !Array.isArray(d.settings)) return null;
+            const out = [], seen = new Set();
+            d.settings.slice(0, 2000).forEach(x => {
+                if (!x || !SDB_TABLES.includes(x.ns) || typeof x.key !== 'string' || !/^[A-Za-z0-9_.:@-]{1,200}$/.test(x.key)) return;
+                if (!(x.value === null || (typeof x.value === 'string' && x.value.length <= 2000))) return;
+                const id = x.ns + '/' + x.key;
+                if (seen.has(id)) return;
+                seen.add(id);
+                out.push({ ns: x.ns, key: x.key, value: x.value });
+            });
+            return out;
+        }
+        function sdbRestoreFrom(text) {
+            const all = sdbRestoreParse(text);
+            if (all === null) { showToast('That is not a Hidden Settings backup from this app'); return; }
+            if (!all.length) { showToast('Nothing usable in that file'); return; }
+            const cur = (ns, k) => sdbData[ns] ? (sdbData[ns].has(k) ? sdbData[ns].get(k) : null) : undefined;       // undefined: that table is not read yet
+            const todo = all.filter(x => cur(x.ns, x.key) !== x.value);
+            const same = all.length - todo.length;
+            if (!todo.length) { showToast('All ' + all.length + ' settings are already as in the backup'); return; }
+            const risky = todo.filter(x => { const h = sdbHint(x.ns, x.key); return h && h.r; });
+            const names = todo.slice(0, 6).map(x => '  ' + x.key + ' → ' + (x.value === null ? '(removed)' : '“' + sdbClip(x.value, 24) + '”')).join('\n') + (todo.length > 6 ? '\n  … and ' + (todo.length - 6) + ' more' : '');
+            if (!confirm('Put ' + todo.length + ' hidden setting' + (todo.length === 1 ? '' : 's') + ' back from the backup?' + (same ? '\n(' + same + ' already match.)' : '') + '\n\n' + names
+                + (risky.length ? '\n\n' + risky.length + ' of them ' + (risky.length === 1 ? 'is' : 'are') + ' marked risky (' + risky.slice(0, 4).map(x => x.key).join(', ') + (risky.length > 4 ? ', …' : '') + '). A wrong value can break calls, Wi-Fi or the screen.' : '')
+                + '\n\nEvery change goes into the history, so it can be reverted.')) return;
+            sdbRestoreRun(todo);
+        }
+        function sdbRestoreRun(items) {
+            let i = 0, ok = 0;
+            const bad = [];
+            const next = () => {
+                if (i >= items.length) {
+                    sdbRender();
+                    showToast('Restored ' + ok + ' of ' + items.length + (bad.length ? '; could not change ' + bad.slice(0, 3).join(', ') + (bad.length > 3 ? ' and ' + (bad.length - 3) + ' more' : '') : ''));
+                    return;
+                }
+                const it = items[i++];
+                showToast('Restoring ' + i + ' of ' + items.length + '…');
+                const done = r => { if (r && r.ok) ok++; else bad.push(it.key); next(); };
+                if (it.value === null) sdbDelete(it.ns, it.key, { silent: true, after: done });
+                else sdbPut(it.ns, it.key, it.value, { silent: true, after: done });
+            };
+            next();
         }
 
         function sdbJournalClear() {
@@ -31417,7 +31518,7 @@ Type any command below (e.g. pm list packages -d)
                 '<div class="mp-sw"><div class="mp-main"><div class="mp-name">Scan with VirusTotal</div></div><label class="mp-check"><input type="checkbox" ' + (c.hVt ? 'checked ' : '') + 'onchange="mp.cfg.hVt=this.checked;mpCfgSave();mpHelperRender();if(this.checked)mpHelperQuota();"></label></div>' +
                 (c.hVt ? '<div class="mp-note" style="margin:6px 0;">' + (vtKeyApproved() ? 'Using the VirusTotal API key from Settings (approved).' : (vtKey() ? 'The key in Settings has not been approved yet.' : 'No VirusTotal API key yet.')) + ' <button class="mp-act" onclick="vtOpenSettings()">' + (vtKeyApproved() ? 'Settings' : (vtKey() ? 'Test it in Settings' : 'Enter it in Settings')) + '</button></div>' +
                     '<div class="mp-sw"><div class="mp-main"><div class="mp-name">When to scan</div></div>' + sel('hVtMode', [['never', 'Never'], ['ask', 'Ask (a button)'], ['always', 'Always']]) + '</div>' +
-                    (q ? '<div class="mp-note">This minute: ' + q.perMinuteUsed + ' of ' + q.perMinuteLimit + '</div><div class="mp-bar-quota"><i style="width:' + Math.min(100, 100 * q.perMinuteUsed / q.perMinuteLimit) + '%"></i></div><div class="mp-note">Today: ' + q.perDayUsed + ' of ' + q.perDayLimit + '</div><div class="mp-bar-quota"><i style="width:' + Math.min(100, 100 * q.perDayUsed / q.perDayLimit) + '%"></i></div>' : '') : '') +
+                    (q ? '<div class="mp-note">This minute: ' + q.perMinuteUsed + ' of ' + q.perMinuteLimit + '</div><div class="mp-bar-quota"><i style="width:' + Math.min(100, 100 * q.perMinuteUsed / q.perMinuteLimit) + '%"></i></div><div class="mp-note">Today: ' + q.perDayUsed + ' of ' + q.perDayLimit + (q.live ? ' (counted by VirusTotal)' : '') + '</div><div class="mp-bar-quota"><i style="width:' + Math.min(100, 100 * q.perDayUsed / q.perDayLimit) + '%"></i></div>' : '') : '') +
                 '<div class="mp-group"><span>Credits</span></div><div class="mp-note">The sources, Fast mode and VirusTotal flow of Morphe Helper follow <a href="#" style="color:var(--accent)" onclick="mpLink(\'https://github.com/rushiranpise/helper-for-morphe\');return false;">Helper for Morphe</a> by rushiranpise (GPL-3.0). It is independent of the APK sites it uses; availability, versions and formats can change at any time. The community patch index is community-maintained and its bundles are not verified by Morphe.</div>';
         }
         function mpHSrcToggle(id, on) {
@@ -31428,7 +31529,16 @@ Type any command below (e.g. pm list packages -d)
             if (!mp.cfg.hSources.includes(mp.cfg.hDefault)) mp.cfg.hDefault = mp.cfg.hSources[0];
             mpCfgSave();
         }
-        async function mpHelperQuota() { const r = await mpCall('vtQuota', {}); if (r.ok && r.data) { mp.h.quota = r.data; if (mp.h.tab === 'set') mpHelperRender(); } }
+        // This minute comes from this app's own count; today's number comes from VirusTotal itself when the key is approved (so the Installer's scans count too)
+        async function mpHelperQuota() {
+            const r = await mpCall('vtQuota', {});
+            if (!r.ok || !r.data) return;
+            mp.h.quota = r.data;
+            if (mp.h.tab === 'set') mpHelperRender();
+            if (!vtKeyApproved()) return;
+            const l = await mpCall('vtQuotaLive', { key: vtKey() });
+            if (l.ok && l.data && l.data.source === 'virustotal') { mp.h.quota = Object.assign({}, mp.h.quota, { perDayUsed: l.data.dayUsed, perDayLimit: l.data.dayAllowed, live: true }); if (mp.h.tab === 'set') mpHelperRender(); }
+        }
         // MORPHE:JS:END
         // SDM:JS:BEGIN
         const SD_SCHEMA = {

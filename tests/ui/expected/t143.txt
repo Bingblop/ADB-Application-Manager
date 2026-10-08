@@ -1,0 +1,27 @@
+ok   1. the Changes sheet has Back up changes and Restore…
+ok      it shares one JSON file named for the day: "hidden_settings_2026-10-03.json"
+ok      it holds the value each changed setting has now and the one it had before: [{"ns":"global","key":"stay_on_while_plugged_in","value":"3","original":"7"},{"ns":"global","key":"device_name","value":"Renamed","original":"Sam's phone"}]
+ok   2. Restore… asks the app for a file
+ok      it asks first, naming the settings and saying they are in the history: Put 2 hidden settings back from the backup?
+
+  stay_on_while_plugged_in → “3”
+  device_name → “Renamed”
+
+Every change goes into the history, so it can be reverted.
+ok      then puts both values back, one after the other: put stay_on_while_plugged_in=3|put device_name=Renamed
+ok      and says once at the end how many were restored: Restored 2 of 2
+ok      without a sheet or a message for each setting
+ok      every change is in the history again
+ok   3. a backup that already matches changes nothing and says so: All 2 settings are already as in the backup
+ok   4. a file that is not JSON is refused
+ok      so is a file of another kind
+ok      names with spaces or shell characters, unknown tables, numbers as values and doubles are left out; a null value removes the setting: Put 2 hidden settings back from the backup?
+
+  zen_mode → “1”
+  low_power → (removed)
+
+Every change goes into the history, so it can be reverted. :: put zen_mode=1|delete low_power=
+ok      the removed one is gone from the fake phone
+ok   5. saying no at the question changes nothing
+ok   no page errors:
+ALL PASSED

@@ -111,6 +111,7 @@ const { chromium, PAGE, fixture } = require('./lib/pw');
           }
           case 'helperManual': return ok({ url: 'https://www.apkmirror.com/?s=' + a.pkg });
           case 'vtQuota': return ok({ perMinuteUsed: 1, perMinuteLimit: 4, perDayUsed: 12, perDayLimit: 500 });
+          case 'vtQuotaLive': return ok({ source: 'virustotal', dayAllowed: 500, dayUsed: 77, dayLeft: 423, resetDayInMs: 3600000 });
           case 'vtValidate': return a.key === 'good' ? ok({}) : bad('VirusTotal refused the key (401)');
           case 'vtScan': return ok({ found: true, cached: true, verdict: M.vtVerdict, malicious: M.vtVerdict === 'clean' ? 0 : 7, suspicious: 0, total: 70, permalink: 'https://www.virustotal.com/gui/file/abc' }, 20);
           case 'keyExport': return ok({ path: '/storage/emulated/0/Download/Morphe Patcher/morphe.keystore' });
@@ -342,6 +343,8 @@ const { chromium, PAGE, fixture } = require('./lib/pw');
   await ev(() => { const c = document.querySelector('#mpSheetBody .mp-sw input[onchange*="hVt=this"]'); c.checked = true; c.dispatchEvent(new Event('change')); }); await wait(200);
   check('turning VirusTotal on shows the key note (no box of its own), the mode and the quota bars', await ev(() => { const t = document.getElementById('mpSheetBody').innerText; return !document.getElementById('mpHKey') && /No VirusTotal API key yet/.test(t) && /Enter it in Settings/.test(t) && /When to scan/.test(t) && /This minute: 1 of 4/.test(t) && /Today: 12 of 500/.test(t); }));
   await ev(() => { vtKeyTyped('good'); kvSet('vt_key_ok', 'good'); mpHelperRender(); });
+  await ev(() => { mpHelperQuota(); }); await wait(300);
+  check('with the key approved, today\'s number is the one VirusTotal counts (Installer scans included) and the line says so', await ev(() => /Today: 77 of 500 \(counted by VirusTotal\)/.test(document.getElementById('mpSheetBody').innerText) && /This minute: 1 of 4/.test(document.getElementById('mpSheetBody').innerText)));
   check('with the one key from Settings approved the note says so', await ev(() => /Using the VirusTotal API key from Settings \(approved\)/.test(document.getElementById('mpSheetBody').innerText)));
   await ev(() => { mp.cfg.hVtMode = 'ask'; mpCfgSave(); mpHTab('get'); });
   await ev(() => { mp.h.got = { path: '/cache/h/y.apk', pkg: 'com.google.android.youtube', versionName: '20.21.37', versionCode: 1, format: 'apk', size: 1000, sha256: 'cd'.repeat(32) }; mpHelperRender(); });

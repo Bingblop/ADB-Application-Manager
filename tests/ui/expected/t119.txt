@@ -82,6 +82,7 @@ ok   This version downloads and shows the file, its SHA-256 and the install / pa
 ok   VirusTotal is off, so there is no scan button
 ok   Helper settings: the ten sources, connection, save, fast mode, VirusTotal and the credit
 ok   turning VirusTotal on shows the key note (no box of its own), the mode and the quota bars
+ok   with the key approved, today's number is the one VirusTotal counts (Installer scans included) and the line says so
 ok   with the one key from Settings approved the note says so
 ok   with a key and "ask" a Scan button appears
 ok   a clean file is shown as clean with the engine counts and a link
