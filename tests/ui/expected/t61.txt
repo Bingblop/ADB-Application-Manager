@@ -1,5 +1,5 @@
 1. a name that looks like an <img onerror> is shown as text, nothing runs: true {"imgs":0,"pwned":0,"rows":1}
-   a value with <script> and <b> is text too: true <div class="sdb-main"><div class="sdb-key"><mark class="find-hit">xss_value</mark></div><div class="sdb-val">&lt;script&gt;window.__pwned=2&lt;/script&gt;&lt;b&gt;bold&lt;/b&gt;</div></div>
+   a value with <script> and <b> is text too: true <div class="sdb-main"><div class="sdb-key"><mark class="find-hit">xss_value</mark></div><div class="sdb-hint">No description yet</div><div class="sdb-val">&lt;script&gt;window.__pwned=2&lt;/script&gt;
    quotes in a name survive the round trip to the editor: true {"n":1,"pwned":0,"key":"quote\"key's"}
    and it opens: true
    Copy command escapes both kinds of quote: true settings put global 'quote"key'\''s' '"><svg onload=window.__pwned=3>'

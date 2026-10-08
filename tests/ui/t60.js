@@ -127,7 +127,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   await sleep(150);
   const op8 = await lastOp();
   check('   press and hold flips 1 to 0 with one put', (await opCount()) === n0 + 1 && op8.op === 'put' && op8.ns === 'global' && op8.key === 'heads_up_notifications_enabled' && op8.value === '0', JSON.stringify(op8));
-  check('   the row shows the new state (read back)', (await switchOn('heads_up_notifications_enabled')) === false && /\n0\s*$/.test(await rowText('heads_up_notifications_enabled')), JSON.stringify(await rowText('heads_up_notifications_enabled')));
+  check('   the row shows the new state (read back)', (await switchOn('heads_up_notifications_enabled')) === false && /\n0\n✦ Ask agent\s*$/.test(await rowText('heads_up_notifications_enabled')), JSON.stringify(await rowText('heads_up_notifications_enabled')));
   check('   an undo bar names the change', /heads_up_notifications_enabled: 1 → 0/.test(await snack()), await snack());
   await page.locator('#sdbSnackUndo').click(); await sleep(200);
   check('   Undo puts the old value back', (await lastOp()).value === '1' && (await switchOn('heads_up_notifications_enabled')) === true);

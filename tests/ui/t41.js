@@ -93,7 +93,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.fill('#logcatFilter', '');
 
   // 9) Bridge errors show as a plain notice, no rows, counts reset.
-  await page.evaluate(() => { window.__logText = 'Error: reading logcat needs ADB, Shizuku or Root.'; logcatFetch(false); });
+  await page.evaluate(() => { logcatClear(); window.__logText = 'Error: reading logcat needs ADB, Shizuku or Root.'; logcatFetch(false); });      // (since v7.12.0 an error does not wipe lines already shown: it is the notice only when there are none)
   await page.waitForTimeout(40);
   const errRows = await page.locator('#logcatOutput .lc-row').count();
   const notice = await page.locator('#logcatOutput .lc-meta').innerText();

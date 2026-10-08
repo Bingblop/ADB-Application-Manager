@@ -1,4 +1,4 @@
-# On-device test checklist (v7.1 to v7.11.2)
+# On-device test checklist (v7.1 to v7.12.0)
 
 The automated tests run the page in a browser with a pretend phone. They cannot prove the parts that talk to Android:
 icons, the file chooser, added storage, shell commands and the haptic feedback. This list is for those. Tick a box when
@@ -25,10 +25,10 @@ it works; write down what you saw when it does not.
 - [ ] App Stores > screenshots (v7.10.8): open an app with screenshots in ShizuStore, tap one: it opens full screen. Pinch to zoom in and out, double tap, drag a zoomed picture, swipe to the next one, use the arrows, press Back: only the viewer closes and the app's details are still there. Rotate the phone while it is open (the picture should still fit), and try it with a slow connection (it says Loading… and then shows it).
 - [ ] Saved Applications > Back up and restore (v7.10.8): Choose folder… and pick a folder on the phone (then try an SD card or a cloud folder if you have one); Back up now: the file `saved-lists-….json` is in that folder (check with the Files app). Switch Back up automatically on, edit a list, wait 5 seconds: `saved-lists-latest.json` is updated (one file, no copies). Delete a list on purpose, then Restore from the folder… and choose Add them to my lists: it comes back. Restore from a file… with the same file: nothing doubles. Replace my lists with them with a backup made before you changed lists: you get the old state, and the Quick list is the one it was. Close and reopen the app, back up again: the folder still works (no need to choose it again).
 - [ ] Connected Devices > Saved devices (v7.10.9): connect a watch or tablet, then open Saved devices (N): it is listed with how it was connected. Switch its Wi-Fi off: it stays listed with Connect and Delete. Delete it (asked first): it goes from this list and from the Not connected cards. Delete one that is connected: it stays connected. Switch Remember the devices I connect off, connect another device: it works but is not saved.
-- [ ] Logcat > tap an entry (v7.10.9): a window opens with the whole message. Copy: paste it somewhere. Web search: your browser opens a search. More info with a Coding Agent connected (Command-Line Interface tab): an explanation streams in under the buttons; with none connected, it says so. Long-press text in a row: it selects, the window does not open.
+- [ ] Logcat > tap an entry (v7.10.9): a window opens with the whole message. Copy: paste it somewhere. Web search: your browser opens a search. Ask agent (was More info before v7.12.0) with a default agent connected (Command-Line Interface tab): an explanation streams in under the buttons; with none connected, it says so. Long-press text in a row: it selects, the window does not open.
 - [ ] Task Manager (v7.10.9): CPU tab > the °F / °C menu changes the CPU temperature (and the Battery tab's). GPU tab: the renderer card is the first thing; change it (working mode needed) and the card names the new one after System UI restarts.
 - [ ] Apps tab (v7.10.9): the boxes at the top show their colours when on (Enabled green, Frozen cyan, 3rd Party orange, System purple). Turn on Running, then tap Bloatware (Uninstalled): Running goes off and only the uninstalled apps are listed. The row under the boxes starts with the sort menu, with no "Sort" text before it.
-- [ ] Hidden Settings (v7.10.9): open a setting, Web search opens the browser; Explain (AI) with a Coding Agent connected explains it under the buttons. Look up wifi_frequency_band or ble_scan_background_mode: they say what they do and list their values.
+- [ ] Hidden Settings (v7.10.9): open a setting, Web search opens the browser; Ask agent (was Explain (AI) before v7.12.0) with a default agent connected explains it under the buttons. Look up wifi_frequency_band or ble_scan_background_mode: they say what they do and list their values.
 - [ ] Haptic feedback (v7.10.10): tap buttons, tabs, switches and list rows: a short tick each time (once, never twice for one tap). Settings > Haptic feedback > Vibrate on taps off: nothing vibrates; on again: one tick. It is on after a fresh install.
 - [ ] App Stores > + (v7.10.10): add a GitHub project (https://github.com/owner/project), then a GitHub user, then an F-Droid style repository (for example https://apt.izzysoft.de/fdroid/repo): each becomes a tab before the +, named from its address (or by you), loads its apps, and is still there after closing the app. Rename and Remove this store work. An address that is no repository says so. Tap a row in the GitHub, F-Droid, Orion and your own tabs: the sheet opens with the description, screenshots (tap one to enlarge), Website and Source; Install in the sheet installs the app.
 - [ ] Task Manager > Processes (v7.10.10): Apps first puts the apps above the system processes; tap again for the plain order.
@@ -273,8 +273,18 @@ These came before the rest of this list and were only checked in the browser. Th
 
 ## 15. Ask the agent about an unlisted app (v7.11.2)
 
-- [ ] Open an app the UAD-NG list does not rate (a small vendor system package): under Share the chip reads **UAD-NG Not listed · Ask**. An app the list rates (Bixby, a Google app) still shows its level and no Ask chip.
-- [ ] Tap the chip, then **Ask the agent** with no Coding Agent connected: it tells you to connect one (with an Open link). With an agent connected: the answer streams in, ends in a verdict, and **Copy the answer** copies it. **Web search** opens a search for the package.
+- [ ] Open an app the UAD-NG list does not rate (a small vendor system package): under Share an **Ask agent** button stands where the chip would be (since v7.12.0; before that the chip read UAD-NG Not listed · Ask). An app the list rates (Bixby, a Google app) still shows its level and no Ask chip.
+- [ ] Tap the button with no default agent chosen (v7.12.0): Settings opens on the Default agent card. With an agent connected: the answer streams in, ends in a verdict, and **Copy the answer** copies it. **Web search** opens a search for the package.
+
+## 16. Logcat, recording, default agent (v7.12.0)
+
+- [ ] Logcat > set the level to **Error** and press **Play** while using other apps: lines stay on the screen (they used to vanish after two seconds). A pause with nothing new does not empty the view. Changing the level starts a fresh view; **Clear** empties it.
+- [ ] Logcat > **Record to file**: the button becomes **Stop recording** with a growing line count; leave the tab, use an app, come back; tap **Stop recording**: the file opens as a still picture. Search for a word (the match is marked), hide a level with the key, go to **End**, tap an entry (Copy / Ask agent / Web search), **Copy shown**, **Save** (the file is in Download/ADB App Manager), **Share**.
+- [ ] Logcat > **Recordings** lists it with its size; tap it to open it again; the cross deletes it (**Delete** in the picture does too).
+- [ ] Settings > **Default agent** sits under Language. With none chosen, press **Ask agent** on a Hidden Setting row: Settings opens on the card, which is outlined for a moment, and nothing is sent. Choose an agent that has no key: the line under it says it is not connected; the button still leads to Settings.
+- [ ] Connect an agent (key in the Command-Line Interface tab), choose it as the default, press **Ask agent** on a hidden setting row, on a permission in an app's menu, on an overlay row and on a Task Manager process: a box shows what is sent and the answer streams in; **Ask again**, **Web search** and **Copy the answer** work.
+- [ ] App menu of an app the UAD-NG list rates: the chip reads only the level (no "UAD-NG" text). An unlisted app shows **Ask agent** in its place.
+- [ ] SD Maid: the four tools come first, then **Leftover data of uninstalled apps**, then **Trim Caches**.
 
 ## Report
 

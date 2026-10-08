@@ -10980,10 +10980,12 @@ public class MainActivity extends Activity {
                         return "Error: " + pkg + " is not installed.";
                     }
                     scope = " --uid=" + uid;
-                    fetch = Math.min(5000, n * 5);            // the tail is cut before the app filter on some versions, so read more
                     String[] sharing = getPackageManager().getPackagesForUid(uid);
                     if (sharing != null && sharing.length > 1) note = "note: " + pkg + " shares its user ID with " + (sharing.length - 1) + " other package(s), so their lines appear too\n";
                 }
+                // `-t N` counts lines of the whole buffer before the level / app filter on many versions, so an Error-only view of the last 300 lines
+                // was usually empty (and what it held rolled out a second later): when anything filters, read much further back and cut the tail here.
+                if (!"V".equals(lv) || !scope.isEmpty() || (filter != null && !filter.trim().isEmpty())) fetch = Math.min(10000, Math.max(3000, n * 10));
                 String out = executeShell("logcat -d -v threadtime -t " + fetch + scope + " *:" + lv);
                 if (out == null) out = "";
                 if (!scope.isEmpty() && isLogcatUsageError(out)) {
@@ -11030,6 +11032,95 @@ public class MainActivity extends Activity {
                         || first.contains("usage");
             }
             return first.contains("unrecognized option") || first.contains("unknown option") || first.contains("invalid option") || first.contains("unknown argument");
+        }
+
+        // ---- Log recorder: the log written to a file while it is on, looked at afterwards ----
+        private LogRecorder logRec;
+        private File logRecDir() { return new File(getFilesDir(), "logs"); }
+
+        private String logRecStatusJson() {
+            JSONObject r = new JSONObject();
+            try {
+                LogRecorder.Status s = logRec == null ? null : logRec.status();
+                r.put("ok", true);
+                r.put("running", s != null && s.running);
+                r.put("name", s == null ? "" : s.name);
+                r.put("lines", s == null ? 0 : s.lines);
+                r.put("bytes", s == null ? 0 : s.bytes);
+                r.put("startedAt", s == null ? 0 : s.startedAt);
+                r.put("stopReason", s == null ? "" : s.stopReason);
+                r.put("lastError", s == null ? "" : s.lastError);
+            } catch (Exception ignored) {}
+            return r.toString();
+        }
+
+        /** Starts writing the log (level, text filter and app as in the Logcat tab) to a new file. Returns JSON: ok, name / error. */
+        @JavascriptInterface
+        public synchronized String logRecStart(final String level, final String filter, final String pkg, String appName) {
+            JSONObject r = new JSONObject();
+            try {
+                if ("standard".equals(resolveExecMode())) { r.put("ok", false); r.put("error", "Recording the log needs ADB, Shizuku or Root."); return r.toString(); }
+                if (logRec != null && logRec.status().running) { r.put("ok", false); r.put("error", "A recording is already running."); return r.toString(); }
+                final String lv = level != null && level.matches("[VDIWEF]") ? level : "V";
+                final String app = pkg == null || pkg.trim().isEmpty() ? null : pkg.trim();
+                final String flt = filter == null ? "" : filter;
+                logRec = new LogRecorder(logRecDir(), new LogRecorder.Source() {
+                    @Override public String read() { return logcatImpl(lv, flt, 5000, app); }
+                }, 2000, 25L * 1024 * 1024);
+                java.util.ArrayList<String> head = new java.util.ArrayList<String>();
+                head.add("ADB Application Manager - log recording");
+                head.add("Started: " + new java.util.Date());
+                head.add("Android " + Build.VERSION.RELEASE + " / " + Build.MANUFACTURER + " " + Build.MODEL);
+                head.add("Level: " + lv + " and above");
+                head.add("App: " + (app == null ? "all apps" : (appName != null && !appName.isEmpty() ? appName + " (" + app + ")" : app)) + (flt.trim().isEmpty() ? "" : " | Text filter: \"" + flt.trim() + "\""));
+                String name = logRec.start(head);
+                if (name.isEmpty()) { r.put("ok", false); r.put("error", "The recording file could not be created."); return r.toString(); }
+                r.put("ok", true); r.put("name", name);
+            } catch (Exception e) {
+                try { r.put("ok", false); r.put("error", String.valueOf(e.getMessage())); } catch (Exception ignored) {}
+            }
+            return r.toString();
+        }
+
+        @JavascriptInterface
+        public synchronized String logRecStop() {
+            if (logRec != null) logRec.stop("stopped");
+            return logRecStatusJson();
+        }
+
+        @JavascriptInterface
+        public synchronized String logRecStatus() { return logRecStatusJson(); }
+
+        /** The saved recordings, newest first (JSON: ok, items[{name, size, modified}]). */
+        @JavascriptInterface
+        public String logRecList() {
+            JSONObject r = new JSONObject();
+            try {
+                JSONArray a = new JSONArray();
+                for (LogRecorder.Info i : LogRecorder.list(logRecDir())) {
+                    JSONObject o = new JSONObject();
+                    o.put("name", i.name); o.put("size", i.size); o.put("modified", i.modified);
+                    a.put(o);
+                }
+                r.put("ok", true); r.put("items", a);
+            } catch (Exception e) {
+                try { r.put("ok", false); r.put("error", String.valueOf(e.getMessage())); } catch (Exception ignored) {}
+            }
+            return r.toString();
+        }
+
+        /** A recording's text (its last 4 MB when it is longer); "Error: ..." when it cannot be read. */
+        @JavascriptInterface
+        public String logRecRead(String name) {
+            if (!LogRecorder.validName(name)) return "Error: not a recording";
+            if (!new File(logRecDir(), name).isFile()) return "Error: that recording is gone";
+            return LogRecorder.read(logRecDir(), name, 4L * 1024 * 1024);
+        }
+
+        @JavascriptInterface
+        public synchronized String logRecDelete(String name) {
+            if (logRec != null && logRec.status().running && name != null && name.equals(logRec.status().name)) return "Error: stop the recording first";
+            return LogRecorder.delete(logRecDir(), name) ? "ok" : "Error: could not delete it";
         }
 
         @JavascriptInterface

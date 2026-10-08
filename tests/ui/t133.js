@@ -109,17 +109,19 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('3. every entry is a row that can be tapped', await ev(() => document.querySelectorAll('#logcatOutput .lc-row[data-i]').length === 2));
   await page.locator('#logcatOutput .lc-row').first().click(); await sleep(150);
   const w = await ev(() => ({ shown: document.getElementById('lcEntryModal').classList.contains('show'), level: document.getElementById('lcEntLevel').innerText, tag: document.getElementById('lcEntTag').innerText, meta: document.getElementById('lcEntMeta').innerText, msg: document.getElementById('lcEntMsg').innerText, btns: [...document.querySelectorAll('#lcEntryModal .lc-ent-btns button')].map(x => x.innerText) }));
-  check('   tapping a row opens it in its own window: level, tag, time and ids, the whole message, and three buttons', w.shown && w.level === 'Error' && w.tag === 'AndroidRuntime' && /10-08 12:00:01\.123/.test(w.meta) && /pid 1234 \/ tid 1250/.test(w.meta) && /FATAL EXCEPTION[\s\S]*NullPointerException/.test(w.msg) && w.btns.slice(0, 3).join() === 'Copy,More info,Web search', JSON.stringify(w));
+  check('   tapping a row opens it in its own window: level, tag, time and ids, the whole message, and three buttons', w.shown && w.level === 'Error' && w.tag === 'AndroidRuntime' && /10-08 12:00:01\.123/.test(w.meta) && /pid 1234 \/ tid 1250/.test(w.meta) && /FATAL EXCEPTION[\s\S]*NullPointerException/.test(w.msg) && w.btns.slice(0, 3).join() === 'Copy,Ask agent,Web search', JSON.stringify(w));
   await ev(() => { window.__copied = ''; }); await page.click('#lcEntCopy'); await sleep(60);
   check('   Copy puts the entry\'s lines on the clipboard', await ev(() => /AndroidRuntime: FATAL EXCEPTION/.test(window.__copied) && /NullPointerException/.test(window.__copied)), await ev(() => window.__copied));
   await page.click('#lcEntWeb'); await sleep(60);
   const opened = await ev(() => window.__opened.slice());
   check('   Web search opens a search made of the tag and the first line', opened.length === 1 && /^https:\/\/www\.google\.com\/search\?q=/.test(opened[0]) && /AndroidRuntime/.test(decodeURIComponent(opened[0])) && /FATAL\+EXCEPTION|FATAL%20EXCEPTION/.test(opened[0]), opened[0]);
-  await page.click('#lcEntMore'); await sleep(100);
-  check('   More info with no Coding Agent connected says what to do, and offers to open the place for it', await ev(() => { const a = document.getElementById('lcEntAi'); return getComputedStyle(document.getElementById('lcEntAiWrap')).display !== 'none' && /pick and connect a Coding Agent/i.test(a.innerText) && !!a.querySelector('a'); }));
+  await page.click('#lcEntMore'); await sleep(250);
+  check('   Ask agent with no default agent chosen opens Settings on the choice instead of asking (nothing is sent)', await ev(() => currentViewName() === 'prefs' && !document.getElementById('lcEntryModal').classList.contains('show') && !!document.getElementById('agentCard') && document.getElementById('agentCard').classList.contains('flash')));
+  await ev(l => { switchView('logcat'); logcatRender(l, true); lcEntryOpen(0); }, LOG); await sleep(250);
   // with an agent: the answer streams in
   await ev(() => {
     window.__sent = [];
+    askAgentId = 'fake';
     window.txAgentDef = () => ({ id: 'fake', name: 'Fake AI (test)', api: 'x', provider: 'fake' });
     window.txAgentReady = () => true;
     window.txModelFor = () => 'fake-model';
@@ -139,16 +141,16 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('   selecting text in a row to copy it does not open the window', await ev(() => !document.getElementById('lcEntryModal').classList.contains('show')));
   await ev(() => window.getSelection().removeAllRanges());
 
-  // ---- 4. a hidden setting: Web search and Explain (AI) ----
+  // ---- 4. a hidden setting: Web search and Ask agent ----
   await ev(() => switchView('settings')); await sleep(900);
   await ev(() => { sdbResetView(); const i = document.getElementById('sdbSearch'); i.value = 'zen_mode'; sdbSearchInput(); }); await sleep(300);
   await ev(() => { sdbOpenEditor(sdbNs, 'zen_mode'); }); await sleep(200);
-  check('4. the editor of a setting has Web search and Explain (AI) next to Copy', await ev(() => { const t = [...document.querySelectorAll('#sdbEditModal .batch-sheet-tools button')].map(b => b.innerText); return t.slice(0, 3).join() === 'Web search,Explain (AI),Copy name'; }));
+  check('4. the editor of a setting has Web search and Ask agent next to Copy', await ev(() => { const t = [...document.querySelectorAll('#sdbEditModal .batch-sheet-tools button')].map(b => b.innerText); return t.slice(0, 3).join() === 'Web search,Ask agent,Copy name'; }));
   await ev(() => { window.__opened.length = 0; }); await page.click('#sdbEditWebBtn'); await sleep(60);
   check('   Web search looks the setting up by table and name', await ev(() => window.__opened.length === 1 && /android\+settings\+\w+\+zen_mode|android%20settings%20\w+%20zen_mode/.test(window.__opened[0])), await ev(() => window.__opened[0]));
   await ev(() => { window.__sent.length = 0; }); await page.click('#sdbEditAiBtn'); await sleep(250);
   const hs = await ev(() => ({ shown: getComputedStyle(document.getElementById('sdbEditAi')).display !== 'none', text: document.getElementById('sdbEditAi').innerText, sent: window.__sent[0] }));
-  check('   Explain (AI) shows the answer under the buttons and says what was sent', hs.shown && /This is a crash/.test(hs.text) && /name, table and current value are sent/.test(hs.text) && hs.sent && /Setting: zen_mode/.test(hs.sent.msgs[0].text) && /Table: global/.test(hs.sent.msgs[0].text) && /Value now: 0/.test(hs.sent.msgs[0].text) && /Do Not Disturb/.test(hs.sent.msgs[0].text), JSON.stringify(hs));
+  check('   Ask agent shows the answer under the buttons and says what was sent', hs.shown && /This is a crash/.test(hs.text) && /name, table and current value are sent/.test(hs.text) && hs.sent && /Setting: zen_mode/.test(hs.sent.msgs[0].text) && /Table: global/.test(hs.sent.msgs[0].text) && /Value now: 0/.test(hs.sent.msgs[0].text) && /Do Not Disturb/.test(hs.sent.msgs[0].text), JSON.stringify(hs));
   await ev(() => sdbEditClose()); await ev(() => sdbOpenEditor(sdbNs, 'zen_mode')); await sleep(100);
   check('   reopening a setting starts without the old answer', await ev(() => getComputedStyle(document.getElementById('sdbEditAi')).display === 'none' && document.getElementById('sdbEditAi').innerText === ''));
   await ev(() => sdbEditClose());

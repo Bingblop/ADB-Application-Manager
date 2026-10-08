@@ -2122,6 +2122,21 @@
             background: rgba(var(--ov), 0.04);
         }
 
+        .agent-btn { display: inline-flex; align-items: center; gap: 4px; font: inherit; font-size: 10.5px; font-weight: 800; padding: 2px 9px; margin: 3px 0 0; border-radius: 999px; border: 1px solid var(--accent); background: transparent; color: var(--accent); color: color-mix(in srgb, var(--accent) 80%, var(--text-main)); cursor: pointer; line-height: 1.5; white-space: nowrap; -webkit-user-select: none; user-select: none; }
+        .agent-btn:active { background: var(--accent); color: var(--on-accent); }
+        .agent-ask-sent { margin-top: 6px; padding: 8px 10px; border: 1px dashed var(--border-glass); border-radius: 10px; font: 11px/1.45 ui-monospace, monospace; color: var(--text-muted); white-space: pre-wrap; word-break: break-word; max-height: 22vh; overflow: auto; }
+        .agent-ask-foot { margin-top: 10px; font-size: 11px; line-height: 1.5; color: var(--text-muted); }
+        #agentCard.flash { animation: agentFlash 1.1s ease 2; }
+        @keyframes agentFlash { 0%, 100% { box-shadow: 0 0 0 0 transparent; } 50% { box-shadow: 0 0 0 3px var(--accent); } }
+        .lcv-box { height: 46vh; min-height: 220px; margin: 6px 0 0; }
+        .lcv-pager { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 6px 0 0; font-size: 11.5px; color: var(--text-muted); }
+        .lcv-pager .lcv-info { flex: 1 1 140px; min-width: 0; }
+        .lcv-pager button { padding: 4px 10px; }
+        .lc-rec-row { display: flex; align-items: center; gap: 10px; padding: 10px 2px; border-bottom: 1px solid var(--border-glass); cursor: pointer; }
+        .lc-rec-row .lc-rec-main { flex: 1; min-width: 0; }
+        .lc-rec-row .lc-rec-name { font-size: 13px; font-weight: 800; word-break: break-all; }
+        .lc-rec-row .lc-rec-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+        .lc-rec-row .lc-rec-del { font-size: 18px; padding: 4px 8px; cursor: pointer; opacity: 0.7; }
         .lc-hit {
             background: rgba(255, 213, 0, 0.35);
             color: inherit;
@@ -4058,6 +4073,10 @@
                     <button class="batch-tool-link" onclick="logcatSave()">Save</button>
                     <button class="batch-tool-link" onclick="logcatShare()">Share</button>
                 </div>
+                <div class="batch-sheet-tools" style="margin:0 0 4px; gap:14px; flex-wrap:wrap;">
+                    <button class="batch-tool-link" id="logcatRecBtn" onclick="logcatRecToggle()" style="color:#FF5252;">● Record to file</button>
+                    <button class="batch-tool-link" id="logcatRecListBtn" onclick="lcRecListOpen()">Recordings</button>
+                </div>
                 <!-- Color key. Each chip is also a switch: tap to hide / show that level. -->
                 <div class="lc-key" id="logcatKey" aria-label="Log level color key"></div>
             </div>
@@ -5097,6 +5116,13 @@
                 <select class="op-select lang-select" id="langSelect" translate="no" aria-label="Language" onchange="chooseLanguage(this.value)"></select>
             </div>
 
+            <div class="color-card" id="agentCard">
+                <div class="color-card-title">Default agent</div>
+                <div class="color-card-subtitle">The Coding Agent that answers every Ask agent button: what a hidden setting, a permission, a process, a log line or an app is. Its key or sign-in is set up in the Command-Line Interface tab.</div>
+                <select class="op-select lang-select" id="askAgentSelect" aria-label="Default agent" onchange="askAgentChoose(this.value)"></select>
+                <div class="appearance-note" id="askAgentNote"></div>
+            </div>
+
             <div class="color-card">
                 <div class="color-card-title">Appearance</div>
                 <div class="color-card-subtitle">Light, dark, or follow your phone's dark mode setting</div>
@@ -5809,6 +5835,9 @@
                 <div class="sd-btns" id="sdAcsBtns"></div>
             </div>
 
+            <div class="sd-live" id="sdLive"></div>
+            <div id="sdCards"></div>
+
             <div class="color-card" id="uninstDataCard">
                 <div class="color-card-title">Leftover data of uninstalled apps</div>
                 <div class="mode-btn-row">
@@ -5837,9 +5866,6 @@
                     <p><b>How long it takes.</b> From a few seconds to a minute or two, depending on how many apps you have and how much cache they hold. The app stays usable while it runs, and a report shows how much free space there was before and after.</p>
                 </div>
             </div>
-
-            <div class="sd-live" id="sdLive"></div>
-            <div id="sdCards"></div>
             <div class="sd-undo" id="sdUndo"><span id="sdUndoText"></span><button onclick="sdUndoDo()">Undo</button></div>
         </section>
 <!-- SDM:VIEW:END -->
@@ -6873,7 +6899,7 @@ Type any command below (e.g. pm list packages -d)
                         <div style="font-size:20px; cursor:pointer;" onclick="closeInspector()">✕</div>
                     </div>
                     <button class="uad-chip" id="sheetUad" type="button" style="display:none;" onclick="openUadInfo()" aria-haspopup="dialog"></button>
-                    <button class="uad-chip uad-chip-ask" id="sheetAsk" type="button" style="display:none;" onclick="openAppAsk()" aria-haspopup="dialog" aria-label="Ask the agent whether it is safe to disable this app"><span class="uad-chip-src">UAD-NG</span><span>Not listed · Ask</span></button>
+                    <button class="uad-chip uad-chip-ask" id="sheetAsk" type="button" style="display:none;" onclick="openAppAsk()" aria-haspopup="dialog" aria-label="Ask the agent whether it is safe to disable this app"><span>✦ Ask agent</span></button>
                     <button class="uad-chip" id="sheetTrk" type="button" style="display:none;" onclick="openTrackersInfo()" aria-haspopup="dialog"></button>
                 </div>
             </div>
@@ -7582,6 +7608,45 @@ Type any command below (e.g. pm list packages -d)
         </div>
     </div>
 
+    <!-- Logcat: the recordings (logs written to a file), and one of them as a still picture -->
+    <div class="modal-overlay" id="lcRecModal" onclick="if(event.target===this) lcRecListClose()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-title">
+                        <h3>Recordings</h3>
+                        <p>Logs written to a file. Tap one to look at it as a still picture.</p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="lcRecListClose()" role="button" aria-label="Close">✕</div>
+            </div>
+            <div id="lcRecList"></div>
+        </div>
+    </div>
+    <div class="modal-overlay" id="lcvModal" onclick="if(event.target===this) lcvClose()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-title">
+                        <h3 id="lcvTitle" translate="no">&nbsp;</h3>
+                        <p id="lcvSub">&nbsp;</p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="lcvClose()" role="button" aria-label="Close">✕</div>
+            </div>
+            <input type="text" class="list-search" id="lcvFilter" placeholder="search the recording" style="width:100%; box-sizing:border-box;" autocomplete="off" autocapitalize="off" spellcheck="false" oninput="lcvFilterInput()">
+            <div class="lc-key" id="lcvKey" aria-label="Log level color key"></div>
+            <div class="lcv-pager" id="lcvPager"></div>
+            <div class="logcat-box lcv-box" id="lcvOut"></div>
+            <div class="lc-ent-btns">
+                <button class="mode-action-btn primary" onclick="lcvCopy()">Copy shown</button>
+                <button class="mode-action-btn" onclick="lcvSave()">Save</button>
+                <button class="mode-action-btn" onclick="lcvShare()">Share</button>
+                <button class="mode-action-btn" onclick="lcvDelete()">Delete</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Logcat: one entry in its own window -->
     <div class="modal-overlay" id="lcEntryModal" onclick="if(event.target===this) lcEntryClose()">
         <div class="modal-sheet">
@@ -7598,7 +7663,7 @@ Type any command below (e.g. pm list packages -d)
             <div class="lc-ent-msg" id="lcEntMsg" translate="no"></div>
             <div class="lc-ent-btns">
                 <button class="mode-action-btn primary" id="lcEntCopy" onclick="lcEntryCopy()">Copy</button>
-                <button class="mode-action-btn" id="lcEntMore" onclick="lcEntryMore()">More info</button>
+                <button class="mode-action-btn" id="lcEntMore" onclick="lcEntryMore()">Ask agent</button>
                 <button class="mode-action-btn" id="lcEntWeb" onclick="lcEntryWeb()">Web search</button>
             </div>
             <div id="lcEntAiWrap" style="display:none;">
@@ -7634,7 +7699,7 @@ Type any command below (e.g. pm list packages -d)
             <div class="lc-ent-ai" id="sdbEditAi" style="display:none; margin-top:10px;"></div>
             <div class="batch-sheet-tools" style="margin-top:8px; gap:12px; flex-wrap:wrap;">
                 <button class="batch-tool-link" id="sdbEditWebBtn" onclick="sdbEditWeb()">Web search</button>
-                <button class="batch-tool-link" id="sdbEditAiBtn" onclick="sdbEditAsk()">Explain (AI)</button>
+                <button class="batch-tool-link" id="sdbEditAiBtn" onclick="sdbEditAsk()">Ask agent</button>
                 <button class="batch-tool-link" onclick="sdbEditCopy('name')">Copy name</button>
                 <button class="batch-tool-link" onclick="sdbEditCopy('value')">Copy value</button>
                 <button class="batch-tool-link" onclick="sdbEditCopy('cmd')">Copy command</button>
@@ -8303,26 +8368,25 @@ Type any command below (e.g. pm list packages -d)
     </div>
 
     <!-- App menu: for an app the UAD-NG list does not know, ask the Coding Agent whether it is safe to disable -->
-    <div class="modal-overlay" id="appAskModal" onclick="if(event.target===this) appAskClose()">
-        <div class="modal-sheet" style="max-width:480px;" role="dialog" aria-labelledby="appAskTitle">
+    <div class="modal-overlay" id="agentAskModal" onclick="if(event.target===this) agentAskClose()">
+        <div class="modal-sheet" style="max-width:480px;" role="dialog" aria-labelledby="agentAskTitle">
             <div class="sheet-header">
                 <div class="sheet-app-hero">
                     <div class="sheet-title">
-                        <h3 id="appAskTitle">Is it safe to disable?</h3>
-                        <p id="appAskApp" translate="no"></p>
+                        <h3 id="agentAskTitle">Ask the agent</h3>
+                        <p id="agentAskSubject" translate="no"></p>
                     </div>
                 </div>
-                <div style="font-size:20px; cursor:pointer;" onclick="appAskClose()" role="button" aria-label="Close">✕</div>
+                <div style="font-size:20px; cursor:pointer;" onclick="agentAskClose()" role="button" aria-label="Close">✕</div>
             </div>
-            <div style="font-size:13px; line-height:1.55;">The UAD-NG list has nothing on this package. Ask your Coding Agent what it is and whether it is safe to disable. An agent can be wrong, so treat the answer as a hint: freeze first (it can be undone), and check that the phone still works.</div>
-            <div class="mode-btn-row" style="margin-top:12px;">
-                <button class="mode-action-btn primary" id="appAskGo" onclick="appAskRun()">Ask the agent</button>
-                <button class="mode-action-btn" onclick="appAskWeb()">Web search</button>
+            <div class="agent-ask-sent" id="agentAskSent" translate="no"></div>
+            <div class="lc-ent-ai" id="agentAskAi"></div>
+            <div class="lc-ent-btns">
+                <button class="mode-action-btn primary" id="agentAskGo" onclick="agentAskRun()">Ask again</button>
+                <button class="mode-action-btn" onclick="agentAskWeb()">Web search</button>
+                <button class="mode-action-btn" id="agentAskCopy" onclick="agentAskCopy()">Copy the answer</button>
             </div>
-            <div id="appAskWrap" style="display:none;">
-                <div class="lc-ent-ai" id="appAskAi"></div>
-                <div class="lc-ent-btns"><button class="mode-action-btn" onclick="appAskCopy()">Copy the answer</button></div>
-            </div>
+            <div class="agent-ask-foot">An agent can be wrong, so treat the answer as a hint: for anything that changes the phone, try the step that can be undone first (freeze rather than uninstall) and check that the phone still works. <a href="#" onclick="agentAskToSettings(); return false;">Change the default agent</a></div>
         </div>
     </div>
 
@@ -8905,7 +8969,7 @@ Type any command below (e.g. pm list packages -d)
             });
             const gear = document.getElementById('prefsHeaderBtn');
             if (gear) gear.classList.toggle('active', viewName === 'prefs');
-            if (viewName === 'prefs') { iconPackRender(); actionBtnRender(); trimSyncLock(); uninstDataSyncLock(); syncHapticsUi(); syncProgressToastsUi(); }
+            if (viewName === 'prefs') { askAgentBuild(); iconPackRender(); actionBtnRender(); trimSyncLock(); uninstDataSyncLock(); syncHapticsUi(); syncProgressToastsUi(); }
 
             document.querySelectorAll('.view-content').forEach(v => {
                 v.classList.remove('active');
@@ -10494,6 +10558,7 @@ Type any command below (e.g. pm list packages -d)
             else if (!rows.length) html = '<div class="list-empty" style="padding:8px 0;">No known tracker library was found in the class names of this app.</div>';
             else html = rows.map(t => '<div class="trk-row"><div class="trk-name" translate="no">' + escapeHtml(t.name) + '</div>'
                 + (t.categories ? '<div class="trk-cats">' + escapeHtml(t.categories) + '</div>' : '')
+                + agentBtnHtml('tracker', t.name, ['Found in the app: ' + pkg, t.categories ? 'Exodus Privacy category: ' + t.categories : ''])
                 + (t.website ? '<div><a href="#" translate="no" onclick="openUrlExternal(this.dataset.u); return false;" data-u="' + escapeHtml(t.website) + '">' + escapeHtml(t.website.replace(/^https?:\/\//, '')) + '</a></div>' : '') + '</div>').join('');
             document.getElementById('trackersBody').innerHTML = html;
             document.getElementById('trackersCredit').innerText = 'Found by reading the class names in the app\'s code on this phone; nothing is sent anywhere. Tracker list: Exodus Privacy' + (info.count ? ' (' + info.count + ' trackers, copied ' + info.retrieved + ')' : '') + ', licensed ODbL 1.0. Code renamed by a shrinker (R8, ProGuard) or loaded later can hide a tracker, so a low number is not proof that there are none.';
@@ -10537,7 +10602,7 @@ Type any command below (e.g. pm list packages -d)
             sheetUadInfo = r;
             const lvl = String(r.removal || 'Expert');
             chip.className = 'uad-chip uad-r-' + lvl.toLowerCase();
-            chip.innerHTML = '<span class="uad-chip-src">UAD-NG</span><span></span>';
+            chip.innerHTML = '<span></span>';
             chip.lastChild.innerText = lvl.toUpperCase();
             chip.setAttribute('aria-label', 'UAD-NG classification ' + lvl + ': tap for the description');
             chip.style.display = '';
@@ -10562,37 +10627,128 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('uadLevelsModal').classList.remove('show');
             document.getElementById('uadInfoModal').classList.remove('show');
         }
-        // ---- Ask the agent: is this package safe to disable? (for the apps the UAD-NG list does not know) ----
-        const APP_ASK_SYSTEM = 'You help someone who is not a developer decide whether an Android app or system package can be disabled (frozen) or removed for the current user on their phone. '
-            + 'Say briefly and in plain words: what the package is and what it does, what stops working if it is disabled, and a verdict: Safe, Caution or Do not touch. '
-            + 'Mention that freezing can be undone, and what to check afterwards. Say plainly when you do not recognize the package name (many belong to the phone maker or are random) instead of guessing, '
-            + 'and then say what the name suggests and that the person should leave it alone unless they know it. Short paragraphs, no headings. Do not invent details.';
-        let appAskPkg = '', appAskText = '', appAskBusy = false;
-        function appAskQuery() { return 'android package ' + appAskPkg + ' safe to disable'; }
-        function openAppAsk() {
-            const app = inspectedApp();
-            if (!inspectedPkg) return;
-            haptic();
-            appAskPkg = inspectedPkg; appAskText = ''; appAskBusy = false;
-            document.getElementById('appAskApp').innerText = (app && app.name && app.name !== inspectedPkg ? app.name + ' · ' : '') + inspectedPkg;
-            document.getElementById('appAskWrap').style.display = 'none';
-            document.getElementById('appAskGo').disabled = false;
-            document.getElementById('appAskModal').classList.add('show');
+        // ---- The default agent, and the "Ask agent" buttons ----
+        // One Coding Agent answers every "Ask agent" button (what a hidden setting, a permission, a process, a log line or an app is). It is chosen
+        // in Settings, under Language; the key or sign-in and the model are the ones set up in the Command-Line Interface tab. Without one, the
+        // button leads to Settings instead.
+        let askAgentId = String(kvGet('ask_agent', '') || '');
+        function askAgentDef() {
+            const ag = askAgentId ? txAgentDef(askAgentId) : null;
+            return ag && ag.id !== 'none' && ag.api !== 'info' ? ag : null;
         }
-        function appAskClose() { haptic(); document.getElementById('appAskModal').classList.remove('show'); appAskPkg = ''; }
-        function appAskWeb() { if (appAskPkg) { haptic(); openUrlExternal('https://www.google.com/search?q=' + encodeURIComponent(appAskQuery())); } }
-        function appAskCopy() { if (appAskText) { copyText(appAskText); showToast('Copied the answer'); } }
-        async function appAskRun() {
-            if (!appAskPkg || appAskBusy) return;
-            const pkg = appAskPkg, app = allApps.find(a => a.pkg === pkg) || {}, info = txInfo || {};
-            const q = 'Package name: ' + pkg + '\nApp name: ' + (app.name || pkg) + '\nType: ' + (app.isSystem ? 'system app' : 'user-installed app')
-                + '\nState: ' + (app.isUninstalled ? 'uninstalled for this user' : app.isFrozen ? 'disabled' : 'enabled')
-                + '\nAndroid ' + (info.release || '?') + (info.model ? ' on ' + ((info.manufacturer || '') + ' ' + info.model).trim() : '');
-            const btn = document.getElementById('appAskGo');
-            document.getElementById('appAskWrap').style.display = '';
-            appAskBusy = true; btn.disabled = true;
-            appAskText = await aiExplainInto(document.getElementById('appAskAi'), APP_ASK_SYSTEM, q, () => appAskPkg === pkg, 'The package name, the app\'s name, whether it is a system app and its state are sent to them.');
-            appAskBusy = false; btn.disabled = false;
+        function askAgentBuild() {
+            const sel = document.getElementById('askAgentSelect');
+            if (!sel) return;
+            const opt = a => '<option value="' + a.id + '" translate="no">' + escapeHtml(a.name) + '</option>';
+            const ok = a => a.id !== 'none' && a.api !== 'info';
+            sel.innerHTML = '<option value="">No default agent chosen</option>'
+                + '<optgroup label="' + escapeHtml('API Key Required') + '">' + TX_AGENTS.filter(a => a.group === 'key' && ok(a)).map(opt).join('') + '</optgroup>'
+                + '<optgroup label="' + escapeHtml('Free Open-Source') + '">' + TX_AGENTS.filter(a => a.group === 'oss' && ok(a)).map(opt).join('') + '</optgroup>';
+            sel.value = askAgentDef() ? askAgentId : '';
+            askAgentNote();
+        }
+        function askAgentNote() {
+            const el = document.getElementById('askAgentNote');
+            if (!el) return;
+            const ag = askAgentDef();
+            if (!ag) { el.textContent = 'No agent is chosen yet, so every Ask agent button brings you here.'; return; }
+            txRefreshVault();
+            if (!txAgentReady(ag)) { el.innerHTML = escapeHtml(ag.name) + ' is not connected yet. Add its key or sign-in in the Command-Line Interface tab. <a href="#" onclick="aiOpenAgentSetup(); return false;">Open it</a>'; return; }
+            const model = txModelFor(ag);
+            el.textContent = ag.name + ' is ready' + (model ? ' · ' + model : '') + '. Nothing is sent until you press an Ask agent button.';
+        }
+        function askAgentChoose(id) {
+            haptic();
+            askAgentId = id || '';
+            kvSet('ask_agent', askAgentId);
+            askAgentBuild();
+            const ag = askAgentDef();
+            showToast(ag ? 'Default agent: ' + ag.name : 'No default agent');
+        }
+        // The agent when there is one that can answer; otherwise Settings opens on the choice (nothing is sent anywhere).
+        function askAgentGate() {
+            const ag = askAgentDef();
+            if (ag) { txRefreshVault(); if (txAgentReady(ag)) return ag; }
+            agentAskToSettings(ag ? ag.name + ' is not connected yet: finish its setup or choose another default agent' : 'Choose a default agent first');
+            return null;
+        }
+        function agentAskToSettings(why) {
+            document.querySelectorAll('.modal-overlay.show').forEach(m => m.classList.remove('show'));
+            switchView('prefs');
+            askAgentBuild();
+            if (why) showToast(why);
+            setTimeout(() => {
+                const c = document.getElementById('agentCard');
+                if (!c) return;
+                c.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                c.classList.remove('flash'); void c.offsetWidth; c.classList.add('flash');
+            }, 250);
+        }
+
+        // What each kind of thing is called when the agent is asked about it.
+        const AGENT_KINDS = {
+            setting:    { title: 'About this setting', label: 'Setting', noun: 'one Android hidden setting (an entry of the Settings.Global, Settings.Secure or Settings.System database, the ones "settings get/put" reads and writes)' },
+            permission: { title: 'About this permission', label: 'Permission', noun: 'one Android permission an app can hold' },
+            appop:      { title: 'About this app operation', label: 'App operation', noun: 'one Android app operation ("appops": a permission-like switch such as RUN_IN_BACKGROUND)' },
+            component:  { title: 'About this component', label: 'App component', noun: 'one component of an Android app (an activity, service, broadcast receiver or content provider)' },
+            feature:    { title: 'About this feature', label: 'System feature', noun: 'one Android system feature flag (as listed by "pm list features")' },
+            library:    { title: 'About this library', label: 'Library', noun: 'one library an Android app uses or the system offers (a shared library or a native library)' },
+            process:    { title: 'About this process', label: 'Process', noun: 'one process running on an Android phone' },
+            overlay:    { title: 'About this overlay', label: 'Overlay', noun: 'one Android runtime resource overlay (RRO), a theme layer that changes colors, shapes or text of the system or of an app' },
+            package:    { title: 'Is it safe to disable?', label: 'Package', noun: 'one Android package (an app or a system package)', safety: true },
+            file:       { title: 'About this file', label: 'File or folder', noun: 'one file or folder on an Android phone' },
+            tracker:    { title: 'About this tracker', label: 'Tracker', noun: 'one tracking or advertising library that Android apps embed' },
+            item:       { title: 'Ask the agent', label: 'Item', noun: 'one item found on an Android phone' }
+        };
+        function agentSystem(kind) {
+            const k = AGENT_KINDS[kind] || AGENT_KINDS.item;
+            if (k.safety) return 'You help someone who is not a developer decide whether an Android app or system package can be disabled (frozen) or removed for the current user on their phone. '
+                + 'Say briefly and in plain words: what the package is and what it does, what stops working if it is disabled, and a verdict: Safe, Caution or Do not touch. '
+                + 'Mention that freezing can be undone, and what to check afterwards. Say plainly when you do not recognize the package name (many belong to the phone maker or are random) instead of guessing, '
+                + 'and then say what the name suggests and that the person should leave it alone unless they know it. Short paragraphs, no headings. Do not invent details.';
+            return 'You explain ' + k.noun + ' to someone who is not a developer. Say briefly and in plain words: what it is and what it does, whether it matters in daily use, '
+                + 'and, if the person might want to change, turn off or remove it, what would happen and how safe that is (and whether it can be undone). '
+                + 'Say plainly when you do not recognize it (many belong to the phone maker or to one app) instead of guessing, and then say what its name suggests. Short paragraphs, no headings. Do not invent details.';
+        }
+        let agentAsk = null;             // { kind, name, text, web, answer, busy }
+        // The button: kind and name from its data (nothing goes into an attribute that was not escaped), the rest of what the screen knows in data-ax (one line each).
+        function agentBtnHtml(kind, name, extra, cls) {
+            return '<button type="button" class="agent-btn' + (cls ? ' ' + cls : '') + '" data-ak="' + escapeHtml(kind) + '" data-an="' + escapeHtml(String(name)) + '" data-ax="' + escapeHtml(Array.isArray(extra) ? extra.filter(Boolean).join('\n') : (extra ? String(extra) : '')) + '" onclick="event.stopPropagation(); agentAskFromBtn(this)" onkeydown="event.stopPropagation()" aria-label="Ask the agent about ' + escapeHtml(String(name)) + '" title="Ask the agent about this">✦ Ask agent</button>';
+        }
+        function agentAskFromBtn(btn) {
+            haptic();
+            askAgentAbout(btn.dataset.ak, btn.dataset.an, btn.dataset.ax ? btn.dataset.ax.split('\n') : []);
+        }
+        function askAgentAbout(kind, name, lines) {
+            if (!askAgentGate()) return;
+            const k = AGENT_KINDS[kind] || AGENT_KINDS.item, info = txInfo || {};
+            const phone = 'Android ' + (info.release || '?') + (info.model ? ' on ' + ((info.manufacturer || '') + ' ' + info.model).trim() : '');
+            const text = phone + '\n' + k.label + ': ' + name + (lines && lines.length ? '\n' + lines.filter(Boolean).join('\n') : '');
+            agentAsk = { kind: kind, name: name, text: text, answer: '', busy: false, web: 'android ' + name + (k.safety ? ' safe to disable' : '') };
+            document.getElementById('agentAskTitle').innerText = k.title;
+            document.getElementById('agentAskSubject').innerText = name;
+            document.getElementById('agentAskSent').innerText = text;
+            document.getElementById('agentAskAi').textContent = '';
+            document.getElementById('agentAskModal').classList.add('show');
+            agentAskRun();
+        }
+        function agentAskClose() { haptic(); document.getElementById('agentAskModal').classList.remove('show'); agentAsk = null; }
+        function agentAskWeb() { if (agentAsk) { haptic(); openUrlExternal('https://www.google.com/search?q=' + encodeURIComponent(agentAsk.web)); } }
+        function agentAskCopy() { if (agentAsk && agentAsk.answer) { copyText(agentAsk.answer); showToast('Copied the answer'); } }
+        async function agentAskRun() {
+            const cur = agentAsk;
+            if (!cur || cur.busy) return;
+            const btn = document.getElementById('agentAskGo');
+            cur.busy = true; btn.disabled = true;
+            cur.answer = await aiExplainInto(document.getElementById('agentAskAi'), agentSystem(cur.kind), cur.text, () => agentAsk === cur, 'The text above is sent to them.');
+            cur.busy = false; btn.disabled = false;
+        }
+        // The app menu's chip for an app the UAD-NG list does not know
+        function openAppAsk() {
+            if (!inspectedPkg) return;
+            const pkg = inspectedPkg, app = allApps.find(a => a.pkg === pkg) || {};
+            askAgentAbout('package', pkg, ['App name: ' + (app.name || pkg), 'Type: ' + (app.isSystem ? 'system app' : 'user-installed app'),
+                'State: ' + (app.isUninstalled ? 'uninstalled for this user' : app.isFrozen ? 'disabled' : 'enabled')]);
         }
         // "Removal Levels" at the bottom of the classification sheet: the very same lines as under Removal Levels in the Debloater tab (they are copied from there, so there is one text)
         function openUadLevels() {
@@ -10655,7 +10811,7 @@ Type any command below (e.g. pm list packages -d)
                             <div class="uad-name">${escapeHtml(p.name)}</div>
                             <div class="uad-pkg">${escapeHtml(p.pkg)}</div>
                             <div>${uadRemovalBadge(p.removal)}<span class="uad-badge uad-tag">${escapeHtml(p.brand)}</span><span class="uad-badge uad-tag">${escapeHtml(p.list)}</span>${state}${p.isSuspended ? '<span class="uad-badge" style="color:var(--status-suspended)">suspended</span>' : ''}</div>
-                            ${p.description ? `<div class="uad-desc">${escapeHtml(p.description.trim())}</div>` : ''}
+                            ${p.description ? `<div class="uad-desc">${escapeHtml(p.description.trim())}</div>` : agentBtnHtml('package', p.pkg, ['App name: ' + p.name, 'UAD-NG classification: ' + p.removal + ' (the list gives no description)', 'State: ' + p.state])}
                             ${warn}
                             ${exp ? `<div class="uad-row-btns"><button class="mode-action-btn" type="button" onclick="event.stopPropagation(); openUadLevels()">Removal Levels</button></div>` : ''}
                         </div>
@@ -13720,7 +13876,7 @@ Type any command below (e.g. pm list packages -d)
                 list.innerHTML = rows.length ? rows.map(op => {
                     const sub = [op.uidOnly ? 'uid-level mode' : '', op.uidMode && !op.uidOnly ? 'uid: ' + op.uidMode : '', op.detail].filter(Boolean).join(' • ');
                     const buttons = OP_MODES.map(([mode, label]) => `<button class="op-mode-btn ${mode} ${op.mode === mode ? 'on' : ''}${lockedNow() ? ' locked' : ''}"${lockedNow() ? ` title="${NEEDS_MODE}"` : ''} data-op="${escapeHtml(op.name)}" onclick="setAppOpMode(this.getAttribute('data-op'), '${mode}')">${lk(lockedNow() && op.mode === mode)}${label}</button>`).join('');
-                    return `<div class="perm-row als-row" style="flex-direction:column; align-items:stretch; gap:6px;"><div class="perm-info"><div class="perm-name" translate="no">${escapeHtml(op.name)}</div>${sub ? `<div class="als-detail">${escapeHtml(sub)}</div>` : ''}</div><div class="op-modes">${buttons}</div></div>`;
+                    return `<div class="perm-row als-row" style="flex-direction:column; align-items:stretch; gap:6px;"><div class="perm-info"><div class="perm-name" translate="no">${escapeHtml(op.name)}</div>${sub ? `<div class="als-detail">${escapeHtml(sub)}</div>` : ''}${agentBtnHtml('appop', op.name, ['Used by the app: ' + inspectedPkg, 'Mode now: ' + op.mode])}</div><div class="op-modes">${buttons}</div></div>`;
                 }).join('') : '<div class="list-empty">' + (ops.length ? 'No app ops match.' : (isPrivilegedActive ? 'No app ops recorded for this app yet.' : 'App ops need ADB, Shizuku or Root. Set up a working mode first.')) + '</div>';
                 return;
             }
@@ -13755,6 +13911,7 @@ Type any command below (e.g. pm list packages -d)
                         ${p.group ? `<div class="als-detail" translate="no">Group: ${escapeHtml(p.group.replace(/^android\.permission-group\./, ''))}</div>` : ''}
                         <div class="als-detail">${how}</div>
                         ${alsOpLine(p.name)}
+                        ${agentBtnHtml('permission', p.name, ['Declared by the app: ' + inspectedPkg, 'Protection level: ' + (p.protection || 'unknown'), p.group ? 'Permission group: ' + p.group : '', p.description ? 'Android describes it as: ' + p.description : ''])}
                     </div>${btn}</div>`;
                 }).join('') : '<div class="list-empty">' + (perms.length ? 'No permissions match.' : 'No permissions declared.') + '</div>';
             } else {
@@ -13777,6 +13934,7 @@ Type any command below (e.g. pm list packages -d)
                         <div class="als-detail" translate="no">${escapeHtml(a.name)}</div>
                         ${a.permission ? `<div class="als-detail" translate="no">Needs permission: ${escapeHtml(a.permission)}</div>` : ''}
                         <div class="als-detail">${need}</div>
+                        ${agentBtnHtml('component', a.name, ['Part of the app: ' + inspectedPkg, 'Type: activity', 'Exported: ' + (a.exported ? 'yes' : 'no'), a.permission ? 'Needs permission: ' + a.permission : ''])}
                     </div><div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">
                         <button class="perm-toggle-btn ${a.exported ? 'granted' : 'locked'}" style="cursor:pointer;" data-comp="${escapeHtml(a.name)}" data-exported="${a.exported}" onclick="launchComponent(this.getAttribute('data-comp'), this.getAttribute('data-exported') === 'true')">${lk(!a.exported && lockedNow())}LAUNCH</button>
                         <button class="perm-toggle-btn ${lockedNow() ? 'locked' : (a.enabled === false ? 'granted' : 'revoked')}"${lockedNow() ? ` title="${NEEDS_MODE}"` : ''} style="cursor:pointer;" data-comp="${escapeHtml(a.name)}" onclick="toggleComponent(this.getAttribute('data-comp'), ${a.enabled === false ? 'true' : 'false'})">${lk(lockedNow())}${a.enabled === false ? 'ENABLE' : 'DISABLE'}</button>
@@ -20469,6 +20627,7 @@ Type any command below (e.g. pm list packages -d)
         function onLogcatShown() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
             logcatTogglePlay();
+            lcRecPoll();
         }
 
         function logcatParse(text) {
@@ -20530,11 +20689,23 @@ Type any command below (e.g. pm list packages -d)
 
         // Shows a plain status line (errors, "no matching lines", cleared) instead of entries.
         function logcatNotice(msg) {
+            lcLastText = msg;
             logcatEntries = [];
             logcatCounts = { V: 0, D: 0, I: 0, W: 0, E: 0, F: 0 };
             logcatRenderKey();
             const el = document.getElementById('logcatOutput');
             if (el) el.innerHTML = `<div class="lc-meta">${escapeHtml(msg)}</div>`;
+        }
+
+        // One entry as a row. src: '' for the live view, 'v' for the recording being looked at.
+        function lcRowHtml(e, i, rx, src) {
+            const open = 'lcEntryOpen(' + i + (src ? ",'" + src + "'" : '') + ')';
+            return `<div class="lc-row lvl-${e.lvl}" data-i="${i}" role="button" tabindex="0" onclick="${open}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();${open};}">` +
+                `<div class="lc-badge" title="${e.lvl}">${e.lvl}</div>` +
+                `<div class="lc-main">` +
+                `<div class="lc-head"><span class="lc-tag">${lcHighlight(e.tag, rx)}</span><span class="lc-time">${e.time}</span><span class="lc-pid">${e.pid}/${e.tid}</span></div>` +
+                `<div class="lc-msg">${e.lines.map(l => lcHighlight(l, rx)).join('\n')}</div>` +
+                `</div></div>`;
         }
 
         // Draws logcatEntries. toBottom: jump to the newest line; otherwise only follow the log when the
@@ -20556,29 +20727,61 @@ Type any command below (e.g. pm list packages -d)
                 if (e.kind === 'meta') return `<div class="lc-meta">${escapeHtml(e.text)}</div>`;
                 if (logcatHidden.has(e.lvl)) return '';
                 lcRowMap.push(e);
-                return `<div class="lc-row lvl-${e.lvl}" data-i="${lcRowMap.length - 1}" role="button" tabindex="0" onclick="lcEntryOpen(${lcRowMap.length - 1})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();lcEntryOpen(${lcRowMap.length - 1});}">` +
-                    `<div class="lc-badge" title="${e.lvl}">${e.lvl}</div>` +
-                    `<div class="lc-main">` +
-                    `<div class="lc-head"><span class="lc-tag">${lcHighlight(e.tag, rx)}</span><span class="lc-time">${e.time}</span><span class="lc-pid">${e.pid}/${e.tid}</span></div>` +
-                    `<div class="lc-msg">${e.lines.map(l => lcHighlight(l, rx)).join('\n')}</div>` +
-                    `</div></div>`;
+                return lcRowHtml(e, lcRowMap.length - 1, rx);
             }).join('');
             const anyVisible = entries.some(e => e.kind === 'entry' && !logcatHidden.has(e.lvl));
             el.innerHTML = anyVisible ? html : (html || '') + `<div class="lc-meta">${entries.some(e => e.kind === 'entry') ? 'Every level is hidden - tap the color key above to show some.' : 'No log lines.'}</div>`;
             if (toBottom || wasAtBottom) el.scrollTop = el.scrollHeight;
         }
 
-        function logcatRender(text, toBottom) {
+        // The lines kept so far. Every poll adds the lines that are new, so a line stays on the screen after the device's small log buffer has dropped it.
+        // (Each poll used to replace the whole view with what the last 300 lines of the buffer held: at Error level that was usually nothing, and what
+        // had been there vanished a second later.) A change of level, text filter or app starts a new store; Clear empties it.
+        const LC_STORE_MAX = 8000, LC_SEEN_MAX = 40000;
+        let lcStore = [], lcSeen = new Set(), lcNote = '', lcSig = '';
+        function lcSigNow() {
+            return [document.getElementById('logcatLevel').value, (document.getElementById('logcatFilter').value || '').trim(), logcatApp ? logcatApp.pkg : ''].join('|');
+        }
+        function lcStoreReset() { lcStore = []; lcSeen = new Set(); lcNote = ''; lcLastText = null; }
+        // Identical lines inside one fetch (a recursion's stack frames) are all kept: a line's key is the line plus how many of it came before it in the fetch.
+        function lcMerge(text) {
+            const here = new Map();
+            let added = 0;
+            String(text).split('\n').forEach(line => {
+                const raw = line.replace(/\r$/, '');
+                if (!raw.trim()) return;
+                if (/^note: /.test(raw)) { lcNote = raw; return; }
+                const k = here.get(raw) || 0;
+                here.set(raw, k + 1);
+                const key = raw + '\u0001' + k;
+                if (lcSeen.has(key)) return;
+                lcSeen.add(key); lcStore.push(raw); added++;
+            });
+            if (lcStore.length > LC_STORE_MAX) lcStore = lcStore.slice(lcStore.length - LC_STORE_MAX);
+            while (lcSeen.size > LC_SEEN_MAX) lcSeen.delete(lcSeen.values().next().value);
+            return added;
+        }
+
+        // sig: the level / filter / app the text was fetched for; text for a view that has since changed is dropped.
+        function logcatRender(text, toBottom, live, sig) {
             const t = String(text || '');
-            // The bridge reports problems as plain text rather than log lines
-            if (!t.trim()) { lcLastText = null; logcatNotice('(no output)'); return; }
-            if (/^Error:/.test(t) || /^\([^\n]*\)\s*$/.test(t)) { lcLastText = null; logcatNotice(t.trim()); return; }
-            if (t === lcLastText && logcatEntries.length) {          // nothing new since the last draw
+            const now = lcSigNow();
+            if (sig && sig !== now) return;
+            if (now !== lcSig) { lcStoreReset(); lcSig = now; }
+            // The bridge reports problems and empty answers as plain text rather than log lines. Lines already on the screen stay: a quiet second is not an empty log.
+            const notice = !t.trim() ? '(no output)' : (/^Error:/.test(t) || /^\([^\n]*\)\s*$/.test(t)) ? t.trim() : '';
+            if (notice) {
+                if (!lcStore.length) { if (lcLastText !== notice) logcatNotice(notice); }
+                else if (!live) showToast(notice);
+                return;
+            }
+            const added = lcMerge(t);
+            if (!added && logcatEntries.length) {                      // nothing new since the last draw
                 if (toBottom) { const box = document.getElementById('logcatOutput'); if (box) box.scrollTop = box.scrollHeight; }
                 return;
             }
             lcLastText = t;
-            logcatEntries = logcatParse(t);
+            logcatEntries = (lcNote ? [{ kind: 'meta', text: lcNote, raws: [lcNote] }] : []).concat(logcatParse(lcStore.join('\n')));
             logcatCounts = { V: 0, D: 0, I: 0, W: 0, E: 0, F: 0 };
             logcatEntries.forEach(e => { if (e.kind === 'entry') logcatCounts[e.lvl] += e.lines.length; });
             logcatRenderKey();
@@ -20597,7 +20800,7 @@ Type any command below (e.g. pm list packages -d)
                 // fetched off the page's thread: a poll every second used to freeze the page for as long as adb took each time
                 if (live && lcPending && Date.now() - lcPending.at < 15000) return;       // the previous poll is still out
                 const id = ++lcReqSeq;
-                lcPending = { id, live, at: Date.now() };
+                lcPending = { id, live, at: Date.now(), sig: lcSigNow() };
                 try {
                     window.AndroidBridge.getLogcatAsync(id, level, filter, lines, logcatApp ? logcatApp.pkg : '');
                 } catch (e) {
@@ -20609,21 +20812,20 @@ Type any command below (e.g. pm list packages -d)
             const out = logcatApp && window.AndroidBridge.getLogcatFor
                 ? window.AndroidBridge.getLogcatFor(level, filter, lines, logcatApp.pkg)
                 : window.AndroidBridge.getLogcat(level, filter, lines);
-            logcatRender(out, !live);
+            logcatRender(out, !live, live, lcSigNow());
         }
 
         let lcReqSeq = 0;
         let lcPending = null;           // the request in flight: { id, live, at }
         function onLogcatData(id, text) {
             if (!lcPending || lcPending.id !== id) return;       // the answer to a request that was replaced
-            const live = lcPending.live;
+            const live = lcPending.live, sig = lcPending.sig;
             lcPending = null;
-            logcatRender(text, !live);
+            logcatRender(text, !live, live, sig);
         }
         window.onLogcatData = onLogcatData;
         function logcatRefresh() {
             if (!guardPrivilege('Logcat')) return;
-            lcLastText = null;
             lcShowAll = false;
             logcatFetch(false);
         }
@@ -20651,7 +20853,8 @@ Type any command below (e.g. pm list packages -d)
             // visibly empty until the next Play/Refresh instead of instantly repopulating.
             if (window.AndroidBridge && window.AndroidBridge.clearLogcat) window.AndroidBridge.clearLogcat();
             lcPending = null;                  // an answer still on its way (a Refresh) was fetched before the clear: it must not repaint the old log
-            lcLastText = null;
+            lcStoreReset();
+            lcSig = lcSigNow();
             logcatNotice('(cleared)');
             showToast('Log cleared');
         }
@@ -20698,10 +20901,10 @@ Type any command below (e.g. pm list packages -d)
         }
 
         // ---- one entry in its own window: copy, an explanation from the Coding Agent, a web search ----
-        function lcEntryOpen(i) {
+        function lcEntryOpen(i, src) {
             const sel = window.getSelection && window.getSelection();
             if (sel && String(sel).trim()) return;                          // the person is selecting text: not a tap
-            const e = lcRowMap[i];
+            const e = (src === 'v' ? lcv.map : lcRowMap)[i];
             if (!e || e.kind !== 'entry') return;
             haptic();
             lcEnt = e; lcEntAiText = ''; lcEntAiBusy = false;
@@ -20736,6 +20939,7 @@ Type any command below (e.g. pm list packages -d)
             + 'Use short paragraphs, no headings. If the line is too cryptic to explain with confidence, say so and say what else would help. Do not invent details.';
         async function lcEntryMore() {
             if (!lcEnt || lcEntAiBusy) return;
+            if (!askAgentGate()) return;
             const ent = lcEnt, info = txInfo || {};
             const q = 'Android ' + (info.release || '?') + (info.model ? ' on ' + ((info.manufacturer || '') + ' ' + info.model).trim() : '') + '\nLevel: ' + ent.lvl + '\nTag: ' + ent.tag + '\nProcess: ' + ent.pid + '/' + ent.tid + '\nMessage:\n' + ent.lines.join('\n');
             const btn = document.getElementById('lcEntMore');
@@ -20745,15 +20949,176 @@ Type any command below (e.g. pm list packages -d)
             lcEntAiBusy = false; btn.disabled = false;
         }
 
+        // ---- recording the log to a file, and looking at a recording as a still picture ----
+        let lcRecTimer = null, lcRecWas = false;
+        function lcRecBridge() { const b = window.AndroidBridge; return b && b.logRecStart ? b : null; }
+        function lcRecJson(s) { try { return JSON.parse(s); } catch (e) { return null; } }
+        function lcRecButton(st) {
+            const btn = document.getElementById('logcatRecBtn');
+            if (!btn) return;
+            btn.innerText = st && st.running ? '■ Stop recording · ' + st.lines + ' lines' : '● Record to file';
+            btn.style.color = st && st.running ? '#FFA726' : '#FF5252';
+        }
+        // Asks the phone how the recording is doing; keeps asking while one runs. A recording that ended by itself (the size limit) is announced once.
+        function lcRecPoll() {
+            const br = lcRecBridge();
+            if (!br) return;
+            const st = lcRecJson(br.logRecStatus());
+            if (!st) return;
+            lcRecButton(st);
+            if (st.running && !lcRecTimer) lcRecTimer = setInterval(lcRecPoll, 2000);
+            if (!st.running && lcRecTimer) { clearInterval(lcRecTimer); lcRecTimer = null; }
+            if (lcRecWas && !st.running) {
+                showToast(st.stopReason && st.stopReason !== 'stopped' ? 'The recording stopped: ' + st.stopReason : 'Recording stopped');
+                if (st.name && st.lines > 0 && st.stopReason && st.stopReason !== 'stopped') lcvOpen(st.name);
+            }
+            lcRecWas = !!st.running;
+        }
+        function logcatRecToggle() {
+            haptic();
+            const br = lcRecBridge();
+            if (!br) { showToast('Recording is only available in the app'); return; }
+            const st = lcRecJson(br.logRecStatus());
+            if (st && st.running) {
+                const r = lcRecJson(br.logRecStop()) || {};
+                lcRecWas = false;
+                if (lcRecTimer) { clearInterval(lcRecTimer); lcRecTimer = null; }
+                lcRecButton(r);
+                if (r.name && r.lines > 0) { showToast('Saved ' + r.lines + ' lines'); lcvOpen(r.name); }
+                else showToast('Nothing was recorded');
+                return;
+            }
+            if (!guardPrivilege('Logcat')) return;
+            const level = document.getElementById('logcatLevel').value;
+            const r = lcRecJson(br.logRecStart(level, document.getElementById('logcatFilter').value || '', logcatApp ? logcatApp.pkg : '', logcatApp ? logcatApp.name : ''));
+            if (!r || !r.ok) { showToast((r && r.error) || 'Could not start the recording'); return; }
+            showToast('Recording the log to a file');
+            lcRecWas = true;
+            lcRecPoll();
+        }
+
+        function lcRecListClose() { document.getElementById('lcRecModal').classList.remove('show'); }
+        function lcRecWhen(name, modified) {
+            const m = /^logcat_(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})/.exec(name);
+            const d = m ? new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]) : new Date(modified || 0);
+            return d.toLocaleString();
+        }
+        function lcRecSize(n) { return n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB'; }
+        function lcRecListOpen() {
+            haptic();
+            const br = lcRecBridge();
+            if (!br) { showToast('Recording is only available in the app'); return; }
+            lcRecListDraw();
+            document.getElementById('lcRecModal').classList.add('show');
+        }
+        function lcRecListDraw() {
+            const br = lcRecBridge(), box = document.getElementById('lcRecList');
+            const r = br ? lcRecJson(br.logRecList()) : null;
+            const items = r && r.ok ? r.items : [];
+            lcRecItems = items;
+            box.innerHTML = items.length
+                ? items.map((it, i) => `<div class="lc-rec-row" onclick="lcvOpen(lcRecItems[${i}].name)" role="button" tabindex="0"><div class="lc-rec-main"><div class="lc-rec-name" translate="no">${escapeHtml(lcRecWhen(it.name, it.modified))}</div><div class="lc-rec-sub" translate="no">${escapeHtml(it.name)} · ${lcRecSize(it.size)}</div></div><div class="lc-rec-del" onclick="event.stopPropagation(); lcRecDelete(${i})" role="button" aria-label="Delete">✕</div></div>`).join('')
+                : '<div class="lc-meta">No recordings yet. Tap Record to file in the Logcat tab to make one.</div>';
+        }
+        let lcRecItems = [];
+        function lcRecDelete(i) {
+            const it = lcRecItems[i], br = lcRecBridge();
+            if (!it || !br) return;
+            haptic();
+            const res = br.logRecDelete(it.name) || '';
+            showToast(/^Error/.test(res) ? res : 'Deleted the recording');
+            lcRecListDraw();
+        }
+
+        // The still picture: a recording read once and drawn with its own search, level key and pages; nothing in it moves.
+        const LCV_PAGE = 500;
+        const LCV_NAV = { first: '« Start', prev: '‹ Earlier', next: 'Later ›', last: 'End »' };
+        let lcv = { name: '', text: '', entries: [], view: [], map: [], page: 0, hidden: new Set(), counts: {} };
+        function lcvOpen(name) {
+            const br = lcRecBridge();
+            if (!br) return;
+            haptic();
+            const text = br.logRecRead(name) || '';
+            if (!text || /^Error:/.test(text)) { showToast(text || 'That recording could not be read'); return; }
+            lcv = { name: name, text: text, entries: logcatParse(text), view: [], map: [], page: 0, hidden: new Set(), counts: { V: 0, D: 0, I: 0, W: 0, E: 0, F: 0 } };
+            lcv.entries.forEach(e => { if (e.kind === 'entry') { lcv.counts[e.lvl] += e.lines.length; e.h = (e.tag + '\n' + e.lines.join('\n')).toLowerCase(); } });
+            const n = lcv.entries.filter(e => e.kind === 'entry').length;
+            document.getElementById('lcvTitle').innerText = name;
+            document.getElementById('lcvSub').innerText = n + ' entries · ' + lcRecWhen(name, 0);
+            document.getElementById('lcvFilter').value = '';
+            document.getElementById('lcRecModal').classList.remove('show');
+            lcvKey();
+            lcvDraw(0);
+            document.getElementById('lcvModal').classList.add('show');
+        }
+        function lcvClose() { document.getElementById('lcvModal').classList.remove('show'); }
+        function lcvKey() {
+            document.getElementById('lcvKey').innerHTML = LC_LEVELS.map(l =>
+                `<span class="lc-chip lvl-${l[0]}${lcv.hidden.has(l[0]) ? ' off' : ''}" role="button" tabindex="0" onclick="lcvToggleLevel('${l[0]}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();lcvToggleLevel('${l[0]}');}" title="Tap to ${lcv.hidden.has(l[0]) ? 'show' : 'hide'} ${l[1]} lines">` +
+                `<span class="lc-dot"></span><span class="lc-name">${l[0]} · ${l[1]}</span><span class="lc-n">${lcv.counts[l[0]] || 0}</span></span>`).join('');
+        }
+        function lcvToggleLevel(l) { haptic(); if (lcv.hidden.has(l)) lcv.hidden.delete(l); else lcv.hidden.add(l); lcvKey(); lcvDraw(0); }
+        let lcvTimer = null;
+        function lcvFilterInput() { clearTimeout(lcvTimer); lcvTimer = setTimeout(() => lcvDraw(0), 200); }
+        function lcvNeedle() { return (document.getElementById('lcvFilter').value || '').trim(); }
+        // The entries that pass the level key and the search.
+        function lcvMatching() {
+            const q = lcvNeedle().toLowerCase();
+            return lcv.entries.filter(e => e.kind === 'entry' && !lcv.hidden.has(e.lvl) && (!q || e.h.indexOf(q) >= 0));
+        }
+        // page: 0-based; -1 = the last one
+        function lcvDraw(page) {
+            const out = document.getElementById('lcvOut');
+            const needle = lcvNeedle();
+            const rx = needle ? new RegExp(needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'ig') : null;
+            const all = lcvMatching();
+            lcv.view = all;
+            const pages = Math.max(1, Math.ceil(all.length / LCV_PAGE));
+            lcv.page = page < 0 ? pages - 1 : Math.min(page, pages - 1);
+            const from = lcv.page * LCV_PAGE, rows = all.slice(from, from + LCV_PAGE);
+            lcv.map = rows;
+            out.innerHTML = rows.length ? rows.map((e, i) => lcRowHtml(e, i, rx, 'v')).join('') : '<div class="lc-meta">Nothing matches.</div>';
+            out.scrollTop = 0;
+            const info = 'Entries ' + (from + 1) + '–' + (from + rows.length) + ' of ' + all.length;
+            const nav = (label, page, off) => '<button class="batch-tool-link" onclick="lcvDraw(' + page + ')"' + (off ? ' disabled' : '') + '>' + label + '</button>';
+            document.getElementById('lcvPager').innerHTML = all.length
+                ? '<span class="lcv-info">' + info + '</span>' + nav(LCV_NAV.first, 0, lcv.page === 0) + nav(LCV_NAV.prev, lcv.page - 1, lcv.page === 0)
+                    + nav(LCV_NAV.next, lcv.page + 1, lcv.page >= pages - 1) + nav(LCV_NAV.last, -1, lcv.page >= pages - 1)
+                : '';
+        }
+        function lcvCopy() {
+            const lines = [];
+            lcv.view.forEach(e => e.raws.forEach(r => lines.push(r)));
+            if (!lines.length) { showToast('Nothing to copy'); return; }
+            copyText(lines.join('\n'));
+            showToast('Copied ' + lines.length + ' lines');
+        }
+        function lcvSave() {
+            haptic();
+            if (!window.AndroidBridge || !window.AndroidBridge.saveTextToDownloads) { showToast('Saving is only available in the app'); return; }
+            const res = window.AndroidBridge.saveTextToDownloads(lcv.name, lcv.text) || '';
+            showToast(/^Error/.test(res) ? res : 'Saved to ' + res);
+        }
+        function lcvShare() { haptic(); shareFileViaBridge(lcv.name, lcv.text, 'text/plain'); }
+        function lcvDelete() {
+            const br = lcRecBridge();
+            if (!br || !lcv.name) return;
+            haptic();
+            const res = br.logRecDelete(lcv.name) || '';
+            if (/^Error/.test(res)) { showToast(res); return; }
+            showToast('Deleted the recording');
+            lcvClose();
+        }
+
         function aiOpenAgentSetup() { document.querySelectorAll('.modal-overlay.show').forEach(m => m.classList.remove('show')); switchView('terminal'); }
         // Asks the Coding Agent chosen in the Command-Line Interface tab to explain something, and streams the answer into box.
         // Says what is missing when there is no agent. Returns the answer ('' when there is none). isCurrent(): false once the window moved on.
         async function aiExplainInto(box, system, text, isCurrent, sentNote) {
             box.classList.remove('is-err');
-            const ag = txAgentDef(txState.agent);
-            if (!ag || ag.id === 'none' || !txAgentReady(ag)) {
+            const ag = askAgentDef();
+            if (!ag || !txAgentReady(ag)) {
                 box.classList.add('is-err');
-                box.innerHTML = 'To get an explanation, pick and connect a Coding Agent first (Command-Line Interface tab, Coding Agent). <a href="#" onclick="aiOpenAgentSetup(); return false;">Open it</a>. Web search works without one.';
+                box.innerHTML = 'To get an explanation, choose a default agent and connect it. <a href="#" onclick="agentAskToSettings(); return false;">Open Settings</a>. Web search works without one.';
                 return '';
             }
             const who = ag.name.replace(/\s*\(.*\)$/, '');
@@ -21069,7 +21434,7 @@ Type any command below (e.g. pm list packages -d)
                 if (p.pkg) parts.push(p.pkg);
                 parts.push('PID ' + p.pid, formatBytes(p.rssKb * 1024), p.cpuPercent.toFixed(1) + '% CPU');
                 const killBtn = p.pkg ? `<button class="tm-kill-btn" onclick="tmKillProc('${p.pkg.replace(/'/g, "\\'")}')" aria-label="Force Stop">✕</button>` : '';
-                return `<div class="tm-row"><div class="tm-row-info"><div class="tm-row-name">${escapeHtml(title)}</div><div class="tm-row-sub">${escapeHtml(parts.join(' • '))}</div></div>${killBtn}</div>`;
+                return `<div class="tm-row"><div class="tm-row-info"><div class="tm-row-name">${escapeHtml(title)}</div><div class="tm-row-sub">${escapeHtml(parts.join(' • '))}</div>${agentBtnHtml('process', p.name, [p.pkg ? 'Belongs to the app: ' + (app ? app.name + ' (' + p.pkg + ')' : p.pkg) : 'Not an app: a system or native process', 'Memory: ' + formatBytes(p.rssKb * 1024), 'CPU: ' + p.cpuPercent.toFixed(1) + '%'])}</div>${killBtn}</div>`;
             }).join('');
         }
 
@@ -21462,6 +21827,7 @@ Type any command below (e.g. pm list packages -d)
                     <div class="perm-info">
                         <div class="perm-name">${escapeHtml(short)}</div>
                         <div class="perm-sub">${badges}${escapeHtml(c.name)}</div>
+                        ${agentBtnHtml('component', c.name, ['Part of the app: ' + inspectedPkg, 'Type: ' + (k.launch ? 'activity' : k.stop ? 'service' : 'receiver or provider'), 'Exported: ' + (c.exported ? 'yes' : 'no'), c.permission ? 'Needs permission: ' + c.permission : ''])}
                     </div>
                     <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">${btns}</div>
                 </div>`;
@@ -21658,6 +22024,7 @@ Type any command below (e.g. pm list packages -d)
                         <div class="perm-info">
                             <div class="perm-name">${escapeHtml(shortName)}</div>
                             <div class="perm-sub"><span class="perm-kind">${escapeHtml(kind)}</span>${p.appOp ? '<span class="perm-kind">app op</span>' : ''}${p.changeable ? '' : '<span class="perm-kind">locked</span>'}${escapeHtml(sub)}</div>
+                            ${agentBtnHtml('permission', p.name, ['Declared by the app: ' + inspectedPkg, 'Protection level: ' + kind, p.label ? 'Android calls it: ' + p.label : ''])}
                         </div>
                         ${btn}
                     </div>`;
@@ -21739,6 +22106,7 @@ Type any command below (e.g. pm list packages -d)
                         <div class="perm-info">
                             <div class="perm-name">${escapeHtml(op.name)}</div>
                             ${sub ? `<div class="perm-sub">${escapeHtml(sub)}</div>` : ''}
+                            ${agentBtnHtml('appop', op.name, ['Used by the app: ' + inspectedPkg, 'Mode now: ' + op.mode])}
                         </div>
                         <div class="op-modes">${buttons}</div>
                     </div>`;
@@ -22075,7 +22443,7 @@ Type any command below (e.g. pm list packages -d)
             const reqMissing = all.filter(f => f.device === false && (f.required || f.gl)).length;
             let html = `<div class="ax-note">${all.length} feature${all.length === 1 ? '' : 's'}. ${missing ? missing + ' not on this phone' + (reqMissing ? ' (' + reqMissing + ' of them required, so the Play Store would not list the app for this phone)' : ' (all optional)') : 'This phone has all of them.'}</div>`;
             if (!rows.length) html += '<div class="list-empty">None match.</div>';
-            html += rows.map(f => `<div class="perm-row"><div class="perm-info"><div class="perm-name">${escapeHtml(f.name)}</div></div><div class="ax-badges">` +
+            html += rows.map(f => `<div class="perm-row"><div class="perm-info"><div class="perm-name">${escapeHtml(f.name)}</div>${agentBtnHtml('feature', f.name, ['Asked for by the app: ' + inspectedPkg, f.gl ? '' : (f.required ? 'The app marks it as required' : 'The app marks it as optional'), f.device === null ? '' : (f.device ? 'This phone has it' : 'This phone does not have it')])}</div><div class="ax-badges">` +
                 (f.gl ? '' : `<span class="perm-kind"${f.required ? '' : ' style="color:var(--text-muted);"'}>${f.required ? 'required' : 'optional'}</span>`) +
                 (f.device === null ? '' : `<span class="perm-kind" style="${f.device ? 'color:#4CAF50;border-color:rgba(76,175,80,0.45);' : 'color:#FFA726;border-color:rgba(255,145,0,0.4);'}">${f.device ? 'on this phone' : 'not on this phone'}</span>`) +
                 '</div></div>').join('');
@@ -22177,11 +22545,11 @@ Type any command below (e.g. pm list packages -d)
             const dShown = declared.filter(l => hit(l.name));
             html += `<div class="ax-sec">Libraries it asks for (${declared.length})</div>`;
             html += !declared.length ? '<div class="ax-note">The manifest does not ask for any extra library (no uses-library entry).</div>'
-                : (dShown.length ? dShown.map(l => `<div class="perm-row"><div class="perm-info"><div class="perm-name">${escapeHtml(l.name)}</div>${l.version ? `<div class="perm-sub">version ${escapeHtml(l.version)}</div>` : ''}</div><div class="ax-badges"><span class="perm-kind">${l.kind === 'static' ? 'static' : l.kind === 'native' ? 'native' : 'shared'}</span><span class="perm-kind"${l.required ? '' : ' style="color:var(--text-muted);"'}>${l.required ? 'required' : 'optional'}</span></div></div>`).join('') : '<div class="list-empty">None match.</div>');
+                : (dShown.length ? dShown.map(l => `<div class="perm-row"><div class="perm-info"><div class="perm-name">${escapeHtml(l.name)}</div>${l.version ? `<div class="perm-sub">version ${escapeHtml(l.version)}</div>` : ''}${agentBtnHtml('library', l.name, ['Asked for by the app: ' + inspectedPkg, 'Kind: ' + (l.kind || 'shared') + ' library, ' + (l.required ? 'required' : 'optional')])}</div><div class="ax-badges"><span class="perm-kind">${l.kind === 'static' ? 'static' : l.kind === 'native' ? 'native' : 'shared'}</span><span class="perm-kind"${l.required ? '' : ' style="color:var(--text-muted);"'}>${l.required ? 'required' : 'optional'}</span></div></div>`).join('') : '<div class="list-empty">None match.</div>');
             const sShown = shared.filter(hit);
             html += `<div class="ax-sec">Shared libraries linked in (${shared.length})</div>`;
             html += !shared.length ? '<div class="ax-note">No shared library files are linked into this app.</div>'
-                : (sShown.length ? sShown.map(p => `<div class="perm-row"><div class="perm-info"><div class="perm-name">${escapeHtml(String(p).split('/').pop())}</div><div class="perm-sub">${escapeHtml(p)}</div></div></div>`).join('') : '<div class="list-empty">None match.</div>');
+                : (sShown.length ? sShown.map(p => `<div class="perm-row"><div class="perm-info"><div class="perm-name">${escapeHtml(String(p).split('/').pop())}</div><div class="perm-sub">${escapeHtml(p)}</div>${agentBtnHtml('library', String(p).split('/').pop(), ['Linked into the app: ' + inspectedPkg, 'Path: ' + p])}</div></div>`).join('') : '<div class="list-empty">None match.</div>');
             const nShown = nat.filter(n => hit(n.name) || hit(n.abi));
             html += `<div class="ax-sec">Native libraries inside the APK (${nat.length})</div>`;
             if (lb.nativeDir) html += `<div class="ax-note" translate="no">${escapeHtml(lb.nativeDir)}${lb.primaryAbi ? ' &bull; primary CPU type ' + escapeHtml(lb.primaryAbi) : ''}</div>`;
@@ -22193,7 +22561,7 @@ Type any command below (e.g. pm list packages -d)
                 nShown.forEach(n => { (byAbi[n.abi] = byAbi[n.abi] || []).push(n); });
                 Object.keys(byAbi).sort().forEach(abi => {
                     html += `<div class="ax-abi" translate="no">${escapeHtml(abi)} (${byAbi[abi].length})</div>`;
-                    html += byAbi[abi].sort((a, b) => a.name.localeCompare(b.name)).map(n => `<div class="perm-row"><div class="perm-info"><div class="perm-name">${escapeHtml(n.name)}</div>${multiApk ? `<div class="perm-sub">${escapeHtml(n.apk || '')}</div>` : ''}</div><div class="ax-badges"><span class="perm-kind" translate="no">${escapeHtml(formatBytes(n.size))}</span></div></div>`).join('');
+                    html += byAbi[abi].sort((a, b) => a.name.localeCompare(b.name)).map(n => `<div class="perm-row"><div class="perm-info"><div class="perm-name">${escapeHtml(n.name)}</div>${multiApk ? `<div class="perm-sub">${escapeHtml(n.apk || '')}</div>` : ''}${agentBtnHtml('library', n.name, ['Native library inside the app: ' + inspectedPkg, 'CPU type: ' + abi])}</div><div class="ax-badges"><span class="perm-kind" translate="no">${escapeHtml(formatBytes(n.size))}</span></div></div>`).join('');
                 });
             }
             box.innerHTML = html;
@@ -27869,9 +28237,11 @@ Type any command below (e.g. pm list packages -d)
             let h = '<div class="sdb-row' + (sdbBusy.has(id) ? ' busy' : '') + (hint && hint.r ? ' risky' : '') + '" role="listitem" tabindex="0" data-k="' + escapeHtml(key) + '">';
             h += '<div class="sdb-main"><div class="sdb-key">' + sdbMark(key, terms) + (sdbEdited.has(id) ? '<span class="sdb-dot" title="Changed with this app"></span>' : '') + '</div>';
             if (hint) h += '<div class="sdb-hint">' + sdbMark(hint.t, terms) + (hint.r ? ' · careful' : '') + '</div>';
+            else h += '<div class="sdb-hint">No description yet</div>';
             if (hint && hint.v) h += '<div class="sdb-vals">' + sdbValsHtml(hint, value, terms) + '</div>';
             const blank = value === '' ? '(empty)' : /^\s+$/.test(value) ? '(blank)' : '';
-            h += '<div class="sdb-val' + (blank ? ' empty' : '') + '">' + (blank || sdbMark(sdbClip(value), terms)) + '</div></div>';
+            h += '<div class="sdb-val' + (blank ? ' empty' : '') + '">' + (blank || sdbMark(sdbClip(value), terms)) + '</div>';
+            h += agentBtnHtml('setting', key, ['Table: ' + ns, 'Value now: ' + (value === '' ? '(empty)' : sdbClip(value, 200)), hint ? 'The app already says: ' + hint.t + (hint.v ? ' Values: ' + hint.v : '') : '']) + '</div>';
             if (sw) h += '<button class="sdb-sw' + (sw.on ? ' on' : '') + '" role="switch" aria-checked="' + sw.on + '" aria-label="Flip ' + escapeHtml(key) + '"><span></span></button>';
             return h + '</div>';
         }
@@ -28012,14 +28382,14 @@ Type any command below (e.g. pm list packages -d)
             list.addEventListener('click', e => {
                 if (sdbPress.fired) { sdbPress.fired = false; return; }          // the click that ends a long press
                 const row = rowOf(e);
-                if (!row) return;
+                if (!row || e.target.closest('.agent-btn')) return;
                 if (e.target.closest('.sdb-sw')) sdbToggle(sdbNs, row.dataset.k);
                 else sdbOpenEditor(sdbNs, row.dataset.k);
             });
             list.addEventListener('keydown', e => {
                 if (e.key !== 'Enter' && e.key !== ' ') return;
                 const row = rowOf(e);
-                if (!row || e.target.closest('.sdb-sw')) return;
+                if (!row || e.target.closest('.sdb-sw') || e.target.closest('.agent-btn')) return;
                 e.preventDefault();
                 sdbOpenEditor(sdbNs, row.dataset.k);
             });
@@ -28031,7 +28401,7 @@ Type any command below (e.g. pm list packages -d)
             list.addEventListener('touchstart', e => {
                 lastTouchAt = Date.now(); sdbPress.fired = false;
                 const row = rowOf(e); const t = e.touches[0];
-                if (row && t) sdbPressStart(row, t.clientX, t.clientY);
+                if (row && t && !e.target.closest('.agent-btn')) sdbPressStart(row, t.clientX, t.clientY);
                 // Flipping redraws the row while the finger is still down. A removed element no longer passes its touch events up to the
                 // list, so the end of the touch is listened for on the element itself (otherwise a long hold ends in a second flip or the editor)
                 const target = e.target;
@@ -28045,7 +28415,7 @@ Type any command below (e.g. pm list packages -d)
             }, { passive: true });
             list.addEventListener('touchend', endTouch);
             list.addEventListener('touchcancel', sdbPressCancel);
-            list.addEventListener('mousedown', e => { if (fromTouch()) return; sdbPress.fired = false; const row = rowOf(e); if (row && e.button === 0) sdbPressStart(row, e.clientX, e.clientY); });
+            list.addEventListener('mousedown', e => { if (fromTouch()) return; sdbPress.fired = false; const row = rowOf(e); if (row && e.button === 0 && !e.target.closest('.agent-btn')) sdbPressStart(row, e.clientX, e.clientY); });
             list.addEventListener('mouseup', sdbPressCancel);
             list.addEventListener('mouseleave', sdbPressCancel);
             window.addEventListener('scroll', sdbPressCancel, { passive: true });
@@ -28412,6 +28782,7 @@ Type any command below (e.g. pm list packages -d)
             + 'Say briefly: what it controls, what its values mean, what changing it does, and whether it is safe to change. Say plainly when you do not know the setting (many belong to the phone maker) instead of guessing, and then say what its name suggests. Short paragraphs, no headings.';
         async function sdbEditAsk() {
             if (!sdbEditing || sdbAiBusy) return;
+            if (!askAgentGate()) return;
             const cur = sdbEditing, hint = sdbHint(cur.ns, cur.key), info = txInfo || {};
             const val = cur.orig.length <= 200 ? cur.orig : cur.orig.slice(0, 200) + '...';
             const q = 'Android ' + (info.release || '?') + (info.model ? ' on ' + ((info.manufacturer || '') + ' ' + info.model).trim() : '') + '\nTable: ' + cur.ns + '\nSetting: ' + cur.key + '\nValue now: ' + (val === '' ? '(empty)' : val)
@@ -29284,7 +29655,8 @@ Type any command below (e.g. pm list packages -d)
             return '<div class="sdb-row ovl-row' + (busy ? ' busy' : '') + (o.state < 0 ? ' na' : '') + '" role="listitem" tabindex="0" data-id="' + escapeHtml(o.id) + '">'
                 + '<div class="sdb-main"><div class="sdb-key">' + escapeHtml(o.id) + '</div>'
                 + '<div class="sdb-hint">' + ovlStateText(o) + (withTarget && o.target ? ' · ' + escapeHtml(o.target) : '') + '</div>'
-                + '<div class="ovl-why">' + escapeHtml(ovlWhy(o)) + '</div></div>' + sw + '</div>';
+                + '<div class="ovl-why">' + escapeHtml(ovlWhy(o)) + '</div>'
+                + agentBtnHtml('overlay', o.id, ['Targets: ' + (o.target || 'unknown'), 'State: ' + ovlStateText(o), 'The app says: ' + ovlWhy(o)]) + '</div>' + sw + '</div>';
         }
 
         function ovlRenderList() {
@@ -29577,7 +29949,7 @@ Type any command below (e.g. pm list packages -d)
             list.addEventListener('touchstart', e => {
                 lastTouchAt = Date.now(); ovlPress.fired = false;
                 const row = rowOf(e); const t = e.touches[0];
-                if (row && t) start(row, t.clientX, t.clientY);
+                if (row && t && !e.target.closest('.agent-btn')) start(row, t.clientX, t.clientY);
                 // Switching redraws the row while the finger is still down, and a removed element no longer passes its touch events up to the
                 // list: the end of the touch is listened for on the element itself (or a long hold ends in a second flip or the sheet)
                 const target = e.target;
@@ -29588,7 +29960,7 @@ Type any command below (e.g. pm list packages -d)
             list.addEventListener('touchmove', e => { const t = e.touches[0]; if (t && (Math.abs(t.clientX - ovlPress.x) > 12 || Math.abs(t.clientY - ovlPress.y) > 12)) cancel(); }, { passive: true });
             list.addEventListener('touchend', endTouch);
             list.addEventListener('touchcancel', cancel);
-            list.addEventListener('mousedown', e => { if (fromTouch()) return; ovlPress.fired = false; const row = rowOf(e); if (row && e.button === 0) start(row, e.clientX, e.clientY); });
+            list.addEventListener('mousedown', e => { if (fromTouch()) return; ovlPress.fired = false; const row = rowOf(e); if (row && e.button === 0 && !e.target.closest('.agent-btn')) start(row, e.clientX, e.clientY); });
             list.addEventListener('mouseup', cancel);
             list.addEventListener('mouseleave', cancel);
             window.addEventListener('scroll', cancel, { passive: true });
@@ -32840,7 +33212,7 @@ Type any command below (e.g. pm list packages -d)
                     const part = on && d && d.size ? d.size + ' of ' + (g.count || '?') + ' taken out' : '';
                     return '<div class="sd-row' + (on ? '' : ' is-off') + '"><input type="checkbox" ' + (on ? 'checked ' : '') + 'onchange="sdGroupToggle(' + i + ',this.checked)" aria-label="Select">' +
                         '<div class="sd-main" onclick="sdRevOpen(' + i + ')"><div class="sd-t" translate="no">' + escapeHtml(g.label || g.id) + '</div>' +
-                        '<div class="sd-m">' + (g.sub ? '<span translate="no">' + escapeHtml(g.sub) + '</span> &middot; ' : '') + (g.count || 0) + ' item' + (g.count === 1 ? '' : 's') + (part ? ' &middot; ' + part : '') + '</div>' + sdRevTags(g) + '</div>' +
+                        '<div class="sd-m">' + (g.sub ? '<span translate="no">' + escapeHtml(g.sub) + '</span> &middot; ' : '') + (g.count || 0) + ' item' + (g.count === 1 ? '' : 's') + (part ? ' &middot; ' + part : '') + '</div>' + sdRevTags(g) + (g.pkg ? agentBtnHtml('package', g.pkg, ['Found by SD Maid: ' + sdName(r.tool), 'Name shown: ' + (g.label || g.id), (g.count || 0) + ' items, ' + sdSizeStr(g.bytes)]) : g.path ? agentBtnHtml('file', g.path, ['Found by SD Maid: ' + sdName(r.tool), (g.count || 0) + ' items, ' + sdSizeStr(g.bytes)]) : '') + '</div>' +
                         '<div class="sd-sz">' + sdSizeStr(g.bytes) + '</div>' + (g.pkg || g.path ? '<button class="sd-ex" onclick="sdExcludeGroup(' + i + ')">Exclude</button>' : '') + '</div>';
                 }).join('');
                 const more = r.groups.length < r.gTotal ? '<div class="sd-btns"><button class="mode-action-btn" onclick="sdRevLoadGroups(true)">Show more (' + (r.gTotal - r.groups.length) + ')</button></div>' : '';
@@ -32856,7 +33228,7 @@ Type any command below (e.g. pm list packages -d)
                 const rows = r.items.map((it, i) => {
                     const on = sdItemOn(r.tool, g.id, it.id);
                     return '<div class="sd-row' + (on ? '' : ' is-off') + '"><input type="checkbox" ' + (on ? 'checked ' : '') + (it.keep ? 'disabled ' : '') + 'onchange="sdItemToggle(' + i + ',this.checked)" aria-label="Select">' +
-                        '<div class="sd-main"><div class="sd-t" translate="no">' + escapeHtml(it.name || it.path) + '</div><div class="sd-m" translate="no">' + escapeHtml(it.path || '') + '</div>' + sdRevTags(it) + '</div>' +
+                        '<div class="sd-main"><div class="sd-t" translate="no">' + escapeHtml(it.name || it.path) + '</div><div class="sd-m" translate="no">' + escapeHtml(it.path || '') + '</div>' + sdRevTags(it) + (it.path ? agentBtnHtml('file', it.path, ['Found by SD Maid: ' + sdName(r.tool), 'Kind: ' + (it.type === 1 ? 'folder' : 'file'), it.type === 1 && !it.size ? '' : 'Size: ' + sdSizeStr(it.size)]) : '') + '</div>' +
                         '<div class="sd-sz">' + (it.type === 1 && !it.size ? '' : sdSizeStr(it.size)) + '</div>' + (it.path && !it.keep ? '<button class="sd-ex" onclick="sdExcludeItem(' + i + ')">Exclude</button>' : '') + '</div>';
                 }).join('');
                 const more = r.items.length < r.iTotal ? '<div class="sd-btns"><button class="mode-action-btn" onclick="sdRevLoadItems(true)">Show more (' + (r.iTotal - r.items.length) + ')</button></div>' : '';

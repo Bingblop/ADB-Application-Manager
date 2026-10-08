@@ -1,0 +1,33 @@
+ok   1. a first poll shows its three lines
+ok      the next poll adds only what is new: four lines, the overlap is not doubled
+ok   2. a poll that finds nothing leaves the four lines on the screen (it used to empty the view)
+ok      an empty answer does the same
+ok      a failed poll while live changes nothing
+ok      Refresh finding nothing new keeps the lines too, and says so in a toast
+ok   3. identical lines in one poll (a recursion) are all kept
+ok      and not added again by the next poll
+ok   4. an answer for a level that was changed since is dropped
+ok      a new level starts a new view: only the new answer is shown
+ok   5. Clear empties the view and the kept lines
+ok   6. the Logcat tab has Record to file and Recordings
+ok      pressing it starts a recording with the level of the view, and the button becomes Stop with the line count: {"rec":"E","btn":"■ Stop recording · 5 lines"}
+ok   7. stopping saves the file and opens it as a still picture: {"open":true,"title":"logcat_20261008_120001.log","sub":"1200 entries · 10/8/2026, <clock>","rows":500,"pager":"Entries 1–500 of 1200 « Start ‹ Earlier Later › End »","btn":"● Record to file"}
+ok      the pages go on to the end (the last one holds the rest)
+ok   8. the search narrows the recording to the matching entries and marks the match
+ok      the level key hides levels in the recording: {"n":172,"all":true,"pager":"Entries 1–172 of 172 « Start ‹ Earlier Later › End »"}
+ok      tapping an entry opens its window above the recording
+ok   9. Copy shown copies the lines that are shown
+ok      Save writes the whole recording to Downloads
+ok   10. Recordings lists it, newest first, with its size
+ok       tapping one opens the still picture again (and closes the list)
+ok   11. Delete removes the recording
+ok       and the list says there are none
+ok   12. a hidden setting's row carries the Ask agent button: {"has":true,"ak":"setting","an":"zen_mode","ax":"Table: global\nValue now: 0\nThe app already says: Do Not Disturb. Values: 0 = off; 1 = priority interruptions only; 2 = total silence; 3 = alarms only","txt":"✦ Ask agent"}
+ok       a setting without a description says so, next to the button: 5
+ok   13. without a default agent the button leads to Settings (the row did not open its editor)
+ok   14. with a default agent it asks at once, in its own window, about that setting: {"modal":true,"editor":false,"title":"About this setting","subj":"zen_mode","ans":"Asking Fake AI (fake-model). The text above is sent to them.\nA mode.","sent":{"system":"You explain one Android hidden setting (an entry of the Settings.Global, Settings.Secure or Settings.System database, the ones \"settings get/put\" reads and writes) to someone who is not a developer. Say briefly and in plain words: what it is and what it does, whether it matters in daily use, and, if the person might want to change, turn off or remove it, what would happen and how safe that is (and whether it can be undone). Say plainly when you do not recognize it (many belong to the phone maker or to one app) instead of guessing, and then say what its name suggests. Short paragraphs, no headings. Do not invent details.","msgs":[{"role":"user","text":"Android ?\nSetting: zen_mode\nTable: global\nValue now: 0\nThe app already says: Do Not Disturb. Values: 0 = off; 1 = priority interruptions only; 2 = total silence; 3 = alarms only"}]}}
+ok   15. overlays carry the button too
+ok       and a button made for a name with quotes keeps them out of the markup
+ok   16. in SD Maid, the Leftover data card and Trim Caches come after the four tools, in that order
+ok   no page errors:
+ALL PASSED

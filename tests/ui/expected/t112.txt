@@ -5,7 +5,7 @@ activities: ["Main","Settings"] | count: 2
 components: ["Boot","Sync","Files"] | count: 3
 read once for the app: ["com.x"]
 features tab count: 5
-features: ["OpenGL ES 3.2 ON THIS PHONE","android.hardware.camera REQUIRED NOT ON THIS PHONE","android.hardware.bluetooth_le OPTIONAL NOT ON THIS PHONE","android.hardware.touchscreen OPTIONAL ON THIS PHONE","android.software.leanback OPTIONAL NOT ON THIS PHONE"]
+features: ["OpenGL ES 3.2 ✦ Ask agent ON THIS PHONE","android.hardware.camera ✦ Ask agent REQUIRED NOT ON THIS PHONE","android.hardware.bluetooth_le ✦ Ask agent OPTIONAL NOT ON THIS PHONE","android.hardware.touchscreen ✦ Ask agent OPTIONAL ON THIS PHONE","android.software.leanback ✦ Ask agent OPTIONAL NOT ON THIS PHONE"]
 summary: 5 features. 3 not on this phone (1 of them required, so the Play Store would not list the app for this phone)
 features, required: ["OpenGL ES 3.2","android.hardware.camera"]
 features, optional: ["android.hardware.bluetooth_le","android.hardware.touchscreen","android.software.leanback"]
@@ -20,7 +20,7 @@ badges: ["SELF-SIGNED","SELF-SIGNED"]
 a fingerprint copies on tap: ["AA:BB:CC:DD:EE:FF:<clock>:<clock>:<clock>:99:AA:BB:CC:DD:EE:FF:<clock>:<clock>:<clock>:99"]
 Copy all: ["com.x","","Signer 1","Subject: CN=Example Release, O=Example, C=US","Issuer: CN=Example Release, O=Example, C=US","Serial: 4A1F9C03"]
 library headings: ["LIBRARIES IT ASKS FOR (3)","SHARED LIBRARIES LINKED IN (1)","NATIVE LIBRARIES INSIDE THE APK (3)"]
-libraries: ["org.apache.http.legacy SHARED OPTIONAL","androidx.window.extensions SHARED OPTIONAL","com.example.static version 12 STATIC REQUIRED","org.apache.http.legacy.jar /system/framework/org.apache.http.legacy.jar","libapp.so 9.0 MB","libflutter.so 11.0 MB","libapp.so 7.0 MB"]
+libraries: ["org.apache.http.legacy ✦ Ask agent SHARED OPTIONAL","androidx.window.extensions ✦ Ask agent SHARED OPTIONAL","com.example.static version 12 ✦ Ask agent STATIC REQUIRED","org.apache.http.legacy.jar /system/framework/org.apache.http.legacy.jar ✦ Ask agent","libapp.so ✦ Ask agent 9.0 MB","libflutter.so ✦ Ask agent 11.0 MB","libapp.so ✦ Ask agent 7.0 MB"]
 CPU groups: ["arm64-v8a (2)","armeabi-v7a (1)"]
 libraries, search "flutter": ["libflutter.so"]
 libraries, nothing found: ["None match.","None match.","None match."]
