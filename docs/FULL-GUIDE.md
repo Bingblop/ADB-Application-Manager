@@ -118,7 +118,7 @@ Every tab except Application Manager and About can be switched off or moved in *
 
 ## New in v7.9
 
-**v7.11.2 is the latest build** (Connected Devices, 32-bit and universal APKs, the Help Guide: see [CHANGELOG.md](../CHANGELOG.md)). Everything from v7.9 through v7.9.15 is below; the full, dated list is in
+**v7.12.0 is the latest build** (Connected Devices, 32-bit and universal APKs, the Help Guide: see [CHANGELOG.md](../CHANGELOG.md)). Everything from v7.9 through v7.9.15 is below; the full, dated list is in
 [CHANGELOG.md](../CHANGELOG.md) (and inside the app, under About).
 
 **Newest (v7.9.12 to v7.9.15)**
@@ -998,7 +998,7 @@ Light / Dark / System stays as you set it.
 
 **Saved devices** (Connected Devices, under the picker): every device that was connected, up to 20, with **Connect** and **Delete** (asked first), **Delete all**, and a switch to stop remembering new ones.
 
-**Logcat entries** open when tapped, in a window with **Copy**, **More info** (the Coding Agent explains the entry; nothing is sent until you tap it) and **Web search**. **Hidden Settings** have **Web search** and **Explain (AI)** in the editor and 150 more settings described.
+**Logcat entries** open when tapped, in a window with **Copy**, **Ask agent** (the default agent explains the entry; nothing is sent until you tap it) and **Web search**. **Hidden Settings** have **Web search** and **Ask agent** in the editor and 150 more settings described.
 The Task Manager's **CPU** tab has the °F / °C menu, and the **GPU** tab starts with the renderer card. In the Apps tab the boxes at the top wear their own colours, and the **Bloatware (Uninstalled)** box clears the other filters.
 
 **Morphe Helper downloads** keep going when the app is left: a foreground service with a notification (progress, speed, time left, **Pause all**, **Cancel**) and a switch to turn it off.
@@ -1305,6 +1305,8 @@ Changes by version: [CHANGELOG.md](../CHANGELOG.md).
 
 **Trackers** (v7.11.0): the Apps tab has a **Trackers** pill and the app menu a **TRACKERS** chip (green 0, orange N, grey ?) that opens the list of the tracker libraries found in the app's code, from the Exodus Privacy list (ODbL 1.0). It reads class names offline, keeps the result until the app updates, and cannot see renamed (R8/ProGuard) or later-downloaded code.
 
-**Ask the agent** (v7.11.2): for an app the UAD-NG list does not know, the app menu shows **UAD-NG Not listed · Ask**; it opens a box with **Ask the agent** (the Coding Agent from the Command-Line Interface tab says what the package is and whether it is Safe, Caution or Do not touch; only the package name, app name, system flag and state are sent) and **Web search**.
+**Default agent and Ask agent buttons** (v7.12.0): Settings has a **Default agent** card under Language; that agent (key and model from the Command-Line Interface tab) answers every **Ask agent** button: on each Hidden Setting (rows and editor), the app menu's permission / app op / activity / service / receiver / provider / feature / library lists, overlays, Task Manager processes, Debloater rows without a description, trackers, what SD Maid found and log entries. The box shows exactly what is sent and asks at once; with no default agent (or one that is not connected) the button opens Settings instead. For an app the UAD-NG list does not know, an **Ask agent** button stands where the classification chip would be ("Is it safe to disable?"); the chip itself now shows only the level.
+
+**Logcat** (v7.12.0): the view keeps its lines (a poll that finds nothing no longer empties it; Error-only views no longer lose their lines after a second). **Record to file** writes the log to a file in the background; **Recordings** lists them and opens one as a still picture (search, level key, pages, Copy shown, Save, Share, Delete). **SD Maid**: the two data cards come after the four tools.
 
 **Hidden Settings back up and restore, Update the tracker list** (v7.11.1): the Changes sheet has **Back up changes** (a JSON file with each changed setting's current and earlier value) and **Restore…** (checks the file, asks, puts the values back, every one into the history). The Trackers box has **Update the list**, which downloads the current Exodus Privacy list after checking it is whole.

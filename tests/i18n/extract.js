@@ -101,7 +101,8 @@ const isCmp = (p, node) => p && ((p.type === 'BinaryExpression' && ['===', '!=='
 const top = (node, anc) => { const p = anc[anc.length - 2]; return !(p && ((p.type === 'BinaryExpression' && p.operator === '+') || (p.type === 'ConditionalExpression' && p.test !== node) || (p.type === 'LogicalExpression' && (p.operator === '||' || p.operator === '??')) || (p.type === 'TemplateLiteral'))); };
 
 // what the coding agents are told, and shell commands the Terminal builds: never shown to a person
-const neverShown = (anc) => anc.some(a => a.type === 'FunctionDeclaration' && a.id && /^(txSystemPrompt|txCliWrap|txCliLogin|txComplete|txReadFile|txWriteBytes|txApplyEdits|txCursorPrompt|txDebianCmd)$/.test(a.id.name))
+const neverShown = (anc) => anc.some(a => a.type === 'FunctionDeclaration' && a.id && /^(txSystemPrompt|txCliWrap|txCliLogin|txComplete|txReadFile|txWriteBytes|txApplyEdits|txCursorPrompt|txDebianCmd|agentSystem|askAgentAbout|openAppAsk)$/.test(a.id.name))
+  || anc.some(a => a.type === 'CallExpression' && a.callee.type === 'Identifier' && a.callee.name === 'agentBtnHtml')     // the lines an Ask agent button hands to the agent (shown only in a box that is not translated)
   || (anc.some(a => a.type === 'VariableDeclarator' && a.id && a.id.name === 'TX_CLI') && anc.some(a => a.type === 'ArrowFunctionExpression' || a.type === 'FunctionExpression'));   // the command lines of the agents' own tools
 // what the page tells a coding agent about its steps (<result ...>), and web addresses with changing parts: not text either
 const forModel = (v) => /<\/?result\b/.test(v);
@@ -191,7 +192,8 @@ const found = { x: [], p: [] };
 for (const [k, v] of keys.x) {
   if (forced.x.has(k)) { found.x.push({ k, fn: [...v.ctx] }); continue; }
   if (isData(k)) continue;
-  if (seen.has(k) || uiLike(k) || label(k)) found.x.push({ k, fn: [...v.ctx] });
+  const bare = k.replace(/^[✕✦●■▸◂»‹]+\s+/, '');                                    // a button label may start with a symbol
+  if (seen.has(k) || uiLike(bare) || label(bare)) found.x.push({ k, fn: [...v.ctx] });
 }
 for (const [k, v] of keys.p) {
   if (forced.p.has(k)) { found.p.push({ k, fn: [...v.ctx] }); continue; }

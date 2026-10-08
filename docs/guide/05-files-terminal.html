@@ -529,8 +529,10 @@
 <tr><td>Lines drop-down</td><td>How many recent lines to read: 200, <b>500</b> (starting choice), 1000 or 2000. While Playing, up to 300 are read each second.</td></tr>
 <tr><td>Filter box</td><td>Type a word or a tag and press Enter. Only lines that contain it (capital letters ignored, anywhere in the line) stay, and the word is highlighted.</td></tr>
 <tr><td><b>All apps</b></td><td>Opens <i>Log of one app</i>: a search box and a list, running apps first. Tap an app to see only the lines written by it. The button then shows the app's name and <b>Show all apps</b> appears to go back. An app that shares its user id with others shows their lines too, with a note.</td></tr>
-<tr><td><b>Play</b> / <b>Pause</b></td><td>Play reads the log once a second and follows the newest line. It starts by itself when you open the tab. Pause stops it. It also stops when you leave the tab, and it does not read while the app is in the background.</td></tr>
-<tr><td><b>Refresh</b></td><td>Reads once, and jumps to the newest line.</td></tr>
+<tr><td><b>Play</b> / <b>Pause</b></td><td>Play reads the log once a second, adds the lines that are new to the ones already on the screen, and follows the newest line. Lines stay on the screen even after the phone's own log has dropped them, and a second with nothing new, or one where the read fails, does not empty the view (it used to). Changing the level, the filter or the app starts a fresh view; <b>Clear</b> empties it. It starts by itself when you open the tab. Pause stops it. It also stops when you leave the tab, and it does not read while the app is in the background.</td></tr>
+<tr><td><b>Refresh</b></td><td>Reads once, adds what is new and jumps to the newest line.</td></tr>
+<tr><td><b>Record to file</b></td><td>Writes the log to a file while it is on, so you can look at it afterwards. See <i>Record to a file and look at it later</i> below. While it records, the button reads <b>Stop recording</b> with the number of lines written.</td></tr>
+<tr><td><b>Recordings</b></td><td>The list of recordings, newest first. Tap one to open it; the cross at the right deletes it.</td></tr>
 <tr><td><b>Clear</b></td><td>Empties the phone's log buffer and the screen (<i>Log cleared</i>). It clears it for every app, not only the one you chose.</td></tr>
 <tr><td><b>Copy</b>, <b>Save</b>, <b>Share</b></td><td>Copy the lines as text; save them as a text file in <code>Download/ADB App Manager/</code> (on Android 9 and older, in the app's own folder instead), named <code>logcat_all_</code> plus the date and time, with the app's package name in place of <code>all</code> when you picked one app; or share that file with Android's share sheet. Lines of hidden levels are left out, and a short header says the filters used.</td></tr>
 </tbody>
@@ -541,11 +543,21 @@
 <p>Above the log is a row of six chips, one per level, each with a coloured dot, its letter and name, and how many lines of that level were read: for example <i>E · Error 12</i>. Tap a chip to hide that level (it turns dim); tap again to show it. If you hide all of them, the screen says <i>Every level is hidden - tap the color key above to show some.</i></p>
 <p>To keep the screen quick, only the newest 800 entries are drawn. A line at the top says <i>N earlier entries not shown · tap to show them</i>; tap it to show up to 2500. The phone itself keeps only a limited amount of log, so older lines are gone.</p>
 
+<h4>Record to a file and look at it later</h4>
+<p>Live logs scroll by too fast to read. <b>Record to file</b> writes everything to a file on the phone while you use the app, whether or not the Logcat tab is open, and then lets you open it as a still picture. It records what the view is set to: the level, the filter text and the app you picked.</p>
+<ol class="hg-steps">
+<li>Set the <b>Level</b> (Error is a good start for a crash), pick the app if you like, and tap <b>Record to file</b>. A message says <i>Recording the log to a file</i> and the button becomes <b>Stop recording</b> with a count of lines.</li>
+<li>Use the phone until the problem happens. Every couple of seconds the new lines are added to the file; a line is written once, however often it appears in the phone's buffer. A recording stops by itself at 25 MB, and says so.</li>
+<li>Tap <b>Stop recording</b>. The file is kept and opens at once as a still picture. Open it again later with <b>Recordings</b>.</li>
+</ol>
+<p><b>The still picture</b> never moves. It has a search box (the match is marked), the colour key (tap a level to hide it), pages of 500 entries with <b>Start</b>, <b>Earlier</b>, <b>Later</b> and <b>End</b> buttons and a count such as <i>1-500 of 1200</i>, and tapping an entry opens it in its own window with <b>Copy</b>, <b>Ask agent</b> and <b>Web search</b>. <b>Copy shown</b> copies the entries that pass the search and the key; <b>Save</b> writes the whole recording to Download/ADB App Manager (see Save above); <b>Share</b> sends it; <b>Delete</b> removes it. Only the last 4 MB of a very long recording are opened.</p>
+<p>A recording lives in the app's own storage (it is removed when the app is uninstalled). Recording needs a working mode, like reading the log. If the app is closed by Android while it records, the recording ends where it was and keeps what it had; the next time you open the tab a message says it stopped. The file may contain personal details just like the log: read it before you share it.</p>
+
 <h4>Tap an entry to open it</h4>
 <p>Tap any entry (a coloured row) and it opens in a window of its own, so a long line is easy to read in full. Selecting text in a row with a long press still works and does not open the window. The window shows the level, the tag (the part of the system or the app that wrote it), the time and the process numbers, and the whole message in a box, with three buttons:</p>
 <ul>
 <li><b>Copy</b>: puts the entry's lines, as they were logged, on the clipboard.</li>
-<li><b>More info</b>: asks the Coding Agent you chose in the <a href="#tab-terminal">Command-Line Interface</a> tab to explain the entry in plain words: what it means, the likely cause, whether it matters and what to try. The answer appears under the buttons as it is written, with a <b>Copy the answer</b> button. <b>This sends the entry's text (and your Android version and phone model) to that agent's company</b>; nothing is sent until you tap the button. API keys that appear in the text are shortened first; other private details (account names, addresses) are not, so look at the entry before you ask. With no agent connected, the window says so and offers to open the place where you set one up.</li>
+<li><b>Ask agent</b>: asks your <a href="#prefs">Default agent</a> (Settings, under Language; with none chosen the button opens Settings) to explain the entry in plain words: what it means, the likely cause, whether it matters and what to try. The answer appears under the buttons as it is written, with a <b>Copy the answer</b> button. <b>This sends the entry's text (and your Android version and phone model) to that agent's company</b>; nothing is sent until you tap the button. API keys that appear in the text are shortened first; other private details (account names, addresses) are not, so look at the entry before you ask. With no agent connected, the window says so and offers to open the place where you set one up.</li>
 <li><b>Web search</b>: opens a search for the tag and the first line of the message in your browser. Long numbers and addresses are left out of the search so that other people's reports can match. It needs no agent.</li>
 </ul>
 
@@ -564,7 +576,8 @@
 <h4>If it fails</h4>
 <ul>
 <li><i>Working Mode Required</i> or <i>reading logcat needs ADB, Shizuku or Root</i>: set up a working mode.</li>
-<li><i>(no matching log lines)</i> or <i>(no output)</i>: lower the Level to Verbose, empty the filter, or choose <b>All apps</b>.</li>
+<li><i>(no matching log lines)</i> or <i>(no output)</i>: lower the Level to Verbose, empty the filter, or choose <b>All apps</b>. (When lines are already on the screen, a read that finds nothing leaves them there.)</li>
+<li>Error-only views used to look empty or lose their lines after a second: the phone cut the last lines of the whole log before the level filter. The viewer now reads much further back for any filter and keeps what it has seen.</li>
 <li><i>(name is not running, so there are no log lines to show)</i>: on an older Android the app has to be running; start it.</li>
 </ul>
 </section>

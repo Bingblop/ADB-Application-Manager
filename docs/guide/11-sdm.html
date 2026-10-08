@@ -86,7 +86,7 @@
   <p><b>Withdraw consent</b> in the card stops AppCleaner from using it. The automation follows the screen texts of the system settings, in the languages SD Maid has tables for; on some phone makers' systems it can fail, and then it says so and the rest of the cleanup still works.</p>
 
   <h4>Clear Data from Uninstalled Apps</h4>
-  <p>A card of this tab, <b>above Trim Caches</b>. It clears the data of apps that were uninstalled from this device while the <code>DONT_DELETE_FLAG</code> flag was active (Android's own name for the same thing is the <i>keep data</i> option of <code>pm uninstall -k</code>, which this app also uses when you uninstall without losing an app's data). This usually applies to <b>third-party</b> apps, and clearing that data can <b>fix common problems</b> when you install them again.</p>
+  <p>A card of this tab, <b>below the four cleaning tools and above Trim Caches</b>. It clears the data of apps that were uninstalled from this device while the <code>DONT_DELETE_FLAG</code> flag was active (Android's own name for the same thing is the <i>keep data</i> option of <code>pm uninstall -k</code>, which this app also uses when you uninstall without losing an app's data). This usually applies to <b>third-party</b> apps, and clearing that data can <b>fix common problems</b> when you install them again.</p>
   <h5>How to use it</h5>
   <ol class="hg-steps">
     <li>Open the <b>SD Maid</b> tab and tap <b>Clear Data from Uninstalled Apps</b>. It needs a working mode; without one the button is locked.</li>
@@ -96,7 +96,7 @@
   <p><b>How each app is cleared.</b> First with <code>pm clear</code>. If that is refused, in Root mode the app's data folders are deleted directly; without Root the app is brought back for you with <code>pm install-existing</code> and removed again <i>without</i> keeping its data (an app whose APK is gone cannot be brought back and needs Root). In Root mode the result is checked by counting the files before and after. Installed apps and your own files are never touched.</p>
 
   <h4>Trim Caches in All Applications</h4>
-  <p>A card of this tab (it was in Settings until v7.10.10), next to the cleaning tools because it does the same kind of job for every app at once. It has one button, <b>Trim Caches in All Applications</b>, and a long explanation under it. The button clears the cache of every app in one go, to free some storage.</p>
+  <p>A card of this tab (it was in Settings until v7.10.10), at the bottom, below the four cleaning tools and the Clear Data card, because it does the same kind of job for every app at once. It has one button, <b>Trim Caches in All Applications</b>, and a long explanation under it. The button clears the cache of every app in one go, to free some storage.</p>
   <p><b>What it needs.</b> A <a href="#modes-overview">working mode</a> (ADB over TCP, Wireless Debugging, Shizuku or Root). Without one the button shows a padlock, and tapping it opens the sheet <b>Working Mode Required</b>.</p>
   <ol class="hg-steps">
     <li>Open the <b>SD Maid</b> tab and find the card <b>Trim Caches</b>, under the <b>Clear Data from Uninstalled Apps</b> card.</li>

@@ -1,4 +1,4 @@
-// v7.11.2: for an app the UAD-NG list does not know, the app menu offers an "Ask" chip; it opens a window where the Coding Agent is asked whether the package is safe to disable.
+// v7.12.0: the default agent (Settings, under Language) and the Ask agent window; the app menu's tags carry no "UAD-NG" text and an app the list does not know gets an Ask agent button; without a default agent (or one that is not connected) the button opens Settings.
 const { chromium, PAGE } = require('./lib/pw');
 let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : 'FAIL ') + label + (ok && extra === undefined ? '' : ': ' + (extra === undefined ? ok : extra))); }
@@ -27,36 +27,46 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await ev(() => { isPrivilegedActive = true; window.__sent = []; });
 
   await ev(() => openInspector('com.samsung.android.bixby.agent')); await sleep(250);
-  check('1. an app the UAD-NG list knows shows its classification and no Ask chip', await ev(() => getComputedStyle(document.getElementById('sheetUad')).display !== 'none' && getComputedStyle(document.getElementById('sheetAsk')).display === 'none'));
+  check('1. an app the UAD-NG list knows shows its classification and no Ask agent chip', await ev(() => getComputedStyle(document.getElementById('sheetUad')).display !== 'none' && getComputedStyle(document.getElementById('sheetAsk')).display === 'none'));
+  check('   the classification tag says only the level, no "UAD-NG" text', await ev(() => document.getElementById('sheetUad').innerText.trim() === 'ADVANCED' && !/UAD-NG/.test(document.getElementById('sheetUad').innerText)));
   await ev(() => closeInspector()); await sleep(150);
   await ev(() => openInspector('com.example.unknown')); await sleep(250);
   const chip = await ev(() => ({ ask: getComputedStyle(document.getElementById('sheetAsk')).display !== 'none', uad: getComputedStyle(document.getElementById('sheetUad')).display !== 'none', t: document.getElementById('sheetAsk').innerText.replace(/\s+/g, ' ').trim() }));
-  check('2. an app the list does not know shows the Ask chip instead', chip.ask && !chip.uad && /Ask/.test(chip.t), JSON.stringify(chip));
-  await ev(() => document.getElementById('sheetAsk').click()); await sleep(150);
-  const m = await ev(() => ({ open: document.getElementById('appAskModal').classList.contains('show'), app: document.getElementById('appAskApp').innerText, wrap: document.getElementById('appAskWrap').style.display }));
-  check('3. it opens a window with the app and the package, and asks nothing yet', m.open && /Unknown One · com\.example\.unknown/.test(m.app) && m.wrap === 'none', JSON.stringify(m));
+  check('2. an app the list does not know shows an Ask agent button where the tag would be, without "UAD-NG"', chip.ask && !chip.uad && /Ask agent/.test(chip.t) && !/UAD-NG/.test(chip.t), JSON.stringify(chip));
 
-  // no agent yet: say what is missing
-  await ev(() => document.getElementById('appAskGo').click()); await sleep(200);
-  const noAg = await ev(() => document.getElementById('appAskAi').innerText);
-  check('4. with no Coding Agent connected it says what to do first', /pick and connect a Coding Agent/.test(noAg) && await ev(() => document.getElementById('appAskGo').disabled === false), noAg);
+  // no default agent chosen: the button leads to Settings, nothing is asked
+  await ev(() => { window.__sent.length = 0; document.getElementById('sheetAsk').click(); }); await sleep(450);
+  const redirected = await ev(() => ({ view: currentViewName(), card: document.getElementById('agentCard').classList.contains('flash'), modal: document.getElementById('agentAskModal').classList.contains('show'), insp: document.getElementById('inspectorModal').classList.contains('show'), sent: window.__sent.length }));
+  check('3. with no default agent chosen the button opens Settings on the Default agent card, and nothing is sent', redirected.view === 'prefs' && redirected.card && !redirected.modal && !redirected.insp && redirected.sent === 0, JSON.stringify(redirected));
 
-  // with an agent
+  // the Settings card: right after Language
+  const card = await ev(() => { const l = document.getElementById('languageCard'), c = document.getElementById('agentCard'); return { after: l.nextElementSibling === c, opts: [...document.querySelectorAll('#askAgentSelect option')].map(o => o.value), val: document.getElementById('askAgentSelect').value, note: document.getElementById('askAgentNote').innerText }; });
+  check('4. the Default agent card follows the Language card; no agent is chosen, and the agents can be picked', card.after && card.val === '' && card.opts[0] === '' && card.opts.includes('claude') && card.opts.includes('gemini') && !card.opts.includes('none') && /No agent is chosen/.test(card.note), JSON.stringify(card));
+  await ev(() => { const s = document.getElementById('askAgentSelect'); s.value = 'claude'; s.dispatchEvent(new Event('change')); }); await sleep(100);
+  const picked = await ev(() => ({ id: askAgentId, saved: kvGet('ask_agent', ''), note: document.getElementById('askAgentNote').innerText }));
+  check('5. choosing an agent saves it; one that is not connected yet says so', picked.id === 'claude' && picked.saved === 'claude' && /not connected yet/.test(picked.note), JSON.stringify(picked));
+  await ev(() => { switchView('apps'); openInspector('com.example.unknown'); }); await sleep(250);
+  await ev(() => document.getElementById('sheetAsk').click()); await sleep(450);
+  check('   pressing Ask agent with an agent that is not connected also leads to Settings', await ev(() => currentViewName() === 'prefs' && !document.getElementById('agentAskModal').classList.contains('show')));
+
+  // with an agent that works
   await ev(() => {
-    window.txAgentReady = () => true; txState.agent = Object.keys(window.TX_AGENTS || {})[0] || txState.agent;
-    window.txAgentDef = () => ({ id: 'claude', name: 'Claude Code (API)' });
+    window.txAgentReady = () => true;
     window.txTurnApi = async (ag, model, effort, system, msgs, onText) => { window.__sent.push({ system, msgs }); onText('Caution: '); onText('this is the Bixby-like helper.'); return { text: 'Caution: this is the Bixby-like helper.', usage: { in: 1, out: 1 } }; };
-  });
-  await ev(() => document.getElementById('appAskGo').click()); await sleep(250);
+    switchView('apps'); openInspector('com.example.unknown');
+  }); await sleep(300);
+  await ev(() => document.getElementById('sheetAsk').click()); await sleep(350);
+  const m = await ev(() => ({ open: document.getElementById('agentAskModal').classList.contains('show'), title: document.getElementById('agentAskTitle').innerText, subj: document.getElementById('agentAskSubject').innerText, sentText: document.getElementById('agentAskSent').innerText }));
+  check('6. it opens a window with the package and shows exactly what is sent', m.open && /safe to disable/i.test(m.title) && m.subj === 'com.example.unknown' && /Package: com\.example\.unknown/.test(m.sentText) && /App name: Unknown One/.test(m.sentText), JSON.stringify(m));
   const sent = await ev(() => window.__sent[0]);
-  check('5. the agent gets the package name, the app name, that it is a system app and that it is disabled', sent && /Package name: com\.example\.unknown/.test(sent.msgs[0].text) && /App name: Unknown One/.test(sent.msgs[0].text) && /system app/.test(sent.msgs[0].text) && /State: disabled/.test(sent.msgs[0].text), JSON.stringify(sent));
-  check('   and a system prompt that asks for a verdict and admits not knowing', /Safe, Caution or Do not touch/.test(sent.system) && /do not recognize/.test(sent.system));
-  const ans = await ev(() => ({ t: document.getElementById('appAskAi').innerText, wrap: document.getElementById('appAskWrap').style.display }));
-  check('6. the answer is shown, with a note of what was sent', /Caution: this is the Bixby-like helper\./.test(ans.t) && /The package name, the app's name/.test(ans.t) && ans.wrap !== 'none', JSON.stringify(ans));
-  await ev(() => document.querySelector('#appAskModal .mode-btn-row .mode-action-btn:not(.primary)').click()); await sleep(100);
-  check('7. Web search opens a search for the package', (await ev(() => window.__opened.join('|'))).includes('google.com/search?q=android%20package%20com.example.unknown%20safe%20to%20disable'));
-  await ev(() => appAskClose());
-  check('8. closing leaves the window shut', await ev(() => !document.getElementById('appAskModal').classList.contains('show')));
+  check('7. the agent was asked at once: the package name, the app name, that it is a system app and that it is disabled', sent && /Package: com\.example\.unknown/.test(sent.msgs[0].text) && /App name: Unknown One/.test(sent.msgs[0].text) && /system app/.test(sent.msgs[0].text) && /State: disabled/.test(sent.msgs[0].text), JSON.stringify(sent));
+  check('   and a system prompt that asks for a verdict and admits not knowing', sent && /Safe, Caution or Do not touch/.test(sent.system) && /do not recognize/.test(sent.system));
+  const ans = await ev(() => ({ t: document.getElementById('agentAskAi').innerText }));
+  check('8. the answer is shown, with a note of what was sent', /Caution: this is the Bixby-like helper\./.test(ans.t) && /Asking Claude/.test(ans.t) && /The text above is sent to them/.test(ans.t), JSON.stringify(ans));
+  await ev(() => document.querySelector('#agentAskModal .lc-ent-btns .mode-action-btn:nth-child(2)').click()); await sleep(100);
+  check('9. Web search opens a search for the package', (await ev(() => window.__opened.join('|'))).includes('google.com/search?q=android%20com.example.unknown%20safe%20to%20disable'));
+  await ev(() => agentAskClose());
+  check('10. closing leaves the window shut', await ev(() => !document.getElementById('agentAskModal').classList.contains('show')));
   check('no page errors', errors.length === 0, errors.join(' | '));
   await b.close();
   console.log(bad ? bad + ' FAILED' : 'ALL PASSED');
