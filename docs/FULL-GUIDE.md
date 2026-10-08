@@ -118,7 +118,7 @@ Every tab except Application Manager and About can be switched off or moved in *
 
 ## New in v7.9
 
-**v7.10.7 is the latest build** (Connected Devices, 32-bit and universal APKs, the Help Guide: see [CHANGELOG.md](../CHANGELOG.md)). Everything from v7.9 through v7.9.15 is below; the full, dated list is in
+**v7.10.8 is the latest build** (Connected Devices, 32-bit and universal APKs, the Help Guide: see [CHANGELOG.md](../CHANGELOG.md)). Everything from v7.9 through v7.9.15 is below; the full, dated list is in
 [CHANGELOG.md](../CHANGELOG.md) (and inside the app, under About).
 
 **Newest (v7.9.12 to v7.9.15)**
@@ -988,6 +988,9 @@ styles: Tonal Spot, Vibrant, Fidelity, Content, Neutral, Expressive, Fruit Salad
 
 **My Themes** (Settings, below Palette Style): save the look in use (palette or palette style, source color, color tweaks, Pure black) under a name, switch between up to 30 themes with a tap, rename, update or delete them;
 Light / Dark / System stays as you set it.
+
+**Saved lists backup** (Saved Applications tab, **Back up and restore**): back up to a folder you choose (or Download/ADB App Manager), share the file, switch on automatic backups into
+`saved-lists-latest.json`, and restore from a file or from the folder, adding to your lists or replacing them (the Quick list follows).
 
 **Morphe Helper downloads** keep going when the app is left: a foreground service with a notification (progress, speed, time left, **Pause all**, **Cancel**) and a switch to turn it off.
 
