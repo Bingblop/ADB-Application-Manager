@@ -62,7 +62,7 @@
     <li>A red line means it cannot be saved yet. The limits are 20,000 characters, no control characters (invisible special codes, apart from a tab or a line break), and a size that fits in one command sent through ADB (about 62,000 bytes once quoted). <b>Save</b> stays grey until the problem is gone.</li>
     <li>Tap <b>Save</b>. For a careful setting your phone first asks you to confirm.</li>
   </ol>
-  <p><b>What you will see:</b> the sheet stays open while the phone applies the change, so a refusal never loses what you typed. On success it closes, the row shows the new value with a dot, and an <b>Undo</b> bar appears for about 7 seconds. Saving the same value says <i>No change</i>. The word <code>null</code> is stored as that text; use <b>(empty)</b> for nothing and <b>Delete</b> to remove the setting. The sheet's other links: <b>Copy name</b>, <b>Copy value</b> and <b>Copy command</b> (the exact <code>settings put</code> line, to paste in the ADB Console pane of the <a href="#tab-terminal">Command-Line Interface</a> tab).</p>
+  <p><b>What you will see:</b> the sheet stays open while the phone applies the change, so a refusal never loses what you typed. On success it closes, the row shows the new value with a dot, and an <b>Undo</b> bar appears for about 7 seconds. Saving the same value says <i>No change</i>. The word <code>null</code> is stored as that text; use <b>(empty)</b> for nothing and <b>Delete</b> to remove the setting. The sheet's other links: <b>Web search</b> (looks the setting up on the web by its table and name), <b>Explain (AI)</b> (asks the Coding Agent you chose in the <a href="#tab-terminal">Command-Line Interface</a> tab what the setting is and whether it is safe to change; the setting's name, table and current value are sent to that agent's company, only when you tap the button, and many settings belong to the phone maker, so the answer may be a careful guess), <b>Copy name</b>, <b>Copy value</b> and <b>Copy command</b> (the exact <code>settings put</code> line, to paste in the ADB Console pane of the <a href="#tab-terminal">Command-Line Interface</a> tab).</p>
 
   <h4>Flip a switch</h4>
   <ol class="hg-steps">
@@ -377,9 +377,6 @@
   </table>
   <p>Under the list, a line either says <b>Signed with the official release key</b> or <b>Not signed with the official release key (a debug, fork or modified build)</b>, followed by the signature's SHA-256 fingerprint (a long code that identifies the key the app was signed with). The official key's fingerprint begins <code>94:61:87:0F</code>. The second message is not automatically a danger (a copy you built yourself, or a fork, also shows it), but if you meant to install the official app, reinstall from the project's Releases page (see <a href="#install-and-update">Installing and updating</a>). Three buttons: <b>Copy debug info</b> (a short text with version, package, Android, device, WebView, working mode and fingerprint), <b>Share it</b> (the same text through the share sheet) and <b>Copy fingerprint</b>.</p>
 
-  <h4>Handy to know</h4>
-  <p>A short list of tips: how Back works, press and hold, File Manager View, installs from File Manager, the Rish shell in the ADB Console, and the per-app log in Logcat. Each tip is explained in its own section of this guide.</p>
-
   <h4>Device Specs</h4>
   <p>Everything the phone will say about itself, <b>with no working mode needed</b>. It is read when the tab opens, and the <b>Refresh</b> button reads it again. A line appears only when your phone reports it. The groups are:</p>
   <ul>
@@ -392,6 +389,9 @@
     <li><b>Sensors:</b> the count, then each sensor's name and maker.</li>
   </ul>
   <p>If it says <i>Could not read the device specs</i>, tap <b>Refresh</b>.</p>
+
+  <h4>Handy to know</h4>
+  <p>A short list of tips: how Back works, press and hold, File Manager View, installs from File Manager, the Rish shell in the ADB Console, and the per-app log in Logcat. Each tip is explained in its own section of this guide.</p>
 
   <h4>Privacy and Credits</h4>
   <p>The <b>Privacy</b> card says: no account, no ads, no analytics and no server of the developer's; everything runs on your phone; the app goes online only for something you open or ask for (update checks, App Stores, the debloat list, and a VirusTotal lookup if you add your own key); the ADB key and the APK-signing key are made on your phone and never leave it. The full text is in <a href="#privacy">Privacy</a>. The <b>Credits</b> card thanks the projects the app builds on; see <a href="#credits">Credits</a>.</p>

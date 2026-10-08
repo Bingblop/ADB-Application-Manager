@@ -1,4 +1,4 @@
-ok   the row: Sort, its menu, Share CSV, Profiles, Backups and the Action Button menu where its label was (no label, no Export)
+ok   the row: the Sort menu first (no "Sort" text beside it), Share CSV, Profiles, Backups and the Action Button menu (no Export)
 ok   the menu shows the current choice by name
 ok   there is no Export CSV button
 ok   tapping it opens a sheet with a title and a few words about what it edits

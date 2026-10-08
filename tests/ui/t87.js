@@ -99,12 +99,16 @@ const { chromium, PAGE } = require('./lib/pw');
   const optionValues = () => page.evaluate(() => [...document.querySelectorAll('#tmRendererSelect option')].map(o => o.value));
   console.log('12. switching to GPU loads the renderer dropdown: Default plus both backends, since this sample supports Vulkan:', JSON.stringify(await optionValues()) === JSON.stringify(['', 'skiagl', 'skiavk']) && !(await page.evaluate(() => document.getElementById('tmRendererSelect').disabled)));
   let before = await page.evaluate(() => window.__calls.executeShell.length);
+  // v7.10.9: the renderer is the first thing in the GPU tab, as a card that says which one is in use
+  console.log('    the renderer card is the first thing in the GPU tab, above the graph:', await page.evaluate(() => { const p = document.getElementById('tmGpuPanel'); return p.firstElementChild.id === 'tmRendererCard' && p.firstElementChild.getBoundingClientRect().bottom <= document.getElementById('tmGpuCanvas').getBoundingClientRect().top + 1; }));
+  console.log('    it names the renderer in use in large letters (Default until one is set):', (await text('#tmRendererNow')) === 'Default');
   await page.selectOption('#tmRendererSelect', 'skiavk'); await sleep(30);
   console.log('    picking Vulkan runs setprop skiavk then crashes System UI, in that order (then re-reads the property, a 3rd call):', JSON.stringify(await page.evaluate(n => window.__calls.executeShell.slice(n, n + 2).map(c => c.split(';')[0]), before)) === JSON.stringify(['setprop debug.hwui.renderer skiavk', 'am crash com.android.systemui']));
   console.log('    the dropdown re-reads the property right after and reflects it (no "Default" option once it is actually set):', (await page.evaluate(() => document.getElementById('tmRendererSelect').value)) === 'skiavk' && JSON.stringify(await optionValues()) === JSON.stringify(['skiagl', 'skiavk']));
   before = await page.evaluate(() => window.__calls.executeShell.length);
   await page.selectOption('#tmRendererSelect', 'skiagl'); await sleep(30);
   console.log('    picking OpenGL does the same with skiagl:', JSON.stringify(await page.evaluate(n => window.__calls.executeShell.slice(n, n + 2).map(c => c.split(';')[0]), before)) === JSON.stringify(['setprop debug.hwui.renderer skiagl', 'am crash com.android.systemui']) && (await page.evaluate(() => document.getElementById('tmRendererSelect').value)) === 'skiagl');
+  console.log('    and the card follows the choice:', (await text('#tmRendererNow')) === 'OpenGL');
 
   const beforeTick = await page.evaluate(() => document.getElementById('tmRendererSelect').outerHTML);
   const shellCallsBeforeTick = await page.evaluate(() => window.__calls.executeShell.length);
@@ -128,7 +132,13 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.selectOption('#tmTempUnit', 'c'); await sleep(30);
   const unitsC = await text('#tmBattStats');
   console.log('   switching the temperature unit re-renders the same reading in Celsius:', /90°F/.test(unitsF) && /32°C/.test(unitsC));
-  await page.evaluate(() => tmSetSub('cpu')); await sleep(20);
+  // v7.10.9: the CPU tab has the temperature unit too (the same choice as the Battery tab), without the current unit
+  await page.evaluate(() => { tmLastData.cpu.tempC = 41.4; tmLastData.cpu.soc = 'Test SoC'; tmSetSub('cpu'); }); await sleep(30);
+  console.log('   the CPU tab shows the units row with the temperature unit only:', (await disp('#tmBattUnitsRow')) !== 'none' && (await disp('#tmTempUnit')) !== 'none' && (await disp('#tmCurrentUnit')) === 'none');
+  console.log('   its temperature is in the unit chosen (Celsius here):', /41°C/.test(await text("#tmCpuInfo")));
+  await page.selectOption('#tmTempUnit', 'f'); await sleep(30);
+  console.log('   picking Fahrenheit there changes it at once, and the Battery tab shares the choice:', /107°F/.test(await text("#tmCpuInfo")) && (await page.evaluate(() => tmTempUnit)) === 'f');
+  await page.evaluate(() => tmSetSub('ram')); await sleep(20);
   console.log('   the units row is hidden again on another sub-tab:', (await disp('#tmBattUnitsRow')) === 'none');
 
   // ---------------------------------------------------------------- settings persist across leaving and reopening the tab

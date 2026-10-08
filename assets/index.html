@@ -335,6 +335,23 @@
         .stat-split .stat-card + .stat-card { border-left: 1px solid var(--border-glass); }
         .stat-split .stat-card.active { background: rgba(var(--ov), 0.1); box-shadow: inset 0 0 0 1px var(--accent); }
         .stat-split:has(.stat-card.active) { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 2px 12px var(--accent-glow); }
+        /* each box wears its own colour (the one its number has): a faint tint when off, a strong one with a ring when it is the filter in use */
+        .stat-card[data-filter="running"] { --tone: var(--status-running); }
+        .stat-card[data-filter="uninstalled"] { --tone: var(--status-bloat); }
+        .stat-card[data-filter="enabled"] { --tone: var(--status-running); }
+        .stat-card[data-filter="frozen"] { --tone: var(--status-frozen); }
+        .stat-card[data-filter="user"] { --tone: var(--status-user); }
+        .stat-card[data-filter="system"] { --tone: var(--status-system); }
+        .stat-card[data-filter="running"], .stat-card[data-filter="uninstalled"], .stat-card[data-filter="enabled"],
+        .stat-card[data-filter="frozen"], .stat-card[data-filter="user"], .stat-card[data-filter="system"] { background: color-mix(in srgb, var(--tone) 7%, var(--bg-card)); }
+        .stats-grid .stat-card.active[data-filter="running"], .stats-grid .stat-card.active[data-filter="uninstalled"],
+        .stat-split .stat-card.active { background: color-mix(in srgb, var(--tone) 30%, var(--bg-card)); border-color: var(--tone); box-shadow: inset 0 0 0 1.5px var(--tone), 0 2px 12px color-mix(in srgb, var(--tone) 40%, transparent); }
+        .stat-split .stat-card { background: color-mix(in srgb, var(--tone) 7%, transparent); }
+        .stat-split:has(.stat-card.active) { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 2px 12px var(--accent-glow); }
+        .stat-split:has(.stat-card.active[data-filter="enabled"]) { border-color: var(--status-running); box-shadow: 0 0 0 1px var(--status-running), 0 2px 12px color-mix(in srgb, var(--status-running) 40%, transparent); }
+        .stat-split:has(.stat-card.active[data-filter="frozen"]) { border-color: var(--status-frozen); box-shadow: 0 0 0 1px var(--status-frozen), 0 2px 12px color-mix(in srgb, var(--status-frozen) 40%, transparent); }
+        .stat-split:has(.stat-card.active[data-filter="user"]) { border-color: var(--status-user); box-shadow: 0 0 0 1px var(--status-user), 0 2px 12px color-mix(in srgb, var(--status-user) 40%, transparent); }
+        .stat-split:has(.stat-card.active[data-filter="system"]) { border-color: var(--status-system); box-shadow: 0 0 0 1px var(--status-system), 0 2px 12px color-mix(in srgb, var(--status-system) 40%, transparent); }
         .filter-summary-row { display: flex; align-items: center; gap: 8px; }
         .filter-summary-row .filter-summary-text { flex: 1 1 auto; min-width: 0; }
         .filter-clear-chip { flex: 0 0 auto; border: 1px solid var(--accent); color: var(--accent); background: transparent;
@@ -2036,6 +2053,18 @@
             font-weight: 700;
         }
 
+        .lc-row { cursor: pointer; }
+        .lc-row:active { background: rgba(var(--ov), 0.1); }
+        .lc-ent-top { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+        .lc-ent-top .lc-badge { margin: 0; flex: 0 0 24px; height: 24px; font-size: 13px; line-height: 24px; }
+        .lc-ent-tag { font-size: 14px; font-weight: 800; word-break: break-all; }
+        .lc-ent-meta { font: 11px/1.4 monospace; color: var(--text-muted); margin-top: 2px; }
+        .lc-ent-msg { margin-top: 10px; padding: 10px; border: 1px solid var(--border-glass); border-radius: 10px; background: rgba(var(--ov), 0.05); max-height: 34vh; overflow: auto; font: 12px/1.45 monospace; white-space: pre-wrap; word-break: break-word; user-select: text; -webkit-user-select: text; }
+        .lc-ent-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .lc-ent-btns .mode-action-btn { flex: 1 1 auto; justify-content: center; }
+        .lc-ent-ai { margin-top: 12px; padding: 10px; border: 1px solid var(--accent); border-radius: 10px; background: color-mix(in srgb, var(--accent) 8%, transparent); font-size: 13px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; user-select: text; -webkit-user-select: text; }
+        .lc-ent-ai-note { font-size: 10.5px; color: var(--text-muted); margin-bottom: 6px; }
+        .lc-ent-ai.is-err { border-color: var(--status-bloat); }
         .lc-meta {
             padding: 8px 10px;
             text-align: center;
@@ -3197,13 +3226,6 @@
             display: none;
         }
 
-        .apps-sort-label {
-            font-size: 11px;
-            font-weight: 800;
-            color: var(--text-muted);
-            flex: 0 0 auto;
-        }
-
         .apps-sort-row .mode-action-btn {
             flex: 0 0 auto;
             padding: 7px 7px;
@@ -3477,8 +3499,7 @@
 
             <!-- Sort and export -->
             <div class="apps-sort-row">
-                <label class="apps-sort-label" for="appSort">Sort</label>
-                <select id="appSort" class="op-select apps-sort-select" onchange="setAppSort(this.value)">
+                <select id="appSort" class="op-select apps-sort-select" aria-label="Sort apps by" onchange="setAppSort(this.value)">
                     <option value="name">Name (A–Z)</option>
                     <option value="updated">Last updated</option>
                     <option value="installed">Install date</option>
@@ -4109,6 +4130,10 @@
                 .cd-lost-main span.is-err { color: var(--status-bloat); }
                 .cd-lost-btns { display: flex; gap: 6px; flex: 0 0 auto; }
                 .cd-lost-auto { margin-top: 8px; font-size: 11px; color: var(--text-muted); }
+                .cd-saved-head { margin-top: 10px; }
+                .cd-saved { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 10px; margin-top: 8px; border: 1px solid var(--border-glass); border-left: 3px solid var(--accent); border-radius: 10px; background: rgba(var(--ov), 0.04); }
+                .cd-saved.up { border-left-color: var(--status-running); }
+                .cd-saved-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; font-size: 11px; color: var(--text-muted); flex-wrap: wrap; }
                 .cd-lost-all { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; font-size: 11.5px; font-weight: 800; color: var(--text-muted); }
                 .cd-retry-line { display: flex; gap: 8px; align-items: center; margin: 4px 0 6px; }
                 .cd-retry-line .list-search { flex: 1 1 auto; min-width: 0; }
@@ -4131,6 +4156,7 @@
                 </div>
                 <div class="cd-info" id="cdInfo"></div>
                 <div id="cdLost"></div>
+                <div id="cdSaved"></div>
             </div>
 
             <div class="cd-empty" id="cdEmpty">
@@ -4366,6 +4392,10 @@
                 .tm-net-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 10px; border: 1px solid var(--border-glass); border-radius: 10px; background: rgba(var(--ov), 0.04); font-size: 11.5px; }
                 .tm-net-row b { font-weight: 800; }
                 .tm-net-row span { color: var(--text-muted); font-size: 10.5px; }
+                .tm-renderer-card { margin: 0 0 12px; padding: 12px 14px; border: 1px solid var(--accent); border-radius: 14px; background: color-mix(in srgb, var(--accent) 10%, var(--bg-card)); box-shadow: 0 2px 12px var(--accent-glow); }
+                .tm-renderer-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+                .tm-renderer-head span { font-size: 11px; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 0.3px; }
+                .tm-renderer-head b { font-size: 22px; font-weight: 900; color: var(--text-main); }
                 .tm-info-title { font-size: 11px; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 0.3px; margin: 16px 0 6px; }
                 .tm-cluster { padding: 8px 10px; border: 1px solid var(--border-glass); border-radius: 10px; background: rgba(var(--ov), 0.04); margin-top: 8px; }
                 .tm-cluster-head { font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; }
@@ -4410,7 +4440,7 @@
                     </div>
                     <div class="tm-settings-row" id="tmBattUnitsRow" style="display:none;">
                         <span>Units</span>
-                        <select class="op-select" id="tmTempUnit" onchange="tmSaveUi(); tmRenderBattery();" aria-label="Temperature unit">
+                        <select class="op-select" id="tmTempUnit" onchange="tmTempChanged()" aria-label="Temperature unit">
                             <option value="f" selected>°F</option><option value="c">°C</option>
                         </select>
                         <select class="op-select" id="tmCurrentUnit" onchange="tmSaveUi(); tmRenderBattery();" aria-label="Current unit">
@@ -4445,16 +4475,18 @@
 
                 <!-- GPU -->
                 <div id="tmGpuPanel" style="display:none;">
+                    <div class="tm-renderer-card" id="tmRendererCard">
+                        <div class="tm-renderer-head"><span>GPU renderer</span><b id="tmRendererNow" translate="no">—</b></div>
+                        <div class="tm-settings-row" style="margin:8px 0 0;">
+                            <select class="op-select" id="tmRendererSelect" onchange="tmSetRenderer()" aria-label="Renderer" disabled>
+                                <option value="">—</option>
+                            </select>
+                        </div>
+                        <div class="switch-sub" id="tmRendererNote" style="margin-top:6px;">Switches the system's HWUI renderer and restarts System UI to apply it - a visible flicker of the status and navigation bars is normal.</div>
+                    </div>
                     <div class="tm-canvas-wrap"><canvas id="tmGpuCanvas"></canvas><div class="tm-canvas-label" id="tmGpuNow">—</div><div class="tm-canvas-sub" id="tmGpuSub">&nbsp;</div></div>
                     <div class="switch-sub" id="tmGpuNote" style="margin-top:4px;">GPU load is not exposed the same way on every phone, so this may say "Not available" on yours.</div>
                     <div id="tmGpuInfo"></div>
-                    <div class="tm-info-title">Renderer</div>
-                    <div class="tm-settings-row">
-                        <select class="op-select" id="tmRendererSelect" onchange="tmSetRenderer()" aria-label="Renderer" disabled>
-                            <option value="">—</option>
-                        </select>
-                    </div>
-                    <div class="switch-sub" id="tmRendererNote" style="margin-top:4px;">Switches the system's HWUI renderer and restarts System UI to apply it - a visible flicker of the status and navigation bars is normal.</div>
                 </div>
 
                 <!-- BATTERY -->
@@ -5746,6 +5778,15 @@
             </div>
 
             <div class="color-card">
+                <div class="color-card-title">Device Specs</div>
+                <div class="color-card-subtitle">Hardware, software, system, battery, network, camera and sensors - everything this phone will say about itself, with no working mode needed.</div>
+                <div class="mode-btn-row" style="margin:8px 0 2px;">
+                    <button class="mode-action-btn" onclick="renderDeviceSpecs()">Refresh</button>
+                </div>
+                <div id="deviceSpecsBody"></div>
+            </div>
+
+            <div class="color-card">
                 <div class="color-card-title">Handy to know</div>
                 <ul class="about-list">
                     <li><b>Back</b> closes the open sheet, steps up a folder or out of an archive, then returns to the tab you came from. Leaving takes a second, deliberate press.</li>
@@ -5755,15 +5796,6 @@
                     <li><b>ADB Console → Rish</b> is a persistent Shizuku shell: <code>cd</code> and variables stay put between commands.</li>
                     <li><b>Logcat</b> can show one app only. Tap Logs in an app's ⋯ menu.</li>
                 </ul>
-            </div>
-
-            <div class="color-card">
-                <div class="color-card-title">Device Specs</div>
-                <div class="color-card-subtitle">Hardware, software, system, battery, network, camera and sensors - everything this phone will say about itself, with no working mode needed.</div>
-                <div class="mode-btn-row" style="margin:8px 0 2px;">
-                    <button class="mode-action-btn" onclick="renderDeviceSpecs()">Refresh</button>
-                </div>
-                <div id="deviceSpecsBody"></div>
             </div>
 
             <div class="color-card">
@@ -7366,6 +7398,32 @@ Type any command below (e.g. pm list packages -d)
         </div>
     </div>
 
+    <!-- Logcat: one entry in its own window -->
+    <div class="modal-overlay" id="lcEntryModal" onclick="if(event.target===this) lcEntryClose()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-title">
+                        <h3>Log entry</h3>
+                        <p id="lcEntLevel">&nbsp;</p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="lcEntryClose()" role="button" aria-label="Close">✕</div>
+            </div>
+            <div class="lc-ent-top lvl-V" id="lcEntTop"><div class="lc-badge" id="lcEntBadge">I</div><div style="min-width:0;"><div class="lc-ent-tag" id="lcEntTag" translate="no"></div><div class="lc-ent-meta" id="lcEntMeta" translate="no"></div></div></div>
+            <div class="lc-ent-msg" id="lcEntMsg" translate="no"></div>
+            <div class="lc-ent-btns">
+                <button class="mode-action-btn primary" id="lcEntCopy" onclick="lcEntryCopy()">Copy</button>
+                <button class="mode-action-btn" id="lcEntMore" onclick="lcEntryMore()">More info</button>
+                <button class="mode-action-btn" id="lcEntWeb" onclick="lcEntryWeb()">Web search</button>
+            </div>
+            <div id="lcEntAiWrap" style="display:none;">
+                <div class="lc-ent-ai" id="lcEntAi"></div>
+                <div class="lc-ent-btns"><button class="mode-action-btn" id="lcEntAiCopy" onclick="lcEntryCopyAnswer()">Copy the answer</button></div>
+            </div>
+        </div>
+    </div>
+
     <!-- Android settings: edit one setting -->
     <div class="modal-overlay" id="sdbEditModal" onclick="if(event.target===this) sdbEditClose()">
         <div class="modal-sheet">
@@ -7389,7 +7447,10 @@ Type any command below (e.g. pm list packages -d)
                 <button class="mode-action-btn primary" id="sdbEditSaveBtn" style="flex:1; justify-content:center; min-height:40px;" onclick="sdbEditSave()">Save</button>
                 <button class="mode-action-btn" id="sdbEditFlipBtn" style="min-height:40px;" onclick="sdbEditFlip()">Flip</button>
             </div>
+            <div class="lc-ent-ai" id="sdbEditAi" style="display:none; margin-top:10px;"></div>
             <div class="batch-sheet-tools" style="margin-top:8px; gap:12px; flex-wrap:wrap;">
+                <button class="batch-tool-link" id="sdbEditWebBtn" onclick="sdbEditWeb()">Web search</button>
+                <button class="batch-tool-link" id="sdbEditAiBtn" onclick="sdbEditAsk()">Explain (AI)</button>
                 <button class="batch-tool-link" onclick="sdbEditCopy('name')">Copy name</button>
                 <button class="batch-tool-link" onclick="sdbEditCopy('value')">Copy value</button>
                 <button class="batch-tool-link" onclick="sdbEditCopy('cmd')">Copy command</button>
@@ -13789,6 +13850,8 @@ Type any command below (e.g. pm list packages -d)
 
         // A tap on a pill or a box turns that filter on or off, next to the ones already on. "All Apps" turns them all off.
         function setFilter(filter, el) {
+            // Uninstalled bloatware is a list of its own: turning it on turns every other filter off
+            if (filter === 'uninstalled' && !activeFilters.has('uninstalled')) activeFilters.clear();
             toggleFilterIn(activeFilters, filter);
             resetAppsWindow();
             haptic();
@@ -17823,7 +17886,7 @@ Type any command below (e.g. pm list packages -d)
             set: { ns: 'global', data: {}, loaded: {}, busy: false },
             keep: null, bt: new Set(), scan: [], addTab: 'wifi', ask: null, acts: [],
             phone: { sel: new Set(), filter: 'user' },
-            up: new Set(), upKnown: false, dropped: {}, rc: {}
+            up: new Set(), upKnown: false, dropped: {}, rc: {}, savedOpen: false, skip: {}
         };
         const cdWait = {};
         let cdSeq = 0;
@@ -18055,6 +18118,8 @@ Type any command below (e.g. pm list packages -d)
         function cdWaitList() { const k = kvGet('cd_retry', null), r = cdParseWaits(Array.isArray(k) ? k.join(',') : ''); return r.ok ? r.list : CD_AUTO_WAITS.slice(); }
         function cdWaitText(list) { return list.join(', '); }
         function cdKnown() { const k = kvGet('cd_known', {}); return k && typeof k === 'object' && !Array.isArray(k) ? k : {}; }
+        const CD_SAVED_MAX = 20;                           // devices kept in the saved list
+        function cdSaveOn() { return kvGet('cd_save', true) !== false; }
         function cdAutoOn() { return kvGet('cd_autore', true) !== false; }
         function cdKind(serial) {
             if (cd.bt.has(serial) || /^(127\.0\.0\.1|localhost):\d+$/.test(serial)) return 'bt';
@@ -18072,12 +18137,14 @@ Type any command below (e.g. pm list packages -d)
                 if (d.state !== 'device') return;
                 now.add(d.serial);
                 const nm = cd.names[d.serial] || d.model || d.serial;
+                if (cd.skip[d.serial] || !cdSaveOn()) return;       // deleted from the saved list while connected / saving is off
                 if (!known[d.serial] || known[d.serial].name !== nm) { known[d.serial] = { name: nm, at: Date.now() }; changed = true; }
                 delete cd.dropped[d.serial];
             });
+            Object.keys(cd.skip).forEach(k => { if (!now.has(k)) delete cd.skip[k]; });
             if (changed) {
                 const keys = Object.keys(known);
-                if (keys.length > 8) keys.sort((a, b) => known[a].at - known[b].at).slice(0, keys.length - 8).forEach(k => { if (!now.has(k)) delete known[k]; });
+                if (keys.length > CD_SAVED_MAX) keys.sort((a, b) => known[a].at - known[b].at).slice(0, keys.length - CD_SAVED_MAX).forEach(k => { if (!now.has(k)) delete known[k]; });
                 kvSet('cd_known', known);
             }
             if (cd.upKnown) {
@@ -18101,6 +18168,7 @@ Type any command below (e.g. pm list packages -d)
             return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' days ago';
         }
         function cdRenderLost() {
+            cdRenderSaved();
             const el = document.getElementById('cdLost');
             if (!el) return;
             const lost = cdLostList();
@@ -18151,10 +18219,67 @@ Type any command below (e.g. pm list packages -d)
             finally { cd.reAll = false; cdRenderLost(); }
             showToast(ok === todo.length ? 'Reconnected ' + ok + (ok === 1 ? ' device' : ' devices') : 'Reconnected ' + ok + ' of ' + todo.length + '. The rest says why where it is listed.');
         }
-        function cdForget(serial) {
+        // ---- Saved devices: every device that was connected, kept until it is deleted here ----
+        function cdSavedRows() {
+            const known = cdKnown(), rows = [], seen = new Set();
+            Object.keys(known).forEach(s => { seen.add(s); rows.push({ serial: s, name: known[s].name || s, at: known[s].at || 0, up: cdIsUp(s) }); });
+            const r = kvGet('cd_recent', []);
+            (Array.isArray(r) ? r : []).forEach(x => { if (!x || !x.addr || seen.has(x.addr)) return; seen.add(x.addr); rows.push({ serial: x.addr, name: x.addr, at: x.at || 0, up: cdIsUp(x.addr) }); });
+            return rows.sort((a, b) => (b.up - a.up) || (b.at - a.at));
+        }
+        function cdRenderSaved() {
+            const el = document.getElementById('cdSaved');
+            if (!el) return;
+            const rows = cdSavedRows();
+            if (!rows.length) { el.innerHTML = ''; return; }
+            const open = !!cd.savedOpen;
+            let h = '<div class="cd-saved-head"><button class="batch-tool-link" id="cdSavedToggle" aria-expanded="' + (open ? 'true' : 'false') + '" onclick="cdSavedToggle()">Saved devices (' + rows.length + ') ' + (open ? '\u25b4' : '\u25be') + '</button></div>';
+            if (open) {
+                h += rows.map(r => {
+                    const rc = cd.rc[r.serial] || {};
+                    const line = rc.busy ? (rc.msg || 'Connecting...') : (r.up ? cdTransport(r.serial) + ' \u00b7 connected now' : cdTransport(r.serial) + ' \u00b7 ' + (r.at ? 'last connected ' + cdAgo(r.at) : 'saved'));
+                    return '<div class="cd-saved' + (r.up ? ' up' : '') + '" data-serial="' + escapeHtml(r.serial) + '"><div class="cd-lost-main"><b translate="no">' + escapeHtml(r.name) + '</b><span>' + escapeHtml(line) + '</span></div>' +
+                        '<div class="cd-lost-btns">' + (r.up ? '' : '<button class="cd-row-act" data-s="' + escapeHtml(r.serial) + '" onclick="cdSavedConnect(this.dataset.s)"' + (rc.busy ? ' disabled' : '') + '>Connect</button>') +
+                        '<button class="cd-row-act" style="border-color:var(--status-bloat);color:var(--status-bloat);" data-s="' + escapeHtml(r.serial) + '" onclick="cdDeleteSaved(this.dataset.s)">Delete</button></div></div>';
+                }).join('');
+                h += '<div class="cd-saved-foot"><span>Remember the devices I connect: <button class="batch-tool-link" id="cdSaveBtn" onclick="cdSaveToggle()">' + (cdSaveOn() ? 'On' : 'Off') + '</button></span>' +
+                    '<button class="batch-tool-link" id="cdDeleteAllBtn" onclick="cdDeleteAllSaved()">Delete all</button></div>';
+            }
+            el.innerHTML = h;
+        }
+        function cdSavedToggle() { cd.savedOpen = !cd.savedOpen; cdRenderSaved(); }
+        function cdSaveToggle() { kvSet('cd_save', !cdSaveOn()); cdRenderSaved(); haptic(); showToast(cdSaveOn() ? 'Devices you connect are saved' : 'Devices you connect are no longer saved'); }
+        function cdSavedConnect(serial) {
+            if (cdKnown()[serial]) return cdReconnectSerial(serial, false);
+            return cdConnect(serial);
+        }
+        function cdDeleteSaved(serial) {
+            const row = cdSavedRows().filter(r => r.serial === serial)[0];
+            if (!row) return;
+            if (!confirm('Delete ' + row.name + ' from the saved devices?' + (row.up ? '\n\nIt is connected now and stays connected. It is saved again the next time you connect it.' : ''))) return;
+            cdDropSaved(serial);
+            cdRenderLost(); cdRenderRecent();
+            showToast('Deleted ' + row.name);
+        }
+        function cdDeleteAllSaved() {
+            const rows = cdSavedRows();
+            if (!rows.length) return;
+            if (!confirm('Delete all ' + rows.length + ' saved ' + (rows.length === 1 ? 'device' : 'devices') + '?\n\nDevices that are connected now stay connected.')) return;
+            rows.forEach(r => cdDropSaved(r.serial));
+            cdRenderLost(); cdRenderRecent();
+            showToast('Deleted ' + rows.length + (rows.length === 1 ? ' device' : ' devices'));
+        }
+        function cdDropSaved(serial) {
+            const up = cdIsUp(serial);
+            cdForget(serial, true);
+            const r = kvGet('cd_recent', []);
+            if (Array.isArray(r)) kvSet('cd_recent', r.filter(x => x.addr !== serial));
+            if (up) { cd.skip[serial] = true; cd.up.add(serial); }
+        }
+        function cdForget(serial, quiet) {
             const k = cdKnown(); delete k[serial]; kvSet('cd_known', k);
             delete cd.dropped[serial]; delete cd.rc[serial]; cd.up.delete(serial);
-            cdRenderLost();
+            if (!quiet) cdRenderLost();
         }
 
         async function cdRefreshNow() { while (cd.refreshing) await cdSleep(60); await cdRefreshDevices(false); }
@@ -19257,7 +19382,7 @@ Type any command below (e.g. pm list packages -d)
             if (!Array.isArray(r)) r = [];
             r = r.filter(x => x.addr !== addr);
             r.unshift({ addr: addr, at: Date.now() });
-            kvSet('cd_recent', r.slice(0, 8));
+            if (cdSaveOn()) kvSet('cd_recent', r.slice(0, 8));
         }
         function cdRenderRecent() {
             const el = document.getElementById('cdRecentWrap');
@@ -19343,6 +19468,9 @@ Type any command below (e.g. pm list packages -d)
         let lcLastText = null;                  // the last text drawn, so an unchanged poll costs nothing
         let logcatTimer = null;
         let logcatEntries = [];                 // parsed entries of the last fetch
+        let lcRowMap = [];                      // the entries as drawn, row by row (a tap on a row opens its entry)
+        let lcEnt = null;                       // the entry shown in its own window
+        let lcEntAiBusy = false, lcEntAiText = '';
         let logcatCounts = { V: 0, D: 0, I: 0, W: 0, E: 0, F: 0 };
         const logcatHidden = new Set();         // levels switched off through the key
 
@@ -19433,10 +19561,12 @@ Type any command below (e.g. pm list packages -d)
             if (entries.length > cap) entries = entries.slice(entries.length - cap);
             const earlier = total > entries.length
                 ? `<div class="lc-meta" style="cursor:pointer;" onclick="lcShowAll = true; logcatDraw(false)">${total - entries.length} earlier entr${total - entries.length === 1 ? 'y' : 'ies'} not shown · tap to show them</div>` : '';
+            lcRowMap = [];
             const html = earlier + entries.map(e => {
                 if (e.kind === 'meta') return `<div class="lc-meta">${escapeHtml(e.text)}</div>`;
                 if (logcatHidden.has(e.lvl)) return '';
-                return `<div class="lc-row lvl-${e.lvl}">` +
+                lcRowMap.push(e);
+                return `<div class="lc-row lvl-${e.lvl}" data-i="${lcRowMap.length - 1}" role="button" tabindex="0" onclick="lcEntryOpen(${lcRowMap.length - 1})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();lcEntryOpen(${lcRowMap.length - 1});}">` +
                     `<div class="lc-badge" title="${e.lvl}">${e.lvl}</div>` +
                     `<div class="lc-main">` +
                     `<div class="lc-head"><span class="lc-tag">${lcHighlight(e.tag, rx)}</span><span class="lc-time">${e.time}</span><span class="lc-pid">${e.pid}/${e.tid}</span></div>` +
@@ -19577,6 +19707,81 @@ Type any command below (e.g. pm list packages -d)
             shareFileViaBridge(rep.name, rep.text, 'text/plain');
         }
 
+        // ---- one entry in its own window: copy, an explanation from the Coding Agent, a web search ----
+        function lcEntryOpen(i) {
+            const sel = window.getSelection && window.getSelection();
+            if (sel && String(sel).trim()) return;                          // the person is selecting text: not a tap
+            const e = lcRowMap[i];
+            if (!e || e.kind !== 'entry') return;
+            haptic();
+            lcEnt = e; lcEntAiText = ''; lcEntAiBusy = false;
+            const L = LC_LEVELS.filter(l => l[0] === e.lvl)[0];
+            document.getElementById('lcEntLevel').innerText = L ? L[1] : e.lvl;
+            document.getElementById('lcEntTop').className = 'lc-ent-top lvl-' + e.lvl;
+            document.getElementById('lcEntBadge').innerText = e.lvl;
+            document.getElementById('lcEntTag').innerText = e.tag;
+            document.getElementById('lcEntMeta').innerText = (e.date ? e.date + ' ' : '') + e.time + '  pid ' + e.pid + ' / tid ' + e.tid;
+            document.getElementById('lcEntMsg').innerText = e.lines.join('\n');
+            document.getElementById('lcEntAiWrap').style.display = 'none';
+            document.getElementById('lcEntMore').disabled = false;
+            document.getElementById('lcEntryModal').classList.add('show');
+        }
+        function lcEntryClose() { document.getElementById('lcEntryModal').classList.remove('show'); lcEnt = null; }
+        function lcEntryText() { return lcEnt ? lcEnt.raws.join('\n') : ''; }
+        function lcEntryCopy() { if (!lcEnt) return; copyText(lcEntryText()); showToast('Copied the entry'); }
+        function lcEntryCopyAnswer() { if (lcEntAiText) { copyText(lcEntAiText); showToast('Copied the answer'); } }
+        // the search: the tag and the message's first line, cut to a sensible length
+        function lcEntryQuery() {
+            if (!lcEnt) return '';
+            const first = (lcEnt.lines[0] || '').replace(/0x[0-9a-f]+|\b\d{5,}\b/gi, ' ').replace(/\s+/g, ' ').trim().slice(0, 140);
+            return ('android ' + lcEnt.tag + ' ' + first).replace(/\s+/g, ' ').trim();
+        }
+        function lcEntryWeb() {
+            if (!lcEnt) return;
+            haptic();
+            openUrlExternal('https://www.google.com/search?q=' + encodeURIComponent(lcEntryQuery()));
+        }
+        const LC_ENTRY_SYSTEM = 'You explain one Android logcat entry to someone who is not a developer. Say, in plain words and briefly: what this line means, '
+            + 'the most likely cause, whether it matters (harmless noise, a real problem, or a crash) and, if it does matter, what to try. '
+            + 'Use short paragraphs, no headings. If the line is too cryptic to explain with confidence, say so and say what else would help. Do not invent details.';
+        async function lcEntryMore() {
+            if (!lcEnt || lcEntAiBusy) return;
+            const ent = lcEnt, info = txInfo || {};
+            const q = 'Android ' + (info.release || '?') + (info.model ? ' on ' + ((info.manufacturer || '') + ' ' + info.model).trim() : '') + '\nLevel: ' + ent.lvl + '\nTag: ' + ent.tag + '\nProcess: ' + ent.pid + '/' + ent.tid + '\nMessage:\n' + ent.lines.join('\n');
+            const btn = document.getElementById('lcEntMore');
+            document.getElementById('lcEntAiWrap').style.display = '';
+            lcEntAiBusy = true; btn.disabled = true;
+            lcEntAiText = await aiExplainInto(document.getElementById('lcEntAi'), LC_ENTRY_SYSTEM, q, () => lcEnt === ent);
+            lcEntAiBusy = false; btn.disabled = false;
+        }
+
+        function aiOpenAgentSetup() { document.querySelectorAll('.modal-overlay.show').forEach(m => m.classList.remove('show')); switchView('terminal'); }
+        // Asks the Coding Agent chosen in the Command-Line Interface tab to explain something, and streams the answer into box.
+        // Says what is missing when there is no agent. Returns the answer ('' when there is none). isCurrent(): false once the window moved on.
+        async function aiExplainInto(box, system, text, isCurrent, sentNote) {
+            box.classList.remove('is-err');
+            const ag = txAgentDef(txState.agent);
+            if (!ag || ag.id === 'none' || !txAgentReady(ag)) {
+                box.classList.add('is-err');
+                box.innerHTML = 'To get an explanation, pick and connect a Coding Agent first (Command-Line Interface tab, Coding Agent). <a href="#" onclick="aiOpenAgentSetup(); return false;">Open it</a>. Web search works without one.';
+                return '';
+            }
+            const who = ag.name.replace(/\s*\(.*\)$/, '');
+            const model = txModelFor(ag);
+            box.innerHTML = '<div class="lc-ent-ai-note">Asking ' + escapeHtml(who) + (model ? ' (' + escapeHtml(model) + ')' : '') + '. ' + escapeHtml(sentNote || 'The text above is sent to them.') + '</div><span class="ai-out"></span>';
+            const out = box.querySelector('.ai-out');
+            let shown = '';
+            try {
+                const r = await txTurnApi(ag, model, txEffortFor(ag), system, [{ role: 'user', text: txForModel(text) }], t => { shown += t; if (isCurrent()) out.textContent = shown; });
+                const answer = r.text.trim();
+                if (isCurrent()) out.textContent = answer || '(no answer)';
+                return answer;
+            } catch (e) {
+                if (isCurrent()) { box.classList.add('is-err'); box.textContent = (e && e.msg) || (e && e.message) || String(e); }
+                return '';
+            }
+        }
+
         // ---- log of one app ----
         let logcatApp = null;           // { pkg, name } while the log is limited to one app
 
@@ -19667,6 +19872,12 @@ Type any command below (e.g. pm list packages -d)
             const sm = document.getElementById('tmSortMem'); if (sm) sm.classList.toggle('on', tmSort === 'mem');
             tmShowPanels();
         }
+        // a temperature in the unit chosen under Units (the Battery and CPU tabs share it)
+        function tmFormatTemp(c) { return tmTempUnit === 'f' ? Math.round(c * 9 / 5 + 32) + '°F' : Math.round(c) + '°C'; }
+        function tmTempChanged() {
+            const sel = document.getElementById('tmTempUnit'); if (sel) tmTempUnit = sel.value === 'c' ? 'c' : 'f';
+            tmSaveUi(); tmRenderBattery(); tmRenderCpu();
+        }
         function tmSaveUi() { kvSet('taskmgr_ui', { sub: tmSub, autoMs: tmAutoMs, graphMs: tmGraphMs, tempUnit: tmTempUnit, currentUnit: tmCurrentUnit, sort: tmSort }); }
 
         function tmNeedsPriv() { return tmSub === 'processes' || tmSub === 'gpu'; }
@@ -19687,7 +19898,8 @@ Type any command below (e.g. pm list packages -d)
 
         function tmShowPanels() {
             Object.keys(TM_PANELS).forEach(k => { const el = document.getElementById(TM_PANELS[k]); if (el) el.style.display = (k === tmSub) ? '' : 'none'; });
-            const battRow = document.getElementById('tmBattUnitsRow'); if (battRow) battRow.style.display = (tmSub === 'battery') ? '' : 'none';
+            const battRow = document.getElementById('tmBattUnitsRow'); if (battRow) battRow.style.display = (tmSub === 'battery' || tmSub === 'cpu') ? '' : 'none';
+            const curUnit = document.getElementById('tmCurrentUnit'); if (curUnit) curUnit.style.display = (tmSub === 'battery') ? '' : 'none';
             tmRenderGate();
         }
         function tmSetSub(sub) {
@@ -19901,7 +20113,7 @@ Type any command below (e.g. pm list packages -d)
             if (c.arch) infoRows.push(['Architecture', c.arch, true]);
             if (c.abi) infoRows.push(['ABI', c.abi, true]);
             if (c.governor) infoRows.push(['Governor', c.governor, true]);
-            if (c.tempC != null) infoRows.push(['Temperature', Math.round(c.tempC) + '°C (estimated)']);
+            if (c.tempC != null) infoRows.push(['Temperature', tmFormatTemp(c.tempC) + ' (estimated)']);
             const sysRows = [];
             if (c.processes != null) sysRows.push(['Processes', String(c.processes)]);
             if (c.threads != null) sysRows.push(['Threads', String(c.threads)]);
@@ -19984,6 +20196,7 @@ Type any command below (e.g. pm list packages -d)
             if (!isPrivilegedActive || !window.AndroidBridge || !window.AndroidBridge.executeShell) {
                 sel.innerHTML = '<option value="">—</option>';
                 sel.disabled = true;
+                const nowEl0 = document.getElementById('tmRendererNow'); if (nowEl0) nowEl0.innerText = '—';
                 if (note) note.innerText = 'Needs a working mode';
                 return;
             }
@@ -19997,6 +20210,7 @@ Type any command below (e.g. pm list packages -d)
             sel.innerHTML = opts.join('');
             sel.disabled = false;
             const label = tmRendererLabel(raw);
+            const nowEl = document.getElementById('tmRendererNow'); if (nowEl) nowEl.innerText = label;
             if (note) note.innerText = `Currently using ${label}. Switching restarts System UI to apply it.`;
         }
         function tmSetRenderer() {
@@ -20031,7 +20245,7 @@ Type any command below (e.g. pm list packages -d)
             const statusText = STATUS[b.status] || '', plugText = b.plugged ? (PLUG[b.plugged] || 'Plugged in') : '';
             subEl.innerHTML = `<span>${escapeHtml(statusText)}</span>` + (plugText ? ` • <span>${escapeHtml(plugText)}</span>` : '');
             const tempC = (b.tempTenthsC != null && b.tempTenthsC > -2000) ? b.tempTenthsC / 10 : null;
-            const tempStr = tempC == null ? '—' : (tmTempUnit === 'f' ? Math.round(tempC * 9 / 5 + 32) + '°F' : Math.round(tempC) + '°C');
+            const tempStr = tempC == null ? '—' : tmFormatTemp(tempC);
             const curMicro = (b.currentMicroA != null && b.currentMicroA > -2000000000) ? b.currentMicroA : null;
             const curStr = curMicro == null ? '—' : (tmCurrentUnit === 'ua' ? Math.round(curMicro) + ' µA' : Math.round(curMicro / 1000) + ' mA');
             const voltStr = (b.voltageMv != null && b.voltageMv > 0) ? (b.voltageMv / 1000).toFixed(2) + ' V' : '—';
@@ -26861,6 +27075,7 @@ Type any command below (e.g. pm list packages -d)
             if (!data || !data.has(key)) return;
             const v = data.get(key);
             sdbEditing = { ns, key, orig: v };
+            sdbEditAiReset();
             const hint = sdbHint(ns, key);
             document.getElementById('sdbEditKey').innerText = key;
             document.getElementById('sdbEditSub').innerText = SDB_TITLES[ns] + (hint ? ' · ' + hint.t : '');
@@ -26915,6 +27130,28 @@ Type any command below (e.g. pm list packages -d)
 
         function sdbOpenHelp() { haptic(); document.getElementById('sdbHelpModal').classList.add('show'); }
         function sdbCloseHelp() { document.getElementById('sdbHelpModal').classList.remove('show'); }
+
+        // more about a setting: a web search, and an explanation from the Coding Agent (the name, the table and what the list already says; the value only if it is short)
+        function sdbEditWeb() {
+            if (!sdbEditing) return;
+            haptic();
+            openUrlExternal('https://www.google.com/search?q=' + encodeURIComponent('android settings ' + sdbEditing.ns + ' ' + sdbEditing.key));
+        }
+        let sdbAiBusy = false;
+        function sdbEditAiReset() { const b = document.getElementById('sdbEditAi'); if (b) { b.style.display = 'none'; b.textContent = ''; b.classList.remove('is-err'); } sdbAiBusy = false; const btn = document.getElementById('sdbEditAiBtn'); if (btn) btn.disabled = false; }
+        const SDB_AI_SYSTEM = 'You explain one Android hidden setting (an entry of the Settings.Global, Settings.Secure or Settings.System database, the ones "settings get/put" reads and writes) to someone who is not a developer. '
+            + 'Say briefly: what it controls, what its values mean, what changing it does, and whether it is safe to change. Say plainly when you do not know the setting (many belong to the phone maker) instead of guessing, and then say what its name suggests. Short paragraphs, no headings.';
+        async function sdbEditAsk() {
+            if (!sdbEditing || sdbAiBusy) return;
+            const cur = sdbEditing, hint = sdbHint(cur.ns, cur.key), info = txInfo || {};
+            const val = cur.orig.length <= 200 ? cur.orig : cur.orig.slice(0, 200) + '...';
+            const q = 'Android ' + (info.release || '?') + (info.model ? ' on ' + ((info.manufacturer || '') + ' ' + info.model).trim() : '') + '\nTable: ' + cur.ns + '\nSetting: ' + cur.key + '\nValue now: ' + (val === '' ? '(empty)' : val)
+                + (hint ? '\nThe app already says: ' + hint.t + (hint.v ? ' Values: ' + hint.v : '') : '');
+            const box = document.getElementById('sdbEditAi'), btn = document.getElementById('sdbEditAiBtn');
+            box.style.display = ''; sdbAiBusy = true; btn.disabled = true;
+            await aiExplainInto(box, SDB_AI_SYSTEM, q, () => sdbEditing === cur, 'The setting\'s name, table and current value are sent to them.');
+            sdbAiBusy = false; btn.disabled = false;
+        }
 
         function sdbEditClose() { document.getElementById('sdbEditModal').classList.remove('show'); sdbEditing = null; }
 

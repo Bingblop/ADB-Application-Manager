@@ -1,5 +1,31 @@
 # Changelog
 
+## v7.10.9-Pro (versionCode 829)
+
+- **About: "Handy to know" now sits under Device Specs** (it was above it). Help Guide and test `t99` follow.
+- **Connected Devices: Saved devices, with Delete.** A new **Saved devices (N)** line under the device picker opens the list of every device that was connected (up to 20 now, it
+  was 8), newest first, with how it was connected and when. A device that is not connected has **Connect** and **Delete**; a connected one has Delete. Delete asks first; a device
+  that is connected at that moment stays connected and is not saved again until you connect it again. **Delete all**, and a **Remember the devices I connect** switch (off: nothing
+  new is saved and a dropped device is not reconnected by itself). Test: `t133`.
+- **Task Manager, CPU tab: temperature unit.** The CPU tab shows the Units row with the **°F / °C** menu (the same choice as the Battery tab, which keeps its current-unit menu
+  to itself); the CPU's temperature follows it. Test: `t87`.
+- **Task Manager, GPU tab: the renderer is on top.** The renderer drop-down moved from the bottom to a card at the very top, above the graph, with the renderer in use (Default,
+  OpenGL or Vulkan) in large letters. Test: `t87`.
+- **Logcat: tap an entry to open it.** Every entry is a tappable row that opens in a window of its own with the level, tag, time, ids and the whole message, and the buttons
+  **Copy**, **More info** (the Coding Agent chosen in the Command-Line Interface tab explains the entry: what it means, the likely cause, whether it matters, what to try; streamed
+  into the window, with Copy the answer; with no agent the window says so and opens the place to set one up) and **Web search** (the tag and the first line, long numbers left
+  out). Selecting text with a long press does not open it. Nothing is sent to an agent until More info is tapped. Test: `t133`.
+- **Hidden Settings: more information.** 150 more settings are described by hand (global 100, secure 50) from the AOSP documentation: power button actions, Wi-Fi band, Bluetooth LE
+  scan modes, DropBox limits, captive portal servers, GPU debug layers and ANGLE, the time zone / SELinux / APN / certificate update addresses, accessibility and lock screen
+  options and more, with the values they take. (Android's own source, `Settings.java`, was read again: it holds no setting that the list did not already cover, so the rest comes
+  from vendor settings, which no public documentation covers; those still get a guess from their name.) The editor of every setting has **Web search** and **Explain (AI)** (asks
+  the Coding Agent; sends the setting's name, table and current value, only when tapped, and says it may be a careful guess for settings that belong to the phone maker). Test: `t133`, `t123`.
+- **Apps tab: the boxes wear their colours.** Each box at the top (Running, Bloatware, Enabled, Frozen, 3rd Party, System) has a faint tint of its own colour and, while its
+  filter is on, a strong shade with a ring in that colour, so the one in use is easy to see; a split box takes the colour of the side that is on.
+- **Apps tab: Uninstalled starts a clean list.** Turning the Bloatware (Uninstalled) box, or the Uninstalled pill, on turns every other filter off first; filters added afterwards
+  still combine. Test: `t104`.
+- **Apps tab: the "Sort" text is gone** from the row (the menu is read as "Sort apps by" by screen readers) and the row starts at the left edge. Test: `t118`.
+
 ## v7.10.8-Pro (versionCode 828)
 
 - **App Stores: tap a screenshot to see it full screen.** The screenshots in an app's detail sheet (ShizuStore) are now tappable and open in a picture viewer: shown to fit the screen on

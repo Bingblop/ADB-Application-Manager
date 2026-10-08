@@ -40,10 +40,10 @@ const { chromium, PAGE } = require('./lib/pw');
   const sleep = ms => page.waitForTimeout(ms);
   const body = () => page.locator('#deviceSpecsBody');
 
-  console.log('1. Device Specs section exists, under Handy to know:', await page.evaluate(() => {
+  console.log('1. Handy to know sits under the Device Specs section:', await page.evaluate(() => {
     const cards = [...document.querySelectorAll('#view-about .color-card-title')].map(e => e.innerText);
     const handy = cards.indexOf('Handy to know'), specs = cards.indexOf('Device Specs');
-    return handy >= 0 && specs === handy + 1;
+    return specs >= 0 && handy === specs + 1;
   }));
 
   await page.evaluate(() => switchView('about')); await sleep(150);

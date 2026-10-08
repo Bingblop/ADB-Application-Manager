@@ -228,3 +228,56 @@ volume_dialog_dismiss_timeout | How long the volume panel stays on screen. | mil
 volume_hush_gesture | What pressing power and volume up does. | 0 = nothing; 1 = vibrate; 2 = mute
 wake_gesture_enabled | Wakes the screen when you lift the phone. | 0 = off; 1 = on
 zen_duration | How long Do Not Disturb stays on when you switch it on from Quick Settings. | minutes; 0 = until you turn it off; -1 = ask each time
+
+# more Android settings (2026-10): written from the AOSP documentation
+default_voice_input_method | The last voice keyboard (voice typing engine) that was the default. Android resets it when the phone maker changes the default. | keyboard id: package/service
+input_method_selector_visibility | Whether the keyboard picker button shows on the navigation bar. | 0 = automatic; 1 = always; 2 = never
+credential_service_primary | The service that holds your passkeys and passwords (Credential Manager). | component name
+location_time_zone_detection_enabled | Sets the time zone from your location instead of the mobile network. | 0 = off; 1 = on
+accessibility_button_target_component | The accessibility service or feature the accessibility button on the navigation bar toggles. | component name or the class name of an Android feature
+accessibility_key_gesture_targets | The accessibility services or features a keyboard shortcut toggles. | list separated by :
+accessibility_qs_targets | The accessibility services or features that have a Quick Settings tile. | list separated by :
+even_dimmer_min_nits | How dark Extra dim lets the screen go. | brightness in nits (a number)
+tty_mode_enabled | Text telephone (TTY) mode for calls. | 0 = off; 1 = on
+doze_wake_display_gesture | Wakes the always-on display when you tap or touch it. | 0 = off; 1 = on
+doze_quick_pickup_gesture | Wakes the always-on display when you pick the phone up quickly. | 0 = off; 1 = on
+ui_night_mode_override_on | The night mode the system has turned on by itself (for example with Battery Saver). | 0 = automatic; 1 = night off; 2 = night on
+screensaver_default_component | The screen saver that is used when screen savers are on. | component name
+screensaver_complications_enabled | Shows extras such as the time and weather over the screen saver. | 0 = off; 1 = on
+glanceable_hub_enabled | Turns on the glanceable hub (widgets on a charging screen). | 0 = off; 1 = on
+camera_double_twist_to_flip_enabled | Twisting the phone twice switches the camera between the front and the back. | 0 = off; 1 = on
+face_unlock_dismisses_keyguard | Face unlock takes you straight into the phone instead of stopping at the lock screen. | 0 = off; 1 = on
+show_media_when_bypassing | Shows the media player on the lock screen when face unlock skips the lock screen. | 0 = off; 1 = on
+face_unlock_attention_required | Face unlock needs you to look at the phone. | 0 = not needed; 1 = needed
+screen_off_udfps_enabled | Lets the under-screen fingerprint reader work while the screen is off. | 0 = off; 1 = on
+biometric_debug_enabled | Turns on debugging of fingerprint and face unlock. | 0 = off; 1 = on
+assist_gesture_silence_alerts_enabled | Squeezing the phone (assist gesture) silences alerts. | 0 = off; 1 = on
+assist_gesture_wake_enabled | Squeezing the phone (assist gesture) wakes it. | 0 = off; 1 = on
+assist_long_press_home_enabled | Holding the home button opens the assistant. | 0 = off; 1 = on
+system_navigation_keys_enabled | Lets the keys of the navigation bar be used by the system. | 0 = off; 1 = on
+lockscreen_allow_trivial_controls | Home controls that are harmless (like a light) work from the lock screen without unlocking. | 0 = off; 1 = on
+lockscreen_use_double_line_clock | Shows the large two-line clock on the lock screen. | 0 = single line; 1 = two lines
+show_qr_code_scanner_setting | Shows the QR code scanner option for the lock screen. | 1 = show; unset = hidden
+bubble_important_conversations | Opens conversations you marked as favorites in bubbles. | 0 = off; 1 = on
+back_gesture_inset_scale_left | How wide the back gesture area is on the left edge. | decimal; 1 = normal; smaller = narrower
+back_gesture_inset_scale_right | How wide the back gesture area is on the right edge. | decimal; 1 = normal; smaller = narrower
+trackpad_gesture_back_enabled | The back gesture on a trackpad. | 0 = off; 1 = on
+accessibility_magnification_follow_typing_enabled | Magnification follows the text you type. | 0 = off; 1 = on
+accessibility_single_finger_panning_enabled | Move around a magnified screen with one finger. | 0 = two fingers; 1 = one finger
+accessibility_mouse_keys_enabled | Moves the mouse pointer with keys on a physical keyboard. | 0 = off; 1 = on
+lockscreen_weather_enabled | Shows the weather on the lock screen. | 0 = off; 1 = on
+accessibility_display_magnification_edge_haptic_enabled | Vibrates when you scroll to the edge of the screen while magnified. | 0 = off; 1 = on
+hide_privatespace_entry_point | Hides the Private Space entry in the app drawer. | 0 = shown; 1 = hidden
+disable_secure_windows | Lets screenshots and recordings show screens that apps mark as secret. Works only on debuggable builds. | 0 = off; 1 = on
+private_space_auto_lock | When Private Space locks itself: every time the screen locks, after a few minutes without use, or only after a restart. | whole number picking one of those three
+stylus_pointer_icon_enabled | Shows a pointer icon where a stylus hovers. | 0 = off; 1 = on
+charge_optimization_mode | The charging optimization in use. | 0 = none; 1 to 10 = the maker's modes
+extra_automatic_power_save_mode | Battery Saver runs on a different schedule than the standard one. | 0 = no; 1 = yes
+low_power_warning_acknowledged | The first-time Battery Saver warning has been seen. | 0 = not yet; 1 = seen
+emergency_thermal_alert_disabled | Switches off the emergency alert about the phone overheating. | 0 = alert on; 1 = alert off
+suppress_auto_battery_saver_suggestion | Stops suggesting an automatic Battery Saver. | 0 = suggest; 1 = do not
+theme_customization_overlay_packages | Which style, color and font overlays are on, as a JSON text (Material You). | JSON text
+aware_enabled | Lets the phone sense when you are near or looking at it (Aware). | 0 = off; 1 = on
+odi_captions_volume_ui_enabled | Shows the Live Caption button on the volume panel. | 0 = hidden; 1 = shown
+reduce_bright_colors_persist_across_reboots | Keeps Extra dim on after a restart. | 0 = off after a restart; 1 = stays on
+tts_default_locale | The language each text-to-speech engine uses. | list separated by commas: engine:language, e.g. com.google.android.tts:en-US

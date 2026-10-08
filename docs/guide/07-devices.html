@@ -24,7 +24,7 @@
   </table>
   <p>You do not have to press Refresh to see changes. While you look at this tab the list is read again every 6 seconds, so a device that connects, drops or is allowed on its own screen shows up by itself. Leaving the tab stops this.</p>
   <h4>A device that dropped</h4>
-  <p>Every device that was connected is remembered (up to eight). When one is no longer connected, because its Wi-Fi went to sleep, the cable came out, its Wireless debugging was switched off or it restarted, it does not just vanish: a toast says <b>Lost the connection to ...</b> and a card stays under the picker with the device's name, how it was connected (Wi-Fi, USB or Bluetooth link) and when it was lost. The card has two buttons:</p>
+  <p>Every device that was connected is remembered (up to twenty, see Saved devices below). When one is no longer connected, because its Wi-Fi went to sleep, the cable came out, its Wireless debugging was switched off or it restarted, it does not just vanish: a toast says <b>Lost the connection to ...</b> and a card stays under the picker with the device's name, how it was connected (Wi-Fi, USB or Bluetooth link) and when it was lost. The card has two buttons:</p>
   <table class="hg-table">
     <thead><tr><th>Button</th><th>What it does</th></tr></thead>
     <tbody>
@@ -34,6 +34,14 @@
   </table>
   <p><b>Reconnect all.</b> When two or more devices are not connected, a line above the cards says <b>2 devices not connected</b> and has a <b>Reconnect all</b> button. It tries each one in turn (they share one adb, so not at the same time), shows <i>Trying...</i> while it works, and ends with a message such as <i>Reconnected 1 of 2. The rest says why where it is listed.</i> or <i>Reconnected 2 devices</i>. A device that could not be reached keeps its card with the reason, so you can fix it and press its own <b>Reconnect</b>. With one device not connected there is no such button: its own Reconnect does the same.</p>
   <p><b>On its own.</b> When a device drops while you look at the tab, the app also tries to bring it back by itself: right away, after 8 seconds and after 25 seconds (not for USB, and not while the app is in the background). If one attempt works it stops there; if all three fail the card tells why and waits for you. The line <b>Reconnect on its own when a device drops: On</b> under the card switches this off and on, and <a href="#prefs">Settings &gt; Reconnecting devices</a> has the same switch and lets you set the <b>retry timings</b> (how many attempts, and how many seconds before each one). <b>Reconnect</b> is also the first item in the device menu (the three dots on the device card) and the button in the note under the card of a device that is <b>offline</b>. <b>Disconnect</b> in the device menu is a decision, not a drop: the device is forgotten and nothing is tried.</p>
+  <h4>Saved devices</h4>
+  <p>Under the picker, once a device has been connected, a line says <b>Saved devices (2)</b>. Tap it to open the list: every device this app has seen connected, newest first, with how it was connected (<b>Wi-Fi</b>, <b>USB</b> or <b>Bluetooth link</b>) and when it was last connected, or <b>connected now</b>. A device that is not connected has two buttons: <b>Connect</b> (the same as Reconnect above) and <b>Delete</b>; a device that is connected has only Delete.</p>
+  <ul>
+    <li><b>Delete</b> asks first, then takes the device off the list. If it is connected at that moment, it stays connected and is not saved again until you connect it again.</li>
+    <li><b>Delete all</b> (under the list) does the same for every saved device.</li>
+    <li><b>Remember the devices I connect</b> (under the list) can be turned <b>Off</b>: devices you connect after that work as usual but are not saved, and a dropped one is not reconnected by itself.</li>
+  </ul>
+  <p>The list is kept in this app only, on this phone, and holds the name and the address or serial of each device, nothing else.</p>
   <p><b>This phone is never in the list</b>, even when its own ADB or Wireless Debugging working mode is on. The tab leaves out this phone's own addresses on purpose, so you cannot manage the wrong device by mistake.</p>
 
   <h4>When no device is connected</h4>

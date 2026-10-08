@@ -118,7 +118,7 @@ Every tab except Application Manager and About can be switched off or moved in *
 
 ## New in v7.9
 
-**v7.10.8 is the latest build** (Connected Devices, 32-bit and universal APKs, the Help Guide: see [CHANGELOG.md](../CHANGELOG.md)). Everything from v7.9 through v7.9.15 is below; the full, dated list is in
+**v7.10.9 is the latest build** (Connected Devices, 32-bit and universal APKs, the Help Guide: see [CHANGELOG.md](../CHANGELOG.md)). Everything from v7.9 through v7.9.15 is below; the full, dated list is in
 [CHANGELOG.md](../CHANGELOG.md) (and inside the app, under About).
 
 **Newest (v7.9.12 to v7.9.15)**
@@ -993,6 +993,11 @@ Light / Dark / System stays as you set it.
 
 **Saved lists backup** (Saved Applications tab, **Back up and restore**): back up to a folder you choose (or Download/ADB App Manager), share the file, switch on automatic backups into
 `saved-lists-latest.json`, and restore from a file or from the folder, adding to your lists or replacing them (the Quick list follows).
+
+**Saved devices** (Connected Devices, under the picker): every device that was connected, up to 20, with **Connect** and **Delete** (asked first), **Delete all**, and a switch to stop remembering new ones.
+
+**Logcat entries** open when tapped, in a window with **Copy**, **More info** (the Coding Agent explains the entry; nothing is sent until you tap it) and **Web search**. **Hidden Settings** have **Web search** and **Explain (AI)** in the editor and 150 more settings described.
+The Task Manager's **CPU** tab has the °F / °C menu, and the **GPU** tab starts with the renderer card. In the Apps tab the boxes at the top wear their own colours, and the **Bloatware (Uninstalled)** box clears the other filters.
 
 **Morphe Helper downloads** keep going when the app is left: a foreground service with a notification (progress, speed, time left, **Pause all**, **Cancel**) and a switch to turn it off.
 

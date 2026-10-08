@@ -539,6 +539,14 @@
 <p>Above the log is a row of six chips, one per level, each with a coloured dot, its letter and name, and how many lines of that level were read: for example <i>E · Error 12</i>. Tap a chip to hide that level (it turns dim); tap again to show it. If you hide all of them, the screen says <i>Every level is hidden - tap the color key above to show some.</i></p>
 <p>To keep the screen quick, only the newest 800 entries are drawn. A line at the top says <i>N earlier entries not shown · tap to show them</i>; tap it to show up to 2500. The phone itself keeps only a limited amount of log, so older lines are gone.</p>
 
+<h4>Tap an entry to open it</h4>
+<p>Tap any entry (a coloured row) and it opens in a window of its own, so a long line is easy to read in full. Selecting text in a row with a long press still works and does not open the window. The window shows the level, the tag (the part of the system or the app that wrote it), the time and the process numbers, and the whole message in a box, with three buttons:</p>
+<ul>
+<li><b>Copy</b>: puts the entry's lines, as they were logged, on the clipboard.</li>
+<li><b>More info</b>: asks the Coding Agent you chose in the <a href="#tab-terminal">Command-Line Interface</a> tab to explain the entry in plain words: what it means, the likely cause, whether it matters and what to try. The answer appears under the buttons as it is written, with a <b>Copy the answer</b> button. <b>This sends the entry's text (and your Android version and phone model) to that agent's company</b>; nothing is sent until you tap the button. API keys that appear in the text are shortened first; other private details (account names, addresses) are not, so look at the entry before you ask. With no agent connected, the window says so and offers to open the place where you set one up.</li>
+<li><b>Web search</b>: opens a search for the tag and the first line of the message in your browser. Long numbers and addresses are left out of the search so that other people's reports can match. It needs no agent.</li>
+</ul>
+
 <h4>Example: why does my app crash?</h4>
 <ol class="hg-steps">
 <li>Open the app's menu (<a href="#tab-apps">Application Manager</a>) and tap <b>Logs</b>, or open Logcat Viewer and use <b>All apps</b> to pick it. The log is now only that app's.</li>
@@ -595,7 +603,7 @@
 <p>The CPU is the phone's processor. The big number is how busy it was since the last reading, over all its cores (a core is one processing unit). The first reading shows 0% because two readings are needed. Under the graph:</p>
 <ul>
 <li>One box per core with its own percentage.</li>
-<li><b>Processor Information</b>: SoC (the chip's name), Architecture, ABI (the kind of code it runs), Governor (the rule that picks the speed) and Temperature (<i>estimated</i>, from a sensor the app thinks belongs to the CPU).</li>
+<li><b>Processor Information</b>: SoC (the chip's name), Architecture, ABI (the kind of code it runs), Governor (the rule that picks the speed) and Temperature (<i>estimated</i>, from a sensor the app thinks belongs to the CPU). Under the tabs, the <b>Units</b> row has a <b>°F / °C</b> menu that picks the unit; the Battery tab uses the same choice.</li>
 <li><b>System Statistics</b>: Processes and Threads (only with a working mode) and Uptime (time since the phone started).</li>
 <li><b>Cluster</b> boxes: cores are grouped by speed range (fast cores and slow, thrifty ones). Each group shows <b>Min</b>, <b>Current</b> and <b>Max</b> frequency in MHz or GHz. A high Current close to Max means the group is working hard; it drops when idle.</li>
 </ul>
@@ -612,7 +620,7 @@
 
 <h4>GPU</h4>
 <p>The GPU draws the picture on your screen. The big number is its load. Phones do not all expose it, so you may see <i>Not available on this phone</i>. Some show <i>~40% (by clock speed)</i>, a rough guess from the chip's speed. Under it, <b>GPU Information</b> says whether <b>Vulkan</b> is supported (and its API version) and the <b>OpenGL ES</b> version (Vulkan and OpenGL ES are the two ways apps draw graphics on the chip).</p>
-<p>The <b>Renderer</b> drop-down (working mode needed) offers <b>OpenGL</b>, and <b>Vulkan</b> if the phone supports it (plus <b>Default</b> until you pick one). Choosing one sets the system's drawing engine and restarts System UI (the status and navigation bars) to apply it, with a visible flicker. To go back, choose the other one, or restart the phone (a setting made this way normally does not survive a restart).</p>
+<p>The <b>GPU renderer</b> card is at the very top of the tab, above the graph, and shows in large letters which renderer is in use (<b>Default</b>, <b>OpenGL</b> or <b>Vulkan</b>). Its drop-down (working mode needed) offers <b>OpenGL</b>, and <b>Vulkan</b> if the phone supports it (plus <b>Default</b> until you pick one). Choosing one sets the system's drawing engine and restarts System UI (the status and navigation bars) to apply it, with a visible flicker. To go back, choose the other one, or restart the phone (a setting made this way normally does not survive a restart).</p>
 <div class="hg-warn"><b>Careful.</b> Change the renderer only if you know why, for example to test an app. Some apps and games behave differently or look wrong with the other engine.</div>
 
 <h4>Battery</h4>
