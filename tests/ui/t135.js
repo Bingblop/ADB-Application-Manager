@@ -119,7 +119,12 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('   Contact the developer opens a window with a message box, the details switch and Send', await ev(() => document.getElementById('contactModal').classList.contains('show') && !!document.getElementById('contactText') && !!document.getElementById('contactSendBtn')));
   check('   the developer\'s own address is nowhere in the app', await ev(async () => { const html = document.documentElement.outerHTML; const js = [...document.scripts].map(s => s.textContent).join('\n'); return !/kyle\.tameirao|tameirao@/i.test(html + js); }));
   check('   the subject is ADB App Manager', await ev(() => CONTACT_SUBJECT === 'ADB App Manager'));
-  check('   until the alias is set, the window says the address is not set up and Send sends nothing', await ev(() => { if (CONTACT_ALIAS) return true; return /not set up/.test(document.getElementById('contactNote').innerText); }));
+  check('   the contact address is the forwarding alias', await ev(() => CONTACT_ALIAS === 'bingblop.coral666@simplelogin.fr'), await ev(() => CONTACT_ALIAS));
+  check('   the window shows the alias to write to', await ev(() => /bingblop\.coral666@simplelogin\.fr/.test(document.getElementById('contactModal').innerText)), await ev(() => document.getElementById('contactModal').innerText.slice(0, 300)));
+  // a build with no alias says the address is not set up
+  await ev(() => { window.__alias0 = CONTACT_ALIAS; CONTACT_ALIAS = ''; contactClose(); contactOpen(); });
+  check('   with no alias, the window says the address is not set up', await ev(() => /not set up/.test(document.getElementById('contactNote').innerText)), await ev(() => document.getElementById('contactNote').innerText));
+  await ev(() => { CONTACT_ALIAS = window.__alias0; contactClose(); contactOpen(); });
   // with an alias (set for this test): the message goes to the mail app, with the details added at the end
   await ev(() => { window.CONTACT_ALIAS_TEST = true; });
   const sent = await ev(() => {
@@ -140,7 +145,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await ev(() => { window.__mailOk = false; window.__mail.length = 0; contactOpen(); document.getElementById('contactText').value = 'Second'; });
   await page.click('#contactSendBtn'); await sleep(80);
   check('   with no email app it says so and gives the alias to write to by hand', await ev(() => /No email app answered/.test(document.getElementById('contactNote').innerText) && /contact@alias\.example/.test(document.getElementById('contactNote').innerText) && document.getElementById('contactModal').classList.contains('show')));
-  await ev(() => { CONTACT_ALIAS = ''; });
+  await ev(() => { CONTACT_ALIAS = window.__alias0; });
 
   check('no page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
   await b.close();

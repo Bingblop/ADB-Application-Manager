@@ -1,5 +1,14 @@
 # Changelog
 
+## v7.10.12-Pro (versionCode 832)
+
+- **Batch results come from the phone, not from the command.** A run of uninstalls often ended with "batch commands failed" although every app was gone. After Uninstall, Uninstall (keep data),
+  Reinstall, Freeze and Unfreeze the app now asks the package manager what became of each app (`pm list packages --user 0`, and `-d` for frozen ones; once more after 0.9 s if an app is not yet in its
+  new state) and reports that: the tag of each result is **Uninstalled** / **Still installed**, **Installed** / **Not installed**, **Frozen** / **Not frozen**, **Enabled** / **Still frozen**, the counts,
+  the history and "Run again on the ones that failed" follow it, and a card says "Checked afterwards: uninstalled. The command reported a failure, but the phone says it worked." when the two disagree.
+  A phone that cannot be asked keeps the command's own answer. Profiles that run these actions are checked the same way. Native: new `BatchVerify` (pure logic) used by `appActionBatch`. Tests: `BatchVerifyTest`, `t136`.
+- **Contact the developer** now has its forwarding alias (bingblop.coral666@simplelogin.fr), shown in the window; the developer's own address is still nowhere in the app. Test: `t135`.
+
 ## v7.10.11-Pro (versionCode 831)
 
 - **RRO/Monet > Overlays: enabled first, then disabled, then not changeable.** The list is in three parts with counts, **Enabled**, **Disabled** and **Installed, not changeable**; inside each

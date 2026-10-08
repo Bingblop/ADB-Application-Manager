@@ -14,7 +14,7 @@ recolor the whole system · run a real terminal with AI coding agents — **no c
 
 ## [⬇️ Get the latest APK](https://github.com/Bingblop/ADB-Application-Manager/releases/latest)
 
-`v7.10.11-Pro` · signed · installs over any earlier version · works with **ADB, Wireless Debugging, Shizuku or Root**
+`v7.10.12-Pro` · signed · installs over any earlier version · works with **ADB, Wireless Debugging, Shizuku or Root**
 
 <table>
   <tr>
@@ -118,7 +118,8 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ## What's new in v7.10
 
-- **Contact the developer and Issues** at the top of the About tab: Issues opens the GitHub issue page; Contact opens your email app with the subject "ADB App Manager", addressed to a forwarding alias so the developer's own address stays private.
+- **Contact the developer and Issues** at the top of the About tab: Issues opens the GitHub issue page; Contact opens your email app with the subject "ADB App Manager", addressed to a forwarding alias (bingblop.coral666@simplelogin.fr) so the developer's own address stays private.
+- **Honest batch results**: after a batch uninstall, reinstall, freeze or unfreeze the app asks the phone what became of each app and shows *Uninstalled / Still installed* (and so on) instead of trusting the command's exit status.
 - **Overlays in order**: enabled, then disabled, then not changeable, each with a one-line description.
 - **Command suggestions** in the Terminal and the ADB Console: a grey completion of what you type from your history, the phone's packages and common commands; Right arrow (or a tap) accepts it.
 - **Haptic feedback** on every tap, on by default, with a switch in Settings.

@@ -118,7 +118,7 @@ Every tab except Application Manager and About can be switched off or moved in *
 
 ## New in v7.9
 
-**v7.10.11 is the latest build** (Connected Devices, 32-bit and universal APKs, the Help Guide: see [CHANGELOG.md](../CHANGELOG.md)). Everything from v7.9 through v7.9.15 is below; the full, dated list is in
+**v7.10.12 is the latest build** (Connected Devices, 32-bit and universal APKs, the Help Guide: see [CHANGELOG.md](../CHANGELOG.md)). Everything from v7.9 through v7.9.15 is below; the full, dated list is in
 [CHANGELOG.md](../CHANGELOG.md) (and inside the app, under About).
 
 **Newest (v7.9.12 to v7.9.15)**
@@ -1288,3 +1288,5 @@ Changes by version: [CHANGELOG.md](../CHANGELOG.md).
 **Command suggestions** (Command-Line Interface, Terminal and ADB Console, v7.10.11): a grey completion line above the input offers the rest of what you type, from your history first, then the packages on the phone, Hidden Settings keys and common commands. **Right arrow** at the end of the line accepts it; a **tap on the line** does too. It never runs anything.
 
 **Issues and Contact the developer** (top of the About card, v7.10.11): **Issues** opens the GitHub issue page. **Contact the developer** opens a sheet to write a message (with or without the app, Android and phone details) and opens your email app with the subject **ADB App Manager**, addressed to a forwarding alias so the developer's own address is not shown or stored in the app.
+
+**Batch results read back from the phone** (v7.10.12): after Uninstall, Uninstall (keep data), Reinstall, Freeze and Unfreeze the batch asks the package manager (`pm list packages --user 0`, `-d` for frozen apps) what became of each app, and the Batch Results tags are **Uninstalled / Still installed**, **Installed / Not installed**, **Frozen / Not frozen**, **Enabled / Still frozen**. A command that reported a failure for an app that is gone counts as a success, with a note on its card. If the phone cannot be asked, the command's own result is used.

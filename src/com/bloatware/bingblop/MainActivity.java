@@ -8803,6 +8803,7 @@ public class MainActivity extends Activity {
                             if (ok) done++;
                             rows.put(new JSONObject().put("pkg", pkg).put("output", out).put("success", ok));
                         }
+                        done = verifyBatchRows(action, rows, done);
                         res.put("action", action);
                         res.put("total", total);
                         res.put("done", done);
@@ -8828,6 +8829,35 @@ public class MainActivity extends Activity {
                 return "error";
             }
             return "started";
+        }
+
+        private java.util.Set<String> listPackageSet(String flags) {
+            try { return BatchVerify.parse(executeShell("pm list packages " + flags + " --user 0")); } catch (Throwable t) { return null; }
+        }
+
+        /** After a batch, asks the phone what became of each app instead of trusting what the command printed or its exit status (a
+         *  run of uninstalls "failed" on some phones although every app was gone): see {@link BatchVerify}. Anything that cannot be
+         *  checked is left as it was. Returns the number of rows that succeeded. */
+        private int verifyBatchRows(String action, JSONArray rows, int done) {
+            if (rows.length() == 0 || !BatchVerify.verifiable(action)) return done;
+            try {
+                boolean dis = BatchVerify.needsDisabled(action);
+                java.util.Set<String> installed = listPackageSet("");
+                java.util.Set<String> disabled = dis ? listPackageSet("-d") : new java.util.HashSet<String>();
+                // -d legitimately lists nothing when no app is frozen, so only the installed list has to look real
+                if (installed == null) return done;
+                if (disabled == null) disabled = new java.util.HashSet<String>();
+                if (!BatchVerify.allOk(action, rows, installed, disabled)) {
+                    // the package manager may still be finishing: ask once more before calling anything undone
+                    try { Thread.sleep(900); } catch (InterruptedException ignored) {}
+                    java.util.Set<String> i2 = listPackageSet("");
+                    java.util.Set<String> d2 = dis ? listPackageSet("-d") : new java.util.HashSet<String>();
+                    if (i2 != null) { installed = i2; disabled = d2 == null ? new java.util.HashSet<String>() : d2; }
+                }
+                return BatchVerify.apply(action, rows, installed, disabled);
+            } catch (Throwable t) {
+                return done;
+            }
         }
 
         // A single '\u0001' + ('1'|'0') flag glued onto the front of a pm/am result, read from the command's

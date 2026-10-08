@@ -7454,7 +7454,7 @@ Type any command below (e.g. pm list packages -d)
                 </div>
                 <div style="font-size:20px; cursor:pointer;" onclick="contactClose()" role="button" aria-label="Close">✕</div>
             </div>
-            <div class="switch-sub" style="margin:0 0 8px;">Write your message and tap <b>Send</b>: your email app opens with it ready, addressed to a contact alias that forwards to the developer. The subject is <b>ADB App Manager</b>. The developer's own address is not in this app, and the message is sent from your email app, not by this one.</div>
+            <div class="switch-sub" style="margin:0 0 8px;">Write your message and tap <b>Send</b>: your email app opens with it ready, addressed to a contact alias (<b id="contactTo"></b>) that forwards to the developer. The subject is <b>ADB App Manager</b>. The developer's own address is not in this app, and the message is sent from your email app, not by this one.</div>
             <textarea class="modal-text-input" id="contactText" rows="6" placeholder="Your message" autocomplete="off" spellcheck="true" style="width:100%; resize:vertical;" aria-label="Message" oninput="contactPreview()"></textarea>
             <label class="switch-row" style="margin-top:8px;">
                 <div>
@@ -14126,7 +14126,7 @@ Type any command below (e.g. pm list packages -d)
             const action = res.action, total = res.total, stopped = !!res.cancelled;
             const rows = (res.rows || []).map(r => {
                 const app = allApps.find(a => a.pkg === r.pkg) || { name: r.pkg, pkg: r.pkg };
-                return { name: app.name, pkg: r.pkg, output: r.output, success: r.success };
+                return { name: app.name, pkg: r.pkg, output: r.output, success: r.success, label: r.label };      // label: what the phone said afterwards (Uninstalled, Still installed, Frozen...)
             });
             const success = rows.filter(r => r.success).length, failed = rows.length - success;
             const label = `${batchRunLabel || ACTION_LABELS[action] || action} ${rows.length} app${rows.length === 1 ? '' : 's'}` + (stopped ? ' (stopped early)' : '');
@@ -28865,7 +28865,7 @@ Type any command below (e.g. pm list packages -d)
 
         // ---- Contact the developer: an email to an alias, so the developer's own address is never in the app or the repository ----
         // CONTACT_ALIAS is the only place the address is written: a forwarding alias (not the developer's mailbox).
-        let CONTACT_ALIAS = '';             // (a let only so that the tests can set one)
+        let CONTACT_ALIAS = 'bingblop.coral666@simplelogin.fr';   // a forwarding alias (SimpleLogin), never the developer's own address (a let only so that the tests can change it)
         const CONTACT_SUBJECT = 'ADB App Manager';
         function contactDetailsText() {
             if (!aboutInfo || !aboutInfo.pkg) { try { renderAbout(); } catch (e) {} }
@@ -28887,6 +28887,7 @@ Type any command below (e.g. pm list packages -d)
             n.classList.remove('is-err');
             n.innerText = CONTACT_ALIAS ? '' : 'The contact address is not set up in this build yet. You can still copy your message.';
             if (!CONTACT_ALIAS) n.classList.add('is-err');
+            const to = document.getElementById('contactTo'); if (to) to.innerText = CONTACT_ALIAS || 'not set up';
             const d = document.getElementById('contactDetails');
             if (d) d.innerText = document.getElementById('contactWithInfo').checked ? 'Added at the end: ' + contactDetailsText().replace(/\n/g, ' · ') : 'Nothing but your message is added.';
         }
@@ -29348,7 +29349,7 @@ Type any command below (e.g. pm list packages -d)
             (res.rows || []).forEach(r => {
                 const app = allApps.find(a => a.pkg === r.pkg) || { name: r.pkg, pkg: r.pkg };
                 if (r.success) st.ok++; else st.bad++;
-                st.shown.push({ name: app.name, pkg: r.pkg, output: r.output, success: r.success });
+                st.shown.push({ name: app.name, pkg: r.pkg, output: r.output, success: r.success, label: r.label });
                 st.histRows.push({ pkg: r.pkg, name: app.name, action, success: r.success });
             });
             if (res.cancelled) { profileRunFinish(true); return; }
