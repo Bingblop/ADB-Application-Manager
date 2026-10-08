@@ -1,5 +1,24 @@
 # Changelog
 
+## v7.10.7-Pro (versionCode 827)
+
+- **Morphe Helper downloads keep going in the background.** What the in-app browser downloads is now held by a foreground service (`DownloadService`, type dataSync): leave the
+  app or let the screen go off and the downloads carry on. A notification shows how many files, how far (a bar and a percentage when every size is known), how fast and how
+  long is left, with **Pause all** (every download that is going or waiting is paused and stays in the list to Resume) and **Cancel** (they stop and the unfinished parts are
+  removed). The processor is kept awake (a partial wake lock, renewed while something downloads and given back the moment nothing does). When the last download is over
+  the notification gives way to a short note of how it went ("keyboard.apkm is saved", "2 downloads finished", "1 finished, 1 stopped. Open the app to retry") that opens the app
+  when tapped. The service starts with the first running download and stops itself with the last; on Android 15, whose six-hour limit for data-sync services ends it, what is
+  going is paused rather than lost. A switch under the download list, **Keep downloading in the background** (on by default), turns the service off for people who want the
+  old behaviour. A phone that refuses the foreground start only loses the notification: the downloads still run. Tests: `DownloadNoticeTest` (21 checks: the counts, the
+  percentage, the smoothed speed and time left, the unknown size, waiting and paused jobs, how it ended), `HelperDownloadsTest` (pause all, cancel all, the active count) and `t119`
+  (the switch).
+- **My Themes: save and switch your own looks.** A new **My Themes** card in Settings (under Palette Style) saves the look in use under a name (up to 40 characters, up to 30
+  themes, unique without regard to case): the palette or palette style, the source color, your color tweaks for light and dark, and Pure black. Tapping a theme wears it at once
+  (Appearance, light or dark or system, is not part of a theme and stays as it is); each theme shows four swatches in the mode in use, says what it is ("Vibrant · #E91E63",
+  "Midnight Slate · tweaked · pure black"), is highlighted while it is the look in use, and can be **Renamed**, **Updated** with the look in use now or **Deleted** (each asked
+  first where it replaces or removes something). Saving under a name that exists asks before replacing it. The saved list is checked every time it is read: entries that are not
+  themes, unknown palettes or styles, bad colors and repeated names are dropped or put right. Test: `t130`.
+
 ## v7.10.6-Pro (versionCode 826)
 
 - **Palette Style in the Theme menu.** Settings has a new **Palette Style** card above the curated palettes: one **source color** turned into a whole theme (accent,

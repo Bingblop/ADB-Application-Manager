@@ -85,7 +85,7 @@ tell you when a new version is out (see [Updates](#updates)).
 | **Overlays** | **New in v6.0:** change Android's **Material You** theme from the phone — the **wallpaper** or **any color** (hex, sliders or 657 named presets) with one of six **styles** (Tonal Spot … Spritz), and the palette Android is really using shown afterwards · list every **overlay** (`cmd overlay list`) grouped by the app it restyles, search and filter it, **switch one on or off** with its switch or by **pressing and holding** its row · every change is read back to prove it, with **Undo** — see [Overlays and Material You](#overlays-and-material-you) |
 | **App Stores** | **ShizuStore**, **GitHub** (up to 5,000 apps, live search), **F-Droid** (any known repository, streamed) and **Orion** as sub-tabs, each with a category drop-down · every install comes from the app's own upstream (nothing is rehosted), through your active mode or the system installer · a successful install offers **Launch Application** and **Application Settings**, the same as the APK Installer |
 | **Modes** | ADB over TCP · Wireless Debugging (pairing, mDNS port detection, and **🔔 pairing from a notification** so the code can't expire while you switch apps) · Shizuku · Root · Automatic · Read-Only |
-| **Themes** | **Material 3** (default) · **Material You** (follows your wallpaper) · six more palettes · **nine palette styles** (Tonal Spot, Vibrant, Fidelity, Content, Neutral, Expressive, Fruit Salad, Rainbow, Monotone) built from a source color you pick · Light / Dark / System / Schedule · pure-black AMOLED option · per-mode color tuning · **Expressive Animations** (Material 3 Expressive's springier motion across the whole app, on by default, with its own switch under Settings → Motion) |
+| **Themes** | **Material 3** (default) · **Material You** (follows your wallpaper) · six more palettes · **nine palette styles** (Tonal Spot, Vibrant, Fidelity, Content, Neutral, Expressive, Fruit Salad, Rainbow, Monotone) built from a source color you pick · **My Themes** (save a look under a name, switch with a tap) · Light / Dark / System / Schedule · pure-black AMOLED option · per-mode color tuning · **Expressive Animations** (Material 3 Expressive's springier motion across the whole app, on by default, with its own switch under Settings → Motion) |
 | **Security** | A **private ADB key is generated on each install** (nothing is bundled) · fingerprint shown in the app · signing-certificate comparison before every update |
 | **Navigation** | A Back button that closes the open sheet, clears a selection, steps up a folder or out of an archive, returns to the previous tab, and only then asks for a deliberate second press to leave (it also asks first while an install, update, file job or command is running) |
 | **Permissions** | A first-launch sheet offers **All files access**, **Usage access** and **Display over other apps** (each optional, also under About); with a working mode it also offers **Read/Write External Storage**, **Write Secure Settings** and **Access Restricted Settings**, granted straight through the shell. An action that fails for want of file access asks for it on the spot and carries on once it is allowed — see [Permissions](#permissions) |
@@ -118,7 +118,7 @@ Every tab except Application Manager and About can be switched off or moved in *
 
 ## New in v7.9
 
-**v7.10.6 is the latest build** (Connected Devices, 32-bit and universal APKs, the Help Guide: see [CHANGELOG.md](../CHANGELOG.md)). Everything from v7.9 through v7.9.15 is below; the full, dated list is in
+**v7.10.7 is the latest build** (Connected Devices, 32-bit and universal APKs, the Help Guide: see [CHANGELOG.md](../CHANGELOG.md)). Everything from v7.9 through v7.9.15 is below; the full, dated list is in
 [CHANGELOG.md](../CHANGELOG.md) (and inside the app, under About).
 
 **Newest (v7.9.12 to v7.9.15)**
@@ -985,6 +985,11 @@ colors can be fine-tuned per mode, and everything is remembered between launches
 **Palette Style** (Settings, above the palettes): one **source color** (your wallpaper's, Material purple, or any color you pick) turned into a whole light and dark theme in one of nine
 styles: Tonal Spot, Vibrant, Fidelity, Content, Neutral, Expressive, Fruit Salad, Rainbow or Monotone. The colors are worked out in the HCT color space with tonal palettes, as in Google's
 [Material Color Utilities](https://github.com/material-foundation/material-color-utilities) (Apache-2.0); text stays readable for any source color.
+
+**My Themes** (Settings, below Palette Style): save the look in use (palette or palette style, source color, color tweaks, Pure black) under a name, switch between up to 30 themes with a tap, rename, update or delete them;
+Light / Dark / System stays as you set it.
+
+**Morphe Helper downloads** keep going when the app is left: a foreground service with a notification (progress, speed, time left, **Pause all**, **Cancel**) and a switch to turn it off.
 
 **Reconnecting devices** (Settings): the switch for reconnecting a dropped device on its own and the **retry timings** (seconds before each attempt, `0, 8, 25` by default); the Devices tab
 has **Reconnect all** when two or more devices are not connected.

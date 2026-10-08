@@ -114,6 +114,10 @@ ok   Use this file makes it the result: the bundle with its parts, ready to inst
 ok   Cancel: the row says Cancelled and offers Remove
 ok   Remove takes it off the list
 ok   Clear finished removes the saved ones and keeps the others
+ok   under the list: "Keep downloading in the background", on by default, saying what it does
+ok   turning it off asks the app, remembers it and says so
+ok   the choice is read back when the list is opened again
+ok   and turning it on again
 ok   the list explains that downloads go on without the browser, and what Pause and Resume do
 ok   with no downloads the section is not there
 ok   Find in Downloads asks the app and lists the files of this package, newest first, with format and parts

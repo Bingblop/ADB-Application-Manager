@@ -410,7 +410,7 @@
   <ul>
     <li>No permission and no computer are needed, and no working mode either, except for <b>Trim Caches</b> (the last card), which needs one. Every control works at once; there is no Save button, and what you choose is kept on the phone.</li>
     <li>These settings are about this app only. The font, the colours and the language do not change the rest of your phone. <b>Trim Caches</b> is the exception: it clears the temporary files of the other apps.</li>
-    <li>The cards come in this order: <b>Language</b>, <b>Appearance</b>, <b>Palette Style</b>, <b>Curated Theme Palettes</b> (with the <b>Granular Color Pickers</b> inside it), <b>Lists</b>, <b>Motion</b>, <b>Reconnecting devices</b>, <b>Font</b>, <b>Icon pack</b>, <b>Action Button</b>, <b>Feature List</b>, <b>Press and hold guide</b> and, last, <b>Trim Caches</b>. Below, each card has its own part, with every control, its default and when to change it.</li>
+    <li>The cards come in this order: <b>Language</b>, <b>Appearance</b>, <b>Palette Style</b>, <b>My Themes</b>, <b>Curated Theme Palettes</b> (with the <b>Granular Color Pickers</b> inside it), <b>Lists</b>, <b>Motion</b>, <b>Reconnecting devices</b>, <b>Font</b>, <b>Icon pack</b>, <b>Action Button</b>, <b>Feature List</b>, <b>Press and hold guide</b> and, last, <b>Trim Caches</b>. Below, each card has its own part, with every control, its default and when to change it.</li>
   </ul>
   <div class="hg-note"><b>Not in this screen.</b> There is no switch here for the short vibration the app gives when you tap buttons, for keeping the screen on, for update checks, for backups or for logs. Update checks live in <a href="#tab-updates">App Updater</a>, backups in the <a href="#apps-backup">apps backup</a> section, logs in <a href="#tab-logcat">Logcat Viewer</a>. The Command-Line Interface has its own gear (<a href="#tab-terminal">Command-Line Interface</a>), and the <b>Keep selection after running</b> switch is inside the batch panel (see <a href="#apps-batch">batch actions</a>).</div>
 
@@ -469,6 +469,20 @@
     <li>The style, the source colour and the palette in use are remembered. Tapping a curated palette card takes over again.</li>
     <li>The colours are calculated with the HCT colour space and tonal palettes of Google's Material Color Utilities. The third accent of Fidelity and Content is an approximation of Google's, so those two can differ a little from the same style in Android.</li>
   </ul>
+
+  <h4>My Themes</h4>
+  <p>Save the look you made under a name and switch between your themes with one tap. A theme holds the palette (a curated palette, Material You, or a palette style with its source colour), your <b>colour tweaks</b> for light and for dark, and <b>Pure black in dark mode</b>. It does <b>not</b> hold <b>Appearance</b> (Light, Dark, System, Schedule): that stays as you set it, so one theme shows in both its light and its dark version.</p>
+  <table class="hg-table">
+    <thead><tr><th>Control</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><b>Save current theme…</b></td><td>Asks for a name (up to 40 characters; it suggests one such as <i>Vibrant #E91E63</i> or <i>Midnight Slate tweaked</i>) and saves the look in use now. A name that is already used, in capitals or not, asks <i>Replace it with the look in use now?</i>; the replaced theme moves to the top. Up to 30 themes: the 31st is refused with <i>Up to 30 themes: delete one first</i>.</td></tr>
+      <tr><td>A theme (tap it)</td><td>Applies it at once: the palette, source colour, tweaks and Pure black come back and a message says <i>Theme: ...</i>. The theme in use is highlighted, and the <b>Palette Style</b> card follows. The four swatches (accent, background, card, second accent) preview the theme in the light or dark mode you are in. Under the name a line says what it is, for example <i>Vibrant · #E91E63</i> or <i>Midnight Slate · tweaked · pure black</i>.</td></tr>
+      <tr><td><b>Rename</b></td><td>Changes the name. Another theme's name (any case) is refused: <i>Another theme is already called ...</i>.</td></tr>
+      <tr><td><b>Update</b></td><td>Asks, then puts the look in use now into that theme, keeping its name and place.</td></tr>
+      <tr><td><b>Delete</b></td><td>Asks, then removes the theme.</td></tr>
+    </tbody>
+  </table>
+  <p>Themes are kept on the phone with the other settings. A look made with a very old custom palette cannot be saved (the card says to choose a palette or a palette style first).</p>
 
   <h4>Curated Theme Palettes</h4>
   <p>Eight ready-made colour schemes. Tap a card to use it. Each has a light and a dark version, and the little strip of four swatches shows how it looks in the mode you are in now. The active card has a highlight.</p>
@@ -728,7 +742,7 @@
 </section>
 <section id="themes" data-title="Themes and colours" data-group="Settings and looks">
   <p class="hg-lead">Choose how the app looks: light or dark, one of eight ready-made colour schemes, one of nine palette styles built from a source colour of your choice, or your own colours. These choices change only this app, not the rest of your phone.</p>
-  <p><b>Where to find it:</b> tap the gear icon in the header to open <a href="#prefs">Settings</a>. Four cards are about looks: <b>Appearance</b>, <b>Palette Style</b>, <b>Curated Theme Palettes</b> and, inside the same card below the palettes, <b>Granular Color Pickers</b>.</p>
+  <p><b>Where to find it:</b> tap the gear icon in the header to open <a href="#prefs">Settings</a>. Five cards are about looks: <b>Appearance</b>, <b>Palette Style</b>, <b>My Themes</b>, <b>Curated Theme Palettes</b> and, inside the same card below the palettes, <b>Granular Color Pickers</b>.</p>
 
   <h4>Before you start</h4>
   <ul>
@@ -776,6 +790,9 @@
       <tr><td><b>AMOLED Cyan</b>, <b>Cyberpunk Violet</b>, <b>Nordic Emerald</b>, <b>Sunset Amber</b>, <b>Midnight Slate</b>, <b>Blood Moon</b></td><td>Six dark schemes made for the app. Their light version is made from the dark one: lighter backgrounds, and the accent and badge colours darkened until they are easy to read on white.</td></tr>
     </tbody>
   </table>
+
+  <h4>My Themes</h4>
+  <p>The <b>My Themes</b> card (below Palette Style) saves a look under a name: <b>Save current theme…</b>, then tap a saved theme to wear it again. It keeps the palette or palette style, the source colour, your colour tweaks and Pure black, and leaves Light, Dark and System alone. Each theme can be renamed, updated with the look in use now, or deleted. See <a href="#prefs">Settings</a> for every control.</p>
 
   <h4>Palette styles</h4>
   <p>The <b>Palette Style</b> card (above the eight palettes) builds a whole theme from <b>one source colour</b> in one of nine styles: <b>Tonal Spot</b>, <b>Vibrant</b>, <b>Fidelity</b>, <b>Content</b>, <b>Neutral</b>, <b>Expressive</b>, <b>Fruit Salad</b>, <b>Rainbow</b> and <b>Monotone</b>. The source colour is automatic (your wallpaper's main colour on Android 12 and newer, otherwise Material purple) until you pick one with the circle in the card. See <a href="#prefs">Settings</a> for what each style does and for the controls.</p>

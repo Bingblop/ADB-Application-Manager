@@ -14,7 +14,7 @@ recolor the whole system · run a real terminal with AI coding agents — **no c
 
 ## [⬇️ Get the latest APK](https://github.com/Bingblop/ADB-Application-Manager/releases/latest)
 
-`v7.10.6-Pro` · signed · installs over any earlier version · works with **ADB, Wireless Debugging, Shizuku or Root**
+`v7.10.7-Pro` · signed · installs over any earlier version · works with **ADB, Wireless Debugging, Shizuku or Root**
 
 <table>
   <tr>
@@ -60,7 +60,7 @@ recolor the whole system · run a real terminal with AI coding agents — **no c
 | **Monitoring** | Task Manager (processes, CPU, RAM, GPU, battery, network) · color-coded Logcat for one app · Device Specs |
 | **Quick actions** | Quick Settings tiles and a home-screen widget |
 | **Free up space** | One button in Settings runs `pm trim-caches 128G` to clear every app's cache, with a plain explanation of what is and is not touched |
-| **Make it yours** | Material 3 and Material You themes · **nine palette styles** (Tonal Spot to Monotone) from any source color · light, dark, schedule, pure black · **Expressive Animations** · 14 languages · custom font · reorder or hide tabs |
+| **Make it yours** | Material 3 and Material You themes · **nine palette styles** (Tonal Spot to Monotone) from any source color · **save your own themes** · light, dark, schedule, pure black · **Expressive Animations** · 14 languages · custom font · reorder or hide tabs |
 
 ## Install in 30 seconds
 

@@ -2709,6 +2709,14 @@
             color: var(--text-muted);
         }
         .ps-style-card .preset-name { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+        .mt-card { padding: 10px 12px 8px; }
+        .mt-main { cursor: pointer; border-radius: 8px; outline-offset: 3px; }
+        .mt-main:focus-visible { outline: 2px solid var(--accent); }
+        .mt-card .preset-name { overflow-wrap: anywhere; }
+        .mt-sub { font-size: 10.5px; line-height: 1.35; color: var(--text-muted); margin-top: 2px; font-weight: 600; overflow-wrap: anywhere; }
+        .mt-btns { display: flex; gap: 4px; margin-top: 8px; flex-wrap: wrap; }
+        .mt-btns button { flex: 1 1 0; min-width: 0; border: 1px solid var(--border-glass); background: transparent; color: var(--text-muted); border-radius: 999px; padding: 6px 4px; font-size: 10.5px; font-weight: 800; cursor: pointer; }
+        .mt-btns button.danger { color: var(--status-bloat); }
         .ps-style-card .ps-desc { font-size: 10.5px; line-height: 1.35; color: var(--text-muted); margin-top: 3px; font-weight: 600; }
         .appearance-toggle {
             display: grid;
@@ -4996,6 +5004,16 @@
 
                 <div class="palette-presets-grid" id="psStyleGrid"></div>
                 <div class="appearance-note" id="psNote"></div>
+            </div>
+
+            <div class="color-card" id="myThemesCard">
+                <div class="color-card-title">My Themes</div>
+                <div class="color-card-subtitle">Save the look you made (the palette or palette style, the source color, your color tweaks and Pure black) under a name, and switch between your themes with one tap. Light, dark or system stays as you set it in Appearance.</div>
+                <div class="mode-btn-row" style="margin:2px 0 12px;">
+                    <button class="mode-action-btn primary" id="mtSaveBtn" onclick="mtSave()">Save current theme…</button>
+                </div>
+                <div class="palette-presets-grid" id="mtGrid"></div>
+                <div class="appearance-note" id="mtNote"></div>
             </div>
 
             <div class="color-card">
@@ -20706,6 +20724,7 @@ Type any command below (e.g. pm list packages -d)
             markActivePreset(themeState.preset);
             renderPresetStrips(mode);
             renderStyleCards(mode);
+            renderMyThemes(mode);
             renderAppearanceControls(mode);
 
             if (window.AndroidBridge) {
@@ -20870,6 +20889,123 @@ Type any command below (e.g. pm list packages -d)
             const card = el || document.querySelector('.palette-preset-card[data-preset="' + name + '"]');
             const label = card ? card.querySelector('.preset-name').innerText : name;
             showToast('Applied Theme: ' + label);
+        }
+
+        // ---- My Themes: the look you made, saved under a name ----
+        // kv 'saved_themes': [{ name, preset, style, seed, pureBlack, overrides: { dark: {key: '#rrggbb'}, light: {...} } }], newest first, at most 30.
+        // Appearance (light / dark / system / schedule) is not part of a theme: it stays as it is.
+        const MT_MAX = 30, MT_KEYS = ['accent', 'bg', 'card', 'running', 'frozen', 'system', 'bloat', 'surface', 'text', 'muted', 'secondary', 'sheet'];
+        const MT_PRESET_NAMES = { material3: 'Material 3', materialyou: 'Material You', amoled: 'AMOLED Cyan', cyberpunk: 'Cyberpunk Violet', emerald: 'Nordic Emerald', amber: 'Sunset Amber', slate: 'Midnight Slate', crimson: 'Blood Moon', generated: 'Palette Style' };
+        function mtClean(t) {
+            if (!t || typeof t !== 'object') return null;
+            const name = String(t.name || '').trim().slice(0, 40);
+            const preset = String(t.preset || '');
+            if (!name || !(palettes[preset] && preset !== 'custom' || preset === 'materialyou' || preset === 'generated')) return null;
+            const ov = { dark: {}, light: {} };
+            ['dark', 'light'].forEach(m => { const src = t.overrides && t.overrides[m]; if (src && typeof src === 'object') MT_KEYS.forEach(k => { if (/^#[0-9a-f]{6}$/i.test(src[k] || '')) ov[m][k] = src[k].toLowerCase(); }); });
+            return { name: name, preset: preset, style: PS_IDS.includes(t.style) ? t.style : 'TONAL_SPOT', seed: /^#[0-9a-f]{6}$/i.test(t.seed || '') ? t.seed.toUpperCase() : null, pureBlack: !!t.pureBlack, overrides: ov };
+        }
+        function mtLoad() {
+            const raw = kvGet('saved_themes', []), out = [];
+            (Array.isArray(raw) ? raw : []).forEach(t => { const c = mtClean(t); if (c && !out.some(x => x.name.toLowerCase() === c.name.toLowerCase())) out.push(c); });
+            return out.slice(0, MT_MAX);
+        }
+        function mtStore(list) { kvSet('saved_themes', list.slice(0, MT_MAX)); }
+        function mtCurrent(name) {
+            return mtClean({ name: name || 'x', preset: themeState.preset, style: themeState.style, seed: themeState.seed, pureBlack: themeState.pureBlack, overrides: themeState.overrides });
+        }
+        function mtSame(a, b) {
+            return a.preset === b.preset && a.pureBlack === b.pureBlack && JSON.stringify(a.overrides) === JSON.stringify(b.overrides)
+                && (a.preset !== 'generated' || (a.style === b.style && a.seed === b.seed));
+        }
+        function mtSub(t) {
+            const bits = [t.preset === 'generated' ? (PS_STYLES.find(x => x.id === t.style) || PS_STYLES[0]).name + ' · ' + (t.seed || 'automatic') : (MT_PRESET_NAMES[t.preset] || t.preset)];
+            if (Object.keys(t.overrides.dark).length + Object.keys(t.overrides.light).length) bits.push('tweaked');
+            if (t.pureBlack) bits.push('pure black');
+            return bits.join(' · ');
+        }
+        function mtScheme(t, mode) {
+            const base = t.preset === 'generated' ? psScheme(/^#[0-9a-f]{6}$/i.test(t.seed || '') ? t.seed : psAutoSeed(), t.style, mode) : resolvePresetScheme(t.preset, mode);
+            return Object.assign(base, t.overrides[mode] || {});
+        }
+        function renderMyThemes(mode) {
+            const grid = document.getElementById('mtGrid');
+            if (!grid) return;
+            const list = mtLoad(), cur = mtCurrent();
+            grid.innerHTML = list.map((t, i) => {
+                const c = mtScheme(t, mode), on = cur && mtSame(cur, t), nm = escapeHtml(t.name);
+                return '<div class="palette-preset-card mt-card' + (on ? ' active' : '') + '" data-mt="' + i + '">'
+                    + '<div class="mt-main" role="button" tabindex="0" aria-pressed="' + !!on + '" aria-label="Use the theme ' + nm + '" onclick="mtApply(' + i + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();mtApply(' + i + ');}">'
+                    + '<div class="preset-strip">' + [c.accent, c.bg, c.card, c.secondary].map(x => '<div class="preset-swatch" style="background:' + x + '"></div>').join('') + '</div>'
+                    + '<div class="preset-name">' + nm + '</div><div class="mt-sub">' + escapeHtml(mtSub(t)) + '</div></div>'
+                    + '<div class="mt-btns"><button type="button" aria-label="Rename the theme ' + nm + '" onclick="mtRename(' + i + ')">Rename</button><button type="button" aria-label="Replace the theme ' + nm + ' with the look in use now" onclick="mtUpdate(' + i + ')">Update</button><button type="button" class="danger" aria-label="Delete the theme ' + nm + '" onclick="mtDelete(' + i + ')">Delete</button></div></div>';
+            }).join('');
+            const note = document.getElementById('mtNote');
+            if (note) note.innerText = list.length ? list.length + (list.length === 1 ? ' theme' : ' themes') + ' saved (up to ' + MT_MAX + '). Tap a theme to use it. Update puts the look in use now into it.' : 'None yet: set the look you want (a palette or a palette style, your colors), then tap Save current theme.';
+        }
+        function mtDefaultName() {
+            const t = mtCurrent();
+            if (!t) return 'My theme';
+            return t.preset === 'generated' ? (PS_STYLES.find(x => x.id === t.style) || PS_STYLES[0]).name + ' ' + psSeed() : (MT_PRESET_NAMES[t.preset] || 'My theme') + (Object.keys(t.overrides.dark).length + Object.keys(t.overrides.light).length ? ' tweaked' : '');
+        }
+        function mtSave() {
+            if (!mtCurrent()) { showToast('This look is an old custom palette: choose a palette or a palette style first'); return; }
+            const name = (prompt('Name for this theme:', mtDefaultName()) || '').trim().slice(0, 40);
+            if (!name) return;
+            const list = mtLoad(), at = list.findIndex(x => x.name.toLowerCase() === name.toLowerCase());
+            if (at >= 0 && !confirm('A theme called ' + list[at].name + ' is saved already. Replace it with the look in use now?')) return;
+            if (at < 0 && list.length >= MT_MAX) { showToast('Up to ' + MT_MAX + ' themes: delete one first'); return; }
+            haptic();
+            const t = mtCurrent(name);
+            if (at >= 0) list.splice(at, 1);
+            list.unshift(t);
+            mtStore(list);
+            renderMyThemes(effectiveMode());
+            showToast('Saved the theme ' + name);
+        }
+        function mtApply(i) {
+            const t = mtLoad()[i];
+            if (!t) return;
+            themeState.preset = t.preset;
+            themeState.style = t.style;
+            themeState.seed = t.seed;
+            themeState.pureBlack = t.pureBlack;
+            themeState.overrides = { dark: Object.assign({}, t.overrides.dark), light: Object.assign({}, t.overrides.light) };
+            applyTheme();
+            haptic();
+            showToast('Theme: ' + t.name);
+        }
+        function mtRename(i) {
+            const list = mtLoad(), t = list[i];
+            if (!t) return;
+            const name = (prompt('New name for this theme:', t.name) || '').trim().slice(0, 40);
+            if (!name || name === t.name) return;
+            if (list.some((x, j) => j !== i && x.name.toLowerCase() === name.toLowerCase())) { showToast('Another theme is already called ' + name); return; }
+            haptic();
+            t.name = name;
+            mtStore(list);
+            renderMyThemes(effectiveMode());
+            showToast('Renamed to ' + name);
+        }
+        function mtUpdate(i) {
+            const list = mtLoad(), t = list[i];
+            if (!t) return;
+            if (!mtCurrent()) { showToast('This look is an old custom palette: choose a palette or a palette style first'); return; }
+            if (!confirm('Replace the theme ' + t.name + ' with the look in use now?')) return;
+            haptic();
+            list[i] = mtCurrent(t.name);
+            mtStore(list);
+            renderMyThemes(effectiveMode());
+            showToast('Updated the theme ' + t.name);
+        }
+        function mtDelete(i) {
+            const list = mtLoad(), t = list[i];
+            if (!t || !confirm('Delete the theme ' + t.name + '?')) return;
+            haptic();
+            list.splice(i, 1);
+            mtStore(list);
+            renderMyThemes(effectiveMode());
+            showToast('Deleted the theme ' + t.name);
         }
 
         // ---- Palette Style: nine styles of one source color ----
@@ -29241,7 +29377,15 @@ Type any command below (e.g. pm list packages -d)
         function mpHDSet(list) { mp.dl = (list || []).map(j => { const o = (mp.dl || []).find(x => x.id === j.id); return Object.assign({}, o || {}, j, { sp: o ? o.sp : 0, at: o ? o.at : 0, was: o ? o.was : j.done }); }); }
         async function mpHDLoad() {
             const r = await mpCall('helperDownloadList', {});
-            if (r.ok && r.data) { mpHDSet(r.data.jobs); mpHDRender(); }
+            if (r.ok && r.data) { mp.dlBg = r.data.background !== false; mpHDSet(r.data.jobs); mpHDRender(); }
+        }
+        // the downloads go on, with a notification, when the app is left (a foreground service); this is the switch
+        async function mpHDBackground(on) {
+            haptic();
+            mp.dlBg = !!on; mpHDRender();
+            const r = await mpCall('helperDownloadOp', { id: '', op: 'background', on: !!on });
+            if (!r.ok) { mp.dlBg = !on; mpHDRender(); showToast(r.error || 'That did not work'); return; }
+            showToast(on ? 'Downloads go on in the background' : 'Downloads stop when the app is left');
         }
         function mpHDEvent(j) {
             if (!j || !j.id) return;
@@ -29289,6 +29433,7 @@ Type any command below (e.g. pm list packages -d)
             const clearable = list.some(j => j.state === 'done' || j.state === 'cancelled');
             return '<div class="mp-group"><span>Downloads from the browser</span><span>' + list.length + '</span></div>' + rows +
                 (clearable ? '<div class="mp-row"><button class="mode-action-btn" onclick="mpHDOp(\'\', \'clear\')">Clear finished</button></div>' : '') +
+                '<label class="switch-row" style="margin-top:6px;"><div><div class="switch-title">Keep downloading in the background</div><div class="switch-sub">A notification shows how far they are, with Pause all and Cancel, and the downloads go on when you leave the app or the screen goes off.</div></div><input type="checkbox" class="switch-input" id="mpHDBg"' + (mp.dlBg === false ? '' : ' checked') + ' onchange="mpHDBackground(this.checked)"><span class="switch-track"></span></label>' +
                 '<div class="mp-note">They go on when the browser is closed. Pause keeps what was downloaded and Resume asks the site for the rest only (a site that cannot do that starts the file again).</div>';
         }
         async function mpHDOp(id, op) {
