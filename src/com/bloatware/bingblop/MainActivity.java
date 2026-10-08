@@ -8765,6 +8765,36 @@ public class MainActivity extends Activity {
         public void appBatchCancel() { appBatchCancel = true; }
 
         /**
+         * One app's action, then a look at what the phone says (see {@link BatchVerify}), off the page's thread: the app menu's
+         * Uninstall, Freeze and Suspend (and their opposites) report what really happened, not what the command printed. Returns
+         * "started", "unsupported" (an action that cannot be read back: use executeAppAction) or "error"; the answer arrives as
+         * window.onAppActionChecked(token, {pkg, action, success, label, verified, output}); window.onAppActionChecking(token) comes first,
+         * when the command is done and the phone is being asked.
+         */
+        @JavascriptInterface
+        public String appActionChecked(final String action, final String pkg, final String token) {
+            if (!BatchVerify.verifiable(action)) return "unsupported";
+            if (!submitJob(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject res = new JSONObject();
+                    try {
+                        String flagged = executeAppAction(action, pkg);
+                        JSONArray rows = new JSONArray();
+                        rows.put(new JSONObject().put("pkg", pkg).put("output", flagText(flagged)).put("success", flagOk(flagged)));
+                        verifyBatchRows(action, rows, 0, "window.onAppActionChecking && window.onAppActionChecking(" + JSONObject.quote(token) + ")");
+                        res = rows.getJSONObject(0);
+                        res.put("action", action);
+                    } catch (Throwable t) {
+                        try { res.put("pkg", pkg).put("action", action).put("success", false).put("output", "Error: " + errMsg(t)); } catch (Exception ignored) {}
+                    }
+                    notifyJs("window.onAppActionChecked && window.onAppActionChecked(" + JSONObject.quote(token) + "," + res.toString() + ")");
+                }
+            })) return "error";
+            return "started";
+        }
+
+        /**
          * Runs {@link #executeAppAction} across every package in pkgsJson (a JSON array of package name
          * strings) one at a time, off the page's thread - the point of this method existing at all, since
          * executeAppAction's own shell round-trip blocks whichever thread calls it, and running the whole loop
@@ -8803,7 +8833,7 @@ public class MainActivity extends Activity {
                             if (ok) done++;
                             rows.put(new JSONObject().put("pkg", pkg).put("output", out).put("success", ok));
                         }
-                        done = verifyBatchRows(action, rows, done);
+                        done = verifyBatchRows(action, rows, done, "window.onAppBatchChecking && window.onAppBatchChecking(" + rows.length() + ")");
                         res.put("action", action);
                         res.put("total", total);
                         res.put("done", done);
@@ -8838,26 +8868,41 @@ public class MainActivity extends Activity {
         /** After a batch, asks the phone what became of each app instead of trusting what the command printed or its exit status (a
          *  run of uninstalls "failed" on some phones although every app was gone): see {@link BatchVerify}. Anything that cannot be
          *  checked is left as it was. Returns the number of rows that succeeded. */
-        private int verifyBatchRows(String action, JSONArray rows, int done) {
+        private int verifyBatchRows(String action, JSONArray rows, int done, String announce) {
             if (rows.length() == 0 || !BatchVerify.verifiable(action)) return done;
+            if (announce != null) notifyJs(announce);              // the page says "Checking the phone..." while this runs
             try {
-                boolean dis = BatchVerify.needsDisabled(action);
-                java.util.Set<String> installed = listPackageSet("");
-                java.util.Set<String> disabled = dis ? listPackageSet("-d") : new java.util.HashSet<String>();
-                // -d legitimately lists nothing when no app is frozen, so only the installed list has to look real
-                if (installed == null) return done;
-                if (disabled == null) disabled = new java.util.HashSet<String>();
-                if (!BatchVerify.allOk(action, rows, installed, disabled)) {
+                BatchVerify.State st = readBatchState(action, rows);
+                if (st == null) return done;
+                if (!BatchVerify.allOk(action, rows, st)) {
                     // the package manager may still be finishing: ask once more before calling anything undone
                     try { Thread.sleep(900); } catch (InterruptedException ignored) {}
-                    java.util.Set<String> i2 = listPackageSet("");
-                    java.util.Set<String> d2 = dis ? listPackageSet("-d") : new java.util.HashSet<String>();
-                    if (i2 != null) { installed = i2; disabled = d2 == null ? new java.util.HashSet<String>() : d2; }
+                    BatchVerify.State st2 = readBatchState(action, rows);
+                    if (st2 != null) st = st2;
                 }
-                return BatchVerify.apply(action, rows, installed, disabled);
+                return BatchVerify.apply(action, rows, st);
             } catch (Throwable t) {
                 return done;
             }
+        }
+
+        /** What the phone says now about the apps in rows: the installed list, the frozen list, and each app's suspended flag, as the action needs. */
+        private BatchVerify.State readBatchState(String action, JSONArray rows) throws org.json.JSONException {
+            java.util.Set<String> installed = listPackageSet("");
+            if (installed == null) return null;                 // not a real shell: nothing can be proved
+            java.util.Set<String> disabled = BatchVerify.needsDisabled(action) ? listPackageSet("-d") : null;     // -d lists nothing when no app is frozen: null is fine
+            java.util.Set<String> suspended = new java.util.HashSet<String>(), unknown = new java.util.HashSet<String>();
+            if (BatchVerify.needsSuspended(action)) {
+                for (int i = 0; i < rows.length(); i++) {
+                    String pkg = rows.getJSONObject(i).optString("pkg", "");
+                    Boolean sus = null;
+                    if (installed.contains(pkg) && BackupScripts.isPackageName(pkg)) {
+                        try { sus = BatchVerify.suspendedFrom(executeShell("dumpsys package " + pkg)); } catch (Throwable ignored) {}
+                    }
+                    if (sus == null) unknown.add(pkg); else if (sus.booleanValue()) suspended.add(pkg);
+                }
+            }
+            return new BatchVerify.State(installed, disabled, suspended, unknown);
         }
 
         // A single '\u0001' + ('1'|'0') flag glued onto the front of a pm/am result, read from the command's

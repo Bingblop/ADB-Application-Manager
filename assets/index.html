@@ -4264,9 +4264,10 @@
                         <div class="cd-term" id="cdTerm" translate="no"><span class="cd-dim">Type a command for the device and press Run. A line that starts with "adb " goes to adb itself (adb pull, adb forward ...).</span></div>
                         <div class="cd-input-line">
                             <button class="cd-mode" id="cdModeBtn" onclick="cdModeToggle()" title="Shell on the device, or adb itself">$</button>
-                            <textarea class="cd-input" id="cdInput" rows="1" placeholder="getprop ro.product.model" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" onkeydown="cdInputKey(event)"></textarea>
+                            <textarea class="cd-input" id="cdInput" rows="1" placeholder="getprop ro.product.model" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" onkeydown="cdInputKey(event)" oninput="acUpdate('cd')" onclick="acUpdate('cd')" onfocus="acUpdate('cd')" onblur="acHide('cd')"></textarea>
                             <button class="cd-send" id="cdRunBtn" onclick="cdRunOrStop()">Run</button>
                         </div>
+                        <div class="ac-hint" id="cdAc" hidden role="button" tabindex="-1" aria-label="Suggestion: tap to accept" onmousedown="event.preventDefault()" onclick="acTap('cd')"></div>
                         <div class="cd-links" style="margin-top:6px;">
                             <button class="batch-tool-link" onclick="cdHistStep(-1)">Previous</button>
                             <button class="batch-tool-link" onclick="cdHistStep(1)">Next</button>
@@ -14116,6 +14117,15 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('batchProgressBar').style.width = Math.round(i / total * 100) + '%';
         };
 
+        // Fires when the commands of a batch are done and the phone is being asked what became of each app.
+        window.onAppBatchChecking = function (n) {
+            if (profileRunActive) return;
+            document.getElementById('batchProgressText').innerText = 'Checking the phone… (' + n + ' app' + (n === 1 ? '' : 's') + ')';
+            document.getElementById('batchProgressBar').style.width = '100%';
+            const stopBtn = document.getElementById('batchProgressStopBtn');
+            if (stopBtn) stopBtn.disabled = true;
+        };
+
         // Fires once the native run has finished (to completion, or stopped early).
         window.onAppBatchDone = function (resultJson) {
             if (profileRunActive) { profileOnBatchDone(resultJson); return; }
@@ -14216,11 +14226,36 @@ Type any command below (e.g. pm list packages -d)
             return { ok: rc === 0, output };
         }
 
+        // Uninstall, Reinstall, Freeze, Unfreeze, Suspend and Unsuspend of one app are read back from the phone (natively, off this thread) and
+        // the toast / result says what it found, not what the command printed: see BatchVerify.java. Anything else is judged by the command.
+        const CHECKED_ACTIONS = new Set(['uninstall', 'uninstall_keep_data', 'reinstall', 'freeze', 'unfreeze', 'suspend', 'unsuspend']);
+        const pendingChecked = new Map();
+        let checkedSeq = 0;
+        window.onAppActionChecking = function (token) { if (pendingChecked.has(token)) showToast('Checking the phone…'); };
+        window.onAppActionChecked = function (token, r) {
+            const p = pendingChecked.get(token);
+            if (!p) return;
+            pendingChecked.delete(token);
+            r = r || {};
+            const ok = !!r.success;
+            showToast(ok ? (r.verified && r.label ? p.app.name + ': ' + r.label : 'Action executed') : (r.verified && r.label ? p.app.name + ': ' + r.label : 'Action reported a problem'));
+            if (!ok) showCommandResults('Command Result', p.action.toUpperCase(), [{ name: p.app.name, pkg: p.pkg, output: r.output || '', success: false, label: r.label }]);
+            if (UNDO_ACTION[p.action]) recordHistory('apps', `${ACTION_LABELS[p.action] || p.action} ${p.app.name}`, [{ pkg: p.pkg, name: p.app.name, action: p.action, success: ok }]);
+            setTimeout(loadPackageData, 400);
+        };
         function quickAction(action, pkg) {
             if (!guardPrivilege(action)) return;
             haptic();
             if (window.AndroidBridge) {
                 const app = allApps.find(a => a.pkg === pkg) || { name: pkg, pkg: pkg };
+                if (CHECKED_ACTIONS.has(action) && window.AndroidBridge.appActionChecked) {
+                    const token = 'a' + (++checkedSeq) + '_' + Date.now();
+                    pendingChecked.set(token, { action, pkg, app });
+                    let started = '';
+                    try { started = window.AndroidBridge.appActionChecked(action, pkg, token); } catch (e) { started = ''; }
+                    if (started === 'started') { showToast('Working on it…'); return; }
+                    pendingChecked.delete(token);                 // not started: the plain way below
+                }
                 const { ok, output } = parseActionResult(window.AndroidBridge.executeAppAction(action, pkg));
                 showToast(ok ? 'Action executed' : 'Action reported a problem');
                 // Modal only on failure (the same convention as toggleComponent/fmOp/launchActivity/Archive/Sign/Settings/Overlay) -
@@ -19262,14 +19297,16 @@ Type any command below (e.g. pm list packages -d)
             if (el && !el.firstChild) el.innerHTML = CD_CHIPS.map((c, i) => '<button class="cd-chip" translate="no" onclick="cdChip(' + i + ')">' + escapeHtml(c) + '</button>').join('');
             cdTermRender();
         }
-        function cdChip(i) { const inp = document.getElementById('cdInput'); inp.value = CD_CHIPS[i]; inp.focus(); haptic(); }
+        function cdChip(i) { const inp = document.getElementById('cdInput'); inp.value = CD_CHIPS[i]; inp.focus(); acUpdate('cd'); haptic(); }
         function cdModeToggle() {
             cd.mode = cd.mode === 'shell' ? 'adb' : 'shell';
             document.getElementById('cdModeBtn').innerText = cd.mode === 'shell' ? '$' : 'adb';
             document.getElementById('cdInput').placeholder = cd.mode === 'shell' ? 'getprop ro.product.model' : 'pull /sdcard/Download/a.txt /sdcard/';
+            acUpdate('cd');
             haptic();
         }
         function cdInputKey(e) {
+            if (acRightKey(e, 'cd')) return;
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); cdRunOrStop(); }
             else if (e.key === 'ArrowUp' && !e.target.value.includes('\n')) { e.preventDefault(); cdHistStep(-1); }
             else if (e.key === 'ArrowDown' && !e.target.value.includes('\n')) { e.preventDefault(); cdHistStep(1); }
@@ -19279,6 +19316,7 @@ Type any command below (e.g. pm list packages -d)
             if (cd.histAt < 0) cd.histAt = cd.hist.length;
             cd.histAt = Math.max(0, Math.min(cd.hist.length, cd.histAt + d));
             document.getElementById('cdInput').value = cd.histAt >= cd.hist.length ? '' : cd.hist[cd.histAt];
+            acUpdate('cd');
         }
         function cdSplitArgs(s) {
             const out = [];
@@ -19302,6 +19340,7 @@ Type any command below (e.g. pm list packages -d)
             if (cd.hist[cd.hist.length - 1] !== line) { cd.hist.push(line); if (cd.hist.length > 100) cd.hist.shift(); kvSet('cd_hist', cd.hist); }
             cd.histAt = -1;
             inp.value = '';
+            acUpdate('cd');
             const adbLine = cd.mode === 'adb' ? line : (/^adb\s+/.test(line) ? line.replace(/^adb\s+/, '') : null);
             let args, serial, shown, timeout;
             if (adbLine !== null) {
@@ -22682,9 +22721,27 @@ Type any command below (e.g. pm list packages -d)
         ];
         const AC_PKG_AFTER = /^(pm (path|clear|dump|enable|grant|revoke|reset-permissions|resolve-activity|install-existing|uninstall( -k)?( --user \d+)?|disable-user( --user \d+)?|compile -m \S+ -f)|am (force-stop|kill|crash)|cmd appops (get|set)|cmd package resolve-activity( --brief)?|dumpsys (package|meminfo|gfxinfo|activity services)|appops (get|set)|monkey -p|am start -n|am startservice -n|logcat --pid=|pidof) /;
         const acSug = { tx: '', term: '' };
-        function acInput(which) { return document.getElementById(which === 'tx' ? 'txInput' : 'termCmd'); }
-        function acHistory(which) { return which === 'tx' ? (typeof txHist !== 'undefined' ? txHist : []) : (typeof termHistory !== 'undefined' ? termHistory : []); }
-        function acPackages() { try { return (typeof allApps !== 'undefined' ? allApps : []).map(a => a.pkg).filter(Boolean); } catch (e) { return []; } }
+        const AC_IDS = { tx: ['txInput', 'txAc'], term: ['termCmd', 'termAc'], cd: ['cdInput', 'cdAc'] };       // the three boxes: ADB Console, Terminal, and the console of Connected Devices
+        function acInput(which) { return document.getElementById(AC_IDS[which][0]); }
+        function acBox(which) { return document.getElementById(AC_IDS[which][1]); }
+        // newest first (the device console keeps its lines oldest first)
+        function acHistory(which) {
+            if (which === 'cd') return (typeof cd !== 'undefined' && Array.isArray(cd.hist)) ? cd.hist.slice().reverse() : [];
+            return which === 'tx' ? (typeof txHist !== 'undefined' ? txHist : []) : (typeof termHistory !== 'undefined' ? termHistory : []);
+        }
+        // the package names the commands may be about: this phone's apps, or (device console) the other device's, once its Apps tab has read them
+        function acPackages(which) {
+            try {
+                if (which === 'cd') return (typeof cd !== 'undefined' && Array.isArray(cd.apps) ? cd.apps : []).map(a => a.pkg).filter(Boolean);
+                return (typeof allApps !== 'undefined' ? allApps : []).map(a => a.pkg).filter(Boolean);
+            } catch (e) { return []; }
+        }
+        // what adb itself understands (the device console in adb mode, or after "adb ")
+        const AC_ADB_PHRASES = [
+            'devices -l', 'devices', 'shell ', 'pull /sdcard/', 'pull /sdcard/Download/', 'pull /sdcard/DCIM/', 'push ', 'install ', 'install -r ', 'install -r -d ', 'install -g ', 'install-multiple ', 'uninstall ', 'uninstall -k ',
+            'logcat -d', 'logcat -c', 'logcat -v time', 'logcat *:E', 'bugreport', 'reboot', 'reboot recovery', 'reboot bootloader', 'forward tcp:', 'forward --list', 'forward --remove-all', 'reverse tcp:', 'reverse --list',
+            'get-state', 'get-serialno', 'tcpip 5555', 'usb', 'connect ', 'disconnect', 'pair ', 'mdns services', 'exec-out screencap -p', 'exec-out ', 'sync', 'version', 'help',
+        ];
         // the whole text with its suggested ending, or '' when there is none
         function acSuggest(text, which) {
             if (!text || /\n/.test(text) || text.length > 300) return '';
@@ -22694,28 +22751,50 @@ Type any command below (e.g. pm list packages -d)
             if (which === 'term' && typeof termMode !== 'undefined' && termMode === 'chat') return '';
             const hist = acHistory(which);
             for (let i = 0; i < hist.length; i++) { const h = hist[i]; if (typeof h === 'string' && h.length > text.length && h.indexOf(text) === 0 && h.indexOf('\n') < 0) return bang + h; }
+            // the device console: lines for adb itself (adb mode, or after "adb "), and the device's own shell after "shell"
+            let pre = '';
+            if (which === 'cd') {
+                const am = /^adb\s+/.exec(text);
+                if (am) { pre = am[0]; text = text.slice(am[0].length); }
+                const adbMode = !!am || (typeof cd !== 'undefined' && cd.mode === 'adb');
+                if (adbMode) {
+                    const sm = /^((?:-s \S+ )?(?:shell|exec-out) )/.exec(text);
+                    if (sm) { text = text.slice(sm[0].length); pre += sm[0]; }
+                    else {
+                        if (!text) return '';
+                        for (let i = 0; i < AC_ADB_PHRASES.length; i++) { const p = AC_ADB_PHRASES[i]; if (p.length > text.length && p.indexOf(text) === 0) return pre + p; }
+                        const word = /^(\S+) (\S*)$/.exec(text);
+                        if (word && /^(uninstall( -k)?|shell)$/.test(word[1]) && word[2].length >= 2) {
+                            const pk = acPackages(which).filter(x => x.indexOf(word[2]) === 0 && x.length > word[2].length).sort((a, b) => a.length - b.length || a.localeCompare(b))[0];
+                            if (pk) return pre + word[1] + ' ' + pk;
+                        }
+                        return '';
+                    }
+                    if (!text) return '';
+                }
+            }
             // an app's package name, or a Hidden Settings key, after the commands that take one
             const sp = text.lastIndexOf(' ');
             if (sp > 0) {
                 const head = text.slice(0, sp + 1), word = text.slice(sp + 1);
                 if (word.length >= 2 && AC_PKG_AFTER.test(head)) {
-                    const pk = acPackages().filter(x => x.indexOf(word) === 0 && x.length > word.length).sort((a, b) => a.length - b.length || a.localeCompare(b))[0];
-                    if (pk) return bang + head + pk;
+                    const pk = acPackages(which).filter(x => x.indexOf(word) === 0 && x.length > word.length).sort((a, b) => a.length - b.length || a.localeCompare(b))[0];
+                    if (pk) return bang + pre + head + pk;
                 }
                 const sm = /^settings (get|put|delete) (system|secure|global) $/.exec(head);
-                if (sm && word.length >= 2 && typeof sdbData === 'object' && sdbData && sdbData[sm[2]] && sdbData[sm[2]].keys) {
+                if (which !== 'cd' && sm && word.length >= 2 && typeof sdbData === 'object' && sdbData && sdbData[sm[2]] && sdbData[sm[2]].keys) {
                     let found = '';
                     for (const k of sdbData[sm[2]].keys()) { if (k.indexOf(word) === 0 && k.length > word.length && (!found || k.length < found.length)) found = k; }
-                    if (found) return bang + head + found;
+                    if (found) return bang + pre + head + found;
                 }
             }
             if (text.length >= 2 || /^[a-z]$/.test(text)) {
-                for (let i = 0; i < AC_PHRASES.length; i++) { const p = AC_PHRASES[i]; if (p.length > text.length && p.indexOf(text) === 0) return bang + p; }
+                for (let i = 0; i < AC_PHRASES.length; i++) { const p = AC_PHRASES[i]; if (p.length > text.length && p.indexOf(text) === 0) return bang + pre + p; }
             }
             return '';
         }
         function acUpdate(which) {
-            const inp = acInput(which), box = document.getElementById(which === 'tx' ? 'txAc' : 'termAc');
+            const inp = acInput(which), box = acBox(which);
             if (!inp || !box) return;
             const atEnd = inp.selectionStart === inp.value.length && inp.selectionEnd === inp.value.length;
             const sug = atEnd ? acSuggest(inp.value, which) : '';
@@ -22725,14 +22804,14 @@ Type any command below (e.g. pm list packages -d)
             box.hidden = false;
             box.innerHTML = '<span class="ac-text" translate="no"><span>' + escapeHtml(typed) + '</span><span class="ac-rest">' + escapeHtml(sug.slice(typed.length)) + '</span></span><span class="ac-key">&rarr;</span>';
         }
-        function acHide(which) { setTimeout(() => { const inp = acInput(which); if (inp && document.activeElement === inp) return; const box = document.getElementById(which === 'tx' ? 'txAc' : 'termAc'); if (box && !box.matches(':active')) { box.hidden = true; } }, 250); }
+        function acHide(which) { setTimeout(() => { const inp = acInput(which); if (inp && document.activeElement === inp) return; const box = acBox(which); if (box && !box.matches(':active')) { box.hidden = true; } }, 250); }
         // puts the suggestion in the box; true when there was one
         function acAccept(which) {
             const inp = acInput(which), sug = acSug[which];
             if (!inp || !sug || sug.length <= inp.value.length || sug.indexOf(inp.value) !== 0) return false;
             inp.value = sug;
             inp.setSelectionRange(sug.length, sug.length);
-            if (which === 'tx') { txAutosize(); } else { termHistPos = -1; acUpdate('term'); }
+            if (which === 'tx') { txAutosize(); } else if (which === 'cd') { acUpdate('cd'); } else { termHistPos = -1; acUpdate('term'); }
             return true;
         }
         function acTap(which) { if (acAccept(which)) { const inp = acInput(which); if (inp) inp.focus(); } }

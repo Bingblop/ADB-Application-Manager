@@ -474,6 +474,7 @@
       <tr><td>The input box</td><td>Type a command. The <b>Enter</b> key of a keyboard runs it; <b>Shift</b> and <b>Enter</b> start a new line.</td></tr>
       <tr><td><b>Run</b> / <b>Stop</b></td><td>While a command runs, the button turns red and says <b>Stop</b>. Tap it to end the command.</td></tr>
       <tr><td><b>Previous</b> / <b>Next</b></td><td>Step back and forward through the lines you ran before (the last 100, kept even after you close the app). The up and down arrow keys of a keyboard do the same.</td></tr>
+      <tr><td>The suggestion line</td><td>Just above the input box a grey line completes what you are typing: first from your earlier lines, then, in the shell, from common commands and (after <code>pm path</code>, <code>am force-stop</code> and the like) from the package names that this device's <b>Apps</b> sub-tab has read; in adb mode, or after <code>adb </code>, from adb's own commands (<code>pull</code>, <code>push</code>, <code>install</code>, <code>uninstall</code>, <code>logcat</code>, <code>forward</code> ...) and, after <code>shell</code>, the device's shell. <b>Right arrow</b> (cursor at the end) accepts it; so does a tap on the line. It never runs anything.</td></tr>
       <tr><td>The chips</td><td>A row of ready-made commands. Tapping one types it into the input box and puts the cursor there. It does <b>not</b> run it: you check it, then tap <b>Run</b>.</td></tr>
     </tbody>
   </table>

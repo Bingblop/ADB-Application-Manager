@@ -1,5 +1,17 @@
 # Changelog
 
+## v7.10.13-Pro (versionCode 833)
+
+- **One app at a time is read back too.** From the app menu (and the action button on a row), Uninstall, Reinstall, Freeze, Enable, Suspend and Unsuspend now run natively off the page's thread
+  (`appActionChecked`), then ask the phone what became of the app and say so in the message ("Alpha: Uninstalled", "Bravo: Still installed"), showing the result window with the finding
+  only when it did not work. Unreadable states fall back to the command's answer. Test: `t137`.
+- **Suspend and Unsuspend are read back** (single and batch): the app's own flag is read from `dumpsys package <pkg>` (the User 0 line); an app whose flag cannot be read keeps the command's answer.
+  Tag words: **Suspended / Not suspended / Still suspended**. `BatchVerify.State`, `BatchVerifyTest`. **Clear data, Force stop, Batch Ops and Command are not read back**: the phone gives a shell
+  user nothing to read their result from, so they are still judged by the command (said in the Help Guide).
+- **"Checking the phone…" on the batch progress sheet.** After the last command the sheet says **Checking the phone… (N apps)** with a full bar (Stop is off meanwhile) until the results open.
+- **Command suggestions in the Connected Devices console.** The same grey line as in the Terminal and the ADB Console, for the other device: your earlier lines, common commands, the package names
+  of the device (once its Apps sub-tab has read them), and adb's own commands in adb mode or after `adb ` (`adb shell ...` completes the device's shell). Right arrow or a tap accepts it.
+
 ## v7.10.12-Pro (versionCode 832)
 
 - **Batch results come from the phone, not from the command.** A run of uninstalls often ended with "batch commands failed" although every app was gone. After Uninstall, Uninstall (keep data),
