@@ -5019,6 +5019,8 @@ public class MainActivity extends Activity {
 
     private static final int REQ_PICK_FONT = 4204;
     private static final int REQ_PICK_TEXT = 4290;       // a small text file for the page (presets and saved commands)
+    private static final int REQ_PICK_BACKUP_DIR = 4291; // a folder the page keeps its backups in (saved lists)
+    private volatile String pickBackupDirTag = "";
     // ---- Connected Devices: another device (a watch, a phone, a TV) driven through the app's own adb server ----
     private static final int REQ_PICK_CD = 4291;         // package files to send to a connected device
     private static final int REQ_BT_CONNECT = 9203;
@@ -6077,6 +6079,27 @@ public class MainActivity extends Activity {
             }
             String label = storageRootLabel(picked);
             notifyJs("window.onStorageRootPicked && window.onStorageRootPicked(" + JSONObject.quote(picked.toString()) + "," + JSONObject.quote(label) + ")");
+            return;
+        }
+        if (requestCode == REQ_PICK_BACKUP_DIR) {
+            final String tag = pickBackupDirTag;
+            final Uri picked = (resultCode == RESULT_OK && data != null) ? data.getData() : null;
+            JSONObject res = new JSONObject();
+            try {
+                res.put("tag", tag);
+                if (picked == null) {
+                    res.put("cancelled", true);
+                } else {
+                    try {
+                        getContentResolver().takePersistableUriPermission(picked, Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+                    } catch (Exception ignored) {
+                        // a provider that cannot keep the grant (a few cloud ones) still works until the app is closed
+                    }
+                    res.put("uri", picked.toString());
+                    res.put("label", storageRootLabel(picked));
+                }
+            } catch (Exception ignored) {}
+            notifyJs("window.onBackupFolderPicked && window.onBackupFolderPicked(" + res.toString() + ")");
             return;
         }
         if (requestCode == REQ_PICK_BACKUP) {
@@ -9907,6 +9930,155 @@ public class MainActivity extends Activity {
                     startActivityForResult(i, REQ_PICK_TEXT);
                 }
             });
+        }
+
+        /** Lets the user choose a folder to keep backups in (Android's own folder picker: the phone, an SD card, a cloud provider, whatever it offers).
+         *  The grant is kept, so it works after the app restarts. Answer: window.onBackupFolderPicked({tag, uri, label} or {tag, cancelled}). */
+        @JavascriptInterface
+        public void pickBackupFolder(final String tag) {
+            pickBackupDirTag = tag == null ? "" : tag;
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+                    i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+                    try {
+                        startActivityForResult(i, REQ_PICK_BACKUP_DIR);
+                    } catch (Exception e) {
+                        notifyJs("window.onBackupFolderPicked && window.onBackupFolderPicked({\"tag\":" + JSONObject.quote(pickBackupDirTag) + ",\"cancelled\":true})");
+                    }
+                }
+            });
+        }
+
+        private String backupFileName(String name) {
+            String n = (name == null ? "backup.json" : name).replaceAll("[^A-Za-z0-9._ -]", "_");
+            if (n.length() > 100) n = n.substring(n.length() - 100);
+            return n.isEmpty() || n.startsWith(".") ? "backup.json" : n;
+        }
+
+        /** The child of the folder's root with this display name, or null. */
+        private Uri backupChild(Uri tree, String name) {
+            Uri kids = android.provider.DocumentsContract.buildChildDocumentsUriUsingTree(tree, android.provider.DocumentsContract.getTreeDocumentId(tree));
+            android.database.Cursor c = getContentResolver().query(kids, new String[]{android.provider.DocumentsContract.Document.COLUMN_DOCUMENT_ID, android.provider.DocumentsContract.Document.COLUMN_DISPLAY_NAME}, null, null, null);
+            if (c == null) return null;
+            try {
+                while (c.moveToNext()) {
+                    if (name.equals(c.getString(1))) return android.provider.DocumentsContract.buildDocumentUriUsingTree(tree, c.getString(0));
+                }
+            } finally {
+                c.close();
+            }
+            return null;
+        }
+
+        /** Writes a small text file into a folder chosen with pickBackupFolder. replace: a file of that name is overwritten (else a new one is made; the
+         *  provider may rename it when the name is taken). Answer: {ok, name, bytes} or {ok:false, error}. */
+        @JavascriptInterface
+        public String treeWriteText(String treeUri, String fileName, String text, boolean replace) {
+            JSONObject res = new JSONObject();
+            try {
+                if (treeUri == null || !treeUri.startsWith("content://")) throw new IllegalArgumentException("no folder was chosen");
+                Uri tree = Uri.parse(treeUri);
+                String name = backupFileName(fileName);
+                byte[] bytes = (text == null ? "" : text).getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                Uri target = replace ? backupChild(tree, name) : null;
+                if (target == null) {
+                    Uri parent = android.provider.DocumentsContract.buildDocumentUriUsingTree(tree, android.provider.DocumentsContract.getTreeDocumentId(tree));
+                    target = android.provider.DocumentsContract.createDocument(getContentResolver(), parent, "application/json", name);
+                }
+                if (target == null) throw new IllegalStateException("the folder would not make the file");
+                OutputStream out = getContentResolver().openOutputStream(target, "wt");
+                if (out == null) throw new IllegalStateException("the folder would not open the file");
+                try { out.write(bytes); } finally { out.close(); }
+                res.put("ok", true);
+                res.put("name", name);
+                res.put("bytes", bytes.length);
+            } catch (SecurityException e) {
+                try { res.put("ok", false); res.put("error", "Android no longer lets this app use that folder: choose it again"); } catch (Exception ignored) {}
+            } catch (Throwable t) {
+                try { res.put("ok", false); res.put("error", errMsg(t)); } catch (Exception ignored) {}
+            }
+            return res.toString();
+        }
+
+        /** The .json files of a folder chosen with pickBackupFolder whose names start with prefix, newest first (up to 60).
+         *  Answer: {ok, files:[{name, uri, size, modified}]} or {ok:false, error}. */
+        @JavascriptInterface
+        public String treeListFiles(String treeUri, String prefix) {
+            JSONObject res = new JSONObject();
+            try {
+                if (treeUri == null || !treeUri.startsWith("content://")) throw new IllegalArgumentException("no folder was chosen");
+                Uri tree = Uri.parse(treeUri);
+                Uri kids = android.provider.DocumentsContract.buildChildDocumentsUriUsingTree(tree, android.provider.DocumentsContract.getTreeDocumentId(tree));
+                android.database.Cursor c = getContentResolver().query(kids, new String[]{
+                        android.provider.DocumentsContract.Document.COLUMN_DOCUMENT_ID, android.provider.DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                        android.provider.DocumentsContract.Document.COLUMN_SIZE, android.provider.DocumentsContract.Document.COLUMN_LAST_MODIFIED,
+                        android.provider.DocumentsContract.Document.COLUMN_MIME_TYPE}, null, null, null);
+                java.util.List<JSONObject> found = new java.util.ArrayList<JSONObject>();
+                if (c != null) {
+                    try {
+                        while (c.moveToNext()) {
+                            String nm = c.getString(1);
+                            if (nm == null || !nm.endsWith(".json") || (prefix != null && !nm.startsWith(prefix))) continue;
+                            if (android.provider.DocumentsContract.Document.MIME_TYPE_DIR.equals(c.getString(4))) continue;
+                            JSONObject f = new JSONObject();
+                            f.put("name", nm);
+                            f.put("uri", android.provider.DocumentsContract.buildDocumentUriUsingTree(tree, c.getString(0)).toString());
+                            f.put("size", c.isNull(2) ? -1 : c.getLong(2));
+                            f.put("modified", c.isNull(3) ? 0 : c.getLong(3));
+                            found.add(f);
+                        }
+                    } finally {
+                        c.close();
+                    }
+                }
+                java.util.Collections.sort(found, new java.util.Comparator<JSONObject>() {
+                    @Override public int compare(JSONObject a, JSONObject b) {
+                        int d = Long.compare(b.optLong("modified"), a.optLong("modified"));
+                        return d != 0 ? d : b.optString("name").compareTo(a.optString("name"));
+                    }
+                });
+                JSONArray arr = new JSONArray();
+                for (int i = 0; i < found.size() && i < 60; i++) arr.put(found.get(i));
+                res.put("ok", true);
+                res.put("files", arr);
+            } catch (SecurityException e) {
+                try { res.put("ok", false); res.put("error", "Android no longer lets this app use that folder: choose it again"); } catch (Exception ignored) {}
+            } catch (Throwable t) {
+                try { res.put("ok", false); res.put("error", errMsg(t)); } catch (Exception ignored) {}
+            }
+            return res.toString();
+        }
+
+        /** The text of a small file (up to 1 MB) that listFiles gave. Answer: {ok, name, text} or {ok:false, error}. */
+        @JavascriptInterface
+        public String readTextUri(String uri) {
+            JSONObject res = new JSONObject();
+            try {
+                if (uri == null || !uri.startsWith("content://")) throw new IllegalArgumentException("that is not a file of a chosen folder");
+                Uri u = Uri.parse(uri);
+                InputStream in = getContentResolver().openInputStream(u);
+                if (in == null) throw new IllegalStateException("could not open the file");
+                java.io.ByteArrayOutputStream buf = new java.io.ByteArrayOutputStream();
+                try {
+                    byte[] b = new byte[16384];
+                    int n;
+                    while ((n = in.read(b)) > 0) {
+                        buf.write(b, 0, n);
+                        if (buf.size() > 1024 * 1024) throw new IllegalStateException("the file is over 1 MB, too big for this");
+                    }
+                } finally {
+                    in.close();
+                }
+                res.put("ok", true);
+                res.put("text", buf.toString("UTF-8"));
+            } catch (SecurityException e) {
+                try { res.put("ok", false); res.put("error", "Android no longer lets this app use that folder: choose it again"); } catch (Exception ignored) {}
+            } catch (Throwable t) {
+                try { res.put("ok", false); res.put("error", errMsg(t)); } catch (Exception ignored) {}
+            }
+            return res.toString();
         }
 
         /** Lets the user choose a font file with Android's file chooser. Answer: window.onFontPicked(ref). */

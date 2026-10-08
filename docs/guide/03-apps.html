@@ -615,7 +615,7 @@
   <ul>
     <li>A list holds package names only (see the <a href="#glossary">glossary</a>). It does not remember whether an app was frozen or not; use a <a href="#apps-profiles">profile</a> for that.</li>
     <li>Making, editing, copying and deleting lists works in every mode. Acting on the apps in a list needs a <a href="#modes-overview">working mode</a>.</li>
-    <li>Lists are kept inside this app on this phone. Uninstalling the app, or clearing its storage, deletes them. Copy a list somewhere safe if it matters.</li>
+    <li>Lists are kept inside this app on this phone. Uninstalling the app, or clearing its storage, deletes them. Use <b>Back up and restore</b> (the card under the New List button) to keep a copy in a folder of your choice, and to bring the lists back.</li>
     <li>The app has no built-in lists. The tab starts empty, with "No Saved Lists Yet".</li>
   </ul>
 
@@ -627,7 +627,7 @@
   <ol class="hg-steps">
     <li><b>From apps you selected.</b> In the Application Manager, select the apps, tap the round button, then <b>Save to List</b>. A box "Save Selected Apps" shows how many apps are selected. Type a <b>List name</b>, an optional description, and tap <b>Save Selected Apps</b>. A message says "Saved selected apps to (name)". The same idea works in the <a href="#tab-debloater">UAD-NG Debloater</a>, with its own <b>Save to List</b> button.</li>
     <li><b>By typing.</b> In this tab tap <b>New List</b>. The box "Create Saved List" opens. Fill in the name and an optional description, then type the package names in the big box, one per line. Tap <b>Save List</b>. Double entries are removed by themselves. Names separated by commas also work.</li>
-    <li><b>By pasting.</b> Copy a list of package names from anywhere, open <b>New List</b> and paste it into the big box. This is how you bring in a list from another phone, a chat message or a note. The app has no file import: only pasted text works.</li>
+    <li><b>By pasting.</b> Copy a list of package names from anywhere, open <b>New List</b> and paste it into the big box. This is how you bring in a list from another phone, a chat message or a note. A whole set of lists comes back from a backup file instead: see <a href="#tab-saved-lists">Back up and restore</a> further down this page.</li>
   </ol>
   <p>A name is required: without one the message says "Please enter a list name". The new list appears at the top.</p>
 
@@ -643,11 +643,34 @@
       <tr><td><b>Recall</b></td><td>Selects the list's apps in the Application Manager (replacing any earlier selection) and takes you there. A message says "Recalled (number) apps from (name)". Open the round button to run any batch action on them. See <a href="#apps-batch">batch actions</a>. This is how you apply an action to a whole list.</td></tr>
       <tr><td><b>Quick list</b></td><td>Makes this the list that the Stop apps tile and widget force-stop. The button then shows "Quick list" with a tick. Tap it again to clear it.</td></tr>
       <tr><td><b>Edit</b></td><td>Opens "Edit Saved List" with the name, description and package names. Change them, then tap <b>Save List</b>.</td></tr>
-      <tr><td><b>Copy</b></td><td>Copies the package names, one per line, to the clipboard. A message says "Copied (name)". This is how you export a list: there is no list file export, only this text, which you can paste into a note or a message.</td></tr>
+      <tr><td><b>Copy</b></td><td>Copies the package names, one per line, to the clipboard. A message says "Copied (name)". This is how you pass on one list as plain text, to paste into a note or a message. To keep all your lists in a file, use <b>Back up and restore</b>.</td></tr>
       <tr><td><b>Delete</b></td><td>Opens "Delete Saved List" with "Are you sure you want to delete this saved list?" and the name. Tap <b>Delete List</b> to go on, or <b>Cancel</b>. A deleted list cannot be recovered.</td></tr>
     </tbody>
   </table>
   <p>You can also run a command on a list without selecting it first: in the batch sheet's <b>Command</b> box, the menu <b>Run it on</b> offers each saved list.</p>
+
+  <h4>Back up and restore</h4>
+  <p>The card <b>Back up and restore</b> sits under the <b>New List</b> button. It keeps your lists in a small file (JSON) in a place you choose, and brings them back from such a file. Lists are only kept inside the app otherwise, so a backup is what saves them when you uninstall the app, clear its storage or change phone.</p>
+  <table class="hg-table">
+    <thead><tr><th>Control</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td>The line at the top of the card</td><td>Says where backups go: <i>Download/ADB App Manager (the default)</i>, or the folder you chose. Under it: when the last backup was made, how many lists it held and its file name, or that the last attempt failed and why.</td></tr>
+      <tr><td><b>Choose folder…</b></td><td>Opens Android's own folder picker. Choose any folder it offers: on the phone, an SD card, a USB drive, or a cloud provider that shows up there. The app keeps the permission, so it works again after a restart, and the folder is shown on the card. Backing out changes nothing.</td></tr>
+      <tr><td><b>Use Downloads</b></td><td>Shown only while a folder is chosen. Goes back to <i>Download/ADB App Manager</i> (and switches automatic backups off).</td></tr>
+      <tr><td><b>Back up now</b></td><td>Writes a new file named <code>saved-lists-YYYYMMDD-HHMM.json</code> (the date and time of the backup) to that place, so earlier backups stay. A message says how many lists and where. With no saved lists it says so and writes nothing.</td></tr>
+      <tr><td><b>Share…</b></td><td>Hands the same file to Android's share sheet: send it by e-mail or chat, or save it in an app of your choice.</td></tr>
+      <tr><td><b>Back up automatically</b> (switch, needs a chosen folder)</td><td>A few seconds after a list is saved, edited, copied in or deleted, the folder's <code>saved-lists-latest.json</code> is replaced with the current lists (one file, always the newest state; several changes in a row make one write). Switching it on makes the first one at once. A set of lists that is empty never replaces it, so deleting everything cannot wipe your last backup. The card marks such a backup <i>(automatic)</i>.</td></tr>
+      <tr><td><b>Restore from a file…</b></td><td>Opens Android's file chooser. Choose a backup file from anywhere.</td></tr>
+      <tr><td><b>Restore from the folder…</b></td><td>Needs a chosen folder. Lists the <code>saved-lists…</code> files in it, newest first, with their size and date; tap one.</td></tr>
+    </tbody>
+  </table>
+  <p><b>What restoring does.</b> The file is checked first. If you have no lists yet, its lists are simply put back. If you have some, a sheet asks:</p>
+  <ul>
+    <li><b>Add them to my lists</b>: yours stay. A list that is the same as one you have (same name, description and apps) is skipped; one with the same name but other apps comes in as <i>Name (imported)</i>; a list with an id yours already uses gets a new one. A message counts what came in, what was already there and what was renamed.</li>
+    <li><b>Replace my lists with them</b>: yours are removed first (the sheet says how many), then the backup's lists are put in. The <b>Quick list</b> follows the backup when its list is there, and is cleared when the list it pointed to is gone.</li>
+  </ul>
+  <p><b>What is refused.</b> A file that is not JSON (<i>That is not a backup file (it is not JSON).</i>), JSON that is not a saved-lists backup of this app (<i>That is not a saved-lists backup from this app.</i>; the presets file of the batch sheet is another kind of file), a backup from a newer version (<i>That backup was made by a newer version of the app (format 2).</i>), a file with no usable list (<i>There are no usable lists in that file.</i>) and a file over 1 MB. Nothing changes then. Inside a good file, entries that are not lists are skipped and counted, names are cut to 80 characters and descriptions to 500, only real package names are kept (letters, digits, dots and underscores, once each), and at most 200 lists of 5,000 apps are taken.</p>
+  <div class="hg-note"><b>Tip.</b> Choose a folder that your cloud app syncs (or an SD card), switch <b>Back up automatically</b> on, and your lists survive losing the phone. If Android says it no longer lets the app use the folder (<i>choose it again</i>), press <b>Choose folder…</b> once more.</div>
 
   <h4>The filters of this tab</h4>
   <p>Under the heading "Show only the apps in each list that match (combine as many as you like)" is a row of pills: <b>All</b>, <b>Updated 7d</b>, <b>Running</b>, <b>3rd Party</b>, <b>System</b>, <b>Enabled</b>, <b>Frozen</b>, <b>Suspended</b>, <b>Patched</b> and <b>Uninstalled</b>. They are the same filters as in the <a href="#tab-apps">Application Manager</a>, including the rule that 3rd Party / System and Enabled / Frozen are pairs that keep only one side.</p>
@@ -670,7 +693,8 @@
 
   <h4>If something is wrong</h4>
   <ul>
-    <li><b>My list disappeared.</b> Lists live in this app's storage. Clearing the app's data or uninstalling it removes them.</li>
+    <li><b>My list disappeared.</b> Lists live in this app's storage. Clearing the app's data or uninstalling it removes them. If you made a backup, use <b>Restore from a file…</b> or <b>Restore from the folder…</b>.</li>
+    <li><b>The backup says it failed.</b> The card says why in the line under <i>Backups go to</i>. <i>Choose it again</i> means Android took the folder's permission away: press <b>Choose folder…</b>. <i>No space left</i> (the default place) means the phone is full.</li>
     <li><b>Recall selected fewer apps than I expected.</b> A filter is on. Tap <b>All</b> and recall again.</li>
     <li><b>A package name is wrong.</b> Tap <b>Edit</b> and fix it. The batch results show a failure for names that are not real apps.</li>
     <li>The Quick Settings tile does nothing: see <a href="#quick-tiles">the tile page</a>.</li>
