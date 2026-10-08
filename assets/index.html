@@ -8197,7 +8197,27 @@ Type any command below (e.g. pm list packages -d)
             <div class="uad-credit" style="margin-top:12px;">Levels and descriptions come from the UAD-NG project (GPL-3.0). The list is downloaded from their GitHub and cached on this phone.</div>
             <div class="mode-btn-row" style="margin-top:12px;">
                 <button class="mode-action-btn" onclick="openUadWiki()">UAD-NG Wiki</button>
+                <button class="mode-action-btn" id="uadInfoLevelsBtn" onclick="openUadLevels()">Removal Levels</button>
                 <button class="mode-action-btn" onclick="closeUadInfo()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- What the removal levels mean: the same four lines as under Removal Levels in the Debloater tab -->
+    <div class="modal-overlay" id="uadLevelsModal" onclick="if(event.target===this) closeUadLevels()">
+        <div class="modal-sheet" style="max-width:480px;" role="dialog" aria-labelledby="uadLevelsTitle">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-title">
+                        <h3 id="uadLevelsTitle">Removal Levels</h3>
+                        <p>What Recommended, Advanced, Expert and Unsafe mean</p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="closeUadLevels()" role="button" aria-label="Close">✕</div>
+            </div>
+            <div class="uad-levels" id="uadLevelsBody" style="display:flex;"></div>
+            <div class="mode-btn-row" style="margin-top:12px;">
+                <button class="mode-action-btn" onclick="closeUadLevels()">Close</button>
             </div>
         </div>
     </div>
@@ -10222,12 +10242,6 @@ Type any command below (e.g. pm list packages -d)
             }).sort((a, b) => (UAD_LEVEL_ORDER[a.removal] - UAD_LEVEL_ORDER[b.removal]) || a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
         }
 
-        const UAD_LEVEL_TEXT = {
-            Recommended: 'Safe to remove for most people, including apps you can reinstall from an app store. Still worth a quick review, since everyone uses their phone differently.',
-            Advanced: 'Breaks minor or obscure features, overlays, or default apps (keyboard, gallery, launcher) that a better alternative can replace.',
-            Expert: "Breaks widespread or important features, but not basic operation. Shouldn't boot-loop the phone unless the description says so, with no guarantee.",
-            Unsafe: 'Can break vital parts of Android, or may be illegal to remove where you live (e.g. emergency alerts). High risk of a boot-loop.'
-        };
         // The UAD-NG classification on an app's row (when the project lists the package): tap it for the same description box as the app menu's chip
         let uadLevelByPkg = new Map();
         function listUadChip(app) {
@@ -10281,8 +10295,7 @@ Type any command below (e.g. pm list packages -d)
             const lvl = String(r.removal || 'Expert');
             const list = a => (a || []).map(x => '<code translate="no">' + escapeHtml(x) + '</code>').join(', ');
             document.getElementById('uadInfoBody').innerHTML =
-                '<div>' + uadRemovalBadge(lvl) + '<span class="uad-badge uad-tag">' + escapeHtml(r.list || 'Misc') + '</span></div>'
-                + '<div class="uad-level" style="margin:8px 0;"><b>' + escapeHtml(lvl) + ':</b> ' + escapeHtml(UAD_LEVEL_TEXT[lvl] || '') + '</div>'
+                '<div style="margin-bottom:8px;">' + uadRemovalBadge(lvl) + '<span class="uad-badge uad-tag">' + escapeHtml(r.list || 'Misc') + '</span></div>'
                 + (r.description && r.description.trim() ? '<div style="white-space:pre-wrap; margin:8px 0;">' + escapeHtml(r.description.trim()) + '</div>' : '<div class="list-empty" style="padding:8px 0;">The project gives no description for this package.</div>')
                 + ((r.neededBy || []).length ? '<div class="uad-warn">Needed by: ' + list(r.neededBy) + '</div>' : '')
                 + ((r.dependencies || []).length ? '<div class="uad-warn">Depends on: ' + list(r.dependencies) + '</div>' : '');
@@ -10290,7 +10303,18 @@ Type any command below (e.g. pm list packages -d)
         }
         function closeUadInfo() {
             haptic();
+            document.getElementById('uadLevelsModal').classList.remove('show');
             document.getElementById('uadInfoModal').classList.remove('show');
+        }
+        // "Removal Levels" at the bottom of the classification sheet: the very same lines as under Removal Levels in the Debloater tab (they are copied from there, so there is one text)
+        function openUadLevels() {
+            haptic();
+            document.getElementById('uadLevelsBody').innerHTML = document.getElementById('uadLevels').innerHTML;
+            document.getElementById('uadLevelsModal').classList.add('show');
+        }
+        function closeUadLevels() {
+            haptic();
+            document.getElementById('uadLevelsModal').classList.remove('show');
         }
         function uadRemovalBadge(r) {
             return `<span class="uad-badge uad-r-${String(r).toLowerCase()}">${escapeHtml(r)}</span>`;

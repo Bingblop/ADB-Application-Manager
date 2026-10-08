@@ -72,17 +72,26 @@ const { chromium, PAGE } = require('./lib/pw');
   const selBefore = await ev(() => selectedPkgs.size);
   await page.click('#card_com\\.sec\\.hearingadjust .uad-chip-row'); await wait(250);
   const pr = await ev(() => ({ open: document.getElementById('uadInfoModal').classList.contains('show'), app: document.getElementById('uadInfoApp').innerText, body: document.getElementById('uadInfoBody').innerText.replace(/\n+/g, ' | ') }));
-  check('tapping it opens the same prompt as the app menu (level, meaning, description, needs)', pr.open && /Adapt sound/.test(pr.app) && /Advanced:/.test(pr.body) && /Tunes the sound/.test(pr.body) && /Needed by: com\.sec\.audio/.test(pr.body) && /Depends on: com\.sec\.core/.test(pr.body), JSON.stringify(pr));
+  check('tapping it opens the same prompt as the app menu (level, description, needs; not the meaning of the level)', pr.open && /Adapt sound/.test(pr.app) && /advanced/i.test(pr.body) && !/Breaks minor or obscure/.test(pr.body) && /Tunes the sound/.test(pr.body) && /Needed by: com\.sec\.audio/.test(pr.body) && /Depends on: com\.sec\.core/.test(pr.body), JSON.stringify(pr));
   check('the row is not selected by that tap, and the app menu did not open', (await ev(() => selectedPkgs.size)) === selBefore && !(await ev(() => document.getElementById('inspectorModal').classList.contains('show'))));
   await page.screenshot({ path: 'apps_uad_prompt.png' });
-  await ev(() => closeUadInfo());
+  // the meaning of the levels is one more button away: "Removal Levels" at the bottom, the same four lines as under Removal Levels in the Debloater tab
+  check('the sheet has a Removal Levels button at the bottom, after UAD-NG Wiki and before Close', await ev(() => Array.from(document.querySelectorAll('#uadInfoModal .mode-btn-row button')).map(b => b.innerText).join('|')) === 'UAD-NG Wiki|Removal Levels|Close');
+  await page.click('#uadInfoLevelsBtn'); await wait(200);
+  const lv = await ev(() => ({ open: document.getElementById('uadLevelsModal').classList.contains('show'), mine: document.getElementById('uadLevelsBody').innerText.replace(/\s+/g, ' ').trim(), tab: document.getElementById('uadLevels').innerText.replace(/\s+/g, ' ').trim(), n: document.querySelectorAll('#uadLevelsBody .uad-level').length, above: getComputedStyle(document.getElementById('uadLevelsModal')).zIndex >= getComputedStyle(document.getElementById('uadInfoModal')).zIndex }));
+  check('Removal Levels opens another sheet with the same data as the Debloater tab (four levels and the credit)', lv.open && lv.n === 4 && lv.mine === lv.tab && /Safe to remove for most people/.test(lv.mine) && /High risk of a boot-loop/.test(lv.mine) && /GPL-3\.0/.test(lv.mine), JSON.stringify(lv));
+  await page.screenshot({ path: 'apps_uad_levels.png' });
+  await ev(() => closeUadLevels());
+  check('closing it leaves the classification sheet open', await ev(() => !document.getElementById('uadLevelsModal').classList.contains('show') && document.getElementById('uadInfoModal').classList.contains('show')));
+  await ev(() => { openUadLevels(); closeUadInfo(); });
+  check('closing the classification sheet closes the levels sheet too', await ev(() => !document.getElementById('uadLevelsModal').classList.contains('show') && !document.getElementById('uadInfoModal').classList.contains('show')));
   await page.click('#card_com\\.danger .uad-chip-row'); await wait(200);
-  check('an Unsafe one with no description says so', await ev(() => /Unsafe:/.test(document.getElementById('uadInfoBody').innerText) && /gives no description/.test(document.getElementById('uadInfoBody').innerText)));
+  check('an Unsafe one with no description says so', await ev(() => /unsafe/i.test(document.getElementById('uadInfoBody').innerText) && /gives no description/.test(document.getElementById('uadInfoBody').innerText)));
   await ev(() => closeUadInfo());
   // the menu's chip still works, with the same box
   await ev(() => openInspector('com.rec')); await wait(300);
   await page.click('#sheetUad'); await wait(200);
-  check('the app menu chip still opens its prompt', await ev(() => document.getElementById('uadInfoModal').classList.contains('show') && /Recommended:/.test(document.getElementById('uadInfoBody').innerText)));
+  check('the app menu chip still opens its prompt', await ev(() => document.getElementById('uadInfoModal').classList.contains('show') && /recommended/i.test(document.getElementById('uadInfoBody').innerText)));
   await ev(() => { closeUadInfo(); closeInspector(); });
   // a list that was not downloaded: no chips and nothing breaks
   await ev(() => { uadLevelByPkg = new Map(); renderApps(); });

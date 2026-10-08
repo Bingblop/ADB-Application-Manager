@@ -118,7 +118,7 @@ Every tab except Application Manager and About can be switched off or moved in *
 
 ## New in v7.9
 
-**v7.10.14 is the latest build** (Connected Devices, 32-bit and universal APKs, the Help Guide: see [CHANGELOG.md](../CHANGELOG.md)). Everything from v7.9 through v7.9.15 is below; the full, dated list is in
+**v7.10.15 is the latest build** (Connected Devices, 32-bit and universal APKs, the Help Guide: see [CHANGELOG.md](../CHANGELOG.md)). Everything from v7.9 through v7.9.15 is below; the full, dated list is in
 [CHANGELOG.md](../CHANGELOG.md) (and inside the app, under About).
 
 **Newest (v7.9.12 to v7.9.15)**
@@ -1294,3 +1294,5 @@ Changes by version: [CHANGELOG.md](../CHANGELOG.md).
 **One app, read back too** (v7.10.13): the app menu's Uninstall, Reinstall, Freeze, Enable, Suspend and Unsuspend run natively, then the phone is asked (package lists; for Suspend the app's own flag in `dumpsys package`) and the message says what was found. A batch shows **Checking the phone…** on its progress sheet first. Clear data and Force stop are not read back (nothing to read). The **Connected Devices console** now suggests commands like the Terminal does, including adb's own commands in adb mode.
 
 **Read-back everywhere** (v7.10.14): the Connected Devices app list lists the device again after Enable, Disable, Uninstall and Reinstall and reports what it finds (*Checking the device…*); Clear data is read back in Root mode by counting the files and size of the app's `/data/user/0/<package>` folder before and after; **Settings > Progress messages** switches off the "Working on it… / Checking…" toasts (the result and every problem stay).
+
+**UAD-NG tag** (v7.10.15): tapping it opens the app's classification (level, group, the project's description, needed by / depends on). What the four levels mean is behind the **Removal Levels** button at the bottom of that sheet (the same lines as in the Debloater tab).

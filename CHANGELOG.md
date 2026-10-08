@@ -1,5 +1,11 @@
 # Changelog
 
+## v7.10.15-Pro (versionCode 835)
+
+- **UAD-NG classification sheet: the meaning of the level moved behind a button.** Tapping the UAD-NG tag on an app (in the Apps list, the Debloater or the app menu) no longer starts with the line that says what
+  "Recommended", "Advanced", "Expert" or "Unsafe" means. The sheet now ends with **UAD-NG Wiki**, **Removal Levels** and **Close**; **Removal Levels** opens another sheet with exactly the lines of the Removal Levels
+  list in the Debloater tab (they are copied from there: one text), and its Close returns to the classification. Test: `t118`.
+
 ## v7.10.14-Pro (versionCode 834)
 
 - **Connected Devices: the apps are read back from the device.** After Enable, Disable, Uninstall and Reinstall (one app, or a batch) the app lists the device's apps again and reports what it found
