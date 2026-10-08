@@ -1,6 +1,6 @@
 1. the Language card is the first of Settings, with English chosen and a drop-down of 14 languages named in themselves: true ["en=English","es=Español","fr=Français","de=Deutsch","pt-BR=Português (Brasil)","it=Italiano","ru=Русский","zh-CN=简体中文","ja=日本語","ko=한국어","ar=العربية","hi=हिन्दी","tr=Türkçe","id=Bahasa Indonesia"]
    English: the page says Appearance, lang="en" dir="ltr", dates in the phone's language: true
-2. choosing Español translates the card titles, the tab labels (with their line break) and the Feature List button at once: true ["Idioma","Apariencia","Curated Theme Palettes","Lists","Motion","Fuente","Icon pack","Action Button","Lista de funciones","Press and hold guide","Trim Caches"]
+2. choosing Español translates the card titles, the tab labels (with their line break) and the Feature List button at once: true ["Idioma","Apariencia","Palette Style","Curated Theme Palettes","Lists","Motion","Reconnecting devices","Fuente","Icon pack","Action Button","Lista de funciones","Press and hold guide","Trim Caches"]
    no reload: the page is the same one: true
    lang="es", dates in Spanish (langLocale), the toast says Idioma: Español (a template with a changing part): true
    the choice is kept (kv lang): true
@@ -10,7 +10,7 @@
    a dialog of the browser (alert, confirm, prompt) is translated: true Registro borrado
 4. a list of apps named Settings and Camera keeps those names although the dictionary has both words: true ["Camera","Settings"]
 5. at the next launch the page starts in Español (tab label, lang attribute, the drop-down): true {"lang":"es","tab":"Gestor de\naplicaciones","sel":"es"}
-6. choosing English again brings every text back (card titles, tab label, Feature List button, lang attribute): true ["Language","Appearance","Curated Theme Palettes","Lists","Motion","Font","Icon pack","Action Button","Feature List","Press and hold guide","Trim Caches"]
+6. choosing English again brings every text back (card titles, tab label, Feature List button, lang attribute): true ["Language","Appearance","Palette Style","Curated Theme Palettes","Lists","Motion","Reconnecting devices","Font","Icon pack","Action Button","Feature List","Press and hold guide","Trim Caches"]
    the choice is kept as English: true
    English, Español, English: the Settings page is the same markup as the first English one: true
 7. Arabic: dir="rtl", lang="ar", the card is translated and the page does not scroll sideways: true {"dir":"rtl","lang":"ar","title":"اللغة","over":0}

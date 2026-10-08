@@ -410,7 +410,7 @@
   <ul>
     <li>No permission and no computer are needed, and no working mode either, except for <b>Trim Caches</b> (the last card), which needs one. Every control works at once; there is no Save button, and what you choose is kept on the phone.</li>
     <li>These settings are about this app only. The font, the colours and the language do not change the rest of your phone. <b>Trim Caches</b> is the exception: it clears the temporary files of the other apps.</li>
-    <li>The cards come in this order: <b>Language</b>, <b>Appearance</b>, <b>Curated Theme Palettes</b> (with the <b>Granular Color Pickers</b> inside it), <b>Lists</b>, <b>Motion</b>, <b>Font</b>, <b>Icon pack</b>, <b>Action Button</b>, <b>Feature List</b>, <b>Press and hold guide</b> and, last, <b>Trim Caches</b>. Below, each card has its own part, with every control, its default and when to change it.</li>
+    <li>The cards come in this order: <b>Language</b>, <b>Appearance</b>, <b>Palette Style</b>, <b>Curated Theme Palettes</b> (with the <b>Granular Color Pickers</b> inside it), <b>Lists</b>, <b>Motion</b>, <b>Reconnecting devices</b>, <b>Font</b>, <b>Icon pack</b>, <b>Action Button</b>, <b>Feature List</b>, <b>Press and hold guide</b> and, last, <b>Trim Caches</b>. Below, each card has its own part, with every control, its default and when to change it.</li>
   </ul>
   <div class="hg-note"><b>Not in this screen.</b> There is no switch here for the short vibration the app gives when you tap buttons, for keeping the screen on, for update checks, for backups or for logs. Update checks live in <a href="#tab-updates">App Updater</a>, backups in the <a href="#apps-backup">apps backup</a> section, logs in <a href="#tab-logcat">Logcat Viewer</a>. The Command-Line Interface has its own gear (<a href="#tab-terminal">Command-Line Interface</a>), and the <b>Keep selection after running</b> switch is inside the batch panel (see <a href="#apps-batch">batch actions</a>).</div>
 
@@ -437,6 +437,38 @@
       <tr><td><b>Pure black in dark mode</b> (switch)</td><td>Makes the dark backgrounds true black (#000000) for AMOLED screens, with cards lifted just enough to stay visible. It applies only while dark mode is active.</td><td>Off</td><td>On an OLED or AMOLED screen (a screen type where black pixels are switched off), to save some battery and get deeper blacks.</td></tr>
     </tbody>
   </table>
+
+  <h4>Palette Style</h4>
+  <p>One <b>source colour</b>, nine ways to turn it into a whole theme: the accent, the background, the cards and the text, each in a light and a dark version. Tap a style card and the app is rebuilt from the source colour at once; a message says <i>Palette style: Vibrant</i>. The nine styles are the ones Android's own Material You uses, plus Fidelity, Content, Neutral and Monotone from Google's Material Color Utilities.</p>
+  <table class="hg-table">
+    <thead><tr><th>Style</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><b>Tonal Spot</b></td><td>Calm and balanced: soft colours with a gentle tint. What Android uses by default. With Material purple as the source, this is the Material 3 baseline.</td></tr>
+      <tr><td><b>Vibrant</b></td><td>Strong, saturated colours with a clearly tinted background.</td></tr>
+      <tr><td><b>Fidelity</b></td><td>Stays as close to your source colour as it can, in its own strength. The third (tertiary) colour is the opposite one on the colour wheel.</td></tr>
+      <tr><td><b>Content</b></td><td>Like Fidelity, with a neighbouring colour for the third accent.</td></tr>
+      <tr><td><b>Neutral</b></td><td>Almost grey, with only a trace of your colour.</td></tr>
+      <tr><td><b>Expressive</b></td><td>Playful: the accents are turned far away from your colour.</td></tr>
+      <tr><td><b>Fruit Salad</b></td><td>A lively mix: the main colour is turned back 50° on the colour wheel and the accents are bold.</td></tr>
+      <tr><td><b>Rainbow</b></td><td>A strong accent on a plain grey background.</td></tr>
+      <tr><td><b>Monotone</b></td><td>Greys only, no colour at all. The green of Running and the red of Bloatware stay, because they tell you a state.</td></tr>
+    </tbody>
+  </table>
+  <table class="hg-table">
+    <thead><tr><th>Control</th><th>What it does</th><th>Default</th><th>When to change it</th></tr></thead>
+    <tbody>
+      <tr><td><b>Source color</b> (a circle and its code)</td><td>The colour every style starts from. Tap it for the colour popup (grid, or Custom with sliders and a hex box). Choosing a colour switches the style palette on.</td><td>Automatic: the main colour of your wallpaper on Android 12 and newer, otherwise Material purple (#6750A4). The line under <i>Source color</i> says which.</td><td>To get the same style in your own colour. A colour that is already vivid, such as #E91E63 or #009688, shows the styles best.</td></tr>
+      <tr><td><b>Automatic</b> (button)</td><td>Goes back to the automatic source colour. It shows only while you have picked a colour.</td><td>-</td><td>To follow the wallpaper again.</td></tr>
+    </tbody>
+  </table>
+  <p><b>What you will see:</b> every tile is a small preview (accent, second accent, third accent and card colour) of that style for the source colour and for the mode you are in, so the previews change when you switch light and dark or pick another source. The style in use is highlighted and the line under the tiles says, for example, <i>Vibrant from #6750A4</i>. While a curated palette is in use the line says <i>Not in use</i>.</p>
+  <ul>
+    <li>Choosing a style (or a source colour) clears your colour tweaks, like choosing a curated palette does. You can tweak the result with the <b>Granular Color Pickers</b> afterwards.</li>
+    <li>The text on the page is always easy to read: the styles keep text at least 7:1 against the background, and the accent at least 4.5:1, for any source colour, in light and in dark.</li>
+    <li><b>Light and dark</b> follow the <b>Appearance</b> card. <b>Pure black in dark mode</b> still applies on top.</li>
+    <li>The style, the source colour and the palette in use are remembered. Tapping a curated palette card takes over again.</li>
+    <li>The colours are calculated with the HCT colour space and tonal palettes of Google's Material Color Utilities. The third accent of Fidelity and Content is an approximation of Google's, so those two can differ a little from the same style in Android.</li>
+  </ul>
 
   <h4>Curated Theme Palettes</h4>
   <p>Eight ready-made colour schemes. Tap a card to use it. Each has a light and a dark version, and the little strip of four swatches shows how it looks in the mode you are in now. The active card has a highlight.</p>
@@ -493,6 +525,18 @@
       <tr><td><b>Expressive Animations</b> (switch)</td><td>Material 3 Expressive's bouncier, springier motion throughout the app, instead of a plain fade or slide. A message says <i>Expressive animations on</i> or <i>off</i>.</td><td>On</td><td>Turn it off if the motion bothers you or you prefer plain movement.</td></tr>
     </tbody>
   </table>
+
+  <h4>Reconnecting devices</h4>
+  <p>What the <a href="#tab-devices">Connected Devices</a> tab does when a device you were connected to drops. The same switch is under the <b>Not connected</b> cards in that tab.</p>
+  <table class="hg-table">
+    <thead><tr><th>Control</th><th>What it does</th><th>Default</th><th>When to change it</th></tr></thead>
+    <tbody>
+      <tr><td><b>Reconnect on its own</b> (switch)</td><td>When a Wi-Fi, Wireless debugging or Bluetooth device drops while the tab is open, the app tries to bring it back without you pressing anything. A cable (USB) is never retried on its own. A message says <i>Reconnecting on its own: on</i> or <i>off</i>.</td><td>On</td><td>Turn it off if you take devices away on purpose and do not want the app to keep knocking.</td></tr>
+      <tr><td><b>Retry timings</b> (a box)</td><td>The seconds to wait before each attempt, separated by commas or spaces. <b>0, 8, 25</b> means: at once, again 8 seconds after that attempt and a last time 25 seconds later. Up to 8 attempts, each wait from 0 to 600 seconds (10 minutes); a decimal such as 0.5 is allowed. A line under the box repeats what is in use. When the box is not valid the line says why (<i>"x" is not a number of seconds</i>, <i>At most 8 attempts.</i>, <i>Each wait is 600 seconds (10 minutes) at most.</i>) and the timings you had stay.</td><td>0, 8, 25</td><td>A watch that needs longer to wake up: <b>0, 15, 45, 90</b>. A device that comes back fast: <b>0, 3</b>.</td></tr>
+      <tr><td><b>Reset</b> (button)</td><td>Back to 0, 8, 25. It shows only while you use your own timings.</td><td>-</td><td>To undo your timings.</td></tr>
+    </tbody>
+  </table>
+  <p>The box is greyed out while <b>Reconnect on its own</b> is off. The timings count from the moment the device dropped, one attempt after the other, and the series stops at the first attempt that works. While the app is in the background the attempts wait for you to come back.</p>
 
   <h4>Font</h4>
   <p>The font of the text in this app only. A line shows what is in use: <i>In use: the system font</i>, or <i>In use: Name (file name, size)</i>.</p>
@@ -683,8 +727,8 @@
   </ul>
 </section>
 <section id="themes" data-title="Themes and colours" data-group="Settings and looks">
-  <p class="hg-lead">Choose how the app looks: light or dark, one of eight ready-made colour schemes, or your own colours. These choices change only this app, not the rest of your phone.</p>
-  <p><b>Where to find it:</b> tap the gear icon in the header to open <a href="#prefs">Settings</a>. Three cards are about looks: <b>Appearance</b>, <b>Curated Theme Palettes</b> and, inside the same card below the palettes, <b>Granular Color Pickers</b>.</p>
+  <p class="hg-lead">Choose how the app looks: light or dark, one of eight ready-made colour schemes, one of nine palette styles built from a source colour of your choice, or your own colours. These choices change only this app, not the rest of your phone.</p>
+  <p><b>Where to find it:</b> tap the gear icon in the header to open <a href="#prefs">Settings</a>. Four cards are about looks: <b>Appearance</b>, <b>Palette Style</b>, <b>Curated Theme Palettes</b> and, inside the same card below the palettes, <b>Granular Color Pickers</b>.</p>
 
   <h4>Before you start</h4>
   <ul>
@@ -697,7 +741,7 @@
   <p>Four things work together, in this order:</p>
   <ol class="hg-steps">
     <li><b>The mode:</b> light or dark. <b>Appearance</b> decides which one is in use now.</li>
-    <li><b>The palette:</b> one of the eight cards. A palette has a dark version and a light version.</li>
+    <li><b>The palette:</b> one of the eight cards, or a <b>palette style</b> (Tonal Spot, Vibrant, Fidelity, Content, Neutral, Expressive, Fruit Salad, Rainbow or Monotone) built from the source colour. Either way there is a dark version and a light version.</li>
     <li><b>Your tweaks:</b> any colours you changed with the colour pickers. They are saved for one mode only, so a tweak made in dark mode does not change light mode.</li>
     <li><b>Pure black:</b> if it is on, then in dark mode the backgrounds become black whatever the palette and your tweaks say.</li>
   </ol>
@@ -733,6 +777,15 @@
     </tbody>
   </table>
 
+  <h4>Palette styles</h4>
+  <p>The <b>Palette Style</b> card (above the eight palettes) builds a whole theme from <b>one source colour</b> in one of nine styles: <b>Tonal Spot</b>, <b>Vibrant</b>, <b>Fidelity</b>, <b>Content</b>, <b>Neutral</b>, <b>Expressive</b>, <b>Fruit Salad</b>, <b>Rainbow</b> and <b>Monotone</b>. The source colour is automatic (your wallpaper's main colour on Android 12 and newer, otherwise Material purple) until you pick one with the circle in the card. See <a href="#prefs">Settings</a> for what each style does and for the controls.</p>
+  <ol class="hg-steps">
+    <li>Open Settings (the gear) and find <b>Palette Style</b>.</li>
+    <li>Optional: tap the <b>Source color</b> circle and choose a colour, for example #009688.</li>
+    <li>Tap a style. The app changes colour at once, the tile is highlighted and a message says <i>Palette style: ...</i>.</li>
+    <li>Switch <b>Appearance</b> between Light and Dark to see both versions. Tap one of the eight palette cards to leave the style palette.</li>
+  </ol>
+
   <h4>Material You</h4>
   <p>Material You is Android 12's way of building the phone's colours from one source colour, normally your wallpaper. When you choose this palette, the app borrows the phone's accent and neutral colours, so it matches the rest of the phone.</p>
   <ul>
@@ -767,7 +820,7 @@
   <ul>
     <li><b>Reset tweaks</b> removes your tweaks for the mode that is showing. A message says <i>Color tweaks reset</i>. The other mode's tweaks stay.</li>
     <li><b>Tap a palette card</b> (even the one already in use) to clear the tweaks for both modes.</li>
-    <li>There is no single "reset everything" button. To return to the starting point, set <b>Appearance</b> to <b>System</b>, tap the <b>Material You</b> card, switch <b>Pure black in dark mode</b> off and, if you used it, leave Schedule at its default times 07:00 and 19:00.</li>
+    <li>There is no single "reset everything" button. To return to the starting point, set <b>Appearance</b> to <b>System</b>, tap the <b>Material You</b> card (this also leaves a palette style), switch <b>Pure black in dark mode</b> off and, if you used it, leave Schedule at its default times 07:00 and 19:00.</li>
   </ul>
 
   <h4>Tips</h4>

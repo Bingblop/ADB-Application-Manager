@@ -1,5 +1,22 @@
 # Changelog
 
+## v7.10.6-Pro (versionCode 826)
+
+- **Palette Style in the Theme menu.** Settings has a new **Palette Style** card above the curated palettes: one **source color** turned into a whole theme (accent,
+  background, cards, text, in light and in dark) in one of nine styles: **Tonal Spot, Vibrant, Fidelity, Content, Neutral, Expressive, Fruit Salad, Rainbow** and
+  **Monotone**. Tap a style and the app is rebuilt from the source color at once; the tiles preview each style for the source color and the mode in use. The source
+  color is automatic (the wallpaper's main color on Android 12+, otherwise Material purple) or picked with the color popup; an **Automatic** button goes back. The
+  colors are worked out in the HCT color space with tonal palettes, the way Google's Material Color Utilities (Apache-2.0) does it, written again in a few lines
+  (checked against known HCT values; Tonal Spot of Material purple gives the Material 3 baseline). Text keeps 7:1 and the accent 4.5:1 against the background for any
+  source color, light and dark; Running stays green and Bloatware red in every style. Fidelity's and Content's third accent is an approximation of Google's. The
+  style, source color and palette are saved with the theme and restored (a damaged value falls back to Tonal Spot / automatic); a color tweak still works on top, and
+  choosing a style clears tweaks like choosing a palette does. Test: `t129`.
+- **Connected Devices: Reconnect all and your own retry timings.** With two or more devices not connected a line above the cards offers **Reconnect all**, which tries
+  each in turn and counts the result ("Reconnected 1 of 2"; a device that could not be reached keeps its card with the reason). Settings has a new **Reconnecting
+  devices** card with the **Reconnect on its own** switch (the same one as in the Devices tab) and **Retry timings**: the seconds to wait before each attempt, such as
+  `0, 8, 25` (the default), up to 8 attempts of 0 to 600 seconds; a box that is not valid says why and keeps the timings in use, and **Reset** goes back to the default.
+  Test: `t128`.
+
 ## v7.10.5-Pro (versionCode 825)
 
 - **Connected Devices: a device that dropped can be brought back.** Devices are remembered while they are connected. When one is gone (Wi-Fi asleep, cable out, Wireless

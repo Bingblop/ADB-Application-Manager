@@ -27,5 +27,24 @@ ok   the card then says why it could not (the buttons are free again)
 ok   when the first attempt works, it stops there and the watch is back
 ok   with the setting off, nothing is tried until the button is pressed
 ok   the setting is switched in the card (and remembered)
+ok   with one device not connected there is no Reconnect all (its own Reconnect does that)
+ok   with two it shows how many are not connected, and Reconnect all
+ok   Reconnect all tries each device (both addresses)
+ok   the one that answers is back, the other stays listed with the reason
+ok   and the toast counts: 1 of 2
+ok   the buttons are free again
+ok   when both answer, both are back and the card is gone
+ok   Settings has the switch (off here, as set) and the timings box showing the default 0, 8, 25 with no Reset
+ok   turning it on in Settings is the same setting as in the Devices tab (and enables the box)
+ok   your own timings are saved and used (seconds), and Reset appears
+ok   invalid timings (a word) are refused in words and the saved ones stay
+ok   invalid timings (nothing) are refused in words and the saved ones stay
+ok   invalid timings (nine attempts) are refused in words and the saved ones stay
+ok   invalid timings (more than 10 minutes) are refused in words and the saved ones stay
+ok   invalid timings (a negative number) are refused in words and the saved ones stay
+ok   spaces work as separators too
+ok   Reset goes back to 0, 8, 25 and hides itself
+ok   a damaged saved value falls back to the default
+ok   a saved value out of range falls back to the default too
 errors: []
 all ok
