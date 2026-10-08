@@ -111,14 +111,14 @@ Left to right, with the **settings gear** (it opens Settings: language, appearan
 | **Task Manager** | Processes, CPU, RAM, GPU, battery and network, live, each with a graph ([details](#new-in-v75)) |
 | **Connected Devices** | Another Android device (a Wear OS watch first) over adb: add by pairing code, address, network scan or Bluetooth link; its apps (enable, disable, uninstall, reinstall, pull), send APK / APKS / APKM / XAPK, console, logcat, files, hidden settings, screen density and size |
 | **Morphe Patcher** | Morphe patching on the phone: patch sources and the community finder, apps marked **Installed**, Morphe Helper (ten APK download sources, an in-app browser for sites with a browser check, optional VirusTotal), Simple and Advanced patching, install when finished, live log, Patched APKs |
-| **SD Maid SE** | SystemCleaner, AppCleaner, CorpseFinder and Deduplicator ported from SD Maid SE: scan, review and untick, delete, optional 1-tap scan and delete, exclusions, history, accessibility cache clearing |
+| **SD Maid** | SystemCleaner, AppCleaner, CorpseFinder and Deduplicator ported from SD Maid SE: scan, review and untick, delete, optional 1-tap scan and delete, exclusions, history, accessibility cache clearing |
 | **About** | Who made it, which build and key you have, debug info, the Permissions sheet, and the coffee button |
 
 Every tab except Application Manager and About can be switched off or moved in **Settings → Feature List**.
 
 ## New in v7.9
 
-**v7.10.9 is the latest build** (Connected Devices, 32-bit and universal APKs, the Help Guide: see [CHANGELOG.md](../CHANGELOG.md)). Everything from v7.9 through v7.9.15 is below; the full, dated list is in
+**v7.10.10 is the latest build** (Connected Devices, 32-bit and universal APKs, the Help Guide: see [CHANGELOG.md](../CHANGELOG.md)). Everything from v7.9 through v7.9.15 is below; the full, dated list is in
 [CHANGELOG.md](../CHANGELOG.md) (and inside the app, under About).
 
 **Newest (v7.9.12 to v7.9.15)**
@@ -993,6 +993,8 @@ Light / Dark / System stays as you set it.
 
 **Saved lists backup** (Saved Applications tab, **Back up and restore**): back up to a folder you choose (or Download/ADB App Manager), share the file, switch on automatic backups into
 `saved-lists-latest.json`, and restore from a file or from the folder, adding to your lists or replacing them (the Quick list follows).
+
+**Haptic feedback** (Settings, on by default): a short tick on every tap of a button, tab, switch or row, with one switch to turn it off. **App Stores**: the **+** tab adds a store of your own (an F-Droid style repository, or a GitHub or Codeberg user, organization or project; the tab is named by you or from the address), and every store's apps now open a detail sheet with the full description and screenshots (it was ShizuStore only). **Task Manager**: **Apps first** in the Processes list. **SD Maid** (the tab's new name) now holds **Trim Caches** (it was in Settings), and AppCleaner asks the phone whether the accessibility service is ready when you Delete and has **Clear the rest with accessibility**. The gear wears the app's colours, and the list of fonts found is emptied when Settings is left.
 
 **Saved devices** (Connected Devices, under the picker): every device that was connected, up to 20, with **Connect** and **Delete** (asked first), **Delete all**, and a switch to stop remembering new ones.
 

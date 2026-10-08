@@ -233,7 +233,11 @@
             box-shadow: 0 0 0 1px var(--accent) inset;
         }
 
+        /* the gear wears the app's theme (the mode badge next to it keeps its green) */
         #prefsHeaderBtn {
+            background: color-mix(in srgb, var(--accent) 16%, var(--bg-card));
+            border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+            color: var(--text-main);
             min-width: 46px;
             min-height: 38px;
             padding: 0 11px;
@@ -4454,6 +4458,7 @@
                     <div class="tm-sort-bar">
                         <button class="batch-tool-link on" id="tmSortCpu" onclick="tmSetSort('cpu')">Sort by CPU</button>
                         <button class="batch-tool-link" id="tmSortMem" onclick="tmSetSort('mem')">Sort by memory</button>
+                        <button class="batch-tool-link" id="tmAppsFirst" aria-pressed="false" onclick="tmToggleAppsFirst()">Apps first</button>
                     </div>
                     <div class="tm-status" id="tmProcStatus" style="font-size:11px; color:var(--text-muted); margin-bottom:6px;"></div>
                     <div id="tmProcList"><div class="list-empty">Open this tab to see what is running.</div></div>
@@ -4790,6 +4795,9 @@
             <style>
                 .store-subtabs { display:flex; gap:7px; overflow-x:auto; padding:2px 2px 8px; margin-bottom:4px; -webkit-overflow-scrolling:touch; }
                 .store-subtab { flex:0 0 auto; border:1px solid var(--border-glass); background:rgba(var(--ov),0.05); color:var(--text-muted); border-radius:999px; padding:7px 14px; font-size:14px; font-weight:700; cursor:pointer; white-space:nowrap; }
+                .store-subtab.store-add { padding:7px 16px; font-size:17px; font-weight:900; line-height:1; color:var(--accent); border-style:dashed; }
+                .store-subtab.store-add.hasnone { animation:none; }
+                .store-row[data-src] { cursor:pointer; }
                 .store-subtab.active { background:linear-gradient(135deg,var(--accent),var(--secondary)); color:var(--on-accent); border-color:transparent; }
                 .store-toolbar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:8px 0 2px; }
                 /* search on its own full row; the category and sort dropdowns share the next one */
@@ -4814,6 +4822,7 @@
                 <button class="store-subtab" data-store="github" onclick="switchStoreTab('github')">GitHub</button>
                 <button class="store-subtab" data-store="fdroid" onclick="switchStoreTab('fdroid')">F-Droid</button>
                 <button class="store-subtab" data-store="orion" onclick="switchStoreTab('orion')">Orion</button>
+                <button class="store-subtab store-add" id="storeAddTab" onclick="storeAddOpen()" aria-label="Add a store" title="Add a store: a repository address, or a GitHub or Codeberg user or project">+</button>
             </div>
 
             <!-- Sub-tab: ShizuStore -->
@@ -4923,6 +4932,9 @@
                 <div id="orionList" class="store-rows"></div>
                 <div id="orionMore" class="store-more"></div>
             </div>
+
+            <!-- Sub-tabs the person added with the + tab (a repository address, or a GitHub or Codeberg user or project) -->
+            <div id="storeCustomPanels"></div>
 
         </section>
 
@@ -5282,6 +5294,19 @@
                 </label>
             </div>
 
+            <div class="color-card" id="hapticCard">
+                <div class="color-card-title">Haptic feedback</div>
+                <div class="color-card-subtitle">A short tick you feel when you tap</div>
+                <label class="switch-row">
+                    <div>
+                        <div class="switch-title">Vibrate on taps</div>
+                        <div class="switch-sub">A short vibration for every button, tab, switch and list row you tap. On by default. It is only the app's own tick: the phone's own touch feedback setting is not changed.</div>
+                    </div>
+                    <input type="checkbox" class="switch-input" id="hapticToggle" checked onchange="setHaptics(this.checked)">
+                    <span class="switch-track"></span>
+                </label>
+            </div>
+
             <div class="color-card" id="cdReconnectCard">
                 <div class="color-card-title">Reconnecting devices</div>
                 <div class="color-card-subtitle">What the Devices tab does when a device you were connected to drops (Wi-Fi, Wireless debugging and Bluetooth devices; a cable is never retried on its own)</div>
@@ -5317,6 +5342,7 @@
                 </div>
                 <div id="fontScanBox" style="display:none;">
                     <div id="fontScanStatus" class="uad-status" style="margin:8px 0 0;"></div>
+                    <button class="batch-tool-link" id="fontScanClearBtn" style="display:none; margin-top:6px;" onclick="fontScanClear(true)">Clear this list</button>
                     <div id="fontScanBar" class="apk-scan-bar" role="progressbar" aria-label="Searching storage for fonts" aria-valuemin="0" aria-valuemax="100" style="display:none;"><div id="fontScanBarFill"></div></div>
                     <input type="text" class="list-search" id="fontScanSearch" placeholder="Filter found fonts…" style="display:none; margin-top:8px;" oninput="fontScanRender()" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false">
                     <div id="fontScanList" class="font-list"></div>
@@ -5357,23 +5383,6 @@
                 <div class="color-card-title">Press and hold guide</div>
                 <div class="color-card-subtitle">Hold a finger on these for about half a second. You feel a short tap when it works.</div>
                 <div class="hold-list"><div class="hold-row"><span class="hold-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg></span><div class="hold-txt"><div class="hold-what"><b>An app row</b><span class="hold-where">Apps</span></div><div class="hold-does">Opens that app's menu (the same as tapping ⋯). Tap the checkbox to select it instead.</div></div></div><div class="hold-row"><span class="hold-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg></span><div class="hold-txt"><div class="hold-what"><b>An app's icon</b><span class="hold-where">Apps</span></div><div class="hold-does">Saves the icon as a PNG to Download/ADB App Manager/Icons.</div></div></div><div class="hold-row"><span class="hold-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg></span><div class="hold-txt"><div class="hold-what"><b>The Action Button</b><span class="hold-where">Apps, Debloater</span></div><div class="hold-does">A sheet with every action for that app: settings, launch, force stop, enable or disable, uninstall, suspend, permissions, activities. Choose which ones it lists below.</div></div></div><div class="hold-row"><span class="hold-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg></span><div class="hold-txt"><div class="hold-what"><b>The round checkmark button (when apps are selected)</b><span class="hold-where">Apps</span></div><div class="hold-does">Clears every selection at once.</div></div></div><div class="hold-row"><span class="hold-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg></span><div class="hold-txt"><div class="hold-what"><b>A file or folder row</b><span class="hold-where">File Manager</span></div><div class="hold-does">Starts selecting. Tap more rows to add them, then Copy, Move or Delete.</div></div></div><div class="hold-row"><span class="hold-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg></span><div class="hold-txt"><div class="hold-what"><b>A file the APK search found</b><span class="hold-where">Installer</span></div><div class="hold-does">Deletes it from the phone, with an Undo right after.</div></div></div><div class="hold-row"><span class="hold-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg></span><div class="hold-txt"><div class="hold-what"><b>A setting that is 1 or 0</b><span class="hold-where">Hidden Settings</span></div><div class="hold-does">Flips it.</div></div></div><div class="hold-row"><span class="hold-ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg></span><div class="hold-txt"><div class="hold-what"><b>An overlay row</b><span class="hold-where">Overlays</span></div><div class="hold-does">Switches that overlay on or off.</div></div></div></div>
-            </div>
-
-            <div class="color-card" id="trimCachesCard">
-                <div class="color-card-title">Trim Caches</div>
-                <div class="color-card-subtitle">Free up storage by clearing the cache of every app on your phone in one go.</div>
-                <div class="mode-btn-row">
-                    <button class="mode-action-btn primary" id="trimCachesBtn" onclick="trimCachesAll()"><span id="trimCachesLock"></span><span id="trimCachesLabel">Trim Caches in All Applications</span></button>
-                </div>
-                <div class="switch-sub" id="trimCachesStatus" style="display:none; margin-top:8px;"></div>
-                <div class="trim-explain" id="trimCachesExplain">
-                    <p><b>What it runs.</b> The button runs <code translate="no">pm trim-caches 128G</code> on the phone, the same as typing <code translate="no">adb shell pm trim-caches 128G</code> on a computer. It needs a working mode (ADB, Wireless Debugging, Shizuku or Root); without one the button is locked.</p>
-                    <p><b>What it does.</b> <code translate="no">pm trim-caches</code> asks Android to free space by deleting app caches until the phone has the amount of free storage you give it. 128 GB is more free space than any phone has, so the target can never be reached: Android keeps going and clears every cache it is allowed to clear, in every app, instead of stopping after the first few. The apps it starts with, and the order, are Android's own choice.</p>
-                    <p><b>What is trimmed.</b> Only cache: the temporary files each app keeps in its own <i>cache</i> folder (and in its <i>code cache</i> folder), on the phone's internal storage and in the app's folder under Android/data. That is things like downloaded thumbnails and images, web pages a browser kept for next time, map tiles, video and music that was only buffered, and temporary files an app made while working. Android treats all of it as safe to throw away, and the app makes it again when it needs it.</p>
-                    <p><b>What is not touched.</b> Your apps themselves, their data and settings, logins and accounts, saved games, photos, videos, downloads and every other file in your folders. Nothing is uninstalled and no app is reset.</p>
-                    <p><b>What you may notice.</b> The first start of an app afterwards can be a little slower, and it may use mobile data to fetch images again. An app that keeps offline downloads in its cache folder (some music, video and map apps do) may need to download them again. Apps that are running right now may keep some of their cache until they close.</p>
-                    <p><b>How long it takes.</b> From a few seconds to a minute or two, depending on how many apps you have and how much cache they hold. The app stays usable while it runs, and a report shows how much free space there was before and after.</p>
-                </div>
             </div>
         </section>
 
@@ -5654,7 +5663,8 @@
                 .sd-one { display: flex; align-items: center; gap: 10px; margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(var(--ov), 0.06); font-size: 12.5px; font-weight: 700; cursor: pointer; }
                 .sd-one input { width: 20px; height: 20px; accent-color: var(--accent); flex: 0 0 auto; }
                 .sd-one .sd-sub { display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-top: 1px; line-height: 1.35; }
-                .sd-act { display: flex; gap: 8px; margin-top: 10px; align-items: stretch; }
+                .sd-act { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; align-items: stretch; }
+                .sd-act #sdClearRest { flex: 1 1 100%; order: -1; }
                 .sd-act .mode-action-btn { flex: 1 1 0; justify-content: center; min-width: 0; }
                 .sd-act .mode-action-btn.danger { border-color: var(--status-bloat); color: var(--status-bloat); }
                 .sd-act .mode-action-btn.danger.fill { background: var(--status-bloat); color: #fff; }
@@ -5691,7 +5701,7 @@
             </style>
 
             <div class="color-card" id="sdTop">
-                <div class="color-card-title">SD Maid SE</div>
+                <div class="color-card-title">SD Maid</div>
                 <div class="color-card-subtitle">Clean up what is not needed any more: superfluous files, the expendable data of apps, the leftovers of apps that are gone, and files that exist twice. Scan first, look at the list, take out what you want to keep, then delete. The four tools use the working mode of this app for the folders a normal app cannot read.</div>
                 <div class="sd-status" id="sdStatus"></div>
                 <div class="sd-chips" id="sdAreas"></div>
@@ -5716,6 +5726,23 @@
                 <div class="sd-chips" id="sdAcsChips"></div>
                 <div class="sd-note" id="sdAcsNote"></div>
                 <div class="sd-btns" id="sdAcsBtns"></div>
+            </div>
+
+            <div class="color-card" id="trimCachesCard">
+                <div class="color-card-title">Trim Caches</div>
+                <div class="color-card-subtitle">Free up storage by clearing the cache of every app on your phone in one go.</div>
+                <div class="mode-btn-row">
+                    <button class="mode-action-btn primary" id="trimCachesBtn" onclick="trimCachesAll()"><span id="trimCachesLock"></span><span id="trimCachesLabel">Trim Caches in All Applications</span></button>
+                </div>
+                <div class="switch-sub" id="trimCachesStatus" style="display:none; margin-top:8px;"></div>
+                <div class="trim-explain" id="trimCachesExplain">
+                    <p><b>What it runs.</b> The button runs <code translate="no">pm trim-caches 128G</code> on the phone, the same as typing <code translate="no">adb shell pm trim-caches 128G</code> on a computer. It needs a working mode (ADB, Wireless Debugging, Shizuku or Root); without one the button is locked.</p>
+                    <p><b>What it does.</b> <code translate="no">pm trim-caches</code> asks Android to free space by deleting app caches until the phone has the amount of free storage you give it. 128 GB is more free space than any phone has, so the target can never be reached: Android keeps going and clears every cache it is allowed to clear, in every app, instead of stopping after the first few. The apps it starts with, and the order, are Android's own choice.</p>
+                    <p><b>What is trimmed.</b> Only cache: the temporary files each app keeps in its own <i>cache</i> folder (and in its <i>code cache</i> folder), on the phone's internal storage and in the app's folder under Android/data. That is things like downloaded thumbnails and images, web pages a browser kept for next time, map tiles, video and music that was only buffered, and temporary files an app made while working. Android treats all of it as safe to throw away, and the app makes it again when it needs it.</p>
+                    <p><b>What is not touched.</b> Your apps themselves, their data and settings, logins and accounts, saved games, photos, videos, downloads and every other file in your folders. Nothing is uninstalled and no app is reset.</p>
+                    <p><b>What you may notice.</b> The first start of an app afterwards can be a little slower, and it may use mobile data to fetch images again. An app that keeps offline downloads in its cache folder (some music, video and map apps do) may need to download them again. Apps that are running right now may keep some of their cache until they close.</p>
+                    <p><b>How long it takes.</b> From a few seconds to a minute or two, depending on how many apps you have and how much cache they hold. The app stays usable while it runs, and a report shows how much free space there was before and after.</p>
+                </div>
             </div>
 
             <div class="sd-live" id="sdLive"></div>
@@ -5809,7 +5836,7 @@
                 <div class="about-tip">Debloat data from <a href="#" onclick="openUrlExternal('https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation'); return false;">UAD-NG</a> (GPL-3.0). Shell access through <a href="#" onclick="openUrlExternal('https://github.com/RikkaApps/Shizuku-API'); return false;">Shizuku</a>. Update sources: Galaxy Store, GitHub, Codeberg, F-Droid, IzzyOnDroid and the Obtainium community catalog.</div>
                 <div class="about-tip">Task Manager tab modeled on <a href="#" onclick="openUrlExternal('https://github.com/RohitKushvaha01/TaskManager'); return false;">RohitKushvaha01/TaskManager</a>.</div>
                 <div class="about-tip">Morphe Patcher tab: the patcher engine is <a href="#" onclick="openUrlExternal('https://github.com/MorpheApp/morphe-patcher'); return false;">morphe-patcher</a> and the way sources, patching and the community finder work follows <a href="#" onclick="openUrlExternal('https://github.com/MorpheApp/morphe-manager'); return false;">Morphe Manager</a>, both by <a href="#" onclick="openUrlExternal('https://github.com/MorpheApp'); return false;">MorpheApp</a> (GPL-3.0); the APK download sources and the VirusTotal check follow <a href="#" onclick="openUrlExternal('https://github.com/rushiranpise/helper-for-morphe'); return false;">Helper for Morphe</a> by rushiranpise (GPL-3.0). The patches belong to their authors.</div>
-                <div class="about-tip">SD Maid SE tab: a port of the four tools of <a href="#" onclick="openUrlExternal('https://github.com/d4rken-org/sdmaid-se'); return false;">SD Maid SE</a> by darken (d4rken-org, GPL-3.0), also on <a href="#" onclick="openUrlExternal('https://play.google.com/store/apps/details?id=eu.darken.sdmse'); return false;">Google Play</a>. Its icons, logo and translations are not used.</div>
+                <div class="about-tip">SD Maid tab: a port of the four tools of <a href="#" onclick="openUrlExternal('https://github.com/d4rken-org/sdmaid-se'); return false;">SD Maid SE</a> by darken (d4rken-org, GPL-3.0), also on <a href="#" onclick="openUrlExternal('https://play.google.com/store/apps/details?id=eu.darken.sdmse'); return false;">Google Play</a>. Its icons, logo and translations are not used.</div>
                 <div class="about-tip">Palette Style: the nine styles and the way a source color becomes a whole theme (the HCT color space and its tonal palettes) follow Google's <a href="#" onclick="openUrlExternal('https://github.com/material-foundation/material-color-utilities'); return false;">Material Color Utilities</a> (Apache-2.0), written again for this app.</div>
                 <div class="about-tip">Hidden Settings: the descriptions of Android's own settings are taken in part from the documentation in the <a href="#" onclick="openUrlExternal('https://source.android.com/'); return false;">Android Open Source Project</a> (Apache-2.0).</div>
             </div>
@@ -7398,6 +7425,29 @@ Type any command below (e.g. pm list packages -d)
         </div>
     </div>
 
+    <!-- App Stores: add a store (the + tab) -->
+    <div class="modal-overlay" id="storeAddModal" onclick="if(event.target===this) storeAddClose()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-title">
+                        <h3>Add a store</h3>
+                        <p>One more place to find apps</p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="storeAddClose()" role="button" aria-label="Close">✕</div>
+            </div>
+            <div class="switch-sub" style="margin:0 0 8px;">Paste the address of an <b>F-Droid style repository</b> (for example <span translate="no">https://apt.izzysoft.de/fdroid/repo</span>), or of a <b>GitHub</b> or <b>Codeberg</b> user, organization or project. The app reads what it publishes and lists the apps.</div>
+            <input class="modal-text-input" id="storeAddUrl" type="url" inputmode="url" placeholder="https://…" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" aria-label="Address" oninput="storeAddHint()">
+            <input class="modal-text-input" id="storeAddName" type="text" placeholder="Name of the tab (optional: filled in from the address)" autocomplete="off" maxlength="30" style="margin-top:8px;" aria-label="Name of the tab">
+            <div class="sdb-note" id="storeAddNote" style="margin-top:8px; min-height:18px;"></div>
+            <div style="display:flex; gap:10px; margin-top:12px;">
+                <button class="mode-action-btn primary" id="storeAddBtn" style="flex:1; justify-content:center; min-height:40px;" onclick="storeAddSubmit()">Add</button>
+                <button class="mode-action-btn" style="min-height:40px;" onclick="storeAddClose()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Logcat: one entry in its own window -->
     <div class="modal-overlay" id="lcEntryModal" onclick="if(event.target===this) lcEntryClose()">
         <div class="modal-sheet">
@@ -8543,7 +8593,7 @@ Type any command below (e.g. pm list packages -d)
             { key: 'taskmgr', label: 'Task\nManager', name: 'Task Manager' },
             { key: 'devices', label: 'Connected\nDevices', name: 'Connected Devices' },
             { key: 'morphe', label: 'Morphe\nPatcher', name: 'Morphe Patcher' },
-            { key: 'sdm', label: 'SD Maid\nSE', name: 'SD Maid SE' },
+            { key: 'sdm', label: 'SD Maid', name: 'SD Maid' },
             { key: 'about', label: 'About', name: 'About', fixed: true }
         ];
         const TAB_MOVABLE = TAB_DEFS.filter(t => !t.fixed).map(t => t.key);          // the default order of the tabs that can move
@@ -8608,6 +8658,7 @@ Type any command below (e.g. pm list packages -d)
             if (txFullOn && viewName !== 'terminal') txFullToggle(false);
             if (typeof rt === 'object' && rt && rt.open && viewName !== 'terminal') rtHide();
             const fromView = currentViewName();
+            if (fromView === 'prefs' && viewName !== 'prefs') fontScanClear(false);          // the list of fonts found is emptied when Settings is left
             if (!navFromBack && fromView && fromView !== viewName) {
                 viewStack = viewStack.filter(v => v !== fromView);
                 viewStack.push(fromView);
@@ -8624,7 +8675,7 @@ Type any command below (e.g. pm list packages -d)
             });
             const gear = document.getElementById('prefsHeaderBtn');
             if (gear) gear.classList.toggle('active', viewName === 'prefs');
-            if (viewName === 'prefs') { iconPackRender(); actionBtnRender(); trimSyncLock(); }
+            if (viewName === 'prefs') { iconPackRender(); actionBtnRender(); trimSyncLock(); syncHapticsUi(); }
 
             document.querySelectorAll('.view-content').forEach(v => {
                 v.classList.remove('active');
@@ -8665,11 +8716,34 @@ Type any command below (e.g. pm list packages -d)
         // every File Manager and Apps list button gives the tap of feedback, whatever its own handler does
         document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('#view-files button, #view-apps button'); if (b && !b.disabled) haptic(); }, true);
 
+        // Haptic feedback: a short tick for every tap on a button, a tab, a switch, a list row. Settings > Haptic feedback turns it off (it is on until then).
+        // One tick at most every 70 ms, so a tap that the page also answers with its own haptic() is felt once.
+        let hapticsOn = null, hapticLast = 0;
+        function hapticsEnabled() { if (hapticsOn === null) hapticsOn = kvGet('haptics', true) !== false; return hapticsOn; }
         function haptic() {
+            if (!hapticsEnabled()) return;
+            const now = Date.now();
+            if (now - hapticLast < 70) return;
+            hapticLast = now;
             if (window.AndroidBridge && window.AndroidBridge.vibrate) {
                 window.AndroidBridge.vibrate();
             }
         }
+        function setHaptics(on) {
+            hapticsOn = !!on;
+            kvSet('haptics', hapticsOn);
+            hapticLast = 0; haptic();                      // the tick says it is on; nothing when it is turned off
+            showToast(hapticsOn ? 'Haptic feedback on' : 'Haptic feedback off');
+        }
+        function syncHapticsUi() { const t = document.getElementById('hapticToggle'); if (t) t.checked = hapticsEnabled(); }
+        // every real tap (not a click the page makes by itself) on something that can be pressed
+        const HAPTIC_SEL = 'button, [role="button"], [role="tab"], .tab-btn, .switch-row, input[type="checkbox"], input[type="radio"], select, summary, .filter-pill, .stat-card, .filter-chip, [onclick]';
+        document.addEventListener('click', function (e) {
+            if (!e.isTrusted || !hapticsEnabled()) return;
+            const t = e.target && e.target.closest ? e.target.closest(HAPTIC_SEL) : null;
+            if (!t || t.disabled || t.closest('#hapticCard') || t.closest('[data-no-haptic]')) return;           // (the haptic switch ticks for itself, and only when it turns on)
+            haptic();
+        }, true);
 
         // ---------- Language: assets/i18n.js translates the page; the choice is kept as "lang" ----------
         const LANG_ENGINE = window.I18N || { langs: [{ code: 'en', name: 'English' }], code: 'en', name: 'English', set: () => Promise.resolve(false) };
@@ -8719,6 +8793,7 @@ Type any command below (e.g. pm list packages -d)
         let appFont = { mode: 'system' };               // { mode: 'custom', family, style, name, kind, variable, size }
         let fontFound = [];                              // what the search found
         let fontScanning = false;
+        let fontScanStale = false;                       // Settings was left during the search: its answer is dropped
         let fontPreviewMeta = null;                      // the font on the sheet
         const fontFaces = {};                            // the loaded face of each name (AppFont, PreviewFont)
         function fontDrop(name) { if (fontFaces[name]) { try { document.fonts.delete(fontFaces[name]); } catch (e) {} delete fontFaces[name]; } }
@@ -8790,13 +8865,25 @@ Type any command below (e.g. pm list packages -d)
             if (fontScanning) return;
             if (!window.AndroidBridge || !window.AndroidBridge.scanFonts) { showToast('The font search needs the app build'); return; }
             haptic();
-            fontScanning = true;
+            fontScanning = true; fontScanStale = false;
+            document.getElementById('fontScanClearBtn').style.display = 'none';
             document.getElementById('fontScanBtn').disabled = true;
             document.getElementById('fontScanBox').style.display = '';
             document.getElementById('fontScanList').innerHTML = '';
             document.getElementById('fontScanSearch').style.display = 'none';
             fontScanBarSet(0, 'Looking through storage for fonts…', 0);
             try { window.AndroidBridge.scanFonts(); } catch (e) { fontScanEnd(); fontScanNote('The search failed: ' + String(e && e.message || e), true); }
+        }
+        // The list of fonts found is for the visit to Settings that asked for it: leaving Settings (or Clear this list) empties it
+        function fontScanClear(toast) {
+            fontFound = [];
+            if (fontScanning) fontScanStale = true;
+            const box = document.getElementById('fontScanBox'), list = document.getElementById('fontScanList'), search = document.getElementById('fontScanSearch'), clr = document.getElementById('fontScanClearBtn');
+            if (list) list.innerHTML = '';
+            if (search) { search.value = ''; search.style.display = 'none'; }
+            if (clr) clr.style.display = 'none';
+            if (!fontScanning) { const st = document.getElementById('fontScanStatus'); if (st) { st.innerText = ''; st.style.display = 'none'; } if (box) box.style.display = 'none'; }
+            if (toast) { haptic(); showToast('The list of fonts is cleared'); }
         }
         function fontScanEnd() {
             fontScanning = false;
@@ -8816,6 +8903,7 @@ Type any command below (e.g. pm list packages -d)
         };
         window.onFontScan = function (json) {
             fontScanEnd();
+            if (fontScanStale) { fontScanStale = false; fontScanClear(false); return; }
             let d; try { d = JSON.parse(json); } catch (e) { d = { status: 'error', error: 'unreadable answer' }; }
             if (d.status === 'noaccess') {
                 fontScanNote('This app cannot read storage. Grant All-files access, or choose a font file by hand (that needs no access).', true);
@@ -8825,6 +8913,7 @@ Type any command below (e.g. pm list packages -d)
             if (d.status !== 'ok') { fontScanNote('The search failed: ' + (d.error || 'unknown error'), true); return; }
             fontFound = d.fonts || [];
             if (!fontFound.length) { fontScanNote('No .ttf or .otf files were found on storage. You can still choose a font file by hand.', false); document.getElementById('fontScanList').innerHTML = ''; return; }
+            document.getElementById('fontScanClearBtn').style.display = '';
             fontScanNote(fontFound.length + (fontFound.length === 1 ? ' font found' : ' fonts found') + (d.truncated ? ' (the search stopped at its limit)' : '') + '. Tap one to see it before you use it.', false);
             document.getElementById('fontScanSearch').style.display = fontFound.length > 8 ? '' : 'none';
             fontScanRender();
@@ -11269,7 +11358,8 @@ Type any command below (e.g. pm list packages -d)
         }
 
         function onStoreShown() {
-            switchStoreTab(currentStoreTab || 'shizu');
+            storeCustomRestore();
+            switchStoreTab(storeSrc[currentStoreTab] || ['shizu', 'github', 'fdroid', 'orion'].indexOf(currentStoreTab) >= 0 ? currentStoreTab : 'shizu');
         }
 
         function loadStoreCatalog(force) {
@@ -11631,6 +11721,14 @@ Type any command below (e.g. pm list packages -d)
         }
 
         function installStoreApp() {
+            if (storeCurrent && storeCurrent.generic) {
+                haptic();
+                const p = document.getElementById('storeInstallProgress');
+                p.style.display = ''; p.innerText = 'Starting…';
+                document.getElementById('storeInstallBtn').disabled = true;
+                installSourceItem(storeCurrent.src, storeCurrent.slug);
+                return;
+            }
             if (!storeCurrent || !storeCurrent.download) { showToast('No APK to install'); return; }
             haptic();
             const dl = storeCurrent.download;
@@ -11723,6 +11821,9 @@ Type any command below (e.g. pm list packages -d)
             if (key === 'shizu') { if (!storeLoaded && !storeLoading) loadStoreCatalog(false); }
             else if (key === 'github' || key === 'orion') loadSource(key, false);
             else if (key === 'fdroid') loadFdroid();
+            else if (storeSrc[key] && storeSrc[key].custom) loadCustom(key, false);
+            const act = document.querySelector('.store-subtab.active');
+            if (act && act.scrollIntoView) act.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
         }
 
         // ---- shared filter / sort / category helpers ----
@@ -11805,7 +11906,7 @@ Type any command below (e.g. pm list packages -d)
             (a.cats || []).slice(0, 2).forEach(c => chips.push('<span class="sr-chip cat">' + esc(c) + '</span>'));
             const sid = key + '-' + cssId(k);
             const sub = key === 'github' ? (a.owner ? esc(a.owner + '/' + a.repo) : '') : (a.author ? esc(a.author) : '');
-            return `<div class="store-row">
+            return `<div class="store-row" data-src="${key}" data-key="${esc(k)}" onclick="storeItemOpen(this)" role="button" tabindex="0" onkeydown="if(event.target===this&&(event.key==='Enter'||event.key===' ')){event.preventDefault();storeItemOpen(this);}">
                 ${srcIconHtml(a)}
                 <div style="flex:1;min-width:0;">
                     <div style="font-weight:700;color:var(--text-main);overflow-wrap:anywhere;">${esc(a.name || k || 'App')}</div>
@@ -11814,7 +11915,7 @@ Type any command below (e.g. pm list packages -d)
                     <div style="display:flex;gap:5px;flex-wrap:wrap;">${chips.join(' ')}</div>
                     <div class="sr-status" id="st-${sid}" style="display:none;"></div>
                 </div>
-                <button class="store-inst-btn" id="bt-${sid}" data-src="${key}" data-key="${esc(k)}" onclick="installSourceItemEl(this)" aria-label="Install ${esc(a.name || k)}">Install</button>
+                <button class="store-inst-btn" id="bt-${sid}" data-src="${key}" data-key="${esc(k)}" onclick="event.stopPropagation(); installSourceItemEl(this)" aria-label="Install ${esc(a.name || k)}">Install</button>
             </div>`;
         }
 
@@ -11887,6 +11988,7 @@ Type any command below (e.g. pm list packages -d)
         function refreshSource(key) {
             haptic();
             if (key === 'fdroid') { fdroidLoadRepo(true); return; }
+            if (storeSrc[key] && storeSrc[key].custom) { loadCustom(key, true); return; }
             const s = storeSrc[key];
             if (s.loading) { showToast('Still loading…'); return; }
             if (!srcBridgeOk(key)) return;
@@ -12096,10 +12198,14 @@ Type any command below (e.g. pm list packages -d)
         // ---- the single entry point the native side calls ----
         function onStoreSource(json) {
             let d; try { d = JSON.parse(json); } catch (e) { return; }
-            const src = d.source;
+            let src = d.source;
             if (src === 'fdroid-repos') { onFdroidRepos(d); return; }
             if (src === 'fdroid-repo') { onFdroidRepoEvent(d); return; }
-            if (src !== 'github' && src !== 'orion') return;
+            if (src === 'custom') {
+                let a = {}; try { a = JSON.parse(d.arg || '{}'); } catch (e) { a = {}; }
+                src = a.id;
+                if (!src || !storeSrc[src] || !storeSrc[src].custom) return;
+            } else if (src !== 'github' && src !== 'orion') return;
             const s = storeSrc[src];
             if (d.status === 'progress') { s.progress = d.message || ''; if (s.loading) renderSource(src); return; }
             if (d.status === 'error') {
@@ -12133,12 +12239,242 @@ Type any command below (e.g. pm list packages -d)
             if (!d.append) { s.items = []; s.keys = null; }
             addItems(s, d.items);
             s.loaded = true;
-            if (d.done) { s.loading = false; s.note = d.note || ''; }
+            if (d.done) {
+                s.loading = false; s.note = d.note || '';
+                if (s.custom && d.skipped && !s.note) s.note = d.skipped + ' app' + (d.skipped === 1 ? '' : 's') + ' hidden (no build for this device).';
+                if (s.custom && d.repoName && !s.def.named) storeCustomSetTitle(src, d.repoName, true);
+            }
             else if (d.note) s.note = d.note;
             refreshCats(src);
             renderSource(src);
         }
         window.onStoreSource = onStoreSource;
+
+        // ---- the + tab: stores the person adds (a repository address, a GitHub or Codeberg user, organization or project) ----
+        const STORE_CUSTOM_MAX = 12;
+        let storeCustomBuilt = false;
+        function storeCustomList() { const l = kvGet('store_custom', []); return Array.isArray(l) ? l.filter(d => d && /^x[a-z0-9]{3,12}$/.test(d.id || '') && typeof d.title === 'string' && typeof d.kind === 'string') : []; }
+        function storeCustomSave(l) { kvSet('store_custom', l); }
+        // what an address is: a project or a user of GitHub or Codeberg, or else a repository to be read (F-Droid style)
+        function storeParseUrl(raw) {
+            let u = String(raw || '').trim();
+            if (!u) return null;
+            if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(u)) u = 'https://' + u.replace(/^\/+/, '');
+            u = u.replace(/^http:\/\//i, 'https://');
+            if (!/^https:\/\/[^\s/]+\.[^\s/]+/i.test(u) || /\s/.test(u)) return null;
+            let m = /^https:\/\/(?:www\.)?(github\.com|codeberg\.org)\/([A-Za-z0-9](?:[A-Za-z0-9._-]{0,98}))(?:\/([A-Za-z0-9._-]{1,100}))?(?:[\/?#].*)?$/i.exec(u);
+            if (m) {
+                const host = m[1].toLowerCase() === 'github.com' ? 'github' : 'codeberg';
+                const owner = m[2];
+                if (/^(orgs|topics|settings|marketplace|explore|about|pricing|features|sponsors|login|join|notifications|issues|pulls|search|trending|collections|apps)$/i.test(owner)) return null;
+                const repo = m[3] ? m[3].replace(/\.git$/i, '') : '';
+                return repo ? { kind: host + '-repo', owner: owner, repo: repo, url: 'https://' + (host === 'github' ? 'github.com' : 'codeberg.org') + '/' + owner + '/' + repo, title: repo }
+                            : { kind: host + '-owner', owner: owner, repo: '', url: 'https://' + (host === 'github' ? 'github.com' : 'codeberg.org') + '/' + owner, title: owner };
+            }
+            let host = '';
+            try { host = new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return null; }
+            return { kind: 'fdroid', owner: '', repo: '', url: u, title: host };
+        }
+        function storeAddHint() {
+            const p = storeParseUrl(document.getElementById('storeAddUrl').value), n = document.getElementById('storeAddNote');
+            n.classList.remove('is-err');
+            if (!document.getElementById('storeAddUrl').value.trim()) { n.innerText = ''; return; }
+            n.innerText = !p ? 'That does not look like a web address.' : p.kind === 'fdroid' ? 'A repository: the app will look for its catalog (index-v2.json or index-v1.jar).'
+                : p.kind.endsWith('-repo') ? 'A ' + (p.kind.startsWith('github') ? 'GitHub' : 'Codeberg') + ' project: it installs the APK of its latest release.' : 'A ' + (p.kind.startsWith('github') ? 'GitHub' : 'Codeberg') + ' user or organization: every project of it is listed.';
+        }
+        function storeAddOpen() {
+            haptic();
+            if (storeCustomList().length >= STORE_CUSTOM_MAX) { showToast('Up to ' + STORE_CUSTOM_MAX + ' extra stores. Remove one first.'); return; }
+            document.getElementById('storeAddUrl').value = ''; document.getElementById('storeAddName').value = '';
+            document.getElementById('storeAddNote').innerText = ''; document.getElementById('storeAddBtn').disabled = false;
+            document.getElementById('storeAddModal').classList.add('show');
+        }
+        function storeAddClose() { document.getElementById('storeAddModal').classList.remove('show'); storeProbePending = null; }
+        let storeProbePending = null;
+        function storeAddSubmit() {
+            const raw = document.getElementById('storeAddUrl').value, note = document.getElementById('storeAddNote');
+            const p = storeParseUrl(raw), named = document.getElementById('storeAddName').value.trim().slice(0, 30);
+            note.classList.remove('is-err');
+            if (!p) { note.classList.add('is-err'); note.innerText = 'Paste a web address, for example https://github.com/owner/project'; return; }
+            const dup = storeCustomList().find(d => d.kind === p.kind && (p.kind === 'fdroid' ? d.url.replace(/\/+$/, '') === p.url.replace(/\/+$/, '') : d.owner.toLowerCase() === p.owner.toLowerCase() && d.repo.toLowerCase() === p.repo.toLowerCase()));
+            if (dup) { storeAddClose(); showToast('That store is already here: ' + dup.title); switchStoreTab('x' + dup.id.slice(1)); return; }
+            if (p.kind !== 'fdroid') { storeCustomCreate({ kind: p.kind, url: p.url, owner: p.owner, repo: p.repo, title: named || p.title, named: !!named }); return; }
+            if (!window.AndroidBridge || !window.AndroidBridge.storeCustomProbe) { note.classList.add('is-err'); note.innerText = 'Adding a repository needs the app build.'; return; }
+            const id = 'x' + Date.now().toString(36).slice(-6) + Math.floor(Math.random() * 36).toString(36);
+            storeProbePending = { id: id, named: named, url: p.url };
+            document.getElementById('storeAddBtn').disabled = true;
+            note.innerText = 'Looking at the address…';
+            window.AndroidBridge.storeCustomProbe(id, p.url);
+        }
+        window.onStoreCustomProbe = function (json) {
+            let d; try { d = JSON.parse(json); } catch (e) { return; }
+            if (!storeProbePending || storeProbePending.id !== d.id) return;
+            const pend = storeProbePending; storeProbePending = null;
+            const note = document.getElementById('storeAddNote'); document.getElementById('storeAddBtn').disabled = false;
+            if (!d.ok) { note.classList.add('is-err'); note.innerText = d.error || 'That address could not be read.'; return; }
+            let host = 'Repository'; try { host = new URL(d.address).hostname.replace(/^www\./, ''); } catch (e) {}
+            storeCustomCreate({ id: d.id, kind: 'fdroid', url: d.address, owner: '', repo: '', title: pend.named || String(d.title || '').slice(0, 30) || host, named: !!pend.named });
+        };
+        function storeCustomCreate(def) {
+            def.id = def.id || ('x' + Date.now().toString(36).slice(-6) + Math.floor(Math.random() * 36).toString(36));
+            const list = storeCustomList();
+            if (list.some(x => x.id === def.id)) def.id += 'z';
+            list.push({ id: def.id, kind: def.kind, url: def.url, owner: def.owner || '', repo: def.repo || '', title: def.title, named: !!def.named });
+            storeCustomSave(list);
+            storeAddClose();
+            storeCustomBuild(list[list.length - 1]);
+            showToast('Added ' + def.title);
+            switchStoreTab(def.id);
+        }
+        function storeCustomBuild(def) {
+            const key = def.id;
+            if (document.getElementById('substore-' + key)) return;
+            const esc = escapeHtml;
+            const stars = def.kind.indexOf('github') === 0 || def.kind.indexOf('codeberg') === 0;
+            storeSrc[key] = Object.assign(newSrc(stars ? 'stars' : 'updated'), { custom: true, def: def, fdroidRepo: def.kind === 'fdroid' ? def.url : '' });
+            const btn = document.createElement('button');
+            btn.className = 'store-subtab'; btn.dataset.store = key; btn.id = 'subtab-' + key; btn.setAttribute('translate', 'no');
+            btn.textContent = def.title; btn.onclick = function () { switchStoreTab(key); };
+            const bar = document.getElementById('storeSubtabs');
+            bar.insertBefore(btn, document.getElementById('storeAddTab'));
+            const kindText = def.kind === 'fdroid' ? 'An F-Droid style repository' : def.kind === 'github-owner' ? 'Projects of a GitHub user or organization' : def.kind === 'github-repo' ? 'A GitHub project' : def.kind === 'codeberg-owner' ? 'Projects of a Codeberg user or organization' : 'A Codeberg project';
+            const sorts = def.kind === 'fdroid' ? '<option value="updated">Recently updated</option><option value="name">Name (A–Z)</option>'
+                : '<option value="stars">Most starred</option><option value="updated">Recently updated</option><option value="name">Name (A–Z)</option>';
+            const panel = document.createElement('div');
+            panel.className = 'substore'; panel.id = 'substore-' + key; panel.style.display = 'none';
+            panel.innerHTML = `<div class="color-card">
+                    <div class="color-card-title" id="${key}Title" translate="no">${esc(def.title)}</div>
+                    <div class="color-card-subtitle">${esc(kindText)}: <span translate="no" style="word-break:break-all;">${esc(def.url)}</span></div>
+                    <div class="store-toolbar">
+                        <input type="text" class="list-search" id="${key}Search" placeholder="Search apps…" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="setSrcQuery('${key}', this.value)">
+                        <select class="op-select" id="${key}Cat" onchange="setSrcCat('${key}', this.value)" aria-label="Category"><option value="">All categories</option></select>
+                        <select class="op-select" id="${key}Sort" onchange="setSrcSort('${key}', this.value)" aria-label="Sort">${sorts}</select>
+                    </div>
+                    <div class="batch-sheet-tools" style="margin-bottom:2px; gap:14px; align-items:center; flex-wrap:wrap;">
+                        <button class="batch-tool-link" onclick="refreshSource('${key}')">Refresh</button>
+                        <button class="batch-tool-link" onclick="storeCustomRename('${key}')">Rename</button>
+                        <button class="batch-tool-link" style="color:var(--status-bloat);" onclick="storeCustomRemove('${key}')">Remove this store</button>
+                        <span id="${key}Count" style="font-size:12px; color:var(--text-muted);"></span>
+                    </div>
+                </div>
+                <div id="${key}Status" class="uad-status" style="margin:6px 2px;">Loading…</div>
+                <div id="${key}List" class="store-rows"></div>
+                <div id="${key}More" class="store-more"></div>`;
+            document.getElementById('storeCustomPanels').appendChild(panel);
+        }
+        function storeCustomRestore() {
+            if (storeCustomBuilt) return;
+            storeCustomBuilt = true;
+            storeCustomList().forEach(storeCustomBuild);
+        }
+        function loadCustom(key, force) {
+            const s = storeSrc[key];
+            if (!s || s.loading) return;
+            if (s.loaded && !force) { renderSource(key); return; }
+            if (!window.AndroidBridge || !window.AndroidBridge.storeSourceCatalog) { s.error = 'This store needs the app build (Android bridge).'; renderSource(key); return; }
+            s.items = []; s.keys = null; s.loaded = false; s.loading = true; s.error = ''; s.note = ''; s.shown = STORE_PAGE; s.progress = force ? 'Refreshing…' : 'Loading…';
+            renderSource(key);
+            const arg = JSON.stringify({ id: key, kind: s.def.kind, url: s.def.url, owner: s.def.owner || '', repo: s.def.repo || '' });
+            if (force && window.AndroidBridge.storeSourceRefresh) window.AndroidBridge.storeSourceRefresh('custom', arg); else window.AndroidBridge.storeSourceCatalog('custom', arg);
+        }
+        function storeCustomSetTitle(key, title, auto) {
+            const s = storeSrc[key]; if (!s || !s.custom) return;
+            title = String(title || '').trim().slice(0, 30); if (!title) return;
+            s.def.title = title; if (!auto) s.def.named = true;
+            const l = storeCustomList(); const d = l.find(x => x.id === key); if (d) { d.title = title; d.named = !!s.def.named; storeCustomSave(l); }
+            const b = document.getElementById('subtab-' + key); if (b) b.textContent = title;
+            const t = document.getElementById(key + 'Title'); if (t) t.textContent = title;
+        }
+        function storeCustomRename(key) {
+            const s = storeSrc[key]; if (!s || !s.custom) return;
+            haptic();
+            const v = prompt('Name of this tab', s.def.title);
+            if (v === null) return;
+            if (!v.trim()) { showToast('A tab needs a name'); return; }
+            storeCustomSetTitle(key, v, false);
+            showToast('Renamed');
+        }
+        function storeCustomRemove(key) {
+            const s = storeSrc[key]; if (!s || !s.custom) return;
+            haptic();
+            if (!confirm('Remove the store "' + s.def.title + '"? Apps you installed from it stay installed.')) return;
+            storeCustomSave(storeCustomList().filter(x => x.id !== key));
+            const b = document.getElementById('subtab-' + key); if (b) b.remove();
+            const p = document.getElementById('substore-' + key); if (p) p.remove();
+            delete storeSrc[key];
+            switchStoreTab('shizu');
+            showToast('Removed');
+        }
+
+        // ---- the details of an app of any store: what the list knows at once, the rest (long text, screenshots, links) from the phone ----
+        const storeDetailMemo = {};
+        function storeItemOpen(el) {
+            const src = el.dataset.src, k = el.dataset.key;
+            const item = storeSrc[src] ? srcItemByKey(src, k) : null;
+            if (!item) return;
+            haptic();
+            const memo = storeDetailMemo[src + '|' + k];
+            storeCurrent = { slug: k, src: src, item: item, app: { name: item.name, sourceUrl: item.page || '' }, download: null, generic: true };
+            document.getElementById('storeModal').classList.add('show');
+            document.getElementById('storeInstallProgress').style.display = 'none';
+            const btn = document.getElementById('storeInstallBtn'); btn.disabled = false; btn.innerText = 'Install';
+            document.getElementById('storeDetailName').innerText = item.name || k;
+            const ver = item.ver || item.version;
+            document.getElementById('storeDetailSub').innerText = (item.pkg || (item.owner ? item.owner + '/' + item.repo : '')) + (ver && String(ver).toLowerCase() !== 'latest' ? ' · v' + String(ver).replace(/^v/i, '') : '');
+            const av = document.getElementById('storeDetailAvatar'), letter = firstChar(item.name, '?');
+            if (item.icon) av.innerHTML = `<img src="${escapeHtml(item.icon)}" alt="" data-letter="${escapeHtml(letter)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.textContent=this.dataset.letter">`;
+            else av.textContent = letter;
+            storeGenericRender(item, memo || null, memo ? '' : 'Loading the full description and the screenshots…', false);
+            if (memo) return;
+            if (!window.AndroidBridge || !window.AndroidBridge.storeSourceDetail) { storeGenericRender(item, null, '', false); return; }
+            const s = storeSrc[src];
+            window.AndroidBridge.storeSourceDetail(JSON.stringify({ key: k, source: item.source || src, resolveKind: item.resolveKind || '', owner: item.owner || '', repo: item.repo || '', pkg: item.pkg || '',
+                fdroidRepo: src === 'fdroid' ? (s.current || '') : (s.fdroidRepo || '') }));
+        }
+        window.onStoreSourceDetail = function (json) {
+            let d; try { d = JSON.parse(json); } catch (e) { return; }
+            if (!storeCurrent || !storeCurrent.generic || d.key !== storeCurrent.slug) return;
+            const item = storeCurrent.item;
+            if (d.ok && d.detail) storeDetailMemo[storeCurrent.src + '|' + d.key] = d.detail;
+            storeGenericRender(item, d.ok ? (d.detail || null) : null, d.ok ? (d.note || '') : 'The full information could not be loaded: ' + (d.error || 'unknown error'), !d.ok);
+        };
+        function storeShotsHtml(shots) {
+            const esc = escapeHtml;
+            const list = (shots || []).filter(u => typeof u === 'string' && /^https?:\/\//i.test(u)).slice(0, 12);
+            if (!list.length) return '';
+            shotSet(list);
+            return `<div class="shot-row">${list.map((x, i) => `<img class="shot-thumb" src="${esc(x)}" alt="Screenshot ${i + 1} of ${list.length}: tap to enlarge" role="button" tabindex="0" style="height:220px;border-radius:10px;" loading="lazy" onclick="shotOpen(${i})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();shotOpen(${i});}">`).join('')}</div>`;
+        }
+        function storeGenericRender(item, det, note, isErr) {
+            const esc = escapeHtml;
+            const parts = [];
+            det = det || {};
+            const text = htmlToReadable(det.d || item.desc || '');
+            if (text) parts.push(`<div style="font-size:13px;color:var(--text-main);white-space:pre-wrap;overflow-wrap:anywhere;margin-bottom:10px;">${esc(text)}</div>`);
+            const chips = [];
+            const stars = det.stars != null ? det.stars : item.stars;
+            if (stars) chips.push(esc(fmtCount(stars)) + ' stars');
+            if (det.forks) chips.push(esc(fmtCount(det.forks)) + ' forks');
+            if (item.downloads) chips.push(esc(fmtCount(item.downloads)) + ' downloads');
+            const by = det.by || item.author || item.owner; if (by) chips.push('by ' + esc(by));
+            if (det.lic) chips.push('© ' + esc(det.lic));
+            if (item.size) chips.push((Math.round(item.size / 1048576 * 10) / 10) + ' MB');
+            (item.cats || []).slice(0, 3).forEach(c => chips.push(esc(c)));
+            (det.topics || []).slice(0, 5).forEach(c => chips.push('#' + esc(c)));
+            if (chips.length) parts.push(`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">${chips.map(c => `<span style="font-size:11px;color:var(--text-muted);background:rgba(var(--ov),0.08);border-radius:8px;padding:3px 8px;">${c}</span>`).join('')}</div>`);
+            const from = item.resolveKind === 'github' ? 'the latest GitHub release' : item.resolveKind === 'codeberg' ? 'the latest Codeberg release' : item.source === 'fdroid' ? 'the repository' : 'a direct link';
+            parts.push(`<div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">Installs from <b>${esc(from)}</b>, checked for this device before it is installed.</div>`);
+            const shots = storeShotsHtml(det.shots);
+            if (shots) parts.push(shots);
+            const links = [];
+            if (det.web && /^https?:\/\//i.test(det.web)) links.push(['Website', det.web]);
+            const srcUrl = det.src || item.page || '';
+            if (/^https?:\/\//i.test(srcUrl)) links.push(['Source', srcUrl]);
+            if (links.length) parts.push(`<div style="display:flex;gap:12px;flex-wrap:wrap;margin:6px 0 10px;">${links.map(l => `<button class="batch-tool-link" data-u="${esc(l[1])}" onclick="openUrlExternal(this.dataset.u)">${esc(l[0])}</button>`).join('')}</div>`);
+            if (note) parts.push(isErr ? `<div class="uad-status"><span class="is-err">${esc(note)}</span></div>` : `<div class="uad-status">${esc(note)}</div>`);
+            if (storeCurrent && storeCurrent.generic) storeCurrent.app = { name: item.name, sourceUrl: srcUrl, url: det.web || '' };
+            document.getElementById('storeDetailBody').innerHTML = parts.join('');
+        }
 
         // ---- install ----
         function srcItemByKey(src, k) {
@@ -19845,6 +20181,7 @@ Type any command below (e.g. pm list packages -d)
         let tmTempUnit = 'f';
         let tmCurrentUnit = 'ma';
         let tmSort = 'cpu';
+        let tmAppsFirst = false;                // apps (processes that belong to an app) above system and kernel processes
         let tmRedrawTimer = null;
         let tmLastData = null;
         const TM_BUF_MAX = 120;
@@ -19861,6 +20198,7 @@ Type any command below (e.g. pm list packages -d)
             if (ui.tempUnit === 'c' || ui.tempUnit === 'f') tmTempUnit = ui.tempUnit;
             if (ui.currentUnit === 'ua' || ui.currentUnit === 'ma') tmCurrentUnit = ui.currentUnit;
             if (ui.sort === 'mem' || ui.sort === 'cpu') tmSort = ui.sort;
+            tmAppsFirst = ui.appsFirst === true;
 
             document.querySelectorAll('#tmTabs .sdb-tab').forEach(b => b.classList.toggle('active', b.dataset.sub === tmSub));
             const auto = document.getElementById('tmAutoRefresh'); if (auto) auto.value = String(tmAutoMs / 1000);
@@ -19870,6 +20208,7 @@ Type any command below (e.g. pm list packages -d)
             const curSel = document.getElementById('tmCurrentUnit'); if (curSel) curSel.value = tmCurrentUnit;
             const sc = document.getElementById('tmSortCpu'); if (sc) sc.classList.toggle('on', tmSort === 'cpu');
             const sm = document.getElementById('tmSortMem'); if (sm) sm.classList.toggle('on', tmSort === 'mem');
+            tmSyncAppsFirst();
             tmShowPanels();
         }
         // a temperature in the unit chosen under Units (the Battery and CPU tabs share it)
@@ -19878,7 +20217,7 @@ Type any command below (e.g. pm list packages -d)
             const sel = document.getElementById('tmTempUnit'); if (sel) tmTempUnit = sel.value === 'c' ? 'c' : 'f';
             tmSaveUi(); tmRenderBattery(); tmRenderCpu();
         }
-        function tmSaveUi() { kvSet('taskmgr_ui', { sub: tmSub, autoMs: tmAutoMs, graphMs: tmGraphMs, tempUnit: tmTempUnit, currentUnit: tmCurrentUnit, sort: tmSort }); }
+        function tmSaveUi() { kvSet('taskmgr_ui', { sub: tmSub, autoMs: tmAutoMs, graphMs: tmGraphMs, tempUnit: tmTempUnit, currentUnit: tmCurrentUnit, sort: tmSort, appsFirst: tmAppsFirst }); }
 
         function tmNeedsPriv() { return tmSub === 'processes' || tmSub === 'gpu'; }
         function tmRenderGate() {
@@ -19957,6 +20296,17 @@ Type any command below (e.g. pm list packages -d)
             tmSort = sort;
             const sc = document.getElementById('tmSortCpu'); if (sc) sc.classList.toggle('on', sort === 'cpu');
             const sm = document.getElementById('tmSortMem'); if (sm) sm.classList.toggle('on', sort === 'mem');
+            tmSaveUi();
+            haptic();
+            tmRenderProcesses();
+        }
+        function tmSyncAppsFirst() {
+            const b = document.getElementById('tmAppsFirst');
+            if (b) { b.classList.toggle('on', tmAppsFirst); b.setAttribute('aria-pressed', tmAppsFirst ? 'true' : 'false'); }
+        }
+        function tmToggleAppsFirst() {
+            tmAppsFirst = !tmAppsFirst;
+            tmSyncAppsFirst();
             tmSaveUi();
             haptic();
             tmRenderProcesses();
@@ -20052,6 +20402,10 @@ Type any command below (e.g. pm list packages -d)
                 return;
             }
             const procs = (d.procs || []).slice().sort(tmSort === 'mem' ? (a, b) => b.rssKb - a.rssKb : (a, b) => b.cpuPercent - a.cpuPercent);
+            if (tmAppsFirst) {                                  // a stable split: apps keep their order among themselves, so do the rest
+                const apps = procs.filter(p => !!p.pkg), rest = procs.filter(p => !p.pkg);
+                procs.length = 0; apps.concat(rest).forEach(p => procs.push(p));
+            }
             statusEl.innerText = procs.length + ' process' + (procs.length === 1 ? '' : 'es') + (d.procsFullFormat === false ? ' (reduced ps output on this device)' : '');
             if (!procs.length) { el.innerHTML = '<div class="list-empty">No processes read.</div>'; return; }
             el.innerHTML = procs.slice(0, 200).map(p => {
@@ -31069,7 +31423,7 @@ Type any command below (e.g. pm list packages -d)
         function sdCall(op, args) {
             return new Promise(resolve => {
                 const b = window.AndroidBridge;
-                if (!b || !b.sdm) { resolve({ ok: false, error: 'SD Maid SE needs the app (this build of the page has no bridge).' }); return; }
+                if (!b || !b.sdm) { resolve({ ok: false, error: 'SD Maid needs the app (this build of the page has no bridge).' }); return; }
                 const tag = 'sd' + (++SD.seq);
                 SD.calls[tag] = resolve;
                 try { b.sdm(tag, op, JSON.stringify(args || {})); } catch (e) { delete SD.calls[tag]; resolve({ ok: false, error: String(e && e.message || e) }); }
@@ -31116,6 +31470,7 @@ Type any command below (e.g. pm list packages -d)
 
         // ---- showing the tab ----
         async function onSdmShown() {
+            trimSyncLock();
             if (!SD.shown) {
                 SD.shown = true;
                 const saved = kvGet('sdm_onetap', null);
@@ -31126,7 +31481,7 @@ Type any command below (e.g. pm list packages -d)
             if (st.ok) sdApplyState(st);
             if (ar.ok) { SD.areas = ar.areas || []; SD.mode = ar.mode || null; SD.access = ar.access || null; if (ar.acs) SD.acs = ar.acs; }
             if (ac.ok) SD.acs = ac;
-            if (!st.ok) { const e = document.getElementById('sdStatus'); if (e) e.textContent = st.error || 'SD Maid SE is not available.'; }
+            if (!st.ok) { const e = document.getElementById('sdStatus'); if (e) e.textContent = st.error || 'SD Maid is not available.'; }
             sdPaintTop(); sdPaintAcs();
             clearTimeout(SD.timer);
         }
@@ -31205,7 +31560,7 @@ Type any command below (e.g. pm list packages -d)
             const id = t.id, s = sdTool(id), busy = sdBusy(s), one = !!SD.one[id];
             let btns;
             if (busy) btns = '<button class="mode-action-btn" onclick="sdCancel(\'' + id + '\')">Cancel</button>';
-            else if (s.hasData) btns = '<button class="mode-action-btn ico" onclick="sdReview(\'' + id + '\')" aria-label="Show details">Details</button>' +
+            else if (s.hasData) btns = (id === 'appcleaner' ? '<button class="mode-action-btn" id="sdClearRest" onclick="sdClearRemaining()">Clear the rest with accessibility</button>' : '') + '<button class="mode-action-btn ico" onclick="sdReview(\'' + id + '\')" aria-label="Show details">Details</button>' +
                 '<button class="mode-action-btn danger fill" onclick="sdDeleteTool(\'' + id + '\')">Delete</button>' +
                 '<button class="mode-action-btn primary" onclick="sdScan(\'' + id + '\')">' + (one ? 'Scan and delete' : 'Scan') + '</button>';
             else btns = '<button class="mode-action-btn primary" onclick="sdScan(\'' + id + '\')">' + (one ? 'Scan and delete' : 'Scan') + '</button>';
@@ -31302,7 +31657,7 @@ Type any command below (e.g. pm list packages -d)
             const r = await sdCall('acs', { op: op });
             if (!r.ok) { sdFail(r); return; }
             SD.acs = r; sdPaintAcs();
-            if (op === 'openSettings') showToast('Find SD Maid SE, or this app, in the list and turn the service on');
+            if (op === 'openSettings') showToast('Find this app in the list and turn its service on');
         }
         async function sdAcsConsent() {
             if (!await mpAsk({ title: 'Allow the accessibility service?', text: SD_ACS_BODY, ok: 'I agree' })) return;
@@ -31373,23 +31728,44 @@ Type any command below (e.g. pm list packages -d)
 
         // ---- delete ----
         function sdDeleteOptions(tool) {
-            if (tool === 'appcleaner') return { includeInaccessible: true, useAutomation: !!(SD.acs && SD.acs.enabled && SD.acs.consent) };
+            // the service is asked for at the moment of deleting: the phone knows if it is ready, the page's idea of it may be minutes old
+            if (tool === 'appcleaner') return { includeInaccessible: true, useAutomation: true };
             if (tool === 'deduplicator') return { deleteAll: false };
             return {};
         }
         function sdConfirmText(tool) {
             const t = SD_TOOLS.find(x => x.id === tool), st = sdSelStats(tool);
             let txt = st.all ? t.all : 'Delete ' + st.count + ' selected item' + (st.count === 1 ? '' : 's') + (st.bytes ? ' (' + sdSizeStr(st.bytes) + ')' : '') + '?';
-            if (tool === 'appcleaner' && SD.acs && SD.acs.enabled && SD.acs.consent) txt += '\n\nCaches that file access cannot reach are cleared with the accessibility service: the screen shows the settings of one app after the other for a moment.';
-            if (tool === 'appcleaner' && !(SD.acs && SD.acs.enabled && SD.acs.consent)) txt += '\n\nThe accessibility service is not set up, so the caches that only it can clear stay.';
+            if (tool === 'appcleaner' && SD.acs && SD.acs.consent && SD.acs.connected) txt += '\n\nCaches that file access cannot reach are cleared with the accessibility service: the screen shows the settings of one app after the other for a moment.';
+            if (tool === 'appcleaner' && !(SD.acs && SD.acs.consent && SD.acs.connected)) txt += '\n\nThe accessibility service is not ready (' + (SD.acs && !SD.acs.consent ? 'no consent given' : SD.acs && !SD.acs.enabled ? 'it is off' : 'it is not connected') + '), so the caches that only it can clear stay. After this, use "Clear the rest with accessibility" on the AppCleaner card.';
             return txt;
+        }
+        async function sdAcsRefresh() {
+            const r = await sdCall('acs', { op: 'status' });
+            if (r.ok) { SD.acs = r; sdPaintAcs(); }
         }
         async function sdDeleteTool(tool) {
             const st = sdSelStats(tool);
             if (!st.all && st.count === 0) { showToast('Nothing is selected'); return; }
+            if (tool === 'appcleaner') await sdAcsRefresh();
             if (!await mpAsk({ title: 'Confirm deletion', text: sdConfirmText(tool), ok: 'Delete', danger: true })) return;
             if (SD.sheet) sdSheetClose();
             const r = await sdCall('delete', { tool: tool, selection: sdSelection(tool, sdDeleteOptions(tool)) });
+            if (!r.ok) sdFail(r);
+        }
+        // The caches that no file access reaches, and that the trim of all apps left: the accessibility service opens each app's settings and taps Clear cache.
+        async function sdClearRemaining() {
+            haptic();
+            await sdAcsRefresh();
+            const a = SD.acs || {};
+            if (!a.consent || !a.enabled || !a.connected) {
+                const why = !a.consent ? 'It needs your consent first.' : !a.enabled ? 'The service is off.' : 'The service is switched on but has not connected yet; turn it off and on again in the accessibility settings.';
+                if (await mpAsk({ title: 'The accessibility service is not ready', text: why + ' Set it up now?', ok: 'Set it up' })) { if (!a.consent || !a.enabled) await sdAcsEnable(); else await sdAcsOp('openSettings'); }
+                return;
+            }
+            if (!await mpAsk({ title: 'Clear the rest with accessibility?', text: 'The screen shows the settings of one app after the other for a moment while Clear cache is tapped for each app that still has a cache the files cannot reach. A cover shows what is happening, with a Cancel button. It stops if the screen turns off.', ok: 'Start' })) return;
+            if (SD.sheet) sdSheetClose();
+            const r = await sdCall('delete', { tool: 'appcleaner', selection: sdSelection('appcleaner', { includeInaccessible: true, onlyInaccessible: true, useAutomation: true }) });
             if (!r.ok) sdFail(r);
         }
         async function sdDeleteAll() {

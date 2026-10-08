@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.bloatware.bingblop"
-    android:versionCode="829"
-    android:versionName="7.10.9-Pro">
+    android:versionCode="830"
+    android:versionName="7.10.10-Pro">
 
     <uses-sdk
         android:minSdkVersion="26"
@@ -156,11 +156,11 @@
             </intent-filter>
         </service>
 
-        <!-- The SD Maid SE tab's AppCleaner: taps Clear cache in the system settings, only after the person agreed in the app, with a cover and a Cancel -->
+        <!-- The SD Maid tab's AppCleaner: taps Clear cache in the system settings, only after the person agreed in the app, with a cover and a Cancel -->
         <service
             android:name=".SdmAccessService"
             android:exported="true"
-            android:label="SD Maid SE (AppCleaner)"
+            android:label="SD Maid (AppCleaner) - ADB App Manager"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />

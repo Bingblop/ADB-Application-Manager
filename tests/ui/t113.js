@@ -1,4 +1,4 @@
-// Settings > Trim Caches in All Applications: the last card of Settings, a button that says exactly that with a long explanation under it; it runs
+// SD Maid > Trim Caches in All Applications (a card of Settings until v7.10.10): a button that says exactly that with a long explanation under it; it runs
 // `pm trim-caches 128G` through the working mode (locked without one), asks first, runs off the page's thread, and reports success or failure with the free space before and after.
 const { chromium, PAGE } = require('./lib/pw');
 (async () => {
@@ -22,9 +22,9 @@ const { chromium, PAGE } = require('./lib/pw');
   const modal = () => page.isVisible('#commandResultsModal.show');
   const setMode = on => page.evaluate(on => { isPrivilegedActive = on; trimSyncLock(); }, on);
 
-  await page.evaluate(() => switchView('prefs')); await sleep(300);
+  await page.evaluate(() => switchView('sdm')); await sleep(300);
   const card = page.locator('#trimCachesCard');
-  console.log('the card is the last one in Settings:', await page.evaluate(() => { const cards = document.querySelectorAll('#view-prefs > .color-card'); return cards[cards.length - 1].id; }));
+  console.log('the card is in the SD Maid tab and no longer in Settings:', await page.evaluate(() => !!document.querySelector('#view-sdm #trimCachesCard') && !document.querySelector('#view-prefs #trimCachesCard')));
   console.log('button text:', JSON.stringify((await page.locator('#trimCachesBtn').innerText()).trim()));
   console.log('explanation is below the button:', await page.evaluate(() => { const a = document.getElementById('trimCachesBtn'), e = document.getElementById('trimCachesExplain'); return !!(a.compareDocumentPosition(e) & Node.DOCUMENT_POSITION_FOLLOWING); }));
   const text = await page.locator('#trimCachesExplain').innerText();

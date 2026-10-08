@@ -2825,33 +2825,91 @@ public class MainActivity extends Activity {
     }
 
     private void loadFdroidRepo(final String address, boolean force) throws Exception {
-        final String source = "fdroid-repo";
+        loadFdroidRepoAs("fdroid-repo", address, address, force);
+    }
+
+    /** The side file with the descriptions and screenshots of a repository's apps, next to its cached catalog. */
+    private File storeDetailFile(String address) {
+        String ckey = "fdroid-" + Integer.toHexString(address.hashCode());
+        File d = new File(getCacheDir(), "store");
+        d.mkdirs();
+        return new File(d, ckey + ".detail");
+    }
+
+    /** Reads an F-Droid style repository and delivers it as {@code source}/{@code arg} (the F-Droid tab and the custom stores share this). */
+    private void loadFdroidRepoAs(final String source, final String arg, final String address, boolean force) throws Exception {
         if (address == null || !address.startsWith("https://")) {
-            storeError(source, address, "Invalid repository address.");
+            storeError(source, arg, "Invalid repository address.");
             return;
         }
         final String ckey = "fdroid-" + Integer.toHexString(address.hashCode());
-        if (force) storeCacheClear(ckey);
+        if (force) { storeCacheClear(ckey); try { storeDetailFile(address).delete(); } catch (Throwable ignored) {} }
         JSONArray cached = force ? null : storeCacheRead(ckey, STORE_CACHE_TTL_MS);
         if (cached != null && cached.length() > 0) {
             JSONObject extra = new JSONObject();
             extra.put("cached", true);
-            storeDeliver(source, address, cached, extra);
+            storeDeliver(source, arg, cached, extra);
             return;
         }
-        storeProgress(source, address, "Contacting the repository…");
-        FdroidIndex.Result res = FdroidIndex.load(address, Build.SUPPORTED_ABIS, Build.VERSION.SDK_INT, new FdroidIndex.Sink() {
-            @Override
-            public void onProgress(long bytes, int apps) {
-                storeProgress(source, address, "Reading the catalog… " + XapkInfo.humanBytes(bytes) + " · " + apps + " apps");
-            }
-        });
+        storeProgress(source, arg, "Contacting the repository…");
+        final File detailTmp = new File(storeDetailFile(address).getPath() + ".tmp");
+        final java.io.BufferedWriter dw = new java.io.BufferedWriter(new java.io.OutputStreamWriter(new FileOutputStream(detailTmp), "UTF-8"), 65536);
+        FdroidIndex.Result res;
+        try {
+            res = FdroidIndex.load(address, Build.SUPPORTED_ABIS, Build.VERSION.SDK_INT, new FdroidIndex.Sink() {
+                @Override
+                public void onProgress(long bytes, int apps) {
+                    storeProgress(source, arg, "Reading the catalog… " + XapkInfo.humanBytes(bytes) + " · " + apps + " apps");
+                }
+            }, new FdroidIndex.Details() {
+                @Override
+                public void put(String pkg, JSONObject detail) {
+                    try { dw.write(StoreDetail.detailLine(pkg, detail)); dw.write('\n'); } catch (java.io.IOException ignored) {}
+                }
+            });
+        } catch (Exception e) {
+            try { dw.close(); } catch (Exception ignored) {}
+            detailTmp.delete();
+            throw e;
+        }
+        try { dw.close(); } catch (Exception ignored) {}
+        File detailFile = storeDetailFile(address);
+        detailFile.delete();
+        if (!detailTmp.renameTo(detailFile)) detailTmp.delete();
         storeCacheWrite(ckey, res.items);
         JSONObject extra = new JSONObject();
         extra.put("repoName", res.repoName);
         extra.put("format", res.format);
         extra.put("skipped", res.skipped);
-        storeDeliver(source, address, res.items, extra);
+        storeDeliver(source, arg, res.items, extra);
+    }
+
+    /**
+     * The catalog of a custom store (the "+" tab). arg is {id, kind, url, owner, repo}: kind "fdroid" (an F-Droid style repository at url), "github-owner",
+     * "github-repo", "codeberg-owner" or "codeberg-repo". Delivered as source "custom" with the same arg, so the page knows which tab it is for.
+     */
+    private void loadCustomStore(final String arg, boolean force) throws Exception {
+        final String source = "custom";
+        JSONObject a = new JSONObject(arg);
+        String kind = a.optString("kind", ""), owner = a.optString("owner", ""), repo = a.optString("repo", ""), url = a.optString("url", "");
+        if ("fdroid".equals(kind)) { loadFdroidRepoAs(source, arg, url, force); return; }
+        final String ckey = "custom-" + Integer.toHexString((kind + "|" + owner + "|" + repo).hashCode());
+        if (force) storeCacheClear(ckey);
+        JSONArray cached = force ? null : storeCacheRead(ckey, STORE_CACHE_TTL_MS);
+        if (cached != null && cached.length() > 0) { storeDeliver(source, arg, cached, null); return; }
+        storeProgress(source, arg, "Asking " + ("github-owner".equals(kind) || "github-repo".equals(kind) ? "GitHub" : "Codeberg") + "…");
+        String token = prefs.getString("github_token", "");
+        JSONArray items;
+        if ("github-owner".equals(kind)) items = StoreDetail.githubOwner(owner, token);
+        else if ("github-repo".equals(kind)) items = StoreDetail.githubRepo(owner, repo, token);
+        else if ("codeberg-owner".equals(kind)) items = StoreDetail.codebergOwner(owner);
+        else if ("codeberg-repo".equals(kind)) items = StoreDetail.codebergRepo(owner, repo);
+        else throw new IllegalStateException("unknown kind of store");
+        storeCacheWrite(ckey, items);
+        JSONObject extra = new JSONObject();
+        if (items.length() == 0) extra.put("note", "No projects found there.");
+        else if (kind.endsWith("-owner")) extra.put("note", "Not every project publishes an APK. Install says so when a project has none.");
+        storeDeliver(source, arg, items, extra);
     }
 
     /**
@@ -2870,9 +2928,69 @@ public class MainActivity extends Activity {
                         JSONObject res = Stores.fdroidRepos();
                         storeDeliver(source, arg, res.optJSONArray("items"), null);
                     } else if ("fdroid-repo".equals(source)) loadFdroidRepo(arg, force);
+                    else if ("custom".equals(source)) loadCustomStore(arg, force);
                     else throw new IllegalStateException("unknown store source");
                 } catch (Throwable e) {
                     storeError(source, arg, e instanceof Exception ? errMsg((Exception) e) : String.valueOf(e.getMessage()));
+                }
+            }
+        });
+    }
+
+    /**
+     * What an app of any store shows when it is opened: the long description, screenshots and links. item is the store item plus "repo" (the
+     * address of the F-Droid repository it came from). Answer: window.onStoreSourceDetail(json) {key, ok, detail | error}.
+     */
+    private void runStoreSourceDetail(final String itemJson) {
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                String key = "";
+                try {
+                    JSONObject item = new JSONObject(itemJson);
+                    key = item.optString("key", item.optString("id", ""));
+                    String kind = item.optString("resolveKind", ""), source = item.optString("source", ""), owner = item.optString("owner", ""), repo = item.optString("repo", "");
+                    String pkg = item.optString("pkg", ""), fdroidAddr = item.optString("fdroidRepo", "");
+                    JSONObject detail = null;
+                    String note = "";
+                    if (!fdroidAddr.isEmpty() && !pkg.isEmpty()) {
+                        detail = StoreDetail.fromFile(storeDetailFile(fdroidAddr), pkg);
+                        if (detail == null) note = "Refresh this store to load the full description and the screenshots.";
+                    } else if (!owner.isEmpty() && !repo.isEmpty() && "codeberg".equals(kind)) {
+                        detail = StoreDetail.codeberg(owner, repo);
+                    } else if (!owner.isEmpty() && !repo.isEmpty()) {
+                        detail = StoreDetail.github(owner, repo, prefs.getString("github_token", ""));
+                    } else {
+                        note = "This entry gives no more than what the list shows.";
+                    }
+                    JSONObject out = new JSONObject();
+                    out.put("key", key).put("source", source).put("ok", true).put("note", note);
+                    if (detail != null) out.put("detail", detail);
+                    notifyUpdates("onStoreSourceDetail", out);
+                } catch (Exception e) {
+                    try {
+                        String m = errMsg(e);
+                        if (m != null && m.contains("limit for requests")) m += ". Save a GitHub token (Updates tab) to raise it.";
+                        notifyUpdates("onStoreSourceDetail", new JSONObject().put("key", key).put("ok", false).put("error", m));
+                    } catch (Exception ignored) {}
+                }
+            }
+        });
+    }
+
+    /** Finds out what an address is for a custom store: an F-Droid style repository (and its name). Answer: window.onStoreCustomProbe(json). */
+    private void runStoreCustomProbe(final String id, final String url) {
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    String[] p = FdroidIndex.probe(url);
+                    JSONObject out = new JSONObject().put("id", id).put("url", url);
+                    if (p == null) out.put("ok", false).put("error", "That address is not a repository the app can read. Use the address of an F-Droid style repository, or a GitHub or Codeberg user, organization or project.");
+                    else out.put("ok", true).put("kind", "fdroid").put("address", p[0]).put("title", p[1]).put("format", p[2]);
+                    notifyUpdates("onStoreCustomProbe", out);
+                } catch (Exception e) {
+                    try { notifyUpdates("onStoreCustomProbe", new JSONObject().put("id", id).put("ok", false).put("error", errMsg(e))); } catch (Exception ignored) {}
                 }
             }
         });
@@ -10460,6 +10578,18 @@ public class MainActivity extends Activity {
             } catch (Throwable t) {
                 return false;
             }
+        }
+
+        /** The long description, screenshots and links of a store item. Answer: window.onStoreSourceDetail(json). */
+        @JavascriptInterface
+        public void storeSourceDetail(String itemJson) {
+            if (itemJson != null && !itemJson.isEmpty()) runStoreSourceDetail(itemJson);
+        }
+
+        /** What an address is for a custom store. Answer: window.onStoreCustomProbe(json). */
+        @JavascriptInterface
+        public void storeCustomProbe(String id, String url) {
+            if (id != null && url != null && url.startsWith("https://")) runStoreCustomProbe(id, url);
         }
 
         /** Resolves and installs a Komi/Orion/F-Droid catalog item. Progress: window.onStoreInstallProgress(json). */

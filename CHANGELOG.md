@@ -1,5 +1,29 @@
 # Changelog
 
+## v7.10.10-Pro (versionCode 830)
+
+- **Haptic feedback on every tap, with a switch.** Every tap on a button, a tab, a switch, a menu or a list row ticks (a short vibration), from one place, so nothing is missed and
+  nothing ticks twice (ticks are at least 70 ms apart; only real taps count, not clicks the page makes by itself). **Settings > Haptic feedback > Vibrate on taps**, **on by default**;
+  turning it on gives one tick as proof. Test: `t134`.
+- **App Stores: a + tab for stores of your own.** The last tab is a **+**. Paste an F-Droid style repository (its index is read for its name and apps, with the same checks as the
+  F-Droid tab), a GitHub or Codeberg **project** (a tab with that project, installing its latest release) or a GitHub or Codeberg **user or organization** (all their projects that are
+  not archived or forks, by stars). The tab is **named by you** or filled in from the address (the repository's own name, the project's or user's name); Rename and **Remove this store**
+  on its card; up to 12; kept across restarts. Native: `FdroidIndex.probe`, `StoreDetail.githubOwner/githubRepo/codebergOwner/codebergRepo`, bridge `storeCustomProbe`. Tests: `t134`,
+  `StoreDetailTest`, `FdroidTest`.
+- **App Stores: the details and screenshots of an app in every store.** Tapping a row in GitHub, F-Droid, Orion and your own tabs opens the detail sheet that only ShizuStore had: the
+  list's data at once, then the full description, screenshots (tap to enlarge), license, stars and forks, topics, Website and Source, and Install. F-Droid style repositories supply
+  their own description and screenshots (kept in a side file while the catalog is read, `StoreDetail.detailLine`); GitHub and Codeberg projects the README (readable text) and
+  the fastlane screenshots or, failing that, the pictures of the README (badges, logos and buttons left out). A failure keeps what the list knows and says why. Native:
+  `FdroidIndex.Details`, `StoreDetail`, bridge `storeSourceDetail`. Tests: `t134`, `StoreDetailTest`, `FdroidTest`.
+- **Task Manager > Processes: Apps first.** A button next to the sort buttons puts the processes of apps above the system and kernel processes, each group keeping the sort order. Remembered.
+- **Settings: the list of fonts found is emptied** when Settings is left (and when you tap the new **Clear this list**); a search that ends after you left is thrown away.
+- **The gear in the header wears the app's colours** (it had the green of the mode badge).
+- **SD Maid** is the tab's name now (it was SD Maid SE; the credits still say it is a port of SD Maid SE by darken). **Trim Caches in All Applications moved from Settings to this tab.**
+- **SD Maid > AppCleaner uses the accessibility service to clear the remaining caches.** Found and fixed: the service switched itself off when it was turned on before the consent
+  was given, so AppCleaner found no service and skipped the caches that need it; it now stays connected and only acts with the consent. The page no longer decides from a state that
+  may be minutes old: Delete asks the phone first (and says what is missing), and always asks for the automation, which the phone allows or not. New button **Clear the rest with
+  accessibility** on the AppCleaner card: clears only the caches no file access reaches, or says what is missing and offers to set the service up. Test: `t134`.
+
 ## v7.10.9-Pro (versionCode 829)
 
 - **About: "Handy to know" now sits under Device Specs** (it was above it). Help Guide and test `t99` follow.

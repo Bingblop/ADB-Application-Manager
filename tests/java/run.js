@@ -69,6 +69,7 @@ const SUITES = [
   { name: 'uninstallhints', title: 'What an uninstall failure means (pm uninstall answers: needs root, device policy, user restriction)', tests: ['UninstallHintsTest'], main: 'com.bloatware.bingblop.UninstallHintsTest' },
   { name: 'devuninstall', title: 'Removing an app on another device (Connected Devices): pm uninstall --user 0, the Binder helper pushed, run and taken off again when a system app needs it, what may go into the shell, against a fake adb', tests: ['DeviceUninstallTest'], main: 'com.bloatware.bingblop.DeviceUninstallTest', needs: ['json'] },
   { name: 'pure', title: 'Package-file scan output and XAPK data paths', tests: ['PureTest'], main: 'PureTest', needs: ['json'] },
+  { name: 'storedetail', title: 'App Stores: the detail of an app (pictures of a README, the side file of a repository, GitHub and Codeberg projects)', tests: ['StoreDetailTest'], main: 'com.bloatware.bingblop.StoreDetailTest', needs: ['androidall'] },
   { name: 'fdroid', title: 'F-Droid index v1 / v2 parsing (real Seeker and WG Tunnel indexes)', tests: ['FdroidTest'], main: 'com.bloatware.bingblop.FdroidTest', needs: ['androidall', 'fixtures'] },
   { name: 'komi', title: 'GitHub catalog (Komi) feeds: mapping, de-duplication, dates', tests: ['KomiTest'], main: 'KomiTest', needs: ['json', 'fixtures'] },
   { name: 'ziptool', title: 'Archive engine: read, edit and rewrite zips (bad, truncated, encrypted, huge, zip64, streamed), alignment, diff', tests: ['ZipToolTest'], main: 'ZipToolTest', needs: ['zipfix1', 'apk?'] },

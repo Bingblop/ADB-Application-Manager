@@ -1,5 +1,5 @@
-ok   SD Maid SE is in the tab bar after Morphe Patcher
-ok   its label is on two lines
+ok   SD Maid is in the tab bar after Morphe Patcher
+ok   its label is just SD Maid (v7.10.10), one line
 ok   it has a help "?" that points to its guide topic
 ok   four tool cards in the order SystemCleaner, AppCleaner, CorpseFinder, Deduplicator
 ok   each card says what the tool does

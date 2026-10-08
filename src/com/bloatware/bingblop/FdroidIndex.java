@@ -39,6 +39,14 @@ public final class FdroidIndex {
         void onProgress(long bytesRead, int apps);
     }
 
+    /**
+     * Receives what the app's detail sheet needs and the list does not: the long description, the screenshots (full addresses), the web site,
+     * the source code address, the license and the author. Called once per app that is listed, while the catalog is read.
+     */
+    public interface Details {
+        void put(String pkg, JSONObject detail);
+    }
+
     public static final class Result {
         public final JSONArray items = new JSONArray();
         public String repoName = "";
@@ -54,6 +62,7 @@ public final class FdroidIndex {
         int apps;
         long lastTick;
         final Sink sink;
+        Details details;
 
         Progress(Sink sink) { this.sink = sink; }
 
@@ -111,8 +120,14 @@ public final class FdroidIndex {
      * used to pick an installable version of each app.
      */
     public static Result load(String address, String[] abis, int sdk, Sink sink) throws Exception {
+        return load(address, abis, sdk, sink, null);
+    }
+
+    /** Same, and {@code details} (may be null) gets the description and screenshots of every app that is listed. */
+    public static Result load(String address, String[] abis, int sdk, Sink sink, Details details) throws Exception {
         String base = address.endsWith("/") ? address.substring(0, address.length() - 1) : address;
         Progress prog = new Progress(sink);
+        prog.details = details;
         String v2Problem;
         HttpURLConnection c2 = open(base + "/index-v2.json");
         try {
@@ -148,6 +163,68 @@ public final class FdroidIndex {
             } finally { z.close(); }
             throw new IllegalStateException("index-v1.jar has no index-v1.json");
         } finally { c1.disconnect(); }
+    }
+
+    /**
+     * Finds out whether {@code address} is an F-Droid style repository and what it calls itself, by reading only the start of its index.
+     * Tries the address as given (minus a trailing index file name or slash) and with /repo added. Returns {address, name, format} or null.
+     */
+    public static String[] probe(String address) throws Exception {
+        String a = address == null ? "" : address.trim();
+        a = a.replaceAll("[?#].*$", "").replaceAll("/index-v[12]\\.(json|jar)$", "").replaceAll("/entry\\.(json|jar)$", "").replaceAll("/+$", "");
+        if (!a.startsWith("https://")) return null;
+        String[] cands = a.endsWith("/repo") ? new String[]{a} : new String[]{a, a + "/repo"};
+        for (String base : cands) {
+            String name = probeV2(base);
+            if (name != null) return new String[]{base, name, "v2"};
+            name = probeV1(base);
+            if (name != null) return new String[]{base, name, "v1"};
+        }
+        return null;
+    }
+
+    private static String probeV2(String base) {
+        HttpURLConnection c = null;
+        try {
+            c = open(base + "/index-v2.json");
+            if (c.getResponseCode() != 200) return null;
+            return repoNameOf(c.getInputStream());
+        } catch (Exception e) {
+            return null;
+        } finally { if (c != null) c.disconnect(); }
+    }
+
+    private static String probeV1(String base) {
+        HttpURLConnection c = null;
+        try {
+            c = open(base + "/index-v1.jar");
+            if (c.getResponseCode() != 200) return null;
+            ZipInputStream z = new ZipInputStream(c.getInputStream());
+            ZipEntry e;
+            while ((e = z.getNextEntry()) != null) if ("index-v1.json".equals(e.getName())) return repoNameOf(z);
+            return null;
+        } catch (Exception e) {
+            return null;
+        } finally { if (c != null) c.disconnect(); }
+    }
+
+    /** The "repo" > "name" of an index (localized or plain), read from the start of the stream; "" when it has none, null when it is no index at all. */
+    static String repoNameOf(InputStream in) throws Exception {
+        JsonReader r = reader(in);
+        if (r.peek() != JsonToken.BEGIN_OBJECT) return null;
+        r.beginObject();
+        while (r.hasNext()) {
+            String key = r.nextName();
+            if ("repo".equals(key) && r.peek() == JsonToken.BEGIN_OBJECT) {
+                r.beginObject();
+                String name = "";
+                while (r.hasNext()) { if ("name".equals(r.nextName())) name = readLocalized(r); else r.skipValue(); }
+                return name == null ? "" : name.trim();
+            }
+            if ("packages".equals(key) || "apps".equals(key)) return "";          // an index whose repo block comes after the apps: it is still an index
+            r.skipValue();
+        }
+        return null;
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -310,8 +387,9 @@ public final class FdroidIndex {
                 r.beginObject();
                 while (r.hasNext()) {
                     String pkg = r.nextName();
-                    JSONObject it = readPackageV2(r, pkg, base, abis, sdk);
-                    if (it != null) res.items.put(it); else res.skipped++;
+                    JSONObject det = prog != null && prog.details != null ? new JSONObject() : null;
+                    JSONObject it = readPackageV2(r, pkg, base, abis, sdk, det);
+                    if (it != null) { res.items.put(it); if (det != null) prog.details.put(pkg, det); } else res.skipped++;
                     if (prog != null) { prog.apps = res.items.length(); prog.tick(false); }
                 }
                 r.endObject();
@@ -323,7 +401,7 @@ public final class FdroidIndex {
         return res;
     }
 
-    private static JSONObject readPackageV2(JsonReader r, String pkg, String base, String[] abis, int sdk) throws Exception {
+    private static JSONObject readPackageV2(JsonReader r, String pkg, String base, String[] abis, int sdk, JSONObject det) throws Exception {
         if (r.peek() != JsonToken.BEGIN_OBJECT) { r.skipValue(); return null; }
         String name = "", summary = "", icon = "";
         List<String> cats = new ArrayList<String>();
@@ -341,6 +419,12 @@ public final class FdroidIndex {
                     else if ("icon".equals(m)) icon = readLocalizedIcon(r);
                     else if ("categories".equals(m)) cats = readStringArray(r);
                     else if ("lastUpdated".equals(m)) updated = readLong(r);
+                    else if (det != null && "description".equals(m)) det.put("d", trimKeep(readLocalized(r), 4000));
+                    else if (det != null && "webSite".equals(m)) det.put("web", readString(r));
+                    else if (det != null && "sourceCode".equals(m)) det.put("src", readString(r));
+                    else if (det != null && "license".equals(m)) det.put("lic", readString(r));
+                    else if (det != null && "authorName".equals(m)) det.put("by", readString(r));
+                    else if (det != null && "screenshots".equals(m)) det.put("shots", readScreenshotsV2(r, base));
                     else r.skipValue();
                 }
                 r.endObject();
@@ -359,6 +443,49 @@ public final class FdroidIndex {
         r.endObject();
         if (best == null) return null;
         return buildItem(base, pkg, name, summary, icon, cats, updated, best, "");
+    }
+
+    /** {phone: {locale: [{name}]}} -> full addresses of the phone screenshots (en-US, else any en*, else the first language). */
+    static JSONArray readScreenshotsV2(JsonReader r, String base) throws Exception {
+        JSONArray out = new JSONArray();
+        if (r.peek() != JsonToken.BEGIN_OBJECT) { r.skipValue(); return out; }
+        r.beginObject();
+        while (r.hasNext()) {
+            String kind = r.nextName();
+            if (!"phone".equals(kind) || r.peek() != JsonToken.BEGIN_OBJECT) { r.skipValue(); continue; }
+            Map<String, List<String>> byLoc = new LinkedHashMap<String, List<String>>();
+            r.beginObject();
+            while (r.hasNext()) {
+                String loc = r.nextName();
+                List<String> names = new ArrayList<String>();
+                if (r.peek() == JsonToken.BEGIN_ARRAY) {
+                    r.beginArray();
+                    while (r.hasNext()) {
+                        if (r.peek() == JsonToken.BEGIN_OBJECT) {
+                            r.beginObject();
+                            while (r.hasNext()) { if ("name".equals(r.nextName())) names.add(readString(r)); else r.skipValue(); }
+                            r.endObject();
+                        } else r.skipValue();
+                    }
+                    r.endArray();
+                } else r.skipValue();
+                byLoc.put(loc, names);
+            }
+            r.endObject();
+            List<String> pick = byLoc.get("en-US");
+            if (pick == null) for (Map.Entry<String, List<String>> e : byLoc.entrySet()) if (e.getKey().startsWith("en")) { pick = e.getValue(); break; }
+            if (pick == null && !byLoc.isEmpty()) pick = byLoc.values().iterator().next();
+            if (pick != null) for (String n : pick) { if (out.length() >= 12) break; String u = join(base, n); if (!u.isEmpty()) out.put(u); }
+        }
+        r.endObject();
+        return out;
+    }
+
+    /** Text cut to {@code max} characters, with its line breaks kept (the detail sheet shows paragraphs). */
+    private static String trimKeep(String s, int max) {
+        if (s == null) return "";
+        s = s.trim();
+        return s.length() > max ? s.substring(0, max) + "…" : s;
     }
 
     private static Cand readVersionV2(JsonReader r, String[] abis, int sdk) throws IOException {
@@ -410,7 +537,8 @@ public final class FdroidIndex {
     // ---------------------------------------------------------------------------------------------
 
     private static final class MetaV1 {
-        String pkg = "", name = "", summary = "", icon = "";
+        String pkg = "", name = "", summary = "", icon = "", desc = "", web = "", src = "", lic = "", by = "", shotLoc = "";
+        List<String> shots = new ArrayList<String>();
         List<String> cats = new ArrayList<String>();
         long updated;
     }
@@ -455,6 +583,14 @@ public final class FdroidIndex {
             Cand c = best.get(m.pkg);
             if (c == null) { res.skipped++; continue; }
             res.items.put(buildItem(base, m.pkg, m.name, m.summary, m.icon, m.cats, m.updated, c, "/icons/"));
+            if (prog != null && prog.details != null) {
+                JSONObject det = new JSONObject();
+                det.put("d", trimKeep(m.desc, 4000)).put("web", m.web).put("src", m.src).put("lic", m.lic).put("by", m.by);
+                JSONArray sh = new JSONArray();
+                for (String f : m.shots) { if (sh.length() >= 12) break; sh.put(join(base, "/" + m.pkg + "/" + m.shotLoc + "/phoneScreenshots/" + f)); }
+                det.put("shots", sh);
+                prog.details.put(m.pkg, det);
+            }
         }
         return res;
     }
@@ -472,6 +608,11 @@ public final class FdroidIndex {
             else if ("icon".equals(k)) m.icon = readString(r);
             else if ("categories".equals(k)) m.cats = readStringArray(r);
             else if ("lastUpdated".equals(k)) m.updated = readLong(r);
+            else if ("description".equals(k)) m.desc = readString(r);
+            else if ("webSite".equals(k)) m.web = readString(r);
+            else if ("sourceCode".equals(k)) m.src = readString(r);
+            else if ("license".equals(k)) m.lic = readString(r);
+            else if ("authorName".equals(k)) m.by = readString(r);
             else if ("localized".equals(k) && r.peek() == JsonToken.BEGIN_OBJECT) {
                 // {locale: {name, summary, ...}} - used when the app has no top-level name/summary
                 String firstName = "", firstSum = "", enName = "", enSum = "";
@@ -479,15 +620,20 @@ public final class FdroidIndex {
                 while (r.hasNext()) {
                     String loc = r.nextName();
                     if (r.peek() != JsonToken.BEGIN_OBJECT) { r.skipValue(); continue; }
-                    String n = "", s = "";
+                    String n = "", s = "", dsc = "";
+                    List<String> shots = null;
                     r.beginObject();
                     while (r.hasNext()) {
                         String f = r.nextName();
                         if ("name".equals(f)) n = readString(r);
                         else if ("summary".equals(f)) s = readString(r);
+                        else if ("description".equals(f)) dsc = readString(r);
+                        else if ("phoneScreenshots".equals(f)) shots = readStringArray(r);
                         else r.skipValue();
                     }
                     r.endObject();
+                    if (shots != null && !shots.isEmpty() && (m.shots.isEmpty() || loc.equals("en-US") || (loc.startsWith("en") && !m.shotLoc.equals("en-US")))) { m.shots = shots; m.shotLoc = loc; }
+                    if (!dsc.isEmpty() && (m.desc.isEmpty() || loc.equals("en-US"))) m.desc = dsc;
                     if (firstName.isEmpty()) firstName = n;
                     if (firstSum.isEmpty()) firstSum = s;
                     if (loc.startsWith("en")) { if (enName.isEmpty()) enName = n; if (enSum.isEmpty()) enSum = s; }

@@ -14,7 +14,7 @@ recolor the whole system · run a real terminal with AI coding agents — **no c
 
 ## [⬇️ Get the latest APK](https://github.com/Bingblop/ADB-Application-Manager/releases/latest)
 
-`v7.10.9-Pro` · signed · installs over any earlier version · works with **ADB, Wireless Debugging, Shizuku or Root**
+`v7.10.10-Pro` · signed · installs over any earlier version · works with **ADB, Wireless Debugging, Shizuku or Root**
 
 <table>
   <tr>
@@ -55,7 +55,7 @@ recolor the whole system · run a real terminal with AI coding agents — **no c
 | **Hidden Settings & Overlays** | Edit Android's settings tables, each explained with what it does and its values · Material You color and style · switch overlays on and off |
 | **Connected Devices** | Manage a **Wear OS watch** (or another Android device) from your phone: pair over Wi-Fi or link over Bluetooth · apps (enable, disable, uninstall, reinstall) · send APK, APKS, APKM and XAPK · console, logcat, files, hidden settings, screen density · **Reconnect** (or **Reconnect all**) devices that dropped, with timings you set |
 | **Morphe Patcher** | Patch apps with [Morphe](https://github.com/MorpheApp) on the phone: patch sources and the community finder · **Installed** apps marked · Morphe Helper downloads the right APK version (ten sources, an **in-app browser** that passes APKMirror's check and saves bundles straight in with a pause and resume download list, optional VirusTotal) · Simple and Advanced patching · install when finished · live log · Patched APKs |
-| **SD Maid SE** | SystemCleaner, AppCleaner, CorpseFinder and Deduplicator, ported from [SD Maid SE](https://github.com/d4rken-org/sdmaid-se) · scan, review and untick, delete · optional 1-tap scan and delete · exclusion manager · history · accessibility cache clearing |
+| **SD Maid** | SystemCleaner, AppCleaner, CorpseFinder and Deduplicator, ported from [SD Maid SE](https://github.com/d4rken-org/sdmaid-se) · scan, review and untick, delete · optional 1-tap scan and delete · exclusion manager · history · accessibility cache clearing |
 | **Help Guide** | A complete guide for beginners inside the app (About tab): table of contents, search, every tab explained, recipes, safety, troubleshooting |
 | **Monitoring** | Task Manager (processes, CPU, RAM, GPU, battery, network) · color-coded Logcat for one app · Device Specs |
 | **Quick actions** | Quick Settings tiles and a home-screen widget |
@@ -136,5 +136,5 @@ shell access via [Shizuku](https://github.com/RikkaApps/Shizuku-API) ·
 update sources: Galaxy Store, GitHub, Codeberg, [F-Droid](https://f-droid.org), [IzzyOnDroid](https://apt.izzysoft.de/fdroid) and the [Obtainium](https://github.com/ImranR98/Obtainium) catalog ·
 the Task Manager tab is modeled on [RohitKushvaha01/TaskManager](https://github.com/RohitKushvaha01/TaskManager) ·
 the Morphe Patcher tab is built on the [Morphe](https://github.com/MorpheApp) project: the engine is [morphe-patcher](https://github.com/MorpheApp/morphe-patcher), the workflow follows [Morphe Manager](https://github.com/MorpheApp/morphe-manager) and [morphe-cli](https://github.com/MorpheApp/morphe-cli), the APK downloads and VirusTotal check follow [Helper for Morphe](https://github.com/rushiranpise/helper-for-morphe) (all GPL-3.0); patches belong to their authors. ·
-the SD Maid SE tab is a port of the four tools of [SD Maid SE](https://github.com/d4rken-org/sdmaid-se) by darken (GPL-3.0; also on [Google Play](https://play.google.com/store/apps/details?id=eu.darken.sdmse)) ·
+the SD Maid tab is a port of the four tools of [SD Maid SE](https://github.com/d4rken-org/sdmaid-se) by darken (GPL-3.0; also on [Google Play](https://play.google.com/store/apps/details?id=eu.darken.sdmse)) ·
 the descriptions of Android's own settings in Hidden Settings are taken in part from the [Android Open Source Project](https://source.android.com/) documentation (Apache-2.0)
