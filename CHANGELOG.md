@@ -1,5 +1,15 @@
 # Changelog
 
+## v7.11.1-Pro (versionCode 840)
+
+- **Hidden Settings: back up and restore.** The **Changes** sheet has **Back up changes** (shares `hidden_settings_<date>.json`: for each setting changed with the app, its table, name, current value and
+  the value it had before) and **Restore…** (picks such a file, checks every name and value, compares with the phone, asks, then puts the values back one after the other with one report at the end; a null value
+  deletes the setting). Every restored setting goes into the history again, so it can be reverted. `sdbBackupData`, `sdbRestoreParse`, `sdbRestoreRun`; `sdbPut` / `sdbDelete` got a `silent` option. Test: `t143`.
+- **Trackers: Update the list.** A button in the Trackers box downloads the current Exodus Privacy list (`TrackerUpdate`: a plain GET of the public API, checked for at least 300 trackers with code names before it
+  replaces anything, cut down to what the app uses) into `files/trackers_user.json`, which then wins over the copy in the app; the app's results are read again with it. Java test `trackerupdate`, UI test `t142`.
+- **Morphe Helper: today's VirusTotal number is VirusTotal's.** In the Helper's settings the "Today: N of 500" bar uses the key's counter from VirusTotal when the key is approved (so scans made in the Installer
+  count too) and says "(counted by VirusTotal)"; "This minute" stays this app's own count. Test: `t119`.
+
 ## v7.11.0-Pro (versionCode 839)
 
 - **Trackers.** A **Trackers** pill in the Apps tab (apps with at least one known tracker library) and a **TRACKERS** chip in the app menu, under the UAD-NG chip: green 0, orange N, grey ? when the code cannot be read.

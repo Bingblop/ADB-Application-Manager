@@ -1,4 +1,4 @@
-# On-device test checklist (v7.1 to v7.11.0)
+# On-device test checklist (v7.1 to v7.11.1)
 
 The automated tests run the page in a browser with a pretend phone. They cannot prove the parts that talk to Android:
 icons, the file chooser, added storage, shell commands and the haptic feedback. This list is for those. Tick a box when
@@ -243,13 +243,6 @@ Select three or four apps you do not mind changing, open the round checkmark.
 
 - [ ] With no working mode on, open an app's menu: the permission toggles, the App Ops modes (on the mode that is set) and every Enable / Disable, Stop and Launch button of activities, services, receivers and providers show the lock and look dimmed. Turn a working mode on and open the menu again: only install-time permissions keep the lock.
 
-## 13. Trackers (v7.11.0)
-
-- [ ] Apps tab: tap the **Trackers** pill. A message says how many apps are read, the pill counts "12/150" and ends on a number; the list shows only apps with trackers. A second tap off and on is instant.
-- [ ] Open an app you know uses ads or analytics (a free game, a news app): the **TRACKERS** chip under UAD-NG shows an orange number; the list names trackers such as Google AdMob or Firebase Analytics, each with a web address that opens. An open-source app from F-Droid usually shows a green 0.
-- [ ] An app that is only a launcher stub or a preinstalled system app may show a grey ? or 0: both are fine; it must never crash or hang. Updating an app and opening it again re-reads it.
-- [ ] Turn the phone to airplane mode and tap the pill: it still works (nothing is downloaded).
-
 ## 12. Language, font and File Manager core (v7.1 to v7.4)
 
 These came before the rest of this list and were only checked in the browser. They need a real phone because they use the system font list, the file access, the foreground notification and the archive libraries.
@@ -264,6 +257,19 @@ These came before the rest of this list and were only checked in the browser. Th
 - [ ] **Extract** a zip, a 7z and a tar.gz: a progress notification shows the file, the time left and a Cancel button; pulling the notification down while it works does not stop it. A password-protected zip or 7z asks for the password and refuses a wrong one.
 - [ ] Open a .rar: it can be read and extracted, not changed. Compress a folder to zip and to 7z: the file opens on the phone.
 - [ ] Installer > Find APKs on this device: a progress bar runs; duplicates and older versions are flagged; delete selected asks first and can be undone.
+
+## 13. Trackers (v7.11.0)
+
+- [ ] Apps tab: tap the **Trackers** pill. A message says how many apps are read, the pill counts "12/150" and ends on a number; the list shows only apps with trackers. A second tap off and on is instant.
+- [ ] Open an app you know uses ads or analytics (a free game, a news app): the **TRACKERS** chip under UAD-NG shows an orange number; the list names trackers such as Google AdMob or Firebase Analytics, each with a web address that opens. An open-source app from F-Droid usually shows a green 0.
+- [ ] An app that is only a launcher stub or a preinstalled system app may show a grey ? or 0: both are fine; it must never crash or hang. Updating an app and opening it again re-reads it.
+- [ ] Turn the phone to airplane mode and tap the pill: it still works (nothing is downloaded).
+
+## 14. Hidden Settings backup and Update the tracker list (v7.11.1)
+
+- [ ] Hidden Settings: change two harmless settings (for example Global > `stay_on_while_plugged_in`), open **Changes**, tap **Back up changes**: the share sheet offers a .json file; save it. Change both settings again by hand, then **Restore…**, pick the file: the question names both settings; after Yes they have the backed-up values and appear in the Changes list again. Restoring the same file once more says everything already matches.
+- [ ] Open the file in a text app and break a name (put a space in it), restore: that setting is skipped, the others work. Pick a file that is not a backup (a photo, a presets file): a message says it is not a Hidden Settings backup.
+- [ ] Apps > any app > TRACKERS chip > **Update the list**: the button says Updating…, then "Tracker list updated: N trackers" (about 430), and the chip reads the app again. In airplane mode it says why it failed and the list keeps working.
 
 ## Report
 

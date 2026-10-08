@@ -109,6 +109,14 @@ public class MainActivity extends Activity {
         if (t != null) return t;
         synchronized (trackerLock) {
             if (trackersLib == null) {
+                // a list fetched with "Update the tracker list" wins over the one in the app, as long as it can be read
+                File fresh = new File(getFilesDir(), "trackers_user.json");
+                if (fresh.isFile()) {
+                    try {
+                        trackersLib = Trackers.load(new String(java.nio.file.Files.readAllBytes(fresh.toPath()), "UTF-8"));
+                        return trackersLib;
+                    } catch (Throwable broken) { fresh.delete(); }
+                }
                 InputStream in = getAssets().open("trackers.json");
                 try {
                     java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
@@ -14314,6 +14322,34 @@ public class MainActivity extends Activity {
                 trackerBusy = false;
                 return "error";
             }
+            return "started";
+        }
+
+        /** Fetches the current Exodus Privacy list and uses it from now on. Answer: window.onTrackerUpdate({ok, count, retrieved, error}). */
+        @JavascriptInterface
+        public String trackerUpdate() {
+            if (!submitJob(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject res = new JSONObject();
+                    try {
+                        String today = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(new java.util.Date());
+                        String json = TrackerUpdate.fetch(today);
+                        Trackers fresh = Trackers.load(json);                  // it must load before it replaces anything
+                        synchronized (trackerLock) {
+                            File tmp = new File(getFilesDir(), "trackers_user.json.tmp");
+                            java.nio.file.Files.write(tmp.toPath(), json.getBytes("UTF-8"));
+                            File dest = new File(getFilesDir(), "trackers_user.json");
+                            if (!tmp.renameTo(dest)) { tmp.delete(); throw new IOException("Could not save the list"); }
+                            trackersLib = fresh;
+                        }
+                        res.put("ok", true).put("count", fresh.db.n).put("retrieved", fresh.db.retrieved);
+                    } catch (Throwable t) {
+                        try { res.put("ok", false).put("error", String.valueOf(t.getMessage())); } catch (Exception ignored) { }
+                    }
+                    notifyJs("window.onTrackerUpdate && window.onTrackerUpdate(" + res + ")");
+                }
+            })) return "error";
             return "started";
         }
 

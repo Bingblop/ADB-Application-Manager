@@ -34,6 +34,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
         }, 60 * (i + 1)));
         return 'started';
       },
+      trackerUpdate() { window.__upd = (window.__upd || 0) + 1; setTimeout(() => { window.__cache = {}; window.onTrackerUpdate(window.__updFail ? { ok: false, error: 'Exodus Privacy answered HTTP 500' } : { ok: true, count: 431, retrieved: '2026-11-01' }); }, 120); return 'started'; },
       trackerInfo(json) { return JSON.stringify({ count: 428, retrieved: '2026-10-03', trackers: { 49: { id: 49, name: 'Google Firebase Analytics', categories: 'Analytics', website: 'https://firebase.google.com/' }, 312: { id: 312, name: 'Google AdMob', categories: 'Advertisement', website: 'https://admob.google.com' } } }); },
     };
   }, apps);
@@ -78,9 +79,22 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('7. an uninstalled app has no chip', await ev(() => getComputedStyle(document.getElementById('sheetTrk')).display === 'none'));
   await ev(() => closeInspector());
 
+  // update the list
+  await ev(() => openInspector('com.example.alpha')); await sleep(200);
+  await ev(() => document.getElementById('sheetTrk').click()); await sleep(100);
+  await ev(() => document.getElementById('trackersUpdateBtn').click()); await sleep(40);
+  const up1 = await ev(() => ({ t: document.getElementById('trackersUpdateBtn').innerText, d: document.getElementById('trackersUpdateBtn').disabled }));
+  check('9. Update the list asks the app and shows that it is working', up1.t === 'Updating…' && up1.d === true && (await ev(() => window.__upd)) === 1, JSON.stringify(up1));
+  await sleep(300);
+  const up2 = await ev(() => ({ toast: document.getElementById('toastMsg').innerText, open: document.getElementById('trackersModal').classList.contains('show'), btn: document.getElementById('trackersUpdateBtn').innerText, scans: window.__scans.length }));
+  check('   when it is done the toast says how many trackers the new list has, the old results are dropped and the open app is read again', /Tracker list updated: 431 trackers/.test(up2.toast) && !up2.open && up2.btn === 'Update the list' && up2.scans === 2, JSON.stringify(up2));
+  await ev(() => { window.__updFail = true; openTrackersInfo(); document.getElementById('trackersUpdateBtn').click(); }); await sleep(300);
+  check('10. a failed update says why and keeps the button usable', /Tracker list not updated: Exodus Privacy answered HTTP 500/.test(await ev(() => document.getElementById('toastMsg').innerText)) && (await ev(() => document.getElementById('trackersUpdateBtn').disabled)) === false);
+  await ev(() => { closeTrackersInfo(); closeInspector(); });
+
   // a second start: results are kept by the native side, so nothing is left to scan
-  await ev(() => { trackerMap = {}; trackersLoadCached(); });
-  check('8. the results of an earlier run come back from the cache at the next start', await ev(() => Object.keys(trackerMap).length) === 3 && (await ev(() => trackersMissing().length)) === 0);
+  await ev(() => { window.__cache = { 'com.example.alpha': { ok: true, ids: [49] }, 'com.example.bravo': { ok: true, ids: [] }, 'com.example.charlie': { ok: false, ids: [] } }; trackerMap = {}; trackersLoadCached(); });
+  check('8. the results of an earlier run come back from the cache at the next start, so nothing is left to scan', await ev(() => Object.keys(trackerMap).length) === 3 && (await ev(() => trackersMissing().length)) === 0);
 
   check('no page errors', errors.length === 0, errors.join(' | '));
   await b.close();

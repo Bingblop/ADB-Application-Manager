@@ -14,7 +14,7 @@ recolor the whole system · run a real terminal with AI coding agents — **no c
 
 ## [⬇️ Get the latest APK](https://github.com/Bingblop/ADB-Application-Manager/releases/latest)
 
-`v7.11.0-Pro` · signed · installs over any earlier version · works with **ADB, Wireless Debugging, Shizuku or Root**
+`v7.11.1-Pro` · signed · installs over any earlier version · works with **ADB, Wireless Debugging, Shizuku or Root**
 
 <table>
   <tr>
@@ -123,6 +123,7 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 - **Read-back everywhere**: Force stop (is the process gone?) and Clear data (files counted, also in ADB/Shizuku mode, with a check for files the app writes again); a **spinner on the row** while an app is changed and checked; **Removal Levels** in the Debloater list; Morphe Helper sends you to the right APKMirror bundle page when the browser check stands in the way.
 - **SD Maid → Clear Data from Uninstalled Apps** clears the leftover data of apps removed with the keep-data flag. **Batch menu**: a pull handle, outlined Select All / Clear All, Show Applications, Keep selecting always on. **One VirusTotal key** in Settings for the Installer and Morphe Helper.
 - **v7.10.18**: outlined Select All / Clear All on the Selected apps list and the leftover-data sheet; a **bin button on a row of the Uninstalled filter** clears that one app's leftover data; the **VirusTotal card shows how many lookups are left today**.
+- **v7.11.1**: **Hidden Settings back up and restore** (a file of the settings you changed, put back with one confirmation, each one in the history) and **Update the list** for the tracker database.
 - **v7.11.0**: a **Trackers** filter and a TRACKERS chip in the app menu (the Exodus Privacy list, read from the apps' code on the phone, nothing sent anywhere); a move done through the shell is no longer reported as failed; the on-device checklist covers v7.1 on.
 - **UAD-NG tag**: tap it for the app's description; the meaning of Recommended / Advanced / Expert / Unsafe is one button away (**Removal Levels**).
 - **Overlays in order**: enabled, then disabled, then not changeable, each with a one-line description.

@@ -118,7 +118,7 @@ Every tab except Application Manager and About can be switched off or moved in *
 
 ## New in v7.9
 
-**v7.11.0 is the latest build** (Connected Devices, 32-bit and universal APKs, the Help Guide: see [CHANGELOG.md](../CHANGELOG.md)). Everything from v7.9 through v7.9.15 is below; the full, dated list is in
+**v7.11.1 is the latest build** (Connected Devices, 32-bit and universal APKs, the Help Guide: see [CHANGELOG.md](../CHANGELOG.md)). Everything from v7.9 through v7.9.15 is below; the full, dated list is in
 [CHANGELOG.md](../CHANGELOG.md) (and inside the app, under About).
 
 **Newest (v7.9.12 to v7.9.15)**
@@ -1304,3 +1304,5 @@ Changes by version: [CHANGELOG.md](../CHANGELOG.md).
 **Select All / Clear All, one app's leftover data, VirusTotal quota** (v7.10.18): the Selected apps list and the Clear Data from Uninstalled Apps sheet have outlined **Select All** / **Clear All** buttons (so has **New List**). In the Uninstalled filter each row has a bin button that clears the data that one app left behind (asks first; Root mode names the size). The VirusTotal card in Settings (and the Installer's) shows *N of 500 lookups left today*, read from VirusTotal.
 
 **Trackers** (v7.11.0): the Apps tab has a **Trackers** pill and the app menu a **TRACKERS** chip (green 0, orange N, grey ?) that opens the list of the tracker libraries found in the app's code, from the Exodus Privacy list (ODbL 1.0). It reads class names offline, keeps the result until the app updates, and cannot see renamed (R8/ProGuard) or later-downloaded code.
+
+**Hidden Settings back up and restore, Update the tracker list** (v7.11.1): the Changes sheet has **Back up changes** (a JSON file with each changed setting's current and earlier value) and **Restore…** (checks the file, asks, puts the values back, every one into the history). The Trackers box has **Update the list**, which downloads the current Exodus Privacy list after checking it is whole.
