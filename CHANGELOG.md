@@ -1,5 +1,20 @@
 # Changelog
 
+## v7.10.16-Pro (versionCode 836)
+
+- **SD Maid > Clear Data from Uninstalled Apps.** A button in a card above Trim Caches, with the description "Clears the data of apps that were uninstalled from this device while the `DONT_DELETE_FLAG` flag was
+  active. This usually applies to third-party apps, and it can fix common problems when you install them again." It opens a sheet of the uninstalled apps (in Root mode only those that still have a data
+  folder, with its size; `MainActivity.leftoverData`), you tick the ones to clear and confirm, and the batch runner does the rest (new action `clear_removed_data`): `pm clear`, else in Root the folders are deleted,
+  else the app is brought back with `pm install-existing` and removed again without keeping its data. In Root mode the result is counted before and after (`BatchVerify.applyClear`). Test: `t139`.
+- **Batch menu.** The grab handle in the middle at the top, like the other sheets, with the same gestures: pull up = taller, pull down = back, pull down again = closes into the checkmark button (apps stay selected).
+  **Select All** and **Clear All** (it was "Clear") are outlined buttons. **Keep selection after running** is on every time (each new selection starts with it on; the switch is no longer remembered).
+  **Share List** and **Show Apps** changed places, and Show Apps is **Show Applications**.
+- **Package names** in all app lists (Apps, Debloater, Saved, Show Applications, results, Connected Devices) use `--pkg-color`, the theme's accent mixed into the muted grey, so they stand apart from the names.
+- **Leaving the Apps tab drops the selection** at once (and the checkmark button and the batch menu, without their slide).
+- **Running** turns **Uninstalled** off in the Apps tab filters.
+- **One VirusTotal API key for the whole app**, in Settings > VirusTotal API key, with **Test key** (the key is "approved" once the test worked; changing it takes the approval away). The Installer's scan and Morphe
+  Helper no longer have key boxes: when the key is missing or not approved they say so and have a button that opens the Settings card. Keys entered in older versions are taken over. Tests: `t139`, `t37`, `t119`.
+
 ## v7.10.15-Pro (versionCode 835)
 
 - **UAD-NG classification sheet: the meaning of the level moved behind a button.** Tapping the UAD-NG tag on an app (in the Apps list, the Debloater or the app menu) no longer starts with the line that says what

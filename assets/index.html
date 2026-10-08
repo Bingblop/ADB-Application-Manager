@@ -22,6 +22,7 @@
             --ov: 255, 255, 255;
             --text-muted: #8E9BAE;
             --text-dim: #546075;
+            --pkg-color: var(--text-muted);          /* the package names in every app list: the theme's accent leaning into the muted grey, so they stand apart from the app name (see below) */
             
             /* Status Badge Colors */
             --status-running: #00E676;
@@ -37,6 +38,9 @@
             --radius-sm: 8px;
         }
 
+        @supports (color: color-mix(in srgb, red 50%, blue)) {
+            :root { --pkg-color: color-mix(in srgb, var(--accent) 52%, var(--text-muted)); }
+        }
         * {
             margin: 0;
             padding: 0;
@@ -624,7 +628,7 @@
 
         .app-pkg {
             font-size: 10px;
-            color: var(--text-muted);
+            color: var(--pkg-color);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -820,7 +824,29 @@
         .als-cb.on { background: var(--accent); border-color: var(--accent); }
         .als-desc { color: var(--text-main); opacity: 0.85; }
 
-        .batch-bottom-sheet { max-height: 92vh; overflow-y: auto; }
+        .batch-bottom-sheet { max-height: 92vh; overflow-y: auto; padding-top: 20px; }
+        /* the grab handle of every bottom sheet, in the middle at the top of the batch menu too: pull it up for more room, down to make it smaller and then close it */
+        .batch-bottom-sheet {
+            background-image: linear-gradient(rgba(var(--ov), 0.22), rgba(var(--ov), 0.22));
+            background-size: 38px 4px;
+            background-position: center 7px;
+            background-repeat: no-repeat;
+        }
+        .batch-bottom-sheet.sheet-expanded { min-height: 72vh; max-height: calc(100vh - 14px); }
+        .batch-bottom-sheet.sheet-dragging { transition: none !important; }
+        /* Select All and Clear All are buttons with an outline, like the other buttons of the Apps tab */
+        .batch-tool-link.bs-btn {
+            background: var(--bg-surface);
+            border: 1px solid var(--accent);
+            border-radius: 10px;
+            padding: 7px 12px;
+            min-height: 34px;
+            font-size: 12px;
+            transition: background 0.15s, transform 0.12s;
+        }
+        .batch-tool-link.bs-btn:active:not(:disabled) { background: var(--accent); color: var(--on-accent); transform: scale(0.96); }
+        .batch-tool-link.bs-btn.bs-muted { border-color: var(--border-glass); color: var(--text-muted); }
+        .batch-tool-link.bs-btn.bs-muted:active:not(:disabled) { background: var(--text-muted); color: var(--bg-sheet); }
         .batch-help { font-size: 12px; line-height: 1.5; color: var(--text-muted); background: rgba(var(--ov), 0.05); border: 1px solid var(--border-glass); border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; }
         .batch-help b { color: var(--text-main); }
         .batch-help-list { margin: 6px 0 8px 18px; padding: 0; }
@@ -842,7 +868,8 @@
         .sa-row:first-child { border-top: none; }
         .sa-info { flex: 1; min-width: 0; }
         .sa-name { font-size: 13px; font-weight: 800; word-break: break-word; }
-        .sa-pkg { font-size: 10.5px; color: var(--text-muted); word-break: break-all; }
+        .sa-pkg { font-size: 10.5px; color: var(--pkg-color); word-break: break-all; }
+        .pkg-text { color: var(--pkg-color); }
 
         .batch-tool-link {
             background: none;
@@ -1696,7 +1723,7 @@
 
         .result-item-pkg {
             font-size: 10px;
-            color: var(--text-muted);
+            color: var(--pkg-color);
             word-break: break-all;
             margin-bottom: 6px;
         }
@@ -3033,7 +3060,7 @@
 
         .uad-pkg {
             font-size: 10px;
-            color: var(--text-muted);
+            color: var(--pkg-color);
             word-break: break-all;
             margin: 2px 0 5px;
         }
@@ -3713,11 +3740,7 @@
             <div class="color-card" id="installVtCard" style="display:none;">
                 <div class="color-card-title">VirusTotal scan <span class="switch-sub" style="font-weight:600;">(optional)</span></div>
                 <div class="color-card-subtitle">Check this package against 70+ antivirus engines before installing, with your own VirusTotal API key. The scan is a SHA-256 lookup — <b>nothing is uploaded</b>; only if VirusTotal hasn't seen the file can you choose to upload it.</div>
-                <div style="margin-top:10px;">
-                    <div class="switch-title">VirusTotal API key</div>
-                    <input class="modal-text-input" id="vtApiKey" type="password" placeholder="Paste your personal API key (optional)" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="vtKeyChanged()">
-                    <div class="switch-sub" style="margin-top:4px;">Free key from <a href="#" onclick="openUrlExternal('https://www.virustotal.com/gui/my-apikey'); return false;">virustotal.com</a> → your account → API key. Stored on this device only.</div>
-                </div>
+                <div id="vtKeyNote" class="switch-sub" style="margin-top:10px;"></div>
                 <div class="batch-sheet-tools" style="margin-top:10px;gap:10px;flex-wrap:wrap;">
                     <button class="mode-action-btn primary" id="vtScanBtn" onclick="vtScan(false)">Scan this package</button>
                 </div>
@@ -5334,6 +5357,18 @@
                 </label>
             </div>
 
+            <div class="color-card" id="vtCard">
+                <div class="color-card-title">VirusTotal API key</div>
+                <div class="color-card-subtitle">One key for the whole app. The Installer's scan and Morphe Helper's scan both use it; neither asks for it again, they only point here when it is missing.</div>
+                <input class="modal-text-input" id="vtKeyInput" type="password" placeholder="Paste your personal API key" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="vtKeyTyped(this.value)" onchange="vtTestKey()">
+                <div class="mode-btn-row" style="margin-top:10px;">
+                    <button class="mode-action-btn primary" id="vtTestBtn" onclick="vtTestKey()">Test key</button>
+                    <button class="mode-action-btn" onclick="vtClearKey()">Remove key</button>
+                </div>
+                <div class="switch-sub" id="vtKeyStatus" style="margin-top:8px;"></div>
+                <div class="switch-sub" style="margin-top:4px;">Free key from <a href="#" onclick="openUrlExternal('https://www.virustotal.com/gui/my-apikey'); return false;">virustotal.com</a> &rarr; your account &rarr; API key. It is kept on this phone only, and sent only to VirusTotal when you scan. A key counts as approved once <b>Test key</b> has worked.</div>
+            </div>
+
             <div class="color-card" id="cdReconnectCard">
                 <div class="color-card-title">Reconnecting devices</div>
                 <div class="color-card-subtitle">What the Devices tab does when a device you were connected to drops (Wi-Fi, Wireless debugging and Bluetooth devices; a cable is never retried on its own)</div>
@@ -5755,6 +5790,18 @@
                 <div class="sd-btns" id="sdAcsBtns"></div>
             </div>
 
+            <div class="color-card" id="uninstDataCard">
+                <div class="color-card-title">Leftover data of uninstalled apps</div>
+                <div class="mode-btn-row">
+                    <button class="mode-action-btn primary" id="uninstDataBtn" onclick="uninstDataStart()"><span id="uninstDataLock"></span><span id="uninstDataLabel">Clear Data from Uninstalled Apps</span></button>
+                </div>
+                <div class="color-card-subtitle" style="margin-top:8px;">Clears the data of apps that were uninstalled from this device while the <code translate="no">DONT_DELETE_FLAG</code> flag was active. This usually applies to <b>third-party</b> apps, and it can <b>fix common problems</b> when you install them again.</div>
+                <div class="trim-explain" id="uninstDataExplain">
+                    <p><b>What happens.</b> The app lists the apps that are uninstalled on this phone, and in <b>Root</b> mode only those that still have a data folder, with its size. You tick the ones to clear and confirm. Each one is cleared with <code translate="no">pm clear</code>; if that is refused, Root removes the app's data folders directly, and without Root the app is brought back for you with <code translate="no">pm install-existing</code> and removed again <i>without</i> keeping its data. An app that cannot be brought back (its APK was removed) needs Root.</p>
+                    <p><b>What is not touched.</b> Installed apps, and the files in your own folders. The data of the apps you clear is gone for good.</p>
+                </div>
+            </div>
+
             <div class="color-card" id="trimCachesCard">
                 <div class="color-card-title">Trim Caches</div>
                 <div class="color-card-subtitle">Free up storage by clearing the cache of every app on your phone in one go.</div>
@@ -6135,8 +6182,8 @@ Type any command below (e.g. pm list packages -d)
                 <span id="batchCountText">0 Selected</span>
             </div>
             <div class="batch-sheet-tools">
-                <button class="batch-tool-link" onclick="selectAllFiltered()">Select All</button>
-                <button class="batch-tool-link" onclick="clearBatchSelection()" style="color:var(--text-muted);">Clear</button>
+                <button class="batch-tool-link bs-btn" onclick="selectAllFiltered()">Select All</button>
+                <button class="batch-tool-link bs-btn bs-muted" onclick="clearBatchSelection()">Clear All</button>
                 <div style="font-size:20px; cursor:pointer; margin-left:6px;" role="button" tabindex="0" aria-label="Close the batch menu" onclick="collapseBatchPanel()">✕</div>
             </div>
         </div>
@@ -6144,12 +6191,12 @@ Type any command below (e.g. pm list packages -d)
             <button class="batch-grid-btn accent" onclick="openSaveSelectedModal()">Save to List</button>
             <div class="copy-row">
                 <button class="batch-grid-btn" onclick="copySelectedPackages()">Copy Packages</button>
-                <button class="batch-grid-btn" onclick="shareSelectedPackages()">Share List</button>
+                <button class="batch-grid-btn" onclick="openShowApps()">Show Applications</button>
             </div>
         </div>
         <label class="switch-row" style="margin-top:10px; padding-top:10px;">
             <div><div class="switch-title">Keep selection after running</div><div class="switch-sub">Run another command on these same apps without reselecting them</div></div>
-            <input type="checkbox" class="switch-input" id="batchKeepSelectionToggle" onchange="setBatchKeepSelection(this.checked)"><span class="switch-track"></span>
+            <input type="checkbox" class="switch-input" id="batchKeepSelectionToggle" checked onchange="setBatchKeepSelection(this.checked)"><span class="switch-track"></span>
         </label>
         <div class="batch-actions-grid">
             <button class="batch-grid-btn" onclick="batchAction('freeze')">Freeze</button>
@@ -6162,7 +6209,7 @@ Type any command below (e.g. pm list packages -d)
             <button class="batch-grid-btn danger" onclick="batchAction('uninstall')">Uninstall</button>
             <button class="batch-grid-btn accent" onclick="batchAction('reinstall')">Reinstall</button>
             <button class="batch-grid-btn" onclick="openBatchOps()">Batch Ops</button>
-            <button class="batch-grid-btn" onclick="openShowApps()">Show Apps</button>
+            <button class="batch-grid-btn" onclick="shareSelectedPackages()">Share List</button>
             <button class="batch-grid-btn" onclick="openBatchCmd()">Command</button>
         </div>
     </div>
@@ -8203,6 +8250,31 @@ Type any command below (e.g. pm list packages -d)
         </div>
     </div>
 
+    <!-- SD Maid > Clear Data from Uninstalled Apps: the apps to clear -->
+    <div class="modal-overlay" id="uninstDataModal" onclick="if(event.target===this) uninstDataClose()">
+        <div class="modal-sheet" style="max-width:480px;" role="dialog" aria-labelledby="uninstDataTitle">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-title">
+                        <h3 id="uninstDataTitle">Clear Data from Uninstalled Apps</h3>
+                        <p id="uninstDataSub"></p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="uninstDataClose()" role="button" aria-label="Close">✕</div>
+            </div>
+            <div class="batch-help" id="uninstDataNote"></div>
+            <div class="batch-sheet-tools" style="margin:6px 0;">
+                <button class="batch-tool-link" onclick="uninstDataAll(true)">Select All</button>
+                <button class="batch-tool-link" onclick="uninstDataAll(false)">Select None</button>
+            </div>
+            <div id="uninstDataList" style="max-height:44vh; overflow-y:auto;"></div>
+            <div class="mode-btn-row" style="margin-top:12px;">
+                <button class="mode-action-btn danger" id="uninstDataGo" onclick="uninstDataRun()">Clear data</button>
+                <button class="mode-action-btn" onclick="uninstDataClose()">Close</button>
+            </div>
+        </div>
+    </div>
+
     <!-- What the removal levels mean: the same four lines as under Removal Levels in the Debloater tab -->
     <div class="modal-overlay" id="uadLevelsModal" onclick="if(event.target===this) closeUadLevels()">
         <div class="modal-sheet" style="max-width:480px;" role="dialog" aria-labelledby="uadLevelsTitle">
@@ -8307,7 +8379,7 @@ Type any command below (e.g. pm list packages -d)
         let batchPanelExpanded = false;
         // When on, a batch action (Freeze, Suspend, Uninstall, ...) leaves the selection as it is instead of
         // clearing it, so the same apps are ready for another action straight away. Remembered in ui_state.
-        let batchKeepSelection = false;
+        let batchKeepSelection = true;          // on every time: it is put back on whenever a new selection starts (the switch is not remembered)
         let rememberFilters = false;   // off by default: the Apps tab opens on Total Installed unless the user asks for the filters to be kept
         // Filters combine: any number of pills / boxes can be on, and an app has to match every one of them (Running + 3rd Party = your running
         // user apps). None on is "All Apps". Two pairs can only have one member on, or none: 3rd Party / System, and Enabled / Frozen.
@@ -8739,6 +8811,7 @@ Type any command below (e.g. pm list packages -d)
             if (txFullOn && viewName !== 'terminal') txFullToggle(false);
             if (typeof rt === 'object' && rt && rt.open && viewName !== 'terminal') rtHide();
             const fromView = currentViewName();
+            if (fromView === 'apps' && viewName !== 'apps' && selectedPkgs.size) clearBatchSelectionNow();       // the selection (and the checkmark button, and the batch menu) goes with the tab, at once
             if (fromView === 'prefs' && viewName !== 'prefs') fontScanClear(false);          // the list of fonts found is emptied when Settings is left
             if (!navFromBack && fromView && fromView !== viewName) {
                 viewStack = viewStack.filter(v => v !== fromView);
@@ -8756,7 +8829,7 @@ Type any command below (e.g. pm list packages -d)
             });
             const gear = document.getElementById('prefsHeaderBtn');
             if (gear) gear.classList.toggle('active', viewName === 'prefs');
-            if (viewName === 'prefs') { iconPackRender(); actionBtnRender(); trimSyncLock(); syncHapticsUi(); syncProgressToastsUi(); }
+            if (viewName === 'prefs') { iconPackRender(); actionBtnRender(); trimSyncLock(); uninstDataSyncLock(); syncHapticsUi(); syncProgressToastsUi(); }
 
             document.querySelectorAll('.view-content').forEach(v => {
                 v.classList.remove('active');
@@ -9677,7 +9750,7 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('batchConfirmExecuteBtn').innerText = labels[1];
             document.getElementById('batchConfirmList').innerHTML = pkgs.map(pkg => {
                 const app = allApps.find(a => a.pkg === pkg) || { name: pkg, pkg: pkg };
-                return '<div class="confirm-list-row"><strong>' + escapeHtml(app.name) + '</strong><br><span style="font-size:10px; color:var(--text-muted);">' + escapeHtml(pkg) + '</span></div>';
+                return '<div class="confirm-list-row"><strong>' + escapeHtml(app.name) + '</strong><br><span class="pkg-text" style="font-size:10px;">' + escapeHtml(pkg) + '</span></div>';
             }).join('');
             batchConfirmShowBody('confirm');
             document.getElementById('batchConfirmModal').classList.add('show');
@@ -9828,7 +9901,7 @@ Type any command below (e.g. pm list packages -d)
                 const configured = d.configuredMode || 'auto';
                 currentWorkingMode = d.activeMode || 'unprivileged';
                 isPrivilegedActive = !!d.isPrivileged;
-                trimSyncLock();
+                trimSyncLock(); uninstDataSyncLock();
                 const pinnedButNotReady = configured !== 'auto' && configured !== 'unprivileged' && !d.modeAvailable;
 
                 // Update Header Badge
@@ -10437,7 +10510,7 @@ Type any command below (e.g. pm list packages -d)
                 (risky.length ? `<br><span class="uad-confirm-warn">${risky.length} Expert/Unsafe package${risky.length === 1 ? '' : 's'}: these can break important features${risky.some(x => x.p.removal === 'Unsafe') ? ' or boot-loop the phone' : ''}.</span>` : '');
             document.getElementById('batchConfirmExecuteBtn').innerText = titles[kind][1] + ' ' + plan.length;
             document.getElementById('batchConfirmList').innerHTML = plan.map(x =>
-                `<div class="confirm-list-row">${uadRemovalBadge(x.p.removal)}<strong>${escapeHtml(x.p.name)}</strong><br><span style="font-size:10px; color:var(--text-muted);">${escapeHtml(x.p.pkg)}</span></div>`).join('');
+                `<div class="confirm-list-row">${uadRemovalBadge(x.p.removal)}<strong>${escapeHtml(x.p.name)}</strong><br><span class="pkg-text" style="font-size:10px;">${escapeHtml(x.p.pkg)}</span></div>`).join('');
             pendingBatchAction = { custom: () => runUadPlan(kind, plan) };
             document.getElementById('batchConfirmModal').classList.add('show');
         }
@@ -10489,7 +10562,6 @@ Type any command below (e.g. pm list packages -d)
             saveStoreJson('ui_state', {
                 appSort: appSort,
                 filtersHintDone: filtersHintDone,
-                batchKeepSelection: batchKeepSelection,
                 rememberFilters: rememberFilters,
                 filters: rememberFilters ? { apps: Array.from(activeFilters), uad: Array.from(uadExtra), saved: Array.from(savedFilters) } : null,
                 search: { names: searchOpts.names, packages: searchOpts.packages, regex: searchOpts.regex },
@@ -10510,11 +10582,6 @@ Type any command below (e.g. pm list packages -d)
                     rememberFilters = true;
                     const rcb = document.getElementById('rememberFiltersToggle');
                     if (rcb) rcb.checked = true;
-                }
-                if (typeof st.batchKeepSelection === 'boolean') {
-                    batchKeepSelection = st.batchKeepSelection;
-                    const kcb = document.getElementById('batchKeepSelectionToggle');
-                    if (kcb) kcb.checked = batchKeepSelection;
                 }
                 if (st.search && typeof st.search === 'object') {
                     ['names', 'packages', 'regex'].forEach(k => { if (typeof st.search[k] === 'boolean') searchOpts[k] = st.search[k]; });
@@ -10549,7 +10616,7 @@ Type any command below (e.g. pm list packages -d)
         // ---------- Debloat history ----------
         const HISTORY_LIMIT = 150;
         const UNDO_ACTION = { uninstall: 'reinstall', reinstall: 'uninstall', freeze: 'unfreeze', unfreeze: 'freeze', suspend: 'unsuspend', unsuspend: 'suspend' };
-        const ACTION_LABELS = { uninstall: 'Uninstalled', reinstall: 'Restored', freeze: 'Disabled', unfreeze: 'Enabled', suspend: 'Suspended', unsuspend: 'Unsuspended', force_stop: 'Force-stopped', clear_data: 'Cleared data', uninstall_updates: 'Removed updates' };
+        const ACTION_LABELS = { clear_removed_data: 'Cleared leftover data of', uninstall: 'Uninstalled', reinstall: 'Restored', freeze: 'Disabled', unfreeze: 'Enabled', suspend: 'Suspended', unsuspend: 'Unsuspended', force_stop: 'Force-stopped', clear_data: 'Cleared data', uninstall_updates: 'Removed updates' };
         let debloatHistory = null;
 
         function getHistory() {
@@ -14016,6 +14083,8 @@ Type any command below (e.g. pm list packages -d)
             const count = selectedPkgs.size;
             if (count === 0) {
                 batchPanelExpanded = false;
+                batchKeepSelection = true;                                      // "Keep selecting after running" is on again for the next selection
+                const kcb = document.getElementById('batchKeepSelectionToggle'); if (kcb) kcb.checked = true;
                 bar.classList.remove('show');
                 fab.classList.remove('show');
                 return;
@@ -14047,8 +14116,21 @@ Type any command below (e.g. pm list packages -d)
         }
 
         function setBatchKeepSelection(on) {
-            batchKeepSelection = !!on;
-            saveUiState();
+            batchKeepSelection = !!on;           // for this selection only: the next one starts with it on again
+        }
+
+        // clears the selection with no transition: the checkmark button and the batch menu are gone in the same frame
+        function clearBatchSelectionNow() {
+            const els = [document.getElementById('floatingBatchBar'), document.getElementById('batchFab')].filter(Boolean);
+            els.forEach(e => { e.style.transition = 'none'; });
+            selectedPkgs.clear();
+            updateBatchBar();
+            document.querySelectorAll('.app-card').forEach(c => {
+                c.classList.remove('selected');
+                const cb = c.querySelector('.app-checkbox');
+                if (cb) cb.innerText = '';
+            });
+            requestAnimationFrame(() => requestAnimationFrame(() => els.forEach(e => { e.style.transition = ''; })));
         }
 
         function clearBatchSelection() {
@@ -14188,7 +14270,7 @@ Type any command below (e.g. pm list packages -d)
             });
             const success = rows.filter(r => r.success).length, failed = rows.length - success;
             const label = `${batchRunLabel || ACTION_LABELS[action] || action} ${rows.length} app${rows.length === 1 ? '' : 's'}` + (stopped ? ' (stopped early)' : '');
-            const histAction = batchRunHist || action, shownAction = batchRunHist ? (batchRunHist === 'custom' ? 'Command' : 'App Ops') : action.toUpperCase();
+            const histAction = batchRunHist || action, shownAction = batchRunHist ? (batchRunHist === 'custom' ? 'Command' : 'App Ops') : (action === 'clear_removed_data' ? 'CLEAR LEFTOVER DATA' : action.toUpperCase());
             batchRunLabel = ''; batchRunHist = '';
             recordHistory('apps', label, rows.map(r => ({ pkg: r.pkg, name: r.name, action: histAction, success: r.success })));
             showToast(stopped ? `Stopped: ${success} succeeded, ${failed} failed, ${total - rows.length} not run` : `Batch Done: ${success} succeeded, ${failed} failed`);
@@ -14318,6 +14400,8 @@ Type any command below (e.g. pm list packages -d)
         function setFilter(filter, el) {
             // Uninstalled bloatware is a list of its own: turning it on turns every other filter off
             if (filter === 'uninstalled' && !activeFilters.has('uninstalled')) activeFilters.clear();
+            // a running app is installed: turning Running on turns Uninstalled off
+            if (filter === 'running' && !activeFilters.has('running')) activeFilters.delete('uninstalled');
             toggleFilterIn(activeFilters, filter);
             resetAppsWindow();
             haptic();
@@ -15038,10 +15122,71 @@ Type any command below (e.g. pm list packages -d)
         window.onInstallProgress = onInstallProgress;
 
         // ---------- VirusTotal (optional pre-install scan) ----------
-        function vtKeyChanged() {
-            const v = document.getElementById('vtApiKey').value || '';
-            if (window.AndroidBridge && window.AndroidBridge.saveSetting) window.AndroidBridge.saveSetting('vt_api_key', v);
+        // One VirusTotal key for the whole app (Settings > VirusTotal API key). "Approved" = Test key has worked for exactly this key.
+        let vtKeyCache = null;
+        function vtKey() {
+            if (vtKeyCache === null) {
+                let k = '';
+                try { k = String(kvGet('vt_key', '') || ''); } catch (e) {}
+                // keys entered before there was one place for them: the Installer's own box, then Morphe Helper's
+                if (!k && window.AndroidBridge && window.AndroidBridge.loadSetting) { try { k = String(window.AndroidBridge.loadSetting('vt_api_key') || ''); } catch (e) {} }
+                if (!k) { try { if (typeof mp === 'object' && mp && mp.cfg && mp.cfg.hVtKey) k = String(mp.cfg.hVtKey); } catch (e) {} }
+                vtKeyCache = k.trim();
+                if (vtKeyCache) kvSet('vt_key', vtKeyCache);
+            }
+            return vtKeyCache;
         }
+        function vtKeyApproved() { const k = vtKey(); return !!k && kvGet('vt_key_ok', '') === k; }
+        function vtKeyTyped(v) {
+            const k = String(v || '').trim();
+            if (k === vtKey()) return;
+            vtKeyCache = k;
+            kvSet('vt_key', k);
+            if (window.AndroidBridge && window.AndroidBridge.saveSetting) { try { window.AndroidBridge.saveSetting('vt_api_key', k); } catch (e) {} }
+            vtRefreshUi();
+        }
+        function vtClearKey() { haptic(); const i = document.getElementById('vtKeyInput'); if (i) i.value = ''; vtKeyTyped(''); kvSet('vt_key_ok', ''); showToast('VirusTotal key removed'); }
+        async function vtTestKey() {
+            const k = vtKey();
+            if (!k) { showToast('Paste your VirusTotal API key first'); return; }
+            haptic();
+            const st = document.getElementById('vtKeyStatus'), btn = document.getElementById('vtTestBtn');
+            if (st) st.innerText = 'Testing the key…';
+            if (btn) btn.disabled = true;
+            const r = await mpCall('vtValidate', { key: k });
+            if (btn) btn.disabled = false;
+            if (vtKey() !== k) return;                                     // changed while it was being tested
+            if (r.ok) { kvSet('vt_key_ok', k); showToast('The key works'); }
+            else { kvSet('vt_key_ok', ''); showToast(r.error || 'The key was refused'); if (st) st.dataset.err = r.error || 'refused'; }
+            vtRefreshUi();
+        }
+        // what the settings card, the Installer's card and Morphe Helper say about the key
+        function vtStateText() {
+            if (!vtKey()) return { cls: 'none', text: 'No VirusTotal API key yet.' };
+            if (vtKeyApproved()) return { cls: 'ok', text: 'The key is entered and approved.' };
+            return { cls: 'untested', text: 'A key is entered, but it has not been approved yet. Tap Test key.' };
+        }
+        function vtOpenSettings() {
+            haptic();
+            document.querySelectorAll('.modal-overlay.show').forEach(m => m.classList.remove('show'));
+            switchView('prefs');
+            setTimeout(() => { const c = document.getElementById('vtCard'); if (c && c.scrollIntoView) c.scrollIntoView({ block: 'center' }); const i = document.getElementById('vtKeyInput'); if (i && !vtKey()) i.focus({ preventScroll: true }); }, 120);
+        }
+        function vtRefreshUi() {
+            const st = vtStateText();
+            const i = document.getElementById('vtKeyInput'); if (i && document.activeElement !== i) i.value = vtKey();
+            const s1 = document.getElementById('vtKeyStatus');
+            if (s1 && !(s1.innerText === 'Testing the key…' && document.getElementById('vtTestBtn') && document.getElementById('vtTestBtn').disabled)) { s1.innerText = st.text; s1.style.color = st.cls === 'ok' ? 'var(--status-running)' : ''; }
+            const n = document.getElementById('vtKeyNote');
+            if (n) {
+                n.innerHTML = st.cls === 'ok' ? 'Using the VirusTotal API key from Settings (approved).'
+                    : (st.cls === 'none' ? 'No VirusTotal API key yet. ' : 'The key in Settings has not been approved yet. ')
+                      + '<button class="batch-tool-link bs-btn" type="button" onclick="vtOpenSettings()">' + (st.cls === 'none' ? 'Enter it in Settings' : 'Test it in Settings') + '</button>';
+            }
+            const scan = document.getElementById('vtScanBtn'); if (scan && !vtBusyScan) scan.disabled = !vtKey();
+            if (typeof mp === 'object' && mp && mp.h && mp.h.tab === 'set' && document.getElementById('mpSheetBody') && typeof mpHelperRender === 'function') { try { mpHelperRender(); } catch (e) {} }
+        }
+        let vtBusyScan = false;
 
         function vtBaseApkPath() {
             if (!installData || !installData.splits) return '';
@@ -15052,24 +15197,20 @@ Type any command below (e.g. pm list packages -d)
         function resetVtScan() {
             const box = document.getElementById('vtResultBox');
             if (box) { box.style.display = 'none'; box.innerHTML = ''; }
-            const btn = document.getElementById('vtScanBtn');
-            if (btn) btn.disabled = false;
-            const key = document.getElementById('vtApiKey');
-            if (key && !key.value && window.AndroidBridge && window.AndroidBridge.loadSetting) {
-                try { key.value = window.AndroidBridge.loadSetting('vt_api_key') || ''; } catch (e) {}
-            }
+            vtBusyScan = false;
+            vtRefreshUi();
         }
 
         function vtScan(upload) {
-            const key = (document.getElementById('vtApiKey').value || '').trim();
-            if (!key) { showToast('Enter your VirusTotal API key first'); return; }
+            const key = vtKey();
+            if (!key) { showToast('Add your VirusTotal API key in Settings first'); vtOpenSettings(); return; }
             const path = vtBaseApkPath();
             if (!path) { showToast('Load a package first'); return; }
             if (!window.AndroidBridge || !window.AndroidBridge.virusTotalScan) { showToast('VirusTotal scan needs the app build'); return; }
             haptic();
             const box = document.getElementById('vtResultBox');
             box.style.display = ''; box.innerHTML = upload ? 'Uploading to VirusTotal…' : 'Checking VirusTotal…';
-            document.getElementById('vtScanBtn').disabled = true;
+            document.getElementById('vtScanBtn').disabled = true; vtBusyScan = true;
             if (upload) window.AndroidBridge.virusTotalUpload(key, path);
             else window.AndroidBridge.virusTotalScan(key, path);
         }
@@ -15081,7 +15222,8 @@ Type any command below (e.g. pm list packages -d)
             if (!box) return;
             box.style.display = '';
             if (d.stage === 'scanning' || d.stage === 'uploading') { box.innerHTML = escapeHtml(d.message || 'Working…'); return; }
-            if (btn) btn.disabled = false;
+            vtBusyScan = false;
+            if (btn) btn.disabled = !vtKey();
             if (d.stage === 'error') { errNote(box, 'The scan failed: ' + (d.error || 'unknown error')); return; }
             if (d.found === false) {
                 box.innerHTML = 'VirusTotal hasn\'t analyzed this file yet.<br><button class="batch-tool-link" style="margin-top:6px;" onclick="vtScan(true)">Upload it for analysis</button>';
@@ -22790,6 +22932,60 @@ Type any command below (e.g. pm list packages -d)
                 output: said || (failed ? 'The command gave no answer.' : 'Done. The command printed nothing, which is what it does when it works.' + (freed ? '' : ' (The free space could not be read.)')),
                 success: !failed,
             }]);
+        }
+
+        // ---------- SD Maid > Clear Data from Uninstalled Apps ----------
+        // The apps that are uninstalled but may have kept their data (pm uninstall -k): the Apps list already knows which are uninstalled; in Root mode the native side also says which still have a data folder and how big.
+        let uninstData = { rows: [], root: false };
+        function uninstDataSyncLock() {
+            const lock = document.getElementById('uninstDataLock'), btn = document.getElementById('uninstDataBtn');
+            if (lock) lock.innerText = lk(lockedNow());
+            if (btn) { btn.classList.toggle('locked', lockedNow()); if (lockedNow()) btn.title = NEEDS_MODE; else btn.removeAttribute('title'); }
+        }
+        function uninstDataStart() {
+            if (!guardPrivilege('Clear data from uninstalled apps')) return;
+            haptic();
+            const gone = allApps.filter(a => a.isUninstalled);
+            if (!gone.length) { showToast('No app is uninstalled on this phone'); return; }
+            let root = false, found = null;
+            try {
+                if (window.AndroidBridge && window.AndroidBridge.leftoverData) {
+                    const r = JSON.parse(window.AndroidBridge.leftoverData(JSON.stringify(gone.map(a => a.pkg))) || '{}');
+                    root = !!r.root; found = root ? (r.found || {}) : null;
+                }
+            } catch (e) { root = false; found = null; }
+            let rows = gone.map(a => ({ pkg: a.pkg, name: a.name || a.pkg, kb: found ? found[a.pkg] : undefined, system: !!a.isSystem }));
+            if (found) rows = rows.filter(r => r.kb !== undefined);
+            rows.sort((a, b) => (b.kb || 0) - (a.kb || 0) || String(a.name).localeCompare(String(b.name)));
+            uninstData = { rows, root, ticked: new Set(rows.map(r => r.pkg)) };
+            if (!rows.length) { showToast(root ? 'No uninstalled app has data left' : 'No app is uninstalled on this phone'); return; }
+            uninstDataRender();
+            document.getElementById('uninstDataModal').classList.add('show');
+        }
+        function uninstDataRender() {
+            const u = uninstData;
+            const total = u.rows.reduce((n, r) => n + (r.kb || 0), 0);
+            document.getElementById('uninstDataSub').innerText = u.rows.length + ' uninstalled app' + (u.rows.length === 1 ? '' : 's') + (u.root ? ' with data left (' + formatBytes(total * 1024) + ')' : '');
+            document.getElementById('uninstDataNote').innerText = u.root
+                ? 'These apps are uninstalled but their data folders are still on the phone. The data of the apps you tick is deleted for good.'
+                : 'These apps are uninstalled. Without Root the app cannot see which of them still have data, so clearing all of them is safe but may find nothing for some. The data of the apps you tick is deleted for good.';
+            document.getElementById('uninstDataList').innerHTML = u.rows.map(r =>
+                '<label class="confirm-list-row" style="display:flex; gap:10px; align-items:center; cursor:pointer;"><input type="checkbox" class="als-cb-in" data-pkg="' + escapeHtml(r.pkg) + '"' + (u.ticked.has(r.pkg) ? ' checked' : '') + ' onchange="uninstDataTick(this)">'
+                + '<span style="min-width:0; flex:1;"><strong>' + escapeHtml(r.name) + '</strong><br><span class="pkg-text" style="font-size:10px;">' + escapeHtml(r.pkg) + '</span></span>'
+                + (r.kb !== undefined ? '<span class="switch-sub" style="white-space:nowrap;">' + formatBytes(r.kb * 1024) + '</span>' : '') + '</label>').join('');
+            uninstDataCount();
+        }
+        function uninstDataTick(el) { const p = el.getAttribute('data-pkg'); if (el.checked) uninstData.ticked.add(p); else uninstData.ticked.delete(p); uninstDataCount(); }
+        function uninstDataAll(on) { uninstData.ticked = on ? new Set(uninstData.rows.map(r => r.pkg)) : new Set(); document.querySelectorAll('#uninstDataList input').forEach(i => { i.checked = on; }); uninstDataCount(); haptic(); }
+        function uninstDataCount() { const n = uninstData.ticked.size, b = document.getElementById('uninstDataGo'); if (b) { b.disabled = !n; b.innerText = n ? 'Clear data of ' + n + ' app' + (n === 1 ? '' : 's') : 'Clear data'; } }
+        function uninstDataClose() { haptic(); document.getElementById('uninstDataModal').classList.remove('show'); }
+        function uninstDataRun() {
+            const pkgs = uninstData.rows.map(r => r.pkg).filter(p => uninstData.ticked.has(p));
+            if (!pkgs.length) return;
+            if (!confirm('Delete the data of ' + pkgs.length + ' uninstalled app' + (pkgs.length === 1 ? '' : 's') + '?\n\nThis cannot be undone.')) return;
+            document.getElementById('uninstDataModal').classList.remove('show');
+            batchRunLabel = 'Clear leftover data of';
+            runBatchAction('clear_removed_data', pkgs);
         }
 
         // ---------- Terminal: command history, saved commands, pinned chips ----------
@@ -30755,7 +30951,7 @@ Type any command below (e.g. pm list packages -d)
             if (!r.ok) { h.msg = r.error || 'Download failed'; h.err = true; h.browse = r.browse || ''; mpHelperRender(); return; }
             h.got = r.data; h.msg = mpHBundle(r.data) ? 'The bundle is ready.' : 'The APK is ready.'; h.err = false;
             mpHelperRender();
-            if (mp.cfg.hVt && mp.cfg.hVtKey && mp.cfg.hVtMode === 'always') mpHScan();
+            if (mp.cfg.hVt && vtKey() && mp.cfg.hVtMode === 'always') mpHScan();
         }
         async function mpHGetVersion(i) {
             const x = mp.h.versions && mp.h.versions.versions[i];
@@ -30767,7 +30963,7 @@ Type any command below (e.g. pm list packages -d)
             h.busy = false;
             if (!r.ok) { h.msg = r.error || 'Download failed'; h.err = true; h.browse = r.browse || ''; } else { h.got = r.data; h.msg = mpHBundle(r.data) ? 'The bundle is ready.' : 'The APK is ready.'; h.err = false; }
             mpHelperRender();
-            if (r.ok && mp.cfg.hVt && mp.cfg.hVtKey && mp.cfg.hVtMode === 'always') mpHScan();
+            if (r.ok && mp.cfg.hVt && vtKey() && mp.cfg.hVtMode === 'always') mpHScan();
         }
         // ---- the download list: what the in-app browser started goes on without it; pause, resume, retry, cancel ----
         function mpHBytes(n) { n = Number(n) || 0; return n >= 1073741824 ? (n / 1073741824).toFixed(2) + ' GB' : n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : n >= 1024 ? Math.round(n / 1024) + ' KB' : n + ' B'; }
@@ -30842,7 +31038,7 @@ Type any command below (e.g. pm list packages -d)
                 h.got = i; h.pkg = i.pkg || h.pkg; h.vt = null; h.found = null; h.err = false; h.browse = '';
                 h.msg = (mpHBundle(i) ? 'The bundle' : 'The APK') + ' is ready (saved from the browser).';
                 mpHelperRender();
-                if (mp.cfg.hVt && mp.cfg.hVtKey && mp.cfg.hVtMode === 'always') mpHScan();
+                if (mp.cfg.hVt && vtKey() && mp.cfg.hVtMode === 'always') mpHScan();
                 return;
             }
             mpHDSet(r.data.jobs); mpHDRender();
@@ -30872,7 +31068,7 @@ Type any command below (e.g. pm list packages -d)
                     h.got = e.info; h.pkg = e.info.pkg || h.pkg; h.vt = null; h.found = null; h.err = false; h.browse = '';
                     h.msg = (mpHBundle(e.info) ? 'The bundle' : 'The APK') + ' is ready (saved from the browser).';
                     mpHelperRender();
-                    if (mp.cfg.hVt && mp.cfg.hVtKey && mp.cfg.hVtMode === 'always') mpHScan();
+                    if (mp.cfg.hVt && vtKey() && mp.cfg.hVtMode === 'always') mpHScan();
                 } else mpHMsg((e.name || 'The file') + ' was saved, but it is not an app file (' + (e.error || 'unknown') + '). Choose another download in the browser.', true);
             }
         }
@@ -30923,7 +31119,7 @@ Type any command below (e.g. pm list packages -d)
             mp.h.got = r.data; mp.h.pkg = r.data.pkg; mp.h.vt = null; mp.h.found = null; mp.h.err = false;
             mpHMsg(mpHBundle(r.data) ? 'The bundle is ready.' : 'The APK is ready.', false);
             mpHelperRender();
-            if (mp.cfg.hVt && mp.cfg.hVtKey && mp.cfg.hVtMode === 'always') mpHScan();
+            if (mp.cfg.hVt && vtKey() && mp.cfg.hVtMode === 'always') mpHScan();
         }
         async function mpHPick() {
             const f = await mpCall('pick', { kind: 'apk' });
@@ -30938,9 +31134,9 @@ Type any command below (e.g. pm list packages -d)
         async function mpHScan() {
             const g = mp.h.got;
             if (!g || mp.h.vtBusy) return;
-            if (!mp.cfg.hVtKey) { showToast('Add your VirusTotal API key in Settings'); return; }
+            if (!vtKey()) { showToast('Add your VirusTotal API key in Settings'); vtOpenSettings(); return; }
             mp.h.vtBusy = true; mpHelperRender();
-            const r = await mpCall('vtScan', { path: g.path, key: mp.cfg.hVtKey });
+            const r = await mpCall('vtScan', { path: g.path, key: vtKey() });
             mp.h.vtBusy = false;
             if (!r.ok) { mpHMsg(r.error || 'The VirusTotal scan did not work', true); mpHelperRender(); return; }
             mp.h.vt = r.data; mpHelperRender();
@@ -30985,7 +31181,7 @@ Type any command below (e.g. pm list packages -d)
                 '<div class="mp-sw"><div class="mp-main"><div class="mp-name">Fast mode: version</div><div class="mp-patch-desc">Which version Fast mode looks for: the one the patches need, or the newest.</div></div>' + sel('hPolicy', [['requested', 'Requested'], ['latest', 'Newest']]) + '</div>' +
                 '<div class="mp-group"><span>VirusTotal</span></div><div class="mp-note">Check every downloaded file with VirusTotal before you use it. The free key allows 4 lookups a minute and 500 a day. Get a key at <a href="#" style="color:var(--accent)" onclick="mpLink(\'https://www.virustotal.com/gui/my-apikey\');return false;">virustotal.com</a>.</div>' +
                 '<div class="mp-sw"><div class="mp-main"><div class="mp-name">Scan with VirusTotal</div></div><label class="mp-check"><input type="checkbox" ' + (c.hVt ? 'checked ' : '') + 'onchange="mp.cfg.hVt=this.checked;mpCfgSave();mpHelperRender();if(this.checked)mpHelperQuota();"></label></div>' +
-                (c.hVt ? '<div class="mp-q" style="margin:6px 0;"><input class="modal-text-input" type="password" id="mpHKey" value="' + escapeHtml(c.hVtKey) + '" placeholder="API key" autocomplete="off" autocapitalize="off" spellcheck="false" onchange="mp.cfg.hVtKey=this.value.trim();mpCfgSave();"><button class="mp-act" onclick="mpHKeyTest()">Test</button></div>' +
+                (c.hVt ? '<div class="mp-note" style="margin:6px 0;">' + (vtKeyApproved() ? 'Using the VirusTotal API key from Settings (approved).' : (vtKey() ? 'The key in Settings has not been approved yet.' : 'No VirusTotal API key yet.')) + ' <button class="mp-act" onclick="vtOpenSettings()">' + (vtKeyApproved() ? 'Settings' : (vtKey() ? 'Test it in Settings' : 'Enter it in Settings')) + '</button></div>' +
                     '<div class="mp-sw"><div class="mp-main"><div class="mp-name">When to scan</div></div>' + sel('hVtMode', [['never', 'Never'], ['ask', 'Ask (a button)'], ['always', 'Always']]) + '</div>' +
                     (q ? '<div class="mp-note">This minute: ' + q.perMinuteUsed + ' of ' + q.perMinuteLimit + '</div><div class="mp-bar-quota"><i style="width:' + Math.min(100, 100 * q.perMinuteUsed / q.perMinuteLimit) + '%"></i></div><div class="mp-note">Today: ' + q.perDayUsed + ' of ' + q.perDayLimit + '</div><div class="mp-bar-quota"><i style="width:' + Math.min(100, 100 * q.perDayUsed / q.perDayLimit) + '%"></i></div>' : '') : '') +
                 '<div class="mp-group"><span>Credits</span></div><div class="mp-note">The sources, Fast mode and VirusTotal flow of Morphe Helper follow <a href="#" style="color:var(--accent)" onclick="mpLink(\'https://github.com/rushiranpise/helper-for-morphe\');return false;">Helper for Morphe</a> by rushiranpise (GPL-3.0). It is independent of the APK sites it uses; availability, versions and formats can change at any time. The community patch index is community-maintained and its bundles are not verified by Morphe.</div>';
@@ -30997,13 +31193,6 @@ Type any command below (e.g. pm list packages -d)
             if (!mp.cfg.hSources.length) { mp.cfg.hSources = ['play']; showToast('At least one source stays on'); mpHelperRender(); }
             if (!mp.cfg.hSources.includes(mp.cfg.hDefault)) mp.cfg.hDefault = mp.cfg.hSources[0];
             mpCfgSave();
-        }
-        async function mpHKeyTest() {
-            const k = (document.getElementById('mpHKey') || {}).value || '';
-            mp.cfg.hVtKey = k.trim(); mpCfgSave();
-            const r = await mpCall('vtValidate', { key: mp.cfg.hVtKey });
-            showToast(r.ok ? 'The key works' : (r.error || 'The key was refused'));
-            mpHelperQuota();
         }
         async function mpHelperQuota() { const r = await mpCall('vtQuota', {}); if (r.ok && r.data) { mp.h.quota = r.data; if (mp.h.tab === 'set') mpHelperRender(); } }
         // MORPHE:JS:END
@@ -31900,7 +32089,7 @@ Type any command below (e.g. pm list packages -d)
 
         // ---- showing the tab ----
         async function onSdmShown() {
-            trimSyncLock();
+            trimSyncLock(); uninstDataSyncLock();
             if (!SD.shown) {
                 SD.shown = true;
                 const saved = kvGet('sdm_onetap', null);
@@ -32857,7 +33046,12 @@ Type any command below (e.g. pm list packages -d)
         (function () {
             const ZONE = 44;                           // px from the top of the sheet that count as the handle
             let st = null, swallow = 0;
-            const sheetAt = (el) => { const sh = el && el.closest ? el.closest('.modal-sheet') : null; return sh && sh.closest('.modal-overlay.show') ? sh : null; };
+            const sheetAt = (el) => {
+                const bs = el && el.closest ? el.closest('.batch-bottom-sheet.show') : null;          // the batch menu is a bottom sheet of its own, with the same handle
+                if (bs) return bs;
+                const sh = el && el.closest ? el.closest('.modal-sheet') : null;
+                return sh && sh.closest('.modal-overlay.show') ? sh : null;
+            };
             const point = (e) => (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]) || e;
             function begin(e) {
                 const sh = sheetAt(e.target);
@@ -32890,6 +33084,7 @@ Type any command below (e.g. pm list packages -d)
                 if (dy < 0 && far) { sh.classList.add('sheet-expanded'); later(); return; }
                 if (dy > 0 && far) {
                     if (sh.classList.contains('sheet-expanded')) { sh.classList.remove('sheet-expanded'); later(); return; }
+                    if (sh.classList.contains('batch-bottom-sheet')) { collapseBatchPanel(); later(); return; }          // down from the batch menu: back to the checkmark button (the apps stay selected)
                     const ov = sh.closest('.modal-overlay');
                     if (ov) ov.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));      // the same as a tap outside the sheet: each sheet closes itself
                     if (ov && ov.classList.contains('show') && !ov.getAttribute('onclick')) ov.classList.remove('show');
@@ -32908,6 +33103,7 @@ Type any command below (e.g. pm list packages -d)
                 for (const m of list) {
                     const t = m.target;
                     if (t.classList && t.classList.contains('modal-overlay') && !t.classList.contains('show')) { const sh = t.querySelector('.modal-sheet'); if (sh) sh.classList.remove('sheet-expanded'); }
+                    if (t.classList && t.classList.contains('batch-bottom-sheet') && !t.classList.contains('show') && t.classList.contains('sheet-expanded')) t.classList.remove('sheet-expanded');          // (only when it is there: removing a class that is not there would still write the attribute and loop)
                 }
             }).observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class'] });
         })();

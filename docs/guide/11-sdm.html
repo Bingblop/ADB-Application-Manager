@@ -85,11 +85,21 @@
   <p><b>Clear the rest with accessibility.</b> After a Delete, or whenever AppCleaner has results, the card has this button above Details. It clears only the caches that no file access reaches (what the trim of all apps through a working mode, and the file deletions, left), by tapping Clear cache in the settings of each of those apps. If the service is not ready (no consent, switched off, or not connected yet), the button says which and offers to set it up instead of doing nothing.</p>
   <p><b>Withdraw consent</b> in the card stops AppCleaner from using it. The automation follows the screen texts of the system settings, in the languages SD Maid has tables for; on some phone makers' systems it can fail, and then it says so and the rest of the cleanup still works.</p>
 
+  <h4>Clear Data from Uninstalled Apps</h4>
+  <p>A card of this tab, <b>above Trim Caches</b>. It clears the data of apps that were uninstalled from this device while the <code>DONT_DELETE_FLAG</code> flag was active (Android's own name for the same thing is the <i>keep data</i> option of <code>pm uninstall -k</code>, which this app also uses when you uninstall without losing an app's data). This usually applies to <b>third-party</b> apps, and clearing that data can <b>fix common problems</b> when you install them again.</p>
+  <h5>How to use it</h5>
+  <ol class="hg-steps">
+    <li>Open the <b>SD Maid</b> tab and tap <b>Clear Data from Uninstalled Apps</b>. It needs a working mode; without one the button is locked.</li>
+    <li>A sheet lists the uninstalled apps, all ticked. In <b>Root</b> mode only the ones that still have a data folder are listed, each with its size. Without Root the app cannot look into other apps' folders, so every uninstalled app is listed and the note says that some may have nothing left. <b>Select All</b> and <b>Select None</b> change the ticks.</li>
+    <li>Tap <b>Clear data of N apps</b> and confirm the question: it cannot be undone. A progress sheet and then the usual results box follow.</li>
+  </ol>
+  <p><b>How each app is cleared.</b> First with <code>pm clear</code>. If that is refused, in Root mode the app's data folders are deleted directly; without Root the app is brought back for you with <code>pm install-existing</code> and removed again <i>without</i> keeping its data (an app whose APK is gone cannot be brought back and needs Root). In Root mode the result is checked by counting the files before and after. Installed apps and your own files are never touched.</p>
+
   <h4>Trim Caches in All Applications</h4>
   <p>A card of this tab (it was in Settings until v7.10.10), next to the cleaning tools because it does the same kind of job for every app at once. It has one button, <b>Trim Caches in All Applications</b>, and a long explanation under it. The button clears the cache of every app in one go, to free some storage.</p>
   <p><b>What it needs.</b> A <a href="#modes-overview">working mode</a> (ADB over TCP, Wireless Debugging, Shizuku or Root). Without one the button shows a padlock, and tapping it opens the sheet <b>Working Mode Required</b>.</p>
   <ol class="hg-steps">
-    <li>Open the <b>SD Maid</b> tab and find the card <b>Trim Caches</b>, under the <b>Accessibility service</b> card.</li>
+    <li>Open the <b>SD Maid</b> tab and find the card <b>Trim Caches</b>, under the <b>Clear Data from Uninstalled Apps</b> card.</li>
     <li>Tap <b>Trim Caches in All Applications</b>. A question opens: "Trim the caches of every app now? Only cache files are deleted. Apps, their data, logins and your files stay as they are." Tap <b>OK</b> to go on, or <b>Cancel</b> and nothing happens.</li>
     <li>The app runs <code>pm trim-caches 128G</code> through your working mode, which is the same as typing <code>adb shell pm trim-caches 128G</code> on a computer. The button turns grey and reads "Trimming caches&hellip;", and a line under it says that this can take up to a minute or two. The app stays usable while it runs.</li>
     <li>When it ends, a box titled <b>Trim Caches in All Applications</b> opens. On success it says <b>Caches trimmed</b>, shows the command tagged <b>SUCCESS</b>, and gives a line such as "Free space on the phone: 120 GB before, 123 GB after (2.4 GB freed)." When nothing more could be freed, the line ends "(nothing more could be freed)" instead. The command prints nothing when it works, so the box also says "Done. The command printed nothing, which is what it does when it works."</li>

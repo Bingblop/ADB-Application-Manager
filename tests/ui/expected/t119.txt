@@ -81,10 +81,8 @@ ok   All versions lists the versions with their format and a Download button
 ok   This version downloads and shows the file, its SHA-256 and the install / patch buttons
 ok   VirusTotal is off, so there is no scan button
 ok   Helper settings: the ten sources, connection, save, fast mode, VirusTotal and the credit
-ok   turning VirusTotal on shows the key box, the mode and the quota bars
-ok   the key is a password box
-ok   a refused key says so
-ok   a good key is accepted and saved
+ok   turning VirusTotal on shows the key note (no box of its own), the mode and the quota bars
+ok   with the one key from Settings approved the note says so
 ok   with a key and "ask" a Scan button appears
 ok   a clean file is shown as clean with the engine counts and a link
 ok   a flagged file is shown in red

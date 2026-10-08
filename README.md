@@ -14,7 +14,7 @@ recolor the whole system · run a real terminal with AI coding agents — **no c
 
 ## [⬇️ Get the latest APK](https://github.com/Bingblop/ADB-Application-Manager/releases/latest)
 
-`v7.10.15-Pro` · signed · installs over any earlier version · works with **ADB, Wireless Debugging, Shizuku or Root**
+`v7.10.16-Pro` · signed · installs over any earlier version · works with **ADB, Wireless Debugging, Shizuku or Root**
 
 <table>
   <tr>
@@ -120,6 +120,7 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 - **Contact the developer and Issues** at the top of the About tab: Issues opens the GitHub issue page; Contact opens your email app with the subject "ADB App Manager", addressed to a forwarding alias (bingblop.coral666@simplelogin.fr) so the developer's own address stays private.
 - **Honest results**: after an uninstall, reinstall, freeze, unfreeze, suspend or unsuspend (one app or a batch, on this phone or on a connected device), and after Clear data in Root mode, the app asks what became of each app, says *Checking the phone…* (or *the device…*) while it does, and shows *Uninstalled / Still installed*, *Data cleared* and so on instead of trusting the command's exit status. **Settings → Progress messages** turns the "Working on it…" / "Checking…" messages off.
+- **SD Maid → Clear Data from Uninstalled Apps** clears the leftover data of apps removed with the keep-data flag. **Batch menu**: a pull handle, outlined Select All / Clear All, Show Applications, Keep selecting always on. **One VirusTotal key** in Settings for the Installer and Morphe Helper.
 - **UAD-NG tag**: tap it for the app's description; the meaning of Recommended / Advanced / Expert / Unsafe is one button away (**Removal Levels**).
 - **Overlays in order**: enabled, then disabled, then not changeable, each with a one-line description.
 - **Command suggestions** in the Terminal, the ADB Console and the Connected Devices console: a grey completion of what you type from your history, the phone's packages and common commands; Right arrow (or a tap) accepts it.

@@ -67,9 +67,9 @@ const appBatchMock = require('./lib/appbatch_mock');
   await page.evaluate(() => { expandBatchPanel(); });
   await page.click('.batch-grid-btn:has-text("Force Stop")'); await page.waitForTimeout(600);
   await page.evaluate(() => closeCommandResultsModal());
-  console.log('9. after batch action completes -> selection + panel reset:', JSON.stringify(await state()));
+  console.log('9. after batch action completes (Keep selection is on by default now) -> selection and sheet stay:', JSON.stringify(await state()));
   await page.evaluate(() => toggleSelectPkg('com.b'));
-  console.log('10. next selection after that -> collapsed again:', JSON.stringify(await state()));
+  console.log('10. one more app selected -> the sheet stays, the count follows:', JSON.stringify(await state()));
   await page.evaluate(() => clearBatchSelection());
 
   // recallSavedList starts a fresh selection session - should also start collapsed even if a
@@ -87,8 +87,7 @@ const appBatchMock = require('./lib/appbatch_mock');
   // "Keep selection after running" - ticking it stops a batch action from clearing the selection, so another
   // action can run on the same apps right away; unticking it restores the normal clear-after-running behavior.
   await page.evaluate(() => { toggleSelectPkg('com.a'); toggleSelectPkg('com.b'); expandBatchPanel(); });
-  await page.locator('.switch-row:has(#batchKeepSelectionToggle)').click();
-  console.log('13. ticked "Keep selection after running":', await page.isChecked('#batchKeepSelectionToggle'));
+  console.log('13. "Keep selection after running" is ticked by default (v7.10.16: on every time):', await page.isChecked('#batchKeepSelectionToggle'));
   await page.click('.batch-grid-btn:has-text("Force Stop")'); await page.waitForTimeout(600);
   await page.evaluate(() => closeCommandResultsModal());
   console.log('14. after a batch action with it ticked -> selection kept, sheet still shown:', JSON.stringify(await state()));

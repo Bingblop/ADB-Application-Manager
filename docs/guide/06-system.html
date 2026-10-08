@@ -413,7 +413,7 @@
   <ul>
     <li>No permission, no computer and no working mode are needed. Every control works at once; there is no Save button, and what you choose is kept on the phone.</li>
     <li>These settings are about this app only. The font, the colours and the language do not change the rest of your phone. (<b>Trim Caches</b>, which clears the caches of the other apps, was a card here until v7.10.10; it now lives in the <a href="#tab-sdm">SD Maid</a> tab.)</li>
-    <li>The cards come in this order: <b>Language</b>, <b>Appearance</b>, <b>Palette Style</b>, <b>My Themes</b>, <b>Curated Theme Palettes</b> (with the <b>Granular Color Pickers</b> inside it), <b>Lists</b>, <b>Motion</b>, <b>Haptic feedback</b>, <b>Progress messages</b>, <b>Reconnecting devices</b>, <b>Font</b>, <b>Icon pack</b>, <b>Action Button</b>, <b>Feature List</b> and, last, <b>Press and hold guide</b>. Below, each card has its own part, with every control, its default and when to change it.</li>
+    <li>The cards come in this order: <b>Language</b>, <b>Appearance</b>, <b>Palette Style</b>, <b>My Themes</b>, <b>Curated Theme Palettes</b> (with the <b>Granular Color Pickers</b> inside it), <b>Lists</b>, <b>Motion</b>, <b>Haptic feedback</b>, <b>Progress messages</b>, <b>VirusTotal API key</b>, <b>Reconnecting devices</b>, <b>Font</b>, <b>Icon pack</b>, <b>Action Button</b>, <b>Feature List</b> and, last, <b>Press and hold guide</b>. Below, each card has its own part, with every control, its default and when to change it.</li>
   </ul>
   <div class="hg-note"><b>Not in this screen.</b> There is no switch here for keeping the screen on, for update checks, for backups or for logs. Update checks live in <a href="#tab-updates">App Updater</a>, backups in the <a href="#apps-backup">apps backup</a> section, logs in <a href="#tab-logcat">Logcat Viewer</a>. The Command-Line Interface has its own gear (<a href="#tab-terminal">Command-Line Interface</a>), and the <b>Keep selection after running</b> switch is inside the batch panel (see <a href="#apps-batch">batch actions</a>).</div>
 
@@ -548,6 +548,9 @@
 
   <h4>Progress messages</h4>
   <p>One switch, <b>Say what is going on</b>, <b>on by default</b>. While an app is uninstalled, frozen, suspended, cleared and so on (from the app menu, the action button, a batch or the Connected Devices apps), the app shows small messages while it works: <i>Working on it&hellip;</i>, then <i>Checking the phone&hellip;</i> (or <i>Checking the device&hellip;</i>) while it asks the phone what became of the app. Turn the switch off if they are noise. What stays: the result (for example <i>Alpha: Uninstalled</i> or <i>Bravo: Still installed</i>), every problem and its result window, and the line on a batch's progress sheet.</p>
+
+  <h4>VirusTotal API key</h4>
+  <p>The one place for the VirusTotal key (a free key from virustotal.com, under your account, API key). Paste it into the box; <b>Test key</b> asks VirusTotal whether it works, and once it has, the line under the box says <i>The key is entered and approved.</i> Changing the key takes the approval away until you test again; <b>Remove key</b> empties the box. The <a href="#tab-installer">APK Installer</a>'s scan and <a href="#morphe-helper">Morphe Helper</a>'s scan both use this key and no longer have a key box of their own: when it is missing or not approved they say so and show a button that opens this card. A key entered in an older version is taken over automatically. The key stays on this phone and is sent only to VirusTotal when you scan.</p>
 
   <h4>Reconnecting devices</h4>
   <p>What the <a href="#tab-devices">Connected Devices</a> tab does when a device you were connected to drops. The same switch is under the <b>Not connected</b> cards in that tab.</p>

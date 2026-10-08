@@ -8733,6 +8733,7 @@ public class MainActivity extends Activity {
                 if ("unsuspend".equals(action)) return runShellAction("pm unsuspend " + pkg);
                 if ("force_stop".equals(action)) return runShellAction("am force-stop " + pkg);
                 if ("clear_data".equals(action)) return runShellAction("pm clear " + pkg);
+                if ("clear_removed_data".equals(action)) return clearRemovedData(pkg);
                 if ("uninstall".equals(action)) return uninstallForUser(pkg, false);
                 if ("uninstall_keep_data".equals(action)) return uninstallForUser(pkg, true);
                 if ("uninstall_updates".equals(action)) return runShellAction("pm uninstall-system-updates " + pkg);
@@ -8876,7 +8877,7 @@ public class MainActivity extends Activity {
          *  checked is left as it was. Returns the number of rows that succeeded. */
         private int verifyBatchRows(String action, JSONArray rows, int done, String announce) {
             if (rows.length() == 0) return done;
-            if ("clear_data".equals(action)) return verifyClearRows(rows, done, announce);
+            if ("clear_data".equals(action) || "clear_removed_data".equals(action)) return verifyClearRows(rows, done, announce);
             if (!BatchVerify.verifiable(action)) return done;
             if (announce != null) notifyJs(announce);              // the page says "Checking the phone..." while this runs
             try {
@@ -8895,7 +8896,7 @@ public class MainActivity extends Activity {
         }
 
         /** Clear data can be read back only where the app's data folder is readable: in Root mode. */
-        private boolean clearIsChecked(String action) { return "clear_data".equals(action) && "root".equals(resolveExecMode()); }
+        private boolean clearIsChecked(String action) { return ("clear_data".equals(action) || "clear_removed_data".equals(action)) && "root".equals(resolveExecMode()); }
 
         /** {size in KB, regular files} of an app's private data folder, or null (not Root, or the folder cannot be read). */
         private long[] dataStat(String pkg) {
@@ -9021,6 +9022,60 @@ public class MainActivity extends Activity {
          *  (IPackageManager.deletePackageAsUser) App Manager and Canta use for the same refusal, run as a
          *  standalone app_process under whatever privileged shell (ADB or Shizuku) is already active. That
          *  fallback only applies to a full removal, not the keep-data variant. */
+        /** The data an uninstalled app left behind (it was removed with the keep-data option, {@code pm uninstall -k}). Three ways, the first that works wins: {@code pm clear};
+         *  in Root mode the folders are removed directly; otherwise the app is brought back for the user ({@code pm install-existing}) and removed again without keeping its data. */
+        private String clearRemovedData(String pkg) {
+            String r = runShellAction("pm clear --user 0 " + pkg);
+            String said = flagText(r).trim();
+            if (flagOk(r) && !said.toLowerCase(java.util.Locale.ROOT).contains("fail")) return flagged(true, said.isEmpty() ? "Success" : said);
+            if ("root".equals(resolveExecMode())) {
+                String[] dirs = { "/data/user/0/", "/data/user_de/0/", "/data/misc/profiles/cur/0/", "/data/media/0/Android/data/", "/data/media/0/Android/media/" };
+                StringBuilder rm = new StringBuilder("rm -rf");
+                for (String d : dirs) rm.append(' ').append(d).append(pkg);
+                runShellAction(rm.toString());
+                String left = flagText(runShellAction("ls -d /data/user/0/" + pkg + " 2>/dev/null")).trim();
+                if (left.isEmpty() || left.contains("No such file")) return flagged(true, "Cleared by deleting the app's data folders (Root), after pm clear said: " + (said.isEmpty() ? "nothing" : said));
+                return flagged(false, "The data folders could not be deleted: " + left + "\n\npm clear said: " + said);
+            }
+            String back = runShellAction("cmd package install-existing --user 0 " + pkg);
+            if (flagOk(back)) {
+                String un = runShellAction("pm uninstall --user 0 " + pkg);
+                if (flagOk(un)) return flagged(true, "Cleared by bringing the app back for you and removing it again without keeping its data (pm clear said: " + (said.isEmpty() ? "nothing" : said) + ").");
+                return flagged(false, "The app was brought back but could not be removed again: " + flagText(un).trim() + "\n\nIt is installed now. Uninstall it from the Apps list.");
+            }
+            return flagged(false, said + (said.isEmpty() ? "" : "\n\n") + "The app cannot be brought back (its APK is gone), and Root is needed to delete its data folders directly.");
+        }
+
+        /** Root mode: of these packages, the ones that still have a data folder, with its size in KB: {"root":true,"found":{pkg:kb}}; {"root":false} without Root (the folders are not readable). */
+        @JavascriptInterface
+        public String leftoverData(String pkgsJson) {
+            try {
+                if (!"root".equals(resolveExecMode())) return "{\"root\":false}";
+                JSONArray in = new JSONArray(pkgsJson);
+                java.util.Set<String> have = new java.util.HashSet<String>();
+                for (String line : String.valueOf(executeShell("ls /data/user/0 2>/dev/null")).split("\n")) { line = line.trim(); if (!line.isEmpty()) have.add(line); }
+                JSONObject found = new JSONObject();
+                java.util.List<String> hit = new java.util.ArrayList<String>();
+                for (int i = 0; i < in.length(); i++) { String p = in.optString(i, ""); if (BackupScripts.isPackageName(p) && have.contains(p)) hit.add(p); }
+                for (int i = 0; i < hit.size(); i += 40) {
+                    StringBuilder cmd = new StringBuilder("du -sk");
+                    for (int j = i; j < Math.min(hit.size(), i + 40); j++) cmd.append(" /data/user/0/").append(hit.get(j));
+                    for (String line : String.valueOf(executeShell(cmd + " 2>/dev/null")).split("\n")) {
+                        line = line.trim();
+                        int tab = line.indexOf('\t'); if (tab < 0) tab = line.indexOf(' ');
+                        if (tab <= 0) continue;
+                        String path = line.substring(tab).trim();
+                        String name = path.substring(path.lastIndexOf('/') + 1);
+                        try { found.put(name, Long.parseLong(line.substring(0, tab).trim())); } catch (NumberFormatException ignored) {}
+                    }
+                }
+                for (String p : hit) if (!found.has(p)) found.put(p, 0);
+                return new JSONObject().put("root", true).put("found", found).toString();
+            } catch (Throwable t) {
+                return "{\"root\":false}";
+            }
+        }
+
         private String uninstallForUser(String pkg, boolean keepData) {
             String cmd = keepData ? ("pm uninstall -k --user 0 " + pkg) : ("pm uninstall --user 0 " + pkg);
             String result = runShellAction(cmd);

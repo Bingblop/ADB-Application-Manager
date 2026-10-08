@@ -8,7 +8,7 @@
     <li>Changing an app (freeze, suspend, stop, clear data, uninstall) needs a <a href="#modes-overview">working mode</a>: ADB TCP, Wireless Debugging, Shizuku or Root. Without one, a box called <b>Working Mode Required</b> opens instead.</li>
     <li>The RUNNING badge and the UNINSTALLED apps are only found while a working mode is on, because the app has to ask Android through it. In Read-Only mode the Running count stays at 0.</li>
   </ul>
-  <p>Every Android app has a <b>package name</b>, its unique ID, for example <code>com.android.chrome</code>. The list shows it under each app's name, and many features work with it (see the <a href="#glossary">glossary</a>).</p>
+  <p>Every Android app has a <b>package name</b>, its unique ID, for example <code>com.android.chrome</code>. The list shows it under each app's name, in a softer colour taken from the app's theme so it stands apart from the name (in every app list), and many features work with it (see the <a href="#glossary">glossary</a>).</p>
 
   <h4>Freeze, suspend, uninstall: what they mean here</h4>
   <p>This app has three ways to switch an app off. They are not the same, and each can be undone.</p>
@@ -28,7 +28,7 @@
   <p>Above the list are three whole boxes and two split boxes with two halves each. Each shows a count, and each is also a filter: tap it and the list shows only those apps, tap it again to turn it off. It lights up while its filter is on, in its own colour: green for Enabled and Running, cyan for Frozen, orange for 3rd Party, purple for System and red for Bloatware (Uninstalled), with a ring around it, so you can tell at a glance which one is in use. The boxes and the filter pills under them are the same filters, so they always agree.</p>
   <ul>
     <li><b>Total Installed</b>: every app in the list. It also counts the UNINSTALLED apps, because they stay in the list so you can bring them back. Tapping it turns all filters off.</li>
-    <li><b>Running</b>: apps that have a live process right now. Needs a working mode.</li>
+    <li><b>Running</b>: apps that have a live process right now. Needs a working mode. Turning it on turns <b>Uninstalled</b> off (a running app is installed).</li>
     <li><b>Bloatware (Uninstalled)</b>: system apps that were removed for you (by this app or by another tool) but whose files are still in the system. "Bloatware" means apps that come pre-installed and that many people do not want. Needs a working mode.</li>
     <li><b>Enabled | Frozen</b>: a split box with two halves. Enabled counts apps that are on (a suspended app still counts as Enabled, it is only paused). Frozen counts apps that are disabled.</li>
     <li><b>3rd Party | System</b>: another split box. 3rd Party counts apps that you or a store installed. System counts apps that came with the phone.</li>
@@ -341,7 +341,7 @@
 
   <h4>Before you start</h4>
   <ul>
-    <li>Selecting apps, <b>Save to List</b>, <b>Copy Packages</b>, <b>Share List</b> and <b>Show Apps</b> work in every mode.</li>
+    <li>Selecting apps, <b>Save to List</b>, <b>Copy Packages</b>, <b>Share List</b> and <b>Show Applications</b> work in every mode.</li>
     <li>Every action that changes apps needs a <a href="#modes-overview">working mode</a>. Without one, the "Working Mode Required" box opens.</li>
     <li>Only one batch can run at a time. If you start another, a message says "Another batch action is already running".</li>
   </ul>
@@ -351,17 +351,17 @@
     <li>Tap a row to tick its checkbox. Tap again to untick it. The row gets a coloured border while it is selected.</li>
     <li>A round button with a tick and a number (how many apps are selected) appears at the bottom right of the screen. This button is how you open the batch sheet.</li>
     <li><b>Hold the round button</b> for about half a second to drop the whole selection at once. A message says "Cleared (number) selections".</li>
-    <li>Selected apps stay selected when you change the filters or the search, so you can build a selection in several steps.</li>
+    <li>Selected apps stay selected when you change the filters or the search, so you can build a selection in several steps. They do <b>not</b> stay selected when you leave the Application Manager for another tab: the selection is dropped and the round button goes away at once.</li>
   </ul>
 
   <h4>The batch sheet</h4>
-  <p>Tap the round button and a sheet slides up. The top row shows "(number) Selected" with three controls:</p>
+  <p>Tap the round button and a sheet slides up. At the top, in the middle, is the same grab line as on every other sheet: <b>pull it up</b> and the sheet grows taller, <b>pull it down</b> and it goes back to its size, and <b>pull it down once more</b> and it closes into the round button (the apps stay selected). The top row shows "(number) Selected" with three controls:</p>
   <ul>
-    <li><b>Select All</b>: selects every app that matches your current filters and search, including those not yet drawn on screen.</li>
-    <li><b>Clear</b>: unselects everything.</li>
+    <li><b>Select All</b> (an outlined button): selects every app that matches your current filters and search, including those not yet drawn on screen.</li>
+    <li><b>Clear All</b> (outlined too): unselects everything.</li>
     <li>The <b>X</b>: closes the sheet but keeps the selection. The round button comes back.</li>
   </ul>
-  <p>Next come three buttons: <b>Save to List</b> (see <a href="#tab-saved-lists">Saved Applications</a>), <b>Copy Packages</b> (copies the package names, one per line) and <b>Share List</b> (sends the same text through the share sheet). Then a switch, <b>Keep selection after running</b>: "Run another command on these same apps without reselecting them". Then twelve action buttons:</p>
+  <p>Next come three buttons: <b>Save to List</b> (see <a href="#tab-saved-lists">Saved Applications</a>), <b>Copy Packages</b> (copies the package names, one per line) and <b>Show Applications</b> (lists the selected apps, see below). Then a switch, <b>Keep selection after running</b>: "Run another command on these same apps without reselecting them". It is <b>on every time</b>: each new selection starts with it on, whatever you did to it before. Then twelve action buttons:</p>
   <table class="hg-table">
     <thead><tr><th>Button</th><th>What it does to each app</th><th>Asks first?</th></tr></thead>
     <tbody>
@@ -375,7 +375,7 @@
       <tr><td><b>Uninstall</b></td><td>Removes the app for you.</td><td>Yes</td></tr>
       <tr><td><b>Reinstall</b></td><td>Brings back removed system apps (<code>pm install-existing</code>).</td><td>No</td></tr>
       <tr><td><b>Batch Ops</b></td><td>Sets app ops on all of them. See below.</td><td>Its own box</td></tr>
-      <tr><td><b>Show Apps</b></td><td>Lists the selected apps, each with a <b>Remove</b> button.</td><td>Nothing runs</td></tr>
+      <tr><td><b>Share List</b></td><td>Sends the package names, one per line, through the share sheet.</td><td>Nothing runs</td></tr>
       <tr><td><b>Command</b></td><td>Runs a command you type on each app. See below.</td><td>Its own box</td></tr>
     </tbody>
   </table>
@@ -401,7 +401,7 @@
   <ol class="hg-steps">
     <li>In the Application Manager, tap five rows, one by one. The rows get a border, and a round button with a tick and the number 5 appears at the bottom right.</li>
     <li>Tap the round button. The batch sheet slides up and says "5 Selected".</li>
-    <li>Tap <b>Show Apps</b> to check the five names. Tap <b>Remove</b> beside any you picked by mistake, then close the box with its X.</li>
+    <li>Tap <b>Show Applications</b> to check the five names. Tap <b>Remove</b> beside any you picked by mistake, then close the box with its X.</li>
     <li>Tap <b>Freeze</b>. The box "Confirm Freeze Selected Apps" opens with the five apps listed.</li>
     <li>Tap <b>Confirm Freeze</b>. A progress box shows "1 of 5", "2 of 5" and so on, with a bar.</li>
     <li>When it ends, <b>Batch Results</b> opens. Each app should show <b>Success</b>. Tap <b>Done</b>.</li>
@@ -429,7 +429,7 @@
 
   <h4>Getting out of a mistake</h4>
   <ul>
-    <li>Wrong apps selected: tap <b>Clear</b>, or hold the round button.</li>
+    <li>Wrong apps selected: tap <b>Clear All</b>, or hold the round button.</li>
     <li>Wrong action started: tap <b>Stop</b>. Apps not yet reached stay as they were.</li>
     <li>Action finished: use the opposite button (Enable, Unsuspend, Reinstall), or the Debloater's History Undo.</li>
   </ul>
@@ -688,7 +688,7 @@
   <h4>Step by step: freeze a group again later</h4>
   <ol class="hg-steps">
     <li>Open the <b>Saved Applications</b> tab and tap <b>Recall</b> on the list. The Application Manager opens with those apps selected and a message "Recalled (number) apps from (name)".</li>
-    <li>Tap the round button at the bottom right, check the number and the names with <b>Show Apps</b>, then tap <b>Freeze</b> and confirm.</li>
+    <li>Tap the round button at the bottom right, check the number and the names with <b>Show Applications</b>, then tap <b>Freeze</b> and confirm.</li>
     <li>Read the results. Apps that are not on this phone fail; the others are done.</li>
   </ol>
   <div class="hg-warn"><b>Careful.</b> Recall selects every package on the list, even those that are not installed on this phone, and counts them. They simply show <b>Failed</b> in the results. Use the filter pills before you tap <b>Recall</b> if you want only the apps that are present.</div>
