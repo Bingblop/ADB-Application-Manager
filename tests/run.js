@@ -76,7 +76,7 @@ function failures(r) {
   else if (r.code !== 0) why.push('exit code ' + r.code);
   const lines = r.out.split('\n');
   const failLines = lines.filter(l => /^FAIL\b/.test(l) || /^\d+ FAILED$/.test(l));
-  if (failLines.length) why.push(failLines.length + ' failing check' + (failLines.length > 1 ? 's' : '') + ': ' + failLines.slice(0, 3).map(l => l.slice(0, 120)).join(' | '));
+  if (failLines.length) why.push(failLines.length + ' failing check' + (failLines.length > 1 ? 's' : '') + ': ' + failLines.slice(0, 3).map(l => l.slice(0, 500)).join(' | '));
   const pageErrors = lines.filter(l => /^errors: \[.+\]/.test(l) && !/^errors: \[\]/.test(l));
   if (pageErrors.length) why.push('page errors: ' + pageErrors[0].slice(0, 160));
   return why;
