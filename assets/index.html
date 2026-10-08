@@ -2708,6 +2708,21 @@
             border: 1px solid var(--border-glass);
             color: var(--text-muted);
         }
+        .shot-row { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 10px; padding-bottom: 4px; }
+        .shot-thumb { cursor: zoom-in; flex: 0 0 auto; }
+        .shot-thumb:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+        .modal-overlay.shot-viewer { z-index: 330; background: #000; align-items: stretch; justify-content: stretch; flex-direction: column; }
+        .shot-top { position: absolute; top: 0; left: 0; right: 0; z-index: 3; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; background: linear-gradient(rgba(0,0,0,.65), transparent); color: #fff; }
+        .shot-count { font-size: 13px; font-weight: 800; }
+        .shot-top-btns { display: flex; gap: 6px; }
+        .shot-btn { min-width: 40px; height: 40px; padding: 0 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,.35); background: rgba(0,0,0,.5); color: #fff; font-size: 16px; font-weight: 800; cursor: pointer; }
+        .shot-stage { position: absolute; inset: 0; overflow: hidden; touch-action: none; display: flex; align-items: center; justify-content: center; cursor: grab; user-select: none; -webkit-user-select: none; }
+        .shot-stage img { max-width: 100%; max-height: 100%; transform-origin: center center; will-change: transform; -webkit-user-drag: none; }
+        .shot-msg { position: absolute; left: 20px; right: 20px; text-align: center; color: #ddd; font-size: 13px; font-weight: 700; pointer-events: none; }
+        .shot-nav { position: absolute; top: 50%; z-index: 3; width: 44px; height: 64px; margin-top: -32px; border: 0; background: rgba(0,0,0,.45); color: #fff; font-size: 34px; line-height: 1; cursor: pointer; }
+        .shot-prev { left: 0; border-radius: 0 12px 12px 0; }
+        .shot-next { right: 0; border-radius: 12px 0 0 12px; }
+        .shot-nav:disabled { display: none; }
         .lb-where { font-size: 12px; font-weight: 700; overflow-wrap: anywhere; }
         .lb-where small { display: block; font-size: 10.5px; font-weight: 600; color: var(--text-muted); margin-top: 2px; }
         .ps-style-card .preset-name { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
@@ -6495,6 +6510,25 @@ Type any command below (e.g. pm list packages -d)
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- The picture viewer: a screenshot of an app in the App Stores, full screen, pinch to zoom, swipe for the next -->
+    <div class="modal-overlay shot-viewer" id="shotViewer" role="dialog" aria-modal="true" aria-label="Picture viewer" onclick="if(event.target===this) shotClose()">
+        <div class="shot-top">
+            <span id="shotCount" class="shot-count"></span>
+            <span class="shot-top-btns">
+                <button type="button" class="shot-btn" aria-label="Zoom out" onclick="shotZoomBy(1 / 1.5)">−</button>
+                <button type="button" class="shot-btn" aria-label="Zoom in" onclick="shotZoomBy(1.5)">+</button>
+                <button type="button" class="shot-btn" id="shotFit" aria-label="Fit to screen" onclick="shotReset()">Fit</button>
+                <button type="button" class="shot-btn" aria-label="Close" onclick="shotClose()">✕</button>
+            </span>
+        </div>
+        <div class="shot-stage" id="shotStage">
+            <img id="shotImg" alt="" draggable="false">
+            <div class="shot-msg" id="shotMsg"></div>
+        </div>
+        <button type="button" class="shot-nav shot-prev" id="shotPrev" aria-label="Previous picture" onclick="shotStep(-1)">‹</button>
+        <button type="button" class="shot-nav shot-next" id="shotNext" aria-label="Next picture" onclick="shotStep(1)">›</button>
     </div>
 
     <!-- App profiles -->
@@ -11398,7 +11432,9 @@ Type any command below (e.g. pm list packages -d)
                 parts.push(`<div class="uad-status" style="margin-bottom:10px;">No direct APK is available for this app.</div>`);
             }
             if (Array.isArray(a.screenshots) && a.screenshots.length) {
-                parts.push(`<div style="display:flex;gap:8px;overflow-x:auto;margin-bottom:10px;padding-bottom:4px;">${a.screenshots.slice(0, 12).map(s => `<img src="${esc(s)}" alt="" style="height:220px;border-radius:10px;" loading="lazy">`).join('')}</div>`);
+                const shots = a.screenshots.filter(u => typeof u === 'string' && /^https?:\/\//i.test(u)).slice(0, 12);
+                shotSet(shots);
+                parts.push(`<div class="shot-row">${shots.map((s, i) => `<img class="shot-thumb" src="${esc(s)}" alt="Screenshot ${i + 1} of ${shots.length}: tap to enlarge" role="button" tabindex="0" style="height:220px;border-radius:10px;" loading="lazy" onclick="shotOpen(${i})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();shotOpen(${i});}">`).join('')}</div><div class="switch-sub" style="margin:-4px 0 10px;">Tap a picture to enlarge it.</div>`);
             }
             if (Array.isArray(a.permissions) && a.permissions.length) {
                 parts.push(`<details style="margin-bottom:8px;"><summary style="cursor:pointer;font-weight:700;font-size:13px;">Permissions (${a.permissions.length})</summary><div style="font-size:11px;color:var(--text-muted);margin-top:6px;word-break:break-all;">${a.permissions.map(esc).join('<br>')}</div></details>`);
@@ -11408,6 +11444,124 @@ Type any command below (e.g. pm list packages -d)
             btn.disabled = !d.download;
             btn.innerText = d.download ? 'Install' : 'No APK';
         }
+
+        // ---- The picture viewer: a screenshot of an app, full screen. Pinch or the + and - buttons to zoom, drag to move a zoomed picture, swipe or the arrows for the next one,
+        // double tap to zoom in and out, Back or a tap beside the picture to close. Only web addresses (http, https) are shown. ----
+        let shotUrls = [], shotIdx = 0, shotS = 1, shotX = 0, shotY = 0;
+        const SHOT_MAX = 6, SHOT_SWIPE = 60;
+        const shotPtrs = new Map();
+        let shotGesture = null, shotLastTap = 0;
+        function shotSet(list) { shotUrls = (list || []).filter(u => typeof u === 'string' && /^https?:\/\//i.test(u)); }
+        function shotIsOpen() { return document.getElementById('shotViewer').classList.contains('show'); }
+        function shotOpen(i) {
+            if (!shotUrls.length) return;
+            haptic();
+            shotIdx = Math.max(0, Math.min(shotUrls.length - 1, Number(i) || 0));
+            document.getElementById('shotViewer').classList.add('show');
+            shotShow();
+        }
+        function shotClose() { document.getElementById('shotViewer').classList.remove('show'); shotPtrs.clear(); shotGesture = null; document.getElementById('shotImg').removeAttribute('src'); }
+        function shotShow() {
+            const img = document.getElementById('shotImg'), msg = document.getElementById('shotMsg');
+            shotS = 1; shotX = 0; shotY = 0;
+            img.style.transform = '';
+            img.style.visibility = 'hidden';
+            msg.innerText = 'Loading…';
+            img.onload = () => { img.style.visibility = ''; msg.innerText = ''; shotApply(); };
+            img.onerror = () => { img.style.visibility = 'hidden'; msg.innerText = 'This picture could not be loaded. Check the connection and open it again.'; };
+            img.alt = 'Screenshot ' + (shotIdx + 1) + ' of ' + shotUrls.length;
+            img.src = shotUrls[shotIdx];
+            document.getElementById('shotCount').innerText = shotUrls.length > 1 ? (shotIdx + 1) + ' / ' + shotUrls.length : 'Picture';
+            document.getElementById('shotPrev').disabled = shotIdx <= 0;
+            document.getElementById('shotNext').disabled = shotIdx >= shotUrls.length - 1;
+            [shotIdx - 1, shotIdx + 1].forEach(j => { if (shotUrls[j]) { const pre = new Image(); pre.src = shotUrls[j]; } });          // the neighbours load while this one is looked at
+        }
+        function shotStep(d) {
+            const j = shotIdx + d;
+            if (j < 0 || j >= shotUrls.length) return;
+            haptic();
+            shotIdx = j;
+            shotShow();
+        }
+        // where a picture may be moved to: while it is bigger than the screen, no edge goes past the screen's edge
+        function shotLimits() {
+            const st = document.getElementById('shotStage'), img = document.getElementById('shotImg');
+            const w = img.offsetWidth * shotS, h = img.offsetHeight * shotS;
+            return { x: Math.max(0, (w - st.clientWidth) / 2), y: Math.max(0, (h - st.clientHeight) / 2) };
+        }
+        function shotApply() {
+            const img = document.getElementById('shotImg'), l = shotLimits();
+            shotX = Math.max(-l.x, Math.min(l.x, shotX));
+            shotY = Math.max(-l.y, Math.min(l.y, shotY));
+            if (shotS <= 1.001) { shotS = 1; shotX = 0; shotY = 0; }
+            img.style.transform = shotS === 1 ? '' : 'translate(' + shotX + 'px,' + shotY + 'px) scale(' + shotS + ')';
+            document.getElementById('shotFit').style.opacity = shotS === 1 ? '.55' : '1';
+            document.getElementById('shotStage').style.cursor = shotS > 1 ? 'grab' : 'default';
+        }
+        // zoom by a factor around a point of the stage (default: its centre), keeping that point of the picture where it is
+        function shotZoomAt(f, cx, cy) {
+            const st = document.getElementById('shotStage'), r = st.getBoundingClientRect();
+            const px = (cx === undefined ? r.left + r.width / 2 : cx) - (r.left + r.width / 2), py = (cy === undefined ? r.top + r.height / 2 : cy) - (r.top + r.height / 2);
+            const ns = Math.max(1, Math.min(SHOT_MAX, shotS * f)), k = ns / shotS;
+            shotX = px - (px - shotX) * k; shotY = py - (py - shotY) * k; shotS = ns;
+            shotApply();
+        }
+        function shotZoomBy(f) { haptic(); shotZoomAt(f); }
+        function shotReset() { shotS = 1; shotX = 0; shotY = 0; shotApply(); }
+        (function shotWire() {
+            const st = document.getElementById('shotStage');
+            if (!st) return;
+            const pts = () => Array.from(shotPtrs.values());
+            st.addEventListener('pointerdown', e => {
+                try { st.setPointerCapture(e.pointerId); } catch (x) {}
+                shotPtrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+                if (shotPtrs.size === 2) { const [a, b] = pts(); shotGesture = { kind: 'pinch', d: Math.hypot(a.x - b.x, a.y - b.y) || 1 }; }
+                else if (shotPtrs.size === 1) shotGesture = { kind: 'drag', x0: e.clientX, y0: e.clientY, sx: shotX, sy: shotY, moved: false, t0: Date.now() };
+            });
+            st.addEventListener('pointermove', e => {
+                if (!shotPtrs.has(e.pointerId)) return;
+                shotPtrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+                if (!shotGesture) return;
+                if (shotGesture.kind === 'pinch' && shotPtrs.size >= 2) {
+                    const [a, b] = pts(), d = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+                    shotZoomAt(d / shotGesture.d, (a.x + b.x) / 2, (a.y + b.y) / 2);
+                    shotGesture.d = d;
+                } else if (shotGesture.kind === 'drag') {
+                    const dx = e.clientX - shotGesture.x0, dy = e.clientY - shotGesture.y0;
+                    if (Math.abs(dx) + Math.abs(dy) > 6) shotGesture.moved = true;
+                    if (shotS > 1) { shotX = shotGesture.sx + dx; shotY = shotGesture.sy + dy; shotApply(); }
+                }
+            });
+            const up = e => {
+                const g = shotGesture;
+                shotPtrs.delete(e.pointerId);
+                if (!g) return;
+                if (g.kind === 'pinch') { shotGesture = shotPtrs.size === 1 ? (() => { const p = pts()[0]; return { kind: 'drag', x0: p.x, y0: p.y, sx: shotX, sy: shotY, moved: true, t0: Date.now() }; })() : null; return; }
+                shotGesture = null;
+                const dx = e.clientX - g.x0, dy = e.clientY - g.y0;
+                if (shotS === 1 && g.moved && Math.abs(dx) > SHOT_SWIPE && Math.abs(dx) > Math.abs(dy) * 1.3) { shotStep(dx < 0 ? 1 : -1); return; }
+                if (!g.moved) {
+                    const now = Date.now();
+                    if (now - shotLastTap < 320) { shotLastTap = 0; shotS > 1 ? shotReset() : shotZoomAt(2.5, e.clientX, e.clientY); return; }
+                    shotLastTap = now;
+                    const r = document.getElementById('shotImg').getBoundingClientRect();         // (the stage holds the pointer while it is down, so where the tap was is what says if it was on the picture)
+                    const onPic = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+                    if (!onPic) setTimeout(() => { if (shotLastTap === now && shotIsOpen()) shotClose(); }, 340);       // a tap beside the picture closes, unless it is the first half of a double tap
+                }
+            };
+            st.addEventListener('pointerup', up);
+            st.addEventListener('pointercancel', e => { shotPtrs.delete(e.pointerId); shotGesture = null; });
+            st.addEventListener('wheel', e => { e.preventDefault(); shotZoomAt(e.deltaY < 0 ? 1.2 : 1 / 1.2, e.clientX, e.clientY); }, { passive: false });
+            window.addEventListener('resize', () => { if (shotIsOpen()) shotApply(); });                   // turning the phone: the picture is fitted and kept on the screen again
+            document.addEventListener('keydown', e => {
+                if (!shotIsOpen()) return;
+                if (e.key === 'Escape') { shotClose(); e.stopPropagation(); }
+                else if (e.key === 'ArrowRight') shotStep(1);
+                else if (e.key === 'ArrowLeft') shotStep(-1);
+                else if (e.key === '+' || e.key === '=') shotZoomAt(1.5);
+                else if (e.key === '-') shotZoomAt(1 / 1.5);
+            });
+        })();
 
         function openStoreSource() {
             const a = storeCurrent && storeCurrent.app ? storeCurrent.app : null;

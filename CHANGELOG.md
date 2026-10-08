@@ -2,6 +2,10 @@
 
 ## v7.10.8-Pro (versionCode 828)
 
+- **App Stores: tap a screenshot to see it full screen.** The screenshots in an app's detail sheet (ShizuStore) are now tappable and open in a picture viewer: shown to fit the screen on
+  black, counted ("2 / 8"), with **pinch** zoom (up to 6 times), the **+ / − / Fit** buttons, **double tap** (2.5 times and back), **drag** of a zoomed picture (it cannot leave the
+  screen), **swipe** or arrows to the next and previous picture (the neighbours are loaded ahead), and **Back**, the ✕, Escape or a tap beside the picture to close it, leaving
+  the sheet as it was. A picture that cannot be loaded says so; only http and https addresses are shown. Test: `t132`.
 - **Saved lists: back them up to a folder of your choice and restore them from a file.** A new card, **Back up and restore**, in the Saved Applications tab. **Choose folder…**
   opens Android's folder picker (the phone, an SD card, a USB drive, a cloud provider) and the app keeps the permission across restarts; with no folder chosen, backups go to
   Download/ADB App Manager. **Back up now** writes `saved-lists-YYYYMMDD-HHMM.json`; **Share…** sends the same file anywhere; **Back up automatically** keeps the folder's

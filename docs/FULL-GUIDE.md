@@ -989,6 +989,8 @@ styles: Tonal Spot, Vibrant, Fidelity, Content, Neutral, Expressive, Fruit Salad
 **My Themes** (Settings, below Palette Style): save the look in use (palette or palette style, source color, color tweaks, Pure black) under a name, switch between up to 30 themes with a tap, rename, update or delete them;
 Light / Dark / System stays as you set it.
 
+**Screenshots in App Stores** open full screen when tapped: pinch / double tap / buttons to zoom, drag, swipe or arrows for the next one, Back to close.
+
 **Saved lists backup** (Saved Applications tab, **Back up and restore**): back up to a folder you choose (or Download/ADB App Manager), share the file, switch on automatic backups into
 `saved-lists-latest.json`, and restore from a file or from the folder, adding to your lists or replacing them (the Quick list follows).
 
