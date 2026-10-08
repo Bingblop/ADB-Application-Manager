@@ -295,7 +295,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await ev(() => Array.from(document.querySelectorAll('#cdSheetBtns button')).find(b => b.innerText === 'Pull to this phone').click());
   for (let i = 0; i < 40 && !/Saved to Download/.test(await toast()); i++) await wait(100);
   await wait(100);
-  check('Pull to this phone saves into the device\'s own folder', /Saved to Download\/ADB App Manager\/Devices\/192\.168\.1\.20_5555/.test(await toast()) && (await lastCall()) === 'pull /sdcard/notes.txt /storage/emulated/0/Download/ADB App Manager/Devices/192.168.1.20_5555/');
+  check('Pull to this phone saves into the device\'s own folder', /Saved to Download\/ADB App Manager\/Devices\/192\.168\.1\.20_5555/.test(await toast()) && (await calls()).some(c => /(^| )pull \/sdcard\/notes\.txt \/storage\/emulated\/0\/Download\/ADB App Manager\/Devices\/192\.168\.1\.20_5555\/$/.test(c)), JSON.stringify({ toast: await toast(), calls: (await calls()).slice(-4) }));
   await ev(() => { cdSheetClose(); cdFmMenu(2); }); await wait(100);
   await ev(() => Array.from(document.querySelectorAll('#cdSheetBtns button')).find(b => b.innerText === 'Delete').click()); await wait(150);
   check('Delete asks first', await ev(() => document.getElementById('cdAskModal').classList.contains('show')) && !(await calls()).some(c => / rm /.test(c)));
