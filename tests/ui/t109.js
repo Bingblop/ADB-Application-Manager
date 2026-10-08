@@ -99,7 +99,8 @@ const { chromium, PAGE } = require('./lib/pw');
   const wait = ms => page.waitForTimeout(ms);
   const toast = () => ev(() => document.getElementById('toastMsg').innerText);
   const calls = () => ev(() => window.__st.calls.map(c => c.pick ? 'pick:' + c.pick : (c.serial ? c.serial + ' ' : '') + c.a.join(' ')));
-  const lastCall = () => ev(() => { const c = window.__st.calls[window.__st.calls.length - 1]; return c.pick ? 'pick:' + c.pick : c.a.join(' '); });
+  // the last thing the page asked for, leaving out the device-list polls the tab makes now and then (they can land after any step)
+  const lastCall = () => ev(() => { const cs = window.__st.calls.filter(c => c.pick || c.a.join(' ') !== 'devices -l'); const c = cs[cs.length - 1]; return c.pick ? 'pick:' + c.pick : c.a.join(' '); });
 
   // the tab
   const tab = await ev(() => { const t = TAB_DEFS.map(x => x.key); return { ix: t.indexOf('devices'), after: t[t.indexOf('devices') - 1], onBar: !!document.querySelector('.tab-btn[data-tab="devices"]'), label: document.querySelector('.tab-btn[data-tab="devices"]').innerText.replace(/\n/g, ' ') }; });
@@ -247,9 +248,9 @@ const { chromium, PAGE } = require('./lib/pw');
   await ev(() => { document.getElementById('cdInput').value = 'adb devices -l'; cdRunOrStop(); }); await wait(200);
   check('adb\'s own commands go without a device', (await ev(() => window.__st.calls.slice(-1)[0].serial)) === '');
   await ev(() => { document.getElementById('cdInput').value = 'adb kill-server'; cdRunOrStop(); }); await wait(100);
-  check('stopping the adb this app runs on is not sent', /would stop the adb this app runs on/.test(await ev(() => document.getElementById('cdTerm').innerText)) && (await lastCall()) === 'devices -l');
+  check('stopping the adb this app runs on is not sent', /would stop the adb this app runs on/.test(await ev(() => document.getElementById('cdTerm').innerText)) && !(await calls()).some(c => /kill-server/.test(c)));
   await ev(() => { document.getElementById('cdInput').value = 'adb -s other-device kill-server'; cdRunOrStop(); }); await wait(100);
-  check('kill-server is not sent even after other words (-s serial)', (await lastCall()) === 'devices -l' && (await ev(() => document.getElementById('cdTerm').innerText.match(/would stop the adb/g).length)) === 2);
+  check('kill-server is not sent even after other words (-s serial)', !(await calls()).some(c => /kill-server/.test(c)) && (await ev(() => document.getElementById('cdTerm').innerText.match(/would stop the adb/g).length)) === 2);
   await ev(() => cdModeToggle());
   await ev(() => { document.getElementById('cdInput').value = 'adb shell "getprop ro.product.model"'; cdRunOrStop(); }); await wait(200);
   check('in adb mode a leading adb is taken off (and a shell command may hold the word kill-server)', (await lastCall()) === 'shell getprop ro.product.model');
