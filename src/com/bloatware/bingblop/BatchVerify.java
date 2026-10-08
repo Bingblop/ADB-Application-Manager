@@ -122,4 +122,48 @@ final class BatchVerify {
         }
         return ok;
     }
+
+    // ---- Clear data, in Root mode only: the app's own data folder is readable there, so what is in it before and after can be counted ----
+
+    /** The shell line that measures an app's private data folder: "KB=<size in KB>" and "FILES=<regular files>". */
+    static String dataStatCmd(String pkg) {
+        String dir = "/data/user/0/" + pkg;
+        return "echo KB=$(du -sk " + dir + " 2>/dev/null | cut -f1); echo FILES=$(find " + dir + " -type f 2>/dev/null | wc -l | tr -d ' ')";
+    }
+
+    /** {kb, files} from the output of {@link #dataStatCmd}; null when it does not hold both numbers (no such folder, not root, no du). */
+    static long[] parseDataStat(String out) {
+        if (out == null) return null;
+        java.util.regex.Matcher k = java.util.regex.Pattern.compile("KB=\\s*(\\d+)").matcher(out);
+        java.util.regex.Matcher f = java.util.regex.Pattern.compile("FILES=\\s*(\\d+)").matcher(out);
+        if (!k.find() || !f.find()) return null;
+        try { return new long[] { Long.parseLong(k.group(1)), Long.parseLong(f.group(1)) }; } catch (NumberFormatException e) { return null; }
+    }
+
+    static String fmtKb(long kb) {
+        if (kb >= 1024L * 1024L) return String.format(Locale.ROOT, "%.1f GB", kb / 1048576.0);
+        if (kb >= 1024L) return String.format(Locale.ROOT, "%.1f MB", kb / 1024.0);
+        return kb + " KB";
+    }
+
+    /** Rewrites a Clear data row from the counts before and after. Returns whether it succeeded. Nothing counted before: the command's answer stands. */
+    static boolean applyClear(JSONObject row, long[] before, long[] after) throws org.json.JSONException {
+        boolean cmdOk = row.optBoolean("success", false);
+        boolean real;
+        String label;
+        if (before[1] == 0) { real = cmdOk; label = "Nothing to clear"; }
+        else if (after[1] == 0 || (after[1] < before[1] && after[0] * 10 <= before[0])) { real = true; label = "Data cleared"; }
+        else if (after[1] < before[1]) { real = false; label = "Partly cleared"; }
+        else { real = false; label = "Not cleared"; }
+        String counts = before[1] + " file" + (before[1] == 1 ? "" : "s") + " (" + fmtKb(before[0]) + ") before, " + after[1] + " after (" + fmtKb(after[0]) + ")";
+        String note = "Checked afterwards: " + counts + ".";
+        if (real && !cmdOk) note += " The command reported a failure, but the data is gone.";
+        else if (!real && cmdOk) note += " The command reported success, but the data is still there" + (after[1] < before[1] ? " (the app may have started again and written new files)." : ".");
+        row.put("success", real);
+        row.put("label", label);
+        row.put("verified", true);
+        row.put("commandOk", cmdOk);
+        row.put("output", (note + "\n\n" + row.optString("output", "")).trim());
+        return real;
+    }
 }

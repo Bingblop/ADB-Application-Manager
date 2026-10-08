@@ -1,5 +1,17 @@
 # Changelog
 
+## v7.10.14-Pro (versionCode 834)
+
+- **Connected Devices: the apps are read back from the device.** After Enable, Disable, Uninstall and Reinstall (one app, or a batch) the app lists the device's apps again and reports what it found
+  (**Disabled: Fit** when it worked; otherwise the sheet *That did not work* starts with *Checked afterwards: still installed / not disabled / not installed*); the app records follow the device, a command that printed an error for an app that is gone counts
+  as done (with a note), and one that said "worked" for an app that did not change is a failure. A batch looks at the device once for all its apps (once more after 0.9 s when something is not yet as wanted)
+  and the failure sheet names only the apps that are not as wanted. **Checking the device…** shows while it looks. Tests: `t138`, `t109`.
+- **Settings > Progress messages.** One switch, **Say what is going on**, on by default: turns off "Working on it…", "Checking the phone…" and "Checking the device…". The result of the change and every problem are
+  always shown. Kept as `progress_toasts`. Test: `t138`.
+- **Clear data is read back in Root mode.** Root can read an app's data folder, so before and after the clear the app counts the regular files and the size in `/data/user/0/<package>`
+  (`BatchVerify.dataStatCmd`, `applyClear`) and says **Data cleared** (12 files, 3.4 MB before, 0 after), **Partly cleared** (the app may have started again and written new files), **Not cleared** or
+  **Nothing to clear**; for one app and for a batch (with the *Checking the phone…* step). In ADB and Shizuku modes the folder is not readable and nothing changes. Tests: `BatchVerifyTest`, `t138`.
+
 ## v7.10.13-Pro (versionCode 833)
 
 - **One app at a time is read back too.** From the app menu (and the action button on a row), Uninstall, Reinstall, Freeze, Enable, Suspend and Unsuspend now run natively off the page's thread

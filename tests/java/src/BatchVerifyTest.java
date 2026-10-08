@@ -84,6 +84,28 @@ public class BatchVerifyTest {
         ok = BatchVerify.apply("unsuspend", r8, new BatchVerify.State(set("com.a", "com.b"), null, set("com.a"), null));
         check("unsuspend: a suspended app is Still suspended", ok == 1 && r8.getJSONObject(0).getString("label").equals("Still suspended") && r8.getJSONObject(1).getString("label").equals("Not suspended"));
 
+        // Clear data in Root mode: the app's own folder, counted before and after
+        long[] st1 = BatchVerify.parseDataStat("KB=3480\nFILES=12\n");
+        check("the data stat is read (KB and files)", st1 != null && st1[0] == 3480 && st1[1] == 12);
+        long[] st0 = BatchVerify.parseDataStat("KB=\nFILES=0");
+        check("an empty KB (no such folder) is not a stat", st0 == null && BatchVerify.parseDataStat(null) == null && BatchVerify.parseDataStat("nothing") == null);
+        check("the stat line asks du and find for the user 0 folder of the package", BatchVerify.dataStatCmd("com.a.b").contains("/data/user/0/com.a.b") && BatchVerify.dataStatCmd("com.a.b").contains("du -sk") && BatchVerify.dataStatCmd("com.a.b").contains("-type f"));
+        check("sizes read as words", BatchVerify.fmtKb(4).equals("4 KB") && BatchVerify.fmtKb(3480).equals("3.4 MB") && BatchVerify.fmtKb(2L * 1024 * 1024).equals("2.0 GB"));
+        JSONObject c1 = new JSONObject().put("pkg", "com.a").put("success", false).put("output", "Failed");
+        check("emptied folder, command said failed: it worked", BatchVerify.applyClear(c1, new long[] { 3480, 12 }, new long[] { 4, 0 }) && c1.getString("label").equals("Data cleared") && c1.getBoolean("success")
+                && c1.getString("output").startsWith("Checked afterwards: 12 files (3.4 MB) before, 0 after (4 KB). The command reported a failure, but the data is gone."));
+        JSONObject c2 = new JSONObject().put("pkg", "com.a").put("success", true).put("output", "Success");
+        check("the files are all still there, command said success: not cleared", !BatchVerify.applyClear(c2, new long[] { 3480, 12 }, new long[] { 3480, 12 }) && c2.getString("label").equals("Not cleared") && c2.getString("output").contains("the data is still there."));
+        JSONObject c3 = new JSONObject().put("pkg", "com.a").put("success", true).put("output", "Success");
+        check("a few files and most of the size left: partly cleared (the app may have started again)", !BatchVerify.applyClear(c3, new long[] { 1000, 10 }, new long[] { 600, 4 }) && c3.getString("label").equals("Partly cleared") && c3.getString("output").contains("started again"));
+        JSONObject c4 = new JSONObject().put("pkg", "com.a").put("success", true).put("output", "Success");
+        check("the app wrote a little after being cleared (files fewer, size a tenth): cleared", BatchVerify.applyClear(c4, new long[] { 1000, 10 }, new long[] { 40, 2 }) && c4.getString("label").equals("Data cleared"));
+        JSONObject c5 = new JSONObject().put("pkg", "com.a").put("success", true).put("output", "Success");
+        check("nothing in the folder before: the command's answer stands", BatchVerify.applyClear(c5, new long[] { 4, 0 }, new long[] { 4, 0 }) && c5.getString("label").equals("Nothing to clear"));
+        JSONObject c6 = new JSONObject().put("pkg", "com.a").put("success", false).put("output", "Failed");
+        check("nothing before and the command failed: still a failure", !BatchVerify.applyClear(c6, new long[] { 4, 0 }, new long[] { 4, 0 }));
+
+
         System.out.println(fails == 0 ? "ALL PASS (" + n + " checks)" : fails + " of " + n + " FAILED");
         System.exit(fails == 0 ? 0 : 1);
     }

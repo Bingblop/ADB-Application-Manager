@@ -8773,15 +8773,18 @@ public class MainActivity extends Activity {
          */
         @JavascriptInterface
         public String appActionChecked(final String action, final String pkg, final String token) {
-            if (!BatchVerify.verifiable(action)) return "unsupported";
+            if (!BatchVerify.verifiable(action) && !clearIsChecked(action)) return "unsupported";
             if (!submitJob(new Runnable() {
                 @Override
                 public void run() {
                     JSONObject res = new JSONObject();
                     try {
+                        long[] dataBefore = clearIsChecked(action) ? dataStat(pkg) : null;
                         String flagged = executeAppAction(action, pkg);
                         JSONArray rows = new JSONArray();
-                        rows.put(new JSONObject().put("pkg", pkg).put("output", flagText(flagged)).put("success", flagOk(flagged)));
+                        JSONObject first = new JSONObject().put("pkg", pkg).put("output", flagText(flagged)).put("success", flagOk(flagged));
+                        if (dataBefore != null) first.put("dataBefore", new JSONArray().put(dataBefore[0]).put(dataBefore[1]));
+                        rows.put(first);
                         verifyBatchRows(action, rows, 0, "window.onAppActionChecking && window.onAppActionChecking(" + JSONObject.quote(token) + ")");
                         res = rows.getJSONObject(0);
                         res.put("action", action);
@@ -8827,11 +8830,14 @@ public class MainActivity extends Activity {
                             if (appBatchCancel) { cancelled = true; break; }
                             String pkg = pkgs.optString(i, "");
                             notifyJs("window.onAppBatchProgress && window.onAppBatchProgress(" + i + "," + total + "," + JSONObject.quote(pkg) + ")");
+                            long[] dataBefore = clearIsChecked(action) ? dataStat(pkg) : null;       // Clear data in Root mode: what is in the app's folder before
                             String flagged = executeAppAction(action, pkg);
                             boolean ok = flagOk(flagged);
                             String out = flagText(flagged);
                             if (ok) done++;
-                            rows.put(new JSONObject().put("pkg", pkg).put("output", out).put("success", ok));
+                            JSONObject row = new JSONObject().put("pkg", pkg).put("output", out).put("success", ok);
+                            if (dataBefore != null) row.put("dataBefore", new JSONArray().put(dataBefore[0]).put(dataBefore[1]));
+                            rows.put(row);
                         }
                         done = verifyBatchRows(action, rows, done, "window.onAppBatchChecking && window.onAppBatchChecking(" + rows.length() + ")");
                         res.put("action", action);
@@ -8869,7 +8875,9 @@ public class MainActivity extends Activity {
          *  run of uninstalls "failed" on some phones although every app was gone): see {@link BatchVerify}. Anything that cannot be
          *  checked is left as it was. Returns the number of rows that succeeded. */
         private int verifyBatchRows(String action, JSONArray rows, int done, String announce) {
-            if (rows.length() == 0 || !BatchVerify.verifiable(action)) return done;
+            if (rows.length() == 0) return done;
+            if ("clear_data".equals(action)) return verifyClearRows(rows, done, announce);
+            if (!BatchVerify.verifiable(action)) return done;
             if (announce != null) notifyJs(announce);              // the page says "Checking the phone..." while this runs
             try {
                 BatchVerify.State st = readBatchState(action, rows);
@@ -8881,6 +8889,38 @@ public class MainActivity extends Activity {
                     if (st2 != null) st = st2;
                 }
                 return BatchVerify.apply(action, rows, st);
+            } catch (Throwable t) {
+                return done;
+            }
+        }
+
+        /** Clear data can be read back only where the app's data folder is readable: in Root mode. */
+        private boolean clearIsChecked(String action) { return "clear_data".equals(action) && "root".equals(resolveExecMode()); }
+
+        /** {size in KB, regular files} of an app's private data folder, or null (not Root, or the folder cannot be read). */
+        private long[] dataStat(String pkg) {
+            if (!BackupScripts.isPackageName(pkg)) return null;
+            try { return BatchVerify.parseDataStat(executeShell(BatchVerify.dataStatCmd(pkg))); } catch (Throwable t) { return null; }
+        }
+
+        /** After Clear data in Root mode: counts what is left in each app's folder and rewrites the row from that (see {@link BatchVerify#applyClear}). */
+        private int verifyClearRows(JSONArray rows, int done, String announce) {
+            try {
+                boolean any = false;
+                for (int i = 0; i < rows.length(); i++) if (rows.getJSONObject(i).has("dataBefore")) any = true;
+                if (!any) return done;
+                if (announce != null) notifyJs(announce);
+                int ok = 0;
+                for (int i = 0; i < rows.length(); i++) {
+                    JSONObject row = rows.getJSONObject(i);
+                    JSONArray b = row.optJSONArray("dataBefore");
+                    long[] after = b == null ? null : dataStat(row.optString("pkg", ""));
+                    if (b != null && after != null) {
+                        if (BatchVerify.applyClear(row, new long[] { b.getLong(0), b.getLong(1) }, after)) ok++;
+                    } else if (row.optBoolean("success", false)) ok++;
+                    row.remove("dataBefore");
+                }
+                return ok;
             } catch (Throwable t) {
                 return done;
             }

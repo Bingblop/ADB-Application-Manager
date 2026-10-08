@@ -192,13 +192,14 @@ const { chromium, PAGE } = require('./lib/pw');
   await ev(() => cdSheetClose());
 
   // many apps: select two, disable, a failure is reported
+  await ev(async () => { await cdDo('reinstall', 'com.example.fit'); });             // (fit was uninstalled above: an uninstalled app cannot be enabled, and the app now checks)
   await ev(() => { window.__st.refuseFit = true; cdFilter('all'); cdToggleSel('com.wear.weather'); cdToggleSel('com.example.fit'); });
   check('selecting shows the batch bar with a count', await ev(() => document.getElementById('cdBatch').classList.contains('show') && document.getElementById('cdBatchCount').innerText === '2 selected'));
   await ev(() => cdBatch('enable')); await wait(500);
   check('a batch with no failure toasts the count and clears the selection', /Enabled 2 apps/.test(await toast()) && await ev(() => !cd.sel.size && !document.getElementById('cdBatch').classList.contains('show')));
   await ev(() => { cdToggleSel('com.wear.weather'); cdToggleSel('com.example.fit'); cdBatch('disable'); }); await wait(250);
   check('disabling several asks first', await ev(() => document.getElementById('cdAskModal').classList.contains('show') && /Disable 2 apps/.test(document.getElementById('cdAskTitle').innerText)));
-  await page.click('#cdAskOk'); await wait(600);
+  await page.click('#cdAskOk'); await wait(2200);          // (the commands, then the look at the device, which asks twice when an app is not as wanted)
   const fail = await ev(() => ({ open: document.getElementById('cdSheet').classList.contains('show'), title: document.getElementById('cdSheetTitle').innerText, body: document.getElementById('cdSheetBody').innerText }));
   check('the one the device refused is named with its reason, the other went through', fail.open && /1 of 2 did not work/.test(fail.title) && /Shell cannot change component state/.test(fail.body) && await ev(() => cdApp('com.wear.weather').disabled && !cdApp('com.example.fit').disabled), JSON.stringify(fail));
   await ev(() => { cdSheetClose(); window.__st.refuseFit = false; });
@@ -333,7 +334,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await ev(() => cdDensStep(5));
   check('+ steps the dropdown by 5', await ev(() => document.getElementById('cdDensSel').value) === '285');
   await ev(() => { document.getElementById('cdDensSel').value = '300'; }); await page.click('#view-devices .mode-action-btn.primary:has-text("Apply selected")'); await wait(300);
-  check('Apply selected sends wm density with the value', (await lastCall()) === 'shell wm density 300' && await ev(() => window.__st.dens) === 300);
+  check('Apply selected sends wm density with the value', (await calls()).some(c => /shell wm density 300$/.test(c)) && await ev(() => window.__st.dens) === 300);       // (the tab looks at the device list now and then: not always the last call)
   const keep = await ev(() => ({ shown: getComputedStyle(document.getElementById('cdKeep')).display !== 'none', text: document.getElementById('cdKeep').innerText.replace(/\s+/g, ' '), card: document.getElementById('cdInfo').innerText.includes('300 dpi') }));
   check('a change shows Keep / Put it back with a countdown and the card follows', keep.shown && /300 dpi/.test(keep.text) && /15 s/.test(keep.text) && keep.card, JSON.stringify(keep));
   await page.click('#cdKeep .mode-action-btn.primary'); await wait(100);

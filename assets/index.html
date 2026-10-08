@@ -5321,6 +5321,19 @@
                 </label>
             </div>
 
+            <div class="color-card" id="progressToastsCard">
+                <div class="color-card-title">Progress messages</div>
+                <div class="color-card-subtitle">The small messages while a change is made and checked</div>
+                <label class="switch-row">
+                    <div>
+                        <div class="switch-title">Say what is going on</div>
+                        <div class="switch-sub">"Working on it…", "Checking the phone…" and "Checking the device…" while an app is uninstalled, frozen, suspended or cleared and the app asks the phone what became of it. Turn it off if they are noise: the result ("Alpha: Uninstalled", "Bravo: Still installed") and every problem are still shown. On by default.</div>
+                    </div>
+                    <input type="checkbox" class="switch-input" id="progressToastsToggle" checked onchange="setProgressToasts(this.checked)">
+                    <span class="switch-track"></span>
+                </label>
+            </div>
+
             <div class="color-card" id="cdReconnectCard">
                 <div class="color-card-title">Reconnecting devices</div>
                 <div class="color-card-subtitle">What the Devices tab does when a device you were connected to drops (Wi-Fi, Wireless debugging and Bluetooth devices; a cable is never retried on its own)</div>
@@ -8723,7 +8736,7 @@ Type any command below (e.g. pm list packages -d)
             });
             const gear = document.getElementById('prefsHeaderBtn');
             if (gear) gear.classList.toggle('active', viewName === 'prefs');
-            if (viewName === 'prefs') { iconPackRender(); actionBtnRender(); trimSyncLock(); syncHapticsUi(); }
+            if (viewName === 'prefs') { iconPackRender(); actionBtnRender(); trimSyncLock(); syncHapticsUi(); syncProgressToastsUi(); }
 
             document.querySelectorAll('.view-content').forEach(v => {
                 v.classList.remove('active');
@@ -8783,6 +8796,17 @@ Type any command below (e.g. pm list packages -d)
             hapticLast = 0; haptic();                      // the tick says it is on; nothing when it is turned off
             showToast(hapticsOn ? 'Haptic feedback on' : 'Haptic feedback off');
         }
+        // "Working on it…" / "Checking the phone…" / "Checking the device…": the messages that say a change is under way and is being checked. Settings > Progress messages turns them off
+        // (the result of the change is always shown). On by default.
+        let progressToastsOn = null;
+        function progressToastsEnabled() { if (progressToastsOn === null) progressToastsOn = kvGet('progress_toasts', true) !== false; return progressToastsOn; }
+        function progressToast(msg) { if (progressToastsEnabled()) showToast(msg); }
+        function setProgressToasts(on) {
+            progressToastsOn = !!on;
+            kvSet('progress_toasts', progressToastsOn);
+            showToast(progressToastsOn ? 'Progress messages on' : 'Progress messages off');
+        }
+        function syncProgressToastsUi() { const t = document.getElementById('progressToastsToggle'); if (t) t.checked = progressToastsEnabled(); }
         function syncHapticsUi() { const t = document.getElementById('hapticToggle'); if (t) t.checked = hapticsEnabled(); }
         // every real tap (not a click the page makes by itself) on something that can be pressed
         const HAPTIC_SEL = 'button, [role="button"], [role="tab"], .tab-btn, .switch-row, input[type="checkbox"], input[type="radio"], select, summary, .filter-pill, .stat-card, .filter-chip, [onclick]';
@@ -14228,10 +14252,10 @@ Type any command below (e.g. pm list packages -d)
 
         // Uninstall, Reinstall, Freeze, Unfreeze, Suspend and Unsuspend of one app are read back from the phone (natively, off this thread) and
         // the toast / result says what it found, not what the command printed: see BatchVerify.java. Anything else is judged by the command.
-        const CHECKED_ACTIONS = new Set(['uninstall', 'uninstall_keep_data', 'reinstall', 'freeze', 'unfreeze', 'suspend', 'unsuspend']);
+        const CHECKED_ACTIONS = new Set(['uninstall', 'uninstall_keep_data', 'reinstall', 'freeze', 'unfreeze', 'suspend', 'unsuspend', 'clear_data']);       // (Clear data only in Root mode: the native side says "unsupported" otherwise and the plain way is taken)
         const pendingChecked = new Map();
         let checkedSeq = 0;
-        window.onAppActionChecking = function (token) { if (pendingChecked.has(token)) showToast('Checking the phone…'); };
+        window.onAppActionChecking = function (token) { if (pendingChecked.has(token)) progressToast('Checking the phone…'); };
         window.onAppActionChecked = function (token, r) {
             const p = pendingChecked.get(token);
             if (!p) return;
@@ -14253,7 +14277,7 @@ Type any command below (e.g. pm list packages -d)
                     pendingChecked.set(token, { action, pkg, app });
                     let started = '';
                     try { started = window.AndroidBridge.appActionChecked(action, pkg, token); } catch (e) { started = ''; }
-                    if (started === 'started') { showToast('Working on it…'); return; }
+                    if (started === 'started') { progressToast('Working on it…'); return; }
                     pendingChecked.delete(token);                 // not started: the plain way below
                 }
                 const { ok, output } = parseActionResult(window.AndroidBridge.executeAppAction(action, pkg));
@@ -19034,7 +19058,46 @@ Type any command below (e.g. pm list packages -d)
                 catch (e) { delete cdWait[tag]; res({ ok: false, out: 'Error: ' + (e && e.message || e) }); }
             });
         }
-        async function cdDo(act, pkg) {
+        // Read back from the device (like the app does for this phone): after enable / disable / uninstall / reinstall the apps are listed again and the answer is what the
+        // device says now, not what the command printed. { uninstalled, disabled } of a package, or null when the device did not give a real list.
+        const CD_CHECKED = new Set(['enable', 'disable', 'uninstall', 'reinstall']);
+        async function cdReadStates() {
+            const out = await cdSh(CD_APPS_CMD, { timeout: 90000 });
+            if (cdFail(out)) return null;
+            const apps = cdParseApps(out);
+            if (!apps.length) return null;
+            const m = new Map();
+            apps.forEach(a => m.set(a.pkg, a));
+            return m;
+        }
+        function cdStateOk(act, pkg, m) {
+            const a = m.get(pkg);
+            if (act === 'uninstall') return !a || a.uninstalled;
+            if (act === 'reinstall') return !!a && !a.uninstalled;
+            if (act === 'disable') return !!a && !a.uninstalled && a.disabled;
+            return !!a && !a.uninstalled && !a.disabled;                       // enable
+        }
+        const CD_STATE_WORDS = { uninstall: ['Uninstalled', 'Still installed'], reinstall: ['Installed', 'Not installed'], disable: ['Disabled', 'Not disabled'], enable: ['Enabled', 'Still disabled'] };
+        // reads the states (and once more after a moment when something is not yet as wanted), then sets the app records from them. Returns Map pkg -> { ok, label } or null.
+        async function cdCheckStates(act, pkgs) {
+            let m = await cdReadStates();
+            if (!m) return null;
+            if (pkgs.some(p => !cdStateOk(act, p, m))) { await new Promise(r => setTimeout(r, 900)); m = (await cdReadStates()) || m; }
+            const res = new Map();
+            pkgs.forEach(p => {
+                const ok = cdStateOk(act, p, m), a = (cd.apps || []).find(x => x.pkg === p), real = m.get(p);
+                if (a && real) { a.uninstalled = real.uninstalled; a.disabled = real.disabled; }
+                else if (a && !real && act === 'uninstall') { a.uninstalled = true; a.disabled = false; }
+                res.set(p, { ok, label: (!ok && (act === 'enable' || act === 'disable') && (!real || real.uninstalled)) ? 'Not installed' : CD_STATE_WORDS[act][ok ? 0 : 1] });
+            });
+            return res;
+        }
+        function cdCheckNote(cmdOk, c) {
+            const w = c.label.toLowerCase();
+            return c.ok && !cmdOk ? 'Checked afterwards: ' + w + '. The command reported a failure, but the device says it worked.\n\n'
+                : !c.ok && cmdOk ? 'Checked afterwards: ' + w + ', although the command reported success.\n\n' : 'Checked afterwards: ' + w + '.\n\n';
+        }
+        async function cdDo(act, pkg, opt) {
             let out, ok;
             if (act === 'uninstall' && cd.serial && window.AndroidBridge && window.AndroidBridge.cdUninstall) {
                 const u = await cdUninstallRun(pkg);
@@ -19053,6 +19116,15 @@ Type any command below (e.g. pm list packages -d)
                     if (act === 'reinstall') { a.uninstalled = false; a.disabled = false; }
                 }
             }
+            if (CD_CHECKED.has(act) && !(opt && opt.check === false)) {
+                progressToast('Checking the device…');
+                const c = await cdCheckStates(act, [pkg]);
+                if (c) {
+                    const r = c.get(pkg);
+                    out = cdCheckNote(ok, r) + String(out || '');
+                    return { ok: r.ok, out: String(out).trim(), label: r.label };
+                }
+            }
             return { ok: ok, out: String(out || '').trim() };
         }
         function cdActOk(out) {
@@ -19066,9 +19138,10 @@ Type any command below (e.g. pm list packages -d)
             const a = cdApp(pkg);
             if (act === 'uninstall' && !(await cdAsk({ title: 'Uninstall ' + a.name + '?', text: pkg + '\n\nIt is removed for the device\'s user. A system app can be put back with Reinstall.', ok: 'Uninstall', danger: true }))) return;
             if (act === 'clear' && !(await cdAsk({ title: 'Clear the data of ' + a.name + '?', text: 'Its settings, accounts and files on the device are deleted.', ok: 'Clear data', danger: true }))) return;
-            showToast((CD_ACT_DONE[act] || act).replace(/ed$/, 'ing').replace(/^Data clearing$/, 'Clearing data') + ' ' + a.name + '...');
+            progressToast((CD_ACT_DONE[act] || act).replace(/ed$/, 'ing').replace(/^Data clearing$/, 'Clearing data') + ' ' + a.name + '...');
             const r = await cdDo(act, pkg);
-            if (r.ok) { showToast(CD_ACT_DONE[act] + ': ' + a.name); cdAppsRender(); }
+            cdAppsRender();
+            if (r.ok) showToast(CD_ACT_DONE[act] + ': ' + a.name);
             else cdSheetOpen({ title: 'That did not work', sub: a.name + ' \u00b7 ' + act, body: '<div class="cd-log" translate="no">' + escapeHtml(r.out || 'No answer from the device') + '</div>' });
         }
 
@@ -19081,12 +19154,25 @@ Type any command below (e.g. pm list packages -d)
             cd.batchBusy = true;
             const failed = [];
             let done = 0;
+            const results = [];
             for (const p of pkgs) {
                 document.getElementById('cdBatchCount').innerText = (done + 1) + ' of ' + pkgs.length + '...';
-                const r = await cdDo(act, p);
-                if (!r.ok) failed.push(cdApp(p).name + ': ' + (r.out.split('\n')[0] || 'no answer'));
+                const r = await cdDo(act, p, { check: false });
+                results.push([p, r]);
                 done++;
             }
+            // one look at the device for the whole batch: the answer is what it says now
+            let checked = null;
+            if (CD_CHECKED.has(act)) {
+                document.getElementById('cdBatchCount').innerText = 'Checking the device…';
+                progressToast('Checking the device…');
+                checked = await cdCheckStates(act, pkgs);
+            }
+            results.forEach(([p, r]) => {
+                const c = checked && checked.get(p);
+                if (c) { if (!c.ok) failed.push(cdApp(p).name + ': ' + (r.ok ? c.label + ' (the command said it worked)' : (r.out.split('\n')[0] || 'no answer') + ' [' + c.label + ']')); }
+                else if (!r.ok) failed.push(cdApp(p).name + ': ' + (r.out.split('\n')[0] || 'no answer'));
+            });
             cd.batchBusy = false;
             cd.sel.clear();
             cdAppsRender();
