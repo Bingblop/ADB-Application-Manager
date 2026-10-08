@@ -1,0 +1,41 @@
+ok   1. the list has three sections: Enabled, Disabled, Installed (not changeable), in that order: S:Enabled,S:Disabled
+ok      every enabled overlay comes before every disabled one, and those before the ones that cannot be changed
+ok      with everything shown, all three kinds are there and a section heading says how many
+ok      every overlay has a few words on what it is for: []
+ok      the words fit the overlay: the three-button bar, the dark theme, the icon pack, a config of an app: ["Classic three-button navigation bar","Dark theme colors","Icon set for the status bar and settings"]
+ok      switching one on moves it up to the Enabled section
+ok   2. the ADB Console has a box and a suggestion line above it
+ok      typing shows the newest command of your history that starts the same way: pm list packages -3 | grep google
+ok      history first; then the common commands (dumpsys bat -> dumpsys battery)
+ok      from the list of common commands when the history has nothing: getprop ro.product.model
+ok      no suggestion when nothing fits (the line is hidden)
+ok      after a command that takes an app, the app's package name is completed (the shortest match): pm clear com.example.alpha
+ok      Hidden Settings keys are completed after settings get/put (when the table is loaded) or the common list is used:
+ok      with the cursor in the middle there is no suggestion, and Right arrow moves the cursor as usual
+ok      Right arrow at the end of the text puts the whole suggestion in the box: pm list packages -3 | grep google
+ok      and the line goes away (nothing more to add)
+ok      a tap on the suggestion line takes it too (a phone has no Right arrow key): cat /proc/cpuinfo
+ok      a command that is complete shows nothing
+ok      in the AI chat mode of the console there are no suggestions
+ok   3. the Terminal has the suggestion line too
+ok      typing shows the history match: ls -la /sdcard/Download
+ok      Right arrow accepts it
+ok      an empty box shows nothing
+ok      common commands are suggested here as well: dumpsys wifi
+ok      no suggestion for text on several lines
+ok      none in the AI chat mode, but after a ! (a shell command in the chat) it works
+ok   4. the top of the About tab has Issues and Contact the developer first in the row: ["Issues","Contact the developer","GitHub","Help Guide","What's new","Permissions","Check for update"]
+ok      Issues opens the issues page of the GitHub repository: https://github.com/Bingblop/ADB-Application-Manager/issues
+ok      Contact the developer opens a window with a message box, the details switch and Send
+ok      the developer's own address is nowhere in the app
+ok      the subject is ADB App Manager
+ok      until the alias is set, the window says the address is not set up and Send sends nothing
+ok      the message is followed by the app version, Android version and phone: "It crashes when I tap X\n\n--\nApp: ADB Application Manager Pro 7.10.11-Pro (build 831)\nAndroid: 14 (API 34)\nPhone: Test Phone\nWorking mode: Auto • ADB TCP (5555)"
+ok      with the switch off only the message is sent
+ok      Copy message copies the subject and the message: Subject: ADB App Manager
+
+It crashes when I tap X
+ok      an empty message is refused
+ok      Send opens the email app, addressed to the alias, with the subject ADB App Manager and the message: [{"to":"contact@alias.example","subject":"ADB App Manager","body":"Hello there"}]
+ok      with no email app it says so and gives the alias to write to by hand
+ok   no page errors:

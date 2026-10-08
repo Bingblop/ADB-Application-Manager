@@ -221,11 +221,13 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   await page.locator('#ovlTabs [data-sub="list"]').click(); await sleep(350);
   const L = await ev(() => ({ rows: document.querySelectorAll('#ovlRows .ovl-row').length, groups: Array.from(document.querySelectorAll('#ovlRows .ovl-group')).map(g => g.innerText.replace(/\s+/g, ' ')), more: document.getElementById('ovlMore').innerText, status: document.getElementById('ovlStatus').innerText, count: document.getElementById('ovlListCount').innerText, listed: window.__ovlCalls.list, theme: document.getElementById('ovlThemePanel').style.display, panel: document.getElementById('ovlListPanel').style.display }));
   check('12. the Overlays sub-tab reads the list once and shows the first 120 rows', L.rows === 120 && L.listed === 1 && L.theme === 'none' && L.panel === '', JSON.stringify([L.rows, L.listed]));
-  check('    grouped by target with how many are on', L.groups[0] === 'android 3 / 7 on' && /^com\.android\.systemui 2 \/ 4 on$/.test(L.groups[1]), JSON.stringify(L.groups.slice(0, 3)));
+  check('    grouped by target with how many it has in this part (Enabled / Disabled / not changeable)', L.groups[0] === 'android 3' && L.groups.every(g => /^\S+ \d+$/.test(g)), JSON.stringify(L.groups.slice(0, 3)));
   check('    "Show more" says how many are left', /Show 11 more \(11 left\)/.test(L.more), L.more);
   check('    the status line and the tab count', /131 overlays · \d+ on/.test(L.status) && L.count === '131', L.status + ' / ' + L.count);
   const rs = await rowState('android.theme.customization.accent_color');
   check('    a row shows the id and its state; its switch is on', rs.on && /On/.test(rs.text) && /android\.theme\.customization\.accent_color/.test(rs.text), JSON.stringify(rs));
+  // the ones that cannot be changed come last now, after the first 120 rows: draw them all
+  await ev(() => { ovlLimit = 100000; ovlRender(); }); await new Promise(r => setTimeout(r, 300));
   const un = await rowState('com.google.android.overlay.gmsconfig.photos');
   check('    an unavailable overlay says so and its switch is disabled', un.disabled && /Unavailable/.test(un.text), JSON.stringify(un));
   const weird = await ev(() => { const r = Array.from(document.querySelectorAll('#ovlRows .ovl-row')).find(x => x.dataset.id.startsWith('weird')); return r ? { text: r.querySelector('.sdb-key').innerText, html: r.querySelector('.sdb-key').innerHTML, bold: r.querySelectorAll('b').length } : null; });
@@ -259,11 +261,12 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   check('    the overlay manager was asked to disable it', JSON.stringify((await calls()).op) === '[{"op":"disable","id":"android.theme.customization.accent_color"}]', JSON.stringify((await calls()).op));
   check('    the row now shows it off, from the list the phone sent back', (await rowState('android.theme.customization.accent_color')).on === false);
   check('    a bar offers Undo', (await snack()) === 'Off: android.theme.customization.accent_color', await snack());
-  check('    the group counts follow', (await ev(() => document.querySelector('#ovlRows .ovl-group').innerText.replace(/\s+/g, ' '))) === 'android 2 / 7 on');
+  check('    the group counts follow', (await ev(() => document.querySelector('#ovlRows .ovl-group').innerText.replace(/\s+/g, ' '))) === 'android 2');
   await ev(() => { window.__ovlCalls.op.length = 0; });
   await page.locator('#sdbSnackUndo').click(); await sleep(300);
   check('    Undo switches it back on, without a new Undo', JSON.stringify((await calls()).op) === '[{"op":"enable","id":"android.theme.customization.accent_color"}]' && (await rowState('android.theme.customization.accent_color')).on === true && (await snack()) === '');
   await ev(() => { window.__ovlCalls.op.length = 0; });
+  await ev(() => { ovlLimit = 100000; ovlRender(); }); await sleep(300);      // the off ones sit after the on ones now: draw them all
   await hold('android.theme.customization.font'); await sleep(200);
   check('    press and hold flips a row (off -> on)', JSON.stringify((await calls()).op) === '[{"op":"enable","id":"android.theme.customization.font"}]' && (await rowState('android.theme.customization.font')).on === true, JSON.stringify((await calls()).op));
   check('    and the hold did not also open the sheet', (await ev(() => document.getElementById('ovlDetailModal').classList.contains('show'))) === false);

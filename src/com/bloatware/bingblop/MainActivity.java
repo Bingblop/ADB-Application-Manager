@@ -9871,6 +9871,25 @@ public class MainActivity extends Activity {
             });
         }
 
+        /**
+         * Opens the person's email app with a message ready (to, subject, body): a mailto: intent, so the app itself sends nothing and needs no permission.
+         * Only a plain address is taken. Returns false when no email app is installed.
+         */
+        @JavascriptInterface
+        public boolean composeEmail(String to, String subject, String body) {
+            if (to == null || !to.matches("[A-Za-z0-9._%+\\-]+@[A-Za-z0-9.\\-]+\\.[A-Za-z]{2,}")) return false;
+            try {
+                Intent intent = new Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:" + Uri.encode(to)));
+                intent.putExtra(Intent.EXTRA_SUBJECT, subject == null ? "" : subject);
+                intent.putExtra(Intent.EXTRA_TEXT, body == null ? "" : body);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(intent);
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
+        }
+
         @JavascriptInterface
         public String getAdbKeyInfo() {
             return adbKeyInfo().toString();

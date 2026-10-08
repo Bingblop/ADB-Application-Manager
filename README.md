@@ -14,7 +14,7 @@ recolor the whole system · run a real terminal with AI coding agents — **no c
 
 ## [⬇️ Get the latest APK](https://github.com/Bingblop/ADB-Application-Manager/releases/latest)
 
-`v7.10.10-Pro` · signed · installs over any earlier version · works with **ADB, Wireless Debugging, Shizuku or Root**
+`v7.10.11-Pro` · signed · installs over any earlier version · works with **ADB, Wireless Debugging, Shizuku or Root**
 
 <table>
   <tr>
@@ -48,19 +48,19 @@ recolor the whole system · run a real terminal with AI coding agents — **no c
 |---|---|
 | **Apps** | Search, sort and filter every package · freeze, suspend, uninstall (even system apps), clear data, reinstall · batch actions · saved lists · profiles you can share to another phone · CSV export |
 | **Installer** | `.apk`, `.apks`, `.apkm`, `.xapk` (with OBB) · every `pm install` flag · splits that fit your phone pre-ticked · optional VirusTotal check |
-| **Updates & stores** | Update the app itself, Galaxy Store apps, and open-source apps from GitHub, Codeberg, F-Droid and IzzyOnDroid · ShizuStore, GitHub, F-Droid and Orion catalogs |
+| **Updates & stores** | Update the app itself, Galaxy Store apps, and open-source apps from GitHub, Codeberg, F-Droid and IzzyOnDroid · ShizuStore, GitHub, F-Droid and Orion catalogs · **a + tab adds a store of your own** (any F-Droid style repository, or a GitHub or Codeberg user, organization or project) · **every store opens the full description and screenshots of an app** |
 | **Inspector** | Ten tabs per app: permissions, App Ops, activities, components (services, receivers, providers; enable or disable any) · decoded manifest · features, configurations (screens, Android versions), signatures (v1-v3.1, certificates, SHA-256) and libraries (native .so by CPU) · launch unexported activities |
 | **Files** | Privileged file manager · open APKs and archives (zip, 7z, rar, tar) without extracting · edit, sign, compare · add an SD card or USB drive |
-| **Command-Line Interface** | Terminal with three shells (sandbox, working mode, **your own Termux**, with a **one-tap setup** of vim, nano, git and python and a starter .bashrc) and AI agents · **full-screen real terminal** (vim, htop, ssh: a genuine pty) · classic ADB Console with cheat sheet and Rish shell |
-| **Hidden Settings & Overlays** | Edit Android's settings tables, each explained with what it does and its values · Material You color and style · switch overlays on and off |
-| **Connected Devices** | Manage a **Wear OS watch** (or another Android device) from your phone: pair over Wi-Fi or link over Bluetooth · apps (enable, disable, uninstall, reinstall) · send APK, APKS, APKM and XAPK · console, logcat, files, hidden settings, screen density · **Reconnect** (or **Reconnect all**) devices that dropped, with timings you set |
+| **Command-Line Interface** | Terminal with three shells (sandbox, working mode, **your own Termux**, with a **one-tap setup** of vim, nano, git and python and a starter .bashrc) and AI agents · **full-screen real terminal** (vim, htop, ssh: a genuine pty) · classic ADB Console with cheat sheet and Rish shell · **grey command suggestions as you type (Right arrow to accept)** in the Terminal and the ADB Console |
+| **Hidden Settings & Overlays** | Edit Android's settings tables, each explained with what it does and its values · Material You color and style · switch overlays on and off: **enabled first, then disabled, then not changeable, each with a one-line description of what it is for** |
+| **Connected Devices** | Manage a **Wear OS watch** (or another Android device) from your phone: pair over Wi-Fi or link over Bluetooth · apps (enable, disable, uninstall, reinstall) · send APK, APKS, APKM and XAPK · console, logcat, files, hidden settings, screen density · **Reconnect** (or **Reconnect all**) devices that dropped, with timings you set · **saved devices** you can reconnect or delete |
 | **Morphe Patcher** | Patch apps with [Morphe](https://github.com/MorpheApp) on the phone: patch sources and the community finder · **Installed** apps marked · Morphe Helper downloads the right APK version (ten sources, an **in-app browser** that passes APKMirror's check and saves bundles straight in with a pause and resume download list, optional VirusTotal) · Simple and Advanced patching · install when finished · live log · Patched APKs |
 | **SD Maid** | SystemCleaner, AppCleaner, CorpseFinder and Deduplicator, ported from [SD Maid SE](https://github.com/d4rken-org/sdmaid-se) · scan, review and untick, delete · optional 1-tap scan and delete · exclusion manager · history · accessibility cache clearing |
 | **Help Guide** | A complete guide for beginners inside the app (About tab): table of contents, search, every tab explained, recipes, safety, troubleshooting |
-| **Monitoring** | Task Manager (processes, CPU, RAM, GPU, battery, network) · color-coded Logcat for one app · Device Specs |
+| **Monitoring** | Task Manager (processes with **Apps first**, CPU with °C/°F, RAM, GPU with the renderer up top, battery, network) · color-coded Logcat for one app, **tap an entry for a window with Copy, Web search and AI explanation** · Device Specs |
 | **Quick actions** | Quick Settings tiles and a home-screen widget |
-| **Free up space** | One button in Settings runs `pm trim-caches 128G` to clear every app's cache, with a plain explanation of what is and is not touched |
-| **Make it yours** | Material 3 and Material You themes · **nine palette styles** (Tonal Spot to Monotone) from any source color · **save your own themes** · light, dark, schedule, pure black · **Expressive Animations** · 14 languages · custom font · reorder or hide tabs |
+| **Free up space** | **Trim Caches in All Applications** (`pm trim-caches 128G`, in the **SD Maid** tab) clears every app's cache, with a plain explanation of what is and is not touched |
+| **Make it yours** | Material 3 and Material You themes · **nine palette styles** (Tonal Spot to Monotone) from any source color · **save your own themes** · light, dark, schedule, pure black · **Expressive Animations** · 14 languages · custom font · reorder or hide tabs · **haptic feedback** on every tap, with a switch in Settings |
 
 ## Install in 30 seconds
 
@@ -116,6 +116,18 @@ The complete reference lives in the **[Full Guide](docs/FULL-GUIDE.md)**:
 [Testing](docs/FULL-GUIDE.md#testing).
 What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
+## What's new in v7.10
+
+- **Contact the developer and Issues** at the top of the About tab: Issues opens the GitHub issue page; Contact opens your email app with the subject "ADB App Manager", addressed to a forwarding alias so the developer's own address stays private.
+- **Overlays in order**: enabled, then disabled, then not changeable, each with a one-line description.
+- **Command suggestions** in the Terminal and the ADB Console: a grey completion of what you type from your history, the phone's packages and common commands; Right arrow (or a tap) accepts it.
+- **Haptic feedback** on every tap, on by default, with a switch in Settings.
+- **App Stores**: a **+** tab for stores of your own, and the details and screenshots of an app in every store.
+- **Task Manager**: Apps first in Processes, a °C/°F choice for the CPU temperature, the GPU renderer shown first. **Logcat**: tap an entry for a window with Copy, Web search and an AI explanation.
+- **Connected Devices**: saved devices you can reconnect or delete. **Hidden Settings**: more researched descriptions, Web search and AI explain. **Apps**: clearer Enabled/Frozen and User/System boxes; "Uninstalled" clears the other boxes.
+- **SD Maid** (the tab's new short name) now holds Trim Caches, and AppCleaner can clear the remaining caches through the accessibility service.
+- **Palette styles**, **saved themes**, **Saved lists backup**, **Morphe Helper** downloads in the background, **Reconnect all** for devices, screenshots in full screen. Details in [CHANGELOG.md](CHANGELOG.md).
+
 ## What's new in v7.9
 
 - **Added storage** (SD card, USB drive) now copies, moves, previews, shares and searches too.
@@ -129,7 +141,7 @@ What changed in each version: [CHANGELOG.md](CHANGELOG.md).
 
 ## Support & credits
 
-Found a bug? [Open an issue](https://github.com/Bingblop/ADB-Application-Manager/issues). Like it? ☕ **Buy me a coffee** is in the About tab.
+Found a bug? [Open an issue](https://github.com/Bingblop/ADB-Application-Manager/issues), or use **About → Contact the developer** in the app. Like it? ☕ **Buy me a coffee** is in the About tab.
 
 Debloat data from [UAD-NG](https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation) (GPL-3.0, downloaded at runtime) ·
 shell access via [Shizuku](https://github.com/RikkaApps/Shizuku-API) ·

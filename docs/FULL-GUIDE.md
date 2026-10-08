@@ -118,7 +118,7 @@ Every tab except Application Manager and About can be switched off or moved in *
 
 ## New in v7.9
 
-**v7.10.10 is the latest build** (Connected Devices, 32-bit and universal APKs, the Help Guide: see [CHANGELOG.md](../CHANGELOG.md)). Everything from v7.9 through v7.9.15 is below; the full, dated list is in
+**v7.10.11 is the latest build** (Connected Devices, 32-bit and universal APKs, the Help Guide: see [CHANGELOG.md](../CHANGELOG.md)). Everything from v7.9 through v7.9.15 is below; the full, dated list is in
 [CHANGELOG.md](../CHANGELOG.md) (and inside the app, under About).
 
 **Newest (v7.9.12 to v7.9.15)**
@@ -830,7 +830,7 @@ non-system app), and needs a working mode that isn't already Root (Root removes 
 The four last tabs are read in one go by the bridge call `getAppExtras(pkg)` (`AppExtras.java` does the decoding; each part is read on
 its own, so one that cannot be read does not blank the others).
 
-**Trim Caches in All Applications** (the last card of Settings) runs `pm trim-caches 128G` through the working mode, off the page's
+**Trim Caches in All Applications** (a card of the **SD Maid** tab; it was in Settings before v7.10.10) runs `pm trim-caches 128G` through the working mode, off the page's
 thread, and reports the free space of `/data` before and after. Only caches are cleared.
 
 **Uninstalling on a connected device** follows the same steps: `pm uninstall --user 0`, then, for the root-only refusal, the helper
@@ -1282,3 +1282,9 @@ community catalog. The Task Manager tab is modeled on
 [RohitKushvaha01/TaskManager](https://github.com/RohitKushvaha01/TaskManager).
 
 Changes by version: [CHANGELOG.md](../CHANGELOG.md).
+
+**Overlays, ordered and explained** (RRO/Monet Customization > Overlays, v7.10.11): the list is in three parts, **Enabled**, **Disabled**, **Installed, not changeable**, each with its count and, inside it, the overlays grouped under their target. Every row has a very short description of what the overlay is for (a best guess from its name and target).
+
+**Command suggestions** (Command-Line Interface, Terminal and ADB Console, v7.10.11): a grey completion line above the input offers the rest of what you type, from your history first, then the packages on the phone, Hidden Settings keys and common commands. **Right arrow** at the end of the line accepts it; a **tap on the line** does too. It never runs anything.
+
+**Issues and Contact the developer** (top of the About card, v7.10.11): **Issues** opens the GitHub issue page. **Contact the developer** opens a sheet to write a message (with or without the app, Android and phone details) and opens your email app with the subject **ADB App Manager**, addressed to a forwarding alias so the developer's own address is not shown or stored in the app.

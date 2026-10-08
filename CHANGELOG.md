@@ -1,5 +1,19 @@
 # Changelog
 
+## v7.10.11-Pro (versionCode 831)
+
+- **RRO/Monet > Overlays: enabled first, then disabled, then not changeable.** The list is in three parts with counts, **Enabled**, **Disabled** and **Installed, not changeable**; inside each
+  part the overlays stay grouped under their target. Test: `t135`.
+- **A very short description on every overlay** (for example "Gesture navigation: swipes instead of buttons", "Shape of app icons"). A best guess from the overlay's name and target
+  (rule table `OVL_WHY`, first match wins, a generic line when nothing matches).
+- **Command suggestions in the Terminal and the ADB Console.** A grey completion line above the input offers the rest of what you are typing: your earlier commands first, then the packages on the
+  phone (after `pm`, `am`, `dumpsys` and the like), the Hidden Settings keys (after `settings get/put`) and a list of common commands. **Right arrow** with the cursor at the end accepts
+  it; because phone keyboards often have no right arrow, **tapping the line** accepts it too. It never runs anything. Test: `t135`.
+- **About: Issues and Contact the developer.** Two buttons at the top of the About card. **Issues** opens the project's GitHub issue page. **Contact the developer** opens a sheet to write a
+  message (optionally with the app version, Android version and phone model) and opens the email app with the subject **ADB App Manager**. The message is addressed to a **contact alias**
+  that forwards to the developer, so the developer's own address is not in the app or in this repository (test `t135` checks that it is not in the page). The alias is one constant
+  (`CONTACT_ALIAS`); until it is set the sheet says the contact address is not set up yet and points to Issues. Native: bridge `composeEmail` (a `mailto:` intent with the subject and body).
+
 ## v7.10.10-Pro (versionCode 830)
 
 - **Haptic feedback on every tap, with a switch.** Every tap on a button, a tab, a switch, a menu or a list row ticks (a short vibration), from one place, so nothing is missed and

@@ -2085,6 +2085,13 @@
             border-radius: 3px;
         }
 
+        /* the suggestion line above the command box of the Terminal and the ADB Console: what you typed, and in bold what Right arrow adds */
+        .ac-hint { display: flex; align-items: center; gap: 8px; margin: 8px 0 0; padding: 5px 10px; border: 1px dashed var(--border-glass); border-radius: 10px; background: rgba(var(--ov), 0.05);
+            font: 12px/1.3 ui-monospace, monospace; color: var(--text-muted); cursor: pointer; min-width: 0; }
+        .ac-hint[hidden] { display: none; }
+        .ac-hint .ac-text { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .ac-hint .ac-rest { color: var(--text-main); font-weight: 800; }
+        .ac-hint .ac-key { flex: 0 0 auto; font: 800 10.5px/1 system-ui, sans-serif; color: var(--accent); border: 1px solid var(--accent); border-radius: 6px; padding: 3px 6px; }
         .term-input-row {
             display: flex;
             gap: 8px;
@@ -4673,6 +4680,12 @@
                 .ovl-actions .mode-action-btn { min-height:44px; justify-content:center; }
                 .ovl-actions .mode-action-btn:disabled, #ovlDetailModal .mode-action-btn:disabled { opacity:.4; cursor:not-allowed; }
                 .ovl-hint { font-size:11px; color:var(--text-muted); margin:0 2px 16px; min-height:14px; }
+                .ovl-section { display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin:16px 2px 2px; padding-bottom:4px; border-bottom:1px solid var(--border-glass); font-size:12px; font-weight:900; letter-spacing:.2px; }
+                .ovl-section b { font-weight:700; font-size:11px; color:var(--text-muted); }
+                .ovl-section.s-on { color:var(--status-running); }
+                .ovl-section.s-off { color:var(--text-main); }
+                .ovl-section.s-na { color:var(--text-muted); }
+                .ovl-why { font-size:11px; color:var(--text-muted); line-height:1.35; margin-top:2px; font-family:inherit; }
                 .ovl-group { display:flex; justify-content:space-between; gap:8px; margin:10px 2px 0; font-size:10.5px; color:var(--text-muted); font-family:ui-monospace,monospace; }
                 .ovl-group span { overflow-wrap:anywhere; font-weight:800; }
                 .ovl-group b { flex:0 0 auto; font-weight:700; }
@@ -5757,7 +5770,9 @@
                 <div class="about-ver" id="aboutVersion">Version …</div>
                 <div class="about-blurb">Freeze, debloat, install, back up and inspect every app on your phone, straight from the phone: through ADB, Wireless Debugging, Shizuku or Root. No computer, no account, no ads.</div>
                 <div class="mode-btn-row">
-                    <button class="mode-action-btn primary" onclick="aboutOpenRepo()">GitHub</button>
+                    <button class="mode-action-btn" id="aboutIssuesBtn" onclick="aboutOpenIssues()">Issues</button>
+                    <button class="mode-action-btn primary" id="aboutContactBtn" onclick="contactOpen()">Contact the developer</button>
+                    <button class="mode-action-btn" onclick="aboutOpenRepo()">GitHub</button>
                     <button class="mode-action-btn" id="aboutHelpBtn" onclick="openHelpGuide()">Help Guide</button>
                     <button class="mode-action-btn" onclick="openWhatsNew({ max: 3 })">What's new</button>
                     <button class="mode-action-btn" onclick="openPermSheet('manual')">Permissions</button>
@@ -5996,9 +6011,10 @@
                     <span class="tx-state" id="txState"></span>
                 </div>
                 <div class="tx-screens" id="txScreens"></div>
+                <div class="ac-hint" id="txAc" hidden role="button" tabindex="-1" aria-label="Suggestion: tap to accept" onmousedown="event.preventDefault()" onclick="acTap('tx')"></div>
                 <div class="tx-inputline">
                     <button class="tx-mode-btn" id="txModeBtn" translate="no" onclick="txToggleMode()" title="Shell commands or AI chat" aria-label="Shell commands or AI chat">$</button>
-                    <textarea id="txInput" class="tx-input" rows="1" placeholder="Type a command" onkeydown="txKey(event)" oninput="txAutosize()" autocapitalize="none" autocorrect="off" autocomplete="off" spellcheck="false" enterkeyhint="send" aria-label="Terminal input"></textarea>
+                    <textarea id="txInput" class="tx-input" rows="1" placeholder="Type a command" onkeydown="txKey(event)" oninput="txAutosize()" onclick="acUpdate('tx')" onfocus="acUpdate('tx')" onblur="acHide('tx')" autocapitalize="none" autocorrect="off" autocomplete="off" spellcheck="false" enterkeyhint="send" aria-label="Terminal input"></textarea>
                     <button class="tx-send-btn" id="txSendBtn" translate="no" onclick="txSendClick()">RUN</button>
                 </div>
                 <div class="tx-keys" id="txKeys" role="toolbar" aria-label="Extra keys">
@@ -6077,9 +6093,10 @@ Type any command below (e.g. pm list packages -d)
 
             <div class="rish-promptline" id="termPromptLine" style="display:none;"></div>
             <div class="term-ai-note" id="termAiNote" style="display:none; font-size:11px; color:var(--text-muted); margin-top:8px;"></div>
+            <div class="ac-hint" id="termAc" hidden role="button" tabindex="-1" aria-label="Suggestion: tap to accept" onmousedown="event.preventDefault()" onclick="acTap('term')"></div>
             <div class="term-input-row" style="margin-top:12px;">
                 <button class="tx-mode-btn" id="termModeBtn" translate="no" onclick="termToggleMode()" title="Shell commands or ask the coding agent" aria-label="Shell commands or ask the coding agent">$</button>
-                <input type="text" class="term-input" id="termCmd" placeholder="Enter shell command..." onkeydown="termKey(event)" oninput="termHistPos = -1" autocapitalize="none" autocorrect="off" autocomplete="off" spellcheck="false" inputmode="text">
+                <input type="text" class="term-input" id="termCmd" placeholder="Enter shell command..." onkeydown="termKey(event)" oninput="termHistPos = -1; acUpdate('term')" onclick="acUpdate('term')" onfocus="acUpdate('term')" onblur="acHide('term')" autocapitalize="none" autocorrect="off" autocomplete="off" spellcheck="false" inputmode="text">
                 <button class="term-run-btn" id="termRunBtn" onclick="termRunClick()">RUN</button>
             </div>
             <div class="term-input-tools">
@@ -7422,6 +7439,36 @@ Type any command below (e.g. pm list packages -d)
             </div>
             <input class="modal-text-input" id="lcAppSearch" placeholder="Search apps…" oninput="lcAppRender()" autocomplete="off" autocapitalize="off" spellcheck="false">
             <div id="lcAppList" style="max-height:50vh; overflow:auto; margin-top:8px;"></div>
+        </div>
+    </div>
+
+    <!-- About: write to the developer (through an alias: the developer's own address is not in the app) -->
+    <div class="modal-overlay" id="contactModal" onclick="if(event.target===this) contactClose()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-title">
+                        <h3>Contact the developer</h3>
+                        <p>A bug, a question, an idea</p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="contactClose()" role="button" aria-label="Close">✕</div>
+            </div>
+            <div class="switch-sub" style="margin:0 0 8px;">Write your message and tap <b>Send</b>: your email app opens with it ready, addressed to a contact alias that forwards to the developer. The subject is <b>ADB App Manager</b>. The developer's own address is not in this app, and the message is sent from your email app, not by this one.</div>
+            <textarea class="modal-text-input" id="contactText" rows="6" placeholder="Your message" autocomplete="off" spellcheck="true" style="width:100%; resize:vertical;" aria-label="Message" oninput="contactPreview()"></textarea>
+            <label class="switch-row" style="margin-top:8px;">
+                <div>
+                    <div class="switch-title">Add the app and phone details</div>
+                    <div class="switch-sub" id="contactDetails">The app version, Android version and phone model, so a problem is easier to find.</div>
+                </div>
+                <input type="checkbox" class="switch-input" id="contactWithInfo" checked onchange="contactPreview()">
+                <span class="switch-track"></span>
+            </label>
+            <div class="sdb-note" id="contactNote" style="margin-top:8px; min-height:18px;"></div>
+            <div style="display:flex; gap:10px; margin-top:12px; flex-wrap:wrap;">
+                <button class="mode-action-btn primary" id="contactSendBtn" style="flex:1; justify-content:center; min-height:40px;" onclick="contactSend()">Send</button>
+                <button class="mode-action-btn" style="min-height:40px;" onclick="contactCopy()">Copy message</button>
+            </div>
         </div>
     </div>
 
@@ -22363,6 +22410,7 @@ Type any command below (e.g. pm list packages -d)
             if (termShellRun) { showToast('A command is still running. Wait for it to finish.'); return; }      // before the box is cleared: what was typed stays
             haptic();
             if (typeof override !== 'string') input.value = '';
+            acUpdate('term');
             termRemember(cmd);
 
             const term = document.getElementById('termOutput');
@@ -22613,13 +22661,100 @@ Type any command below (e.g. pm list packages -d)
             termHistPos = -1;
         }
 
+        // ---------- Suggestions while typing, in the Terminal and the ADB Console ----------
+        // What you typed so far is completed from, in this order: your own history (the newest command that starts the same way), the names of apps and Hidden Settings keys after the commands
+        // that take them, and a list of common commands. The suggestion shows on a line above the box; Right arrow (with the cursor at the end) or a tap on the line accepts it.
+        const AC_PHRASES = [
+            'pm list packages', 'pm list packages -3', 'pm list packages -s', 'pm list packages -d', 'pm list packages -e', 'pm list packages -f', 'pm list packages -u', 'pm list packages --user 0', 'pm list permissions -g', 'pm list users', 'pm list features', 'pm list libraries', 'pm list instrumentation',
+            'pm path ', 'pm clear ', 'pm uninstall --user 0 ', 'pm uninstall -k --user 0 ', 'pm disable-user --user 0 ', 'pm enable ', 'pm grant ', 'pm revoke ', 'pm dump ', 'pm trim-caches 128G', 'pm get-install-location', 'pm resolve-activity ', 'pm install-existing ', 'pm compile -m speed-profile -f ', 'pm reset-permissions',
+            'am start -n ', 'am start -a android.intent.action.VIEW -d ', 'am start -a android.settings.SETTINGS', 'am force-stop ', 'am kill ', 'am kill-all', 'am broadcast -a ', 'am startservice -n ', 'am stack list', 'am get-config', 'am crash ', 'am monitor',
+            'cmd package list packages', 'cmd package resolve-activity --brief ', 'cmd overlay list', 'cmd overlay enable ', 'cmd overlay disable ', 'cmd appops get ', 'cmd appops set ', 'cmd jobscheduler run ', 'cmd statusbar expand-notifications', 'cmd statusbar collapse', 'cmd wifi status', 'cmd battery unplug', 'cmd battery reset', 'cmd notification list', 'cmd activity ', 'cmd uimode night ', 'cmd media_session list-sessions',
+            'dumpsys battery', 'dumpsys activity activities', 'dumpsys activity top', 'dumpsys activity services ', 'dumpsys package ', 'dumpsys window displays', 'dumpsys window windows', 'dumpsys meminfo ', 'dumpsys cpuinfo', 'dumpsys display', 'dumpsys wifi', 'dumpsys connectivity', 'dumpsys notification', 'dumpsys power', 'dumpsys usagestats', 'dumpsys deviceidle', 'dumpsys jobscheduler', 'dumpsys alarm', 'dumpsys appops', 'dumpsys batterystats', 'dumpsys telephony.registry', 'dumpsys diskstats', 'dumpsys SurfaceFlinger', 'dumpsys gfxinfo ', 'dumpsys netstats', 'dumpsys input', 'dumpsys media.audio_flinger', 'dumpsys -l',
+            'settings get global ', 'settings get secure ', 'settings get system ', 'settings put global ', 'settings put secure ', 'settings put system ', 'settings delete global ', 'settings delete secure ', 'settings delete system ', 'settings list global', 'settings list secure', 'settings list system',
+            'settings put global window_animation_scale ', 'settings put global transition_animation_scale ', 'settings put global animator_duration_scale ', 'settings put global adb_enabled ', 'settings put global airplane_mode_on ', 'settings put system screen_off_timeout ', 'settings put system screen_brightness ', 'settings put secure ui_night_mode ',
+            'getprop ro.build.version.release', 'getprop ro.build.version.sdk', 'getprop ro.product.model', 'getprop ro.product.manufacturer', 'getprop ro.product.device', 'getprop ro.build.fingerprint', 'getprop ro.serialno', 'getprop ro.product.cpu.abi', 'getprop ro.hardware', 'getprop persist.sys.locale', 'getprop sys.boot_completed', 'getprop debug.hwui.renderer', 'getprop ro.boot.verifiedbootstate',
+            'setprop debug.hwui.renderer ', 'setprop ', 'logcat -d', 'logcat -c', 'logcat -v time', 'logcat -b crash', 'logcat -b all -d', 'logcat *:E', 'logcat -s ', 'logcat --pid=',
+            'wm size', 'wm size reset', 'wm density', 'wm density reset', 'wm overscan reset', 'input keyevent KEYCODE_HOME', 'input keyevent KEYCODE_BACK', 'input keyevent KEYCODE_POWER', 'input keyevent KEYCODE_WAKEUP', 'input keyevent KEYCODE_MENU', 'input tap ', 'input swipe ', 'input text ',
+            'svc wifi enable', 'svc wifi disable', 'svc data enable', 'svc data disable', 'svc power stayon true', 'svc power stayon false', 'svc bluetooth enable', 'svc bluetooth disable', 'monkey -p ', 'content query --uri content://settings/system', 'dpm list-owners', 'appops get ', 'appops set ',
+            'ls -la ', 'ls -l /sdcard/', 'ls /sdcard/Download', 'ls /data/local/tmp', 'cd /sdcard', 'cd /sdcard/Download', 'cd /data/local/tmp', 'cat /proc/cpuinfo', 'cat /proc/meminfo', 'cat /proc/version', 'cat /proc/uptime', 'cat /proc/loadavg', 'cat /proc/net/dev', 'cat /sys/class/power_supply/battery/capacity', 'cat /sys/class/thermal/thermal_zone0/temp',
+            'df -h', 'df -h /data', 'du -sh ', 'free -m', 'top -n 1', 'top -b -n 1', 'ps -A', 'ps -A | grep ', 'ps -ef', 'id', 'uname -a', 'uname -r', 'whoami', 'date', 'uptime', 'env', 'which ', 'pwd', 'mount', 'ip addr', 'ip route', 'ifconfig', 'netstat -an', 'ping -c 4 ', 'pidof ', 'kill ', 'killall ',
+            'mkdir -p ', 'rm -rf ', 'cp -r ', 'mv ', 'chmod 755 ', 'chown ', 'touch ', 'find /sdcard -name ', 'find / -name ', 'grep -r ', 'grep -i ', 'head -n 20 ', 'tail -n 50 ', 'tail -f ', 'wc -l ', 'echo ', 'sleep ', 'sort | uniq -c', 'tar -xvf ', 'unzip ', 'screencap -p /sdcard/screen.png', 'screenrecord /sdcard/record.mp4', 'bugreportz', 'service list', 'getevent -lp', 'locksettings get-disabled', 'bmgr list transports', 'reboot', 'reboot recovery', 'reboot bootloader', 'su -c ', 'sync', 'exit', 'clear'
+        ];
+        const AC_PKG_AFTER = /^(pm (path|clear|dump|enable|grant|revoke|reset-permissions|resolve-activity|install-existing|uninstall( -k)?( --user \d+)?|disable-user( --user \d+)?|compile -m \S+ -f)|am (force-stop|kill|crash)|cmd appops (get|set)|cmd package resolve-activity( --brief)?|dumpsys (package|meminfo|gfxinfo|activity services)|appops (get|set)|monkey -p|am start -n|am startservice -n|logcat --pid=|pidof) /;
+        const acSug = { tx: '', term: '' };
+        function acInput(which) { return document.getElementById(which === 'tx' ? 'txInput' : 'termCmd'); }
+        function acHistory(which) { return which === 'tx' ? (typeof txHist !== 'undefined' ? txHist : []) : (typeof termHistory !== 'undefined' ? termHistory : []); }
+        function acPackages() { try { return (typeof allApps !== 'undefined' ? allApps : []).map(a => a.pkg).filter(Boolean); } catch (e) { return []; } }
+        // the whole text with its suggested ending, or '' when there is none
+        function acSuggest(text, which) {
+            if (!text || /\n/.test(text) || text.length > 300) return '';
+            let bang = '';
+            if (which === 'tx' && text[0] === '!') { bang = '!'; text = text.slice(1); if (!text) return ''; }
+            else if (which === 'tx' && typeof txInputMode === 'function' && txInputMode() === 'chat') return '';
+            if (which === 'term' && typeof termMode !== 'undefined' && termMode === 'chat') return '';
+            const hist = acHistory(which);
+            for (let i = 0; i < hist.length; i++) { const h = hist[i]; if (typeof h === 'string' && h.length > text.length && h.indexOf(text) === 0 && h.indexOf('\n') < 0) return bang + h; }
+            // an app's package name, or a Hidden Settings key, after the commands that take one
+            const sp = text.lastIndexOf(' ');
+            if (sp > 0) {
+                const head = text.slice(0, sp + 1), word = text.slice(sp + 1);
+                if (word.length >= 2 && AC_PKG_AFTER.test(head)) {
+                    const pk = acPackages().filter(x => x.indexOf(word) === 0 && x.length > word.length).sort((a, b) => a.length - b.length || a.localeCompare(b))[0];
+                    if (pk) return bang + head + pk;
+                }
+                const sm = /^settings (get|put|delete) (system|secure|global) $/.exec(head);
+                if (sm && word.length >= 2 && typeof sdbData === 'object' && sdbData && sdbData[sm[2]] && sdbData[sm[2]].keys) {
+                    let found = '';
+                    for (const k of sdbData[sm[2]].keys()) { if (k.indexOf(word) === 0 && k.length > word.length && (!found || k.length < found.length)) found = k; }
+                    if (found) return bang + head + found;
+                }
+            }
+            if (text.length >= 2 || /^[a-z]$/.test(text)) {
+                for (let i = 0; i < AC_PHRASES.length; i++) { const p = AC_PHRASES[i]; if (p.length > text.length && p.indexOf(text) === 0) return bang + p; }
+            }
+            return '';
+        }
+        function acUpdate(which) {
+            const inp = acInput(which), box = document.getElementById(which === 'tx' ? 'txAc' : 'termAc');
+            if (!inp || !box) return;
+            const atEnd = inp.selectionStart === inp.value.length && inp.selectionEnd === inp.value.length;
+            const sug = atEnd ? acSuggest(inp.value, which) : '';
+            acSug[which] = sug;
+            if (!sug) { box.hidden = true; box.innerHTML = ''; return; }
+            const typed = inp.value;
+            box.hidden = false;
+            box.innerHTML = '<span class="ac-text" translate="no"><span>' + escapeHtml(typed) + '</span><span class="ac-rest">' + escapeHtml(sug.slice(typed.length)) + '</span></span><span class="ac-key">&rarr;</span>';
+        }
+        function acHide(which) { setTimeout(() => { const inp = acInput(which); if (inp && document.activeElement === inp) return; const box = document.getElementById(which === 'tx' ? 'txAc' : 'termAc'); if (box && !box.matches(':active')) { box.hidden = true; } }, 250); }
+        // puts the suggestion in the box; true when there was one
+        function acAccept(which) {
+            const inp = acInput(which), sug = acSug[which];
+            if (!inp || !sug || sug.length <= inp.value.length || sug.indexOf(inp.value) !== 0) return false;
+            inp.value = sug;
+            inp.setSelectionRange(sug.length, sug.length);
+            if (which === 'tx') { txAutosize(); } else { termHistPos = -1; acUpdate('term'); }
+            return true;
+        }
+        function acTap(which) { if (acAccept(which)) { const inp = acInput(which); if (inp) inp.focus(); } }
+        // Right arrow with the cursor at the end of the box accepts the suggestion (anywhere else it moves the cursor as usual)
+        function acRightKey(e, which) {
+            if (e.key !== 'ArrowRight' || e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) return false;
+            const inp = e.target;
+            if (inp.selectionStart !== inp.value.length || inp.selectionEnd !== inp.value.length) return false;
+            if (!acAccept(which)) return false;
+            e.preventDefault();
+            return true;
+        }
+
         function termKey(e) {
+            if (acRightKey(e, 'term')) return;
             if (e.key === 'Enter') { runTerminalCmd(); return; }
             if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
                 if (!termHistory.length) return;
                 e.preventDefault();
                 termHistPos = Math.max(-1, Math.min(termHistory.length - 1, termHistPos + (e.key === 'ArrowUp' ? 1 : -1)));
                 document.getElementById('termCmd').value = termHistPos < 0 ? '' : termHistory[termHistPos];
+                acUpdate('term');
             }
         }
 
@@ -23451,9 +23586,11 @@ Type any command below (e.g. pm list packages -d)
             inp.style.height = 'auto';
             inp.style.height = Math.min(170, Math.max(56, inp.scrollHeight)) + 'px';
             txHistPos = -1;
+            acUpdate('tx');
         }
 
         function txKey(e) {
+            if (acRightKey(e, 'tx')) return;
             if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); txSubmit(); return; }
             const inp = e.target;
             if (e.key === 'ArrowUp' && inp.value.lastIndexOf('\n', inp.selectionStart - 1) < 0) { e.preventDefault(); txHistMove(1); return; }
@@ -25795,6 +25932,7 @@ Type any command below (e.g. pm list packages -d)
             if (rishRunning) { showToast('A command is still running. Tap STOP to end it.'); return; }
             haptic();
             if (typeof override !== 'string') input.value = '';
+            acUpdate('term');
             termRemember(cmd);
             const term = document.getElementById('termOutput');
             clearFind(term);
@@ -28308,10 +28446,59 @@ Type any command below (e.g. pm list packages -d)
                 }
                 return true;
             });
+            // on first, then off, then the ones that cannot be changed; inside each, by the app they change and then by name
+            const rank = o => o.state === 1 ? 0 : o.state === 0 ? 1 : 2;
+            rows.sort((a, b) => rank(a) - rank(b) || a.target.localeCompare(b.target) || a.id.localeCompare(b.id));
             ovlListMemo = { key, rows };
             return rows;
         }
 
+        // A few words on what an overlay is for, from its name and the app it changes. The first rule that fits wins; the last one always fits.
+        const OVL_WHY = [
+            [/navbar\.gestural|gestural/i, 'Gesture navigation: swipes instead of buttons'],
+            [/navbar\.threebutton|three_?button/i, 'Classic three-button navigation bar'],
+            [/navbar\.twobutton|two_?button/i, 'Two-button navigation bar'],
+            [/navbar|navigation/i, 'Looks or size of the navigation bar'],
+            [/cutout|notch|punch/i, 'Shape and size of the screen cutout (camera hole)'],
+            [/emulation/i, 'Pretends the screen has a cutout, for testing'],
+            [/rounded|corner_?radius/i, 'Corner roundness of the screen and windows'],
+            [/accent_?color|accentcolor/i, 'Accent color used across the system'],
+            [/system_?palette|monet|color_?source|theme_?color|theme\.color|palette/i, 'Part of the system color theme (Material You)'],
+            [/icon_?pack|iconpack/i, 'Icon set for the status bar and settings'],
+            [/icon_?shape|iconshape|\.icon\.|adaptive_?icon|shape/i, 'Shape of app icons (circle, square, teardrop...)'],
+            [/font|typeface|headline|body_?font/i, 'The font the system uses'],
+            [/dark|night/i, 'Dark theme colors'],
+            [/auto_generated_characteristics|characteristics/i, 'Fits the system to this device (screen size and shape)'],
+            [/auto_generated_rro/i, 'Settings made by the phone\'s build for this device'],
+            [/quick_?settings|qs_|qstile|\.qs\./i, 'Looks of the quick settings panel'],
+            [/statusbar|status_?bar/i, 'Looks of the status bar at the top'],
+            [/lockscreen|keyguard/i, 'Looks of the lock screen'],
+            [/wallpaper/i, 'Wallpaper behavior'],
+            [/keyboard|inputmethod|ime/i, 'Looks of the keyboard'],
+            [/wifi|wi-fi/i, 'Wi-Fi settings'],
+            [/telephony|carrier|sim|mms|apn|ims/i, 'Mobile network and calling settings'],
+            [/bluetooth/i, 'Bluetooth settings'],
+            [/battery|power/i, 'Battery and power settings'],
+            [/config|overlay_?config|resources?/i, 'Device settings that the maker changed'],
+            [/samsung|sec\./i, 'Samsung changes to the look or behavior of this part'],
+            [/google|gms|pixel/i, 'Google changes to the look or behavior of this part'],
+        ];
+        const OVL_WHY_TARGET = [
+            [/^android$/, 'Changes a setting of the Android system itself'],
+            [/systemui/i, 'Changes the look or behavior of the system bars and panels'],
+            [/settings/i, 'Changes the look or behavior of the Settings app'],
+            [/launcher|home/i, 'Changes the look or behavior of the home screen'],
+            [/telephony|phone|dialer|telecom/i, 'Changes the phone and calling parts'],
+            [/inputmethod|keyboard/i, 'Changes the keyboard'],
+            [/documentsui|files/i, 'Changes the files app'],
+        ];
+        function ovlWhy(o) {
+            const id = String(o.id || ''), target = String(o.target || '');
+            for (let i = 0; i < OVL_WHY.length; i++) if (OVL_WHY[i][0].test(id)) return OVL_WHY[i][1];
+            for (let i = 0; i < OVL_WHY_TARGET.length; i++) if (OVL_WHY_TARGET[i][0].test(target)) return OVL_WHY_TARGET[i][1];
+            const short = target.replace(/^com\.(android|google\.android|samsung\.android|samsung)\./, '').split('.')[0];
+            return target ? 'Changes how ' + short + ' looks or is set up' : 'Changes how a part of the phone looks or is set up';
+        }
         function ovlStateText(o) { return o.state === 1 ? 'On' : o.state === 0 ? 'Off' : 'Unavailable'; }
 
         function ovlRowHtml(o, withTarget) {
@@ -28319,7 +28506,8 @@ Type any command below (e.g. pm list packages -d)
             const sw = '<button type="button" class="sdb-sw' + (o.state === 1 ? ' on' : '') + '" role="switch" aria-checked="' + (o.state === 1 ? 'true' : 'false') + '" aria-label="' + escapeHtml(o.id) + '"' + (o.state < 0 ? ' disabled' : '') + '><span></span></button>';
             return '<div class="sdb-row ovl-row' + (busy ? ' busy' : '') + (o.state < 0 ? ' na' : '') + '" role="listitem" tabindex="0" data-id="' + escapeHtml(o.id) + '">'
                 + '<div class="sdb-main"><div class="sdb-key">' + escapeHtml(o.id) + '</div>'
-                + '<div class="sdb-hint">' + ovlStateText(o) + (withTarget && o.target ? ' · ' + escapeHtml(o.target) : '') + '</div></div>' + sw + '</div>';
+                + '<div class="sdb-hint">' + ovlStateText(o) + (withTarget && o.target ? ' · ' + escapeHtml(o.target) : '') + '</div>'
+                + '<div class="ovl-why">' + escapeHtml(ovlWhy(o)) + '</div></div>' + sw + '</div>';
         }
 
         function ovlRenderList() {
@@ -28351,14 +28539,19 @@ Type any command below (e.g. pm list packages -d)
                 return;
             }
             const slice = rows.slice(0, ovlLimit);
-            let html = '', last = null;
+            let html = '', last = null, lastRank = -1;
             const counts = new Map();                           // not a plain object: a target may be called "constructor" or "__proto__"
-            rows.forEach(o => { let c = counts.get(o.target); if (!c) { c = { on: 0, all: 0 }; counts.set(o.target, c); } c.all++; if (o.state === 1) c.on++; });
+            const rankOf = o => o.state === 1 ? 0 : o.state === 0 ? 1 : 2;
+            const perRank = [0, 0, 0];
+            rows.forEach(o => { perRank[rankOf(o)]++; const k = rankOf(o) + '|' + o.target; let c = counts.get(k); if (!c) { c = { all: 0 }; counts.set(k, c); } c.all++; });
+            const SECTION = [['s-on', 'Enabled'], ['s-off', 'Disabled'], ['s-na', 'Installed, not changeable']];
             slice.forEach(o => {
+                const rk = rankOf(o);
+                if (rk !== lastRank) { lastRank = rk; last = null; html += '<div class="ovl-section ' + SECTION[rk][0] + '"><span>' + SECTION[rk][1] + '</span><b>' + perRank[rk] + '</b></div>'; }
                 if (o.target !== last) {
                     last = o.target;
-                    const c = counts.get(o.target);
-                    html += '<div class="ovl-group"><span>' + (o.target ? escapeHtml(o.target) : 'Other') + '</span><b>' + c.on + ' / ' + c.all + ' on</b></div>';
+                    const c = counts.get(rk + '|' + o.target);
+                    html += '<div class="ovl-group"><span>' + (o.target ? escapeHtml(o.target) : 'Other') + '</span><b>' + c.all + '</b></div>';
                 }
                 html += ovlRowHtml(o, false);
             });
@@ -28668,6 +28861,53 @@ Type any command below (e.g. pm list packages -d)
         function aboutAmountInput() { document.getElementById('aboutAmtBox').classList.remove('bad'); }
 
         function aboutOpenRepo() { haptic(); openUrlExternal(ABOUT_REPO); }
+        function aboutOpenIssues() { haptic(); openUrlExternal(ABOUT_REPO + '/issues'); }
+
+        // ---- Contact the developer: an email to an alias, so the developer's own address is never in the app or the repository ----
+        // CONTACT_ALIAS is the only place the address is written: a forwarding alias (not the developer's mailbox).
+        let CONTACT_ALIAS = '';             // (a let only so that the tests can set one)
+        const CONTACT_SUBJECT = 'ADB App Manager';
+        function contactDetailsText() {
+            if (!aboutInfo || !aboutInfo.pkg) { try { renderAbout(); } catch (e) {} }
+            const i = aboutInfo || {};
+            const l = ['App: ADB Application Manager Pro ' + (i.versionName || '?') + ' (build ' + (i.versionCode || '?') + ')'];
+            if (i.android) l.push('Android: ' + i.android + ' (API ' + i.sdk + ')');
+            if (i.device) l.push('Phone: ' + i.device + (i.abi ? ' · ' + i.abi : ''));
+            const mode = (document.getElementById('execModeText') || {}).innerText;
+            if (mode) l.push('Working mode: ' + mode);
+            return l.join('\n');
+        }
+        function contactBody() {
+            const t = (document.getElementById('contactText').value || '').trim();
+            const withInfo = document.getElementById('contactWithInfo').checked;
+            return t + (withInfo ? (t ? '\n\n' : '') + '--\n' + contactDetailsText() : '');
+        }
+        function contactPreview() {
+            const n = document.getElementById('contactNote');
+            n.classList.remove('is-err');
+            n.innerText = CONTACT_ALIAS ? '' : 'The contact address is not set up in this build yet. You can still copy your message.';
+            if (!CONTACT_ALIAS) n.classList.add('is-err');
+            const d = document.getElementById('contactDetails');
+            if (d) d.innerText = document.getElementById('contactWithInfo').checked ? 'Added at the end: ' + contactDetailsText().replace(/\n/g, ' · ') : 'Nothing but your message is added.';
+        }
+        function contactOpen() { haptic(); document.getElementById('contactModal').classList.add('show'); contactPreview(); }
+        function contactClose() { document.getElementById('contactModal').classList.remove('show'); }
+        function contactSend() {
+            const n = document.getElementById('contactNote');
+            if (!CONTACT_ALIAS) { contactPreview(); return; }
+            const body = contactBody();
+            if (!body.trim() || !(document.getElementById('contactText').value || '').trim()) { n.classList.add('is-err'); n.innerText = 'Write your message first.'; return; }
+            let ok = false;
+            try { ok = !!(window.AndroidBridge && window.AndroidBridge.composeEmail && window.AndroidBridge.composeEmail(CONTACT_ALIAS, CONTACT_SUBJECT, body)); } catch (e) { ok = false; }
+            if (ok) { contactClose(); showToast('Your email app is open: tap send there'); }
+            else { n.classList.add('is-err'); n.innerText = 'No email app answered. Tap Copy message and send it to ' + CONTACT_ALIAS + ' with the subject "' + CONTACT_SUBJECT + '".'; }
+        }
+        function contactCopy() {
+            const text = (document.getElementById('contactText').value || '').trim();
+            if (!text) { const n = document.getElementById('contactNote'); n.classList.add('is-err'); n.innerText = 'Write your message first.'; return; }
+            copyText((CONTACT_ALIAS ? 'To: ' + CONTACT_ALIAS + '\n' : '') + 'Subject: ' + CONTACT_SUBJECT + '\n\n' + contactBody());
+            showToast('Message copied');
+        }
 
         function aboutCheckUpdate() {
             haptic();

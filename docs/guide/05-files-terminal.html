@@ -324,6 +324,7 @@
 <ul>
 <li><b>RUN</b> sends the line. While a command runs it turns into <b>STOP</b>. The small button at its left shows <b>$</b> (or <b>#</b>): it switches between commands and the AI chat of an agent, and is dim until you pick one.</li>
 <li>The key rows under the box work like Termux's: <b>ESC</b> clears the line, <b>TAB</b> completes a file name (several matches are listed), <b>CTRL</b> stops what is running, the up and down arrow keys go through earlier commands (the last 120 are remembered), the left and right arrow keys, <b>HOME</b> and <b>END</b> move the cursor, and | / - ~ are there because phone keyboards hide them. <b>SHIFT</b> swaps the row for a second row of symbols: backtick, $ ; : " ' \ { } ( ) * &amp; #. Tap SHIFT again to go back.</li>
+<li><b>Suggestions.</b> While you type, a faint grey completion shows on a line just above the box (the part you have not typed yet, after what you have). It comes from your earlier commands first, then from the packages on your phone (after <code>pm</code>, <code>am</code>, <code>dumpsys</code> and similar commands) and a list of common commands. <b>Press the right arrow key</b> with the cursor at the end of the line to accept it, or <b>tap the suggestion line</b> (phone keyboards often have no right arrow). Keep typing to ignore it. It only suggests; nothing runs until you tap <b>RUN</b>.</li>
 <li><code>clear</code> empties the screen. <code>exit</code> ends the shell; press Enter to start a new one.</li>
 <li>Programs that need the whole screen (nano, vim, top, a Python prompt, ssh) cannot run here. The screen says it needs a real terminal and offers <b>Open in Termux</b> or <b>Run here anyway</b>.</li>
 </ul>
@@ -373,6 +374,7 @@
 <li>A card shows the active working mode, with <b>Configure</b> and <b>Working Modes</b>, and buttons <b>Rish mode</b> (a long-lived Shizuku shell where <code>cd</code> sticks), <b>UID (id)</b>, <b>Connect 5555</b>, <b>tcpip 5555</b>, <b>Dev Options</b> and <b>Cheat Sheet</b>. See <a href="#modes-overview">Working modes</a>.</li>
 <li>Each command is run on its own through the active mode, so <code>cd</code> does not carry over (Rish mode does). Without a working mode the commands run as this app, like the sandbox.</li>
 <li><b>Find in output...</b> highlights matches (<i>2 / 7 matches</i>) with arrows to jump; <b>Copy</b> puts the whole output on the clipboard and <b>Share</b> sends it as a text file.</li>
+<li><b>Suggestions.</b> The ADB Console completes as you type, the same way the Terminal does: a grey line above the box shows the rest of the command, from your history first, then from the packages on your phone and a list of common <code>adb</code>/shell commands. <b>Right arrow</b> (cursor at the end) or a <b>tap on the line</b> accepts it. Nothing runs until you tap <b>Run</b>.</li>
 <li><b>History</b> lists the last 80 commands (tap one to edit it, <b>Run</b>, <b>Save</b>, or the X). <b>Saved</b> keeps named commands or several-line scripts; <b>Pin</b> turns up to six into one-tap buttons.</li>
 </ul>
 
