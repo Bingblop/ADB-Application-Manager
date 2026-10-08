@@ -324,6 +324,7 @@
 <ul>
 <li><b>RUN</b> sends the line. While a command runs it turns into <b>STOP</b>. The small button at its left shows <b>$</b> (or <b>#</b>): it switches between commands and the AI chat of an agent, and is dim until you pick one.</li>
 <li>The key rows under the box work like Termux's: <b>ESC</b> clears the line, <b>TAB</b> completes a file name (several matches are listed), <b>CTRL</b> stops what is running, the up and down arrow keys go through earlier commands (the last 120 are remembered), the left and right arrow keys, <b>HOME</b> and <b>END</b> move the cursor, and | / - ~ are there because phone keyboards hide them. <b>SHIFT</b> swaps the row for a second row of symbols: backtick, $ ; : " ' \ { } ( ) * &amp; #. Tap SHIFT again to go back.</li>
+<li><b>Suggestions.</b> While you type, a faint grey completion shows on a line just above the box (the part you have not typed yet, after what you have). It comes from your earlier commands first, then from the packages on your phone (after <code>pm</code>, <code>am</code>, <code>dumpsys</code> and similar commands) and a list of common commands. <b>Press the right arrow key</b> with the cursor at the end of the line to accept it, or <b>tap the suggestion line</b> (phone keyboards often have no right arrow). Keep typing to ignore it. It only suggests; nothing runs until you tap <b>RUN</b>.</li>
 <li><code>clear</code> empties the screen. <code>exit</code> ends the shell; press Enter to start a new one.</li>
 <li>Programs that need the whole screen (nano, vim, top, a Python prompt, ssh) cannot run here. The screen says it needs a real terminal and offers <b>Open in Termux</b> or <b>Run here anyway</b>.</li>
 </ul>
@@ -373,6 +374,7 @@
 <li>A card shows the active working mode, with <b>Configure</b> and <b>Working Modes</b>, and buttons <b>Rish mode</b> (a long-lived Shizuku shell where <code>cd</code> sticks), <b>UID (id)</b>, <b>Connect 5555</b>, <b>tcpip 5555</b>, <b>Dev Options</b> and <b>Cheat Sheet</b>. See <a href="#modes-overview">Working modes</a>.</li>
 <li>Each command is run on its own through the active mode, so <code>cd</code> does not carry over (Rish mode does). Without a working mode the commands run as this app, like the sandbox.</li>
 <li><b>Find in output...</b> highlights matches (<i>2 / 7 matches</i>) with arrows to jump; <b>Copy</b> puts the whole output on the clipboard and <b>Share</b> sends it as a text file.</li>
+<li><b>Suggestions.</b> The ADB Console completes as you type, the same way the Terminal does: a grey line above the box shows the rest of the command, from your history first, then from the packages on your phone and a list of common <code>adb</code>/shell commands. <b>Right arrow</b> (cursor at the end) or a <b>tap on the line</b> accepts it. Nothing runs until you tap <b>Run</b>.</li>
 <li><b>History</b> lists the last 80 commands (tap one to edit it, <b>Run</b>, <b>Save</b>, or the X). <b>Saved</b> keeps named commands or several-line scripts; <b>Pin</b> turns up to six into one-tap buttons.</li>
 </ul>
 
@@ -539,6 +541,14 @@
 <p>Above the log is a row of six chips, one per level, each with a coloured dot, its letter and name, and how many lines of that level were read: for example <i>E · Error 12</i>. Tap a chip to hide that level (it turns dim); tap again to show it. If you hide all of them, the screen says <i>Every level is hidden - tap the color key above to show some.</i></p>
 <p>To keep the screen quick, only the newest 800 entries are drawn. A line at the top says <i>N earlier entries not shown · tap to show them</i>; tap it to show up to 2500. The phone itself keeps only a limited amount of log, so older lines are gone.</p>
 
+<h4>Tap an entry to open it</h4>
+<p>Tap any entry (a coloured row) and it opens in a window of its own, so a long line is easy to read in full. Selecting text in a row with a long press still works and does not open the window. The window shows the level, the tag (the part of the system or the app that wrote it), the time and the process numbers, and the whole message in a box, with three buttons:</p>
+<ul>
+<li><b>Copy</b>: puts the entry's lines, as they were logged, on the clipboard.</li>
+<li><b>More info</b>: asks the Coding Agent you chose in the <a href="#tab-terminal">Command-Line Interface</a> tab to explain the entry in plain words: what it means, the likely cause, whether it matters and what to try. The answer appears under the buttons as it is written, with a <b>Copy the answer</b> button. <b>This sends the entry's text (and your Android version and phone model) to that agent's company</b>; nothing is sent until you tap the button. API keys that appear in the text are shortened first; other private details (account names, addresses) are not, so look at the entry before you ask. With no agent connected, the window says so and offers to open the place where you set one up.</li>
+<li><b>Web search</b>: opens a search for the tag and the first line of the message in your browser. Long numbers and addresses are left out of the search so that other people's reports can match. It needs no agent.</li>
+</ul>
+
 <h4>Example: why does my app crash?</h4>
 <ol class="hg-steps">
 <li>Open the app's menu (<a href="#tab-apps">Application Manager</a>) and tap <b>Logs</b>, or open Logcat Viewer and use <b>All apps</b> to pick it. The log is now only that app's.</li>
@@ -583,7 +593,7 @@
 <p>The graphs keep the last 120 readings. Your choices are remembered.</p>
 
 <h4>Processes</h4>
-<p>A process is one running program. The list shows the busiest first. <b>Sort by CPU</b> (starting choice) orders by how much processor each uses; <b>Sort by memory</b> by how much memory each holds. A line above says how many processes were read (200 are shown at most).</p>
+<p>A process is one running program. The list shows the busiest first. <b>Sort by CPU</b> (starting choice) orders by how much processor each uses; <b>Sort by memory</b> by how much memory each holds. The button <b>Apps first</b> next to them puts the processes that belong to an app (the ones with a package name and an X button) above the system and kernel processes, each group keeping the order of the sort; tap it again for the plain order. Your choice is remembered. A line above says how many processes were read (200 are shown at most).</p>
 <ol class="hg-steps">
 <li>Open <b>Processes</b>. Each row shows the app's name and a line such as <i>com.example.app • PID 4821 • 182 MB • 1.5% CPU</i>. PID is the process's number; the memory is what it holds in RAM now.</li>
 <li>Rows for system and kernel work (names that are not an app) have no button. Rows for apps have a round <b>X</b>. Tap it to <b>Force Stop</b> that app: <i>Stopped com.example.app</i>. There is no question first.</li>
@@ -595,7 +605,7 @@
 <p>The CPU is the phone's processor. The big number is how busy it was since the last reading, over all its cores (a core is one processing unit). The first reading shows 0% because two readings are needed. Under the graph:</p>
 <ul>
 <li>One box per core with its own percentage.</li>
-<li><b>Processor Information</b>: SoC (the chip's name), Architecture, ABI (the kind of code it runs), Governor (the rule that picks the speed) and Temperature (<i>estimated</i>, from a sensor the app thinks belongs to the CPU).</li>
+<li><b>Processor Information</b>: SoC (the chip's name), Architecture, ABI (the kind of code it runs), Governor (the rule that picks the speed) and Temperature (<i>estimated</i>, from a sensor the app thinks belongs to the CPU). Under the tabs, the <b>Units</b> row has a <b>°F / °C</b> menu that picks the unit; the Battery tab uses the same choice.</li>
 <li><b>System Statistics</b>: Processes and Threads (only with a working mode) and Uptime (time since the phone started).</li>
 <li><b>Cluster</b> boxes: cores are grouped by speed range (fast cores and slow, thrifty ones). Each group shows <b>Min</b>, <b>Current</b> and <b>Max</b> frequency in MHz or GHz. A high Current close to Max means the group is working hard; it drops when idle.</li>
 </ul>
@@ -612,7 +622,7 @@
 
 <h4>GPU</h4>
 <p>The GPU draws the picture on your screen. The big number is its load. Phones do not all expose it, so you may see <i>Not available on this phone</i>. Some show <i>~40% (by clock speed)</i>, a rough guess from the chip's speed. Under it, <b>GPU Information</b> says whether <b>Vulkan</b> is supported (and its API version) and the <b>OpenGL ES</b> version (Vulkan and OpenGL ES are the two ways apps draw graphics on the chip).</p>
-<p>The <b>Renderer</b> drop-down (working mode needed) offers <b>OpenGL</b>, and <b>Vulkan</b> if the phone supports it (plus <b>Default</b> until you pick one). Choosing one sets the system's drawing engine and restarts System UI (the status and navigation bars) to apply it, with a visible flicker. To go back, choose the other one, or restart the phone (a setting made this way normally does not survive a restart).</p>
+<p>The <b>GPU renderer</b> card is at the very top of the tab, above the graph, and shows in large letters which renderer is in use (<b>Default</b>, <b>OpenGL</b> or <b>Vulkan</b>). Its drop-down (working mode needed) offers <b>OpenGL</b>, and <b>Vulkan</b> if the phone supports it (plus <b>Default</b> until you pick one). Choosing one sets the system's drawing engine and restarts System UI (the status and navigation bars) to apply it, with a visible flicker. To go back, choose the other one, or restart the phone (a setting made this way normally does not survive a restart).</p>
 <div class="hg-warn"><b>Careful.</b> Change the renderer only if you know why, for example to test an app. Some apps and games behave differently or look wrong with the other engine.</div>
 
 <h4>Battery</h4>

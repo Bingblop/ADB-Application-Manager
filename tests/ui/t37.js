@@ -29,13 +29,15 @@ const { chromium, PAGE } = require('./lib/pw');
   console.log('1. VirusTotal card visible after a package loads:', await page.isVisible('#installVtCard'));
 
   // 2) Scanning with no key does not call the bridge.
-  await page.click('#vtScanBtn'); await page.waitForTimeout(40);
+  console.log('2a. no key -> the card says so and links to Settings, the scan button is off:', await page.evaluate(() => /No VirusTotal API key yet/.test(document.getElementById('vtKeyNote').innerText) && !!document.querySelector('#vtKeyNote button') && document.getElementById('vtScanBtn').disabled));
+  await page.evaluate(() => vtScan(false)); await page.waitForTimeout(40);
   console.log('2. no key -> bridge not called:', (await page.evaluate(() => window.__vt)).length === 0);
+  await page.evaluate(() => { switchView('installer'); });
 
   // 3) Entering a key persists it and a scan calls the bridge with the base APK path.
-  await page.fill('#vtApiKey', 'MYKEY123'); await page.waitForTimeout(20);
+  await page.evaluate(() => vtKeyTyped('MYKEY123')); await page.waitForTimeout(20);
   console.log('3. key persisted via saveSetting:', await page.evaluate(() => window.__settings.vt_api_key) === 'MYKEY123');
-  await page.click('#vtScanBtn'); await page.waitForTimeout(40);
+  await page.evaluate(() => { document.getElementById('vtScanBtn').click(); }); await page.waitForTimeout(40);
   const calls = await page.evaluate(() => window.__vt);
   console.log('   scan bridge called with key+path:', calls.includes('scan:MYKEY123:/data/work/base.apk'));
 

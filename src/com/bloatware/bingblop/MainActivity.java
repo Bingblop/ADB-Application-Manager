@@ -2825,33 +2825,91 @@ public class MainActivity extends Activity {
     }
 
     private void loadFdroidRepo(final String address, boolean force) throws Exception {
-        final String source = "fdroid-repo";
+        loadFdroidRepoAs("fdroid-repo", address, address, force);
+    }
+
+    /** The side file with the descriptions and screenshots of a repository's apps, next to its cached catalog. */
+    private File storeDetailFile(String address) {
+        String ckey = "fdroid-" + Integer.toHexString(address.hashCode());
+        File d = new File(getCacheDir(), "store");
+        d.mkdirs();
+        return new File(d, ckey + ".detail");
+    }
+
+    /** Reads an F-Droid style repository and delivers it as {@code source}/{@code arg} (the F-Droid tab and the custom stores share this). */
+    private void loadFdroidRepoAs(final String source, final String arg, final String address, boolean force) throws Exception {
         if (address == null || !address.startsWith("https://")) {
-            storeError(source, address, "Invalid repository address.");
+            storeError(source, arg, "Invalid repository address.");
             return;
         }
         final String ckey = "fdroid-" + Integer.toHexString(address.hashCode());
-        if (force) storeCacheClear(ckey);
+        if (force) { storeCacheClear(ckey); try { storeDetailFile(address).delete(); } catch (Throwable ignored) {} }
         JSONArray cached = force ? null : storeCacheRead(ckey, STORE_CACHE_TTL_MS);
         if (cached != null && cached.length() > 0) {
             JSONObject extra = new JSONObject();
             extra.put("cached", true);
-            storeDeliver(source, address, cached, extra);
+            storeDeliver(source, arg, cached, extra);
             return;
         }
-        storeProgress(source, address, "Contacting the repository…");
-        FdroidIndex.Result res = FdroidIndex.load(address, Build.SUPPORTED_ABIS, Build.VERSION.SDK_INT, new FdroidIndex.Sink() {
-            @Override
-            public void onProgress(long bytes, int apps) {
-                storeProgress(source, address, "Reading the catalog… " + XapkInfo.humanBytes(bytes) + " · " + apps + " apps");
-            }
-        });
+        storeProgress(source, arg, "Contacting the repository…");
+        final File detailTmp = new File(storeDetailFile(address).getPath() + ".tmp");
+        final java.io.BufferedWriter dw = new java.io.BufferedWriter(new java.io.OutputStreamWriter(new FileOutputStream(detailTmp), "UTF-8"), 65536);
+        FdroidIndex.Result res;
+        try {
+            res = FdroidIndex.load(address, Build.SUPPORTED_ABIS, Build.VERSION.SDK_INT, new FdroidIndex.Sink() {
+                @Override
+                public void onProgress(long bytes, int apps) {
+                    storeProgress(source, arg, "Reading the catalog… " + XapkInfo.humanBytes(bytes) + " · " + apps + " apps");
+                }
+            }, new FdroidIndex.Details() {
+                @Override
+                public void put(String pkg, JSONObject detail) {
+                    try { dw.write(StoreDetail.detailLine(pkg, detail)); dw.write('\n'); } catch (java.io.IOException ignored) {}
+                }
+            });
+        } catch (Exception e) {
+            try { dw.close(); } catch (Exception ignored) {}
+            detailTmp.delete();
+            throw e;
+        }
+        try { dw.close(); } catch (Exception ignored) {}
+        File detailFile = storeDetailFile(address);
+        detailFile.delete();
+        if (!detailTmp.renameTo(detailFile)) detailTmp.delete();
         storeCacheWrite(ckey, res.items);
         JSONObject extra = new JSONObject();
         extra.put("repoName", res.repoName);
         extra.put("format", res.format);
         extra.put("skipped", res.skipped);
-        storeDeliver(source, address, res.items, extra);
+        storeDeliver(source, arg, res.items, extra);
+    }
+
+    /**
+     * The catalog of a custom store (the "+" tab). arg is {id, kind, url, owner, repo}: kind "fdroid" (an F-Droid style repository at url), "github-owner",
+     * "github-repo", "codeberg-owner" or "codeberg-repo". Delivered as source "custom" with the same arg, so the page knows which tab it is for.
+     */
+    private void loadCustomStore(final String arg, boolean force) throws Exception {
+        final String source = "custom";
+        JSONObject a = new JSONObject(arg);
+        String kind = a.optString("kind", ""), owner = a.optString("owner", ""), repo = a.optString("repo", ""), url = a.optString("url", "");
+        if ("fdroid".equals(kind)) { loadFdroidRepoAs(source, arg, url, force); return; }
+        final String ckey = "custom-" + Integer.toHexString((kind + "|" + owner + "|" + repo).hashCode());
+        if (force) storeCacheClear(ckey);
+        JSONArray cached = force ? null : storeCacheRead(ckey, STORE_CACHE_TTL_MS);
+        if (cached != null && cached.length() > 0) { storeDeliver(source, arg, cached, null); return; }
+        storeProgress(source, arg, "Asking " + ("github-owner".equals(kind) || "github-repo".equals(kind) ? "GitHub" : "Codeberg") + "…");
+        String token = prefs.getString("github_token", "");
+        JSONArray items;
+        if ("github-owner".equals(kind)) items = StoreDetail.githubOwner(owner, token);
+        else if ("github-repo".equals(kind)) items = StoreDetail.githubRepo(owner, repo, token);
+        else if ("codeberg-owner".equals(kind)) items = StoreDetail.codebergOwner(owner);
+        else if ("codeberg-repo".equals(kind)) items = StoreDetail.codebergRepo(owner, repo);
+        else throw new IllegalStateException("unknown kind of store");
+        storeCacheWrite(ckey, items);
+        JSONObject extra = new JSONObject();
+        if (items.length() == 0) extra.put("note", "No projects found there.");
+        else if (kind.endsWith("-owner")) extra.put("note", "Not every project publishes an APK. Install says so when a project has none.");
+        storeDeliver(source, arg, items, extra);
     }
 
     /**
@@ -2870,9 +2928,69 @@ public class MainActivity extends Activity {
                         JSONObject res = Stores.fdroidRepos();
                         storeDeliver(source, arg, res.optJSONArray("items"), null);
                     } else if ("fdroid-repo".equals(source)) loadFdroidRepo(arg, force);
+                    else if ("custom".equals(source)) loadCustomStore(arg, force);
                     else throw new IllegalStateException("unknown store source");
                 } catch (Throwable e) {
                     storeError(source, arg, e instanceof Exception ? errMsg((Exception) e) : String.valueOf(e.getMessage()));
+                }
+            }
+        });
+    }
+
+    /**
+     * What an app of any store shows when it is opened: the long description, screenshots and links. item is the store item plus "repo" (the
+     * address of the F-Droid repository it came from). Answer: window.onStoreSourceDetail(json) {key, ok, detail | error}.
+     */
+    private void runStoreSourceDetail(final String itemJson) {
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                String key = "";
+                try {
+                    JSONObject item = new JSONObject(itemJson);
+                    key = item.optString("key", item.optString("id", ""));
+                    String kind = item.optString("resolveKind", ""), source = item.optString("source", ""), owner = item.optString("owner", ""), repo = item.optString("repo", "");
+                    String pkg = item.optString("pkg", ""), fdroidAddr = item.optString("fdroidRepo", "");
+                    JSONObject detail = null;
+                    String note = "";
+                    if (!fdroidAddr.isEmpty() && !pkg.isEmpty()) {
+                        detail = StoreDetail.fromFile(storeDetailFile(fdroidAddr), pkg);
+                        if (detail == null) note = "Refresh this store to load the full description and the screenshots.";
+                    } else if (!owner.isEmpty() && !repo.isEmpty() && "codeberg".equals(kind)) {
+                        detail = StoreDetail.codeberg(owner, repo);
+                    } else if (!owner.isEmpty() && !repo.isEmpty()) {
+                        detail = StoreDetail.github(owner, repo, prefs.getString("github_token", ""));
+                    } else {
+                        note = "This entry gives no more than what the list shows.";
+                    }
+                    JSONObject out = new JSONObject();
+                    out.put("key", key).put("source", source).put("ok", true).put("note", note);
+                    if (detail != null) out.put("detail", detail);
+                    notifyUpdates("onStoreSourceDetail", out);
+                } catch (Exception e) {
+                    try {
+                        String m = errMsg(e);
+                        if (m != null && m.contains("limit for requests")) m += ". Save a GitHub token (Updates tab) to raise it.";
+                        notifyUpdates("onStoreSourceDetail", new JSONObject().put("key", key).put("ok", false).put("error", m));
+                    } catch (Exception ignored) {}
+                }
+            }
+        });
+    }
+
+    /** Finds out what an address is for a custom store: an F-Droid style repository (and its name). Answer: window.onStoreCustomProbe(json). */
+    private void runStoreCustomProbe(final String id, final String url) {
+        executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    String[] p = FdroidIndex.probe(url);
+                    JSONObject out = new JSONObject().put("id", id).put("url", url);
+                    if (p == null) out.put("ok", false).put("error", "That address is not a repository the app can read. Use the address of an F-Droid style repository, or a GitHub or Codeberg user, organization or project.");
+                    else out.put("ok", true).put("kind", "fdroid").put("address", p[0]).put("title", p[1]).put("format", p[2]);
+                    notifyUpdates("onStoreCustomProbe", out);
+                } catch (Exception e) {
+                    try { notifyUpdates("onStoreCustomProbe", new JSONObject().put("id", id).put("ok", false).put("error", errMsg(e))); } catch (Exception ignored) {}
                 }
             }
         });
@@ -8615,6 +8733,7 @@ public class MainActivity extends Activity {
                 if ("unsuspend".equals(action)) return runShellAction("pm unsuspend " + pkg);
                 if ("force_stop".equals(action)) return runShellAction("am force-stop " + pkg);
                 if ("clear_data".equals(action)) return runShellAction("pm clear " + pkg);
+                if ("clear_removed_data".equals(action)) return clearRemovedData(pkg);
                 if ("uninstall".equals(action)) return uninstallForUser(pkg, false);
                 if ("uninstall_keep_data".equals(action)) return uninstallForUser(pkg, true);
                 if ("uninstall_updates".equals(action)) return runShellAction("pm uninstall-system-updates " + pkg);
@@ -8645,6 +8764,40 @@ public class MainActivity extends Activity {
          *  once started, so every app not reached yet is left exactly as it was. */
         @JavascriptInterface
         public void appBatchCancel() { appBatchCancel = true; }
+
+        /**
+         * One app's action, then a look at what the phone says (see {@link BatchVerify}), off the page's thread: the app menu's
+         * Uninstall, Freeze and Suspend (and their opposites) report what really happened, not what the command printed. Returns
+         * "started", "unsupported" (an action that cannot be read back: use executeAppAction) or "error"; the answer arrives as
+         * window.onAppActionChecked(token, {pkg, action, success, label, verified, output}); window.onAppActionChecking(token) comes first,
+         * when the command is done and the phone is being asked.
+         */
+        @JavascriptInterface
+        public String appActionChecked(final String action, final String pkg, final String token) {
+            if (!BatchVerify.verifiable(action) && !clearIsChecked(action)) return "unsupported";
+            if (!submitJob(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject res = new JSONObject();
+                    try {
+                        String kind = clearKind(action);
+                        long[] dataBefore = kind != null ? dataStatFor(kind, pkg) : null;
+                        String flagged = executeAppAction(action, pkg);
+                        JSONArray rows = new JSONArray();
+                        JSONObject first = new JSONObject().put("pkg", pkg).put("output", flagText(flagged)).put("success", flagOk(flagged));
+                        if (dataBefore != null) { first.put("dataBefore", new JSONArray().put(dataBefore[0]).put(dataBefore[1])); first.put("dataKind", kind); }
+                        rows.put(first);
+                        verifyBatchRows(action, rows, 0, "window.onAppActionChecking && window.onAppActionChecking(" + JSONObject.quote(token) + ")");
+                        res = rows.getJSONObject(0);
+                        res.put("action", action);
+                    } catch (Throwable t) {
+                        try { res.put("pkg", pkg).put("action", action).put("success", false).put("output", "Error: " + errMsg(t)); } catch (Exception ignored) {}
+                    }
+                    notifyJs("window.onAppActionChecked && window.onAppActionChecked(" + JSONObject.quote(token) + "," + res.toString() + ")");
+                }
+            })) return "error";
+            return "started";
+        }
 
         /**
          * Runs {@link #executeAppAction} across every package in pkgsJson (a JSON array of package name
@@ -8679,12 +8832,17 @@ public class MainActivity extends Activity {
                             if (appBatchCancel) { cancelled = true; break; }
                             String pkg = pkgs.optString(i, "");
                             notifyJs("window.onAppBatchProgress && window.onAppBatchProgress(" + i + "," + total + "," + JSONObject.quote(pkg) + ")");
+                            String kind = clearKind(action);
+                            long[] dataBefore = kind != null ? dataStatFor(kind, pkg) : null;       // Clear data: what is in the app's folder before (private folder in Root mode, its storage folder otherwise)
                             String flagged = executeAppAction(action, pkg);
                             boolean ok = flagOk(flagged);
                             String out = flagText(flagged);
                             if (ok) done++;
-                            rows.put(new JSONObject().put("pkg", pkg).put("output", out).put("success", ok));
+                            JSONObject row = new JSONObject().put("pkg", pkg).put("output", out).put("success", ok);
+                            if (dataBefore != null) { row.put("dataBefore", new JSONArray().put(dataBefore[0]).put(dataBefore[1])); row.put("dataKind", kind); }
+                            rows.put(row);
                         }
+                        done = verifyBatchRows(action, rows, done, "window.onAppBatchChecking && window.onAppBatchChecking(" + rows.length() + ")");
                         res.put("action", action);
                         res.put("total", total);
                         res.put("done", done);
@@ -8710,6 +8868,126 @@ public class MainActivity extends Activity {
                 return "error";
             }
             return "started";
+        }
+
+        private java.util.Set<String> listPackageSet(String flags) {
+            try { return BatchVerify.parse(executeShell("pm list packages " + flags + " --user 0")); } catch (Throwable t) { return null; }
+        }
+
+        /** After a batch, asks the phone what became of each app instead of trusting what the command printed or its exit status (a
+         *  run of uninstalls "failed" on some phones although every app was gone): see {@link BatchVerify}. Anything that cannot be
+         *  checked is left as it was. Returns the number of rows that succeeded. */
+        private int verifyBatchRows(String action, JSONArray rows, int done, String announce) {
+            if (rows.length() == 0) return done;
+            if ("clear_data".equals(action) || "clear_removed_data".equals(action)) return verifyClearRows(rows, done, announce);
+            if (!BatchVerify.verifiable(action)) return done;
+            if (announce != null) notifyJs(announce);              // the page says "Checking the phone..." while this runs
+            try {
+                BatchVerify.State st = readBatchState(action, rows);
+                if (st == null) return done;
+                if (!BatchVerify.allOk(action, rows, st)) {
+                    // the package manager may still be finishing: ask once more before calling anything undone
+                    try { Thread.sleep(900); } catch (InterruptedException ignored) {}
+                    BatchVerify.State st2 = readBatchState(action, rows);
+                    if (st2 != null) st = st2;
+                }
+                return BatchVerify.apply(action, rows, st);
+            } catch (Throwable t) {
+                return done;
+            }
+        }
+
+        /** Clear data can be read back only where the app's data folder is readable: in Root mode. */
+        private boolean clearIsChecked(String action) { return clearKind(action) != null; }
+
+        /** What can be counted for Clear data: "internal" (the app's private folder: Root), "storage" (its folder under Android/data on the shared storage: ADB and Shizuku, where the private
+         *  folder cannot be read) or null (nothing to count: no working mode, or the leftover data of an uninstalled app without Root). */
+        private String clearKind(String action) {
+            if (!"clear_data".equals(action) && !"clear_removed_data".equals(action)) return null;
+            String m = resolveExecMode();
+            if ("root".equals(m)) return "internal";
+            if ("clear_data".equals(action) && !"standard".equals(m)) return "storage";
+            return null;
+        }
+
+        /** {size in KB, regular files} of the folder {@link #clearKind} says, or null when it cannot be read. */
+        private long[] dataStatFor(String kind, String pkg) {
+            if (!BackupScripts.isPackageName(pkg)) return null;
+            try {
+                String dir = "internal".equals(kind) ? "/data/user/0/" + pkg : "/sdcard/Android/data/" + pkg;
+                return BatchVerify.parseDataStat(executeShell(BatchVerify.dataStatCmd(pkg, dir)));
+            } catch (Throwable t) { return null; }
+        }
+
+        /** The base names of the running processes, from {@code ps -A -o NAME}; null when the phone does not answer with a list. */
+        private java.util.Set<String> readRunningProcs() {
+            try { return BatchVerify.parseProcessNames(executeShell("ps -A -o NAME 2>/dev/null")); } catch (Throwable t) { return null; }
+        }
+
+        /** After Clear data: counts what is left in each app's folder, once right away and once after a pause (files the app writes again show), asks whether the app is running again,
+         *  and rewrites the row from that (see {@link BatchVerify#applyClear}). */
+        private int verifyClearRows(JSONArray rows, int done, String announce) {
+            try {
+                boolean any = false;
+                for (int i = 0; i < rows.length(); i++) if (rows.getJSONObject(i).has("dataBefore")) any = true;
+                if (!any) return done;
+                if (announce != null) notifyJs(announce);
+                long[][] a1 = new long[rows.length()][];
+                for (int i = 0; i < rows.length(); i++) {
+                    JSONObject row = rows.getJSONObject(i);
+                    if (row.has("dataBefore")) a1[i] = dataStatFor(row.optString("dataKind", "internal"), row.optString("pkg", ""));
+                }
+                try { Thread.sleep(1500); } catch (InterruptedException ignored) {}          // a moment for an app that starts again to write its files
+                java.util.Set<String> procs = readRunningProcs();
+                int ok = 0;
+                for (int i = 0; i < rows.length(); i++) {
+                    JSONObject row = rows.getJSONObject(i);
+                    JSONArray b = row.optJSONArray("dataBefore");
+                    String kind = row.optString("dataKind", "internal"), pkg = row.optString("pkg", "");
+                    long[] after2 = b == null || a1[i] == null ? null : dataStatFor(kind, pkg);
+                    if (b != null && a1[i] != null) {
+                        boolean run = procs != null && procs.contains(pkg);
+                        if (BatchVerify.applyClear(row, new long[] { b.getLong(0), b.getLong(1) }, a1[i], after2, "internal".equals(kind), run)) ok++;
+                    } else if (row.optBoolean("success", false)) ok++;
+                    row.remove("dataBefore"); row.remove("dataKind");
+                }
+                return ok;
+            } catch (Throwable t) {
+                return done;
+            }
+        }
+
+        /** What the phone says now about the apps in rows: the installed list, the frozen list, and each app's suspended flag, as the action needs. */
+        private BatchVerify.State readBatchState(String action, JSONArray rows) throws org.json.JSONException {
+            if (BatchVerify.needsRunning(action)) {
+                java.util.Set<String> procs = readRunningProcs();
+                if (procs == null) {                             // no ps -A -o NAME: ask for each app by itself
+                    procs = new java.util.HashSet<String>();
+                    for (int i = 0; i < rows.length(); i++) {
+                        String pkg = rows.getJSONObject(i).optString("pkg", "");
+                        if (!BackupScripts.isPackageName(pkg)) continue;
+                        String out = String.valueOf(executeShell("pidof " + pkg + " 2>&1; echo RC=$?")).trim();
+                        if (out.contains("RC=127") || out.contains("not found") || !out.contains("RC=")) return null;          // no pidof either: nothing can be proved
+                        if (out.replace("RC=0", "").replace("RC=1", "").trim().matches("[0-9 ]+")) procs.add(pkg);
+                    }
+                }
+                return new BatchVerify.State(new java.util.HashSet<String>(), null, null, null, procs);
+            }
+            java.util.Set<String> installed = listPackageSet("");
+            if (installed == null) return null;                 // not a real shell: nothing can be proved
+            java.util.Set<String> disabled = BatchVerify.needsDisabled(action) ? listPackageSet("-d") : null;     // -d lists nothing when no app is frozen: null is fine
+            java.util.Set<String> suspended = new java.util.HashSet<String>(), unknown = new java.util.HashSet<String>();
+            if (BatchVerify.needsSuspended(action)) {
+                for (int i = 0; i < rows.length(); i++) {
+                    String pkg = rows.getJSONObject(i).optString("pkg", "");
+                    Boolean sus = null;
+                    if (installed.contains(pkg) && BackupScripts.isPackageName(pkg)) {
+                        try { sus = BatchVerify.suspendedFrom(executeShell("dumpsys package " + pkg)); } catch (Throwable ignored) {}
+                    }
+                    if (sus == null) unknown.add(pkg); else if (sus.booleanValue()) suspended.add(pkg);
+                }
+            }
+            return new BatchVerify.State(installed, disabled, suspended, unknown);
         }
 
         // A single '\u0001' + ('1'|'0') flag glued onto the front of a pm/am result, read from the command's
@@ -8788,6 +9066,60 @@ public class MainActivity extends Activity {
          *  (IPackageManager.deletePackageAsUser) App Manager and Canta use for the same refusal, run as a
          *  standalone app_process under whatever privileged shell (ADB or Shizuku) is already active. That
          *  fallback only applies to a full removal, not the keep-data variant. */
+        /** The data an uninstalled app left behind (it was removed with the keep-data option, {@code pm uninstall -k}). Three ways, the first that works wins: {@code pm clear};
+         *  in Root mode the folders are removed directly; otherwise the app is brought back for the user ({@code pm install-existing}) and removed again without keeping its data. */
+        private String clearRemovedData(String pkg) {
+            String r = runShellAction("pm clear --user 0 " + pkg);
+            String said = flagText(r).trim();
+            if (flagOk(r) && !said.toLowerCase(java.util.Locale.ROOT).contains("fail")) return flagged(true, said.isEmpty() ? "Success" : said);
+            if ("root".equals(resolveExecMode())) {
+                String[] dirs = { "/data/user/0/", "/data/user_de/0/", "/data/misc/profiles/cur/0/", "/data/media/0/Android/data/", "/data/media/0/Android/media/" };
+                StringBuilder rm = new StringBuilder("rm -rf");
+                for (String d : dirs) rm.append(' ').append(d).append(pkg);
+                runShellAction(rm.toString());
+                String left = flagText(runShellAction("ls -d /data/user/0/" + pkg + " 2>/dev/null")).trim();
+                if (left.isEmpty() || left.contains("No such file")) return flagged(true, "Cleared by deleting the app's data folders (Root), after pm clear said: " + (said.isEmpty() ? "nothing" : said));
+                return flagged(false, "The data folders could not be deleted: " + left + "\n\npm clear said: " + said);
+            }
+            String back = runShellAction("cmd package install-existing --user 0 " + pkg);
+            if (flagOk(back)) {
+                String un = runShellAction("pm uninstall --user 0 " + pkg);
+                if (flagOk(un)) return flagged(true, "Cleared by bringing the app back for you and removing it again without keeping its data (pm clear said: " + (said.isEmpty() ? "nothing" : said) + ").");
+                return flagged(false, "The app was brought back but could not be removed again: " + flagText(un).trim() + "\n\nIt is installed now. Uninstall it from the Apps list.");
+            }
+            return flagged(false, said + (said.isEmpty() ? "" : "\n\n") + "The app cannot be brought back (its APK is gone), and Root is needed to delete its data folders directly.");
+        }
+
+        /** Root mode: of these packages, the ones that still have a data folder, with its size in KB: {"root":true,"found":{pkg:kb}}; {"root":false} without Root (the folders are not readable). */
+        @JavascriptInterface
+        public String leftoverData(String pkgsJson) {
+            try {
+                if (!"root".equals(resolveExecMode())) return "{\"root\":false}";
+                JSONArray in = new JSONArray(pkgsJson);
+                java.util.Set<String> have = new java.util.HashSet<String>();
+                for (String line : String.valueOf(executeShell("ls /data/user/0 2>/dev/null")).split("\n")) { line = line.trim(); if (!line.isEmpty()) have.add(line); }
+                JSONObject found = new JSONObject();
+                java.util.List<String> hit = new java.util.ArrayList<String>();
+                for (int i = 0; i < in.length(); i++) { String p = in.optString(i, ""); if (BackupScripts.isPackageName(p) && have.contains(p)) hit.add(p); }
+                for (int i = 0; i < hit.size(); i += 40) {
+                    StringBuilder cmd = new StringBuilder("du -sk");
+                    for (int j = i; j < Math.min(hit.size(), i + 40); j++) cmd.append(" /data/user/0/").append(hit.get(j));
+                    for (String line : String.valueOf(executeShell(cmd + " 2>/dev/null")).split("\n")) {
+                        line = line.trim();
+                        int tab = line.indexOf('\t'); if (tab < 0) tab = line.indexOf(' ');
+                        if (tab <= 0) continue;
+                        String path = line.substring(tab).trim();
+                        String name = path.substring(path.lastIndexOf('/') + 1);
+                        try { found.put(name, Long.parseLong(line.substring(0, tab).trim())); } catch (NumberFormatException ignored) {}
+                    }
+                }
+                for (String p : hit) if (!found.has(p)) found.put(p, 0);
+                return new JSONObject().put("root", true).put("found", found).toString();
+            } catch (Throwable t) {
+                return "{\"root\":false}";
+            }
+        }
+
         private String uninstallForUser(String pkg, boolean keepData) {
             String cmd = keepData ? ("pm uninstall -k --user 0 " + pkg) : ("pm uninstall --user 0 " + pkg);
             String result = runShellAction(cmd);
@@ -9753,6 +10085,25 @@ public class MainActivity extends Activity {
             });
         }
 
+        /**
+         * Opens the person's email app with a message ready (to, subject, body): a mailto: intent, so the app itself sends nothing and needs no permission.
+         * Only a plain address is taken. Returns false when no email app is installed.
+         */
+        @JavascriptInterface
+        public boolean composeEmail(String to, String subject, String body) {
+            if (to == null || !to.matches("[A-Za-z0-9._%+\\-]+@[A-Za-z0-9.\\-]+\\.[A-Za-z]{2,}")) return false;
+            try {
+                Intent intent = new Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:" + Uri.encode(to)));
+                intent.putExtra(Intent.EXTRA_SUBJECT, subject == null ? "" : subject);
+                intent.putExtra(Intent.EXTRA_TEXT, body == null ? "" : body);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(intent);
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
+        }
+
         @JavascriptInterface
         public String getAdbKeyInfo() {
             return adbKeyInfo().toString();
@@ -10460,6 +10811,18 @@ public class MainActivity extends Activity {
             } catch (Throwable t) {
                 return false;
             }
+        }
+
+        /** The long description, screenshots and links of a store item. Answer: window.onStoreSourceDetail(json). */
+        @JavascriptInterface
+        public void storeSourceDetail(String itemJson) {
+            if (itemJson != null && !itemJson.isEmpty()) runStoreSourceDetail(itemJson);
+        }
+
+        /** What an address is for a custom store. Answer: window.onStoreCustomProbe(json). */
+        @JavascriptInterface
+        public void storeCustomProbe(String id, String url) {
+            if (id != null && url != null && url.startsWith("https://")) runStoreCustomProbe(id, url);
         }
 
         /** Resolves and installs a Komi/Orion/F-Droid catalog item. Progress: window.onStoreInstallProgress(json). */

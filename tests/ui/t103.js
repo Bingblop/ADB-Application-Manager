@@ -1,4 +1,4 @@
-// Batch menu: a taller sheet with a fourth row (Batch Ops, Show Apps, Command), and a close X at the top right like the app menu's.
+// Batch menu: a taller sheet with a fourth row (Batch Ops, Share List, Command), and a close X at the top right like the app menu's.
 const { chromium, PAGE } = require('./lib/pw');
 (async () => {
   const b = await chromium.launch();
@@ -34,7 +34,7 @@ const { chromium, PAGE } = require('./lib/pw');
   console.log('sheet fits the screen:', await page.evaluate(() => { const r = document.getElementById('floatingBatchBar').getBoundingClientRect(); return r.top >= 0 && r.bottom <= window.innerHeight + 1; }));
 
   // Show Apps
-  await page.locator('#floatingBatchBar button', { hasText: 'Show Apps' }).click(); await sleep(250);
+  await page.locator('#floatingBatchBar button', { hasText: 'Show Applications' }).click(); await sleep(250);
   console.log('Show Apps lists the selection:', await page.evaluate(() => [document.getElementById('saSub').innerText, Array.from(document.querySelectorAll('#saList .sa-name')).map(e => e.innerText)]));
   await page.locator('#saList .sa-row', { hasText: 'Bravo' }).locator('button').click(); await sleep(150);
   console.log('Remove takes one out:', await page.evaluate(() => [Array.from(selectedPkgs), document.getElementById('batchCountText').innerText, document.getElementById('saList').querySelectorAll('.sa-row').length, document.getElementById('card_com.example.bravo').classList.contains('selected')]));

@@ -1,5 +1,137 @@
 # Changelog
 
+## v7.10.17-Pro (versionCode 837)
+
+- **Force stop is read back.** After `am force-stop` the app lists the running processes (`ps -A -o NAME`, or `pidof` where that is missing) and says **Stopped** or **Still running** (with the reason an app can be
+  up again at once: the system, a service, another app); single app and batch. `BatchVerify.State.running`.
+- **Clear data is read back in ADB and Shizuku modes too.** The private folder cannot be read there, so the app counts the files and size of the app's folder on the shared storage (`/sdcard/Android/data/<package>`)
+  before and after, and once more after 1.5 s to see **files that were written again**: **Data cleared**, **Cleared, new files written**, **Partly cleared**, **Not cleared**. An empty folder before proves
+  nothing: the command's answer stands, with a note. Root mode still counts the private folder (and now also looks for recreated files). `BatchVerify.applyClear(…, after2, internal, running)`.
+- **A spinner on the row.** While an app is changed and checked, its row (Apps list, Debloater list, Connected Devices list) shows a small spinner and **Working…** then **Checking…** in its corner, whatever the
+  Progress messages switch says; a batch marks every selected row. Cleared when the result is in (or after 2 minutes). Test: `t140`.
+- **Debloater list: a Removal Levels button.** A row opened by tapping it has a **Removal Levels** button that opens the sheet with the four levels (the same as the classification sheet's). Test: `t140`.
+- **Morphe Helper and APKMirror's split files, checked against the live site.** The release page's variants table (APK and BUNDLE rows, architecture, DPI, build number) is read correctly on real pages
+  (YouTube, Photos). Fixed: the variant's type is now the APK/BUNDLE badge wherever it stands among the others (a NEW or signature badge in front no longer hides a bundle), and when APKMirror's browser
+  check stands in front of the variant page the in-app browser is sent to **that variant's page** (the bundle for the phone) instead of the whole release. Test: `MorpheHelperTest`.
+
+## v7.10.16-Pro (versionCode 836)
+
+- **SD Maid > Clear Data from Uninstalled Apps.** A button in a card above Trim Caches, with the description "Clears the data of apps that were uninstalled from this device while the `DONT_DELETE_FLAG` flag was
+  active. This usually applies to third-party apps, and it can fix common problems when you install them again." It opens a sheet of the uninstalled apps (in Root mode only those that still have a data
+  folder, with its size; `MainActivity.leftoverData`), you tick the ones to clear and confirm, and the batch runner does the rest (new action `clear_removed_data`): `pm clear`, else in Root the folders are deleted,
+  else the app is brought back with `pm install-existing` and removed again without keeping its data. In Root mode the result is counted before and after (`BatchVerify.applyClear`). Test: `t139`.
+- **Batch menu.** The grab handle in the middle at the top, like the other sheets, with the same gestures: pull up = taller, pull down = back, pull down again = closes into the checkmark button (apps stay selected).
+  **Select All** and **Clear All** (it was "Clear") are outlined buttons. **Keep selection after running** is on every time (each new selection starts with it on; the switch is no longer remembered).
+  **Share List** and **Show Apps** changed places, and Show Apps is **Show Applications**.
+- **Package names** in all app lists (Apps, Debloater, Saved, Show Applications, results, Connected Devices) use `--pkg-color`, the theme's accent mixed into the muted grey, so they stand apart from the names.
+- **Leaving the Apps tab drops the selection** at once (and the checkmark button and the batch menu, without their slide).
+- **Running** turns **Uninstalled** off in the Apps tab filters.
+- **One VirusTotal API key for the whole app**, in Settings > VirusTotal API key, with **Test key** (the key is "approved" once the test worked; changing it takes the approval away). The Installer's scan and Morphe
+  Helper no longer have key boxes: when the key is missing or not approved they say so and have a button that opens the Settings card. Keys entered in older versions are taken over. Tests: `t139`, `t37`, `t119`.
+
+## v7.10.15-Pro (versionCode 835)
+
+- **UAD-NG classification sheet: the meaning of the level moved behind a button.** Tapping the UAD-NG tag on an app (in the Apps list, the Debloater or the app menu) no longer starts with the line that says what
+  "Recommended", "Advanced", "Expert" or "Unsafe" means. The sheet now ends with **UAD-NG Wiki**, **Removal Levels** and **Close**; **Removal Levels** opens another sheet with exactly the lines of the Removal Levels
+  list in the Debloater tab (they are copied from there: one text), and its Close returns to the classification. Test: `t118`.
+
+## v7.10.14-Pro (versionCode 834)
+
+- **Connected Devices: the apps are read back from the device.** After Enable, Disable, Uninstall and Reinstall (one app, or a batch) the app lists the device's apps again and reports what it found
+  (**Disabled: Fit** when it worked; otherwise the sheet *That did not work* starts with *Checked afterwards: still installed / not disabled / not installed*); the app records follow the device, a command that printed an error for an app that is gone counts
+  as done (with a note), and one that said "worked" for an app that did not change is a failure. A batch looks at the device once for all its apps (once more after 0.9 s when something is not yet as wanted)
+  and the failure sheet names only the apps that are not as wanted. **Checking the device…** shows while it looks. Tests: `t138`, `t109`.
+- **Settings > Progress messages.** One switch, **Say what is going on**, on by default: turns off "Working on it…", "Checking the phone…" and "Checking the device…". The result of the change and every problem are
+  always shown. Kept as `progress_toasts`. Test: `t138`.
+- **Clear data is read back in Root mode.** Root can read an app's data folder, so before and after the clear the app counts the regular files and the size in `/data/user/0/<package>`
+  (`BatchVerify.dataStatCmd`, `applyClear`) and says **Data cleared** (12 files, 3.4 MB before, 0 after), **Partly cleared** (the app may have started again and written new files), **Not cleared** or
+  **Nothing to clear**; for one app and for a batch (with the *Checking the phone…* step). In ADB and Shizuku modes the folder is not readable and nothing changes. Tests: `BatchVerifyTest`, `t138`.
+
+## v7.10.13-Pro (versionCode 833)
+
+- **One app at a time is read back too.** From the app menu (and the action button on a row), Uninstall, Reinstall, Freeze, Enable, Suspend and Unsuspend now run natively off the page's thread
+  (`appActionChecked`), then ask the phone what became of the app and say so in the message ("Alpha: Uninstalled", "Bravo: Still installed"), showing the result window with the finding
+  only when it did not work. Unreadable states fall back to the command's answer. Test: `t137`.
+- **Suspend and Unsuspend are read back** (single and batch): the app's own flag is read from `dumpsys package <pkg>` (the User 0 line); an app whose flag cannot be read keeps the command's answer.
+  Tag words: **Suspended / Not suspended / Still suspended**. `BatchVerify.State`, `BatchVerifyTest`. **Clear data, Force stop, Batch Ops and Command are not read back**: the phone gives a shell
+  user nothing to read their result from, so they are still judged by the command (said in the Help Guide).
+- **"Checking the phone…" on the batch progress sheet.** After the last command the sheet says **Checking the phone… (N apps)** with a full bar (Stop is off meanwhile) until the results open.
+- **Command suggestions in the Connected Devices console.** The same grey line as in the Terminal and the ADB Console, for the other device: your earlier lines, common commands, the package names
+  of the device (once its Apps sub-tab has read them), and adb's own commands in adb mode or after `adb ` (`adb shell ...` completes the device's shell). Right arrow or a tap accepts it.
+
+## v7.10.12-Pro (versionCode 832)
+
+- **Batch results come from the phone, not from the command.** A run of uninstalls often ended with "batch commands failed" although every app was gone. After Uninstall, Uninstall (keep data),
+  Reinstall, Freeze and Unfreeze the app now asks the package manager what became of each app (`pm list packages --user 0`, and `-d` for frozen ones; once more after 0.9 s if an app is not yet in its
+  new state) and reports that: the tag of each result is **Uninstalled** / **Still installed**, **Installed** / **Not installed**, **Frozen** / **Not frozen**, **Enabled** / **Still frozen**, the counts,
+  the history and "Run again on the ones that failed" follow it, and a card says "Checked afterwards: uninstalled. The command reported a failure, but the phone says it worked." when the two disagree.
+  A phone that cannot be asked keeps the command's own answer. Profiles that run these actions are checked the same way. Native: new `BatchVerify` (pure logic) used by `appActionBatch`. Tests: `BatchVerifyTest`, `t136`.
+- **Contact the developer** now has its forwarding alias (bingblop.coral666@simplelogin.fr), shown in the window; the developer's own address is still nowhere in the app. Test: `t135`.
+
+## v7.10.11-Pro (versionCode 831)
+
+- **RRO/Monet > Overlays: enabled first, then disabled, then not changeable.** The list is in three parts with counts, **Enabled**, **Disabled** and **Installed, not changeable**; inside each
+  part the overlays stay grouped under their target. Test: `t135`.
+- **A very short description on every overlay** (for example "Gesture navigation: swipes instead of buttons", "Shape of app icons"). A best guess from the overlay's name and target
+  (rule table `OVL_WHY`, first match wins, a generic line when nothing matches).
+- **Command suggestions in the Terminal and the ADB Console.** A grey completion line above the input offers the rest of what you are typing: your earlier commands first, then the packages on the
+  phone (after `pm`, `am`, `dumpsys` and the like), the Hidden Settings keys (after `settings get/put`) and a list of common commands. **Right arrow** with the cursor at the end accepts
+  it; because phone keyboards often have no right arrow, **tapping the line** accepts it too. It never runs anything. Test: `t135`.
+- **About: Issues and Contact the developer.** Two buttons at the top of the About card. **Issues** opens the project's GitHub issue page. **Contact the developer** opens a sheet to write a
+  message (optionally with the app version, Android version and phone model) and opens the email app with the subject **ADB App Manager**. The message is addressed to a **contact alias**
+  that forwards to the developer, so the developer's own address is not in the app or in this repository (test `t135` checks that it is not in the page). The alias is one constant
+  (`CONTACT_ALIAS`); until it is set the sheet says the contact address is not set up yet and points to Issues. Native: bridge `composeEmail` (a `mailto:` intent with the subject and body).
+
+## v7.10.10-Pro (versionCode 830)
+
+- **Haptic feedback on every tap, with a switch.** Every tap on a button, a tab, a switch, a menu or a list row ticks (a short vibration), from one place, so nothing is missed and
+  nothing ticks twice (ticks are at least 70 ms apart; only real taps count, not clicks the page makes by itself). **Settings > Haptic feedback > Vibrate on taps**, **on by default**;
+  turning it on gives one tick as proof. Test: `t134`.
+- **App Stores: a + tab for stores of your own.** The last tab is a **+**. Paste an F-Droid style repository (its index is read for its name and apps, with the same checks as the
+  F-Droid tab), a GitHub or Codeberg **project** (a tab with that project, installing its latest release) or a GitHub or Codeberg **user or organization** (all their projects that are
+  not archived or forks, by stars). The tab is **named by you** or filled in from the address (the repository's own name, the project's or user's name); Rename and **Remove this store**
+  on its card; up to 12; kept across restarts. Native: `FdroidIndex.probe`, `StoreDetail.githubOwner/githubRepo/codebergOwner/codebergRepo`, bridge `storeCustomProbe`. Tests: `t134`,
+  `StoreDetailTest`, `FdroidTest`.
+- **App Stores: the details and screenshots of an app in every store.** Tapping a row in GitHub, F-Droid, Orion and your own tabs opens the detail sheet that only ShizuStore had: the
+  list's data at once, then the full description, screenshots (tap to enlarge), license, stars and forks, topics, Website and Source, and Install. F-Droid style repositories supply
+  their own description and screenshots (kept in a side file while the catalog is read, `StoreDetail.detailLine`); GitHub and Codeberg projects the README (readable text) and
+  the fastlane screenshots or, failing that, the pictures of the README (badges, logos and buttons left out). A failure keeps what the list knows and says why. Native:
+  `FdroidIndex.Details`, `StoreDetail`, bridge `storeSourceDetail`. Tests: `t134`, `StoreDetailTest`, `FdroidTest`.
+- **Task Manager > Processes: Apps first.** A button next to the sort buttons puts the processes of apps above the system and kernel processes, each group keeping the sort order. Remembered.
+- **Settings: the list of fonts found is emptied** when Settings is left (and when you tap the new **Clear this list**); a search that ends after you left is thrown away.
+- **The gear in the header wears the app's colours** (it had the green of the mode badge).
+- **SD Maid** is the tab's name now (it was SD Maid SE; the credits still say it is a port of SD Maid SE by darken). **Trim Caches in All Applications moved from Settings to this tab.**
+- **SD Maid > AppCleaner uses the accessibility service to clear the remaining caches.** Found and fixed: the service switched itself off when it was turned on before the consent
+  was given, so AppCleaner found no service and skipped the caches that need it; it now stays connected and only acts with the consent. The page no longer decides from a state that
+  may be minutes old: Delete asks the phone first (and says what is missing), and always asks for the automation, which the phone allows or not. New button **Clear the rest with
+  accessibility** on the AppCleaner card: clears only the caches no file access reaches, or says what is missing and offers to set the service up. Test: `t134`.
+
+## v7.10.9-Pro (versionCode 829)
+
+- **About: "Handy to know" now sits under Device Specs** (it was above it). Help Guide and test `t99` follow.
+- **Connected Devices: Saved devices, with Delete.** A new **Saved devices (N)** line under the device picker opens the list of every device that was connected (up to 20 now, it
+  was 8), newest first, with how it was connected and when. A device that is not connected has **Connect** and **Delete**; a connected one has Delete. Delete asks first; a device
+  that is connected at that moment stays connected and is not saved again until you connect it again. **Delete all**, and a **Remember the devices I connect** switch (off: nothing
+  new is saved and a dropped device is not reconnected by itself). Test: `t133`.
+- **Task Manager, CPU tab: temperature unit.** The CPU tab shows the Units row with the **°F / °C** menu (the same choice as the Battery tab, which keeps its current-unit menu
+  to itself); the CPU's temperature follows it. Test: `t87`.
+- **Task Manager, GPU tab: the renderer is on top.** The renderer drop-down moved from the bottom to a card at the very top, above the graph, with the renderer in use (Default,
+  OpenGL or Vulkan) in large letters. Test: `t87`.
+- **Logcat: tap an entry to open it.** Every entry is a tappable row that opens in a window of its own with the level, tag, time, ids and the whole message, and the buttons
+  **Copy**, **More info** (the Coding Agent chosen in the Command-Line Interface tab explains the entry: what it means, the likely cause, whether it matters, what to try; streamed
+  into the window, with Copy the answer; with no agent the window says so and opens the place to set one up) and **Web search** (the tag and the first line, long numbers left
+  out). Selecting text with a long press does not open it. Nothing is sent to an agent until More info is tapped. Test: `t133`.
+- **Hidden Settings: more information.** 150 more settings are described by hand (global 100, secure 50) from the AOSP documentation: power button actions, Wi-Fi band, Bluetooth LE
+  scan modes, DropBox limits, captive portal servers, GPU debug layers and ANGLE, the time zone / SELinux / APN / certificate update addresses, accessibility and lock screen
+  options and more, with the values they take. (Android's own source, `Settings.java`, was read again: it holds no setting that the list did not already cover, so the rest comes
+  from vendor settings, which no public documentation covers; those still get a guess from their name.) The editor of every setting has **Web search** and **Explain (AI)** (asks
+  the Coding Agent; sends the setting's name, table and current value, only when tapped, and says it may be a careful guess for settings that belong to the phone maker). Test: `t133`, `t123`.
+- **Apps tab: the boxes wear their colours.** Each box at the top (Running, Bloatware, Enabled, Frozen, 3rd Party, System) has a faint tint of its own colour and, while its
+  filter is on, a strong shade with a ring in that colour, so the one in use is easy to see; a split box takes the colour of the side that is on.
+- **Apps tab: Uninstalled starts a clean list.** Turning the Bloatware (Uninstalled) box, or the Uninstalled pill, on turns every other filter off first; filters added afterwards
+  still combine. Test: `t104`.
+- **Apps tab: the "Sort" text is gone** from the row (the menu is read as "Sort apps by" by screen readers) and the row starts at the left edge. Test: `t118`.
+
 ## v7.10.8-Pro (versionCode 828)
 
 - **App Stores: tap a screenshot to see it full screen.** The screenshots in an app's detail sheet (ShizuStore) are now tappable and open in a picture viewer: shown to fit the screen on

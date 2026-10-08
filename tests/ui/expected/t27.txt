@@ -7,11 +7,11 @@
 6. re-tapped FAB -> expands again: {"fab":false,"sheet":true,"badge":"3","count":"3 Selected"}
 7. cleared -> both hidden: {"fab":false,"sheet":false,"badge":"3","count":"3 Selected"}
 8. selecting again after clear -> starts collapsed (FAB), not expanded: {"fab":true,"sheet":false,"badge":"1","count":"1 Selected"}
-9. after batch action completes -> selection + panel reset: {"fab":false,"sheet":false,"badge":"1","count":"1 Selected"}
-10. next selection after that -> collapsed again: {"fab":true,"sheet":false,"badge":"1","count":"1 Selected"}
+9. after batch action completes (Keep selection is on by default now) -> selection and sheet stay: {"fab":false,"sheet":true,"badge":"1","count":"1 Selected"}
+10. one more app selected -> the sheet stays, the count follows: {"fab":false,"sheet":true,"badge":"2","count":"2 Selected"}
 11. before recall, panel expanded: {"fab":false,"sheet":true,"badge":"1","count":"1 Selected"}
 12. after recallSavedList -> fresh selection starts collapsed: {"fab":true,"sheet":false,"badge":"2","count":"2 Selected"}
-13. ticked "Keep selection after running": true
+13. "Keep selection after running" is ticked by default (v7.10.16: on every time): true
 14. after a batch action with it ticked -> selection kept, sheet still shown: {"fab":false,"sheet":true,"badge":"2","count":"2 Selected"}
 15. unticked it: false
 16. after a batch action with it unticked -> selection + panel reset, same as before: {"fab":false,"sheet":false,"badge":"2","count":"2 Selected"}

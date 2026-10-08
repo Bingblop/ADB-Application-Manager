@@ -1,8 +1,8 @@
 listed app (Advanced): {"shown":true,"text":"UAD-NG ADVANCED","cls":"uad-chip uad-r-advanced","belowShare":true,"inView":true}
-prompt: {"open":true,"app":"Adapt sound · com.sec.hearingadjust","body":"ADVANCEDOEM | Advanced: Breaks minor or obscure features, overlays, or default apps (keyboard, gallery, launcher) that a better alternative can replace. | Adapt sound | Tunes the sound to your hearing. | Removing it hides the Adapt sound setting. | Needed by: com.sec.audio | Depends on: com.sec.core"}
+prompt: {"open":true,"app":"Adapt sound · com.sec.hearingadjust","body":"ADVANCEDOEM | Adapt sound | Tunes the sound to your hearing. | Removing it hides the Adapt sound setting. | Needed by: com.sec.audio | Depends on: com.sec.core"}
 wiki link opened: "https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation/wiki"
 closed, the app menu is still open: [true,true]
 Unsafe app: {"shown":true,"text":"UAD-NG UNSAFE","cls":"uad-chip uad-r-unsafe","belowShare":true,"inView":true}
-no description given: "UNSAFEAOSP | Unsafe: Can break vital parts of Android, or may be illegal to remove where you live (e.g. emergency alerts). High risk of a boot-loop. | The project gives no description for this package."
+no description given: "UNSAFEAOSP | The project gives no description for this package."
 an app the project does not list shows no chip: {"shown":false,"text":"UAD-NGUNSAFE","cls":"uad-chip uad-r-unsafe","belowShare":false,"inView":true}
 errors: []

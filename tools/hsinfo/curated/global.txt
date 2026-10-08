@@ -167,3 +167,105 @@ zen_mode_ringer_level | The ringer mode from before Do Not Disturb turned on. | 
 zram_enabled | Compressed swap memory (zram). | 0 = off; 1 = on; takes effect after a restart
 sysui_demo_allowed | Allows System UI demo mode, which shows a clean status bar for screenshots. | 0 = off; 1 = on
 sysui_tuner_demo_on | Demo mode is on right now. | 0 = off; 1 = on
+
+# more Android settings (2026-10): written from the AOSP documentation
+remove_guest_on_exit | Deletes the guest user's data when the guest session ends. | 0 = keep the guest's data; 1 = remove it on exit
+satellite_mode_radios | The radios that are switched off while satellite mode is on. | list separated by commas
+bluetooth_class_of_device | The Bluetooth "class of device" code the phone announces to other devices (what kind of device it says it is). | whole number
+auto_time_zone_explicit | Remembers that you chose automatic time zone yourself, so experiments no longer change it. | 0 = no choice made yet; 1 = chosen
+unlock_sound | The sound played when the phone is unlocked. | file path or content address
+trusted_sound | The sound played when the phone becomes trusted (for example near a trusted device). | file path or content address
+wireless_charging_started_sound | The sound played when wireless charging starts. | file path or content address
+adb_disconnect_sessions_on_revoke | Ends every open ADB session (USB and Wi-Fi) when you revoke the saved USB debugging approvals. | 0 = sessions stay open; 1 = sessions are ended | conn
+display_size_forced | The screen size forced with "wm size". Empty means the real size of the screen. | text: width,height in pixels, e.g. 1080,2400 | break
+download_manager_max_bytes_over_mobile | The largest download the Download Manager may start over mobile data. Bigger ones wait for Wi-Fi. | bytes
+download_manager_recommended_max_bytes_over_mobile | A download bigger than this asks you before it uses mobile data. | bytes
+qs_media_controls | Shows the media player in Quick Settings. | 0 = hidden; 1 = shown
+location_background_throttle_interval_ms | The least time between location updates handed to an app that runs in the background. | milliseconds
+location_background_throttle_package_whitelist | Apps that are not slowed down when they ask for location in the background. | list of package names separated by commas
+location_enable_stationary_throttle | Slows down location updates while the phone is not moving. | 0 = off; 1 = on
+network_scorer_app | The app that rates Wi-Fi networks for the "use good networks" feature. | package name
+ota_disable_automatic_update | Stops system updates from being scheduled by themselves; you get a notification instead. | 0 = scheduled automatically; 1 = notification only
+enable_16k_pages | Starts the phone with a kernel that uses 16 KB memory pages instead of 4 KB (developer option, Android 15). Takes a restart. | 0 = 4 KB pages (normal); 1 = 16 KB pages
+verifier_default_response | What the app verifier answers when nobody answers its question in time. | 1 = allow the install; -1 = reject it
+verifier_setting_visible | Shows the app verification option in Settings. | 0 = hidden; 1 = shown
+verifier_timeout | How long the app verifier has to approve an install before the default answer is used. | milliseconds
+sms_outgoing_check_max_count | The number of text messages an app may send without asking you, within the interval below. | whole number
+sms_outgoing_check_interval_ms | The time window in which sms_outgoing_check_max_count is counted. | milliseconds
+dynamic_power_savings_enabled | Lets an app turn on a dynamic Battery Saver for a while (PowerManager.setDynamicPowerSaveHint). | 0 = off; 1 = on
+dynamic_power_savings_disable_threshold | The battery level at which the dynamic Battery Saver turns itself off again. | percent
+low_power_mode_reminder_enabled | Reminds you about Battery Saver when the battery is low. | 0 = no reminder; 1 = remind
+wifi_frequency_band | Which Wi-Fi band the phone may use. | 0 = automatic; 1 = 5 GHz only; 2 = 2.4 GHz only | conn
+wifi_network_show_rssi | Shows the signal strength number next to each Wi-Fi network in Settings. | 0 = off; 1 = on
+wifi_enhanced_auto_join | Lets Android itself choose when to join a better saved Wi-Fi network. | 0 = off; 1 = on
+ble_scan_background_mode | The Bluetooth LE scan mode apps are moved to when they go to the background. | -1 = opportunistic (only hears what others find); 0 = low power; 1 = balanced; 2 = low latency
+ble_scan_low_power_window_ms | In low-power Bluetooth LE scans, how long the radio listens in each cycle. | milliseconds
+ble_scan_low_power_interval_ms | In low-power Bluetooth LE scans, the length of each cycle. | milliseconds
+ble_scan_balanced_window_ms | In balanced Bluetooth LE scans, how long the radio listens in each cycle. | milliseconds
+ble_scan_balanced_interval_ms | In balanced Bluetooth LE scans, the length of each cycle. | milliseconds
+ble_scan_low_latency_window_ms | In low-latency Bluetooth LE scans, how long the radio listens in each cycle. | milliseconds
+ble_scan_low_latency_interval_ms | In low-latency Bluetooth LE scans, the length of each cycle. | milliseconds
+dropbox_age_seconds | How long the crash and error reports in DropBox are kept before they are deleted. | seconds
+dropbox_max_files | The most report files DropBox keeps. | whole number
+dropbox_quota_kb | The most space, in kilobytes, the DropBox reports may use. | kilobytes
+dropbox_quota_percent | The most share of the storage the DropBox reports may use. | percent
+dropbox_reserve_percent | The share of the storage DropBox leaves free for other things. | percent
+captive_portal_server | The host the phone contacts to find out whether a Wi-Fi network needs a sign-in page. An answer of 204 means the internet is open. | host name, e.g. connectivitycheck.gstatic.com
+captive_portal_fallback_url | A second address used for the same sign-in page test when the first one fails. | web address
+captive_portal_other_fallback_urls | More addresses used for the sign-in page test, tried one after the other. | web addresses separated by commas
+captive_portal_user_agent | The browser name the sign-in page test presents itself with. | text
+default_dns_server | The DNS server used when the network does not give one. | IP address, e.g. 8.8.8.8
+private_dns_default_mode | Forces the Private DNS mode that is used until you choose one yourself. | text: off; opportunistic; hostname
+activity_starts_logging_enabled | Records which app starts which screen of another app (for security audits). | 0 = off; 1 = on
+foreground_service_starts_logging_enabled | Records which app starts a foreground service (for security audits). | 0 = off; 1 = on
+force_enable_pss_profiling | Measures the memory use (PSS) of apps all the time (developer option). Costs a little speed. | 0 = off; 1 = on
+gpu_debug_app | The app that is allowed to load GPU debug layers. | package name
+gpu_debug_layers | The Vulkan debug layers loaded into that app. | layer names separated by :
+gpu_debug_layers_gles | The OpenGL ES debug layers loaded into that app. | layer names separated by :
+gpu_debug_layer_app | The apps that supply the GPU debug layers. | package names separated by :
+angle_gl_driver_all_angle | Draws every app with ANGLE (OpenGL ES translated onto Vulkan) instead of the phone's own OpenGL driver. | 0 = off; 1 = on
+angle_gl_driver_selection_pkgs | The apps that have a graphics driver picked for them. Goes together with angle_gl_driver_selection_values. | list of package names separated by commas
+angle_gl_driver_selection_values | The driver picked for each app in angle_gl_driver_selection_pkgs, in the same order. | list separated by commas: default; angle; native
+angle_debug_package | The package that supplies the ANGLE driver while it is being tested. | package name
+show_angle_in_use_dialog_box | Shows a message when an app is drawing through ANGLE. | 0 = off; 1 = on
+updatable_driver_all_apps | Lets every app use the graphics driver that was updated through the Play Store. | 0 = no; 1 = yes
+updatable_driver_production_opt_in_apps | Apps that use the updated production graphics driver. | list of package names separated by commas
+updatable_driver_production_opt_out_apps | Apps that keep the built-in graphics driver. | list of package names separated by commas
+tzinfo_content_url | Where the phone downloads updates of the time zone data without a full system update. | web address
+tzinfo_metadata_url | Where the phone checks whether there is a newer time zone data update. | web address
+selinux_content_url | Where the phone downloads updates of the SELinux security policy rules. | web address
+selinux_metadata_url | Where the phone checks whether there is a newer SELinux policy update. | web address
+sms_short_codes_content_url | Where the phone downloads the list of premium text message numbers it warns about. | web address
+sms_short_codes_metadata_url | Where the phone checks for a newer list of premium text message numbers. | web address
+apn_db_content_url | Where the phone downloads updates of the mobile network (APN) settings. | web address
+apn_db_metadata_url | Where the phone checks for newer mobile network (APN) settings. | web address
+cert_pin_content_url | Where the phone downloads updates of the pinned certificates used to spot fake secure sites. | web address
+cert_pin_metadata_url | Where the phone checks for newer pinned certificates. | web address
+intent_firewall_content_url | Where the phone downloads updates of the intent firewall rules (which app calls are blocked). | web address
+intent_firewall_metadata_url | Where the phone checks for newer intent firewall rules. | web address
+lang_id_content_url | Where the phone downloads updates of the language detection model. | web address
+lang_id_metadata_url | Where the phone checks for a newer language detection model. | web address
+smart_selection_content_url | Where the phone downloads updates of the smart text selection model. | web address
+smart_selection_metadata_url | Where the phone checks for a newer smart text selection model. | web address
+conversation_actions_content_url | Where the phone downloads updates of the model behind suggested replies and actions. | web address
+conversation_actions_metadata_url | Where the phone checks for a newer suggested replies model. | web address
+debug.force_rtl | Lays the whole screen out right to left (developer option "Force RTL layout direction"). | 0 = off; 1 = on
+user_preferred_resolution_height | The screen resolution height you picked, on screens that offer more than one. | pixels
+user_preferred_resolution_width | The screen resolution width you picked, on screens that offer more than one. | pixels
+user_disabled_hdr_formats | The HDR formats you switched off. | list of numbers separated by commas (HDR format codes)
+require_password_to_decrypt | Asks for the screen lock password at start-up to decrypt the storage. | 0 = no; 1 = yes | lock
+stylus_ever_used | Remembers that a stylus has been used on this phone, which unlocks stylus options. | 0 = never; 1 = used
+device_config_sync_disabled | Stops the Google and system flag updates (DeviceConfig) from being applied. | 0 = updates apply; 1 = updates are blocked
+disable_screen_share_protections_for_apps_and_notifications | Lets apps and notifications show up when you share or record the screen, instead of being hidden. | 0 = protected; 1 = protections off
+mute_alarm_stream_with_ringer_mode_user_preference | Your choice of whether alarms are silent when the ringer is silent. | 0 = alarms still sound; 1 = alarms follow the ringer
+repair_mode_active | Repair mode is on: a limited mode that hides your data while the phone is serviced. | 0 = off; 1 = on
+show_new_app_installed_notification_enabled | Shows a notification when a new app is installed. | 0 = off; 1 = on
+show_hidden_icon_apps_enabled | Lists apps that have no launcher icon in Settings and the app drawer. | 0 = off; 1 = on
+maximum_obscuring_opacity_for_touch | How see-through an overlay may be and still let your touch through to the app below. Stops "tapjacking". | decimal from 0 to 1; 0.8 is the normal value
+notification_feedback_enabled | Marks notifications the system changed for you and lets you say if the change was right. | 0 = off; 1 = on
+one_handed_keyguard_side | In one-handed mode, which side of the screen the lock screen sits on. | 0 = left; 1 = right
+power_button_short_press | Changes what a short press of the power button does. | whole number; the codes are those of Android's config_shortPressOnPowerBehavior (1 = go to sleep is the normal one)
+power_button_triple_press | Changes what pressing the power button three times does. | whole number; the codes are those of Android's config_triplePressOnPowerBehavior (0 = nothing)
+power_button_long_press_duration_ms | How long the power button must be held to count as a long press. | milliseconds
+power_button_very_long_press | Changes what a very long press of the power button does. | whole number; the codes are those of Android's config_veryLongPressOnPowerBehavior (0 = nothing)
+key_chord_power_volume_up | Changes what pressing power and volume up together does. | whole number; the codes are those of Android's config_keyChordPowerVolumeUp

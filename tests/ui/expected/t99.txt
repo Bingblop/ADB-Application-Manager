@@ -1,4 +1,4 @@
-1. Device Specs section exists, under Handy to know: true
+1. Handy to know sits under the Device Specs section: true
 2. opening the tab fetches it on its own (no Refresh press needed): true
    Hardware shows model, SoC, cores, RAM, screen and storage: true
    Software shows Android version, patch and build: true

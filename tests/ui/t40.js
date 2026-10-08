@@ -28,7 +28,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.evaluate(() => switchView('store')); await page.waitForTimeout(120);
 
   // 1) Sub-tabs: Komi is renamed to GitHub.
-  const pills = await page.locator('.store-subtab').allInnerTexts();
+  const pills = await page.locator('.store-subtab:not(.store-add)').allInnerTexts();     // (the + tab is v7.10.10, see t134)
   console.log('1. sub-tabs ShizuStore/GitHub/F-Droid/Orion (no Komi, no Aurora):', pills.length === 4 && /GitHub/.test(pills[1]) && !pills.some(t => /Komi|Aurora/.test(t)), JSON.stringify(pills));
 
   // 2) GitHub: opening requests the browse catalog; chunks arrive progressively.

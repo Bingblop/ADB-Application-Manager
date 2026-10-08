@@ -1,0 +1,57 @@
+ok   1. haptic feedback is on until the person turns it off
+ok      tapping a tab ticks once
+ok      tapping the gear ticks once (a button that is not a <button>)
+ok      a button whose own handler also ticks is felt once, not twice
+ok      a click the page makes by itself (not a tap) does not tick
+ok      Settings has the Haptic feedback card with its switch on
+ok      switching it off: no tick, the setting is kept, a tap now does not tick
+ok      after a restart it is still off
+ok      the switch shows it off
+ok      switching it on ticks to show it, and taps tick again
+ok   2. the gear wears the app's colours: not the green of the mode badge
+ok   3. the Processes list starts in the order of the sort (CPU)
+ok      Apps first puts the apps above the system processes, each group keeping its order
+ok      it works together with Sort by memory
+ok      the choice is remembered
+ok      tapping it again goes back to the plain order
+ok   4. a search for fonts lists them, with a Clear this list link
+ok      leaving Settings empties the list and hides the box
+ok      Clear this list does the same without leaving
+ok      a search that ends after Settings was left is thrown away
+ok   5. the tab is called SD Maid, and Trim Caches is in it, no longer in Settings
+ok      the tab bar says SD Maid
+ok      the Trim Caches button is there and has its padlock logic (a working mode is on here)
+ok   6. AppCleaner has "Clear the rest with accessibility" when it has results
+ok      Delete asks the phone for the state of the service first (the page's idea may be old) and says it is not ready
+ok      it still asks for the automation (the phone decides), never a page-side "off"
+ok      "Clear the rest" with the service not ready offers to set it up instead of failing
+ok      with the service ready it asks once
+ok      and then deletes only the caches the files cannot reach, with the automation
+ok   7. the last tab of the App Stores is a +
+ok      it opens a window asking for an address and, if wanted, a name
+ok      it says what it understood from the address
+ok      a GitHub project becomes a tab named after the project, before the +, and it loads its apps
+ok      its list shows the project with an Install button
+ok      a name typed by the person is used: a GitHub user is a tab of all of their projects
+ok      a note on such a store says that not every project has an APK
+ok      a repository is looked at first, and its own name fills the tab
+ok      its apps load through the repository reader
+ok      an address that is no repository says so, in the window, and adds nothing
+ok      something that is no address is refused
+ok      the same project again is not added twice
+ok      the extra stores are still there after a restart, in the same order
+ok      Rename changes the tab and the card
+ok      Remove this store takes the tab and its list away and goes back to ShizuStore
+ok   8. a row of the GitHub store opens the details when tapped (it only worked in ShizuStore before)
+ok      the window shows the app, its long description, chips and the install button
+ok      the phone was asked for the rest, with what it needs to find it
+ok      its screenshots are shown and open the picture viewer
+ok      Website and Source links are there
+ok      the Source button of the window opens the project
+ok      Install in the window installs this app, the same way as the button of the row
+ok      a failure is told in the window and the button is back
+ok      a second look at the same app does not ask again
+ok      the Install button of a row installs without opening the details
+ok      in a repository store the detail request carries the repository and the package
+ok      when the details cannot be loaded, what the list knows stays and the reason is told
+ok   no page errors

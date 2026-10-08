@@ -66,8 +66,8 @@ const { chromium, PAGE } = require('./lib/pw');
 
   // ---- the tab ----
   const tabs = await ev(() => tabsShown());
-  check('SD Maid SE is in the tab bar after Morphe Patcher', tabs.indexOf('sdm') === tabs.indexOf('morphe') + 1, tabs.join());
-  check('its label is on two lines', (await ev(() => tabDef('sdm').label)) === 'SD Maid\nSE');
+  check('SD Maid is in the tab bar after Morphe Patcher', tabs.indexOf('sdm') === tabs.indexOf('morphe') + 1, tabs.join());
+  check('its label is just SD Maid (v7.10.10), one line', (await ev(() => tabDef('sdm').label)) === 'SD Maid' && (await ev(() => tabDef('sdm').name)) === 'SD Maid');
   await ev(() => { switchView('sdm'); }); await wait(500);
   check('it has a help "?" that points to its guide topic', await ev(() => !!document.querySelector('#view-sdm .help-q') && document.querySelector('#view-sdm .help-q').dataset.help === 'tab-sdm'));
   check('four tool cards in the order SystemCleaner, AppCleaner, CorpseFinder, Deduplicator', await ev(() => Array.from(document.querySelectorAll('#sdCards .sd-card .color-card-title')).map(e => e.innerText).join('|')) === 'SystemCleaner|AppCleaner|CorpseFinder|Deduplicator');

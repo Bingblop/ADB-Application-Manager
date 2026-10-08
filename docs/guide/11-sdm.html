@@ -1,4 +1,4 @@
-<section id="tab-sdm" data-title="SD Maid SE" data-group="The tabs">
+<section id="tab-sdm" data-title="SD Maid" data-group="The tabs">
   <p class="hg-lead">Clean up what is not needed any more: <b>SystemCleaner</b> removes superfluous files, <b>AppCleaner</b> the expendable data of apps (caches and the like), <b>CorpseFinder</b> the leftovers of apps that are gone, and <b>Deduplicator</b> files that exist twice. Scan, look at the list, take out what you want to keep, then delete.</p>
   <p>The tools are a port of the four tools of <b>SD Maid SE</b> by darken (GPL-3.0): the filters, the rules, the expendables databases and the automation steps are from there. This is not the SD Maid app, and it has none of its icons, logo or translations. If you want everything else SD Maid can do, the buttons in the card open <b>SD Maid SE on GitHub</b> and <b>on Google Play</b>.</p>
   <p><b>Where to find it:</b> the tab bar, after <b>Morphe Patcher</b>. If it is not there, it has been switched off in the <a href="#feature-list">Feature List</a>.</p>
@@ -27,7 +27,7 @@
   <div class="hg-note"><b>Tip.</b> The work goes on in the app's own process while you look at another tab. The results of a scan stay in memory, so rotating the phone or changing the theme does not lose them; closing the app does.</div>
 </section>
 
-<section id="sdm-review" data-title="SD Maid SE: looking at the results" data-group="The tabs">
+<section id="sdm-review" data-title="SD Maid: looking at the results" data-group="The tabs">
   <p class="hg-lead">Tap <b>Details</b> on a card to see what a scan found, and take out whatever you want to keep.</p>
   <ol class="hg-steps">
     <li>The first list shows the groups: the filters (SystemCleaner), the apps (AppCleaner), the remnants (CorpseFinder) or the sets of identical files (Deduplicator), each with its size. Every group starts ticked. Untick a group to leave all of it out. <b>All</b> and <b>None</b> tick or untick the whole list, and the search box narrows it.</li>
@@ -45,7 +45,7 @@
   </ul>
 </section>
 
-<section id="sdm-exclusions" data-title="SD Maid SE: exclusions" data-group="The tabs">
+<section id="sdm-exclusions" data-title="SD Maid: exclusions" data-group="The tabs">
   <p class="hg-lead">An exclusion keeps an app, a file or a folder out of the tools you choose, so it is never listed and never deleted.</p>
   <p>Open it with <b>Exclusions</b>. The list shows every exclusion with the tools it applies to. The ones marked <b>default</b> come with the app and can be removed; <b>Restore defaults</b> brings them back.</p>
   <table class="hg-table">
@@ -59,13 +59,13 @@
   <p><b>Affected tools</b> chooses where it applies: <b>All tools</b>, or any of the four. A folder that contains an excluded item is not deleted either, so that the excluded item stays. <b>Export</b> copies all exclusions to the clipboard; <b>Import</b> reads them back (and the exclusion files of SD Maid SE).</p>
 </section>
 
-<section id="sdm-history" data-title="SD Maid SE: history" data-group="The tabs">
+<section id="sdm-history" data-title="SD Maid: history" data-group="The tabs">
   <p class="hg-lead">Everything the tools delete is written down: which tool, when, how much, and the paths.</p>
   <p>Open <b>History</b>. Each report shows the tool, the time, <b>Done</b>, <b>Partial success</b> (for example, a run that stopped because the screen turned off) or <b>Failure</b>, and what it says on the card afterwards. Tap a report to see the paths that were deleted. Scans are never written, because nothing is deleted by them. The top shows how much space has been freed in all.</p>
   <p>Reports are kept for 30 days and the paths for 7 days; both can be changed in the general <b>Settings</b> (0 keeps no paths). <b>Reset all</b> deletes all reports and sets the totals to zero.</p>
 </section>
 
-<section id="sdm-settings" data-title="SD Maid SE: settings and the accessibility service" data-group="The tabs">
+<section id="sdm-settings" data-title="SD Maid: settings and the accessibility service" data-group="The tabs">
   <p class="hg-lead">Every tool has its own settings behind the gear on its card, and the tab has general settings behind <b>Settings</b>. They are the settings of SD Maid SE, with its texts; a change is used by the next scan.</p>
   <ul>
     <li>The filters of SystemCleaner and AppCleaner can be switched on and off one by one; some need Root, and say so.</li>
@@ -80,7 +80,47 @@
     <li>In the <b>Accessibility service</b> card, tap <b>Enable the service</b>. The card explains what it does and asks for your consent, then opens Android's accessibility settings. Turn the service on there.</li>
     <li>On Android 13 and newer, an app installed from a file may be blocked from using an accessibility service: open this app's <b>App info</b>, the three dots, <b>Allow restricted settings</b>, and try again.</li>
     <li>With a working mode you can also tap <b>Enable with the working mode</b>, which turns the service on for you.</li>
-    <li>Once the service is on and you gave consent, AppCleaner's Delete uses it after you confirm.</li>
+    <li>Once the service is on and you gave consent, AppCleaner's Delete uses it after you confirm. The phone is asked whether the service is ready at the moment you tap Delete, so a service you turned on a minute ago counts at once. (Before v7.10.10 the service switched itself off again when it was turned on before the consent was given, and AppCleaner then skipped the caches that need it. It now stays on, and only acts once you have agreed.)</li>
   </ol>
+  <p><b>Clear the rest with accessibility.</b> After a Delete, or whenever AppCleaner has results, the card has this button above Details. It clears only the caches that no file access reaches (what the trim of all apps through a working mode, and the file deletions, left), by tapping Clear cache in the settings of each of those apps. If the service is not ready (no consent, switched off, or not connected yet), the button says which and offers to set it up instead of doing nothing.</p>
   <p><b>Withdraw consent</b> in the card stops AppCleaner from using it. The automation follows the screen texts of the system settings, in the languages SD Maid has tables for; on some phone makers' systems it can fail, and then it says so and the rest of the cleanup still works.</p>
+
+  <h4>Clear Data from Uninstalled Apps</h4>
+  <p>A card of this tab, <b>above Trim Caches</b>. It clears the data of apps that were uninstalled from this device while the <code>DONT_DELETE_FLAG</code> flag was active (Android's own name for the same thing is the <i>keep data</i> option of <code>pm uninstall -k</code>, which this app also uses when you uninstall without losing an app's data). This usually applies to <b>third-party</b> apps, and clearing that data can <b>fix common problems</b> when you install them again.</p>
+  <h5>How to use it</h5>
+  <ol class="hg-steps">
+    <li>Open the <b>SD Maid</b> tab and tap <b>Clear Data from Uninstalled Apps</b>. It needs a working mode; without one the button is locked.</li>
+    <li>A sheet lists the uninstalled apps, all ticked. In <b>Root</b> mode only the ones that still have a data folder are listed, each with its size. Without Root the app cannot look into other apps' folders, so every uninstalled app is listed and the note says that some may have nothing left. <b>Select All</b> and <b>Select None</b> change the ticks.</li>
+    <li>Tap <b>Clear data of N apps</b> and confirm the question: it cannot be undone. A progress sheet and then the usual results box follow.</li>
+  </ol>
+  <p><b>How each app is cleared.</b> First with <code>pm clear</code>. If that is refused, in Root mode the app's data folders are deleted directly; without Root the app is brought back for you with <code>pm install-existing</code> and removed again <i>without</i> keeping its data (an app whose APK is gone cannot be brought back and needs Root). In Root mode the result is checked by counting the files before and after. Installed apps and your own files are never touched.</p>
+
+  <h4>Trim Caches in All Applications</h4>
+  <p>A card of this tab (it was in Settings until v7.10.10), next to the cleaning tools because it does the same kind of job for every app at once. It has one button, <b>Trim Caches in All Applications</b>, and a long explanation under it. The button clears the cache of every app in one go, to free some storage.</p>
+  <p><b>What it needs.</b> A <a href="#modes-overview">working mode</a> (ADB over TCP, Wireless Debugging, Shizuku or Root). Without one the button shows a padlock, and tapping it opens the sheet <b>Working Mode Required</b>.</p>
+  <ol class="hg-steps">
+    <li>Open the <b>SD Maid</b> tab and find the card <b>Trim Caches</b>, under the <b>Clear Data from Uninstalled Apps</b> card.</li>
+    <li>Tap <b>Trim Caches in All Applications</b>. A question opens: "Trim the caches of every app now? Only cache files are deleted. Apps, their data, logins and your files stay as they are." Tap <b>OK</b> to go on, or <b>Cancel</b> and nothing happens.</li>
+    <li>The app runs <code>pm trim-caches 128G</code> through your working mode, which is the same as typing <code>adb shell pm trim-caches 128G</code> on a computer. The button turns grey and reads "Trimming caches&hellip;", and a line under it says that this can take up to a minute or two. The app stays usable while it runs.</li>
+    <li>When it ends, a box titled <b>Trim Caches in All Applications</b> opens. On success it says <b>Caches trimmed</b>, shows the command tagged <b>SUCCESS</b>, and gives a line such as "Free space on the phone: 120 GB before, 123 GB after (2.4 GB freed)." When nothing more could be freed, the line ends "(nothing more could be freed)" instead. The command prints nothing when it works, so the box also says "Done. The command printed nothing, which is what it does when it works."</li>
+    <li>If it did not work, the box says <b>It did not finish</b>, shows the command tagged <b>FAILED</b>, and quotes Android's own words. See <a href="#troubleshooting">Troubleshooting</a>, "Trim Caches says it did not finish".</li>
+  </ol>
+
+  <h5>What it does</h5>
+  <p><code>pm trim-caches</code> asks Android to free storage by deleting app caches until the phone has the amount of free space you give it. 128 GB is more free space than any phone has, so the target can never be reached. Android therefore keeps going and clears every cache it is allowed to clear, in every app, instead of stopping after the first few. Which apps it starts with, and in what order, is Android's own choice.</p>
+
+  <h5>What is trimmed</h5>
+  <p>Only cache: the temporary files that each app keeps in its own <i>cache</i> folder and its <i>code cache</i> folder, on the phone's internal storage and in the app's folder under <code>Android/data</code>. That means things like downloaded thumbnails and images, web pages a browser kept for next time, map tiles, video and music that was only buffered, and temporary files an app made while working. Android treats all of it as safe to throw away, and the app makes it again when it needs it. (<a href="#glossary">Glossary</a>: cache.)</p>
+
+  <h5>What is not touched</h5>
+  <p>Your apps themselves, their data and settings, logins and accounts, saved games, photos, videos, downloads and every other file in your folders. Nothing is uninstalled and no app is reset.</p>
+
+  <h5>What you may notice</h5>
+  <ul>
+    <li>The first start of an app afterwards can be a little slower, and it may use mobile data to fetch images again.</li>
+    <li>An app that keeps offline downloads in its cache folder (some music, video and map apps do) may need to download them again.</li>
+    <li>Apps that are running right now may keep some of their cache until they close.</li>
+    <li>How much it frees depends on how much cache your apps hold. The box shows the free space before and after, so you can see what it did.</li>
+  </ul>
+  <div class="hg-note"><b>Tip.</b> This does not delete files, downloads or app data, so it will not free a lot on a phone whose space is used by big apps or files. For that, see <a href="#recipe-find-big-apps">Find the apps that take the most space</a>. The steps again, in short: <a href="#recipe-trim-caches">Free up space by clearing every app's cache</a>.</div>
 </section>

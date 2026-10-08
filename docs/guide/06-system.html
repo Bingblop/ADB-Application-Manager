@@ -62,7 +62,7 @@
     <li>A red line means it cannot be saved yet. The limits are 20,000 characters, no control characters (invisible special codes, apart from a tab or a line break), and a size that fits in one command sent through ADB (about 62,000 bytes once quoted). <b>Save</b> stays grey until the problem is gone.</li>
     <li>Tap <b>Save</b>. For a careful setting your phone first asks you to confirm.</li>
   </ol>
-  <p><b>What you will see:</b> the sheet stays open while the phone applies the change, so a refusal never loses what you typed. On success it closes, the row shows the new value with a dot, and an <b>Undo</b> bar appears for about 7 seconds. Saving the same value says <i>No change</i>. The word <code>null</code> is stored as that text; use <b>(empty)</b> for nothing and <b>Delete</b> to remove the setting. The sheet's other links: <b>Copy name</b>, <b>Copy value</b> and <b>Copy command</b> (the exact <code>settings put</code> line, to paste in the ADB Console pane of the <a href="#tab-terminal">Command-Line Interface</a> tab).</p>
+  <p><b>What you will see:</b> the sheet stays open while the phone applies the change, so a refusal never loses what you typed. On success it closes, the row shows the new value with a dot, and an <b>Undo</b> bar appears for about 7 seconds. Saving the same value says <i>No change</i>. The word <code>null</code> is stored as that text; use <b>(empty)</b> for nothing and <b>Delete</b> to remove the setting. The sheet's other links: <b>Web search</b> (looks the setting up on the web by its table and name), <b>Explain (AI)</b> (asks the Coding Agent you chose in the <a href="#tab-terminal">Command-Line Interface</a> tab what the setting is and whether it is safe to change; the setting's name, table and current value are sent to that agent's company, only when you tap the button, and many settings belong to the phone maker, so the answer may be a careful guess), <b>Copy name</b>, <b>Copy value</b> and <b>Copy command</b> (the exact <code>settings put</code> line, to paste in the ADB Console pane of the <a href="#tab-terminal">Command-Line Interface</a> tab).</p>
 
   <h4>Flip a switch</h4>
   <ol class="hg-steps">
@@ -289,7 +289,8 @@
   <ul>
     <li><b>Search overlays...</b> filters by name or target; <b>Reload</b> reads the list again. Chips: <b>All</b>, <b>On</b>, <b>Off</b> and <b>Theme</b> (names that look like theme, colour, icon pack, navigation bar, font or shape). Your chip is remembered.</li>
     <li>A status line, such as <i>83 overlays · 21 on</i>, the time read, and <b>Refresh</b>.</li>
-    <li>Overlays are grouped under their target (such as <code>android</code> or <code>com.android.systemui</code>) with a count like "3 / 7 on"; those with no target are under <b>Other</b>. Each row shows the name, its state (<b>On</b>, <b>Off</b> or <b>Unavailable</b>) and a switch. Unavailable means Android lists it but it cannot be switched (its target app is missing, or it is not approved); the row is dimmed. 120 rows are drawn at a time.</li>
+    <li>The list is in three parts, in this order: <b>Enabled</b> first, then <b>Disabled</b>, then <b>Installed, not changeable</b> (overlays Android lists but cannot switch), each with its count. Inside a part, overlays are grouped under their target (such as <code>android</code> or <code>com.android.systemui</code>) with a count; those with no target are under <b>Other</b>.</li>
+    <li>Each row shows the name, <b>a very short description of what it is for</b> (for example <i>Gesture navigation: swipes instead of buttons</i>), its state (<b>On</b>, <b>Off</b> or <b>Unavailable</b>) and a switch. The description is a best guess made from the overlay's name and target, so treat it as a hint, not a promise. Unavailable means Android lists it but it cannot be switched (its target app is missing, or it is not approved); the row is dimmed. 120 rows are drawn at a time.</li>
   </ul>
 
   <h5>Switch an overlay on or off</h5>
@@ -336,6 +337,8 @@
   <table class="hg-table">
     <thead><tr><th>Button</th><th>What it does</th></tr></thead>
     <tbody>
+      <tr><td><b>Issues</b></td><td>Opens the project's issue page, <code>github.com/Bingblop/ADB-Application-Manager/issues</code>, in your browser. Report a bug or ask for a feature there, where other people can see it and add to it. It needs a free GitHub account to write; reading does not.</td></tr>
+      <tr><td><b>Contact the developer</b></td><td>Opens a small sheet to write to the developer by email. Type your message, leave <b>Add the app and phone details</b> on (it adds the app version, Android version and phone model, which makes a problem much easier to find; turn it off to send only your words), and tap <b>Send</b>: your email app opens with the message ready, the subject already set to <i>ADB App Manager</i>. <b>Copy message</b> copies the text instead. The message goes to a <b>contact alias</b> (an address that only forwards mail), so the developer's own address is never shown to you or kept in the app. If the phone has no email app, the sheet says so and you can copy the message. The alias is shown in the sheet (<code>bingblop.coral666@simplelogin.fr</code>), so you can also write to it from any email app. A build made without an alias says the contact address is not set up yet and points you to Issues.</td></tr>
       <tr><td><b>GitHub</b></td><td>Opens the project page, <code>github.com/Bingblop/ADB-Application-Manager</code>, in your browser. Source code, releases and the issue tracker are there.</td></tr>
       <tr><td><b>Help Guide</b></td><td>Opens this guide in a sheet: a table of contents (the <b>Contents</b> button at the top brings it back), a search box, and every tab and button explained. After you follow a link inside the guide, a button <b>Back to where I was</b> shows for about 15 seconds and takes you back to the spot you left. The guide is English only, and it is loaded the first time you open it. Most other tabs, and Settings, have a small round <b>?</b> button on their first card that opens the guide at their topic; <b>Application Manager</b> and <b>Command-Line Interface</b> have none, so this button is how you reach the guide from them.</td></tr>
       <tr><td><b>What's new</b></td><td>Opens a sheet titled <b>What's New</b> with the release notes of the newest three versions. At the bottom, <b>Full changelog</b> opens the whole file on GitHub and <b>Got it</b> closes the sheet. The same sheet also opens once by itself after the app has been updated. If the build has no notes, a message says <i>No release notes in this build</i>.</td></tr>
@@ -377,9 +380,6 @@
   </table>
   <p>Under the list, a line either says <b>Signed with the official release key</b> or <b>Not signed with the official release key (a debug, fork or modified build)</b>, followed by the signature's SHA-256 fingerprint (a long code that identifies the key the app was signed with). The official key's fingerprint begins <code>94:61:87:0F</code>. The second message is not automatically a danger (a copy you built yourself, or a fork, also shows it), but if you meant to install the official app, reinstall from the project's Releases page (see <a href="#install-and-update">Installing and updating</a>). Three buttons: <b>Copy debug info</b> (a short text with version, package, Android, device, WebView, working mode and fingerprint), <b>Share it</b> (the same text through the share sheet) and <b>Copy fingerprint</b>.</p>
 
-  <h4>Handy to know</h4>
-  <p>A short list of tips: how Back works, press and hold, File Manager View, installs from File Manager, the Rish shell in the ADB Console, and the per-app log in Logcat. Each tip is explained in its own section of this guide.</p>
-
   <h4>Device Specs</h4>
   <p>Everything the phone will say about itself, <b>with no working mode needed</b>. It is read when the tab opens, and the <b>Refresh</b> button reads it again. A line appears only when your phone reports it. The groups are:</p>
   <ul>
@@ -393,6 +393,9 @@
   </ul>
   <p>If it says <i>Could not read the device specs</i>, tap <b>Refresh</b>.</p>
 
+  <h4>Handy to know</h4>
+  <p>A short list of tips: how Back works, press and hold, File Manager View, installs from File Manager, the Rish shell in the ADB Console, and the per-app log in Logcat. Each tip is explained in its own section of this guide.</p>
+
   <h4>Privacy and Credits</h4>
   <p>The <b>Privacy</b> card says: no account, no ads, no analytics and no server of the developer's; everything runs on your phone; the app goes online only for something you open or ask for (update checks, App Stores, the debloat list, and a VirusTotal lookup if you add your own key); the ADB key and the APK-signing key are made on your phone and never leave it. The full text is in <a href="#privacy">Privacy</a>. The <b>Credits</b> card thanks the projects the app builds on; see <a href="#credits">Credits</a>.</p>
 
@@ -403,16 +406,16 @@
   </ul>
 </section>
 <section id="prefs" data-title="Settings (the gear)" data-group="Settings and looks">
-  <p class="hg-lead">The Settings screen decides how the app looks and behaves: its language, light or dark, colours, font, app icons, the extra button on each app row, and which tabs are shown. Nearly everything here changes only this app. The one exception is the last card, <b>Trim Caches</b>, which clears the cache of every app on your phone.</p>
+  <p class="hg-lead">The Settings screen decides how the app looks and behaves: its language, light or dark, colours, font, app icons, the extra button on each app row, and which tabs are shown. Everything here changes only this app, not the rest of your phone.</p>
   <p><b>Where to find it:</b> tap the <b>gear icon</b> in the header at the top right, to the left of the working-mode badge. Settings is not a tab: it has no place on the tab bar and cannot be switched off. The gear lights up while the screen is open. Press <b>Back</b> to return to the tab you came from.</p>
 
   <h4>Before you start</h4>
   <ul>
-    <li>No permission and no computer are needed, and no working mode either, except for <b>Trim Caches</b> (the last card), which needs one. Every control works at once; there is no Save button, and what you choose is kept on the phone.</li>
-    <li>These settings are about this app only. The font, the colours and the language do not change the rest of your phone. <b>Trim Caches</b> is the exception: it clears the temporary files of the other apps.</li>
-    <li>The cards come in this order: <b>Language</b>, <b>Appearance</b>, <b>Palette Style</b>, <b>My Themes</b>, <b>Curated Theme Palettes</b> (with the <b>Granular Color Pickers</b> inside it), <b>Lists</b>, <b>Motion</b>, <b>Reconnecting devices</b>, <b>Font</b>, <b>Icon pack</b>, <b>Action Button</b>, <b>Feature List</b>, <b>Press and hold guide</b> and, last, <b>Trim Caches</b>. Below, each card has its own part, with every control, its default and when to change it.</li>
+    <li>No permission, no computer and no working mode are needed. Every control works at once; there is no Save button, and what you choose is kept on the phone.</li>
+    <li>These settings are about this app only. The font, the colours and the language do not change the rest of your phone. (<b>Trim Caches</b>, which clears the caches of the other apps, was a card here until v7.10.10; it now lives in the <a href="#tab-sdm">SD Maid</a> tab.)</li>
+    <li>The cards come in this order: <b>Language</b>, <b>Appearance</b>, <b>Palette Style</b>, <b>My Themes</b>, <b>Curated Theme Palettes</b> (with the <b>Granular Color Pickers</b> inside it), <b>Lists</b>, <b>Motion</b>, <b>Haptic feedback</b>, <b>Progress messages</b>, <b>VirusTotal API key</b>, <b>Reconnecting devices</b>, <b>Font</b>, <b>Icon pack</b>, <b>Action Button</b>, <b>Feature List</b> and, last, <b>Press and hold guide</b>. Below, each card has its own part, with every control, its default and when to change it.</li>
   </ul>
-  <div class="hg-note"><b>Not in this screen.</b> There is no switch here for the short vibration the app gives when you tap buttons, for keeping the screen on, for update checks, for backups or for logs. Update checks live in <a href="#tab-updates">App Updater</a>, backups in the <a href="#apps-backup">apps backup</a> section, logs in <a href="#tab-logcat">Logcat Viewer</a>. The Command-Line Interface has its own gear (<a href="#tab-terminal">Command-Line Interface</a>), and the <b>Keep selection after running</b> switch is inside the batch panel (see <a href="#apps-batch">batch actions</a>).</div>
+  <div class="hg-note"><b>Not in this screen.</b> There is no switch here for keeping the screen on, for update checks, for backups or for logs. Update checks live in <a href="#tab-updates">App Updater</a>, backups in the <a href="#apps-backup">apps backup</a> section, logs in <a href="#tab-logcat">Logcat Viewer</a>. The Command-Line Interface has its own gear (<a href="#tab-terminal">Command-Line Interface</a>), and the <b>Keep selection after running</b> switch is inside the batch panel (see <a href="#apps-batch">batch actions</a>).</div>
 
   <h4>Language</h4>
   <p>A drop-down list, under the words "The text of this app. Names of apps, files and commands are not translated."</p>
@@ -540,6 +543,15 @@
     </tbody>
   </table>
 
+  <h4>Haptic feedback</h4>
+  <p>One switch, <b>Vibrate on taps</b>, <b>on by default</b>. While it is on, every tap on a button, a tab, a switch, a menu or a list row gives a very short vibration, so you feel that the tap was taken. A tap that already vibrated for another reason (a press and hold, for example) is still felt once, not twice. Turn it off and the app stays quiet; turning it on again gives one tick as proof. It is the app's own tick: the touch-feedback setting of your phone is not changed, and if your phone has its vibration switched off, you will not feel it either. Needs no permission.</p>
+
+  <h4>Progress messages</h4>
+  <p>One switch, <b>Say what is going on</b>, <b>on by default</b>. While an app is uninstalled, frozen, suspended, cleared and so on (from the app menu, the action button, a batch or the Connected Devices apps), the app shows small messages while it works: <i>Working on it&hellip;</i>, then <i>Checking the phone&hellip;</i> (or <i>Checking the device&hellip;</i>) while it asks the phone what became of the app. Turn the switch off if they are noise. What stays: the result (for example <i>Alpha: Uninstalled</i> or <i>Bravo: Still installed</i>), every problem and its result window, and the line on a batch's progress sheet.</p>
+
+  <h4>VirusTotal API key</h4>
+  <p>The one place for the VirusTotal key (a free key from virustotal.com, under your account, API key). Paste it into the box; <b>Test key</b> asks VirusTotal whether it works, and once it has, the line under the box says <i>The key is entered and approved.</i> Changing the key takes the approval away until you test again; <b>Remove key</b> empties the box. The <a href="#tab-installer">APK Installer</a>'s scan and <a href="#morphe-helper">Morphe Helper</a>'s scan both use this key and no longer have a key box of their own: when it is missing or not approved they say so and show a button that opens this card. A key entered in an older version is taken over automatically. The key stays on this phone and is sent only to VirusTotal when you scan.</p>
+
   <h4>Reconnecting devices</h4>
   <p>What the <a href="#tab-devices">Connected Devices</a> tab does when a device you were connected to drops. The same switch is under the <b>Not connected</b> cards in that tab.</p>
   <table class="hg-table">
@@ -553,6 +565,7 @@
   <p>The box is greyed out while <b>Reconnect on its own</b> is off. The timings count from the moment the device dropped, one attempt after the other, and the series stops at the first attempt that works. While the app is in the background the attempts wait for you to come back.</p>
 
   <h4>Font</h4>
+  <p><b>The list of fonts found is for one visit.</b> What <b>Find fonts on this phone</b> finds is shown under the button, with a <b>Clear this list</b> link. The list is emptied when you leave Settings (and a search that finishes after you left is thrown away), so it does not sit in memory; search again when you need it. The font you chose stays.</p>
   <p>The font of the text in this app only. A line shows what is in use: <i>In use: the system font</i>, or <i>In use: Name (file name, size)</i>.</p>
   <table class="hg-table">
     <thead><tr><th>Control</th><th>What it does</th><th>Default</th><th>When to change it</th></tr></thead>
@@ -618,35 +631,6 @@
     </tbody>
   </table>
 
-  <h4>Trim Caches</h4>
-  <p>The last card of Settings, and the one control here that works on your phone and not only on this app. It has one button, <b>Trim Caches in All Applications</b>, and a long explanation under it. The button clears the cache of every app in one go, to free some storage.</p>
-  <p><b>What it needs.</b> A <a href="#modes-overview">working mode</a> (ADB over TCP, Wireless Debugging, Shizuku or Root). Without one the button shows a padlock, and tapping it opens the sheet <b>Working Mode Required</b>.</p>
-  <ol class="hg-steps">
-    <li>Tap the gear, scroll to the bottom of Settings and find the card <b>Trim Caches</b>.</li>
-    <li>Tap <b>Trim Caches in All Applications</b>. A question opens: "Trim the caches of every app now? Only cache files are deleted. Apps, their data, logins and your files stay as they are." Tap <b>OK</b> to go on, or <b>Cancel</b> and nothing happens.</li>
-    <li>The app runs <code>pm trim-caches 128G</code> through your working mode, which is the same as typing <code>adb shell pm trim-caches 128G</code> on a computer. The button turns grey and reads "Trimming caches&hellip;", and a line under it says that this can take up to a minute or two. The app stays usable while it runs.</li>
-    <li>When it ends, a box titled <b>Trim Caches in All Applications</b> opens. On success it says <b>Caches trimmed</b>, shows the command tagged <b>SUCCESS</b>, and gives a line such as "Free space on the phone: 120 GB before, 123 GB after (2.4 GB freed)." When nothing more could be freed, the line ends "(nothing more could be freed)" instead. The command prints nothing when it works, so the box also says "Done. The command printed nothing, which is what it does when it works."</li>
-    <li>If it did not work, the box says <b>It did not finish</b>, shows the command tagged <b>FAILED</b>, and quotes Android's own words. See <a href="#troubleshooting">Troubleshooting</a>, "Trim Caches says it did not finish".</li>
-  </ol>
-
-  <h5>What it does</h5>
-  <p><code>pm trim-caches</code> asks Android to free storage by deleting app caches until the phone has the amount of free space you give it. 128 GB is more free space than any phone has, so the target can never be reached. Android therefore keeps going and clears every cache it is allowed to clear, in every app, instead of stopping after the first few. Which apps it starts with, and in what order, is Android's own choice.</p>
-
-  <h5>What is trimmed</h5>
-  <p>Only cache: the temporary files that each app keeps in its own <i>cache</i> folder and its <i>code cache</i> folder, on the phone's internal storage and in the app's folder under <code>Android/data</code>. That means things like downloaded thumbnails and images, web pages a browser kept for next time, map tiles, video and music that was only buffered, and temporary files an app made while working. Android treats all of it as safe to throw away, and the app makes it again when it needs it. (<a href="#glossary">Glossary</a>: cache.)</p>
-
-  <h5>What is not touched</h5>
-  <p>Your apps themselves, their data and settings, logins and accounts, saved games, photos, videos, downloads and every other file in your folders. Nothing is uninstalled and no app is reset.</p>
-
-  <h5>What you may notice</h5>
-  <ul>
-    <li>The first start of an app afterwards can be a little slower, and it may use mobile data to fetch images again.</li>
-    <li>An app that keeps offline downloads in its cache folder (some music, video and map apps do) may need to download them again.</li>
-    <li>Apps that are running right now may keep some of their cache until they close.</li>
-    <li>How much it frees depends on how much cache your apps hold. The box shows the free space before and after, so you can see what it did.</li>
-  </ul>
-  <div class="hg-note"><b>Tip.</b> This does not delete files, downloads or app data, so it will not free a lot on a phone whose space is used by big apps or files. For that, see <a href="#recipe-find-big-apps">Find the apps that take the most space</a>. The steps again, in short: <a href="#recipe-trim-caches">Free up space by clearing every app's cache</a>.</div>
-
   <h4>If something here does not work</h4>
   <ul>
     <li><b>I cannot find a button the guide mentions.</b> You may have chosen another language. Switch to English under <b>Language</b>.</li>
@@ -654,8 +638,7 @@
     <li><b>The colours look wrong.</b> Tap <b>Reset tweaks</b>, or tap a palette card to clear every tweak.</li>
     <li><b>An app icon is missing or wrong.</b> Tap <b>Clear icon cache</b>, or pick <b>Default icons</b>.</li>
     <li><b>The text is hard to read after a font change.</b> Tap <b>Use system font</b>.</li>
-    <li><b>The Trim Caches button has a padlock.</b> No working mode is on. Tap it and then <b>Set Up Working Mode</b> (<a href="#modes-overview">Working modes</a>).</li>
-    <li><b>Trim Caches says "It did not finish".</b> Read the words Android gave in the box; <a href="#troubleshooting">Troubleshooting</a> explains the usual ones.</li>
+    <li><b>I cannot find Trim Caches any more.</b> It moved to the <a href="#tab-sdm">SD Maid</a> tab.</li>
   </ul>
 </section>
 <section id="feature-list" data-title="Turning tabs on and off and moving them" data-group="Settings and looks">

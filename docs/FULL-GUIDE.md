@@ -111,14 +111,14 @@ Left to right, with the **settings gear** (it opens Settings: language, appearan
 | **Task Manager** | Processes, CPU, RAM, GPU, battery and network, live, each with a graph ([details](#new-in-v75)) |
 | **Connected Devices** | Another Android device (a Wear OS watch first) over adb: add by pairing code, address, network scan or Bluetooth link; its apps (enable, disable, uninstall, reinstall, pull), send APK / APKS / APKM / XAPK, console, logcat, files, hidden settings, screen density and size |
 | **Morphe Patcher** | Morphe patching on the phone: patch sources and the community finder, apps marked **Installed**, Morphe Helper (ten APK download sources, an in-app browser for sites with a browser check, optional VirusTotal), Simple and Advanced patching, install when finished, live log, Patched APKs |
-| **SD Maid SE** | SystemCleaner, AppCleaner, CorpseFinder and Deduplicator ported from SD Maid SE: scan, review and untick, delete, optional 1-tap scan and delete, exclusions, history, accessibility cache clearing |
+| **SD Maid** | SystemCleaner, AppCleaner, CorpseFinder and Deduplicator ported from SD Maid SE: scan, review and untick, delete, optional 1-tap scan and delete, exclusions, history, accessibility cache clearing |
 | **About** | Who made it, which build and key you have, debug info, the Permissions sheet, and the coffee button |
 
 Every tab except Application Manager and About can be switched off or moved in **Settings → Feature List**.
 
 ## New in v7.9
 
-**v7.10.8 is the latest build** (Connected Devices, 32-bit and universal APKs, the Help Guide: see [CHANGELOG.md](../CHANGELOG.md)). Everything from v7.9 through v7.9.15 is below; the full, dated list is in
+**v7.10.17 is the latest build** (Connected Devices, 32-bit and universal APKs, the Help Guide: see [CHANGELOG.md](../CHANGELOG.md)). Everything from v7.9 through v7.9.15 is below; the full, dated list is in
 [CHANGELOG.md](../CHANGELOG.md) (and inside the app, under About).
 
 **Newest (v7.9.12 to v7.9.15)**
@@ -830,7 +830,7 @@ non-system app), and needs a working mode that isn't already Root (Root removes 
 The four last tabs are read in one go by the bridge call `getAppExtras(pkg)` (`AppExtras.java` does the decoding; each part is read on
 its own, so one that cannot be read does not blank the others).
 
-**Trim Caches in All Applications** (the last card of Settings) runs `pm trim-caches 128G` through the working mode, off the page's
+**Trim Caches in All Applications** (a card of the **SD Maid** tab; it was in Settings before v7.10.10) runs `pm trim-caches 128G` through the working mode, off the page's
 thread, and reports the free space of `/data` before and after. Only caches are cleared.
 
 **Uninstalling on a connected device** follows the same steps: `pm uninstall --user 0`, then, for the root-only refusal, the helper
@@ -993,6 +993,13 @@ Light / Dark / System stays as you set it.
 
 **Saved lists backup** (Saved Applications tab, **Back up and restore**): back up to a folder you choose (or Download/ADB App Manager), share the file, switch on automatic backups into
 `saved-lists-latest.json`, and restore from a file or from the folder, adding to your lists or replacing them (the Quick list follows).
+
+**Haptic feedback** (Settings, on by default): a short tick on every tap of a button, tab, switch or row, with one switch to turn it off. **App Stores**: the **+** tab adds a store of your own (an F-Droid style repository, or a GitHub or Codeberg user, organization or project; the tab is named by you or from the address), and every store's apps now open a detail sheet with the full description and screenshots (it was ShizuStore only). **Task Manager**: **Apps first** in the Processes list. **SD Maid** (the tab's new name) now holds **Trim Caches** (it was in Settings), and AppCleaner asks the phone whether the accessibility service is ready when you Delete and has **Clear the rest with accessibility**. The gear wears the app's colours, and the list of fonts found is emptied when Settings is left.
+
+**Saved devices** (Connected Devices, under the picker): every device that was connected, up to 20, with **Connect** and **Delete** (asked first), **Delete all**, and a switch to stop remembering new ones.
+
+**Logcat entries** open when tapped, in a window with **Copy**, **More info** (the Coding Agent explains the entry; nothing is sent until you tap it) and **Web search**. **Hidden Settings** have **Web search** and **Explain (AI)** in the editor and 150 more settings described.
+The Task Manager's **CPU** tab has the °F / °C menu, and the **GPU** tab starts with the renderer card. In the Apps tab the boxes at the top wear their own colours, and the **Bloatware (Uninstalled)** box clears the other filters.
 
 **Morphe Helper downloads** keep going when the app is left: a foreground service with a notification (progress, speed, time left, **Pause all**, **Cancel**) and a switch to turn it off.
 
@@ -1275,3 +1282,21 @@ community catalog. The Task Manager tab is modeled on
 [RohitKushvaha01/TaskManager](https://github.com/RohitKushvaha01/TaskManager).
 
 Changes by version: [CHANGELOG.md](../CHANGELOG.md).
+
+**Overlays, ordered and explained** (RRO/Monet Customization > Overlays, v7.10.11): the list is in three parts, **Enabled**, **Disabled**, **Installed, not changeable**, each with its count and, inside it, the overlays grouped under their target. Every row has a very short description of what the overlay is for (a best guess from its name and target).
+
+**Command suggestions** (Command-Line Interface, Terminal and ADB Console, v7.10.11): a grey completion line above the input offers the rest of what you type, from your history first, then the packages on the phone, Hidden Settings keys and common commands. **Right arrow** at the end of the line accepts it; a **tap on the line** does too. It never runs anything.
+
+**Issues and Contact the developer** (top of the About card, v7.10.11): **Issues** opens the GitHub issue page. **Contact the developer** opens a sheet to write a message (with or without the app, Android and phone details) and opens your email app with the subject **ADB App Manager**, addressed to a forwarding alias so the developer's own address is not shown or stored in the app.
+
+**Batch results read back from the phone** (v7.10.12): after Uninstall, Uninstall (keep data), Reinstall, Freeze and Unfreeze the batch asks the package manager (`pm list packages --user 0`, `-d` for frozen apps) what became of each app, and the Batch Results tags are **Uninstalled / Still installed**, **Installed / Not installed**, **Frozen / Not frozen**, **Enabled / Still frozen**. A command that reported a failure for an app that is gone counts as a success, with a note on its card. If the phone cannot be asked, the command's own result is used.
+
+**One app, read back too** (v7.10.13): the app menu's Uninstall, Reinstall, Freeze, Enable, Suspend and Unsuspend run natively, then the phone is asked (package lists; for Suspend the app's own flag in `dumpsys package`) and the message says what was found. A batch shows **Checking the phone…** on its progress sheet first. Clear data and Force stop are not read back (nothing to read). The **Connected Devices console** now suggests commands like the Terminal does, including adb's own commands in adb mode.
+
+**Read-back everywhere** (v7.10.14): the Connected Devices app list lists the device again after Enable, Disable, Uninstall and Reinstall and reports what it finds (*Checking the device…*); Clear data is read back in Root mode by counting the files and size of the app's `/data/user/0/<package>` folder before and after; **Settings > Progress messages** switches off the "Working on it… / Checking…" toasts (the result and every problem stay).
+
+**UAD-NG tag** (v7.10.15): tapping it opens the app's classification (level, group, the project's description, needed by / depends on). What the four levels mean is behind the **Removal Levels** button at the bottom of that sheet (the same lines as in the Debloater tab).
+
+**Clear Data from Uninstalled Apps** (SD Maid tab, above Trim Caches, v7.10.16): lists the apps that are uninstalled (in Root mode only those with a data folder left, with sizes), you tick and confirm, and each is cleared with `pm clear`, else (Root) by deleting its data folders, else by bringing it back with `pm install-existing` and removing it again without keeping the data. **Batch menu** (v7.10.16): grab handle (up = taller, down = smaller, down again = closes to the checkmark button), outlined **Select All** / **Clear All**, **Show Applications**, **Share List** in the grid, **Keep selection after running** on every time; leaving the Apps tab drops the selection; **Running** turns **Uninstalled** off; package names in a softer theme colour. **VirusTotal API key** (Settings): one key, tested once, used by the Installer and Morphe Helper.
+
+**Force stop and Clear data read back** (v7.10.17): Force stop shows *Stopped* / *Still running* from the process list; Clear data counts files (private folder in Root mode, the app's `Android/data` folder in ADB and Shizuku modes, twice, to see files that come back). A row shows a spinner and *Working…* / *Checking…* while its app is changed and checked. The opened row of the Debloater list has a **Removal Levels** button. Morphe Helper reads APKMirror's variants table (APK and BUNDLE rows) and, when the browser check blocks the variant page, opens that variant in the in-app browser.

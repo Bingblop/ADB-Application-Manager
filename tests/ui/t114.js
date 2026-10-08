@@ -67,7 +67,7 @@ const { chromium, PAGE } = require('./lib/pw');
 
   // a refusal: the device's own words and the note
   await ev(() => { cdAppAct('com.google.android.deskclock', 'uninstall'); }); await wait(120);
-  await page.click('#cdAskOk'); await wait(300);
+  await page.click('#cdAskOk'); await wait(1800);          // (the command, then two looks at the device with a pause between: the app is still there)
   const sheet = await ev(() => ({ open: document.getElementById('cdSheetModal') ? document.getElementById('cdSheetModal').classList.contains('show') : null, title: document.getElementById('cdSheetTitle').innerText, body: document.getElementById('cdSheetBody').innerText }));
   check('a refusal opens "That did not work" with the answer', sheet.title === 'That did not work' && /only root can delete system app/.test(sheet.body) && /RESULT:FAIL:-3/.test(sheet.body), JSON.stringify(sheet));
   check('with the note about disabling instead', /Disable the app instead/.test(sheet.body));
@@ -79,7 +79,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await ev(() => { cd.sel.clear(); cdToggleSel('com.wear.gone'); cdToggleSel('com.wear.policy'); cdToggleSel('com.google.android.deskclock'); cdBatch('uninstall'); }); await wait(150);
   check('several: asked once for all of them', await ev(() => /Uninstall 3 apps/.test(document.getElementById('cdAskTitle').innerText)));
   await ev(() => { window.__un.length = 0; });
-  await page.click('#cdAskOk'); await wait(700);
+  await page.click('#cdAskOk'); await wait(2800);
   check('each one goes through the same method, for that device', (await un()).length === 3 && (await un()).every(c => /^192\.168\.1\.20:5555 com\./.test(c)), (await un()).join('|'));
   const report = await ev(() => document.getElementById('cdSheetBody').innerText);
   const title = await ev(() => document.getElementById('cdSheetTitle').innerText);

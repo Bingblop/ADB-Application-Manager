@@ -1,0 +1,26 @@
+ok   1. the plain call is not used for Uninstall: the checked one is
+ok      the toast first says the phone is being asked: Checking the phone…
+ok      then it says what was found: Alpha: Uninstalled: Alpha: Uninstalled
+ok      a success shows no result window
+ok      the history has it
+ok      an app that is still installed says so, and the result window opens: Bravo: Still installed
+ok      Suspend is read back too: Alpha: Suspended
+ok      Force stop is read back too since v7.10.17 (the process should be gone)
+ok      an action with nothing to read back (Open) takes the plain way
+ok   2. the progress sheet says "Checking the phone…" with the number of apps and a full bar: {"text":"Checking the phone… (2 apps)","bar":"100%","stop":true}
+ok      Stop is off while it checks
+ok      then the results open
+ok   3. a line from the history is offered: getprop ro.product.model: getprop ro.product.model
+ok      Right arrow at the end accepts it
+ok      after pm path, the device's own package names (from its Apps list) are offered: pm path com.wear.weather
+ok      a tap on the line accepts too
+ok      common commands are offered: dumpsys battery
+ok      nothing matches: no suggestion
+ok      after "adb " the lines for adb itself are offered: adb pull /sdcard/
+ok      after "adb shell" the device's shell is completed (a package from its list): adb shell pm path com.google.android.deskclock
+ok      in adb mode the typed line is for adb: pull…: pull /sdcard/
+ok      adb uninstall takes a package of the device: uninstall com.wear.weather
+ok      a finished line has no suggestion
+ok      an empty box has none
+ok      with the cursor in the middle there is no suggestion
+ok   no page errors:

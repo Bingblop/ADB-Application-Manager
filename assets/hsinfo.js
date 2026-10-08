@@ -2,10 +2,10 @@
 // Text of the settings Android documents comes from AOSP (Settings.java, Apache License 2.0); the rest was written for this app.
 window.HS_INFO = {
 global: `activity_manager_constants|Hidden tuning values of the activity manager (how Android starts and keeps apps).|text: name=value pairs separated by commas; empty = built-in defaults
-activity_starts_logging_enabled|Feature flag to enable or disable the activity starts logging feature.|0 = off; 1 = on
+activity_starts_logging_enabled|Records which app starts which screen of another app (for security audits).|0 = off; 1 = on
 adaptive_battery_management_enabled|Adaptive Battery: Android learns which apps you use and limits the ones you don't.|0 = off; 1 = on
 adb_allowed_connection_time|How long a "Always allow from this computer" ADB approval stays valid before the phone asks again.|milliseconds; 0 = never expires; default 604800000 (7 days)
-adb_disconnect_sessions_on_revoke|Whether existing ADB sessions over both USB and Wifi should be terminated when the user revokes debugging authorizations.|0 = off; 1 = on
+adb_disconnect_sessions_on_revoke|Ends every open ADB session (USB and Wi-Fi) when you revoke the saved USB debugging approvals.|0 = sessions stay open; 1 = sessions are ended|conn
 adb_enabled|USB debugging: lets a computer, or this app, talk to the phone over ADB.|0 = off; 1 = on|conn
 adb_wifi_enabled|Wireless debugging: ADB over Wi-Fi.|0 = off; 1 = on|conn
 add_users_when_locked|Lets people add users or a guest from the lock screen.|0 = no; 1 = yes
@@ -17,17 +17,17 @@ allow_user_switching_when_system_user_locked|Allows switching users when system 
 allow_work_profile_telephony_for_non_dpm_role_holders|Whether work profile telephony feature is enabled for non ROLE_DEVICE_POLICY_MANAGEMENT holders. ("0" = false, "1" = true).|0 = off; 1 = on
 always_finish_activities|"Don't keep activities": destroys every screen of an app the moment you leave it (developer option).|0 = off; 1 = on
 always_on_display_constants|Always on display(AOD) specific settings This is encoded as a key=value list, separated by commas.|text: name=value pairs separated by commas
-angle_debug_package|Package containing ANGLE libraries other than system, which are only available to dumpable apps that opt-in.
+angle_debug_package|The package that supplies the ANGLE driver while it is being tested.|package name
 angle_egl_features|Lists of ANGLE EGL features for debugging. Each list of features is separated by a comma, each feature in each list is separated by a colon. e.g. feature1:feature2:feature3,feature1:feature3:feature5
-angle_gl_driver_all_angle|Force all PKGs to use ANGLE, regardless of any other settings The value is a boolean (1 or 0).|0 = off; 1 = on
-angle_gl_driver_selection_pkgs|List of PKGs that have an OpenGL driver selected
-angle_gl_driver_selection_values|List of selected OpenGL drivers, corresponding to the PKGs in GLOBAL_SETTINGS_DRIVER_PKGS
+angle_gl_driver_all_angle|Draws every app with ANGLE (OpenGL ES translated onto Vulkan) instead of the phone's own OpenGL driver.|0 = off; 1 = on
+angle_gl_driver_selection_pkgs|The apps that have a graphics driver picked for them. Goes together with angle_gl_driver_selection_values.|list of package names separated by commas
+angle_gl_driver_selection_values|The driver picked for each app in angle_gl_driver_selection_pkgs, in the same order.|list separated by commas: default; angle; native
 animator_duration_scale|Speed of animations inside apps (developer option "Animator duration scale").|decimal; 1 = normal; 0 = no animation; 0.5 = twice as fast; 2 = twice as slow
 anomaly_config|A base64-encoded string represents anomaly stats config, used for StatsManager.
 anomaly_config_version|An integer to show the version of the anomaly config. Ex: 1, which means current version is 1.
 anomaly_detection_constants|Tuning values of the battery anomaly detector.|text: name=value pairs separated by commas
-apn_db_content_url|URL for apn_db updates|web address (URL)
-apn_db_metadata_url|URL for apn_db update metadata|web address (URL)
+apn_db_content_url|Where the phone downloads updates of the mobile network (APN) settings.|web address
+apn_db_metadata_url|Where the phone checks for newer mobile network (APN) settings.|web address
 app_auto_restriction_enabled|Settings restricts apps that drain the battery in the background by itself.|0 = off; 1 = on
 app_integrity_verification_timeout|Timeout for app integrity verification.
 app_ops_constants|App ops specific settings. This is encoded as a key=value list, separated by commas.|text: name=value pairs separated by commas
@@ -45,7 +45,7 @@ audio_safe_volume_state|Persisted safe headphone volume management state by Audi
 auto_revoke_parameters|Auto revoke parameters.
 auto_time|Sets the clock from the mobile network.|0 = set by hand; 1 = automatic
 auto_time_zone|Sets the time zone from the mobile network.|0 = set by hand; 1 = automatic
-auto_time_zone_explicit|Records whether an explicit preference for AUTO_TIME_ZONE has been expressed instead of the current value being the default.
+auto_time_zone_explicit|Remembers that you chose automatic time zone yourself, so experiments no longer change it.|0 = no choice made yet; 1 = chosen
 autofill_compat_mode_allowed_packages|Deprecated. The packages allowlisted to be run in autofill compatibility mode.
 autofill_logging_level|Level of autofill logging. Valid values are NO_LOGGING, FLAG_ADD_CLIENT_DEBUG, or FLAG_ADD_CLIENT_VERBOSE.
 autofill_max_partitions_size|Maximum number of partitions that can be allowed in an autofill session.
@@ -66,17 +66,17 @@ bcast_fg_constants|Broadcast dispatch tuning parameters specific to foreground b
 bcast_offload_constants|Broadcast dispatch tuning parameters specific to specific "offline" broadcasts. This is encoded as a key=value list, separated by commas. Ex: "foo=1,bar=true".|text: name=value pairs separated by commas
 binder_calls_stats|Binder call stats settings. The following strings are supported as keys: enabled (boolean) detailed_tracking (boolean) upload_data (boolean) sampling_interval (int)|0 = off; 1 = on
 ble_scan_always_enabled|Lets apps scan for Bluetooth devices even while Bluetooth is off (helps location).|0 = off; 1 = on
-ble_scan_background_mode|The mode that BLE scanning clients will be moved to when in the background.
-ble_scan_balanced_interval_ms|The length in milliseconds of a BLE scan interval in a balanced scan mode.|milliseconds
-ble_scan_balanced_window_ms|The length in milliseconds of a BLE scan window in a balanced scan mode.|milliseconds
-ble_scan_low_latency_interval_ms|The length in milliseconds of a BLE scan interval in a low-latency scan mode.|milliseconds
-ble_scan_low_latency_window_ms|The length in milliseconds of a BLE scan window in a low-latency scan mode.|milliseconds
-ble_scan_low_power_interval_ms|The length in milliseconds of a BLE scan interval in a low-power scan mode.|milliseconds
-ble_scan_low_power_window_ms|The length in milliseconds of a BLE scan window in a low-power scan mode.|milliseconds
+ble_scan_background_mode|The Bluetooth LE scan mode apps are moved to when they go to the background.|-1 = opportunistic (only hears what others find); 0 = low power; 1 = balanced; 2 = low latency
+ble_scan_balanced_interval_ms|In balanced Bluetooth LE scans, the length of each cycle.|milliseconds
+ble_scan_balanced_window_ms|In balanced Bluetooth LE scans, how long the radio listens in each cycle.|milliseconds
+ble_scan_low_latency_interval_ms|In low-latency Bluetooth LE scans, the length of each cycle.|milliseconds
+ble_scan_low_latency_window_ms|In low-latency Bluetooth LE scans, how long the radio listens in each cycle.|milliseconds
+ble_scan_low_power_interval_ms|In low-power Bluetooth LE scans, the length of each cycle.|milliseconds
+ble_scan_low_power_window_ms|In low-power Bluetooth LE scans, how long the radio listens in each cycle.|milliseconds
 blocked_slices|A colon separated list of keys for Settings Slices.|a list, items separated by , or :
 blocking_helper_dismiss_to_view_ratio|Settings key for the ratio of notification dismissals to notification views - one of the criteria for showing the notification blocking helper.|decimal number
 blocking_helper_streak_limit|Settings key for the longest streak of dismissals - one of the criteria for showing the notification blocking helper. The value is an integer greater than 0.
-bluetooth_class_of_device|An integer representing the Bluetooth Class of Device (CoD).
+bluetooth_class_of_device|The Bluetooth "class of device" code the phone announces to other devices (what kind of device it says it is).|whole number
 bluetooth_disabled_profiles|A Long representing a bitmap of profiles that should be disabled when bluetooth starts.
 bluetooth_interoperability_list|A semi-colon separated list of Bluetooth interoperability workarounds.|a list, items separated by , or :
 bluetooth_on|Bluetooth.|0 = off; 1 = on
@@ -87,22 +87,22 @@ cached_apps_freezer|Freezes apps kept in the background so they use no processor
 call_auto_retry|Calls again by itself when a call is dropped (CDMA networks).|0 = off; 1 = on
 captive_portal_detection_enabled|Checks whether a Wi-Fi network needs a sign-in page.|0 = off; 1 = on
 captive_portal_fallback_probe_specs|A list of captive portal detection specifications used in addition to the fallback URLs. Each spec has the format url@@/@@statusCodeRegex@@/@@contentRegex. Specs are separated by "@@,@@".
-captive_portal_fallback_url|The URL used for fallback HTTP captive portal detection when previous HTTP and HTTPS captive portal detection attemps did not return a conclusive answer.|web address (URL)
+captive_portal_fallback_url|A second address used for the same sign-in page test when the first one fails.|web address
 captive_portal_http_url|Address the phone opens to test for a Wi-Fi sign-in page (HTTP).|web address
 captive_portal_https_url|Address the phone opens to test for a Wi-Fi sign-in page (HTTPS).|web address
 captive_portal_mode|What to do when a Wi-Fi network shows a sign-in page.|0 = ignore it; 1 = prompt for sign-in; 2 = avoid the network
-captive_portal_other_fallback_urls|A comma separated list of URLs used for captive portal detection in addition to the fallback HTTP url associated with the CAPTIVE_PORTAL_FALLBACK_URL settings.|a list, items separated by , or :
-captive_portal_server|The server used for captive portal detection upon a new conection. A 204 response code from the server is used for validation. TODO: remove this deprecated symbol.
+captive_portal_other_fallback_urls|More addresses used for the sign-in page test, tried one after the other.|web addresses separated by commas
+captive_portal_server|The host the phone contacts to find out whether a Wi-Fi network needs a sign-in page. An answer of 204 means the internet is open.|host name, e.g. connectivitycheck.gstatic.com
 captive_portal_use_https|Uses HTTPS to check that a Wi-Fi network really has internet.|0 = off; 1 = on
-captive_portal_user_agent|Which User-Agent string to use in the header of the captive portal detection probes. The User-Agent field is unset when this setting has no value (HttpUrlConnection default).
+captive_portal_user_agent|The browser name the sign-in page test presents itself with.|text
 car_dock_sound|Sound played when the phone is put into a car dock.|address of a sound file (URI)
 car_undock_sound|Sound played when the phone is taken out of a car dock.|address of a sound file (URI)
 carrier_app_names|Map of package name to application names. The application names cannot and will not be localized. App names may not contain colons or semicolons.
 carrier_app_whitelist|List of certificate (hex string representation of the application's certificate - SHA-1 or SHA-256) and carrier app package pairs which are allowlisted to prompt the user for install when a sim card...
 cdma_cell_broadcast_sms|CDMA Cell Broadcast SMS 0 = CDMA Cell Broadcast SMS disabled 1 = CDMA Cell Broadcast SMS enabled|0 = CDMA Cell Broadcast SMS disabled; 1 = CDMA Cell Broadcast SMS enabled
 cell_on|Whether cell is enabled/disabled|0 = off; 1 = on
-cert_pin_content_url|URL for cert pinlist updates|web address (URL)
-cert_pin_metadata_url|URL for cert pinlist updates|web address (URL)
+cert_pin_content_url|Where the phone downloads updates of the pinned certificates used to spot fake secure sites.|web address
+cert_pin_metadata_url|Where the phone checks for newer pinned certificates.|web address
 chained_battery_attribution_enabled|Flag to toggle whether system services report attribution chains when they attribute battery use via a WorkSource.|whole number
 charging_sounds_enabled|Plays a sound when charging starts.|0 = off; 1 = on
 charging_started_sound|The sound played when wired charging starts.|address of a sound file (URI)
@@ -117,8 +117,8 @@ connectivity_sampling_interval_in_seconds|Network sampling interval, in seconds.
 contact_metadata_sync|Deprecated. Whether to enable contacts metadata syncing or not The value 1 - enable, 0 - disable|1 = enable; 0 = disable
 contact_metadata_sync_enabled|Whether to enable contacts metadata syncing or not The value 1 - enable, 0 - disable|1 = enable; 0 = disable
 contacts_database_wal_enabled|Flag to toggle journal mode WAL on or off for the contacts database. WAL is enabled by default. Set to 0 to disable.
-conversation_actions_content_url|URL for conversation actions model updates|web address (URL)
-conversation_actions_metadata_url|URL for conversation actions model update metadata|web address (URL)
+conversation_actions_content_url|Where the phone downloads updates of the model behind suggested replies and actions.|web address
+conversation_actions_metadata_url|Where the phone checks for a newer suggested replies model.|web address
 custom_bugreport_handler_app|Deprecated. The package name for the custom bugreport handler app. This app must be allowlisted. This is currently used only by Power Menu short press.|package name
 custom_bugreport_handler_user|Deprecated. The user id for the custom bugreport handler app. This is currently used only by Power Menu short press.
 data_activity_timeout_mobile|Inactivity timeout to track mobile data activity. If set to a positive integer, it indicates the inactivity timeout value in seconds to infer the data activity of mobile network.|seconds
@@ -131,29 +131,29 @@ data_stall_alarm_non_aggressive_delay_in_ms|The number of milliseconds to delay 
 data_stall_recovery_on_bad_network|Tries to repair mobile data when the network is reported as bad.|0 = off; 1 = on
 database_creation_buildid|The build id of when the settings database was first created (or re-created due it being missing).|text
 database_downgrade_reason|The reason for the settings database being downgraded. This is only for troubleshooting purposes and its value should not be interpreted in any way.|text
-debug.force_rtl|Developer setting to force RTL layout.
+debug.force_rtl|Lays the whole screen out right to left (developer option "Force RTL layout direction").|0 = off; 1 = on
 debug_app|The app that waits for a debugger when it starts (developer option "Select debug app").|package name; empty = none
 debug_view_attributes|Lets views save their attributes so tools such as Layout Inspector can read them (developer option).|0 = off; 1 = on
 debug_view_attributes_application_package|Which application package is allowed to save View attribute data.
-default_dns_server|Setting for default DNS in case nobody suggests one
+default_dns_server|The DNS server used when the network does not give one.|IP address, e.g. 8.8.8.8
 default_install_location|Where new apps are installed.|0 = let Android decide; 1 = internal storage; 2 = SD card
 default_restrict_background_data|Whether background data is restricted by default (Data Saver).|0 = not restricted; 1 = restricted
 default_sm_dp_plus|The default SM-DP+ configured for this device. An SM-DP+ is used by an LPA (see EuiccService) to download profiles.
 desk_dock_sound|Sound played when the phone is put into a desk dock.|address of a sound file (URI)
 desk_undock_sound|Sound played when the phone is taken out of a desk dock.|address of a sound file (URI)
 development_settings_enabled|Shows Developer options in Settings.|0 = hidden; 1 = shown
-device_config_sync_disabled|Whether or not syncs (bulk set operations) for DeviceConfig are currently persistently disabled.|0 = off; 1 = on
+device_config_sync_disabled|Stops the Google and system flag updates (DeviceConfig) from being applied.|0 = updates apply; 1 = updates are blocked
 device_demo_mode|The phone is in retail demo mode.|0 = no; 1 = yes
 device_idle_constants|Hidden tuning values of Doze (the deep sleep the phone enters when idle).|text: name=value pairs separated by commas; empty = defaults
 device_name|The name of this phone, shown to Bluetooth, the hotspot and the network.|text
 device_policy_constants|DevicePolicyManager specific settings. This is encoded as a key=value list, separated by commas.|text: name=value pairs separated by commas
 device_provisioned|The first-time setup of the phone is finished: leave this at 1.|1 = finished; 0 = setup not finished|break
 device_provisioning_mobile_data|Indicates whether mobile data should be allowed while the device is being provisioned.|0 = off; 1 = on
-disable_screen_share_protections_for_apps_and_notifications|Whether to disable app and notification screen share protections. The value 1 - enable, 0 - disable|1 = enable; 0 = disable
+disable_screen_share_protections_for_apps_and_notifications|Lets apps and notifications show up when you share or record the screen, instead of being hidden.|0 = protected; 1 = protections off
 disable_window_blurs|Turns off the blur effect behind windows (saves power, helps slow phones).|0 = blur allowed; 1 = blur disabled
 display_panel_lpm|Flag to enable or disable display panel low power mode (lpm) false -> Display panel power saving mode is disabled. true -> Display panel power saving mode is enabled.
 display_scaling_force|The saved value for WindowManagerService.setForcedDisplayScalingMode(). 0 or unset if scaling is automatic, 1 if scaling is disabled.
-display_size_forced|The saved value for WindowManagerService.setForcedDisplaySize(). Two integers separated by a comma. If unset, then use the real display size.
+display_size_forced|The screen size forced with "wm size". Empty means the real size of the screen.|text: width,height in pixels, e.g. 1080,2400|break
 dns_resolver_max_samples|Maximum number taken into account for statistics purposes in the system DNS resolver.
 dns_resolver_min_samples|Minimum number of samples needed for statistics to be considered meaningful in the system DNS resolver.
 dns_resolver_sample_validity_seconds|Sample validity in seconds to configure for the system DNS resolver.|seconds
@@ -161,25 +161,25 @@ dns_resolver_success_threshold_percent|Success threshold in percent for use with
 dock_audio_media_enabled|Plays media on the dock's speakers while docked.|0 = off; 1 = on
 dock_sounds_enabled|Plays sounds when the phone is docked or undocked.|0 = off; 1 = on
 dock_sounds_enabled_when_accessbility|Whether to play a sound for dock events, only when an accessibility service is on.|0 = off; 1 = on
-download_manager_max_bytes_over_mobile|The maximum size, in bytes, of a download that the download manager will transfer over a non-wifi connection.
-download_manager_recommended_max_bytes_over_mobile|The recommended maximum size, in bytes, of a download that the download manager should transfer over a non-wifi connection.
+download_manager_max_bytes_over_mobile|The largest download the Download Manager may start over mobile data. Bigger ones wait for Wi-Fi.|bytes
+download_manager_recommended_max_bytes_over_mobile|A download bigger than this asks you before it uses mobile data.|bytes
 dropbox:|Prefix for per-tag dropbox disable/enable settings.
-dropbox_age_seconds|Maximum age of entries kept by DropBoxManager.
-dropbox_max_files|Maximum number of entry files which DropBoxManager will keep around.
-dropbox_quota_kb|Maximum amount of disk space used by DropBoxManager no matter what.
-dropbox_quota_percent|Percent of free disk (excluding reserve) which DropBoxManager will use.
-dropbox_reserve_percent|Percent of total disk which DropBoxManager will never dip into.
+dropbox_age_seconds|How long the crash and error reports in DropBox are kept before they are deleted.|seconds
+dropbox_max_files|The most report files DropBox keeps.|whole number
+dropbox_quota_kb|The most space, in kilobytes, the DropBox reports may use.|kilobytes
+dropbox_quota_percent|The most share of the storage the DropBox reports may use.|percent
+dropbox_reserve_percent|The share of the storage DropBox leaves free for other things.|percent
 dsrm_duration_millis|The duration in milliseconds of each action, separated by commas. Ex: "18000,18000,18000,18000,0" See com.android.internal.telephony.data.DataStallRecoveryManager for more info|a list, items separated by , or :
 dsrm_enabled_actions|The list of DSRM enabled actions, separated by commas. Ex: "true,true,false,true,true" See com.android.internal.telephony.data.DataStallRecoveryManager for more info|a list, items separated by , or :
-dynamic_power_savings_disable_threshold|The setting that backs the disable threshold for the setPowerSavingsWarning api in PowerManager
-dynamic_power_savings_enabled|The setting which backs the setDynamicPowerSaveHint api in PowerManager.
+dynamic_power_savings_disable_threshold|The battery level at which the dynamic Battery Saver turns itself off again.|percent
+dynamic_power_savings_enabled|Lets an app turn on a dynamic Battery Saver for a while (PowerManager.setDynamicPowerSaveHint).|0 = off; 1 = on
 emergency_affordance_needed|Whether the phone should show an emergency call shortcut. Android sets this by itself.|0 = no; 1 = yes
 emergency_gesture_power_button_cooldown_period_ms|The power button "cooldown" period in milliseconds after the Emergency gesture is triggered, during which single-key actions on the power button are suppressed.|milliseconds
 emergency_gesture_sticky_ui_max_duration_millis|The maximum duration in milliseconds for which the emergency gesture UI can stay "sticky", where the notification pull-down shade and navigation gestures/buttons are temporarily disabled.|milliseconds
 emergency_gesture_tap_detection_min_time_ms|The minimum time in milliseconds to perform the emergency gesture.|milliseconds
 emergency_tone|Tone played when an emergency call ends (CDMA).|0 = off; 1 = alert; 2 = vibrate
 emulate_display_cutout|DisplayCutout DisplayCutout emulation mode.
-enable_16k_pages|Whether to boot with 16K page size compatible kernel 1 = Boot with 16K kernel 0 = Boot with 4K kernel (default)|0 = off; 1 = on
+enable_16k_pages|Starts the phone with a kernel that uses 16 KB memory pages instead of 4 KB (developer option, Android 15). Takes a restart.|0 = 4 KB pages (normal); 1 = 16 KB pages
 enable_accessibility_global_gesture_enabled|Setting whether the global gesture for enabling accessibility is enabled.
 enable_adb_incremental_install_default|Installs apps over ADB in the faster incremental way by default.|0 = off; 1 = on
 enable_automatic_system_server_heap_dumps|Whether to enable automatic system server heap dumps. This only works on userdebug or eng builds, not on user builds. This is set by the user and overrides the config value.|0 = off; 1 = on
@@ -208,11 +208,11 @@ extra_low_power|Extreme battery saver is on.|0 = off; 1 = on
 fancy_ime_animations|Animation when the keyboard opens and closes.|decimal; 1 = normal; 0 = no animation
 force_allow_on_external|Lets every app be moved to an SD card (developer option).|0 = no; 1 = yes
 force_desktop_mode_on_external_displays|Whether to enable the legacy freeform support on secondary displays. If enabled, the SECONDARY_HOME of the launcher is started on any secondary display, allowing for a desktop experience.|0 = off; 1 = on
-force_enable_pss_profiling|Describes whether AM's AppProfiler should collect PSS even if RSS is the default. This can be set by a user in developer settings.
+force_enable_pss_profiling|Measures the memory use (PSS) of apps all the time (developer option). Costs a little speed.|0 = off; 1 = on
 force_non_debuggable_final_build_for_compat|Flag for forcing OverrideValidatorImpl to consider this a non-debuggable build.
 force_resizable_activities|Makes every app resizable for split screen and freeform (developer option).|0 = no; 1 = yes
 forced_app_standby_for_small_battery_enabled|Whether or not to enable Forced App Standby on small battery devices.|0 = off; 1 = on
-foreground_service_starts_logging_enabled|Feature flag to enable or disable the foreground service starts logging feature.|0 = off; 1 = on
+foreground_service_starts_logging_enabled|Records which app starts a foreground service (for security audits).|0 = off; 1 = on
 fps_divisor|An integer to reduce the FPS by this factor. Only for experiments. Need to reboot the device for this setting to take full effect.
 fstrim_mandatory_interval|How long after the last trim the phone must trim storage at start (flash maintenance).|milliseconds
 global_http_proxy_exclusion_list|Addresses that skip the global proxy.|list of host names separated by commas
@@ -221,10 +221,10 @@ global_http_proxy_port|Port of the global proxy.|port number, 1 to 65535
 gnss_hal_location_request_duration_millis|Duration of updates in millisecond for GNSS location request from HAL to framework. If zero, the GNSS location request feature is disabled. The value is a non-negative long.
 gnss_satellite_blocklist|Blocklist of GNSS satellites. This is a list of integers separated by commas to represent pairs of (constellation, svid). Thus, the number of integers should be even.|a list, items separated by , or :
 gprs_register_check_period_ms|The interval in milliseconds at which to check gprs registration after the first registration mismatch of gprs and voice service, to detect possible data network registration problems.|milliseconds
-gpu_debug_app|App allowed to load GPU debug layers
-gpu_debug_layer_app|Addition app for GPU layer discovery
-gpu_debug_layers|Ordered GPU debug layer list for Vulkan i.e. ::...:
-gpu_debug_layers_gles|Ordered GPU debug layer list for GLES i.e. ::...:
+gpu_debug_app|The app that is allowed to load GPU debug layers.|package name
+gpu_debug_layer_app|The apps that supply the GPU debug layers.|package names separated by :
+gpu_debug_layers|The Vulkan debug layers loaded into that app.|layer names separated by :
+gpu_debug_layers_gles|The OpenGL ES debug layers loaded into that app.|layer names separated by :
 hdr_conversion_mode|How the phone handles HDR video the screen cannot show.|1 = pass it through; 2 = let the system convert it; 3 = force one HDR type
 hdr_force_conversion_type|The output HDR type chosen by the user in case when HDR_CONVERSION_MODE is HDR_CONVERSION_FORCE.
 heads_up_notifications_enabled|Pop-up (heads-up) notifications at the top of the screen.|0 = off; 1 = on
@@ -241,19 +241,19 @@ install_non_market_apps|Allows installing apps from outside the store (older glo
 installed_instant_app_max_cache_period|The max period for caching installed instant apps in milliseconds.|milliseconds
 installed_instant_app_min_cache_period|The min period for caching installed instant apps in milliseconds.|milliseconds
 instant_app_dexopt_enabled|Toggle to enable/disable dexopt for instant applications. The default is for dexopt to be disabled.|whole number
-intent_firewall_content_url|URL for intent firewall updates|web address (URL)
-intent_firewall_metadata_url|URL for intent firewall update metadata|web address (URL)
+intent_firewall_content_url|Where the phone downloads updates of the intent firewall rules (which app calls are blocked).|web address
+intent_firewall_metadata_url|Where the phone checks for newer intent firewall rules.|web address
 keep_profile_in_background|Flag to keep background restricted profiles running after exiting. If disabled, the restricted profile can be put into stopped state as soon as the user leaves it.|0 = off; 1 = on
 kernel_cpu_thread_reader|Settings for collecting statistics on CPU usage per thread The following strings are supported as keys: num_buckets (int) collected_uids (string) minimum_total_cpu_usage_millis (int)
 kernel_logs_for_|Lines of kernel logs to include with system crash/ANR/etc. reports, as a prefix of the dropbox tag of the report type.
-key_chord_power_volume_up|Overrides internal R.integer.config_keyChordPowerVolumeUp. Allowable values detailed in frameworks/base/core/res/res/values/config.xml. Used by PhoneWindowManager.
-lang_id_content_url|URL for lang id model updates|web address (URL)
-lang_id_metadata_url|URL for lang id model update metadata|web address (URL)
+key_chord_power_volume_up|Changes what pressing power and volume up together does.|whole number; the codes are those of Android's config_keyChordPowerVolumeUp
+lang_id_content_url|Where the phone downloads updates of the language detection model.|web address
+lang_id_metadata_url|Where the phone checks for a newer language detection model.|web address
 lid_behavior|Specifies the behaviour the lid triggers when closed See WindowManagerPolicy.WindowManagerFuncs
-location_background_throttle_interval_ms|The interval in milliseconds at which location requests will be throttled when they are coming from the background.|milliseconds
-location_background_throttle_package_whitelist|Packages that are allowlisted for background throttling (throttling will not be applied).
+location_background_throttle_interval_ms|The least time between location updates handed to an app that runs in the background.|milliseconds
+location_background_throttle_package_whitelist|Apps that are not slowed down when they ask for location in the background.|list of package names separated by commas
 location_background_throttle_proximity_alert_interval_ms|Most frequent location update interval in milliseconds that proximity alert is allowed to request.|milliseconds
-location_enable_stationary_throttle|Whether to throttle location when the device is in doze and still.|0 = off; 1 = on
+location_enable_stationary_throttle|Slows down location updates while the phone is not moving.|0 = off; 1 = on
 location_ignore_settings_package_whitelist|Deprecated. Packages that are allowlisted for ignoring location settings (may retrieve location even when user location settings are off), for emergency purposes.
 location_settings_link_to_permissions_enabled|Flag to enable the link to location permissions in location setting. Set to 0 to disable.
 lock_sound|Sound played when the phone locks.|address of a sound file (URI)
@@ -262,7 +262,7 @@ looper_stats|Looper stats settings. The following strings are supported as keys:
 low_battery_sound|Sound played at low battery.|address of a sound file (URI)
 low_battery_sound_timeout|Milliseconds after screen-off after which low battery sounds will be silenced. If zero, battery sounds will always play. Defaults to @integer/def_low_battery_sound_timeout in SettingsProvider.
 low_power|Battery Saver is on right now.|0 = off; 1 = on
-low_power_mode_reminder_enabled|Whether low power mode reminder is enabled. If this value is 0, the device will not receive low power notification.|0 = off; 1 = on
+low_power_mode_reminder_enabled|Reminds you about Battery Saver when the battery is low.|0 = no reminder; 1 = remind
 low_power_mode_suggestion_params|See com.android.settingslib.fuelgauge.BatterySaverUtils.
 low_power_standby_active_during_maintenance|Setting indicating whether Low Power Standby is allowed to be active during doze maintenance mode.
 low_power_standby_enabled|Low Power Standby: restricts apps while the phone sits idle and unplugged.|0 = off; 1 = on
@@ -276,7 +276,7 @@ managed_provisioning_defer_provisioning_to_role_holder|Whether to enable managed
 max_error_bytes_for_|Maximum number of bytes of a system crash/ANR/etc. report that ActivityManagerService should send to DropBox, as a prefix of the dropbox tag of the report type.|whole number
 max_notification_enqueue_rate|The maximum allowed notification enqueue rate in Hertz. Should be a float, and includes updates only.|decimal number
 max_sound_trigger_detection_service_ops_per_day|Maximum number of SoundTriggerDetectionService operations per day.
-maximum_obscuring_opacity_for_touch|The maximum allowed obscuring opacity by UID to propagate touches. For certain window types (eg.
+maximum_obscuring_opacity_for_touch|How see-through an overlay may be and still let your touch through to the app below. Stops "tapjacking".|decimal from 0 to 1; 0.8 is the normal value
 mdc_initial_max_retry|The value passed to a Mobile DataConnection via bringUp which defines the number of retries to perform when setting up the initial connection.
 mhl_input_switching_enabled|Whether TV will switch to MHL port when a mobile device is plugged in. (0 = false, 1 = true)|0 = false; 1 = true
 mhl_power_charge_enabled|Whether TV will charge the mobile device connected at MHL port. (0 = false, 1 = true)|0 = false; 1 = true
@@ -293,7 +293,7 @@ multi_sim_sms_prompt|Asks which SIM to use for each text.|0 = off; 1 = on
 multi_sim_voice_call|The SIM used for calls (subscription id).|subscription id; -1 = ask every time
 multi_sim_voice_prompt|Asks which SIM to use for each call.|0 = off; 1 = on
 mute_alarm_stream_with_ringer_mode|Alarms are silenced together with the ringer.|0 = no; 1 = yes
-mute_alarm_stream_with_ringer_mode_user_preference|The user's choice for whether or not Alarm stream should always be muted with Ringer.
+mute_alarm_stream_with_ringer_mode_user_preference|Your choice of whether alarms are silent when the ringer is silent.|0 = alarms still sound; 1 = alarms follow the ringer
 native_flags_health_check_enabled|Whether we've enabled native flags health check on this device. Takes effect on reboot. The value "1" enables native flags health check; otherwise it's disabled.|0 = off; 1 = on
 network_avoid_bad_wifi|Switches away from Wi-Fi that has no internet.|0 = never avoid; 1 = ask; null or other = avoid
 network_default_daily_multipath_quota_bytes|Default daily multipath budget used by ConnectivityManager.getMultipathPreference() on metered networks.
@@ -301,7 +301,7 @@ network_metered_multipath_preference|Uses Wi-Fi and mobile data together on mete
 network_preference|User preference for which network(s) should be used. Only the connectivity service should touch this.
 network_recommendations_enabled|Deprecated. Value to specify if network recommendations from NetworkScoreService are enabled.|-1 = Forced off; 0 = Disabled
 network_recommendations_package|Deprecated. Which package name to use for network recommendations. If null, network recommendations will neither be requested nor accepted.|text
-network_scorer_app|Which package name to use for network scoring. If null, or if the package is not a valid scorer app, external network scores will neither be requested nor accepted.
+network_scorer_app|The app that rates Wi-Fi networks for the "use good networks" feature.|package name
 network_scoring_provisioned|The network scoring service has started once. Android keeps this by itself.|0 = no; 1 = yes
 network_scoring_ui_enabled|Deprecated. Value to specify whether network quality scores and badging should be shown in the UI.|0 = off; 1 = on
 network_switch_notification_daily_limit|The maximum number of notifications shown in 24 hours when switching networks.
@@ -314,14 +314,14 @@ nitz_network_disconnect_retention|If the device connects to a telephony network 
 nitz_update_diff|Smallest clock difference between two network time signals that is accepted.|milliseconds
 nitz_update_spacing|If the elapsed realtime between two NITZ signals is greater than this value then the second signal cannot be ignored. This value is in milliseconds.|milliseconds
 notification_bubbles|Chat bubbles for notifications. Now kept in the Secure table.|0 = off; 1 = on
-notification_feedback_enabled|When enabled, notifications the notification assistant service has modified will show an indicator. When tapped, this indicator will describe the adjustment made and solicit feedback.|1 = enable; 0 = disable
+notification_feedback_enabled|Marks notifications the system changed for you and lets you say if the change was right.|0 = off; 1 = on
 notification_snooze_options|The list of snooze options for notifications This is encoded as a key=value list, separated by commas.|text: name=value pairs separated by commas
 nr_nsa_tracking_screen_off_mode|For 5G NSA capable devices, determines whether NR tracking indications are on when the screen is off. Values are: 0: off - All 5G NSA tracking indications are off when the screen is off.
 nsd_on|Network service discovery: finds printers and other devices on the network.|0 = off; 1 = on
 ntp_server|Network time server used to set the clock.|host name
 ntp_timeout|How long to wait for the network time server.|milliseconds
-one_handed_keyguard_side|In one handed mode, which side the keyguard should be on. Allowable values are one of the ONE_HANDED_KEYGUARD_SIDE_* constants.
-ota_disable_automatic_update|Whether to disable the automatic scheduling of system updates. 1 = system updates won't be automatically scheduled (will always present notification instead).|0 = off; 1 = on
+one_handed_keyguard_side|In one-handed mode, which side of the screen the lock screen sits on.|0 = left; 1 = right
+ota_disable_automatic_update|Stops system updates from being scheduled by themselves; you get a notification instead.|0 = scheduled automatically; 1 = notification only
 overlay_display_devices|Simulated extra screens, to test apps with several displays (developer option).|text, e.g. 1280x720/320; empty = none
 override_desktop_mode_features|Whether to override the availability of the desktop mode on the main display of the device. If on, users can make move an app to the desktop, allowing a freeform windowing experience.|0 = off; 1 = on
 override_settings_provider_restore_any_version|If set to 1, SettingsProvider's restoreAnyVersion="true" attribute will be ignored and restoring to lower version of platform API will be skipped.
@@ -338,34 +338,34 @@ people_space_conversation_type|Which types of conversation(s) to show in People 
 policy_control|Hides the status bar or navigation bar for chosen apps (immersive mode).|text, e.g. immersive.full=*; empty = none
 power_button_double_press|What a double press of the power button does (when the phone maker has overridden it).|a number picking the action; 0 = nothing; the other numbers depend on the Android version
 power_button_long_press|What a long press of the power button does (when the phone maker has overridden it).|a number picking the action; 0 = nothing; 1 = power menu; the other numbers depend on the Android version
-power_button_long_press_duration_ms|Override internal R.integer.config_longPressOnPowerDurationMs. It determines the length of power button press to be considered a long press in milliseconds. Used by PhoneWindowManager.|milliseconds
-power_button_short_press|Overrides internal R.integer.config_shortPressOnPowerBehavior. Allowable values detailed in frameworks/base/core/res/res/values/config.xml. Used by PhoneWindowManager.
+power_button_long_press_duration_ms|How long the power button must be held to count as a long press.|milliseconds
+power_button_short_press|Changes what a short press of the power button does.|whole number; the codes are those of Android's config_shortPressOnPowerBehavior (1 = go to sleep is the normal one)
 power_button_suppression_delay_after_gesture_wake|The amount of time to suppress "power-off" from the power button after the device has woken due to a gesture (lifting the phone).
-power_button_triple_press|Overrides internal R.integer.config_triplePressOnPowerBehavior. Allowable values detailed in frameworks/base/core/res/res/values/config.xml. Used by PhoneWindowManager.
-power_button_very_long_press|Overrides internal R.integer.config_veryLongPressOnPowerBehavior. Allowable values detailed in frameworks/base/core/res/res/values/config.xml. Used by PhoneWindowManager.
+power_button_triple_press|Changes what pressing the power button three times does.|whole number; the codes are those of Android's config_triplePressOnPowerBehavior (0 = nothing)
+power_button_very_long_press|Changes what a very long press of the power button does.|whole number; the codes are those of Android's config_veryLongPressOnPowerBehavior (0 = nothing)
 power_manager_constants|Hidden tuning values of the power manager.|text: name=value pairs separated by commas
 power_sounds_enabled|Plays sounds for low battery alerts.|0 = off; 1 = on
 preferred_network_mode|See RIL_PreferredNetworkType in ril.h
-private_dns_default_mode|Forced override of the default mode (hardcoded as "automatic", nee "opportunistic").
+private_dns_default_mode|Forces the Private DNS mode that is used until you choose one yourself.|text: off; opportunistic; hostname
 private_dns_mode|Private DNS (DNS over TLS), which hides which sites you look up.|off = off; opportunistic = automatic; hostname = use the host named in private_dns_specifier
 private_dns_specifier|Host name of the private DNS provider.|host name, e.g. dns.google; used when private_dns_mode is hostname
 provisioning_apn_alarm_delay_in_ms|The number of milliseconds to allow the provisioning apn to remain active
-qs_media_controls|Whether or not media is shown automatically when bypassing as a heads up.|0 = off; 1 = on
+qs_media_controls|Shows the media player in Quick Settings.|0 = hidden; 1 = shown
 receive_explicit_user_interaction_audio_enabled|Record audio from near-field microphone (ie. TV remote) Allows audio recording regardless of sensor privacy state, as it is an intentional user interaction: hold-to-talk|whole number
 recommended_network_evaluator_cache_expiry_ms|Deprecated. The expiration time in milliseconds for the WifiKey request cache in RecommendedNetworkEvaluator.|milliseconds
-remove_guest_on_exit|Whether guest user should be removed on exit from guest mode.|whole number
+remove_guest_on_exit|Deletes the guest user's data when the guest session ends.|0 = keep the guest's data; 1 = remove it on exit
 render_shadows_in_compositor|If true, shadows drawn around the window will be rendered by the system compositor.|0 = false; 1 = true
-repair_mode_active|Whether repair mode is active on the device. Set to 1 for true and 0 for false.|0 = off; 1 = on
-require_password_to_decrypt|On devices that use full-disk encryption, indicates whether the primary user's lockscreen credential is required to decrypt the device on boot.|0 = off; 1 = on
+repair_mode_active|Repair mode is on: a limited mode that hides your data while the phone is serviced.|0 = off; 1 = on
+require_password_to_decrypt|Asks for the screen lock password at start-up to decrypt the storage.|0 = no; 1 = yes|lock
 restricted_networking_mode|Only apps on an allow list may use the network.|0 = off; 1 = on
 review_permissions_notification_state|State of whether review notification permissions notification needs to be shown the user, and whether the user has interacted.|-1 = UNKNOWN; 0 = SHOULD_SHOW; 1 = USER_INTERACTED; 2 = DISMISSED; 3 = RESHOWN
 roaming_settings|The CDMA roaming mode 0 = Home Networks, CDMA default 1 = Roaming on Affiliated networks 2 = Roaming on any networks|0 = Home Networks, CDMA default; 1 = Roaming on Affiliated networks; 2 = Roaming on any networks
 safe_boot_disallowed|Stops the phone from starting in safe mode.|0 = allowed; 1 = disallowed
 satellite_mode_enabled|Satellite mode: switches off radios that satellite use does not allow.|0 = off; 1 = on
-satellite_mode_radios|A comma separated list of radios that need to be disabled when satellite mode is on.|a list, items separated by , or :
+satellite_mode_radios|The radios that are switched off while satellite mode is on.|list separated by commas
 secure_frp_mode|The phone is in a restricted factory-reset-protection state.|0 = no; 1 = yes
-selinux_content_url|URL for selinux (mandatory access control) updates|web address (URL)
-selinux_metadata_url|URL for selinux (mandatory access control) update metadata|web address (URL)
+selinux_content_url|Where the phone downloads updates of the SELinux security policy rules.|web address
+selinux_metadata_url|Where the phone checks whether there is a newer SELinux policy update.|web address
 selinux_status|SELinux security mode.|0 = permissive (only logs); 1 = enforcing
 send_action_app_error|Lets Android send the "app error" notice when an app crashes.|0 = no; 1 = yes
 set_global_http_proxy|Enables the UI setting to allow the user to specify the global HTTP proxy and associated exclusion list.
@@ -377,11 +377,11 @@ setup_prepaid_data_service_url|URL to open browser on to allow user to manage a 
 setup_prepaid_detection_redir_host|Host to check for a redirect to after an attempt to GET SETUP_PREPAID_DETECTION_TARGET_URL. (If we redirected there, this is a prepaid device with zero balance.)
 setup_prepaid_detection_target_url|URL to attempt a GET on to see if this is a prepay device|web address (URL)
 shortcut_manager_constants|ShortcutManager specific settings. This is encoded as a key=value list, separated by commas.|text: name=value pairs separated by commas
-show_angle_in_use_dialog_box|Show the "ANGLE In Use" dialog box to the user when ANGLE is the OpenGL driver. The value is a boolean (1 or 0).|0 = off; 1 = on
+show_angle_in_use_dialog_box|Shows a message when an app is drawing through ANGLE.|0 = off; 1 = on
 show_first_crash_dialog|Shows a dialog when an app in the foreground crashes.|0 = no; 1 = yes
-show_hidden_icon_apps_enabled|Whether or not show hidden launcher icon apps feature is enabled.|0 = off; 1 = on
+show_hidden_icon_apps_enabled|Lists apps that have no launcher icon in Settings and the app drawer.|0 = off; 1 = on
 show_mute_in_crash_dialog|If nonzero, crash dialogs will show an option to mute all future crash dialogs for this app.
-show_new_app_installed_notification_enabled|Whether or not show new app installed notification is enabled.|0 = off; 1 = on
+show_new_app_installed_notification_enabled|Shows a notification when a new app is installed.|0 = off; 1 = on
 show_new_notif_dismiss|Whether to show new notification dismissal. Values are: 0: Disabled 1: Enabled|0 = Disabled; 1 = Enabled
 show_notification_channel_warnings|Shows a toast when an app posts a notification without a valid channel (developer option).|0 = off; 1 = on
 show_people_space|Whether to show People Space. Values are: 0: Disabled (default) 1: Enabled|0 = Disabled (default; 1 = Enabled
@@ -391,15 +391,15 @@ show_temperature_warning|Shows a notification when the phone gets too hot.|0 = o
 show_usb_temperature_alarm|Shows a notification when the USB port gets too hot.|0 = off; 1 = on
 signed_config_version|Current version of signed configuration applied.
 smart_replies_in_notifications_flags|Configuration flags for smart replies in notifications. This is encoded as a key=value list, separated by commas.|0 = off; 1 = on
-smart_selection_content_url|URL for smart selection model updates|web address (URL)
-smart_selection_metadata_url|URL for smart selection model update metadata|web address (URL)
+smart_selection_content_url|Where the phone downloads updates of the smart text selection model.|web address
+smart_selection_metadata_url|Where the phone checks for a newer smart text selection model.|web address
 smart_suggestions_in_notifications_flags|Configuration flags for the automatic generation of smart replies and smart actions in notifications. This is encoded as a key=value list, separated by commas.|0 = off; 1 = on
-sms_outgoing_check_interval_ms|The interval in milliseconds at which to check the number of SMS sent out without asking for use permit, to limit the un-authorized SMS usage.|milliseconds
-sms_outgoing_check_max_count|The number of outgoing SMS sent without asking for user permit (of SMS_OUTGOING_CHECK_INTERVAL_MS
+sms_outgoing_check_interval_ms|The time window in which sms_outgoing_check_max_count is counted.|milliseconds
+sms_outgoing_check_max_count|The number of text messages an app may send without asking you, within the interval below.|whole number
 sms_short_code_confirmation|Used to disable SMS short code confirmation - defaults to true. True indcates we will do the check, etc. Set to false to disable.
 sms_short_code_rule|Used to select which country we use to determine premium sms codes.
-sms_short_codes_content_url|URL for sms short code updates|web address (URL)
-sms_short_codes_metadata_url|URL for sms short code update metadata|web address (URL)
+sms_short_codes_content_url|Where the phone downloads the list of premium text message numbers it warns about.|web address
+sms_short_codes_metadata_url|Where the phone checks for a newer list of premium text message numbers.|web address
 soft_ap_timeout_enabled|Deprecated. Whether soft AP will shut down after a timeout period when no devices are connected.|0 = off; 1 = on
 sound_trigger_detection_service_op_timeout|Timeout for a single SoundTriggerDetectionService operation (in ms).
 speed_label_cache_eviction_age_millis|Deprecated. Value to specify how long in milliseconds to retain seen score cache curves to be used when generating SSID only bases score curves.|milliseconds
@@ -411,7 +411,7 @@ stem_primary_button_short_press|Overrides internal R.integer.config_shortPressOn
 stem_primary_button_triple_press|Overrides internal R.integer.config_triplePressOnStemPrimaryBehavior. Allowable values detailed in frameworks/base/core/res/res/values/config.xml. Used by PhoneWindowManager.
 storage_settings_clobber_threshold|Flag to set the timeout for when to refresh the storage settings cached data.|whole number
 streaming_verifier_timeout|Timeout for package verification during streaming installations.
-stylus_ever_used|Indicates whether a stylus has ever been used on the device.|0 = off; 1 = on
+stylus_ever_used|Remembers that a stylus has been used on this phone, which unlocks stylus options.|0 = never; 1 = used
 subscription_mode|The CDMA subscription mode 0 = RUIM/SIM (default) 1 = NV|0 = RUIM/SIM (default; 1 = NV
 sync_manager_constants|Hidden tuning values of background sync.|text: name=value pairs separated by commas
 sys_free_storage_log_interval|The interval in minutes after which the amount of free storage left on the device is logged to the event log|minutes
@@ -433,36 +433,36 @@ time_only_mode_constants|Time Only Mode specific settings. This is encoded as a 
 time_remaining_estimate_based_on_usage|Deprecated. A boolean indicating whether TIME_REMAINING_ESTIMATE_MILLIS is customized to the device's usage or using global models. See BATTERY_ESTIMATES_LAST_UPDATE_TIME for the last time this value was updated.|0 = off; 1 = on
 time_remaining_estimate_millis|Deprecated. A long value indicating how much longer the system battery is estimated to last in millis. See BATTERY_ESTIMATES_LAST_UPDATE_TIME for the last time this value was updated.
 transition_animation_scale|Speed of the animation between screens (developer option "Transition animation scale").|decimal; 1 = normal; 0 = no animation; 0.5 = twice as fast; 2 = twice as slow
-trusted_sound|URI for the "device is trusted" sound, which is played when the device enters the trusted state without unlocking.|web address (URL)
-tzinfo_content_url|URL for tzinfo (time zone) updates|web address (URL)
-tzinfo_metadata_url|URL for tzinfo (time zone) update metadata|web address (URL)
+trusted_sound|The sound played when the phone becomes trusted (for example near a trusted device).|file path or content address
+tzinfo_content_url|Where the phone downloads updates of the time zone data without a full system update.|web address
+tzinfo_metadata_url|Where the phone checks whether there is a newer time zone data update.|web address
 ungaze_sleep_enabled|Whether of not to send keycode sleep for ungaze when Home is the foreground activity on watch type devices.|0 = off; 1 = on
 uninstalled_instant_app_max_cache_period|The max period for caching uninstalled instant apps in milliseconds.|milliseconds
 uninstalled_instant_app_min_cache_period|The min period for caching uninstalled instant apps in milliseconds.|milliseconds
-unlock_sound|URI for the "device unlocked" sound.|web address (URL)
+unlock_sound|The sound played when the phone is unlocked.|file path or content address
 unused_static_shared_lib_min_cache_period|The min period for caching unused static shared libs in milliseconds.|milliseconds
-updatable_driver_all_apps|Updatable driver global preference for all Apps. 0 = Default 1 = All Apps use updatable production driver 2 = All apps use updatable prerelease driver 3 = All Apps use system graphics driver|0 = Default; 1 = All Apps use updatable production driver; 2 = All apps use updatable prerelease driver; 3 = All Apps use system graphics driver
+updatable_driver_all_apps|Lets every app use the graphics driver that was updated through the Play Store.|0 = no; 1 = yes
 updatable_driver_prerelease_opt_in_apps|List of Apps selected to use updatable prerelease driver. i.e. ,,...,
 updatable_driver_production_allowlist|Apps on the allowlist that are allowed to use updatable production driver. The string is a list of application package names, seperated by comma. i.e. ,,...,
 updatable_driver_production_denylist|Apps on the denylist that are forbidden to use updatable production driver.
 updatable_driver_production_denylists|List of denylists, each denylist is a denylist for a specific version of updatable production driver.
-updatable_driver_production_opt_in_apps|List of Apps selected to use updatable production driver. i.e. ,,...,
-updatable_driver_production_opt_out_apps|List of Apps selected not to use updatable production driver. i.e. ,,...,
+updatable_driver_production_opt_in_apps|Apps that use the updated production graphics driver.|list of package names separated by commas
+updatable_driver_production_opt_out_apps|Apps that keep the built-in graphics driver.|list of package names separated by commas
 updatable_driver_sphal_libraries|List of libraries in sphal accessible by updatable driver The string is a list of library names, separated by colon. i.e. ::...:
 usb_mass_storage_enabled|USB mass storage mode (very old phones).|0 = off; 1 = on
 use_google_mail|Shows "Google Mail" instead of "Gmail".|0 or empty = no; any value = yes
 use_open_wifi_package|Deprecated. The package name of the application that connect and secures high quality open wifi networks automatically.|package name
 user_absent_radios_off_for_small_battery_enabled|Whether or not to enable the User Absent, Radios Off feature on small battery devices.|0 = off; 1 = on
 user_absent_touch_off_for_small_battery_enabled|Whether or not to enable the User Absent, Touch Off feature on small battery devices.|0 = off; 1 = on
-user_disabled_hdr_formats|A comma-separated list of HDR formats that have been disabled by the user. If present, these formats will not be reported to apps, even if the display supports them.|a list, items separated by , or :
+user_disabled_hdr_formats|The HDR formats you switched off.|list of numbers separated by commas (HDR format codes)
 user_preferred_refresh_rate|Screen refresh rate you chose.|Hz, e.g. 60 or 120; 0 = automatic
-user_preferred_resolution_height|The resolution height chosen by the user.
-user_preferred_resolution_width|The resolution width chosen by the user.
+user_preferred_resolution_height|The screen resolution height you picked, on screens that offer more than one.|pixels
+user_preferred_resolution_width|The screen resolution width you picked, on screens that offer more than one.|pixels
 user_switcher_enabled|Shows the user switcher so people can switch accounts.|0 = off; 1 = on
 uwb_enabled|Ultra-wideband radio (precise nearby device finding).|0 = off; 1 = on
-verifier_default_response|Default response code for package verification.
-verifier_setting_visible|Show package verification setting in the Settings app. 1 = show (default) 0 = hide|1 = show (default; 0 = hide
-verifier_timeout|Timeout for package verification.
+verifier_default_response|What the app verifier answers when nobody answers its question in time.|1 = allow the install; -1 = reject it
+verifier_setting_visible|Shows the app verification option in Settings.|0 = hidden; 1 = shown
+verifier_timeout|How long the app verifier has to approve an install before the default answer is used.|milliseconds
 verifier_verify_adb_installs|Checks apps installed over ADB for harm.|0 = off; 1 = on
 verify_integrity_for_rule_provider|Run integrity checks for integrity rule providers. 0 = bypass integrity verification on installs from rule providers (default) 1 = perform integrity verification on installs from rule providers
 wait_for_debugger|Makes the debug app wait for a debugger before it starts (developer option).|0 = off; 1 = on
@@ -479,15 +479,15 @@ wifi_device_owner_configs_lockdown|This setting controls whether WiFi configurat
 wifi_display_certification_on|Whether Wifi display certification mode is enabled/disabled 0=disabled. 1=enabled.|0 = off; 1 = on
 wifi_display_on|Wireless display (screen casting).|0 = off; 1 = on
 wifi_display_wps_config|WPS Configuration method used by Wifi display, this setting only takes effect when WIFI_DISPLAY_CERTIFICATION_ON is 1 (enabled).
-wifi_enhanced_auto_join|whether frameworks handles wifi auto-join
+wifi_enhanced_auto_join|Lets Android itself choose when to join a better saved Wi-Fi network.|0 = off; 1 = on
 wifi_ephemeral_out_of_range_timeout_ms|Timeout for ephemeral networks when all known BSSIDs go out of range.
 wifi_framework_scan_interval_ms|The interval in milliseconds to issue wake up scans when wifi needs to connect. This is necessary to connect to an access point when device is on the move and the screen is off.|milliseconds
-wifi_frequency_band|The operational wifi frequency band Set to one of WIFI_FREQUENCY_BAND_AUTO, WIFI_FREQUENCY_BAND_5GHZ or WIFI_FREQUENCY_BAND_2GHZ
+wifi_frequency_band|Which Wi-Fi band the phone may use.|0 = automatic; 1 = 5 GHz only; 2 = 2.4 GHz only|conn
 wifi_idle_ms|The interval in milliseconds after which Wi-Fi is considered idle. When idle, it is possible for the device to be switched from Wi-Fi to the mobile data network.|milliseconds
 wifi_max_dhcp_retry_count|How many times to retry getting an address from the router.|whole number
 wifi_migration_completed|Value to specify if wifi settings migration is complete or not. Note: This should only be used from within WifiMigration class.|0 = off; 1 = on
 wifi_mobile_data_transition_wakelock_timeout_ms|Maximum amount of time in milliseconds to hold a wakelock while waiting for mobile data connectivity to be established after a disconnect from Wi-Fi.|milliseconds
-wifi_network_show_rssi|whether settings show RSSI
+wifi_network_show_rssi|Shows the signal strength number next to each Wi-Fi network in Settings.|0 = off; 1 = on
 wifi_networks_available_notification_on|Notifies you when open Wi-Fi networks are nearby (older setting).|0 = off; 1 = on
 wifi_networks_available_repeat_delay|Deprecated. Delay (in seconds) before repeating the Wi-Fi networks available notification. Connecting to a network will reset the timer.|seconds
 wifi_num_open_networks_kept|Deprecated. When the number of open networks exceeds this number, the least-recently-used excess networks will be removed.
@@ -506,7 +506,7 @@ wifi_wakeup_enabled|Turns Wi-Fi back on near networks you saved.|0 = off; 1 = on
 wifi_watchdog_on|Watches Wi-Fi quality and leaves poor networks.|0 = off; 1 = on
 wifi_watchdog_poor_network_test_enabled|Setting to turn off poor network avoidance on Wi-Fi. Feature is enabled by default and the setting needs to be set to 0 to disable it.
 window_animation_scale|Speed of window open and close animations (developer option "Window animation scale").|decimal; 1 = normal; 0 = no animation; 0.5 = twice as fast; 2 = twice as slow
-wireless_charging_started_sound|URI for the "wireless charging started" sound.|web address (URL)
+wireless_charging_started_sound|The sound played when wireless charging starts.|file path or content address
 wm_display_settings_path|Path to the WindowManager display settings file. If unset, the default file path will be used.
 wtf_is_fatal|Makes serious "should never happen" log messages crash the app (developer option).|0 = no; 1 = yes
 zen_duration|How long Do Not Disturb stays on when you switch it on from Quick Settings.|minutes; 0 = until you turn it off; -1 = ask each time
@@ -519,7 +519,7 @@ accessibility_autoclick_delay|How long the mouse pointer must stay still before 
 accessibility_autoclick_enabled|Clicks by itself when the mouse pointer stops moving.|0 = off; 1 = on
 accessibility_bounce_keys|Ignores a repeated press of the same key on a physical keyboard within this time.|milliseconds; 0 = off
 accessibility_button_mode|Where the accessibility shortcut button lives.|0 = in the navigation bar; 1 = floating button; 2 = use the navigation gesture
-accessibility_button_target_component|Setting specifying the accessibility service or feature to be toggled via the accessibility button in the navigation bar.
+accessibility_button_target_component|The accessibility service or feature the accessibility button on the navigation bar toggles.|component name or the class name of an Android feature
 accessibility_button_targets|The accessibility features the accessibility button starts.|list of component names separated by :
 accessibility_captioning_background_color|Background colour behind captions.|colour as a whole number (ARGB)
 accessibility_captioning_edge_color|Edge colour of caption text.|colour as a whole number (ARGB)
@@ -536,7 +536,7 @@ accessibility_display_daltonizer_enabled|Colour correction for colour blindness.
 accessibility_display_daltonizer_saturation_level|How strong the colour correction is.|whole number, 0 to 10
 accessibility_display_inversion_enabled|Colour inversion.|0 = off; 1 = on
 accessibility_display_magnification_auto_update|Deprecated. Unused mangnification setting
-accessibility_display_magnification_edge_haptic_enabled|Whether the feature that the device will fire a haptic when users scroll and hit the edge of the screen is enabled.|0 = off; 1 = on
+accessibility_display_magnification_edge_haptic_enabled|Vibrates when you scroll to the edge of the screen while magnified.|0 = off; 1 = on
 accessibility_display_magnification_enabled|Magnify the screen with a triple tap.|0 = off; 1 = on
 accessibility_display_magnification_navbar_enabled|Deprecated. Setting that specifies whether the display magnification is enabled via a shortcut affordance within the system's navigation area.|0 = off; 1 = on
 accessibility_display_magnification_scale|How much the magnifier zooms.|decimal, 1 to 8; 2 is the default
@@ -550,23 +550,23 @@ accessibility_font_scaling_has_been_changed|Whether you ever changed the text si
 accessibility_force_invert_color_enabled|Forces dark appearance on apps that have no dark theme.|0 = off; 1 = on
 accessibility_gesture_targets|The accessibility features the accessibility gesture starts.|list of component names separated by :
 accessibility_interactive_ui_timeout_ms|How long controls that need a tap stay on screen ("Time to take action").|milliseconds; 0 = use the app's own time
-accessibility_key_gesture_targets|Setting specifying the accessibility services, accessibility shortcut targets, or features to be toggled via a keyboard shortcut gesture.|a list, items separated by , or :
+accessibility_key_gesture_targets|The accessibility services or features a keyboard shortcut toggles.|list separated by :
 accessibility_large_pointer_icon|Bigger mouse pointer.|0 = normal; 1 = large
 accessibility_magnification_always_on_enabled|Keeps the magnifier on when you switch apps.|0 = off; 1 = on
 accessibility_magnification_capability|Which magnification modes are allowed.|1 = full screen; 2 = a window; 3 = both
-accessibility_magnification_follow_typing_enabled|Whether the following typing focus feature for magnification is enabled.|0 = off; 1 = on
+accessibility_magnification_follow_typing_enabled|Magnification follows the text you type.|0 = off; 1 = on
 accessibility_magnification_joystick_enabled|Whether the magnification joystick controller feature is enabled.|0 = off; 1 = on
 accessibility_magnification_mode|Which magnification mode the shortcut starts.|1 = full screen; 2 = a window; 3 = switch between them
 accessibility_magnification_two_finger_triple_tap_enabled|Setting that specifies whether the display magnification is enabled via a system-wide two fingers triple tap gesture.|0 = off; 1 = on
-accessibility_mouse_keys_enabled|Whether to enable mouse keys for Physical Keyboard accessibility. If set to true, key presses (of the mouse keys) on physical keyboard will control mouse pointer on the display.|0 = off; 1 = on
+accessibility_mouse_keys_enabled|Moves the mouse pointer with keys on a physical keyboard.|0 = off; 1 = on
 accessibility_non_interactive_ui_timeout_ms|How long messages that need no action stay on screen ("Time to read").|milliseconds; 0 = use the app's own time
 accessibility_pinch_to_zoom_anywhere_enabled|For pinch to zoom anywhere feature. If true, you should be able to pinch to magnify the window anywhere.
-accessibility_qs_targets|Setting specifying the accessibility services, accessibility shortcut targets, or features to be toggled via a tile in the quick settings panel.|a list, items separated by , or :
+accessibility_qs_targets|The accessibility services or features that have a Quick Settings tile.|list separated by :
 accessibility_shortcut_dialog_shown|Setting specifying if the accessibility shortcut dialog has been shown to this user.
 accessibility_shortcut_on_lock_screen|Allows the accessibility shortcut on the lock screen.|0 = no; 1 = yes
 accessibility_shortcut_target_service|The accessibility feature the volume-key shortcut starts.|component name, e.g. com.google.android.marvin.talkback/...TalkBackService
 accessibility_show_window_magnification_prompt|Whether to show the window magnification prompt dialog when the user uses full-screen magnification first time after database is upgraded.|0 = off; 1 = on
-accessibility_single_finger_panning_enabled|For magnification feature where panning can be controlled with a single finger. If true, you can pan using a single finger gesture.
+accessibility_single_finger_panning_enabled|Move around a magnified screen with one finger.|0 = two fingers; 1 = one finger
 accessibility_slow_keys|Ignores key presses shorter than this on a physical keyboard.|milliseconds; 0 = off
 accessibility_soft_keyboard_mode|Whether the on-screen keyboard shows while a hardware keyboard is used.|0 = default; 1 = hidden
 accessibility_sticky_keys|Sticky keys: Shift, Ctrl and Alt stay pressed for the next key.|0 = off; 1 = on
@@ -597,9 +597,9 @@ assist_disclosure_enabled|Shows a glow when the assistant reads the screen.|0 = 
 assist_gesture_enabled|The squeeze or assistant gesture.|0 = off; 1 = on
 assist_gesture_sensitivity|How hard to squeeze for the assistant gesture.|decimal, 0 to 1
 assist_gesture_setup_complete|Indicates whether the Assist Gesture Deferred Setup has been completed.|0 = off; 1 = on
-assist_gesture_silence_alerts_enabled|Whether the assist gesture should silence alerts.|0 = off; 1 = on
-assist_gesture_wake_enabled|Whether the assist gesture should wake the phone.|0 = off; 1 = on
-assist_long_press_home_enabled|Whether the assistant can be triggered by long-pressing the home button|0 = off; 1 = on
+assist_gesture_silence_alerts_enabled|Squeezing the phone (assist gesture) silences alerts.|0 = off; 1 = on
+assist_gesture_wake_enabled|Squeezing the phone (assist gesture) wakes it.|0 = off; 1 = on
+assist_long_press_home_enabled|Holding the home button opens the assistant.|0 = off; 1 = on
 assist_screenshot_enabled|Lets the assistant use a screenshot of the screen.|0 = off; 1 = on
 assist_structure_enabled|Lets the assistant see the text and layout of the current app.|0 = off; 1 = on
 assist_touch_gesture_enabled|Whether the assistant can be triggered by a touch gesture.|0 = off; 1 = on
@@ -621,12 +621,12 @@ automatic_storage_manager_days_to_retain|Storage manager deletes backed-up photo
 automatic_storage_manager_enabled|Storage manager frees space by itself.|0 = off; 1 = on
 automatic_storage_manager_last_run|Last run time for the automatic storage manager.
 automatic_storage_manager_turned_off_by_policy|If the automatic storage manager has been disabled by policy.
-aware_enabled|Controls whether aware is enabled.|0 = off; 1 = on
+aware_enabled|Lets the phone sense when you are near or looking at it (Aware).|0 = off; 1 = on
 aware_lock_enabled|Controls whether aware_lock is enabled.|0 = off; 1 = on
 aware_tap_pause_gesture_count|Number of successful "Motion Sense" tap gestures to pause media.
 aware_tap_pause_touch_count|Number of touch interactions to pause media when a "Motion Sense" gesture could have been used.
-back_gesture_inset_scale_left|Scale factor for the back gesture inset size on the left side of the screen.
-back_gesture_inset_scale_right|Scale factor for the back gesture inset size on the right side of the screen.
+back_gesture_inset_scale_left|How wide the back gesture area is on the left edge.|decimal; 1 = normal; smaller = narrower
+back_gesture_inset_scale_right|How wide the back gesture area is on the right edge.|decimal; 1 = normal; smaller = narrower
 background_data|Deprecated. Whether background data usage is allowed.|0 = off; 1 = on
 backup_auto_restore|Restores an app's data when it is reinstalled.|0 = off; 1 = on
 backup_enabled|Backs up app data and settings to your account.|0 = off; 1 = on
@@ -636,7 +636,7 @@ backup_provisioned|Indicates whether settings backup has been fully provisioned.
 backup_scheduling_enabled|Controls whether framework backup scheduling is enabled.|0 = off; 1 = on
 backup_transport|The service that backs up and restores data.|component name
 biometric_app_enabled|Lets apps use fingerprint or face to sign in.|0 = off; 1 = on
-biometric_debug_enabled|Whether or not debugging is enabled.|0 = off; 1 = on
+biometric_debug_enabled|Turns on debugging of fingerprint and face unlock.|0 = off; 1 = on
 biometric_face_virtual_enabled|Whether or not face virtual sensors are enabled.|0 = off; 1 = on
 biometric_fingerprint_virtual_enabled|Whether or not fingerprint virtual sensors are enabled.|0 = off; 1 = on
 biometric_keyguard_enabled|Lets fingerprint or face unlock the screen.|0 = off; 1 = on
@@ -651,17 +651,17 @@ bluetooth_le_broadcast_name|This is used by LocalBluetoothLeBroadcast to store t
 bluetooth_le_broadcast_program_info|This is used by LocalBluetoothLeBroadcast to store the broadcast program info.
 bluetooth_name|The Bluetooth name of this phone.|text
 bluetooth_on_while_driving|Flag to set if the system should predictively attempt to re-enable Bluetooth while the user is driving.
-bubble_important_conversations|When enabled conversations marked as favorites will be set to bubble. The value 1 - enable, 0 - disable|1 = enable; 0 = disable
+bubble_important_conversations|Opens conversations you marked as favorites in bubbles.|0 = off; 1 = on
 bugreport_in_power_menu|Shows "Take bug report" in the power menu.|0 = hidden; 1 = shown
 call_screening_default_component|Specifies the component name currently configured to be the default call screening application
 camera_autorotate|Rotates the screen using the camera to see how you hold the phone.|0 = off; 1 = on
 camera_double_tap_power_gesture_disabled|Turns off "double-press the power button to open the camera".|0 = gesture works; 1 = gesture turned off
-camera_double_twist_to_flip_enabled|Whether the camera double twist gesture to flip between front and back mode should be enabled.|0 = off; 1 = on
+camera_double_twist_to_flip_enabled|Twisting the phone twice switches the camera between the front and the back.|0 = off; 1 = on
 camera_extensions_fallback|Whether to enable camera extensions software fallback.|0 = off; 1 = on
 camera_gesture_disabled|Turns off the camera launch gesture.|0 = gesture works; 1 = gesture turned off
 camera_lift_trigger_enabled|Opens the camera when you lift the phone.|0 = off; 1 = on
 carrier_apps_handled|The latest SDK version that CarrierAppUtils#disableCarrierAppsUntilPrivileged has been executed for.
-charge_optimization_mode|Integer property that determines which charging optimization mode is applied. [0-10] inclusive representing different modes, where 0 is the default indicating no optimization mode is applied.
+charge_optimization_mode|The charging optimization in use.|0 = none; 1 to 10 = the maker's modes
 charging_sounds_enabled|Plays a sound when charging starts.|0 = off; 1 = on
 charging_vibration_enabled|Vibrates when charging starts.|0 = off; 1 = on
 clipboard_show_access_notifications|Shows a message when an app reads what you copied.|0 = off; 1 = on
@@ -677,7 +677,7 @@ contextual_search_package|String property which contains the package name of the
 contrast_level|Colour contrast of the system theme.|decimal, -1 (lowest) to 1 (highest); 0 = standard
 controls_enabled|Device controls (smart home) in the power menu.|0 = off; 1 = on
 credential_service|Apps that provide passkeys and passwords.|list of component names separated by :
-credential_service_primary|The currently selected primary credential service flattened ComponentName.
+credential_service_primary|The service that holds your passkeys and passwords (Credential Manager).|component name
 cross_profile_calendar_enabled|Whether parent profile can access remote calendar data in managed profile.|0 = off; 1 = on
 custom_bugreport_handler_app|The package name for the custom bugreport handler app. This app must be bugreport allow-listed. This is currently used only by Power Menu short press.|package name
 custom_bugreport_handler_user|The user id for the custom bugreport handler app. This is currently used only by Power Menu short press.
@@ -687,11 +687,11 @@ dark_theme_custom_start_time|When the dark theme turns on on a custom schedule.|
 default_device_input_method|Used only by InputMethodManagerService as a temporary data store of DEFAULT_INPUT_METHOD while a virtual-device-specific input method is set as default.
 default_input_method|The keyboard that is in use.|component name, e.g. com.google.android.inputmethod.latin/...LatinIME|lock
 default_note_task_profile|Preferred default user profile to use with the notes task button shortcut.
-default_voice_input_method|The getId() ID of the default voice input method. This stores the last known default voice IME. If the related system config value changes, this is reset by InputMethodManagerService.
+default_voice_input_method|The last voice keyboard (voice typing engine) that was the default. Android resets it when the phone maker changes the default.|keyboard id: package/service
 device_paired|Has this pairable device been paired or upgraded from a previously paired system.
 device_state_rotation_lock|Rotation lock setting keyed on device state.
 dialer_default_application|The app that makes calls.|package name
-disable_secure_windows|Whether or not secure windows should be disabled. This only works on debuggable builds. When this setting is set to a non-zero value, all windows are treated as non-secure.|0 = off; 1 = on
+disable_secure_windows|Lets screenshots and recordings show screens that apps mark as secret. Works only on debuggable builds.|0 = off; 1 = on
 disabled_print_services|Print services that are switched off.|list of component names separated by :
 disabled_system_input_methods|Built-in keyboards that are switched off.|list of keyboard ids separated by :
 display_density_forced|Screen density you set with "wm density".|dots per inch, e.g. 420; empty = the phone's own
@@ -707,16 +707,16 @@ doze_enabled|Allows the display to show a low-power screen (ambient display).|0 
 doze_pulse_on_double_tap|Ambient display shows when you double-tap the screen.|0 = off; 1 = on
 doze_pulse_on_long_press|Ambient display shows when you long-press the screen.|0 = off; 1 = on
 doze_pulse_on_pick_up|Ambient display shows when you pick the phone up.|0 = off; 1 = on
-doze_quick_pickup_gesture|Gesture that wakes up the display on quick pickup, toggling between STATE_OFF and STATE_DOZE.
+doze_quick_pickup_gesture|Wakes the always-on display when you pick the phone up quickly.|0 = off; 1 = on
 doze_tap_gesture|Ambient display shows when you tap the screen.|0 = off; 1 = on
-doze_wake_display_gesture|Gesture that wakes up the display, toggling between STATE_OFF and STATE_DOZE.
+doze_wake_display_gesture|Wakes the always-on display when you tap or touch it.|0 = off; 1 = on
 doze_wake_screen_gesture|Wakes the screen with a gesture.|0 = off; 1 = on
 emergency_assistance_application|The app used for emergency assistance.|package name
 emergency_gesture_enabled|The emergency gesture (press power button quickly several times).|0 = off; 1 = on
 emergency_gesture_sound_enabled|Plays a sound while the emergency gesture counts down.|0 = off; 1 = on
 emergency_gesture_ui_last_started_millis|The last time the emergency gesture UI was started.
 emergency_gesture_ui_showing|Whether the emergency gesture UI is currently showing.|0 = off; 1 = on
-emergency_thermal_alert_disabled|Whether the emergency thermal alert would be disabled (0: default) or not (1).|0 = off; 1 = on
+emergency_thermal_alert_disabled|Switches off the emergency alert about the phone overheating.|0 = alert on; 1 = alert off
 enabled_accessibility_audio_description_by_default|Whether select sound track with audio description by default.|0 = off; 1 = on
 enabled_accessibility_services|Accessibility services that are on.|list of component names separated by :|lock
 enabled_input_methods|Keyboards that are switched on.|list of keyboard ids separated by :|lock
@@ -727,13 +727,13 @@ enabled_print_services|Print services that are switched on.|list of component na
 enabled_vr_listeners|Services that may know when VR mode is on.|list of component names separated by :
 enhanced_voice_privacy_enabled|Whether the enhanced voice privacy mode is enabled. 0 = normal voice privacy 1 = enhanced voice privacy|0 = normal voice privacy; 1 = enhanced voice privacy
 even_dimmer_activated|Extra dim: lets the screen go dimmer than the lowest brightness.|0 = off; 1 = on
-even_dimmer_min_nits|Setting that specifies which nits level Even Dimmer should allow the screen brightness to go down to.
-extra_automatic_power_save_mode|Whether battery saver is currently set to different schedule mode.|0 = off; 1 = on
+even_dimmer_min_nits|How dark Extra dim lets the screen go.|brightness in nits (a number)
+extra_automatic_power_save_mode|Battery Saver runs on a different schedule than the standard one.|0 = no; 1 = yes
 extra_low_power_warning_acknowledged|You saw the extreme battery saver warning.|0 = no; 1 = yes
 face_unlock_always_require_confirmation|Face unlock asks you to tap Confirm.|0 = off; 1 = on
 face_unlock_app_enabled|Face unlock may be used inside apps.|0 = off; 1 = on
-face_unlock_attention_required|Whether or not face unlock requires attention. This is a cached value, the source of truth is obtained through the HAL.|0 = off; 1 = on
-face_unlock_dismisses_keyguard|Whether or not face unlock dismisses the keyguard.|0 = off; 1 = on
+face_unlock_attention_required|Face unlock needs you to look at the phone.|0 = not needed; 1 = needed
+face_unlock_dismisses_keyguard|Face unlock takes you straight into the phone instead of stopping at the lock screen.|0 = off; 1 = on
 face_unlock_diversity_required|Whether or not face unlock requires a diverse set of poses during enrollment. This is a cached value, the source of truth is obtained through the HAL.|0 = off; 1 = on
 face_unlock_keyguard_enabled|Face unlock may unlock the screen.|0 = off; 1 = on
 face_unlock_re_enroll|Whether or not a user should re enroll their face. Face unlock re enroll. 0 = No re enrollment. 1 = Re enrollment is required.|0 = No re enrollment; 1 = Re enrollment is required
@@ -745,7 +745,7 @@ flashlight_available|A flashlight can be turned on now. Android keeps this by it
 flashlight_enabled|The flashlight is on.|0 = off; 1 = on
 font_weight_adjustment|Bold text.|0 = normal; 300 = bold (small steps are added to the font weight)
 game_dashboard_always_on|Shows the Game Dashboard shortcut in every game.|0 = off; 1 = on
-glanceable_hub_enabled|Defines the enabled state for the glanceable hub.
+glanceable_hub_enabled|Turns on the glanceable hub (widgets on a charging screen).|0 = off; 1 = on
 global_actions_panel_available|Whether the Global Actions Panel can be toggled on or off in Settings.|0 = off; 1 = on
 global_actions_panel_debug_enabled|Enables debug mode for the Global Actions Panel.
 global_actions_panel_enabled|Whether the Global Actions Panel is enabled.|0 = off; 1 = on
@@ -754,7 +754,7 @@ hearing_aid_call_routing|Where call sound plays when a hearing aid is connected.
 hearing_aid_media_routing|Where media sound plays when a hearing aid is connected.|0 = default; 1 = hearing aid; 2 = phone speaker
 hearing_aid_notification_routing|Where notification sound plays when a hearing aid is connected.|0 = default; 1 = hearing aid; 2 = phone speaker
 hearing_aid_ringtone_routing|Where the ringtone plays when a hearing aid is connected.|0 = default; 1 = hearing aid; 2 = phone speaker
-hide_privatespace_entry_point|Controls whether to hide private space entry point in All Apps|0 = off; 1 = on
+hide_privatespace_entry_point|Hides the Private Space entry in the app drawer.|0 = shown; 1 = hidden
 high_text_contrast_enabled|High contrast text.|0 = off; 1 = on
 hinge_angle_lidevent_enabled|Whether hinge angle lidevent is enabled.|0 = off; 1 = on
 hub_mode_tutorial_state|Defines the user's current state of navigating through the hub mode tutorial. Some possible states are defined in HubModeTutorialState.
@@ -764,7 +764,7 @@ immersive_mode_confirmations|Apps for which you accepted the "full screen" hint.
 in_call_notification_enabled|Plays a sound during calls when a notification comes in.|0 = off; 1 = on
 incall_back_button_behavior|What the Back button does during a call.|0 = nothing; 1 = ends the call
 incall_power_button_behavior|What the power button does during a call.|1 = turn the screen off; 2 = hang up
-input_method_selector_visibility|Setting to record the visibility of input method selector
+input_method_selector_visibility|Whether the keyboard picker button shows on the navigation bar.|0 = automatic; 1 = always; 2 = never
 input_methods_subtype_history|Which keyboard language you used last for each keyboard.|text kept by Android
 install_non_market_apps|Allows installing apps from outside the store (older switch; now chosen per app).|0 = no; 1 = yes
 instant_apps_enabled|Instant apps (open apps without installing).|0 = off; 1 = on
@@ -780,7 +780,7 @@ location_access_check_interval_millis|Deprecated. How often to check for locatio
 location_changer|Which app or setting last changed the location mode.|whole number code; Android keeps this by itself
 location_mode|Location mode (older setting; now only on or off).|0 = off; 1 = device only (GPS); 2 = battery saving; 3 = high accuracy
 location_providers_allowed|Location providers that are on (older setting).|list separated by commas, e.g. gps,network|lock
-location_time_zone_detection_enabled|The current location time zone detection enabled state for the user. See getTimeZoneCapabilitiesAndConfig for access. See updateTimeZoneConfiguration to update.
+location_time_zone_detection_enabled|Sets the time zone from your location instead of the mobile network.|0 = off; 1 = on
 lock_biometric_weak_flags|Deprecated. A flag containing settings used for biometric weak
 lock_pattern_autolock|Deprecated. Whether autolock is enabled (0 = false, 1 = true)|0 = false; 1 = true
 lock_pattern_visible_pattern|Deprecated. Whether lock pattern is visible as user enters (0 = false, 1 = true)|0 = false; 1 = true
@@ -799,15 +799,15 @@ lock_screen_show_qr_code_scanner|Shows the QR scanner shortcut on the lock scree
 lock_screen_show_silent_notifications|Shows silent notifications on the lock screen.|0 = off; 1 = on
 lock_screen_sticky_appwidget|Deprecated. Index of the lockscreen appwidget to restore, -1 if none.
 lock_to_app_exit_locked|Locks the screen when you leave screen pinning.|0 = off; 1 = on
-lockscreen_allow_trivial_controls|Whether trivial home controls can be used without authentication|0 = off; 1 = on
+lockscreen_allow_trivial_controls|Home controls that are harmless (like a light) work from the lock screen without unlocking.|0 = off; 1 = on
 lockscreen_show_controls|Shows device controls on the lock screen.|0 = off; 1 = on
 lockscreen_show_wallet|Shows the wallet on the lock screen.|0 = off; 1 = on
-lockscreen_use_double_line_clock|Whether to use the lockscreen double-line clock|0 = off; 1 = on
-lockscreen_weather_enabled|Whether lockscreen weather is enabled.|0 = off; 1 = on
+lockscreen_use_double_line_clock|Shows the large two-line clock on the lock screen.|0 = single line; 1 = two lines
+lockscreen_weather_enabled|Shows the weather on the lock screen.|0 = off; 1 = on
 logging_id|Deprecated. The Logging ID (a unique 64-bit value) as a hex string. Used as a pseudonymous identifier for logging.
 long_press_timeout|How long a touch must last to count as a long press.|milliseconds, e.g. 400 (short), 500 (default), 1500 (long)
 low_power_manual_activation_count|The number of times (integer) the user has manually enabled battery saver.
-low_power_warning_acknowledged|Whether the "first time battery saver warning" dialog needs to be shown (0: default) or not (1).|0 = off; 1 = on
+low_power_warning_acknowledged|The first-time Battery Saver warning has been seen.|0 = not yet; 1 = seen
 managed_profile_contact_remote_search|Whether parent user can access remote contact in managed profile.|0 = off; 1 = on
 managed_provisioning_dpc_downloaded|Indicates whether a DPC has been downloaded during provisioning.|0 = off; 1 = on
 mandatory_biometrics|Requires biometrics for sensitive actions.|0 = off; 1 = on
@@ -846,7 +846,7 @@ notification_history_enabled|Keeps a history of notifications for the last 24 ho
 notified_non_accessibility_category_services|List of the notified non-accessibility category accessibility services.
 num_rotation_suggestions_accepted|The number of accepted rotation suggestions. Used to determine if the user has been introduced to rotation suggestions.
 odi_captions_enabled|Live Caption.|0 = off; 1 = on
-odi_captions_volume_ui_enabled|Setting to indicate live caption button show or hide in the volume rocker.
+odi_captions_volume_ui_enabled|Shows the Live Caption button on the volume panel.|0 = hidden; 1 = shown
 on_device_inference_unbind_timeout_ms|Timeout to be used for unbinding to the configured remote OnDeviceSandboxedInferenceService if there are no requests in the queue. A value of -1 represents to never unbind.
 on_device_intelligence_idle_timeout_ms|Timeout that represents maximum idle time before which a callback should be populated.
 on_device_intelligence_unbind_timeout_ms|Timeout to be used for unbinding to the configured remote OnDeviceIntelligenceService if there are no requests in the queue. A value of -1 represents to never unbind.
@@ -863,24 +863,24 @@ people_strip|Shows a strip of people at the top of notifications.|0 = off; 1 = o
 power_menu_locked_show_content|Shows cards and controls in the power menu while locked.|0 = hide; 1 = show
 preferred_tty_mode|Preferred TTY (text telephone) mode.|0 = off; 1 = full; 2 = hearing carry over; 3 = voice carry over
 print_service_search_uri|This is the query URI for finding a print service to install.
-private_space_auto_lock|Store auto lock value for private space. The possible values are defined in PrivateSpaceAutoLockOption.
+private_space_auto_lock|When Private Space locks itself: every time the screen locks, after a few minutes without use, or only after a restart.|whole number picking one of those three
 qs_auto_tiles|Quick Settings tiles that were added automatically.|list separated by commas
 qs_media_recommend|Controls whether contextual suggestions can be shown in the media controls.|0 = off; 1 = on
 qs_media_resumption|Shows resumable media in Quick Settings.|0 = off; 1 = on
 reduce_bright_colors_activated|Extra dim (Reduce Bright Colors) is on.|0 = off; 1 = on
 reduce_bright_colors_level|How strong Extra dim is.|percent, 0 to 100
-reduce_bright_colors_persist_across_reboots|Setting that specifies whether Reduce Bright Colors should persist across reboots.|0 = off; 1 = on
+reduce_bright_colors_persist_across_reboots|Keeps Extra dim on after a restart.|0 = off after a restart; 1 = stays on
 release_compress_blocks_on_install|Whether or not compress blocks should be released on install.|0 = off; 1 = on
 reminder_exp_learning_event_count|How many times the Assistant has been triggered using the touch gesture.
 reminder_exp_learning_time_elapsed|How long Assistant handles have enabled in milliseconds.|milliseconds
 rtt_calling_mode|Real-time text calls.|0 = off; 1 = on
-screen_off_udfps_enabled|Whether or not the UDFPS device is enabling the screen off unlock settings.|0 = off; 1 = on
+screen_off_udfps_enabled|Lets the under-screen fingerprint reader work while the screen is off.|0 = off; 1 = on
 screen_resolution_mode|Screen resolution you chose.|0 = unset; 1 = high resolution; 2 = full resolution
 screensaver_activate_on_dock|Starts the screen saver while docked.|0 = off; 1 = on
 screensaver_activate_on_sleep|Starts the screen saver while charging.|0 = off; 1 = on
-screensaver_complications_enabled|Whether complications are enabled to be shown over the screensaver by the user.|0 = off; 1 = on
+screensaver_complications_enabled|Shows extras such as the time and weather over the screen saver.|0 = off; 1 = on
 screensaver_components|The screen saver in use.|list of component names separated by commas
-screensaver_default_component|If screensavers are enabled, the default screensaver component.
+screensaver_default_component|The screen saver that is used when screen savers are on.|component name
 screensaver_enabled|Screen saver (daydream).|0 = off; 1 = on
 screensaver_home_controls_enabled|Whether home controls are enabled to be shown over the screensaver by the user.|0 = off; 1 = on
 search_all_entrypoints_enabled|Whether all entrypoints (e.g. long-press home, long-press nav handle) can trigger contextual search.|0 = off; 1 = on
@@ -910,10 +910,10 @@ selected_spell_checker_subtype|hashCode() of the selected subtype of the selecte
 sfps_performant_auth_enabled_v2|Whether or not a SFPS device is enabling the performant auth setting. The "_V2" suffix was added to re-introduce the default behavior for users. See b/265264294 fore more details.|0 = off; 1 = on
 show_first_crash_dialog_dev_option|Shows a dialog when an app crashes (developer option).|0 = off; 1 = on
 show_ime_with_hard_keyboard|Shows the on-screen keyboard while a physical keyboard is connected.|0 = off; 1 = on
-show_media_when_bypassing|Whether or not media is shown automatically when bypassing as a heads up.|0 = off; 1 = on
+show_media_when_bypassing|Shows the media player on the lock screen when face unlock skips the lock screen.|0 = off; 1 = on
 show_note_about_notification_hiding|Set by the system to track if the user needs to see the call to action for the lockscreen notification policy.
 show_notification_snooze|Shows snooze options on notifications.|0 = off; 1 = on
-show_qr_code_scanner_setting|Whether or not to enable qr code code scanner setting to enable/disable lockscreen entry point. Any value apart from null means setting needs to be enabled|0 = off; 1 = on
+show_qr_code_scanner_setting|Shows the QR code scanner option for the lock screen.|1 = show; unset = hidden
 show_rotation_suggestions|The small button that offers to rotate the screen when auto-rotate is off.|0 = off; 1 = on
 silence_alarms_gesture_count|Count of successful silence alarms gestures.
 silence_alarms_touch_count|Count of non-gesture interaction.
@@ -936,22 +936,22 @@ spell_checker_enabled|Spell checker.|0 = off; 1 = on
 status_bar_show_vibrate_icon|Shows the vibrate icon in the status bar.|0 = off; 1 = on
 stylus_buttons_enabled|Lets the stylus buttons do things.|0 = off; 1 = on
 stylus_handwriting_enabled|Handwriting with a stylus in text fields.|0 = off; 1 = on
-stylus_pointer_icon_enabled|Toggle for enabling stylus pointer icon. Pointer icons for styluses will only be be shown when this is enabled.
+stylus_pointer_icon_enabled|Shows a pointer icon where a stylus hovers.|0 = off; 1 = on
 suggested.completed_category.|The prefix for a category name that indicates whether a suggested action from that category was marked as completed.|0 = off; 1 = on
-suppress_auto_battery_saver_suggestion|0 (default) Auto battery saver suggestion has not been suppressed. 1) it has been suppressed.
+suppress_auto_battery_saver_suggestion|Stops suggesting an automatic Battery Saver.|0 = suggest; 1 = do not
 suppress_doze|Prevents the phone from entering ambient display (doze).|0 = off; 1 = on
 swipe_bottom_to_notification_enabled|Swipe down on the bottom edge to open notifications.|0 = off; 1 = on
 sync_parent_sounds|Defines whether managed profile ringtones should be synced from it's parent profile 0 = ringtones are not synced 1 = ringtones are synced from the profile's parent (default) This value is only used for managed profiles.
-system_navigation_keys_enabled|Whether SystemUI navigation keys is enabled.|0 = off; 1 = on
+system_navigation_keys_enabled|Lets the keys of the navigation bar be used by the system.|0 = off; 1 = on
 sysui_nav_bar|The buttons of the navigation bar and their order.|text, e.g. space;back,home;recent
 sysui_qs_tiles|Quick Settings tiles and their order.|list of tile names separated by commas, e.g. wifi,bt,dnd,flashlight
 tap_gesture|Tap to check the phone.|0 = off; 1 = on
 taps_app_to_exit|For user taps app to exit One-Handed Mode.
-theme_customization_overlay_packages|Map of android.theme.customization.* categories to the enabled overlay package for that category, formatted as a serialized JSONObject.
+theme_customization_overlay_packages|Which style, color and font overlays are on, as a JSON text (Material You).|JSON text
 timeout_to_dock_user|The duration of timeout, in milliseconds, to switch from a non-Dock User to the Dock User when the device is docked.|milliseconds
 touch_exploration_enabled|TalkBack touch exploration.|0 = off; 1 = on|lock
 touch_exploration_granted_accessibility_services|Services allowed to use touch exploration.|list of component names separated by :
-trackpad_gesture_back_enabled|Indicates whether the trackpad back gesture is enabled.|0 = off; 1 = on
+trackpad_gesture_back_enabled|The back gesture on a trackpad.|0 = off; 1 = on
 trackpad_gesture_home_enabled|Indicates whether the trackpad home gesture is enabled.|0 = off; 1 = on
 trackpad_gesture_notification_enabled|Indicates whether the trackpad notification gesture is enabled.|0 = off; 1 = on
 trackpad_gesture_overview_enabled|Indicates whether the trackpad overview gesture is enabled.|0 = off; 1 = on
@@ -959,14 +959,14 @@ trackpad_gesture_quick_switch_enabled|Indicates whether the trackpad quick switc
 trust_agents_initialized|Set to 1 by the system after trust agents have been initialized.
 tts_default_country|Deprecated. Default text-to-speech country.
 tts_default_lang|Deprecated. Default text-to-speech language.
-tts_default_locale|Stores the default tts locales on a per engine basis. Stored as a comma seperated list of values, each value being of the form engine_name:locale for example, ttsengine:esp-ESP.
+tts_default_locale|The language each text-to-speech engine uses.|list separated by commas: engine:language, e.g. com.google.android.tts:en-US
 tts_default_pitch|Pitch of the text-to-speech voice.|percent; 100 = normal
 tts_default_rate|Speed of the text-to-speech voice.|percent; 100 = normal
 tts_default_synth|The text-to-speech engine in use.|package name
 tts_default_variant|Deprecated. Default text-to-speech locale variant.
 tts_enabled_plugins|Space delimited list of plugin packages that are enabled.
 tts_use_defaults|Deprecated. Setting to always use the default text-to-speech settings regardless of the application settings. 1 = override application settings, 0 = use application settings (if specified).|1 = override application settings; 0 = use application settings (if specified
-tty_mode_enabled|Whether the TTY mode mode is enabled. 0 = disabled 1 = enabled|0 = disabled; 1 = enabled
+tty_mode_enabled|Text telephone (TTY) mode for calls.|0 = off; 1 = on
 tv_app_uses_non_system_inputs|Whether TV app uses non-system inputs. The value is boolean (1 or 0), where 1 means non-system TV inputs are allowed, and 0 means non-system TV inputs are not allowed.|0 = off; 1 = on
 tv_input_custom_labels|List of custom TV input labels. This is a string containing pairs. TV input id and custom name are encoded by encode(String) and separated by ','. Each pair is separated by ':'.
 tv_input_hidden_inputs|List of TV inputs that are currently hidden. This is a string containing the IDs of all hidden TV inputs. Each ID is encoded by encode(String) and separated by ':'.
@@ -975,7 +975,7 @@ ui_night_mode|Dark theme.|0 = automatic (follows Battery Saver or the schedule);
 ui_night_mode_custom_type|Which kind of custom schedule the dark theme follows.|0 = unset; 1 = a schedule; 2 = bedtime mode
 ui_night_mode_last_computed|The last computed night mode bool the last time the phone was on
 ui_night_mode_override_off|The current night mode that has been overridden to turn off by the system. Owned and controlled by UiModeManagerService. Constants are as per UiModeManager.
-ui_night_mode_override_on|The current night mode that has been overridden to turn on by the system. Owned and controlled by UiModeManagerService. Constants are as per UiModeManager.
+ui_night_mode_override_on|The night mode the system has turned on by itself (for example with Battery Saver).|0 = automatic; 1 = night off; 2 = night on
 ui_translation_enabled|Toggle to enable/disable for the apps to use the Ui translation for Views. The value indicates whether the Ui translation is enabled by the user.|whole number
 unknown_sources_default_reversed|Reverses the default for installing apps from unknown sources.|0 = no; 1 = yes
 unsafe_volume_music_active_ms|Persisted playback time after a user confirmation of an unsafe volume level.

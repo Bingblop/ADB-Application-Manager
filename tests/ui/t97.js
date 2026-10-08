@@ -58,7 +58,7 @@ const appBatchMock = require('./lib/appbatch_mock');
   const subtitle = () => page.evaluate(() => document.getElementById('commandResultsSubtitle').innerText);
   const seen = () => page.evaluate(() => window.__seen);
   const resetSeen = () => page.evaluate(() => { window.__seen = []; });
-  const selectAll = () => page.evaluate(() => { ['com.a', 'com.b', 'com.c', 'com.d'].forEach(toggleSelectPkg); });
+  const selectAll = () => page.evaluate(() => { ['com.a', 'com.b', 'com.c', 'com.d'].forEach(toggleSelectPkg); batchKeepSelection = false; });       // (Keep selection is on by default since v7.10.16: these checks are about the other way)
 
   // ---------------------------------------------------------------- 1. normal run to completion
   await selectAll();

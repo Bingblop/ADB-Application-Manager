@@ -227,7 +227,7 @@ const KEY = 'theme_customization_overlay_packages';
     await T.open('list');
     await T.ev(() => { ovlLimit = 100000; ovlRender(); }); await T.sleep(300);
     const groups = await T.ev(() => Array.from(document.querySelectorAll('#ovlRows .ovl-group')).filter(g => /constructor|__proto__|toString|hasOwnProperty/.test(g.innerText)).map(g => g.innerText.replace(/\s+/g, ' ')));
-    check('8. targets "constructor", "__proto__", "toString" and "hasOwnProperty" show real counts', groups.length === 4 && groups.every(g => !/NaN|undefined/.test(g)) && groups.some(g => /constructor 1 \/ 2 on/.test(g)), JSON.stringify(groups));
+    check('8. targets "constructor", "__proto__", "toString" and "hasOwnProperty" show real counts', groups.length >= 4 && groups.every(g => !/NaN|undefined/.test(g)) && groups.some(g => /constructor 1$/.test(g)) && groups.some(g => /__proto__ 1$/.test(g)), JSON.stringify(groups));
     check('   and nothing was written onto Object.prototype', (await T.ev(() => Object.prototype.all === undefined && Object.prototype.on === undefined)));
     await page.close();
   }

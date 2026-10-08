@@ -8,7 +8,7 @@
     <li>Changing an app (freeze, suspend, stop, clear data, uninstall) needs a <a href="#modes-overview">working mode</a>: ADB TCP, Wireless Debugging, Shizuku or Root. Without one, a box called <b>Working Mode Required</b> opens instead.</li>
     <li>The RUNNING badge and the UNINSTALLED apps are only found while a working mode is on, because the app has to ask Android through it. In Read-Only mode the Running count stays at 0.</li>
   </ul>
-  <p>Every Android app has a <b>package name</b>, its unique ID, for example <code>com.android.chrome</code>. The list shows it under each app's name, and many features work with it (see the <a href="#glossary">glossary</a>).</p>
+  <p>Every Android app has a <b>package name</b>, its unique ID, for example <code>com.android.chrome</code>. The list shows it under each app's name, in a softer colour taken from the app's theme so it stands apart from the name (in every app list), and many features work with it (see the <a href="#glossary">glossary</a>).</p>
 
   <h4>Freeze, suspend, uninstall: what they mean here</h4>
   <p>This app has three ways to switch an app off. They are not the same, and each can be undone.</p>
@@ -25,15 +25,16 @@
   <div class="hg-danger"><b>Risky.</b> Uninstall on an app you installed yourself deletes it and its data, and Reinstall cannot bring it back. Clear Data cannot be undone either. If you may want the data again, make a backup first (see <a href="#apps-backup">Backups and restore</a>). The general advice is on the <a href="#safety">Safety</a> page.</div>
 
   <h4>The boxes at the top</h4>
-  <p>Above the list are three whole boxes and two split boxes with two halves each. Each shows a count, and each is also a filter: tap it and the list shows only those apps, tap it again to turn it off. It lights up while its filter is on. The boxes and the filter pills under them are the same filters, so they always agree.</p>
+  <p>Above the list are three whole boxes and two split boxes with two halves each. Each shows a count, and each is also a filter: tap it and the list shows only those apps, tap it again to turn it off. It lights up while its filter is on, in its own colour: green for Enabled and Running, cyan for Frozen, orange for 3rd Party, purple for System and red for Bloatware (Uninstalled), with a ring around it, so you can tell at a glance which one is in use. The boxes and the filter pills under them are the same filters, so they always agree.</p>
   <ul>
     <li><b>Total Installed</b>: every app in the list. It also counts the UNINSTALLED apps, because they stay in the list so you can bring them back. Tapping it turns all filters off.</li>
-    <li><b>Running</b>: apps that have a live process right now. Needs a working mode.</li>
+    <li><b>Running</b>: apps that have a live process right now. Needs a working mode. Turning it on turns <b>Uninstalled</b> off (a running app is installed).</li>
     <li><b>Bloatware (Uninstalled)</b>: system apps that were removed for you (by this app or by another tool) but whose files are still in the system. "Bloatware" means apps that come pre-installed and that many people do not want. Needs a working mode.</li>
     <li><b>Enabled | Frozen</b>: a split box with two halves. Enabled counts apps that are on (a suspended app still counts as Enabled, it is only paused). Frozen counts apps that are disabled.</li>
     <li><b>3rd Party | System</b>: another split box. 3rd Party counts apps that you or a store installed. System counts apps that came with the phone.</li>
   </ul>
   <p>UNINSTALLED apps are counted in Total Installed and in Bloatware (Uninstalled) only, not in the four halves.</p>
+  <p><b>Bloatware (Uninstalled) starts a clean list.</b> Tapping it (or the Uninstalled pill) turns every other filter off first, so you see all the uninstalled apps, not only those that also match a filter you forgot was on. You can still tap another box or pill afterwards to narrow the list, for example System to see only the uninstalled system apps.</p>
   <p><b>A pair keeps one side.</b> Enabled and Frozen are a pair, and so are 3rd Party and System. Only one half of a pair can be on. Tap Enabled, then Frozen, and Frozen takes the place of Enabled. Tap the half that is on to turn it off.</p>
   <p><b>Clear filters.</b> When more than one filter is on, a line appears above the pills saying what is combined, for example "Showing apps that are Running + 3rd Party.", with a <b>Clear filters</b> chip. Tap the chip (or Total Installed, or <b>All Apps</b>) to turn them all off.</p>
 
@@ -54,7 +55,7 @@
       <tr><td><b>Uninstalled</b></td><td>...are system apps removed for you (the UNINSTALLED badge).</td></tr>
     </tbody>
   </table>
-  <p>Filters stack: an app has to match every filter that is on. Running and 3rd Party together show your own apps that are running now. System and Frozen show the system apps you have frozen. 3rd Party, System and Frozen leave out UNINSTALLED apps unless Uninstalled is on as well.</p>
+  <p>Filters stack: an app has to match every filter that is on. Running and 3rd Party together show your own apps that are running now. System and Frozen show the system apps you have frozen. 3rd Party, System and Frozen leave out UNINSTALLED apps unless Uninstalled is on as well. Turning Uninstalled on turns every other pill off first (add another one afterwards to combine).</p>
 
   <h4>Search</h4>
   <p>The search box sits under the pills. It narrows the list while you type, and it searches inside whatever the filters already show. The X in the box clears the text. If nothing matches you see "No Applications Found".</p>
@@ -132,11 +133,11 @@
   <ol class="hg-steps">
     <li>Type a few letters of the app's name in the search box. The list shrinks as you type.</li>
     <li>Tap the three-dot button on its row. The app menu slides up from the bottom.</li>
-    <li>Tap <b>Freeze</b>. A short message says "Action executed". The menu stays open.</li>
+    <li>Tap <b>Freeze</b>. A short message says "Working on it&hellip;", then "Checking the phone&hellip;", then what the phone reports, for example "Alpha: Frozen". The menu stays open.</li>
     <li>Look at the row behind the menu: it now has a FROZEN badge, and in the menu the Freeze button has turned into <b>Enable</b>. The Frozen count at the top went up by one.</li>
     <li>To undo, tap <b>Enable</b> in the same menu.</li>
   </ol>
-  <p>If Android refuses, you see "Action reported a problem" and a <b>Command Result</b> box with Android's own words. Nothing was changed. Some system apps are protected and cannot be frozen.</p>
+  <p>For <b>Freeze</b>, <b>Enable</b>, <b>Uninstall</b>, <b>Reinstall</b>, <b>Suspend</b> and <b>Unsuspend</b> the message comes from the phone, not from the command: after the command the app reads the list of apps (and, for Suspend, the app's own suspended flag) and tells you what it found: <i>Frozen</i>, <i>Not frozen</i>, <i>Uninstalled</i>, <i>Still installed</i>, <i>Suspended</i> and so on. A command that printed an error for an app that is in fact gone still counts as done. If Android refuses, you see "Action reported a problem" (or, for these actions, the finding, such as "Still installed") and a <b>Command Result</b> box with Android's own words. Nothing was changed. Some system apps are protected and cannot be frozen. <b>Force stop</b> is read back too: the app looks at the running processes and tells you <i>Stopped</i> or <i>Still running</i> (an app can be started again at once by the system, one of its services or another app, and the card says so). <b>Clear data</b> is read back by counting files: in <b>Root</b> mode in the app's own data folder, in <b>ADB and Shizuku</b> modes (where that folder cannot be read) in the app's folder on the shared storage, <code>Android/data/package</code>, before and after, and once more after a moment to see whether the app wrote files again. You get, for example, <i>Data cleared</i> (12 files, 3.4 MB before, 0 after), <i>Cleared, new files written</i>, <i>Partly cleared</i> or <i>Not cleared</i>. If that folder was empty before, there is nothing to compare, and the command's answer stands with a note saying so. While an app is being changed and checked its row in the list shows a small spinner and <i>Working&hellip;</i> or <i>Checking&hellip;</i> in its corner, even with <a href="#prefs">Progress messages</a> turned off.</p>
   <div class="hg-note"><b>Tip.</b> Freeze, Enable, Suspend, Unsuspend, Uninstall and Reinstall are written to a history with one-tap Undo. Open the <a href="#tab-debloater">UAD-NG Debloater</a> tab and tap <b>History</b>. If that tab is missing, turn it on again in the <a href="#feature-list">Feature List</a>.</div>
 
   <h4>If something is wrong</h4>
@@ -174,10 +175,10 @@
   <h5>The UAD-NG chip</h5>
   <p>UAD-NG is a community list that rates how safe it is to remove many phone apps. When the app you opened is in that list, a chip under Share shows "UAD-NG" and one word: <b>RECOMMENDED</b>, <b>ADVANCED</b>, <b>EXPERT</b> or <b>UNSAFE</b>. Tap it for the "UAD-NG classification" box:</p>
   <ul>
-    <li>the level and the group the project files it under (such as Oem, Google, Aosp, Carrier or Misc), and what the level means: Recommended is safe to remove for most people; Advanced breaks minor features or default apps you can replace; Expert breaks widespread or important features, but not basic operation; Unsafe can break vital parts of Android, with a high risk of a boot-loop (the phone keeps restarting and never finishes starting);</li>
+    <li>the level and the group the project files it under (such as Oem, Google, Aosp, Carrier or Misc);</li>
     <li>the project's description of the app, when it has one;</li>
     <li>warning lines "Needed by:" and "Depends on:" naming other packages, when the project lists any;</li>
-    <li>buttons <b>UAD-NG Wiki</b> and <b>Close</b>.</li>
+    <li>buttons <b>UAD-NG Wiki</b>, <b>Removal Levels</b> and <b>Close</b>. <b>Removal Levels</b> opens another sheet with what the four levels mean, the same lines as under <b>Removal Levels</b> in the <a href="#tab-debloater">UAD-NG Debloater</a> tab: Recommended is safe to remove for most people; Advanced breaks minor features or default apps you can replace; Expert breaks widespread or important features, but not basic operation; Unsafe can break vital parts of Android, with a high risk of a boot-loop (the phone keeps restarting and never finishes starting). <b>Close</b> on that sheet brings you back to the classification.</li>
   </ul>
   <p>No chip appears when the app is not in the list, or when you have not yet downloaded the list. Open the <a href="#tab-debloater">UAD-NG Debloater</a> tab and use <b>Update List</b> once. Read <a href="#debloater-safety">Debloater safety</a> before you act on any rating.</p>
 
@@ -340,7 +341,7 @@
 
   <h4>Before you start</h4>
   <ul>
-    <li>Selecting apps, <b>Save to List</b>, <b>Copy Packages</b>, <b>Share List</b> and <b>Show Apps</b> work in every mode.</li>
+    <li>Selecting apps, <b>Save to List</b>, <b>Copy Packages</b>, <b>Share List</b> and <b>Show Applications</b> work in every mode.</li>
     <li>Every action that changes apps needs a <a href="#modes-overview">working mode</a>. Without one, the "Working Mode Required" box opens.</li>
     <li>Only one batch can run at a time. If you start another, a message says "Another batch action is already running".</li>
   </ul>
@@ -350,17 +351,17 @@
     <li>Tap a row to tick its checkbox. Tap again to untick it. The row gets a coloured border while it is selected.</li>
     <li>A round button with a tick and a number (how many apps are selected) appears at the bottom right of the screen. This button is how you open the batch sheet.</li>
     <li><b>Hold the round button</b> for about half a second to drop the whole selection at once. A message says "Cleared (number) selections".</li>
-    <li>Selected apps stay selected when you change the filters or the search, so you can build a selection in several steps.</li>
+    <li>Selected apps stay selected when you change the filters or the search, so you can build a selection in several steps. They do <b>not</b> stay selected when you leave the Application Manager for another tab: the selection is dropped and the round button goes away at once.</li>
   </ul>
 
   <h4>The batch sheet</h4>
-  <p>Tap the round button and a sheet slides up. The top row shows "(number) Selected" with three controls:</p>
+  <p>Tap the round button and a sheet slides up. At the top, in the middle, is the same grab line as on every other sheet: <b>pull it up</b> and the sheet grows taller, <b>pull it down</b> and it goes back to its size, and <b>pull it down once more</b> and it closes into the round button (the apps stay selected). The top row shows "(number) Selected" with three controls:</p>
   <ul>
-    <li><b>Select All</b>: selects every app that matches your current filters and search, including those not yet drawn on screen.</li>
-    <li><b>Clear</b>: unselects everything.</li>
+    <li><b>Select All</b> (an outlined button): selects every app that matches your current filters and search, including those not yet drawn on screen.</li>
+    <li><b>Clear All</b> (outlined too): unselects everything.</li>
     <li>The <b>X</b>: closes the sheet but keeps the selection. The round button comes back.</li>
   </ul>
-  <p>Next come three buttons: <b>Save to List</b> (see <a href="#tab-saved-lists">Saved Applications</a>), <b>Copy Packages</b> (copies the package names, one per line) and <b>Share List</b> (sends the same text through the share sheet). Then a switch, <b>Keep selection after running</b>: "Run another command on these same apps without reselecting them". Then twelve action buttons:</p>
+  <p>Next come three buttons: <b>Save to List</b> (see <a href="#tab-saved-lists">Saved Applications</a>), <b>Copy Packages</b> (copies the package names, one per line) and <b>Show Applications</b> (lists the selected apps, see below). Then a switch, <b>Keep selection after running</b>: "Run another command on these same apps without reselecting them". It is <b>on every time</b>: each new selection starts with it on, whatever you did to it before. Then twelve action buttons:</p>
   <table class="hg-table">
     <thead><tr><th>Button</th><th>What it does to each app</th><th>Asks first?</th></tr></thead>
     <tbody>
@@ -374,7 +375,7 @@
       <tr><td><b>Uninstall</b></td><td>Removes the app for you.</td><td>Yes</td></tr>
       <tr><td><b>Reinstall</b></td><td>Brings back removed system apps (<code>pm install-existing</code>).</td><td>No</td></tr>
       <tr><td><b>Batch Ops</b></td><td>Sets app ops on all of them. See below.</td><td>Its own box</td></tr>
-      <tr><td><b>Show Apps</b></td><td>Lists the selected apps, each with a <b>Remove</b> button.</td><td>Nothing runs</td></tr>
+      <tr><td><b>Share List</b></td><td>Sends the package names, one per line, through the share sheet.</td><td>Nothing runs</td></tr>
       <tr><td><b>Command</b></td><td>Runs a command you type on each app. See below.</td><td>Its own box</td></tr>
     </tbody>
   </table>
@@ -386,6 +387,7 @@
 
   <h4>The results box</h4>
   <p>When the batch ends, a message such as "Batch Done: 5 succeeded, 0 failed" appears and a box called <b>Batch Results</b> opens. Its subtitle names the action and the count, for example "FREEZE &bull; 5 of 5 apps" (the action keeps the name of the button you tapped). Each app has a card with its name, package name, the answer Android gave (or "No output returned") and a tag, <b>Success</b> or <b>Failed</b>. At the bottom:</p>
+  <p><b>The result comes from the phone, not from the command.</b> After <b>Uninstall</b>, <b>Uninstall (keep data)</b>, <b>Reinstall</b>, <b>Freeze</b>, <b>Unfreeze</b>, <b>Suspend</b> and <b>Unsuspend</b>, the app asks the phone what became of each app (the progress sheet says <b>Checking the phone&hellip; (N apps)</b> with a full bar while it does; it reads the list of installed and of frozen apps again, plus each app's suspended flag for Suspend, and waits a second and asks once more if an app is not yet in its new state). The tag then says what it found: <b>Uninstalled</b> or <b>Still installed</b>, <b>Installed</b> or <b>Not installed</b>, <b>Frozen</b> or <b>Not frozen</b>, <b>Enabled</b> or <b>Still frozen</b>, and the counts in the message follow it. Some phones make the uninstall command report a failure although the app is gone; the card then starts with <i>Checked afterwards: uninstalled. The command reported a failure, but the phone says it worked.</i> and the app counts as a success. If the phone cannot be asked (no working shell), the command's own answer is used, as before. <b>Force stop</b> (<i>Stopped</i> / <i>Still running</i>) and <b>Clear data</b> (file counts, see above) are checked the same way, with the same <i>Checking the phone&hellip;</i> step. <b>Batch Ops</b> and <b>Command</b> are not checked (the phone offers nothing to read their result from), so their tags come from the command. Every row of the batch shows the spinner and <i>Working&hellip;</i>, then <i>Checking&hellip;</i>, until the results open.</p>
   <ul>
     <li><b>Run again</b>: runs the same action on the same apps (Freeze, Suspend and Uninstall ask first again).</li>
     <li><b>Run again on the (number) that failed</b>: shown when some, but not all, failed.</li>
@@ -399,7 +401,7 @@
   <ol class="hg-steps">
     <li>In the Application Manager, tap five rows, one by one. The rows get a border, and a round button with a tick and the number 5 appears at the bottom right.</li>
     <li>Tap the round button. The batch sheet slides up and says "5 Selected".</li>
-    <li>Tap <b>Show Apps</b> to check the five names. Tap <b>Remove</b> beside any you picked by mistake, then close the box with its X.</li>
+    <li>Tap <b>Show Applications</b> to check the five names. Tap <b>Remove</b> beside any you picked by mistake, then close the box with its X.</li>
     <li>Tap <b>Freeze</b>. The box "Confirm Freeze Selected Apps" opens with the five apps listed.</li>
     <li>Tap <b>Confirm Freeze</b>. A progress box shows "1 of 5", "2 of 5" and so on, with a bar.</li>
     <li>When it ends, <b>Batch Results</b> opens. Each app should show <b>Success</b>. Tap <b>Done</b>.</li>
@@ -427,7 +429,7 @@
 
   <h4>Getting out of a mistake</h4>
   <ul>
-    <li>Wrong apps selected: tap <b>Clear</b>, or hold the round button.</li>
+    <li>Wrong apps selected: tap <b>Clear All</b>, or hold the round button.</li>
     <li>Wrong action started: tap <b>Stop</b>. Apps not yet reached stay as they were.</li>
     <li>Action finished: use the opposite button (Enable, Unsuspend, Reinstall), or the Debloater's History Undo.</li>
   </ul>
@@ -686,7 +688,7 @@
   <h4>Step by step: freeze a group again later</h4>
   <ol class="hg-steps">
     <li>Open the <b>Saved Applications</b> tab and tap <b>Recall</b> on the list. The Application Manager opens with those apps selected and a message "Recalled (number) apps from (name)".</li>
-    <li>Tap the round button at the bottom right, check the number and the names with <b>Show Apps</b>, then tap <b>Freeze</b> and confirm.</li>
+    <li>Tap the round button at the bottom right, check the number and the names with <b>Show Applications</b>, then tap <b>Freeze</b> and confirm.</li>
     <li>Read the results. Apps that are not on this phone fail; the others are done.</li>
   </ol>
   <div class="hg-warn"><b>Careful.</b> Recall selects every package on the list, even those that are not installed on this phone, and counts them. They simply show <b>Failed</b> in the results. Use the filter pills before you tap <b>Recall</b> if you want only the apps that are present.</div>

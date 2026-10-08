@@ -1,4 +1,4 @@
-batch grid: buttons / rows / the new row: {"buttons":12,"rows":4,"labels":["Batch Ops","Show Apps","Command"]}
+batch grid: buttons / rows / the new row: {"buttons":12,"rows":4,"labels":["Batch Ops","Share List","Command"]}
 batch menu X (top right, no arrow): [ '✕', true, true, 0, '20px' ]
 sheet fits the screen: true
 Show Apps lists the selection: [ '3 apps selected', [ 'Alpha', 'Bravo', 'Charlie' ] ]
@@ -88,5 +88,5 @@ Rename a saved command: [ 'Stop it', 'Wipe cache (copy)', 'Wipe cache' ]
 Export saved commands: ["batch_commands_DATE.json",["Stop it=am force-stop $package","Wipe cache (copy)=echo $package","Wipe cache=echo $package"]]
 app menu has no arrow, its X closes it: 0
 closed: true
-the batch X minimizes the menu (selection kept): [ true, 1 ]
+the batch X minimizes the menu (selection kept): [ true, 2 ]
 errors: []

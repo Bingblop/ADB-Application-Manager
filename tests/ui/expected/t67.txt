@@ -36,7 +36,7 @@
    the clear button can be tabbed to and used with Enter: true
    ... Enter clears the search: true
    "Show more" in the list keeps the focus in the list: true DIV
-8. targets "constructor", "__proto__", "toString" and "hasOwnProperty" show real counts: true ["constructor 1 / 2 on","__proto__ 1 / 1 on","toString 0 / 1 on","hasOwnProperty 1 / 1 on"]
+8. targets "constructor", "__proto__", "toString" and "hasOwnProperty" show real counts: true ["__proto__ 1","constructor 1","hasOwnProperty 1","constructor 1","toString 1"]
    and nothing was written onto Object.prototype: true
 9. the preset list is open: true
    choosing the wallpaper closes it (it is hidden with the editor): true

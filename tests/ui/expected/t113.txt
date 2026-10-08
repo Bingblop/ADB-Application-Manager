@@ -1,4 +1,4 @@
-the card is the last one in Settings: trimCachesCard
+the card is in the SD Maid tab and no longer in Settings: true
 button text: "🔒\nTrim Caches in All Applications"
 explanation is below the button: true
 explanation parts: ["What it runs=true","What it does=true","What is trimmed=true","What is not touched=true","What you may notice=true","How long it takes=true"]

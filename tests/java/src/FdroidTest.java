@@ -101,6 +101,36 @@ public class FdroidTest {
     for (int i = 0; i < 1000; i++) p.tick(false);
     check("progress is throttled (<= 2 ticks for 1000 rapid calls)", ticks[0] <= 2);
 
+    // ---------- the details for the detail sheet (v7.10.10): description, screenshots, links ----------
+    final Map<String, JSONObject> got = new LinkedHashMap<String, JSONObject>();
+    FdroidIndex.Progress dp = new FdroidIndex.Progress(null);
+    dp.details = new FdroidIndex.Details() { public void put(String pkg, JSONObject d) { got.put(pkg, d); } };
+    FdroidIndex.Result wd = FdroidIndex.parseV2(new FileInputStream(FIX + "wgtunnel-index-v2.json"), "https://example.org/repo", arm64, 34, dp);
+    JSONObject wdet = got.get("com.zaneschepke.wireguardautotunnel");
+    check("details(v2): an entry for every listed app", wd.items.length() == got.size() && wdet != null);
+    check("details(v2): the long description (en-US) is kept", wdet.optString("d").startsWith("A WireGuard & AmneziaWG VPN client") && wdet.optString("d").contains("Features"));
+    check("details(v2): web site, source code, license and author", "https://wgtunnel.com".equals(wdet.optString("web")) && "https://github.com/wgtunnel/android".equals(wdet.optString("src")) && "MIT".equals(wdet.optString("lic")) && "wgtunnel".equals(wdet.optString("by")));
+    JSONArray shots = wdet.optJSONArray("shots");
+    check("details(v2): phone screenshots as full addresses, at most 12", shots != null && shots.length() > 0 && shots.length() <= 12 && shots.getString(0).startsWith("https://example.org/repo/com.zaneschepke.wireguardautotunnel/en-US/phoneScreenshots/"));
+    check("details(v2): the list items are the same with and without a details receiver", FdroidIndex.parseV2(new FileInputStream(FIX + "wgtunnel-index-v2.json"), "https://example.org/repo", arm64, 34, null).items.toString().equals(wd.items.toString()));
+
+    final Map<String, JSONObject> got1 = new LinkedHashMap<String, JSONObject>();
+    FdroidIndex.Progress dp1 = new FdroidIndex.Progress(null);
+    dp1.details = new FdroidIndex.Details() { public void put(String pkg, JSONObject d) { got1.put(pkg, d); } };
+    String v1d = "{\"repo\":{\"name\":\"Old Repo\"},\"apps\":[{\"packageName\":\"o.app\",\"name\":\"Old App\",\"summary\":\"Legacy\",\"description\":\"The old description\",\"webSite\":\"https://old.example\",\"sourceCode\":\"https://git.example/o\",\"license\":\"GPL-3.0\",\"authorName\":\"Olga\","
+      + "\"localized\":{\"de\":{\"phoneScreenshots\":[\"de1.png\"]},\"en-US\":{\"description\":\"English text\",\"phoneScreenshots\":[\"a.png\",\"b.png\"]}}}],"
+      + "\"packages\":{\"o.app\":[{\"apkName\":\"o.app_5.apk\",\"versionName\":\"0.5\",\"versionCode\":5,\"size\":500,\"hash\":\"h5\",\"hashType\":\"sha256\"}]}}";
+    FdroidIndex.parseV1(in(v1d), "https://old.example/repo", arm64, 34, dp1);
+    JSONObject od = got1.get("o.app");
+    check("details(v1): description (the en-US one wins), links, license, author", od != null && "English text".equals(od.optString("d")) && "https://old.example".equals(od.optString("web")) && "https://git.example/o".equals(od.optString("src")) && "GPL-3.0".equals(od.optString("lic")) && "Olga".equals(od.optString("by")));
+    check("details(v1): screenshots of the en-US folder, built from the app and file names", od.getJSONArray("shots").length() == 2 && "https://old.example/repo/o.app/en-US/phoneScreenshots/a.png".equals(od.getJSONArray("shots").getString(0)));
+
+    // ---------- what an address is: the name of a repository, read from the start of its index ----------
+    check("repoNameOf(v2): the localized name", "Test Repo".equals(FdroidIndex.repoNameOf(in(idx))));
+    check("repoNameOf(v1): a plain name", "Old Repo".equals(FdroidIndex.repoNameOf(in(v1d))));
+    check("repoNameOf: an index whose repo block comes last is still an index (empty name)", "".equals(FdroidIndex.repoNameOf(in("{\"packages\":{}}"))));
+    check("repoNameOf: something that is not an index is null", FdroidIndex.repoNameOf(in("{\"hello\":1}")) == null);
+
     System.out.println(fails == 0 ? "ALL PASS" : (fails + " FAILED"));
     System.exit(fails == 0 ? 0 : 1);
   }

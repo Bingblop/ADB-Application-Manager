@@ -34,7 +34,7 @@ const { chromium, PAGE, REPO } = require('./lib/pw');
 
     await ev(() => switchView('about')); await wait(200);
     const btns = await ev(() => Array.from(document.querySelectorAll('#view-about .about-hero .mode-btn-row button')).map(b => b.innerText));
-    check('the About tab has Help Guide next to GitHub, What\'s new, Permissions and Check for update', btns.join('|') === 'GitHub|Help Guide|What\'s new|Permissions|Check for update', btns.join('|'));
+    check('the About tab has Issues and Contact first, then GitHub, Help Guide, What\'s new, Permissions and Check for update', btns.join('|') === 'Issues|Contact the developer|GitHub|Help Guide|What\'s new|Permissions|Check for update', btns.join('|'));
     await page.click('#aboutHelpBtn'); await wait(700);
     const open = await ev(() => ({ shown: document.getElementById('helpGuideModal').classList.contains('show'), groups: Array.from(document.querySelectorAll('#hgToc summary')).map(s => s.innerText.replace(/\s+/g, ' ').trim()),
       links: Array.from(document.querySelectorAll('#hgToc a')).map(a => a.innerText.replace(/\s+/g, ' ')), drawn: document.querySelectorAll('.hg-sec').length, intro: document.querySelector('.hg-intro').innerText }));

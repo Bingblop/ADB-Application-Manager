@@ -1,4 +1,4 @@
-1. RRO/Monet Customization sits right of Hidden Settings and before App Updater: true ["Application Manager","Saved Applications","UAD-NG Debloater","APK Installer","File Manager","Command-Line Interface","Hidden Settings","RRO/Monet Customization","App Updater","App Stores","Logcat Viewer","Task Manager","Connected Devices","Morphe Patcher","SD Maid SE","About"]
+1. RRO/Monet Customization sits right of Hidden Settings and before App Updater: true ["Application Manager","Saved Applications","UAD-NG Debloater","APK Installer","File Manager","Command-Line Interface","Hidden Settings","RRO/Monet Customization","App Updater","App Stores","Logcat Viewer","Task Manager","Connected Devices","Morphe Patcher","SD Maid","About"]
    it activates its own button and view: true
    Hidden Settings is still itself: true
    App Stores and About keep their buttons: true
@@ -70,12 +70,12 @@ Android will use your wallpaper’s colors with the Tonal Spot style again.
 11. a refused change opens a sheet with Android's words and the advice: true {"shown":true,"title":"Theme change refused","body":"Theme change refused\nFAILED\nMonet · secure setting\njava.lang.SecurityException: not allowed to write secure settings\n\nAndroid refused the request."}
     the button is usable again, the theme line is unchanged and nothing is offered to undo: true
 12. the Overlays sub-tab reads the list once and shows the first 120 rows: true [120,1]
-    grouped by target with how many are on: true ["android 3 / 7 on","com.android.systemui 2 / 4 on","com.android.settings 14 / 40 on"]
+    grouped by target with how many it has in this part (Enabled / Disabled / not changeable): true ["android 3","com.android.launcher3 14","com.android.settings 14"]
     "Show more" says how many are left: true Show 11 more (11 left)
     the status line and the tab count: true 131 overlays · 47 on · read <clock>
 Refresh / 131
-    a row shows the id and its state; its switch is on: true {"on":true,"disabled":false,"text":"android.theme.customization.accent_color\nOn"}
-    an unavailable overlay says so and its switch is disabled: true {"on":false,"disabled":true,"text":"com.google.android.overlay.gmsconfig.photos\nUnavailable"}
+    a row shows the id and its state; its switch is on: true {"on":true,"disabled":false,"text":"android.theme.customization.accent_color\nOn\nAccent color used across the system"}
+    an unavailable overlay says so and its switch is disabled: true {"on":false,"disabled":true,"text":"com.google.android.overlay.gmsconfig.photos\nUnavailable\nDevice settings that the maker changed"}
     an id with HTML characters is shown as text: true {"text":"weird<b>id</b>&\"quote's","html":"weird&lt;b&gt;id&lt;/b&gt;&amp;\"quote's","bold":0}
 13. "On" shows only the switched-on overlays: true
     "Off" shows the switched-off ones, not the unavailable: true

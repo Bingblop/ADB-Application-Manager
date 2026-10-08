@@ -2082,8 +2082,12 @@ public final class MorpheHelper {
             if (url == null) continue;
             MirrorVariant v = new MirrorVariant();
             v.url = url;
-            El badge = d.first(cells.get(0), "span", "apkm-badge");
-            String type = badge == null ? "" : d.text(badge).toLowerCase(Locale.ROOT);
+            // the file type is the badge that says APK / BUNDLE (a "NEW", a signature or a "33 S" splits badge may come before it)
+            String type = "";
+            for (El badge : d.select(cells.get(0), "span", "apkm-badge")) {
+                String t = d.text(badge).toLowerCase(Locale.ROOT).trim();
+                if (t.equals("apk") || t.equals("bundle") || t.equals("apkm") || t.equals("apks") || t.equals("xapk")) { type = t; break; }
+            }
             String kind = normFormat(type);
             v.kind = kind.isEmpty() ? "apk" : kind;
             v.bundle = !v.kind.equals("apk");
@@ -2184,6 +2188,9 @@ public final class MorpheHelper {
                 variantDoc = new Doc(getPage("apkmirror", variantUrl, it.page).text);
             } catch (Missing e) {
                 throw notListed("apkmirror", pkg);
+            } catch (Blocked b) {
+                // the browser check stands in front of the variant: the in-app browser opens THIS variant (the one that fits the phone), not the whole release
+                throw new NeedsBrowser("apkmirror", variantUrl, b.getMessage() + " Open the " + (pick != null && pick.bundle ? "bundle (split APKs)" : "APK") + " page for your phone in the browser; the file it saves is picked up as a download.");
             }
         }
         boolean bundle = pick != null ? pick.bundle : mirrorLooksBundle(variantDoc);
@@ -2194,6 +2201,8 @@ public final class MorpheHelper {
             dl = new Doc(getPage("apkmirror", button, variantUrl).text);
         } catch (Missing e) {
             throw notListed("apkmirror", pkg);
+        } catch (Blocked b) {
+            throw new NeedsBrowser("apkmirror", variantUrl, b.getMessage() + " Open the " + (bundle ? "bundle (split APKs)" : "APK") + " page for your phone in the browser and tap its download button.");
         }
         String fin = mirrorFinalLink(dl);
         if (fin == null) throw new NeedsBrowser("apkmirror", it.page, "APKMirror shows no direct download for this release. Open the release page and download it there.");

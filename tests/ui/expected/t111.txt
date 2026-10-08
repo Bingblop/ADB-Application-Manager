@@ -1,4 +1,4 @@
-ok   the About tab has Help Guide next to GitHub, What's new, Permissions and Check for update
+ok   the About tab has Issues and Contact first, then GitHub, Help Guide, What's new, Permissions and Check for update
 ok   it opens with the table of contents: groups with counts, numbered topics, and no topic drawn yet
 ok   the intro says how to use it, that it is English, and the version it was written for
 ok   on the contents the Contents button is not needed
