@@ -176,6 +176,7 @@ public final class MorpheBridge {
             case "helperGet": return helperGet(a, false);
             case "helperFast": return helperGet(a, true);
             case "vtQuota": return new MorpheVirusTotal("", new File(base, "vt_state.json")).quota();
+            case "vtQuotaLive": return MorpheVirusTotal.accountQuota(a.optString("key"), new File(base, "vt_state.json"));
             case "vtValidate": MorpheVirusTotal.validateKey(a.optString("key")); return null;
             case "vtScan": return vtScan(a);
             case "keyExport": return keyExport();

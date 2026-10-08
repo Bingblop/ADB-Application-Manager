@@ -438,6 +438,7 @@ public class MorpheVirusTotalTest {
             testLimiter(s, dir);
             testWaiting(s, dir);
             testKey(s, dir);
+            testQuota(s, dir);
         } catch (Throwable t) {
             fails++;
             System.out.println("FAIL the test run itself broke: " + t);
@@ -997,6 +998,35 @@ public class MorpheVirusTotalTest {
         JSONObject ry = y.scan(f, null);
         lift.join(5000);
         check("scan: a 429 from the server on the lookup is waited out (Retry-After 3 s), unlike lookup() which would throw", "clean".equals(ry.getString("verdict")) && NOW[0] - b3 >= 3000 && s.count("GET /api/v3/files/") == 2, (NOW[0] - b3) + s.log.toString());
+    }
+
+    static void testQuota(Vt s, File dir) throws Exception {
+        File st = new File(dir, "quota-state.json");
+        s.reset();
+        s.forceStatus("GET /api/v3/users/current", 200, "{\"data\":{\"id\":\"me\",\"type\":\"user\",\"attributes\":{\"quotas\":{\"api_requests_daily\":{\"allowed\":500,\"used\":123},\"api_requests_hourly\":{\"allowed\":10000,\"used\":4},\"api_requests_monthly\":{\"allowed\":15500,\"used\":900}}}}}");
+        JSONObject q = MorpheVirusTotal.accountQuota(KEY, st);
+        check("accountQuota: the day's counter is read from the user object, one call", s.log.equals(Arrays.asList("GET /api/v3/users/current")) && "virustotal".equals(q.getString("source")) && q.getLong("dayAllowed") == 500 && q.getLong("dayUsed") == 123 && q.getLong("dayLeft") == 377, q.toString());
+        check("accountQuota: the hour and the month come along, and the time to the UTC midnight", q.getLong("hourAllowed") == 10000 && q.getLong("hourUsed") == 4 && q.getLong("monthAllowed") == 15500 && q.getLong("monthUsed") == 900 && q.getLong("resetDayInMs") > 0 && q.getLong("resetDayInMs") <= 86400000L, q.toString());
+        s.reset();
+        s.forceStatus("GET /api/v3/users/current", 200, "{\"data\":{\"attributes\":{\"quotas\":{\"api_requests_daily\":{\"group\":{\"allowed\":9000,\"used\":10},\"user\":{\"allowed\":500,\"used\":500}}}}}}");
+        q = MorpheVirusTotal.accountQuota(KEY, st);
+        check("accountQuota: with a user and a group counter the user's own wins; a used-up day has 0 left", q.getLong("dayAllowed") == 500 && q.getLong("dayLeft") == 0, q.toString());
+        s.reset();
+        s.forceStatus("GET /api/v3/users/" + KEY + "/overall_quotas", 200, "{\"data\":{\"api_requests_daily\":{\"user\":{\"allowed\":500,\"used\":40}}}}");
+        q = MorpheVirusTotal.accountQuota(KEY, st);
+        check("accountQuota: a user object without quotas is followed by overall_quotas", s.log.equals(Arrays.asList("GET /api/v3/users/current", "GET /api/v3/users/" + KEY + "/overall_quotas")) && q.getLong("dayLeft") == 460 && "virustotal".equals(q.getString("source")), q.toString() + s.log);
+        s.reset();
+        q = MorpheVirusTotal.accountQuota(KEY, st);
+        check("accountQuota: when VirusTotal gives no counter the app's own count of the day is used and says so", "local".equals(q.getString("source")) && q.getLong("dayAllowed") == MorpheVirusTotal.PER_DAY && q.getLong("dayLeft") <= MorpheVirusTotal.PER_DAY, q.toString());
+        s.reset();
+        s.forceStatus("GET /api/v3/users/current", 403, "{}");
+        check("accountQuota: a refused key says so", has(errv(() -> MorpheVirusTotal.accountQuota(KEY, st)), "does not accept this API key"));
+        s.reset();
+        s.forceStatus("GET /api/v3/users/current", 429, "{\"error\":{\"code\":\"QuotaExceededError\",\"message\":\"Daily quota exceeded\"}}");
+        Throwable t = errv(() -> MorpheVirusTotal.accountQuota(KEY, st));
+        check("accountQuota: a 429 is a RateLimited, flagged daily", t instanceof MorpheVirusTotal.RateLimited && ((MorpheVirusTotal.RateLimited) t).daily, msg(t));
+        check("accountQuota: no key, no request", has(errv(() -> MorpheVirusTotal.accountQuota("", st)), "no usable VirusTotal API key"));
+        check("parseQuotas: no daily counter is null", MorpheVirusTotal.parseQuotas(new JSONObject("{\"data\":{\"attributes\":{}}}")) == null);
     }
 
     static void testKey(Vt s, File dir) throws Exception {
