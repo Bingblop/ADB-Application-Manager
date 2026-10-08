@@ -1187,6 +1187,13 @@
         .uad-chip .uad-chip-src { font-size: 9px; font-weight: 700; letter-spacing: 0.4px; color: var(--text-muted); }
         .uad-chip.uad-r-recommended, .uad-chip.uad-r-advanced, .uad-chip.uad-r-expert, .uad-chip.uad-r-unsafe { }
         /* the same chip on an app's row: small, in the line of badges */
+        .uad-chip.trk-0 { color: var(--status-running); }
+        .uad-chip.trk-n { color: #FFA726; }
+        .uad-chip.trk-na { color: var(--text-muted); }
+        .trk-row { padding: 8px 0; border-bottom: 1px solid var(--border-glass); }
+        .trk-row:last-child { border-bottom: 0; }
+        .trk-name { font-weight: 800; }
+        .trk-cats { font-size: 11px; color: var(--text-muted); }
         .uad-chip.uad-chip-row { font-size: 9px; padding: 1px 7px; gap: 4px; margin: 0 3px 3px 0; line-height: 1.5; vertical-align: middle; }
         .uad-chip.uad-chip-row .uad-chip-src { font-size: 8px; }
         .sheet-avatar:empty { display: none; }
@@ -3576,6 +3583,7 @@
                 <div class="filter-pill" data-filter="frozen" onclick="setFilter('frozen', this)">Frozen (<span id="countFrozen">0</span>)</div>
                 <div class="filter-pill" data-filter="suspended" onclick="setFilter('suspended', this)">Suspended (<span id="countSuspended">0</span>)</div>
                 <div class="filter-pill" data-filter="patched" onclick="setFilter('patched', this)">Patched (<span id="countPatched">0</span>)</div>
+                <div class="filter-pill" data-filter="trackers" onclick="setFilter('trackers', this)">Trackers (<span id="countTrackers">?</span>)</div>
                 <div class="filter-pill" data-filter="uninstalled" onclick="setFilter('uninstalled', this)">Uninstalled (<span id="countUninstalled">0</span>)</div>
             </div>
 
@@ -5921,6 +5929,7 @@
             <div class="color-card">
                 <div class="color-card-title">Credits</div>
                 <div class="about-tip">Debloat data from <a href="#" onclick="openUrlExternal('https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation'); return false;">UAD-NG</a> (GPL-3.0). Shell access through <a href="#" onclick="openUrlExternal('https://github.com/RikkaApps/Shizuku-API'); return false;">Shizuku</a>. Update sources: Galaxy Store, GitHub, Codeberg, F-Droid, IzzyOnDroid and the Obtainium community catalog.</div>
+                <div class="about-tip">Tracker libraries: the list is the <a href="#" onclick="openUrlExternal('https://exodus-privacy.eu.org'); return false;">Exodus Privacy</a> tracker database, made available under the Open Database License (ODbL) 1.0. This app reads class names in the apps' code on the phone; nothing is sent to Exodus.</div>
                 <div class="about-tip">Task Manager tab modeled on <a href="#" onclick="openUrlExternal('https://github.com/RohitKushvaha01/TaskManager'); return false;">RohitKushvaha01/TaskManager</a>.</div>
                 <div class="about-tip">Morphe Patcher tab: the patcher engine is <a href="#" onclick="openUrlExternal('https://github.com/MorpheApp/morphe-patcher'); return false;">morphe-patcher</a> and the way sources, patching and the community finder work follows <a href="#" onclick="openUrlExternal('https://github.com/MorpheApp/morphe-manager'); return false;">Morphe Manager</a>, both by <a href="#" onclick="openUrlExternal('https://github.com/MorpheApp'); return false;">MorpheApp</a> (GPL-3.0); the APK download sources and the VirusTotal check follow <a href="#" onclick="openUrlExternal('https://github.com/rushiranpise/helper-for-morphe'); return false;">Helper for Morphe</a> by rushiranpise (GPL-3.0). The patches belong to their authors.</div>
                 <div class="about-tip">SD Maid tab: a port of the four tools of <a href="#" onclick="openUrlExternal('https://github.com/d4rken-org/sdmaid-se'); return false;">SD Maid SE</a> by darken (d4rken-org, GPL-3.0), also on <a href="#" onclick="openUrlExternal('https://play.google.com/store/apps/details?id=eu.darken.sdmse'); return false;">Google Play</a>. Its icons, logo and translations are not used.</div>
@@ -6864,6 +6873,7 @@ Type any command below (e.g. pm list packages -d)
                         <div style="font-size:20px; cursor:pointer;" onclick="closeInspector()">✕</div>
                     </div>
                     <button class="uad-chip" id="sheetUad" type="button" style="display:none;" onclick="openUadInfo()" aria-haspopup="dialog"></button>
+                    <button class="uad-chip" id="sheetTrk" type="button" style="display:none;" onclick="openTrackersInfo()" aria-haspopup="dialog"></button>
                 </div>
             </div>
 
@@ -8244,6 +8254,27 @@ Type any command below (e.g. pm list packages -d)
         </div>
     </div>
 
+    <!-- The tracker libraries found in one app -->
+    <div class="modal-overlay" id="trackersModal" onclick="if(event.target===this) closeTrackersInfo()">
+        <div class="modal-sheet" style="max-width:480px;" role="dialog" aria-labelledby="trackersTitle">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-title">
+                        <h3 id="trackersTitle">Trackers</h3>
+                        <p id="trackersApp"></p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="closeTrackersInfo()" role="button" aria-label="Close">✕</div>
+            </div>
+            <div id="trackersBody" style="font-size:13px; line-height:1.55;"></div>
+            <div class="uad-credit" id="trackersCredit" style="margin-top:12px;"></div>
+            <div class="mode-btn-row" style="margin-top:12px;">
+                <button class="mode-action-btn" onclick="openUrlExternal('https://exodus-privacy.eu.org')">Exodus Privacy</button>
+                <button class="mode-action-btn" onclick="closeTrackersInfo()">Close</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="uadInfoModal" onclick="if(event.target===this) closeUadInfo()">
         <div class="modal-sheet" style="max-width:480px;" role="dialog" aria-labelledby="uadInfoTitle">
             <div class="sheet-header">
@@ -8400,7 +8431,7 @@ Type any command below (e.g. pm list packages -d)
         // user apps). None on is "All Apps". Two pairs can only have one member on, or none: 3rd Party / System, and Enabled / Frozen.
         const activeFilters = new Set();
         const FILTER_GROUPS = [['user', 'system'], ['enabled', 'frozen']];
-        const FILTER_NAMES = { recent: 'Updated 7d', running: 'Running', user: '3rd Party', system: 'System', enabled: 'Enabled', frozen: 'Frozen', suspended: 'Suspended', patched: 'Patched', uninstalled: 'Uninstalled' };
+        const FILTER_NAMES = { recent: 'Updated 7d', running: 'Running', user: '3rd Party', system: 'System', enabled: 'Enabled', frozen: 'Frozen', suspended: 'Suspended', patched: 'Patched', trackers: 'Trackers', uninstalled: 'Uninstalled' };
         let inspectedPkg = null;
         let currentWorkingMode = 'unprivileged';
         let isPrivilegedActive = false;
@@ -10354,6 +10385,92 @@ Type any command below (e.g. pm list packages -d)
             if (!r || !r.found) { showToast('The UAD-NG list has nothing on this app'); return; }
             openUadInfo(r);
         }
+        // ---- Trackers: the known tracker libraries (Exodus Privacy list) found in the class names of an app's code, by the app itself, offline ----
+        // trackerMap: pkg -> { ok, ids }. ok false = nothing to read (no code). The native side keeps results per app version, so a scan is only slow the first time.
+        let trackerMap = {}, trackerRun = { running: false, done: 0, total: 0, error: '' }, trackerInfoById = {}, trackerMeta = null;
+        function trackerCount(pkg) { const e = trackerMap[pkg]; return e && e.ok ? e.ids.length : 0; }
+        function trackersInstalledPkgs() { return allApps.filter(a => !a.isUninstalled).map(a => a.pkg); }
+        function trackersLoadCached() {
+            const b = window.AndroidBridge;
+            if (!b || !b.trackerCached) return;
+            try { Object.assign(trackerMap, JSON.parse(b.trackerCached(JSON.stringify(trackersInstalledPkgs())) || '{}')); } catch (e) {}
+        }
+        function trackersMissing() { return trackersInstalledPkgs().filter(p => !trackerMap[p]); }
+        function trackersCountLabel(n) {
+            if (trackerRun.running) return trackerRun.done + '/' + trackerRun.total;
+            return trackersMissing().length && !Object.keys(trackerMap).length ? '?' : String(n);
+        }
+        // Start (or continue) the scan of the apps that have no result yet. user: the Trackers pill was tapped (say so once).
+        function trackersEnsure(user) {
+            const b = window.AndroidBridge;
+            if (!b || !b.trackerScan) { if (user) showToast('Looking for trackers works in the app'); return; }
+            const todo = trackersMissing();
+            if (!todo.length || trackerRun.running) return;
+            const started = b.trackerScan(JSON.stringify(todo));
+            if (started === 'started') {
+                trackerRun = { running: true, done: 0, total: todo.length, error: '' };
+                if (user) showToast('Looking for trackers in ' + todo.length + ' apps (only the first time)…');
+            }
+        }
+        window.onTrackers = function (r) {
+            if (!r) return;
+            if (r.apps) Object.keys(r.apps).forEach(p => { trackerMap[p] = { ok: !!r.apps[p].ok, ids: r.apps[p].ids || [] }; });
+            if (r.finished) { trackerRun.running = false; trackerRun.error = r.error || ''; if (r.error) showToast('Trackers: ' + r.error); }
+            else { trackerRun.running = true; trackerRun.done = r.done || 0; trackerRun.total = r.total || 0; }
+            if (document.getElementById('view-apps') && activeFilters.has('trackers') && (r.finished || Object.keys(r.apps || {}).length)) renderApps();
+            else { const c = document.getElementById('countTrackers'); if (c) c.innerText = trackersCountLabel(Object.keys(trackerMap).filter(p => trackerCount(p)).length); }
+            if (inspectedPkg && document.getElementById('inspectorModal').classList.contains('show')) drawSheetTrackers(inspectedPkg);
+            if (r.finished && inspectedPkg && !trackerMap[inspectedPkg]) loadSheetTrackers(inspectedPkg);        // the open app was not in that scan
+        };
+        // The app menu's chip: how many trackers the open app holds; tap for the list
+        function loadSheetTrackers(pkg) {
+            const chip = document.getElementById('sheetTrk');
+            if (!chip) return;
+            chip.style.display = 'none';
+            const b = window.AndroidBridge, app = allApps.find(a => a.pkg === pkg);
+            if (!b || !b.trackerScan || !app || app.isUninstalled) return;
+            if (!trackerMap[pkg]) { trackersLoadCached(); }
+            if (!trackerMap[pkg] && !trackerRun.running) {
+                if (b.trackerScan(JSON.stringify([pkg])) === 'started') trackerRun = { running: true, done: 0, total: 1, error: '' };
+            }
+            drawSheetTrackers(pkg);
+        }
+        function drawSheetTrackers(pkg) {
+            const chip = document.getElementById('sheetTrk');
+            if (!chip || pkg !== inspectedPkg) return;
+            const e = trackerMap[pkg];
+            chip.style.display = '';
+            if (!e) { chip.className = 'uad-chip trk-na'; chip.innerHTML = '<span class="uad-chip-src">TRACKERS</span><span>…</span>'; chip.setAttribute('aria-label', 'Looking for trackers'); return; }
+            if (!e.ok) { chip.className = 'uad-chip trk-na'; chip.innerHTML = '<span class="uad-chip-src">TRACKERS</span><span>?</span>'; chip.setAttribute('aria-label', 'Trackers: the app\'s code could not be read'); return; }
+            chip.className = 'uad-chip ' + (e.ids.length ? 'trk-n' : 'trk-0');
+            chip.innerHTML = '<span class="uad-chip-src">TRACKERS</span><span></span>';
+            chip.lastChild.innerText = String(e.ids.length);
+            chip.setAttribute('aria-label', e.ids.length + ' trackers found: tap for the list');
+        }
+        function openTrackersInfo() {
+            const pkg = inspectedPkg, e = trackerMap[pkg], b = window.AndroidBridge;
+            if (!pkg || !b || !b.trackerInfo) return;
+            haptic();
+            const app = allApps.find(a => a.pkg === pkg);
+            document.getElementById('trackersApp').innerText = (app ? app.name + ' · ' : '') + pkg;
+            const ids = e && e.ok ? e.ids : [];
+            let info = {};
+            try { info = JSON.parse(b.trackerInfo(JSON.stringify(ids)) || '{}'); } catch (x) { info = {}; }
+            trackerMeta = info;
+            const rows = ids.map(id => (info.trackers || {})[id]).filter(Boolean);
+            let html;
+            if (!e) html = '<div class="list-empty" style="padding:8px 0;">Still looking…</div>';
+            else if (!e.ok) html = '<div class="list-empty" style="padding:8px 0;">This app\'s code could not be read (it has none, or the file is not readable), so nothing can be said about trackers.</div>';
+            else if (!rows.length) html = '<div class="list-empty" style="padding:8px 0;">No known tracker library was found in the class names of this app.</div>';
+            else html = rows.map(t => '<div class="trk-row"><div class="trk-name" translate="no">' + escapeHtml(t.name) + '</div>'
+                + (t.categories ? '<div class="trk-cats">' + escapeHtml(t.categories) + '</div>' : '')
+                + (t.website ? '<div><a href="#" translate="no" onclick="openUrlExternal(this.dataset.u); return false;" data-u="' + escapeHtml(t.website) + '">' + escapeHtml(t.website.replace(/^https?:\/\//, '')) + '</a></div>' : '') + '</div>').join('');
+            document.getElementById('trackersBody').innerHTML = html;
+            document.getElementById('trackersCredit').innerText = 'Found by reading the class names in the app\'s code on this phone; nothing is sent anywhere. Tracker list: Exodus Privacy' + (info.count ? ' (' + info.count + ' trackers, copied ' + info.retrieved + ')' : '') + ', licensed ODbL 1.0. Code renamed by a shrinker (R8, ProGuard) or loaded later can hide a tracker, so a low number is not proof that there are none.';
+            document.getElementById('trackersModal').classList.add('show');
+        }
+        function closeTrackersInfo() { haptic(); document.getElementById('trackersModal').classList.remove('show'); }
+
         // The app menu's UAD-NG chip: what the project's list says about the open app (nothing shown when it is not in the list)
         let sheetUadInfo = null;
         function loadSheetUad(pkg) {
@@ -12857,7 +12974,9 @@ Type any command below (e.g. pm list packages -d)
                 const jsonStr = window.AndroidBridge.loadPackages();
                 allApps = JSON.parse(jsonStr);
                 allApps.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+                trackersLoadCached();
                 renderApps();
+                if (activeFilters.has('trackers')) trackersEnsure(false);
                 checkProfileDrift();
                 // The single-app sheet is left open behind an action's result dialog rather than closed (see
                 // singleAction) - once this refresh lands its Freeze/Suspend/Uninstall buttons need to catch up.
@@ -13014,6 +13133,7 @@ Type any command below (e.g. pm list packages -d)
             if (f.has('uninstalled') && !app.isUninstalled) return false;
             if (f.has('recent') && !isRecentlyUpdated(app)) return false;
             if (f.has('patched') && !(app.mods && app.mods.length)) return false;
+            if (f.has('trackers') && !trackerCount(app.pkg)) return false;
             return true;
         }
         function appMatchesFilters(app) { return appMatchesFilterSet(app, activeFilters); }
@@ -13054,7 +13174,7 @@ Type any command below (e.g. pm list packages -d)
             sortApps(filteredApps);
 
             // Update stats counts (one pass over the list)
-            const n = { running: 0, enabled: 0, frozen: 0, user: 0, system: 0, uninstalled: 0, recent: 0, suspended: 0, patched: 0 };
+            const n = { running: 0, enabled: 0, frozen: 0, user: 0, system: 0, uninstalled: 0, recent: 0, suspended: 0, patched: 0, trackers: 0 };
             allApps.forEach(a => {
                 if (a.isRunning) n.running++;
                 if (a.isFrozen && !a.isUninstalled) n.frozen++;
@@ -13064,6 +13184,7 @@ Type any command below (e.g. pm list packages -d)
                 else n.user++;
                 if (a.isSuspended) n.suspended++;
                 if (a.mods && a.mods.length) n.patched++;
+                if (trackerCount(a.pkg)) n.trackers++;
                 if (isRecentlyUpdated(a)) n.recent++;
             });
             document.getElementById('statTotal').innerText = allApps.length;
@@ -13084,6 +13205,7 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('countSuspended').innerText = n.suspended;
             document.getElementById('countUninstalled').innerText = n.uninstalled;
             document.getElementById('countPatched').innerText = n.patched;
+            document.getElementById('countTrackers').innerText = trackersCountLabel(n.trackers);
 
             const container = document.getElementById('appsListContainer');
             if (filteredApps.length === 0) {
@@ -14475,6 +14597,7 @@ Type any command below (e.g. pm list packages -d)
             // a running app is installed: turning Running on turns Uninstalled off
             if (filter === 'running' && !activeFilters.has('running')) activeFilters.delete('uninstalled');
             toggleFilterIn(activeFilters, filter);
+            if (filter === 'trackers' && activeFilters.has('trackers')) trackersEnsure(true);
             resetAppsWindow();
             haptic();
             syncFilterUi();
@@ -21161,6 +21284,7 @@ Type any command below (e.g. pm list packages -d)
 
             refreshInspectorButtons(pkg);
             loadSheetUad(pkg);
+            loadSheetTrackers(pkg);
 
             // Reset per-app state
             inspectorData = null;

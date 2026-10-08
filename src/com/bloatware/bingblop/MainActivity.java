@@ -95,6 +95,67 @@ public class MainActivity extends Activity {
      * Hands a job to the executor. False when it refuses (shut down with the Activity): the caller then clears the
      * process-wide "busy" mark it set before submitting, so a re-created page isn't told "busy" for the rest of the process.
      */
+    // ---------------------------------------------------------------------------------------------
+    // Trackers: the known tracker libraries (Exodus Privacy list, assets/trackers.json) found in an app's dex class names. Results are kept in files/trackers_cache.json
+    // per package, valid while the app's version, update time, split count and the list are the same.
+    // ---------------------------------------------------------------------------------------------
+    private volatile Trackers trackersLib;
+    private final Object trackerLock = new Object();
+    private final ExecutorService trackerExecutor = Executors.newSingleThreadExecutor();
+    private volatile boolean trackerBusy, trackerCancel;
+
+    private Trackers trackers() throws Exception {
+        Trackers t = trackersLib;
+        if (t != null) return t;
+        synchronized (trackerLock) {
+            if (trackersLib == null) {
+                InputStream in = getAssets().open("trackers.json");
+                try {
+                    java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
+                    byte[] buf = new byte[16384];
+                    for (int n; (n = in.read(buf)) > 0; ) bo.write(buf, 0, n);
+                    trackersLib = Trackers.load(new String(bo.toByteArray(), "UTF-8"));
+                } finally {
+                    in.close();
+                }
+            }
+            return trackersLib;
+        }
+    }
+
+    private File trackerCacheFile() { return new File(getFilesDir(), "trackers_cache.json"); }
+
+    private JSONObject trackerCacheRead(Trackers t) {
+        try {
+            JSONObject o = new JSONObject(new String(java.nio.file.Files.readAllBytes(trackerCacheFile().toPath()), "UTF-8"));
+            if (t.dbVersion().equals(o.optString("db")) && o.optJSONObject("apps") != null) return o;
+        } catch (Throwable ignored) { }
+        try { return new JSONObject().put("db", t.dbVersion()).put("apps", new JSONObject()); } catch (Exception e) { return new JSONObject(); }
+    }
+
+    private void trackerCacheWrite(JSONObject cache) {
+        try {
+            File tmp = new File(getFilesDir(), "trackers_cache.json.tmp");
+            java.nio.file.Files.write(tmp.toPath(), cache.toString().getBytes("UTF-8"));
+            if (!tmp.renameTo(trackerCacheFile())) tmp.delete();
+        } catch (Throwable ignored) { }
+    }
+
+    /** Version, update time and number of splits of an installed package, "" when it is not installed. */
+    private String trackerStamp(PackageInfo pi) {
+        long vc = Build.VERSION.SDK_INT >= 28 ? pi.getLongVersionCode() : pi.versionCode;
+        int splits = pi.applicationInfo != null && pi.applicationInfo.splitSourceDirs != null ? pi.applicationInfo.splitSourceDirs.length : 0;
+        return vc + ":" + pi.lastUpdateTime + ":" + splits;
+    }
+
+    private List<File> trackerApks(PackageInfo pi) {
+        List<File> files = new ArrayList<File>();
+        if (pi.applicationInfo == null) return files;
+        if (pi.applicationInfo.sourceDir != null) files.add(new File(pi.applicationInfo.sourceDir));
+        if (pi.applicationInfo.splitSourceDirs != null) for (String d : pi.applicationInfo.splitSourceDirs) files.add(new File(d));
+        return files;
+    }
+
     private boolean submitJob(Runnable job) {
         try {
             executor.submit(job);
@@ -14142,6 +14203,124 @@ public class MainActivity extends Activity {
                 }
             })) return "error";
             return "started";
+        }
+
+        // ---- Trackers ----
+
+        /** What is known from earlier scans, for the packages given and still valid: {pkg: {ok, ids}} (ok false = nothing to read, e.g. no code). */
+        @JavascriptInterface
+        public String trackerCached(String pkgsJson) {
+            try {
+                Trackers t = trackers();
+                JSONObject apps;
+                synchronized (trackerLock) { apps = trackerCacheRead(t).optJSONObject("apps"); }
+                JSONArray pkgs = new JSONArray(pkgsJson);
+                JSONObject out = new JSONObject();
+                PackageManager pm = getPackageManager();
+                for (int i = 0; i < pkgs.length(); i++) {
+                    String pkg = pkgs.optString(i, "");
+                    JSONObject e = apps.optJSONObject(pkg);
+                    if (e == null) continue;
+                    try {
+                        if (e.optString("k").equals(trackerStamp(pm.getPackageInfo(pkg, 0)))) out.put(pkg, new JSONObject().put("ok", e.optBoolean("ok")).put("ids", e.optJSONArray("ids") != null ? e.optJSONArray("ids") : new JSONArray()));
+                    } catch (PackageManager.NameNotFoundException gone) { }
+                }
+                return out.toString();
+            } catch (Throwable th) {
+                return "{}";
+            }
+        }
+
+        /** The name, kinds and web address of the trackers with these ids, and how many the list holds: {count, retrieved, trackers: {id: {id, name, categories, website}}}. */
+        @JavascriptInterface
+        public String trackerInfo(String idsJson) {
+            try {
+                Trackers t = trackers();
+                JSONObject out = new JSONObject().put("count", t.db.n).put("retrieved", t.db.retrieved);
+                JSONObject map = new JSONObject();
+                JSONArray ids = new JSONArray(idsJson);
+                for (int i = 0; i < ids.length(); i++) {
+                    int k = t.db.indexOf(ids.optInt(i, -1));
+                    if (k >= 0) map.put(String.valueOf(t.db.id[k]), t.db.info(k));
+                }
+                return out.put("trackers", map).toString();
+            } catch (Throwable th) {
+                return "{\"error\":" + JSONObject.quote(String.valueOf(th.getMessage())) + "}";
+            }
+        }
+
+        /**
+         * Looks for trackers in these packages (skipping the ones with a valid earlier result). Answers "started", or "busy" while a scan runs.
+         * Progress and results arrive as window.onTrackers({done, total, apps: {pkg: {ok, ids}}, finished}) in small groups.
+         */
+        @JavascriptInterface
+        public String trackerScan(final String pkgsJson) {
+            synchronized (trackerLock) {
+                if (trackerBusy) return "busy";
+                trackerBusy = true;
+                trackerCancel = false;
+            }
+            try {
+                trackerExecutor.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Trackers t = trackers();
+                            JSONArray pkgs = new JSONArray(pkgsJson);
+                            PackageManager pm = getPackageManager();
+                            JSONObject cache;
+                            synchronized (trackerLock) { cache = trackerCacheRead(t); }
+                            JSONObject apps = cache.optJSONObject("apps");
+                            JSONObject chunk = new JSONObject();
+                            int total = pkgs.length(), sinceSave = 0;
+                            long lastSent = 0;
+                            for (int i = 0; i < total && !trackerCancel; i++) {
+                                String pkg = pkgs.optString(i, "");
+                                if (pkg.isEmpty()) continue;
+                                try {
+                                    PackageInfo pi = pm.getPackageInfo(pkg, 0);
+                                    String stamp = trackerStamp(pi);
+                                    JSONObject e = apps.optJSONObject(pkg);
+                                    if (e == null || !stamp.equals(e.optString("k"))) {
+                                        Trackers.Scan sc = t.scan(trackerApks(pi));
+                                        JSONArray ids = new JSONArray();
+                                        for (int id : sc.ids) ids.put(id);
+                                        e = new JSONObject().put("k", stamp).put("ok", sc.scannable).put("ids", ids);
+                                        apps.put(pkg, e);
+                                        sinceSave++;
+                                    }
+                                    chunk.put(pkg, new JSONObject().put("ok", e.optBoolean("ok")).put("ids", e.optJSONArray("ids")));
+                                } catch (PackageManager.NameNotFoundException gone) {
+                                    // not installed (an uninstalled app that is still listed): nothing to read
+                                }
+                                long now = System.currentTimeMillis();
+                                if (chunk.length() >= 25 || now - lastSent > 700 || i == total - 1) {
+                                    if (chunk.length() > 0 || i == total - 1) notifyJs("window.onTrackers && window.onTrackers(" + new JSONObject().put("done", i + 1).put("total", total).put("apps", chunk).put("finished", false) + ")");
+                                    chunk = new JSONObject();
+                                    lastSent = now;
+                                }
+                                if (sinceSave >= 40) { synchronized (trackerLock) { trackerCacheWrite(cache); } sinceSave = 0; }
+                            }
+                            synchronized (trackerLock) { trackerCacheWrite(cache); }
+                            notifyJs("window.onTrackers && window.onTrackers(" + new JSONObject().put("done", total).put("total", total).put("apps", new JSONObject()).put("finished", true).put("stopped", trackerCancel) + ")");
+                        } catch (Throwable th) {
+                            try { notifyJs("window.onTrackers && window.onTrackers(" + new JSONObject().put("finished", true).put("error", String.valueOf(th.getMessage())) + ")"); } catch (Exception ignored) { }
+                        } finally {
+                            trackerBusy = false;
+                        }
+                    }
+                });
+            } catch (java.util.concurrent.RejectedExecutionException refused) {
+                trackerBusy = false;
+                return "error";
+            }
+            return "started";
+        }
+
+        @JavascriptInterface
+        public String trackerScanStop() {
+            trackerCancel = true;
+            return "ok";
         }
 
         /** Saves an app's icon (256 px PNG) to Download/ADB App Manager/Icons. Result via window.onAppIconSaved(json{ok, pkg, path, error}). */

@@ -1,4 +1,4 @@
-# On-device test checklist (v7.1 to v7.10.18)
+# On-device test checklist (v7.1 to v7.11.0)
 
 The automated tests run the page in a browser with a pretend phone. They cannot prove the parts that talk to Android:
 icons, the file chooser, added storage, shell commands and the haptic feedback. This list is for those. Tick a box when
@@ -242,6 +242,13 @@ Select three or four apps you do not mind changing, open the round checkmark.
 - [ ] Settings, Lists, **Remember my filters** on: turn on Running + 3rd Party, force-close the app, open it again: the same filters are on. Off: it opens on Total Installed.
 
 - [ ] With no working mode on, open an app's menu: the permission toggles, the App Ops modes (on the mode that is set) and every Enable / Disable, Stop and Launch button of activities, services, receivers and providers show the lock and look dimmed. Turn a working mode on and open the menu again: only install-time permissions keep the lock.
+
+## 13. Trackers (v7.11.0)
+
+- [ ] Apps tab: tap the **Trackers** pill. A message says how many apps are read, the pill counts "12/150" and ends on a number; the list shows only apps with trackers. A second tap off and on is instant.
+- [ ] Open an app you know uses ads or analytics (a free game, a news app): the **TRACKERS** chip under UAD-NG shows an orange number; the list names trackers such as Google AdMob or Firebase Analytics, each with a web address that opens. An open-source app from F-Droid usually shows a green 0.
+- [ ] An app that is only a launcher stub or a preinstalled system app may show a grey ? or 0: both are fine; it must never crash or hang. Updating an app and opening it again re-reads it.
+- [ ] Turn the phone to airplane mode and tap the pill: it still works (nothing is downloaded).
 
 ## 12. Language, font and File Manager core (v7.1 to v7.4)
 

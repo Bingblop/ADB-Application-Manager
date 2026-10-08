@@ -34,6 +34,7 @@
     <li><b>3rd Party | System</b>: another split box. 3rd Party counts apps that you or a store installed. System counts apps that came with the phone.</li>
   </ul>
   <p>UNINSTALLED apps are counted in Total Installed and in Bloatware (Uninstalled) only, not in the four halves.</p>
+  <p>The filter pills under the boxes add one more: <b>Trackers</b>, for apps with a known tracker library (see the table below and <a href="#apps-menu">The Trackers chip</a>).</p>
   <p><b>Bloatware (Uninstalled) starts a clean list.</b> Tapping it (or the Uninstalled pill) turns every other filter off first, so you see all the uninstalled apps, not only those that also match a filter you forgot was on. You can still tap another box or pill afterwards to narrow the list, for example System to see only the uninstalled system apps.</p>
   <p><b>Clear what an uninstalled app left behind.</b> While the Uninstalled filter is on, each row has a small bin button next to its action button. It clears the data that one app kept after it was uninstalled (see <a href="#tab-sdm">Clear Data from Uninstalled Apps</a> in the SD Maid tab). It asks first, because it cannot be undone; in <b>Root</b> mode it names the size and says so if the app has no data left, and the result is checked afterwards like any batch.</p>
   <p><b>A pair keeps one side.</b> Enabled and Frozen are a pair, and so are 3rd Party and System. Only one half of a pair can be on. Tap Enabled, then Frozen, and Frozen takes the place of Enabled. Tap the half that is on to turn it off.</p>
@@ -53,6 +54,7 @@
       <tr><td><b>Frozen</b></td><td>...are disabled.</td></tr>
       <tr><td><b>Suspended</b></td><td>...are paused with Suspend.</td></tr>
       <tr><td><b>Patched</b></td><td>...look patched or repackaged, for example by ReVanced, or Xposed/LSPosed modules. They carry a teal tag.</td></tr>
+      <tr><td><b>Trackers</b></td><td>...contain at least one known tracker library (advertising, analytics, crash reporting). The first time you tap it the app reads the code of every installed app once (it says how many, and the pill counts them as it goes); later taps are instant, and only new or updated apps are read again. See <a href="#apps-menu">The Trackers chip</a>.</td></tr>
       <tr><td><b>Uninstalled</b></td><td>...are system apps removed for you (the UNINSTALLED badge).</td></tr>
     </tbody>
   </table>
@@ -171,7 +173,13 @@
     <li><b>Patched / modified.</b> If the app looks changed by a patching tool, a box lists tags such as ReVanced, Morphe, LSPatch, NPatch, Xposed/LSPosed module or "Debug-signed (repackaged)", and who installed it ("Installed by ..."). Opening the menu does a deeper check than the list does: it reads the app's file, so a patched app can show a tag here that the list did not show.</li>
     <li><b>Share</b> (top right, next to the X). Opens Android's share sheet with the app's name, package name and version as text.</li>
     <li><b>The UAD-NG chip</b> under Share. See below.</li>
+    <li><b>The TRACKERS chip</b> under it, with a number. See <a href="#apps-menu">The Trackers chip</a>.</li>
   </ul>
+
+  <h5>The Trackers chip</h5>
+  <p>A tracker is a ready-made library that an app includes to show ads, count how it is used or report crashes (Google Firebase Analytics and AdMob are two). The chip says how many known trackers this app contains: green <b>0</b> when none was found, orange when there are some, grey <b>?</b> when the app's code could not be read (an app with no code of its own, or a file Android does not let this app open). Tap it for the list: each tracker's name, its kind (Advertisement, Analytics, Crash reporting, Location, Profiling) and its web address.</p>
+  <p><b>How it is found.</b> The app opens the app's installed files and reads the class names inside its code, then compares them with the <a href="https://exodus-privacy.eu.org">Exodus Privacy</a> list of about 430 trackers (licence: ODbL 1.0). Nothing is run, nothing is sent anywhere, and no working mode is needed. A result is kept until the app is updated.</p>
+  <p><b>What it cannot tell.</b> Code that a shrinker (R8, ProGuard) has renamed hides the library's class names, and a tracker that is downloaded later or sits in native code is not seen. So a number is "trackers the code shows", never "no tracking at all". Apps that are uninstalled have no chip.</p>
 
   <h5>The UAD-NG chip</h5>
   <p>UAD-NG is a community list that rates how safe it is to remove many phone apps. When the app you opened is in that list, a chip under Share shows "UAD-NG" and one word: <b>RECOMMENDED</b>, <b>ADVANCED</b>, <b>EXPERT</b> or <b>UNSAFE</b>. Tap it for the "UAD-NG classification" box:</p>
