@@ -713,7 +713,7 @@ public class MainActivity extends Activity {
             // force_stop is flagged by its own real exit status (see AndroidBridge.runShellAction) - read that
             // rather than guessing from the text, same reasoning as the rest of executeAppAction's callers.
             if (out != null && out.length() >= 2 && out.charAt(0) == '\u0001') { if (out.charAt(1) == '1') ok++; else failed++; }
-            else if (out != null && (out.toLowerCase().contains("error") || out.toLowerCase().contains("exception") || out.toLowerCase().contains("denied"))) failed++;
+            else if (launchOutputFailed(out)) failed++;
             else ok++;
         }
         return "Force-stopped " + ok + " app" + (ok == 1 ? "" : "s") + (failed > 0 ? ", " + failed + " failed" : "");
@@ -3200,8 +3200,7 @@ public class MainActivity extends Activity {
     private static boolean optimizeBatchBusy;
     private static volatile boolean optimizeBatchCancel;  // same Stop convention, for Dex optimization (single app or several)
 
-    /** The marker line fmOp's shell commands print when the command itself succeeded: a whole line, so a name or message that merely contains "OK" never counts. */
-    private static final java.util.regex.Pattern FM_OK_LINE = java.util.regex.Pattern.compile("(?m)^FMOK\\s*$");
+    // The success markers of the file and backup commands (FMOK, OK) are read with FileRules.okLine: a whole line, so a name or message that merely contains the letters never counts.
     /** What a failed app launch or app action prints, matched at the start of a line: "Error: ...", "Error type 3", an exception, "Warning: Activity not started", "No activities found", a permission denial. A package or app name that happens to contain "error" or "failed" is not a failure. */
     private static final java.util.regex.Pattern LAUNCH_FAILED = java.util.regex.Pattern.compile(
             "(?mi)^\\s*(error\\b|error type\\b|exception\\b|(java|android)\\.[a-z.]*(exception|error)\\b|security\\s*exception|failure\\b|failed\\b|aborted\\b|status:\\s*(failed|error)|warning: activity not started|no activities found|permission denial)");
@@ -4586,7 +4585,7 @@ public class MainActivity extends Activity {
             }
         }
         String out = shellVia(mode, sweep + "cp " + BackupScripts.quote(p) + " " + stage + " && chmod 644 " + stage + " && stat -c %s:%Y " + BackupScripts.quote(p) + " && echo OK");
-        if (out == null || !out.contains("OK")) {
+        if (!FileRules.okLine(out, "OK")) {
             deleteStagedFiles(java.util.Collections.singletonList(stage));
             throw new IOException(out == null || out.trim().isEmpty() ? "copy failed" : out.trim());
         }
@@ -4878,7 +4877,7 @@ public class MainActivity extends Activity {
             if ("standard".equals(mode)) return own ? "Android wouldn't let this app move that file." : "This needs All-files access, or ADB, Shizuku or Root.";
             String dir = to.substring(0, to.lastIndexOf('/'));
             String out = shellVia(mode, "mkdir -p " + BackupScripts.quote(dir) + " && [ ! -e " + BackupScripts.quote(to) + " ] && mv " + BackupScripts.quote(from) + " " + BackupScripts.quote(to) + " && echo FMOK");
-            if (out != null && out.contains("FMOK")) return null;
+            if (FileRules.okLine(out, "FMOK")) return null;
             String why = out == null ? "" : out.trim();
             return why.isEmpty() ? "The file could not be moved." : why;
         } catch (Exception e) {
@@ -5633,7 +5632,7 @@ public class MainActivity extends Activity {
                         backupEvent("backup", "data", 20, "Backing up data (Root)...");
                         tmpTar = new File(getCacheDir(), "backup_data_" + System.nanoTime() + ".tar");
                         String out = runRootScript(BackupScripts.dataBackup("/data", pkg, tmpTar.getAbsolutePath(), android.os.Process.myUid()), 900000);
-                        if (!out.contains("OK")) throw new IllegalStateException("data: " + rootError(out));
+                        if (!FileRules.okLine(out, "OK")) throw new IllegalStateException("data: " + rootError(out));
                         if (out.contains("WARN")) warnings.put("Some data changed while it was being read; the backup may be incomplete");
                         withData = true;
                     }
@@ -5897,7 +5896,7 @@ public class MainActivity extends Activity {
                     if (wantData) {
                         backupEvent("restore", "data", 80, "Restoring data (Root)...");
                         String out = runRootScript(BackupScripts.dataRestore("/data", pkg, dataTar.getAbsolutePath()), 900000);
-                        if (out.contains("OK")) {
+                        if (FileRules.okLine(out, "OK")) {
                             res.put("data", "restored");
                         } else {
                             res.put("data", "not restored");
@@ -12762,10 +12761,10 @@ public class MainActivity extends Activity {
                 else if ("touch".equals(op)) cmd = "touch " + qa + " && echo FMOK";
                 else if ("rm".equals(op)) cmd = "rm -rf " + qa + " && echo FMOK";
                 else if ("cp".equals(op)) cmd = "cp -r " + qa + " " + BackupScripts.quote(b) + " && echo FMOK";
-                else if ("mv".equals(op)) cmd = "if [ -e " + BackupScripts.quote(b) + " ] && [ ! -d " + BackupScripts.quote(b) + " ]; then echo 'A file or folder with that name is already there'; else mv " + qa + " " + BackupScripts.quote(b) + " && echo OK; fi";
+                else if ("mv".equals(op)) cmd = "if [ -e " + BackupScripts.quote(b) + " ] && [ ! -d " + BackupScripts.quote(b) + " ]; then echo 'A file or folder with that name is already there'; else mv " + qa + " " + BackupScripts.quote(b) + " && echo FMOK; fi";
                 else { res.put("ok", false); res.put("output", "unknown op"); return res.toString(); }
                 String out = executeShell(cmd);
-                res.put("ok", out != null && FM_OK_LINE.matcher(out).find());
+                res.put("ok", FileRules.okLine(out, "FMOK"));
                 res.put("output", out != null ? out.replaceAll("(?m)^FMOK\\s*$", "OK").trim() : "");
             } catch (Exception e) {
                 try { res.put("ok", false); res.put("output", "Error: " + e.getMessage()); } catch (Exception ignored) {}
@@ -12921,7 +12920,7 @@ public class MainActivity extends Activity {
                                     if (fmBatchCancel) { cancelled = true; break; }
                                     if (linkLost) { failed.put(new JSONObject().put("p", q).put("error", "The connection to the device was lost")); continue; }
                                     String o2 = batchShell(FileOps.shellScript("cp".equals(op) ? "cp -r" : "mv", q, dest, policy));
-                                    if (o2 != null && o2.contains("FMOK")) done++;
+                                    if (FileRules.okLine(o2, "FMOK")) done++;
                                     else if (o2 != null && o2.contains("FMSKIP")) skipped++;
                                     else {
                                         String m2 = o2 == null ? "failed" : o2.trim();
@@ -12942,7 +12941,7 @@ public class MainActivity extends Activity {
                                     : "cp".equals(op) ? "mkdir -p " + qd + " && cp -r" + args + " " + qd + "/"
                                     : "mkdir -p " + qd + " && mv" + args + " " + qd;
                             String out = batchShell(cmd + " && echo FMOK");
-                            if (out != null && out.contains("FMOK")) {
+                            if (FileRules.okLine(out, "FMOK")) {
                                 done += part.size();
                                 continue;
                             }
@@ -12973,7 +12972,7 @@ public class MainActivity extends Activity {
                                             + "; elif [ -e " + there + " ] || [ -L " + there + " ]; then true; else echo 'No such file or directory'; false; fi";
                                 }
                                 String o1 = batchShell(one + " && echo FMOK");
-                                if (o1 != null && o1.contains("FMOK")) {
+                                if (FileRules.okLine(o1, "FMOK")) {
                                     done++;
                                     lost = 0;
                                 } else {
@@ -13027,7 +13026,7 @@ public class MainActivity extends Activity {
                 if ("standard".equals(resolveExecMode())) { needFileAccess("To read this package from storage", path); res.put("ok", false); res.put("error", "Can't read this APK. For storage, grant All-files access; for system paths, set up ADB, Shizuku or Root."); return res.toString(); }
                 String staged = "/data/local/tmp/fm_install.apk";
                 String out = executeShell("cp " + BackupScripts.quote(path) + " " + staged + " && chmod 644 " + staged + " && echo OK");
-                if (out == null || !out.contains("OK")) { res.put("ok", false); res.put("error", out != null ? out.trim() : "copy failed"); return res.toString(); }
+                if (!FileRules.okLine(out, "OK")) { res.put("ok", false); res.put("error", out != null ? out.trim() : "copy failed"); return res.toString(); }
                 res.put("ok", true);
                 res.put("ref", staged);
             } catch (Exception e) {

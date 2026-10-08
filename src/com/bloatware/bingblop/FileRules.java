@@ -94,6 +94,16 @@ final class FileRules {
     }
 
     /**
+     * True when {@code out} holds {@code marker} as a whole line (a trailing carriage return or blanks are fine). A command that ends with "&amp;&amp; echo OK" prints it on a line of its own;
+     * a message that merely contains the letters (a file called "BOOKS", an error about "/sdcard/OKAY") is not a success.
+     */
+    static boolean okLine(String out, String marker) {
+        if (out == null || marker == null || marker.isEmpty()) return false;
+        for (String line : out.split("\\r?\\n")) if (line.trim().equals(marker)) return true;
+        return false;
+    }
+
+    /**
      * True when a shell answer says the link to the device is gone (adb offline / not found / closed, a timeout), so trying
      * item after item is pointless. Only a line that starts with such a message counts - adb and this app put theirs at the
      * start of a line - so a file whose name happens to contain the words ("mv: unauthorized.txt: Permission denied") doesn't.
