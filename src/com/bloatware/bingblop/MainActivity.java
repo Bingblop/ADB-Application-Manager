@@ -95,6 +95,67 @@ public class MainActivity extends Activity {
      * Hands a job to the executor. False when it refuses (shut down with the Activity): the caller then clears the
      * process-wide "busy" mark it set before submitting, so a re-created page isn't told "busy" for the rest of the process.
      */
+    // ---------------------------------------------------------------------------------------------
+    // Trackers: the known tracker libraries (Exodus Privacy list, assets/trackers.json) found in an app's dex class names. Results are kept in files/trackers_cache.json
+    // per package, valid while the app's version, update time, split count and the list are the same.
+    // ---------------------------------------------------------------------------------------------
+    private volatile Trackers trackersLib;
+    private final Object trackerLock = new Object();
+    private final ExecutorService trackerExecutor = Executors.newSingleThreadExecutor();
+    private volatile boolean trackerBusy, trackerCancel;
+
+    private Trackers trackers() throws Exception {
+        Trackers t = trackersLib;
+        if (t != null) return t;
+        synchronized (trackerLock) {
+            if (trackersLib == null) {
+                InputStream in = getAssets().open("trackers.json");
+                try {
+                    java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
+                    byte[] buf = new byte[16384];
+                    for (int n; (n = in.read(buf)) > 0; ) bo.write(buf, 0, n);
+                    trackersLib = Trackers.load(new String(bo.toByteArray(), "UTF-8"));
+                } finally {
+                    in.close();
+                }
+            }
+            return trackersLib;
+        }
+    }
+
+    private File trackerCacheFile() { return new File(getFilesDir(), "trackers_cache.json"); }
+
+    private JSONObject trackerCacheRead(Trackers t) {
+        try {
+            JSONObject o = new JSONObject(new String(java.nio.file.Files.readAllBytes(trackerCacheFile().toPath()), "UTF-8"));
+            if (t.dbVersion().equals(o.optString("db")) && o.optJSONObject("apps") != null) return o;
+        } catch (Throwable ignored) { }
+        try { return new JSONObject().put("db", t.dbVersion()).put("apps", new JSONObject()); } catch (Exception e) { return new JSONObject(); }
+    }
+
+    private void trackerCacheWrite(JSONObject cache) {
+        try {
+            File tmp = new File(getFilesDir(), "trackers_cache.json.tmp");
+            java.nio.file.Files.write(tmp.toPath(), cache.toString().getBytes("UTF-8"));
+            if (!tmp.renameTo(trackerCacheFile())) tmp.delete();
+        } catch (Throwable ignored) { }
+    }
+
+    /** Version, update time and number of splits of an installed package, "" when it is not installed. */
+    private String trackerStamp(PackageInfo pi) {
+        long vc = Build.VERSION.SDK_INT >= 28 ? pi.getLongVersionCode() : pi.versionCode;
+        int splits = pi.applicationInfo != null && pi.applicationInfo.splitSourceDirs != null ? pi.applicationInfo.splitSourceDirs.length : 0;
+        return vc + ":" + pi.lastUpdateTime + ":" + splits;
+    }
+
+    private List<File> trackerApks(PackageInfo pi) {
+        List<File> files = new ArrayList<File>();
+        if (pi.applicationInfo == null) return files;
+        if (pi.applicationInfo.sourceDir != null) files.add(new File(pi.applicationInfo.sourceDir));
+        if (pi.applicationInfo.splitSourceDirs != null) for (String d : pi.applicationInfo.splitSourceDirs) files.add(new File(d));
+        return files;
+    }
+
     private boolean submitJob(Runnable job) {
         try {
             executor.submit(job);
@@ -713,7 +774,7 @@ public class MainActivity extends Activity {
             // force_stop is flagged by its own real exit status (see AndroidBridge.runShellAction) - read that
             // rather than guessing from the text, same reasoning as the rest of executeAppAction's callers.
             if (out != null && out.length() >= 2 && out.charAt(0) == '\u0001') { if (out.charAt(1) == '1') ok++; else failed++; }
-            else if (out != null && (out.toLowerCase().contains("error") || out.toLowerCase().contains("exception") || out.toLowerCase().contains("denied"))) failed++;
+            else if (launchOutputFailed(out)) failed++;
             else ok++;
         }
         return "Force-stopped " + ok + " app" + (ok == 1 ? "" : "s") + (failed > 0 ? ", " + failed + " failed" : "");
@@ -3200,8 +3261,7 @@ public class MainActivity extends Activity {
     private static boolean optimizeBatchBusy;
     private static volatile boolean optimizeBatchCancel;  // same Stop convention, for Dex optimization (single app or several)
 
-    /** The marker line fmOp's shell commands print when the command itself succeeded: a whole line, so a name or message that merely contains "OK" never counts. */
-    private static final java.util.regex.Pattern FM_OK_LINE = java.util.regex.Pattern.compile("(?m)^FMOK\\s*$");
+    // The success markers of the file and backup commands (FMOK, OK) are read with FileRules.okLine: a whole line, so a name or message that merely contains the letters never counts.
     /** What a failed app launch or app action prints, matched at the start of a line: "Error: ...", "Error type 3", an exception, "Warning: Activity not started", "No activities found", a permission denial. A package or app name that happens to contain "error" or "failed" is not a failure. */
     private static final java.util.regex.Pattern LAUNCH_FAILED = java.util.regex.Pattern.compile(
             "(?mi)^\\s*(error\\b|error type\\b|exception\\b|(java|android)\\.[a-z.]*(exception|error)\\b|security\\s*exception|failure\\b|failed\\b|aborted\\b|status:\\s*(failed|error)|warning: activity not started|no activities found|permission denial)");
@@ -4586,7 +4646,7 @@ public class MainActivity extends Activity {
             }
         }
         String out = shellVia(mode, sweep + "cp " + BackupScripts.quote(p) + " " + stage + " && chmod 644 " + stage + " && stat -c %s:%Y " + BackupScripts.quote(p) + " && echo OK");
-        if (out == null || !out.contains("OK")) {
+        if (!FileRules.okLine(out, "OK")) {
             deleteStagedFiles(java.util.Collections.singletonList(stage));
             throw new IOException(out == null || out.trim().isEmpty() ? "copy failed" : out.trim());
         }
@@ -4878,7 +4938,7 @@ public class MainActivity extends Activity {
             if ("standard".equals(mode)) return own ? "Android wouldn't let this app move that file." : "This needs All-files access, or ADB, Shizuku or Root.";
             String dir = to.substring(0, to.lastIndexOf('/'));
             String out = shellVia(mode, "mkdir -p " + BackupScripts.quote(dir) + " && [ ! -e " + BackupScripts.quote(to) + " ] && mv " + BackupScripts.quote(from) + " " + BackupScripts.quote(to) + " && echo FMOK");
-            if (out != null && out.contains("FMOK")) return null;
+            if (FileRules.okLine(out, "FMOK")) return null;
             String why = out == null ? "" : out.trim();
             return why.isEmpty() ? "The file could not be moved." : why;
         } catch (Exception e) {
@@ -5633,7 +5693,7 @@ public class MainActivity extends Activity {
                         backupEvent("backup", "data", 20, "Backing up data (Root)...");
                         tmpTar = new File(getCacheDir(), "backup_data_" + System.nanoTime() + ".tar");
                         String out = runRootScript(BackupScripts.dataBackup("/data", pkg, tmpTar.getAbsolutePath(), android.os.Process.myUid()), 900000);
-                        if (!out.contains("OK")) throw new IllegalStateException("data: " + rootError(out));
+                        if (!FileRules.okLine(out, "OK")) throw new IllegalStateException("data: " + rootError(out));
                         if (out.contains("WARN")) warnings.put("Some data changed while it was being read; the backup may be incomplete");
                         withData = true;
                     }
@@ -5897,7 +5957,7 @@ public class MainActivity extends Activity {
                     if (wantData) {
                         backupEvent("restore", "data", 80, "Restoring data (Root)...");
                         String out = runRootScript(BackupScripts.dataRestore("/data", pkg, dataTar.getAbsolutePath()), 900000);
-                        if (out.contains("OK")) {
+                        if (FileRules.okLine(out, "OK")) {
                             res.put("data", "restored");
                         } else {
                             res.put("data", "not restored");
@@ -12762,10 +12822,10 @@ public class MainActivity extends Activity {
                 else if ("touch".equals(op)) cmd = "touch " + qa + " && echo FMOK";
                 else if ("rm".equals(op)) cmd = "rm -rf " + qa + " && echo FMOK";
                 else if ("cp".equals(op)) cmd = "cp -r " + qa + " " + BackupScripts.quote(b) + " && echo FMOK";
-                else if ("mv".equals(op)) cmd = "if [ -e " + BackupScripts.quote(b) + " ] && [ ! -d " + BackupScripts.quote(b) + " ]; then echo 'A file or folder with that name is already there'; else mv " + qa + " " + BackupScripts.quote(b) + " && echo OK; fi";
+                else if ("mv".equals(op)) cmd = "if [ -e " + BackupScripts.quote(b) + " ] && [ ! -d " + BackupScripts.quote(b) + " ]; then echo 'A file or folder with that name is already there'; else mv " + qa + " " + BackupScripts.quote(b) + " && echo FMOK; fi";
                 else { res.put("ok", false); res.put("output", "unknown op"); return res.toString(); }
                 String out = executeShell(cmd);
-                res.put("ok", out != null && FM_OK_LINE.matcher(out).find());
+                res.put("ok", FileRules.okLine(out, "FMOK"));
                 res.put("output", out != null ? out.replaceAll("(?m)^FMOK\\s*$", "OK").trim() : "");
             } catch (Exception e) {
                 try { res.put("ok", false); res.put("output", "Error: " + e.getMessage()); } catch (Exception ignored) {}
@@ -12921,7 +12981,7 @@ public class MainActivity extends Activity {
                                     if (fmBatchCancel) { cancelled = true; break; }
                                     if (linkLost) { failed.put(new JSONObject().put("p", q).put("error", "The connection to the device was lost")); continue; }
                                     String o2 = batchShell(FileOps.shellScript("cp".equals(op) ? "cp -r" : "mv", q, dest, policy));
-                                    if (o2 != null && o2.contains("FMOK")) done++;
+                                    if (FileRules.okLine(o2, "FMOK")) done++;
                                     else if (o2 != null && o2.contains("FMSKIP")) skipped++;
                                     else {
                                         String m2 = o2 == null ? "failed" : o2.trim();
@@ -12942,7 +13002,7 @@ public class MainActivity extends Activity {
                                     : "cp".equals(op) ? "mkdir -p " + qd + " && cp -r" + args + " " + qd + "/"
                                     : "mkdir -p " + qd + " && mv" + args + " " + qd;
                             String out = batchShell(cmd + " && echo FMOK");
-                            if (out != null && out.contains("FMOK")) {
+                            if (FileRules.okLine(out, "FMOK")) {
                                 done += part.size();
                                 continue;
                             }
@@ -12973,7 +13033,7 @@ public class MainActivity extends Activity {
                                             + "; elif [ -e " + there + " ] || [ -L " + there + " ]; then true; else echo 'No such file or directory'; false; fi";
                                 }
                                 String o1 = batchShell(one + " && echo FMOK");
-                                if (o1 != null && o1.contains("FMOK")) {
+                                if (FileRules.okLine(o1, "FMOK")) {
                                     done++;
                                     lost = 0;
                                 } else {
@@ -13027,7 +13087,7 @@ public class MainActivity extends Activity {
                 if ("standard".equals(resolveExecMode())) { needFileAccess("To read this package from storage", path); res.put("ok", false); res.put("error", "Can't read this APK. For storage, grant All-files access; for system paths, set up ADB, Shizuku or Root."); return res.toString(); }
                 String staged = "/data/local/tmp/fm_install.apk";
                 String out = executeShell("cp " + BackupScripts.quote(path) + " " + staged + " && chmod 644 " + staged + " && echo OK");
-                if (out == null || !out.contains("OK")) { res.put("ok", false); res.put("error", out != null ? out.trim() : "copy failed"); return res.toString(); }
+                if (!FileRules.okLine(out, "OK")) { res.put("ok", false); res.put("error", out != null ? out.trim() : "copy failed"); return res.toString(); }
                 res.put("ok", true);
                 res.put("ref", staged);
             } catch (Exception e) {
@@ -14143,6 +14203,124 @@ public class MainActivity extends Activity {
                 }
             })) return "error";
             return "started";
+        }
+
+        // ---- Trackers ----
+
+        /** What is known from earlier scans, for the packages given and still valid: {pkg: {ok, ids}} (ok false = nothing to read, e.g. no code). */
+        @JavascriptInterface
+        public String trackerCached(String pkgsJson) {
+            try {
+                Trackers t = trackers();
+                JSONObject apps;
+                synchronized (trackerLock) { apps = trackerCacheRead(t).optJSONObject("apps"); }
+                JSONArray pkgs = new JSONArray(pkgsJson);
+                JSONObject out = new JSONObject();
+                PackageManager pm = getPackageManager();
+                for (int i = 0; i < pkgs.length(); i++) {
+                    String pkg = pkgs.optString(i, "");
+                    JSONObject e = apps.optJSONObject(pkg);
+                    if (e == null) continue;
+                    try {
+                        if (e.optString("k").equals(trackerStamp(pm.getPackageInfo(pkg, 0)))) out.put(pkg, new JSONObject().put("ok", e.optBoolean("ok")).put("ids", e.optJSONArray("ids") != null ? e.optJSONArray("ids") : new JSONArray()));
+                    } catch (PackageManager.NameNotFoundException gone) { }
+                }
+                return out.toString();
+            } catch (Throwable th) {
+                return "{}";
+            }
+        }
+
+        /** The name, kinds and web address of the trackers with these ids, and how many the list holds: {count, retrieved, trackers: {id: {id, name, categories, website}}}. */
+        @JavascriptInterface
+        public String trackerInfo(String idsJson) {
+            try {
+                Trackers t = trackers();
+                JSONObject out = new JSONObject().put("count", t.db.n).put("retrieved", t.db.retrieved);
+                JSONObject map = new JSONObject();
+                JSONArray ids = new JSONArray(idsJson);
+                for (int i = 0; i < ids.length(); i++) {
+                    int k = t.db.indexOf(ids.optInt(i, -1));
+                    if (k >= 0) map.put(String.valueOf(t.db.id[k]), t.db.info(k));
+                }
+                return out.put("trackers", map).toString();
+            } catch (Throwable th) {
+                return "{\"error\":" + JSONObject.quote(String.valueOf(th.getMessage())) + "}";
+            }
+        }
+
+        /**
+         * Looks for trackers in these packages (skipping the ones with a valid earlier result). Answers "started", or "busy" while a scan runs.
+         * Progress and results arrive as window.onTrackers({done, total, apps: {pkg: {ok, ids}}, finished}) in small groups.
+         */
+        @JavascriptInterface
+        public String trackerScan(final String pkgsJson) {
+            synchronized (trackerLock) {
+                if (trackerBusy) return "busy";
+                trackerBusy = true;
+                trackerCancel = false;
+            }
+            try {
+                trackerExecutor.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Trackers t = trackers();
+                            JSONArray pkgs = new JSONArray(pkgsJson);
+                            PackageManager pm = getPackageManager();
+                            JSONObject cache;
+                            synchronized (trackerLock) { cache = trackerCacheRead(t); }
+                            JSONObject apps = cache.optJSONObject("apps");
+                            JSONObject chunk = new JSONObject();
+                            int total = pkgs.length(), sinceSave = 0;
+                            long lastSent = 0;
+                            for (int i = 0; i < total && !trackerCancel; i++) {
+                                String pkg = pkgs.optString(i, "");
+                                if (pkg.isEmpty()) continue;
+                                try {
+                                    PackageInfo pi = pm.getPackageInfo(pkg, 0);
+                                    String stamp = trackerStamp(pi);
+                                    JSONObject e = apps.optJSONObject(pkg);
+                                    if (e == null || !stamp.equals(e.optString("k"))) {
+                                        Trackers.Scan sc = t.scan(trackerApks(pi));
+                                        JSONArray ids = new JSONArray();
+                                        for (int id : sc.ids) ids.put(id);
+                                        e = new JSONObject().put("k", stamp).put("ok", sc.scannable).put("ids", ids);
+                                        apps.put(pkg, e);
+                                        sinceSave++;
+                                    }
+                                    chunk.put(pkg, new JSONObject().put("ok", e.optBoolean("ok")).put("ids", e.optJSONArray("ids")));
+                                } catch (PackageManager.NameNotFoundException gone) {
+                                    // not installed (an uninstalled app that is still listed): nothing to read
+                                }
+                                long now = System.currentTimeMillis();
+                                if (chunk.length() >= 25 || now - lastSent > 700 || i == total - 1) {
+                                    if (chunk.length() > 0 || i == total - 1) notifyJs("window.onTrackers && window.onTrackers(" + new JSONObject().put("done", i + 1).put("total", total).put("apps", chunk).put("finished", false) + ")");
+                                    chunk = new JSONObject();
+                                    lastSent = now;
+                                }
+                                if (sinceSave >= 40) { synchronized (trackerLock) { trackerCacheWrite(cache); } sinceSave = 0; }
+                            }
+                            synchronized (trackerLock) { trackerCacheWrite(cache); }
+                            notifyJs("window.onTrackers && window.onTrackers(" + new JSONObject().put("done", total).put("total", total).put("apps", new JSONObject()).put("finished", true).put("stopped", trackerCancel) + ")");
+                        } catch (Throwable th) {
+                            try { notifyJs("window.onTrackers && window.onTrackers(" + new JSONObject().put("finished", true).put("error", String.valueOf(th.getMessage())) + ")"); } catch (Exception ignored) { }
+                        } finally {
+                            trackerBusy = false;
+                        }
+                    }
+                });
+            } catch (java.util.concurrent.RejectedExecutionException refused) {
+                trackerBusy = false;
+                return "error";
+            }
+            return "started";
+        }
+
+        @JavascriptInterface
+        public String trackerScanStop() {
+            trackerCancel = true;
+            return "ok";
         }
 
         /** Saves an app's icon (256 px PNG) to Download/ADB App Manager/Icons. Result via window.onAppIconSaved(json{ok, pkg, path, error}). */

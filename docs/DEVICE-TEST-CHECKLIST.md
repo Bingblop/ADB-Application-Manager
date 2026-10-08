@@ -1,4 +1,4 @@
-# On-device test checklist (v7.9.14 to v7.10.18)
+# On-device test checklist (v7.1 to v7.11.0)
 
 The automated tests run the page in a browser with a pretend phone. They cannot prove the parts that talk to Android:
 icons, the file chooser, added storage, shell commands and the haptic feedback. This list is for those. Tick a box when
@@ -242,6 +242,28 @@ Select three or four apps you do not mind changing, open the round checkmark.
 - [ ] Settings, Lists, **Remember my filters** on: turn on Running + 3rd Party, force-close the app, open it again: the same filters are on. Off: it opens on Total Installed.
 
 - [ ] With no working mode on, open an app's menu: the permission toggles, the App Ops modes (on the mode that is set) and every Enable / Disable, Stop and Launch button of activities, services, receivers and providers show the lock and look dimmed. Turn a working mode on and open the menu again: only install-time permissions keep the lock.
+
+## 13. Trackers (v7.11.0)
+
+- [ ] Apps tab: tap the **Trackers** pill. A message says how many apps are read, the pill counts "12/150" and ends on a number; the list shows only apps with trackers. A second tap off and on is instant.
+- [ ] Open an app you know uses ads or analytics (a free game, a news app): the **TRACKERS** chip under UAD-NG shows an orange number; the list names trackers such as Google AdMob or Firebase Analytics, each with a web address that opens. An open-source app from F-Droid usually shows a green 0.
+- [ ] An app that is only a launcher stub or a preinstalled system app may show a grey ? or 0: both are fine; it must never crash or hang. Updating an app and opening it again re-reads it.
+- [ ] Turn the phone to airplane mode and tap the pill: it still works (nothing is downloaded).
+
+## 12. Language, font and File Manager core (v7.1 to v7.4)
+
+These came before the rest of this list and were only checked in the browser. They need a real phone because they use the system font list, the file access, the foreground notification and the archive libraries.
+
+- [ ] Settings > Language: the drop-down at the very top lists the languages. Pick one: the tabs, buttons and Settings change at once; app names, package names, file names and logs stay as they are. Pick "System default": it follows the phone's language again after a restart of the app.
+- [ ] Settings > Font: the system font is the default. **Choose a font file** (a .ttf or .otf from Downloads): the whole app uses it; **Find fonts on this phone** shows a progress bar and a list. Removing the choice puts the system font back.
+- [ ] File Manager: every folder starts with a **..** row that goes up one level. **+ File** and **+ Folder** make them; a name with a slash is refused. **Show hidden files** shows the dot files and hides them again.
+- [ ] A folder of pictures shows thumbnails (Show thumbnails on); **Clear thumbnail cache** empties them.
+- [ ] Copy a file onto a name that is already there: the dialog offers Replace, Keep both and Skip, and does what it says. Delete asks first.
+- [ ] Tap a picture, a PDF, a text file, a .ttf and a zip: each opens in its viewer. **Open with** hands the file to another app; the editor saves a text file back.
+- [ ] Search (the bar at the top of the File Manager): a name, `ext:apk`, `content:word` and `archive:name` each find the right files; the pills under the results (kinds, size, age) narrow them.
+- [ ] **Extract** a zip, a 7z and a tar.gz: a progress notification shows the file, the time left and a Cancel button; pulling the notification down while it works does not stop it. A password-protected zip or 7z asks for the password and refuses a wrong one.
+- [ ] Open a .rar: it can be read and extracted, not changed. Compress a folder to zip and to 7z: the file opens on the phone.
+- [ ] Installer > Find APKs on this device: a progress bar runs; duplicates and older versions are flagged; delete selected asks first and can be undone.
 
 ## Report
 

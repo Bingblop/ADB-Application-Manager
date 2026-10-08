@@ -1,4 +1,4 @@
-pills: ["All Apps (6)","Updated 7d (0)","Running (2)","3rd Party (2)","System (2)","Enabled (2)","Frozen (2)","Suspended (1)","Patched (0)","Uninstalled (2)"]
+pills: ["All Apps (6)","Updated 7d (0)","Running (2)","3rd Party (2)","System (2)","Enabled (2)","Frozen (2)","Suspended (1)","Patched (0)","Trackers (?)","Uninstalled (2)"]
 Enabled shows installed apps that are not disabled (a suspended one counts): [["enabled"],"enabled",["On One","On Two"]]
 Frozen still works: ["Off","Sys Off"]
 Running + 3rd Party (your running user apps): [["On One"],[["running","user"],["running","user"]],"Showing apps that are Running + 3rd Party.\nClear filters"]

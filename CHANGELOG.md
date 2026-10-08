@@ -1,5 +1,19 @@
 # Changelog
 
+## v7.11.0-Pro (versionCode 839)
+
+- **Trackers.** A **Trackers** pill in the Apps tab (apps with at least one known tracker library) and a **TRACKERS** chip in the app menu, under the UAD-NG chip: green 0, orange N, grey ? when the code cannot be read.
+  Tap the chip for the list (name, kinds, web address) with the Exodus credit and the limits of the method. The app reads the class names in each app's dex files (base and split apks; a class must be *defined*
+  there, a mere reference does not count) and matches them against the bundled Exodus Privacy list (`assets/trackers.json`, 428 detectable trackers copied 2026-10-03, ODbL 1.0) with an Aho-Corasick automaton.
+  Offline, no working mode, nothing sent. Results are kept per app in `files/trackers_cache.json` until the app's version, update time, number of splits or the list changes; the first tap on the pill scans the
+  installed apps once in the background with the count growing on the pill. `Trackers`, `TrackerDb`, `TrackerMatcher`, `DexTypeScanner`; bridge `trackerCached`, `trackerInfo`, `trackerScan`, `trackerScanStop`.
+  Tests: Java `trackers` (hand-built dex files: defined vs referenced classes, stored and deflated entries, splits, damaged files), UI `t142`.
+- **Command results.** A move done through the shell printed `OK` but was judged by the `FMOK` marker, so a move that worked was reported as failed. Every `OK` / `FMOK` check (File Manager, backup, APK
+  staging) now goes through `FileRules.okLine`, a whole line, so a path with the letters inside (`/sdcard/BOOKS/...`) is no success. The quick list's force stop reads failures at the start of a line, like the launch scans.
+- **Tests.** `t109` no longer assumes the last call was its own (the Connected Devices tab refreshes its device list now and then; it turned `main` red on a slow runner), and the runner shows up to 500 characters of a
+  failing check.
+- **Docs.** The on-device checklist now covers v7.1 to v7.4 (language, font, File Manager, search, archives). Not done, on purpose: the "Write Secure Settings / assistant" workaround for unexported activities.
+
 ## v7.10.18-Pro (versionCode 838)
 
 - **Select All / Clear All on the other list headers.** The Selected apps list (Show Applications) gets outlined **Select All** (adds every app the Apps list shows now) and **Clear All** (empties the selection and

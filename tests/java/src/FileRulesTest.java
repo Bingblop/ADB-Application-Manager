@@ -96,6 +96,15 @@ public class FileRulesTest {
         }
         is("null", FileRules.transportLost(null), false);
 
+        // the success marker of a shell command is a whole line, never letters inside a message
+        is("okLine: marker alone", FileRules.okLine("FMOK", "FMOK"), true);
+        is("okLine: after other output, with CRLF and blanks", FileRules.okLine("12345:678\r\n  OK \r\n", "OK"), true);
+        is("okLine: a path with the letters inside is not a success", FileRules.okLine("cp: /sdcard/BOOKS/a.txt: No such file or directory", "OK"), false);
+        is("okLine: a name that ends in OK on its own line is not the marker", FileRules.okLine("NOT OK\nBOOK", "OK"), false);
+        is("okLine: FMOK is not OK", FileRules.okLine("FMOK", "OK"), false);
+        is("okLine: the message of a taken name is not a success", FileRules.okLine("A file or folder with that name is already there", "FMOK"), false);
+        is("okLine: null and empty", FileRules.okLine(null, "OK") || FileRules.okLine("", "OK") || FileRules.okLine("OK", ""), false);
+
         System.out.println(n + " checks, " + fails + " failed");
         if (fails != 0) System.exit(1);
     }
