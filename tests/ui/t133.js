@@ -59,6 +59,14 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
     const probe = document.createElement('i'); probe.style.color = 'var(--apps-frozen)'; document.body.appendChild(probe); const want = getComputedStyle(probe).color; probe.remove();
     return bc === want;
   }));
+  check('   a frozen app\'s whole row has a blue tint (a selected one keeps the selection colours), an enabled one has none', await ev(() => {
+    allApps.length = 0; allApps.push({ name: 'Alpha', pkg: 'com.t.alpha', isFrozen: true, isSystem: false }, { name: 'Bravo', pkg: 'com.t.bravo', isFrozen: false, isSystem: false }); renderApps();
+    const a = document.getElementById('card_com.t.alpha'), b = document.getElementById('card_com.t.bravo');
+    const ba = getComputedStyle(a).backgroundColor, bb = getComputedStyle(b).backgroundColor;
+    const [r, g, bl] = ba.match(/\d+(\.\d+)?/g).map(Number);
+    a.classList.add('selected'); const sel = getComputedStyle(a).backgroundColor; a.classList.remove('selected');
+    return a.classList.contains('frozen') && !b.classList.contains('frozen') && ba !== bb && bl > r && bl > g && sel !== ba;
+  }));
   await ev(() => switchView('apps')); await sleep(200);
   await ev(() => setFilter('user')); await sleep(150);
   await page.screenshot({ path: 'stat_boxes.png' });

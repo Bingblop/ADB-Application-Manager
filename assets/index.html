@@ -564,6 +564,12 @@
             background: rgba(0, 229, 255, 0.1);
         }
 
+        /* A frozen (disabled) app's whole row has a blue tint, like the Frozen box at the top; a selected row keeps the selection colours */
+        .app-card.frozen:not(.selected) {
+            background: color-mix(in srgb, var(--apps-frozen) 9%, var(--bg-card));
+            border-color: color-mix(in srgb, var(--apps-frozen) 35%, var(--border-glass));
+        }
+
         /* Just the checkbox and the avatar now (app-meta sits on its own, to the left of this) - sized to its
            content, not stretched, so it and app-actions sit together on the right. */
         .app-left {
@@ -14430,7 +14436,7 @@ Type any command below (e.g. pm list packages -d)
 
             const pk = escapeHtml(app.pkg);
             return `
-                <div class="app-card ${isSelected ? 'selected' : ''} ${app.isSuspended ? 'suspended' : ''}" id="card_${pk}" data-pkg="${pk}">
+                <div class="app-card ${isSelected ? 'selected' : ''} ${app.isSuspended ? 'suspended' : ''} ${app.isFrozen && !app.isUninstalled ? 'frozen' : ''}" id="card_${pk}" data-pkg="${pk}">
                     <img class="app-icon" alt="" draggable="false" data-icon="${pk}"${appIconCache[app.pkg] ? ` src="${appIconCache[app.pkg]}"` : ''}>
                     <div class="app-meta" onclick="toggleSelectPkg(this.parentElement.dataset.pkg)">
                         <div class="app-name">${escapeHtml(app.name)}</div>

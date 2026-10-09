@@ -1,5 +1,9 @@
 # Changelog
 
+## v7.12.4-Pro (versionCode 846)
+
+- **A frozen app's whole row has a blue tint** in the Apps tab (the same blue as the Frozen box), not only its FROZEN badge. A selected row keeps the selection colours. Test: `t133`.
+
 ## v7.12.3-Pro (versionCode 845)
 
 - **The Apps tab boxes have their own colours.** Frozen is **blue** (the box, its number, and the FROZEN badge on the rows), Enabled is a **more vivid green**, and System is a clearer **purple** (box, number and SYSTEM badge). They no longer follow the theme, so Material You or a palette cannot turn them into other shades. Test: `t133`.
