@@ -1,6 +1,7 @@
 // v7.12.0: the Logcat keeps its lines (a quiet or failed poll no longer empties it), the log can be recorded to a file and looked at afterwards as a still picture,
 // the Ask agent button sits on every hidden setting (and the other places that need an explanation), and SD Maid's two data cards come after its four tools.
 const { chromium, PAGE } = require('./lib/pw');
+const webMock = require('./lib/web_mock.js');
 const mock = require('./lib/sdb_mock.js');
 let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : 'FAIL ') + label + (ok && extra === undefined ? '' : ': ' + (extra === undefined ? ok : extra))); }
@@ -10,6 +11,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   const page = await ctx.newPage();
   const errors = []; page.on('pageerror', e => errors.push(e.message));
   await page.addInitScript(mock.initScript);
+  await page.addInitScript(webMock.install);
   await page.addInitScript(() => {
     const base = window.AndroidBridge;
     window.__opened = []; window.__recs = {}; window.__rec = null; window.__recSeq = 0;
@@ -106,7 +108,8 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await ev(() => { sdbResetView(); const i = document.getElementById('sdbSearch'); i.value = 'zen_mode'; sdbSearchInput(); }); await sleep(300);
   await ev(() => { askAgentId = ''; window.__sent = []; });
   await page.locator('#sdbList .sdb-row[data-k="zen_mode"] .agent-btn').click(); await sleep(450);
-  check('13. without a default agent the button still opens the Ask agent window, which says so and offers the free Web search (the row did not open its editor, nothing was sent)', await ev(() => document.getElementById('agentAskModal').classList.contains('show') && !document.getElementById('sdbEditModal').classList.contains('show') && /choose a default agent/.test(document.getElementById('agentAskAi').innerText) && /Web search/.test(document.getElementById('agentAskAi').innerText) && window.__sent.length === 0));
+  await sleep(500);
+  check('13. without a default agent the button opens the Ask agent window and the built-in web lookup answers about that setting (only the words "android settings zen_mode" are searched; the row did not open its editor)', await ev(() => document.getElementById('agentAskModal').classList.contains('show') && !document.getElementById('sdbEditModal').classList.contains('show') && /What the pages say|Looking it up/.test(document.getElementById('agentAskAi').innerText) && /bing\.com\/search\?q=android(%20|\+)settings(%20|\+)zen_mode/.test(window.__reqs[0] || '') && window.__sent.length === 0));
   await ev(() => agentAskClose());
   await ev(() => {
     askAgentId = 'fake';

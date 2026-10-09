@@ -10688,7 +10688,7 @@ Type any command below (e.g. pm list packages -d)
             const el = document.getElementById('askAgentNote');
             if (!el) return;
             const ag = askAgentDef();
-            if (!ag) { el.textContent = 'No agent is chosen yet, so an Ask agent button only offers Web search, which is free and needs no setup.'; return; }
+            if (!ag) { el.textContent = 'No agent is chosen yet, so an Ask agent button reads the web for you (free, no key). Choose an agent for an explanation written for you.'; return; }
             txRefreshVault();
             if (!txAgentReady(ag)) { el.innerHTML = escapeHtml(ag.name) + ' is not connected yet. Add its key or sign-in in the Command-Line Interface tab. <a href="#" onclick="aiOpenAgentSetup(); return false;">Open it</a>'; return; }
             const model = txModelFor(ag);
@@ -10757,14 +10757,14 @@ Type any command below (e.g. pm list packages -d)
             askAgentAbout(btn.dataset.ak, btn.dataset.an, btn.dataset.ax ? btn.dataset.ax.split('\n') : []);
         }
         function askAgentAbout(kind, name, lines) {
-            // no gate here: without a connected agent the window still opens, says so (aiExplainInto) and Web search in it is free and needs no setup
+            // no gate here: without a connected agent the window still opens and the built-in web lookup answers (aiExplainInto)
             const k = AGENT_KINDS[kind] || AGENT_KINDS.item, info = txInfo || {};
             const phone = 'Android ' + (info.release || '?') + (info.model ? ' on ' + ((info.manufacturer || '') + ' ' + info.model).trim() : '');
             const text = phone + '\n' + k.label + ': ' + name + (lines && lines.length ? '\n' + lines.filter(Boolean).join('\n') : '');
-            agentAsk = { kind: kind, name: name, text: text, answer: '', busy: false, web: 'android ' + name + (k.safety ? ' safe to disable' : '') };
+            agentAsk = { kind: kind, name: name, text: text, answer: '', busy: false, web: 'android ' + (kind === 'setting' ? 'settings ' : '') + name + (k.safety ? ' safe to disable' : '') };
             document.getElementById('agentAskTitle').innerText = k.title;
             document.getElementById('agentAskSubject').innerText = name;
-            document.getElementById('agentAskSent').innerText = text;
+            document.getElementById('agentAskSent').innerText = askAgentReadyNow() ? text : agentAsk.web;          // with no agent only the search words are sent
             document.getElementById('agentAskAi').textContent = '';
             document.getElementById('agentAskModal').classList.add('show');
             agentAskRun();
@@ -10777,7 +10777,7 @@ Type any command below (e.g. pm list packages -d)
             if (!cur || cur.busy) return;
             const btn = document.getElementById('agentAskGo');
             cur.busy = true; btn.disabled = true;
-            cur.answer = await aiExplainInto(document.getElementById('agentAskAi'), agentSystem(cur.kind), cur.text, () => agentAsk === cur, 'The text above is sent to them.');
+            cur.answer = await aiExplainInto(document.getElementById('agentAskAi'), agentSystem(cur.kind), cur.text, () => agentAsk === cur, 'The text above is sent to them.', cur.web);
             cur.busy = false; btn.disabled = false;
         }
         // The app menu's chip for an app the UAD-NG list does not know
@@ -20978,13 +20978,13 @@ Type any command below (e.g. pm list packages -d)
             + 'Use short paragraphs, no headings. If the line is too cryptic to explain with confidence, say so and say what else would help. Do not invent details.';
         async function lcEntryMore() {
             if (!lcEnt || lcEntAiBusy) return;
-            if (!askAgentGate()) return;
+            // no gate: without a connected agent the built-in web lookup answers
             const ent = lcEnt, info = txInfo || {};
             const q = 'Android ' + (info.release || '?') + (info.model ? ' on ' + ((info.manufacturer || '') + ' ' + info.model).trim() : '') + '\nLevel: ' + ent.lvl + '\nTag: ' + ent.tag + '\nProcess: ' + ent.pid + '/' + ent.tid + '\nMessage:\n' + ent.lines.join('\n');
             const btn = document.getElementById('lcEntMore');
             document.getElementById('lcEntAiWrap').style.display = '';
             lcEntAiBusy = true; btn.disabled = true;
-            lcEntAiText = await aiExplainInto(document.getElementById('lcEntAi'), LC_ENTRY_SYSTEM, q, () => lcEnt === ent);
+            lcEntAiText = await aiExplainInto(document.getElementById('lcEntAi'), LC_ENTRY_SYSTEM, q, () => lcEnt === ent, undefined, lcEntryQuery());
             lcEntAiBusy = false; btn.disabled = false;
         }
 
@@ -21152,14 +21152,134 @@ Type any command below (e.g. pm list packages -d)
         function aiOpenAgentSetup() { document.querySelectorAll('.modal-overlay.show').forEach(m => m.classList.remove('show')); switchView('terminal'); }
         // Asks the Coding Agent chosen in the Command-Line Interface tab to explain something, and streams the answer into box.
         // Says what is missing when there is no agent. Returns the answer ('' when there is none). isCurrent(): false once the window moved on.
-        async function aiExplainInto(box, system, text, isCurrent, sentNote) {
+        // ---- No agent connected: a built-in web lookup (free, no key, no account) ----
+        // It does what a crawler does, in a small way: searches the web for the item's name, reads the first page that has something about it into plain text and shows
+        // the passages that mention it, with the sources. Nothing is written for you and nothing is guessed; only the search words leave the phone.
+        const WL_UA = 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36';
+        function wlGet(url, ms) { return txAiCall({ url: url, method: 'GET', headers: { 'User-Agent': WL_UA, 'Accept-Language': 'en-US,en;q=0.8' }, readTimeoutMs: ms || 15000 }, null, true); }
+        function wlHost(u) { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return ''; } }
+        // a result's address: Bing may wrap it (bing.com/ck/a?...&u=a1<base64 of the address>)
+        function wlRealUrl(href) {
+            try {
+                const u = new URL(href, 'https://www.bing.com/');
+                if (/(^|\.)bing\.com$/.test(u.hostname)) {
+                    const p = u.searchParams.get('u');
+                    if (p && /^a1/.test(p)) {
+                        const b = p.slice(2).replace(/-/g, '+').replace(/_/g, '/');
+                        const d = atob(b + '='.repeat((4 - b.length % 4) % 4));
+                        if (/^https?:\/\//.test(d)) return d;
+                    }
+                    return '';
+                }
+                return /^https?:$/.test(u.protocol) ? u.href : '';
+            } catch (e) { return ''; }
+        }
+        function wlParseBing(html) {
+            const doc = new DOMParser().parseFromString(html, 'text/html'), out = [];
+            doc.querySelectorAll('li.b_algo').forEach(li => {
+                const h2 = li.querySelector('h2');
+                const a = h2 && (h2.closest('a') || h2.querySelector('a'));          // Bing wraps the heading in the link (some pages put the link inside)
+                if (!a) return;
+                const url = wlRealUrl(a.getAttribute('href') || '');
+                if (!url) return;
+                const sn = li.querySelector('.b_caption p, .b_lineclamp2, .b_lineclamp3');
+                out.push({ title: a.textContent.replace(/\s+/g, ' ').trim(), url: url, snippet: sn ? sn.textContent.replace(/\s+/g, ' ').trim() : '' });
+            });
+            return out;
+        }
+        async function wlSearch(q) {
+            try {
+                const r = await wlGet('https://www.bing.com/search?q=' + encodeURIComponent(q) + '&setlang=en&count=8', 15000);
+                const l = wlParseBing(r.body);
+                if (l.length) return l;
+            } catch (e) {}
+            const r2 = await wlGet('https://en.wikipedia.org/w/api.php?action=query&list=search&format=json&srlimit=5&srsearch=' + encodeURIComponent(q), 15000);
+            const j = JSON.parse(r2.body);
+            return ((j.query && j.query.search) || []).map(x => ({ title: x.title, url: 'https://en.wikipedia.org/wiki/' + encodeURIComponent(String(x.title).replace(/ /g, '_')),
+                snippet: String(x.snippet || '').replace(/<[^>]+>/g, '').replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&#039;/g, "'") }));
+        }
+        // the words that tell a passage is about the item: its name and the other longer words of the search
+        function wlWords(q) {
+            const stop = { android: 1, what: 1, safe: 1, disable: 1, this: 1, that: 1, with: 1, from: 1, about: 1, settings: 1, setting: 1 };
+            return Array.from(new Set(String(q).split(/\s+/).filter(w => w.length >= 4 && !stop[w.toLowerCase()]).map(w => w.replace(/^["'(]+|["'),.:]+$/g, '')).filter(Boolean)));
+        }
+        function wlExcerpts(html, words) {
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+            doc.querySelectorAll('script, style, nav, header, footer, aside, noscript, svg, form, button, select, [role=navigation]').forEach(n => n.remove());
+            const root = doc.querySelector('main, article, [role=main]') || doc.body;
+            if (!root) return [];
+            const blocks = Array.from(root.querySelectorAll('p, li, dd, td, pre, h2, h3')).map(n => n.textContent.replace(/\s+/g, ' ').trim()).filter(t => t.length >= 50 && t.length <= 900);
+            const low = words.map(w => w.toLowerCase());
+            const scored = blocks.map((t, i) => { const l = t.toLowerCase(); let sc = 0; low.forEach(w => { if (l.indexOf(w) >= 0) sc += w.length > 5 ? 3 : 1; }); return { t: t, i: i, sc: sc }; }).filter(x => x.sc > 0);
+            scored.sort((a, b) => b.sc - a.sc || a.i - b.i);
+            const seen = new Set(), out = [];
+            for (const x of scored) {
+                const k = x.t.slice(0, 60);
+                if (seen.has(k)) continue;
+                seen.add(k);
+                out.push(x.t.length > 420 ? x.t.slice(0, 417) + '…' : x.t);
+                if (out.length === 3) break;
+            }
+            return out;
+        }
+        function wlQueryFromText(text) {
+            const lines = String(text || '').split('\n').slice(1).map(l => l.replace(/^(Table|Setting|Permission|Package|Process|Overlay|Item|App name|Value now):\s*/i, '').trim()).filter(Boolean);
+            return ('android ' + lines.slice(0, 2).join(' ')).replace(/\s+/g, ' ').trim().slice(0, 150);
+        }
+        async function webLookupInto(box, query, isCurrent) {
             box.classList.remove('is-err');
-            const ag = askAgentDef();
-            if (!ag || !txAgentReady(ag)) {
-                box.classList.add('is-err');
-                box.innerHTML = 'To get an explanation, choose a default agent and connect it. <a href="#" onclick="agentAskToSettings(); return false;">Open Settings</a>. Web search works without one.';
+            box.innerHTML = '<div class="lc-ent-ai-note"></div><span class="ai-out" translate="no"></span>';
+            box.firstChild.textContent = txF('Searched the web for “{0}”. Only these words were sent, nothing else.', query);
+            const out = box.querySelector('.ai-out');
+            out.removeAttribute('translate');
+            out.textContent = txT('Looking it up on the web…');
+            let hits = [];
+            try { hits = await wlSearch(query); } catch (e) {
+                if (isCurrent()) { box.classList.add('is-err'); box.textContent = txF('Something went wrong: {0}', (e && (e.msg || e.error || e.message)) || ''); }
                 return '';
             }
+            if (!isCurrent()) return '';
+            const words = wlWords(query);
+            let ex = [];
+            for (const h of hits.slice(0, 3)) {
+                if (!/^https:/.test(h.url)) continue;
+                try { ex = wlExcerpts((await wlGet(h.url, 15000)).body, words); } catch (e) { ex = []; }
+                if (!isCurrent()) return '';
+                if (ex.length) break;
+            }
+            const passages = ex.length ? ex : hits.slice(0, 3).map(h => h.snippet).filter(Boolean);
+            const sources = hits.slice(0, 4);
+            out.textContent = '';
+            if (!passages.length && !sources.length) { out.textContent = txT('Nothing useful was found. Try Web search.'); }
+            else {
+                const wrap = document.createElement('div');
+                wrap.setAttribute('translate', 'no');
+                const head = document.createElement('b'); head.textContent = txT('What the pages say'); head.removeAttribute('translate');
+                out.appendChild(head);
+                passages.forEach(t => { const d = document.createElement('div'); d.setAttribute('translate', 'no'); d.style.marginTop = '6px'; d.textContent = '• ' + t; out.appendChild(d); });
+                if (sources.length) {
+                    const sh = document.createElement('div'); sh.style.marginTop = '10px'; const sb = document.createElement('b'); sb.textContent = txT('Sources'); sh.appendChild(sb); out.appendChild(sh);
+                    sources.forEach(h => {
+                        const b = document.createElement('button');
+                        b.type = 'button'; b.className = 'agent-btn'; b.setAttribute('translate', 'no'); b.title = h.title;
+                        b.textContent = wlHost(h.url) || h.url;
+                        b.addEventListener('click', () => { haptic(); openUrlExternal(h.url); });
+                        out.appendChild(b); out.appendChild(document.createTextNode(' '));
+                    });
+                }
+            }
+            const foot = document.createElement('div');
+            foot.className = 'lc-ent-ai-note'; foot.style.marginTop = '10px';
+            foot.innerHTML = 'To get an explanation, choose a default agent and connect it. <a href="#" onclick="agentAskToSettings(); return false;">Open Settings</a>. Web search works without one.';
+            box.appendChild(foot);
+            return passages.join('\n') + (sources.length ? '\n' + sources.map(h => h.url).join('\n') : '');
+        }
+        function askAgentReadyNow() { const a = askAgentDef(); if (!a) return false; txRefreshVault(); return txAgentReady(a); }
+
+        async function aiExplainInto(box, system, text, isCurrent, sentNote, webQuery) {
+            box.classList.remove('is-err');
+            const ag = askAgentDef();
+            if (!ag || !txAgentReady(ag)) return webLookupInto(box, webQuery || wlQueryFromText(text), isCurrent);
             const who = ag.name.replace(/\s*\(.*\)$/, '');
             const model = txModelFor(ag);
             box.innerHTML = '<div class="lc-ent-ai-note">Asking ' + escapeHtml(who) + (model ? ' (' + escapeHtml(model) + ')' : '') + '. ' + escapeHtml(sentNote || 'The text above is sent to them.') + '</div><span class="ai-out"></span>';
@@ -26336,10 +26456,10 @@ Type any command below (e.g. pm list packages -d)
                     + '<p class="tx-sheet-p muted">For a coding agent that runs right here in Termux instead, choose OpenCode, or one of the API-key / sign-in agents above.</p>'
                     + '<div class="mode-btn-row" style="margin-top:10px;"><button class="mode-action-btn" onclick="openUrlExternal(\'https://kilocode.ai/\')">Website</button><button class="mode-action-btn" onclick="openUrlExternal(\'https://github.com/Kilo-Org/kilocode\')">Source</button></div>';
                 else if (ag.id === 'browseruse') h = '<p class="tx-sheet-p">Browser Use is an open-source library that lets an AI model drive a web browser to do a task. It runs on a computer with Python and needs a key for the AI model it uses (its own cloud gives new accounts some free credit, then it is paid). It has no Android version and is not a coding agent, so it does not chat here.</p>'
-                    + '<p class="tx-sheet-p muted">For an answer to an Ask agent button, choose an agent above that has a key or runs on your own server; with none, the button still offers the free Web search.</p>'
+                    + '<p class="tx-sheet-p muted">For an answer to an Ask agent button, choose an agent above that has a key or runs on your own server; with none, the button reads the web for you (free, no key).</p>'
                     + '<div class="mode-btn-row" style="margin-top:10px;"><button class="mode-action-btn" onclick="openUrlExternal(\'https://browser-use.com/\')">Website</button><button class="mode-action-btn" onclick="openUrlExternal(\'https://github.com/browser-use/browser-use\')">Source</button></div>';
                 else if (ag.id === 'crawl4ai') h = '<p class="tx-sheet-p">Crawl4AI is an open-source web crawler that turns web pages into clean text for AI models. The library and its Docker server are free, but run on a computer, not on Android; its hosted cloud is pay-as-you-go. It is not a coding agent, so it does not chat here.</p>'
-                    + '<p class="tx-sheet-p muted">For an answer to an Ask agent button, choose an agent above that has a key or runs on your own server; with none, the button still offers the free Web search.</p>'
+                    + '<p class="tx-sheet-p muted">For an answer to an Ask agent button, choose an agent above that has a key or runs on your own server; with none, the button reads the web for you (free, no key).</p>'
                     + '<div class="mode-btn-row" style="margin-top:10px;"><button class="mode-action-btn" onclick="openUrlExternal(\'https://crawl4ai.com/\')">Website</button><button class="mode-action-btn" onclick="openUrlExternal(\'https://github.com/unclecode/crawl4ai\')">Source</button></div>';
                 else h = '<p class="tx-sheet-p">Leon is an open-source personal assistant (skills, voice) that runs on a computer with Node.js and Python. It has no Android version and is not a coding agent, so it does not chat in this Terminal.</p>'
                     + '<p class="tx-sheet-p muted">For a free assistant on this phone, choose Ollama (on-device); for one on your computer, Jan.ai or AnythingLLM.</p>'
@@ -28826,14 +28946,14 @@ Type any command below (e.g. pm list packages -d)
             + 'Say briefly: what it controls, what its values mean, what changing it does, and whether it is safe to change. Say plainly when you do not know the setting (many belong to the phone maker) instead of guessing, and then say what its name suggests. Short paragraphs, no headings.';
         async function sdbEditAsk() {
             if (!sdbEditing || sdbAiBusy) return;
-            if (!askAgentGate()) return;
+            // no gate: without a connected agent the built-in web lookup answers
             const cur = sdbEditing, hint = sdbHint(cur.ns, cur.key), info = txInfo || {};
             const val = cur.orig.length <= 200 ? cur.orig : cur.orig.slice(0, 200) + '...';
             const q = 'Android ' + (info.release || '?') + (info.model ? ' on ' + ((info.manufacturer || '') + ' ' + info.model).trim() : '') + '\nTable: ' + cur.ns + '\nSetting: ' + cur.key + '\nValue now: ' + (val === '' ? '(empty)' : val)
                 + (hint ? '\nThe app already says: ' + hint.t + (hint.v ? ' Values: ' + hint.v : '') : '');
             const box = document.getElementById('sdbEditAi'), btn = document.getElementById('sdbEditAiBtn');
             box.style.display = ''; sdbAiBusy = true; btn.disabled = true;
-            await aiExplainInto(box, SDB_AI_SYSTEM, q, () => sdbEditing === cur, 'The setting\'s name, table and current value are sent to them.');
+            await aiExplainInto(box, SDB_AI_SYSTEM, q, () => sdbEditing === cur, 'The setting\'s name, table and current value are sent to them.', 'android settings ' + cur.ns + ' ' + cur.key);
             sdbAiBusy = false; btn.disabled = false;
         }
 

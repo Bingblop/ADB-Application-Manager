@@ -1,5 +1,6 @@
 // v7.12.0: the default agent (Settings, under Language) and the Ask agent window; the app menu's tags carry no "UAD-NG" text and an app the list does not know gets an Ask agent button; without a default agent (or one that is not connected) the button opens Settings.
 const { chromium, PAGE } = require('./lib/pw');
+const webMock = require('./lib/web_mock.js');
 let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : 'FAIL ') + label + (ok && extra === undefined ? '' : ': ' + (extra === undefined ? ok : extra))); }
 (async () => {
@@ -20,6 +21,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
       getUadInfo(p) { return p === 'com.samsung.android.bixby.agent' ? JSON.stringify({ found: true, pkg: p, removal: 'Advanced', list: 'OEM', description: 'Bixby.' }) : '{}'; },
     };
   }, apps);
+  await page.addInitScript(webMock.install);
   await page.addInitScript(() => { window.__opened = []; window.open = u => { window.__opened.push(u); return null; }; });
   await page.goto(PAGE); await page.waitForTimeout(900);
   const sleep = ms => page.waitForTimeout(ms);
@@ -40,8 +42,10 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
 
   // no default agent chosen: the window still opens, says so and leaves the free Web search; nothing is asked
   await ev(() => { window.__sent.length = 0; document.getElementById('sheetAsk').click(); }); await sleep(450);
-  const noAgent = await ev(() => ({ modal: document.getElementById('agentAskModal').classList.contains('show'), ai: document.getElementById('agentAskAi').innerText, sent: window.__sent.length, web: !!document.querySelector('#agentAskModal [onclick="agentAskWeb()"]') }));
-  check('3. with no default agent chosen the button opens the window, which says to choose and connect an agent and keeps Web search (free, no setup); nothing is sent', noAgent.modal && /choose a default agent/.test(noAgent.ai) && /Web search/.test(noAgent.ai) && noAgent.web && noAgent.sent === 0, JSON.stringify(noAgent));
+  const noAgent = await ev(() => ({ modal: document.getElementById('agentAskModal').classList.contains('show'), ai: document.getElementById('agentAskAi').innerText, sentBox: document.getElementById('agentAskSent').innerText, sent: window.__sent.length, reqs: window.__reqs.slice(), web: !!document.querySelector('#agentAskModal [onclick="agentAskWeb()"]'), src: Array.from(document.querySelectorAll('#agentAskAi .agent-btn')).map(b => b.innerText) }));
+  check('3. with no default agent chosen the button opens the window and the built-in web lookup answers instead of an agent: nothing goes to an agent', noAgent.modal && noAgent.sent === 0 && noAgent.reqs.length >= 2, JSON.stringify(noAgent));
+  check('   the first request is the search for the package name only (nothing about the phone), the first result page is read, a wrapped result address is unwrapped', /bing\.com\/search\?q=android(%20|\+)com\.example\.unknown/.test(noAgent.reqs[0]) && !/Pixel|SM-|Android%2014/i.test(noAgent.reqs[0]) && noAgent.reqs.indexOf('https://example.org/perm') > 0 && noAgent.src.indexOf('developer.android.com') >= 0, JSON.stringify(noAgent.reqs));
+  check('   it shows what the pages say, the sources, and the way to choose an agent; the box of "what is sent" lists the search words, not the phone', /What the pages say/.test(noAgent.ai) && /allows read only access/i.test(noAgent.ai) && /Sources/.test(noAgent.ai) && /Open Settings/.test(noAgent.ai) && noAgent.web && /^android /.test(noAgent.sentBox) && !/Version|Android 1/.test(noAgent.sentBox), JSON.stringify(noAgent.ai) + ' | ' + noAgent.sentBox);
   await ev(() => document.querySelector('#agentAskAi a').click()); await sleep(450);
   const redirected = await ev(() => ({ view: currentViewName(), card: document.getElementById('agentCard').classList.contains('flash'), modal: document.getElementById('agentAskModal').classList.contains('show'), insp: document.getElementById('inspectorModal').classList.contains('show') }));
   check('   its Open Settings link leads to the Default agent card', redirected.view === 'prefs' && redirected.card && !redirected.modal && !redirected.insp, JSON.stringify(redirected));

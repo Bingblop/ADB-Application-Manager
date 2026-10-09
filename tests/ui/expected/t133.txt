@@ -24,7 +24,13 @@ ok      tapping a row opens it in its own window: level, tag, time and ids, the 
 ok      Copy puts the entry's lines on the clipboard: 10-08 <clock>.123  1234  1250 E AndroidRuntime: FATAL EXCEPTION: main
 10-08 <clock>.123  1234  1250 E AndroidRuntime: java.lang.NullPointerException: Attempt to invoke virtual method on a null object
 ok      Web search opens a search made of the tag and the first line: https://www.google.com/search?q=android%20AndroidRuntime%20FATAL%20EXCEPTION%3A%20main
-ok      Ask agent with no default agent chosen opens Settings on the choice instead of asking (nothing is sent)
+ok      Ask agent with no default agent chosen answers with the built-in web lookup in the entry window (nothing goes to an agent): Searched the web for “android AndroidRuntime FATAL EXCEPTION: main”. Only these words were sent, nothing else.
+What the pages say
+• Allows read only access to phone state.
+• Constants for permissions.
+Sources
+example.org developer.android.com
+To get an explanation, choose a default agent and connect it. Open Settings. Web search works without one. | ["https://www.bing.com/search?q=android%20AndroidRuntime%20FATAL%20EXCEPTION%3A%20main&setlang=en&count=8","https://example.org/perm","https://developer.android.com/reference/android/Manifest.permission"]
 ok      with a Coding Agent connected, the explanation is shown in the window, and the entry was what was sent: {"text":"Asking Fake AI (fake-model). The text above is sent to them.\nThis is a crash: a null object was used.","sent":{"system":"You explain one Android logcat entry to someone who is not a developer. Say, in plain words and briefly: what this line means, the most likely cause, whether it matters (harmless noise, a real problem, or a crash) and, if it does matter, what to try. Use short paragraphs, no headings. If the line is too cryptic to explain with confidence, say so and say what else would help. Do not invent details.","msgs":[{"role":"user","text":"Android ?\nLevel: E\nTag: AndroidRuntime\nProcess: 1234/1250\nMessage:\nFATAL EXCEPTION: main\njava.lang.NullPointerException: Attempt to invoke virtual method on a null object"}]},"dis":false}
 ok      the answer can be copied too
 ok      closing the window shuts it

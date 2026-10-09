@@ -2,6 +2,7 @@
 // (Copy, More info from the Coding Agent, Web search), Web search and Explain (AI) for a hidden setting, the CPU temperature unit lives in t87, the Uninstalled box in t104.
 const { chromium, PAGE } = require('./lib/pw');
 const mock = require('./lib/sdb_mock.js');
+const webMock = require('./lib/web_mock.js');
 let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : 'FAIL ') + label + (ok && extra === undefined ? '' : ': ' + (extra === undefined ? ok : extra))); }
 (async () => {
@@ -13,6 +14,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   let acceptNext = true;
   page.on('dialog', d => { dialogs.push(d.message()); if (acceptNext) d.accept(); else d.dismiss(); });
   await page.addInitScript(mock.initScript);
+  await page.addInitScript(webMock.install);
   await page.addInitScript(() => {
     const base = window.AndroidBridge;
     window.__opened = [];
@@ -132,7 +134,8 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   const opened = await ev(() => window.__opened.slice());
   check('   Web search opens a search made of the tag and the first line', opened.length === 1 && /^https:\/\/www\.google\.com\/search\?q=/.test(opened[0]) && /AndroidRuntime/.test(decodeURIComponent(opened[0])) && /FATAL\+EXCEPTION|FATAL%20EXCEPTION/.test(opened[0]), opened[0]);
   await page.click('#lcEntMore'); await sleep(250);
-  check('   Ask agent with no default agent chosen opens Settings on the choice instead of asking (nothing is sent)', await ev(() => currentViewName() === 'prefs' && !document.getElementById('lcEntryModal').classList.contains('show') && !!document.getElementById('agentCard') && document.getElementById('agentCard').classList.contains('flash')));
+  await sleep(600);
+  check('   Ask agent with no default agent chosen answers with the built-in web lookup in the entry window (nothing goes to an agent)', await ev(() => document.getElementById('lcEntryModal').classList.contains('show') && /Searched the web for/.test(document.getElementById('lcEntAi').innerText) && (window.__sent || []).length === 0 && /bing\.com\/search/.test((window.__reqs || [])[0] || '')), await ev(() => document.getElementById('lcEntAi').innerText + ' | ' + JSON.stringify(window.__reqs)));
   await ev(l => { switchView('logcat'); logcatRender(l, true); lcEntryOpen(0); }, LOG); await sleep(250);
   // with an agent: the answer streams in
   await ev(() => {
