@@ -568,17 +568,21 @@
 
         /* The whole row of an app is tinted like the box at the top for its state: green running, blue frozen (disabled), red uninstalled
            (the later rule wins); a selected row keeps the selection colours */
+        /* "Row tints" in Settings: Off, Subtle (the default) or Normal */
+        html { --rt-bg: 3%; --rt-bd: 12%; }
+        html[data-row-tint="off"] { --rt-bg: 0%; --rt-bd: 0%; }
+        html[data-row-tint="normal"] { --rt-bg: 9%; --rt-bd: 35%; }
         .app-card.running:not(.selected) {
-            background: color-mix(in srgb, var(--apps-running) 3%, var(--bg-card));
-            border-color: color-mix(in srgb, var(--apps-running) 12%, var(--border-glass));
+            background: color-mix(in srgb, var(--apps-running) var(--rt-bg), var(--bg-card));
+            border-color: color-mix(in srgb, var(--apps-running) var(--rt-bd), var(--border-glass));
         }
         .app-card.frozen:not(.selected) {
-            background: color-mix(in srgb, var(--apps-frozen) 3%, var(--bg-card));
-            border-color: color-mix(in srgb, var(--apps-frozen) 12%, var(--border-glass));
+            background: color-mix(in srgb, var(--apps-frozen) var(--rt-bg), var(--bg-card));
+            border-color: color-mix(in srgb, var(--apps-frozen) var(--rt-bd), var(--border-glass));
         }
         .app-card.uninstalled:not(.selected) {
-            background: color-mix(in srgb, var(--apps-uninstalled) 3%, var(--bg-card));
-            border-color: color-mix(in srgb, var(--apps-uninstalled) 12%, var(--border-glass));
+            background: color-mix(in srgb, var(--apps-uninstalled) var(--rt-bg), var(--bg-card));
+            border-color: color-mix(in srgb, var(--apps-uninstalled) var(--rt-bd), var(--border-glass));
         }
 
         /* Just the checkbox and the avatar now (app-meta sits on its own, to the left of this) - sized to its
@@ -1284,7 +1288,8 @@
         /* Uninstall wears the red of the uninstalled rows, Freeze the blue of the frozen ones */
         .sheet-btn-red { background: color-mix(in srgb, var(--apps-uninstalled) 14%, transparent); border-color: color-mix(in srgb, var(--apps-uninstalled) 50%, var(--border-glass)); color: var(--apps-uninstalled); }
         .sheet-btn-blue { background: color-mix(in srgb, var(--apps-frozen) 14%, transparent); border-color: color-mix(in srgb, var(--apps-frozen) 50%, var(--border-glass)); color: var(--apps-frozen); }
-        .sheet-btn-red:active, .sheet-btn-blue:active { background: var(--accent); color: var(--on-accent); }
+        .sheet-btn-green { background: color-mix(in srgb, var(--apps-enabled) 14%, transparent); border-color: color-mix(in srgb, var(--apps-enabled) 50%, var(--border-glass)); color: var(--apps-enabled); }
+        .sheet-btn-red:active, .sheet-btn-blue:active, .sheet-btn-green:active { background: var(--accent); color: var(--on-accent); }
 
         .sheet-tabs {
             display: flex;
@@ -2151,6 +2156,16 @@
         .agent-btn { display: inline-flex; align-items: center; gap: 4px; font: inherit; font-size: 10.5px; font-weight: 800; padding: 2px 9px; margin: 3px 0 0; border-radius: 999px; border: 1px solid var(--accent); background: transparent; color: var(--accent); color: color-mix(in srgb, var(--accent) 80%, var(--text-main)); cursor: pointer; line-height: 1.5; white-space: nowrap; -webkit-user-select: none; user-select: none; }
         .agent-btn:active { background: var(--accent); color: var(--on-accent); }
         .agent-ask-sent { margin-top: 6px; padding: 8px 10px; border: 1px dashed var(--border-glass); border-radius: 10px; font: 11px/1.45 ui-monospace, monospace; color: var(--text-muted); white-space: pre-wrap; word-break: break-word; max-height: 22vh; overflow: auto; }
+        .row-tint-slider { padding: 4px 2px 0; }
+        .row-tint-slider input[type="range"] { width: 100%; accent-color: var(--accent); }
+        .row-tint-ticks { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); }
+        .agent-ask-prog { display: none; margin-top: 10px; }
+        .agent-ask-prog.on { display: block; }
+        .agent-ask-bar { height: 6px; border-radius: 3px; background: color-mix(in srgb, var(--accent) 18%, transparent); overflow: hidden; }
+        .agent-ask-bar > i { display: block; height: 100%; width: 0; border-radius: 3px; background: var(--accent); transition: width .4s ease; }
+        .agent-ask-bar.indet > i { width: 35%; animation: askIndet 1.3s ease-in-out infinite; }
+        @keyframes askIndet { 0% { margin-left: -35%; } 100% { margin-left: 100%; } }
+        .agent-ask-prog-txt { margin-top: 4px; font-size: 11px; color: var(--text-muted); }
         .agent-ask-foot { margin-top: 10px; font-size: 11px; line-height: 1.5; color: var(--text-muted); }
         #agentCard.flash { animation: agentFlash 1.1s ease 2; }
         @keyframes agentFlash { 0%, 100% { box-shadow: 0 0 0 0 transparent; } 50% { box-shadow: 0 0 0 3px var(--accent); } }
@@ -5402,6 +5417,15 @@
                 </label>
             </div>
 
+            <div class="color-card" id="rowTintCard">
+                <div class="color-card-title">Row tints</div>
+                <div class="color-card-subtitle">How strongly the Apps tab tints the whole row of a running (green), frozen (blue) or uninstalled (red) app</div>
+                <div class="row-tint-slider">
+                    <input type="range" id="rowTintRange" min="0" max="2" step="1" value="1" oninput="setRowTint(this.value)" aria-label="Row tints">
+                    <div class="row-tint-ticks"><span>Off</span><span>Subtle</span><span>Normal</span></div>
+                </div>
+            </div>
+
             <div class="color-card" id="hapticCard">
                 <div class="color-card-title">Haptic feedback</div>
                 <div class="color-card-subtitle">A short tick you feel when you tap</div>
@@ -6944,7 +6968,7 @@ Type any command below (e.g. pm list packages -d)
                 <button class="sheet-btn sheet-btn-blue" onclick="singleAction('freeze')" id="sheetBtnFreeze">
                     <span>Freeze</span>
                 </button>
-                <button class="sheet-btn" onclick="singleAction('unfreeze')" id="sheetBtnUnfreeze">
+                <button class="sheet-btn sheet-btn-green" onclick="singleAction('unfreeze')" id="sheetBtnUnfreeze">
                     <span>Enable</span>
                 </button>
                 <button class="sheet-btn" onclick="singleAction('suspend')" id="sheetBtnSuspend">
@@ -6965,7 +6989,7 @@ Type any command below (e.g. pm list packages -d)
                 <button class="sheet-btn sheet-btn-red" onclick="singleAction('uninstall')" id="sheetBtnUninstall">
                     <span>Uninstall</span>
                 </button>
-                <button class="sheet-btn" onclick="singleAction('reinstall')" id="sheetBtnReinstall" style="display:none;">
+                <button class="sheet-btn sheet-btn-green" onclick="singleAction('reinstall')" id="sheetBtnReinstall" style="display:none;">
                     <span>Reinstall</span>
                 </button>
                 <button class="sheet-btn" onclick="extractApkUI()" id="sheetBtnExtract">
@@ -8414,9 +8438,11 @@ Type any command below (e.g. pm list packages -d)
             </div>
             <div class="agent-ask-sent" id="agentAskSent" translate="no"></div>
             <div class="lc-ent-ai" id="agentAskAi"></div>
+            <div class="agent-ask-prog" id="agentAskProg" role="progressbar" aria-label="Progress"><div class="agent-ask-bar indet" id="agentAskBar"><i id="agentAskBarFill"></i></div><div class="agent-ask-prog-txt" id="agentAskProgTxt"></div></div>
             <div class="lc-ent-btns">
                 <button class="mode-action-btn primary" id="agentAskGo" onclick="agentAskRun()">Ask again</button>
-                <button class="mode-action-btn" onclick="agentAskWeb()">Web search</button>
+                <button class="mode-action-btn" id="agentAskStop" style="display:none;" onclick="agentAskStop()">Stop</button>
+                <button class="mode-action-btn" id="agentAskWebBtn" onclick="agentAskWeb()">Web search</button>
                 <button class="mode-action-btn" id="agentAskCopy" onclick="agentAskCopy()">Copy the answer</button>
             </div>
             <div class="agent-ask-foot">An agent can be wrong, so treat the answer as a hint: for anything that changes the phone, try the step that can be undone first (freeze rather than uninstall) and check that the phone still works. <a href="#" onclick="agentAskToSettings(); return false;">Change the default agent</a></div>
@@ -10668,6 +10694,23 @@ Type any command below (e.g. pm list packages -d)
         // One Coding Agent answers every "Ask agent" button (what a hidden setting, a permission, a process, a log line or an app is). It is chosen
         // in Settings, under Language; the key or sign-in and the model are the ones set up in the Command-Line Interface tab. Without one, the
         // button leads to Settings instead.
+        // ---- Row tints (Settings): 0 Off, 1 Subtle (default), 2 Normal ----
+        function rowTintApply() {
+            let v = parseInt(kvGet('row_tint', 1), 10);
+            if (!(v >= 0 && v <= 2)) v = 1;
+            document.documentElement.setAttribute('data-row-tint', ['off', 'subtle', 'normal'][v]);
+            const r = document.getElementById('rowTintRange');
+            if (r) r.value = String(v);
+            return v;
+        }
+        function setRowTint(v) {
+            v = parseInt(v, 10);
+            if (!(v >= 0 && v <= 2)) return;
+            kvSet('row_tint', v);
+            rowTintApply();
+            haptic();
+        }
+        rowTintApply();
         let askAgentId = String(kvGet('ask_agent', '') || '');
         function askAgentDef() {
             const ag = askAgentId ? txAgentDef(askAgentId) : null;
@@ -10769,7 +10812,7 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('agentAskModal').classList.add('show');
             agentAskRun();
         }
-        function agentAskClose() { haptic(); document.getElementById('agentAskModal').classList.remove('show'); agentAsk = null; }
+        function agentAskClose() { haptic(); if (askRun) askRun.stop(); document.getElementById('agentAskModal').classList.remove('show'); askProgressShow(false); agentAsk = null; }
         function agentAskWeb() { if (agentAsk) { haptic(); openUrlExternal('https://www.google.com/search?q=' + encodeURIComponent(agentAsk.web)); } }
         function agentAskCopy() { if (agentAsk && agentAsk.answer) { copyText(agentAsk.answer); showToast('Copied the answer'); } }
         async function agentAskRun() {
@@ -10777,8 +10820,31 @@ Type any command below (e.g. pm list packages -d)
             if (!cur || cur.busy) return;
             const btn = document.getElementById('agentAskGo');
             cur.busy = true; btn.disabled = true;
+            askProgressShow(true);
             cur.answer = await aiExplainInto(document.getElementById('agentAskAi'), agentSystem(cur.kind), cur.text, () => agentAsk === cur, 'The text above is sent to them.', cur.web);
             cur.busy = false; btn.disabled = false;
+            if (agentAsk === cur) askProgressShow(false);
+        }
+        // A progress bar and a Stop button while an answer is on its way (an agent that streams, a cloud agent's task, the web lookup)
+        function askProgressShow(on) {
+            const p = document.getElementById('agentAskProg'), s = document.getElementById('agentAskStop');
+            if (!p || !s) return;
+            p.classList.toggle('on', !!on);
+            s.style.display = on ? '' : 'none';
+            if (on) askProgressSet(null, '');
+        }
+        function askProgressSet(frac, label) {
+            const bar = document.getElementById('agentAskBar'), fill = document.getElementById('agentAskBarFill'), t = document.getElementById('agentAskProgTxt');
+            if (!bar) return;
+            const det = typeof frac === 'number';
+            bar.classList.toggle('indet', !det);
+            fill.style.width = det ? Math.max(3, Math.min(100, Math.round(frac * 100))) + '%' : '';
+            t.textContent = label || '';
+        }
+        let askRun = null;                // the answer being fetched: { stopped, ids, stop() }
+        function agentAskStop() {
+            haptic();
+            if (askRun) askRun.stop();
         }
         // The app menu's chip for an app the UAD-NG list does not know
         function openAppAsk() {
@@ -21278,23 +21344,37 @@ Type any command below (e.g. pm list packages -d)
 
         async function aiExplainInto(box, system, text, isCurrent, sentNote, webQuery) {
             box.classList.remove('is-err');
-            const ag = askAgentDef();
-            if (!ag || !txAgentReady(ag)) return webLookupInto(box, webQuery || wlQueryFromText(text), isCurrent);
-            const who = ag.name.replace(/\s*\(.*\)$/, '');
-            const model = txModelFor(ag);
-            box.innerHTML = '<div class="lc-ent-ai-note">Asking ' + escapeHtml(who) + (model ? ' (' + escapeHtml(model) + ')' : '') + '. ' + escapeHtml(sentNote || 'The text above is sent to them.') + '</div><span class="ai-out"></span>';
-            const out = box.querySelector('.ai-out');
-            let shown = '';
+            const run = askRun = { stopped: false, ids: new Set(), remote: null, stop() {          // what the Stop button of the Ask agent window ends
+                if (this.stopped) return;
+                this.stopped = true;
+                this.ids.forEach(i => { try { window.AndroidBridge.aiCancel(i); } catch (e) {} });
+                if (this.remote) this.remote();
+            } };
+            const live = () => isCurrent() && !run.stopped;
             try {
-                const cb = (t, replace) => { shown = replace ? t : shown + t; if (isCurrent()) out.textContent = shown; };
-                cb.alive = isCurrent;
+                const ag = askAgentDef();
+                if (!ag || !txAgentReady(ag)) {
+                    const r = await webLookupInto(box, webQuery || wlQueryFromText(text), live);
+                    if (run.stopped && isCurrent()) { box.classList.remove('is-err'); box.textContent = txT('Stopped.'); }
+                    return r;
+                }
+                const who = ag.name.replace(/\s*\(.*\)$/, '');
+                const model = txModelFor(ag);
+                box.innerHTML = '<div class="lc-ent-ai-note">Asking ' + escapeHtml(who) + (model ? ' (' + escapeHtml(model) + ')' : '') + '. ' + escapeHtml(sentNote || 'The text above is sent to them.') + '</div><span class="ai-out"></span>';
+                const out = box.querySelector('.ai-out');
+                let shown = '';
+                const cb = (t, replace) => { shown = replace ? t : shown + t; if (live()) out.textContent = shown; };
+                cb.alive = live;
+                cb.progress = (frac, label) => { if (live()) askProgressSet(frac, label); };
                 const r = await txTurnApi(ag, model, txEffortFor(ag), system, [{ role: 'user', text: txForModel(text) }], cb);
                 const answer = r.text.trim();
-                if (isCurrent()) out.textContent = answer || '(no answer)';
+                if (live()) out.textContent = answer || '(no answer)';
                 return answer;
             } catch (e) {
-                if (isCurrent()) { box.classList.add('is-err'); box.textContent = txErrText(e); }
+                if (isCurrent()) { box.classList.toggle('is-err', !run.stopped); box.textContent = run.stopped ? txT('Stopped.') : txErrText(e); }
                 return '';
+            } finally {
+                if (askRun === run) askRun = null;
             }
         }
 
@@ -25021,7 +25101,8 @@ Type any command below (e.g. pm list packages -d)
             { id: 'crawl4ai', name: 'Crawl4AI', group: 'oss', api: 'crawl4ai', provider: 'crawl4ai', askOnly: true, color: '#4dd0e1', site: 'https://github.com/unclecode/crawl4ai', keyUrl: 'https://api.crawl4ai.com/', keyLook: 'sk_live_…' },
             { id: 'jan', name: 'Jan.ai', group: 'oss', api: 'openai-compat', provider: 'jan', color: '#fbbf24', site: 'https://www.jan.ai/', bases: ['http://127.0.0.1:1337/v1'], keyOptional: true },
             { id: 'anythingllm', name: 'AnythingLLM', group: 'oss', api: 'openai-compat', provider: 'anythingllm', color: '#60a5fa', site: 'https://anythingllm.com/', bases: ['http://127.0.0.1:3001/api/v1/openai'] },
-            { id: 'ollama', name: 'Ollama (on-device)', group: 'oss', api: 'openai-compat', provider: 'ollama', color: '#e5e5e5', site: 'https://ollama.com/', bases: ['http://127.0.0.1:11434/v1'], keyOptional: true }
+            { id: 'ollama', name: 'Ollama (on-device)', group: 'oss', api: 'openai-compat', provider: 'ollama', color: '#e5e5e5', site: 'https://ollama.com/', bases: ['http://127.0.0.1:11434/v1'], keyOptional: true },
+            { id: 'ownserver', name: 'Own server (OpenAI-compatible)', group: 'oss', api: 'openai-compat', provider: 'ownserver', color: '#94a3b8', site: 'https://github.com/ggml-org/llama.cpp', keyOptional: true }
         ];
         const TX_MODELS = {
             claude: ['claude-sonnet-5-5', 'claude-opus-5-5', 'claude-fable-5-1', 'claude-haiku-4-5'],
@@ -25302,6 +25383,7 @@ Type any command below (e.g. pm list packages -d)
                 const id = 'ai' + (++txAiSeq);
                 txAiPending[id] = { id, onEvent, buf: '', resolve, reject, failed: null };
                 if (!background) txChat.reqId = id;
+                if (askRun && !askRun.stopped) askRun.ids.add(id);
                 let st = '';
                 try { st = String(window.AndroidBridge.aiRequest(id, JSON.stringify(spec)) || ''); } catch (e) { st = 'error: ' + (e && e.message || e); }
                 if (st !== 'started') {
@@ -25577,6 +25659,8 @@ Type any command below (e.g. pm list packages -d)
                 try { id = String(JSON.parse(made.body || '{}').id || ''); } catch (e) {}
                 if (!/^[0-9a-f-]{36}$/i.test(id)) throw { local: true, msg: 'Browser Use did not start the task.' };
                 const t0 = Date.now();
+                const stopRemote = () => { txAiCall({ url: 'https://api.browser-use.com/api/v2/tasks/' + id, method: 'PATCH', auth: 'browseruse', headers: json, body: JSON.stringify({ action: 'stop' }) }, null, true).catch(() => {}); };
+                if (askRun) askRun.remote = stopRemote;
                 for (;;) {
                     if (onText.alive && !onText.alive()) throw { local: true, msg: 'Stopped.' };
                     if (Date.now() - t0 > 240000) throw { local: true, msg: 'Browser Use took too long (over 4 minutes). Try again later.' };
@@ -25592,7 +25676,9 @@ Type any command below (e.g. pm list packages -d)
                         break;
                     }
                     if (j.status === 'failed' || j.status === 'stopped') throw { local: true, msg: j.status === 'failed' ? 'Browser Use failed before it had an answer.' : 'Browser Use was stopped before it had an answer.' };
-                    onText(txF('Browsing the web… {0} s, step {1}', Math.round((Date.now() - t0) / 1000), (j.steps || []).length), true);
+                    const steps = (j.steps || []).length, secs = Math.round((Date.now() - t0) / 1000);
+                    onText(txF('Browsing the web… {0} s, step {1}', secs, steps), true);
+                    if (onText.progress) onText.progress(steps > 0 ? Math.min(0.95, steps / 12) : null, txF('Step {0} of up to 12 · {1} s', steps, secs));
                 }
             } else {
                 throw { local: true, msg: ag.name + ' cannot chat here.' };
@@ -26506,16 +26592,17 @@ Type any command below (e.g. pm list packages -d)
                 const desc = {
                     jan: 'Jan runs AI models on your computer, free. On the computer: Jan, Settings, Local API Server: set the host to 0.0.0.0 and start it, then enter the computer\'s address here (like http://192.168.1.20:1337/v1). There is no Android version of Jan.',
                     anythingllm: 'AnythingLLM runs on a computer or a server (Desktop or Docker). Enter its address (like http://192.168.1.20:3001/api/v1/openai) and an API key from AnythingLLM, Settings, Developer API. Each workspace shows up as a model.',
-                    ollama: 'Ollama runs a coding model right on this phone: free, and offline once the model is downloaded. It is installed in Termux; small models (1.5B to 3B) run best on a phone.'
+                    ollama: 'Ollama runs a coding model right on this phone: free, and offline once the model is downloaded. It is installed in Termux; small models (1.5B to 3B) run best on a phone. Ollama on a computer works too: let it listen on all addresses there, then enter the computer\'s address here (like 192.168.1.20:11434/v1).',
+                    ownserver: 'Any server on your own computer or network that speaks the OpenAI chat API: LM Studio, llama.cpp (llama-server), vLLM, text-generation-webui, Open WebUI, LocalAI or a server you rent. Enter its address with /v1 (like http://192.168.1.20:1234/v1) and an API key only if it asks for one. Nothing leaves your network unless the server is out on the internet.'
                 }[ag.id];
                 h = '<p class="tx-sheet-p">' + escapeHtml(desc) + '</p>'
                     + '<div class="tx-sheet-p muted" id="txProbeStatus" translate="no">' + (txBase(ag) ? escapeHtml(txF('Connected to {0}', txBase(ag))) : '') + '</div>'
                     + '<div class="tx-sheet-sec">Server address</div>'
-                    + '<input id="txBaseInput" class="modal-text-input tx-key-input" translate="no" value="' + escapeHtml(txBase(ag) || (ag.bases || [''])[0]) + '" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="url">'
+                    + '<input id="txBaseInput" class="modal-text-input tx-key-input" translate="no" value="' + escapeHtml(txBase(ag) || (ag.bases || [''])[0]) + '" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="url" placeholder="' + (ag.bases ? '' : 'http://192.168.1.20:1234/v1') + '">'
                     + '<div class="tx-sheet-sec">API key' + (ag.keyOptional ? ' (only if the server asks for one)' : '') + '</div>' + saved
                     + '<input id="txKeyInput" type="password" class="modal-text-input tx-key-input" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="' + (v.key ? 'leave empty to keep the saved key' : '') + '">'
                     + '<div class="mode-btn-row" style="margin-top:10px;"><button class="mode-action-btn primary" id="txKeyTestBtn" onclick="txTestKey()">Connect</button>'
-                    + '<button class="mode-action-btn" onclick="txProbeServer(txAgentDef(\'' + ag.id + '\'))">Look on this phone</button>'
+                    + ((ag.bases || []).length ? '<button class="mode-action-btn" onclick="txProbeServer(txAgentDef(\'' + ag.id + '\'))">Look on this phone</button>' : '')
                     + '<button class="mode-action-btn" onclick="openUrlExternal(\'' + ag.site + '\')">Website</button>'
                     + (v.key || v.base ? '<button class="mode-action-btn" onclick="txForgetKey()">Forget</button>' : '') + '</div>'
                     + '<div class="tx-sheet-p muted" id="txKeyStatus"></div>'

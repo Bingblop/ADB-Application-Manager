@@ -77,7 +77,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('   and a system prompt that asks for a verdict and admits not knowing', sent && /Safe, Caution or Do not touch/.test(sent.system) && /do not recognize/.test(sent.system));
   const ans = await ev(() => ({ t: document.getElementById('agentAskAi').innerText }));
   check('8. the answer is shown, with a note of what was sent', /Caution: this is the Bixby-like helper\./.test(ans.t) && /Asking Claude/.test(ans.t) && /The text above is sent to them/.test(ans.t), JSON.stringify(ans));
-  await ev(() => document.querySelector('#agentAskModal .lc-ent-btns .mode-action-btn:nth-child(2)').click()); await sleep(100);
+  await ev(() => document.getElementById('agentAskWebBtn').click()); await sleep(100);
   check('9. Web search opens a search for the package', (await ev(() => window.__opened.join('|'))).includes('google.com/search?q=android%20com.example.unknown%20safe%20to%20disable'));
   await ev(() => agentAskClose());
   check('10. closing leaves the window shut', await ev(() => !document.getElementById('agentAskModal').classList.contains('show')));

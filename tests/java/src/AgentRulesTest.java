@@ -82,7 +82,12 @@ public class AgentRulesTest {
         && copilot.test.equals("https://api.github.com/user"));
     check("each command-line tool's own variable", "ANTHROPIC_API_KEY".equals(claude.env) && "OPENAI_API_KEY".equals(openai.env) && "GEMINI_API_KEY".equals(gemini.env)
         && "CURSOR_API_KEY".equals(cursor.env) && "COPILOT_GITHUB_TOKEN".equals(copilot.env) && jan.env == null);
-    check("own-server providers have no fixed host", jan.ownServer() && AgentRules.find("anythingllm").ownServer() && AgentRules.find("ollama").ownServer() && !claude.ownServer());
+    check("own-server providers have no fixed host", jan.ownServer() && AgentRules.find("anythingllm").ownServer() && AgentRules.find("ollama").ownServer() && AgentRules.find("ownserver").ownServer() && !claude.ownServer());
+    check("Own server: its key goes only to the saved address (a LAN address over http is fine, another one is not)",
+        AgentRules.allowed(AgentRules.find("ownserver"), "http://192.168.1.20:1234/v1", "http://192.168.1.20:1234/v1/chat/completions")
+        && !AgentRules.allowed(AgentRules.find("ownserver"), "http://192.168.1.20:1234/v1", "http://192.168.1.21:1234/v1/chat/completions")
+        && !AgentRules.allowed(AgentRules.find("ownserver"), null, "http://192.168.1.20:1234/v1/models")
+        && AgentRules.testUrl(AgentRules.find("ownserver"), "192.168.1.20:1234/v1/").equals("http://192.168.1.20:1234/v1/models"));
 
     // ---------------------------------------------------------------- where a key may go
     check("Claude key: to api.anthropic.com over https", AgentRules.allowed(claude, "", "https://api.anthropic.com/v1/messages"));

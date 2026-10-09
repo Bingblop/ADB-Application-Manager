@@ -69,6 +69,7 @@ public final class AgentRules {
             new Provider("jan", null, "Authorization", "Bearer ", "/models", null, null),
             new Provider("anythingllm", null, "Authorization", "Bearer ", "/models", null, null),
             new Provider("ollama", null, "Authorization", "Bearer ", "/models", null, null),
+            new Provider("ownserver", null, "Authorization", "Bearer ", "/models", null, null),
     };
 
     public static Provider find(String id) {
