@@ -1,5 +1,9 @@
 # Changelog
 
+## v7.12.3-Pro (versionCode 845)
+
+- **The Apps tab boxes have their own colours.** Frozen is **blue** (the box, its number, and the FROZEN badge on the rows), Enabled is a **more vivid green**, and System is a clearer **purple** (box, number and SYSTEM badge). They no longer follow the theme, so Material You or a palette cannot turn them into other shades. Test: `t133`.
+
 ## v7.12.2-Pro (versionCode 844)
 
 - **Clear Data and Remove updates in the app menu no longer ask first either.** No button of the single-app menu asks a question now: Uninstall (since v7.12.1), Clear Data and Remove updates run at once. Clear Data still cannot be undone, and Remove updates puts a system app back to its shipped version. Test: `t115`.
