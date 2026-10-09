@@ -31,6 +31,10 @@
             --status-user: #FF9100;
             --status-bloat: #FF5252;
             --status-suspended: #FFC400;
+            /* The Apps tab's Enabled / Frozen / System boxes and their tags keep their own colours whatever the theme is: vivid green, blue, purple (applyTheme darkens them for the light page) */
+            --apps-enabled: #00F050;
+            --apps-frozen: #2979FF;
+            --apps-system: #A33CFF;
 
             --radius-xl: 24px;
             --radius-lg: 16px;
@@ -346,20 +350,20 @@
         /* each box wears its own colour (the one its number has): a faint tint when off, a strong one with a ring when it is the filter in use */
         .stat-card[data-filter="running"] { --tone: var(--status-running); }
         .stat-card[data-filter="uninstalled"] { --tone: var(--status-bloat); }
-        .stat-card[data-filter="enabled"] { --tone: var(--status-running); }
-        .stat-card[data-filter="frozen"] { --tone: var(--status-frozen); }
+        .stat-card[data-filter="enabled"] { --tone: var(--apps-enabled); }
+        .stat-card[data-filter="frozen"] { --tone: var(--apps-frozen); }
         .stat-card[data-filter="user"] { --tone: var(--status-user); }
-        .stat-card[data-filter="system"] { --tone: var(--status-system); }
+        .stat-card[data-filter="system"] { --tone: var(--apps-system); }
         .stat-card[data-filter="running"], .stat-card[data-filter="uninstalled"], .stat-card[data-filter="enabled"],
         .stat-card[data-filter="frozen"], .stat-card[data-filter="user"], .stat-card[data-filter="system"] { background: color-mix(in srgb, var(--tone) 7%, var(--bg-card)); }
         .stats-grid .stat-card.active[data-filter="running"], .stats-grid .stat-card.active[data-filter="uninstalled"],
         .stat-split .stat-card.active { background: color-mix(in srgb, var(--tone) 30%, var(--bg-card)); border-color: var(--tone); box-shadow: inset 0 0 0 1.5px var(--tone), 0 2px 12px color-mix(in srgb, var(--tone) 40%, transparent); }
         .stat-split .stat-card { background: color-mix(in srgb, var(--tone) 7%, transparent); }
         .stat-split:has(.stat-card.active) { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 2px 12px var(--accent-glow); }
-        .stat-split:has(.stat-card.active[data-filter="enabled"]) { border-color: var(--status-running); box-shadow: 0 0 0 1px var(--status-running), 0 2px 12px color-mix(in srgb, var(--status-running) 40%, transparent); }
-        .stat-split:has(.stat-card.active[data-filter="frozen"]) { border-color: var(--status-frozen); box-shadow: 0 0 0 1px var(--status-frozen), 0 2px 12px color-mix(in srgb, var(--status-frozen) 40%, transparent); }
+        .stat-split:has(.stat-card.active[data-filter="enabled"]) { border-color: var(--apps-enabled); box-shadow: 0 0 0 1px var(--apps-enabled), 0 2px 12px color-mix(in srgb, var(--apps-enabled) 40%, transparent); }
+        .stat-split:has(.stat-card.active[data-filter="frozen"]) { border-color: var(--apps-frozen); box-shadow: 0 0 0 1px var(--apps-frozen), 0 2px 12px color-mix(in srgb, var(--apps-frozen) 40%, transparent); }
         .stat-split:has(.stat-card.active[data-filter="user"]) { border-color: var(--status-user); box-shadow: 0 0 0 1px var(--status-user), 0 2px 12px color-mix(in srgb, var(--status-user) 40%, transparent); }
-        .stat-split:has(.stat-card.active[data-filter="system"]) { border-color: var(--status-system); box-shadow: 0 0 0 1px var(--status-system), 0 2px 12px color-mix(in srgb, var(--status-system) 40%, transparent); }
+        .stat-split:has(.stat-card.active[data-filter="system"]) { border-color: var(--apps-system); box-shadow: 0 0 0 1px var(--apps-system), 0 2px 12px color-mix(in srgb, var(--apps-system) 40%, transparent); }
         .filter-summary-row { display: flex; align-items: center; gap: 8px; }
         .filter-summary-row .filter-summary-text { flex: 1 1 auto; min-width: 0; }
         .filter-clear-chip { flex: 0 0 auto; border: 1px solid var(--accent); color: var(--accent); background: transparent;
@@ -657,15 +661,15 @@
         }
 
         .tag-frozen {
-            background: rgba(0, 229, 255, 0.12);
-            color: var(--status-frozen);
-            border: 1px solid rgba(0, 229, 255, 0.3);
+            background: color-mix(in srgb, var(--apps-frozen) 14%, transparent);
+            color: var(--apps-frozen);
+            border: 1px solid color-mix(in srgb, var(--apps-frozen) 40%, transparent);
         }
 
         .tag-system {
-            background: rgba(124, 77, 255, 0.12);
-            color: var(--status-system);
-            border: 1px solid rgba(124, 77, 255, 0.3);
+            background: color-mix(in srgb, var(--apps-system) 14%, transparent);
+            color: var(--apps-system);
+            border: 1px solid color-mix(in srgb, var(--apps-system) 40%, transparent);
         }
 
         .tag-user {
@@ -3546,11 +3550,11 @@
                 </div>
                 <div class="stat-split">
                     <div class="stat-card" data-filter="enabled" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('enabled')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
-                        <div class="stat-num" style="color:var(--status-running);" id="statEnabled">--</div>
+                        <div class="stat-num" style="color:var(--apps-enabled);" id="statEnabled">--</div>
                         <div class="stat-label">Enabled</div>
                     </div>
                     <div class="stat-card" data-filter="frozen" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('frozen')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
-                        <div class="stat-num" style="color:var(--status-frozen);" id="statFrozen">--</div>
+                        <div class="stat-num" style="color:var(--apps-frozen);" id="statFrozen">--</div>
                         <div class="stat-label">Frozen</div>
                     </div>
                 </div>
@@ -3560,7 +3564,7 @@
                         <div class="stat-label">3rd Party</div>
                     </div>
                     <div class="stat-card" data-filter="system" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('system')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
-                        <div class="stat-num" style="color:var(--status-system);" id="statSystem">--</div>
+                        <div class="stat-num" style="color:var(--apps-system);" id="statSystem">--</div>
                         <div class="stat-label">System</div>
                     </div>
                 </div>
@@ -22665,6 +22669,9 @@ Type any command below (e.g. pm list packages -d)
             css.setProperty('--status-system', t.system);
             css.setProperty('--status-bloat', t.bloat);
             css.setProperty('--note', ensureContrast('#F0C000', t.bg, 4.5));                  // amber text that can be read on the light page too
+            css.setProperty('--apps-enabled', light ? ensureContrast('#00F050', '#FFFFFF', 3.5) : '#00F050');
+            css.setProperty('--apps-frozen', light ? ensureContrast('#2979FF', '#FFFFFF', 3.5) : '#2979FF');
+            css.setProperty('--apps-system', light ? ensureContrast('#A33CFF', '#FFFFFF', 3.5) : '#A33CFF');
             css.setProperty('--status-user', light ? ensureContrast('#FF9100', '#FFFFFF', 3.5) : '#FF9100');
             css.setProperty('--status-suspended', light ? ensureContrast('#FFAB00', '#FFFFFF', 3.5) : '#FFC400');
             css.setProperty('--ov', light ? '0, 0, 0' : '255, 255, 255');

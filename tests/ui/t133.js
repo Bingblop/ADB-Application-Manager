@@ -42,21 +42,21 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
       const off = getComputedStyle(c).backgroundColor;
       c.classList.add('active');
       const cs = getComputedStyle(c);
-      const want = { enabled: 'running', running: 'running', frozen: 'frozen', user: 'user', system: 'system', uninstalled: 'bloat' }[f];
-      const probe = document.createElement('i'); probe.style.color = 'var(--status-' + want + ')'; document.body.appendChild(probe); const wantRgb = getComputedStyle(probe).color; probe.remove();
+      const want = { enabled: 'apps-enabled', running: 'status-running', frozen: 'apps-frozen', user: 'status-user', system: 'apps-system', uninstalled: 'status-bloat' }[f];
+      const probe = document.createElement('i'); probe.style.color = 'var(--' + want + ')'; document.body.appendChild(probe); const wantRgb = getComputedStyle(probe).color; probe.remove();
       const tone = document.createElement('i'); tone.style.color = 'var(--tone)'; c.appendChild(tone); const toneRgb = getComputedStyle(tone).color; tone.remove();
       out[f] = { off, on: cs.backgroundColor, border: cs.borderTopColor, tone: toneRgb === wantRgb ? 'ok' : toneRgb + ' != ' + wantRgb };
       c.classList.remove('active');
     });
     return out;
   });
-  check('1. every box has its own colour (the one its number has): Enabled green, Frozen cyan, 3rd Party orange, System purple', Object.keys(colors).every(k => colors[k].tone === 'ok'), JSON.stringify(Object.keys(colors).map(k => k + ':' + colors[k].tone)));
+  check('1. every box has its own colour (the one its number has): Enabled vivid green, Frozen blue, 3rd Party orange, System purple', Object.keys(colors).every(k => colors[k].tone === 'ok'), JSON.stringify(Object.keys(colors).map(k => k + ':' + colors[k].tone)));
   check('   the one in use is a clearly stronger shade than when it is off, with a ring in its colour', ['enabled', 'frozen', 'user', 'system'].every(k => colors[k].on !== colors[k].off && colors[k].border !== 'rgba(0, 0, 0, 0)'), JSON.stringify(colors.user));
   check('   the four colours differ from each other', new Set(['enabled', 'frozen', 'user', 'system'].map(k => colors[k].on)).size === 4);
   check('   a pair keeps its frame in the colour of the side that is on', await ev(() => {
     const box = document.querySelector('.stat-split'); const c = box.querySelector('.stat-card[data-filter="frozen"]');
     c.classList.add('active'); const bc = getComputedStyle(box).borderTopColor; c.classList.remove('active');
-    const probe = document.createElement('i'); probe.style.color = 'var(--status-frozen)'; document.body.appendChild(probe); const want = getComputedStyle(probe).color; probe.remove();
+    const probe = document.createElement('i'); probe.style.color = 'var(--apps-frozen)'; document.body.appendChild(probe); const want = getComputedStyle(probe).color; probe.remove();
     return bc === want;
   }));
   await ev(() => switchView('apps')); await sleep(200);

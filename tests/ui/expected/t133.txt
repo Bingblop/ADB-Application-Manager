@@ -1,4 +1,4 @@
-ok   1. every box has its own colour (the one its number has): Enabled green, Frozen cyan, 3rd Party orange, System purple: ["enabled:ok","frozen:ok","user:ok","system:ok","running:ok","uninstalled:ok"]
+ok   1. every box has its own colour (the one its number has): Enabled vivid green, Frozen blue, 3rd Party orange, System purple: ["enabled:ok","frozen:ok","user:ok","system:ok","running:ok","uninstalled:ok"]
 ok      the one in use is a clearly stronger shade than when it is off, with a ring in its colour: {"off":"color(srgb 1 0.568627 0 / 0.07)","on":"color(srgb 0.390588 0.255686 0.104314)","border":"rgb(255, 145, 0)","tone":"ok"}
 ok      the four colours differ from each other
 ok      a pair keeps its frame in the colour of the side that is on
