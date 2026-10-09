@@ -1644,7 +1644,6 @@ x: {
 "It is installed silently through the working mode.": "يُثبَّت بصمت عبر وضع التشغيل.",
 "It is not set any more": "لم يعد مضبوطًا",
 "It is removed for the device's user. A system app can be put back with Reinstall.": "تتم إزالته لمستخدم الجهاز. يمكن استرجاع تطبيق النظام بواسطة «إعادة التثبيت».",
-"It is removed for you. A system app stays on the phone and can be brought back with Reinstall.": "تتم إزالته من أجلك. يبقى تطبيق النظام على الهاتف ويمكن استرجاعه بواسطة «إعادة التثبيت».",
 "It is tried as it is first; if Android refuses it, a copy signed with this app's key is installed.": "تتم المحاولة أولًا كما هو؛ وإذا رفضه Android، تُثبَّت نسخة موقّعة بمفتاح هذا التطبيق.",
 "It looks like a percentage.": "يبدو كنسبة مئوية.",
 "It looks like a time in seconds.": "يبدو كوقت بالثواني.",

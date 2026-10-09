@@ -1644,7 +1644,6 @@ x: {
 "It is installed silently through the working mode.": "動作モードでサイレントにインストールされます。",
 "It is not set any more": "もう設定されていません",
 "It is removed for the device's user. A system app can be put back with Reinstall.": "端末のユーザーから削除されます。システムアプリは「再インストール」で元に戻せます。",
-"It is removed for you. A system app stays on the phone and can be brought back with Reinstall.": "あなたのユーザーから削除されます。システムアプリは端末に残り、「再インストール」で元に戻せます。",
 "It is tried as it is first; if Android refuses it, a copy signed with this app's key is installed.": "まずそのままインストールを試し、Androidに拒否された場合は、このアプリのキーで署名したコピーをインストールします。",
 "It looks like a percentage.": "パーセントのようです。",
 "It looks like a time in seconds.": "秒単位の時間のようです。",

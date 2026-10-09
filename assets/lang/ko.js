@@ -1644,7 +1644,6 @@ x: {
 "It is installed silently through the working mode.": "작동 모드를 통해 자동으로 설치됩니다.",
 "It is not set any more": "더 이상 설정되어 있지 않습니다",
 "It is removed for the device's user. A system app can be put back with Reinstall.": "기기 사용자에게서 제거됩니다. 시스템 앱은 재설치로 다시 복구할 수 있습니다.",
-"It is removed for you. A system app stays on the phone and can be brought back with Reinstall.": "사용자에게서 제거됩니다. 시스템 앱은 휴대전화에 그대로 남아 있으며 재설치로 되살릴 수 있습니다.",
 "It is tried as it is first; if Android refuses it, a copy signed with this app's key is installed.": "먼저 그대로 설치를 시도하고, Android가 거부하면 이 앱의 키로 서명한 사본을 설치합니다.",
 "It looks like a percentage.": "백분율처럼 보입니다.",
 "It looks like a time in seconds.": "초 단위 시간처럼 보입니다.",

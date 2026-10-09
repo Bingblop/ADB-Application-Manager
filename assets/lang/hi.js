@@ -1644,7 +1644,6 @@ x: {
 "It is installed silently through the working mode.": "यह वर्किंग मोड से चुपचाप इंस्टॉल होता है।",
 "It is not set any more": "यह अब सेट नहीं है",
 "It is removed for the device's user. A system app can be put back with Reinstall.": "यह डिवाइस के उपयोगकर्ता के लिए हटा दिया जाता है। सिस्टम ऐप को रीइंस्टॉल करें से वापस लाया जा सकता है।",
-"It is removed for you. A system app stays on the phone and can be brought back with Reinstall.": "यह आपके लिए हटा दिया जाता है। सिस्टम ऐप फ़ोन पर रहता है और उसे रीइंस्टॉल करें से वापस लाया जा सकता है।",
 "It is tried as it is first; if Android refuses it, a copy signed with this app's key is installed.": "पहले इसे जैसा है वैसा ही आज़माया जाता है; Android मना कर दे तो इस ऐप की कुंजी से साइन की गई कॉपी इंस्टॉल की जाती है।",
 "It looks like a percentage.": "यह प्रतिशत जैसा दिखता है।",
 "It looks like a time in seconds.": "यह सेकंड में समय जैसा दिखता है।",

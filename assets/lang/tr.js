@@ -1644,7 +1644,6 @@ x: {
 "It is installed silently through the working mode.": "Çalışma moduyla sessizce yüklenir.",
 "It is not set any more": "Artık ayarlı değil",
 "It is removed for the device's user. A system app can be put back with Reinstall.": "Cihazın kullanıcısı için kaldırılır. Bir sistem uygulaması Yeniden yükle ile geri getirilebilir.",
-"It is removed for you. A system app stays on the phone and can be brought back with Reinstall.": "Sizin için kaldırılır. Sistem uygulaması telefonda kalır ve Yeniden yükle ile geri getirilebilir.",
 "It is tried as it is first; if Android refuses it, a copy signed with this app's key is installed.": "Önce olduğu gibi denenir; Android reddederse bu uygulamanın anahtarıyla imzalanmış bir kopya yüklenir.",
 "It looks like a percentage.": "Bir yüzdeye benziyor.",
 "It looks like a time in seconds.": "Saniye cinsinden bir süreye benziyor.",
