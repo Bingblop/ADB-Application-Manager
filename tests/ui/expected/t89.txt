@@ -1,7 +1,7 @@
 1. Coding Agents, None first, then the two groups:
    None
    API Key Required: Gemini (Google), Claude (Anthropic), ChatGPT (OpenAI), Cursor (SpaceX), Copilot (GitHub), Perplexity, Grok (SpaceX), Muse (Meta), Deepseek
-   Free Open-Source: DroidMind, OpenCode, Kilo Code, Leon.ai, Jan.ai, AnythingLLM, Ollama (on-device)
+   Free Open-Source: DroidMind, OpenCode, Kilo Code, Leon.ai, Browser Use, Crawl4AI, Jan.ai, AnythingLLM, Ollama (on-device)
    the label above it: CODING AGENTS
 2. choosing Claude without a key opens its Connect sheet: true Claude (Anthropic)
    tabs: "API key\nSign in with subscription" API key first: API key

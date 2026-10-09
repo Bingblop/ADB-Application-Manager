@@ -606,7 +606,7 @@ or effort keeps the conversation.
 | Jan.ai, AnythingLLM | the address of the computer that runs it (found by itself when it runs on the phone); AnythingLLM also needs its key |
 | Ollama (on-device) | Ollama in Termux with a small coding model, installed from the agent's sheet: free and offline |
 | OpenCode | the OpenCode CLI, installed in Termux |
-| DroidMind, Kilo Code, Leon.ai | explained in their sheet: DroidMind is a tool other agents use to control Android (every agent here can already work with the phone through the Working mode shell); Kilo Code is an editor extension with no phone terminal of its own; Leon is a computer assistant |
+| DroidMind, Kilo Code, Leon.ai, Browser Use, Crawl4AI | explained in their sheet: DroidMind is a tool other agents use to control Android (every agent here can already work with the phone through the Working mode shell); Kilo Code is an editor extension with no phone terminal of its own; Leon is a computer assistant |
 
 **The classic ADB Console can ask an agent too.** Next to its input, a **$ / AI** button switches it to ask the same agent,
 model and effort picked in the Terminal above — for ADB/shell syntax and code help, not full file access. The agent answers

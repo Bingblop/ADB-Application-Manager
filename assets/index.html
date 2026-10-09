@@ -6693,6 +6693,8 @@ Type any command below (e.g. pm list packages -d)
                     <button class="mode-action-btn" onclick="openUrlExternal('https://opencode.ai/')">OpenCode</button>
                     <button class="mode-action-btn" onclick="openUrlExternal('https://kilocode.ai/')">Kilo Code</button>
                     <button class="mode-action-btn" onclick="openUrlExternal('https://getleon.ai/')">Leon.ai</button>
+                    <button class="mode-action-btn" onclick="openUrlExternal('https://github.com/browser-use/browser-use')">Browser Use</button>
+                    <button class="mode-action-btn" onclick="openUrlExternal('https://github.com/unclecode/crawl4ai')">Crawl4AI</button>
                     <button class="mode-action-btn" onclick="openUrlExternal('https://www.jan.ai/')">Jan.ai</button>
                     <button class="mode-action-btn" onclick="openUrlExternal('https://anythingllm.com/')">AnythingLLM</button>
                     <button class="mode-action-btn" onclick="openUrlExternal('https://ollama.com/')">Ollama</button>
@@ -24883,6 +24885,8 @@ Type any command below (e.g. pm list packages -d)
             { id: 'opencode', name: 'OpenCode', group: 'oss', api: 'cli', cli: 'opencode', color: '#f5f543', site: 'https://opencode.ai/' },
             { id: 'kilocode', name: 'Kilo Code', group: 'oss', api: 'info', color: '#ff6b9d', site: 'https://kilocode.ai/' },
             { id: 'leon', name: 'Leon.ai', group: 'oss', api: 'info', color: '#ffb74d', site: 'https://getleon.ai/' },
+            { id: 'browseruse', name: 'Browser Use', group: 'oss', api: 'info', color: '#ff9f43', site: 'https://github.com/browser-use/browser-use' },
+            { id: 'crawl4ai', name: 'Crawl4AI', group: 'oss', api: 'info', color: '#4dd0e1', site: 'https://github.com/unclecode/crawl4ai' },
             { id: 'jan', name: 'Jan.ai', group: 'oss', api: 'openai-compat', provider: 'jan', color: '#fbbf24', site: 'https://www.jan.ai/', bases: ['http://127.0.0.1:1337/v1'], keyOptional: true },
             { id: 'anythingllm', name: 'AnythingLLM', group: 'oss', api: 'openai-compat', provider: 'anythingllm', color: '#60a5fa', site: 'https://anythingllm.com/', bases: ['http://127.0.0.1:3001/api/v1/openai'] },
             { id: 'ollama', name: 'Ollama (on-device)', group: 'oss', api: 'openai-compat', provider: 'ollama', color: '#e5e5e5', site: 'https://ollama.com/', bases: ['http://127.0.0.1:11434/v1'], keyOptional: true }
@@ -26321,6 +26325,12 @@ Type any command below (e.g. pm list packages -d)
                 else if (ag.id === 'kilocode') h = '<p class="tx-sheet-p">Kilo Code is an open-source AI coding agent built as an editor extension (VS Code, JetBrains), not a phone terminal tool, so it does not chat here.</p>'
                     + '<p class="tx-sheet-p muted">For a coding agent that runs right here in Termux instead, choose OpenCode, or one of the API-key / sign-in agents above.</p>'
                     + '<div class="mode-btn-row" style="margin-top:10px;"><button class="mode-action-btn" onclick="openUrlExternal(\'https://kilocode.ai/\')">Website</button><button class="mode-action-btn" onclick="openUrlExternal(\'https://github.com/Kilo-Org/kilocode\')">Source</button></div>';
+                else if (ag.id === 'browseruse') h = '<p class="tx-sheet-p">Browser Use is an open-source library that lets an AI model drive a web browser to do a task. It runs on a computer with Python and needs a key for the AI model it uses (its own cloud gives new accounts some free credit, then it is paid). It has no Android version and is not a coding agent, so it does not chat here.</p>'
+                    + '<p class="tx-sheet-p muted">For an answer to an Ask agent button, choose an agent above that has a key or runs on your own server; with none, the button still offers the free Web search.</p>'
+                    + '<div class="mode-btn-row" style="margin-top:10px;"><button class="mode-action-btn" onclick="openUrlExternal(\'https://browser-use.com/\')">Website</button><button class="mode-action-btn" onclick="openUrlExternal(\'https://github.com/browser-use/browser-use\')">Source</button></div>';
+                else if (ag.id === 'crawl4ai') h = '<p class="tx-sheet-p">Crawl4AI is an open-source web crawler that turns web pages into clean text for AI models. The library and its Docker server are free, but run on a computer, not on Android; its hosted cloud is pay-as-you-go. It is not a coding agent, so it does not chat here.</p>'
+                    + '<p class="tx-sheet-p muted">For an answer to an Ask agent button, choose an agent above that has a key or runs on your own server; with none, the button still offers the free Web search.</p>'
+                    + '<div class="mode-btn-row" style="margin-top:10px;"><button class="mode-action-btn" onclick="openUrlExternal(\'https://crawl4ai.com/\')">Website</button><button class="mode-action-btn" onclick="openUrlExternal(\'https://github.com/unclecode/crawl4ai\')">Source</button></div>';
                 else h = '<p class="tx-sheet-p">Leon is an open-source personal assistant (skills, voice) that runs on a computer with Node.js and Python. It has no Android version and is not a coding agent, so it does not chat in this Terminal.</p>'
                     + '<p class="tx-sheet-p muted">For a free assistant on this phone, choose Ollama (on-device); for one on your computer, Jan.ai or AnythingLLM.</p>'
                     + '<div class="mode-btn-row" style="margin-top:10px;"><button class="mode-action-btn" onclick="openUrlExternal(\'https://getleon.ai/\')">Website</button><button class="mode-action-btn" onclick="openUrlExternal(\'https://github.com/leon-ai/leon\')">Source</button></div>';
