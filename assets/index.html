@@ -569,16 +569,16 @@
         /* The whole row of an app is tinted like the box at the top for its state: green running, blue frozen (disabled), red uninstalled
            (the later rule wins); a selected row keeps the selection colours */
         .app-card.running:not(.selected) {
-            background: color-mix(in srgb, var(--apps-running) 8%, var(--bg-card));
-            border-color: color-mix(in srgb, var(--apps-running) 32%, var(--border-glass));
+            background: color-mix(in srgb, var(--apps-running) 3%, var(--bg-card));
+            border-color: color-mix(in srgb, var(--apps-running) 12%, var(--border-glass));
         }
         .app-card.frozen:not(.selected) {
-            background: color-mix(in srgb, var(--apps-frozen) 9%, var(--bg-card));
-            border-color: color-mix(in srgb, var(--apps-frozen) 35%, var(--border-glass));
+            background: color-mix(in srgb, var(--apps-frozen) 3%, var(--bg-card));
+            border-color: color-mix(in srgb, var(--apps-frozen) 12%, var(--border-glass));
         }
         .app-card.uninstalled:not(.selected) {
-            background: color-mix(in srgb, var(--apps-uninstalled) 9%, var(--bg-card));
-            border-color: color-mix(in srgb, var(--apps-uninstalled) 35%, var(--border-glass));
+            background: color-mix(in srgb, var(--apps-uninstalled) 3%, var(--bg-card));
+            border-color: color-mix(in srgb, var(--apps-uninstalled) 12%, var(--border-glass));
         }
 
         /* Just the checkbox and the avatar now (app-meta sits on its own, to the left of this) - sized to its
@@ -21286,12 +21286,14 @@ Type any command below (e.g. pm list packages -d)
             const out = box.querySelector('.ai-out');
             let shown = '';
             try {
-                const r = await txTurnApi(ag, model, txEffortFor(ag), system, [{ role: 'user', text: txForModel(text) }], t => { shown += t; if (isCurrent()) out.textContent = shown; });
+                const cb = (t, replace) => { shown = replace ? t : shown + t; if (isCurrent()) out.textContent = shown; };
+                cb.alive = isCurrent;
+                const r = await txTurnApi(ag, model, txEffortFor(ag), system, [{ role: 'user', text: txForModel(text) }], cb);
                 const answer = r.text.trim();
                 if (isCurrent()) out.textContent = answer || '(no answer)';
                 return answer;
             } catch (e) {
-                if (isCurrent()) { box.classList.add('is-err'); box.textContent = (e && e.msg) || (e && e.message) || String(e); }
+                if (isCurrent()) { box.classList.add('is-err'); box.textContent = txErrText(e); }
                 return '';
             }
         }
@@ -25015,8 +25017,8 @@ Type any command below (e.g. pm list packages -d)
             { id: 'opencode', name: 'OpenCode', group: 'oss', api: 'cli', cli: 'opencode', color: '#f5f543', site: 'https://opencode.ai/' },
             { id: 'kilocode', name: 'Kilo Code', group: 'oss', api: 'info', color: '#ff6b9d', site: 'https://kilocode.ai/' },
             { id: 'leon', name: 'Leon.ai', group: 'oss', api: 'info', color: '#ffb74d', site: 'https://getleon.ai/' },
-            { id: 'browseruse', name: 'Browser Use', group: 'oss', api: 'info', color: '#ff9f43', site: 'https://github.com/browser-use/browser-use' },
-            { id: 'crawl4ai', name: 'Crawl4AI', group: 'oss', api: 'info', color: '#4dd0e1', site: 'https://github.com/unclecode/crawl4ai' },
+            { id: 'browseruse', name: 'Browser Use', group: 'oss', api: 'browseruse', provider: 'browseruse', askOnly: true, color: '#ff9f43', site: 'https://github.com/browser-use/browser-use', keyUrl: 'https://cloud.browser-use.com/settings?tab=api-keys', keyLook: 'bu_…' },
+            { id: 'crawl4ai', name: 'Crawl4AI', group: 'oss', api: 'crawl4ai', provider: 'crawl4ai', askOnly: true, color: '#4dd0e1', site: 'https://github.com/unclecode/crawl4ai', keyUrl: 'https://api.crawl4ai.com/', keyLook: 'sk_live_…' },
             { id: 'jan', name: 'Jan.ai', group: 'oss', api: 'openai-compat', provider: 'jan', color: '#fbbf24', site: 'https://www.jan.ai/', bases: ['http://127.0.0.1:1337/v1'], keyOptional: true },
             { id: 'anythingllm', name: 'AnythingLLM', group: 'oss', api: 'openai-compat', provider: 'anythingllm', color: '#60a5fa', site: 'https://anythingllm.com/', bases: ['http://127.0.0.1:3001/api/v1/openai'] },
             { id: 'ollama', name: 'Ollama (on-device)', group: 'oss', api: 'openai-compat', provider: 'ollama', color: '#e5e5e5', site: 'https://ollama.com/', bases: ['http://127.0.0.1:11434/v1'], keyOptional: true }
@@ -25194,7 +25196,7 @@ Type any command below (e.g. pm list packages -d)
             if (!ag) return;
             haptic();
             if (txChat.busy) { showToast('The agent is still working: STOP it first'); txSyncAgentUi(); return; }
-            if (ag.api === 'info') {                      // a tool for other agents, not a chat: explain, keep the agent that was chosen
+            if (ag.api === 'info' || ag.askOnly) {        // a tool for other agents, or one that only answers the Ask agent buttons: not a chat. Explain / connect, keep the agent that was chosen
                 txOpenConnect(id);
                 const sel = document.getElementById('txAgent');
                 if (sel) sel.value = txState.agent;
@@ -25503,6 +25505,8 @@ Type any command below (e.g. pm list packages -d)
 
         // Low / Balanced / High, applied only where a provider's own API has a matching knob; the others simply ignore the setting
         // (their effort drop-down still shows and is remembered, for when they are called through their own CLI instead).
+        function txBuTask(system, text) { return (system + '\n\n' + text + '\n\nLook this up on the web with a search engine and answer in plain words. Do not sign in anywhere and do not change anything.').slice(0, 6000); }
+        let txBuPollMs = 3000;           // how often a Browser Use task is asked about
         async function txTurnApi(ag, model, effort, system, msgs, onText) {
             const usage = { in: 0, out: 0 };
             let text = '';
@@ -25554,6 +25558,42 @@ Type any command below (e.g. pm list packages -d)
                     if (d.usageMetadata) meta = d.usageMetadata;
                 });
                 if (meta) { usage.in += meta.promptTokenCount || 0; usage.out += meta.candidatesTokenCount || 0; }
+            } else if (ag.api === 'crawl4ai') {
+                // Crawl4AI Cloud's answer service: one GET with the question; it searches, reads pages and writes the answer
+                const q = (system + '\n\n' + msgs[msgs.length - 1].text).slice(0, 4000);
+                const r = await txAiCall({ url: 'https://api.crawl4ai.com/answer?q=' + encodeURIComponent(q), method: 'GET', auth: 'crawl4ai', headers: { accept: 'application/json' }, readTimeoutMs: 120000 }, null, true);
+                let j = {};
+                try { j = JSON.parse(r.body || '{}'); } catch (e) {}
+                const a = j && j.answer;
+                const txt = a && typeof a === 'object' ? String(a.text || '') : '';
+                if (!j.answered || !txt.trim()) throw { local: true, msg: 'Crawl4AI found no answer for this one. Try Web search, or another agent.' };
+                const src = ((a.sources || []).slice(0, 4).map(x => '• ' + (x.title || x.url || '') + (x.url ? ' ' + x.url : '')));
+                add(txt.trim() + (src.length ? '\n\nSources:\n' + src.join('\n') : ''));
+            } else if (ag.api === 'browseruse') {
+                // Browser Use Cloud: start a short task, then ask for it until it ends (the browser looks the question up)
+                const task = txBuTask(system, msgs[msgs.length - 1].text);
+                const made = await txAiCall({ url: 'https://api.browser-use.com/api/v2/tasks', method: 'POST', auth: 'browseruse', headers: json, body: JSON.stringify({ task, maxSteps: 12 }) }, null, true);
+                let id = '';
+                try { id = String(JSON.parse(made.body || '{}').id || ''); } catch (e) {}
+                if (!/^[0-9a-f-]{36}$/i.test(id)) throw { local: true, msg: 'Browser Use did not start the task.' };
+                const t0 = Date.now();
+                for (;;) {
+                    if (onText.alive && !onText.alive()) throw { local: true, msg: 'Stopped.' };
+                    if (Date.now() - t0 > 240000) throw { local: true, msg: 'Browser Use took too long (over 4 minutes). Try again later.' };
+                    await new Promise(res => setTimeout(res, txBuPollMs));
+                    const g = await txAiCall({ url: 'https://api.browser-use.com/api/v2/tasks/' + id, method: 'GET', auth: 'browseruse', headers: { accept: 'application/json' } }, null, true);
+                    let j = {};
+                    try { j = JSON.parse(g.body || '{}'); } catch (e) {}
+                    if (j.status === 'finished') {
+                        const out = String(j.output || '').trim();
+                        if (!out) throw { local: true, msg: 'Browser Use finished without an answer.' };
+                        text = out;
+                        onText(out, true);
+                        break;
+                    }
+                    if (j.status === 'failed' || j.status === 'stopped') throw { local: true, msg: j.status === 'failed' ? 'Browser Use failed before it had an answer.' : 'Browser Use was stopped before it had an answer.' };
+                    onText(txF('Browsing the web… {0} s, step {1}', Math.round((Date.now() - t0) / 1000), (j.steps || []).length), true);
+                }
             } else {
                 throw { local: true, msg: ag.name + ' cannot chat here.' };
             }
@@ -26365,7 +26405,7 @@ Type any command below (e.g. pm list packages -d)
                 case 'setup': case 'key': if (ag) txOpenConnect(ag.id); return;
                 case 'login': if (ag && ag.cli && TX_CLI[ag.cli]) txCliLogin(ag); else txNote('[' + (ag ? ag.name : 'This agent') + ' has no sign-in tool]'); return;
                 case 'agent': {
-                    if (!arg) { txNote('agents: ' + TX_AGENTS.filter(a => a.api !== 'info').map(a => a.id).join(', ')); return; }
+                    if (!arg) { txNote('agents: ' + TX_AGENTS.filter(a => a.api !== 'info' && !a.askOnly).map(a => a.id).join(', ')); return; }
                     const hit = TX_AGENTS.find(a => a.id === arg.toLowerCase()) || TX_AGENTS.find(a => a.name.toLowerCase().indexOf(arg.toLowerCase()) === 0);
                     if (!hit) { txNote('[no agent called ' + arg + ']', null, 'tx-err'); return; }
                     const sel = document.getElementById('txAgent');
@@ -26414,6 +26454,7 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('txConnectTitle').textContent = ag.name;
             document.getElementById('txConnectSub').textContent = ag.api === 'info' ? 'What it is, and how it fits here'
                 : ag.api === 'openai-compat' ? 'Free and open-source: on your computer or on this phone'
+                : ag.askOnly ? 'Answers the Ask agent buttons (not a chat). A free account is enough'
                 : ag.id === 'copilot' ? 'GitHub Copilot, through GitHub\'s official CLI in Termux'
                 : ag.id === 'opencode' ? 'Open-source coding agent, installed in Termux'
                 : 'An API key, or your subscription through the official tool';
@@ -26455,12 +26496,6 @@ Type any command below (e.g. pm list packages -d)
                 else if (ag.id === 'kilocode') h = '<p class="tx-sheet-p">Kilo Code is an open-source AI coding agent built as an editor extension (VS Code, JetBrains), not a phone terminal tool, so it does not chat here.</p>'
                     + '<p class="tx-sheet-p muted">For a coding agent that runs right here in Termux instead, choose OpenCode, or one of the API-key / sign-in agents above.</p>'
                     + '<div class="mode-btn-row" style="margin-top:10px;"><button class="mode-action-btn" onclick="openUrlExternal(\'https://kilocode.ai/\')">Website</button><button class="mode-action-btn" onclick="openUrlExternal(\'https://github.com/Kilo-Org/kilocode\')">Source</button></div>';
-                else if (ag.id === 'browseruse') h = '<p class="tx-sheet-p">Browser Use is an open-source library that lets an AI model drive a web browser to do a task. It runs on a computer with Python and needs a key for the AI model it uses (its own cloud gives new accounts some free credit, then it is paid). It has no Android version and is not a coding agent, so it does not chat here.</p>'
-                    + '<p class="tx-sheet-p muted">For an answer to an Ask agent button, choose an agent above that has a key or runs on your own server; with none, the button reads the web for you (free, no key).</p>'
-                    + '<div class="mode-btn-row" style="margin-top:10px;"><button class="mode-action-btn" onclick="openUrlExternal(\'https://browser-use.com/\')">Website</button><button class="mode-action-btn" onclick="openUrlExternal(\'https://github.com/browser-use/browser-use\')">Source</button></div>';
-                else if (ag.id === 'crawl4ai') h = '<p class="tx-sheet-p">Crawl4AI is an open-source web crawler that turns web pages into clean text for AI models. The library and its Docker server are free, but run on a computer, not on Android; its hosted cloud is pay-as-you-go. It is not a coding agent, so it does not chat here.</p>'
-                    + '<p class="tx-sheet-p muted">For an answer to an Ask agent button, choose an agent above that has a key or runs on your own server; with none, the button reads the web for you (free, no key).</p>'
-                    + '<div class="mode-btn-row" style="margin-top:10px;"><button class="mode-action-btn" onclick="openUrlExternal(\'https://crawl4ai.com/\')">Website</button><button class="mode-action-btn" onclick="openUrlExternal(\'https://github.com/unclecode/crawl4ai\')">Source</button></div>';
                 else h = '<p class="tx-sheet-p">Leon is an open-source personal assistant (skills, voice) that runs on a computer with Node.js and Python. It has no Android version and is not a coding agent, so it does not chat in this Terminal.</p>'
                     + '<p class="tx-sheet-p muted">For a free assistant on this phone, choose Ollama (on-device); for one on your computer, Jan.ai or AnythingLLM.</p>'
                     + '<div class="mode-btn-row" style="margin-top:10px;"><button class="mode-action-btn" onclick="openUrlExternal(\'https://getleon.ai/\')">Website</button><button class="mode-action-btn" onclick="openUrlExternal(\'https://github.com/leon-ai/leon\')">Source</button></div>';
@@ -26495,7 +26530,7 @@ Type any command below (e.g. pm list packages -d)
                     + '<button class="sdb-tab' + (txConnectTab === 'cli' ? ' active' : '') + '" role="tab" onclick="txConnectSet(\'cli\')">Sign in with subscription</button></div>';
             }
             if (!onlyCli && txConnectTab === 'key') {
-                const host = { claude: 'api.anthropic.com', chatgpt: 'api.openai.com', gemini: 'generativelanguage.googleapis.com', cursor: 'api.cursor.com', perplexity: 'api.perplexity.ai', grok: 'api.x.ai', muse: 'api.llama.com', deepseek: 'api.deepseek.com' }[ag.provider] || '';
+                const host = { claude: 'api.anthropic.com', chatgpt: 'api.openai.com', gemini: 'generativelanguage.googleapis.com', cursor: 'api.cursor.com', perplexity: 'api.perplexity.ai', grok: 'api.x.ai', muse: 'api.llama.com', deepseek: 'api.deepseek.com', crawl4ai: 'api.crawl4ai.com', browseruse: 'api.browser-use.com' }[ag.provider] || '';
                 h += '<p class="tx-sheet-p">Paste your ' + escapeHtml(ag.name.replace(/\s*\(.*\)$/, '')) + ' API key. It is tested right away, then kept encrypted on this phone and only ever sent to <span translate="no">' + escapeHtml(host) + '</span>.</p>' + saved
                     + '<input id="txKeyInput" type="password" class="modal-text-input tx-key-input" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="' + escapeHtml(ag.keyLook || '') + '">'
                     + (ag.id === 'cursor' ? '<div class="tx-sheet-sec">Repository (optional)</div><input id="txCursorRepo" class="modal-text-input tx-key-input" translate="no" placeholder="https://github.com/you/project" value="' + escapeHtml(txSettings.cursorRepo || '') + '" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="url">' : '')
@@ -26506,6 +26541,8 @@ Type any command below (e.g. pm list packages -d)
                     + '<div class="tx-sheet-p muted" id="txKeyStatus"></div>'
                     + (ag.id === 'cursor' ? '<p class="tx-sheet-p muted">Cursor\'s agents run in Cursor\'s cloud, on a copy of a Git repository (the one above, or none): they cannot see this phone\'s files. To work on files here, sign in with the Cursor CLI instead.</p>' : '')
                     + (ag.id === 'gemini' ? '<p class="tx-sheet-p muted">Google AI Studio keys have a free tier; on the free tier Google may use what you send to improve its products.</p>' : '');
+                if (ag.id === 'crawl4ai') h += '<p class="tx-sheet-p muted">Crawl4AI is the open-source web crawler; this is its hosted cloud. A new account gets free credits and a free monthly allowance, no card. An Ask agent button sends the question to its answer service, which searches the web, reads the pages and writes the answer. It is for the Ask agent buttons only, not a chat. The test spends one credit.</p>';
+                if (ag.id === 'browseruse') h += '<p class="tx-sheet-p muted">Browser Use is the open-source browser agent; this is its hosted cloud, which has a free tier for new accounts. An Ask agent button starts a short browser task that looks the question up on the web: it can take a minute or two and uses a little credit. It is for the Ask agent buttons only, not a chat. Testing the key costs nothing.</p>';
             } else if (hasCli) {
                 const cli = TX_CLI[ag.cli];
                 const t = txInfo && txInfo.termux || {};
@@ -26600,6 +26637,7 @@ Type any command below (e.g. pm list packages -d)
                 txSettings.connect[ag.id] = 'key';
                 txSaveSettings();
                 txCloseConnect();
+                if (ag.askOnly) { txAskOnlyConnected(ag); return; }
                 const was = txState.agent;
                 txState.agent = ag.id;
                 txState.mode = 'chat';
@@ -26619,6 +26657,14 @@ Type any command below (e.g. pm list packages -d)
             ]);
         };
 
+        // An agent that only answers the Ask agent buttons: once it works it becomes the default agent when none is chosen yet; the Terminal is left as it was
+        function txAskOnlyConnected(ag) {
+            let made = false;
+            if (!askAgentDef()) { askAgentId = ag.id; kvSet('ask_agent', askAgentId); made = true; }
+            askAgentBuild();
+            showToast(made ? ag.name + ' works and is now the default agent for the Ask agent buttons' : ag.name + ' works. Choose it as the default agent in Settings to use it');
+        }
+
         function txSaveKeyAnyway(t) {
             const ag = txAgentDef(t.agent);
             let r = '';
@@ -26626,7 +26672,8 @@ Type any command below (e.g. pm list packages -d)
             txRefreshVault();
             if (r !== 'ok') { txAlert(ag.name, r.replace(/^error:\s*/, '') || 'It could not be saved'); return; }
             showToast('Saved without a working test');
-            if (ag.id !== 'copilot') { txSettings.connect[ag.id] = 'key'; txSaveSettings(); txCloseConnect(); txState.agent = ag.id; txState.mode = 'chat'; txSaveState(); txSyncAgentUi(); }
+            if (ag.askOnly) { txSettings.connect[ag.id] = 'key'; txSaveSettings(); txCloseConnect(); txAskOnlyConnected(ag); }
+            else if (ag.id !== 'copilot') { txSettings.connect[ag.id] = 'key'; txSaveSettings(); txCloseConnect(); txState.agent = ag.id; txState.mode = 'chat'; txSaveState(); txSyncAgentUi(); }
             else txRenderConnect();
         }
 
@@ -26958,8 +27005,8 @@ Type any command below (e.g. pm list packages -d)
                     : v.key ? 'key ' + escapeHtml(v.hint || '••••') + (v.readable === false ? ' · <span class="is-err">cannot be read: enter it again</span>' : '') : (txSettings.connect[a.id] === 'cli' ? 'signs in with ' + escapeHtml((TX_CLI[a.cli] || {}).name || 'its tool') : 'no key');
                 return '<div class="tx-row"><div class="tx-row-main"><div class="tx-row-name">' + escapeHtml(a.name) + '</div><div class="tx-row-sub" translate="no">' + sub + '</div></div><button class="mode-action-btn" onclick="txCloseSettings(); txOpenConnect(\'' + a.id + '\')">' + (v.key || v.base ? 'Change' : 'Connect') + '</button></div>';
             }).join('');
-            const agentOpts = '<option value="">Remember the last one</option>' + TX_AGENTS.filter(a => a.api !== 'info').map(a => '<option value="' + a.id + '"' + (txSettings.defaultAgent === a.id ? ' selected' : '') + '>' + escapeHtml(a.name) + '</option>').join('');
-            const modelRows = TX_AGENTS.filter(a => a.id !== 'none' && a.api !== 'info' && (txHasKey(a.provider) || txBase(a) || txSettings.connect[a.id] === 'cli')).map(a => {
+            const agentOpts = '<option value="">Remember the last one</option>' + TX_AGENTS.filter(a => a.api !== 'info' && !a.askOnly).map(a => '<option value="' + a.id + '"' + (txSettings.defaultAgent === a.id ? ' selected' : '') + '>' + escapeHtml(a.name) + '</option>').join('');
+            const modelRows = TX_AGENTS.filter(a => a.id !== 'none' && a.api !== 'info' && !a.askOnly && (txHasKey(a.provider) || txBase(a) || txSettings.connect[a.id] === 'cli')).map(a => {
                 const list = txModelList(a);
                 const cur = (txSettings.models || {})[a.id] || '';
                 const effCur = (txSettings.efforts || {})[a.id] || '';

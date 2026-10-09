@@ -1,0 +1,12 @@
+ok   1. choosing Crawl4AI in the Terminal opens its key sheet (host api.crawl4ai.com, free tier explained), and does not make it the chat agent: {"open":true,"text":"Paste your Crawl4AI API key. It is tested right away, then kept encrypted on this phone and only ever sent to api.crawl4ai.com.\n\nTest and save\nShow\nGet a key\n\nCrawl4AI is the open-source web crawler; this is its hosted cloud. A new account gets free credits and a free mont
+ok   2. a good key connects it, it becomes the default agent (none was chosen) and the Terminal stays as it was: {"open":false,"ask":"crawl4ai","saved":"crawl4ai","st":"none","mode":"shell","prov":["crawl4ai"],"ready":true}
+ok   3. the Ask agent window gets the answer from Crawl4AI's answer service, with its sources, the request carries the vault name and no key: {"t":"Asking Crawl4AI. The text above is sent to them.\nIt is the Bixby helper. Caution.\n\nSources:\n• Samsung https://samsung.example/bixby","req":[{"url":"https://api.crawl4ai.com/answer?q=You%20help%20someone%20who","auth":"crawl4ai","method":"GET"}]}
+ok   4. no answer is said in words: Crawl4AI found no answer for this one. Try Web search, or another agent.
+ok   5. a refused key is reported like any agent's: The key was not accepted. Check it, or make a new one on the provider's website.
+ok   6. Browser Use's sheet names api.browser-use.com
+ok   7. a good key connects it; the default agent (Crawl4AI) is left alone: {"ask":"crawl4ai","ready":true}
+ok   8. a task is started (the question as its task, a step limit), asked about until it ends, and its output is the answer: {"t":"Asking Browser Use. The text above is sent to them.\nSafe to disable. It is only a helper.","urls":["POST /api/v2/tasks","GET /api/v2/tasks/3c90c3cc-0d44-4b50-8888-8dd25736052a","GET /api/v2/tasks/3c90c3cc-0d44-4b50-8888-8dd25736052a"],"body":{"task":"You help someone who is not a developer decide whether an Android app or system package can be disabled (frozen) or removed for the current us
+ok   9. a failed task is said in words: Browser Use failed before it had an answer.
+ok   10. neither is listed as a chat agent
+ok   no page errors:
+ALL PASSED

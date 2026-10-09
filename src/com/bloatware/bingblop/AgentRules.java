@@ -64,6 +64,8 @@ public final class AgentRules {
             new Provider("grok", "api.x.ai", "Authorization", "Bearer ", "https://api.x.ai/v1/models", null, "XAI_API_KEY"),
             new Provider("muse", "api.llama.com", "Authorization", "Bearer ", "https://api.llama.com/v1/models", null, "LLAMA_API_KEY"),
             new Provider("deepseek", "api.deepseek.com", "Authorization", "Bearer ", "https://api.deepseek.com/v1/models", null, "DEEPSEEK_API_KEY"),
+            new Provider("crawl4ai", "api.crawl4ai.com", "Authorization", "Bearer ", "https://api.crawl4ai.com/search?q=android", null, "CRAWL4AI_KEY"),
+            new Provider("browseruse", "api.browser-use.com", "X-Browser-Use-API-Key", "", "https://api.browser-use.com/api/v2/billing/account", null, "BROWSER_USE_API_KEY"),
             new Provider("jan", null, "Authorization", "Bearer ", "/models", null, null),
             new Provider("anythingllm", null, "Authorization", "Bearer ", "/models", null, null),
             new Provider("ollama", null, "Authorization", "Bearer ", "/models", null, null),
@@ -142,7 +144,7 @@ public final class AgentRules {
         String s = secret.trim();
         if (s.length() <= 10) return s.isEmpty() ? "" : "••••";
         int keep = 0;
-        java.util.regex.Matcher m = java.util.regex.Pattern.compile("^(sk-ant-|sk-proj-|sk-|pplx-|xai-|LLM\\||AIza|github_pat_|gh[pousr]_|crsr_|key_)").matcher(s);
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("^(sk-ant-|sk-proj-|sk_live_|sk-|bu_|pplx-|xai-|LLM\\||AIza|github_pat_|gh[pousr]_|crsr_|key_)").matcher(s);
         if (m.find()) keep = m.end();
         return s.substring(0, keep) + "…" + s.substring(s.length() - 4);
     }
@@ -157,6 +159,8 @@ public final class AgentRules {
                 .replaceAll("(gh[pousr]_[A-Za-z0-9]{4})[A-Za-z0-9]{20,}", "$1…")
                 .replaceAll("(crsr_[A-Za-z0-9]{4})[A-Za-z0-9_\\-]{16,}", "$1…")
                 .replaceAll("\\b(key_[A-Za-z0-9]{4})[A-Za-z0-9_\\-]{24,}", "$1…")
+                .replaceAll("(sk_live_[A-Za-z0-9]{4})[A-Za-z0-9_\\-]{12,}", "$1…")
+                .replaceAll("\\b(bu_[A-Za-z0-9]{4})[A-Za-z0-9_\\-]{16,}", "$1…")
                 .replaceAll("(pplx-[A-Za-z0-9]{4})[A-Za-z0-9]{16,}", "$1…")
                 .replaceAll("(xai-[A-Za-z0-9]{4})[A-Za-z0-9]{16,}", "$1…")
                 .replaceAll("(LLM\\|[A-Za-z0-9]{4})[A-Za-z0-9|_\\-]{10,}", "$1…");

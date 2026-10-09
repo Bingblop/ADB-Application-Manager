@@ -72,9 +72,11 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   }));
   check('   a running app\'s row is tinted green and an uninstalled app\'s row red (a frozen one stays blue, a plain one has no tint)', await ev(() => {
     allApps.length = 0; allApps.push({ name: 'Run', pkg: 'com.t.run', isRunning: true }, { name: 'Gone', pkg: 'com.t.gone', isUninstalled: true }, { name: 'Cold', pkg: 'com.t.cold', isFrozen: true }, { name: 'Plain', pkg: 'com.t.plain' }); renderApps();
-    const rgb = k => getComputedStyle(document.getElementById('card_com.t.' + k)).backgroundColor.match(/\d+(\.\d+)?/g).map(Number);
+    const rgb = k => { const c = getComputedStyle(document.getElementById('card_com.t.' + k)).backgroundColor; const n = c.match(/\d+(\.\d+)?/g).slice(0, 3).map(Number); return /^color\(/.test(c) ? n.map(v => v * 255) : n; };       // a mixed colour comes back as color(srgb 0..1)
     const run = rgb('run'), gone = rgb('gone'), cold = rgb('cold'), plain = rgb('plain');
-    return run[1] > run[0] && run[1] > run[2] && gone[0] > gone[1] && gone[0] > gone[2] && cold[2] > cold[0] && cold[2] > cold[1]
+    const lean = (c, i) => [0, 1, 2].every(j => j === i || (c[i] - plain[i]) > (c[j] - plain[j]));        // the tint is very subtle: compare with the plain row, towards green / red / blue
+    const big = c => Math.max(Math.abs(c[0] - plain[0]), Math.abs(c[1] - plain[1]), Math.abs(c[2] - plain[2]));
+    return lean(run, 1) && lean(gone, 0) && lean(cold, 2) && big(run) <= 14 && big(gone) <= 14 && big(cold) <= 14
       && document.getElementById('card_com.t.plain').className.indexOf('running') < 0 && String(plain) !== String(run) && String(plain) !== String(gone);
   }));
   await ev(() => switchView('apps')); await sleep(200);

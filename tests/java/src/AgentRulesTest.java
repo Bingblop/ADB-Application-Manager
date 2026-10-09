@@ -58,6 +58,19 @@ public class AgentRulesTest {
         && deepseek.test.equals("https://api.deepseek.com/v1/models")
         && AgentRules.allowed(deepseek, null, "https://api.deepseek.com/v1/chat/completions") && !AgentRules.allowed(deepseek, null, "https://evil.example/v1/chat/completions")
         && AgentRules.hint("sk-0123456789abcdef0123456789abcdef").equals("sk-…cdef"));
+    AgentRules.Provider crawl4ai = AgentRules.find("crawl4ai"), browseruse = AgentRules.find("browseruse");
+    check("Crawl4AI: Bearer key to api.crawl4ai.com only, its sk_live_ key shown short and masked",
+        crawl4ai != null && "api.crawl4ai.com".equals(crawl4ai.host) && "Authorization".equals(crawl4ai.header) && "Bearer ".equals(crawl4ai.prefix)
+        && AgentRules.allowed(crawl4ai, null, "https://api.crawl4ai.com/answer?q=x") && !AgentRules.allowed(crawl4ai, null, "https://evil.example/answer")
+        && !AgentRules.allowed(crawl4ai, null, "http://api.crawl4ai.com/answer")
+        && AgentRules.hint("sk_" + "live_0123456789abcdef0123456789").equals("sk_live_…6789")
+        && AgentRules.redact("Bearer sk_" + "live_0123456789abcdef0123456789").equals("Bearer sk_live_0123…"));
+    check("Browser Use: X-Browser-Use-API-Key (no prefix) to api.browser-use.com only, its bu_ key masked",
+        browseruse != null && "api.browser-use.com".equals(browseruse.host) && "X-Browser-Use-API-Key".equals(browseruse.header) && "".equals(browseruse.prefix)
+        && browseruse.test.equals("https://api.browser-use.com/api/v2/billing/account")
+        && AgentRules.allowed(browseruse, null, "https://api.browser-use.com/api/v2/tasks") && !AgentRules.allowed(browseruse, null, "https://evil.example/api/v2/tasks")
+        && AgentRules.hint("bu_0123456789abcdef0123456789").equals("bu_…6789")
+        && AgentRules.redact("key bu_0123456789abcdef0123456789").equals("key bu_0123…"));
     check("unknown providers are not", AgentRules.find("evil") == null && AgentRules.find(null) == null);
     check("Claude: x-api-key plus the API version header", "x-api-key".equals(claude.header) && "".equals(claude.prefix)
         && claude.extra.length == 1 && "anthropic-version".equals(claude.extra[0][0]) && "2023-06-01".equals(claude.extra[0][1]));
