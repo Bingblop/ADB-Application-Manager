@@ -319,12 +319,39 @@
     return load(code).then(function (d) { if (my === setSeq) apply(code, d); return true; }, function () { return false; });
   }
 
+  // The app's language that matches the phone's first language that the app has ('de-DE' -> de, 'pt-PT' -> pt-BR, 'zh-TW' -> zh-CN, the old 'in' -> id); English first means English.
+  function deviceCode() {
+    var list = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || ''];
+    var alias = { 'in': 'id', pt: 'pt-BR', zh: 'zh-CN' };
+    for (var i = 0; i < list.length; i++) {
+      var tag = String(list[i] || '').replace('_', '-');
+      if (!tag) continue;
+      var primary = tag.split('-')[0].toLowerCase();
+      if (primary === 'en') return 'en';
+      for (var k = 0; k < LANGS.length; k++) if (LANGS[k].code.toLowerCase() === tag.toLowerCase()) return LANGS[k].code;
+      var code = alias[primary] || primary;
+      if (find(code)) return code;
+    }
+    return 'en';
+  }
+
   // ---------- start: the language chosen last time ----------
   var startCode = null;
   try {
     var raw = window.AndroidBridge && window.AndroidBridge.loadSetting ? window.AndroidBridge.loadSetting('lang') : localStorage.getItem('lang');
     var saved = raw ? JSON.parse(raw) : null;
     if (typeof saved === 'string' && saved !== 'en' && find(saved)) startCode = saved;
+    // a first launch (no language chosen, the first-launch permission sheet not seen yet) starts in the language of the phone when the app has it, English otherwise
+    var bridge = window.AndroidBridge;
+    var seenIntro = bridge && bridge.loadSetting ? bridge.loadSetting('perm_intro_v62') : localStorage.getItem('perm_intro_v62');
+    if (!raw && !seenIntro) {
+      var dev = deviceCode();
+      if (dev && dev !== 'en') {
+        startCode = dev;
+        var json = JSON.stringify(dev);
+        if (bridge && bridge.saveSetting) bridge.saveSetting('lang', json); else localStorage.setItem('lang', json);
+      }
+    }
   } catch (e) {}
   if (startCode && !window.__LANGS[startCode]) {
     if (document.readyState === 'loading') { document.write('<script src="lang/' + startCode + '.js"><\/script>'); }   // synchronous: the dictionary is there before the page is drawn

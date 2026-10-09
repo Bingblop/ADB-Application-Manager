@@ -94,17 +94,17 @@
    and when the person is back the search starts again by itself: true
 20. a search the person started themselves, when it cannot read storage, asks for the access with a sheet: true To search storage for APK, APKS, APKM and XAPK files, this app needs All-files access (or a working mode: ADB, Shizuku or Root).
    once it is allowed the sheet closes and the search starts again: true
-[360x800] intro: the sheet is inside the screen, its rows and buttons inside the sheet, no text cut off sideways: true {"subWholeWords":true,"inside":true,"scrolls":false,"wide":false,"rowsIn":true,"textIn":true,"allowMin":40,"allowW":61,"btnsIn":true,"bottomMin":44,"rows":3,"h":383,"closeW":77,"rowsW":322}
+[360x800] intro: the sheet is inside the screen, its rows and buttons inside the sheet, no text cut off sideways: true {"subWholeWords":true,"inside":true,"scrolls":false,"wide":false,"rowsIn":true,"textIn":true,"allowMin":40,"allowW":61,"btnsIn":true,"bottomMin":44,"rows":3,"h":442,"closeW":77,"rowsW":322}
 [360x800] intro: the subtitle wraps between words, not in the middle of one: true
 [360x800] intro: the Allow buttons are at least 40 px tall and the bottom buttons at least 44: true 40 / 44
 [360x800] intro: "Not now" shares the row with "Allow all": true 77 of 322
-[360x800] intro: on a normal screen the sheet fits without scrolling: true 383
+[360x800] intro: on a normal screen the sheet fits without scrolling: true 442
 [360x800] files: the sheet is inside the screen, its rows and buttons inside the sheet, no text cut off sideways: true {"subWholeWords":true,"inside":true,"scrolls":false,"wide":false,"rowsIn":true,"textIn":true,"allowMin":40,"allowW":61,"btnsIn":true,"bottomMin":44,"rows":1,"h":268,"closeW":322,"rowsW":322}
 [360x800] files: the subtitle wraps between words, not in the middle of one: true
 [360x800] files: the Allow buttons are at least 40 px tall and the bottom buttons at least 44: true 40 / 44
 [360x800] files: alone, "Not now" takes the whole row: true 322 of 322
 [360x800] files: on a normal screen the sheet fits without scrolling: true 268
-[320x640] intro: the sheet is inside the screen, its rows and buttons inside the sheet, no text cut off sideways: true {"subWholeWords":true,"inside":true,"scrolls":false,"wide":false,"rowsIn":true,"textIn":true,"allowMin":40,"allowW":61,"btnsIn":true,"bottomMin":44,"rows":3,"h":383,"closeW":77,"rowsW":282}
+[320x640] intro: the sheet is inside the screen, its rows and buttons inside the sheet, no text cut off sideways: true {"subWholeWords":true,"inside":true,"scrolls":false,"wide":false,"rowsIn":true,"textIn":true,"allowMin":40,"allowW":61,"btnsIn":true,"bottomMin":44,"rows":3,"h":442,"closeW":77,"rowsW":282}
 [320x640] intro: the subtitle wraps between words, not in the middle of one: true
 [320x640] intro: the Allow buttons are at least 40 px tall and the bottom buttons at least 44: true 40 / 44
 [320x640] intro: "Not now" shares the row with "Allow all": true 77 of 282
@@ -112,11 +112,11 @@
 [320x640] files: the subtitle wraps between words, not in the middle of one: true
 [320x640] files: the Allow buttons are at least 40 px tall and the bottom buttons at least 44: true 40 / 44
 [320x640] files: alone, "Not now" takes the whole row: true 282 of 282
-[412x915] intro: the sheet is inside the screen, its rows and buttons inside the sheet, no text cut off sideways: true {"subWholeWords":true,"inside":true,"scrolls":false,"wide":false,"rowsIn":true,"textIn":true,"allowMin":40,"allowW":61,"btnsIn":true,"bottomMin":44,"rows":3,"h":341,"closeW":77,"rowsW":374}
+[412x915] intro: the sheet is inside the screen, its rows and buttons inside the sheet, no text cut off sideways: true {"subWholeWords":true,"inside":true,"scrolls":false,"wide":false,"rowsIn":true,"textIn":true,"allowMin":40,"allowW":61,"btnsIn":true,"bottomMin":44,"rows":3,"h":400,"closeW":77,"rowsW":374}
 [412x915] intro: the subtitle wraps between words, not in the middle of one: true
 [412x915] intro: the Allow buttons are at least 40 px tall and the bottom buttons at least 44: true 40 / 44
 [412x915] intro: "Not now" shares the row with "Allow all": true 77 of 374
-[412x915] intro: on a normal screen the sheet fits without scrolling: true 341
+[412x915] intro: on a normal screen the sheet fits without scrolling: true 400
 [412x915] files: the sheet is inside the screen, its rows and buttons inside the sheet, no text cut off sideways: true {"subWholeWords":true,"inside":true,"scrolls":false,"wide":false,"rowsIn":true,"textIn":true,"allowMin":40,"allowW":61,"btnsIn":true,"bottomMin":44,"rows":1,"h":260,"closeW":374,"rowsW":374}
 [412x915] files: the subtitle wraps between words, not in the middle of one: true
 [412x915] files: the Allow buttons are at least 40 px tall and the bottom buttons at least 44: true 40 / 44

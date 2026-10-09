@@ -7231,6 +7231,10 @@ Type any command below (e.g. pm list packages -d)
                 </div>
                 <div style="font-size:20px; cursor:pointer;" onclick="closePermSheet()">✕</div>
             </div>
+            <div id="permLangRow" style="display:none; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px;">
+                <label for="permLangSelect" style="font-size:13px; font-weight:800;">Language</label>
+                <select class="op-select lang-select" id="permLangSelect" translate="no" aria-label="Language" onchange="chooseLanguage(this.value)"></select>
+            </div>
             <div class="mode-tip-box" id="permReason" style="display:none; margin-bottom:10px;"></div>
             <div id="permRows"></div>
             <div style="display:flex; gap:10px; margin-top:14px;">
@@ -9105,6 +9109,8 @@ Type any command below (e.g. pm list packages -d)
             if (!sel) return;
             sel.innerHTML = LANG_ENGINE.langs.map(l => '<option value="' + l.code + '">' + escapeHtml(l.name) + '</option>').join('');
             sel.value = LANG_ENGINE.code;
+            const ps = document.getElementById('permLangSelect');        // the same list in the first-launch permission sheet
+            if (ps) { ps.innerHTML = sel.innerHTML; ps.value = LANG_ENGINE.code; }
         }
         function chooseLanguage(code) {
             const sel = document.getElementById('langSelect');
@@ -9117,6 +9123,8 @@ Type any command below (e.g. pm list packages -d)
                 }
                 kvSet('lang', code);
                 if (sel) sel.value = code;
+                const ps = document.getElementById('permLangSelect');
+                if (ps) ps.value = code;
                 showToast('Language: ' + LANG_ENGINE.name);
             });
         }
@@ -23249,6 +23257,8 @@ Type any command below (e.g. pm list packages -d)
             why.style.display = files && reason ? '' : 'none';
             why.innerText = reason || '';
             permRender();
+            const lr = document.getElementById('permLangRow');            // the language: on the first-launch sheet only (the phone's language, or English, is chosen already)
+            if (lr) { lr.style.display = permMode === 'intro' ? 'flex' : 'none'; const ps = document.getElementById('permLangSelect'); if (ps) ps.value = LANG_ENGINE.code; }
             document.getElementById('permModal').classList.add('show');
             haptic();
         }

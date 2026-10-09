@@ -294,6 +294,8 @@ These came before the rest of this list and were only checked in the browser. Th
 
 - [ ] App menu buttons (v7.12.5): **App Info** now stands right after **Clear Data** and **Uninstall** right after **Rem Updates**; **Uninstall** is tinted red and **Freeze** blue.
 
+- [ ] First launch in the phone's language (v7.12.5): on a phone set to Deutsch (or Español, Français...), install the app fresh: it starts in that language, and the first-launch **Allow a few permissions** sheet has a **Language** drop-down set to it; pick English there: the whole app switches at once. On a phone in a language the app does not have it starts in English. The sheet opened later from About has no Language drop-down.
+
 ## Report
 
 Note the phone model, Android version, working mode and the item number of anything that failed, then open an issue
