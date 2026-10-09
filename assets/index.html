@@ -35,6 +35,8 @@
             --apps-enabled: #00F050;
             --apps-frozen: #2979FF;
             --apps-system: #A33CFF;
+            --apps-running: #00E676;
+            --apps-uninstalled: #FF5252;
 
             --radius-xl: 24px;
             --radius-lg: 16px;
@@ -348,8 +350,8 @@
         .stat-split .stat-card.active { background: rgba(var(--ov), 0.1); box-shadow: inset 0 0 0 1px var(--accent); }
         .stat-split:has(.stat-card.active) { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 2px 12px var(--accent-glow); }
         /* each box wears its own colour (the one its number has): a faint tint when off, a strong one with a ring when it is the filter in use */
-        .stat-card[data-filter="running"] { --tone: var(--status-running); }
-        .stat-card[data-filter="uninstalled"] { --tone: var(--status-bloat); }
+        .stat-card[data-filter="running"] { --tone: var(--apps-running); }
+        .stat-card[data-filter="uninstalled"] { --tone: var(--apps-uninstalled); }
         .stat-card[data-filter="enabled"] { --tone: var(--apps-enabled); }
         .stat-card[data-filter="frozen"] { --tone: var(--apps-frozen); }
         .stat-card[data-filter="user"] { --tone: var(--status-user); }
@@ -564,10 +566,19 @@
             background: rgba(0, 229, 255, 0.1);
         }
 
-        /* A frozen (disabled) app's whole row has a blue tint, like the Frozen box at the top; a selected row keeps the selection colours */
+        /* The whole row of an app is tinted like the box at the top for its state: green running, blue frozen (disabled), red uninstalled
+           (the later rule wins); a selected row keeps the selection colours */
+        .app-card.running:not(.selected) {
+            background: color-mix(in srgb, var(--apps-running) 8%, var(--bg-card));
+            border-color: color-mix(in srgb, var(--apps-running) 32%, var(--border-glass));
+        }
         .app-card.frozen:not(.selected) {
             background: color-mix(in srgb, var(--apps-frozen) 9%, var(--bg-card));
             border-color: color-mix(in srgb, var(--apps-frozen) 35%, var(--border-glass));
+        }
+        .app-card.uninstalled:not(.selected) {
+            background: color-mix(in srgb, var(--apps-uninstalled) 9%, var(--bg-card));
+            border-color: color-mix(in srgb, var(--apps-uninstalled) 35%, var(--border-glass));
         }
 
         /* Just the checkbox and the avatar now (app-meta sits on its own, to the left of this) - sized to its
@@ -3547,11 +3558,11 @@
                     <div class="stat-label">Installed</div>
                 </div>
                 <div class="stat-card" data-filter="running" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('running')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
-                    <div class="stat-num" style="color:var(--status-running);" id="statRunning">--</div>
+                    <div class="stat-num" style="color:var(--apps-running);" id="statRunning">--</div>
                     <div class="stat-label">Running</div>
                 </div>
                 <div class="stat-card" data-filter="uninstalled" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('uninstalled')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
-                    <div class="stat-num" style="color:var(--status-bloat);" id="statUninstalled">--</div>
+                    <div class="stat-num" style="color:var(--apps-uninstalled);" id="statUninstalled">--</div>
                     <div class="stat-label">Bloatware (Uninstalled)</div>
                 </div>
                 <div class="stat-split">
@@ -14438,7 +14449,7 @@ Type any command below (e.g. pm list packages -d)
 
             const pk = escapeHtml(app.pkg);
             return `
-                <div class="app-card ${isSelected ? 'selected' : ''} ${app.isSuspended ? 'suspended' : ''} ${app.isFrozen && !app.isUninstalled ? 'frozen' : ''}" id="card_${pk}" data-pkg="${pk}">
+                <div class="app-card ${isSelected ? 'selected' : ''} ${app.isSuspended ? 'suspended' : ''} ${app.isFrozen && !app.isUninstalled ? 'frozen' : ''} ${app.isRunning && !app.isUninstalled ? 'running' : ''} ${app.isUninstalled ? 'uninstalled' : ''}" id="card_${pk}" data-pkg="${pk}">
                     <img class="app-icon" alt="" draggable="false" data-icon="${pk}"${appIconCache[app.pkg] ? ` src="${appIconCache[app.pkg]}"` : ''}>
                     <div class="app-meta" onclick="toggleSelectPkg(this.parentElement.dataset.pkg)">
                         <div class="app-name">${escapeHtml(app.name)}</div>
@@ -22680,6 +22691,8 @@ Type any command below (e.g. pm list packages -d)
             css.setProperty('--note', ensureContrast('#F0C000', t.bg, 4.5));                  // amber text that can be read on the light page too
             css.setProperty('--apps-enabled', light ? ensureContrast('#00F050', '#FFFFFF', 3.5) : '#00F050');
             css.setProperty('--apps-frozen', light ? ensureContrast('#2979FF', '#FFFFFF', 3.5) : '#2979FF');
+            css.setProperty('--apps-running', light ? ensureContrast('#00E676', '#FFFFFF', 3.5) : '#00E676');
+            css.setProperty('--apps-uninstalled', light ? ensureContrast('#FF5252', '#FFFFFF', 3.5) : '#FF5252');
             css.setProperty('--apps-system', light ? ensureContrast('#A33CFF', '#FFFFFF', 3.5) : '#A33CFF');
             css.setProperty('--status-user', light ? ensureContrast('#FF9100', '#FFFFFF', 3.5) : '#FF9100');
             css.setProperty('--status-suspended', light ? ensureContrast('#FFAB00', '#FFFFFF', 3.5) : '#FFC400');
