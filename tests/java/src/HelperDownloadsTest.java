@@ -166,6 +166,8 @@ public class HelperDownloadsTest {
             BrowserDownload.Job pj = dl.start(base + "/f?n=persist", "UA", "http://ref/", dir);
             until(() -> pj.state == BrowserDownload.State.RUNNING && pj.done > 90000, 8000);
             dl.pause(pj.id); until(() -> pj.state == BrowserDownload.State.PAUSED, 8000);
+            // the worker sets PAUSED first and writes the journal a moment later: shutting down in between left the journal of the start (no name, 0 bytes) - wait for the write
+            until(() -> { try { String t = new String(Files.readAllBytes(journal.toPath()), StandardCharsets.UTF_8); return t.contains("\"state\":\"PAUSED\"") && t.contains("persist.apkm"); } catch (IOException e) { return false; } }, 8000);
             long keptBytes = pj.done;
             dl.shutdown();
             slowMs = 0; reqs.clear();
