@@ -1,5 +1,9 @@
 # Changelog
 
+## v7.12.1-Pro (versionCode 843)
+
+- **Uninstall in the app menu no longer asks first.** The button just uninstalls (a system app stays on the phone and **Reinstall** brings it back). **Clear Data** and **Remove updates**, which cannot be taken back, still ask. Test: `t115`.
+
 ## v7.12.0-Pro (versionCode 842)
 
 - **Logcat keeps its lines.** Each live poll used to replace the whole view with what the last 300 lines of the device's log held, and `logcat -t N` counts lines of the whole buffer *before* the level filter on many Android versions: at Error level the view was usually empty and what had shown vanished a second later. Now every poll is merged into the lines already kept (`lcMerge`: a line is added once; identical lines inside one fetch, such as a recursion's stack frames, are all kept; up to 8,000 lines), a poll that finds nothing or fails leaves the screen alone, a new level / filter / app starts a new view and answers for an old one are dropped, and `logcatImpl` reads 3,000 to 10,000 lines back whenever a level, app or text filter is set and cuts the tail itself. Test: `t41`, `t145`.

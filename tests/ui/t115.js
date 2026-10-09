@@ -1,4 +1,4 @@
-// The small things asked for with "all your suggestions": the app menu asks before Uninstall, Clear Data and Remove updates (and not before the rest); the batch Freeze is called Freeze in its
+// The small things asked for with "all your suggestions": the app menu asks before Clear Data and Remove updates (and not before the rest, Uninstall included since v7.12.1); the batch Freeze is called Freeze in its
 // question as on its button; "Install unknown apps" is a row of the permissions sheet (granted through a working mode, or opened in Settings, and left out when the app build does not report it);
 // Root is "DENIED" and not ready when su exists but was not granted; and a "?" on the first card of each tab opens the Help Guide at that tab's topic.
 const { chromium, PAGE } = require('./lib/pw');
@@ -27,9 +27,9 @@ const { chromium, PAGE } = require('./lib/pw');
   const wait = ms => page.waitForTimeout(ms);
   const acts = () => ev(() => window.__acts.slice());
 
-  // ---- the app menu asks first, for the three that cannot be taken back with one tap ----
+  // ---- the app menu asks first, for the two that cannot be taken back with one tap (Uninstall does not ask: a system app can be brought back with Reinstall) ----
   await ev(() => { isPrivilegedActive = true; openInspector('com.x'); }); await wait(300);
-  for (const [action, word] of [['uninstall', /Uninstall Example\?/], ['clear_data', /Clear all data of Example\?/], ['uninstall_updates', /Remove the updates of Example\?/]]) {
+  for (const [action, word] of [['clear_data', /Clear all data of Example\?/], ['uninstall_updates', /Remove the updates of Example\?/]]) {
     dialogs.length = 0; answer = false;
     await ev(a => singleAction(a), action); await wait(150);
     check(action + ': asks, in words that say what is lost', dialogs.length === 1 && word.test(dialogs[0]), JSON.stringify(dialogs));
@@ -40,8 +40,8 @@ const { chromium, PAGE } = require('./lib/pw');
     await ev(() => { window.__acts.length = 0; });
   }
   dialogs.length = 0;
-  for (const action of ['launch', 'force_stop', 'freeze', 'unfreeze', 'suspend']) { await ev(a => singleAction(a), action); await wait(120); }
-  check('the others do not ask', dialogs.length === 0 && (await acts()).length === 5, JSON.stringify([dialogs, await acts()]));
+  for (const action of ['launch', 'force_stop', 'freeze', 'unfreeze', 'suspend', 'uninstall']) { await ev(a => singleAction(a), action); await wait(120); }
+  check('the others do not ask, and Uninstall just uninstalls', dialogs.length === 0 && (await acts()).length === 6 && (await acts()).includes('uninstall:com.x'), JSON.stringify([dialogs, await acts()]));
   await ev(() => { window.__acts.length = 0; isPrivilegedActive = false; });
   dialogs.length = 0;
   await ev(() => singleAction('uninstall')); await wait(150);

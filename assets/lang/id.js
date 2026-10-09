@@ -1644,7 +1644,6 @@ x: {
 "It is installed silently through the working mode.": "Dipasang secara senyap melalui mode kerja.",
 "It is not set any more": "Tidak lagi diatur",
 "It is removed for the device's user. A system app can be put back with Reinstall.": "Aplikasi dihapus untuk pengguna perangkat. Aplikasi sistem dapat dikembalikan dengan Instal ulang.",
-"It is removed for you. A system app stays on the phone and can be brought back with Reinstall.": "Aplikasi dihapus untuk Anda. Aplikasi sistem tetap ada di ponsel dan dapat dikembalikan dengan Instal ulang.",
 "It is tried as it is first; if Android refuses it, a copy signed with this app's key is installed.": "APK dicoba apa adanya lebih dulu; jika Android menolaknya, salinan yang ditandatangani dengan kunci aplikasi ini akan diinstal.",
 "It looks like a percentage.": "Tampaknya sebuah persentase.",
 "It looks like a time in seconds.": "Tampaknya sebuah waktu dalam detik.",

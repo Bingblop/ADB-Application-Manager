@@ -1644,7 +1644,6 @@ x: {
 "It is installed silently through the working mode.": "通过工作模式静默安装。",
 "It is not set any more": "已不再设置该项",
 "It is removed for the device's user. A system app can be put back with Reinstall.": "它会为设备用户移除。系统应用可通过“重新安装”恢复。",
-"It is removed for you. A system app stays on the phone and can be brought back with Reinstall.": "它会为你移除。系统应用仍保留在手机中，可通过“重新安装”恢复。",
 "It is tried as it is first; if Android refuses it, a copy signed with this app's key is installed.": "将先按原样尝试安装；如果 Android 拒绝，则会安装一个用本应用密钥签名的副本。",
 "It looks like a percentage.": "看起来像百分比。",
 "It looks like a time in seconds.": "看起来像以秒为单位的时间。",

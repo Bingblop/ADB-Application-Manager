@@ -22585,9 +22585,8 @@ Type any command below (e.g. pm list packages -d)
             if (!silent) haptic();
         }
 
-        // The three buttons of the app menu that cannot be taken back with one tap ask first, in words that say what is lost
+        // Clear Data and Remove updates in the app menu cannot be taken back with one tap, so they ask first, in words that say what is lost (Uninstall does not ask: a system app stays on the phone and Reinstall brings it back)
         function singleConfirmText(action, name) {
-            if (action === 'uninstall') return 'Uninstall ' + name + '?\n\nIt is removed for you. A system app stays on the phone and can be brought back with Reinstall.';
             if (action === 'clear_data') return 'Clear all data of ' + name + '?\n\nIts settings, accounts, saved games and the files in its own storage are deleted. This cannot be undone.';
             if (action === 'uninstall_updates') return 'Remove the updates of ' + name + '?\n\nIt goes back to the version that came with the phone. An older version often cannot use the data of a newer one, so it may lose its data.';
             return '';

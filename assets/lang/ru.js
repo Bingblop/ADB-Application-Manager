@@ -1644,7 +1644,6 @@ x: {
 "It is installed silently through the working mode.": "Устанавливается тихо через режим работы.",
 "It is not set any more": "Больше не задано",
 "It is removed for the device's user. A system app can be put back with Reinstall.": "Оно удаляется для пользователя устройства. Системное приложение можно вернуть кнопкой «Переустановить».",
-"It is removed for you. A system app stays on the phone and can be brought back with Reinstall.": "Оно удаляется для вас. Системное приложение остаётся на телефоне, и его можно вернуть кнопкой «Переустановить».",
 "It is tried as it is first; if Android refuses it, a copy signed with this app's key is installed.": "Сначала он устанавливается как есть; если Android его отклонит, устанавливается копия, подписанная ключом этого приложения.",
 "It looks like a percentage.": "Похоже на проценты.",
 "It looks like a time in seconds.": "Похоже на время в секундах.",

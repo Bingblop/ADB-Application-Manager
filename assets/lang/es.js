@@ -1644,7 +1644,6 @@ x: {
 "It is installed silently through the working mode.": "Se instala en silencio con el modo de operación.",
 "It is not set any more": "Ya no está definido",
 "It is removed for the device's user. A system app can be put back with Reinstall.": "Se elimina para el usuario del dispositivo. Una app del sistema se puede recuperar con Reinstalar.",
-"It is removed for you. A system app stays on the phone and can be brought back with Reinstall.": "Se elimina para ti. Una app del sistema permanece en el teléfono y se puede recuperar con Reinstalar.",
 "It is tried as it is first; if Android refuses it, a copy signed with this app's key is installed.": "Primero se intenta tal cual; si Android lo rechaza, se instala una copia firmada con la clave de esta app.",
 "It looks like a percentage.": "Parece un porcentaje.",
 "It looks like a time in seconds.": "Parece un tiempo en segundos.",

@@ -1641,7 +1641,6 @@
 {"k":"It is installed silently through the working mode.","ctx":"built by the code of: mp bar sync"},
 {"k":"It is not set any more","ctx":"built by the code of: sdb edit reload"},
 {"k":"It is removed for the device's user. A system app can be put back with Reinstall.","ctx":"built by the code of: cd app act"},
-{"k":"It is removed for you. A system app stays on the phone and can be brought back with Reinstall.","ctx":"built by the code of: single confirm text"},
 {"k":"It is tried as it is first; if Android refuses it, a copy signed with this app's key is installed.","ctx":"built by the code of: render install info"},
 {"k":"It looks like a percentage.","ctx":"built by the code of: sdb guess"},
 {"k":"It looks like a time in seconds.","ctx":"built by the code of: sdb guess"},

@@ -1,13 +1,10 @@
-ok   uninstall: asks, in words that say what is lost
-ok   uninstall: "Cancel" runs nothing
-ok   uninstall: "OK" runs it
 ok   clear_data: asks, in words that say what is lost
 ok   clear_data: "Cancel" runs nothing
 ok   clear_data: "OK" runs it
 ok   uninstall_updates: asks, in words that say what is lost
 ok   uninstall_updates: "Cancel" runs nothing
 ok   uninstall_updates: "OK" runs it
-ok   the others do not ask
+ok   the others do not ask, and Uninstall just uninstalls
 ok   without a working mode the lock answers first, with no question
 ok   the batch question says Freeze, as the button does
 ok   the batch button of the grid is still Freeze
