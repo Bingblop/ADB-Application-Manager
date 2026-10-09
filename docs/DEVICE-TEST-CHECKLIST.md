@@ -273,15 +273,15 @@ These came before the rest of this list and were only checked in the browser. Th
 
 ## 15. Ask the agent about an unlisted app (v7.11.2)
 
-- [ ] Open an app the UAD-NG list does not rate (a small vendor system package): an **Ask agent** button stands right under the app name, package and version (it was under Share before v7.12.5) (since v7.12.0; before that the chip read UAD-NG Not listed · Ask). An app the list rates (Bixby, a Google app) still shows its level and no Ask chip.
-- [ ] Tap the button with no default agent chosen (v7.12.0): Settings opens on the Default agent card. With an agent connected: the answer streams in, ends in a verdict, and **Copy the answer** copies it. **Web search** opens a search for the package.
+- [ ] Open an app the UAD-NG list does not rate (a small vendor system package): an **Ask agent** button (no symbol on it) stands where the chip would be, under Share and a little to the left (since v7.12.0; before that the chip read UAD-NG Not listed · Ask). An app the list rates (Bixby, a Google app) still shows its level and no Ask chip.
+- [ ] Tap the button with no default agent chosen (v7.12.5): the window opens and says to choose and connect an agent, **Web search** works, and its **Open Settings** link opens the Default agent card. With an agent connected: the answer streams in, ends in a verdict, and **Copy the answer** copies it. **Web search** opens a search for the package.
 
 ## 16. Logcat, recording, default agent (v7.12.0)
 
 - [ ] Logcat > set the level to **Error** and press **Play** while using other apps: lines stay on the screen (they used to vanish after two seconds). A pause with nothing new does not empty the view. Changing the level starts a fresh view; **Clear** empties it.
 - [ ] Logcat > **Record to file**: the button becomes **Stop recording** with a growing line count; leave the tab, use an app, come back; tap **Stop recording**: the file opens as a still picture. Search for a word (the match is marked), hide a level with the key, go to **End**, tap an entry (Copy / Ask agent / Web search), **Copy shown**, **Save** (the file is in Download/ADB App Manager), **Share**.
 - [ ] Logcat > **Recordings** lists it with its size; tap it to open it again; the cross deletes it (**Delete** in the picture does too).
-- [ ] Settings > **Default agent** sits under Language. With none chosen, press **Ask agent** on a Hidden Setting row: Settings opens on the card, which is outlined for a moment, and nothing is sent. Choose an agent that has no key: the line under it says it is not connected; the button still leads to Settings.
+- [ ] Settings > **Default agent** sits under Language. With none chosen, press **Ask agent** on a Hidden Setting row: the window opens with the free Web search and an Open Settings link (which outlines the card for a moment); nothing is sent. Choose an agent that has no key: the line under it says it is not connected; the button still leads to Settings.
 - [ ] Connect an agent (key in the Command-Line Interface tab), choose it as the default, press **Ask agent** on a hidden setting row, on a permission in an app's menu, on an overlay row and on a Task Manager process: a box shows what is sent and the answer streams in; **Ask again**, **Web search** and **Copy the answer** work.
 - [ ] App menu of an app the UAD-NG list rates: the chip reads only the level (no "UAD-NG" text). An unlisted app shows **Ask agent** in its place.
 - [ ] SD Maid: the four tools come first, then **Leftover data of uninstalled apps**, then **Trim Caches**.
@@ -291,6 +291,8 @@ These came before the rest of this list and were only checked in the browser. Th
 - [ ] The first box reads **Installed** and its count leaves out the uninstalled apps. The **All Apps** pill still counts every app.
 - [ ] Tap **Installed**: only installed apps are listed. Also tap **Bloatware (Uninstalled)**: every app on the phone is listed and both boxes are lit. Tap **Installed** again: only the uninstalled apps remain.
 - [ ] With Installed and Bloatware (Uninstalled) lit, tap **Running**: Bloatware (Uninstalled) turns off (a running app is installed).
+
+- [ ] App menu buttons (v7.12.5): **App Info** now stands right after **Clear Data** and **Uninstall** right after **Rem Updates**; **Uninstall** is tinted red and **Freeze** blue.
 
 ## Report
 

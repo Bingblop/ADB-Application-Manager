@@ -1281,6 +1281,11 @@
             color: var(--on-accent);
         }
 
+        /* Uninstall wears the red of the uninstalled rows, Freeze the blue of the frozen ones */
+        .sheet-btn-red { background: color-mix(in srgb, var(--apps-uninstalled) 14%, transparent); border-color: color-mix(in srgb, var(--apps-uninstalled) 50%, var(--border-glass)); color: var(--apps-uninstalled); }
+        .sheet-btn-blue { background: color-mix(in srgb, var(--apps-frozen) 14%, transparent); border-color: color-mix(in srgb, var(--apps-frozen) 50%, var(--border-glass)); color: var(--apps-frozen); }
+        .sheet-btn-red:active, .sheet-btn-blue:active { background: var(--accent); color: var(--on-accent); }
+
         .sheet-tabs {
             display: flex;
             border-bottom: 1px solid var(--border-glass);
@@ -6905,7 +6910,6 @@ Type any command below (e.g. pm list packages -d)
                         <h3 id="sheetTitle">App Title</h3>
                         <p id="sheetPkg">com.example.package</p>
                         <p id="sheetVersion" class="sheet-version"></p>
-                        <button class="uad-chip uad-chip-ask" id="sheetAsk" type="button" style="display:none; margin-top:8px;" onclick="openAppAsk()" aria-haspopup="dialog" aria-label="Ask the agent whether it is safe to disable this app"><span>✦ Ask agent</span></button>
                         <div class="copy-row">
                             <span class="copy-chip" onclick="copyAppField('pkg')">Copy package</span>
                             <span class="copy-chip" onclick="copyAppField('name')">Copy name</span>
@@ -6922,6 +6926,7 @@ Type any command below (e.g. pm list packages -d)
                         <div style="font-size:20px; cursor:pointer;" onclick="closeInspector()">✕</div>
                     </div>
                     <button class="uad-chip" id="sheetUad" type="button" style="display:none;" onclick="openUadInfo()" aria-haspopup="dialog"></button>
+                    <button class="uad-chip uad-chip-ask" id="sheetAsk" type="button" style="display:none; align-self:flex-start;" onclick="openAppAsk()" aria-haspopup="dialog" aria-label="Ask the agent whether it is safe to disable this app"><span>Ask agent</span></button>
                     <button class="uad-chip" id="sheetTrk" type="button" style="display:none;" onclick="openTrackersInfo()" aria-haspopup="dialog"></button>
                 </div>
             </div>
@@ -6934,7 +6939,7 @@ Type any command below (e.g. pm list packages -d)
                 <button class="sheet-btn" onclick="singleAction('force_stop')">
                     <span>Force Stop</span>
                 </button>
-                <button class="sheet-btn" onclick="singleAction('freeze')" id="sheetBtnFreeze">
+                <button class="sheet-btn sheet-btn-blue" onclick="singleAction('freeze')" id="sheetBtnFreeze">
                     <span>Freeze</span>
                 </button>
                 <button class="sheet-btn" onclick="singleAction('unfreeze')" id="sheetBtnUnfreeze">
@@ -6949,17 +6954,17 @@ Type any command below (e.g. pm list packages -d)
                 <button class="sheet-btn" onclick="singleAction('clear_data')">
                     <span>Clear Data</span>
                 </button>
-                <button class="sheet-btn" onclick="singleAction('uninstall')" id="sheetBtnUninstall">
-                    <span>Uninstall</span>
-                </button>
-                <button class="sheet-btn" onclick="singleAction('reinstall')" id="sheetBtnReinstall" style="display:none;">
-                    <span>Reinstall</span>
+                <button class="sheet-btn" onclick="singleAction('app_settings')">
+                    <span>App Info</span>
                 </button>
                 <button class="sheet-btn" onclick="singleAction('uninstall_updates')">
                     <span>Rem Updates</span>
                 </button>
-                <button class="sheet-btn" onclick="singleAction('app_settings')">
-                    <span>App Info</span>
+                <button class="sheet-btn sheet-btn-red" onclick="singleAction('uninstall')" id="sheetBtnUninstall">
+                    <span>Uninstall</span>
+                </button>
+                <button class="sheet-btn" onclick="singleAction('reinstall')" id="sheetBtnReinstall" style="display:none;">
+                    <span>Reinstall</span>
                 </button>
                 <button class="sheet-btn" onclick="extractApkUI()" id="sheetBtnExtract">
                     <span>Extract APK</span>
@@ -10673,7 +10678,7 @@ Type any command below (e.g. pm list packages -d)
             const el = document.getElementById('askAgentNote');
             if (!el) return;
             const ag = askAgentDef();
-            if (!ag) { el.textContent = 'No agent is chosen yet, so every Ask agent button brings you here.'; return; }
+            if (!ag) { el.textContent = 'No agent is chosen yet, so an Ask agent button only offers Web search, which is free and needs no setup.'; return; }
             txRefreshVault();
             if (!txAgentReady(ag)) { el.innerHTML = escapeHtml(ag.name) + ' is not connected yet. Add its key or sign-in in the Command-Line Interface tab. <a href="#" onclick="aiOpenAgentSetup(); return false;">Open it</a>'; return; }
             const model = txModelFor(ag);
@@ -10735,14 +10740,14 @@ Type any command below (e.g. pm list packages -d)
         let agentAsk = null;             // { kind, name, text, web, answer, busy }
         // The button: kind and name from its data (nothing goes into an attribute that was not escaped), the rest of what the screen knows in data-ax (one line each).
         function agentBtnHtml(kind, name, extra, cls) {
-            return '<button type="button" class="agent-btn' + (cls ? ' ' + cls : '') + '" data-ak="' + escapeHtml(kind) + '" data-an="' + escapeHtml(String(name)) + '" data-ax="' + escapeHtml(Array.isArray(extra) ? extra.filter(Boolean).join('\n') : (extra ? String(extra) : '')) + '" onclick="event.stopPropagation(); agentAskFromBtn(this)" onkeydown="event.stopPropagation()" aria-label="Ask the agent about ' + escapeHtml(String(name)) + '" title="Ask the agent about this">✦ Ask agent</button>';
+            return '<button type="button" class="agent-btn' + (cls ? ' ' + cls : '') + '" data-ak="' + escapeHtml(kind) + '" data-an="' + escapeHtml(String(name)) + '" data-ax="' + escapeHtml(Array.isArray(extra) ? extra.filter(Boolean).join('\n') : (extra ? String(extra) : '')) + '" onclick="event.stopPropagation(); agentAskFromBtn(this)" onkeydown="event.stopPropagation()" aria-label="Ask the agent about ' + escapeHtml(String(name)) + '" title="Ask the agent about this">Ask agent</button>';
         }
         function agentAskFromBtn(btn) {
             haptic();
             askAgentAbout(btn.dataset.ak, btn.dataset.an, btn.dataset.ax ? btn.dataset.ax.split('\n') : []);
         }
         function askAgentAbout(kind, name, lines) {
-            if (!askAgentGate()) return;
+            // no gate here: without a connected agent the window still opens, says so (aiExplainInto) and Web search in it is free and needs no setup
             const k = AGENT_KINDS[kind] || AGENT_KINDS.item, info = txInfo || {};
             const phone = 'Android ' + (info.release || '?') + (info.model ? ' on ' + ((info.manufacturer || '') + ' ' + info.model).trim() : '');
             const text = phone + '\n' + k.label + ': ' + name + (lines && lines.length ? '\n' + lines.filter(Boolean).join('\n') : '');

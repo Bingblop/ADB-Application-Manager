@@ -3,7 +3,8 @@
 ## v7.12.5-Pro (versionCode 847)
 
 - **"Total Installed" is now "Installed", and it no longer counts the uninstalled apps.** Tap it to see only the installed apps. Tap **Installed** and **Bloatware (Uninstalled)** together to see every app on the phone. The list still opens on every app with no box lit (the **All Apps** pill, which also clears the filters, is lit). A new **Installed** pill sits next to All Apps. Tests: `t70`, `t104`.
-- **The app menu's Ask agent button sits under the app name** (below the package and version), not at the far right under Share, so it is in reach at once. Test: `t144`.
+- **The app menu's buttons.** **App Info** and **Uninstall** swapped places (App Info after Clear Data, Uninstall after Rem Updates); **Uninstall** is tinted red and **Freeze** blue. The **Ask agent** chip stays under Share, a little to the left, and the star symbol is gone from every Ask agent button. Tests: `t144`.
+- **A free source without any setup.** With no agent chosen (or one that is not connected) an Ask agent button no longer jumps to Settings: its window opens, says so and keeps **Web search** (free, no setup), with an **Open Settings** link. Tests: `t144`, `t145`.
 - **Running and uninstalled rows are tinted too.** In the Apps tab the whole row of a running app has a green tint and the whole row of an uninstalled app a red one, like the frozen (blue) rows; the Running and Bloatware (Uninstalled) boxes at the top use the same green and red. A selected row keeps the selection colours. Test: `t133`.
 - **A frozen app's whole row has a blue tint** in the Apps tab (the same blue as the Frozen box), not only its FROZEN badge. A selected row keeps the selection colours. Test: `t133`.
 

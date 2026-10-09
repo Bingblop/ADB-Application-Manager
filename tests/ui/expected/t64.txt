@@ -50,7 +50,7 @@ Replace its value?
     a table tab keeps the focus when the tabs are redrawn: true
     a quick value does not focus the text box (no keyboard over the button): true
     the search clear button can be reached with the keyboard: true
-13. a setting named "constructor" is listed as a plain setting: true {"rows":["constructor|constructor No description yet c1 ✦ Ask agent"],"hint":"null"}
+13. a setting named "constructor" is listed as a plain setting: true {"rows":["constructor|constructor No description yet c1 Ask agent"],"hint":"null"}
     and so are toString / valueOf / hasOwnProperty: true
     a mistake in the Settings tab's mode hook does not stop the Working Modes update: true console: Settings tab: Error: boom
 14. the color correction hint has the values the right way round: true
@@ -58,7 +58,7 @@ Replace its value?
 17. a value of only spaces shows (blank), not a gap: true blank_value
 No description yet
 (blank)
-✦ Ask agent
+Ask agent
     a line break added at the end is pointed out: true
     the Undo bar goes away when leaving for another tab: true
     but stays when moving between the tabs that make changes: true

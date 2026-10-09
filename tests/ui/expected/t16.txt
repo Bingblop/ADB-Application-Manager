@@ -3,10 +3,10 @@ row fdroid:   USER
 row uninstalled (no version): UNINSTALLED
 SYSTEM
 bridge getUpdateState calls for 124 rows: 0
-menu sbrowser: Samsung Internet | com.sec.android.app.sbrowser | Version 26.0.3.1 (260003100) | ✦ Ask agent | Copy package | Copy name | Installed Jan 15, 2024 • Updated Sep 20, 2026 | → 27.1.0.103 available on Galaxy Store | Update
+menu sbrowser: Samsung Internet | com.sec.android.app.sbrowser | Version 26.0.3.1 (260003100) | Copy package | Copy name | Installed Jan 15, 2024 • Updated Sep 20, 2026 | → 27.1.0.103 available on Galaxy Store | Update
 after Update tap → active tab: App
 Updater | calls: ["install:com.sec.android.app.sbrowser"]
-menu ddg (no apk, same-day install): DuckDuckGo | com.duckduckgo.mobile.android | Version 5.210.0 (260003100) | ✦ Ask agent | Copy package | Copy name | Installed Jan 15, 2024 | → 5.212.1 available on GitHub | Release
+menu ddg (no apk, same-day install): DuckDuckGo | com.duckduckgo.mobile.android | Version 5.210.0 (260003100) | Copy package | Copy name | Installed Jan 15, 2024 | → 5.212.1 available on GitHub | Release
 hint shown for fdroid (no update): false
 no Versions pill any more: true | no version in any row: true | no update arrow in a row: true
 after a filter change still none: true

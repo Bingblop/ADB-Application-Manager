@@ -30,7 +30,7 @@ Refresh | Global 2 / 455
    by value: true
 8. a 1 shows a switch that is on: true
    press and hold flips 1 to 0 with one put: true {"op":"put","ns":"global","key":"heads_up_notifications_enabled","value":"0"}
-   the row shows the new state (read back): true "heads_up_notifications_enabled\nPop-up (heads-up) notifications at the top of the screen.\n0 = off; 1 = on\n0\n✦ Ask agent"
+   the row shows the new state (read back): true "heads_up_notifications_enabled\nPop-up (heads-up) notifications at the top of the screen.\n0 = off; 1 = on\n0\nAsk agent"
    an undo bar names the change: true heads_up_notifications_enabled: 1 → 0
    Undo puts the old value back: true
    a short press does not flip (it opens the editor): true

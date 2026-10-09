@@ -74,8 +74,8 @@ Android will use your wallpaper’s colors with the Tonal Spot style again.
     "Show more" says how many are left: true Show 11 more (11 left)
     the status line and the tab count: true 131 overlays · 47 on · read <clock>
 Refresh / 131
-    a row shows the id and its state; its switch is on: true {"on":true,"disabled":false,"text":"android.theme.customization.accent_color\nOn\nAccent color used across the system\n✦ Ask agent"}
-    an unavailable overlay says so and its switch is disabled: true {"on":false,"disabled":true,"text":"com.google.android.overlay.gmsconfig.photos\nUnavailable\nDevice settings that the maker changed\n✦ Ask agent"}
+    a row shows the id and its state; its switch is on: true {"on":true,"disabled":false,"text":"android.theme.customization.accent_color\nOn\nAccent color used across the system\nAsk agent"}
+    an unavailable overlay says so and its switch is disabled: true {"on":false,"disabled":true,"text":"com.google.android.overlay.gmsconfig.photos\nUnavailable\nDevice settings that the maker changed\nAsk agent"}
     an id with HTML characters is shown as text: true {"text":"weird<b>id</b>&\"quote's","html":"weird&lt;b&gt;id&lt;/b&gt;&amp;\"quote's","bold":0}
 13. "On" shows only the switched-on overlays: true
     "Off" shows the switched-off ones, not the unavailable: true

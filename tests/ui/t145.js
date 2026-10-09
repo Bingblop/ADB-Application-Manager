@@ -99,14 +99,15 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await ev(() => switchView('settings')); await sleep(900);
   await ev(() => { sdbResetView(); const i = document.getElementById('sdbSearch'); i.value = 'zen_mode'; sdbSearchInput(); }); await sleep(300);
   const row = await ev(() => { const r = document.querySelector('#sdbList .sdb-row[data-k="zen_mode"]'); const bt = r && r.querySelector('.agent-btn'); return { has: !!bt, ak: bt && bt.dataset.ak, an: bt && bt.dataset.an, ax: bt && bt.dataset.ax, txt: bt && bt.innerText.trim() }; });
-  check('12. a hidden setting\'s row carries the Ask agent button', row.has && row.ak === 'setting' && row.an === 'zen_mode' && /Table: global/.test(row.ax) && /Value now: /.test(row.ax) && row.txt === '✦ Ask agent', JSON.stringify(row));
+  check('12. a hidden setting\'s row carries the Ask agent button', row.has && row.ak === 'setting' && row.an === 'zen_mode' && /Table: global/.test(row.ax) && /Value now: /.test(row.ax) && row.txt === 'Ask agent', JSON.stringify(row));
   await ev(() => { sdbResetView(); const i = document.getElementById('sdbSearch'); i.value = 'zzz_no_such'; sdbSearchInput(); }); await sleep(100);
   const hasUndescribed = await ev(() => { const out = []; for (const ns of ['global', 'secure', 'system']) if (sdbData[ns]) for (const k of sdbData[ns].keys()) if (!sdbHint(ns, k)) { out.push(sdbRowHtml(ns, k, sdbData[ns].get(k), [])); if (out.length > 2) break; } return out; });
   check('    a setting without a description says so, next to the button', hasUndescribed.length > 0 && hasUndescribed.every(h => /No description yet/.test(h) && /agent-btn/.test(h)), String(hasUndescribed.length));
   await ev(() => { sdbResetView(); const i = document.getElementById('sdbSearch'); i.value = 'zen_mode'; sdbSearchInput(); }); await sleep(300);
   await ev(() => { askAgentId = ''; window.__sent = []; });
   await page.locator('#sdbList .sdb-row[data-k="zen_mode"] .agent-btn').click(); await sleep(450);
-  check('13. without a default agent the button leads to Settings (the row did not open its editor)', await ev(() => currentViewName() === 'prefs' && !document.getElementById('sdbEditModal').classList.contains('show') && !document.getElementById('agentAskModal').classList.contains('show')));
+  check('13. without a default agent the button still opens the Ask agent window, which says so and offers the free Web search (the row did not open its editor, nothing was sent)', await ev(() => document.getElementById('agentAskModal').classList.contains('show') && !document.getElementById('sdbEditModal').classList.contains('show') && /choose a default agent/.test(document.getElementById('agentAskAi').innerText) && /Web search/.test(document.getElementById('agentAskAi').innerText) && window.__sent.length === 0));
+  await ev(() => agentAskClose());
   await ev(() => {
     askAgentId = 'fake';
     window.txAgentDef = () => ({ id: 'fake', name: 'Fake AI (test)', api: 'x', provider: 'fake' });
