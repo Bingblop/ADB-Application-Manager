@@ -1,5 +1,9 @@
 # Changelog
 
+## v7.12.2-Pro (versionCode 844)
+
+- **Clear Data and Remove updates in the app menu no longer ask first either.** No button of the single-app menu asks a question now: Uninstall (since v7.12.1), Clear Data and Remove updates run at once. Clear Data still cannot be undone, and Remove updates puts a system app back to its shipped version. Test: `t115`.
+
 ## v7.12.1-Pro (versionCode 843)
 
 - **Uninstall in the app menu no longer asks first.** The button just uninstalls (a system app stays on the phone and **Reinstall** brings it back). **Clear Data** and **Remove updates**, which cannot be taken back, still ask. Test: `t115`.
