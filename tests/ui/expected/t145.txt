@@ -22,9 +22,9 @@ ok   10. Recordings lists it, newest first, with its size
 ok       tapping one opens the still picture again (and closes the list)
 ok   11. Delete removes the recording
 ok       and the list says there are none
-ok   12. a hidden setting's row carries the Ask agent button: {"has":true,"ak":"setting","an":"zen_mode","ax":"Table: global\nValue now: 0\nThe app already says: Do Not Disturb. Values: 0 = off; 1 = priority interruptions only; 2 = total silence; 3 = alarms only","txt":"✦ Ask agent"}
+ok   12. a hidden setting's row carries the Ask agent button: {"has":true,"ak":"setting","an":"zen_mode","ax":"Table: global\nValue now: 0\nThe app already says: Do Not Disturb. Values: 0 = off; 1 = priority interruptions only; 2 = total silence; 3 = alarms only","txt":"Ask agent"}
 ok       a setting without a description says so, next to the button: 5
-ok   13. without a default agent the button leads to Settings (the row did not open its editor)
+ok   13. without a default agent the button still opens the Ask agent window, which says so and offers the free Web search (the row did not open its editor, nothing was sent)
 ok   14. with a default agent it asks at once, in its own window, about that setting: {"modal":true,"editor":false,"title":"About this setting","subj":"zen_mode","ans":"Asking Fake AI (fake-model). The text above is sent to them.\nA mode.","sent":{"system":"You explain one Android hidden setting (an entry of the Settings.Global, Settings.Secure or Settings.System database, the ones \"settings get/put\" reads and writes) to someone who is not a developer. Say briefly and in plain words: what it is and what it does, whether it matters in daily use, and, if the person might want to change, turn off or remove it, what would happen and how safe that is (and whether it can be undone). Say plainly when you do not recognize it (many belong to the phone maker or to one app) instead of guessing, and then say what its name suggests. Short paragraphs, no headings. Do not invent details.","msgs":[{"role":"user","text":"Android ?\nSetting: zen_mode\nTable: global\nValue now: 0\nThe app already says: Do Not Disturb. Values: 0 = off; 1 = priority interruptions only; 2 = total silence; 3 = alarms only"}]}}
 ok   15. overlays carry the button too
 ok       and a button made for a name with quotes keeps them out of the markup

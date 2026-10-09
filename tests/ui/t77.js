@@ -23,7 +23,7 @@ const APPS = [
     page.on('pageerror', e => { bad++; console.log('FAIL page error:', e.message); });
     await page.addInitScript(inst.initScript, { kv: { perm_intro_v61: '1' }, apps: APPS, store: store || {} });
     await page.goto(PAGE);
-    await page.waitForFunction(() => document.getElementById('statTotal').innerText === '7');
+    await page.waitForFunction(() => document.getElementById('countAll').innerText === '7');
     return page;
   };
   const ev = (page, fn, arg) => page.evaluate(fn, arg);
@@ -232,7 +232,7 @@ const APPS = [
   page.on('pageerror', e => { bad++; console.log('FAIL page error:', e.message); });
   await page.addInitScript(inst.initScript, { kv: { perm_intro_v61: '1' }, apps: big, store: {} });
   await page.goto(PAGE);
-  await page.waitForFunction(() => document.getElementById('statTotal').innerText === '3000');
+  await page.waitForFunction(() => document.getElementById('countAll').innerText === '3000');
   let t0 = Date.now();
   await page.fill('#searchInput', '(.*)*x');
   await sleep(350);                                                  // a long list waits for a pause in typing before it is searched
@@ -253,7 +253,7 @@ const APPS = [
       const many = Array.from({ length: 60 }, (_, i) => ({ pkg: 'com.vendor.app' + i, name: 'Application ' + i }));
       await p.addInitScript(inst.initScript, { kv: { perm_intro_v61: '1' }, apps: many, store: {} });
       await p.goto(PAGE);
-      await p.waitForFunction(() => document.getElementById('statTotal').innerText === '60');
+      await p.waitForFunction(() => document.getElementById('countAll').innerText === '60');
       if (withSel) { await ev(p, () => { selectedPkgs.add('com.vendor.app1'); updateBatchBar(); }); await sleep(400); }
       await p.click('#searchMenuBtn');
       let still = 0, last = -1;

@@ -1,4 +1,4 @@
-// v6.1 Application Manager tab top: the header button (the colors palette in v6.1, the settings gear since v7.0) is bigger, the big stat buttons (Total installed, Running, ...) light up for the filter the list shows,
+// v6.1 Application Manager tab top: the header button (the colors palette in v6.1, the settings gear since v7.0) is bigger, the big stat buttons (Installed, Running, ...) light up for the filter the list shows,
 // and a tip under Export / Share CSV says the filters scroll sideways (and goes once they have been).
 const { chromium, PAGE } = require('./lib/pw');
 const inst = require('./lib/inst_mock.js');
@@ -32,57 +32,57 @@ for (let i = 0; i < 40; i++) apps.push({ pkg: 'com.example.app' + i, name: 'App 
   await ev(page, () => switchView('apps'));
 
   // 2) the stat buttons follow the filter
-  check('2. on opening, "Total installed" is lit (the list shows every app, like the All pill)', (await active(page)) === 'all:true' && (await pill(page)) === 'all', await active(page));
+  check('2. on opening, no box is lit and the All Apps pill is (the list shows every app)', (await active(page)) === 'none' && (await pill(page)) === 'all', await active(page));
+  await page.click('.stat-card[data-filter="running"]');
   const lit = await ev(page, () => { const c = document.querySelector('.stat-card.active'), o = document.querySelector('.stat-card:not(.active)'); const a = getComputedStyle(c), n = getComputedStyle(o); return { lit: a.borderTopColor + '|' + a.boxShadow !== 'none', borderDiffers: a.borderTopColor !== n.borderTopColor, shadow: a.boxShadow !== 'none' && n.boxShadow === 'none' }; });
   check('   a lit card looks different (its own border colour and a glow), the others do not', lit.borderDiffers && lit.shadow, JSON.stringify(lit));
-  await page.click('.stat-card[data-filter="running"]');
   check('   tapping Running lights Running only, and the Running pill follows', (await active(page)) === 'running:true' && (await pill(page)) === 'running', await active(page));
   check('   the list below shows what the lit card counts', (await ev(page, () => document.querySelectorAll('#appsListContainer .app-card').length)) === Number(await page.locator('#statRunning').innerText()));
-  await page.click('.stat-card[data-filter="all"]');
+  await page.click('#filterScroll .filter-pill[data-filter="all"]');
   await page.click('#filterScroll .filter-pill[data-filter="system"]');
   check('   choosing the System pill lights System', (await active(page)) === 'system:true', await active(page));
-  await page.click('.stat-card[data-filter="all"]');
+  await page.click('#filterScroll .filter-pill[data-filter="all"]');
   await page.click('#filterScroll .filter-pill[data-filter="suspended"]');
   check('   a filter with no card (Suspended) lights none', (await active(page)) === 'none', await active(page));
-  await page.click('.stat-card[data-filter="all"]');
+  await page.click('#filterScroll .filter-pill[data-filter="all"]');
   await page.click('#filterScroll .filter-pill[data-filter="recent"]');
   check('   same for Updated 7d', (await active(page)) === 'none', await active(page));
-  await page.click('.stat-card[data-filter="all"]');
-  check('   tapping Total installed is back to the start', (await active(page)) === 'all:true' && (await pill(page)) === 'all', await active(page));
+  await page.click('#filterScroll .filter-pill[data-filter="all"]');
+  check('   tapping All Apps is back to the start', (await active(page)) === 'none' && (await pill(page)) === 'all', await active(page));
   for (const f of ['frozen', 'user', 'uninstalled']) {
-    await page.click('.stat-card[data-filter="all"]');
+    await page.click('#filterScroll .filter-pill[data-filter="all"]');
     await page.click('.stat-card[data-filter="' + f + '"]');
     check('   ' + f + ' card lights ' + f + ' and the pill follows', (await active(page)) === f + ':true' && (await pill(page)) === f, await active(page));
   }
-  await page.click('.stat-card[data-filter="all"]');
+  await page.click('#filterScroll .filter-pill[data-filter="all"]');
   await ev(page, () => document.querySelector('.stat-card[data-filter="system"]').focus());
   await page.keyboard.press('Enter');
   check('   a card can be used from the keyboard (Enter)', (await active(page)) === 'system:true', await active(page));
-  await page.click('.stat-card[data-filter="all"]');
+  await page.click('#filterScroll .filter-pill[data-filter="all"]');
   await ev(page, () => document.querySelector('.stat-card[data-filter="running"]').focus());
   await page.keyboard.press(' ');
   check('   …and Space', (await active(page)) === 'running:true', await active(page));
   check('   each card is a button with a pressed state for a screen reader', await ev(page, () => Array.from(document.querySelectorAll('.stat-card')).every(c => c.getAttribute('role') === 'button' && c.hasAttribute('aria-pressed') && c.tabIndex === 0)));
-  check('   the highlight does not shrink the card or move the grid', await ev(page, () => { const w = k => Math.round(document.querySelector('.stat-card[data-filter="' + k + '"]').getBoundingClientRect().width); return w('all') === w('running') && w('running') === w('uninstalled') && w('enabled') === w('frozen') && w('user') === w('system'); }));
+  check('   the highlight does not shrink the card or move the grid', await ev(page, () => { const w = k => Math.round(document.querySelector('.stat-card[data-filter="' + k + '"]').getBoundingClientRect().width); return w('installed') === w('running') && w('running') === w('uninstalled') && w('enabled') === w('frozen') && w('user') === w('system'); }));
   await page.close();
 
-  // 3) a filter left on last time is not brought back: the app always opens on Total Installed ("all")
+  // 3) a filter left on last time is not brought back: the app always opens on All Apps
   page = await open({ ui_state: JSON.stringify({ appsFilter: 'frozen', showVersions: true, appSort: 'name' }) });
-  check('3. a remembered filter is ignored: the app opens on Total Installed', (await active(page)) === 'all:true' && (await pill(page)) === 'all', await active(page));
+  check('3. a remembered filter is ignored: the app opens on All Apps', (await active(page)) === 'none' && (await pill(page)) === 'all', await active(page));
   await page.close();
   page = await open({ ui_state: JSON.stringify({ appsFilter: 'patched', showVersions: true, appSort: 'name' }) });
-  check('   a remembered filter with no card is ignored too', (await active(page)) === 'all:true', await active(page));
+  check('   a remembered filter with no card is ignored too', (await active(page)) === 'none', await active(page));
   await page.close();
 
   // 3b) the opt-in "Remember my filters" setting (Settings, Lists): off by default, and when on the filters come back
   page = await open({ ui_state: JSON.stringify({ rememberFilters: true, filters: { apps: ['running', 'user', 'bogus'], uad: ['system'], saved: ['frozen'] } }) });
   check('3b. with "Remember my filters" on, the filters left on come back (running + user, unknown ones dropped)', (await active(page)) === 'running:true,user:true', await active(page));
   check('   the setting shows as on, and the Debloater and Saved rows come back too', await ev(page, () => document.getElementById('rememberFiltersToggle').checked && uadExtra.has('system') && savedFilters.has('frozen')));
-  await page.click('.stat-card[data-filter="all"]'); await ev(page, () => new Promise(r => setTimeout(r, 200)));
-  check('   it saves the change (tapping Total installed saves an empty set)', await ev(page, () => JSON.parse(window.AndroidBridge.loadStore('ui_state') || '{}').filters.apps.length === 0));
+  await page.click('#filterScroll .filter-pill[data-filter="all"]'); await ev(page, () => new Promise(r => setTimeout(r, 200)));
+  check('   it saves the change (tapping All Apps saves an empty set)', await ev(page, () => JSON.parse(window.AndroidBridge.loadStore('ui_state') || '{}').filters.apps.length === 0));
   await page.close();
   page = await open({ ui_state: JSON.stringify({ filters: { apps: ['running'] } }) });
-  check('   with the setting off (the default), a saved filter set is ignored', (await active(page)) === 'all:true' && await ev(page, () => !document.getElementById('rememberFiltersToggle').checked), await active(page));
+  check('   with the setting off (the default), a saved filter set is ignored', (await active(page)) === 'none' && await ev(page, () => !document.getElementById('rememberFiltersToggle').checked), await active(page));
   await page.close();
 
   // 4) the tip under Export / Share CSV

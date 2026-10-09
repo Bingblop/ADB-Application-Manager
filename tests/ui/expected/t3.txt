@@ -5,7 +5,7 @@ locked buttons (a permission that cannot be toggled) carry the lock: [[false,"GR
 changeable rows: 2
 camera after toggle: CAMERA
 RUNTIMEtake pictures and videos • android.permission.CAMERA
-✦ Ask agent
+Ask agent
 DENIED
 ops rows: 4
 CAMERA mode now: Ignore

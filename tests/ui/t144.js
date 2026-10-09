@@ -34,20 +34,30 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   const chip = await ev(() => ({ ask: getComputedStyle(document.getElementById('sheetAsk')).display !== 'none', uad: getComputedStyle(document.getElementById('sheetUad')).display !== 'none', t: document.getElementById('sheetAsk').innerText.replace(/\s+/g, ' ').trim() }));
   check('2. an app the list does not know shows an Ask agent button where the tag would be, without "UAD-NG"', chip.ask && !chip.uad && /Ask agent/.test(chip.t) && !/UAD-NG/.test(chip.t), JSON.stringify(chip));
 
-  // no default agent chosen: the button leads to Settings, nothing is asked
+  const grid = await ev(() => { const names = Array.from(document.querySelectorAll('.sheet-action-grid .sheet-btn')).filter(b => getComputedStyle(b).display !== 'none').map(b => b.innerText.trim()); const col = id => (getComputedStyle(document.getElementById(id)).color.match(/\d+/g) || []).map(Number); return { names, red: col('sheetBtnUninstall'), blue: col('sheetBtnFreeze'), ask: document.getElementById('sheetAsk').parentElement.className, askAlign: getComputedStyle(document.getElementById('sheetAsk')).alignSelf, symbol: document.getElementById('sheetAsk').innerText }; });
+  check('2b. the sheet\'s buttons: App Info took the place of Uninstall (after Clear Data) and Uninstall that of App Info (after Rem Updates); Uninstall is red, Freeze is blue', grid.names.indexOf('App Info') === grid.names.indexOf('Clear Data') + 1 && grid.names.indexOf('Uninstall') === grid.names.indexOf('Rem Updates') + 1 && grid.names.indexOf('Uninstall') === grid.names.indexOf('App Info') + 2 && grid.red[0] > grid.red[1] + 60 && grid.red[0] > grid.red[2] + 60 && grid.blue[2] > grid.blue[0] + 60 && grid.blue[2] > grid.blue[1] - 20, JSON.stringify(grid));
+  check('   the Ask agent chip is back in the header\'s right column, towards the left of it, and has no symbol', /sheet-header-actions/.test(grid.ask) && grid.askAlign === 'flex-start' && grid.symbol === 'Ask agent', JSON.stringify(grid));
+
+  // no default agent chosen: the window still opens, says so and leaves the free Web search; nothing is asked
   await ev(() => { window.__sent.length = 0; document.getElementById('sheetAsk').click(); }); await sleep(450);
-  const redirected = await ev(() => ({ view: currentViewName(), card: document.getElementById('agentCard').classList.contains('flash'), modal: document.getElementById('agentAskModal').classList.contains('show'), insp: document.getElementById('inspectorModal').classList.contains('show'), sent: window.__sent.length }));
-  check('3. with no default agent chosen the button opens Settings on the Default agent card, and nothing is sent', redirected.view === 'prefs' && redirected.card && !redirected.modal && !redirected.insp && redirected.sent === 0, JSON.stringify(redirected));
+  const noAgent = await ev(() => ({ modal: document.getElementById('agentAskModal').classList.contains('show'), ai: document.getElementById('agentAskAi').innerText, sent: window.__sent.length, web: !!document.querySelector('#agentAskModal [onclick="agentAskWeb()"]') }));
+  check('3. with no default agent chosen the button opens the window, which says to choose and connect an agent and keeps Web search (free, no setup); nothing is sent', noAgent.modal && /choose a default agent/.test(noAgent.ai) && /Web search/.test(noAgent.ai) && noAgent.web && noAgent.sent === 0, JSON.stringify(noAgent));
+  await ev(() => document.querySelector('#agentAskAi a').click()); await sleep(450);
+  const redirected = await ev(() => ({ view: currentViewName(), card: document.getElementById('agentCard').classList.contains('flash'), modal: document.getElementById('agentAskModal').classList.contains('show'), insp: document.getElementById('inspectorModal').classList.contains('show') }));
+  check('   its Open Settings link leads to the Default agent card', redirected.view === 'prefs' && redirected.card && !redirected.modal && !redirected.insp, JSON.stringify(redirected));
 
   // the Settings card: right after Language
   const card = await ev(() => { const l = document.getElementById('languageCard'), c = document.getElementById('agentCard'); return { after: l.nextElementSibling === c, opts: [...document.querySelectorAll('#askAgentSelect option')].map(o => o.value), val: document.getElementById('askAgentSelect').value, note: document.getElementById('askAgentNote').innerText }; });
   check('4. the Default agent card follows the Language card; no agent is chosen, and the agents can be picked', card.after && card.val === '' && card.opts[0] === '' && card.opts.includes('claude') && card.opts.includes('gemini') && !card.opts.includes('none') && /No agent is chosen/.test(card.note), JSON.stringify(card));
+  const oss = await ev(() => { txBuildAgentSelect(); return ({ bu: txAgentDef('browseruse'), c4: txAgentDef('crawl4ai'), inDefault: [...document.querySelectorAll('#askAgentSelect option')].map(o => o.value).filter(v => v === 'browseruse' || v === 'crawl4ai'), inCli: [...document.querySelectorAll('#txAgent option')].map(o => o.value).filter(v => v === 'browseruse' || v === 'crawl4ai') }); });
+  check('4b. Browser Use and Crawl4AI are explained entries of the free open-source list (not chat agents): in the Command-Line Interface list, not in the Default agent choice', oss.bu && oss.c4 && oss.bu.api === 'info' && oss.c4.api === 'info' && oss.bu.group === 'oss' && oss.c4.group === 'oss' && oss.inDefault.length === 0 && oss.inCli.length === 2, JSON.stringify(oss));
   await ev(() => { const s = document.getElementById('askAgentSelect'); s.value = 'claude'; s.dispatchEvent(new Event('change')); }); await sleep(100);
   const picked = await ev(() => ({ id: askAgentId, saved: kvGet('ask_agent', ''), note: document.getElementById('askAgentNote').innerText }));
   check('5. choosing an agent saves it; one that is not connected yet says so', picked.id === 'claude' && picked.saved === 'claude' && /not connected yet/.test(picked.note), JSON.stringify(picked));
   await ev(() => { switchView('apps'); openInspector('com.example.unknown'); }); await sleep(250);
   await ev(() => document.getElementById('sheetAsk').click()); await sleep(450);
-  check('   pressing Ask agent with an agent that is not connected also leads to Settings', await ev(() => currentViewName() === 'prefs' && !document.getElementById('agentAskModal').classList.contains('show')));
+  check('   pressing Ask agent with an agent that is not connected also opens the window with the same message, and nothing is sent', await ev(() => document.getElementById('agentAskModal').classList.contains('show') && /choose a default agent/.test(document.getElementById('agentAskAi').innerText) && window.__sent.length === 0));
+  await ev(() => { agentAskClose(); closeInspector(); });
 
   // with an agent that works
   await ev(() => {

@@ -35,6 +35,8 @@
             --apps-enabled: #00F050;
             --apps-frozen: #2979FF;
             --apps-system: #A33CFF;
+            --apps-running: #00E676;
+            --apps-uninstalled: #FF5252;
 
             --radius-xl: 24px;
             --radius-lg: 16px;
@@ -348,8 +350,8 @@
         .stat-split .stat-card.active { background: rgba(var(--ov), 0.1); box-shadow: inset 0 0 0 1px var(--accent); }
         .stat-split:has(.stat-card.active) { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 2px 12px var(--accent-glow); }
         /* each box wears its own colour (the one its number has): a faint tint when off, a strong one with a ring when it is the filter in use */
-        .stat-card[data-filter="running"] { --tone: var(--status-running); }
-        .stat-card[data-filter="uninstalled"] { --tone: var(--status-bloat); }
+        .stat-card[data-filter="running"] { --tone: var(--apps-running); }
+        .stat-card[data-filter="uninstalled"] { --tone: var(--apps-uninstalled); }
         .stat-card[data-filter="enabled"] { --tone: var(--apps-enabled); }
         .stat-card[data-filter="frozen"] { --tone: var(--apps-frozen); }
         .stat-card[data-filter="user"] { --tone: var(--status-user); }
@@ -562,6 +564,21 @@
         .app-card.selected {
             border-color: var(--accent);
             background: rgba(0, 229, 255, 0.1);
+        }
+
+        /* The whole row of an app is tinted like the box at the top for its state: green running, blue frozen (disabled), red uninstalled
+           (the later rule wins); a selected row keeps the selection colours */
+        .app-card.running:not(.selected) {
+            background: color-mix(in srgb, var(--apps-running) 8%, var(--bg-card));
+            border-color: color-mix(in srgb, var(--apps-running) 32%, var(--border-glass));
+        }
+        .app-card.frozen:not(.selected) {
+            background: color-mix(in srgb, var(--apps-frozen) 9%, var(--bg-card));
+            border-color: color-mix(in srgb, var(--apps-frozen) 35%, var(--border-glass));
+        }
+        .app-card.uninstalled:not(.selected) {
+            background: color-mix(in srgb, var(--apps-uninstalled) 9%, var(--bg-card));
+            border-color: color-mix(in srgb, var(--apps-uninstalled) 35%, var(--border-glass));
         }
 
         /* Just the checkbox and the avatar now (app-meta sits on its own, to the left of this) - sized to its
@@ -1263,6 +1280,11 @@
             background: var(--accent);
             color: var(--on-accent);
         }
+
+        /* Uninstall wears the red of the uninstalled rows, Freeze the blue of the frozen ones */
+        .sheet-btn-red { background: color-mix(in srgb, var(--apps-uninstalled) 14%, transparent); border-color: color-mix(in srgb, var(--apps-uninstalled) 50%, var(--border-glass)); color: var(--apps-uninstalled); }
+        .sheet-btn-blue { background: color-mix(in srgb, var(--apps-frozen) 14%, transparent); border-color: color-mix(in srgb, var(--apps-frozen) 50%, var(--border-glass)); color: var(--apps-frozen); }
+        .sheet-btn-red:active, .sheet-btn-blue:active { background: var(--accent); color: var(--on-accent); }
 
         .sheet-tabs {
             display: flex;
@@ -3536,16 +3558,16 @@
 
             <!-- Live Statistics Grid -->
             <div class="stats-grid">
-                <div class="stat-card" data-filter="all" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('all')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
+                <div class="stat-card" data-filter="installed" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('installed')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
                     <div class="stat-num" id="statTotal">--</div>
-                    <div class="stat-label">Total Installed</div>
+                    <div class="stat-label">Installed</div>
                 </div>
                 <div class="stat-card" data-filter="running" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('running')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
-                    <div class="stat-num" style="color:var(--status-running);" id="statRunning">--</div>
+                    <div class="stat-num" style="color:var(--apps-running);" id="statRunning">--</div>
                     <div class="stat-label">Running</div>
                 </div>
                 <div class="stat-card" data-filter="uninstalled" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('uninstalled')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
-                    <div class="stat-num" style="color:var(--status-bloat);" id="statUninstalled">--</div>
+                    <div class="stat-num" style="color:var(--apps-uninstalled);" id="statUninstalled">--</div>
                     <div class="stat-label">Bloatware (Uninstalled)</div>
                 </div>
                 <div class="stat-split">
@@ -3594,6 +3616,7 @@
             <div class="switch-sub filter-summary-row" id="filterSummary" style="display:none; margin:-2px 2px 8px;"><span class="filter-summary-text" id="filterSummaryText"></span><button class="filter-clear-chip" id="filterClearChip" type="button" onclick="setFilter('all')">Clear filters</button></div>
             <div class="filter-scroll" id="filterScroll" onscroll="filtersScrolled()">
                 <div class="filter-pill active" data-filter="all" onclick="setFilter('all', this)">All Apps (<span id="countAll">0</span>)</div>
+                <div class="filter-pill" data-filter="installed" onclick="setFilter('installed', this)">Installed (<span id="countInstalled">0</span>)</div>
                 <div class="filter-pill" data-filter="recent" onclick="setFilter('recent', this)">Updated 7d (<span id="countRecent">0</span>)</div>
                 <div class="filter-pill" data-filter="running" onclick="setFilter('running', this)">Running (<span id="countRunning">0</span>)</div>
                 <div class="filter-pill" data-filter="user" onclick="setFilter('user', this)">3rd Party (<span id="countUser">0</span>)</div>
@@ -5359,7 +5382,7 @@
                 <label class="switch-row">
                     <div>
                         <div class="switch-title">Remember my filters</div>
-                        <div class="switch-sub">Open the Application Manager, Debloater and Saved Applications with the filters you left on. Off: the Application Manager always opens on Total Installed.</div>
+                        <div class="switch-sub">Open the Application Manager, Debloater and Saved Applications with the filters you left on. Off: the Application Manager always opens on All Apps.</div>
                     </div>
                     <input type="checkbox" class="switch-input" id="rememberFiltersToggle" onchange="setRememberFilters(this.checked)">
                     <span class="switch-track"></span>
@@ -6670,6 +6693,8 @@ Type any command below (e.g. pm list packages -d)
                     <button class="mode-action-btn" onclick="openUrlExternal('https://opencode.ai/')">OpenCode</button>
                     <button class="mode-action-btn" onclick="openUrlExternal('https://kilocode.ai/')">Kilo Code</button>
                     <button class="mode-action-btn" onclick="openUrlExternal('https://getleon.ai/')">Leon.ai</button>
+                    <button class="mode-action-btn" onclick="openUrlExternal('https://github.com/browser-use/browser-use')">Browser Use</button>
+                    <button class="mode-action-btn" onclick="openUrlExternal('https://github.com/unclecode/crawl4ai')">Crawl4AI</button>
                     <button class="mode-action-btn" onclick="openUrlExternal('https://www.jan.ai/')">Jan.ai</button>
                     <button class="mode-action-btn" onclick="openUrlExternal('https://anythingllm.com/')">AnythingLLM</button>
                     <button class="mode-action-btn" onclick="openUrlExternal('https://ollama.com/')">Ollama</button>
@@ -6903,7 +6928,7 @@ Type any command below (e.g. pm list packages -d)
                         <div style="font-size:20px; cursor:pointer;" onclick="closeInspector()">✕</div>
                     </div>
                     <button class="uad-chip" id="sheetUad" type="button" style="display:none;" onclick="openUadInfo()" aria-haspopup="dialog"></button>
-                    <button class="uad-chip uad-chip-ask" id="sheetAsk" type="button" style="display:none;" onclick="openAppAsk()" aria-haspopup="dialog" aria-label="Ask the agent whether it is safe to disable this app"><span>✦ Ask agent</span></button>
+                    <button class="uad-chip uad-chip-ask" id="sheetAsk" type="button" style="display:none; align-self:flex-start;" onclick="openAppAsk()" aria-haspopup="dialog" aria-label="Ask the agent whether it is safe to disable this app"><span>Ask agent</span></button>
                     <button class="uad-chip" id="sheetTrk" type="button" style="display:none;" onclick="openTrackersInfo()" aria-haspopup="dialog"></button>
                 </div>
             </div>
@@ -6916,7 +6941,7 @@ Type any command below (e.g. pm list packages -d)
                 <button class="sheet-btn" onclick="singleAction('force_stop')">
                     <span>Force Stop</span>
                 </button>
-                <button class="sheet-btn" onclick="singleAction('freeze')" id="sheetBtnFreeze">
+                <button class="sheet-btn sheet-btn-blue" onclick="singleAction('freeze')" id="sheetBtnFreeze">
                     <span>Freeze</span>
                 </button>
                 <button class="sheet-btn" onclick="singleAction('unfreeze')" id="sheetBtnUnfreeze">
@@ -6931,17 +6956,17 @@ Type any command below (e.g. pm list packages -d)
                 <button class="sheet-btn" onclick="singleAction('clear_data')">
                     <span>Clear Data</span>
                 </button>
-                <button class="sheet-btn" onclick="singleAction('uninstall')" id="sheetBtnUninstall">
-                    <span>Uninstall</span>
-                </button>
-                <button class="sheet-btn" onclick="singleAction('reinstall')" id="sheetBtnReinstall" style="display:none;">
-                    <span>Reinstall</span>
+                <button class="sheet-btn" onclick="singleAction('app_settings')">
+                    <span>App Info</span>
                 </button>
                 <button class="sheet-btn" onclick="singleAction('uninstall_updates')">
                     <span>Rem Updates</span>
                 </button>
-                <button class="sheet-btn" onclick="singleAction('app_settings')">
-                    <span>App Info</span>
+                <button class="sheet-btn sheet-btn-red" onclick="singleAction('uninstall')" id="sheetBtnUninstall">
+                    <span>Uninstall</span>
+                </button>
+                <button class="sheet-btn" onclick="singleAction('reinstall')" id="sheetBtnReinstall" style="display:none;">
+                    <span>Reinstall</span>
                 </button>
                 <button class="sheet-btn" onclick="extractApkUI()" id="sheetBtnExtract">
                     <span>Extract APK</span>
@@ -7205,6 +7230,10 @@ Type any command below (e.g. pm list packages -d)
                     </div>
                 </div>
                 <div style="font-size:20px; cursor:pointer;" onclick="closePermSheet()">✕</div>
+            </div>
+            <div id="permLangRow" style="display:none; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px;">
+                <label for="permLangSelect" style="font-size:13px; font-weight:800;">Language</label>
+                <select class="op-select lang-select" id="permLangSelect" translate="no" aria-label="Language" onchange="chooseLanguage(this.value)"></select>
             </div>
             <div class="mode-tip-box" id="permReason" style="display:none; margin-bottom:10px;"></div>
             <div id="permRows"></div>
@@ -8524,12 +8553,12 @@ Type any command below (e.g. pm list packages -d)
         // When on, a batch action (Freeze, Suspend, Uninstall, ...) leaves the selection as it is instead of
         // clearing it, so the same apps are ready for another action straight away. Remembered in ui_state.
         let batchKeepSelection = true;          // on every time: it is put back on whenever a new selection starts (the switch is not remembered)
-        let rememberFilters = false;   // off by default: the Apps tab opens on Total Installed unless the user asks for the filters to be kept
+        let rememberFilters = false;   // off by default: the Apps tab opens on All Apps unless the user asks for the filters to be kept
         // Filters combine: any number of pills / boxes can be on, and an app has to match every one of them (Running + 3rd Party = your running
         // user apps). None on is "All Apps". Two pairs can only have one member on, or none: 3rd Party / System, and Enabled / Frozen.
         const activeFilters = new Set();
         const FILTER_GROUPS = [['user', 'system'], ['enabled', 'frozen']];
-        const FILTER_NAMES = { recent: 'Updated 7d', running: 'Running', user: '3rd Party', system: 'System', enabled: 'Enabled', frozen: 'Frozen', suspended: 'Suspended', patched: 'Patched', trackers: 'Trackers', uninstalled: 'Uninstalled' };
+        const FILTER_NAMES = { installed: 'Installed', recent: 'Updated 7d', running: 'Running', user: '3rd Party', system: 'System', enabled: 'Enabled', frozen: 'Frozen', suspended: 'Suspended', patched: 'Patched', trackers: 'Trackers', uninstalled: 'Uninstalled' };
         let inspectedPkg = null;
         let currentWorkingMode = 'unprivileged';
         let isPrivilegedActive = false;
@@ -9080,6 +9109,8 @@ Type any command below (e.g. pm list packages -d)
             if (!sel) return;
             sel.innerHTML = LANG_ENGINE.langs.map(l => '<option value="' + l.code + '">' + escapeHtml(l.name) + '</option>').join('');
             sel.value = LANG_ENGINE.code;
+            const ps = document.getElementById('permLangSelect');        // the same list in the first-launch permission sheet
+            if (ps) { ps.innerHTML = sel.innerHTML; ps.value = LANG_ENGINE.code; }
         }
         function chooseLanguage(code) {
             const sel = document.getElementById('langSelect');
@@ -9092,6 +9123,8 @@ Type any command below (e.g. pm list packages -d)
                 }
                 kvSet('lang', code);
                 if (sel) sel.value = code;
+                const ps = document.getElementById('permLangSelect');
+                if (ps) ps.value = code;
                 showToast('Language: ' + LANG_ENGINE.name);
             });
         }
@@ -10655,7 +10688,7 @@ Type any command below (e.g. pm list packages -d)
             const el = document.getElementById('askAgentNote');
             if (!el) return;
             const ag = askAgentDef();
-            if (!ag) { el.textContent = 'No agent is chosen yet, so every Ask agent button brings you here.'; return; }
+            if (!ag) { el.textContent = 'No agent is chosen yet, so an Ask agent button only offers Web search, which is free and needs no setup.'; return; }
             txRefreshVault();
             if (!txAgentReady(ag)) { el.innerHTML = escapeHtml(ag.name) + ' is not connected yet. Add its key or sign-in in the Command-Line Interface tab. <a href="#" onclick="aiOpenAgentSetup(); return false;">Open it</a>'; return; }
             const model = txModelFor(ag);
@@ -10717,14 +10750,14 @@ Type any command below (e.g. pm list packages -d)
         let agentAsk = null;             // { kind, name, text, web, answer, busy }
         // The button: kind and name from its data (nothing goes into an attribute that was not escaped), the rest of what the screen knows in data-ax (one line each).
         function agentBtnHtml(kind, name, extra, cls) {
-            return '<button type="button" class="agent-btn' + (cls ? ' ' + cls : '') + '" data-ak="' + escapeHtml(kind) + '" data-an="' + escapeHtml(String(name)) + '" data-ax="' + escapeHtml(Array.isArray(extra) ? extra.filter(Boolean).join('\n') : (extra ? String(extra) : '')) + '" onclick="event.stopPropagation(); agentAskFromBtn(this)" onkeydown="event.stopPropagation()" aria-label="Ask the agent about ' + escapeHtml(String(name)) + '" title="Ask the agent about this">✦ Ask agent</button>';
+            return '<button type="button" class="agent-btn' + (cls ? ' ' + cls : '') + '" data-ak="' + escapeHtml(kind) + '" data-an="' + escapeHtml(String(name)) + '" data-ax="' + escapeHtml(Array.isArray(extra) ? extra.filter(Boolean).join('\n') : (extra ? String(extra) : '')) + '" onclick="event.stopPropagation(); agentAskFromBtn(this)" onkeydown="event.stopPropagation()" aria-label="Ask the agent about ' + escapeHtml(String(name)) + '" title="Ask the agent about this">Ask agent</button>';
         }
         function agentAskFromBtn(btn) {
             haptic();
             askAgentAbout(btn.dataset.ak, btn.dataset.an, btn.dataset.ax ? btn.dataset.ax.split('\n') : []);
         }
         function askAgentAbout(kind, name, lines) {
-            if (!askAgentGate()) return;
+            // no gate here: without a connected agent the window still opens, says so (aiExplainInto) and Web search in it is free and needs no setup
             const k = AGENT_KINDS[kind] || AGENT_KINDS.item, info = txInfo || {};
             const phone = 'Android ' + (info.release || '?') + (info.model ? ' on ' + ((info.manufacturer || '') + ' ' + info.model).trim() : '');
             const text = phone + '\n' + k.label + ': ' + name + (lines && lines.length ? '\n' + lines.filter(Boolean).join('\n') : '');
@@ -10964,7 +10997,7 @@ Type any command below (e.g. pm list packages -d)
                     ['names', 'packages', 'regex'].forEach(k => { if (typeof st.search[k] === 'boolean') searchOpts[k] = st.search[k]; });
                     if (!searchOpts.names && !searchOpts.packages) searchOpts.names = true;      // one of the two always searches
                 }
-                // The Apps tab always opens on "Total Installed" (the "all" filter) after the app was gone from memory: a filter left on
+                // The Apps tab always opens on All Apps (no filter) after the app was gone from memory: a filter left on
                 // last time is not brought back, so the whole list is what you see first.
                 activeFilters.clear();
                 if (rememberFilters && st.filters && typeof st.filters === 'object') {
@@ -13373,7 +13406,8 @@ Type any command below (e.g. pm list packages -d)
             if (f.has('suspended') && !app.isSuspended) return false;
             if (f.has('user') && (app.isSystem || (app.isUninstalled && !f.has('uninstalled')))) return false;
             if (f.has('system') && (!app.isSystem || (app.isUninstalled && !f.has('uninstalled')))) return false;
-            if (f.has('uninstalled') && !app.isUninstalled) return false;
+            if (f.has('installed') && app.isUninstalled && !f.has('uninstalled')) return false;       // Installed leaves the uninstalled apps out, unless Uninstalled is on too: both together are every app on the phone
+            if (f.has('uninstalled') && !app.isUninstalled && !f.has('installed')) return false;
             if (f.has('recent') && !isRecentlyUpdated(app)) return false;
             if (f.has('patched') && !(app.mods && app.mods.length)) return false;
             if (f.has('trackers') && !trackerCount(app.pkg)) return false;
@@ -13417,20 +13451,19 @@ Type any command below (e.g. pm list packages -d)
             sortApps(filteredApps);
 
             // Update stats counts (one pass over the list)
-            const n = { running: 0, enabled: 0, frozen: 0, user: 0, system: 0, uninstalled: 0, recent: 0, suspended: 0, patched: 0, trackers: 0 };
+            const n = { installed: 0, running: 0, enabled: 0, frozen: 0, user: 0, system: 0, uninstalled: 0, recent: 0, suspended: 0, patched: 0, trackers: 0 };
             allApps.forEach(a => {
                 if (a.isRunning) n.running++;
                 if (a.isFrozen && !a.isUninstalled) n.frozen++;
                 if (!a.isFrozen && !a.isUninstalled) n.enabled++;
                 if (a.isUninstalled) n.uninstalled++;
-                else if (a.isSystem) n.system++;
-                else n.user++;
+                else { n.installed++; if (a.isSystem) n.system++; else n.user++; }
                 if (a.isSuspended) n.suspended++;
                 if (a.mods && a.mods.length) n.patched++;
                 if (trackerCount(a.pkg)) n.trackers++;
                 if (isRecentlyUpdated(a)) n.recent++;
             });
-            document.getElementById('statTotal').innerText = allApps.length;
+            document.getElementById('statTotal').innerText = n.installed;
             document.getElementById('statRunning').innerText = n.running;
             document.getElementById('statEnabled').innerText = n.enabled;
             document.getElementById('statFrozen').innerText = n.frozen;
@@ -13439,6 +13472,7 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('statUninstalled').innerText = n.uninstalled;
 
             document.getElementById('countAll').innerText = allApps.length;
+            document.getElementById('countInstalled').innerText = n.installed;
             document.getElementById('countRunning').innerText = n.running;
             document.getElementById('countUser').innerText = n.user;
             document.getElementById('countSystem').innerText = n.system;
@@ -14430,7 +14464,7 @@ Type any command below (e.g. pm list packages -d)
 
             const pk = escapeHtml(app.pkg);
             return `
-                <div class="app-card ${isSelected ? 'selected' : ''} ${app.isSuspended ? 'suspended' : ''}" id="card_${pk}" data-pkg="${pk}">
+                <div class="app-card ${isSelected ? 'selected' : ''} ${app.isSuspended ? 'suspended' : ''} ${app.isFrozen && !app.isUninstalled ? 'frozen' : ''} ${app.isRunning && !app.isUninstalled ? 'running' : ''} ${app.isUninstalled ? 'uninstalled' : ''}" id="card_${pk}" data-pkg="${pk}">
                     <img class="app-icon" alt="" draggable="false" data-icon="${pk}"${appIconCache[app.pkg] ? ` src="${appIconCache[app.pkg]}"` : ''}>
                     <div class="app-meta" onclick="toggleSelectPkg(this.parentElement.dataset.pkg)">
                         <div class="app-name">${escapeHtml(app.name)}</div>
@@ -14839,7 +14873,8 @@ Type any command below (e.g. pm list packages -d)
         // A tap on a pill or a box turns that filter on or off, next to the ones already on. "All Apps" turns them all off.
         function setFilter(filter, el) {
             // Uninstalled bloatware is a list of its own: turning it on turns every other filter off
-            if (filter === 'uninstalled' && !activeFilters.has('uninstalled')) activeFilters.clear();
+            // (Installed stays: Installed + Uninstalled together are every app on the phone)
+            if (filter === 'uninstalled' && !activeFilters.has('uninstalled')) { const keep = activeFilters.has('installed'); activeFilters.clear(); if (keep) activeFilters.add('installed'); }
             // a running app is installed: turning Running on turns Uninstalled off
             if (filter === 'running' && !activeFilters.has('running')) activeFilters.delete('uninstalled');
             toggleFilterIn(activeFilters, filter);
@@ -14853,7 +14888,7 @@ Type any command below (e.g. pm list packages -d)
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // The pills and the big boxes at the top light up for every filter that is on; All Apps / Total installed when none is
+        // The pills and the big boxes at the top light up for every filter that is on; All Apps when none is
         function syncFilterUi() {
             const none = activeFilters.size === 0;
             document.querySelectorAll('#filterScroll .filter-pill[data-filter]').forEach(p => {
@@ -14868,11 +14903,11 @@ Type any command below (e.g. pm list packages -d)
             }
         }
 
-        // The big buttons at the top (Total installed, Running, ...) light up when the list below is showing their filter
+        // The big buttons at the top (Installed, Running, ...) light up when the list below is showing their filter
         function syncStatCards() {
             document.querySelectorAll('.stat-card[data-filter]').forEach(c => {
                 const k = c.getAttribute('data-filter');
-                const on = k === 'all' ? activeFilters.size === 0 : activeFilters.has(k);
+                const on = activeFilters.has(k);
                 c.classList.toggle('active', on);
                 c.setAttribute('aria-pressed', on ? 'true' : 'false');
             });
@@ -22671,6 +22706,8 @@ Type any command below (e.g. pm list packages -d)
             css.setProperty('--note', ensureContrast('#F0C000', t.bg, 4.5));                  // amber text that can be read on the light page too
             css.setProperty('--apps-enabled', light ? ensureContrast('#00F050', '#FFFFFF', 3.5) : '#00F050');
             css.setProperty('--apps-frozen', light ? ensureContrast('#2979FF', '#FFFFFF', 3.5) : '#2979FF');
+            css.setProperty('--apps-running', light ? ensureContrast('#00E676', '#FFFFFF', 3.5) : '#00E676');
+            css.setProperty('--apps-uninstalled', light ? ensureContrast('#FF5252', '#FFFFFF', 3.5) : '#FF5252');
             css.setProperty('--apps-system', light ? ensureContrast('#A33CFF', '#FFFFFF', 3.5) : '#A33CFF');
             css.setProperty('--status-user', light ? ensureContrast('#FF9100', '#FFFFFF', 3.5) : '#FF9100');
             css.setProperty('--status-suspended', light ? ensureContrast('#FFAB00', '#FFFFFF', 3.5) : '#FFC400');
@@ -23220,6 +23257,8 @@ Type any command below (e.g. pm list packages -d)
             why.style.display = files && reason ? '' : 'none';
             why.innerText = reason || '';
             permRender();
+            const lr = document.getElementById('permLangRow');            // the language: on the first-launch sheet only (the phone's language, or English, is chosen already)
+            if (lr) { lr.style.display = permMode === 'intro' ? 'flex' : 'none'; const ps = document.getElementById('permLangSelect'); if (ps) ps.value = LANG_ENGINE.code; }
             document.getElementById('permModal').classList.add('show');
             haptic();
         }
@@ -24856,6 +24895,8 @@ Type any command below (e.g. pm list packages -d)
             { id: 'opencode', name: 'OpenCode', group: 'oss', api: 'cli', cli: 'opencode', color: '#f5f543', site: 'https://opencode.ai/' },
             { id: 'kilocode', name: 'Kilo Code', group: 'oss', api: 'info', color: '#ff6b9d', site: 'https://kilocode.ai/' },
             { id: 'leon', name: 'Leon.ai', group: 'oss', api: 'info', color: '#ffb74d', site: 'https://getleon.ai/' },
+            { id: 'browseruse', name: 'Browser Use', group: 'oss', api: 'info', color: '#ff9f43', site: 'https://github.com/browser-use/browser-use' },
+            { id: 'crawl4ai', name: 'Crawl4AI', group: 'oss', api: 'info', color: '#4dd0e1', site: 'https://github.com/unclecode/crawl4ai' },
             { id: 'jan', name: 'Jan.ai', group: 'oss', api: 'openai-compat', provider: 'jan', color: '#fbbf24', site: 'https://www.jan.ai/', bases: ['http://127.0.0.1:1337/v1'], keyOptional: true },
             { id: 'anythingllm', name: 'AnythingLLM', group: 'oss', api: 'openai-compat', provider: 'anythingllm', color: '#60a5fa', site: 'https://anythingllm.com/', bases: ['http://127.0.0.1:3001/api/v1/openai'] },
             { id: 'ollama', name: 'Ollama (on-device)', group: 'oss', api: 'openai-compat', provider: 'ollama', color: '#e5e5e5', site: 'https://ollama.com/', bases: ['http://127.0.0.1:11434/v1'], keyOptional: true }
@@ -26294,6 +26335,12 @@ Type any command below (e.g. pm list packages -d)
                 else if (ag.id === 'kilocode') h = '<p class="tx-sheet-p">Kilo Code is an open-source AI coding agent built as an editor extension (VS Code, JetBrains), not a phone terminal tool, so it does not chat here.</p>'
                     + '<p class="tx-sheet-p muted">For a coding agent that runs right here in Termux instead, choose OpenCode, or one of the API-key / sign-in agents above.</p>'
                     + '<div class="mode-btn-row" style="margin-top:10px;"><button class="mode-action-btn" onclick="openUrlExternal(\'https://kilocode.ai/\')">Website</button><button class="mode-action-btn" onclick="openUrlExternal(\'https://github.com/Kilo-Org/kilocode\')">Source</button></div>';
+                else if (ag.id === 'browseruse') h = '<p class="tx-sheet-p">Browser Use is an open-source library that lets an AI model drive a web browser to do a task. It runs on a computer with Python and needs a key for the AI model it uses (its own cloud gives new accounts some free credit, then it is paid). It has no Android version and is not a coding agent, so it does not chat here.</p>'
+                    + '<p class="tx-sheet-p muted">For an answer to an Ask agent button, choose an agent above that has a key or runs on your own server; with none, the button still offers the free Web search.</p>'
+                    + '<div class="mode-btn-row" style="margin-top:10px;"><button class="mode-action-btn" onclick="openUrlExternal(\'https://browser-use.com/\')">Website</button><button class="mode-action-btn" onclick="openUrlExternal(\'https://github.com/browser-use/browser-use\')">Source</button></div>';
+                else if (ag.id === 'crawl4ai') h = '<p class="tx-sheet-p">Crawl4AI is an open-source web crawler that turns web pages into clean text for AI models. The library and its Docker server are free, but run on a computer, not on Android; its hosted cloud is pay-as-you-go. It is not a coding agent, so it does not chat here.</p>'
+                    + '<p class="tx-sheet-p muted">For an answer to an Ask agent button, choose an agent above that has a key or runs on your own server; with none, the button still offers the free Web search.</p>'
+                    + '<div class="mode-btn-row" style="margin-top:10px;"><button class="mode-action-btn" onclick="openUrlExternal(\'https://crawl4ai.com/\')">Website</button><button class="mode-action-btn" onclick="openUrlExternal(\'https://github.com/unclecode/crawl4ai\')">Source</button></div>';
                 else h = '<p class="tx-sheet-p">Leon is an open-source personal assistant (skills, voice) that runs on a computer with Node.js and Python. It has no Android version and is not a coding agent, so it does not chat in this Terminal.</p>'
                     + '<p class="tx-sheet-p muted">For a free assistant on this phone, choose Ollama (on-device); for one on your computer, Jan.ai or AnythingLLM.</p>'
                     + '<div class="mode-btn-row" style="margin-top:10px;"><button class="mode-action-btn" onclick="openUrlExternal(\'https://getleon.ai/\')">Website</button><button class="mode-action-btn" onclick="openUrlExternal(\'https://github.com/leon-ai/leon\')">Source</button></div>';

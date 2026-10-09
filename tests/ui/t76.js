@@ -16,7 +16,7 @@ const DEFAULT_ORDER = ['apps', 'saved-lists', 'debloater', 'installer', 'files',
     await page.addInitScript(inst.initScript, { kv: Object.assign({ perm_intro_v61: '1' }, kv || {}), apps });
     await page.goto(PAGE);
     await page.waitForFunction(() => document.querySelectorAll('.tab-btn').length > 0);
-    if (apps) await page.waitForFunction(n => document.getElementById('statTotal').innerText === String(n), apps.length);
+    if (apps) await page.waitForFunction(n => document.getElementById('countAll').innerText === String(n), apps.length);
     return page;
   };
   const ev = (page, fn, arg) => page.evaluate(fn, arg);

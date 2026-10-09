@@ -430,7 +430,7 @@
   <table class="hg-table">
     <thead><tr><th>Control</th><th>What it does</th><th>Default</th><th>When to change it</th></tr></thead>
     <tbody>
-      <tr><td><b>Language</b> (drop-down)</td><td>Chooses the language of the app's buttons and messages. The list has English, Español, Français, Deutsch, Português (Brasil), Italiano, Русский, 简体中文, 日本語, 한국어, العربية, हिन्दी, Türkçe and Bahasa Indonesia. Arabic is shown right to left. App names, file names, commands and what Android itself prints stay as they are.</td><td>English</td><td>If you read another language more easily. This guide is English only and uses the English button names, so switch back to English if you cannot find a button it describes.</td></tr>
+      <tr><td><b>Language</b> (drop-down)</td><td>Chooses the language of the app's buttons and messages. The list has English, Español, Français, Deutsch, Português (Brasil), Italiano, Русский, 简体中文, 日本語, 한국어, العربية, हिन्दी, Türkçe and Bahasa Indonesia. Arabic is shown right to left. App names, file names, commands and what Android itself prints stay as they are.</td><td>English, or the phone's language on a first launch when the app has it (the first-launch permission sheet also has this drop-down)</td><td>If you read another language more easily. This guide is English only and uses the English button names, so switch back to English if you cannot find a button it describes.</td></tr>
     </tbody>
   </table>
   <p><b>What you will see:</b> the whole app is redrawn in the new language and a message says <i>Language: ...</i>. If the language file cannot be loaded, a message says <i>That language could not be loaded. The text stays in</i> and the name of the language you had, and the list returns to that language.</p>
@@ -444,7 +444,7 @@
     </tbody>
   </table>
   <p><b>Where the Ask agent buttons are.</b> Wherever you may want to know what something is: on every row of <a href="#tab-settings">Hidden Settings</a> (a setting without a description says <i>No description yet</i> next to its button) and in the editor sheet; in the app menu on the permissions, app ops, activities, services, receivers, providers, features and libraries lists, and in place of the classification chip of an app the UAD-NG list does not know; on the rows of the <a href="#tab-overlays">overlays</a>; on the processes of the <a href="#tab-taskmgr">Task Manager</a>; on UAD-NG Debloater rows that have no description; on the trackers in the Trackers box; on what <a href="#tab-sdm">SD Maid</a> found; and on a log entry in the <a href="#tab-logcat">Logcat Viewer</a>. A button opens a box that shows exactly what will be sent and asks at once; <b>Ask again</b> asks once more, <b>Web search</b> looks it up instead, and <b>Copy the answer</b> copies it.</p>
-  <p><b>If no agent is chosen</b>, or the one chosen is not connected yet (no key or sign-in), the button does not send anything: it opens this Settings screen on the Default agent card, which is outlined for a moment, and a message says what is missing. The line under the drop-down then reads <i>No agent is chosen yet</i> or <i>... is not connected yet</i> with a link to the Command-Line Interface tab. An agent can be wrong: treat an answer as a hint.</p>
+  <p><b>If no agent is chosen</b>, or the one chosen is not connected yet (no key or sign-in), nothing is sent anywhere. The Ask agent window still opens, says to choose and connect an agent (with an <b>Open Settings</b> link that opens this screen on the Default agent card, outlined for a moment), and its <b>Web search</b> button works at once: it is a free source that needs no setup. The line under the drop-down reads <i>No agent is chosen yet</i> or <i>... is not connected yet</i>. An agent can be wrong: treat an answer as a hint.</p>
 
   <h4>Appearance</h4>
   <p>Light, dark, or follow your phone. Details and the colour rules are in <a href="#themes">Themes and colours</a>.</p>
@@ -550,7 +550,7 @@
   <table class="hg-table">
     <thead><tr><th>Control</th><th>What it does</th><th>Default</th><th>When to change it</th></tr></thead>
     <tbody>
-      <tr><td><b>Remember my filters</b> (switch)</td><td>On: the Application Manager, the UAD-NG Debloater and Saved Applications open with the filters you left switched on. Off: the Application Manager always opens on <b>Total Installed</b>.</td><td>Off</td><td>Turn it on if you always look at the same slice, such as "3rd Party" apps. Leave it off if you want a fresh start every time (see <a href="#tab-apps">Application Manager</a>).</td></tr>
+      <tr><td><b>Remember my filters</b> (switch)</td><td>On: the Application Manager, the UAD-NG Debloater and Saved Applications open with the filters you left switched on. Off: the Application Manager always opens on <b>All Apps</b>.</td><td>Off</td><td>Turn it on if you always look at the same slice, such as "3rd Party" apps. Leave it off if you want a fresh start every time (see <a href="#tab-apps">Application Manager</a>).</td></tr>
     </tbody>
   </table>
 
