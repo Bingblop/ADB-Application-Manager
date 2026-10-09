@@ -1,5 +1,9 @@
 # Changelog
 
+## v7.12.5-Pro (versionCode 847)
+
+- **"Total Installed" is now "Installed", and it no longer counts the uninstalled apps.** Tap it to see only the installed apps. Tap **Installed** and **Bloatware (Uninstalled)** together to see every app on the phone. The list still opens on every app with no box lit (the **All Apps** pill, which also clears the filters, is lit). A new **Installed** pill sits next to All Apps. Tests: `t70`, `t104`.
+
 ## v7.12.4-Pro (versionCode 846)
 
 - **A frozen app's whole row has a blue tint** in the Apps tab (the same blue as the Frozen box), not only its FROZEN badge. A selected row keeps the selection colours. Test: `t133`.

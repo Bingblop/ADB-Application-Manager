@@ -3542,9 +3542,9 @@
 
             <!-- Live Statistics Grid -->
             <div class="stats-grid">
-                <div class="stat-card" data-filter="all" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('all')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
+                <div class="stat-card" data-filter="installed" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('installed')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
                     <div class="stat-num" id="statTotal">--</div>
-                    <div class="stat-label">Total Installed</div>
+                    <div class="stat-label">Installed</div>
                 </div>
                 <div class="stat-card" data-filter="running" role="button" tabindex="0" aria-pressed="false" onclick="setFilter('running')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
                     <div class="stat-num" style="color:var(--status-running);" id="statRunning">--</div>
@@ -3600,6 +3600,7 @@
             <div class="switch-sub filter-summary-row" id="filterSummary" style="display:none; margin:-2px 2px 8px;"><span class="filter-summary-text" id="filterSummaryText"></span><button class="filter-clear-chip" id="filterClearChip" type="button" onclick="setFilter('all')">Clear filters</button></div>
             <div class="filter-scroll" id="filterScroll" onscroll="filtersScrolled()">
                 <div class="filter-pill active" data-filter="all" onclick="setFilter('all', this)">All Apps (<span id="countAll">0</span>)</div>
+                <div class="filter-pill" data-filter="installed" onclick="setFilter('installed', this)">Installed (<span id="countInstalled">0</span>)</div>
                 <div class="filter-pill" data-filter="recent" onclick="setFilter('recent', this)">Updated 7d (<span id="countRecent">0</span>)</div>
                 <div class="filter-pill" data-filter="running" onclick="setFilter('running', this)">Running (<span id="countRunning">0</span>)</div>
                 <div class="filter-pill" data-filter="user" onclick="setFilter('user', this)">3rd Party (<span id="countUser">0</span>)</div>
@@ -5365,7 +5366,7 @@
                 <label class="switch-row">
                     <div>
                         <div class="switch-title">Remember my filters</div>
-                        <div class="switch-sub">Open the Application Manager, Debloater and Saved Applications with the filters you left on. Off: the Application Manager always opens on Total Installed.</div>
+                        <div class="switch-sub">Open the Application Manager, Debloater and Saved Applications with the filters you left on. Off: the Application Manager always opens on All Apps.</div>
                     </div>
                     <input type="checkbox" class="switch-input" id="rememberFiltersToggle" onchange="setRememberFilters(this.checked)">
                     <span class="switch-track"></span>
@@ -8530,12 +8531,12 @@ Type any command below (e.g. pm list packages -d)
         // When on, a batch action (Freeze, Suspend, Uninstall, ...) leaves the selection as it is instead of
         // clearing it, so the same apps are ready for another action straight away. Remembered in ui_state.
         let batchKeepSelection = true;          // on every time: it is put back on whenever a new selection starts (the switch is not remembered)
-        let rememberFilters = false;   // off by default: the Apps tab opens on Total Installed unless the user asks for the filters to be kept
+        let rememberFilters = false;   // off by default: the Apps tab opens on All Apps unless the user asks for the filters to be kept
         // Filters combine: any number of pills / boxes can be on, and an app has to match every one of them (Running + 3rd Party = your running
         // user apps). None on is "All Apps". Two pairs can only have one member on, or none: 3rd Party / System, and Enabled / Frozen.
         const activeFilters = new Set();
         const FILTER_GROUPS = [['user', 'system'], ['enabled', 'frozen']];
-        const FILTER_NAMES = { recent: 'Updated 7d', running: 'Running', user: '3rd Party', system: 'System', enabled: 'Enabled', frozen: 'Frozen', suspended: 'Suspended', patched: 'Patched', trackers: 'Trackers', uninstalled: 'Uninstalled' };
+        const FILTER_NAMES = { installed: 'Installed', recent: 'Updated 7d', running: 'Running', user: '3rd Party', system: 'System', enabled: 'Enabled', frozen: 'Frozen', suspended: 'Suspended', patched: 'Patched', trackers: 'Trackers', uninstalled: 'Uninstalled' };
         let inspectedPkg = null;
         let currentWorkingMode = 'unprivileged';
         let isPrivilegedActive = false;
@@ -10970,7 +10971,7 @@ Type any command below (e.g. pm list packages -d)
                     ['names', 'packages', 'regex'].forEach(k => { if (typeof st.search[k] === 'boolean') searchOpts[k] = st.search[k]; });
                     if (!searchOpts.names && !searchOpts.packages) searchOpts.names = true;      // one of the two always searches
                 }
-                // The Apps tab always opens on "Total Installed" (the "all" filter) after the app was gone from memory: a filter left on
+                // The Apps tab always opens on All Apps (no filter) after the app was gone from memory: a filter left on
                 // last time is not brought back, so the whole list is what you see first.
                 activeFilters.clear();
                 if (rememberFilters && st.filters && typeof st.filters === 'object') {
@@ -13379,7 +13380,8 @@ Type any command below (e.g. pm list packages -d)
             if (f.has('suspended') && !app.isSuspended) return false;
             if (f.has('user') && (app.isSystem || (app.isUninstalled && !f.has('uninstalled')))) return false;
             if (f.has('system') && (!app.isSystem || (app.isUninstalled && !f.has('uninstalled')))) return false;
-            if (f.has('uninstalled') && !app.isUninstalled) return false;
+            if (f.has('installed') && app.isUninstalled && !f.has('uninstalled')) return false;       // Installed leaves the uninstalled apps out, unless Uninstalled is on too: both together are every app on the phone
+            if (f.has('uninstalled') && !app.isUninstalled && !f.has('installed')) return false;
             if (f.has('recent') && !isRecentlyUpdated(app)) return false;
             if (f.has('patched') && !(app.mods && app.mods.length)) return false;
             if (f.has('trackers') && !trackerCount(app.pkg)) return false;
@@ -13423,20 +13425,19 @@ Type any command below (e.g. pm list packages -d)
             sortApps(filteredApps);
 
             // Update stats counts (one pass over the list)
-            const n = { running: 0, enabled: 0, frozen: 0, user: 0, system: 0, uninstalled: 0, recent: 0, suspended: 0, patched: 0, trackers: 0 };
+            const n = { installed: 0, running: 0, enabled: 0, frozen: 0, user: 0, system: 0, uninstalled: 0, recent: 0, suspended: 0, patched: 0, trackers: 0 };
             allApps.forEach(a => {
                 if (a.isRunning) n.running++;
                 if (a.isFrozen && !a.isUninstalled) n.frozen++;
                 if (!a.isFrozen && !a.isUninstalled) n.enabled++;
                 if (a.isUninstalled) n.uninstalled++;
-                else if (a.isSystem) n.system++;
-                else n.user++;
+                else { n.installed++; if (a.isSystem) n.system++; else n.user++; }
                 if (a.isSuspended) n.suspended++;
                 if (a.mods && a.mods.length) n.patched++;
                 if (trackerCount(a.pkg)) n.trackers++;
                 if (isRecentlyUpdated(a)) n.recent++;
             });
-            document.getElementById('statTotal').innerText = allApps.length;
+            document.getElementById('statTotal').innerText = n.installed;
             document.getElementById('statRunning').innerText = n.running;
             document.getElementById('statEnabled').innerText = n.enabled;
             document.getElementById('statFrozen').innerText = n.frozen;
@@ -13445,6 +13446,7 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('statUninstalled').innerText = n.uninstalled;
 
             document.getElementById('countAll').innerText = allApps.length;
+            document.getElementById('countInstalled').innerText = n.installed;
             document.getElementById('countRunning').innerText = n.running;
             document.getElementById('countUser').innerText = n.user;
             document.getElementById('countSystem').innerText = n.system;
@@ -14845,7 +14847,8 @@ Type any command below (e.g. pm list packages -d)
         // A tap on a pill or a box turns that filter on or off, next to the ones already on. "All Apps" turns them all off.
         function setFilter(filter, el) {
             // Uninstalled bloatware is a list of its own: turning it on turns every other filter off
-            if (filter === 'uninstalled' && !activeFilters.has('uninstalled')) activeFilters.clear();
+            // (Installed stays: Installed + Uninstalled together are every app on the phone)
+            if (filter === 'uninstalled' && !activeFilters.has('uninstalled')) { const keep = activeFilters.has('installed'); activeFilters.clear(); if (keep) activeFilters.add('installed'); }
             // a running app is installed: turning Running on turns Uninstalled off
             if (filter === 'running' && !activeFilters.has('running')) activeFilters.delete('uninstalled');
             toggleFilterIn(activeFilters, filter);
@@ -14859,7 +14862,7 @@ Type any command below (e.g. pm list packages -d)
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // The pills and the big boxes at the top light up for every filter that is on; All Apps / Total installed when none is
+        // The pills and the big boxes at the top light up for every filter that is on; All Apps when none is
         function syncFilterUi() {
             const none = activeFilters.size === 0;
             document.querySelectorAll('#filterScroll .filter-pill[data-filter]').forEach(p => {
@@ -14874,11 +14877,11 @@ Type any command below (e.g. pm list packages -d)
             }
         }
 
-        // The big buttons at the top (Total installed, Running, ...) light up when the list below is showing their filter
+        // The big buttons at the top (Installed, Running, ...) light up when the list below is showing their filter
         function syncStatCards() {
             document.querySelectorAll('.stat-card[data-filter]').forEach(c => {
                 const k = c.getAttribute('data-filter');
-                const on = k === 'all' ? activeFilters.size === 0 : activeFilters.has(k);
+                const on = activeFilters.has(k);
                 c.classList.toggle('active', on);
                 c.setAttribute('aria-pressed', on ? 'true' : 'false');
             });

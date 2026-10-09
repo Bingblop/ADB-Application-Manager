@@ -27,18 +27,18 @@
   <h4>The boxes at the top</h4>
   <p>Above the list are three whole boxes and two split boxes with two halves each. Each shows a count, and each is also a filter: tap it and the list shows only those apps, tap it again to turn it off. It lights up while its filter is on, in its own colour: a bright green for Enabled (Running is a softer green), blue for Frozen, orange for 3rd Party, purple for System and red for Bloatware (Uninstalled), with a ring around it, so you can tell at a glance which one is in use. The boxes and the filter pills under them are the same filters, so they always agree.</p>
   <ul>
-    <li><b>Total Installed</b>: every app in the list. It also counts the UNINSTALLED apps, because they stay in the list so you can bring them back. Tapping it turns all filters off.</li>
+    <li><b>Installed</b>: the apps that are installed on the phone. It does not count the UNINSTALLED apps. Tap it and the list shows only the installed apps. Tap <b>Installed</b> and <b>Bloatware (Uninstalled)</b> together and the list shows every app on the phone, installed or not. With no box lit the list also shows every app (the <b>All Apps</b> pill is lit then).</li>
     <li><b>Running</b>: apps that have a live process right now. Needs a working mode. Turning it on turns <b>Uninstalled</b> off (a running app is installed).</li>
     <li><b>Bloatware (Uninstalled)</b>: system apps that were removed for you (by this app or by another tool) but whose files are still in the system. "Bloatware" means apps that come pre-installed and that many people do not want. Needs a working mode.</li>
     <li><b>Enabled | Frozen</b>: a split box with two halves. Enabled counts apps that are on (a suspended app still counts as Enabled, it is only paused). Frozen counts apps that are disabled.</li>
     <li><b>3rd Party | System</b>: another split box. 3rd Party counts apps that you or a store installed. System counts apps that came with the phone.</li>
   </ul>
-  <p>UNINSTALLED apps are counted in Total Installed and in Bloatware (Uninstalled) only, not in the four halves.</p>
+  <p>UNINSTALLED apps are counted in Bloatware (Uninstalled) and in the All Apps pill only, not in Installed or in the four halves.</p>
   <p>The filter pills under the boxes add one more: <b>Trackers</b>, for apps with a known tracker library (see the table below and <a href="#apps-menu">The Trackers chip</a>).</p>
   <p><b>Bloatware (Uninstalled) starts a clean list.</b> Tapping it (or the Uninstalled pill) turns every other filter off first, so you see all the uninstalled apps, not only those that also match a filter you forgot was on. You can still tap another box or pill afterwards to narrow the list, for example System to see only the uninstalled system apps.</p>
   <p><b>Clear what an uninstalled app left behind.</b> While the Uninstalled filter is on, each row has a small bin button next to its action button. It clears the data that one app kept after it was uninstalled (see <a href="#tab-sdm">Clear Data from Uninstalled Apps</a> in the SD Maid tab). It asks first, because it cannot be undone; in <b>Root</b> mode it names the size and says so if the app has no data left, and the result is checked afterwards like any batch.</p>
   <p><b>A pair keeps one side.</b> Enabled and Frozen are a pair, and so are 3rd Party and System. Only one half of a pair can be on. Tap Enabled, then Frozen, and Frozen takes the place of Enabled. Tap the half that is on to turn it off.</p>
-  <p><b>Clear filters.</b> When more than one filter is on, a line appears above the pills saying what is combined, for example "Showing apps that are Running + 3rd Party.", with a <b>Clear filters</b> chip. Tap the chip (or Total Installed, or <b>All Apps</b>) to turn them all off.</p>
+  <p><b>Clear filters.</b> When more than one filter is on, a line appears above the pills saying what is combined, for example "Showing apps that are Running + 3rd Party.", with a <b>Clear filters</b> chip. Tap the chip (or <b>All Apps</b>) to turn them all off.</p>
 
   <h4>The filter pills</h4>
   <p>Under the Sort row is a strip of pills that scrolls sideways. A tip says so; tap its X to hide it, or just scroll the strip once. Tap a pill to turn it on or off. The number in brackets is how many apps are in that group.</p>
@@ -129,7 +129,7 @@
   <p>When no working mode is ready, a card at the top of the tab says <b>Active Mode: Read-Only (Unprivileged)</b>. Its text says all installed apps are shown, and that to use Freeze, Uninstall or ADB commands you connect through ADB TCP 5555, Wireless Debugging, Shizuku or Root. Its <b>Set Up</b> button opens the Working Modes sheet (see <a href="#modes-overview">Working modes</a>). The X in the top right corner of the banner puts it away for now only: it stays away until the app is started again, or until read-only mode returns after a working mode was on. The banner also goes by itself while a working mode is on.</p>
 
   <h4>Remember my filters</h4>
-  <p>By default the Application Manager opens on Total Installed, with no filter on, every time the app starts. To open with the filters you left on, open Settings (the gear), find the <b>Lists</b> card and switch on <b>Remember my filters</b>. It also covers the UAD-NG Debloater and Saved Applications filters. The sort order, the Versions pill, the search options and "Keep selection after running" are always remembered.</p>
+  <p>By default the Application Manager opens on All Apps, with no filter on, every time the app starts. To open with the filters you left on, open Settings (the gear), find the <b>Lists</b> card and switch on <b>Remember my filters</b>. It also covers the UAD-NG Debloater and Saved Applications filters. The sort order, the Versions pill, the search options and "Keep selection after running" are always remembered.</p>
 
   <h4>Step by step: freeze one app</h4>
   <p>You need a working mode. The mode badge at the top right shows which one is on (see <a href="#screen-tour">The screen tour</a>).</p>

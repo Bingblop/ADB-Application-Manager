@@ -35,7 +35,7 @@ const SETUP = `window.__LANGS = window.__LANGS || {}; window.__LANGS.es = ${JSON
     await page.addInitScript(SETUP);
     await page.addInitScript(inst.initScript, { kv: Object.assign({ perm_intro_v61: '1' }, kv || {}), apps: apps || [{ pkg: 'com.example.app', name: 'Example App', isSystem: false }] });
     await page.goto(url || PAGE);
-    await page.waitForFunction(() => document.getElementById('statTotal').innerText === '1' || document.getElementById('statTotal').innerText !== '');
+    await page.waitForFunction(() => document.getElementById('countAll').innerText === '1' || document.getElementById('countAll').innerText !== '');
     return page;
   };
   const ev = (page, fn, arg) => page.evaluate(fn, arg);

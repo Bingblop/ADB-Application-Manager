@@ -49,7 +49,7 @@ const found = (text) => { const m = decode(text).match(EMOJI); return m ? Array.
   const apps = Array.from({ length: 12 }, (_, i) => ({ pkg: 'com.example.app' + i, name: 'App ' + i, isSystem: i % 3 === 0, isRunning: i % 4 === 0, isFrozen: i === 5, isSuspended: i === 6, isUninstalled: i === 7 }));
   await page.addInitScript(inst.initScript, { kv: { perm_intro_v61: '1' }, apps });
   await page.goto(PAGE);
-  await page.waitForFunction(() => document.getElementById('statTotal').innerText === '12');
+  await page.waitForFunction(() => document.getElementById('countAll').innerText === '12');
   const ev = (fn, arg) => page.evaluate(fn, arg);
   // everything the person can read: text of every element (shown or not, a sheet that is closed is text too) and the attributes that are read aloud or shown on hover
   const scan = () => ev(() => {

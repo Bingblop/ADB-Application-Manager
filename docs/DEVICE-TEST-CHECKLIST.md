@@ -135,7 +135,7 @@ it works; write down what you saw when it does not.
 
 ## 1. Start and Apps list (v7.9.18, v7.9.19)
 
-- [ ] Force-close the app, open it again: it is on **Application Manager** with the **Total Installed** card lit, even if you had left another filter on.
+- [ ] Force-close the app, open it again: it is on **Application Manager** with the **All Apps** pill lit (no box lit), even if you had left another filter on.
 - [ ] Each row shows the app's icon on the left, no letter box, and the checkbox sits to the right of the "..." button.
 - [ ] Tap a row's name: it selects. Tap the checkbox: it selects. Selecting shows the round checkmark button.
 - [ ] **Hold** a row (not the icon, not a button) for half a second: you feel a tap and that app's menu opens. Letting go does not also select the row. No text gets highlighted.
@@ -228,18 +228,18 @@ Select three or four apps you do not mind changing, open the round checkmark.
 
 ## 11. Filters (v7.9.20, v7.9.21)
 
-- [ ] The top of Application Manager has Total installed, Running and Bloatware on one row, then two boxes below: **Enabled | Frozen** and **3rd Party | System**. Each half shows its own count.
+- [ ] The top of Application Manager has Installed, Running and Bloatware on one row, then two boxes below: **Enabled | Frozen** and **3rd Party | System**. Each half shows its own count.
 - [ ] Tap **Running**, then **3rd Party**: the list shows your running user apps, both buttons are lit, and a line under Sort names the filters with a **Clear filters** button.
 - [ ] Tap **Enabled**, then **Frozen**: Frozen replaces Enabled (a pair is one filter); tap it again and neither is on.
 - [ ] Tap **Enabled** then **System** (and the pills in the row below): you see only your enabled system apps; boxes and pills light together.
-- [ ] **Clear filters** turns every filter off and the Total installed box lights again. With only one filter on, the button is not shown.
+- [ ] **Clear filters** turns every filter off and the **All Apps** pill lights again. With only one filter on, the button is not shown.
 - [ ] Debloater: the "Also show only" row combines with Removal, vendor and state; with two or more on, **Clear filters** appears and clears that row only.
 - [ ] Saved Applications: pills apply inside each list (counts update, lists with no match hide); **Clear filters** shows with two or more on and brings every list back.
 
 - [ ] Freeze an app, then uninstall it (Debloater, Uninstall): it leaves the **Frozen** box and filter and shows under **Bloatware (Uninstalled)** only. Reinstall it: if it is still disabled it is **Frozen** again.
 - [ ] Files, search for a word (for example `jpg`), then tap **Images**, **Over 10 MB**, **Last 7 days**: the list narrows, the count says how many are shown, and **Clear filters** brings everything back.
 - [ ] Added storage (SD card or USB): search `content:word` finds text files that hold the word; `archive:` says it is skipped.
-- [ ] Settings, Lists, **Remember my filters** on: turn on Running + 3rd Party, force-close the app, open it again: the same filters are on. Off: it opens on Total Installed.
+- [ ] Settings, Lists, **Remember my filters** on: turn on Running + 3rd Party, force-close the app, open it again: the same filters are on. Off: it opens on All Apps.
 
 - [ ] With no working mode on, open an app's menu: the permission toggles, the App Ops modes (on the mode that is set) and every Enable / Disable, Stop and Launch button of activities, services, receivers and providers show the lock and look dimmed. Turn a working mode on and open the menu again: only install-time permissions keep the lock.
 
@@ -285,6 +285,12 @@ These came before the rest of this list and were only checked in the browser. Th
 - [ ] Connect an agent (key in the Command-Line Interface tab), choose it as the default, press **Ask agent** on a hidden setting row, on a permission in an app's menu, on an overlay row and on a Task Manager process: a box shows what is sent and the answer streams in; **Ask again**, **Web search** and **Copy the answer** work.
 - [ ] App menu of an app the UAD-NG list rates: the chip reads only the level (no "UAD-NG" text). An unlisted app shows **Ask agent** in its place.
 - [ ] SD Maid: the four tools come first, then **Leftover data of uninstalled apps**, then **Trim Caches**.
+
+## 17. The Installed box (v7.12.5)
+
+- [ ] The first box reads **Installed** and its count leaves out the uninstalled apps. The **All Apps** pill still counts every app.
+- [ ] Tap **Installed**: only installed apps are listed. Also tap **Bloatware (Uninstalled)**: every app on the phone is listed and both boxes are lit. Tap **Installed** again: only the uninstalled apps remain.
+- [ ] With Installed and Bloatware (Uninstalled) lit, tap **Running**: Bloatware (Uninstalled) turns off (a running app is installed).
 
 ## Report
 

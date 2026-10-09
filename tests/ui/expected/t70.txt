@@ -2,14 +2,14 @@
    its emoji is bigger (22px, it was 11px): true 22px
    it fits in the header (no taller than the header) and the tab bar still starts where the header ends: true header 83px, tab bar at 83, header ends 83
    it still opens Settings: true
-2. on opening, "Total installed" is lit (the list shows every app, like the All pill): true all:true
+2. on opening, no box is lit and the All Apps pill is (the list shows every app): true none
    a lit card looks different (its own border colour and a glow), the others do not: true {"lit":true,"borderDiffers":true,"shadow":true}
    tapping Running lights Running only, and the Running pill follows: true running:true
    the list below shows what the lit card counts: true
    choosing the System pill lights System: true system:true
    a filter with no card (Suspended) lights none: true none
    same for Updated 7d: true none
-   tapping Total installed is back to the start: true all:true
+   tapping All Apps is back to the start: true none
    frozen card lights frozen and the pill follows: true frozen:true
    user card lights user and the pill follows: true user:true
    uninstalled card lights uninstalled and the pill follows: true uninstalled:true
@@ -17,12 +17,12 @@
    …and Space: true running:true
    each card is a button with a pressed state for a screen reader: true
    the highlight does not shrink the card or move the grid: true
-3. a remembered filter is ignored: the app opens on Total Installed: true all:true
-   a remembered filter with no card is ignored too: true all:true
+3. a remembered filter is ignored: the app opens on All Apps: true none
+   a remembered filter with no card is ignored too: true none
 3b. with "Remember my filters" on, the filters left on come back (running + user, unknown ones dropped): true running:true,user:true
    the setting shows as on, and the Debloater and Saved rows come back too: true
-   it saves the change (tapping Total installed saves an empty set): true
-   with the setting off (the default), a saved filter set is ignored: true all:true
+   it saves the change (tapping All Apps saves an empty set): true
+   with the setting off (the default), a saved filter set is ignored: true none
 4. a tip sits under the Share CSV / Profiles buttons and above the filters: true {"shown":true,"text":"Scroll the filters below sideways for more filters ✕","belowButtons":true,"aboveFilters":true,"width":328,"sticky":"relative"}
    it tells to scroll the filters sideways for more: true Scroll the filters below sideways for more filters ✕
    the filters really do scroll sideways (more pills than fit): true

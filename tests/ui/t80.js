@@ -32,7 +32,7 @@ const FILES = {
     await page.addInitScript(inst.initScript, { kv: Object.assign({ perm_intro_v61: '1' }, (o && o.kv) || {}), perm: (o && o.perm) || undefined, apps: [{ pkg: 'com.example.app', name: 'Example App', isSystem: false }] });
     await page.addInitScript(fonts.initScript, Object.assign({ fonts: FOUND, fontFiles: FILES }, o || {}));
     await page.goto(PAGE);
-    await page.waitForFunction(() => document.getElementById('statTotal').innerText === '1');
+    await page.waitForFunction(() => document.getElementById('countAll').innerText === '1');
     return page;
   };
   const ev = (page, fn, arg) => page.evaluate(fn, arg);
