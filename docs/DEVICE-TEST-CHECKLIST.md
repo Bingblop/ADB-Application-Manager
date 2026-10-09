@@ -273,7 +273,7 @@ These came before the rest of this list and were only checked in the browser. Th
 
 ## 15. Ask the agent about an unlisted app (v7.11.2)
 
-- [ ] Open an app the UAD-NG list does not rate (a small vendor system package): under Share an **Ask agent** button stands where the chip would be (since v7.12.0; before that the chip read UAD-NG Not listed · Ask). An app the list rates (Bixby, a Google app) still shows its level and no Ask chip.
+- [ ] Open an app the UAD-NG list does not rate (a small vendor system package): an **Ask agent** button stands right under the app name, package and version (it was under Share before v7.12.5) (since v7.12.0; before that the chip read UAD-NG Not listed · Ask). An app the list rates (Bixby, a Google app) still shows its level and no Ask chip.
 - [ ] Tap the button with no default agent chosen (v7.12.0): Settings opens on the Default agent card. With an agent connected: the answer streams in, ends in a verdict, and **Copy the answer** copies it. **Web search** opens a search for the package.
 
 ## 16. Logcat, recording, default agent (v7.12.0)

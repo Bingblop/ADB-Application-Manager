@@ -1,9 +1,9 @@
 DARK
-  normal:      Samsung Internet |  | com.sec.android.app.sbrowser |  | Version 27.1.0.103 (2701000103) |  | Copy package | Copy name
-  uninstalled: Bixby |  | com.samsung.android.bixby.agent |  | Version 3.3.55.4 (333554000) |  | Copy package | Copy name
-  no name:     com.example.noname |  | com.example.noname |  | Version 7 |  | Copy package | Copy name
-  bad data:    com.broken.app |  | com.broken.app |  | Version unavailable |  | Copy package | Copy name
+  normal:      Samsung Internet |  | com.sec.android.app.sbrowser |  | Version 27.1.0.103 (2701000103) |  | ✦ Ask agent | Copy package | Copy name
+  uninstalled: Bixby |  | com.samsung.android.bixby.agent |  | Version 3.3.55.4 (333554000) |  | ✦ Ask agent | Copy package | Copy name
+  no name:     com.example.noname |  | com.example.noname |  | Version 7 |  | ✦ Ask agent | Copy package | Copy name
+  bad data:    com.broken.app |  | com.broken.app |  | Version unavailable |  | ✦ Ask agent | Copy package | Copy name
   errors: []
 LIGHT
-  normal:      Samsung Internet |  | com.sec.android.app.sbrowser |  | Version 27.1.0.103 (2701000103) |  | Copy package | Copy name
+  normal:      Samsung Internet |  | com.sec.android.app.sbrowser |  | Version 27.1.0.103 (2701000103) |  | ✦ Ask agent | Copy package | Copy name
   errors: []

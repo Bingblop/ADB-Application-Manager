@@ -6905,6 +6905,7 @@ Type any command below (e.g. pm list packages -d)
                         <h3 id="sheetTitle">App Title</h3>
                         <p id="sheetPkg">com.example.package</p>
                         <p id="sheetVersion" class="sheet-version"></p>
+                        <button class="uad-chip uad-chip-ask" id="sheetAsk" type="button" style="display:none; margin-top:8px;" onclick="openAppAsk()" aria-haspopup="dialog" aria-label="Ask the agent whether it is safe to disable this app"><span>✦ Ask agent</span></button>
                         <div class="copy-row">
                             <span class="copy-chip" onclick="copyAppField('pkg')">Copy package</span>
                             <span class="copy-chip" onclick="copyAppField('name')">Copy name</span>
@@ -6921,7 +6922,6 @@ Type any command below (e.g. pm list packages -d)
                         <div style="font-size:20px; cursor:pointer;" onclick="closeInspector()">✕</div>
                     </div>
                     <button class="uad-chip" id="sheetUad" type="button" style="display:none;" onclick="openUadInfo()" aria-haspopup="dialog"></button>
-                    <button class="uad-chip uad-chip-ask" id="sheetAsk" type="button" style="display:none;" onclick="openAppAsk()" aria-haspopup="dialog" aria-label="Ask the agent whether it is safe to disable this app"><span>✦ Ask agent</span></button>
                     <button class="uad-chip" id="sheetTrk" type="button" style="display:none;" onclick="openTrackersInfo()" aria-haspopup="dialog"></button>
                 </div>
             </div>
