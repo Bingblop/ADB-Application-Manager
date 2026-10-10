@@ -26,8 +26,8 @@ const optimizeBatchMock = require('./lib/optimizebatch_mock');
       },
       executeAppAction(a, p) { window.__calls.push('action:' + a + ':' + p); return 'Success'; },
       setComponentEnabled(pkg, comp, enable) { window.__calls.push('toggle:' + comp + ':' + enable); return JSON.stringify({ ok: true, output: 'Component ' + comp + ' new state: ' + (enable ? 'enabled' : 'disabled') }); },
-      getStandbyBucket(pkg) { window.__calls.push('sbget:' + pkg); if (window.__sbReadFail) return JSON.stringify({ ok: false, bucket: '', output: 'Error: the standby bucket needs ADB, Shizuku or Root.' }); return JSON.stringify({ ok: true, bucket: window.__sb || 'rare', output: window.__sb || 'rare' }); },
-      setStandbyBucket(pkg, b) { window.__calls.push('sbset:' + pkg + ':' + b); if (window.__sbFail) return JSON.stringify({ ok: false, bucket: 'rare', output: 'The phone did not change it: it is in rare.' }); window.__sb = b; return JSON.stringify({ ok: true, bucket: b, output: b }); },
+      getStandbyBucket(pkg) { if (arguments.length !== 1) throw new Error('Java bridge: wrong argument count'); window.__calls.push('sbget:' + pkg); if (window.__sbReadFail) return JSON.stringify({ ok: false, bucket: '', output: 'Error: the standby bucket needs ADB, Shizuku or Root.' }); return JSON.stringify({ ok: true, bucket: window.__sb || 'rare', output: window.__sb || 'rare' }); },
+      setStandbyBucket(pkg, b) { if (arguments.length !== 2) throw new Error('Java bridge: wrong argument count'); window.__calls.push('sbset:' + pkg + ':' + b); if (window.__sbFail) return JSON.stringify({ ok: false, bucket: 'rare', output: 'The phone did not change it: it is in rare.' }); window.__sb = b; return JSON.stringify({ ok: true, bucket: b, output: b }); },
       optimizeApp(pkg, mode, force) { window.__calls.push('opt:' + pkg + ':' + mode + ':' + force); return JSON.stringify({ ok: true, output: 'Success' }); },
     };
   });

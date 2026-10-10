@@ -4982,7 +4982,7 @@
 {"k":"agents: {0}","ctx":"built by the code of: tx slash"},
 {"k":"am force-stop {0}","ctx":"built by the code of: stop"},
 {"k":"am get-standby-bucket {0}","ctx":"built by the code of: open standby modal"},
-{"k":"am set-standby-bucket {0}","ctx":"built by the code of: confirm standby"},
+{"k":"am set-standby-bucket {0} {1}","ctx":"built by the code of: confirm standby"},
 {"k":"am start -a android.settings.APPLICATION_DETAILS_SETTINGS -d package:{0}","ctx":"built by the code of: fn"},
 {"k":"am start -n '{0}/{1}'","ctx":"built by the code of: launch component"},
 {"k":"am stopservice '{0}/{1}'","ctx":"built by the code of: stop component service"},

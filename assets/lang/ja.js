@@ -5518,7 +5518,7 @@ p: [
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0}はこのアプリのキーと署名者が同じため、その場で更新できます"],
 ["✓ {0}: done", "✓ {0}：完了"],
 ["＋ Create “{0}” in {1}", "＋「{0}」を{1}に作成"],
-["am set-standby-bucket {0}", "am set-standby-bucket {0}"],
+["am set-standby-bucket {0} {1}", "am set-standby-bucket {0} {1}"],
 ["am get-standby-bucket {0}", "am get-standby-bucket {0}"]
 ]
 };

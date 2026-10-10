@@ -5518,7 +5518,7 @@ p: [
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0} का साइनर इस ऐप की कुंजी वाला ही है, इसलिए इसे इन-प्लेस अपडेट किया जा सकता है"],
 ["✓ {0}: done", "✓ {0}: हो गया"],
 ["＋ Create “{0}” in {1}", "＋ {1} में “{0}” बनाएं"],
-["am set-standby-bucket {0}", "am set-standby-bucket {0}"],
+["am set-standby-bucket {0} {1}", "am set-standby-bucket {0} {1}"],
 ["am get-standby-bucket {0}", "am get-standby-bucket {0}"]
 ]
 };

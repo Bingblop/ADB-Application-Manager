@@ -5518,7 +5518,7 @@ p: [
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ الإصدار v{0} له الموقِّع نفسه لمفتاح هذا التطبيق، لذلك يمكن تحديثه في المكان نفسه"],
 ["✓ {0}: done", "✓ {0}: تم"],
 ["＋ Create “{0}” in {1}", "＋ إنشاء “{0}” في {1}"],
-["am set-standby-bucket {0}", "am set-standby-bucket {0}"],
+["am set-standby-bucket {0} {1}", "am set-standby-bucket {0} {1}"],
 ["am get-standby-bucket {0}", "am get-standby-bucket {0}"]
 ]
 };

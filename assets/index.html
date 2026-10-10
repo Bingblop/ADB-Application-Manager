@@ -22852,8 +22852,9 @@ Type any command below (e.g. pm list packages -d)
 
         // ---- App standby bucket (single app inspector): read what the phone says, set one, read it back ----
         let standbyPkg = null;
-        function standbyBridgeCall(name, a, b) {
-            try { return JSON.parse(window.AndroidBridge[name](a, b)); } catch (e) { return null; }
+        // the Java bridge matches methods by argument count: pass exactly what the caller gave
+        function standbyBridgeCall(name, ...args) {
+            try { return JSON.parse(window.AndroidBridge[name](...args)); } catch (e) { return null; }
         }
         function openStandbyModal() {
             if (!inspectedPkg) return;
@@ -22890,7 +22891,7 @@ Type any command below (e.g. pm list packages -d)
             if (r && r.ok) { showToast('Standby bucket changed'); return; }
             const app = allApps.find(a => a.pkg === pkg) || { name: pkg };
             showToast('Could not change the standby bucket');
-            showCommandResults('Standby bucket', 'am set-standby-bucket ' + bucket, [{ name: app.name, pkg: pkg, output: (r && r.output) || 'No answer from the app', success: false }]);
+            showCommandResults('Standby bucket', 'am set-standby-bucket ' + pkg + ' ' + bucket, [{ name: app.name, pkg: pkg, output: (r && r.output) || 'No answer from the app', success: false }]);
         }
 
         // ---- Dex optimization (single app inspector + batch) ----

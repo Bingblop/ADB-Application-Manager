@@ -5518,7 +5518,7 @@ p: [
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ a v{0} tem o mesmo signatário que a chave deste app, então pode ser atualizada por cima"],
 ["✓ {0}: done", "✓ {0}: concluído"],
 ["＋ Create “{0}” in {1}", "＋ Criar “{0}” em {1}"],
-["am set-standby-bucket {0}", "am set-standby-bucket {0}"],
+["am set-standby-bucket {0} {1}", "am set-standby-bucket {0} {1}"],
 ["am get-standby-bucket {0}", "am get-standby-bucket {0}"]
 ]
 };
