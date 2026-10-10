@@ -82,6 +82,7 @@ public class InstallConfirmTest {
         String body = at >= 0 && end > at ? src.substring(at, end) : "";
         is("the downloaded file gets a name of its own for every call", body.contains("File.createTempFile(\"store-\""));
         is("and the name is not made from the page's key", !body.contains("hashCode()"));
+        is("old downloads that were cut short (.apk.part) are cleaned up with the finished ones", body.contains("endsWith(\".apk.part\")"));
       }
     } catch (java.io.IOException e) {
       is("MainActivity.java could be read: " + e, false);

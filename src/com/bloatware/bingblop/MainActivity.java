@@ -2746,7 +2746,7 @@ public class MainActivity extends Activity {
                     File dir = new File(getCacheDir(), "updates");
                     dir.mkdirs();
                     File[] old = dir.listFiles();
-                    if (old != null) for (File f : old) if (f.getName().startsWith("store-") && f.getName().endsWith(".apk") && f.lastModified() < System.currentTimeMillis() - 24L * 3600 * 1000) f.delete();
+                    if (old != null) for (File f : old) if (f.getName().startsWith("store-") && (f.getName().endsWith(".apk") || f.getName().endsWith(".apk.part")) && f.lastModified() < System.currentTimeMillis() - 24L * 3600 * 1000) f.delete();
                     apk = File.createTempFile("store-", ".apk", dir);
                     final String name = label == null || label.isEmpty() ? (pkg == null || pkg.isEmpty() ? "app" : pkg) : label;
                     storeInstallProgress(key, "downloading", 0, "Downloading " + name + "…");
