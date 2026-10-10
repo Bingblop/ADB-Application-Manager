@@ -25,17 +25,28 @@ const OPT_OUT = '<!-- no-shell-check -->';
 const SKIP_DIRS = new Set(['node_modules', 'out', 'bin', '.git']);
 
 // Every fenced block of a Markdown text: { tag, startLine (the opening fence, 1-based), lines, optOut }.
+// A fence may sit inside a block quote ("> ```sh") or a list item (indented any number of columns): the quote markers and the fence's own indentation
+// are taken off its lines, and the closing fence is looked for after the same prefix is taken off.
 function extractBlocks(text) {
   const src = text.replace(/\r\n/g, '\n').split('\n');
   const blocks = [];
+  const unquote = (line, quoted) => quoted ? line.replace(/^(?:\s*>)+ ?/, '') : line;
   for (let i = 0; i < src.length; i++) {
-    const open = /^\s{0,3}(`{3,}|~{3,})\s*([^\s`]*)/.exec(src[i]);
+    const open = /^((?:\s*>)*)(\s*)(`{3,}|~{3,})\s*([^\s`]*)/.exec(src[i]);
     if (!open) continue;
-    const fence = open[1];
-    const block = { tag: open[2].toLowerCase(), startLine: i + 1, lines: [], optOut: i > 0 && src[i - 1].trim() === OPT_OUT };
+    const quoted = open[1] !== '';
+    const indent = open[2].length;
+    const fence = open[3];
+    const prev = i > 0 ? unquote(src[i - 1], quoted).trim() : '';
+    const block = { tag: open[4].toLowerCase(), startLine: i + 1, lines: [], optOut: prev === OPT_OUT };
     let j = i + 1;
-    const closeRe = new RegExp('^\\s{0,3}' + (fence[0] === '`' ? '`' : '~') + '{' + fence.length + ',}\\s*$');
-    while (j < src.length && !closeRe.test(src[j])) block.lines.push(src[j++]);
+    const closeRe = new RegExp('^\\s*' + (fence[0] === '`' ? '`' : '~') + '{' + fence.length + ',}\\s*$');
+    while (j < src.length && !closeRe.test(unquote(src[j], quoted))) {
+      let line = unquote(src[j++], quoted);
+      let k = 0;
+      while (k < indent && line[k] === ' ') k++;
+      block.lines.push(line.slice(k));
+    }
     blocks.push(block);
     i = j; // resume after the closing fence
   }
@@ -150,9 +161,11 @@ function selfTest() {
     '```bash', 'echo ok;# <package> in a comment after an operator', 'echo done', '```', '',
     '```bash', 'cat <<END-DATA', '<html>', 'END-DATA', 'adb shell pm path <package>', '```', '',
     '```bash', 'mask=$((1 << FLAG))', 'adb shell pm path <package>', '```', '',
+    '> ```sh', '> APP=<package>', '> ```', '',
+    '- a list item', '', '      ```bash', '      APP=<package>', '      ```', '',
   ].join('\n');
   const got = checkText(fx).map(r => r.state + '@' + r.block.startLine + (r.problems.length ? ':' + [...new Set(r.problems.map(p => p.line))].join(',') : ''));
-  const want = ['ok@3', 'ok@9', 'FAIL@16:17', 'skipped@22', 'FAIL@26:27', 'FAIL@34:34', 'ok@42', 'FAIL@47:49', 'ok@52', 'FAIL@57:59', 'ok@62', 'ok@67', 'FAIL@72:76', 'FAIL@79:81'];
+  const want = ['ok@3', 'ok@9', 'FAIL@16:17', 'skipped@22', 'FAIL@26:27', 'FAIL@34:34', 'ok@42', 'FAIL@47:49', 'ok@52', 'FAIL@57:59', 'ok@62', 'ok@67', 'FAIL@72:76', 'FAIL@79:81', 'FAIL@84:85', 'FAIL@90:91'];
   const ok = JSON.stringify(got) === JSON.stringify(want);
   console.log(ok ? 'self-test: ok (' + got.length + ' blocks judged as expected)' : 'self-test: FAIL\n  got:  ' + got.join(' ') + '\n  want: ' + want.join(' '));
   return ok;
