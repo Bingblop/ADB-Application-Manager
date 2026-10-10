@@ -12,6 +12,19 @@ import java.io.IOException;
 final class PrivatePaths {
     private PrivatePaths() {}
 
+    /**
+     * The folders of the app's data that may leave: its logs, its patched APKs and the Morphe Helper's downloads (not the Morphe folder itself: the
+     * signing key and its password are in it), and the cache folders for files the user picked or downloaded. The rest of the cache
+     * (backup_data_*.tar, restore_*, root scripts, temporary files) is the app's own working data and stays protected.
+     */
+    static File[] exportable(File filesDir, File cacheDir) {
+        return new File[] {
+            new File(filesDir, "logs"), new File(filesDir, "morphe/patched"), new File(filesDir, "morphe/helper"),
+            new File(cacheDir, "updates"), new File(cacheDir, "installer"), new File(cacheDir, "store"), new File(cacheDir, "saf_stage"),
+            new File(cacheDir, "cd_pick"), new File(cacheDir, "morphe_pick"), new File(cacheDir, "share"),
+        };
+    }
+
     /** How many names a file has (its hard-link count); the caller supplies it because android.system.Os is not available here. */
     interface Links { long count(File f) throws Exception; }
 

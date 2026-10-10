@@ -42,6 +42,19 @@ public class PrivatePathsTest {
     is("a look-alike cache folder (updates2) is protected", B(touch(new File(cache, "updates2/x.apk")), data, ok));
     is("logs are not", !B(l1, data, ok));
     is("patched APKs are not", !B(m1, data, ok));
+    // the Morphe folder holds the signing key next to the patched APKs: only the subfolders are allowed, as the app lists them
+    File[] okApp = PrivatePaths.exportable(new File(data, "files"), cache);      // the very list the app uses
+    File mk = touch(new File(morphe, "morphe.keystore")), mj = touch(new File(morphe, "morphe_key.json")), mv = touch(new File(morphe, "vt_state.json"));
+    File mp = touch(new File(morphe, "patched/abc/app-patched.apk")), mh = touch(new File(morphe, "helper/download.apk"));
+    is("the Morphe signing key is protected", B(mk, data, okApp));
+    is("the Morphe key info (with the password) is protected", B(mj, data, okApp));
+    is("the Morphe VirusTotal state is protected", B(mv, data, okApp));
+    is("a patched APK is not", !B(mp, data, okApp));
+    is("the cache's backup tar and restore folder are protected with the app's own list",
+        B(backup, data, okApp) && B(restore, data, okApp) && B(rootSh, data, okApp));
+    is("a picked file in the app's cache folders is not", !B(touch(new File(cache, "saf_stage/pick.apk")), data, okApp) && !B(touch(new File(cache, "cd_pick/x.bin")), data, okApp));
+    is("a Helper download is not", !B(mh, data, okApp));
+    is("with the whole Morphe folder allowed the key would leak (why only subfolders)", !B(mk, data, new File[] { morphe }));
     is("a file outside the data folder is not", !B(outside, data, ok));
     is("a look-alike folder (com.example.app2) is not inside com.example.app", !B(sibling, data, ok));
 

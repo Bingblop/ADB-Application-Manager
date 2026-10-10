@@ -3188,25 +3188,19 @@ public class MainActivity extends Activity {
     // ---------------------------------------------------------------------------------------------
 
     /**
+     * True when {@code f} is part of this app's own private data (settings, sealed secrets, the adb key ...) that must not be handed to a share sheet,
+     * VirusTotal or another app. Its logs, patched APKs, Helper downloads and the cache folders for picked or downloaded files are allowed.
+     */
+    private boolean isPrivateData(File f) {
+        return PrivatePaths.blocked(f, getDataDir(), new PrivatePaths.Links() {
+                    @Override public long count(File x) throws Exception { return android.system.Os.stat(x.getPath()).st_nlink; }
+                }, PrivatePaths.exportable(getFilesDir(), getCacheDir()));
+    }
+
+    /**
      * Scans a local APK with VirusTotal. A SHA-256 lookup (private, no upload) when upload=false; a full
      * upload-and-wait when upload=true. Progress and the final result -> window.onVtResult(json).
      */
-    /**
-     * True when {@code f} is part of this app's own private data (settings, sealed secrets, the adb key ...) that must not be handed to a share sheet,
-     * VirusTotal or another app. Its logs, patched APKs and the cache folders for picked or downloaded files are allowed.
-     */
-    private boolean isPrivateData(File f) {
-        File cache = getCacheDir();
-        return PrivatePaths.blocked(f, getDataDir(), new PrivatePaths.Links() {
-                    @Override public long count(File x) throws Exception { return android.system.Os.stat(x.getPath()).st_nlink; }
-                },
-                new File(getFilesDir(), "logs"), new File(getFilesDir(), "morphe"),
-                // Only the cache folders that hold files the user picked or downloaded. The rest of the cache (backup_data_*.tar, restore_*,
-                // root_*.sh, archive_*.tmp) is the app's own working data and stays protected.
-                new File(cache, "updates"), new File(cache, "installer"), new File(cache, "store"), new File(cache, "saf_stage"),
-                new File(cache, "cd_pick"), new File(cache, "morphe_pick"), new File(cache, "share"));
-    }
-
     private void runVirusTotalScan(final String apiKey, final String path, final boolean upload) {
         executor.submit(new Runnable() {
             @Override
