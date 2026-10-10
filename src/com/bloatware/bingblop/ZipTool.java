@@ -1277,7 +1277,7 @@ public final class ZipTool {
         return bo.toByteArray();
     }
 
-    /** Of an extra field, only the AES encryption record (0x9901): without it an encrypted entry can't be read. */
+    /** Of an extra field, only the records an encrypted entry can't be read without: WinZip AES (0x9901) and PKWARE strong encryption (0x0017). */
     private static byte[] keepEssentialExtra(byte[] extra) {
         ByteArrayOutputStream bo = new ByteArrayOutputStream();
         int p = 0;
@@ -1285,7 +1285,7 @@ public final class ZipTool {
             int id = le16(extra, p);
             int sz = le16(extra, p + 2);
             if (p + 4 + sz > extra.length) break;
-            if (id == 0x9901) bo.write(extra, p, 4 + sz);
+            if (id == 0x9901 || id == 0x0017) bo.write(extra, p, 4 + sz);
             p += 4 + sz;
         }
         return bo.toByteArray();
@@ -1329,7 +1329,7 @@ public final class ZipTool {
         int pad = padFor(out.pos + 30 + nameBytes.length + kept.length, alignment);
         if (kept.length + pad > 0xFFFF) {
             // An enormous extra field leaves no room for the padding that aligns the data (a stored .so then fails to install when libraries are
-            // not extracted). Keep only the record the entry cannot do without (AES), drop the rest, and pad again.
+            // not extracted). Keep only the records an encrypted entry cannot do without (AES, strong encryption), drop the rest, and pad again.
             kept = keepEssentialExtra(kept);
             pad = padFor(out.pos + 30 + nameBytes.length + kept.length, alignment);
             if (kept.length + pad > 0xFFFF) pad = 0;
