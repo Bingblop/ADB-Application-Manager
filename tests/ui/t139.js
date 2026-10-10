@@ -133,8 +133,12 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('   the older key is cleared after it is taken over', await ev(() => vtKey() === 'OLDKEY' && window.__st.vt_api_key === ''));
   await ev(() => { vtKeyCache = null; kvSet('vt_key', ''); mpCfgLoad(); });
   check('   Helper\'s own key is moved to the one key and the plain config is emptied', await ev(() => vtKey() === 'HKEY' && mp.cfg.hVtKey === '' && JSON.parse(window.__st.morphe_cfg).hVtKey === '' && JSON.parse(window.__st.morphe_cfg).hDefault === 'apkmirror'));
-  await ev(() => { window.__st.morphe_cfg = JSON.stringify({ hVtKey: 'OTHERKEY' }); window.AndroidBridge.saveSetting = (k, v) => { window.__st[k] = v; return k !== 'vt_key'; }; vtKeyCache = null; kvSet('vt_key', ''); mpCfgLoad(); });
-  check('   if the key cannot be stored securely the Helper copy is kept (nothing is lost)', await ev(() => mp.cfg.hVtKey === 'OTHERKEY'));
+  await ev(() => { window.__st.morphe_cfg = JSON.stringify({ hVtKey: 'OTHERKEY' }); window.AndroidBridge.saveSetting = (k, v) => { if (k === 'vt_key' && v !== '""') return false; window.__st[k] = v; return true; }; vtKeyCache = null; kvSet('vt_key', ''); mpCfgLoad(); });
+  check('   if the key cannot be stored securely the Helper copy is kept (nothing is lost) and nothing is stored under vt_key', await ev(() => mp.cfg.hVtKey === 'OTHERKEY' && (window.__st.vt_key || '""') === '""'));
+
+  // the Keystore refuses to seal the approval: the page says so instead of "The key works", and the key stays unapproved
+  await ev(() => { window.__vtOk = true; window.AndroidBridge.saveSetting = (k, v) => { if (k === 'vt_key_ok' && v !== '""') return false; window.__st[k] = v; return true; }; vtKeyCache = 'KEYZ'; vtTestKey(); }); await sleep(200);
+  check('   if the approval cannot be stored securely the toast says so and the key stays unapproved', await ev(() => /approval could not be stored securely/.test(document.getElementById('toastMsg').innerText) && !vtKeyApproved()));
 
   check('no page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
   await b.close();

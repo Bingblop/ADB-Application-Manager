@@ -16362,7 +16362,7 @@ Type any command below (e.g. pm list packages -d)
             const r = await mpCall('vtValidate', { key: k });
             if (btn) btn.disabled = false;
             if (vtKey() !== k) return;                                     // changed while it was being tested
-            if (r.ok) { kvSet('vt_key_ok', k); showToast('The key works'); }
+            if (r.ok) { showToast(kvSet('vt_key_ok', k) ? 'The key works' : 'The key works, but its approval could not be stored securely: test it again later'); }
             else { kvSet('vt_key_ok', ''); showToast(r.error || 'The key was refused'); if (st) st.dataset.err = r.error || 'refused'; }
             vtRefreshUi();
         }

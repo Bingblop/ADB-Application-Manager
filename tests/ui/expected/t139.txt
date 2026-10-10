@@ -36,5 +36,6 @@ ok      the links go to Settings
 ok      a key saved by the older Installer box is taken over
 ok      the older key is cleared after it is taken over
 ok      Helper's own key is moved to the one key and the plain config is emptied
-ok      if the key cannot be stored securely the Helper copy is kept (nothing is lost)
+ok      if the key cannot be stored securely the Helper copy is kept (nothing is lost) and nothing is stored under vt_key
+ok      if the approval cannot be stored securely the toast says so and the key stays unapproved
 ok   no page errors:

@@ -7,7 +7,7 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.addInitScript(() => {
     const st = { calls: [], sources: {}, token: false }; window.__st = st; window.__holdCheck = true;
     window.confirm = () => true;
-    let promptAnswers = ['https://github.com/AntennaPod/AntennaPod', 'ghp_example'];
+    let promptAnswers = ['https://github.com/AntennaPod/AntennaPod', 'ghp_example', 'ghp_refused'];
     window.prompt = () => promptAnswers.shift();
     const updates = [
       { pkg: 'com.duckduckgo.mobile.android', name: 'DuckDuckGo', installedVersion: '5.210.0', availableVersion: '5.212.1', source: 'github', origin: 'obtainium-catalog', downloadUrl: 'https://github.com/duckduckgo/Android/releases/download/5.212.1/duckduckgo-5.212.1-play-release.apk', page: 'https://github.com/duckduckgo/Android/releases/tag/5.212.1', notes: 'Bug fixes and improvements', obtainium: 'obtainium://app/%7B%22id%22%3A%22com.duckduckgo.mobile.android%22%7D' },
@@ -63,6 +63,10 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.click('text=Import Obtainium List'); await page.waitForTimeout(300);
   await page.click('#ghTokenBtn');
   console.log('token button:', await page.locator('#ghTokenBtn').innerText());
+  // the Keystore refuses the next token: the bridge answers false, so the page says it was not saved and the button keeps its old state
+  await page.evaluate(() => { window.AndroidBridge.setGithubToken = t => { window.__st.calls.push('token:refused'); return false; }; });
+  await page.click('#ghTokenBtn'); await page.waitForTimeout(150);
+  console.log('token refused:', await page.locator('#toastMsg').innerText(), '|', await page.locator('#ghTokenBtn').innerText());
   await page.click('.upd-row:has-text("Desktop-only") >> button:has-text("Release")');
   console.log('calls:', JSON.stringify(await page.evaluate(() => window.__st.calls)));
   console.log('errors:', JSON.stringify(errors));
