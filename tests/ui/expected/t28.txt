@@ -1,0 +1,23 @@
+info card shown: true
+splits card shown (apkm, >1 split): true
+options card shown: true
+pkg label: Example App
+split rows: 3
+sign row: Signature matches the installed app.
+1. default authorizer=adb, createFlags: -r
+   splits selected: 3 (expect 3)
+   blockMismatch/blockUnknown default on: true true
+2. full flags: -r -g -d -t --user all --bypass-low-target-sdk-block --update-ownership -i com.android.vending --originating-uri https://example.com/app --install-reason 4 --package-source 2
+   matches expected: true
+   dexopt: true everything force: true
+   pkg/sourceRef carried: com.example.app | content://pick/1
+   installReason/packageSource numerics: 4 2
+3. after deselecting config.en: 2 (expect 2)
+   base still included: true
+4. installSelected received authorizer: shizuku | splits: 2 | createFlags: -r -g -d -t --user all --bypass-low-target-sdk-block --update-ownership -i com.android.vending --originating-uri https://example.com/app --install-reason 4 --package-source 2
+5. results modal shown on success: true
+6. no-priv: grantAll disabled: true | installer field disabled: true
+   no-priv createFlags (just -r): "-r"
+   no-priv preview mentions dialog: true
+7. single APK -> splits card hidden: true | info shown: true
+errors: []

@@ -1,0 +1,27 @@
+1. an .apk entry offers Install and Open inside: true ["View","Install","Open inside","Extract…","Rename / move","Delete"]
+   staged through the bridge, then handed to the Installer tab: true {"stage":[["/sd/bundle.xapk","config.arm64.apk","install"]],"tab":"installer","inspected":["/cache/archive_stage/1_config.arm64.apk"],"busy":false}
+   the archive is still open when you come back: true
+   plain files do not offer Install / Open inside: true ["View","Extract…","Rename / move","Delete"]
+   a staging failure is reported and nothing is left busy: true
+2. opening inside shows the nested archive with a chain title: true ["bundle.xapk › base.apk","inside bundle.xapk"]
+   it is view-only (no add/folder, reason shown): true
+   entries in it have no rename/delete: true ["View","Extract…"]
+   Back leaves the nested archive, releases it and shows the parent again: true {"stack":0,"title":"bundle.xapk","released":["/cache/archive_nested/1_base.apk"],"rows":5,"opened":2}
+   an unreadable nested file is reported, released, and the parent stays open: true
+3. Compare asks for the other archive (defaults to the same folder): true {"label":"Compare with: a path to an archive, or an installed app’s package name","val":"/sd/","name":"Compare archives"}
+   the app compares the two paths and shows a summary: true "bundle.xapk (5) ⇄ bundle-v2.xapk (5) All 5 ≠ Changed 3 + New 1 − Gone 1 1 unchanged ✕ Close comparison"
+   changed / new / gone entries listed with sizes: true ["≠manifest.json | 40 B → 40 B","≠data/readme.txt | 10 B → 10 B","≠AndroidManifest.xml | 300 B → 340 B","+extra/new.bin | 8 B","−config.arm64.apk | 1000 B"]
+   breadcrumbs hidden during a comparison; last target remembered: true
+   filter chips and the search box narrow the list: true 1,1,1
+   a changed entry offers Show differences / New / Old: true ["Show differences","New","Old","Extract…"]
+   line diff: -six, +SIX CHANGED, +thirteen with a collapsed gap and a summary: true {"add":["+ SIX CHANGED","+ thirteen"],"del":["- six"],"gap":1,"meta":"+2 / −1 lines • data/readme.txt"}
+   manifest diff shows the new permission: true ["+   <uses-permission name=\"READ_SMS\"/>"]
+   Old / New read the matching archive: true
+   extracting a removed file reads it from the first archive: true ["/sd/bundle.xapk","config.arm64.apk","/storage/emulated/0/Download/bundle","keep",false]
+   Back closes the comparison and returns to the folder view: true
+   the last comparison target is pre-filled next time: true
+   an installed app's package name is accepted: true
+   an unknown target shows the error and leaves the browser as it was: true
+4. identical archives say so: true
+5. extract offers the new folder at first and remembers the folder used last time: true ["/storage/emulated/0/Download/bundle","/storage/emulated/0/Documents/out"]
+errors: []

@@ -1,0 +1,31 @@
+1. roots row starts with only "Add storage": true
+2. Add storage calls the native picker: true
+   picking a root adds it to the row and navigates into it: true ["SD Card","✕","＋ Add storage"]
+   root listing shows its entries: true
+   the root is persisted (uri + label): true [{"uri":"content://mock/root1/root","label":"SD Card"}]
+3. descending into Documents lists its own entries: true
+   Up returns to the root listing: true
+   Up again at the top of this storage does not error, just says so: true
+4. New Folder calls fmNewSaf(parentUri, name, "dir"): true [["content://mock/root1/root","Pics","dir"]]
+   not blocked by the "needs a working mode" prompt: true
+   the new folder shows up: true
+   New File calls fmNewSaf(parentUri, name, "file"): true ["content://mock/root1/root","todo.txt","file"]
+   a text file opens the editor right away, using the uri fmNewSaf handed back: true
+5. SAF file sheet offers View, Edit, Rename, Delete: true ["View","Edit","Open with…","Share","Open as archive","Rename","Copy","Move","Delete"]
+   offers Copy and Move (through the clipboard), Open with and Share, but not Compress: true
+6. Rename prefilled with the bare name, calls fmRenameSaf(uri, newName): true [["content://mock/root1/n2","todo-list.txt"]]
+   the renamed item shows up: true
+   fmOp was never called for a rename: true
+7. Delete calls fmOp("rm", uri, null): true [["rm","content://mock/root1/n1",null]]
+   the deleted folder is gone: true
+8. Copy puts the item on the clipboard and shows the Paste bar: true true
+   Paste calls fmBatch2("cp", [uri], <this folder uri>) with the uri untouched: true [["cp",["content://mock/root1/n2"],"content://mock/root1/f1","keep"]]
+   Select turns selection mode on in added storage: true | Compress hidden: true
+   Open with copies the file to the cache first, then opens that copy: true [["content://mock/root1/n2"],["/data/cache/saf_stage/x_todo-list.txt"]]
+   Share does the same: true
+   Search here in added storage runs with the folder uri (no All-files prompt): true [["todo",["content://mock/root1/root"]]] | prompt shown: false
+9. removing the root calls removeStorageRoot(uri): true ["content://mock/root1/root"]
+   the confirm names the root: true
+   gone from the row and the persisted list: true
+   backed out to internal storage: true
+errors: []

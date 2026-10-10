@@ -1,0 +1,2 @@
+light rgb(236, 230, 240) / avatar n/a
+dark rgb(43, 41, 48) / avatar n/a

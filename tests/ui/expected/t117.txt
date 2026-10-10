@@ -1,0 +1,25 @@
+ok   Samsung: no icon in the header, the title starts at the left (12 px)
+ok   Samsung: two title lines, as large as fits, the widest line inside the room
+ok   Samsung: the subtitle is "SAMSUNG SM-S948U1" and "ANDROID 17 • ONE UI 9.0" in capitals
+ok   Samsung: the subtitle is not wider than the room
+ok   Samsung: the gear and the mode badge are the same height (38)
+ok   Samsung: the page is not wider than the screen
+ok   Samsung, 360 wide: no icon in the header, the title starts at the left (12 px)
+ok   Samsung, 360 wide: two title lines, as large as fits, the widest line inside the room
+ok   Samsung, 360 wide: the subtitle is "SAMSUNG SM-S948U1" and "ANDROID 17 • ONE UI 6.1.1" in capitals
+ok   Samsung, 360 wide: the subtitle is not wider than the room
+ok   Samsung, 360 wide: the gear and the mode badge are the same height (38)
+ok   Samsung, 360 wide: the page is not wider than the screen
+ok   Samsung, 320 wide: no icon in the header, the title starts at the left (12 px)
+ok   Samsung, 320 wide: two title lines, as large as fits, the widest line inside the room
+ok   Samsung, 320 wide: the subtitle is "SAMSUNG SM-S948U1" and "ANDROID 17 • ONE UI 9.0" in capitals
+ok   Samsung, 320 wide: the subtitle is not wider than the room
+ok   Samsung, 320 wide: the gear and the mode badge are the same height (38)
+ok   Samsung, 320 wide: the page is not wider than the screen
+ok   Pixel: no icon in the header, the title starts at the left (12 px)
+ok   Pixel: two title lines, as large as fits, the widest line inside the room
+ok   Pixel: the subtitle is "GOOGLE PIXEL 9 PRO XL" and "ANDROID 16" in capitals
+ok   Pixel: the subtitle is not wider than the room
+ok   Pixel: the gear and the mode badge are the same height (38)
+ok   Pixel: the page is not wider than the screen
+errors: []

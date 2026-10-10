@@ -1,0 +1,18 @@
+ok   1. the Settings card exists and the switch is on by default
+ok      on: Working on it…, Checking the phone…, then the result "Alpha: Data cleared": ["Working on it…","Checking the phone…","Alpha: Data cleared"]
+ok      Clear data went the checked way
+ok      turning it off is kept and says so
+ok      off: no Working on it… and no Checking the phone…; the result is still shown: ["Bravo: Data cleared"]
+ok      without Root the native side says "unsupported" and the plain way is taken
+ok      turned on again
+ok   2. an uninstall whose command printed "Failure" but whose app is gone counts as done: {"ok":true,"out":"Checked afterwards: uninstalled. The command reported a failure, but the device says it worked.\n\nFailure [x]","label":"Uninstalled"}
+ok      "Checking the device…" was shown
+ok      the app record follows the device
+ok      a disable the command called a success, though the app is not disabled, is a failure ("Not disabled"): {"ok":false,"out":"Checked afterwards: not disabled, although the command reported success.\n\nPackage com.c new state: disabled-user","label":"Not disabled"}
+ok      the record says it is not disabled
+ok      an uninstall that really failed is "Still installed": {"ok":false,"out":"Checked afterwards: still installed.\n\nFailure [DELETE_FAILED_INTERNAL_ERROR]","label":"Still installed"}
+ok      a batch looks at the device once for all the apps (twice when something is not as wanted): 2
+ok      the batch says "Checking the device…"
+ok      and names the one that is not disabled (com.c), not the one that is: {"open":true,"title":"1 of 2 did not work","body":"com.c: Not disabled (the command said it worked)"}
+ok      with Progress messages off the device is checked without the message: []
+ok   no page errors:

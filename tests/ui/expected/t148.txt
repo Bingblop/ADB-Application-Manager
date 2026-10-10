@@ -1,0 +1,16 @@
+ok   1. Settings has a Row tints slider; it starts on Subtle: {"def":{"attr":"subtle","range":"1","card":true},"subtle":5.969900000000003}
+ok      Normal tints the row more than Subtle, and Off not at all: {"off":0.00010000000000331966,"subtle":5.969900000000003,"normal":17.910020000000003}
+ok      the choice is kept
+ok      the slider has the three labels
+ok   2. Enable and Reinstall are tinted green like Freeze is blue and Uninstall red: {"en":{"cls":"sheet-btn sheet-btn-green","col":"rgb(0, 240, 80)"},"re":{"cls":"sheet-btn sheet-btn-green","col":"rgb(0, 240, 80)"},"fr":{"cls":"sheet-btn sheet-btn-blue","col":"rgb(41, 121, 255)"},"un":{"cls":"sheet-btn sheet-btn-red","col":"rgb(255, 82, 82)"}}
+ok   3. while a Browser Use task runs the window shows a progress bar (by steps) and a Stop button: {"stop":"flex","w":"25%","txt":"Step 3 of up to 12 · 0 s","go":true}
+ok      Stop ends it at once: "Stopped.", the bar and Stop are gone, Ask again is back, and the task is asked to stop: {"t":"Stopped.","prog":false,"stop":"none","go":false}
+ok      and no more questions about the task are sent
+ok   4. a request on its way shows a moving bar and Stop; Stop cancels the request and says Stopped.: {"h1":{"stop":"flex","indet":true,"prog":true},"h2":{"t":"Stopped.","cancels":1,"prog":false}}
+ok   5. the web lookup can be stopped too
+ok   6. Ollama and Own server are in the Default agent choice: ["ollama","ownserver"]
+ok      its sheet asks for the server address (no phone search), names LM Studio / llama.cpp and says a key is optional: {"txt":"Any server on your own computer or network that speaks the OpenAI chat API: LM Studio, llama.cpp (llama-server), vLLM, text-generation-webui, Open WebUI, LocalAI or a server you rent. Enter its address with /v1 (like http://192.168.1.20:1234/v1) and an API key only if it asks for one. Nothin
+ok      the address is kept (http:// added) and the server is connected: {"ready":true,"base":"192.168.1.20:1234/v1","tests":["192.168.1.20:1234/v1"]}
+ok      an Ask agent button is answered by it, the request going to that address only: {"t":"Asking Own server (qwen2.5-7b). The text above is sent to them.\nIt is a harmless helper.","url":"192.168.1.20:1234/v1/chat/completions"}
+ok   no page errors:
+ALL PASSED

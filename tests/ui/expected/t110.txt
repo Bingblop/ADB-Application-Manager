@@ -1,0 +1,10 @@
+ok   in read-only mode the banner shows with its X in the top right corner, clear of Set Up
+ok   the X puts it away
+ok   it stays away while read-only goes on (tab changes, a mode check)
+ok   nothing was kept: the choice is not saved
+ok   with a working mode it is not shown
+ok   read-only again after a working mode: it is back
+ok   a fresh start in read-only shows it again
+ok   Set Up still opens the Working modes sheet
+errors: []
+all checks passed

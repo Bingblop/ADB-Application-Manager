@@ -1,0 +1,31 @@
+1. the file manager sheet of an .apk offers Sign…: true ["Install","Sign…","View contents","Open with…","Share","Extract…","Compress…","Rename","Copy","Move","Delete"]
+   a .zip does not: true
+   tapping it opens the sign sheet and closes the file sheet: true
+   the sheet shows the app, its valid signature, the installed copy with a different signer and the not-yet-made key: true "APP\nExample <b>App</b> · com.example.app · v2.1\nSIGNATURE NOW\n✓ Valid\nAA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA\nINSTALLED COPY\nv2.0 is signed by someone else. Android refuses to update it with this app’s key: uninstall it first (its data is lost)"
+   the app label is escaped (no injected element): true
+   the sheet asked the bridge for the info of that path: true
+2. the sheet offers Sign in place and Save a signed copy: true ["Sign in place","Save a signed copy"]
+   it is busy while working, buttons are disabled and progress is shown: true
+   the copy was requested:  true
+   done: result row with the new path, key now shown, Install offered: true ":BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB\nSIGNING KEY\nThis app’s key · 2048-bit RSA · in secure hardware\nCC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC\nRESULT\n✓ Signed app-signed.apk (5.3 KB)\n/sd/app-signed.apk"
+   no confirm dialog for a copy: true
+   the key now matches nothing installed (cc… vs bb…) so the warning stays: true
+3. Install stages the signed copy and opens the Installer: true {"install":["/sd/app-signed.apk"],"intent":["/cache/stage/app-signed.apk"],"tab":"installer","open":false}
+4. the archive browser of an .apk shows Sign but no banner yet: true
+   the note on APK editing now points at Sign: true
+   after an edit the "signature is no longer valid" banner shows: true
+   its button opens the sheet for that file: true
+   signing in place of a valid-signed file asks first (it replaces that signature): true ["“app.apk” already has a valid signature. Signing in place replaces it, and the old one can not be restored. Continue?"]
+   in place was sent to the bridge: true
+   afterwards the banner is gone and the archive was re-opened: true
+   the sheet now says the signature is valid: true
+5. Sign in place is disabled when the file can not be written, and says why: true
+   the copy button stays enabled: true
+6. a failed signing is reported and the sheet is usable again: true
+   the failure report is on top of the sign sheet (it used to open underneath): true
+   another archive job running: told so, not stuck busy: true
+7. New key asks first, regenerates and refetches the sheet info: true ["Make a new signing key? An app you signed with the old key can then only be replaced by uninstalling it first."]
+8. Back closes the sign sheet: true
+9. an unreadable file shows the problem: true
+10. closing the sheet mid-signing is harmless: true
+errors: []

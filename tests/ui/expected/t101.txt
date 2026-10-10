@@ -1,0 +1,14 @@
+icons asked for once each: ["com.example.noicon","com.example.one","com.example.two"]
+icons with a picture: 2 of 3
+no letter box any more: 0
+icon sits left of the info, checkbox right of it: {"iconLeftOfInfo":true,"checkboxRightOfInfo":true,"iconW":40}
+re-render does not ask again: 3
+a short tap saves nothing: 0
+press and hold saves it: [["com.example.one","One",""]] | Icon saved to Download/ADB App Manager/Icons/One (com.example.one).png
+and does not select the row: 0
+press and hold on the row opens the app menu: true | row not selected: 0
+Icon pack card follows the Font card: iconPackCard | options: ["Default icons","Pack One"]
+picking a pack asks again, with the pack: [["com.example.noicon","com.example.one","com.example.two"],["","com.pack.one"]]
+and the choice is kept: com.pack.one
+Clear icon cache asks the app to clear, then redraws: [ 1, true ] | Icon cache cleared, icons are being redrawn
+errors: []

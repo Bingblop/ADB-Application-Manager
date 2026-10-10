@@ -1,0 +1,15 @@
+name:      Bixby, DuckDuckGo, F-Droid, Samsung Internet, WhatsApp, "Messenger"
+updated:   WhatsApp, "Messenger", Samsung Internet, F-Droid, DuckDuckGo, Bixby | • updated Oct 2, 2026 • updated Oct 1, 2026 • updated Sep 30, 2026 • updated Sep 13, 2026
+installed: F-Droid, DuckDuckGo, WhatsApp, "Messenger", Samsung Internet, Bixby | • installed Sep 30, 2026 • installed Sep 3, 2026 • installed Aug 29, 2025 • installed Apr 16, 2024
+size:      Samsung Internet, WhatsApp, "Messenger", DuckDuckGo, F-Droid, Bixby | • 172 MB • 85.8 MB • 38.1 MB • 11.4 MB
+updates:   DuckDuckGo, Bixby, F-Droid, Samsung Internet, WhatsApp, "Messenger" |
+recent pill: Updated 7d (3)
+recent apps: F-Droid, Samsung Internet, WhatsApp, "Messenger"
+shared file: app_list_2026-10-03.csv | Export button gone: true
+"WhatsApp, ""Messenger""",com.whatsapp,2.24.1,2025-08-29,2026-10-02,user,suspended,90000000,
+sizes (no access): APK 172 MB (3 parts) • Show data usage
+sizes (granted):   APK 172 MB (3 parts) • Data 488 MB • Cache 32.4 MB
+extract toast: Saved 172 MB to Download/ADB App Manager/APKs/Samsung Internet_26.0.3.1.apks (split app: install the .apks with a split-APK installer such as SAI)
+size (with data): WhatsApp, "Messenger", Samsung Internet, DuckDuckGo, F-Droid, Bixby | • 2.3 GB • 668 MB • 143 MB • 19.1 MB
+RELAUNCH sort: size | WhatsApp, "Messenger", Samsung Internet, DuckDuckGo, F-Droid, Bixby
+calls: ["allSizes","usageAccess","extract:com.sec.android.app.sbrowser","allSizes"] | errors: []

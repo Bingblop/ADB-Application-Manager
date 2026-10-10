@@ -1,0 +1,58 @@
+1. Help opens with its sections: true ["Overview","The three shells","Typing commands","Coding Agents","Chat commands","API keys","Subscriptions and website sign-in","MCP servers","Termux","Free and open-source","Limits","Agent websites"]
+   a link to every agent's website (and Termux): ["Gemini (Google)","Claude (Anthropic)","ChatGPT (OpenAI)","Cursor (SpaceX)","Copilot (GitHub)","Perplexity","Grok (SpaceX)","Muse (Meta)","Deepseek","DroidMind","OpenCode","Kilo Code","Leon.ai","Browser Use","Crawl4AI","Jan.ai","AnythingLLM","Ollama","Termux"]
+   a link opens in the browser: ["url:https://opencode.ai/"]
+2. Settings: the sections: true ["Keys and servers","Default agent and models","Shell","What agents may do","Sign-in tools in Termux","Chat"]
+   keys by their hint only: ["Gemini (Google): no key [Connect]","Claude (Anthropic): key sk-ant-…aaaa [Change]","ChatGPT (OpenAI): no key [Connect]","Cursor (SpaceX): key key_…dddd [Change]","Copilot (GitHub): no key [Connect]","Perplexity: no key [Connect]","Grok (SpaceX): no key [Connect]","Muse (Meta): no key [Connect]"]
+   the default agent is stored: claude
+   a default model and effort can be set for each connected agent: 2
+   ... stored, and in use now: claude-opus-5-5 claude-opus-5-5
+   the effort select too: high high
+   switches and their defaults: ["Use my Termux login profile=true","Match my Termux environment=true","Ask before running commands=true","Ask before changing files=true","Read files outside the working folder without asking=false","Let them act without asking=false","Keep the conversation between launches=true"]
+   turning one off is stored: false
+   turning off "match my Termux environment" is stored: false
+   Sync with Termux, not set up yet: Settings closes and the setup checklist opens instead: true true
+3. with Ask before running off, commands run without a card, and the default model is used: true 0 claude-opus-5-5
+4. Termux missing: ["1 Install Termux [F-Droid, GitHub]","2 Open Termux once [Open Termux]","3 Let Termux take commands from other apps [Copy, Open Termux]","4 Allow this app [Allow(off)]","5 Test the connection [Test(off)]"]
+   its sub text: "Termux is free. Get it from F-Droid or GitHub; the old Google Play build is not suitable."
+   Sync with Termux is disabled until Termux is set up, same as Use Termux as the shell: true
+   installed, not allowed yet: ["✓ Install Termux","2 Open Termux once [Open Termux]","3 Let Termux take commands from other apps [Copy, Open Termux]","4 Allow this app [Allow]","5 Test the connection [Test(off)]"]
+   the command for step 3: "mkdir -p ~/.termux && echo 'allow-external-apps=true' >> ~/.termux/termux.properties && termux-reload-settings"
+   Android refuses for good: the way to allow it by hand: true "Android will not ask again. Allow it by hand: App info of this app, Permissions, Additional permissions, Run commands in Termux environment." "App info\nOK"
+   App info opens this app's page: [["app_settings","com.bloatware.bingblop"]]
+   allowed: ["✓ Install Termux","2 Open Termux once [Open Termux]","3 Let Termux take commands from other apps [Copy, Open Termux]","✓ Allow this app","5 Test the connection [Test]"]
+   the test while Termux still refuses other apps: "Termux does not take commands from other apps yet: run the command of step 3 in Termux, then test again."
+   and once it is set: ["✓ Install Termux","2 Open Termux once [Open Termux]","✓ Let Termux take commands from other apps [Copy, Open Termux]","✓ Allow this app","✓ Test the connection [Test]"]
+   Sync with Termux, set up: re-enables matching, closes the session, starts it again, opens no Termux window, runs the report: true ["termux"] [] ["adbmgr_sync_report"] false
+   Set up storage in Termux opens Termux with a command that skips the question when storage is there: [true]
+   starting it hands the native bridge matchEnv too: ["termux",{"profile":true,"matchEnv":true,"cwd":""}]
+   Use Termux as the shell: termux true
+5. Jan: looks on this phone by itself, finds it, saves the address and is ready: {"key":false,"hint":"","base":"http://127.0.0.1:1337/v1","savedAt":<epoch ms>,"readable":true} ["llama-4-8b","qwen3-coder-7b"]
+   chatting: the saved address, its own provider name for the app, a plain system prompt: http://127.0.0.1:1337/v1/chat/completions jan llama-4-8b system true
+6. AnythingLLM: found, but it needs a key: "Found a server at http://127.0.0.1:3001/api/v1/openai that needs a key: enter it below and tap Connect."
+   Connect tests the key at that address: {"id":"kt7","provider":"anythingllm","key":"ALLM-KEY-123456","base":"http://127.0.0.1:3001/api/v1/openai"} true
+7. Ollama not running here yet: "Ollama is not running on this phone yet. Install it below, or enter the address of a computer that runs it."
+   the steps, run one by one in the Termux shell: ["adbmgr_sync_report","pkg install -y ollama","(pgrep -x ollama >/dev/null || nohup ollama serve >\"$HOME/.ollama-serve.log\" 2>&1 &); sleep 4; ollama --version","ollama pull qwen2.5-coder:1.5b"]
+   and on its screen: ["» Installing Ollama (3 steps, CTRL-C stops)","-- 1/3: Install Ollama (Termux package)","-- 2/3: Start the Ollama server in the background","-- 3/3: Download a small coding model (about 1 GB)","✓ Installing Ollama: done"]
+8. Claude by subscription: why it goes through Claude Code: "Anthropic does not allow other apps to sign in with a Claude Pro or Max account. Claude Code, Anthropic's own tool, can: it runs in Termux, and the Terminal chats through it. With an API key saved, Claude Code uses the key instead."
+   the steps: ["✓ Termux","2 Install Claude Code","3 Sign in","4 Chat here"]
+   Install: Debian in Termux, then Anthropic's installer inside it: ["pkg install -y proot-distro","proot-distro login debian -- true 2>/dev/null || proot-distro install debian","proot-distro login debian -- bash -c \"apt-get update && apt-get install -y curl ca-certificates git\"","proot-distro login debian -- bash -lc 'export PATH=\"$HOME/.local/bin:$PATH\"; curl -fsSL https://claude.ai/install.sh | bash'"]
+   then: sign in, or use it now: "Sign in\nUse it now"
+   Sign in opens Claude Code in a Termux window: "proot-distro login debian -- bash -lc 'export PATH=\"$HOME/.local/bin:$HOME/.opencode/bin:$PATH\"; echo \"Signing in to Claude Code. Follow the link it shows; come back to ADB App Manager when it says you are signed in.\"; claude'"
+   in use: cli claude
+   a message goes to claude -p in the Debian container, with the saved key handed to it as ANTHROPIC_API_KEY (by the app):
+    "proot-distro login debian --shared-tmp --env \"ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY\" -- bash -lc 'export PATH=\"$HOME/.local/bin:$HOME/.opencode/bin:$HOME/bin:$PATH\"; cd '\\''<tmp>/termux'\\'' 2>/dev/null; claude -p '\\''fix the build, please'\\'' --model '\\''claude-opus-5-5'\\'''" {"ANTHROPIC_API_KEY":"claude"}
+   its answer: ["[Claude Code in Termux, with your saved key]","Claude Code says: done."]
+   the next one continues the same Claude Code conversation: true with the model chosen: true
+9. Gemini CLI runs in Termux itself (no container), its own sign-in (no key saved): "export PATH=\"$HOME/.local/bin:$HOME/.opencode/bin:$HOME/bin:$PATH\"; gemini -p 'hello gemini'" null
+   not installed: said, with the install button: "[Gemini CLI does not seem to be installed yet]" "Install Gemini CLI\nConnect sheet"
+10. Copilot: its sheet: "Copilot needs a Copilot plan. GitHub retired GitHub Models in July 2026, so the Terminal uses GitHub's official Copilot CLI in Termux. Sign in there with GitHub, or save a fine-grained token with the \"Copilot Requests\" permission here and the CLI uses it."
+    the token is tested against GitHub and kept for the CLI: "copilot" "The token works. The Copilot CLI uses it from now on."
+    a message goes to copilot -p, the token as COPILOT_GITHUB_TOKEN: "proot-distro login debian --shared-tmp --env \"COPILOT_GITHUB_TOKEN=$COPILOT_GITHUB_TOKEN\" -- bash -lc 'export PATH=\"$HOME/.local/bin:$HOME/.opencode/bin:$HOME/bin:$PATH\"; cd '\\''<tmp>/termux'\\'' 2>/dev/null; copilot -p '\\''explain this repo'\\'''" {"COPILOT_GITHUB_TOKEN":"copilot"}
+11. Cursor: a cloud agent is started with the message (and the chosen model): cursor {"prompt":{"text":"Earlier in this conversation:\nAssistant: Local and free.\n\nUser: fix the build, please\n\nAssistant: Claude Code says: done.\n\nUser: and run the tests\n\nAssistant: Claude Code says: done.\n\nUser: hello gemini\n\nUser: explain this repo\n\nAssistant: Copilot: here you go\n\nNow: summarize the readme"},"model":{"id":"composer-2"}}
+    its stream shows the text and the tools it used; the final reply stays: ["cursor › I read the README: it describes the app."]
+    a follow-up continues the same agent (a new run): [{"prompt":{"text":"now add a section"}}]
+    STOP cancels the run at Cursor too: ["POST https://api.cursor.com/v1/agents/bc-123/runs/run-2/cancel"]
+12. DroidMind is explained (a tool for other agents), and the chosen agent stays: true DroidMind cursor
+     "DroidMind is an MCP server: a tool that gives AI agents control of an Android device over ADB (apps, files, logs, screenshots). It is not a chat by itself."
+    Leon too: "Leon is an open-source personal assistant (skills, voice) that runs on a computer with Node.js and Python. It has no Android version and is not a coding agent, so it does not chat in this Terminal." cursor
+errors: []

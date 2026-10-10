@@ -1,0 +1,56 @@
+1. the tab reads Terminal over ADB Console: "Command-Line\nInterface"
+   the Feature List calls it Terminal / ADB Console: Command-Line Interface
+2. the Terminal page comes first, the ADB Console page is hidden: true
+   the switch is big (at least 48 px tall): true Terminal is the selected one: true
+3. ADB Console shows the classic console (Rish mode, cheat sheet, its own output box): true
+   the choice is kept: "console"
+   leaving and coming back keeps ADB Console: true
+   and back to Terminal: true "terminal"
+4. with a working mode connected the Terminal opens on it, and starts its shell by itself: priv ["priv"]
+   welcome and the ready line: true
+   the state line names the shell and its folder: Working mode <tmp>/priv
+   the mode button shows $, and is off while no agent is chosen: $ true the button says RUN
+5. a command and its output, Termux style (folder $ command): true
+   the input is empty again: ""
+6. cd and export carry over to the next command, and the prompt follows: true
+   a failing command shows its exit status: true
+7. ▲ brings back the last command: "cd .."
+   ▲ again, the one before: "false"
+   ▼ back down to what was being typed: "half typed"
+   history is kept for the next launch: ["cd ..","false","pwd; echo $TXV"]
+8. | goes in at the cursor: "cat| file"
+   HOME then ~: "~cat| file"
+   END then - and /: "~cat| file-/"
+   tapping the keys keeps the focus in the input (the keyboard stays up): txInput
+   ESC clears the line: ""
+   the base keys are shown, SHIFT is not active yet: true
+10. SHIFT swaps in the symbol keys instead (base keys hidden), and lights up: true
+    a symbol key still inserts at the cursor: "${}"
+    tapping SHIFT again goes back to the base keys: true
+9. TAB completes as far as the names agree: "cat alp" and lists them: true
+   one match: the whole name and a space: "cat alpha.txt "
+   a folder ends in / (no space): "ls alpine/"
+   completion asks the shell quietly (nothing about it on the screen): true [true,true,true]
+10. vim is offered in Termux instead of hanging here: true "Open in Termux\nRun here anyway"
+    Termux is not set up on this device yet, so it offers the setup sheet instead of hanging: true
+    prompts only count when started bare (top -n 1 prints once, python3 x.py runs a script): ["top=true","top -n 1 -b=false","python3=true","python3 x.py=false","nano=true","nano a.txt=true","less a.txt=false","man ls=false","ssh me@host=true","ssh me@host uptime=false","ollama run qwen2.5-coder:1.5b=true","ollama run qwen2.5-coder:1.5b hi=false","claude=true","claude -p hi=false"]
+11. clear empties the screen: ""
+12. program output keeps its colours and drops other escape codes:
+    text: "red plain bold green\nsplit: blue end\n256 true inv\nDownloading 100%\nline one\nline two\naX\nafter title\nbar 3/3\n"
+    styled: ["red=color: rgb(205, 49, 49);","bold green=color: rgb(13, 188, 121); font-weight: 700;","blue=color: rgb(36, 114, 200);","256=color: rgb(255, 135, 0);","true=color: rgb(10, 20, 30);","inv=color: rgb(0, 0, 0); background: rgb(230, 230, 230);"]
+13. the app shell has its own screen, the other one is kept: true
+    it runs in its own folder: true
+    switching back shows the first screen as it was: true the choice is kept: priv
+14. while a command runs the button turns into STOP: STOP
+    a second command waits its turn with a note: true
+    CTRL-C asks the shell to stop it: ["priv"] true
+    the end shows [stopped] and RUN comes back: true RUN
+15. exit ends the shell, Termux style: [Process completed - press Enter to start a new shell]
+    Enter on an empty line starts a new one: true [sh ready through Shizuku, running as the shell user (uid 2000) in <tmp>/priv]
+    Restart shell closes it and opens a fresh one: ["priv"] true
+16. Termux without the permission: the setup sheet opens, and the screen says so with an Allow button: true true "Allow\nTermux setup"
+    Allow asks Android, and once granted the Termux shell starts by itself: 1 true
+17. Termux refusing other apps: the exact command to run there, with Copy: true
+    Copy puts it on the clipboard: true
+18. no working mode: the screen says so and offers Working Modes: true "Working Modes\nTry again"
+errors: []

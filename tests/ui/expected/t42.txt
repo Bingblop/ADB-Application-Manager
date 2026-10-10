@@ -1,0 +1,23 @@
+1. auto-scan started on first open: true | "Searching storage for APK, APKS, APKM and XAPK files…"
+2. default-installer button removed: true | text kept at the bottom: true "To make this the default installer, open any APK, choose this app, and tap \"Always\"."
+   buttons: ["?","Choose APK / APKS / APKM / XAPK","Install XAPK (APK + OBB data)","Find APKs on this device","Select","Select duplicates and older versions","All","Delete selected"]
+3. chooser mentions XAPK + XAPK button opens picker: true
+4. 4 rows with kind badges: true ["XAPK","APK","APKS","APKM"]
+   row shows size, age, short folder: true "XAPK | Game.xapk | 700.0 MB · today | Internal storage › Download"
+   count line: true "4 of 4 files found · tap one to load it"
+   SD-card path shortened: true
+5. kind filter -> 1 APK: true | text filter "telegram" -> 1: true
+6. readable file inspected in place: true
+   shell-only file staged first, then inspected: true
+7. no-access prompt + grant button: true
+   Find APKs button re-runs the scan: true
+   empty result message: true
+8. data card shown with 2 files + destination: true
+   hint mentions XAPK + data files: true "Loaded XAPK with 2 game data files — review and install below."
+   copyExtras true by default / false when switched off: true
+   preview mentions the copy only when on: true "pm install -r (1 file) | copy 2 data files to /sdcard/Android/"
+9. plain APK hides data card + copyExtras false: true
+10. live progress shown: true
+    result lists game data outcome + clears progress: true
+11. file manager Install offered for apk/apks/apkm/xapk only: true {"a.apk":true,"b.APKS":true,"c.apkm":true,"d.xapk":true,"e.zip":false}
+errors: []

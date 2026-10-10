@@ -1,0 +1,92 @@
+batch grid: buttons / rows / the new row: {"buttons":12,"rows":4,"labels":["Batch Ops","Share List","Command"]}
+batch menu X (top right, no arrow): [ '✕', true, true, 0, '20px' ]
+sheet fits the screen: true
+Show Apps lists the selection: [ '3 apps selected', [ 'Alpha', 'Bravo', 'Charlie' ] ]
+Remove takes one out: [
+  [ 'com.example.alpha', 'com.example.charlie' ],
+  '2 Selected',
+  2,
+  false
+]
+Batch Ops opens with the list: [ 'Applies to 2 selected apps', true, true ]
+two ticked (choosing a value ticks it): [ '2 app ops ticked', 'Apply to 2 apps' ]
+presets offered: [
+  'Privacy lockdown',
+  'No location',
+  'Stop background activity',
+  'Silence notifications',
+  'Undo Privacy lockdown',
+  '＋ Save ticked as preset…'
+]
+Privacy lockdown ticks its ops (replacing the earlier ticks): [ '10 app ops ticked', 'ignore', false ]
+a saved preset appears and is kept: [
+  [
+    'Privacy lockdown',
+    'No location',
+    'Stop background activity',
+    'Silence notifications',
+    'Undo Privacy lockdown',
+    'My preset'
+  ],
+  '[{"name":"My preset","ops":{"COARSE_LOCATION":"ignore","FINE_LOCATION":"ignore","CAMERA":"'
+]
+loading it brings the ops back (with RUN_ANY_IN_BACKGROUND deny): [ 10, undefined ]
+Apply sends one batch with every op and value: [["appops:CAMERA=deny,RUN_ANY_IN_BACKGROUND=ignore",["com.example.alpha","com.example.charlie"]]] | asked: ["Set 2 app ops on 2 apps?\n\nCAMERA → deny\nRUN_ANY_IN_BACKGROUND → ignore"]
+the result dialog is titled for app ops: true
+Command instructions: [ true, true, true ]
+preview for the first selected app: For com.example.alpha it will run: pm clear com.example.alpha | Run on 2 apps
+Run sends custom:<command> to the batch runner: [["custom:pm clear $package",["com.example.alpha","com.example.charlie"]]]
+the results dialog offers Share CSV: [ 'Run again', 'Share CSV' ]
+CSV shared: ["batch_command_DATE.csv","text/csv","App,Package,Result,Output,Run,Command or action",3,true]
+the recent command is kept: ["pm clear $package"]
+a saved command is listed by name: [
+  [ 'Wipe cache' ],
+  '[{"name":"Wipe cache","cmd":"pm trim-caches 1G; echo $package"}]'
+]
+tapping it loads the command: pm trim-caches 1G; echo $package
+Run on offers the selection and the saved list: [ 'The selected apps (2)', 'From a saved list: My list (2)' ]
+with the list: only its apps that are on the phone, and the others noted: [
+  'Runs once on each of the 1 app in the list My list (1 in the list are not on this phone and are skipped)',
+  'Run on 1 app',
+  'For com.example.bravo it will run: pm trim-caches 1G; echo com.example.bravo'
+]
+Run sends the list apps: [["custom:pm trim-caches 1G; echo $package",["com.example.bravo"]]]
+a saved command can be deleted: [ 0, '[]' ]
+duplicating a built-in preset saves your own copy (and the next copy gets 2): [
+  'Silence notifications (copy 2)',
+  'Silence notifications (copy)',
+  'My preset'
+]
+duplicating a saved command: [{"name":"Wipe cache (copy)","cmd":"echo $package"},{"name":"Wipe cache","cmd":"echo $package"}]
+dry run changes the button: Show what would run on 2 apps
+dry run lists what would run and runs nothing: ["Dry run: nothing was run",["Alpha WOULD RUN com.example.alpha echo com.example.alpha","Charlie WOULD RUN com.example.charlie echo com.example.charlie"],0,["Run it for real","Share CSV"]]
+Run it for real reopens the sheet with the command, dry run off: [ true, 'echo $package', false ]
+results offer Run again and Run again on the failed: ["Run again","Run again on the 1 that failed","Share CSV"] | ran: [["custom:failing $package",["com.example.alpha","com.example.charlie"]]]
+Run again on the failed sends only those: [["custom:failing $package",["com.example.charlie"]]]
+Run again repeats the run the dialog shows (here the retried one): [["custom:failing $package",["com.example.charlie"]]]
+saved presets before: [
+  'Silence notifications (copy 2)',
+  'Silence notifications (copy)',
+  'My preset'
+]
+Rename a saved preset: [ 'Quiet notifications', 'Silence notifications (copy)', 'My preset' ]
+a taken name is refused: [
+  [
+    'Quiet notifications',
+    'Silence notifications (copy)',
+    'My preset'
+  ],
+  'Another preset is already called My preset'
+]
+built-in presets have no Rename: [ 0, 0 ]
+Export presets shares a JSON file: ["batch_ops_presets_DATE.json","application/json","adb-app-manager",1,["Quiet notifications","Silence notifications (copy)","My preset"],false]
+importing the same file again adds nothing: [ 'Imported 0 presets and 0 commands (3 already here)', 3 ]
+Import brings in the good ones (a clash is kept as "(imported)", junk skipped): ["Imported 2 presets and 1 command",["Fresh","My preset (imported)","Quiet notifications","Silence notifications (copy)","My preset"],{"RECORD_AUDIO":"ignore"},["Imported cmd","Wipe cache (copy)","Wipe cache"]]
+a file that is not ours is refused: That is not a presets file from this app
+a read error is shown: Could not read that file: the file is over 1 MB
+Rename a saved command: [ 'Stop it', 'Wipe cache (copy)', 'Wipe cache' ]
+Export saved commands: ["batch_commands_DATE.json",["Stop it=am force-stop $package","Wipe cache (copy)=echo $package","Wipe cache=echo $package"]]
+app menu has no arrow, its X closes it: 0
+closed: true
+the batch X minimizes the menu (selection kept): [ true, 2 ]
+errors: []

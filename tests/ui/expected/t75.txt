@@ -1,0 +1,125 @@
+1. a few seconds after the app opens for the first time, a sheet offers the three permissions: true Allow a few permissions
+   they are All files access, Usage access and Display over other apps, none allowed yet, each with an Allow button: true [{"name":"All files access","ok":false,"btn":true},{"name":"Usage access","ok":false,"btn":true},{"name":"Display over other apps","ok":false,"btn":true}]
+   there is an "Allow all" and a "Not now"; the subtitle says each can be skipped and changed later: true Allow what you like and skip the rest: every one can be changed later.
+   each one says what it is for: true
+   the three Allow buttons are told apart for a screen reader ("Allow All files access", …): true
+   nothing is remembered until the sheet is dealt with: true
+   Allow opens the Android screen of that access (bridge: requestAllFilesAccess) and the sheet stays: true
+   coming back without having allowed it changes nothing: true
+   coming back after allowing it ticks that row ("✓ Allowed", no button) and the rest stay: true ✓ — —
+   the tick says "Allowed": true
+   with one left "Allow all" goes (its own Allow button is enough): true ✓ ✓ —
+   with all three allowed the closing button reads "Done": true ✓ ✓ ✓
+   Done closes it and the app remembers it was shown (it does not come back): true
+   no "file access allowed" toast for something nobody was waiting on: true
+2. a phone where the sheet was already dealt with is not asked again (even though nothing is allowed): true
+   a phone that has all three allowed is not asked, and is marked as done: true
+   with only one missing the sheet comes: the two allowed show ✓, the third has its Allow button, no "Allow all": true ✓ ✓ —
+3. while another sheet is open (What's new) the first-launch sheet waits: true
+   and comes as soon as that one is closed: true
+   the same for any other sheet that is open (a menu, say): it waits and looks again every few seconds: true
+   so it comes by itself soon after that sheet is closed: true
+4. "Allow all" opens the first Android screen at once (All files access): true
+   once the person is back it opens the next one (Usage access) and the first shows ✓: true ✓ — —
+   leaving a screen without allowing does not stop the walk: the last one opens: true
+   after the last it stops; the skipped one is still there to allow by hand: true ✓ — ✓
+   its Allow button opens that screen again: true
+5. closing the sheet in the middle of "Allow all" cancels the rest (no Android screen opens behind the person's back): true
+6. with a working mode, Usage access is allowed on the spot (no Android screen, no coming back): true — ✓ ✓ — ✓ ✓
+   "Allow all" then goes to the one that needs the screen (All files access): true
+   and Display over other apps follows by itself: all three ✓ and "Done": true ✓ ✓ ✓ ✓ ✓ ✓
+   from nothing, "Allow all" needs just the one screen: the other two are allowed by the mode in between: true
+9. the Allow Restricted Settings row sits above Usage access: true
+   with a working mode "Allow all" grants through the mode (one call), closes the sheet and starts the app again: true [1,1,["perm_intro_v62=1"],{"files":true,"usage":true,"overlay":true,"storage_legacy":true,"secure_settings":true,"restricted_settings":true}]
+   Usage access allowed by hand in Settings is also granted as a permission in the background (once): true
+   and not again when nothing changed: true
+   closing the first-launch sheet after something was allowed starts the app again: true
+   closing it with nothing allowed does not start the app again: true
+7. "Not now" closes the first-launch sheet and it is not offered again: true
+   a second look finds it done: nothing opens: true
+7. the ✕ at the top closes the first-launch sheet and it is not offered again: true
+   a second look finds it done: nothing opens: true
+7. a tap beside the sheet closes the first-launch sheet and it is not offered again: true
+   a second look finds it done: nothing opens: true
+7. the Back button closes the first-launch sheet and it is not offered again (Back says it handled it): true
+   a second look finds it done: nothing opens: true
+8. About has a Permissions button: it opens the sheet with what is allowed now: true ✓ — —
+   closing it from there writes nothing (it is not the first-launch sheet): true
+   coming back from Android settings with the sheet closed opens nothing: true
+   with everything allowed it says so and closes with "Done": true ✓ ✓ ✓
+   Done closes it: true
+   about the first-launch sheet: closing the About one does not count as having seen that one: true
+9. the page also follows the app's own notice that a permission was answered (window.onPermissionsChanged): true — ✓ —
+10. when the app reports that an action failed for want of file access, a sheet asks for exactly that one: true [{"name":"All files access","ok":false,"btn":true}]
+   it says what was being done and why: true To save a file there, this app needs All-files access.
+   a second report while it is open does not stack another one: true
+   Allow opens the Android screen for it: true
+   when the access is there the sheet closes by itself: true
+   with nothing waiting to be redone there is no toast: true
+11. "Not now" closes it and writes nothing: true
+   the failures that follow straight away (one action, many files) do not ask again: true
+   something the person asked for (a button) shows it anyway; with no reason it uses a general one: true This action needs access to files on this phone.
+   a few seconds later it asks again (the next thing the person does): true
+   if the access has been given in the meantime it does not ask at all: true
+   a report from an app that has the access (the failure was something else) shows nothing: true
+   the prompt is painted over every other sheet (archive, file action, signing, working modes, privilege, a result report): true []
+12. an action that asks gets told the access is missing: true
+   it has not run yet: true
+   the sheet closes when the access arrives, says so, and the action runs (once): true
+   another return to the app does not run it again: true
+   an action asked for long ago (more than five minutes) is not run: the access may have come from anywhere: true
+   one asked for just now (under five minutes) is: true
+   when the access is already there nothing is asked and the action runs at once: true
+13. "Not now" cancels the action: allowing the access later (from About, say) does not run it: true
+   (asking again straight away shows nothing): true
+   but that second ask is waiting: the access arriving from elsewhere runs it: true
+   an action that fails when it is run again does not break the page: true
+14. opening the Files tab by itself shows its own hint but no sheet: true
+   asking for the storage folder (Go) when nothing can read it asks for the access, saying why: true To browse files on this phone, this app needs All-files access (or a working mode: ADB, Shizuku or Root).
+   once it is allowed the sheet closes, the folder is listed again by itself and the hint goes: true
+15. with a working mode the storage can be read without the access, so nothing is asked: true
+   Android may answer an empty list (not an error) for a folder the app is not allowed to read: that asks too: true
+   and the person asking again right after "Not now" is asked again (they asked): true
+   through a working mode an empty folder is just empty (and one that is not there is not a matter of access): nothing is asked: true
+   a system folder that cannot be read is not a matter for this access: nothing is asked: true
+16. the hint's own button goes to the Android screen without a sheet on top: true
+   and when the person is back the folder is listed again: true
+17. a package on storage that cannot be read for want of the access asks for it, saying so: true To read this package from storage, this app needs All-files access.
+   the Installer says what failed: true
+   once it is allowed the package is read again by itself, without picking it again: true
+18. a package picked through Android's own picker (content://) has nothing to do with this access: no sheet, no second read: true
+   an error that is not about permission asks for nothing and is not tried again: true
+19. the search the Installer starts by itself when it opens does not nag: a note with a "Grant access" button, no sheet: true
+   the button goes to the Android screen and says the search starts again: true
+   and when the person is back the search starts again by itself: true
+20. a search the person started themselves, when it cannot read storage, asks for the access with a sheet: true To search storage for APK, APKS, APKM and XAPK files, this app needs All-files access (or a working mode: ADB, Shizuku or Root).
+   once it is allowed the sheet closes and the search starts again: true
+[360x800] intro: the sheet is inside the screen, its rows and buttons inside the sheet, no text cut off sideways: true {"subWholeWords":true,"inside":true,"scrolls":false,"wide":false,"rowsIn":true,"textIn":true,"allowMin":40,"allowW":61,"btnsIn":true,"bottomMin":44,"rows":3,"h":442,"closeW":77,"rowsW":322}
+[360x800] intro: the subtitle wraps between words, not in the middle of one: true
+[360x800] intro: the Allow buttons are at least 40 px tall and the bottom buttons at least 44: true 40 / 44
+[360x800] intro: "Not now" shares the row with "Allow all": true 77 of 322
+[360x800] intro: on a normal screen the sheet fits without scrolling: true 442
+[360x800] files: the sheet is inside the screen, its rows and buttons inside the sheet, no text cut off sideways: true {"subWholeWords":true,"inside":true,"scrolls":false,"wide":false,"rowsIn":true,"textIn":true,"allowMin":40,"allowW":61,"btnsIn":true,"bottomMin":44,"rows":1,"h":268,"closeW":322,"rowsW":322}
+[360x800] files: the subtitle wraps between words, not in the middle of one: true
+[360x800] files: the Allow buttons are at least 40 px tall and the bottom buttons at least 44: true 40 / 44
+[360x800] files: alone, "Not now" takes the whole row: true 322 of 322
+[360x800] files: on a normal screen the sheet fits without scrolling: true 268
+[320x640] intro: the sheet is inside the screen, its rows and buttons inside the sheet, no text cut off sideways: true {"subWholeWords":true,"inside":true,"scrolls":false,"wide":false,"rowsIn":true,"textIn":true,"allowMin":40,"allowW":61,"btnsIn":true,"bottomMin":44,"rows":3,"h":442,"closeW":77,"rowsW":282}
+[320x640] intro: the subtitle wraps between words, not in the middle of one: true
+[320x640] intro: the Allow buttons are at least 40 px tall and the bottom buttons at least 44: true 40 / 44
+[320x640] intro: "Not now" shares the row with "Allow all": true 77 of 282
+[320x640] files: the sheet is inside the screen, its rows and buttons inside the sheet, no text cut off sideways: true {"subWholeWords":true,"inside":true,"scrolls":false,"wide":false,"rowsIn":true,"textIn":true,"allowMin":40,"allowW":61,"btnsIn":true,"bottomMin":44,"rows":1,"h":268,"closeW":282,"rowsW":282}
+[320x640] files: the subtitle wraps between words, not in the middle of one: true
+[320x640] files: the Allow buttons are at least 40 px tall and the bottom buttons at least 44: true 40 / 44
+[320x640] files: alone, "Not now" takes the whole row: true 282 of 282
+[412x915] intro: the sheet is inside the screen, its rows and buttons inside the sheet, no text cut off sideways: true {"subWholeWords":true,"inside":true,"scrolls":false,"wide":false,"rowsIn":true,"textIn":true,"allowMin":40,"allowW":61,"btnsIn":true,"bottomMin":44,"rows":3,"h":400,"closeW":77,"rowsW":374}
+[412x915] intro: the subtitle wraps between words, not in the middle of one: true
+[412x915] intro: the Allow buttons are at least 40 px tall and the bottom buttons at least 44: true 40 / 44
+[412x915] intro: "Not now" shares the row with "Allow all": true 77 of 374
+[412x915] intro: on a normal screen the sheet fits without scrolling: true 400
+[412x915] files: the sheet is inside the screen, its rows and buttons inside the sheet, no text cut off sideways: true {"subWholeWords":true,"inside":true,"scrolls":false,"wide":false,"rowsIn":true,"textIn":true,"allowMin":40,"allowW":61,"btnsIn":true,"bottomMin":44,"rows":1,"h":260,"closeW":374,"rowsW":374}
+[412x915] files: the subtitle wraps between words, not in the middle of one: true
+[412x915] files: the Allow buttons are at least 40 px tall and the bottom buttons at least 44: true 40 / 44
+[412x915] files: alone, "Not now" takes the whole row: true 374 of 374
+[412x915] files: on a normal screen the sheet fits without scrolling: true 260
+all checks passed

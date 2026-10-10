@@ -1,0 +1,22 @@
+ok   1. the Selected apps list has outlined Select All and Clear All buttons: [{"t":"Select All","bw":"1px","bs":"solid"},{"t":"Clear All","bw":"1px","bs":"solid"}]
+ok      Select All adds every app the list shows now (the uninstalled ones are in the list too): [4,4,4]
+ok      Clear All empties the selection and closes the list
+ok      New List in Saved Applications is outlined the same way: {"t":"New List","bw":"1px","bs":"solid"}
+ok      the Clear Data from Uninstalled Apps sheet has them too (Clear All instead of Select None): [{"t":"Select All","bw":"1px"},{"t":"Clear All","bw":"1px"}]
+ok   2. without the Uninstalled filter no row offers it: 0
+ok      in it, every uninstalled row has the button (and no installed app is in the list): com.example.gone1,com.example.gone2
+ok      Root: an app with no data left says so and starts nothing: Gone Two has no data left
+ok      Root: an app with data asks first (with the size), then clears just that app with the read-back batch: [["Delete the data Gone One left behind (5.0 MB)?\n\nThis cannot be undone."],[["clear_removed_data",["com.example.gone1"]]]]
+ok      without Root the size is unknown: it asks and clears: [["Delete the data Gone One left behind (5.0 MB)?\n\nThis cannot be undone.","Delete the data Gone Two left behind?\n\nThis cannot be undone."],[["clear_removed_data",["com.example.gone2"]]]]
+ok      turning the filter off takes the buttons away
+ok   3. no key, no quota line
+ok      a key that is not approved yet shows none
+ok      once the key is approved the card says 377 of 500 lookups are left today, 123 used, and when the day ends: {"shown":true,"text":"377 of 500 lookups left today (123 used). The day ends at 00:00 UTC, in 5 h 12 min. Refresh","calls":1}
+ok      Refresh asks again and shows the new number
+ok      showing the card again within a minute does not ask VirusTotal again
+ok      the Installer's VirusTotal card carries the same line
+ok      when only this app's own count exists the line says so
+ok      if it cannot be read the line says why and offers Try again
+ok      removing the key hides the line
+ok   no page errors:
+ALL PASSED

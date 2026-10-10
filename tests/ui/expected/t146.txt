@@ -1,0 +1,13 @@
+ok   1. a first launch on a German phone starts in German and keeps it: {"code":"de","saved":"\"de\"","title":"ADB Application Manager Pro","sel":"de"}
+ok   2. Portuguese of Portugal gets the Brazilian dictionary: {"code":"pt-BR","saved":"\"pt-BR\"","title":"ADB Application Manager Pro","sel":"pt-BR"}
+ok      zh-TW -> zh-CN: {"code":"zh-CN","saved":"\"zh-CN\"","title":"ADB Application Manager Pro","sel":"zh-CN"}
+ok      the old Android code in -> Indonesian: {"code":"id","saved":"\"id\"","title":"ADB Application Manager Pro","sel":"id"}
+ok   3. the first language of the phone that the app has is used (Swedish is not there, French is): {"code":"fr","saved":"\"fr\"","title":"ADB Application Manager Pro","sel":"fr"}
+ok   4. a language the app does not have: English, and nothing is saved: {"code":"en","saved":"","title":"ADB Application Manager Pro","sel":"en"}
+ok      English first on the phone: English: {"code":"en","saved":"","title":"ADB Application Manager Pro","sel":"en"}
+ok   5. a language chosen earlier (English) is not replaced by the phone's: {"code":"en","saved":"\"en\"","title":"ADB Application Manager Pro","sel":"en"}
+ok   6. an app that is in use already (first-launch sheet seen) stays in English: {"code":"en","saved":"","title":"ADB Application Manager Pro","sel":"en"}
+ok   7. the first-launch sheet has a Language drop-down with every language, set to the phone's (German here): {"row":"flex","val":"de","n":14,"first":"English"}
+ok   8. choosing English there switches the app at once and saves it (Settings shows it too): {"code":"en","saved":"\"en\"","title":"ADB Application Manager Pro","sel":"en"}
+ok   9. the sheet opened by hand (About) has no Language drop-down
+all ok

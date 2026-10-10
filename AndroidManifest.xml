@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.bloatware.bingblop"
+    android:versionCode="850"
+    android:versionName="7.12.8-Pro">
+
+    <uses-sdk
+        android:minSdkVersion="26"
+        android:targetSdkVersion="34" />
+
+    <!-- Shizuku Privileged Permissions -->
+    <uses-permission android:name="moe.shizuku.manager.permission.API_V23" />
+    <uses-permission android:name="rikka.shizuku.permission.USE_SHIZUKU" />
+
+    <!-- Standard Android Permissions -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Connected Devices: the Bluetooth devices this phone is paired with (Android 12+ asks), and sending files to one -->
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <!-- Terminal tab: run commands in the user's own Termux (granted by the user; Termux also needs allow-external-apps=true) -->
+    <uses-permission android:name="com.termux.permission.RUN_COMMAND" />
+
+    <!-- Package Visibility for Android 11+ (API 30+) -->
+    <queries>
+        <package android:name="moe.shizuku.privileged.api" />
+        <package android:name="af.shizuku.plus.api" />
+        <package android:name="com.termux" />
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+        </intent>
+        <!-- Icon packs (the ADW / Nova / Apex / Go theme convention), for Settings -> Icon pack -->
+        <intent>
+            <action android:name="org.adw.launcher.THEMES" />
+        </intent>
+        <intent>
+            <action android:name="com.novalauncher.THEME" />
+        </intent>
+        <intent>
+            <action android:name="com.anddoes.launcher.THEME" />
+        </intent>
+        <intent>
+            <action android:name="com.gau.go.launcherex.theme" />
+        </intent>
+    </queries>
+
+    <application
+        android:label="ADB Application Manager Pro"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:theme="@android:style/Theme.DeviceDefault.NoActionBar"
+        android:hardwareAccelerated="true"
+        android:largeHeap="true"
+        android:extractNativeLibs="true"
+        android:allowBackup="false"
+        android:requestLegacyExternalStorage="true"
+        android:usesCleartextTraffic="true">
+
+        <!-- Marks this app as a Shizuku v11+ client so Shizuku lists it and shows the authorization prompt -->
+        <meta-data
+            android:name="moe.shizuku.client.V3_SUPPORT"
+            android:value="true" />
+
+        <activity
+            android:name="com.bloatware.bingblop.MainActivity"
+            android:label="ADB Application Manager Pro"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|navigation|uiMode|density|fontScale|locale|layoutDirection"
+            android:windowSoftInputMode="adjustResize"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- Default-installer: handle opening an APK file, so this app can be set as the APK handler.
+                 When launched this way it routes into the Installer tab; a privileged mode installs, and
+                 with no privileged mode it falls back to the normal system installer. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <action android:name="android.intent.action.INSTALL_PACKAGE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" android:mimeType="application/vnd.android.package-archive" />
+                <data android:scheme="file" android:mimeType="application/vnd.android.package-archive" />
+            </intent-filter>
+        </activity>
+
+        <!-- Shizuku delivers its binder to the app through this provider -->
+        <provider
+            android:name="rikka.shizuku.ShizukuProvider"
+            android:authorities="com.bloatware.bingblop.shizuku"
+            android:multiprocess="false"
+            android:enabled="true"
+            android:exported="true"
+            android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
+
+        <!-- Runs tile and widget taps (switch mode, stop the quick list) without showing the app -->
+        <activity
+            android:name=".QuickActionActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
+        <!-- A long file job (copy, extract) keeps running, with a notification and Cancel, when the app is left -->
+        <service
+            android:name=".JobService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
+        <!-- The Morphe Patcher tab patches in a process of its own (the big heap a patch needs stays out of the app), with a notification and Cancel -->
+        <service
+            android:name=".MorpheService"
+            android:process=":morphe"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
+        <!-- The Helper's downloads (started in the in-app browser) go on when the app is left, with a notification, Pause all and Cancel -->
+        <service
+            android:name=".DownloadService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
+        <!-- Quick Settings tiles -->
+        <service
+            android:name=".ModeTileService"
+            android:exported="true"
+            android:label="Working mode"
+            android:icon="@drawable/ic_stat"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+        <service
+            android:name=".StopListTileService"
+            android:exported="true"
+            android:label="Stop apps"
+            android:icon="@drawable/ic_stat"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
+        <!-- The SD Maid tab's AppCleaner: taps Clear cache in the system settings, only after the person agreed in the app, with a cover and a Cancel -->
+        <service
+            android:name=".SdmAccessService"
+            android:exported="true"
+            android:label="SD Maid (AppCleaner) - ADB App Manager"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/sdm_accessibility_service" />
+        </service>
+
+        <!-- Home-screen widget -->
+        <receiver
+            android:name=".QuickWidgetProvider"
+            android:exported="true"
+            android:label="ADB App Manager">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/quick_widget_info" />
+        </receiver>
+
+        <!-- Notices a system update after reboot so a watched profile can be re-checked -->
+        <receiver
+            android:name=".BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Receives the Wi-Fi pairing code typed into the notification's inline reply and runs
+             `adb pair` in the background, so the user can pair without leaving the pairing screen -->
+        <receiver
+            android:name=".PairReceiver"
+            android:exported="false" />
+
+        <!-- Termux hands the result of a command back here, through the PendingIntent this app gave it (not exported) -->
+        <receiver
+            android:name=".TermuxBridge$ResultReceiver"
+            android:exported="false" />
+
+        <!-- Lets the share sheet read exported lists/APKs from this app's cache (one-off URI grants only) -->
+        <provider
+            android:name=".ShareProvider"
+            android:authorities="com.bloatware.bingblop.share"
+            android:exported="false"
+            android:grantUriPermissions="true" />
+
+    </application>
+</manifest>

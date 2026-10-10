@@ -1,0 +1,37 @@
+1. the tab is in the registry and opens to the Processes sub-tab: true
+   opening it starts the native poll at the default interval (3s) with no gate (privileged): true
+2. processes render sorted by CPU by default, with the resolved app name for an installed package: true
+   highest CPU% first: true ["Samsung Internet","com.unknown.app","kworker/0:1"]
+   "Sort by memory" re-sorts by RSS instead (and is remembered as the active sort): true
+   a kernel thread with no resolvable package has no kill button: true
+3. the kill button force-stops immediately through tmKill, with no confirmation dialog anywhere: true
+   it also asks for a fresh sample right away, instead of waiting for the next tick: true
+4. CPU has no gate when unprivileged (it reads /proc/stat itself, no shell needed): true
+   all 4 per-core readings show: true
+5. RAM has no gate either, and shows used/available/swap: true
+6. Network has no gate, shows total throughput and each interface: true
+7. Processes shows the gate once there is no working mode: true
+   and a plain explanation instead of a (misleadingly empty) process list: true
+8. GPU shows the gate too, and explains the reading needs a working mode (not just "unsupported hardware"): true
+   with a real (non-approximate) reading, the "may not be available" note is hidden: true
+12. switching to GPU loads the renderer dropdown: Default plus both backends, since this sample supports Vulkan: true
+    the renderer card is the first thing in the GPU tab, above the graph: true
+    it names the renderer in use in large letters (Default until one is set): true
+    picking Vulkan runs setprop skiavk then crashes System UI, in that order (then re-reads the property, a 3rd call): true
+    the dropdown re-reads the property right after and reflects it (no "Default" option once it is actually set): true
+    picking OpenGL does the same with skiagl: true
+    and the card follows the choice: true
+    an ordinary auto-refresh tick while sitting on GPU does not rebuild the dropdown (would interrupt an open selection) or re-run getprop: true
+    without a working mode the dropdown disables itself and explains why instead of offering a broken control: true
+    a device without Vulkan hardware support is never offered the Vulkan option: true
+9. Battery has no gate (BatteryManager needs no shell), shows percent, and its units row only appears here: true
+   switching the temperature unit re-renders the same reading in Celsius: true
+   the CPU tab shows the units row with the temperature unit only: true
+   its temperature is in the unit chosen (Celsius here): true
+   picking Fahrenheit there changes it at once, and the Battery tab shares the choice: true
+   the units row is hidden again on another sub-tab: true
+10. leaving the tab stops the native poll (both timers: the gone redraw interval and the native side): true
+    reopening it restores the sub-tab, auto-refresh and graph speed exactly as left: true {"sub":"ram","auto":"10","delay":"800"}
+    and restarts the native poll at the restored interval: true
+11. a single reading draws a visible point rather than nothing: true
+no page errors
