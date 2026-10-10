@@ -99,6 +99,7 @@ function scanLine(text, st) {
     if (c === '#' && (i === 0 || /[\s;&|()<>]/.test(text[i - 1]))) break;
     if (c === '(' && text[i + 1] === '(' && (i === 0 || /[\s;&|$]/.test(text[i - 1]))) { st.arith++; i++; continue; }
     if (c === ')' && text[i + 1] === ')' && st.arith > 0) { st.arith--; i++; continue; }
+    if (st.arith > 0) continue;      // inside $(( )) < and > compare numbers (echo $((x<y>z))): nothing there is a redirection, a here-document or a placeholder
     if (c === '<' && text[i + 1] === '<' && text[i + 2] === '<') { code += '<<<'; i += 2; continue; }      // a here-string: the word after it is not a delimiter
     if (c === '<' && text[i + 1] === '<' && st.arith === 0) {
       const hd = heredocWord(text, i);
@@ -295,9 +296,12 @@ function selfTest() {
     '```sh', '$ cat <<\'EOF\'', '<html>', 'EOF', '$ echo done', 'done', '```', '',
     '```bash', 'echo a', '    ```', 'APP=<package>', '```', '',
     '```bash', 'cat <<EO\\', 'F', '<a>', 'EOF', 'APP=<package>', '```', '',
+    '```bash', 'echo $((x<y>z))', 'echo $(( 1 << 2 ))', '```', '',
+    '```bash', 'echo $((1<2)) <package> out.txt', '```', '',
+    '```sh', '$ echo $((x<y>z))', '0', '$ echo done', 'done', '```', '',
   ].join('\n');
   const got = checkText(fx).map(r => r.state + '@' + r.block.startLine + (r.problems.length ? ':' + [...new Set(r.problems.map(p => p.line))].join(',') : ''));
-  const want = ['ok@3', 'ok@9', 'FAIL@16:17', 'skipped@22', 'FAIL@26:27', 'FAIL@34:34', 'ok@42', 'FAIL@47:49', 'ok@52', 'FAIL@57:59', 'ok@62', 'ok@67', 'FAIL@72:76', 'FAIL@79:81', 'FAIL@84:85', 'FAIL@90:91', 'ok@94', 'ok@99', 'ok@104', 'ok@112', 'ok@119', 'ok@127', 'FAIL@138:140', 'FAIL@146:147', 'FAIL@152:156', 'FAIL@159:159', 'ok@166', 'ok@172', 'FAIL@179:183', 'FAIL@186:186', 'ok@193', 'FAIL@201:204', 'FAIL@207:210', 'FAIL@213:216', 'FAIL@219:221', 'FAIL@224:227', 'FAIL@230:231', 'FAIL@236:240', 'FAIL@243:247', 'FAIL@250:254', 'FAIL@257:262', 'FAIL@265:269', 'FAIL@272:276', 'ok@279', 'FAIL@286:290', 'FAIL@293:296', 'ok@299', 'FAIL@307:309', 'FAIL@312:316', 'FAIL@319:321', 'FAIL@324:328', 'FAIL@331:334', 'ok@337', 'ok@344', 'FAIL@352:354,355', 'FAIL@358:363,359'];
+  const want = ['ok@3', 'ok@9', 'FAIL@16:17', 'skipped@22', 'FAIL@26:27', 'FAIL@34:34', 'ok@42', 'FAIL@47:49', 'ok@52', 'FAIL@57:59', 'ok@62', 'ok@67', 'FAIL@72:76', 'FAIL@79:81', 'FAIL@84:85', 'FAIL@90:91', 'ok@94', 'ok@99', 'ok@104', 'ok@112', 'ok@119', 'ok@127', 'FAIL@138:140', 'FAIL@146:147', 'FAIL@152:156', 'FAIL@159:159', 'ok@166', 'ok@172', 'FAIL@179:183', 'FAIL@186:186', 'ok@193', 'FAIL@201:204', 'FAIL@207:210', 'FAIL@213:216', 'FAIL@219:221', 'FAIL@224:227', 'FAIL@230:231', 'FAIL@236:240', 'FAIL@243:247', 'FAIL@250:254', 'FAIL@257:262', 'FAIL@265:269', 'FAIL@272:276', 'ok@279', 'FAIL@286:290', 'FAIL@293:296', 'ok@299', 'FAIL@307:309', 'FAIL@312:316', 'FAIL@319:321', 'FAIL@324:328', 'FAIL@331:334', 'ok@337', 'ok@344', 'FAIL@352:354,355', 'FAIL@358:363,359', 'ok@366', 'FAIL@371:372', 'ok@375'];
   const ok = JSON.stringify(got) === JSON.stringify(want);
   console.log(ok ? 'self-test: ok (' + got.length + ' blocks judged as expected)' : 'self-test: FAIL\n  got:  ' + got.join(' ') + '\n  want: ' + want.join(' '));
   return ok;
