@@ -128,10 +128,15 @@ public final class ApkSigner {
                 os.write(cd);
                 os.write(eocd);
                 os.flush();
+                os.close();     // inside the try: a failing close is a failure of the write, not something that hides the first error
                 ok = true;
             } finally {
-                os.close();
-                if (!ok) out.delete();
+                if (!ok) {
+                    // closing flushes again and throws again when the first write failed (disk full): that must not replace the first
+                    // error or skip the delete of the truncated output
+                    try { os.close(); } catch (IOException ignored) { }
+                    out.delete();
+                }
             }
         } finally {
             raf.close();
