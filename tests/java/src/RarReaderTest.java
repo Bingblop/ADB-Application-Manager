@@ -1050,6 +1050,14 @@ public class RarReaderTest {
     File fb = arc("solid-bad.rar", bad);
     String err = errOf(fb, null, true);
     check("solid: damage in an early entry is an IOException (not a crash)", err != null && !err.startsWith("THROWN"));
+    // a visitor that reads nothing never sees the damage in its own read; the background drain meets it first and must not hide it
+    String skipErr = null;
+    try {
+      RarReader.walk(fb, null, new RarReader.Visitor() {
+        public boolean entry(RarReader.Item it, InputStream data) throws IOException { return true; }
+      });
+    } catch (IOException ex) { skipErr = ex.getMessage(); } catch (Throwable t) { skipErr = "THROWN " + t; }
+    check("solid: damage found while draining entries the visitor skipped is reported (" + skipErr + ")", skipErr != null && !skipErr.startsWith("THROWN"));
   }
 
   /** Ops for a solid continuation (tables sent already). */

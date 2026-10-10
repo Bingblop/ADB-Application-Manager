@@ -1245,7 +1245,7 @@ public final class RarReader {
         CRC32 crc;
         Blake2sp b2;
         byte[] macKey;
-        boolean started, eof, checked, pwVerified, closed;
+        boolean started, eof, checked, pwVerified, closed, failed;
 
         R5In(Rar5 owner, int idx, boolean closeOwner) {
             this.owner = owner;
@@ -1315,11 +1315,14 @@ public final class RarReader {
                 }
                 return n;
             } catch (PasswordException pe) {
+                failed = true;
                 throw pe;
             } catch (IOException ex) {
+                failed = true;
                 if (e.enc != null && !pwVerified && owner.pwBytes != null && !"multi-volume".equals(ex.getMessage())) throw new PasswordException(true);
                 throw ex;
             } catch (OutOfMemoryError oom) {
+                failed = true;
                 throw new IOException("out-of-memory");
             }
         }
@@ -1340,13 +1343,16 @@ public final class RarReader {
         }
 
         void finish(boolean needState) throws IOException {
+            // a read that already failed was reported to the visitor; only a failure first met by the drain below is new
+            final boolean reported = failed;
             try {
                 if (eof || !needState) return;
                 // a later entry continues from the state this one leaves (solid): decode and check what is left
                 byte[] sink = new byte[65536];
                 while (read(sink, 0, sink.length) >= 0) { /* drain */ }
-            } catch (IOException ignored) {
-                // the visitor met this error in its own read; the entries after it fail on their own (the decoder is marked broken)
+            } catch (IOException ex) {
+                // the entries after a reported failure fail on their own (the decoder is marked broken)
+                if (!reported) throw ex;
             } finally {
                 closed = true;
             }
