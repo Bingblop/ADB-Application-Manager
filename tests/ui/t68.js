@@ -19,7 +19,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   const tabs = await ev(() => Array.from(document.querySelectorAll('.tab-btn')).map(b => b.innerText.replace(/\s+/g, ' ').trim()));
   check('1. the tab bar names it "Hidden Settings"', tabs.includes('Hidden Settings') && !tabs.some(t => /^Settings$/.test(t)), JSON.stringify(tabs));
   const i = tabs.indexOf('Hidden Settings');
-  check('   it sits between Command-Line Interface and RRO/Monet Customization', /Command-Line Interface/.test(tabs[i - 1]) && /RRO\/Monet/.test(tabs[i + 1]) && /Third Party/.test(tabs[i + 2]), JSON.stringify(tabs.slice(i - 1, i + 3)));
+  check('   it sits between Command-Line Interface and RRO/Monet Customization', /Command-Line Interface/.test(tabs[i - 1]) && /RRO\/Monet/.test(tabs[i + 1]) && /App Stores/.test(tabs[i + 2]), JSON.stringify(tabs.slice(i - 1, i + 3)));
   await ev(() => { window.__mode.priv = true; checkAllWorkingModes(false); document.querySelectorAll('.tab-btn')[Array.from(document.querySelectorAll('.tab-btn')).findIndex(b => /Hidden\s+Settings/.test(b.innerText))].click(); }); await page.waitForTimeout(800);
   check('2. the button opens it and becomes the active one', (await ev(() => document.querySelector('.tab-btn.active').innerText.replace(/\s+/g, ' ').trim())) === 'Hidden Settings' && (await ev(() => currentViewName())) === 'settings');
   check('3. its card says what it is', (await ev(() => document.querySelector('#sdbTop .color-card-title').innerText.trim())) === 'Android’s hidden settings');

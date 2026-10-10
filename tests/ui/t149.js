@@ -17,8 +17,8 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
 
   // ---- 1. Test the default agent ----
   await ev(() => switchView('prefs')); await sleep(300);
-  check('1. the Default agent card has a "Test the default agent" button', await ev(() => /Test the default agent/.test(document.getElementById('askTestBtn').innerText)));
-  await page.click('#askTestBtn'); await sleep(100);
+  check('1. the Default Ask Agent card has a "Test the Default Ask Agent" button', await ev(() => /Test the Default Ask Agent/.test(document.getElementById('askTestBtn').innerText)));
+  await ev(() => askAgentChoose('')); await page.click('#askTestBtn'); await sleep(100);
   check('   with no default agent it says there is nothing to test (and sends nothing)', await ev(() => /nothing to test/.test(document.getElementById('askTestRes').innerText) && window.__ai.reqs.length === 0), await ev(() => document.getElementById('askTestRes').innerText));
   await ev(() => { askAgentId = 'claude'; askAgentBuild(); });
   await page.click('#askTestBtn'); await sleep(100);

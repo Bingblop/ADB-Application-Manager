@@ -6,7 +6,7 @@ rows: Desktop-only release [GITHUB/YOUR SOURCE] Release
       Obtainium [IZZYONDROID] Update
       Samsung Internet [GALAXY STORE/SYSTEM] Update
       Weather [CODEBERG/VIA YOUR OBTAINIUM LIST] Update
-update all: Update All (5) | tab: Third Party Stores/Updater (6)
+update all: Update All (5) | tab: Installer/ Updater (6)
 extras headers: Track in Obtainium (1) | Not tracked (2)
 after update all: Release | ✓ Updated | Retry | ✓ Updated | ✓ Updated | ✓ Updated
 fdroid msg: signed with a different key than the installed app, so Android won't accept it as an updat

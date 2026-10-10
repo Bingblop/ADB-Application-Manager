@@ -53,6 +53,8 @@ public final class MorpheBridge {
         Runnable openBrowser(String url, File dir, HelperDownloads downloads, BrowserDownload.Events events);
         /** The cookies the in-app browser holds for an address (the Helper's downloads send them like the browser would). */
         BrowserDownload.Cookies cookies();
+        /** Copies a file into a folder the person chose with Android's folder picker (a content:// tree); returns the name it was saved as. */
+        String copyToTree(File file, String treeUri, String name) throws Exception;
     }
 
     private static final String ENGINE_CLASS = "com.bloatware.bingblop.morphe.EngineMain";
@@ -164,7 +166,9 @@ public final class MorpheBridge {
                 return null;
             }
             case "install": return install(a);
-            case "helperSources": return new JSONObject().put("sources", MorpheHelper.sources()).put("defaults", MorpheHelper.settingsDefaults());
+            case "helperSources": return new JSONObject().put("sources", MorpheHelper.sources()).put("defaults", MorpheHelper.settingsDefaults()).put("abi", android.text.TextUtils.join(",", Build.SUPPORTED_ABIS));
+            case "helperFind": return MorpheHelper.find(a.optString("query"));
+            case "copyToTree": return copyToTree(a);
             case "helperManual": return new JSONObject().put("url", MorpheHelper.manualUrl(a.optString("source"), a.optString("pkg"), a.optString("version")));
             case "helperVersions": return MorpheHelper.versions(a.optString("source"), a.optString("pkg"));
             case "helperBrowse": return helperBrowse(a);
@@ -208,10 +212,12 @@ public final class MorpheBridge {
         r.add(base);
         r.add(new File(host.downloadsDir(), "Morphe Patcher"));
         r.add(new File(host.downloadsDir(), "Helper for Morphe"));
+        r.add(new File(host.downloadsDir(), "App Updater"));
         return r;
     }
 
     private File helperDir(String save) {
+        if ("updater".equals(save)) return new File(host.downloadsDir(), "App Updater");
         return "downloads".equals(save) ? new File(host.downloadsDir(), "Helper for Morphe") : new File(base, "helper");
     }
 
@@ -710,7 +716,7 @@ public final class MorpheBridge {
         if (downloadList == null) {
             downloadList = new HelperDownloads(new File(base, "helper_downloads.json"), host.cookies(), new java.util.function.Predicate<File>() {
                 @Override public boolean test(File f) {
-                    try { return f.getCanonicalFile().equals(helperDir("cache").getCanonicalFile()) || f.getCanonicalFile().equals(helperDir("downloads").getCanonicalFile()); }
+                    try { return f.getCanonicalFile().equals(helperDir("cache").getCanonicalFile()) || f.getCanonicalFile().equals(helperDir("downloads").getCanonicalFile()) || f.getCanonicalFile().equals(helperDir("updater").getCanonicalFile()); }
                     catch (IOException e) { return false; }
                 }
             });
@@ -811,6 +817,15 @@ public final class MorpheBridge {
             }
         });
         return new JSONObject().put("url", url);
+    }
+
+    /** A downloaded file is also copied into the folder the person chose (Android's folder picker): {name}. */
+    private JSONObject copyToTree(JSONObject a) throws Exception {
+        File f = new File(a.optString("path"));
+        if (!MorpheJobs.inside(f, allowedRoots()) || !f.isFile()) throw new IOException("that file is not one this app may copy");
+        String tree = a.optString("tree");
+        if (!tree.startsWith("content://")) throw new IOException("no folder was chosen");
+        return new JSONObject().put("name", host.copyToTree(f, tree, f.getName()));
     }
 
     private JSONObject vtScan(JSONObject a) throws Exception {

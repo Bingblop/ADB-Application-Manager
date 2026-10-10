@@ -139,25 +139,49 @@
 
 <h4>What you need</h4>
 <ul>
-<li>Internet, and the <b>Application Updater</b> box of the <b>Third Party Stores/Updater</b> tab.</li>
+<li>Internet, and the <b>Application Updater</b> box of the <b>APK Installer/Updater</b> tab (the tab bar shows "Installer/" over "Updater").</li>
 <li>A <a href="#modes-overview">working mode</a> to install updates. Without one, a sheet called <b>Working Mode Required</b> opens. Only this app's own update can use Android's install screen.</li>
 <li>To know what is not covered: Google Play apps. This app cannot tell whether a Play app has a newer version.</li>
 </ul>
 
 <h4>Steps</h4>
 <ol class="hg-steps">
-<li>Open <b>Third Party Stores/Updater</b>, then the <b>Application Updater</b> box. The first time it checks by itself. Later, tap <b>Check for Updates</b> in the card <b>Updates Available</b>.</li>
-<li>Watch the status line: "Checking sideloaded apps (GitHub, F-Droid, Obtainium)...", then "Checking the Galaxy Store...". It ends with something like "2 updates available &#8226; checked 12 Galaxy Store and 9 sideloaded apps", followed by the time of the check. The tab's name shows the number in brackets. With none, the list says "Everything is up to date."</li>
+<li>Open <b>APK Installer/Updater</b>, then tap the <b>Application Updater</b> box at its top. The first time it checks by itself. Later, tap <b>Check for Updates</b> in the card <b>Updates Available</b>.</li>
+<li>Watch the status line: "Checking sideloaded apps (GitHub, F-Droid, Obtainium)...", then "Checking the Galaxy Store...". It ends with something like "2 updates available &#8226; checked 12 Galaxy Store and 9 sideloaded apps", followed by the time of the check. The tab's name shows the number in brackets, for example "Installer/ Updater (3)". With none, the list says "Everything is up to date."</li>
 <li>Each row shows the app, where the update comes from (for example <b>GitHub</b> or <b>Galaxy Store</b>), and the installed version, an arrow and the new version. Tap <b>Update</b>. The button changes to "Downloading 40%", then "Installing", then a tick and "Updated".</li>
 <li>For several, tap <b>Update All (N)</b> (it appears only when two or more apps can be updated) and confirm "Update N apps?". They go one after another. Waiting rows say "Queued".</li>
-<li>For this app itself, use the top card <b>App update</b>: <b>Check for app update</b>, then <b>Update now</b>.</li>
+<li>For this app itself, use the card <b>App update</b>: <b>Check for app update</b>, then <b>Update now</b>.</li>
 <li>For Google Play apps, use the card <b>Play Store apps (via Aurora)</b>. <b>Open Aurora Store</b>, or tap <b>List installed apps</b> and then <b>Store</b> beside an app to open its store page. Or update them in the Play Store itself.</li>
 </ol>
 <p>A <b>Release</b> button instead of <b>Update</b> means the newest release has no file for your phone. It opens the release page. Apps under <b>Not tracked</b> have no known source: tap <b>+ Set source</b> and enter a GitHub, Codeberg or F-Droid link.</p>
 
 <div class="hg-warn"><b>Careful.</b> An update replaces the working version, and there is no one-tap way back. Before it installs, the app checks that the file is the same package, newer, and signed with the same key, and installs nothing if a check fails. For an app that matters, make a backup first (<a href="#recipe-backup-before">Back up an app before you change it</a>).</div>
 
-<p><b>Read more:</b> <a href="#tab-updates">Application Updater</a>, <a href="#tab-store">Third Party Stores/Updater</a>, <a href="#install-and-update">Installing and updating the app</a>.</p>
+<p><b>Read more:</b> <a href="#tab-updates">Application Updater</a>, <a href="#tab-store">App Stores</a>, <a href="#install-and-update">Installing and updating the app</a>.</p>
+</section>
+
+<section id="recipe-find-app" data-title="Find and download an app by name" data-group="How do I...?">
+<p class="hg-lead">At the end, you have the original file of an app on your phone (and, if you wish, the app installed), found from just its name.</p>
+
+<h4>What you need</h4>
+<ul>
+<li>Internet, and the <b>Application Updater</b> box of the <b>APK Installer/Updater</b> tab.</li>
+<li>To install straight away: a <a href="#modes-overview">working mode</a>, or Android's own install screen.</li>
+</ul>
+
+<h4>Steps</h4>
+<ol class="hg-steps">
+<li>Open <b>APK Installer/Updater</b>, tap the <b>Application Updater</b> box, and find the first card, <b>Find and download an app</b>.</li>
+<li>Type the app's name (or its package name, such as <code>com.example.app</code>) in the search bar and tap <b>Search</b>. Each result shows the app's name, its package name and, if you have it, <b>Installed: version</b>.</li>
+<li>Leave the source on <b>APKMirror</b>, or pick <b>Uptodown</b> or <b>Aptoide</b>. Leave <b>Version</b> empty for the newest, or type a version number.</li>
+<li>Tap <b>Download</b> on the right row. To pick one version from a list, tap <b>Versions</b> instead.</li>
+<li>When it ends, a card shows the package, version, format, size and SHA-256. Tap <b>Install</b> to install it, or <b>Share</b> to send the file to another app.</li>
+</ol>
+<p>If the site wants a browser check first, tap <b>Open it here, in the app</b> and download the file there. To have the file installed by itself, tick <b>Install on download</b> before you start. To keep a copy somewhere else, change <b>Save downloads to</b>.</p>
+
+<div class="hg-warn"><b>Careful.</b> If Android refuses the install because the installed copy was signed with a different key, the app offers to uninstall that copy first. That deletes its data, so say yes only for an app whose data you do not need or have backed up (<a href="#recipe-backup-before">Back up an app before you change it</a>).</div>
+
+<p><b>Read more:</b> <a href="#tab-updates">Application Updater</a>.</p>
 </section>
 
 <section id="recipe-install-apk" data-title="Install an APK file" data-group="How do I...?">
@@ -181,9 +205,9 @@
 </ol>
 <p>Installing over an installed copy of the same app keeps its data.</p>
 
-<div class="hg-warn"><b>Undo.</b> Open the app's <b>...</b> menu in the <b>Application Manager</b> and tap <b>Uninstall</b>. Its data is deleted. An APK can do anything a normal app can, so install only files you trust. If the install fails with <code>INSTALL_FAILED_UPDATE_INCOMPATIBLE</code>, the installed copy has another signing key and only uninstalling it first fixes that, which deletes its data: back it up first. Other messages are explained in <a href="#tab-installer">APK Installer</a>.</div>
+<div class="hg-warn"><b>Undo.</b> Open the app's <b>...</b> menu in the <b>Application Manager</b> and tap <b>Uninstall</b>. Its data is deleted. An APK can do anything a normal app can, so install only files you trust. If the install fails with <code>INSTALL_FAILED_UPDATE_INCOMPATIBLE</code>, the installed copy has another signing key and only uninstalling it first fixes that, which deletes its data: back it up first. Other messages are explained in <a href="#tab-installer">APK Installer/Updater</a>.</div>
 
-<p><b>Read more:</b> <a href="#tab-installer">APK Installer</a>, <a href="#recipe-install-bundle">Install a split bundle (APKS, APKM, XAPK)</a>.</p>
+<p><b>Read more:</b> <a href="#tab-installer">APK Installer/Updater</a>, <a href="#recipe-install-bundle">Install a split bundle (APKS, APKM, XAPK)</a>.</p>
 </section>
 
 <section id="recipe-install-bundle" data-title="Install a split bundle (APKS, APKM, XAPK)" data-group="How do I...?">
@@ -205,7 +229,7 @@
 <li>Tap <b>Install</b>. The grey line shows the command, for example <code>pm install-multiple -r (4 files)</code>. With game data, a line shows "Copying data file 1 of 2: ...". Keep the phone awake and plugged in: a big copy takes time.</li>
 <li>The result sheet says <b>Success</b>, and "Game data (OBB): 2 of 2 data files copied". Tap <b>Done</b>.</li>
 </ol>
-<p>If the app crashes at once, or the install says a split is missing, the app needs a part that was not ticked. Tap <b>Select all</b> and install again. If the install fails for another reason, the error table in <a href="#tab-installer">APK Installer</a> says what to do.</p>
+<p>If the app crashes at once, or the install says a split is missing, the app needs a part that was not ticked. Tap <b>Select all</b> and install again. If the install fails for another reason, the error table in <a href="#tab-installer">APK Installer/Updater</a> says what to do.</p>
 
 <div class="hg-warn"><b>Undo.</b> Uninstall the app from its <b>...</b> menu in the <b>Application Manager</b>. Its data is deleted. Every part of a bundle must be signed with the same key. Keep the <b>Block</b> switches on.</div>
 
@@ -520,7 +544,7 @@
 <h4>What you need</h4>
 <ul>
 <li>The watch connected in <b>Connected Devices</b>, showing <b>Connected</b> (<a href="#devices-wear">Wear OS, start to finish</a>).</li>
-<li>A file made for Wear OS on this phone: an <b>.apk</b>, <b>.apks</b>, <b>.apkm</b>, <b>.xapk</b> or a zip of APKs, from a source you trust. The app cannot download watch apps for you: <b>Application Stores</b> installs on this phone only.</li>
+<li>A file made for Wear OS on this phone: an <b>.apk</b>, <b>.apks</b>, <b>.apkm</b>, <b>.xapk</b> or a zip of APKs, from a source you trust. The app cannot download watch apps for you: <b>App Stores</b> installs on this phone only.</li>
 </ul>
 
 <h4>Steps</h4>

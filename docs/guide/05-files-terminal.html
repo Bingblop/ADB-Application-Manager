@@ -1,6 +1,6 @@
 <section id="tab-files" data-title="File Manager" data-group="The tabs">
 <p class="hg-lead">Browse the files and folders on your phone, read and edit text files, copy, move, rename, delete and share things, and look inside zip files. You do not need a computer.</p>
-<p><b>Where to find it:</b> the tab named <b>File Manager</b>, next to <b>APK Installer</b> (you can move or hide tabs in <a href="#feature-list">Feature List</a>).</p>
+<p><b>Where to find it:</b> the tab named <b>File Manager</b>, next to <b>APK Installer/Updater</b> (you can move or hide tabs in <a href="#feature-list">Feature List</a>).</p>
 
 <h4>Before you start</h4>
 <p>Most of this tab works on your own storage and needs no <a href="#modes-overview">working mode</a> (a way for this app to run commands with more rights than an ordinary app: ADB, Wireless Debugging, Shizuku or Root). It needs permission to see your files instead.</p>
@@ -29,7 +29,7 @@
 <table class="hg-table">
 <thead><tr><th>Button</th><th>What it does</th></tr></thead>
 <tbody>
-<tr><td><b>Install</b>, <b>Sign...</b></td><td>For .apk, .apks, .apkm and .xapk files: hand the file to the <a href="#tab-installer">APK Installer</a>, or sign an .apk with this app's own key</td></tr>
+<tr><td><b>Install</b>, <b>Sign...</b></td><td>For .apk, .apks, .apkm and .xapk files: hand the file to the <a href="#tab-installer">APK Installer/Updater</a>, or sign an .apk with this app's own key</td></tr>
 <tr><td><b>View</b> or <b>View contents</b></td><td>Show the file in a viewer. For an archive, <b>View contents</b> opens it like a folder (see <a href="#files-archives">archives</a>)</td></tr>
 <tr><td><b>Edit</b></td><td>Open a text file in the built-in editor</td></tr>
 <tr><td><b>Open with...</b></td><td>Ask Android which app should open the file (files up to 400 MB)</td></tr>
@@ -279,7 +279,7 @@
 </ol>
 
 <h4>Find APKs is somewhere else</h4>
-<p>The <b>Find APKs on this device</b> button is not here. It lives in the <a href="#tab-installer">APK Installer</a> tab and searches the phone's own storage by path, not storages added here.</p>
+<p>The <b>Find APKs on this device</b> button is not here. It lives in the Application Installer box of the <a href="#tab-installer">APK Installer/Updater</a> tab and searches the phone's own storage by path, not storages added here.</p>
 
 <div class="hg-warn"><b>Careful.</b> Delete on a card or drive is just as final as on the phone: there is no recycle bin. Before you take a card or drive out, let Android eject it (in its own settings) so a copy that is still being written is not cut off.</div>
 <div class="hg-note"><b>If it fails.</b> The picker does not show the card: remove and re-insert it, or look in the picker's side menu. A folder lists as empty or gives an error: the card may be out or locked; put it back and tap its button again. <i>This file is over 300 MB, too big to open from added storage here</i>: copy it to the phone with Copy and Paste here instead. <i>Could not read this file</i>: the provider refused it; try again, or copy it first.</div>
@@ -423,10 +423,10 @@
 <tr><td>Cursor (SpaceX)</td><td>An API key for Cursor's cloud agents, or Cursor CLI in Termux</td><td>Cloud agents work in Cursor's cloud on a Git repository you may name. They cannot see your phone's files</td></tr>
 <tr><td>Copilot (GitHub)</td><td>GitHub's Copilot CLI in Termux, signed in with GitHub or with a token</td><td>Needs a Copilot plan</td></tr>
 <tr><td>Perplexity, Grok (SpaceX), Muse (Meta), Deepseek</td><td>An API key only</td><td>Same steps as below. Their saved keys show in the gear like the others</td></tr>
-<tr><td>Jan.ai, AnythingLLM, Ollama (on-device), Own server (OpenAI-compatible)</td><td>The address of your own server. Jan.ai, Ollama and Own server need a key only if the server asks for one; AnythingLLM needs a key from its own settings</td><td>Free. Jan.ai and AnythingLLM run on a computer; Ollama runs on the phone through Termux (or on a computer: enter its address); <b>Own server</b> is any server that speaks the OpenAI chat API, such as LM Studio, llama.cpp, vLLM or Open WebUI, on your computer or network. All of them can be the Default agent for the Ask agent buttons, so the questions never leave your network</td></tr>
+<tr><td>Jan.ai, AnythingLLM, Ollama (on-device), Own server (OpenAI-compatible)</td><td>The address of your own server. Jan.ai, Ollama and Own server need a key only if the server asks for one; AnythingLLM needs a key from its own settings</td><td>Free. Jan.ai and AnythingLLM run on a computer; Ollama runs on the phone through Termux (or on a computer: enter its address); <b>Own server</b> is any server that speaks the OpenAI chat API, such as LM Studio, llama.cpp, vLLM or Open WebUI, on your computer or network. All of them can be the Default Ask Agent for the Ask agent buttons, so the questions never leave your network</td></tr>
 <tr><td>OpenCode</td><td>Installed in Termux from its sheet</td><td>Signs in to a provider of your choice</td></tr>
 <tr><td>DroidMind, Kilo Code, Leon.ai</td><td>Not chat agents</td><td>Choosing one opens a sheet that explains what it is (DroidMind's sheet also has an install button for Termux)</td></tr>
-<tr><td>Crawl4AI, Browser Use</td><td>Answer the Ask agent buttons only (not a chat)</td><td>Their hosted clouds, with a free account: choosing one opens a sheet where you paste its key (Crawl4AI: a key from api.crawl4ai.com, free credits at sign-up and a free monthly allowance; Browser Use: a key from cloud.browser-use.com, which has a free tier). The key is tested, kept encrypted and sent only to that service's own address. When one works and no default agent is chosen yet, it becomes the default agent. Crawl4AI answers by searching the web, reading pages and writing an answer (the test spends one credit); Browser Use starts a short browser task that looks the question up, which can take a minute or two. Without a key the buttons use the built-in free web lookup instead</td></tr>
+<tr><td>Crawl4AI, Browser Use</td><td>Answer the Ask agent buttons only (not a chat)</td><td>Their hosted clouds, with a free account: choosing one opens a sheet where you paste its key (Crawl4AI: a key from api.crawl4ai.com, free credits at sign-up and a free monthly allowance; Browser Use: a key from cloud.browser-use.com, which has a free tier). The key is tested, kept encrypted and sent only to that service's own address. When one works and <b>No default</b> is chosen in Settings, it becomes the Default Ask Agent; otherwise choose it there. Crawl4AI answers by searching the web, reading pages and writing an answer (the test spends one credit); Browser Use starts a short browser task that looks the question up, which can take a minute or two. Without a key the buttons use the built-in free web lookup instead</td></tr>
 </tbody>
 </table>
 
@@ -559,7 +559,7 @@
 <p>Tap any entry (a coloured row) and it opens in a window of its own, so a long line is easy to read in full. Selecting text in a row with a long press still works and does not open the window. The window shows the level, the tag (the part of the system or the app that wrote it), the time and the process numbers, and the whole message in a box, with three buttons:</p>
 <ul>
 <li><b>Copy</b>: puts the entry's lines, as they were logged, on the clipboard.</li>
-<li><b>Ask agent</b>: asks your <a href="#prefs">Default agent</a> (Settings, under Language; with none chosen the built-in web lookup answers, free and without a key) to explain the entry in plain words: what it means, the likely cause, whether it matters and what to try. The answer appears under the buttons as it is written, with a <b>Copy the answer</b> button. <b>This sends the entry's text (and your Android version and phone model) to that agent's company</b>; nothing is sent until you tap the button. API keys that appear in the text are shortened first; other private details (account names, addresses) are not, so look at the entry before you ask. With no agent connected, nothing is sent to an agent: the built-in web lookup searches the web for the entry's name only and shows the matching passages, and the window offers to open the place where you set an agent up.</li>
+<li><b>Ask agent</b>: asks your <a href="#prefs">Default Ask Agent</a> (Settings, under Language; Perplexity until you choose another; until its key is added, or with <b>No default</b> chosen, the built-in web lookup answers, free and without a key) to explain the entry in plain words: what it means, the likely cause, whether it matters and what to try. The answer appears under the buttons as it is written, with a <b>Copy the answer</b> button. <b>This sends the entry's text (and your Android version and phone model) to that agent's company</b>; nothing is sent until you tap the button. API keys that appear in the text are shortened first; other private details (account names, addresses) are not, so look at the entry before you ask. With no agent connected, nothing is sent to an agent: the built-in web lookup searches the web for the entry's name only and shows the matching passages, and the window offers to open the place where you set an agent up.</li>
 <li><b>Web search</b>: opens a search for the tag and the first line of the message in your browser. Long numbers and addresses are left out of the search so that other people's reports can match. It needs no agent.</li>
 </ul>
 

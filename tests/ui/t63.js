@@ -36,14 +36,14 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
 
   // 1) placement
   const tabs = await ev(() => Array.from(document.querySelectorAll('.tab-btn')).map(b => b.innerText.replace(/\s+/g, ' ').trim()));
-  const iSet = tabs.findIndex(t => /Hidden Settings/.test(t)), iOvl = tabs.findIndex(t => /RRO\/Monet/.test(t)), iUpd = tabs.findIndex(t => /Third Party/.test(t));
-  check('1. RRO/Monet Customization sits right of Hidden Settings and before Third Party Stores/Updater', iOvl === iSet + 1 && iUpd === iOvl + 1, JSON.stringify(tabs));
+  const iSet = tabs.findIndex(t => /Hidden Settings/.test(t)), iOvl = tabs.findIndex(t => /RRO\/Monet/.test(t)), iUpd = tabs.findIndex(t => /App Stores/.test(t));
+  check('1. RRO/Monet Customization sits right of Hidden Settings and before App Stores', iOvl === iSet + 1 && iUpd === iOvl + 1, JSON.stringify(tabs));
   await ev(() => switchView('overlays')); await sleep(150);
   check('   it activates its own button and view', (await ev(() => document.querySelector('.tab-btn.active').innerText.replace(/\s+/g, ' ').trim())) === 'RRO/Monet Customization' && (await ev(() => currentViewName())) === 'overlays');
   await ev(() => switchView('settings')); await sleep(100);
   check('   Hidden Settings is still itself', (await ev(() => document.querySelector('.tab-btn.active').innerText.replace(/\s+/g, ' ').trim())) === 'Hidden Settings');
   await ev(() => switchView('store')); await sleep(60);
-  check('   Third Party Stores/Updater and About keep their buttons', (await ev(() => document.querySelector('.tab-btn.active').innerText.replace(/\s+/g, ' ').trim())) === 'Third Party Stores/Updater');
+  check('   App Stores and About keep their buttons', (await ev(() => document.querySelector('.tab-btn.active').innerText.replace(/\s+/g, ' ').trim())) === 'App Stores');
   await ev(() => switchView('about')); await sleep(60);
   check('   About', (await ev(() => document.querySelector('.tab-btn.active').innerText.replace(/\s+/g, ' ').trim())) === 'About');
 

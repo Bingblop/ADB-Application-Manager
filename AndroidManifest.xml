@@ -115,6 +115,20 @@
             android:taskAffinity=""
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
 
+        <!-- The Authorization Manager's door (About tab): an intent with this app's code in the auth extra opens an app or an address. Off until the person turns it on. -->
+        <activity
+            android:name=".AuthLaunchActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="com.bloatware.bingblop.action.AUTH_LAUNCH" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
         <!-- A long file job (copy, extract) keeps running, with a notification and Cancel, when the app is left -->
         <service
             android:name=".JobService"

@@ -40,7 +40,7 @@ const { chromium, PAGE } = require('./lib/pw');
     };
   });
   await page.goto(PAGE); await page.waitForTimeout(300);
-  await page.click('.tab-btn[data-tab="store"]'); await page.click('#storeSwitchUpdater');
+  await page.click('.tab-btn[data-tab="installer"]'); await page.click('#instSwitchUpdater');
   await page.waitForFunction(() => /6\/12/.test(document.getElementById('updStatus').innerText));          // the first check is held at its progress report
   console.log('progress:', await page.locator('#updStatus').innerText());
   await page.evaluate(() => window.__finishCheck());

@@ -1098,6 +1098,53 @@ public final class MorpheHelper {
         return it;
     }
 
+    /**
+     * Apps whose name matches a search, to turn a name into a package name: {ok, items:[{name, pkg, version, icon}]}. Aptoide's public search is
+     * read here (nothing is downloaded from it); the file itself comes from whatever source the person picked.
+     */
+    public static JSONObject find(String query) throws IOException {
+        String q = query == null ? "" : query.trim();
+        if (q.length() < 2) throw new IOException("type at least two letters of the app's name");
+        if (q.length() > 80) q = q.substring(0, 80);
+        JSONObject body = new JSONObject();
+        put(body, "query", q);
+        put(body, "limit", "12");
+        put(body, "not_apk_tags", "alpha,beta");
+        put(body, "store_ids", new JSONArray().put(15L).put(711454L));
+        Map<String, String> h = jsonHeaders(null);
+        h.put("Content-Type", "application/json");
+        JSONObject res;
+        try {
+            MorpheNet.Response r = fetch("aptoide", "POST", aptoideApi() + "listSearchApps", h, body.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8), false);
+            res = new JSONObject(r.text == null ? "" : r.text.trim());
+        } catch (Missing e) {
+            res = new JSONObject();
+        } catch (JSONException e) {
+            throw changed("aptoide");
+        }
+        JSONObject dl = obj(res, "datalist");
+        JSONArray list = dl == null ? null : arr(dl, "list");
+        JSONArray items = new JSONArray();
+        Set<String> seen = new HashSet<String>();
+        if (list != null) for (int i = 0; i < list.length() && items.length() < 12; i++) {
+            JSONObject c = list.optJSONObject(i);
+            if (c == null) continue;
+            String pkg = str(c, "package");
+            if (!PKG.matcher(pkg).matches() || !seen.add(pkg)) continue;
+            JSONObject f = obj(c, "file");
+            JSONObject o = new JSONObject();
+            put(o, "name", str(c, "name"));
+            put(o, "pkg", pkg);
+            put(o, "version", f == null ? "" : str(f, "vername"));
+            put(o, "icon", str(c, "icon"));
+            items.put(o);
+        }
+        JSONObject out = new JSONObject();
+        put(out, "ok", Boolean.TRUE);
+        put(out, "items", items);
+        return out;
+    }
+
     private static Listing listAptoide(String pkg) throws IOException {
         String api = aptoideApi();
         JSONObject app = aptoideApp(api + "getApp?package_name=" + enc(pkg), pkg);

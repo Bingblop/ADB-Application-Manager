@@ -29,7 +29,7 @@ const DEFAULT_ORDER = ['apps', 'saved-lists', 'debloater', 'installer', 'files',
   let page = await open();
   let t = await bar(page);
   check('1. fifteen tabs in the new order', JSON.stringify(t.map(x => x.key)) === JSON.stringify(DEFAULT_ORDER), JSON.stringify(t.map(x => x.key)));
-  check('   named as asked, two lines where it reads better', JSON.stringify(t.map(x => x.text)) === JSON.stringify(['Application\nManager', 'Saved\nApplications', 'UAD-NG\nDebloater', 'APK\nInstaller', 'File\nManager', 'Command-Line\nInterface', 'Hidden\nSettings', 'RRO/Monet\nCustomization', 'Third Party\nStores/Updater', 'Logcat\nViewer', 'Task\nManager', 'Connected\nDevices', 'Morphe\nPatcher', 'SD Maid',  'About']), JSON.stringify(t.map(x => x.text)));
+  check('   named as asked, two lines where it reads better', JSON.stringify(t.map(x => x.text)) === JSON.stringify(['Application\nManager', 'Saved\nApplications', 'UAD-NG\nDebloater', 'Installer/\nUpdater', 'File\nManager', 'Command-Line\nInterface', 'Hidden\nSettings', 'RRO/Monet\nCustomization', 'App\nStores', 'Logcat\nViewer', 'Task\nManager', 'Connected\nDevices', 'Morphe\nPatcher', 'SD Maid',  'About']), JSON.stringify(t.map(x => x.text)));
   check('   Application Manager is active at the start', t[0].active && t.filter(x => x.active).length === 1);
   const geo = await ev(page, () => Array.from(document.querySelectorAll('.tab-btn')).map(b => ({ h: Math.round(b.getBoundingClientRect().height), clipped: b.scrollWidth > b.clientWidth + 1, font: getComputedStyle(b).fontSize, lines: b.innerText.split('\n').length })));
   check('   every tab is at least 44 px tall and no label is cut off', geo.every(g => g.h >= 44 && !g.clipped), JSON.stringify(geo.map(g => g.h + (g.clipped ? '!' : ''))));
@@ -53,11 +53,11 @@ const DEFAULT_ORDER = ['apps', 'saved-lists', 'debloater', 'installer', 'files',
   // 3) the Feature List: after the colour options, every tab but the two fixed ones
   await ev(page, () => switchView('prefs'));
   const order3 = await ev(page, () => Array.from(document.querySelectorAll('#view-prefs > .color-card')).map(c => c.querySelector('.color-card-title').innerText.trim()));
-  check('3. Settings: the language at the very top, the default agent under it, then Appearance and the colour cards, the Feature List after them, then the Press and hold guide at the very bottom (Trim Caches moved to the SD Maid tab in v7.10.10)', order3[0] === 'Language' && order3[1] === 'Default agent' && /Appearance/.test(order3[2]) && order3.indexOf('Feature List') >= 0 && order3[order3.length - 2] === 'Feature List' && order3[order3.length - 1] === 'Press and hold guide' && order3.indexOf('Trim Caches') < 0, JSON.stringify(order3));
+  check('3. Settings: the language at the very top, the Default Ask Agent under it, then Appearance and the colour cards, the Feature List after them, then the Press and hold guide at the very bottom (Trim Caches moved to the SD Maid tab in v7.10.10)', order3[0] === 'Language' && order3[1] === 'Default Ask Agent' && /Appearance/.test(order3[2]) && order3.indexOf('Feature List') >= 0 && order3[order3.length - 2] === 'Feature List' && order3[order3.length - 1] === 'Press and hold guide' && order3.indexOf('Trim Caches') < 0, JSON.stringify(order3));
   let r = await rows(page);
   check('   thirteen rows, every tab except Application Manager and About, in the tab bar order, all on', r.length === 13 && r.map(x => x.key).join() === DEFAULT_ORDER.slice(1, 14).join() && r.every(x => x.on), JSON.stringify(r.map(x => x.name)));
   check('   the first row cannot move up and the last cannot move down', r[0].up === false && r[0].down === true && r[12].up === true && r[12].down === false);
-  check('   the names are the full names', r.map(x => x.name).join('|') === 'Saved Applications|UAD-NG Debloater|APK Installer|File Manager|Command-Line Interface|Hidden Settings|RRO/Monet Customization|Third Party Stores/Updater|Logcat Viewer|Task Manager|Connected Devices|Morphe Patcher|SD Maid');
+  check('   the names are the full names', r.map(x => x.name).join('|') === 'Saved Applications|UAD-NG Debloater|APK Installer/Updater|File Manager|Command-Line Interface|Hidden Settings|RRO/Monet Customization|App Stores|Logcat Viewer|Task Manager|Connected Devices|Morphe Patcher|SD Maid');
   const a11y = await ev(page, () => ({ switches: Array.from(document.querySelectorAll('#featureList .switch-input')).every(i => i.getAttribute('aria-label')), moves: Array.from(document.querySelectorAll('#featureList .fl-move')).every(b => /^Move .+ (up|down)$/.test(b.getAttribute('aria-label'))) }));
   check('   every switch and arrow has a name for a screen reader', a11y.switches && a11y.moves, JSON.stringify(a11y));
   check('   there is a Reset to Default button', (await ev(page, () => document.getElementById('featureResetBtn').innerText)) === 'Reset to Default');
@@ -136,12 +136,12 @@ const DEFAULT_ORDER = ['apps', 'saved-lists', 'debloater', 'installer', 'files',
   // 9) the update count rides on the label of the App Updater tab (and does not fail when that tab is off)
   page = await open();
   await ev(page, () => { updList = [{ pkg: 'a' }, { pkg: 'b' }]; updateUpdatesTabBadge(); });
-  check('9. App Updater shows how many updates wait', (await ev(page, () => document.getElementById('updatesTabBtn').innerText)) === 'Third Party\nStores/Updater (2)');
-  await ev(page, () => { switchView('prefs'); featureToggle('store', false); });
+  check('9. App Updater shows how many updates wait', (await ev(page, () => document.getElementById('updatesTabBtn').innerText)) === 'Installer/\nUpdater (2)');
+  await ev(page, () => { switchView('prefs'); featureToggle('installer', false); });
   const err9 = await ev(page, () => { try { updateUpdatesTabBadge(); return ''; } catch (e) { return String(e); } });
   check('   with the tab off there is no button to change and nothing fails', err9 === '' && !(await ev(page, () => document.getElementById('updatesTabBtn'))));
-  await ev(page, () => featureToggle('store', true));
-  check('   switching it on again keeps the count', (await ev(page, () => document.getElementById('updatesTabBtn').innerText)) === 'Third Party\nStores/Updater (2)');
+  await ev(page, () => featureToggle('installer', true));
+  check('   switching it on again keeps the count', (await ev(page, () => document.getElementById('updatesTabBtn').innerText)) === 'Installer/\nUpdater (2)');
   await page.close();
 
   // 10) narrow and wide screens
@@ -178,18 +178,18 @@ const DEFAULT_ORDER = ['apps', 'saved-lists', 'debloater', 'installer', 'files',
   };
   const toast11 = p => ev(p, () => document.getElementById('toastMsg').innerText);
   const sheet11 = p => ev(p, () => document.getElementById('inspectorModal').classList.contains('show'));
-  let p11 = await open11(['store']);
+  let p11 = await open11(['installer']);
   await ev(p11, () => openInspector('com.example.one'));
   await sleep(250);
   await ev(p11, () => { const b = document.querySelector('#sheetUpdateHint button'); b.click(); });
   const u11 = await ev(p11, () => ({ view: currentViewName(), bg: window.__bg.slice(), prog: Object.keys(updProgress), busy: backBusyReason() }));
-  check('11. App Updater off: "Update" in an app\'s sheet says it is off, starts no download and leaves the sheet open', /Third Party Stores\/Updater is turned off/.test(await toast11(p11)) && await sheet11(p11) && u11.view === 'apps' && u11.bg.length === 0 && u11.prog.length === 0 && !u11.busy, JSON.stringify(u11));
+  check('11. App Updater off: "Update" in an app\'s sheet says it is off, starts no download and leaves the sheet open', /APK Installer\/Updater is turned off/.test(await toast11(p11)) && await sheet11(p11) && u11.view === 'apps' && u11.bg.length === 0 && u11.prog.length === 0 && !u11.busy, JSON.stringify(u11));
   await ev(p11, () => openSelfUpdate());
   const su11 = await ev(p11, () => ({ view: currentViewName(), bg: window.__bg.slice() }));
   check('    "Download" for this app itself: the same, nothing is checked behind the scenes', await sheet11(p11) && su11.view === 'apps' && su11.bg.length === 0, JSON.stringify(su11));
   await ev(p11, () => { closeInspector(); switchView('about'); selfUpdChecked = true; aboutCheckUpdate(); });          // checked once before: the button would check again
   const ab11 = await ev(p11, () => ({ view: currentViewName(), bg: window.__bg.slice() }));
-  check('    About > check for update: says where to switch the tab on, and stays on About', /Third Party Stores\/Updater is turned off/.test(await toast11(p11)) && ab11.view === 'about' && ab11.bg.length === 0, JSON.stringify(ab11));
+  check('    About > check for update: says where to switch the tab on, and stays on About', /APK Installer\/Updater is turned off/.test(await toast11(p11)) && ab11.view === 'about' && ab11.bg.length === 0, JSON.stringify(ab11));
   await p11.close();
   p11 = await open11(['logcat']);
   await ev(p11, () => openInspector('com.example.one'));
@@ -200,15 +200,15 @@ const DEFAULT_ORDER = ['apps', 'saved-lists', 'debloater', 'installer', 'files',
   await ev(p11, () => { closeInspector(); switchView('prefs'); featureToggle('logcat', true); switchView('logcat'); });
   check('    and once the tab is on, the log shows everything (no app filter left behind)', !(await ev(p11, () => logcatApp)));
   await p11.close();
-  p11 = await open11(['store']);
+  p11 = await open11(['installer']);
   await ev(p11, () => { openInspector('com.example.one'); });
   await sleep(250);
-  await ev(p11, () => { switchView('prefs'); featureToggle('store', true); });
+  await ev(p11, () => { switchView('prefs'); featureToggle('installer', true); });
   await ev(p11, () => { openInspector('com.example.one'); });
   await sleep(250);
   await ev(p11, () => { document.querySelector('#sheetUpdateHint button').click(); });
   const on11 = await ev(p11, () => ({ view: currentViewName(), bg: window.__bg.slice() }));
-  check('    with the tab on again "Update" goes to it and starts the update', on11.view === 'store' && on11.bg.includes('install:com.example.one'), JSON.stringify(on11));
+  check('    with the tab on again "Update" goes to it and starts the update', on11.view === 'installer' && on11.bg.includes('install:com.example.one'), JSON.stringify(on11));
   await p11.close();
   p11 = await open11(['installer']);
   await ev(p11, () => { window.__pkgs['content://x/1'] = { pkg: 'com.new.app', label: 'New App', version: '1', versionCode: 1, splits: [{ name: 'base.apk', size: 1 }], kind: 'apk' }; });

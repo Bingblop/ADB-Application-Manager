@@ -42,7 +42,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? '' : 'FAIL 
   await ev(() => switchView('settings')); await sleep(80);
   check('   it activates its own button and view', (await ev(() => document.querySelector('.tab-btn.active').innerText.replace(/\s+/g, ' ').trim())) === 'Hidden Settings' && (await ev(() => currentViewName())) === 'settings');
   await ev(() => switchView('store')); await sleep(60);
-  check('   and the neighbours still work (App Stores, About)', (await ev(() => document.querySelector('.tab-btn.active').innerText.replace(/\s+/g, ' ').trim())) === 'Third Party Stores/Updater');
+  check('   and the neighbours still work (App Stores, About)', (await ev(() => document.querySelector('.tab-btn.active').innerText.replace(/\s+/g, ' ').trim())) === 'App Stores');
   await ev(() => switchView('about')); await sleep(60);
   check('   About keeps its button', (await ev(() => document.querySelector('.tab-btn.active').innerText.replace(/\s+/g, ' ').trim())) === 'About');
 

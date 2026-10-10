@@ -181,9 +181,9 @@
   <p>A <b>Failed</b> row means the phone refused. Nothing changed for that app. Read the reply on the Debloater Results sheet; the tab adds a note for the common refusals (system app needing root, a device policy, a restriction). Choose <b>Disable</b> instead, or leave the app.</p>
 </section>
 
-<section id="tab-installer" data-title="APK Installer" data-group="The tabs">
+<section id="tab-installer" data-title="APK Installer/Updater" data-group="The tabs">
   <p class="hg-lead">Install an app from a file on your phone: a plain <b>APK</b> (an Android app file), or a bundle (<b>APKS</b>, <b>APKM</b>, <b>XAPK</b>) made of several parts. The tab reads the file first and shows what it is, then lets you choose how to install it.</p>
-  <p><b>Where to find it:</b> the fourth tab in the usual order, named <b>APK Installer</b> (switch it on in the <a href="#feature-list">Feature List</a> if it is missing).</p>
+  <p><b>Where to find it:</b> the fourth tab in the usual order, named <b>APK Installer/Updater</b> (the tab bar shows "Installer/" over "Updater"; switch it on in the <a href="#feature-list">Feature List</a> if it is missing). At its top are two boxes, like the Terminal and the ADB Console: <b>Application Installer</b> on the left and <b>Application Updater</b> on the right. The tab opens on the Application Installer box every time you tap it. This section describes the Application Installer box; the right-hand box is described in <a href="#tab-updates">Application Updater</a>.</p>
 
   <h4>Before you start</h4>
   <ul>
@@ -276,7 +276,7 @@
 
 <section id="installer-splits" data-title="Split packages, APKS, APKM, XAPK and game data" data-group="The tabs">
   <p class="hg-lead">Many apps come as several files, not one. This page explains what that means, which file types the installer accepts, how it chooses the parts your phone needs, how game data is copied, and what to try when a bundle will not install.</p>
-  <p><b>Where to find it:</b> in the <a href="#tab-installer">APK Installer</a> tab, in the <b>Splits</b> and <b>Game data (OBB)</b> cards. They appear only when the file you picked has those parts.</p>
+  <p><b>Where to find it:</b> in the Application Installer box of the <a href="#tab-installer">APK Installer/Updater</a> tab, in the <b>Splits</b> and <b>Game data (OBB)</b> cards. They appear only when the file you picked has those parts.</p>
 
   <h4>What a split APK is</h4>
   <p>A simple app is one APK file. A <b>split</b> app is cut into parts: a <b>base APK</b> (the core of the app) and extra files for one thing each. Most extra files are <b>config splits</b>, made for one processor type (for example arm64-v8a), one screen density (for example xxhdpi) or one language (for example en). Others are <b>feature modules</b>, optional parts of the app. All parts of one app must be installed together, in a single step.</p>
@@ -319,7 +319,7 @@
   <p>When you send a bundle to another device in the Connected Devices tab, the app picks the parts for that device by its own rules, not these: it always sends the feature modules too, and it adds English. See <a href="#devices-send">Sending apps to the device</a>.</p>
 
   <h4>Signing and splits</h4>
-  <p>Every part must be signed with the same key. A bundle you downloaded from its maker or from APKMirror already is. The signature line on the package card is read from the base APK. If you edited a bundle, its signature can no longer be checked; the card then says so, and Android may refuse it. Installing from the <a href="#tab-files">File Manager</a> signs a copy for you. See <a href="#tab-installer">APK Installer</a> for the two <b>Block</b> switches.</p>
+  <p>Every part must be signed with the same key. A bundle you downloaded from its maker or from APKMirror already is. The signature line on the package card is read from the base APK. If you edited a bundle, its signature can no longer be checked; the card then says so, and Android may refuse it. Installing from the <a href="#tab-files">File Manager</a> signs a copy for you. See <a href="#tab-installer">APK Installer/Updater</a> for the two <b>Block</b> switches.</p>
 
   <h4>Game data (OBB)</h4>
   <p>Big games keep their data outside the APK. In a bundle, those files live in folders such as <code>Android/obb/PACKAGE/</code> (sometimes <code>Android/data/PACKAGE/</code>). When the file has some, the <b>Game data (OBB)</b> card lists each one with its destination, for example <code>/sdcard/Android/obb/PACKAGE/</code>, and its size.</p>
@@ -337,7 +337,7 @@
 
   <h4>If a bundle fails</h4>
   <ol class="hg-steps">
-    <li>Read the result sheet and match it with the error table in <a href="#tab-installer">APK Installer</a>.</li>
+    <li>Read the result sheet and match it with the error table in <a href="#tab-installer">APK Installer/Updater</a>.</li>
     <li>Press <b>Select all</b> and try again. If it works, the app needed a part that was not ticked.</li>
     <li>Press <b>Match this phone</b> and look for a row marked "fits this phone (CPU ...)". If there is none, the bundle may not support your phone.</li>
     <li>Check free space. Try a different Authorizer, for example ADB instead of No privilege.</li>
@@ -347,15 +347,69 @@
 </section>
 
 <section id="tab-updates" data-title="Application Updater" data-group="The tabs">
-  <p class="hg-lead">This tab checks whether newer versions exist for the apps you installed outside the Play Store, and for Samsung's own apps. It can download and install them for you, after checking each file.</p>
-  <p><b>Where to find it:</b> the tab named <b>Third Party Stores/Updater</b>. At its top are two boxes, like the Terminal and the ADB Console; tap the right one, <b>Application Updater</b>. When updates are waiting, the tab name and the box show a number in brackets, for example "Application Updater (3)".</p>
+  <p class="hg-lead">This box finds and downloads an app by name, checks whether newer versions exist for the apps you installed outside the Play Store and for Samsung's own apps, and keeps the signing key. It can download and install updates for you, after checking each file.</p>
+  <p><b>Where to find it:</b> the tab named <b>APK Installer/Updater</b> (the tab bar shows "Installer/" over "Updater"). At its top are two boxes, like the Terminal and the ADB Console; tap the right one, <b>Application Updater</b>. The left one, <b>Application Installer</b>, is the page the tab opens on (see <a href="#tab-installer">APK Installer/Updater</a>). When updates are waiting, the tab name and the box show a number in brackets, for example "Installer/ Updater (3)" on the tab and "Application Updater (3)" on the box.</p>
+  <p>The cards of the box, from top to bottom: <b>Find and download an app</b>, <b>App update</b> (this app's own update), <b>Updates Available</b> (the Galaxy Store and open-source updates, with <b>Update All</b>, <b>Import Obtainium List</b> and <b>GitHub Token</b>), <b>Play Store apps (via Aurora)</b>, the update rows, and <b>KeyStore</b>.</p>
 
   <h4>Before you start</h4>
   <ul>
     <li>Checking needs the internet and no working mode.</li>
     <li>Installing an update needs a working mode: ADB over TCP, Wireless Debugging, Shizuku or Root (see <a href="#modes-overview">Working modes</a>). Without one, a sheet <b>Working Mode Required</b> opens. The only exception is this app's own update, which can use Android's install screen. Android can then ask you to allow installs from this app first (Android calls the setting <b>Install unknown apps</b>): switch it on for this app when asked, or beforehand in <b>About</b>, <b>Permissions</b> (see <a href="#app-permissions">The permissions this app asks for</a>).</li>
-    <li>Play Store apps are not checked here (see the last card below).</li>
+    <li>Play Store apps are not checked here (see the <b>Play Store apps (via Aurora)</b> card below).</li>
+    <li><b>Find and download an app</b> needs the internet. A working mode is needed only if you switch on <b>Install on download</b>, and even then Android's own installer is used when you have none.</li>
   </ul>
+
+  <h4>Find and download an app</h4>
+  <p>The first card of the box. It finds an app by its name (or by its package name, the app's unique identifier such as <code>com.example.app</code>) and downloads the original file from a source you choose. It uses the same engine as the downloader in <a href="#morphe-helper">Morphe Helper</a>.</p>
+  <h5>Step by step</h5>
+  <ol class="hg-steps">
+    <li>Type an app name or a package name in the search bar and press <b>Search</b>. A package name goes straight to that app. A name is looked up first among the apps installed on this phone, then Aptoide's public search is asked for matching apps. That second step only turns the name into a package name; the file itself is downloaded from the source you pick.</li>
+    <li>Under the bar, choose the source in the list (next table). The default is <b>APKMirror</b>.</li>
+    <li>Optional: in the small <b>Version</b> box type a version number such as <code>2.4.1</code>. Empty means the newest version the source has.</li>
+    <li>Tick or untick the check boxes (next table) and choose where the file is saved (the table after it). The choices are remembered.</li>
+    <li>Each result row shows the app's name, its package name and, if the app is installed, <b>Installed: version</b>. Press <b>Download</b> for the newest version (or the version you typed, by the rules in the table), <b>Versions</b> to see what the source offers with a <b>Download</b> button for each version, or <b>Open on the web</b> to see the app's page.</li>
+    <li>A bar and a status line follow the download. When it ends, a card shows the package name, version, format, size and SHA-256 (a code that proves the file was not changed on the way), with <b>Install</b> and <b>Share</b> buttons.</li>
+  </ol>
+
+  <h5>The sources</h5>
+  <table class="hg-table">
+    <thead><tr><th>Source</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><b>APKMirror</b> (default)</td><td>Searched and downloaded from inside the app. APKMirror checks the signature of every upload.</td></tr>
+      <tr><td><b>Uptodown</b>, <b>Aptoide</b></td><td>Searched and downloaded from inside the app.</td></tr>
+      <tr><td><b>F-Droid</b>, <b>IzzyOnDroid</b>, <b>Google Play</b></td><td>These are sites, not downloads: the button <b>Open the page</b> opens the app's page in your browser (Google Play opens the Play Store). Nothing is downloaded by this app.</td></tr>
+    </tbody>
+  </table>
+  <p>These sources were chosen because they serve the original file, signed by the developer, never a modified one. Sites that mix modified apps in with the real ones are not offered.</p>
+
+  <h5>The check boxes</h5>
+  <table class="hg-table">
+    <thead><tr><th>Option</th><th>What it does</th><th>Default</th></tr></thead>
+    <tbody>
+      <tr><td><b>Allow split APK</b></td><td>Accepts bundles (APKM, APKS and XAPK, files made of several parts) and not only a single APK. Switch it off to get a single APK.</td><td>On</td></tr>
+      <tr><td><b>Exact version only</b></td><td>Never falls back to another version: if the version you typed is not there, the download is refused.</td><td>Off</td></tr>
+      <tr><td><b>Allow closest nearby version</b></td><td>If the version you typed is missing, takes the closest one the source has.</td><td>On</td></tr>
+      <tr><td><b>Skip alpha and beta builds</b></td><td>Chooses a stable build. It applies only when no version is typed.</td><td>On</td></tr>
+      <tr><td><b>VirusTotal scan</b></td><td>After the download, asks VirusTotal about the file by its hash (a short code of the file; the file is not sent). It uses the one VirusTotal key in <a href="#prefs">Settings</a>.</td><td>Off</td></tr>
+      <tr><td><b>Install on download</b></td><td>Installs the file as soon as it is saved, through your working mode or, if you have none, Android's own installer.</td><td>Off</td></tr>
+      <tr><td><b>Use the Default Ask Agent to search as well</b></td><td>Asks the <a href="#prefs">Default Ask Agent</a> for the package name, the developer and the official page of the app. Any package names it names are added to the results.</td><td>Off</td></tr>
+    </tbody>
+  </table>
+
+  <h5>Save downloads to</h5>
+  <table class="hg-table">
+    <thead><tr><th>Choice</th><th>Where the file goes</th></tr></thead>
+    <tbody>
+      <tr><td><b>This app's own storage (private)</b></td><td>The app's private folder. Other apps cannot see it.</td></tr>
+      <tr><td><b>Downloads/App Updater</b></td><td>The folder <code>App Updater</code> in your phone's Downloads.</td></tr>
+      <tr><td><b>A folder I choose</b></td><td>Press <b>Choose folder</b> and pick one in Android's folder picker. The file is saved in Downloads/App Updater first and then copied into that folder.</td></tr>
+    </tbody>
+  </table>
+
+  <h5>After a download</h5>
+  <p>These steps run in this order: the VirusTotal scan (if on), the copy to the folder you chose (if any), then the install (if on). If Android refuses the install because the installed copy was signed with a different key, the app offers to uninstall the installed copy first. Say yes only if you accept that its data is deleted.</p>
+  <p>If the site asks for a browser check before it lets a file go, the message says so and offers <b>Open it here, in the app</b> and <b>Open on the web</b>. The first opens the app's own browser: the file you download there is saved and then handled the same way as any other download.</p>
+  <div class="hg-note"><b>Same safety as Morphe Helper.</b> Before a file is accepted, the app checks that it is a real Android package, that it is for the package name you asked for, and that its version matches the request. A file that fails a check is refused and nothing is installed.</div>
 
   <h4>Where updates come from</h4>
   <table class="hg-table">
@@ -371,7 +425,7 @@
 
   <h4>Step by step</h4>
   <ol class="hg-steps">
-    <li>Open the tab. The first time, it checks by itself. Later, press <b>Check for Updates</b>.</li>
+    <li>Open the tab and tap the <b>Application Updater</b> box. The first time, it checks by itself. Later, press <b>Check for Updates</b> in the card <b>Updates Available</b>.</li>
     <li>Watch the status line: "Checking sideloaded apps (GitHub, F-Droid, Obtainium)... 3/12", then "Checking the Galaxy Store... 8/30 apps". It ends with, for example, "2 updates available - checked 12 Galaxy Store and 9 sideloaded apps", and a time. If some could not be checked, it says how many and gives the last error.</li>
     <li>Read the rows (next section). With none, the list says "Everything is up to date."</li>
     <li>Press <b>Update</b> on one row. The button changes to "Downloading 40%", then "Installing", then a tick and "Updated". A thin bar follows the progress.</li>
@@ -395,11 +449,25 @@
     <tbody>
       <tr><td><b>Import Obtainium List</b></td><td>Opens the file picker. Choose the export file from Obtainium (Obtainium, Settings, Export). The app uses each app's source from it and checks again.</td></tr>
       <tr><td><b>GitHub Token</b></td><td>Optional. A token is a long code that you create in your GitHub account settings. One with no permissions ticked is enough, and it raises GitHub's limit from 60 to 5,000 checks an hour. Empty the box to remove it. The button shows a tick when a token is saved.</td></tr>
+      <tr><td>Card <b>Find and download an app</b></td><td>Searches an app by name or package name and downloads the original file (see <b>Find and download an app</b> above).</td></tr>
+      <tr><td>Card <b>KeyStore</b></td><td>The signing key of apps signed on this phone (see <b>KeyStore</b> below).</td></tr>
       <tr><td>Card <b>App update</b></td><td>Updates this app itself from its GitHub releases: <b>Check for app update</b>, <b>Update now</b>, <b>Release notes</b>. It checks that the file is this app, newer, and signed with the same key. With a working mode it installs by itself and says "The app will restart" (Android closes the app while it is replaced, so open it again if it does not come back). With none it opens Android's install screen, and Android can first ask you to allow installs from this app (Install unknown apps; the Permissions sheet in About has a row for it).</td></tr>
       <tr><td>Card <b>Play Store apps (via Aurora)</b></td><td>The app cannot tell whether a Play Store app has an update. <b>Open Aurora Store</b> (an open-source Play Store client, shown if installed) and <b>List installed apps</b> give you a <b>Store</b> button per app, which opens its store page.</td></tr>
     </tbody>
   </table>
   <p>The same information shows up in other places: the Application Manager's list can show the new version next to an app (turn on the <b>Versions</b> pill), can sort by <b>Updates first</b>, and the app menu shows an update line with an Update, Release or Download button (see <a href="#tab-apps">Application Manager</a> and <a href="#apps-menu">The app menu</a>).</p>
+
+  <h4>KeyStore</h4>
+  <p>The last card of the box. A <b>keystore</b> is the file that holds a signing key, the secret that stamps an app as yours. Apps patched in the <a href="#tab-morphe">Morphe Patcher</a> tab are signed with one key made on this phone the first time it is needed. This card works on that same key: it lets you keep a copy of it, bring one in, or change it.</p>
+  <table class="hg-table">
+    <thead><tr><th>Button</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><b>Export KeyStore</b></td><td>Saves the signing key to <code>Downloads/Morphe Patcher/morphe.keystore</code>.</td></tr>
+      <tr><td><b>Import KeyStore</b></td><td>Opens the file picker; choose a keystore file. The app asks for its password. Leave it empty for a keystore made by Morphe.</td></tr>
+      <tr><td><b>New key</b></td><td>Asks first, then makes a new key. Apps signed from now on use the new key, and Android will not install them over apps signed with the old one.</td></tr>
+    </tbody>
+  </table>
+  <div class="hg-warn"><b>Careful.</b> Before you press <b>New key</b>, press <b>Export KeyStore</b> so you still have the old key. Without it you cannot update the apps you signed with it: Android refuses an update signed with another key, and the only way round is to uninstall the app (its data goes with it). Treat the exported file like a password: anyone who has it can sign apps that Android takes for yours.</div>
 
   <h4>Checks before an update installs, and messages</h4>
   <p>For every update the app downloads the file, then checks that it is the same package, a newer version, and signed with the same key as the installed app. If any check fails, nothing is installed. It then installs over the old version through your working mode, which keeps the app's data, and deletes the downloaded file.</p>
@@ -415,20 +483,20 @@
     </tbody>
   </table>
 
-  <div class="hg-note"><b>Privacy.</b> Checking contacts these sites: Samsung's update service (it receives your phone model, your SIM's network codes, your region code and Android version, with the package name and version of each Samsung app), api.github.com and github.com, codeberg.org, f-droid.org, apt.izzysoft.de and raw.githubusercontent.com (for the Obtainium catalog). The lookups name the apps being checked (their package names, or their GitHub project). Installing an update also downloads the file from the address the release gives. Nothing else leaves the phone. See <a href="#privacy">Privacy</a>.</div>
+  <div class="hg-note"><b>Privacy.</b> Checking contacts these sites: Samsung's update service (it receives your phone model, your SIM's network codes, your region code and Android version, with the package name and version of each Samsung app), api.github.com and github.com, codeberg.org, f-droid.org, apt.izzysoft.de and raw.githubusercontent.com (for the Obtainium catalog). The lookups name the apps being checked (their package names, or their GitHub project). Installing an update also downloads the file from the address the release gives. <b>Find and download an app</b> contacts Aptoide's public search (only when you type a name, to turn it into a package name), the source you pick (APKMirror, Uptodown or Aptoide), VirusTotal if you switch its scan on, and the Default Ask Agent if you tick that box. Nothing else leaves the phone. See <a href="#privacy">Privacy</a>.</div>
   <div class="hg-warn"><b>Careful.</b> An update replaces the working version. If an app matters to you, back it up first (<a href="#apps-backup">Backups</a>). Every update, done or failed, is also written to the History (the button on the UAD-NG Debloater tab).</div>
 </section>
 
-<section id="tab-store" data-title="Third Party Stores/Updater" data-group="The tabs">
+<section id="tab-store" data-title="App Stores" data-group="The tabs">
   <p class="hg-lead">Browse four catalogs of open-source Android apps and install from them: ShizuStore, GitHub, F-Droid and Orion. The apps are not stored by this app; each one is downloaded from its own developer's page.</p>
-  <p><b>Where to find it:</b> the tab named <b>Third Party Stores/Updater</b>. It has two boxes at its top: <b>Application Stores</b> on the left (the one it opens on every time you tap the tab) and <b>Application Updater</b> on the right (see <a href="#tab-updates">Application Updater</a>). In the Application Stores box, four buttons switch between the catalogs: <b>ShizuStore</b>, <b>GitHub</b>, <b>F-Droid</b> and <b>Orion</b>.</p>
+  <p><b>Where to find it:</b> the tab named <b>App Stores</b> (the ninth in the usual order; switch it on in the <a href="#feature-list">Feature List</a> if it is missing). It holds only the stores. Four buttons at the top switch between the catalogs: <b>ShizuStore</b>, <b>GitHub</b>, <b>F-Droid</b> and <b>Orion</b>, and a <b>+</b> adds stores of your own. Checking for newer versions of the apps you already have is not done here: that is the <a href="#tab-updates">Application Updater</a> box of the <a href="#tab-installer">APK Installer/Updater</a> tab.</p>
 
   <h4>Before you start</h4>
   <ul>
     <li>Browsing needs the internet only.</li>
     <li>Installing uses your active working mode (ADB, Shizuku or Root, see <a href="#modes-overview">Working modes</a>). With none, the app hands the downloaded file to Android's install screen and you confirm there. Android can first ask you to allow installs from this app (Android calls the setting <b>Install unknown apps</b>; the Permissions sheet in <b>About</b> has a row for it). That route may be blocked on some phones; if it is, set up a working mode.</li>
-    <li>Each install is one APK file. Apps that come only as bundles cannot be installed here; use the <a href="#tab-installer">APK Installer</a>.</li>
-    <li>Galaxy Store is not a store in this tab. Samsung apps are checked in the <a href="#tab-updates">Application Updater</a> box.</li>
+    <li>Each install is one APK file. Apps that come only as bundles cannot be installed here; use the Application Installer box of the <a href="#tab-installer">APK Installer/Updater</a> tab.</li>
+    <li>Galaxy Store is not a store in this tab. Samsung apps are checked in the <a href="#tab-updates">Application Updater</a> box of the APK Installer/Updater tab.</li>
   </ul>
 
   <h4>The four catalogs</h4>
@@ -449,7 +517,7 @@
     <li>Each row shows an icon, the name, two lines of description, and small chips such as stars, downloads, version, size and category (ShizuStore shows stars, version, category and a "root" chip when the app needs root). A count such as "12 / 340 apps" sits next to <b>Refresh</b> (called <b>Refresh catalog</b> in ShizuStore). Lists show 60 rows at a time; press <b>Show 60 more</b> for more.</li>
     <li><b>ShizuStore:</b> tap a row to open a detail sheet with the description, stars, downloads, author, licence, the install source and size, screenshots and a collapsible <b>Permissions</b> list. Press <b>Install</b>, or <b>Source</b> to open the project's page. The button says <b>No APK</b> when none is available.</li>
     <li><b>Enlarge a screenshot.</b> The screenshots in the detail sheet are small. Tap one (the line under them says <i>Tap a picture to enlarge it</i>) and it opens full screen on black, to fit the screen, with a counter such as <b>2 / 8</b>. <b>Pinch</b> with two fingers to zoom (up to 6 times), or use the <b>+</b>, <b>−</b> and <b>Fit</b> buttons at the top; <b>double tap</b> zooms in to 2.5 times and a second double tap goes back; <b>drag</b> a zoomed picture to move it (it cannot leave the screen); <b>swipe</b> left or right, or press the arrows at the screen's edges, for the next or previous picture (the neighbours load while you look). <b>Back</b>, the <b>✕</b>, or a tap on the black beside the picture closes the viewer and leaves the detail sheet as it was. A picture that cannot be loaded says <i>This picture could not be loaded. Check the connection and open it again.</i> Only pictures with a web address (http or https) are shown.</li>
-    <li><b>GitHub, F-Droid, Orion and the stores you add:</b> tap a row (not its <b>Install</b> button) to open the same kind of detail sheet. What the list knows is shown at once (description, stars, version, size, categories); the rest comes from the phone while a line says it is loading: the <b>full description</b> (for a GitHub or Codeberg project its README, as far as it is useful, in plain readable text), the <b>screenshots</b>, the <b>license</b>, forks and topics, and the <b>Website</b> and <b>Source</b> links. An F-Droid style repository supplies its own description and screenshots; a GitHub or Codeberg project supplies the screenshots in its <i>fastlane</i> folder or, failing that, the pictures of its README (badges, logos and buttons are left out). Tap a screenshot to enlarge it. <b>Install</b> in the sheet does the same as the button of the row. If the details cannot be loaded (no connection, or GitHub's limit for requests without a token is used up; save a token in the Application Updater tab to raise it), the sheet keeps what the list knows and says why.</li>
+    <li><b>GitHub, F-Droid, Orion and the stores you add:</b> tap a row (not its <b>Install</b> button) to open the same kind of detail sheet. What the list knows is shown at once (description, stars, version, size, categories); the rest comes from the phone while a line says it is loading: the <b>full description</b> (for a GitHub or Codeberg project its README, as far as it is useful, in plain readable text), the <b>screenshots</b>, the <b>license</b>, forks and topics, and the <b>Website</b> and <b>Source</b> links. An F-Droid style repository supplies its own description and screenshots; a GitHub or Codeberg project supplies the screenshots in its <i>fastlane</i> folder or, failing that, the pictures of its README (badges, logos and buttons are left out). Tap a screenshot to enlarge it. <b>Install</b> in the sheet does the same as the button of the row. If the details cannot be loaded (no connection, or GitHub's limit for requests without a token is used up; save a token in the Application Updater box of the APK Installer/Updater tab to raise it), the sheet keeps what the list knows and says why.</li>
     <li>Watch the status line: under the row for GitHub, F-Droid and Orion, and above the buttons of the detail sheet for ShizuStore. It shows "Starting...", "Finding the latest release of ...", "Downloading ..." (then the size so far and a percentage, such as "12 MB 40%"), "Checking the download's SHA-256..." (a code that proves the file was not changed on the way), "Installing ...", then "Installed ...". With the system installer: "Opening the installer..." and "Confirm the install of ...".</li>
     <li>After a successful install through a working mode, a sheet offers <b>Launch Application</b> and <b>Application Settings</b>. With the system installer there is no sheet: Android's own screen tells you.</li>
   </ol>

@@ -6956,6 +6956,23 @@ public class MainActivity extends Activity {
             @Override public boolean connectionOk(String conn) { return morpheConnectionOk(conn); }
             @Override public File downloadsDir() { return android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS); }
             @Override public boolean storageAccess() { return hasStorageAccess(); }
+            @Override public String copyToTree(File file, String treeUri, String name) throws Exception {
+                Uri tree = Uri.parse(treeUri);
+                String safe = name == null ? "app.apk" : name.replaceAll("[^A-Za-z0-9._ ()-]", "_");
+                String lower = safe.toLowerCase(java.util.Locale.ROOT);
+                String mime = lower.endsWith(".apk") ? "application/vnd.android.package-archive" : "application/octet-stream";
+                try {
+                    Uri parent = android.provider.DocumentsContract.buildDocumentUriUsingTree(tree, android.provider.DocumentsContract.getTreeDocumentId(tree));
+                    Uri target = android.provider.DocumentsContract.createDocument(getContentResolver(), parent, mime, safe);
+                    if (target == null) throw new IllegalStateException("the folder would not make the file");
+                    OutputStream out = getContentResolver().openOutputStream(target, "wt");
+                    if (out == null) throw new IllegalStateException("the folder would not open the file");
+                    try { copyFile(file, out); } finally { out.close(); }
+                    return safe;
+                } catch (SecurityException e) {
+                    throw new IllegalStateException("Android no longer lets this app use that folder: choose it again");
+                }
+            }
             @Override public BrowserDownload.Cookies cookies() {
                 return new BrowserDownload.Cookies() { @Override public String forUrl(String u) { try { return android.webkit.CookieManager.getInstance().getCookie(u); } catch (Throwable t) { return null; } } };
             }
@@ -8462,6 +8479,43 @@ public class MainActivity extends Activity {
             } catch (Exception e) {
                 return "{}";
             }
+        }
+
+        /** The Authorization Manager (About tab): {enabled, code, locked, recent:[{at, verdict, what}]}. */
+        @JavascriptInterface
+        public String authStatus() {
+            JSONObject o = new JSONObject();
+            try {
+                AuthManager m = AuthLaunchActivity.manager(MainActivity.this);
+                o.put("enabled", m.enabled());
+                o.put("code", m.code());
+                o.put("locked", m.lockedSeconds(System.currentTimeMillis()));
+                JSONArray rec = new JSONArray();
+                for (AuthManager.Entry e : m.recent()) rec.put(new JSONObject().put("at", e.at).put("verdict", e.verdict).put("what", e.what));
+                o.put("recent", rec);
+            } catch (Exception ignored) {}
+            return o.toString();
+        }
+
+        /** Turns the Authorization Manager's door on or off. */
+        @JavascriptInterface
+        public String authSetEnabled(boolean on) {
+            AuthLaunchActivity.manager(MainActivity.this).setEnabled(on);
+            return authStatus();
+        }
+
+        /** Makes a new code; the old one stops working at once. */
+        @JavascriptInterface
+        public String authRefresh() {
+            AuthLaunchActivity.manager(MainActivity.this).refresh();
+            return authStatus();
+        }
+
+        /** Empties the list of recent uses. */
+        @JavascriptInterface
+        public String authClearRecent() {
+            AuthLaunchActivity.manager(MainActivity.this).clearRecent();
+            return authStatus();
         }
 
         /** What the About tab shows: this build, the certificate it is signed with, the phone and its WebView. */
