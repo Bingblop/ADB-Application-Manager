@@ -621,14 +621,9 @@ public final class MorpheBridge {
     private JSONObject keyImport(JSONObject a) throws Exception {
         File f = new File(a.optString("path"));
         if (!MorpheJobs.inside(f, allowedRoots()) || !f.isFile()) throw new IOException("that file is not one this app may read");
-        String pw = a.optString("password");
-        File k = new File(base, "morphe.keystore");
-        MorpheLibrary.copy(f, k);
-        JSONObject info = new JSONObject();
-        info.put("alias", "Morphe");
-        info.put("password", pw.isEmpty() ? "Morphe" : pw);
-        if (!pw.isEmpty()) info.put("storePassword", pw);
-        writeText(new File(base, "morphe_key.json"), info.toString());
+        // the file is opened with the password and must hold the signing key before it replaces anything; the old key stays as .bak
+        String why = KeyImport.install(base, f, a.optString("password"));
+        if (why != null) throw new IOException(why);
         return null;
     }
 
