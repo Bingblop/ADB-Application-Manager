@@ -5,7 +5,7 @@ import java.security.SecureRandom;
 /**
  * Reads the output of {@code stat -c '<tag> %f %s %Y %u %n'} so that a file name cannot forge a record. A name may hold a newline, and
  * the name {@code x\n81a4 5 1700000000 10000 /sdcard/DCIM/IMG_0001.jpg} would print a second line that looks exactly like the stat line of
- * another file. Every real record therefore starts with a tag the scan makes up for itself (random, unknown to whoever named the file):
+ * another file. Every real record therefore starts and ends with a tag the scan makes up for itself (random, unknown to whoever named the file):
  * a line without the tag is the rest of a name, and a record that goes on over another line is dropped instead of being believed.
  */
 final class SdmStatFrame {
@@ -35,13 +35,16 @@ final class SdmStatFrame {
     String endMarker() { return end; }
 
     /** The {@code -c} argument, single-quoted for the shell. */
-    String format() { return "'" + tag + " %f %s %Y %u %n'"; }
+    String format() { return "'" + tag + " %f %s %Y %u %n " + tag + "'"; }
 
     /** One line of output; returns the entry that this line completed (the previous record), or null. */
     Sdm.Entry feed(String line) {
         if (line != null && line.startsWith(tag + " ")) {
             Sdm.Entry done = take();
-            pending = SdmFsShell.parseStat(line.substring(tag.length() + 1));
+            // the record must also end with the tag: a terminal CR in a name is swallowed with the line break by readLine(), and the
+            // name would then look complete; the tail after it tells a whole record from a cut one
+            String rest = line.substring(tag.length() + 1);
+            pending = rest.endsWith(" " + tag) ? SdmFsShell.parseStat(rest.substring(0, rest.length() - tag.length() - 1)) : null;
             continued = false;
             return done;
         }

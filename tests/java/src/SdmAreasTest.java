@@ -451,6 +451,17 @@ public class SdmAreasTest {
             try { new SdmFsShell(cut).list("/x"); } catch (IOException e) { threw = true; }
             is("list without the end marker throws", threw, true);
 
+            // a name that ends in a carriage return cannot pass for the name without it
+            String fr3 = R.getPath() + "/frame3";
+            Files.createDirectories(new File(R, "frame3").toPath());
+            Files.write(new File(R, "frame3/victim3.txt").toPath(), "vv".getBytes("UTF-8"));
+            Files.write(new File(R, "frame3/victim3.txt\r").toPath(), "zzzzzz".getBytes("UTF-8"));
+            final Map<String, Sdm.Entry> fm3 = new LinkedHashMap<String, Sdm.Entry>();
+            fsh.walk(fr3, new Sdm.EntrySink() { @Override public boolean accept(Sdm.Entry e) { fm3.put(e.path, e); return true; } }, null);
+            is("walk: the file whose name ends in CR is not listed as the file without it", fm3.size() == 1 && fm3.get(fr3 + "/victim3.txt") != null && fm3.get(fr3 + "/victim3.txt").size == 2, true);
+            Map<String, Sdm.Entry> frC = fsh.statAll(Arrays.asList(fr3 + "/victim3.txt", fr3 + "/victim3.txt\r"), null);
+            is("statAll: same", frC.size() == 1 && frC.get(fr3 + "/victim3.txt").size == 2, true);
+
             // a cancelled statAll does not believe its last record (it may be the first line of a longer name)
             final boolean[] cancelNow = { false };
             Sdm.Shell cutCancel = new Sdm.Shell() {
@@ -459,7 +470,7 @@ public class SdmAreasTest {
                 @Override public void stream(String s, int t, Sdm.LineSink k, Sdm.Cancel c) {
                     java.util.regex.Matcher m = java.util.regex.Pattern.compile("'(__SDM_[0-9a-f]+__) ").matcher(s);
                     if (!m.find()) return;
-                    k.line(m.group(1) + " 81a4 5 1700000000 10000 /sdcard/a.txt");
+                    k.line(m.group(1) + " 81a4 5 1700000000 10000 /sdcard/a.txt " + m.group(1));
                     k.line(m.group(1) + " 81a4 7 1700000000 10000 /sdcard/victim");      // the first line of the name "victim\n..." (its rest never came)
                     cancelNow[0] = true;
                 }
@@ -474,7 +485,7 @@ public class SdmAreasTest {
                     java.util.regex.Matcher m = java.util.regex.Pattern.compile("'(__SDM_[0-9a-f]+__) ").matcher(s);
                     java.util.regex.Matcher e = java.util.regex.Pattern.compile("echo (__SDM_END_[0-9a-f]+__)").matcher(s);
                     if (!m.find() || !e.find()) return;
-                    k.line(m.group(1) + " 81a4 5 1700000000 10000 /sdcard/a.txt");
+                    k.line(m.group(1) + " 81a4 5 1700000000 10000 /sdcard/a.txt " + m.group(1));
                     k.line(e.group(1));
                 }
             };
