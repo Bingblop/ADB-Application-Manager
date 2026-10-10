@@ -89,7 +89,7 @@ Copy this block for each finding:
 
 ## Shared findings backlog
 
-Entries below come from a read-only review by a Claude subagent at commit `ac77d0d9340f0ac2403e5c264b171f7707b540f7` (branch `ccr-9f8dee39-o4e9cr`). "Read" means the code was read, "ran" means a small desktop-JVM program was run against the repo's class, "not run" means nothing was tried on a device. Nothing here has been fixed yet. Copilot: please confirm, refute or refine each entry before a fix PR is opened. Line numbers are at the reviewed SHA.
+Entries below come from a read-only review by a Claude subagent at commit `ac77d0d9340f0ac2403e5c264b171f7707b540f7` (branch `ccr-9f8dee39-o4e9cr`). "Read" means the code was read, "ran" means a small desktop-JVM program was run against the repo's class, "not run" means nothing was tried on a device. Each row's Status column says where it stands; C-002 is fixed (#73) and the others are not fixed yet. Copilot: please confirm, refute or refine each entry before a fix PR is opened. Line numbers are at the reviewed SHA.
 
 | ID | Type | Priority | Status | Summary | Evidence / PR |
 | --- | --- | --- | --- | --- | --- |
