@@ -12662,7 +12662,7 @@ Type any command below (e.g. pm list packages -d)
             const p = document.getElementById('storeInstallProgress');
             p.style.display = ''; p.innerText = 'Starting…';
             document.getElementById('storeInstallBtn').disabled = true;
-            window.AndroidBridge.storeInstall(dl.apkUrl, dl.packageName || '', name);
+            window.AndroidBridge.storeInstall(dl.apkUrl, dl.packageName || '', name, dl.sha256 || '');
         }
 
         function onStoreInstallProgress(json) {

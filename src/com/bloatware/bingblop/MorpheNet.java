@@ -190,9 +190,9 @@ public final class MorpheNet {
                     long lastTick = 0;
                     while ((n = in.read(buf)) > 0) {
                         if (progress != null && progress.cancelled()) throw new IOException("cancelled");
+                        if (done + n > MAX_DOWNLOAD_BYTES) throw new IOException("the download is bigger than " + (MAX_DOWNLOAD_BYTES >> 20) + " MB: stopped");
                         out.write(buf, 0, n);
                         done += n;
-                        if (done > MAX_DOWNLOAD_BYTES) throw new IOException("the download is bigger than " + (MAX_DOWNLOAD_BYTES >> 20) + " MB: stopped");
                         long now = System.currentTimeMillis();
                         if (progress != null && now - lastTick >= 250) { lastTick = now; progress.onProgress(done, total); }
                     }
