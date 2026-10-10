@@ -2745,6 +2745,18 @@ public class MainActivity extends Activity {
                         launchSystemInstaller(apk);
                         storeInstallProgress(key, "opened", 100, "Confirm the install of " + name + ".");
                     } else {
+                        // A privileged install has no system installer in front of it, and the address, package and hash all come from the page:
+                        // the user is asked here, with what was read from the file itself.
+                        storeInstallProgress(key, "confirming", 100, "Waiting for your OK to install " + name + "…");
+                        String installedVersion = null;
+                        try {
+                            PackageInfo cur = getPackageManager().getPackageInfo(archive.packageName, 0);
+                            installedVersion = cur.versionName == null ? "" : cur.versionName;
+                        } catch (PackageManager.NameNotFoundException notInstalled) { /* a new app */ }
+                        boolean hashChecked = InstallGuards.hasPublishedHash(sha256) && InstallGuards.isSha256(InstallGuards.normalize(sha256));
+                        if (!confirmPrivilegedInstall(InstallConfirm.message(name, archive.packageName, archive.versionName, InstallConfirm.hostOf(apkUrl), installedVersion, hashChecked))) {
+                            throw new IllegalStateException("Install cancelled.");
+                        }
                         storeInstallProgress(key, "installing", 100, "Installing " + name + "…");
                         String out = installApk(apk);
                         if (out != null && out.contains("Success")) {
@@ -2763,6 +2775,47 @@ public class MainActivity extends Activity {
                 }
             }
         });
+    }
+
+    /**
+     * Asks, in a native dialog the page cannot press, whether to go on with a privileged install. Blocks the calling (background) thread until the
+     * user answers; no answer in two minutes, or the screen closing, is a no.
+     */
+    private boolean confirmPrivilegedInstall(final String message) {
+        final java.util.concurrent.CountDownLatch answered = new java.util.concurrent.CountDownLatch(1);
+        final boolean[] yes = { false };
+        try {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (isFinishing()) { answered.countDown(); return; }
+                    android.app.AlertDialog.Builder b = new android.app.AlertDialog.Builder(MainActivity.this);
+                    b.setTitle(InstallConfirm.title());
+                    b.setMessage(message);
+                    b.setCancelable(true);
+                    b.setPositiveButton("Install", new android.content.DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(android.content.DialogInterface d, int which) { yes[0] = true; answered.countDown(); }
+                    });
+                    b.setNegativeButton("Cancel", new android.content.DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(android.content.DialogInterface d, int which) { answered.countDown(); }
+                    });
+                    b.setOnCancelListener(new android.content.DialogInterface.OnCancelListener() {
+                        @Override
+                        public void onCancel(android.content.DialogInterface d) { answered.countDown(); }
+                    });
+                    b.show();
+                }
+            });
+            if (!answered.await(120, java.util.concurrent.TimeUnit.SECONDS)) return false;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false;
+        } catch (RuntimeException e) {
+            return false;
+        }
+        return yes[0];
     }
 
     private void storeInstallProgress(String pkg, String stage, int percent, String message) {
