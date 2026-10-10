@@ -2722,7 +2722,7 @@ public class MainActivity extends Activity {
                     apk.getParentFile().mkdirs();
                     final String name = label == null || label.isEmpty() ? (pkg == null || pkg.isEmpty() ? "app" : pkg) : label;
                     storeInstallProgress(key, "downloading", 0, "Downloading " + name + "…");
-                    UpdateManager.download(apkUrl, apk, new UpdateManager.Progress() {
+                    final String finalUrl = UpdateManager.download(apkUrl, apk, new UpdateManager.Progress() {
                         @Override
                         public void onProgress(long done, long total) {
                             storeInstallProgress(key, "downloading", total > 0 ? (int) (done * 100 / total) : -1,
@@ -2754,7 +2754,7 @@ public class MainActivity extends Activity {
                             installedVersion = cur.versionName == null ? "" : cur.versionName;
                         } catch (PackageManager.NameNotFoundException notInstalled) { /* a new app */ }
                         boolean hashChecked = InstallGuards.hasPublishedHash(sha256) && InstallGuards.isSha256(InstallGuards.normalize(sha256));
-                        if (!confirmPrivilegedInstall(InstallConfirm.message(name, archive.packageName, archive.versionName, InstallConfirm.hostOf(apkUrl), installedVersion, hashChecked))) {
+                        if (!confirmPrivilegedInstall(InstallConfirm.message(name, archive.packageName, archive.versionName, InstallConfirm.hostOf(finalUrl), InstallConfirm.hostOf(apkUrl), installedVersion, hashChecked))) {
                             throw new IllegalStateException("Install cancelled.");
                         }
                         storeInstallProgress(key, "installing", 100, "Installing " + name + "…");
@@ -2788,34 +2788,57 @@ public class MainActivity extends Activity {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    if (isFinishing()) { answered.countDown(); return; }
+                    if (isFinishing() || isDestroyed()) { answered.countDown(); return; }
                     android.app.AlertDialog.Builder b = new android.app.AlertDialog.Builder(MainActivity.this);
                     b.setTitle(InstallConfirm.title());
                     b.setMessage(message);
                     b.setCancelable(true);
                     b.setPositiveButton("Install", new android.content.DialogInterface.OnClickListener() {
                         @Override
-                        public void onClick(android.content.DialogInterface d, int which) { yes[0] = true; answered.countDown(); }
+                        public void onClick(android.content.DialogInterface d, int which) { yes[0] = true; }
                     });
-                    b.setNegativeButton("Cancel", new android.content.DialogInterface.OnClickListener() {
+                    b.setNegativeButton("Cancel", null);
+                    // Any way the dialog goes away (a button, Back, a tap outside, a timeout, the screen closing) ends the wait; only "Install" says yes.
+                    b.setOnDismissListener(new android.content.DialogInterface.OnDismissListener() {
                         @Override
-                        public void onClick(android.content.DialogInterface d, int which) { answered.countDown(); }
+                        public void onDismiss(android.content.DialogInterface d) {
+                            if (installConfirmDialog == d) installConfirmDialog = null;
+                            answered.countDown();
+                        }
                     });
-                    b.setOnCancelListener(new android.content.DialogInterface.OnCancelListener() {
-                        @Override
-                        public void onCancel(android.content.DialogInterface d) { answered.countDown(); }
-                    });
-                    b.show();
+                    android.app.AlertDialog dlg = b.create();
+                    installConfirmDialog = dlg;
+                    dlg.show();
                 }
             });
-            if (!answered.await(120, java.util.concurrent.TimeUnit.SECONDS)) return false;
+            if (!answered.await(120, java.util.concurrent.TimeUnit.SECONDS)) {
+                dismissInstallConfirm();   // no answer is a no, and the question must not stay on screen to be answered later
+                return false;
+            }
         } catch (InterruptedException e) {
+            dismissInstallConfirm();
             Thread.currentThread().interrupt();
             return false;
         } catch (RuntimeException e) {
             return false;
         }
         return yes[0];
+    }
+
+    /** The install question currently on screen, if any (touched on the UI thread only, except for the null check by the waiting thread). */
+    private volatile android.app.AlertDialog installConfirmDialog;
+
+    private void dismissInstallConfirm() {
+        try {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    android.app.AlertDialog d = installConfirmDialog;
+                    installConfirmDialog = null;
+                    if (d != null && d.isShowing()) d.dismiss();
+                }
+            });
+        } catch (RuntimeException ignored) { /* the screen is already gone */ }
     }
 
     private void storeInstallProgress(String pkg, String stage, int percent, String message) {
@@ -15087,6 +15110,8 @@ public class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        // the install question belongs to this window; closing it ends the wait with "no" (a dialog must not leak past its activity)
+        try { android.app.AlertDialog d = installConfirmDialog; installConfirmDialog = null; if (d != null && d.isShowing()) d.dismiss(); } catch (Throwable ignored) {}
         // pools that nothing else stops: their idle threads would keep this activity (and its views) alive after a recreate()
         // SD Maid SE: drop the calls still queued, then stop the engine's own pool and timer (they hold hooks that capture this
         // activity, and the page that would show their results is gone). Only when the tab was ever used.
