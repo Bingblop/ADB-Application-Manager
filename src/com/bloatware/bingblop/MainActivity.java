@@ -8163,10 +8163,14 @@ public class MainActivity extends Activity {
             final String key = id;
             PtyShell old = ptySessions.remove(key);
             if (old != null) old.close();
+            final long ticket = ptySessions.ticket(key);     // taken now, in the order the page asked: a slower older start cannot replace a newer one
             executor.submit(new Runnable() {
                 @Override
                 public void run() {
                     JSONObject res = new JSONObject();
+                    PtyShell started = null;
+                    Integer early = null;
+                    boolean published = false;
                     try {
                         Process proc = ptyProcess(backend, rows, cols);
                         // the end of this session can be reported before the constructor returns, or after the page has started a new one under the same id
@@ -8186,24 +8190,33 @@ public class MainActivity extends Activity {
                                 ptyEnded(key, me[0], code);
                             }
                         });
-                        Integer early;
-                        PtyShell prev;
+                        started = sh;
+                        java.util.List<PtyShell> replaced = new java.util.ArrayList<PtyShell>();
                         synchronized (me) {
-                            // stored before it is published, so a listener that sees me[0] also finds it in the map
-                            prev = ptySessions.put(key, sh);
-                            me[0] = sh;
-                            early = earlyExit[0];
+                            // Stored before it is published, so a listener that sees me[0] also finds it in the map; and the page is told it started under
+                            // the same lock, so an exit that follows is always queued after the start.
+                            published = ptySessions.publish(key, ticket, sh, replaced);
+                            if (published) {
+                                me[0] = sh;
+                                early = earlyExit[0];
+                                res.put("ok", true);
+                                notifyJs("window.onPtyStarted&&window.onPtyStarted(" + JSONObject.quote(key) + "," + res + ")");
+                            }
                         }
-                        if (prev != null && prev != sh) prev.close();
-                        if (early != null) ptyEnded(key, sh, early);
-                        res.put("ok", true);
+                        for (PtyShell r : replaced) r.close();
+                        if (!published) sh.close();          // a newer start, a close, or the shutdown came first: nobody waits for this one
+                        // a session that was already over when it was stored: its end is told after the start
+                        if (published && early != null) ptyEnded(key, sh, early);
                     } catch (Throwable t) {
-                        try {
-                            res.put("ok", false);
-                            res.put("message", errMsg(t));
-                        } catch (Exception ignored) {}
+                        if (!published) {
+                            if (started != null) started.close();
+                            try {
+                                res.put("ok", false);
+                                res.put("message", errMsg(t));
+                            } catch (Exception ignored) {}
+                            notifyJs("window.onPtyStarted&&window.onPtyStarted(" + JSONObject.quote(key) + "," + res + ")");
+                        }
                     }
-                    notifyJs("window.onPtyStarted&&window.onPtyStarted(" + JSONObject.quote(key) + "," + res + ")");
                 }
             });
             return "started";
