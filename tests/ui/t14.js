@@ -63,8 +63,8 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.click('text=Import Obtainium List'); await page.waitForTimeout(300);
   await page.click('#ghTokenBtn');
   console.log('token button:', await page.locator('#ghTokenBtn').innerText());
-  // the Keystore refuses the next token: the bridge answers false, so the page says it was not saved and the button keeps its old state
-  await page.evaluate(() => { window.AndroidBridge.setGithubToken = t => { window.__st.calls.push('token:refused'); return false; }; });
+  // the Keystore refuses the next token: the bridge answers false, so the page says it was not saved; like the native code (fail closed) the older token is gone too, so the button loses its tick
+  await page.evaluate(() => { window.AndroidBridge.setGithubToken = t => { window.__st.calls.push('token:refused'); window.__st.token = false; return false; }; });
   await page.click('#ghTokenBtn'); await page.waitForTimeout(150);
   console.log('token refused:', await page.locator('#toastMsg').innerText(), '|', await page.locator('#ghTokenBtn').innerText());
   await page.click('.upd-row:has-text("Desktop-only") >> button:has-text("Release")');

@@ -11,6 +11,6 @@ extras headers: Track in Obtainium (1) | Not tracked (2)
 after update all: Release | ✓ Updated | Retry | ✓ Updated | ✓ Updated | ✓ Updated
 fdroid msg: signed with a different key than the installed app, so Android won't accept it as an updat
 token button: GitHub Token ✓
-token refused: The token could not be stored securely: not saved | GitHub Token ✓
+token refused: The token could not be stored securely: not saved | GitHub Token
 calls: ["check","install:com.duckduckgo.mobile.android","install:org.fdroid.fdroid","install:dev.imranr.obtainium","install:org.woheller69.weather","install:com.sec.android.app.sbrowser","obtainium:obtainium://app/%7B%22id%22%3A%22org.moz","obtainium:obtainium://app/%7B%22id%22%3A%22com.duc","source:de.danoeh.antennapod=https://github.com/AntennaPod/AntennaPod","check","import-picker","check","token:set","token:refused","url:https://github.com/x/y/releases/tag/1.1"]
 errors: []
