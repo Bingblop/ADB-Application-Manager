@@ -71,6 +71,21 @@ public class BrowserDownloadTest {
             is("a web page is refused (it is a challenge or an error page, not the file)", t != null && t.getMessage().contains("web page"), String.valueOf(t));
             t = err(() -> BrowserDownload.download(base + "/loop", "UA", null, null, dir, null));
             is("a redirect loop ends", t != null && t.getMessage().contains("redirected too often"), String.valueOf(t));
+            // which redirects may be followed (the same judgement as HttpSafe.open): no step down from https to http, no outside address leading to this phone
+            is("a relative redirect stays on its host", BrowserDownload.nextHop("https://a.example/x/y", "/z").equals("https://a.example/z"));
+            is("http to https and http to http are followed", BrowserDownload.nextHop("http://a.example/x", "https://b.example/z").equals("https://b.example/z") && BrowserDownload.nextHop("http://a.example/x", "http://b.example/z").equals("http://b.example/z"));
+            is("a loopback address may lead to another loopback address (a local server)", BrowserDownload.nextHop("http://127.0.0.1:8080/a", "http://127.0.0.1:8080/b").equals("http://127.0.0.1:8080/b"));
+            for (String[] bad : new String[][]{
+                    {"https://a.example/x", "http://a.example/y"}, {"https://a.example/x", "http://b.example/y"},
+                    {"https://a.example/x", "http://127.0.0.1:8080/y"}, {"https://a.example/x", "https://localhost/y"},
+                    {"http://a.example/x", "http://[::1]/y"}, {"https://a.example/x", "http://2130706433/y"}, {"https://a.example/x", "https://0x7f.1/y"}}) {
+                Throwable rt = err(() -> BrowserDownload.nextHop(bad[0], bad[1]));
+                is("refused: " + bad[0] + " -> " + bad[1], rt instanceof IOException && rt.getMessage().contains("not safe to follow"), String.valueOf(rt));
+            }
+            Throwable ft = err(() -> BrowserDownload.nextHop("https://a.example/x", "ftp://b.example/y"));
+            is("a redirect to something that is not a web address is refused in words", ft instanceof IOException && ft.getMessage().contains("not a web address"), String.valueOf(ft));
+            ft = err(() -> BrowserDownload.nextHop("https://a.example/x", "javascript:alert(1)"));
+            is("a script address is refused", ft instanceof IOException, String.valueOf(ft));
             t = err(() -> BrowserDownload.download(base + "/short", "UA", null, null, dir, null));
             is("a download that ends early is an error", t instanceof IOException, String.valueOf(t));
             String[] left = dir.list();
