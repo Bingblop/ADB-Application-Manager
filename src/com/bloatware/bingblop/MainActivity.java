@@ -792,6 +792,10 @@ public class MainActivity extends Activity {
     // Process helpers
     // ---------------------------------------------------------------------------------------------
 
+    private boolean isDebuggableBuild() {
+        return (getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+    }
+
     private ProcessBuilder buildAdbProcess(String... args) {
         List<String> cmd = new ArrayList<String>();
         cmd.add(adbBinFile != null && adbBinFile.exists() ? adbBinFile.getAbsolutePath() : "adb");
@@ -7720,7 +7724,10 @@ public class MainActivity extends Activity {
                 output = runProcessWithTimeout(pb, 6000);
             }
 
-            Log.d(TAG, "executeShell [" + mode + "]: " + cmd + " -> " + (output != null ? output.trim() : ""));
+            // the command and its output can hold settings values, file contents or a token typed into a custom command: a release build
+            // logs only the mode and the sizes, a debuggable build the whole line
+            if (isDebuggableBuild()) Log.d(TAG, "executeShell [" + mode + "]: " + cmd + " -> " + (output != null ? output.trim() : ""));
+            else Log.d(TAG, "executeShell [" + mode + "]: " + cmd.length() + " chars -> " + (output != null ? output.length() : 0) + " chars");
             return output != null ? output : "";
         }
 
@@ -14892,6 +14899,10 @@ public class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        // pools that nothing else stops: their idle threads would keep this activity (and its views) alive after a recreate()
+        try { sdmCalls.shutdown(); } catch (Throwable ignored) {}
+        try { cdExecutor.shutdown(); } catch (Throwable ignored) {}
+        try { trackerExecutor.shutdown(); } catch (Throwable ignored) {}
         if (Build.VERSION.SDK_INT >= 27 && wallpaperColorsListener != null) {
             try {
                 android.app.WallpaperManager.getInstance(this).removeOnColorsChangedListener(
