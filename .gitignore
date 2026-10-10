@@ -18,3 +18,5 @@ app/build/
 *.class
 *.dex
 debug.keystore.base64
+tests/.cache/
+tests/out/
