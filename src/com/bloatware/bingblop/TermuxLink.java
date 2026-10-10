@@ -12,6 +12,9 @@ import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
+import java.util.LinkedList;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -148,13 +151,20 @@ public final class TermuxLink {
         });
     }
 
+    /** How many connections may wait for their hello at once; when more come, the oldest is dropped. */
+    static final int MAX_PENDING_HELLOS = 32;
+
     private static Process connect(Launcher launcher, long timeoutMs, ScriptMaker maker) throws IOException {
-        ServerSocket server = new ServerSocket(0, 4, InetAddress.getByName("127.0.0.1"));
+        ServerSocket server = new ServerSocket(0, 50, InetAddress.getByName("127.0.0.1"));
         final SessionProcess proc = new SessionProcess(launcher);
+        // Any app on the phone can open this loopback port. Each connection's hello is therefore read on a thread of its own: a peer that connects
+        // and says nothing used to hold the only accepting thread for 3 s, so a few such peers kept Termux's real connection waiting until the timeout.
+        final LinkedList<Socket> pending = new LinkedList<Socket>();
+        final BlockingQueue<Socket> good = new ArrayBlockingQueue<Socket>(1);
         Socket sock = null;
         try {
             server.setSoTimeout(250);
-            String token = randomHex(16);
+            final String token = randomHex(16);
             String script = maker.make(server.getLocalPort(), token);
             proc.launchId = launcher.launch(script, "ADB App Manager terminal", new Callback() {
                 @Override
@@ -169,17 +179,32 @@ public final class TermuxLink {
                 if (System.nanoTime() > deadline) {
                     throw new IOException("Termux did not connect back within " + Math.max(1, timeoutMs / 1000) + " s");
                 }
-                Socket s;
+                Socket s = null;
                 try {
                     s = server.accept();
                 } catch (SocketTimeoutException again) {
-                    continue;
+                    // nothing new; look at the connections already being checked
                 }
-                if (hello(s, token)) {
-                    sock = s;
-                } else {
-                    closeQuietly(s);
+                if (s != null) {
+                    final Socket cs = s;
+                    synchronized (pending) {
+                        pending.add(cs);
+                        while (pending.size() > MAX_PENDING_HELLOS) closeQuietly(pending.removeFirst());
+                    }
+                    Thread t = new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            boolean ok = hello(cs, token);
+                            synchronized (pending) {
+                                pending.remove(cs);
+                            }
+                            if (!ok || !good.offer(cs)) closeQuietly(cs);
+                        }
+                    }, "termux-hello");
+                    t.setDaemon(true);
+                    t.start();
                 }
+                sock = good.poll();
             }
             proc.attach(sock);
         } catch (IOException e) {
@@ -191,6 +216,12 @@ public final class TermuxLink {
                 server.close();
             } catch (IOException ignored) {
             }
+            // connections still being checked, and a valid one that arrived after the winner, are closed
+            synchronized (pending) {
+                for (Socket p : pending) closeQuietly(p);
+                pending.clear();
+            }
+            closeQuietly(good.poll());
         }
         return proc;
     }

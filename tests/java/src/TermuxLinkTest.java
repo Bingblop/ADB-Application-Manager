@@ -251,6 +251,39 @@ public class TermuxLinkTest {
     check("an impostor with a wrong token is turned away; the real bridge gets in", "real\n".equals(c.text()));
     sh3.close();
 
+    // silent peers (any app on the phone can open this loopback port) must not keep the real bridge waiting: six threads open a silent connection
+    // every 50 ms for as long as the session is being opened
+    final java.util.concurrent.atomic.AtomicBoolean stopFlood = new java.util.concurrent.atomic.AtomicBoolean();
+    final List<Socket> flood = Collections.synchronizedList(new ArrayList<Socket>());
+    final LocalTermux flooded = new LocalTermux() {
+      public int launch(final String script, final String label, final TermuxLink.Callback cb) throws IOException {
+        final java.util.regex.Matcher m = java.util.regex.Pattern.compile("/dev/tcp/127\\.0\\.0\\.1/(\\d+)").matcher(script);
+        if (m.find()) {
+          final int port = Integer.parseInt(m.group(1));
+          for (int i = 0; i < 6; i++) {
+            Thread ft = new Thread(new Runnable() { public void run() {
+              while (!stopFlood.get()) {
+                try { flood.add(new Socket("127.0.0.1", port)); Thread.sleep(50); } catch (Exception e) { return; }
+              }
+            } });
+            ft.setDaemon(true);
+            ft.start();
+          }
+          try { Thread.sleep(300); } catch (InterruptedException ignored) {}
+        }
+        return super.launch(script, label, cb);
+      }
+    };
+    long tf = System.currentTimeMillis();
+    String floodErr = null;
+    Process fp = null;
+    try { fp = TermuxLink.openSession(flooded, bash, "", false, 15000); } catch (IOException e) { floodErr = e.getMessage(); }
+    long floodMs = System.currentTimeMillis() - tf;
+    stopFlood.set(true);
+    check("silent connections do not keep the real bridge out (opened in " + floodMs + " ms, error " + floodErr + ")", fp != null && floodMs < 8000);
+    if (fp != null) fp.destroy();
+    for (Socket fs : new ArrayList<Socket>(flood)) { try { fs.close(); } catch (IOException ignored) {} }
+
     // ---------------------------------------------------------------- one-off helper commands
     LocalTermux termux4 = new LocalTermux();
     Process hp = TermuxLink.runCommand(termux4, "echo out; echo err >&2; exit 3");
