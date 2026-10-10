@@ -119,6 +119,7 @@ const SUITES = [
     tests: ['MorpheVirusTotalTest'], main: 'com.bloatware.bingblop.MorpheVirusTotalTest', needs: ['json'], utf8: true },
   { name: 'rishreview', title: 'Rish shell, review findings, against a real mksh with toybox applets (Android\'s shell)', tests: ['RishReviewTest'], main: 'RishReviewTest', needs: ['rish'] },
   { name: 'signer', title: 'In-app APK signer: v2 signatures checked with apksigner, RSA and EC keys, re-sign, edited and big APKs, tampering', tests: ['SignerTest'], main: 'SignerTest', needs: ['apk', 'apksigner', 'keys'] },
+  { name: 'signwritefail', title: 'APK signer: a write that fails half way (disk full, simulated with ulimit -f) leaves no truncated APK and reports the write error', tests: ['SignWriteFailTest'], main: 'SignWriteFailTest', needs: ['apk', 'keys', 'bash'] },
   { name: 'signmismatch', title: 'APK signer refuses a key that does not match its certificate', tests: ['SignMismatchTest'], main: 'SignMismatchTest', needs: ['apk', 'keys'] },
   { name: 'axml', title: 'Manifest decoder reads every compiled XML file of a real APK', tests: ['AxmlTest'], main: 'AxmlTest', needs: ['apk', 'stubs'] },
 ];
