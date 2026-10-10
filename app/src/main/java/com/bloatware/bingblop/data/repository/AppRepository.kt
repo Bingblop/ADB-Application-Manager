@@ -1,5 +1,6 @@
 package com.bloatware.bingblop.data.repository
 
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
@@ -9,8 +10,13 @@ import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import com.bloatware.bingblop.data.model.AppItem
+import com.bloatware.bingblop.data.model.ComponentItem
+import com.bloatware.bingblop.data.model.ComponentType
 import com.bloatware.bingblop.data.model.DebloatLevel
 import com.bloatware.bingblop.data.model.DebloatPackage
+import com.bloatware.bingblop.data.model.DexOptMode
+import com.bloatware.bingblop.data.model.DexOptResult
+import com.bloatware.bingblop.data.model.BatchDexOptSummary
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
@@ -161,6 +167,90 @@ class AppRepository(private val context: Context) {
         }
     }
 
+    suspend fun getAppComponents(packageName: String): List<ComponentItem> = withContext(Dispatchers.IO) {
+        val list = mutableListOf<ComponentItem>()
+        try {
+            val flags = PackageManager.GET_SERVICES or
+                    PackageManager.GET_RECEIVERS or
+                    PackageManager.GET_ACTIVITIES
+            val pkg = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                packageManager.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(flags.toLong()))
+            } else {
+                @Suppress("DEPRECATION")
+                packageManager.getPackageInfo(packageName, flags)
+            }
+
+            fun isCmpEnabled(compName: String, defaultEnabled: Boolean): Boolean {
+                return try {
+                    val componentName = ComponentName(packageName, compName)
+                    val state = packageManager.getComponentEnabledSetting(componentName)
+                    when (state) {
+                        PackageManager.COMPONENT_ENABLED_STATE_ENABLED -> true
+                        PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                        PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER,
+                        PackageManager.COMPONENT_ENABLED_STATE_DISABLED_UNTIL_USED -> false
+                        else -> defaultEnabled
+                    }
+                } catch (_: Exception) {
+                    defaultEnabled
+                }
+            }
+
+            pkg.services?.forEach { s ->
+                val simple = s.name.substringAfterLast('.')
+                list.add(
+                    ComponentItem(
+                        packageName = packageName,
+                        name = s.name,
+                        simpleName = simple,
+                        type = ComponentType.SERVICE,
+                        isEnabled = isCmpEnabled(s.name, s.enabled)
+                    )
+                )
+            }
+
+            pkg.receivers?.forEach { r ->
+                val simple = r.name.substringAfterLast('.')
+                list.add(
+                    ComponentItem(
+                        packageName = packageName,
+                        name = r.name,
+                        simpleName = simple,
+                        type = ComponentType.RECEIVER,
+                        isEnabled = isCmpEnabled(r.name, r.enabled)
+                    )
+                )
+            }
+
+            pkg.activities?.forEach { a ->
+                val simple = a.name.substringAfterLast('.')
+                list.add(
+                    ComponentItem(
+                        packageName = packageName,
+                        name = a.name,
+                        simpleName = simple,
+                        type = ComponentType.ACTIVITY,
+                        isEnabled = isCmpEnabled(a.name, a.enabled)
+                    )
+                )
+            }
+        } catch (_: Exception) {}
+        list.sortedWith(compareBy({ it.type.ordinal }, { it.simpleName.lowercase() }))
+    }
+
+    suspend fun toggleComponent(packageName: String, componentName: String, enable: Boolean): Result<String> = withContext(Dispatchers.IO) {
+        val action = if (enable) "enable" else "disable"
+        val cmd = "pm $action $packageName/$componentName"
+        val output = runShellCommand(cmd)
+        if (output.exitCode == 0 || output.stdout.contains("new state", ignoreCase = true)) {
+            val simple = componentName.substringAfterLast('.')
+            Result.success("Component ${if (enable) "enabled" else "disabled"}: $simple")
+        } else {
+            val err = output.stderr.ifEmpty { output.stdout.ifEmpty { "Permission denied or failed" } }
+            Result.success("Component result: $err")
+        }
+    }
+
     fun getDebloatList(installedApps: List<AppItem>): List<DebloatPackage> {
         val installedMap = installedApps.associateBy { it.packageName }
         return debloatRegistry.map { (pkg, pair) ->
@@ -257,6 +347,87 @@ class AppRepository(private val context: Context) {
             }
             context.startActivity(intent)
         } catch (_: Exception) {}
+    }
+
+    suspend fun getDexOptStatus(packageName: String): String = withContext(Dispatchers.IO) {
+        val cmd = "cmd package compile --status $packageName 2>/dev/null || dumpsys package $packageName"
+        val res = runShellCommand(cmd)
+        val text = res.stdout
+        val regex = Regex("""(?:status=|compilation_filter=|filter=)([a-zA-Z0-9_-]+)""")
+        val match = regex.find(text)
+        if (match != null) {
+            match.groupValues[1]
+        } else if (text.contains("speed-profile", ignoreCase = true)) {
+            "speed-profile"
+        } else if (text.contains("speed", ignoreCase = true)) {
+            "speed"
+        } else if (text.contains("verify", ignoreCase = true)) {
+            "verify"
+        } else {
+            "Default (JIT / Verify)"
+        }
+    }
+
+    suspend fun optimizeApp(
+        packageName: String,
+        mode: DexOptMode,
+        force: Boolean = false,
+        compileSecondaryDex: Boolean = true
+    ): DexOptResult = withContext(Dispatchers.IO) {
+        val startTime = System.currentTimeMillis()
+        val cmd = if (mode.isReset) {
+            "cmd package compile --reset $packageName 2>&1 || pm compile --reset $packageName 2>&1"
+        } else {
+            val forceFlag = if (force) "-f " else ""
+            val secFlag = if (compileSecondaryDex) "--secondary-dex " else ""
+            val m = mode.arg
+            "cmd package compile -m $m $forceFlag$secFlag$packageName 2>&1 || pm compile -m $m $forceFlag$packageName 2>&1"
+        }
+        val output = runShellCommand(cmd)
+        val duration = System.currentTimeMillis() - startTime
+        val outText = output.stdout.ifEmpty { output.stderr }.ifEmpty { "Finished" }
+        val isSuccess = output.exitCode == 0 || outText.contains("Success", ignoreCase = true) || (!outText.contains("Failure", ignoreCase = true) && !outText.contains("Error", ignoreCase = true))
+        DexOptResult(
+            packageName = packageName,
+            mode = mode.arg,
+            success = isSuccess,
+            output = outText,
+            durationMs = duration
+        )
+    }
+
+    suspend fun optimizeAppBatch(
+        packages: List<String>,
+        mode: DexOptMode,
+        force: Boolean = false,
+        compileSecondaryDex: Boolean = true,
+        onProgress: (current: Int, total: Int, currentPkg: String) -> Unit,
+        isCancelled: () -> Boolean = { false }
+    ): BatchDexOptSummary = withContext(Dispatchers.IO) {
+        val results = mutableListOf<DexOptResult>()
+        var succeeded = 0
+        var failed = 0
+        var wasCancelled = false
+
+        for (i in packages.indices) {
+            if (isCancelled()) {
+                wasCancelled = true
+                break
+            }
+            val pkg = packages[i]
+            onProgress(i + 1, packages.size, pkg)
+            val res = optimizeApp(pkg, mode, force, compileSecondaryDex)
+            results.add(res)
+            if (res.success) succeeded++ else failed++
+        }
+
+        BatchDexOptSummary(
+            total = packages.size,
+            succeeded = succeeded,
+            failed = failed,
+            results = results,
+            cancelled = wasCancelled
+        )
     }
 
     private suspend fun runShellCommand(cmd: String): CommandResult = withContext(Dispatchers.IO) {

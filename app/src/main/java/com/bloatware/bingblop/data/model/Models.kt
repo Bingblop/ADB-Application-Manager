@@ -116,3 +116,70 @@ data class ApkInspectorInfo(
     val splits: List<String>,
     val isSafe: Boolean = true
 )
+
+enum class ComponentType(val label: String) {
+    SERVICE("Service"),
+    RECEIVER("Receiver"),
+    ACTIVITY("Activity")
+}
+
+data class ComponentItem(
+    val packageName: String,
+    val name: String,
+    val simpleName: String,
+    val type: ComponentType,
+    val isEnabled: Boolean
+)
+
+enum class LogcatLevel(val code: String, val label: String, val colorHex: Long) {
+    ALL("*", "All", 0xFF90CAF9),
+    VERBOSE("V", "Verbose", 0xFF9E9E9E),
+    DEBUG("D", "Debug", 0xFF00E5FF),
+    INFO("I", "Info", 0xFF00E676),
+    WARN("W", "Warn", 0xFFFFB300),
+    ERROR("E", "Error", 0xFFFF5252),
+    FATAL("F", "Fatal", 0xFFFF1744)
+}
+
+data class LogcatEntry(
+    val id: Long,
+    val timestamp: String,
+    val pid: String,
+    val tid: String,
+    val level: LogcatLevel,
+    val tag: String,
+    val message: String,
+    val raw: String
+)
+
+enum class DexOptMode(
+    val arg: String,
+    val title: String,
+    val description: String,
+    val isReset: Boolean = false
+) {
+    SPEED_PROFILE("speed-profile", "Speed Profile (Recommended)", "Profile-guided AOT using Baseline Profiles for optimal launch latency & small disk footprint"),
+    SPEED("speed", "Speed (Full AOT)", "Compiles all bytecode to native machine code for maximum execution performance"),
+    EVERYTHING("everything", "Everything", "Compiles all code including debugging stubs and rare branches"),
+    SPACE_PROFILE("space-profile", "Space Profile", "Profile-guided compilation optimized to save storage space"),
+    SPACE("space", "Space", "Compiles with optimization prioritizing minimal disk usage"),
+    QUICKEN("quicken", "Quicken", "Fast bytecode verification and dex-to-dex optimizations"),
+    VERIFY("verify", "Verify Only", "Bytecode verification without compiling machine code"),
+    RESET("--reset", "Reset / Uncompile", "Clears compiled oat/odex files and reverts app to default JIT interpretation", isReset = true)
+}
+
+data class DexOptResult(
+    val packageName: String,
+    val mode: String,
+    val success: Boolean,
+    val output: String,
+    val durationMs: Long = 0L
+)
+
+data class BatchDexOptSummary(
+    val total: Int,
+    val succeeded: Int,
+    val failed: Int,
+    val results: List<DexOptResult>,
+    val cancelled: Boolean = false
+)

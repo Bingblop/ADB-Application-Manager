@@ -7,6 +7,20 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
 import java.util.UUID
 
+enum class PowerAction(
+    val title: String,
+    val command: String,
+    val description: String,
+    val isDangerous: Boolean
+) {
+    REBOOT("Reboot System", "reboot", "Standard hardware reboot of the device", false),
+    SOFT_REBOOT("Soft Reboot", "setprop ctl.restart zygote", "Fast restart of the Android userspace framework without full kernel reload", false),
+    REBOOT_RECOVERY("Reboot to Recovery", "reboot recovery", "Boot device into Android Recovery mode for maintenance or sideloading", true),
+    REBOOT_BOOTLOADER("Reboot to Bootloader", "reboot bootloader", "Boot into Fastboot / Bootloader mode for flashing or low-level ADB", true),
+    POWER_OFF("Power Off", "reboot -p", "Completely shut down and power off hardware", true),
+    RESTART_SYSTEM_UI("Restart SystemUI", "pkill -f com.android.systemui", "Restart status bar, navigation bar, and notifications without closing apps", false)
+}
+
 class ShellRepository {
 
     private val commandHistory = mutableListOf<ShellCommand>()
@@ -71,6 +85,10 @@ class ShellRepository {
         } finally {
             process?.destroy()
         }
+    }
+
+    suspend fun executePowerAction(action: PowerAction, mode: ShellMode = ShellMode.LOCAL_SHELL): ShellCommand {
+        return executeCommand(action.command, mode)
     }
 
     fun getHistory(): List<ShellCommand> = commandHistory.toList()

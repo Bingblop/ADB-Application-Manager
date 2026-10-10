@@ -1,7 +1,0 @@
-com.bloatware.bingblop.app-pngs-0 /app/applet/app/build/generated/res/pngs/debug
-com.bloatware.bingblop.app-updated_navigation_xml-1 /app/applet/app/build/generated/updated_navigation_xml/debug
-com.bloatware.bingblop.app-packageDebugResources-2 /app/applet/app/build/intermediates/incremental/debug/packageDebugResources/merged.dir
-com.bloatware.bingblop.app-packageDebugResources-3 /app/applet/app/build/intermediates/incremental/debug/packageDebugResources/stripped.dir
-com.bloatware.bingblop.app-debug-4 /app/applet/app/build/intermediates/merged_res/debug/mergeDebugResources
-com.bloatware.bingblop.app-debug-5 /app/applet/app/src/debug/res
-com.bloatware.bingblop.app-main-6 /app/applet/app/src/main/res

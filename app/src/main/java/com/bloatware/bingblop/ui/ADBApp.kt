@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bloatware.bingblop.data.repository.AppRepository
 import com.bloatware.bingblop.data.repository.CleanerRepository
+import com.bloatware.bingblop.data.repository.LogcatRepository
 import com.bloatware.bingblop.data.repository.MonitorRepository
 import com.bloatware.bingblop.data.repository.SettingsRepository
 import com.bloatware.bingblop.data.repository.ShellRepository
@@ -64,7 +65,8 @@ fun ADBApp(
     settingsRepository: SettingsRepository,
     shellRepository: ShellRepository,
     cleanerRepository: CleanerRepository,
-    monitorRepository: MonitorRepository
+    monitorRepository: MonitorRepository,
+    logcatRepository: LogcatRepository
 ) {
     var selectedIndex by remember { mutableIntStateOf(0) }
 
@@ -78,7 +80,7 @@ fun ADBApp(
         NavItem("Cleaner", Icons.Default.CleaningServices, "nav_cleaner"),
         NavItem("Settings", Icons.Default.Tune, "nav_settings"),
         NavItem("Install", Icons.Default.InstallMobile, "nav_install"),
-        NavItem("Terminal", Icons.Default.Terminal, "nav_terminal"),
+        NavItem("Console", Icons.Default.Terminal, "nav_terminal"),
         NavItem("Specs", Icons.Default.Memory, "nav_specs")
     )
 
@@ -91,10 +93,10 @@ fun ADBApp(
                     1 -> "SD Maid Storage Optimizer"
                     2 -> "Hidden System Settings"
                     3 -> "Package Installer & Inspector"
-                    4 -> "Interactive ADB & Shell Console"
-                    else -> "Device Telemetry & Specs"
+                    4 -> "ADB Terminal & Live Logcat"
+                    else -> "Telemetry & Power Controls"
                 },
-                onModeClick = { selectedIndex = 4 /* jump to terminal */ }
+                onModeClick = { selectedIndex = 4 /* jump to console */ }
             )
         },
         bottomBar = {
@@ -147,8 +149,8 @@ fun ADBApp(
                 1 -> CleanerScreen(cleanerRepository = cleanerRepository)
                 2 -> SettingsScreen(settingsRepository = settingsRepository)
                 3 -> InstallerScreen()
-                4 -> TerminalScreen(shellRepository = shellRepository)
-                5 -> MonitorScreen(monitorRepository = monitorRepository)
+                4 -> TerminalScreen(shellRepository = shellRepository, logcatRepository = logcatRepository)
+                5 -> MonitorScreen(monitorRepository = monitorRepository, shellRepository = shellRepository)
             }
         }
     }

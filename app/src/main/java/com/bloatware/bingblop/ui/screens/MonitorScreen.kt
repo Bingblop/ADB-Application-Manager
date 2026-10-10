@@ -7,6 +7,7 @@ import android.text.format.Formatter
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,11 +22,17 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BatteryChargingFull
+import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.DeveloperBoard
 import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -34,6 +41,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -44,6 +52,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -51,6 +61,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bloatware.bingblop.data.model.DeviceInfo
 import com.bloatware.bingblop.data.repository.MonitorRepository
+import com.bloatware.bingblop.data.repository.PowerAction
+import com.bloatware.bingblop.data.repository.ShellRepository
 import com.bloatware.bingblop.ui.components.CyberCard
 import com.bloatware.bingblop.ui.components.StatusPill
 import com.bloatware.bingblop.ui.theme.AccentCyan
@@ -70,6 +82,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun MonitorScreen(
     monitorRepository: MonitorRepository,
+    shellRepository: ShellRepository,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -77,6 +90,8 @@ fun MonitorScreen(
 
     var deviceInfo by remember { mutableStateOf<DeviceInfo?>(null) }
     var isLoading by remember { mutableStateOf(true) }
+    var pendingPowerAction by remember { mutableStateOf<PowerAction?>(null) }
+    var isExecutingPowerAction by remember { mutableStateOf(false) }
 
     fun refreshMetrics() {
         isLoading = true
@@ -266,6 +281,100 @@ fun MonitorScreen(
                     }
                 }
 
+                // Power & Reboot Controls Card
+                item {
+                    CyberCard(modifier = Modifier.fillMaxWidth()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Icon(Icons.Default.PowerSettingsNew, contentDescription = null, tint = StatusBloat, modifier = Modifier.size(18.dp))
+                                    Text("POWER & REBOOT CONTROLS", fontSize = 11.sp, fontWeight = FontWeight.Black, color = TextMuted, letterSpacing = 1.sp)
+                                }
+                                StatusPill("ROOT / ADB", AccentCyan)
+                            }
+
+                            Text(
+                                "Hardware & userspace power signals via privileged shell commands.",
+                                fontSize = 11.sp,
+                                color = TextDim
+                            )
+
+                            // 2x2 Grid of Primary Controls
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    PowerActionButton(
+                                        title = "Reboot",
+                                        subtitle = "System",
+                                        icon = Icons.Default.RestartAlt,
+                                        color = AccentCyan,
+                                        modifier = Modifier.weight(1f),
+                                        onClick = { pendingPowerAction = PowerAction.REBOOT }
+                                    )
+                                    PowerActionButton(
+                                        title = "Soft Reboot",
+                                        subtitle = "Zygote",
+                                        icon = Icons.Default.Bolt,
+                                        color = CleanGreen,
+                                        modifier = Modifier.weight(1f),
+                                        onClick = { pendingPowerAction = PowerAction.SOFT_REBOOT }
+                                    )
+                                }
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    PowerActionButton(
+                                        title = "Recovery",
+                                        subtitle = "Maintenance",
+                                        icon = Icons.Default.Build,
+                                        color = SecondaryPurple,
+                                        modifier = Modifier.weight(1f),
+                                        onClick = { pendingPowerAction = PowerAction.REBOOT_RECOVERY }
+                                    )
+                                    PowerActionButton(
+                                        title = "Power Off",
+                                        subtitle = "Shutdown",
+                                        icon = Icons.Default.PowerSettingsNew,
+                                        color = StatusBloat,
+                                        modifier = Modifier.weight(1f),
+                                        onClick = { pendingPowerAction = PowerAction.POWER_OFF }
+                                    )
+                                }
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    PowerActionButton(
+                                        title = "Bootloader",
+                                        subtitle = "Fastboot",
+                                        icon = Icons.Default.DeveloperBoard,
+                                        color = Color(0xFFFF9100),
+                                        modifier = Modifier.weight(1f),
+                                        onClick = { pendingPowerAction = PowerAction.REBOOT_BOOTLOADER }
+                                    )
+                                    PowerActionButton(
+                                        title = "SystemUI",
+                                        subtitle = "Restart UI",
+                                        icon = Icons.Default.Refresh,
+                                        color = TextMuted,
+                                        modifier = Modifier.weight(1f),
+                                        onClick = { pendingPowerAction = PowerAction.RESTART_SYSTEM_UI }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // Device Specifications
                 item {
                     CyberCard(modifier = Modifier.fillMaxWidth()) {
@@ -290,6 +399,135 @@ fun MonitorScreen(
                 item {
                     Spacer(modifier = Modifier.height(100.dp))
                 }
+            }
+        }
+
+        // Confirmation Dialog for Power & Reboot Controls
+        pendingPowerAction?.let { action ->
+            AlertDialog(
+                onDismissRequest = { if (!isExecutingPowerAction) pendingPowerAction = null },
+                containerColor = BgCard,
+                icon = {
+                    Icon(
+                        if (action.isDangerous) Icons.Default.Warning else Icons.Default.RestartAlt,
+                        contentDescription = null,
+                        tint = if (action.isDangerous) StatusBloat else AccentCyan,
+                        modifier = Modifier.size(32.dp)
+                    )
+                },
+                title = {
+                    Text(
+                        text = "Confirm ${action.title}?",
+                        color = TextMain,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = action.description,
+                            color = TextMuted,
+                            fontSize = 13.sp
+                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(BgSurface)
+                                .border(width = 1.dp, color = BorderGlass, shape = RoundedCornerShape(8.dp))
+                                .padding(8.dp)
+                        ) {
+                            Text(
+                                text = "$ ${action.command}",
+                                color = AccentCyan,
+                                fontSize = 12.sp,
+                                fontFamily = FontFamily.Monospace,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        if (action.isDangerous) {
+                            Text(
+                                text = "Warning: Make sure all background apps and unsaved work are preserved before executing.",
+                                color = StatusBloat,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            isExecutingPowerAction = true
+                            scope.launch {
+                                val res = shellRepository.executePowerAction(action)
+                                isExecutingPowerAction = false
+                                pendingPowerAction = null
+                                val statusMsg = if (res.exitCode == 0) "${action.title} executed" else "Dispatched: ${res.output.take(80)}"
+                                Toast.makeText(context, statusMsg, Toast.LENGTH_LONG).show()
+                            }
+                        },
+                        enabled = !isExecutingPowerAction,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (action.isDangerous) StatusBloat else AccentCyan,
+                            contentColor = BgBase
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        if (isExecutingPowerAction) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), color = BgBase, strokeWidth = 2.dp)
+                        } else {
+                            Text("Confirm & Execute")
+                        }
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { pendingPowerAction = null },
+                        enabled = !isExecutingPowerAction
+                    ) {
+                        Text("Cancel", color = TextDim)
+                    }
+                }
+            )
+        }
+    }
+}
+
+@Composable
+fun PowerActionButton(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    color: Color,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(10.dp))
+            .background(BgSurface)
+            .border(width = 1.dp, color = BorderGlass, shape = RoundedCornerShape(10.dp))
+            .clickable { onClick() }
+            .padding(vertical = 10.dp, horizontal = 12.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(color.copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(18.dp))
+            }
+            Column {
+                Text(title, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextMain)
+                Text(subtitle, fontSize = 10.sp, color = TextDim)
             }
         }
     }

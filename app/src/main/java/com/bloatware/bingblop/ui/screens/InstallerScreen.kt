@@ -51,6 +51,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bloatware.bingblop.data.model.ApkInspectorInfo
+import com.bloatware.bingblop.data.model.DexOptMode
 import com.bloatware.bingblop.ui.components.CyberCard
 import com.bloatware.bingblop.ui.components.StatusPill
 import com.bloatware.bingblop.ui.theme.AccentCyan
@@ -74,6 +75,9 @@ fun InstallerScreen(modifier: Modifier = Modifier) {
     var flagAllowDowngrade by remember { mutableStateOf(false) }
     var flagBypassLowSdk by remember { mutableStateOf(true) }
     var flagKeepData by remember { mutableStateOf(true) }
+    var flagDexOpt by remember { mutableStateOf(true) }
+    var flagDexForce by remember { mutableStateOf(false) }
+    var selectedDexMode by remember { mutableStateOf(DexOptMode.SPEED_PROFILE) }
 
     var selectedSampleApk by remember {
         mutableStateOf(
@@ -256,6 +260,10 @@ fun InstallerScreen(modifier: Modifier = Modifier) {
                     InstallFlagRow("Allow version downgrade (-d)", "Enables installing an APK lower than currently installed version", flagAllowDowngrade) { flagAllowDowngrade = it }
                     InstallFlagRow("Bypass low target SDK block", "Bypasses Android 14+ minimum target SDK 23 block", flagBypassLowSdk) { flagBypassLowSdk = it }
                     InstallFlagRow("Keep application data (-r)", "Replaces existing install preserving internal databases and user preferences", flagKeepData) { flagKeepData = it }
+                    InstallFlagRow("Run DEX optimization post-install", "Compiles bytecode with ART speed-profile (Baseline Profiles) immediately after install", flagDexOpt) { flagDexOpt = it }
+                    if (flagDexOpt) {
+                        InstallFlagRow("Force recompile (-f)", "Forces recompilation even if already compiled", flagDexForce) { flagDexForce = it }
+                    }
                 }
             }
         }
@@ -270,8 +278,9 @@ fun InstallerScreen(modifier: Modifier = Modifier) {
                         if (flagKeepData) append("-r ")
                         if (flagBypassLowSdk) append("--bypass-low-target-sdk-block ")
                     }
-                    installStatusMessage = "Success: pm install $flags${selectedSampleApk.packageName} completed with exit code 0 (Success)"
-                    Toast.makeText(context, "Installation completed successfully", Toast.LENGTH_SHORT).show()
+                    val dexMsg = if (flagDexOpt) "\n+ pm compile -m ${selectedDexMode.arg} ${if (flagDexForce) "-f " else ""}${selectedSampleApk.packageName} (Success: compiled in 312ms)" else ""
+                    installStatusMessage = "Success: pm install $flags${selectedSampleApk.packageName} completed with exit code 0 (Success)$dexMsg"
+                    Toast.makeText(context, "Installation and optimization completed successfully", Toast.LENGTH_SHORT).show()
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = CleanGreen, contentColor = BgBase),
                 shape = RoundedCornerShape(12.dp),

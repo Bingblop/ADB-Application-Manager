@@ -26,6 +26,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.History
@@ -38,9 +39,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -48,6 +54,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
@@ -56,9 +63,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bloatware.bingblop.data.model.ShellCommand
 import com.bloatware.bingblop.data.model.ShellMode
+import com.bloatware.bingblop.data.repository.LogcatRepository
 import com.bloatware.bingblop.data.repository.ShellRepository
 import com.bloatware.bingblop.ui.components.CyberCard
 import com.bloatware.bingblop.ui.components.StatusPill
+import com.bloatware.bingblop.ui.screens.LogcatScreen
 import com.bloatware.bingblop.ui.theme.AccentCyan
 import com.bloatware.bingblop.ui.theme.BgBase
 import com.bloatware.bingblop.ui.theme.BgCard
@@ -78,6 +87,70 @@ import java.util.Locale
 
 @Composable
 fun TerminalScreen(
+    shellRepository: ShellRepository,
+    logcatRepository: LogcatRepository,
+    modifier: Modifier = Modifier
+) {
+    var selectedConsoleTab by remember { mutableIntStateOf(0) } // 0: Shell, 1: Logcat
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(BgBase)
+    ) {
+        // Modern Minimalist Console Tab Switcher
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 6.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(BgSurface)
+                .border(width = 1.dp, color = BorderGlass, shape = RoundedCornerShape(12.dp))
+                .padding(3.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            listOf("ADB Shell Console", "Live Logcat Stream").forEachIndexed { index, label ->
+                val isSelected = selectedConsoleTab == index
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(9.dp))
+                        .background(if (isSelected) AccentCyan else Color.Transparent)
+                        .clickable { selectedConsoleTab = index }
+                        .padding(vertical = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            if (index == 0) Icons.Default.Terminal else Icons.Default.BugReport,
+                            contentDescription = null,
+                            tint = if (isSelected) BgBase else TextMuted,
+                            modifier = Modifier.size(15.dp)
+                        )
+                        Text(
+                            text = label,
+                            fontSize = 12.sp,
+                            fontWeight = if (isSelected) FontWeight.Black else FontWeight.Medium,
+                            color = if (isSelected) BgBase else TextMuted
+                        )
+                    }
+                }
+            }
+        }
+
+        if (selectedConsoleTab == 0) {
+            ShellConsoleContent(shellRepository = shellRepository)
+        } else {
+            LogcatScreen(logcatRepository = logcatRepository)
+        }
+    }
+}
+
+@Composable
+fun ShellConsoleContent(
     shellRepository: ShellRepository,
     modifier: Modifier = Modifier
 ) {
@@ -102,7 +175,6 @@ fun TerminalScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(BgBase)
             .padding(horizontal = 14.dp)
     ) {
         // Mode & Clear Header

@@ -11,3 +11,10 @@ engine/.upstream/
 engine/build/
 engine/.gradle/
 engine/.kotlin/
+.gradle/
+build/
+app/build/
+.build-outputs/
+*.class
+*.dex
+debug.keystore.base64
