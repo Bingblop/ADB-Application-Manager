@@ -7,27 +7,31 @@ public class InstallConfirmTest {
 
   public static void main(String[] a) {
     String m = InstallConfirm.message("My App", "com.example.app", "1.2.3", "github.com", "github.com", null, true);
-    is("it names the package, version and host", m.contains("com.example.app") && m.contains("1.2.3") && m.contains("Downloaded from: github.com"));
+    is("it names the package, version and host", m.contains("com.example.app") && m.contains("1.2.3") && m.startsWith("Downloaded from: github.com\n"));
     is("a new app is said to be new", m.contains("new app") && !m.contains("replaces"));
-    is("the label is marked as the page's, not presented as a fact", m.startsWith("Name given by the page (not checked): My App\n"));
+    is("the label is marked as the page's and quoted, after the facts", m.contains("\nName given by the page: \u201cMy App\u201d\n") && m.indexOf("Name given by the page") > m.indexOf("Downloaded from"));
+    is("the package and version are quoted and said not to be checked", m.contains("Written in the file or by the page (not checked):") && m.contains("Package: \u201ccom.example.app\u201d") && m.contains("Version: \u201c1.2.3\u201d"));
     is("a checked file does not claim a trusted source", !m.contains("its source published") && m.contains("does not show who published it"));
     is("a checked file says so", m.contains("matches the checksum that came with the install request"));
     String r = InstallConfirm.message("My App", "com.example.app", "1.2.3", "github.com", "github.com", "1.0.0", false);
-    is("an installed app is said to be replaced, with the version now installed", r.contains("replaces the installed app (now 1.0.0)"));
+    is("an installed app is said to be replaced, with the version now installed", r.contains("replaces the installed app (now \u201c1.0.0\u201d)"));
     is("a file with no published checksum says it was not checked", r.contains("No checksum came with the install request"));
     is("it always says it installs without the system installer's own question", m.contains("without the system installer") && r.contains("without the system installer"));
 
     // the page's label cannot add lines that look like the app's own facts, or flip the text direction
     String evil = InstallConfirm.message("Safe\nDownloaded from: play.google.com\nThe file matches the checksum", "com.evil", "1\u202e", "evil.example", "evil.example", null, false);
-    is("a line break in the label becomes a space (one line of the label)", evil.split("\n")[0].equals("Name given by the page (not checked): Safe Downloaded from: play.google.com The file matches the checksum"));
-    is("the real host is still shown, once as the host line", evil.contains("\nDownloaded from: evil.example\n"));
+    is("a line break in the label becomes a space (one quoted line)", evil.contains("\nName given by the page: \u201cSafe Downloaded from: play.google.com Th\u201d\n"));
+    is("the only line that starts with 'Downloaded from' is the real one", evil.startsWith("Downloaded from: evil.example\n") && evil.indexOf("\nDownloaded from") < 0);
+    is("the label cannot close its own quotes", InstallConfirm.quoted("a\u201d b \u201cc\"d\u00bb", 80).equals("\u201ca' b 'c'd'\u201d"));
+    is("nothing to show gives nothing", InstallConfirm.quoted("  ", 80).isEmpty() && InstallConfirm.quoted(null, 80).isEmpty());
+    is("a long value is cut", InstallConfirm.quoted(new String(new char[500]).replace('\0', 'x'), 40).length() == 42);
     is("a right-to-left override in a value becomes a space", !evil.contains("\u202e"));
     is("an overlong label is cut", InstallConfirm.clean(new String(new char[500]).replace('\0', 'x'), 80).length() == 80);
     is("missing values are harmless", InstallConfirm.message(null, "com.a", null, null, null, null, false).contains("Downloaded from: unknown"));
 
     // redirects: the host the bytes came from is the one named, and a different requested host is said so
     String red = InstallConfirm.message("App", "com.a", "1", "cdn.evil.example", "github.com", null, false);
-    is("the final host is shown on the host line", red.contains("\nDownloaded from: cdn.evil.example\n"));
+    is("the final host is shown on the host line", red.startsWith("Downloaded from: cdn.evil.example\n"));
     is("a different requested host is shown", red.contains("the address given was on github.com"));
     is("no extra line when the host did not change", !m.contains("the address given was on"));
 
@@ -45,6 +49,11 @@ public class InstallConfirmTest {
     is("host drops user info, port and case", "evil.example".equals(InstallConfirm.hostOf("https://trusted.example@Evil.Example:8443/a")));
     is("host of an address with a query and no path", "a.example".equals(InstallConfirm.hostOf("https://a.example?x=1")));
     is("host of an ipv6 literal keeps the brackets", "[::1]".equals(InstallConfirm.hostOf("https://[::1]:80/x")));
+    // look-alike names: the ASCII (xn--) form is shown
+    is("a host with non-ASCII letters is shown in its ASCII form", "xn--pple-43d.com".equals(InstallConfirm.hostOf("https://\u0430pple.com/x")));
+    is("a mixed-script look-alike of a trusted name does not pass for it", !"github.com".equals(InstallConfirm.hostOf("https://g\u0456thub.com/x")) && InstallConfirm.hostOf("https://g\u0456thub.com/x").startsWith("xn--"));
+    is("an ASCII host is unchanged and lower-cased", "api.github.com".equals(InstallConfirm.hostOf("https://API.GitHub.com/x")));
+    is("a host with a space or an illegal character is not shown", InstallConfirm.hostOf("https://bad host.example/x").isEmpty() && InstallConfirm.hostOf("https://a_b.example/x").isEmpty());
     is("no host for text that is not an address", InstallConfirm.hostOf("not a url").isEmpty() && InstallConfirm.hostOf(null).isEmpty());
 
     System.out.println(n + " checks, " + fails + " failed");

@@ -24,24 +24,45 @@ final class InstallConfirm {
      */
     static String message(String label, String packageName, String versionName, String host, String requestedHost, String installedVersion, boolean hashChecked) {
         StringBuilder sb = new StringBuilder();
-        String name = clean(label, 80);
-        if (!name.isEmpty()) sb.append("Name given by the page (not checked): ").append(name).append("\n");
-        sb.append(clean(packageName, 200));
-        String v = clean(versionName, 60);
-        if (!v.isEmpty()) sb.append("  ").append(v);
-        sb.append("\n\n");
+        // What the app itself found out comes first, one fact to a line. Everything an attacker can write (the package name and version inside the file,
+        // the page's name for the app) comes after it, labelled as not checked and always inside quotation marks, so that a long value that wraps onto
+        // the next screen line cannot pass for one of the facts above.
         String h = clean(host, 100);
         sb.append("Downloaded from: ").append(h.isEmpty() ? "unknown" : h).append("\n");
         String rh = clean(requestedHost, 100);
         if (!rh.isEmpty() && !rh.equalsIgnoreCase(h)) sb.append("(the address given was on ").append(rh).append(" and sent the download on)\n");
         if (installedVersion == null) sb.append("This is a new app: it is not installed on this phone.\n");
-        else sb.append("It replaces the installed app").append(clean(installedVersion, 60).isEmpty() ? "" : " (now " + clean(installedVersion, 60) + ")").append(".\n");
+        else {
+            String iv = quoted(installedVersion, 40);
+            sb.append("It replaces the installed app").append(iv.isEmpty() ? "" : " (now " + iv + ")").append(".\n");
+        }
         // The checksum comes with the install request, from the same place as the address, so a match proves the download is the file that was asked for,
         // not that the source published it.
         sb.append(hashChecked ? "The file matches the checksum that came with the install request (it does not show who published it).\n"
                               : "No checksum came with the install request, so the file could not be compared with one.\n");
+        sb.append("\nWritten in the file or by the page (not checked):\n");
+        sb.append("Package: ").append(quoted(packageName, 120)).append("\n");
+        String v = quoted(versionName, 40);
+        if (!v.isEmpty()) sb.append("Version: ").append(v).append("\n");
+        String name = quoted(label, 40);
+        if (!name.isEmpty()) sb.append("Name given by the page: ").append(name).append("\n");
         sb.append("\nIt is installed without the system installer's own question, so only continue if you started this install.");
         return sb.toString();
+    }
+
+    /**
+     * An untrusted value in quotation marks: cleaned and cut like {@link #clean}, and any quotation mark inside it becomes an apostrophe, so the
+     * value cannot close its own quotes and go on as if it were text of the dialog. Empty when there is nothing to show.
+     */
+    static String quoted(String s, int max) {
+        String c = clean(s, max);
+        if (c.isEmpty()) return "";
+        StringBuilder sb = new StringBuilder("\u201c");
+        for (int i = 0; i < c.length(); i++) {
+            char ch = c.charAt(i);
+            sb.append(ch == '"' || ch == '\u201c' || ch == '\u201d' || ch == '\u201e' || ch == '\u201f' || ch == '\u00ab' || ch == '\u00bb' ? '\'' : ch);
+        }
+        return sb.append('\u201d').toString();
     }
 
     /**
@@ -90,6 +111,12 @@ final class InstallConfirm {
         if (auth.startsWith("[")) { int b = auth.indexOf(']'); return b > 0 ? auth.substring(0, b + 1).toLowerCase(java.util.Locale.ROOT) : ""; }
         int colon = auth.indexOf(':');
         if (colon >= 0) auth = auth.substring(0, colon);
-        return auth.toLowerCase(java.util.Locale.ROOT);
+        // A name with non-ASCII letters is shown in its ASCII (xn--) form, so a look-alike of a trusted name cannot pass for it; a name that is not a
+        // valid host name is not shown at all.
+        try {
+            return java.net.IDN.toASCII(auth, java.net.IDN.USE_STD3_ASCII_RULES).toLowerCase(java.util.Locale.ROOT);
+        } catch (IllegalArgumentException e) {
+            return "";
+        }
     }
 }
