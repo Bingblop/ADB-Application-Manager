@@ -5,20 +5,10 @@ ok   4. without a key it says it reads the web for you until the agent is connec
 ok      so the Ask agent buttons fall back to the web lookup (not ready) while the default is Perplexity: {"ready":false,"def":"perplexity"}
 ok   5. choosing "No default" is kept (it does not go back to Perplexity) and the card says so: {"id":"","def":null,"val":"","note":"No agent is chosen, so an Ask agent button reads the web for you (free, no key). Choose a research agent for an answer written for you."}
 ok   6. a coding agent cannot be chosen by id either
-ok   7. About has an Authorization Manager card with the code (5 groups of 5), the switch off, and a note that nothing is accepted: {"title":"Authorization Manager","code":"ABCDE-FGHJK-MNPQR-STVWX-YZ012","on":false,"note":"Off: nothing is accepted.","ex":"adb shell am start -n com.bloatware.bingblop/.AuthLaunchActivity \\\n  -a com.bloatware.bingblop.action.AUTH_LAUNCH \\\n  --es auth ABCDE-FGHJK-MNPQR-STVWX-YZ012 --es package com.android.settings","svgs":2,"labels":["Copy the code","Make a new code"],"emoji":false}
-ok   8. a copy button and a refresh button, both icons (SVG) with names, no emoji: ["Copy the code","Make a new code"]
-ok   9. the example is an adb command with the action, the auth extra with the code and a package: adb shell am start -n com.bloatware.bingblop/.AuthLaunchActivity \
-  -a com.bloatware.bingblop.action.AUTH_LAUNCH \
-  --es auth ABCDE-FGHJK-MNPQR-STVWX-YZ012 --es package com.android.settings
-ok   10. the switch turns the door on in the app, and the note says an intent with the code is accepted: {"calls":["status","enabled:true"],"on":true,"note":"On: an intent with this code can open an app or an address."}
-ok   11. Copy puts the code on the clipboard
-ok   12. the refresh button asks first, and nothing changes yet: {"open":true,"title":"Make a new code?","calls":0}
-ok   13. confirming makes the new code, shown at once and in the example: {"code":"NEWCO-DE123-45678-9ABCD-EFGHJ","ex":"adb shell am start -n com.bloatware.bingblop/.AuthLaunchActivity \\\n  -a com.bloatware.bingblop.action.AUTH_LAUNCH \\\n  --es auth NEWCO-DE123-45678-9ABCD-EFGHJ --es package com.android.settings","calls":1}
-ok   14. recent uses are listed (what and the verdict), and a lock after wrong codes is shown with its seconds: {"rows":2,"txt":"Recent uses\npackage com.android.settings\nok · <clock>\npackage com.example.x\nwrong · <clock>\nClear the list","note":"Locked for 42 more seconds after wrong codes."}
-ok   15. Clear the list empties them
-ok   16. the other way round: a switch, off, and a list that says no app gets the code: {"on":false,"list":"No app is listed, so no app gets the code."}
-ok   17. a package is added to the list; something that is not a package is refused with a message and stays in the box: {"list":"com.example.target\nRemove","calls":["add:com.example.target","add:not a package"],"val":"not a package"}
-ok   18. the switch turns sending on in the app
-ok   19. Remove takes the app off the list
+ok   7. About has an Authorization Manager card with the code (5 groups of 5), and it says nothing accepts it yet: {"title":"Authorization Manager","sub":"This app's own authorization code. Nothing accepts it yet: it is kept here for later. It is made on this phone, stays on this phone, and you can replace it at any time.","code":"ABCDE-FGHJK-MNPQR-STVWX-YZ012","svgs":2,"labels":["Copy the code","Make a new code"],"emoji":false,"switches":0}
+ok   8. a copy button and a refresh button, both icons (SVG) with names, no emoji; no switch, no input, nothing about intents: ["Copy the code","Make a new code"]
+ok   9. Copy puts the code on the clipboard
+ok   10. the refresh button asks first, and nothing changes yet: {"open":true,"title":"Make a new code?","calls":0}
+ok   11. confirming makes the new code, shown at once: {"code":"NEWCO-DE123-45678-9ABCD-EFGHJ","calls":1}
 ok   no page errors:
 ALL PASSED
