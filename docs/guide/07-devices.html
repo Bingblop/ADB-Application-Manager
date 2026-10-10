@@ -1,0 +1,911 @@
+<section id="tab-devices" data-title="Connected Devices" data-group="The tabs">
+  <p class="hg-lead">Look after another Android device from this phone: a Wear OS watch first, but a tablet or a second phone works the same way. You can manage its apps, send apps to it, run commands on it, read its log, browse its files and change its settings and screen density, all through ADB (the tool that talks to an Android device, see the <a href="#glossary">glossary</a>).</p>
+  <p><b>Where to find it:</b> the tab bar, after <b>Task Manager</b> and before <b>About</b>. If it is not there, it has been switched off in the <a href="#feature-list">Feature List</a>.</p>
+
+  <h4>Before you start</h4>
+  <ul>
+    <li><b>On this phone:</b> you do not need to set up a working mode when you reach the other device over Wi-Fi. The app carries its own copy of adb and uses it for this tab, so nothing from <a href="#modes-overview">Working modes</a> has to be on. The one exception is the Bluetooth link to a Wear OS watch, which needs ADB in a Working mode (see <a href="#devices-add">Adding a device</a>).</li>
+    <li><b>On the other device:</b> Developer options turned on (a hidden menu in its Settings, opened by tapping <b>Build number</b> seven times: <a href="#devices-wear">Wear OS, start to finish</a> shows how), and debugging turned on inside it. On a phone or tablet that is <b>Wireless debugging</b>. On a Wear OS watch it is <b>ADB debugging</b> and then <b>Debug over Wi-Fi</b>.</li>
+    <li><b>For the Wi-Fi way:</b> both devices on the same Wi-Fi network.</li>
+    <li><b>A few minutes and the other device in your hand.</b> The first connection needs you to read a number off its screen and to tap <b>Allow</b> on it.</li>
+  </ul>
+  <div class="hg-note"><b>Tip.</b> If you have never done this, open <a href="#devices-wear">Wear OS, start to finish</a> first. It walks through a watch from a blank start to an installed app, one screen at a time.</div>
+  <div class="hg-warn"><b>Careful.</b> Whatever you do in this tab happens on the device you picked at the top, not on this phone. The other tabs of the app act on this phone; this one never does. Before you disable, uninstall, delete or change something, read the device name in the card at the top so you are sure which device you are looking at.</div>
+
+  <h4>The top of the tab</h4>
+  <p>The first card is titled <b>Connected Devices</b>. Under the title there is one row:</p>
+  <table class="hg-table">
+    <thead><tr><th>Control</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td>The device picker (a drop-down list)</td><td>Lists every device adb can see, by name. A device that has not allowed this phone yet shows <b>(not allowed yet)</b> after its name, and one that does not answer shows <b>(offline)</b>. Pick one to work with it. When adb sees nothing, the list is grey and says <b>No device</b>.</td></tr>
+      <tr><td><b>+ Add device</b></td><td>Opens the sheet where you pair, connect, scan or link a watch over Bluetooth. See <a href="#devices-add">Adding a device</a>.</td></tr>
+      <tr><td><b>Refresh</b></td><td>Asks adb for the list again right now. A small message at the bottom says how many it found: <b>1 device</b>, <b>2 devices</b> or <b>No device found</b>.</td></tr>
+    </tbody>
+  </table>
+  <p>You do not have to press Refresh to see changes. While you look at this tab the list is read again every 6 seconds, so a device that connects, drops or is allowed on its own screen shows up by itself. Leaving the tab stops this.</p>
+  <h4>A device that dropped</h4>
+  <p>Every device that was connected is remembered (up to twenty, see Saved devices below). When one is no longer connected, because its Wi-Fi went to sleep, the cable came out, its Wireless debugging was switched off or it restarted, it does not just vanish: a toast says <b>Lost the connection to ...</b> and a card stays under the picker with the device's name, how it was connected (Wi-Fi, USB or Bluetooth link) and when it was lost. The card has two buttons:</p>
+  <table class="hg-table">
+    <thead><tr><th>Button</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><b>Reconnect</b></td><td>Does what that kind of connection needs. <b>Wi-Fi</b> (an address such as 192.168.1.20:5555): disconnects, connects again and, if that fails, looks for the device on the same address by its Wireless debugging announcement, because the port changes every time Wireless debugging is switched on; a new port is found and used by itself. <b>Wireless debugging by name</b>: looks the name up on the network and connects to the address it announces. <b>USB</b>: asks adb to reconnect offline devices; if the device does not answer, check the cable, unlock it and make sure USB debugging is on. <b>Bluetooth link</b>: sets the link up again through this phone's own ADB, then connects. When it cannot, the card says why in words. Nothing else changes, and you can press it again.</td></tr>
+      <tr><td><b>Forget</b></td><td>Takes the device off the list for good. You can add it again with Add device.</td></tr>
+    </tbody>
+  </table>
+  <p><b>Reconnect all.</b> When two or more devices are not connected, a line above the cards says <b>2 devices not connected</b> and has a <b>Reconnect all</b> button. It tries each one in turn (they share one adb, so not at the same time), shows <i>Trying...</i> while it works, and ends with a message such as <i>Reconnected 1 of 2. The rest says why where it is listed.</i> or <i>Reconnected 2 devices</i>. A device that could not be reached keeps its card with the reason, so you can fix it and press its own <b>Reconnect</b>. With one device not connected there is no such button: its own Reconnect does the same.</p>
+  <p><b>On its own.</b> When a device drops while you look at the tab, the app also tries to bring it back by itself: right away, after 8 seconds and after 25 seconds (not for USB, and not while the app is in the background). If one attempt works it stops there; if all three fail the card tells why and waits for you. The line <b>Reconnect on its own when a device drops: On</b> under the card switches this off and on, and <a href="#prefs">Settings &gt; Reconnecting devices</a> has the same switch and lets you set the <b>retry timings</b> (how many attempts, and how many seconds before each one). <b>Reconnect</b> is also the first item in the device menu (the three dots on the device card) and the button in the note under the card of a device that is <b>offline</b>. <b>Disconnect</b> in the device menu is a decision, not a drop: the device is forgotten and nothing is tried.</p>
+  <h4>Saved devices</h4>
+  <p>Under the picker, once a device has been connected, a line says <b>Saved devices (2)</b>. Tap it to open the list: every device this app has seen connected, newest first, with how it was connected (<b>Wi-Fi</b>, <b>USB</b> or <b>Bluetooth link</b>) and when it was last connected, or <b>connected now</b>. A device that is not connected has two buttons: <b>Connect</b> (the same as Reconnect above) and <b>Delete</b>; a device that is connected has only Delete.</p>
+  <ul>
+    <li><b>Delete</b> asks first, then takes the device off the list. If it is connected at that moment, it stays connected and is not saved again until you connect it again.</li>
+    <li><b>Delete all</b> (under the list) does the same for every saved device.</li>
+    <li><b>Remember the devices I connect</b> (under the list) can be turned <b>Off</b>: devices you connect after that work as usual but are not saved, and a dropped one is not reconnected by itself.</li>
+  </ul>
+  <p>The list is kept in this app only, on this phone, and holds the name and the address or serial of each device, nothing else.</p>
+  <p><b>This phone is never in the list</b>, even when its own ADB or Wireless Debugging working mode is on. The tab leaves out this phone's own addresses on purpose, so you cannot manage the wrong device by mistake.</p>
+
+  <h4>When no device is connected</h4>
+  <p>You see a card with a plus sign, the words <b>No device connected</b> and a <b>+ Add device</b> button. Under it, once you have connected to something before, a line starting with <b>Recent:</b> lists the addresses you used. Tap one to connect again at once. If adb itself cannot run, the card shows adb's complaint in place of the usual text.</p>
+
+  <h4>The device card</h4>
+  <p>Once a device is picked, a card under the picker describes it:</p>
+  <ul>
+    <li>A square icon: <b>W</b> for a watch, <b>A</b> for any other Android device.</li>
+    <li>The name, made from the maker and the model (for example Samsung SM-R930).</li>
+    <li>A grey line: the Android version and its API level, the processor type, the screen size and the density in dpi (dots per inch, how sharp and how big things are drawn). Under it, the device's address.</li>
+    <li>Badges, explained below.</li>
+    <li>Three dots at the right, which open the device menu.</li>
+  </ul>
+  <table class="hg-table">
+    <thead><tr><th>Badge</th><th>What it means</th></tr></thead>
+    <tbody>
+      <tr><td><b>Connected</b> (green)</td><td>The device answers and has allowed this phone. All the tools below are available.</td></tr>
+      <tr><td><b>Not allowed yet</b> or <b>offline</b> (yellow)</td><td>See the table of states further down.</td></tr>
+      <tr><td><b>Wi-Fi</b>, <b>USB</b> or <b>Bluetooth link</b></td><td>How this phone reaches the device (<b>USB</b> means a cable). <b>Bluetooth link</b> shows for a watch you linked with the Bluetooth tab. The Add device sheet offers two ways to connect, Wi-Fi and the Bluetooth link, and this guide covers those two.</td></tr>
+      <tr><td><b>Wear OS</b></td><td>The device says it is a watch.</td></tr>
+      <tr><td><b>Battery 87%</b>, or <b>Battery 87% charging</b></td><td>The charge level when the details were last read. Use <b>Reload details</b> to read it again.</td></tr>
+    </tbody>
+  </table>
+
+  <h4>The three-dot menu of the device</h4>
+  <p>Tap the three dots in the card. A sheet slides up with the device's name at the top and these buttons:</p>
+  <table class="hg-table">
+    <thead><tr><th>Button</th><th>What it does</th><th>Asks first?</th></tr></thead>
+    <tbody>
+      <tr><td><b>Reload details</b></td><td>Reads the name, Android version, screen and battery again.</td><td>No</td></tr>
+      <tr><td><b>Reboot</b></td><td>Restarts the device. The connection drops for a moment. A device reached over Wi-Fi may come back with a new address, so you may have to connect again.</td><td>Yes</td></tr>
+      <tr><td><b>Reboot to recovery</b></td><td>Restarts into recovery mode (a small maintenance screen).</td><td>Yes</td></tr>
+      <tr><td><b>Reboot to bootloader</b></td><td>Restarts into the bootloader (the tiny program that runs before Android and is used for flashing).</td><td>Yes</td></tr>
+      <tr><td><b>Power off</b></td><td>Turns the device off. It has to be started again by hand.</td><td>Yes</td></tr>
+      <tr><td><b>Copy address</b></td><td>Copies the device's serial or address, the text shown under its name, such as 192.168.1.20:5555.</td><td>No</td></tr>
+      <tr><td><b>Disconnect</b></td><td>Drops the Wi-Fi or Bluetooth-link connection. Shown only for a device that is reached by an address. The device stays paired, so you can connect again later.</td><td>No</td></tr>
+    </tbody>
+  </table>
+  <div class="hg-danger"><b>Risky.</b> <b>Reboot to recovery</b> and <b>Reboot to bootloader</b> take the device out of normal Android. A device in the bootloader cannot be reached over Wi-Fi, so from this phone you have no way to bring it back: you have to restart it by hand, usually by holding its power button. <b>Power off</b> works the same way. Only use these when you know why. If the device does not come back, check its maker's instructions for starting it.</div>
+
+  <h4>The seven sub-tabs</h4>
+  <p>Below the card there is a row of rounded buttons that scrolls sideways. It shows when the device is <b>Connected</b>. The tab remembers the last one you used, and the last device.</p>
+  <table class="hg-table">
+    <thead><tr><th>Sub-tab</th><th>What it is for</th><th>Read more</th></tr></thead>
+    <tbody>
+      <tr><td><b>Apps</b></td><td>List the device's apps; enable, disable, uninstall, reinstall; pull an APK.</td><td><a href="#devices-apps">Apps of the device</a></td></tr>
+      <tr><td><b>Send</b></td><td>Install APK, APKS, APKM or XAPK files, or apps from this phone, on the device.</td><td><a href="#devices-send">Sending apps</a></td></tr>
+      <tr><td><b>Console</b></td><td>Type commands for the device and see what it answers.</td><td><a href="#devices-console">Device console</a></td></tr>
+      <tr><td><b>Logcat</b></td><td>Read the device's own log, for example to see why an app crashed.</td><td><a href="#devices-logcat">Device's log</a></td></tr>
+      <tr><td><b>Files</b></td><td>Browse the device's storage; send files to it and pull files from it.</td><td><a href="#devices-files">Device's files</a></td></tr>
+      <tr><td><b>Hidden Settings</b></td><td>Read and change the device's system, secure and global settings.</td><td><a href="#devices-settings">Device's hidden settings</a></td></tr>
+      <tr><td><b>Display</b></td><td>Change the screen density and size, with an automatic undo.</td><td><a href="#devices-display">Screen density and size</a></td></tr>
+    </tbody>
+  </table>
+
+  <h4>The states a device can be in</h4>
+  <table class="hg-table">
+    <thead><tr><th>You see</th><th>What it means</th><th>What to do</th></tr></thead>
+    <tbody>
+      <tr><td><b>Connected</b></td><td>The device answers and trusts this phone.</td><td>Nothing. Pick a sub-tab.</td></tr>
+      <tr><td><b>Not allowed yet</b> (adb calls this "unauthorized")</td><td>The device has not accepted this phone's key. The tools stay hidden, and a note under the card says so.</td><td>Look at the device's own screen. Tap <b>Allow</b> and tick <b>Always allow</b>, then press <b>Refresh</b> here. If no question appears, turn debugging off and on again on the device and connect again. The same happens after you make a new ADB key in this app: every device has to trust the new key.</td></tr>
+      <tr><td><b>offline</b></td><td>adb knows the device but it does not answer: its Wi-Fi went to sleep, it moved out of range, or it restarted.</td><td>Tap <b>Reconnect</b> in the note under the card (or in the device menu, or on the card of the dropped device). If it stays offline, turn Wireless debugging (or Debug over Wi-Fi) off and on on the device, then use <b>Connect</b> in Add device.</td></tr>
+      <tr><td><b>authorizing</b> or <b>connecting</b></td><td>The connection is being set up. The note under the card words it like the next row ("Most tools need it started normally"), and the tools stay hidden until the card says <b>Connected</b>.</td><td>Wait a few seconds. The list updates by itself.</td></tr>
+      <tr><td><b>recovery</b>, <b>sideload</b>, <b>bootloader</b></td><td>The device is not running Android normally. The note says "Most tools need it started normally."</td><td>Restart the device by hand.</td></tr>
+      <tr><td>Not in the list at all</td><td>adb has forgotten it, or never knew it (for example after you disconnected, or after this phone's adb restarted).</td><td>Tap <b>+ Add device</b> and connect again, or tap its address under <b>Recent:</b>.</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Good to know</h4>
+  <ul>
+    <li>When you switch to another device in the picker, everything read from the first one (its app list, its log, its files) is thrown away and read again for the new one.</li>
+    <li>Pressing <b>Back</b> closes an open sheet first. After that it takes you to the tab you came from, as everywhere in the app. Leaving this tab does not stop a send or a command that is already running, but it does stop the 6-second device check and the live log. Only when <b>Back</b> is about to close the app does it ask first, if apps are being sent, a command is running or a batch change is being applied: it says "Press back again to leave" and then "Leave now?", because closing the app would cut the work short.</li>
+    <li>The live log (Play in the Logcat sub-tab) stops by itself when you leave the Logcat sub-tab or this tab.</li>
+    <li>Everything runs over adb between this phone and the device. Nothing goes through the internet.</li>
+  </ul>
+</section>
+
+<section id="devices-add" data-title="Adding a device: pair, connect, scan, Bluetooth" data-group="The tabs">
+  <p class="hg-lead">Before this phone can manage a device it has to be introduced to it. The <b>Add device</b> sheet has three ways: type the address yourself (<b>Wi-Fi</b>), let the app look for devices on your network (<b>Nearby</b>), or link a Wear OS watch through its Bluetooth connection to the phone (<b>Bluetooth</b>).</p>
+  <p><b>Where to find it:</b> in <a href="#tab-devices">Connected Devices</a>, tap <b>+ Add device</b> (next to the device picker, or in the middle of the screen when no device is connected). The <b>Send</b> sub-tab also has a <b>Bluetooth link</b> button that opens the sheet on the Bluetooth tab.</p>
+
+  <h4>Before you start</h4>
+  <ul>
+    <li>The other device has Developer options on (how to turn them on is in <a href="#devices-wear">Wear OS, start to finish</a>; on a phone or tablet, tap <b>Build number</b> seven times in its About screen).</li>
+    <li>For Wi-Fi and Nearby: debugging over Wi-Fi is on in the device, and both devices are on the same Wi-Fi network. This phone needs no working mode.</li>
+    <li>For Bluetooth: ADB must be on in this phone's own Working mode (<a href="#mode-tcp">ADB TCP</a> or <a href="#mode-wireless">Wireless Debugging</a>; tap the mode badge at the top right of the app to open the Working Modes sheet), and the watch must be connected to this phone through the Wear OS app.</li>
+  </ul>
+
+  <h4>The sheet</h4>
+  <p>A sheet slides up titled <b>Add a device</b>, with the line "Pair and connect over Wi-Fi, or link a watch over Bluetooth". Three tabs sit under it: <b>Wi-Fi</b>, <b>Nearby</b> and <b>Bluetooth</b>. At the bottom is a grey box that shows what adb answered to your last action, in adb's own words. Read it when something does not work. Tap the cross or the dark area outside to close the sheet.</p>
+
+  <h4>Wi-Fi: two steps, pair and then connect</h4>
+  <p>Wireless debugging uses two different addresses on the other device. <b>Pairing</b> is a one-time handshake that uses a 6-digit code. <b>Connecting</b> is what you do every time. They use different ports (the number after the colon), so do not copy one into the other's box.</p>
+  <table class="hg-table">
+    <thead><tr><th>Device</th><th>Where the pairing code and its address are</th><th>Where the connect address is</th></tr></thead>
+    <tbody>
+      <tr><td>Phone or tablet (Android 11 or newer)</td><td>Developer options, <b>Wireless debugging</b> on, then the button for pairing with a pairing code. A box shows a 6-digit code and an address with a port.</td><td>The main <b>Wireless debugging</b> screen, line <b>IP address &amp; Port</b>.</td></tr>
+      <tr><td>Wear OS watch</td><td>Developer options, <b>ADB debugging</b> on, <b>Debug over Wi-Fi</b> on, then <b>Pair new device</b> (the pairing screen with a code). Menu names differ a little between makers.</td><td>The <b>Debug over Wi-Fi</b> line shows the watch's address and port.</td></tr>
+    </tbody>
+  </table>
+  <h5>Step 1 of 2: Pair (first time only)</h5>
+  <ol class="hg-steps">
+    <li>On the other device, open the pairing screen. It shows a code and an address like 192.168.1.20:37215. <b>Keep that screen open</b>: the code only works while it is shown.</li>
+    <li>In the sheet, on the <b>Wi-Fi</b> tab, type the address and port into the first box (the label starts with "1. Pair") and the 6 digits into <b>Pairing code</b>.</li>
+    <li>Tap <b>Pair</b>. The grey box says <b>Pairing...</b>, then shows adb's answer. On success it says <b>Successfully paired</b> and a message at the bottom says <b>Paired. Now connect.</b> If the second box was empty, it gets the device's address filled in up to the colon, with the cursor ready for the port.</li>
+  </ol>
+  <h5>Step 2 of 2: Connect</h5>
+  <ol class="hg-steps">
+    <li>Close the pairing screen on the device. Look at its main wireless screen and read the address and port (not the pairing port).</li>
+    <li>Type it into the second box, the one labelled "2. Connect" (for example 192.168.1.20:5555).</li>
+    <li>Tap <b>Connect</b>. After a moment the sheet closes, the device appears in the picker, a message says <b>Connected to</b> and its address, and the device card shows.</li>
+    <li>The device may ask <b>Allow debugging?</b> on its own screen. Tap <b>Allow</b> and tick <b>Always allow</b>. Until you do, the card says <b>Not allowed yet</b>.</li>
+  </ol>
+  <div class="hg-note"><b>Tip.</b> Some older watches show only <b>Debug over Wi-Fi</b> with an address and no pairing screen. If yours does, skip step 1 and go straight to <b>Connect</b>. On a phone or tablet the connect port usually changes each time you switch Wireless debugging off and on, so read it again each time.</div>
+  <p>If the address or code is typed wrongly the app tells you before it runs anything: <b>Type the address and port, like 192.168.1.20:37215</b>, <b>The pairing code has 6 digits</b>, or <b>Type the address and port, like 192.168.1.20:5555</b>. The last one only appears when the connect address is empty or has odd characters; if the port is missing, adb decides what to do with the address.</p>
+
+  <h4>Nearby: let the app look</h4>
+  <p>Devices that offer wireless debugging announce themselves on the Wi-Fi network (the method is called mDNS). The <b>Nearby</b> tab asks adb who is announcing.</p>
+  <ol class="hg-steps">
+    <li>Turn on Wireless debugging (or Debug over Wi-Fi) on the other device. If it is not paired yet, open its pairing screen and leave it open.</li>
+    <li>In the sheet, tap <b>Nearby</b>, then <b>Scan the network</b>. It says <b>Looking...</b> for up to 15 seconds.</li>
+    <li>Each device found is a row with its address in large letters and a grey line with its name and one of two states: <b>waiting for a pairing code</b> (button <b>Pair</b>) or <b>ready to connect</b> (button <b>Connect</b>).</li>
+    <li>Tap <b>Pair</b>: the sheet jumps to the Wi-Fi tab with the pairing address already typed, and the cursor is in <b>Pairing code</b>. Type the code and continue as above. Tap <b>Connect</b>: the app connects at once.</li>
+  </ol>
+  <p>If nothing is found you read <b>Nothing found. Both devices must be on the same Wi-Fi network, with wireless debugging on. You can also type the address by hand under Wi-Fi.</b> Some routers hide devices from each other (guest networks, "client isolation"), and not every device announces itself, so a failed scan does not mean the device cannot be reached: type the address by hand.</p>
+
+  <h4>Bluetooth: a Wear OS watch with no Wi-Fi</h4>
+  <p>A Wear OS watch is linked to its phone by Bluetooth through the Wear OS app. The Wear OS app can pass adb messages along that link. This app does it in two moves. First it opens a numbered entry point (a "port") on this phone that leads to the Wear OS app's adb hub. Then it connects to that entry point as if it were a device at 127.0.0.1 (the address that always means "this phone itself").</p>
+  <ol class="hg-steps">
+    <li>On the watch: <b>Settings, Developer options, ADB debugging</b> on, then <b>Debug over Bluetooth</b> on.</li>
+    <li>In the Wear OS app on this phone: <b>Watch settings, Advanced, Debugging over Bluetooth</b> on.</li>
+    <li>Turn on <b>ADB</b> in this app's Working mode, so this phone can reach itself (<a href="#mode-tcp">ADB TCP</a> or <a href="#mode-wireless">Wireless Debugging</a>).</li>
+    <li>In the sheet, tap the <b>Bluetooth</b> tab. Leave <b>Local port</b> at 4444 (a free number on this phone: any number from 1024 to 65535 is accepted, except one that this phone's own ADB uses) and tap <b>Connect over Bluetooth</b>.</li>
+    <li>The grey box says <b>Looking for this phone's own ADB...</b>, then <b>Linking to the watch through Bluetooth...</b>. When it works the sheet closes and a message says <b>Connected over Bluetooth. Allow it on the watch if it asks.</b> The card shows the badge <b>Bluetooth link</b>.</li>
+    <li>Look at the watch and tap <b>Allow</b> if it asks.</li>
+  </ol>
+  <p>If this phone has no working ADB mode, the grey box says <b>This phone is not connected to its own ADB. Turn on ADB in this app's Working mode first (Working Mode button at the top), then try again.</b> The "button at the top" is the mode badge at the top right of the app. If you typed a port that this phone's own ADB uses, a message says <b>That port is used by this phone's own ADB. Use another, like 4444.</b> If the link fails, adb's words are shown, followed by a reminder to check that <b>Debugging over Bluetooth</b> is on in the Wear OS app and on the watch.</p>
+  <div class="hg-warn"><b>Careful.</b> The Bluetooth link relies on the Wear OS companion app and on the watch's Debug over Bluetooth setting. It was written to follow the method Google documents for Wear OS, but it has not been tried on every watch. A watch that uses a different companion app, or that has no Debug over Bluetooth option, will not work this way. Use Wi-Fi then. Also keep the port at 4444 or another free number: the app refuses a port that this phone's own ADB uses (5555 by default), because that address stands for this phone itself and is kept out of the device list.</div>
+
+  <h4>Recent addresses</h4>
+  <p>Each time <b>Connect</b> works, the address is remembered (the last 8). When you open the sheet with an empty Connect box, the newest one is typed in for you. With no device connected, the same addresses are on the empty screen after <b>Recent:</b>; tap one to connect straight away. A Bluetooth link is not listed there: connect it again from the Bluetooth tab.</p>
+
+  <h4>Disconnect</h4>
+  <p>Open the device's three-dot menu and tap <b>Disconnect</b>. The device vanishes from the picker, and the empty screen returns if it was the only one. The device is still paired, so you can connect again with <b>Connect</b> or from <b>Recent:</b>.</p>
+
+  <h4>What the messages mean</h4>
+  <p>Messages that come from the app:</p>
+  <table class="hg-table">
+    <thead><tr><th>Message</th><th>What it means</th><th>What to do</th></tr></thead>
+    <tbody>
+      <tr><td>Type the address and port, like 192.168.1.20:37215</td><td>The pairing address is empty, has odd characters or no port.</td><td>Type it as the device shows it, with the colon and the port.</td></tr>
+      <tr><td>The pairing code has 6 digits</td><td>The code box does not hold exactly 6 digits.</td><td>Type the 6 digits shown on the device.</td></tr>
+      <tr><td>Use a port from 1024 to 65535</td><td>The Bluetooth local port is not in that range.</td><td>Use 4444.</td></tr>
+      <tr><td>That port is used by this phone's own ADB. Use another, like 4444.</td><td>The Bluetooth local port is one that this phone's own ADB already uses.</td><td>Use 4444 or another free number.</td></tr>
+      <tr><td>Could not connect</td><td>adb gave no clearer answer.</td><td>Read the grey box, then check the device.</td></tr>
+      <tr><td>Nothing found...</td><td>The scan saw no device.</td><td>Check the Wi-Fi and the setting on the device, or type the address.</td></tr>
+    </tbody>
+  </table>
+  <p>Words that come from adb itself (the exact text differs a little between adb versions):</p>
+  <table class="hg-table">
+    <thead><tr><th>adb says</th><th>What it usually means</th><th>What to do</th></tr></thead>
+    <tbody>
+      <tr><td>Connection refused</td><td>Nothing listens at that address and port: debugging is off, or the port changed.</td><td>Read the address on the device again.</td></tr>
+      <tr><td>Connection timed out, No route to host</td><td>The device did not answer: asleep, other network, or the router blocks it.</td><td>Wake the device, check both are on the same Wi-Fi.</td></tr>
+      <tr><td>Wrong password...</td><td>The pairing code is wrong or expired.</td><td>Look at the pairing screen again; it may have made a new code.</td></tr>
+      <tr><td>[Process timed out after ...ms]</td><td>adb did not finish in time (pairing waits 40 seconds, connecting 25).</td><td>Try again with the device's screen on.</td></tr>
+      <tr><td>already connected</td><td>Not an error: the device is already there.</td><td>Pick it in the device picker.</td></tr>
+    </tbody>
+  </table>
+  <p>More help is in <a href="#devices-wear">Wear OS, start to finish</a> (troubleshooting table) and in <a href="#troubleshooting">Troubleshooting</a>.</p>
+</section>
+<section id="devices-apps" data-title="Managing the apps of the device" data-group="The tabs">
+  <p class="hg-lead">The <b>Apps</b> sub-tab lists every app on the other device and lets you switch one off, remove it, bring a removed system app back, stop it, clear its data or copy its APK to this phone. It is the same idea as the <a href="#tab-apps">Application Manager</a>, but for the other device.</p>
+  <p><b>Where to find it:</b> <a href="#tab-devices">Connected Devices</a>, sub-tab <b>Apps</b> (the first one). It reads the list by itself the first time you open it.</p>
+
+  <h4>Before you start</h4>
+  <ul>
+    <li>The device must show <b>Connected</b> (see <a href="#tab-devices">Connected Devices</a>).</li>
+    <li>Reading the list can take a while on a slow watch: up to 90 seconds are allowed. The line above the list says <b>Reading the apps of the device...</b> until it is done.</li>
+    <li>Nothing here needs root on the device, not even removing a system app (see "Uninstalling a system app" below). The device's own rules still apply, so it will refuse some changes (see "When the device refuses" below).</li>
+  </ul>
+  <div class="hg-warn"><b>Careful.</b> Removing the wrong system app from a watch can break its clock face, its notifications or its pairing with the phone. Read <a href="#debloater-safety">Debloater safety</a> before you remove anything you do not recognise, and <b>Disable</b> an app before you decide to uninstall it.</div>
+
+  <h4>The list</h4>
+  <p>Each app is a row with:</p>
+  <ul>
+    <li>An icon: the real icon when this phone has the same app, otherwise a square with the app's first letter.</li>
+    <li>The <b>name</b>. When this phone has the same app installed, the name is the one this phone shows. Otherwise the app makes a name from the package name (the app's unique code name): it takes the last part, adds the part before it for very generic words such as app or wear, splits joined words and gives it a capital letter. So com.google.android.deskclock becomes <b>Deskclock</b>.</li>
+    <li>The <b>package name</b> in small letters under it.</li>
+    <li>Badges: <b>UNINSTALLED</b> or <b>DISABLED</b> when that applies, and always <b>SYSTEM</b> or <b>USER</b>.</li>
+    <li>A round-edged button on the right (<b>Disable</b>, <b>Enable</b> or <b>Reinstall</b>) and three dots for the menu.</li>
+    <li>A tick box on the left. Tap the box, or the name, to select the row.</li>
+  </ul>
+  <p>The list is sorted by name. Under the search box a line tells you how many apps are shown (<b>12 apps of 87</b>). Only the first 600 rows are drawn; if there are more, a note says how many are hidden and suggests you search or filter. <b>Reload</b>, next to the search box, reads the device again.</p>
+
+  <h4>Search and filters</h4>
+  <p>The search box (<b>Search apps on the device</b>) matches the name or the package name as you type. Under it is a row of filters, each with a count:</p>
+  <table class="hg-table">
+    <thead><tr><th>Filter</th><th>Shows</th></tr></thead>
+    <tbody>
+      <tr><td><b>All</b> (with the total)</td><td>Everything. It is on while no other filter is.</td></tr>
+      <tr><td><b>3rd Party</b></td><td>Apps that were installed by a person (not part of the device's system).</td></tr>
+      <tr><td><b>System</b></td><td>Apps that came with the device.</td></tr>
+      <tr><td><b>Enabled</b></td><td>Apps that are installed and not disabled.</td></tr>
+      <tr><td><b>Disabled</b></td><td>Apps that are installed but switched off.</td></tr>
+      <tr><td><b>Uninstalled</b></td><td>Apps removed for the device's user but still known to it (normally system apps that you can bring back).</td></tr>
+    </tbody>
+  </table>
+  <p>The rules are simple:</p>
+  <ul>
+    <li><b>3rd Party</b> and <b>System</b> are one choice: tapping one turns the other off. <b>Enabled</b> and <b>Disabled</b> are another one.</li>
+    <li>You can combine one of each pair, for example <b>System</b> and <b>Enabled</b>. A line then says "Showing apps that are System + Enabled." with a <b>Clear filters</b> button.</li>
+    <li>An <b>uninstalled</b> app counts only as <b>Uninstalled</b>. It is not in the 3rd Party, System, Enabled or Disabled counts. With <b>Uninstalled</b> on, you see only uninstalled apps, and <b>3rd Party</b> or <b>System</b> narrow that list. <b>Enabled</b> or <b>Disabled</b> together with <b>Uninstalled</b> show nothing, because an uninstalled app is neither.</li>
+    <li>Tap an active filter again to turn it off. <b>All</b> or <b>Clear filters</b> turns all of them off.</li>
+  </ul>
+
+  <h4>The button on each row</h4>
+  <table class="hg-table">
+    <thead><tr><th>Button</th><th>Shown when</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><b>Disable</b></td><td>The app is enabled</td><td>Switches the app off. It stays on the device with its data, but cannot run and is hidden from the launcher. The row gets the <b>DISABLED</b> badge.</td></tr>
+      <tr><td><b>Enable</b></td><td>The app is disabled</td><td>Switches it back on.</td></tr>
+      <tr><td><b>Reinstall</b></td><td>The app is uninstalled</td><td>Brings back a removed system app from the copy still kept in the device's system. No download or file is needed.</td></tr>
+    </tbody>
+  </table>
+  <p>After the command, the app asks the device what became of the app (it lists the apps again; <i>Checking the device&hellip;</i> shows meanwhile, unless you turned off <a href="#prefs">Progress messages</a>), and the answer is what the device says now, not what the command printed. A message such as <b>Disabled: Fit</b> appears and the row changes in place. If the app is not in the wanted state (<i>Still installed</i>, <i>Not disabled</i>, <i>Not installed</i>), the sheet <b>That did not work</b> opens with <i>Checked afterwards: still installed.</i> and the device's own answer, and a command that printed an error for an app that is in fact gone still counts as done. For several apps at once the device is looked at once for all of them, and the sheet names only those that are not as wanted.</p>
+
+  <h4>The three-dot menu of an app</h4>
+  <p>Tap the three dots. A sheet slides up with the app's name and package. For an app that is installed it has these buttons:</p>
+  <table class="hg-table">
+    <thead><tr><th>Button</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><b>Open</b></td><td>Starts the app on the device.</td></tr>
+      <tr><td><b>Force stop</b></td><td>Stops the app if it is running. Nothing is deleted.</td></tr>
+      <tr><td><b>Clear data</b></td><td>Deletes the app's data (its settings, accounts and files) on the device. It asks first.</td></tr>
+      <tr><td><b>Enable</b> / <b>Disable</b></td><td>Same as the row button.</td></tr>
+      <tr><td><b>Uninstall</b></td><td>Removes the app for the device's user. It asks first. For a system app that the device first refuses, the app tries a second way by itself (see "Uninstalling a system app" below).</td></tr>
+      <tr><td><b>Pull APK</b></td><td>Copies the app's file (and its split files) from the device to this phone. See below.</td></tr>
+      <tr><td><b>Details</b></td><td>Shows what the device knows about the app: version, first install and last update times, the installer, the target and minimum Android versions, the user id, the app's folder and its flags. It is the device's own text, shortened to the first lines.</td></tr>
+      <tr><td><b>App page on device</b></td><td>Opens that app's system settings page on the device's own screen.</td></tr>
+      <tr><td><b>Select</b> / <b>Deselect</b></td><td>Adds or removes the app from the selection for a batch.</td></tr>
+      <tr><td><b>Copy package</b></td><td>Copies the package name to the clipboard.</td></tr>
+    </tbody>
+  </table>
+  <p>For an app that is already <b>uninstalled</b> the menu is shorter: <b>Reinstall</b>, <b>Select</b> and <b>Copy package</b>.</p>
+
+  <h4>Selecting several apps</h4>
+  <ol class="hg-steps">
+    <li>Tap the box or the name of a row. The row gets a tick and a bar appears at the bottom of the list: <b>1 selected</b>.</li>
+    <li>Tap more rows. The count goes up. A filter or a search can help you find them.</li>
+    <li>Tap <b>Enable</b>, <b>Disable</b>, <b>Uninstall</b> or <b>Reinstall</b> in the bar. The cross at the right clears the selection.</li>
+    <li>While it runs the bar shows <b>1 of 5...</b>, <b>2 of 5...</b>. The apps are done one after the other.</li>
+    <li>When it ends you see a message such as <b>Disabled 5 apps</b>. If some failed, a sheet titled for example <b>1 of 5 did not work</b> lists each failure with the device's reason, and the others went through.</li>
+  </ol>
+  <p><b>Uninstall</b> always asks first. <b>Disable</b> asks first when more than one app is selected. The bar does not check the state of each app: tapping <b>Enable</b> on an app that is already enabled is harmless, but it is pointless.</p>
+
+  <h4>What the commands really are</h4>
+  <p>The names on the buttons stand for these commands, which the app sends to the device. You can run the ordinary ones yourself in the <a href="#devices-console">console</a> (the file transfer of the second try is done by the app, not by you).</p>
+  <table class="hg-table">
+    <thead><tr><th>Button</th><th>Command on the device</th><th>Effect</th></tr></thead>
+    <tbody>
+      <tr><td>Disable</td><td><code>pm disable-user --user 0 PACKAGE</code></td><td>Switches the app off for the main user. Reversible.</td></tr>
+      <tr><td>Enable</td><td><code>pm enable PACKAGE</code></td><td>Switches it back on.</td></tr>
+      <tr><td>Uninstall</td><td><code>pm uninstall --user 0 PACKAGE</code></td><td>Removes the app for the main user. A system app's file stays in the device's system area.</td></tr>
+      <tr><td>Uninstall, second try (only when the device answers that only root can delete a system app)</td><td>A helper file is sent with <code>adb push</code> to <code>/data/local/tmp</code>, run with <code>app_process</code>, then deleted with <code>rm -f</code></td><td>The helper calls Android's package manager directly, with the delete-system-app flag. The result is the same as the first way: the app is gone for the main user.</td></tr>
+      <tr><td>Reinstall</td><td><code>cmd package install-existing PACKAGE</code></td><td>Makes a removed app available again from the copy that is still on the device.</td></tr>
+    </tbody>
+  </table>
+  <p>If <code>cmd package install-existing</code> fails, the app tries the older <code>pm install-existing</code> before it gives up.</p>
+
+  <h4>Uninstalling a system app</h4>
+  <p>Uninstall on the other device works the way it does on this phone. The app first runs <code>pm uninstall --user 0</code> on the device, and for most apps that is all it takes. Some devices answer a system app with <i>only root can delete system app for a particular user</i>. When that happens the app carries on by itself, with nothing more for you to tap:</p>
+  <ol class="hg-steps">
+    <li>It sends a tiny helper file (about 6 KB, built into this app) to the device's <code>/data/local/tmp</code> folder with <code>adb push</code>.</li>
+    <li>It runs the helper on the device with <code>app_process</code>. The helper calls Android's package manager directly, with the "delete system app" flag. It is the same trick this app uses on its own phone.</li>
+    <li>It deletes the helper from the device again, whatever the result was.</li>
+  </ol>
+  <p>You see what you saw before: a message such as <b>Uninstalled: Fit</b> and an <b>UNINSTALLED</b> badge when it worked. If it still fails, the sheet <b>That did not work</b> shows the device's own words and a note. The note says either to <b>Disable</b> the app instead, or, when the device reports it, that a device policy or a user restriction blocks removing apps, which cannot be changed from here. The question before <b>Uninstall</b> is the same as before. In a batch, each system app of this kind gets the helper sent, run and removed in turn, so a long list takes longer. A removed system app can be brought back with <b>Reinstall</b>.</p>
+  <div class="hg-note"><b>Reinstall is for system apps.</b> A system app is only hidden by <b>Uninstall</b>, because its file lives in the part of the device you cannot erase, so <b>Reinstall</b> works for it. An app that a person installed is normally removed completely: it disappears from the list after a <b>Reload</b>, and <b>Reinstall</b> cannot bring it back. Until you press <b>Reload</b>, its row may still show <b>UNINSTALLED</b> and a <b>Reinstall</b> button, and tapping it will most likely fail. To get it back, send its APK again with the <a href="#devices-send">Send</a> sub-tab.</div>
+  <div class="hg-note"><b>Tip.</b> <b>Disable</b> first. A disabled app does nothing and shows no icon, but all its data is kept. Live with it for a few days. If nothing breaks, you can <b>Uninstall</b>. If something does, <b>Enable</b> undoes it in one tap.</div>
+
+  <h4>Pull APK: copy an app to this phone</h4>
+  <ol class="hg-steps">
+    <li>Tap the three dots of an installed app, then <b>Pull APK</b>.</li>
+    <li>A message says <b>Pulling 1 file...</b> (or more, when the app has split files, see <a href="#installer-splits">Split APKs</a>).</li>
+    <li>When it finishes you read <b>Saved to Download/ADB App Manager/Devices/</b> followed by the device's folder.</li>
+  </ol>
+  <p>The files go to the <code>Download/ADB App Manager/Devices/&lt;device&gt;/</code> folder of this phone, where <code>&lt;device&gt;</code> is the device's address with the colon changed to an underscore (for example <code>192.168.1.20_5555</code>). The main file is named <code>PACKAGE.apk</code>. Each split file is named <code>PACKAGE_</code> and then its own file name. You can find the folder with the <a href="#tab-files">File Manager</a>. If the message says the folder could not be made, the app has no permission to write there: see <a href="#app-permissions">App permissions</a>.</p>
+
+  <h4>When the device refuses</h4>
+  <p>Some apps are protected. The device may answer with words such as <b>Failure</b>, <b>Permission Denial</b>, <b>Operation not allowed</b> or <b>Shell cannot change component state</b>. The sheet <b>That did not work</b> shows that answer. This is the device saying no, not a fault of the app. What you can do:</p>
+  <ul>
+    <li>Leave that app alone. It is protected on purpose, often because the device needs it to run.</li>
+    <li>Try <b>Force stop</b> instead, which is allowed for most apps.</li>
+    <li>If a system app will not uninstall, the app has already tried its second way (the helper, described above) before the sheet opened. <b>Disable</b> the app instead: it stops running and is hidden, and <b>Enable</b> brings it back.</li>
+    <li>For a batch, the others still went through. Select just the failed ones if you want to try again.</li>
+    <li>If an app you disabled makes the device behave oddly, tap <b>Enable</b> on it. Use the <b>Disabled</b> filter to find it.</li>
+  </ul>
+  <div class="hg-danger"><b>Risky.</b> Uninstalling or disabling a system app can leave a watch stuck on a boot screen or without its watch face. Before you remove anything, make sure you can undo it: <b>Disable</b> can be undone with <b>Enable</b>, and an uninstalled system app can come back with <b>Reinstall</b>. If a watch no longer starts properly, a factory reset (done on the device) is the last resort and wipes it.</div>
+</section>
+
+<section id="devices-send" data-title="Sending apps to the device" data-group="The tabs">
+  <p class="hg-lead">The <b>Send</b> sub-tab installs apps on the other device. You can choose package files stored on this phone, or send an app that this phone already has. It goes over the same connection the device uses now: Wi-Fi, USB or the Bluetooth link.</p>
+  <p><b>Where to find it:</b> <a href="#tab-devices">Connected Devices</a>, sub-tab <b>Send</b> (the second one).</p>
+
+  <h4>Before you start</h4>
+  <ul>
+    <li>The device must show <b>Connected</b>. Otherwise tapping <b>Send to device</b> says <b>Choose a connected device first</b>.</li>
+    <li>Have the files ready on this phone. The app accepts <b>APK</b>, <b>APKS</b>, <b>APKM</b> and <b>XAPK</b> files (and a ZIP that holds APKs). If you do not know the difference, read <a href="#installer-splits">Split APKs and bundles</a>.</li>
+    <li>For a watch, use an app made for Wear OS. A phone app may install but not be usable on a round, small screen.</li>
+  </ul>
+  <div class="hg-warn"><b>Careful.</b> Install only files you trust. An app sent to a watch runs with the same powers as one installed any other way. The device may also refuse an app that is meant for a newer Android than it has.</div>
+
+  <h4>Step by step</h4>
+  <ol class="hg-steps">
+    <li>Open the <b>Send</b> sub-tab. The card <b>Send apps to this device</b> says <b>Nothing chosen yet.</b></li>
+    <li>Tap <b>Choose package files</b>. Android's file chooser opens. Pick one or more files and confirm. The files are copied into the app first, so a big file takes a moment.</li>
+    <li>Or tap <b>From this phone</b> to send an app that this phone already has (see below).</li>
+    <li>The chosen items appear as rows, each with a name and a grey line, and a cross to remove it. <b>Clear list</b> removes them all.</li>
+    <li>Set the four switches, if you need to (below).</li>
+    <li>Tap <b>Send to device</b>. A bar and a line show how far it is: for example <b>1 of 3 &middot; face.apk &middot; Installing 2 files</b>.</li>
+    <li>When it ends each row says <b>Installed</b> in green, or shows the end of the device's error in red. A line says <b>2 of 3 packages installed</b> and a message says <b>Sent to the device</b> or <b>Some packages did not install</b>.</li>
+  </ol>
+
+  <h4>What the chosen items look like</h4>
+  <table class="hg-table">
+    <thead><tr><th>You chose</th><th>The row says</th><th>What happens</th></tr></thead>
+    <tbody>
+      <tr><td>One <b>.apk</b></td><td>APK and its size</td><td>Installed as one app.</td></tr>
+      <tr><td>Several <b>.apk</b> files where one is named base.apk or the names contain split or config</td><td>Split APK, with the number of files</td><td>Treated as one app made of parts and installed together.</td></tr>
+      <tr><td>Several unrelated <b>.apk</b> files</td><td>One row each</td><td>Installed one after the other.</td></tr>
+      <tr><td><b>.apks</b>, <b>.apkm</b>, <b>.xapk</b> or <b>.zip</b></td><td>Package file and its size</td><td>Opened by the app; only the parts the device needs are installed (see below).</td></tr>
+      <tr><td>Anything else</td><td>A message "not an APK, APKS, APKM or XAPK file"</td><td>Not added.</td></tr>
+    </tbody>
+  </table>
+
+  <h4>From this phone</h4>
+  <ol class="hg-steps">
+    <li>Tap <b>From this phone</b>. A sheet opens: <b>Apps on this phone</b>, "Choose the ones to send to the device".</li>
+    <li>Use the search box and the filters <b>3rd Party</b>, <b>System</b> and <b>All</b>. Tap rows to tick them. Only the first 300 are drawn: search to find the rest.</li>
+    <li>Tap <b>Add to the list</b> (it says <b>Add 2 to the list</b> when two are ticked). With nothing ticked you read <b>Tick the apps to send</b>.</li>
+    <li>Each app becomes a row that says <b>From this phone</b> and the number of files. An app that this phone keeps in several parts ("splits", see <a href="#installer-splits">Split APKs</a>) says <b>(splits made for this phone, they may not fit the device)</b>.</li>
+  </ol>
+  <p>The app sends exactly the files this phone has for that app. It does not trim them, so an app that this phone keeps in parts for its own processor and screen may not fit a watch. If the install fails, get the app as an APK or bundle made for the device and use <b>Choose package files</b> instead.</p>
+
+  <h4>The four switches</h4>
+  <table class="hg-table">
+    <thead><tr><th>Switch</th><th>Default</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><b>Replace an app that is already there</b></td><td>On</td><td>Installs over an existing copy and keeps its data (adb install -r). Turn it off only if you want the install to fail when the app is already there.</td></tr>
+      <tr><td><b>Allow an older version</b></td><td>Off</td><td>Lets you install a version older than the one on the device (adb install -d). Needed when the device says the version is a downgrade.</td></tr>
+      <tr><td><b>Grant every permission</b></td><td>Off</td><td>Gives the app all the permissions it asks for at install time (adb install -g), so it will not ask later. Use it only for apps you trust.</td></tr>
+      <tr><td><b>Allow test apps</b></td><td>Off</td><td>Lets you install an app that its developer marked as a test build (adb install -t).</td></tr>
+    </tbody>
+  </table>
+  <p>The switches apply to the whole list in one go.</p>
+
+  <h4>Progress, Stop and the results</h4>
+  <ul>
+    <li>While sending, <b>Send to device</b> is replaced by <b>Stop</b>, the crosses on the rows are greyed and the bar creeps along. If you press the phone's Back button until the app is about to close, it asks before leaving.</li>
+    <li><b>Stop</b> ends the adb step that is running. The line says <b>Stopping...</b>. The item that was running fails (its row shows <b>Failed</b>, or whatever adb had printed so far), and every item after it fails with <b>Error: stopped</b>. Items that already said <b>Installed</b> stay installed.</li>
+    <li>An install may take up to 10 minutes per item before it is cut off; copying one game data file may take up to an hour.</li>
+    <li>The result stays on the rows until you send again, remove a row or clear the list. Rows are not removed by themselves, so you can read the errors.</li>
+  </ul>
+  <p>Messages you may see in a red row (they are Android's own words):</p>
+  <table class="hg-table">
+    <thead><tr><th>Message contains</th><th>It usually means</th><th>What to try</th></tr></thead>
+    <tbody>
+      <tr><td>INSTALL_FAILED_OLDER_SDK</td><td>The app needs a newer Android than the device has.</td><td>Find an older version of the app.</td></tr>
+      <tr><td>INSTALL_FAILED_VERSION_DOWNGRADE</td><td>The device has a newer version.</td><td>Turn on <b>Allow an older version</b>.</td></tr>
+      <tr><td>INSTALL_FAILED_ALREADY_EXISTS</td><td>The app is there and replacing is off.</td><td>Turn on <b>Replace an app that is already there</b>.</td></tr>
+      <tr><td>INSTALL_FAILED_UPDATE_INCOMPATIBLE</td><td>The one on the device was signed by someone else.</td><td>Uninstall the old one on the device first. Its data is lost.</td></tr>
+      <tr><td>INSTALL_FAILED_NO_MATCHING_ABIS</td><td>The app has no code for the device's processor.</td><td>Get a build for the right processor.</td></tr>
+      <tr><td>INSTALL_FAILED_INSUFFICIENT_STORAGE</td><td>The device is full.</td><td>Free some space on it.</td></tr>
+    </tbody>
+  </table>
+
+  <h4>How bundles are trimmed to the device</h4>
+  <p>An APKS, APKM, XAPK or ZIP bundle can hold a base app and dozens of "config" parts: one for each processor type, each screen density and each language. A watch needs only a few. When you send a bundle, the app asks the device what it has and keeps:</p>
+  <ul>
+    <li>the base app and any feature parts, always;</li>
+    <li>of the processor parts, the first one that matches the device's processor list (best first); if none matches, all of them stay, because it is better big than broken;</li>
+    <li>of the density parts, the nearest one to the device's current density (the larger one on a tie); if the density is unknown, all stay;</li>
+    <li>of the language parts, the device's own language and English.</li>
+  </ul>
+  <p>The device's language, density and processors are read when you pick the device. If you changed the density on the <a href="#devices-display">Display</a> sub-tab, the new value is the one used. The row for such a bundle says <b>Reading the package file</b> while it is being opened, then <b>Installing 3 files</b> (the count after trimming).</p>
+  <h5>Game data (OBB) in an XAPK</h5>
+  <p>An XAPK can carry extra files for a game or app, stored under <code>Android/obb/</code> or <code>Android/data/</code>. After the app has installed successfully, the app copies these files into the device's <code>/sdcard/Android/...</code> folders, one by one, and the line says <b>Copying</b> and the file's name. If copying fails, the row is marked as failed even though the app itself is installed.</p>
+
+  <h4>Send with Bluetooth</h4>
+  <p>The second card, <b>Send with Bluetooth</b>, is a different route that does not use ADB. It hands the queued files to Android's own Bluetooth sharing.</p>
+  <table class="hg-table">
+    <thead><tr><th>Button</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><b>Show paired devices</b></td><td>Lists the Bluetooth devices this phone is paired with, each marked <b>watch or wearable</b>, phone, computer, audio or other. On Android 12 or newer it first asks for the Bluetooth permission: allow it and tap the button again. It also tells you if the phone has no Bluetooth, if Bluetooth is off, or if nothing is paired.</td></tr>
+      <tr><td><b>Send queued files</b></td><td>Opens Android's Bluetooth sharing (or its share sheet) with the files of the list. You pick the paired device there. It says <b>Choose something to send first</b> if the list is empty.</td></tr>
+      <tr><td><b>Bluetooth link</b></td><td>Opens the Add device sheet on its Bluetooth tab (see <a href="#devices-add">Adding a device</a>).</td></tr>
+    </tbody>
+  </table>
+  <div class="hg-warn"><b>Careful.</b> Most watches, Wear OS included, cannot receive files this way. Android's Bluetooth sharing will start, but the watch will not accept an APK. For a Wear OS watch, use the Bluetooth link under Add device (or Wi-Fi) and send over ADB with <b>Send to device</b>. The Bluetooth card is meant for devices that do accept shared files, such as another phone or a tablet.</div>
+
+  <h4>If it does not work</h4>
+  <ul>
+    <li><b>Choose a connected device first:</b> the card shows <b>Not allowed yet</b> or <b>offline</b>. Fix that first.</li>
+    <li><b>A red row with a long message:</b> read its last lines, then use the table above.</li>
+    <li><b>The whole list failed at once:</b> the connection dropped. Check that the device is still <b>Connected</b>, then send again. Rows that said <b>Installed</b> are not undone.</li>
+    <li><b>Nothing happens after Send to device:</b> a watch with its screen off may be slow to answer. Wake it and wait.</li>
+  </ul>
+</section>
+<section id="devices-console" data-title="The device console" data-group="The tabs">
+  <p class="hg-lead">The <b>Console</b> sub-tab is a small command line for the other device. You type a command, press <b>Run</b>, and the answer appears on a black screen. It also lets you give commands to adb itself, for example to copy a file between the device and this phone.</p>
+  <p><b>Where to find it:</b> <a href="#tab-devices">Connected Devices</a>, sub-tab <b>Console</b> (the third one). It is the device's counterpart of the <a href="#tab-terminal">Command-Line Interface</a> tab, which runs commands on this phone.</p>
+
+  <h4>Before you start</h4>
+  <ul>
+    <li>The device must show <b>Connected</b>. If it does not, Run says <b>Choose a connected device first</b>.</li>
+    <li>Commands run as the device's "shell" user (the one adb uses). That is not root: it can do a lot, but not everything.</li>
+    <li>You do not need to know commands. The row of chips under the input fills in ready-made ones (see below).</li>
+  </ul>
+  <div class="hg-danger"><b>Risky.</b> A command is carried out at once, on the real device, and there is no undo. Commands such as <code>rm</code> (delete files), <code>pm clear</code> (erase an app's data), <code>settings put</code> (change a setting) and <code>reboot</code> do exactly what they say. Copy only commands you understand. If you are not sure what one does, look it up first, or use the buttons in the other sub-tabs, which ask before they do anything risky.</div>
+
+  <h4>What is on the screen</h4>
+  <table class="hg-table">
+    <thead><tr><th>Part</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td>Title <b>ADB console</b> with <b>Copy</b>, <b>Share</b>, <b>Clear</b></td><td><b>Copy</b> copies the whole session (every command and its answer) to the clipboard. <b>Share</b> sends it as a text file named device_console.txt through Android's share sheet. <b>Clear</b> wipes the screen but not the history of commands. With nothing on the screen, Copy and Share say <b>Nothing to copy</b> or <b>Nothing to share</b>.</td></tr>
+      <tr><td>The black screen</td><td>Your commands in blue, the answers in white, errors in red. While a command is running it says <b>running ...</b>. The last 60 commands are kept on the screen. You can select text on it.</td></tr>
+      <tr><td>The mode button, <b>$</b> or <b>adb</b></td><td>Chooses where your lines go (see next section). Tap to switch.</td></tr>
+      <tr><td>The input box</td><td>Type a command. The <b>Enter</b> key of a keyboard runs it; <b>Shift</b> and <b>Enter</b> start a new line.</td></tr>
+      <tr><td><b>Run</b> / <b>Stop</b></td><td>While a command runs, the button turns red and says <b>Stop</b>. Tap it to end the command.</td></tr>
+      <tr><td><b>Previous</b> / <b>Next</b></td><td>Step back and forward through the lines you ran before (the last 100, kept even after you close the app). The up and down arrow keys of a keyboard do the same.</td></tr>
+      <tr><td>The suggestion line</td><td>Just above the input box a grey line completes what you are typing: first from your earlier lines, then, in the shell, from common commands and (after <code>pm path</code>, <code>am force-stop</code> and the like) from the package names that this device's <b>Apps</b> sub-tab has read; in adb mode, or after <code>adb </code>, from adb's own commands (<code>pull</code>, <code>push</code>, <code>install</code>, <code>uninstall</code>, <code>logcat</code>, <code>forward</code> ...) and, after <code>shell</code>, the device's shell. <b>Right arrow</b> (cursor at the end) accepts it; so does a tap on the line. It never runs anything.</td></tr>
+      <tr><td>The chips</td><td>A row of ready-made commands. Tapping one types it into the input box and puts the cursor there. It does <b>not</b> run it: you check it, then tap <b>Run</b>.</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Two kinds of line: for the device, and for adb</h4>
+  <p>A line is sent in one of two ways.</p>
+  <ul>
+    <li><b>Mode <code>$</code> (the default).</b> The line is run in the device's own shell, as if you were typing on the device. Pipes (the vertical bar), quotes and searches work the way the device understands them, for example <code>ps -A | head -25</code>.</li>
+    <li><b>A line that starts with <code>adb </code>.</b> In <code>$</code> mode, if the line begins with the word <code>adb</code> and a space, the rest goes to adb itself, not into the device's shell. This is how you copy files: <code>adb pull</code>, <code>adb push</code>, <code>adb forward</code>.</li>
+    <li><b>Mode <code>adb</code>.</b> Tap the <b>$</b> button and it turns into <b>adb</b>. Now every line goes to adb itself, and the hint in the box becomes <code>pull /sdcard/Download/a.txt /sdcard/</code>. You do not need to type the word adb in this mode; if you do, the app drops it. A command for the device's own shell then needs the word <code>shell</code> in front, for example <code>shell ls /sdcard</code>. Tap the button again to go back to <code>$</code>.</li>
+  </ul>
+  <p>For adb lines the app adds the chosen device for you (<code>adb -s THE-DEVICE ...</code>). A few commands do not belong to one device and run without it: <code>devices</code>, <code>connect</code>, <code>disconnect</code>, <code>pair</code>, <code>mdns</code>, <code>version</code>, <code>help</code>, <code>reconnect</code> and <code>keys</code>. So does a line that starts with <code>-s</code> and a device name: you chose the device yourself. Quotes in an adb line are understood, so a name with spaces can be wrapped in quotes.</p>
+
+  <h4>Which adb commands are blocked, and why</h4>
+  <p>This app uses a single adb server (the background program that carries every adb connection) for everything it does: this tab, the Working modes, installs and the rest. If you stopped or restarted that server, every connection would drop at once, including the app's own working mode. So an adb line (one that starts with <code>adb</code>, or any line in adb mode) is not sent when:</p>
+  <ul>
+    <li>it has <code>kill-server</code>, <code>start-server</code>, <code>server</code> or <code>nodaemon</code> anywhere before the word <code>shell</code> (they stop, start or change the server; what comes after <code>shell</code> is for the device and is not checked);</li>
+    <li>its first word starts with <code>-P</code>, <code>-L</code> or <code>-H</code> (they point adb at a different server).</li>
+  </ul>
+  <p>Instead of running it, the console prints <b>That one would stop the adb this app runs on, so it is not sent.</b> in red. Nothing happened on the device. If you really need to restart the connection to one device, use <b>Reconnect</b> (shown under the card when a device is offline) or <b>Disconnect</b> in the device menu, then connect again.</p>
+
+  <h4>Step by step: your first command</h4>
+  <ol class="hg-steps">
+    <li>Open the <b>Console</b> sub-tab. The screen says <b>Type a command for the device and press Run.</b></li>
+    <li>Tap the chip <code>getprop ro.product.model</code>. It appears in the box.</li>
+    <li>Tap <b>Run</b>. The screen shows <code>$ getprop ro.product.model</code> in blue, then the device's model name, for example <code>SM-R930</code>.</li>
+    <li>Tap <b>Previous</b> to bring the line back, or <b>Copy</b> to keep the session.</li>
+  </ol>
+
+  <h4>Examples to try</h4>
+  <table class="hg-table">
+    <thead><tr><th>Type</th><th>What it does</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><code>getprop ro.product.model</code></td><td>Prints the device's model.</td><td>Harmless.</td></tr>
+      <tr><td><code>pm list packages -3</code></td><td>Lists the apps a person installed.</td><td>One line per app, each starting with package:.</td></tr>
+      <tr><td><code>dumpsys battery</code></td><td>Shows the battery level, charging state and temperature.</td><td>Harmless.</td></tr>
+      <tr><td><code>input keyevent 26</code></td><td>Presses the power key: the screen turns off, or on.</td><td>Handy to wake a sleeping watch. <code>input keyevent 3</code> is Home and <code>4</code> is Back.</td></tr>
+      <tr><td><code>wm size</code> and <code>wm density</code></td><td>Print the screen size and density.</td><td>See <a href="#devices-display">Screen density and size</a>.</td></tr>
+      <tr><td><code>screencap -p /sdcard/screen.png</code></td><td>Takes a screenshot and saves it on the device.</td><td>Then pull it from the <a href="#devices-files">Files</a> sub-tab.</td></tr>
+      <tr><td><code>adb pull /sdcard/Download/a.txt /sdcard/Download/</code></td><td>Copies a file from the device to this phone.</td><td>The second path is on this phone and must be a place the app may write. The Files sub-tab is easier and uses a fixed folder.</td></tr>
+      <tr><td><code>adb push /sdcard/Download/a.txt /sdcard/</code></td><td>Copies a file from this phone to the device.</td><td>The first path is on this phone.</td></tr>
+      <tr><td><code>adb forward tcp:8080 tcp:8080</code></td><td>Passes a network port on this phone to the same port on the device.</td><td>For developers.</td></tr>
+      <tr><td><code>adb devices -l</code></td><td>Lists every device adb knows, with details.</td><td>Runs without choosing a device.</td></tr>
+      <tr><td><code>wm density reset</code></td><td>Puts the screen density back to the device's own.</td><td>The rescue command from the Display sub-tab.</td></tr>
+    </tbody>
+  </table>
+  <p>The built-in chips are: <code>getprop ro.product.model</code>, <code>pm list packages -3</code>, <code>dumpsys battery</code>, <code>dumpsys activity activities | grep mResumedActivity</code> (which app is in front), <code>df -h /data</code> (free space), <code>ps -A | head -25</code> (what is running), <code>wm size</code>, <code>wm density</code>, <code>settings list global</code>, <code>ip addr show wlan0</code> (the Wi-Fi address), <code>cat /proc/meminfo | head -6</code> (memory), <code>logcat -d -t 40</code> (the last 40 log lines), <code>input keyevent 26</code>, <code>adb devices -l</code> and <code>adb pull /sdcard/Download/</code> (an unfinished pull: add the file name and a destination).</p>
+
+  <h4>What the output looks like</h4>
+  <p>Plain text, exactly as the device prints it. A command that prints nothing, such as one that worked silently, shows nothing under it. If the output starts with <b>Error:</b>, or adb complains in its own way (output that starts with <b>adb:</b> or <b>error:</b>), the answer is drawn in red. Output longer than 60,000 characters is cut, and the screen says <b>... (the rest is cut)</b>.</p>
+
+  <h4>Time limits and commands that never end</h4>
+  <ul>
+    <li>A device command may run for up to <b>2 minutes</b>. An adb line (a pull or a push of a big file) may run for up to <b>10 minutes</b>. After that adb is stopped and the answer ends with <b>[Process timed out after ...ms]</b>.</li>
+    <li>Some commands never finish by themselves: <code>logcat</code> without <code>-d</code>, <code>top</code> without <code>-n 1</code>, <code>adb logcat</code>, <code>ping</code> without a count. Tap <b>Stop</b> to end them. Use the chips' forms, which end by themselves.</li>
+    <li>The console has no keyboard link to the device, so programs that wait for you to type (an editor, a login, <code>su</code>) cannot be used.</li>
+    <li>While a command runs, pressing Back until the app is about to close asks first, because closing the app would cut the command short.</li>
+  </ul>
+
+  <h4>If it does not work</h4>
+  <ul>
+    <li><b>Nothing happens on Run:</b> a line that is empty is ignored.</li>
+    <li><b>"Permission denied" or "not found":</b> the shell user may not be allowed that command, or the device lacks it. Not every command exists on a watch.</li>
+    <li><b>Red error that starts with adb's own words:</b> read it. A typo in an adb word gives an answer such as <b>adb: unknown command</b>.</li>
+    <li><b>adb says "unknown command" for something that works in the device's shell (such as <code>ls</code>):</b> you are in adb mode, where every line goes to adb itself. Put <code>shell</code> in front, or tap the button to go back to <code>$</code>.</li>
+  </ul>
+</section>
+
+<section id="devices-logcat" data-title="The device's log" data-group="The tabs">
+  <p class="hg-lead">The <b>Logcat</b> sub-tab reads the other device's own log: the running diary in which Android and every app write what they do, including why something failed. It is the quickest way to see why an app crashes on a watch.</p>
+  <p><b>Where to find it:</b> <a href="#tab-devices">Connected Devices</a>, sub-tab <b>Logcat</b> (the fourth one). It looks and works like the <a href="#tab-logcat">Logcat Viewer</a> tab, which reads this phone's log. Opening the sub-tab reads the log once by itself.</p>
+
+  <h4>Before you start</h4>
+  <ul>
+    <li>The device must show <b>Connected</b>.</li>
+    <li>A device's log is a short, circular buffer: when it is full, the oldest lines are overwritten. Old problems may already be gone.</li>
+  </ul>
+
+  <h4>The controls</h4>
+  <table class="hg-table">
+    <thead><tr><th>Control</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td>Level (drop-down)</td><td>How serious a line has to be to show. Choices: <b>Verbose</b>, <b>Debug</b>, <b>Info</b> (the default), <b>Warn</b>, <b>Error</b>, <b>Fatal</b>. A level shows itself and everything more serious: <b>Info</b> shows Info, Warn, Error and Fatal; <b>Error</b> shows Error and Fatal. Changing it reads the log again.</td></tr>
+      <tr><td>Number of lines (drop-down)</td><td>How many of the most recent lines to read: <b>200</b>, <b>500</b> (the default) or <b>1000</b>. Changing it reads again.</td></tr>
+      <tr><td><b>filter text / tag</b> box</td><td>Shows only the entries that contain what you type, in the tag or in the message. Capitals do not matter and the text is taken as it is (no special codes). Every match is highlighted. It works at once on what is already loaded and does not read the device again.</td></tr>
+      <tr><td><b>Play</b> (green)</td><td>Follows the log live. It reads once now, then again every 2.5 seconds, and the button turns orange and says <b>Pause</b>. Each live read asks for at most 300 lines. Tap <b>Pause</b> to stop.</td></tr>
+      <tr><td><b>Refresh</b></td><td>Reads the log once, now.</td></tr>
+      <tr><td><b>Clear</b></td><td>Empties the device's log buffer (the command <code>logcat -c</code>) and the screen, and says <b>Log cleared on the device.</b> The old lines cannot be brought back.</td></tr>
+      <tr><td><b>Copy</b></td><td>Copies everything that was read to the clipboard as plain text. That includes entries the filter box hides or the 700-row limit leaves off the screen.</td></tr>
+      <tr><td><b>Share</b></td><td>Sends the same text as a file named device_logcat.txt through Android's share sheet.</td></tr>
+    </tbody>
+  </table>
+  <div class="hg-note"><b>Tip.</b> Live reading keeps the watch's Wi-Fi busy and uses its battery. Pause when you have what you need. Playing stops by itself when you leave the Logcat sub-tab or the Connected Devices tab.</div>
+
+  <h4>How the rows are drawn</h4>
+  <p>Exactly like in the Logcat Viewer tab. Each entry is one row:</p>
+  <ul>
+    <li>A small coloured badge at the left with the level letter: <b>V</b>, <b>D</b>, <b>I</b>, <b>W</b>, <b>E</b> or <b>F</b>. The row has a coloured stripe on its left in the same colour.</li>
+    <li>The <b>tag</b> in bold: the part of the system or the app that wrote the line.</li>
+    <li>The time, and two numbers such as <b>1234/1256</b>: the process and the thread that wrote it.</li>
+    <li>The message below, in the colour of its level. Several lines that belong to one log call, such as the lines of a crash report, are joined into one row.</li>
+    <li>Warnings have an amber background, errors a red one and fatal lines a purple one, and error text is bold.</li>
+  </ul>
+  <p>At most 700 rows are drawn. If there are more, the first line of the list says how many earlier entries are not shown; use a higher level or the filter box to narrow it. If you were at the bottom of the list, it follows new lines. If you scrolled up to read, it leaves you where you are. Unlike the Logcat Viewer tab, this one has no per-app picker, no colour-key buttons to hide a level, no <b>Save</b> button and no 2000-line choice.</p>
+
+  <h4>Reading a crash on a watch</h4>
+  <ol class="hg-steps">
+    <li>Set the level to <b>Error</b> and the number of lines to <b>1000</b>.</li>
+    <li>Tap <b>Clear</b>, so only fresh lines show.</li>
+    <li>Make the app crash on the watch (open it again).</li>
+    <li>Tap <b>Refresh</b>. You see a few red rows.</li>
+    <li>Look for a row with the tag <b>AndroidRuntime</b> whose message starts with <b>FATAL EXCEPTION</b>. The lines joined under it are the crash report: a line with <b>Process:</b> and the package name, then the name of the problem (for example <code>java.lang.NullPointerException</code>) and a list of lines that start with <code>at</code>. A line starting with <b>Caused by</b> is usually the real reason.</li>
+    <li>Type the app's package name in the filter box to cut the noise. A crash in native code looks different: search for <b>Fatal signal</b>.</li>
+    <li>Tap <b>Copy</b> or <b>Share</b> to send the text to the app's developer.</li>
+  </ol>
+
+  <h4>If it does not work</h4>
+  <ul>
+    <li><b>The area shows adb's complaint instead of rows:</b> the device dropped or went offline. The live reading stops by itself. Fix the connection (see <a href="#tab-devices">Connected Devices</a>) and tap <b>Refresh</b>.</li>
+    <li><b>No log lines:</b> the level is too high, or you just tapped <b>Clear</b>. Lower the level or wait.</li>
+    <li><b>Nothing matches the filter:</b> the word is not in the lines that were read. Raise the number of lines or lower the level.</li>
+  </ul>
+</section>
+
+<section id="devices-files" data-title="The device's files" data-group="The tabs">
+  <p class="hg-lead">The <b>Files</b> sub-tab is a small file manager for the other device. You can look through its folders, read a text file, copy files to it and from it, make folders, rename and delete.</p>
+  <p><b>Where to find it:</b> <a href="#tab-devices">Connected Devices</a>, sub-tab <b>Files</b> (the fifth one). It opens on the device's shared storage. For this phone's own files see the <a href="#tab-files">File Manager</a>.</p>
+
+  <h4>Before you start</h4>
+  <ul>
+    <li>The device must show <b>Connected</b>.</li>
+    <li>Everything is done as the device's shell user (see <a href="#devices-console">The device console</a>). That user can read and write shared storage, but not the private data of other apps.</li>
+    <li>Pulled files are saved on this phone, so the app needs permission to write there (see <a href="#app-permissions">App permissions</a>).</li>
+  </ul>
+  <div class="hg-danger"><b>Risky.</b> <b>Delete</b> removes the file or folder from the device for good. There is no bin and no undo. Deleting a folder removes everything inside it. Do not delete things in system folders unless you know what they are.</div>
+
+  <h4>The screen</h4>
+  <table class="hg-table">
+    <thead><tr><th>Part</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><b>Up</b> and the path box</td><td>The box shows the folder you are in, for example <code>/sdcard</code>. <b>Up</b> goes to the folder above it. At the very top (<code>/</code>) it stays.</td></tr>
+      <tr><td>The place chips</td><td>Jump to a well-known folder: <b>Storage</b> (<code>/sdcard</code>), <b>Download</b> (<code>/sdcard/Download</code>), <b>Temp</b> (<code>/data/local/tmp</code>, a folder adb can normally write to, handy for scratch files), <b>All storage</b> (<code>/storage</code>), <b>System</b> (<code>/system</code>) and <b>Root</b> (<code>/</code>).</td></tr>
+      <tr><td><b>Refresh</b></td><td>Reads the folder again.</td></tr>
+      <tr><td><b>Send a file here</b></td><td>Copies files from this phone into the open folder (a push). See below.</td></tr>
+      <tr><td><b>New folder</b></td><td>Makes a folder inside the open one. It asks for a name; the name cannot contain a slash. A message says <b>Folder made</b>.</td></tr>
+      <tr><td><b>Go to...</b></td><td>Asks for a full path, such as <code>/sdcard/Download</code>, with the current path filled in. Tap <b>Go</b>.</td></tr>
+      <tr><td>The list</td><td>Folders (and links) first, then files, each sorted by name. A line above says <b>12 items</b>. Each row has a small label (<b>DIR</b>, <b>FILE</b> or <b>LNK</b> for a link), the name, the permissions and, for a file, its size. A link shows an arrow and where it points. An empty folder says <b>This folder is empty.</b></td></tr>
+    </tbody>
+  </table>
+
+  <h4>Tapping a row</h4>
+  <p>Tap a <b>folder</b> and it opens. Tap a <b>file</b> and its menu opens. Tap a <b>link</b> and the app first checks what it points to: a folder opens, anything else gets the menu. The three dots at the right of a row open the same menu.</p>
+  <table class="hg-table">
+    <thead><tr><th>Menu button</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><b>Open</b> (folders)</td><td>Opens the folder.</td></tr>
+      <tr><td><b>View as text</b> (files)</td><td>Shows the start of the file as text in a box. See the limits below.</td></tr>
+      <tr><td><b>Pull to this phone</b> (or <b>Pull folder to this phone</b>)</td><td>Copies it from the device to this phone. See below.</td></tr>
+      <tr><td><b>Rename</b></td><td>Asks for a new name (no slash allowed) and renames it on the device.</td></tr>
+      <tr><td><b>Delete</b></td><td>Asks <b>Delete NAME?</b> and then removes it from the device. A folder is removed with everything in it.</td></tr>
+      <tr><td><b>Copy path</b></td><td>Copies the full path of the row to the clipboard.</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Step by step: get a file from the watch to this phone</h4>
+  <ol class="hg-steps">
+    <li>Open <b>Files</b>. The list shows the device's storage.</li>
+    <li>Tap folders until you see the file (for example <b>Download</b>).</li>
+    <li>Tap the file, then <b>Pull to this phone</b>.</li>
+    <li>A message says <b>Pulling NAME...</b>, then <b>Saved to Download/ADB App Manager/Devices/</b> and the device's folder.</li>
+  </ol>
+  <p>Pulled files always go to the <code>Download/ADB App Manager/Devices/&lt;device&gt;/</code> folder of this phone. The folder is named after the device's address with the colon turned into an underscore, such as <code>192.168.1.20_5555</code>. The file keeps its own name. A pull may run for up to an hour. Open the folder with the <a href="#tab-files">File Manager</a>.</p>
+
+  <h4>Step by step: send a file to the device</h4>
+  <ol class="hg-steps">
+    <li>Open the folder where the file should go.</li>
+    <li>Tap <b>Send a file here</b>. Android's file chooser opens. Pick one or more files.</li>
+    <li>For each file a message says <b>Sending NAME...</b>. At the end: <b>2 files sent to /sdcard/Download</b>, or the reason it failed.</li>
+    <li>The list refreshes by itself and shows the new files.</li>
+  </ol>
+
+  <h4>Limits to know</h4>
+  <ul>
+    <li><b>View as text</b> shows only the first 40 KB of a file. If the file is bigger, a note under the box says <b>Showing the first 40 KB.</b></li>
+    <li>A file over 5 MB is not opened at all. The message says <b>A file this large is better pulled to this phone</b>. Use <b>Pull to this phone</b>.</li>
+    <li>If a file looks like something other than text, the box says <b>This looks like a binary file. Pull it to this phone instead.</b></li>
+    <li><code>/data</code> and <code>/system</code> need the device to allow it. On a normal device the shell user cannot read the private data of apps under <code>/data</code>, and cannot change <code>/system</code>. You will see a red message such as <b>Permission denied</b>. Reading parts of <code>/system</code> usually works. Changing anything in it is refused unless the device is rooted or a developer build.</li>
+    <li>A path that does not exist shows a red message such as <b>No such file or directory</b>.</li>
+  </ul>
+  <div class="hg-note"><b>Tip.</b> A screenshot of the watch: run <code>screencap -p /sdcard/screen.png</code> in the <a href="#devices-console">console</a>, then come here, tap <b>Storage</b>, tap <b>screen.png</b> and <b>Pull to this phone</b>. Delete the file from the watch afterwards.</div>
+</section>
+<section id="devices-settings" data-title="The device's hidden settings" data-group="The tabs">
+  <p class="hg-lead">The <b>Hidden Settings</b> sub-tab lets you read and change the other device's system, secure and global settings: the long list of switches and numbers that Android keeps behind its Settings screens. Many things a watch's menus never offer live here.</p>
+  <p><b>Where to find it:</b> <a href="#tab-devices">Connected Devices</a>, sub-tab <b>Hidden Settings</b> (the sixth one).</p>
+
+  <h4>This one edits the other device</h4>
+  <p>The app also has a main <a href="#tab-settings">Hidden Settings</a> tab. That one edits <b>this phone</b>, needs a working mode on this phone, explains many settings in plain words, flips on/off values with a press and hold, and keeps a journal with Undo (see <a href="#settings-journal">the journal</a>). This sub-tab edits the <b>device you picked</b> in Connected Devices, over adb, and it is plainer: a name, a value and, when the app knows the setting, the same description and values as the main tab (also an About box in its editor). It has no one-tap switches and no journal or Undo. Look at the device card before you save anything, so you are sure whose settings these are.</p>
+
+  <h4>Before you start</h4>
+  <ul>
+    <li>The device must show <b>Connected</b>.</li>
+    <li>Know what you want to change. Do not experiment on a device you rely on.</li>
+    <li>The subtitle on the card already says it: <b>A wrong value can make a device misbehave: change one at a time.</b></li>
+  </ul>
+  <div class="hg-danger"><b>Risky.</b> There is no undo here. A wrong value in the <b>secure</b> or <b>global</b> table can turn off the screen, the Wi-Fi, the keyboard or the touch input of a watch, or stop it from starting normally. Before you change a value, tap its key and use <b>Copy value</b> (or write the old value down). That is how you put it back. Change one setting, look at the device, then go on.</div>
+
+  <h4>The three tables</h4>
+  <table class="hg-table">
+    <thead><tr><th>Table</th><th>What lives there (examples)</th></tr></thead>
+    <tbody>
+      <tr><td><b>global</b></td><td>Settings for the whole device, such as airplane mode, animation speeds and developer options.</td></tr>
+      <tr><td><b>secure</b></td><td>Security-related settings of the current user, such as which keyboard is used and which accessibility services run.</td></tr>
+      <tr><td><b>system</b></td><td>Everyday preferences, such as screen brightness and how long the screen stays on.</td></tr>
+    </tbody>
+  </table>
+  <p>Android reads these three lists from three places, so the same name can exist in more than one. Always check which of the three chips is on.</p>
+
+  <h4>The screen</h4>
+  <ul>
+    <li><b>global</b>, <b>secure</b>, <b>system</b>: three chips; the one that is on is the table you see. The first time you open a table, the app reads it from the device ("Reading global settings..."). Each table is read once and kept until you tap <b>Reload</b> or pick another device.</li>
+    <li><b>Search keys and values</b>: type part of a name or a value. The list narrows as you type. The count line says, for example, <b>3 settings match</b>.</li>
+    <li><b>+ New</b>: makes a setting (see below).</li>
+    <li><b>Reload</b>: reads the table again and says how many settings it found.</li>
+    <li>The count line says <b>120 settings in global</b> when nothing is typed in the search box.</li>
+    <li>The list is sorted by key. Each row shows the key in bold and its current value under it in colour. A long value is cut to about three lines in the list; tap it to see all. Only the first 400 rows are drawn: search to find the rest.</li>
+  </ul>
+
+  <h4>Changing a setting: step by step</h4>
+  <ol class="hg-steps">
+    <li>Choose the table (<b>global</b>, <b>secure</b> or <b>system</b>).</li>
+    <li>Type part of the key into the search box, for example <b>animation</b>.</li>
+    <li>Tap the row. A sheet slides up with the key as its title, <b>global setting</b> under it, a box holding the value, and the warning <b>A wrong value can make the device misbehave. Delete takes the setting away so the system falls back to its default.</b></li>
+    <li>First tap <b>Copy value</b> to keep the old value on the clipboard.</li>
+    <li>Change the text in the box and tap <b>Save</b>. The sheet closes, a message says <b>Saved</b> and the key's name, and the list shows the new value.</li>
+  </ol>
+  <table class="hg-table">
+    <thead><tr><th>Button in the sheet</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><b>Save</b></td><td>Writes the value to the device (<code>settings put TABLE KEY VALUE</code>). If the device answers with an error, a sheet <b>That did not work</b> shows its words and nothing is changed in the list.</td></tr>
+      <tr><td><b>Delete</b></td><td>Asks <b>Delete KEY?</b> first, then removes the setting from the device (<code>settings delete</code>). The system then uses its own default for that key, or none.</td></tr>
+      <tr><td><b>Copy value</b></td><td>Copies the value to the clipboard.</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Making a new setting</h4>
+  <ol class="hg-steps">
+    <li>Tap <b>+ New</b>. A box asks for <b>New global setting</b> (or secure, or system, whichever table is on), with two fields: <b>Key</b> and <b>Value</b>.</li>
+    <li>Type both and tap <b>Add</b>. A key can hold only letters, digits and the signs <code>. _ : -</code>; otherwise you read <b>A key holds letters, digits and . _ : -</b>.</li>
+  </ol>
+  <p>Making a key that the system does not know has no effect: the setting is stored, but nothing reads it. It is useful only when you know that some app or part of the system looks for that exact key.</p>
+
+  <h4>Harmless things to start with</h4>
+  <p>These are well-known Android settings. A watch's software may ignore some of them, and the names can differ between makers, so read the key's current value first.</p>
+  <table class="hg-table">
+    <thead><tr><th>Table and key</th><th>What it does</th><th>Normal value</th></tr></thead>
+    <tbody>
+      <tr><td>global, <code>window_animation_scale</code></td><td>How slowly windows animate. Lower is snappier, 0 turns the animation off.</td><td>1.0</td></tr>
+      <tr><td>global, <code>transition_animation_scale</code></td><td>The same for transitions between screens.</td><td>1.0</td></tr>
+      <tr><td>system, <code>screen_off_timeout</code></td><td>How long the screen stays on, in milliseconds (30000 is 30 seconds).</td><td>30000 or 60000</td></tr>
+    </tbody>
+  </table>
+  <p>Searching the <b>global</b> table for <b>adb</b> shows the debugging settings of the device. Read them if you are curious, but do not change them from here: turning off the debugging that this phone uses ends the connection.</p>
+
+  <h4>Putting it back</h4>
+  <ul>
+    <li>A value you changed: tap its row, put the old value back (paste it with a long press in the box), tap <b>Save</b>.</li>
+    <li>A setting you deleted: tap <b>+ New</b>, type the same key and the old value, tap <b>Add</b>. If you did not write it down, many default values come back by themselves when the device restarts, but not all.</li>
+    <li>A setting you made: tap it and use <b>Delete</b>.</li>
+    <li>If the device behaves badly and you cannot tell why, restart it and look at the table again.</li>
+  </ul>
+</section>
+
+<section id="devices-display" data-title="Screen density and size" data-group="The tabs">
+  <p class="hg-lead">The <b>Display</b> sub-tab changes how big everything looks on the other device (its <b>density</b>) and the size of the picture it draws (its <b>screen size</b>). On a watch, a small change in density can fit much more on the screen. Every change undoes itself after 15 seconds unless you tap <b>Keep</b>. That countdown runs inside the app's page, so it may not happen if the app is paused or closed.</p>
+  <p><b>Where to find it:</b> <a href="#tab-devices">Connected Devices</a>, sub-tab <b>Display</b> (the last one).</p>
+
+  <h4>Before you start</h4>
+  <ul>
+    <li>The device must show <b>Connected</b>. If the first line of the <b>Screen density</b> card says <b>Reading the device...</b>, wait a moment: the current values are being read.</li>
+    <li>Have the device in front of you, with its screen on, so you can see the result.</li>
+    <li>Know the way back (see "If the screen becomes unreadable" below).</li>
+  </ul>
+
+  <h4>What density is, and why it matters on a watch</h4>
+  <p>Density is measured in <b>dpi</b> (dots per inch). It is the number Android uses to decide how big to draw buttons, text and pictures. The screen itself has a fixed number of tiny dots. A <b>lower</b> density draws everything smaller, so more fits on the screen. A <b>higher</b> density draws everything larger and fits less.</p>
+  <p>On a small, round watch screen this is a big deal. At the maker's default, text can look huge and a list may show only two rows. Lowering the density by 20 or 40 can show a whole message at once. Raising it makes things easier to read and to tap. The sharpness does not change: only the size of things.</p>
+
+  <h4>The Screen density card</h4>
+  <p>The card has a line that tells you where you are: <b>Now 280 dpi. The device's own is 320.</b>, or <b>Now 320 dpi (the device's own).</b> when you have not changed it.</p>
+  <table class="hg-table">
+    <thead><tr><th>Control</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td>The drop-down list</td><td>Offers every value from 120 to 640 in steps of 5. The device's own value is marked <b>(default)</b> and the one in use now is marked <b>(now)</b>; both are in the list even if they are not a multiple of 5. Picking a value does <b>not</b> apply it.</td></tr>
+      <tr><td><b>&minus;</b> and <b>+</b></td><td>Move the drop-down 5 lower or 5 higher. They do not apply anything either. They work down to 72 and up to 1000.</td></tr>
+      <tr><td><b>Apply selected</b></td><td>Applies the value that is in the drop-down.</td></tr>
+      <tr><td>The box <b>Your own number</b> and <b>Apply number</b></td><td>Type a whole number from 72 to 1000 and tap <b>Apply number</b> (the Enter key does the same). You read <b>Type a whole number, like 280</b> or <b>Use a number from 72 to 1000</b> if it is not accepted. If the number is already in use you read <b>That is the density now</b>. Picking from the drop-down empties this box.</td></tr>
+      <tr><td><b>Reset to default</b></td><td>Puts the device's own density back at once, with no countdown. A message says <b>Density is back to the device's own</b>.</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Step by step: make a watch show more</h4>
+  <ol class="hg-steps">
+    <li>Open <b>Display</b> and read the first line, for example <b>Now 320 dpi (the device's own).</b></li>
+    <li>Tap <b>&minus;</b> several times until the drop-down shows a value about 20 or 40 lower (for example 280 or 240).</li>
+    <li>Tap <b>Apply selected</b>. The device redraws at once: its screen looks different and some apps restart.</li>
+    <li>A yellow banner appears at the top of the sub-tab: <b>The density is now 280 dpi. Keep it? It goes back by itself in 15 s.</b> with two buttons, <b>Keep</b> and <b>Put it back</b>. The number counts down every second.</li>
+    <li>Look at the device. If you like it, tap <b>Keep</b> (a message says <b>Kept</b>). If not, tap <b>Put it back</b>, or do nothing: when the countdown ends the app puts it back by itself and says <b>Put back</b>.</li>
+  </ol>
+  <p>"Back" means the value before this change: your earlier override if you had one, otherwise the device's own. The same safety net works for a change made with <b>Apply number</b> and for a screen size.</p>
+
+  <h4>The Screen size card</h4>
+  <p>The card says <b>The resolution the device draws at, width x height in pixels.</b> and shows the current size: <b>Now 450x450 (the device's own).</b></p>
+  <table class="hg-table">
+    <thead><tr><th>Control</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td>The box (hint <b>450x450</b>)</td><td>Type the width, the letter x and the height, for example <code>400x400</code>. Spaces are ignored. Each number has 3 to 5 digits, or you read <b>Type it like 450x450</b>.</td></tr>
+      <tr><td><b>Apply</b></td><td>Sets that size. The same yellow <b>Keep</b> / <b>Put it back</b> banner appears, with 15 seconds.</td></tr>
+      <tr><td><b>Reset</b></td><td>Puts the device's own size back at once. A message says <b>Screen size is back to the device's own</b>.</td></tr>
+    </tbody>
+  </table>
+  <div class="hg-warn"><b>Careful.</b> Leave the size alone unless you know why you need it. On a round watch a size that is not the real one can leave the picture off-centre or cut off at the edges. Density is the safer change.</div>
+  <div class="hg-danger"><b>Risky.</b> The drop-down goes from 120 to 640, but a typed number may be anything from 72 to 1000. A very low number draws everything so small that you cannot read or touch it; a very high one makes screens overflow. Stay inside the drop-down range. A density or size change normally stays after the device restarts, so do not count on a reboot to fix it.</div>
+
+  <h4>If the screen becomes unreadable</h4>
+  <ol class="hg-steps">
+    <li><b>Wait 15 seconds.</b> The change undoes itself. The banner counts down on this phone.</li>
+    <li>Or tap <b>Put it back</b> in the banner, or <b>Reset to default</b> (or <b>Reset</b> for the size).</li>
+    <li>Or open the <a href="#devices-console">Console</a> and run <code>wm density reset</code> and, if you changed the size, <code>wm size reset</code>. These work as long as the card says <b>Connected</b>, even when you cannot read the device's screen.</li>
+    <li>If the connection is gone, connect again with <b>+ Add device</b> (see <a href="#devices-add">Adding a device</a>) and then use step 3.</li>
+  </ol>
+  <p>The countdown runs in this app, on this phone. If you close the app, or the phone pauses it, or the connection drops during the 15 seconds, the automatic undo may not happen. That is why steps 2 to 4 exist. Switching to another device in the picker does not stop the undo: it still goes to the device that was changed.</p>
+</section>
+
+<section id="devices-wear" data-title="Wear OS, start to finish" data-group="The tabs">
+  <p class="hg-lead">This is a walk through for a Wear OS watch, from nothing to a managed watch: turn on developer mode, connect, then remove an app you never use, install an app, change the screen density, read the log and copy a file to this phone.</p>
+
+  <h4>Before you start</h4>
+  <ul>
+    <li>A Wear OS watch (the examples are written for Wear OS 3 or newer) that is charged. Put it on its charger for this: debugging uses Wi-Fi, which drains the battery.</li>
+    <li>This phone, with this app, on the same Wi-Fi network as the watch. The watch itself must be joined to that Wi-Fi network, not only linked to the phone by Bluetooth.</li>
+    <li>About ten minutes. No working mode is needed on this phone for the Wi-Fi way.</li>
+  </ul>
+  <div class="hg-note"><b>Tip.</b> Menu names on watches vary with the maker and the Wear OS version. If a name below is not exactly what you see, look for the nearest one: the idea is the same.</div>
+
+  <h4>Part 1: turn on developer mode on the watch</h4>
+  <ol class="hg-steps">
+    <li>On the watch, open <b>Settings</b>.</li>
+    <li>On most Wear OS watches go to <b>System</b>, then <b>About</b>, then <b>Versions</b>. On some it is <b>About watch</b> and the build is listed under software details. Where it sits varies, so look in Settings for About or System.</li>
+    <li>Find <b>Build number</b> and tap it <b>7 times</b>. A short message says that developer mode is on.</li>
+    <li>Go back to <b>Settings</b>. A new entry, <b>Developer options</b>, is now there (on many watches inside <b>System</b>).</li>
+  </ol>
+
+  <h4>Part 2: turn on debugging</h4>
+  <ol class="hg-steps">
+    <li>Open <b>Developer options</b>. Turn on <b>ADB debugging</b> and confirm the question.</li>
+    <li>Turn on <b>Debug over Wi-Fi</b>. The watch joins the Wi-Fi network if it has to, then shows an address with a port, such as <b>192.168.1.20:5555</b>. Leave that screen reachable: you need the address.</li>
+    <li>Check that this phone is on the same Wi-Fi network.</li>
+  </ol>
+
+  <h4>Part 3: pair and connect</h4>
+  <ol class="hg-steps">
+    <li>On the watch, under <b>Debug over Wi-Fi</b>, tap <b>Pair new device</b>. The watch shows a 6-digit code and a second address with another port, such as <b>192.168.1.20:37215</b>. Do not close this screen.</li>
+    <li>On this phone open the <b>Connected Devices</b> tab and tap <b>+ Add device</b>. On the <b>Wi-Fi</b> tab type the pairing address in the first box and the code in <b>Pairing code</b>. Tap <b>Pair</b>. You read <b>Successfully paired</b>.</li>
+    <li>Look at the watch's Debug over Wi-Fi address again (the first one, such as 192.168.1.20:5555). Type it into the second box and tap <b>Connect</b>.</li>
+    <li>The sheet closes and the watch appears. If the watch asks <b>Allow debugging?</b>, tap <b>Allow</b> and tick <b>Always allow</b>.</li>
+    <li>The card shows the watch's name, the badges <b>Connected</b>, <b>Wi-Fi</b>, <b>Wear OS</b> and <b>Battery</b>, and the seven sub-tabs.</li>
+  </ol>
+  <p>Instead of typing, you can tap <b>Nearby</b>, then <b>Scan the network</b>: the watch shows up with <b>Pair</b> or <b>Connect</b>. If your watch has no pairing screen (some older ones), skip the pairing part and use <b>Connect</b> only. More about the sheet in <a href="#devices-add">Adding a device</a>.</p>
+
+  <h4>Example 1: remove a preinstalled app you never use</h4>
+  <ol class="hg-steps">
+    <li>Open the <b>Apps</b> sub-tab. The list reads from the watch. Tap <b>3rd Party</b> or <b>System</b> to narrow it, or type a word in the search box.</li>
+    <li>Find the app. If its name means nothing to you, leave it: use <a href="#debloater-safety">Debloater safety</a> as a guide to what is safe.</li>
+    <li>Tap <b>Disable</b> on its row. The row gets the <b>DISABLED</b> badge and the app is hidden from the watch's own app list.</li>
+    <li>Use the watch for a few days. If anything breaks, tap <b>Enable</b>.</li>
+    <li>If nothing broke and you want the space, tap the three dots, then <b>Uninstall</b> and confirm. A system app now shows <b>UNINSTALLED</b>; <b>Reinstall</b> brings it back. If the watch first answers that only root can remove a system app, the app tries a second way by itself (<a href="#devices-apps">Managing the apps of the device</a> explains it).</li>
+  </ol>
+  <div class="hg-danger"><b>Risky.</b> Never remove the watch face, <b>Settings</b>, the Google or Wear OS services, the keyboard or the Bluetooth and phone-pairing apps. A watch that loses these may not work until it is factory reset, which erases it. When unsure, Disable, and only that.</div>
+
+  <h4>Example 2: install an APK on the watch</h4>
+  <ol class="hg-steps">
+    <li>Have an APK built for Wear OS on this phone.</li>
+    <li>Open the <b>Send</b> sub-tab and tap <b>Choose package files</b>. Pick the file.</li>
+    <li>Tap <b>Send to device</b>. The bar moves and the row says <b>Installed</b>.</li>
+    <li>Open the watch's app list. The app is there. If the row is red, read its message and see the table in <a href="#devices-send">Sending apps to the device</a>.</li>
+  </ol>
+
+  <h4>Example 3: change the screen density</h4>
+  <ol class="hg-steps">
+    <li>Open the <b>Display</b> sub-tab.</li>
+    <li>Tap <b>&minus;</b> until the drop-down shows a value 20 to 40 lower than the one marked <b>(default)</b>. Tap <b>Apply selected</b>.</li>
+    <li>Look at the watch. Tap <b>Keep</b> within 15 seconds if you like it, or let it undo itself. Details: <a href="#devices-display">Screen density and size</a>.</li>
+  </ol>
+
+  <h4>Example 4: read a log</h4>
+  <ol class="hg-steps">
+    <li>Open the <b>Logcat</b> sub-tab. Set the level to <b>Error</b>.</li>
+    <li>Tap <b>Clear</b>, make the problem happen on the watch, tap <b>Refresh</b>.</li>
+    <li>Read the red rows, or type the app's package name in the filter box. See <a href="#devices-logcat">The device's log</a>.</li>
+  </ol>
+
+  <h4>Example 5: copy a screenshot or a file to this phone</h4>
+  <ol class="hg-steps">
+    <li>Open the <b>Console</b> sub-tab, tap <b>Run</b> after typing <code>screencap -p /sdcard/screen.png</code>.</li>
+    <li>Open the <b>Files</b> sub-tab. Tap <b>Storage</b>, then <b>screen.png</b>, then <b>Pull to this phone</b>.</li>
+    <li>Look in <b>Download</b>, <b>ADB App Manager</b>, <b>Devices</b>, then the watch's folder on this phone. Any other file works the same way, see <a href="#devices-files">The device's files</a>.</li>
+  </ol>
+
+  <h4>The Bluetooth route, with no Wi-Fi</h4>
+  <p>If the watch cannot use Wi-Fi, you can reach it over its Bluetooth link to this phone. It needs more things in place, and it is the least tested part of this tab.</p>
+  <ol class="hg-steps">
+    <li>On the watch: <b>Settings, Developer options, ADB debugging</b> on, then <b>Debug over Bluetooth</b> on.</li>
+    <li>In the Wear OS app on this phone: <b>Watch settings, Advanced, Debugging over Bluetooth</b> on.</li>
+    <li>In this app, turn on ADB in a Working mode (<a href="#mode-tcp">ADB TCP</a> or <a href="#mode-wireless">Wireless Debugging</a>).</li>
+    <li>In Connected Devices tap <b>+ Add device</b>, open the <b>Bluetooth</b> tab, leave the port at 4444 and tap <b>Connect over Bluetooth</b>. Allow it on the watch if it asks.</li>
+  </ol>
+  <div class="hg-warn"><b>Careful.</b> This depends on the Wear OS companion app. It follows the method that is documented for Wear OS but has not been tried on every watch, so it may not work on yours. If it does not, use Wi-Fi.</div>
+
+  <h4>Troubleshooting</h4>
+  <table class="hg-table">
+    <thead><tr><th>What you see</th><th>Why</th><th>What to do</th></tr></thead>
+    <tbody>
+      <tr><td>Watch not found: the scan finds nothing, or <b>Connection refused</b></td><td>Debug over Wi-Fi is off, the address or port is wrong, or the phone and watch are on different networks.</td><td>Check <b>Debug over Wi-Fi</b> is on and read the address again. Check both are on the same Wi-Fi (not a guest network). Type the address by hand.</td></tr>
+      <tr><td>Pairing fails (<b>Wrong password</b>)</td><td>The code is wrong or the pairing screen closed, so the code expired.</td><td>Open <b>Pair new device</b> again and use the new code and address.</td></tr>
+      <tr><td>Paired, but Connect fails</td><td>You used the pairing address for connecting. They have different ports.</td><td>Use the address on the Debug over Wi-Fi screen.</td></tr>
+      <tr><td><b>Not allowed yet</b></td><td>The watch has not accepted this phone.</td><td>Look at the watch, tap <b>Allow</b>, tick <b>Always allow</b>, then press <b>Refresh</b>. If no question comes, turn Debug over Wi-Fi off and on and connect again.</td></tr>
+      <tr><td><b>offline</b></td><td>The watch stopped answering.</td><td>Tap <b>Reconnect</b> under the card. If that fails, wake the watch, turn Debug over Wi-Fi off and on, and tap <b>Connect</b> again.</td></tr>
+      <tr><td>The connection drops after a while</td><td>Many watches turn Wi-Fi off to save battery, especially when the screen is off.</td><td>Put the watch on its charger, keep its screen on while you work, and if it has a Wi-Fi mode setting, choose one that keeps Wi-Fi on. Then <b>Connect</b> again.</td></tr>
+      <tr><td>The address changed after the watch restarted</td><td>The router gave it a new address, and the port may be new too.</td><td>Read the new address on the watch, or use <b>Nearby</b>. The old one under <b>Recent:</b> will not work.</td></tr>
+      <tr><td>Bluetooth link fails</td><td>Debugging over Bluetooth is off in the Wear OS app or on the watch, this phone has no working ADB mode, or the watch does not support it.</td><td>Check both switches and the Working mode. If it still fails, use Wi-Fi.</td></tr>
+    </tbody>
+  </table>
+  <p>For general problems see <a href="#troubleshooting">Troubleshooting</a>. Everything here can be undone: <b>Enable</b> brings back a disabled app, <b>Reinstall</b> a removed system app, <b>Reset to default</b> the density, and <b>Disconnect</b> ends the connection.</p>
+</section>

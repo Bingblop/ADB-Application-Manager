@@ -1,0 +1,100 @@
+name: Build APK
+
+# Builds and signs the APK on every push and pull request, and uploads it as a downloadable artifact
+# (Actions tab -> a run -> Artifacts).
+#
+# Signing: add these repository secrets (Settings -> Secrets and variables -> Actions) so builds are
+# signed with YOUR key and install as updates over the app on your phone:
+#   KEYSTORE_BASE64    base64 of release.keystore   (Termux: base64 -w0 release.keystore)
+#   KEYSTORE_PASSWORD  keystore + key password      (build.sh default: password)
+#   KEY_ALIAS          optional, defaults to adbmanager
+# Without them the APK is signed with a throwaway key: fine for testing, but it will not install over
+# your existing app.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Check that the Help Guide is built from its fragments
+        run: |
+          node docs/guide/build.js --strict
+          git diff --exit-code -- assets/guide.js || { echo "::error::assets/guide.js is out of date. Run: node docs/guide/build.js, and commit it."; exit 1; }
+
+      - name: Locate Android SDK tools
+        run: |
+          SDK="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
+          PLATFORM=$(ls -d "$SDK"/platforms/android-* | sort -V | tail -1)
+          BUILD_TOOLS=$(ls -d "$SDK"/build-tools/* | sort -V | tail -1)
+          echo "Using $PLATFORM and $BUILD_TOOLS"
+          echo "ANDROID_JAR=$PLATFORM/android.jar" >> "$GITHUB_ENV"
+          echo "$BUILD_TOOLS" >> "$GITHUB_PATH"
+
+      - name: Prepare signing key
+        id: signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+            echo "KEYSTORE=$RUNNER_TEMP/release.keystore" >> "$GITHUB_ENV"
+            echo "KS_PASS=${KEYSTORE_PASSWORD:-password}" >> "$GITHUB_ENV"
+            echo "KS_ALIAS=${KEY_ALIAS:-adbmanager}" >> "$GITHUB_ENV"
+            echo "kind=release" >> "$GITHUB_OUTPUT"
+          else
+            echo "KEYSTORE=$RUNNER_TEMP/throwaway.keystore" >> "$GITHUB_ENV"
+            echo "kind=test" >> "$GITHUB_OUTPUT"
+            echo "::warning::KEYSTORE_BASE64 secret not set - APK is signed with a throwaway test key and will not install over your existing app."
+          fi
+
+      - name: Build (64-bit, 32-bit and universal)
+        run: |
+          mkdir -p dist
+          for ABI in arm64-v8a armeabi-v7a universal; do
+            ABI=$ABI ./build.sh
+            case "$ABI" in arm64-v8a) F=bin/ADB_Application_Manager_Pro.apk ;; *) F="bin/ADB_Application_Manager_Pro-$ABI.apk" ;; esac
+            cp "$F" "dist/ADB_Application_Manager_Pro-$ABI.apk"
+          done
+
+      - name: Name artifact
+        id: meta
+        run: |
+          VERSION=$(sed -n 's/.*android:versionName="\([^"]*\)".*/\1/p' AndroidManifest.xml | head -1)
+          SUFFIX=$([ "${{ steps.signing.outputs.kind }}" = "release" ] && echo "" || echo "-test-signed")
+          NAME="ADB_Application_Manager_Pro-v${VERSION}${SUFFIX}"
+          mkdir -p out
+          for ABI in arm64-v8a armeabi-v7a universal; do
+            cp "dist/ADB_Application_Manager_Pro-$ABI.apk" "out/$NAME-$ABI.apk"
+          done
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          {
+            echo "### $NAME"
+            echo ""
+            ( cd out && sha256sum *.apk | sed 's/^\([0-9a-f]*\)  \(.*\)$/- `\2`: `\1`/' )
+            if [ "${{ steps.signing.outputs.kind }}" != "release" ]; then
+              echo ""
+              echo "⚠️ Signed with a throwaway key. Add the KEYSTORE_BASE64 and KEYSTORE_PASSWORD secrets to sign with your release key."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.meta.outputs.name }}
+          path: out/*.apk
+          if-no-files-found: error

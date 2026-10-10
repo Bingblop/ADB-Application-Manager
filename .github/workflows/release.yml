@@ -1,0 +1,99 @@
+name: Build, sign and publish release
+
+# Builds + signs the APKs on a version tag (or a manual run) and publishes them as a GitHub Release: arm64-v8a (64-bit phones),
+# armeabi-v7a (32-bit phones) and universal (both).
+#
+# For a build signed with YOUR key (so it installs as an update over the app on a phone), set these
+# repository secrets (Settings -> Secrets and variables -> Actions):
+#   KEYSTORE_BASE64    base64 of release.keystore   (Termux/Linux: base64 -w0 release.keystore)
+#   KEYSTORE_PASSWORD  keystore + key password      (build.sh default: password)
+#   KEY_ALIAS          optional, defaults to adbmanager
+# Without them the APK is signed with a throwaway key: fine for testing, but it will not install over
+# an existing install.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g. 5.5)'
+        required: true
+        default: '7.8'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          # The action's default packages are 'tools platform-tools', but Google removed the legacy
+          # "tools" package from the SDK repo, so the default now fails ("Failed to find package 'tools'").
+          # Install only platform-tools here; the next step adds the platform and build-tools.
+          packages: 'platform-tools'
+
+      - name: Install SDK packages
+        run: |
+          yes | sdkmanager "platform-tools" "platforms;android-34" "build-tools;35.0.0" >/dev/null
+          echo "$ANDROID_HOME/build-tools/35.0.0" >> "$GITHUB_PATH"
+
+      - name: Resolve version
+        id: v
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Prepare signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+            echo "KEYSTORE=$RUNNER_TEMP/release.keystore" >> "$GITHUB_ENV"
+            echo "KS_PASS=${KEYSTORE_PASSWORD:-password}" >> "$GITHUB_ENV"
+            echo "KS_ALIAS=${KEY_ALIAS:-adbmanager}" >> "$GITHUB_ENV"
+          else
+            echo "::warning::KEYSTORE_BASE64 secret not set - the published APK is signed with a throwaway key and will not install over an existing install."
+          fi
+
+      - name: Build and sign (64-bit, 32-bit and universal)
+        run: |
+          V="${{ steps.v.outputs.version }}"
+          mkdir -p out
+          for ABI in arm64-v8a armeabi-v7a universal; do
+            ABI=$ABI ./build.sh
+            case "$ABI" in arm64-v8a) F=bin/ADB_Application_Manager_Pro.apk ;; *) F="bin/ADB_Application_Manager_Pro-$ABI.apk" ;; esac
+            cp "$F" "out/ADB_Application_Manager_Pro-v${V}-$ABI.apk"
+          done
+          ( cd out && sha256sum *.apk > SHA256SUMS.txt )
+
+      - name: Extract release notes
+        run: awk '/^## v${{ steps.v.outputs.version }}/{f=1;next} /^## /{f=0} f' CHANGELOG.md > notes.md || true
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.v.outputs.version }}
+          name: ADB Application Manager Pro v${{ steps.v.outputs.version }}
+          body_path: notes.md
+          target_commitish: ${{ github.sha }}
+          # the 64-bit file is listed first: an older copy of the app that updates itself takes the first .apk of a release
+          files: |
+            out/ADB_Application_Manager_Pro-v${{ steps.v.outputs.version }}-arm64-v8a.apk
+            out/ADB_Application_Manager_Pro-v${{ steps.v.outputs.version }}-armeabi-v7a.apk
+            out/ADB_Application_Manager_Pro-v${{ steps.v.outputs.version }}-universal.apk
+            out/SHA256SUMS.txt
