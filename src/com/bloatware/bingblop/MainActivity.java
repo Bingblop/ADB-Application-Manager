@@ -1629,11 +1629,11 @@ public class MainActivity extends Activity {
     }
 
     /** A terminal session ended: drop it (unless the id already belongs to a newer one) and tell the page when it still waits for this end. */
-    private void ptyEnded(final String key, PtyShell sh, int code) {
+    private void ptyEnded(final String key, PtyShell sh, int code, final long token) {
         final long gen = ptySessions.endedAt(key, sh);
         if (gen >= 0) {
             // told on the UI thread only while no newer session has been stored under the id since this decision
-            notifyJsIf("window.onPtyExit&&window.onPtyExit(" + JSONObject.quote(key) + "," + code + ")", new Live() { public boolean now() { return ptySessions.generation(key) == gen; } });
+            notifyJsIf("window.onPtyExit&&window.onPtyExit(" + JSONObject.quote(key) + "," + code + "," + token + ")", new Live() { public boolean now() { return ptySessions.generation(key) == gen; } });
         }
     }
 
@@ -8171,8 +8171,9 @@ public class MainActivity extends Activity {
 
         /**
          * The full-screen terminal: a real pseudo-terminal (vim, nano, top, htop, ssh ...). {@code backend}: "app", "priv" or "termux".
-         * Answers "started" or "error: ..."; then window.onPtyStarted(id, json{ok, message}), the output as window.onPtyData(id, base64) (the page tells
-         * what it has shown with ptyAck, so a runaway program cannot flood it) and the end as window.onPtyExit(id, code).
+         * Answers "started:N" (N is the number of this start) or "error: ..."; then window.onPtyStarted(id, json{ok, message}, N), the output as
+         * window.onPtyData(id, base64, N) (the page tells what it has shown with ptyAck, so a runaway program cannot flood it) and the end as
+         * window.onPtyExit(id, code, N). The page drops a notice whose N is not the start it is running: one queued before a restart can run after it.
          */
         @JavascriptInterface
         public String ptyStart(final String id, final String backend, final int rows, final int cols) {
@@ -8202,7 +8203,7 @@ public class MainActivity extends Activity {
                         PtyShell sh = new PtyShell(proc, new PtyShell.Listener() {
                             @Override
                             public void onData(byte[] data, int n) {
-                                String js = "window.onPtyData&&window.onPtyData(" + JSONObject.quote(key) + ",\"" + android.util.Base64.encodeToString(data, 0, n, android.util.Base64.NO_WRAP) + "\")";
+                                String js = "window.onPtyData&&window.onPtyData(" + JSONObject.quote(key) + ",\"" + android.util.Base64.encodeToString(data, 0, n, android.util.Base64.NO_WRAP) + "\"," + ticket + ")";
                                 synchronized (me) {
                                     // accepted: its output goes to the page only while this session is the one stored under the id; once it was closed,
                                     // replaced or has ended, the late output of its process must not be drawn in the terminal that took over the id
@@ -8222,7 +8223,7 @@ public class MainActivity extends Activity {
                                 synchronized (me) {
                                     if (me[0] == null) { earlyExit[0] = code; return; }
                                 }
-                                ptyEnded(key, me[0], code);
+                                ptyEnded(key, me[0], code, ticket);
                             }
                         });
                         started = sh;
@@ -8239,7 +8240,7 @@ public class MainActivity extends Activity {
                                 early = earlyExit[0];
                                 res.put("ok", true);
                                 Live live = new Live() { public boolean now() { return ptySessions.generation(key) == gen; } };
-                                notifyJsIf("window.onPtyStarted&&window.onPtyStarted(" + JSONObject.quote(key) + "," + res + ")", live);
+                                notifyJsIf("window.onPtyStarted&&window.onPtyStarted(" + JSONObject.quote(key) + "," + res + "," + ticket + ")", live);
                                 for (String js : held) notifyJsIf(js, live);
                             }
                             held.clear();
@@ -8247,7 +8248,7 @@ public class MainActivity extends Activity {
                         for (PtyShell r : replaced) r.close();
                         if (!published) sh.close();          // a newer start, a close, or the shutdown came first: nobody waits for this one
                         // a session that was already over when it was stored: its end is told after the start
-                        if (published && early != null) ptyEnded(key, sh, early);
+                        if (published && early != null) ptyEnded(key, sh, early, ticket);
                     } catch (Throwable t) {
                         if (!published) {
                             if (started != null) started.close();
@@ -8258,13 +8259,13 @@ public class MainActivity extends Activity {
                                     res.put("message", errMsg(t));
                                 } catch (Exception ignored) {}
                                 // still only if no newer start was requested by the time this runs on the UI thread
-                                notifyJsIf("window.onPtyStarted&&window.onPtyStarted(" + JSONObject.quote(key) + "," + res + ")", new Live() { public boolean now() { return ptySessions.isCurrent(key, ticket); } });
+                                notifyJsIf("window.onPtyStarted&&window.onPtyStarted(" + JSONObject.quote(key) + "," + res + "," + ticket + ")", new Live() { public boolean now() { return ptySessions.isCurrent(key, ticket); } });
                             }
                         }
                     }
                 }
             });
-            return "started";
+            return "started:" + ticket;      // the page tags what it receives from this start with the number, and drops what carries another
         }
 
         /** Keys for the terminal: base64 of the UTF-8 bytes (escape sequences included). */
