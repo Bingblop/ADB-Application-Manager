@@ -6,7 +6,7 @@ import java.util.*;
 /**
  * A hung command is killed: RishShell.run ends a command that never finishes (timeout or stop()), within a bounded time, and the process tree
  * it started (a `sleep` child, a grandchild, one that ignores INT and TERM) is dead afterwards. Real processes: a real mksh with toybox applets on the
- * PATH (what run.js builds as rishenv, prerequisite rish). Every `sleep` has its own number, so the suite finds exactly its own processes in /proc.
+ * PATH (what run.js builds as rishenv, prerequisite rish). Every `sleep` has its own number, drawn at random per run, so the suite finds (and kills) exactly its own processes in /proc.
  * A helper that waits for a death kills the survivor itself, so a failing run leaves no `sleep` behind.
  */
 public class RishKillTest {
@@ -14,7 +14,12 @@ public class RishKillTest {
   static void is(String what, boolean ok, String detail) { n++; if (!ok) { fails++; System.out.println("FAIL " + what + (detail == null ? "" : ": " + detail)); } }
 
   static final String ENV = System.getProperty("rishenv");   // folder with bin/mksh and tb/<toybox applets>, made by run.js
-  static final String[] NUMS = {"7781", "7782", "7783", "7784", "7785", "7786", "7787", "7788"};
+  /** The numbers of the sleeps this run starts, drawn per run: only a process that sleeps exactly this long is looked for or killed, so nothing else on the host can match. */
+  static final String[] NUMS = new String[8];
+  static {
+    long base = 10000000L + new java.security.SecureRandom().nextInt(80000000);
+    for (int i = 0; i < NUMS.length; i++) NUMS[i] = String.valueOf(base + i * 7919L);
+  }
   static final RishShell.Spawner SPAWNER = new RishShell.Spawner() {
     public Process spawn(String[] argv) throws Exception {
       String[] a = argv.clone();
@@ -95,11 +100,11 @@ public class RishKillTest {
       RishShell s = new RishShell(SPAWNER); s.start();
       s.run("cd /tmp; export KEPT=yes", 5000, null);
       long t0 = System.currentTimeMillis();
-      RishShell.Result r = s.run("sleep 7781", 700, new Collect());
+      RishShell.Result r = s.run("sleep " + NUMS[0], 700, new Collect());
       long took = System.currentTimeMillis() - t0;
       is("timeout: the call reports stopped and timedOut", r.stopped && r.timedOut && !r.exited, "stopped=" + r.stopped + " timedOut=" + r.timedOut + " exited=" + r.exited);
       is("timeout: it returns soon after the deadline, not when the sleep would end", took >= 650 && took < 5000, took + " ms");
-      is("timeout: the sleep child is dead", gone("7781", 3000), "sleep 7781 still alive");
+      is("timeout: the sleep child is dead", gone(NUMS[0], 3000), "sleep " + NUMS[0] + " still alive");
       is("timeout: the shell itself was not replaced and is still in its folder", !r.restarted && s.isAlive() && "/tmp".equals(s.cwd()), "restarted=" + r.restarted + " cwd=" + s.cwd());
       // the contract of a stop: the same shell goes on, with its variables
       Collect c = new Collect();
@@ -113,11 +118,11 @@ public class RishKillTest {
       RishShell s = new RishShell(SPAWNER); s.start();
       Collect c = new Collect();
       long t0 = System.currentTimeMillis();
-      RishShell.Result r = runStop(s, "sh -c 'sh -c \"sleep 7782\"; echo after-stop'", 500, 60000, c);
+      RishShell.Result r = runStop(s, "sh -c 'sh -c \"sleep " + NUMS[1] + "\"; echo after-stop'", 500, 60000, c);
       long took = System.currentTimeMillis() - t0;
       is("stop: reported as stopped, not as a timeout", r.stopped && !r.timedOut && !r.exited, "stopped=" + r.stopped + " timedOut=" + r.timedOut);
       is("stop: it returns soon after the stop, long before the 60 s timeout", took >= 450 && took < 5000, took + " ms");
-      is("stop: the grandchild sleep (two shells down) is dead", gone("7782", 3000), "sleep 7782 still alive");
+      is("stop: the grandchild sleep (two shells down) is dead", gone(NUMS[1], 3000), "sleep " + NUMS[1] + " still alive");
       is("stop: the rest of the script did not run", !c.text().contains("after-stop"), c.text());
       is("stop: the shell stays the same one", !r.restarted && s.isAlive(), "restarted=" + r.restarted);
       s.close();
@@ -127,10 +132,10 @@ public class RishKillTest {
     {
       RishShell s = new RishShell(SPAWNER); s.start();
       Collect c = new Collect();
-      RishShell.Result r = s.run("echo one; echo two; sleep 7783", 900, c);
+      RishShell.Result r = s.run("echo one; echo two; sleep " + NUMS[2], 900, c);
       is("output then hang: both lines arrived, in order, before the call ended", c.text().startsWith("one\ntwo\n"), c.text());
       is("output then hang: the call timed out", r.timedOut && r.stopped, "timedOut=" + r.timedOut);
-      is("output then hang: the sleep is dead", gone("7783", 3000), "sleep 7783 still alive");
+      is("output then hang: the sleep is dead", gone(NUMS[2], 3000), "sleep " + NUMS[2] + " still alive");
       String seen = c.text();
       sleepMs(300);
       is("output then hang: the sink is silent after the call returned", seen.equals(c.text()), seen + " -> " + c.text());
@@ -141,11 +146,11 @@ public class RishKillTest {
     {
       RishShell s = new RishShell(SPAWNER); s.start();
       long t0 = System.currentTimeMillis();
-      RishShell.Result r = s.run("sh -c 'trap \"\" INT TERM; sleep 7784; echo survived'", 500, new Collect());
+      RishShell.Result r = s.run("sh -c 'trap \"\" INT TERM; sleep " + NUMS[3] + "; echo survived'", 500, new Collect());
       long took = System.currentTimeMillis() - t0;
       is("ignores INT and TERM: it is still ended, by the timeout", r.stopped && r.timedOut, "stopped=" + r.stopped + " timedOut=" + r.timedOut);
       is("ignores INT and TERM: it took the INT, TERM and KILL stages, and no more", took >= 2500 && took < 7000, took + " ms");
-      is("ignores INT and TERM: the sleep is dead", gone("7784", 3000), "sleep 7784 still alive");
+      is("ignores INT and TERM: the sleep is dead", gone(NUMS[3], 3000), "sleep " + NUMS[3] + " still alive");
       is("ignores INT and TERM: the shell is the same one", !r.restarted && s.isAlive(), "restarted=" + r.restarted);
       s.close();
     }
@@ -171,12 +176,12 @@ public class RishKillTest {
     {
       RishShell s = new RishShell(SPAWNER); s.start();
       final RishShell sf = s;
-      new Thread(new Runnable() { public void run() { started("7785", 5000); sf.close(); } }).start();
+      new Thread(new Runnable() { public void run() { started(NUMS[4], 5000); sf.close(); } }).start();
       long t0 = System.currentTimeMillis();
-      RishShell.Result r = s.run("sleep 7785", 60000, new Collect());
+      RishShell.Result r = s.run("sleep " + NUMS[4], 60000, new Collect());
       long took = System.currentTimeMillis() - t0;
       is("close(): the running call returns, exited, soon", r.exited && took < 5000, "exited=" + r.exited + " " + took + " ms");
-      is("close(): the sleep child is dead", gone("7785", 3000), "sleep 7785 still alive");
+      is("close(): the sleep child is dead", gone(NUMS[4], 3000), "sleep " + NUMS[4] + " still alive");
     }
 
     // 7. a command that finishes by itself is left alone, also when it runs for a while below the timeout
@@ -195,12 +200,12 @@ public class RishKillTest {
       r = s.run("sleep 1; echo fine", 8000, c);
       is("a stop() with nothing running does not hit the next command", "fine\n".equals(c.text()) && r.exit == 0 && !r.stopped, c.text() + " stopped=" + r.stopped);
       // a background job of an earlier command is not part of a later command's timeout
-      s.run("sleep 7786 &", 5000, null);
-      is("setup: the background job runs", started("7786", 3000), "no sleep 7786");
-      r = s.run("sleep 7787", 500, new Collect());
-      is("a timeout of a later command leaves the earlier background job alone", gone("7787", 3000) && !pids("7786").isEmpty(), "7786 alive=" + pids("7786").size());
+      s.run("sleep " + NUMS[5] + " &", 5000, null);
+      is("setup: the background job runs", started(NUMS[5], 3000), "no sleep " + NUMS[5]);
+      r = s.run("sleep " + NUMS[6], 500, new Collect());
+      is("a timeout of a later command leaves the earlier background job alone", gone(NUMS[6], 3000) && !pids(NUMS[5]).isEmpty(), NUMS[5] + " alive=" + pids(NUMS[5]).size());
       s.close();
-      is("close(): the background job is gone too", gone("7786", 3000), "sleep 7786 still alive");
+      is("close(): the background job is gone too", gone(NUMS[5], 3000), "sleep " + NUMS[5] + " still alive");
     }
   }
 }
