@@ -1245,7 +1245,7 @@ public final class RarReader {
         CRC32 crc;
         Blake2sp b2;
         byte[] macKey;
-        boolean started, eof, checked, pwVerified, closed;
+        boolean started, eof, checked, pwVerified, closed, failed;
 
         R5In(Rar5 owner, int idx, boolean closeOwner) {
             this.owner = owner;
@@ -1296,6 +1296,7 @@ public final class RarReader {
             if (closed) throw new IOException("closed");
             try {
                 if (!started) start();
+                else if (src == null) throw new IOException("corrupt");   // start() failed on an earlier call
                 if (eof) return -1;
                 if (left == 0) { verify(); eof = true; return -1; }
                 int want = left < 0 ? len : (int) Math.min(len, left);
@@ -1314,11 +1315,14 @@ public final class RarReader {
                 }
                 return n;
             } catch (PasswordException pe) {
+                failed = true;
                 throw pe;
             } catch (IOException ex) {
+                failed = true;
                 if (e.enc != null && !pwVerified && owner.pwBytes != null && !"multi-volume".equals(ex.getMessage())) throw new PasswordException(true);
                 throw ex;
             } catch (OutOfMemoryError oom) {
+                failed = true;
                 throw new IOException("out-of-memory");
             }
         }
@@ -1339,11 +1343,18 @@ public final class RarReader {
         }
 
         void finish(boolean needState) throws IOException {
+            // a read that already failed was reported to the visitor; only a failure first met by the drain below is new
+            final boolean reported = failed;
             try {
                 if (eof || !needState) return;
                 // a later entry continues from the state this one leaves (solid): decode and check what is left
                 byte[] sink = new byte[65536];
                 while (read(sink, 0, sink.length) >= 0) { /* drain */ }
+            } catch (IOException ex) {
+                if (!reported) throw ex;
+                // The visitor's read failed before the decoder was started for this entry (src is still null), so the shared decoder holds the state of an
+                // earlier entry. Break it, so that a later solid entry fails instead of decoding on that stale state (and, with no checksum, "succeeding").
+                if (src == null && e.method != 0) owner.decoder().broken = true;
             } finally {
                 closed = true;
             }
