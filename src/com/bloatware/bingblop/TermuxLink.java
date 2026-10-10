@@ -161,6 +161,7 @@ public final class TermuxLink {
         // and says nothing used to hold the only accepting thread for 3 s, so a few such peers kept Termux's real connection waiting until the timeout.
         final LinkedList<Socket> pending = new LinkedList<Socket>();
         final BlockingQueue<Socket> good = new ArrayBlockingQueue<Socket>(1);
+        final boolean[] finished = { false };     // guarded by pending: set once the session is set up or has failed
         Socket sock = null;
         try {
             server.setSoTimeout(250);
@@ -195,10 +196,13 @@ public final class TermuxLink {
                         @Override
                         public void run() {
                             boolean ok = hello(cs, token);
+                            boolean kept = false;
+                            // leaving "pending" and entering "good" happen under one lock, so the cleanup below sees the socket in one of the two
                             synchronized (pending) {
                                 pending.remove(cs);
+                                kept = ok && !finished[0] && good.offer(cs);
                             }
-                            if (!ok || !good.offer(cs)) closeQuietly(cs);
+                            if (!kept) closeQuietly(cs);
                         }
                     }, "termux-hello");
                     t.setDaemon(true);
@@ -218,10 +222,11 @@ public final class TermuxLink {
             }
             // connections still being checked, and a valid one that arrived after the winner, are closed
             synchronized (pending) {
+                finished[0] = true;
                 for (Socket p : pending) closeQuietly(p);
                 pending.clear();
+                closeQuietly(good.poll());
             }
-            closeQuietly(good.poll());
         }
         return proc;
     }
