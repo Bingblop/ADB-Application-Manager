@@ -2512,13 +2512,21 @@ public class MainActivity extends Activity {
         // A previous run that was killed half way left the user's values in the record: put them back first.
         recoverPendingAssistant();
         // a record that could not be undone is the only copy of the user's own values: never overwrite it with the current ones
-        if (prefs.contains("assistant_restore_pending")) return "Error: the assistant settings from an earlier launch could not be put back yet, so nothing was changed. Try again once the device is connected.";
+        if (prefs.contains("assistant_restore_pending")) {
+            String msg = "Error: the assistant settings from an earlier launch could not be put back yet, so nothing was changed. Try again once the device is connected.";
+            if (tried != null) tried.append(msg).append("\n");
+            return msg;
+        }
         String oldAssist = trimSetting(sh.executeShell("settings get secure assistant"));
         String oldVis = trimSetting(sh.executeShell("settings get secure voice_interaction_service"));
         // Only go on when both values were read as plain values: an error text read as "the old value" would be written back as the
         // user's assistant. The values are saved before anything is changed, so a killed process can be undone at the next start.
         String record = AssistantRestore.encode(oldAssist, oldVis);
-        if (record == null) return "Error: could not read the current assistant settings, so they were not changed.";
+        if (record == null) {
+            String msg = "Error: could not read the current assistant settings, so they were not changed.";
+            if (tried != null) tried.append(msg).append("\n");
+            return msg;
+        }
         prefs.edit().putString("assistant_restore_pending", record).commit();
         String keyOut = "";
         try {
