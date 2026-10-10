@@ -8196,6 +8196,7 @@ public class MainActivity extends Activity {
                         final PtyShell[] me = new PtyShell[1];
                         final Integer[] earlyExit = new Integer[1];
                         final int[] state = { 0 };
+                        final long[] myGen = { -1 };       // the generation of the id this session was stored under
                         final java.util.List<String> held = new java.util.ArrayList<String>();
                         final int[] heldChars = { 0 };
                         PtyShell sh = new PtyShell(proc, new PtyShell.Listener() {
@@ -8206,8 +8207,10 @@ public class MainActivity extends Activity {
                                     // accepted: its output goes to the page only while this session is the one stored under the id; once it was closed,
                                     // replaced or has ended, the late output of its process must not be drawn in the terminal that took over the id
                                     if (state[0] == 1) {
-                                        final PtyShell mine = me[0];
-                                        if (ptySessions.get(key) == mine) notifyJsIf(js, new Live() { public boolean now() { return ptySessions.get(key) == mine; } });
+                                        // accepted: its output goes to the page unless a newer start or a close of the id came in since (checked again on the
+                                        // UI thread). A session that ended on its own keeps its last output, queued before its end.
+                                        final long g = myGen[0];
+                                        if (ptySessions.generation(key) == g) notifyJsIf(js, new Live() { public boolean now() { return ptySessions.generation(key) == g; } });
                                         return;
                                     }
                                     if (state[0] == 0 && heldChars[0] < (1 << 20)) { held.add(js); heldChars[0] += js.length(); }
@@ -8227,14 +8230,15 @@ public class MainActivity extends Activity {
                         synchronized (me) {
                             // Stored before it is published, so a listener that sees me[0] also finds it in the map; and the page is told it started under
                             // the same lock, so an exit that follows is always queued after the start (and after the output held so far).
-                            published = ptySessions.publish(key, ticket, sh, replaced);
+                            final long gen = ptySessions.publishGen(key, ticket, sh, replaced);
+                            published = gen >= 0;
                             state[0] = published ? 1 : 2;
                             if (published) {
+                                myGen[0] = gen;
                                 me[0] = sh;
                                 early = earlyExit[0];
                                 res.put("ok", true);
-                                final PtyShell mine = sh;
-                                Live live = new Live() { public boolean now() { return ptySessions.get(key) == mine; } };
+                                Live live = new Live() { public boolean now() { return ptySessions.generation(key) == gen; } };
                                 notifyJsIf("window.onPtyStarted&&window.onPtyStarted(" + JSONObject.quote(key) + "," + res + ")", live);
                                 for (String js : held) notifyJsIf(js, live);
                             }

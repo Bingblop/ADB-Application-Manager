@@ -88,6 +88,39 @@ public class SessionMapTest {
     is("an unknown id has generation 0", m.generation("never") == 0);
     m.remove("gen");
 
+    // the page's restart: it closes the old session first (so the old one is not "replaced" by a publish), then starts the new one
+    long pa = m.publishGen("rs", m.ticket("rs"), "RA", new ArrayList<String>());
+    is("a publish returns the generation it was stored under", pa >= 1 && pa == m.generation("rs"));
+    is("the close of the old session moves the generation (its queued output is stale)", "RA".equals(m.remove("rs")) && m.generation("rs") != pa);
+    long pb = m.publishGen("rs", m.ticket("rs"), "RB", new ArrayList<String>());
+    is("the restarted session is stored under a newer generation", pb > pa);
+    is("RB ends and is told", m.endedAt("rs", "RB") == pb);
+    is("RA's delayed end, after RB came and went, is not told (it was closed before RB started)", m.endedAt("rs", "RA") == -1);
+
+    // a close with no restart: the end of the closed session is still told, once, while nothing newer was stored
+    m.publishGen("cl", m.ticket("cl"), "CA", new ArrayList<String>());
+    m.remove("cl");
+    long afterClose = m.generation("cl");
+    is("the end of a session closed on purpose is told under the generation of its close", m.endedAt("cl", "CA") == afterClose);
+    m.publishGen("cl2", m.ticket("cl2"), "DA", new ArrayList<String>());
+    m.remove("cl2");
+    m.publishGen("cl2", m.ticket("cl2"), "DB", new ArrayList<String>());
+    is("a closed session's end after a newer one is stored is not told", m.endedAt("cl2", "DA") == -1 && "DB".equals(m.get("cl2")));
+    m.remove("cl2");
+
+    // a session that ends on its own keeps what it queued: its generation does not move, so its start and last output stay current
+    long na = m.publishGen("nat", m.ticket("nat"), "NA", new ArrayList<String>());
+    long told = m.endedAt("nat", "NA");
+    is("a natural end does not move the generation (queued start and output stay valid, in order, before the end)", told == na && m.generation("nat") == na);
+    is("a newer start after the natural end makes the queued notices stale", m.publishGen("nat", m.ticket("nat"), "NB", new ArrayList<String>()) > na && m.generation("nat") != na);
+    m.remove("nat");
+
+    // replaced by a publish without a prior close: never told
+    m.publishGen("rp", m.ticket("rp"), "PA", new ArrayList<String>());
+    m.publishGen("rp", m.ticket("rp"), "PB", new ArrayList<String>());
+    m.remove("rp");
+    is("a session replaced by a publish is never told, even when the replacement is gone", m.endedAt("rp", "PA") == -1);
+
     // shutdown: drained sessions are returned once, and nothing can be published afterwards
     long tl = m.ticket("late");
     List<String> all = m.drain();
