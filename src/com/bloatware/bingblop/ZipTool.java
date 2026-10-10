@@ -684,12 +684,18 @@ public final class ZipTool {
      * Writes an entry's data to {@code dest} through a hidden temporary file, checks it against the entry's size and (zip) CRC-32, and only
      * then moves it into place. Other formats carry no CRC here (their readers check their own), and a size of -1 means "not known".
      */
+    /** Free space an extraction of an entry with no declared size leaves untouched; package-private so a test can raise it. */
+    static long unknownSizeReserve = 64L << 20;
+
     private static long writeStream(Entry e, InputStream in, File dest) throws IOException {
         File parent = dest.getAbsoluteFile().getParentFile();
         File part = new File(parent, "." + dest.getName() + ".part");
         boolean ok = false;
         try {
             long total = 0;
+            // A size of -1 (RAR5 "unpacked size unknown") has no declared cap, so a tiny archive could otherwise write until the storage is full:
+            // such an entry stops while some free space is left.
+            final long room = e.size >= 0 ? Long.MAX_VALUE : Math.max(0L, parent.getUsableSpace() - unknownSizeReserve);
             CRC32 crc = new CRC32();
             OutputStream out = new FileOutputStream(part);
             try {
@@ -698,6 +704,7 @@ public final class ZipTool {
                 while ((n = in.read(buf)) > 0) {
                     // never write past the size the entry declares: a small zip must not be able to fill the phone's storage
                     if (e.size >= 0 && total + n > e.size) throw new IOException("\"" + e.name + "\" is damaged (its size doesn't match)");
+                    if (total + n > room) throw new IOException("Not enough free space for \"" + e.name + "\"");
                     out.write(buf, 0, n);
                     crc.update(buf, 0, n);
                     total += n;
