@@ -58,7 +58,7 @@ public class AuthLaunchActivity extends Activity {
                 }
             }
         }
-        if (v != AuthManager.Verdict.DISABLED) m.record(now, ok ? "ok" : v == AuthManager.Verdict.OK ? "failed" : v.name().toLowerCase(java.util.Locale.ROOT), what);
+        m.record(now, ok ? "ok" : v == AuthManager.Verdict.OK ? "failed" : v.name().toLowerCase(java.util.Locale.ROOT), what);
         setResult(ok ? RESULT_OK : RESULT_CANCELED, new Intent().putExtra("message", message));
         finish();
     }

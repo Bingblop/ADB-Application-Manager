@@ -11089,7 +11089,9 @@ Type any command below (e.g. pm list packages -d)
             haptic();
             if (!e.pinned && list.filter(x => x.pinned).length >= ASK_HIST_PINS) { showToast(txF('At most {0} answers can be pinned', ASK_HIST_PINS)); return; }
             e.pinned = !e.pinned;
-            kvSet(ASK_HIST[ui].key, list);
+            // an unpinned answer is an ordinary one at once: both groups are cut to their limits again
+            const byNew = (a, b) => b.at - a.at;
+            kvSet(ASK_HIST[ui].key, list.filter(x => x.pinned).sort(byNew).slice(0, ASK_HIST_PINS).concat(list.filter(x => !x.pinned).sort(byNew).slice(0, ASK_HIST_MAX)));
             askHistRender(ui);
         }
         function askHistOpen(ui, i) {

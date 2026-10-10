@@ -656,6 +656,11 @@ public final class MorpheBridge {
             @Override public void onProgress(long done, long total) { download(null, label, done, total); }
             @Override public boolean cancelled() { return false; }
         });
+        if (RepoSources.handles(resolved.optString("source")) && !RepoSources.abiFits(got.optJSONArray("abis"), Build.SUPPORTED_ABIS)) {
+            new File(got.optString("path")).delete();
+            throw new IOException("That build is made for " + got.optJSONArray("abis").join(", ").replace("\"", "") + ", and this phone runs " + android.text.TextUtils.join(", ", Build.SUPPORTED_ABIS)
+                    + ". Pick another build from Versions.");
+        }
         got.put("fileName", new File(got.optString("path")).getName());
         got.put("source", resolved.optString("source"));
         try {

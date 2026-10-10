@@ -3,6 +3,7 @@ package com.bloatware.bingblop;
 import com.sun.net.httpserver.HttpServer;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 /** F-Droid and IzzyOnDroid as download sources: the version list, "latest" and "requested", a package the site does not list, hostile input, against a fake repository. */
@@ -24,6 +25,10 @@ public class RepoSourcesTest {
     };
     s.createContext("/api/v1/packages/com.example.app", app);
     s.createContext("/fdroid/api/v1/packages/com.example.app", app);
+    s.createContext("/api/v1/packages/com.example.sugg", ex -> {
+      byte[] b = "{\"packageName\":\"com.example.sugg\",\"suggestedVersionCode\":11,\"packages\":[{\"versionName\":\"2.0-rc1\",\"versionCode\":12},{\"versionName\":\"1.9\",\"versionCode\":11}]}".getBytes(StandardCharsets.UTF_8);
+      ex.sendResponseHeaders(200, b.length); ex.getResponseBody().write(b); ex.close();
+    });
     s.createContext("/api/v1/packages/com.example.empty", ex -> {
       byte[] b = "{\"packageName\":\"com.example.empty\",\"packages\":[]}".getBytes(StandardCharsets.UTF_8);
       ex.sendResponseHeaders(200, b.length); ex.getResponseBody().write(b); ex.close();
@@ -42,6 +47,11 @@ public class RepoSourcesTest {
         && v.getJSONArray("versions").getJSONObject(2).getLong("versionCode") == 10 && v.getJSONArray("versions").getJSONObject(0).getString("format").equals("apk"));
     JSONObject l = RepoSources.resolve("fdroid", "com.example.app", null, "latest");
     check("latest: the newest build, nothing wanted", l.getString("version").equals("1.2") && l.getLong("versionCode") == 12 && l.getString("wanted").isEmpty() && l.getString("policy").equals("latest") && l.getString("url").endsWith("com.example.app_12.apk"));
+    check("latest follows the repository's suggested build, not the highest number (a release candidate)", RepoSources.resolve("fdroid", "com.example.sugg", null, "latest").getString("version").equals("1.9")
+        && RepoSources.versions("fdroid", "com.example.sugg").getJSONArray("versions").getJSONObject(0).getString("version").equals("2.0-rc1"));
+    check("native code: none fits any phone; the phone's CPU must be among the build's; armeabi runs on armeabi-v7a", RepoSources.abiFits(new JSONArray(), new String[]{"arm64-v8a"})
+        && RepoSources.abiFits(new JSONArray("[\"arm64-v8a\",\"x86_64\"]"), new String[]{"arm64-v8a", "armeabi-v7a"}) && !RepoSources.abiFits(new JSONArray("[\"x86\"]"), new String[]{"arm64-v8a", "armeabi-v7a"})
+        && RepoSources.abiFits(new JSONArray("[\"armeabi\"]"), new String[]{"armeabi-v7a"}) && RepoSources.abiFits(null, new String[]{"x86"}));
     JSONObject r = RepoSources.resolve("fdroid", "com.example.app", "1.1", "requested");
     check("requested: that version, which the download then checks", r.getString("version").equals("1.1") && r.getLong("versionCode") == 11 && r.getString("wanted").equals("1.1") && r.getBoolean("exact"));
     check("requested with its build number", RepoSources.resolve("fdroid", "com.example.app", "1.0 (10)", "requested").getLong("versionCode") == 10 && err(() -> RepoSources.resolve("fdroid", "com.example.app", "1.0 (99)", "requested")).contains("does not list version"));

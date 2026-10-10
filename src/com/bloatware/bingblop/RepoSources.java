@@ -48,7 +48,7 @@ public final class RepoSources {
         if (pkg == null || !PKG.matcher(pkg).matches()) throw new IOException("that is not a package name");
     }
 
-    private static final class Build { String version; long code; }
+    private static final class Build { String version; long code; boolean suggested; }
 
     private static List<Build> builds(String id, String pkg) throws IOException {
         Map<String, String> h = new LinkedHashMap<String, String>();
@@ -65,6 +65,7 @@ public final class RepoSources {
         List<Build> out = new ArrayList<Build>();
         try {
             JSONObject j = new JSONObject(r.text == null ? "" : r.text.trim());
+            long suggested = j.optLong("suggestedVersionCode", 0);
             JSONArray a = j.optJSONArray("packages");
             for (int i = 0; a != null && i < a.length(); i++) {
                 JSONObject p = a.optJSONObject(i);
@@ -72,7 +73,7 @@ public final class RepoSources {
                 Build b = new Build();
                 b.version = p.optString("versionName", "").trim();
                 b.code = p.optLong("versionCode", 0);
-                if (b.code > 0) { if (b.version.isEmpty()) b.version = String.valueOf(b.code); out.add(b); }
+                if (b.code > 0) { if (b.version.isEmpty()) b.version = String.valueOf(b.code); b.suggested = b.code == suggested; out.add(b); }
             }
         } catch (JSONException e) {
             throw new IOException(name(id) + " answered in a form this app does not know (the site may have changed).");
@@ -80,6 +81,22 @@ public final class RepoSources {
         if (out.isEmpty()) throw new IOException(name(id) + " lists no build of " + pkg + ".");
         Collections.sort(out, new Comparator<Build>() { @Override public int compare(Build x, Build y) { return Long.compare(y.code, x.code); } });
         return out;
+    }
+
+    /**
+     * Whether a package's native libraries (the ABI folders of its lib/ directory) can run on a phone with these ABIs (best first). A package with
+     * no native code fits every phone; the repositories' API does not say which CPU a build is for, so the file itself is looked at after the download.
+     */
+    public static boolean abiFits(JSONArray apkAbis, String[] deviceAbis) {
+        if (apkAbis == null || apkAbis.length() == 0) return true;
+        for (int i = 0; i < apkAbis.length(); i++) {
+            String a = apkAbis.optString(i, "");
+            for (String d : deviceAbis) {
+                if (a.equals(d)) return true;
+                if (a.equals("armeabi") && d.equals("armeabi-v7a")) return true;
+            }
+        }
+        return false;
     }
 
     private static String fileUrl(String id, String pkg, long code) { return base(id) + "/repo/" + pkg + "_" + code + ".apk"; }
@@ -119,7 +136,9 @@ public final class RepoSources {
             for (Build b : bs) if (b.version.equalsIgnoreCase(wanted) && (wantedCode <= 0 || b.code == wantedCode)) { pick = b; break; }
             if (pick == null) throw new IOException(name(id) + " does not list version " + wanted + " of " + pkg + " (the newest it lists is " + bs.get(0).version + ").");
         } else {
+            // the repository's own recommendation (its suggested build, the newest stable one) before the highest number, which may be a pre-release
             pick = bs.get(0);
+            for (Build b : bs) if (b.suggested) { pick = b; break; }
         }
         try {
             return new JSONObject().put("ok", true).put("source", id).put("pkg", pkg).put("name", pkg).put("version", pick.version).put("versionCode", pick.code)

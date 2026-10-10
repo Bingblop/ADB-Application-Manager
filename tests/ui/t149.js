@@ -145,6 +145,10 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await page.selectOption('#txAgent', 'kilocode'); await sleep(150);
   check('   explained entries (Kilo Code) have none', await ev(() => !document.getElementById('txConnTestBtn')));
   await ev(() => txCloseConnect());
+  // ---- unpinning an answer puts it under the normal limit at once ----
+  await ev(() => { const mk = (i, p) => ({ id: 'x' + i, kind: 'package', name: 'n' + i, label: 'l', text: 't', web: 'w', answer: 'a', agent: '', at: 1000 + i, pinned: p }); const l = []; for (let i = 0; i < 30; i++) l.push(mk(i, true)); for (let i = 30; i < 42; i++) l.push(mk(i, false)); kvSet(ASK_HIST.agentAsk.key, l); askHistPin('agentAsk', 0); });
+  const cap = await ev(() => { const l = askHistGet('agentAsk'); return { pins: l.filter(x => x.pinned).length, others: l.filter(x => !x.pinned).length }; });
+  check('   with 30 pinned and 12 others, unpinning one leaves 29 pinned and only the newest 12 others (the unpinned, older one is dropped)', cap.pins === 29 && cap.others === 12, JSON.stringify(cap));
   check('no page errors', errors.length === 0, errors.join(' | '));
   await b.close();
   console.log(bad ? bad + ' FAILED' : 'ALL PASSED');

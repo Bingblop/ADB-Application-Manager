@@ -19,5 +19,6 @@ ok      the log-entry window too: {"lh":["AndroidRuntime: FATAL EXCEPTION: main"
 ok   6. a Connect sheet has a Test button: it asks the agent the sample question and says it works: {"out":"Asking Own server (qwen2.5-7b). Only this sample question is sent to them: whether the Calculator package can be disabled.\nSafe to disable.","res":"It works: Own server (OpenAI-compatible) answered in 1 s."}
 ok      an agent without a key says it is not connected: Claude (Anthropic) is not connected yet. Add its key or sign-in in the Command-Line Interface tab first.
 ok      explained entries (Kilo Code) have none
+ok      with 30 pinned and 12 others, unpinning one leaves 29 pinned and only the newest 12 others (the unpinned, older one is dropped): {"pins":29,"others":12}
 ok   no page errors:
 ALL PASSED
