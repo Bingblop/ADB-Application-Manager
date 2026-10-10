@@ -485,16 +485,16 @@ public class MainActivity extends Activity {
 
             ensurePrivateAdbKey();
 
-            // An adb server of an older version may still hold the loopback port that any app on the phone can reach: stop it once
-            // (the server of this version listens on a private socket instead)
-            if (AdbRuntime.usesPrivateSocket(this) && !new File(adbHomeDir, ".legacy-port-closed").exists()) {
+            // An adb server of an older version (or one started on the fallback port by an earlier run) may still hold the loopback port
+            // that any app on the phone can reach: when this run uses the private socket, stop whatever listens there. Checked at every
+            // start (a closed port costs one connect attempt), not once for ever, since a later run may have fallen back to the port.
+            if (AdbRuntime.usesPrivateSocket(this)) {
                 executor.submit(new Runnable() {
                     @Override public void run() {
                         try {
-                            runProcessWithTimeout(buildAdbProcess(AdbServerSpec.args(null), "kill-server"), 3000);
-                            // runProcessWithTimeout turns a launch failure or a timeout into text, so only remember
-                            // the clean-up once the loopback port is really closed (else try again next start)
-                            if (!isPortOpen("127.0.0.1", AdbServerSpec.LEGACY_PORT, 400)) new File(adbHomeDir, ".legacy-port-closed").createNewFile();
+                            if (isPortOpen("127.0.0.1", AdbServerSpec.LEGACY_PORT, 400)) {
+                                runProcessWithTimeout(buildAdbProcess(AdbServerSpec.args(null), "kill-server"), 3000);
+                            }
                         } catch (Throwable ignored) {}
                     }
                 });
