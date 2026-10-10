@@ -683,6 +683,7 @@ public class RarReaderTest {
       testRar5Damage(r);
       testRar5SolidStartFailure();
       testRar5SolidStartFailureChain();
+      testRar5UnknownSizeRoom();
       testRar4(r);
       testSfxAndMagic(r);
       testFixtures();
@@ -1629,6 +1630,33 @@ public class RarReaderTest {
     check("a start failure in the middle of a solid chain does not end the walk (" + thrown + ")", thrown == null);
     check("a.bin reads, b.bin fails to start, and c.bin (no checksum) fails instead of decoding on stale state (" + res + ")",
         res.size() == 3 && res.get(0).equals("a.bin read") && res.get(1).equals("b.bin IOException") && res.get(2).equals("c.bin IOException"));
+  }
+
+  /**
+   * A RAR5 entry whose unpacked size is unknown (file flag 0x08) has size -1 for the app, so no declared size caps its extraction. It must still stop
+   * before the free space is used up. The reserve it leaves is raised here so that there is no room at all, which makes the stop testable.
+   */
+  static void testRar5UnknownSizeRoom() throws Exception {
+    Lz5 z = new Lz5(true);
+    z.beginFile(false); z.block(true); z.lit(0x41); for (int i = 0; i < 40; i++) z.match(8, 1); z.endBlock(true);
+    F5 f = new F5("unknown.bin").lz(z, false, 4);
+    f.unknownSize = true;
+    W5 w = new W5(); w.main(false); w.file(f); w.end();
+    File rar = new File(tmp, "unknown-size.rar");
+    Files.write(rar.toPath(), w.bytes());
+    ZipTool.Archive a = RarSource.open(rar, null);
+    ZipTool.Entry e = a.entries.get(0);
+    check("the entry's size is unknown to the app (-1)", e.size == -1);
+    File out = new File(tmp, "unknown-size.out");
+    long wrote = ZipTool.extractTo(a, e, out);
+    check("with room to spare an unknown-size entry still extracts fully (" + wrote + " bytes)", wrote == z.expected().length && out.length() == wrote);
+    long saved = ZipTool.unknownSizeReserve;
+    ZipTool.unknownSizeReserve = Long.MAX_VALUE / 2;
+    File out2 = new File(tmp, "unknown-size-2.out");
+    String msg = null;
+    try { ZipTool.extractTo(a, e, out2); } catch (IOException ex) { msg = ex.getMessage(); } finally { ZipTool.unknownSizeReserve = saved; }
+    check("with no room left it stops with a free-space message (" + msg + ")", msg != null && msg.contains("Not enough free space"));
+    check("and leaves no partial file behind", !out2.exists() && !new File(tmp, ".unknown-size-2.out.part").exists());
   }
 
   /** The .exp files of the rarfile project: "File: name" lines, or plain lists of names; every name must appear in the listing. */

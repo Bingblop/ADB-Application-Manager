@@ -684,12 +684,18 @@ public final class ZipTool {
      * Writes an entry's data to {@code dest} through a hidden temporary file, checks it against the entry's size and (zip) CRC-32, and only
      * then moves it into place. Other formats carry no CRC here (their readers check their own), and a size of -1 means "not known".
      */
+    /** Free space an extraction of an entry with no declared size leaves untouched; package-private so a test can raise it. */
+    static long unknownSizeReserve = 64L << 20;
+
     private static long writeStream(Entry e, InputStream in, File dest) throws IOException {
         File parent = dest.getAbsoluteFile().getParentFile();
         File part = new File(parent, "." + dest.getName() + ".part");
         boolean ok = false;
         try {
             long total = 0;
+            // A size of -1 (RAR5 "unpacked size unknown") has no declared cap, so a tiny archive could otherwise write until the storage is full:
+            // such an entry stops while some free space is left.
+            final long room = e.size >= 0 ? Long.MAX_VALUE : Math.max(0L, parent.getUsableSpace() - unknownSizeReserve);
             CRC32 crc = new CRC32();
             OutputStream out = new FileOutputStream(part);
             try {
@@ -698,6 +704,7 @@ public final class ZipTool {
                 while ((n = in.read(buf)) > 0) {
                     // never write past the size the entry declares: a small zip must not be able to fill the phone's storage
                     if (e.size >= 0 && total + n > e.size) throw new IOException("\"" + e.name + "\" is damaged (its size doesn't match)");
+                    if (total + n > room) throw new IOException("Not enough free space for \"" + e.name + "\"");
                     out.write(buf, 0, n);
                     crc.update(buf, 0, n);
                     total += n;
@@ -1277,6 +1284,20 @@ public final class ZipTool {
         return bo.toByteArray();
     }
 
+    /** Of an extra field, only the records an encrypted entry can't be read without: WinZip AES (0x9901) and PKWARE strong encryption (0x0017). */
+    private static byte[] keepEssentialExtra(byte[] extra) {
+        ByteArrayOutputStream bo = new ByteArrayOutputStream();
+        int p = 0;
+        while (p + 4 <= extra.length) {
+            int id = le16(extra, p);
+            int sz = le16(extra, p + 2);
+            if (p + 4 + sz > extra.length) break;
+            if (id == 0x9901 || id == 0x0017) bo.write(extra, p, 4 + sz);
+            p += 4 + sz;
+        }
+        return bo.toByteArray();
+    }
+
     private static byte[] extraPadding(int pad) {
         // zipalign's own padding record where it fits (id 0xD935), otherwise plain zero bytes
         byte[] x = new byte[pad];
@@ -1311,8 +1332,15 @@ public final class ZipTool {
         raf.readFully(srcExtra);
         long dataStart = e.lho + 30 + srcNameLen + srcExtraLen;
         byte[] kept = keepExtra(srcExtra, !same);
-        int pad = padFor(out.pos + 30 + nameBytes.length + kept.length, alignmentFor(outName, method, align));
-        if (kept.length + pad > 0xFFFF) pad = 0;
+        int alignment = alignmentFor(outName, method, align);
+        int pad = padFor(out.pos + 30 + nameBytes.length + kept.length, alignment);
+        if (kept.length + pad > 0xFFFF) {
+            // An enormous extra field leaves no room for the padding that aligns the data (a stored .so then fails to install when libraries are
+            // not extracted). Keep only the records an encrypted entry cannot do without (AES, strong encryption), drop the rest, and pad again.
+            kept = keepEssentialExtra(kept);
+            pad = padFor(out.pos + 30 + nameBytes.length + kept.length, alignment);
+            if (kept.length + pad > 0xFFFF) pad = 0;
+        }
         long lho = out.pos;
         byte[] h = new byte[30];
         put32(h, 0, SIG_LOCAL);
