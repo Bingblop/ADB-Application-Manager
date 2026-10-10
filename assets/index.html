@@ -34727,7 +34727,7 @@ Type any command below (e.g. pm list packages -d)
         // ---------- The real terminal: full screen, on a pseudo-terminal (vim, nano, top, htop, ssh, less ...) ----------
         // xterm.js (assets/xterm.js, loaded the first time) draws it; the app runs the program on a pty (PtyShell + the helper libptyexec.so) and sends the bytes both ways.
         // Closing the screen (X or Back) leaves the session running; typing exit (or Restart) ends it.
-        var rt = { term: null, fit: null, loading: false, open: false, id: 'rt', backend: 'app', state: 'off', ctrl: 0, alt: 0, font: 14, started: false, ro: null, repeat: null };
+        var rt = { term: null, fit: null, loading: false, open: false, id: 'rt', backend: 'app', state: 'off', ctrl: 0, alt: 0, font: 14, started: false, ro: null, repeat: null, token: null };
         const RT_SYMS = ['|', '~', '$', ';', ':', '"', "'", '\\', '`', '{', '}', '[', ']', '(', ')', '<', '>', '*', '&', '#', '=', '+', '_', '?', '!', '@', '%', '^', '.', ','];
         function rtLoad(then) {
             if (window.Terminal && window.FitAddon) { then(); return; }
@@ -34794,22 +34794,27 @@ Type any command below (e.g. pm list packages -d)
             let r = '';
             try { r = String(window.AndroidBridge.ptyStart(rt.id, rt.backend, rt.term.rows || 24, rt.term.cols || 80) || ''); } catch (e) { r = 'error: ' + (e && e.message || e); }
             if (r.indexOf('error') === 0) { rt.state = 'exited'; rtNote(r.replace(/^error:\s*/, '')); }
-            else rt.term.focus();
+            else { rt.token = (/^started:(\d+)$/.exec(r) || [])[1] || null; rt.term.focus(); }
         }
-        window.onPtyStarted = function (id, res) {
-            if (id !== rt.id) return;
+        // The phone tags every start/output/end notice with the token of the start it belongs to. A notice queued before a restart can still run after it
+        // (the page was busy inside ptyClose/ptyStart), so it is dropped here when its token is not the one of the running start.
+        function rtStale(token) { return token != null && String(token) !== String(rt.token); }
+        window.onPtyStarted = function (id, res, token) {
+            if (id !== rt.id || rtStale(token)) return;
             if (res && res.ok) { rt.state = 'running'; return; }
             rt.state = 'exited';
             rtNote(String((res && res.message) || 'The terminal did not start'));
         };
-        window.onPtyData = function (id, b64) {
-            if (id !== rt.id || !rt.term) return;
+        window.onPtyData = function (id, b64, token) {
+            if (id !== rt.id || !rt.term || rtStale(token)) return;
             const bin = atob(b64), u = new Uint8Array(bin.length);
             for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
-            rt.term.write(u, () => { try { window.AndroidBridge.ptyAck(id, u.length); } catch (e) {} });
+            const mine = rt.token;
+            // the credit goes back only to the start the output came from: a restart in between must not be given the old session's acknowledgement
+            rt.term.write(u, () => { if (mine !== rt.token) return; try { window.AndroidBridge.ptyAck(id, u.length); } catch (e) {} });
         };
-        window.onPtyExit = function (id, code) {
-            if (id !== rt.id) return;
+        window.onPtyExit = function (id, code, token) {
+            if (id !== rt.id || rtStale(token)) return;
             rt.state = 'exited';
             if (rt.term) rt.term.write('\r\n\x1b[2m[process ended' + (code >= 0 ? ' (' + code + ')' : '') + ': press Enter to start a new one]\x1b[0m\r\n');
         };
@@ -34900,7 +34905,7 @@ Type any command below (e.g. pm list packages -d)
             if (!t) { showToast('The clipboard is empty'); return; }
             if (rt.term) { rt.term.paste(t); rt.term.focus(); }
         }
-        function rtEnd() { try { window.AndroidBridge.ptyClose(rt.id); } catch (e) {} rt.started = false; rt.state = 'off'; }
+        function rtEnd() { try { window.AndroidBridge.ptyClose(rt.id); } catch (e) {} rt.started = false; rt.state = 'off'; rt.token = 'closed'; }
         function rtRestart() {
             haptic();
             rtEnd();
