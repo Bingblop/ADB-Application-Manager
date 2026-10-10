@@ -45,7 +45,7 @@ public class RishKillTest {
     }
     return out;
   }
-  static void kill9(String pid) { try { new ProcessBuilder("/bin/kill", "-9", pid).redirectErrorStream(true).start().waitFor(); } catch (Exception e) { } }
+  static void kill9(String pid) { try { new ProcessBuilder(ENV + "/tb/kill", "-9", pid).redirectErrorStream(true).start().waitFor(); } catch (Exception e) { } }
   static void killAll() { for (String n : NUMS) for (String p : pids(n)) kill9(p); }
   static void sleepMs(long ms) { try { Thread.sleep(ms); } catch (InterruptedException e) { } }
   static boolean pidAlive(String pid) { return new File("/proc/" + pid + "/cmdline").exists() && !zombie(pid); }
