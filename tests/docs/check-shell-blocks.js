@@ -57,16 +57,28 @@ function extractBlocks(text) {
 // A trailing backslash continues the line only when the run of them is odd (an even run ends in an escaped backslash).
 const continues = s => (/\\+$/.exec(s) || [''])[0].length % 2 === 1;
 
-// The here-document delimiters a command line declares (a quoted delimiter counts; <<< is a here-string, not a here-document).
-function heredocsIn(cmd) {
-  const found = [];
-  const re = /<<(-?)\s*(?:'([^']+)'|"([^"]+)"|\\?([^\s;&|<>()'"]+))/g;
-  let m;
-  while ((m = re.exec(cmd))) {
-    if (cmd[m.index - 1] === '<' || cmd[m.index + 2] === '<') continue;
-    found.push({ word: m[2] || m[3] || m[4], dash: m[1] === '-' });
+// One line of shell, read with the quotes, comments and arithmetic of the line (and of the lines before it, in st = { quote, arith }) in mind.
+// Returns { code, heredocs }: the text outside quotes and comments, and the here-document delimiters declared outside them (a quoted delimiter counts;
+// << inside arithmetic is a shift and <<< a here-string, neither is a here-document).
+function scanLine(text, st) {
+  let code = '';
+  const heredocs = [];
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (st.quote) { if (c === st.quote) st.quote = null; else if (c === '\\' && st.quote === '"') i++; continue; }
+    if (c === '\\') { i++; continue; }
+    if (c === '"' || c === "'") { st.quote = c; continue; }
+    // a word that starts with # is a comment; a word starts after white space or a shell operator (echo ok;# note)
+    if (c === '#' && (i === 0 || /[\s;&|()<>]/.test(text[i - 1]))) break;
+    if (c === '(' && text[i + 1] === '(' && (i === 0 || /[\s;&|$]/.test(text[i - 1]))) { st.arith++; i++; continue; }
+    if (c === ')' && text[i + 1] === ')' && st.arith > 0) { st.arith--; i++; continue; }
+    if (c === '<' && text[i + 1] === '<' && text[i + 2] !== '<' && st.arith === 0) {
+      const hd = /^<<-?\s*(?:'([^']+)'|"([^"]+)"|\\?([^\s;&|<>()'"]+))/.exec(text.slice(i));
+      if (hd) { heredocs.push({ word: hd[1] || hd[2] || hd[3], dash: text[i + 2] === '-' }); i += hd[0].length - 1; continue; }
+    }
+    code += c;
   }
-  return found;
+  return { code, heredocs };
 }
 
 function shellLines(block) {
@@ -74,9 +86,15 @@ function shellLines(block) {
   if (!all.some(l => /^\s*\$(?: |$)/.test(l.text))) return all;   // a bare "$" is a prompt too
   const out = [];
   let continued = false;
+  let st = { quote: null, arith: 0 };
   let waiting = [];   // here-documents declared by the command being read
   let active = [];    // here-documents whose body (and terminator) is being read: those lines are input, not output, and are kept
-  const endOfCommand = () => { if (!continued && waiting.length) { active = waiting; waiting = []; } };
+  const read = text => {
+    const r = scanLine(text, st);
+    continued = continues(text) || st.quote !== null || /(?:\|\||&&|\|)\s*$/.test(r.code);      // the command goes on in the next line
+    waiting = waiting.concat(r.heredocs);
+    if (!continued && waiting.length) { active = waiting; waiting = []; }
+  };
   for (const l of all) {
     if (active.length) {
       out.push(l);
@@ -88,14 +106,11 @@ function shellLines(block) {
     if (m) {
       const cmd = m[1] || '';
       out.push({ text: cmd, line: l.line });
-      continued = continues(cmd);
-      waiting = waiting.concat(heredocsIn(cmd));
-      endOfCommand();
+      st = { quote: null, arith: 0 };
+      read(cmd);
     } else if (continued) {
       out.push(l);
-      continued = continues(l.text);
-      waiting = waiting.concat(heredocsIn(l.text));
-      endOfCommand();
+      read(l.text);
     }
   }
   return out;
@@ -108,35 +123,19 @@ function findPlaceholders(lines) {
   const found = [];
   let bodies = [];     // here-documents whose body is being read, in the order declared
   let pending = [];    // declared on the current command; their bodies start on the line after the command ends
-  let quote = null;
-  let arith = 0;
+  const st = { quote: null, arith: 0 };
   for (const { text, line } of lines) {
     // the terminator is the delimiter alone on the line: exact, except that <<- ignores leading tabs
     if (bodies.length) { const h = bodies[0]; if ((h.dash ? text.replace(/^\t+/, '') : text) === h.word) bodies.shift(); continue; }
-    let code = '';
-    for (let i = 0; i < text.length; i++) {
-      const c = text[i];
-      if (quote) { if (c === quote) quote = null; else if (c === '\\' && quote === '"') i++; continue; }
-      if (c === '\\') { i++; continue; }
-      if (c === '"' || c === "'") { quote = c; continue; }
-      // a word that starts with # is a comment; a word starts after white space or a shell operator (echo ok;# note)
-      if (c === '#' && (i === 0 || /[\s;&|()<>]/.test(text[i - 1]))) break;
-      // arithmetic, $(( ... )) or (( ... )): << there is a shift, not a here-document
-      if (c === '(' && text[i + 1] === '(' && (i === 0 || /[\s;&|$]/.test(text[i - 1]))) { arith++; i++; continue; }
-      if (c === ')' && text[i + 1] === ')' && arith > 0) { arith--; i++; continue; }
-      if (c === '<' && text[i + 1] === '<' && text[i + 2] !== '<' && arith === 0) {      // <<< is a here-string, not a here-document
-        const hd = /^<<-?\s*(?:'([^']+)'|"([^"]+)"|\\?([^\s;&|<>()'"]+))/.exec(text.slice(i));
-        if (hd) { pending.push({ word: hd[1] || hd[2] || hd[3], dash: text[i + 2] === '-' }); i += hd[0].length - 1; continue; }
-      }
-      code += c;
-    }
+    const { code, heredocs } = scanLine(text, st);
+    pending = pending.concat(heredocs);
     const re = /<([A-Za-z][\w .:/-]*)>/g;
     let m;
     while ((m = re.exec(code))) {
       found.push({ line, text: m[0] });
     }
     // the bodies start after the whole command: not while the line continues (odd trailing backslash, or a trailing | || &&) or a quote is still open
-    if (pending.length && !quote && !continues(text) && !/(?:\|\||&&|\|)\s*$/.test(code)) { bodies = pending; pending = []; }
+    if (pending.length && !st.quote && !continues(text) && !/(?:\|\||&&|\|)\s*$/.test(code)) { bodies = pending; pending = []; }
   }
   return found;
 }
@@ -216,9 +215,13 @@ function selfTest() {
     '```sh', '$ cat <<EOF', '<html>', 'EOF', '$ adb shell pm path <package> out.txt', '```', '',
     '```sh', '$ cat <<EOF', 'text', 'EOF', '$ if true; then', '```', '',
     '```sh', '$ cat <<EOF', '<html>', 'EOF', '$ echo done', 'done', '```', '',
+    '```sh', '$ echo "<<EOF"', '<<EOF', '$ adb shell pm path <package> out.txt', '```', '',
+    '```sh', '$ echo ok # <<EOF', 'ok', '$ adb shell pm path <package> out.txt', '```', '',
+    '```sh', '$ echo $((1 << 2))', '4', '$ adb shell pm path <package> out.txt', '```', '',
+    '```sh', '$ cat <<\'EOF\'', '<html>', 'EOF', '$ echo done', 'done', '```', '',
   ].join('\n');
   const got = checkText(fx).map(r => r.state + '@' + r.block.startLine + (r.problems.length ? ':' + [...new Set(r.problems.map(p => p.line))].join(',') : ''));
-  const want = ['ok@3', 'ok@9', 'FAIL@16:17', 'skipped@22', 'FAIL@26:27', 'FAIL@34:34', 'ok@42', 'FAIL@47:49', 'ok@52', 'FAIL@57:59', 'ok@62', 'ok@67', 'FAIL@72:76', 'FAIL@79:81', 'FAIL@84:85', 'FAIL@90:91', 'ok@94', 'ok@99', 'ok@104', 'ok@112', 'ok@119', 'ok@127', 'FAIL@138:140', 'FAIL@146:147', 'FAIL@152:154', 'ok@160', 'ok@166', 'FAIL@173:177', 'FAIL@180:180', 'ok@187'];
+  const want = ['ok@3', 'ok@9', 'FAIL@16:17', 'skipped@22', 'FAIL@26:27', 'FAIL@34:34', 'ok@42', 'FAIL@47:49', 'ok@52', 'FAIL@57:59', 'ok@62', 'ok@67', 'FAIL@72:76', 'FAIL@79:81', 'FAIL@84:85', 'FAIL@90:91', 'ok@94', 'ok@99', 'ok@104', 'ok@112', 'ok@119', 'ok@127', 'FAIL@138:140', 'FAIL@146:147', 'FAIL@152:154', 'ok@160', 'ok@166', 'FAIL@173:177', 'FAIL@180:180', 'ok@187', 'FAIL@195:198', 'FAIL@201:204', 'FAIL@207:210', 'ok@213'];
   const ok = JSON.stringify(got) === JSON.stringify(want);
   console.log(ok ? 'self-test: ok (' + got.length + ' blocks judged as expected)' : 'self-test: FAIL\n  got:  ' + got.join(' ') + '\n  want: ' + want.join(' '));
   return ok;
