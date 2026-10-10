@@ -36,7 +36,7 @@ const { chromium, PAGE } = require('./lib/pw');
 
   // 3) Entering a key persists it and a scan calls the bridge with the base APK path.
   await page.evaluate(() => vtKeyTyped('MYKEY123')); await page.waitForTimeout(20);
-  console.log('3. key persisted via saveSetting:', await page.evaluate(() => window.__settings.vt_api_key) === 'MYKEY123');
+  console.log('3. key persisted via saveSetting (as the one key, no second plain copy under the older name):', await page.evaluate(() => window.__settings.vt_key === JSON.stringify('MYKEY123') && !window.__settings.vt_api_key));
   await page.evaluate(() => { document.getElementById('vtScanBtn').click(); }); await page.waitForTimeout(40);
   const calls = await page.evaluate(() => window.__vt);
   console.log('   scan bridge called with key+path:', calls.includes('scan:MYKEY123:/data/work/base.apk'));
