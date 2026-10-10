@@ -14,13 +14,13 @@ Connect the phone to a computer with `adb` (USB, or Wireless Debugging) and run 
 ```sh
 adb devices                                         # the phone is listed as "device", not "unauthorized"
 export PKG=com.bloatware.bingblop                   # this app
-export APP=<package of any normal app you can freeze, e.g. com.android.egg>
+export APP=com.android.egg                          # REPLACE with the package of a normal app you can freeze (find one: adb shell pm list packages -3)
 adb shell getprop ro.product.model                  # write these three down for the report
 adb shell getprop ro.build.version.release
 adb shell getprop ro.build.version.sdk
 ```
 
-On Windows PowerShell use `$env:PKG="com.bloatware.bingblop"` and `$env:APP="..."`, and write `$env:PKG` where this script says `$PKG`.
+The commands are for a POSIX shell (Linux, macOS, Termux, or WSL / Git Bash on Windows): they use `grep`, `head`, `tail`, `sha256sum` and `$PKG` / `$APP`. They are **not** PowerShell commands; on Windows run them in WSL or Git Bash.
 
 Pick `APP` carefully: an app you do not mind freezing, standby-bucketing and dex-optimizing (not your launcher, keyboard or phone app).
 
@@ -34,17 +34,21 @@ Mark each step PASS, FAIL or SKIP and keep the output of the commands for a fail
 2. From the computer, look for the old loopback port 5042 on the phone:
 
    ```sh
-   adb shell "ss -ltn 2>/dev/null | grep 5042"
+   adb shell "ss -ltn | grep 5042"
    ```
 
-   If the phone has no `ss`, use the kernel table directly (5042 is `13B2` in hex; state `0A` means listening):
+   If the phone has no `ss` (the error `ss: inaccessible or not found` or `not found` appears), use the kernel table directly (5042 is `13B2` in hex;
+   state `0A` means listening):
 
    ```sh
-   adb shell "cat /proc/net/tcp /proc/net/tcp6 2>/dev/null | grep -i ':13B2 '"
+   adb shell "cat /proc/net/tcp /proc/net/tcp6 | grep -i ':13B2 '"
    ```
 
+   Errors are left visible on purpose. A probe that printed an error (command not found, permission denied) proved nothing: it is **not** a pass. Only
+   a probe that ran without an error and printed nothing counts as "nothing listening".
+
 3. Read the result:
-   - **Nothing printed** = the private socket is in use. This is the intended result: **PASS**.
+   - **Nothing printed and no error from a probe that ran** (check `echo $?` is 1 for `grep` finding nothing, not 126/127) = the private socket is in use. This is the intended result: **PASS**.
    - **A line with `LISTEN` / state `0A`** = this phone refused the private socket and fell back to loopback port 5042. adb works, but
      the old exposure is unchanged on this phone. Record it as its own result (model, Android version), **not** a pass.
    - Nothing printed *and* the app list did not load = the check says nothing; fix the connection first.
@@ -67,17 +71,19 @@ test it once). **PASS** if nothing asks you to type either again.
 
 ## 3. Keystore vault, new value (checklist: Keystore vault, new value)
 
-On the phone: enter a new GitHub token, then a new VirusTotal key and tap **Test key**. Both must work. Then clear both: the GitHub button loses its
-tick and the key card says no key.
+1. On the phone: enter a new GitHub token, then a new VirusTotal key and tap **Test key**. Both must work. **Leave both saved for now.**
+2. While they are still saved, check that the old plain place does not hold them. The app used to keep them in the plain preferences file
+   `adb_app_manager_prefs.xml` under these names: `github_token`, `kv_vt_key`, `kv_vt_key_ok`, `kv_vt_api_key` (needs a debuggable build or root; on a
+   release build `run-as` is refused and this cross-check is skipped):
 
-Command-line cross-check that no key is stored in the clear in the app's settings (needs a debuggable build or root; on a release
-build `run-as` is refused and this check is skipped):
+   ```sh
+   adb shell run-as $PKG cat shared_prefs/adb_app_manager_prefs.xml | grep -E 'name="(github_token|kv_vt_key|kv_vt_key_ok|kv_vt_api_key)"'
+   ```
 
-```sh
-adb shell run-as $PKG sh -c 'grep -rIl "ghp_\|github_pat_" shared_prefs files 2>/dev/null; echo done'
-```
-
-**PASS** if it prints only `done` (no file names), or if `run-as` is refused (SKIP the cross-check, the on-phone result still counts).
+   **PASS** if it prints nothing (the file exists and none of the four names is in it). An entry with a non-empty value is a **FAIL**: a secret is in
+   the clear. (The vault's own non-secret hint for the GitHub token is stored under a different name and does not match.) If `run-as` is refused or the
+   file is missing, write SKIP; the on-phone result still counts.
+3. Now clear both: the GitHub button loses its tick and the key card says no key. Run the command from step 2 again: still nothing.
 
 ## 4. Download safety (checklist: Download safety)
 
@@ -96,11 +102,14 @@ adb shell sha256sum "/sdcard/Download/<file>"       # must equal the SHA-256 car
 1. Install a downloaded app over the installed one **from the same source**: it must install.
 2. Try a test APK signed with a **different key** than the installed copy of the same package: the app must refuse it with a message about the signer.
 
-To see what the system itself says about the two signers (so you know the refusal is correct, not just the app being strict):
+To check that the two copies really have different signing certificates (so the refusal is correct, not just the app being strict), compare the
+`apksigner` digest of both. `dumpsys package` shows only an internal signature hash, not the SHA-256 certificate digest, so do not use it for this:
 
 ```sh
-adb shell dumpsys package <test-package> | grep -iA3 "signatures\|signing"        # installed copy
-apksigner verify --print-certs <the-test.apk>                                    # on the computer: the APK's signer
+adb shell pm path <test-package>                                  # prints package:/data/app/.../base.apk
+adb pull /data/app/.../base.apk installed-copy.apk                # use the path printed above
+apksigner verify --print-certs installed-copy.apk | grep "certificate SHA-256"
+apksigner verify --print-certs <the-test.apk>      | grep "certificate SHA-256"
 ```
 
 The two SHA-256 certificate digests must differ for step 2 to be a valid test. **PASS** if step 1 installs and step 2 is refused with the signer message.
@@ -152,7 +161,10 @@ must move and **Stop** must work.
 adb shell cmd package dump <second-app> | grep -iA6 "dexopt state"       # status should now read speed-profile after a finished run
 ```
 
-Run it twice: once let it finish, once tap Stop early. After Stop, the second app (the one not reached) must keep its old status.
+That is the finished run. To test **Stop**, first put the second app back to a state that is *different* from speed-profile, for example
+`adb shell cmd package compile --reset <second-app>` (or `-m verify -f <second-app>`), and note its status. Then start the batch again with the second app
+last in the list and tap **Stop** while the first app is being done. The second app's status must still be the baseline you noted (not speed-profile).
+If you cannot be fast enough to tap Stop before the second app, write SKIP rather than PASS.
 
 ## 10. Standby bucket: read (checklist: Standby bucket, read)
 
@@ -197,11 +209,19 @@ Put the app back the way it was afterwards: `adb shell am set-standby-bucket $AP
    adb shell "top -b -n 1 -m 15 2>/dev/null | grep -i bingblop"           # no CPU use
    ```
 
-   **PASS** if no activity of the app is running (a cached/empty process with 0% CPU is fine) and `dumpsys batterystats` shows no wakeups from it after closing:
+   **PASS** if no activity of the app is running (a cached/empty process with 0% CPU is fine).
+
+4. Battery statistics add up since the last charge, so one dump after closing cannot show what happened *after* closing. To check for wakeups, reset the
+   statistics first and then repeat steps 1 to 3:
 
    ```sh
-   adb shell dumpsys batterystats --charged $PKG | head -40
+   adb shell dumpsys batterystats --reset            # before step 1 (this clears the phone's battery history; it comes back as you use the phone)
+   # ... steps 1 to 3 ...
+   adb shell dumpsys batterystats $PKG > after-close.txt
    ```
+
+   Read the whole file for this app's entry (do not cut it with `head`): after the app was closed there should be no new wakelocks, jobs or alarms for
+   it. If you do not want to reset the statistics, write SKIP for this item; the process checks in step 3 still count.
 
 ## 13. Command output in the log (checklist: Command output in the log)
 
