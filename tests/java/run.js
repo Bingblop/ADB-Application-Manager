@@ -121,6 +121,7 @@ const SUITES = [
   { name: 'morphevt', title: 'Morphe Helper VirusTotal scan against a local server: lookup found / not found / wrong key / quota, cached report, upload and polling, upload_url above 32 MB, split bundles, the 4 per minute / 500 per day limiter with a fake clock and its saved counters, the key never in a message, Cancel',
     tests: ['MorpheVirusTotalTest'], main: 'com.bloatware.bingblop.MorpheVirusTotalTest', needs: ['json'], utf8: true },
   { name: 'rishreview', title: 'Rish shell, review findings, against a real mksh with toybox applets (Android\'s shell)', tests: ['RishReviewTest'], main: 'RishReviewTest', needs: ['rish'] },
+  { name: 'rishkill', title: 'Rish shell, a hung command is killed: a timeout or stop() ends it in bounded time with its whole process tree (child, grandchild, one that ignores INT and TERM), output before the hang arrives, a normal command is left alone, the session goes on (real mksh, real processes)', tests: ['RishKillTest'], main: 'RishKillTest', needs: ['rish', 'proc'] },
   { name: 'signer', title: 'In-app APK signer: v2 signatures checked with apksigner, RSA and EC keys, re-sign, edited and big APKs, tampering', tests: ['SignerTest'], main: 'SignerTest', needs: ['apk', 'apksigner', 'keys'] },
   { name: 'signwritefail', title: 'APK signer: a write that fails half way (disk full, simulated with ulimit -f) leaves no truncated APK and reports the write error', tests: ['SignWriteFailTest'], main: 'SignWriteFailTest', needs: ['apk', 'keys', 'bash'] },
   { name: 'signmismatch', title: 'APK signer refuses a key that does not match its certificate', tests: ['SignMismatchTest'], main: 'SignMismatchTest', needs: ['apk', 'keys'] },
@@ -203,6 +204,9 @@ const NEEDS = {
       fs.renameSync(f + '.part', f);
     }
     return { props: { mpp: f } };
+  },
+  proc: () => {
+    try { fs.readFileSync('/proc/self/stat'); fs.readdirSync('/proc'); return {}; } catch (e) { return { skip: 'needs a readable /proc (the suite finds its processes there)' }; }
   },
   rish: () => {
     const mksh = which('mksh'), toybox = which('toybox');
