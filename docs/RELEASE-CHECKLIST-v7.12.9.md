@@ -51,7 +51,7 @@ Install the arm64 file over the previous version (an update, not a fresh install
 Only if the changelog lists them (check the section you published):
 
 - [ ] (Only if the native install confirmation, #109, has been merged and is in the changelog.) Installing a downloaded app in ADB, Shizuku or root mode shows a dialog with the host the file came from, whether the app is new or replaces one, and the package and version read from the file; Cancel stops the install, and the dialog closes by itself after two minutes.
-- [ ] Sharing, scanning with VirusTotal or opening with another app, a file from the app's own private folders (`shared_prefs`, the adb key) is refused with a message; a file picked from storage or a patched APK still works. (The normal screens never offer a private file, so only a script that calls the bridge reaches the refusal; do the part that still works, and skip the rest if you cannot call the bridge.)
+- [ ] In the File Manager, opening, sharing or editing a file from the app's own private folders (`shared_prefs`, the adb key) is refused with a message; a file picked from storage, a patched APK and the Helper's downloads still work (see PHONE-QUICK-CHECK, step 4).
 - [ ] A 100 KB paste into the terminal while `yes` is running does not freeze it, and Ctrl-C still stops `yes`.
 
 ## If something is wrong

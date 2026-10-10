@@ -40,6 +40,24 @@ public class PtyShellTest {
         return r;
     }
 
+    /** The pid of a running process whose command line is exactly "sleep N" (mark), or -1 (a zombie does not count). */
+    static int pidOf(String mark) throws Exception {
+        File[] ps = new File("/proc").listFiles();
+        if (ps == null) return -1;
+        for (File f : ps) {
+            if (!f.getName().matches("[0-9]+")) continue;
+            try {
+                String cmd = new String(java.nio.file.Files.readAllBytes(new File(f, "cmdline").toPath()), StandardCharsets.UTF_8);
+                if (!cmd.equals(mark.replace(' ', '\0') + "\0")) continue;
+                String stat = new String(java.nio.file.Files.readAllBytes(new File(f, "stat").toPath()), StandardCharsets.UTF_8);
+                if (stat.substring(stat.lastIndexOf(')') + 2).startsWith("Z")) continue;
+                return Integer.parseInt(f.getName());
+            } catch (java.io.IOException gone) {
+            }
+        }
+        return -1;
+    }
+
     static void type(Rec r, String s) throws Exception { byte[] b = s.getBytes(StandardCharsets.UTF_8); r.sh.write(b, 0, b.length); }
 
     public static void main(String[] args) throws Exception {
@@ -98,6 +116,23 @@ public class PtyShellTest {
         long t0 = System.currentTimeMillis();
         z.sh.close();
         is("closing hangs up: the program ends within a second or two", z.done.await(4, TimeUnit.SECONDS) && System.currentTimeMillis() - t0 < 3500 && z.code == 129, "code " + z.code);
+
+        // ---- a program that ignores SIGHUP is killed after a grace period (C-015) ----
+        // close() hangs up (the helper sends SIGHUP and, 500 ms later, SIGKILL to the program's process group) and destroys the helper after 800 ms; the
+        // helper used to wait for the program forever, so a program that ignores SIGHUP survived the closed terminal.
+        String mark = "sleep " + (40000 + new java.util.Random().nextInt(20000));       // an unusual duration: no other process has this command line
+        Rec ig = start(h, 24, 80, "/bin/sh", "-c", "trap '' HUP; exec " + mark);
+        long ig0 = System.currentTimeMillis();
+        int igPid = -1;
+        while (igPid < 0 && System.currentTimeMillis() - ig0 < 3000) { igPid = pidOf(mark); if (igPid < 0) Thread.sleep(20); }
+        is("a program that ignores SIGHUP is running", igPid > 0, mark);
+        ig.sh.close();
+        long ig1 = System.currentTimeMillis();
+        while (pidOf(mark) > 0 && System.currentTimeMillis() - ig1 < 2000) Thread.sleep(20);
+        boolean igGone = pidOf(mark) < 0;
+        is("it is gone within 2 s of close()", igGone, igGone ? "" : "still running: pid " + pidOf(mark));
+        is("and the end is reported as a kill (137)", ig.done.await(2, TimeUnit.SECONDS) && ig.code == 137, "code " + ig.code);
+        if (!igGone) new ProcessBuilder("kill", "-9", String.valueOf(pidOf(mark))).start().waitFor();
 
         // ---- flow control: output waits for the page ----
         Rec f = new Rec();

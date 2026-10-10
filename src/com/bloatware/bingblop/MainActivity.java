@@ -3220,6 +3220,72 @@ public class MainActivity extends Activity {
                 }, PrivatePaths.exportable(getFilesDir(), getCacheDir()));
     }
 
+    private static final String PRIVATE_WHY = "That file is part of this app's own private data and is not opened or sent from here.";
+
+    /**
+     * Opens {@code f} for reading and only then decides whether it may be read: the decision is made from the open descriptor (where /proc/self/fd/N
+     * points, and the link count from fstat), not from the name, so a name swapped for a link between a check and the open cannot lead into the private
+     * part of the data folder. Fails closed: anything that cannot be read from the descriptor counts as private. Closing the stream closes the descriptor.
+     */
+    private InputStream openUnlessPrivate(File f) throws IOException {
+        android.os.ParcelFileDescriptor pfd = android.os.ParcelFileDescriptor.open(f, android.os.ParcelFileDescriptor.MODE_READ_ONLY);
+        boolean ok = false;
+        try {
+            checkOpenedNotPrivate(pfd);
+            ok = true;
+            return new android.os.ParcelFileDescriptor.AutoCloseInputStream(pfd);
+        } finally {
+            if (!ok) { try { pfd.close(); } catch (IOException ignored) {} }
+        }
+    }
+
+    /** Throws unless the file behind {@code pfd} may be read (see {@link #openUnlessPrivate}); anything the descriptor cannot tell counts as private. */
+    private void checkOpenedNotPrivate(android.os.ParcelFileDescriptor pfd) throws IOException {
+        try {
+            String target = android.system.Os.readlink("/proc/self/fd/" + pfd.getFd());
+            long links = android.system.Os.fstat(pfd.getFileDescriptor()).st_nlink;
+            if (!PrivatePaths.blockedOpened(target, links, getDataDir(), PrivatePaths.exportable(getFilesDir(), getCacheDir()))) return;
+        } catch (Exception e) {
+            // falls through: fail closed
+        }
+        throw new IOException(PRIVATE_WHY);
+    }
+
+    /** {@link #copyFile(File, OutputStream)} from a file that was opened and then judged (see {@link #openUnlessPrivate}); returns the bytes copied. */
+    private long copyFileChecked(File src, OutputStream out) throws Exception {
+        InputStream in = openUnlessPrivate(src);
+        long total = 0;
+        try {
+            byte[] buf = new byte[65536];
+            int n;
+            while ((n = in.read(buf)) > 0) { out.write(buf, 0, n); total += n; }
+        } finally { in.close(); }
+        return total;
+    }
+
+    /**
+     * What a file search leaves out: the app's own private data. The full check (a resolved path) runs only for what could lead there: a name below the data
+     * folder (under either of its spellings) or a link; everything else in a walk is plainly outside it.
+     */
+    private FileSearch.Skip searchSkip() {
+        final File data = getDataDir();
+        File real;
+        try { real = data.getCanonicalFile(); } catch (IOException e) { real = data; }
+        final File dataReal = real;
+        return new FileSearch.Skip() {
+            @Override
+            public boolean skip(File f) {
+                if (PrivatePaths.inside(f, data) || PrivatePaths.inside(f, dataReal) || java.nio.file.Files.isSymbolicLink(f.toPath())) return isPrivateData(f);
+                return false;
+            }
+        };
+    }
+
+    /** True when the file manager must not read, write or hand on {@code path}: the app's private data (see {@link #isPrivateData}); a content:// reference is never one. */
+    private boolean fmPrivate(String path) {
+        return path != null && !path.startsWith("content://") && isPrivateData(new File(path));
+    }
+
     /**
      * Scans a local APK with VirusTotal. A SHA-256 lookup (private, no upload) when upload=false; a full
      * upload-and-wait when upload=true. Progress and the final result -> window.onVtResult(json).
@@ -3228,12 +3294,20 @@ public class MainActivity extends Activity {
         executor.submit(new Runnable() {
             @Override
             public void run() {
+                File staged = null;
                 try {
                     if (apiKey == null || apiKey.trim().isEmpty()) throw new IllegalStateException("Enter your VirusTotal API key first.");
                     if (path == null || path.isEmpty()) throw new IllegalStateException("Load a package first.");
                     File f = new File(path);
                     if (!f.exists()) throw new IllegalStateException("The selected package is no longer available. Pick it again.");
                     if (isPrivateData(f)) throw new IllegalStateException("That file is part of this app's own private data and is not sent anywhere.");
+                    // what is hashed and uploaded is a copy made from a file that was opened and then judged, not whatever the name leads to a moment later
+                    File dir = new File(getCacheDir(), "vt_stage");
+                    if (!dir.isDirectory()) dir.mkdirs();
+                    staged = File.createTempFile("vt", ".bin", dir);
+                    FileOutputStream sout = new FileOutputStream(staged);
+                    try { copyFileChecked(f, sout); } catch (IOException denied) { throw new IllegalStateException(denied.getMessage()); } finally { sout.close(); }
+                    f = staged;
                     notifyUpdates("onVtResult", new JSONObject()
                             .put("stage", upload ? "uploading" : "scanning")
                             .put("message", upload ? "Uploading to VirusTotal… this can take a minute." : "Checking VirusTotal…"));
@@ -3248,6 +3322,8 @@ public class MainActivity extends Activity {
                     try {
                         notifyUpdates("onVtResult", new JSONObject().put("stage", "error").put("error", errMsg(e)));
                     } catch (Exception ignored) {}
+                } finally {
+                    if (staged != null) staged.delete();
                 }
             }
         });
@@ -4678,6 +4754,7 @@ public class MainActivity extends Activity {
      *  (7z with encrypted names, rar -hp) — a zip's directory is never encrypted, so a zip never needs it here. */
     private ZipTool.Archive archiveFor(String path, boolean fresh, char[] password) throws Exception {
         String p = fmCanonicalPath(path);
+        if (fmPrivate(p)) throw new IOException(PRIVATE_WHY);
         synchronized (archiveLock) {
             ArcSlot hit = fresh ? null : archiveSlots.get(p);
             if (hit != null && !hit.archive.isStale()) return hit.archive;
@@ -10325,7 +10402,7 @@ public class MainActivity extends Activity {
                     if (!src.isFile() || isPrivateData(src)) continue;
                     File copy = ShareProvider.newShareFile(MainActivity.this, o.optString("name", src.getName()));
                     java.io.FileOutputStream out = new java.io.FileOutputStream(copy);
-                    try { copyFile(src, out); } finally { out.close(); }
+                    try { copyFileChecked(src, out); } finally { out.close(); }
                     uris.add(ShareProvider.uriFor(copy));
                 }
                 if (uris.isEmpty()) return "Error: nothing to send";
@@ -12290,7 +12367,7 @@ public class MainActivity extends Activity {
                 }
                 File f = new File(path);
                 if (f.isFile() && f.canRead()) {
-                    java.io.FileInputStream in = new java.io.FileInputStream(f);
+                    InputStream in = openUnlessPrivate(f);
                     try {
                         java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
                         byte[] buf = new byte[65536];
@@ -12364,6 +12441,7 @@ public class MainActivity extends Activity {
                         if (roots.isEmpty() && safRoots.isEmpty()) throw new IOException("Choose where to search");
                         final FileSearch.Limits lim = new FileSearch.Limits();
                         lim.deadlineMs = t0 + 90000;
+                        lim.skip = searchSkip();                             // the app's own private data is neither listed nor read for content
                         lim.cancelled = searchCancelEarly;                  // a Cancel that came before the walk was set up still counts
                         searchLimits = lim;
                         res.put("problems", new JSONArray(q.problems));
@@ -12559,7 +12637,7 @@ public class MainActivity extends Activity {
                     long len = f.length();
                     if (len > FM_EDIT_MAX) { res.put("ok", false); res.put("tooBig", true); res.put("size", len); res.put("error", "This file is over 2 MB: too big to edit here."); return res.toString(); }
                     data = new byte[(int) len];
-                    java.io.DataInputStream in = new java.io.DataInputStream(new java.io.FileInputStream(f));
+                    java.io.DataInputStream in = new java.io.DataInputStream(openUnlessPrivate(f));
                     try { in.readFully(data); } finally { in.close(); }
                     res.put("mtime", f.lastModified());
                     res.put("writable", f.canWrite() || (f.getParentFile() != null && f.getParentFile().canWrite()));
@@ -12599,6 +12677,7 @@ public class MainActivity extends Activity {
                 path = fmCanonicalPath(path);
                 if (path.startsWith("content://")) return fmWriteTextSaf(path, text, expectMtime);
                 if (fmProtectedPath(path)) { res.put("ok", false); res.put("error", "System location: not touched"); return res.toString(); }
+                if (fmPrivate(path)) { res.put("ok", false); res.put("error", PRIVATE_WHY); return res.toString(); }
                 byte[] data = (text == null ? "" : text).getBytes(java.nio.charset.StandardCharsets.UTF_8);
                 if (data.length > FM_EDIT_MAX * 2) { res.put("ok", false); res.put("error", "Too much text to save here."); return res.toString(); }
                 File f = new File(path);
@@ -12636,7 +12715,7 @@ public class MainActivity extends Activity {
                 long len = f.length();
                 if (!f.isFile() || !f.canRead() || len <= 0 || len > Math.min(12288, Math.max(1, maxKb)) * 1024L) return "";
                 byte[] data = new byte[(int) len];
-                java.io.DataInputStream in = new java.io.DataInputStream(new java.io.FileInputStream(f));
+                java.io.DataInputStream in = new java.io.DataInputStream(openUnlessPrivate(f));
                 try { in.readFully(data); } finally { in.close(); }
                 return android.util.Base64.encodeToString(data, android.util.Base64.NO_WRAP);
             } catch (Throwable t) { return ""; }
@@ -12710,6 +12789,7 @@ public class MainActivity extends Activity {
                 File f = new File(path);
                 String kind = ThumbCache.kindOf(f.getName());
                 if (kind.isEmpty() || !f.isFile() || !f.canRead() || f.length() <= 0 || (kind.equals("image") && f.length() > 80L * 1024 * 1024)) return null;
+                if (isPrivateData(f)) return null;
                 File cached = new File(thumbDir(), ThumbCache.key(path, f.lastModified(), f.length(), px) + ".jpg");
                 if (!cached.isFile()) {
                     android.graphics.Bitmap bm = null;
@@ -12755,7 +12835,7 @@ public class MainActivity extends Activity {
                     try {
                         String p = fmCanonicalPath(path);
                         File f = new File(p);
-                        if (f.isFile() && f.canRead() && f.length() < 120L * 1024 * 1024) {
+                        if (f.isFile() && f.canRead() && f.length() < 120L * 1024 * 1024 && !isPrivateData(f)) {
                             int lim = Math.max(256, Math.min(2048, maxPx));
                             android.graphics.Bitmap bm = fmDecodeImage(p, lim);
                             if (bm != null) {
@@ -12785,6 +12865,7 @@ public class MainActivity extends Activity {
                         File f = new File(fmCanonicalPath(path));
                         if (!f.isFile() || !f.canRead()) throw new IOException("The app cannot read this file.");
                         pfd = android.os.ParcelFileDescriptor.open(f, android.os.ParcelFileDescriptor.MODE_READ_ONLY);
+                        checkOpenedNotPrivate(pfd);
                         pr = new android.graphics.pdf.PdfRenderer(pfd);
                         int n = pr.getPageCount();
                         int pg = Math.max(0, Math.min(n - 1, page));
@@ -12844,7 +12925,7 @@ public class MainActivity extends Activity {
                         if (src.length() > 400L * 1024 * 1024) throw new IOException("This file is too big to hand over from here (over 400 MB).");
                         File copy = ShareProvider.newShareFile(MainActivity.this, src.getName());
                         java.io.FileOutputStream out = new java.io.FileOutputStream(copy);
-                        try { copyFile(src, out); } finally { out.close(); }
+                        try { copyFileChecked(src, out); } finally { out.close(); }
                         final Uri uri = ShareProvider.uriFor(copy);
                         final String mime = mimeHint != null && !mimeHint.isEmpty() ? mimeHint : fmMime(src.getName());
                         runOnUiThread(new Runnable() {
@@ -13150,6 +13231,8 @@ public class MainActivity extends Activity {
                 }
                 // the same protection the batch operations have: removing or moving away a whole storage root, a top-level folder or a system tree
                 if (("rm".equals(op) || "mv".equals(op)) && fmProtectedPath(a)) { res.put("ok", false); res.put("output", "System location: not touched"); return res.toString(); }
+                // nothing is copied out of, moved, removed from or written into the app's own private data from here
+                if (fmPrivate(a) || ((("cp".equals(op) || "mv".equals(op)) && b != null && !b.isEmpty() && fmPrivate(b)))) { res.put("ok", false); res.put("output", PRIVATE_WHY); return res.toString(); }
                 // what the app can do with its own file access needs no working mode
                 String direct = fmOpDirect(op, a, b);
                 if (direct != null) { res.put("ok", direct.isEmpty()); res.put("output", direct.isEmpty() ? "OK" : direct); if (direct.isEmpty() || !direct.startsWith("?")) return res.toString(); }
@@ -13263,6 +13346,7 @@ public class MainActivity extends Activity {
                         List<String> todo = new ArrayList<String>();
                         for (String q : paths) {
                             if (fmProtectedPath(q)) failed.put(new JSONObject().put("p", q).put("error", "System location: not touched"));
+                            else if (fmPrivate(q) || (!"rm".equals(op) && fmPrivate(dest))) failed.put(new JSONObject().put("p", q).put("error", PRIVATE_WHY));
                             else if (!"rm".equals(op) && (dest.equals(q) || dest.startsWith(q + "/"))) failed.put(new JSONObject().put("p", q).put("error", "Can't put a folder inside itself"));
                             else todo.add(q);
                         }
@@ -13418,6 +13502,7 @@ public class MainActivity extends Activity {
             JSONObject res = new JSONObject();
             try {
                 path = fmCanonicalPath(path);
+                if (fmPrivate(path)) { res.put("ok", false); res.put("error", PRIVATE_WHY); return res.toString(); }
                 try {
                     File f = new File(path);
                     if (f.isFile() && f.canRead()) { res.put("ok", true); res.put("ref", path); return res.toString(); }
@@ -13681,6 +13766,7 @@ public class MainActivity extends Activity {
                         ZipTool.Archive a = archiveFor(path, false);
                         String dest = fmCanonicalPath(destDir == null || destDir.trim().isEmpty() ? "/storage/emulated/0/Download" : destDir.trim());
                         File dir = new File(dest);
+                        if (fmPrivate(dest)) throw new IOException(PRIVATE_WHY);                     // nothing is unpacked into the app's own private data
                         String name = entry == null ? "" : entry;
                         boolean tree = name.isEmpty() || name.endsWith("/");
                         boolean writable = (dir.isDirectory() || dir.mkdirs()) && dir.canWrite();
@@ -13995,6 +14081,7 @@ public class MainActivity extends Activity {
                         if (!"zip".equals(format) && !ArchiveIo.supportsCreate(format)) throw new IOException("This format isn't available in this build yet. Use Zip for now.");
                         String name = opts.optString("name");
                         File dir = new File(fmCanonicalPath(opts.optString("dir")));
+                        if (fmPrivate(dir.getPath())) throw new IOException(PRIVATE_WHY);
                         int level = opts.optInt("level", 6);
                         boolean replace = "replace".equals(opts.optString("policy"));
                         String password = opts.optString("password", "");
@@ -14010,6 +14097,7 @@ public class MainActivity extends Activity {
                         long totalBytes = 0;
                         for (int i = 0; i < itemsArr.length(); i++) {
                             File f = new File(fmCanonicalPath(itemsArr.getJSONObject(i).optString("p")));
+                            if (isPrivateData(f)) throw new IOException(PRIVATE_WHY);
                             totalBytes += czCollect(srcs, f, f.getName(), seen, problems, fileCount);
                         }
                         if (fileCount[0] == 0) throw new IOException("Nothing to compress");
@@ -14908,7 +14996,7 @@ public class MainActivity extends Activity {
                     File copy = ShareProvider.newShareFile(MainActivity.this, name != null ? name : src.getName());
                     java.io.FileOutputStream out = new java.io.FileOutputStream(copy);
                     try {
-                        copyFile(src, out);
+                        copyFileChecked(src, out);
                     } finally {
                         out.close();
                     }
