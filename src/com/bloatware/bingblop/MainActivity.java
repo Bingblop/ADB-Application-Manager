@@ -1960,10 +1960,9 @@ public class MainActivity extends Activity {
                 String error = null;
                 java.net.HttpURLConnection conn = null;
                 try {
-                    conn = (java.net.HttpURLConnection) new java.net.URL(UAD_LIST_URL).openConnection();
-                    conn.setConnectTimeout(15000);
-                    conn.setReadTimeout(30000);
-                    conn.setRequestProperty("User-Agent", "ADB-Application-Manager");
+                    java.util.Map<String, String> uadHdr = new java.util.LinkedHashMap<String, String>();
+                    uadHdr.put("User-Agent", "ADB-Application-Manager");
+                    conn = HttpSafe.open(UAD_LIST_URL, 15000, 30000, uadHdr);
                     int code = conn.getResponseCode();
                     if (code != 200) throw new IllegalStateException("HTTP " + code);
                     InputStream in = conn.getInputStream();
@@ -4562,6 +4561,7 @@ public class MainActivity extends Activity {
     private static final Object tmLock = new Object();
     private ScheduledExecutorService tmExec;
     private ScheduledFuture<?> tmTask;
+    private boolean tmClosed;           // set under tmLock by onDestroy: a late tmStart from the page must not bring the poll back
     private CpuStats.Reading tmLastCpu;
     private NetStats.Reading tmLastNet;
     private long tmLastSampleAt;
@@ -11265,6 +11265,7 @@ public class MainActivity extends Activity {
             if (intervalMs < 1000) intervalMs = 1000;
             if (intervalMs > 10000) intervalMs = 10000;
             synchronized (tmLock) {
+                if (tmClosed) return "closed";
                 if (tmTask != null) tmTask.cancel(false);
                 if (tmExec == null) {
                     tmExec = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
@@ -14983,6 +14984,14 @@ public class MainActivity extends Activity {
         } catch (Throwable ignored) {}
         try { cdExecutor.shutdown(); } catch (Throwable ignored) {}
         try { trackerExecutor.shutdown(); } catch (Throwable ignored) {}
+        // the Task Manager poll: if the tab was open when the activity went, its thread would keep ticking and keep this activity alive
+        try {
+            synchronized (tmLock) {
+                tmClosed = true;
+                if (tmTask != null) { tmTask.cancel(false); tmTask = null; }
+                if (tmExec != null) { tmExec.shutdownNow(); tmExec = null; }
+            }
+        } catch (Throwable ignored) {}
         if (Build.VERSION.SDK_INT >= 27 && wallpaperColorsListener != null) {
             try {
                 android.app.WallpaperManager.getInstance(this).removeOnColorsChangedListener(
