@@ -61,7 +61,7 @@ Install the arm64 file over the previous version (an update, not a fresh install
 
 Only if the changelog lists them (check the section you published):
 
-- [ ] Installing a downloaded app in ADB, Shizuku or root mode shows a dialog with the host the file came from, whether the app is new or replaces one, and the package and version read from the file; Cancel stops the install, and the dialog closes by itself after two minutes.
+- [ ] (Only if the native install confirmation, #109, has been merged and is in the changelog.) Installing a downloaded app in ADB, Shizuku or root mode shows a dialog with the host the file came from, whether the app is new or replaces one, and the package and version read from the file; Cancel stops the install, and the dialog closes by itself after two minutes.
 - [ ] Sharing, scanning with VirusTotal or opening with another app a file from the app's own private folders (`shared_prefs`, the adb key) is refused with a message; a file picked from storage or a patched APK still works.
 - [ ] A 100 KB paste into the terminal while `yes` is running does not freeze it, and Ctrl-C still stops `yes`.
 
