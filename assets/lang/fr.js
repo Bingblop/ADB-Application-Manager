@@ -4464,7 +4464,14 @@ x: {
 "VirusTotal scan<1>Checks the file by its hash after it downloads</1>": "Analyse VirusTotal<1>Vérifie le fichier par son empreinte après le téléchargement</1>",
 "Words in a name: <1>photo</1> (all must match; <2/> and <3/> are wildcards; <4>-word</4> leaves a name out; \"two words\" in quotes).<br> <5>ext:jpg,png</5> or <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> looks inside text files (up to 4 MB). <15>archive:name</15> looks at the names of the entries inside zip, apk, jar and similar archives.": "Mots dans un nom : <1>photo</1> (tous doivent correspondre ; <2/> et <3/> sont des jokers ; <4>-word</4> exclut un nom ; \"two words\" entre guillemets).<br> <5>ext:jpg,png</5> ou <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> cherche dans les fichiers texte (jusqu'à 4 Mo). <15>archive:name</15> cherche dans les noms des entrées des zip, apk, jar et archives similaires.",
 "Write your message and tap <1>Send</1>: your email app opens with it ready, addressed to a contact alias (<2/>) that forwards to the developer. The subject is <3>ADB App Manager</3>. The developer's own address is not in this app, and the message is sent from your email app, not by this one.": "Écrivez votre message et touchez <1>Envoyer</1> : votre application de messagerie s’ouvre avec le message prêt, adressé à un alias de contact (<2/>) qui le transmet au développeur. L’objet est <3>ADB App Manager</3>. L’adresse propre du développeur n’est pas dans cette application, et le message est envoyé par votre application de messagerie, pas par celle-ci.",
-"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "Vous êtes actuellement en <1>mode lecture seule</1>. Les opérations sur les packages système (comme Geler, Activer, Forcer l’arrêt, Effacer les données ou Désinstaller) nécessitent des autorisations élevées via <2>ADB TCP (5555)</2>, <3>le débogage sans fil</3>, <4>Shizuku</4> ou <5>Root</5>."
+"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "Vous êtes actuellement en <1>mode lecture seule</1>. Les opérations sur les packages système (comme Geler, Activer, Forcer l’arrêt, Effacer les données ou Désinstaller) nécessitent des autorisations élevées via <2>ADB TCP (5555)</2>, <3>le débogage sans fil</3>, <4>Shizuku</4> ou <5>Root</5>.",
+"Choose how much Android limits the app while it is not in use. Active has no limits; restricted has the most.": "Choisissez dans quelle mesure Android limite l’app quand elle n’est pas utilisée. active n’impose aucune limite ; restricted en impose le plus.",
+"Could not change the standby bucket": "Impossible de changer le bucket de veille",
+"Could not read the standby bucket": "Impossible de lire le bucket de veille",
+"No answer from the app": "Aucune réponse de l’app",
+"Standby": "Veille",
+"Standby bucket": "Bucket de veille",
+"Standby bucket changed": "Bucket de veille modifié"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "« {0} » n’est pas un nombre de secondes."],
@@ -5510,6 +5517,8 @@ p: [
 ["✓ fits this phone ({0})", "✓ compatible avec ce téléphone ({0})"],
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0} a le même signataire que la clé de cette application : elle peut être mise à jour sur place"],
 ["✓ {0}: done", "✓ {0} : terminé"],
-["＋ Create “{0}” in {1}", "＋ Créer « {0} » dans {1}"]
+["＋ Create “{0}” in {1}", "＋ Créer « {0} » dans {1}"],
+["am set-standby-bucket {0} {1}", "am set-standby-bucket {0} {1}"],
+["am get-standby-bucket {0}", "am get-standby-bucket {0}"]
 ]
 };

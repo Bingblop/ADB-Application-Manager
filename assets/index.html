@@ -7138,6 +7138,9 @@ Type any command below (e.g. pm list packages -d)
                 <button class="sheet-btn" onclick="openOptimizeModal('single')" id="sheetBtnOptimize">
                     <span>Optimize</span>
                 </button>
+                <button class="sheet-btn" onclick="openStandbyModal()" id="sheetBtnStandby">
+                    <span>Standby</span>
+                </button>
                 <button class="sheet-btn" onclick="openAppLog()" id="sheetBtnLogs">
                     <span>Logs</span>
                 </button>
@@ -7461,6 +7464,35 @@ Type any command below (e.g. pm list packages -d)
             <div style="display:flex; gap:10px; margin-top:8px;">
                 <button class="mode-action-btn primary" style="flex:1; justify-content:center;" onclick="confirmOptimize()">Run</button>
                 <button class="mode-action-btn" style="padding:10px 16px;" onclick="closeOptimizeModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="standbyModal" onclick="if(event.target===this) closeStandbyModal()">
+        <div class="modal-sheet">
+            <div class="sheet-header">
+                <div class="sheet-app-hero">
+                    <div class="sheet-title">
+                        <h3>Standby bucket</h3>
+                        <p id="standbySubtitle" translate="no"></p>
+                    </div>
+                </div>
+                <div style="font-size:20px; cursor:pointer;" onclick="closeStandbyModal()">✕</div>
+            </div>
+            <label class="switch-row" style="margin-top:4px;">
+                <div><div class="switch-title">Standby bucket</div><div class="switch-sub">am set-standby-bucket</div></div>
+                <select class="op-select" id="standbyBucket">
+                    <option value="active">active</option>
+                    <option value="working_set">working_set</option>
+                    <option value="frequent">frequent</option>
+                    <option value="rare">rare</option>
+                    <option value="restricted">restricted</option>
+                </select>
+            </label>
+            <div class="switch-sub" style="margin:6px 2px;">Choose how much Android limits the app while it is not in use. Active has no limits; restricted has the most.</div>
+            <div style="display:flex; gap:10px; margin-top:8px;">
+                <button class="mode-action-btn primary" style="flex:1; justify-content:center;" onclick="confirmStandby()">Apply</button>
+                <button class="mode-action-btn" style="padding:10px 16px;" onclick="closeStandbyModal()">Cancel</button>
             </div>
         </div>
     </div>
@@ -22816,6 +22848,50 @@ Type any command below (e.g. pm list packages -d)
             } else {
                 showCommandResults('Toggle component', name.split('.').pop(), [{ name: name.split('.').pop(), pkg: inspectedPkg + '/' + name, output: r.output, success: false }]);
             }
+        }
+
+        // ---- App standby bucket (single app inspector): read what the phone says, set one, read it back ----
+        let standbyPkg = null;
+        // the Java bridge matches methods by argument count: pass exactly what the caller gave
+        function standbyBridgeCall(name, ...args) {
+            try { return JSON.parse(window.AndroidBridge[name](...args)); } catch (e) { return null; }
+        }
+        function openStandbyModal() {
+            if (!inspectedPkg) return;
+            if (!guardPrivilege('Standby bucket')) return;
+            haptic();
+            standbyPkg = inspectedPkg;
+            const app = allApps.find(a => a.pkg === standbyPkg);
+            document.getElementById('standbySubtitle').innerText = (app ? app.name + ' • ' : '') + standbyPkg;
+            const sel = document.getElementById('standbyBucket');
+            Array.from(sel.querySelectorAll('option[data-extra]')).forEach(o => o.remove());      // a bucket this list cannot set (exempted, never) from an earlier look
+            if (!window.AndroidBridge || !window.AndroidBridge.getStandbyBucket) { showToast('Needs the app build'); return; }
+            const r = standbyBridgeCall('getStandbyBucket', standbyPkg);
+            if (!r || !r.bucket) {                                  // no answer from the phone: do not offer a bucket the page only guessed
+                showToast('Could not read the standby bucket');
+                showCommandResults('Standby bucket', 'am get-standby-bucket ' + standbyPkg, [{ name: app ? app.name : standbyPkg, pkg: standbyPkg, output: (r && r.output) || 'No answer from the app', success: false }]);
+                return;
+            }
+            if (!Array.from(sel.options).some(o => o.value === r.bucket)) {
+                const o = document.createElement('option'); o.value = r.bucket; o.textContent = r.bucket; o.dataset.extra = '1'; o.disabled = true; sel.appendChild(o);
+            }
+            sel.value = r.bucket;
+            document.getElementById('standbyModal').classList.add('show');
+        }
+        function closeStandbyModal() {
+            haptic();
+            document.getElementById('standbyModal').classList.remove('show');
+        }
+        function confirmStandby() {
+            const pkg = standbyPkg, bucket = document.getElementById('standbyBucket').value;
+            document.getElementById('standbyModal').classList.remove('show');
+            if (!pkg || !window.AndroidBridge || !window.AndroidBridge.setStandbyBucket) { showToast('Needs the app build'); return; }
+            haptic();
+            const r = standbyBridgeCall('setStandbyBucket', pkg, bucket);
+            if (r && r.ok) { showToast('Standby bucket changed'); return; }
+            const app = allApps.find(a => a.pkg === pkg) || { name: pkg };
+            showToast('Could not change the standby bucket');
+            showCommandResults('Standby bucket', 'am set-standby-bucket ' + pkg + ' ' + bucket, [{ name: app.name, pkg: pkg, output: (r && r.output) || 'No answer from the app', success: false }]);
         }
 
         // ---- Dex optimization (single app inspector + batch) ----

@@ -4464,7 +4464,14 @@ x: {
 "VirusTotal scan<1>Checks the file by its hash after it downloads</1>": "فحص VirusTotal<1>يفحص الملف بقيمة التجزئة بعد تنزيله</1>",
 "Words in a name: <1>photo</1> (all must match; <2/> and <3/> are wildcards; <4>-word</4> leaves a name out; \"two words\" in quotes).<br> <5>ext:jpg,png</5> or <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> looks inside text files (up to 4 MB). <15>archive:name</15> looks at the names of the entries inside zip, apk, jar and similar archives.": "كلمات في الاسم: <1>photo</1> (يجب أن تتطابق جميعها؛ <2/> و<3/> رمزان بديلان؛ <4>-word</4> يستبعد اسماً؛ \"كلمتان\" بين علامتي تنصيص).<br> <5>ext:jpg,png</5> أو <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> يبحث داخل الملفات النصية (حتى 4 ميغابايت). <15>archive:name</15> يبحث في أسماء العناصر داخل أرشيفات zip وapk وjar وما شابهها.",
 "Write your message and tap <1>Send</1>: your email app opens with it ready, addressed to a contact alias (<2/>) that forwards to the developer. The subject is <3>ADB App Manager</3>. The developer's own address is not in this app, and the message is sent from your email app, not by this one.": "اكتب رسالتك واضغط <1>إرسال</1>: يفتح تطبيق البريد لديك والرسالة جاهزة، موجّهة إلى اسم مستعار للتواصل (<2/>) يحوّلها إلى المطوّر. الموضوع هو <3>ADB App Manager</3>. عنوان المطوّر نفسه ليس في هذا التطبيق، وتُرسل الرسالة من تطبيق البريد لديك لا من هذا التطبيق.",
-"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "أنت تعمل حاليًا في <1>وضع القراءة فقط</1>. تتطلب عمليات حزم النظام (مثل التجميد أو التفعيل أو فرض الإيقاف أو مسح البيانات أو إلغاء التثبيت) صلاحيات مرتفعة عبر <2>ADB TCP (5555)</2> أو <3>التصحيح اللاسلكي</3> أو <4>Shizuku</4> أو <5>Root</5>."
+"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "أنت تعمل حاليًا في <1>وضع القراءة فقط</1>. تتطلب عمليات حزم النظام (مثل التجميد أو التفعيل أو فرض الإيقاف أو مسح البيانات أو إلغاء التثبيت) صلاحيات مرتفعة عبر <2>ADB TCP (5555)</2> أو <3>التصحيح اللاسلكي</3> أو <4>Shizuku</4> أو <5>Root</5>.",
+"Choose how much Android limits the app while it is not in use. Active has no limits; restricted has the most.": "اختر مقدار تقييد Android للتطبيق أثناء عدم استخدامه. لا يفرض active أي قيود، بينما يفرض restricted أقصاها.",
+"Could not change the standby bucket": "تعذّر تغيير سلة الاستعداد",
+"Could not read the standby bucket": "تعذّرت قراءة فئة الاستعداد",
+"No answer from the app": "لا توجد استجابة من التطبيق",
+"Standby": "الاستعداد",
+"Standby bucket": "سلة الاستعداد",
+"Standby bucket changed": "تم تغيير سلة الاستعداد"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "«{0}» ليس عددًا من الثواني."],
@@ -5510,6 +5517,8 @@ p: [
 ["✓ fits this phone ({0})", "✓ يناسب هذا الهاتف ({0})"],
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ الإصدار v{0} له الموقِّع نفسه لمفتاح هذا التطبيق، لذلك يمكن تحديثه في المكان نفسه"],
 ["✓ {0}: done", "✓ {0}: تم"],
-["＋ Create “{0}” in {1}", "＋ إنشاء “{0}” في {1}"]
+["＋ Create “{0}” in {1}", "＋ إنشاء “{0}” في {1}"],
+["am set-standby-bucket {0} {1}", "am set-standby-bucket {0} {1}"],
+["am get-standby-bucket {0}", "am get-standby-bucket {0}"]
 ]
 };
