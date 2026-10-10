@@ -2784,6 +2784,8 @@ public class MainActivity extends Activity {
     private boolean confirmPrivilegedInstall(final String message) {
         final java.util.concurrent.CountDownLatch answered = new java.util.concurrent.CountDownLatch(1);
         final boolean[] yes = { false };
+        // This question's own dialog: several installs can ask at the same time, and each one dismisses only its own
+        final java.util.concurrent.atomic.AtomicReference<android.app.AlertDialog> mine = new java.util.concurrent.atomic.AtomicReference<android.app.AlertDialog>();
         try {
             runOnUiThread(new Runnable() {
                 @Override
@@ -2802,21 +2804,22 @@ public class MainActivity extends Activity {
                     b.setOnDismissListener(new android.content.DialogInterface.OnDismissListener() {
                         @Override
                         public void onDismiss(android.content.DialogInterface d) {
-                            if (installConfirmDialog == d) installConfirmDialog = null;
+                            installConfirmDialogs.remove(d);
                             answered.countDown();
                         }
                     });
                     android.app.AlertDialog dlg = b.create();
-                    installConfirmDialog = dlg;
+                    mine.set(dlg);
+                    installConfirmDialogs.add(dlg);
                     dlg.show();
                 }
             });
             if (!answered.await(120, java.util.concurrent.TimeUnit.SECONDS)) {
-                dismissInstallConfirm();   // no answer is a no, and the question must not stay on screen to be answered later
+                dismissInstallConfirm(mine);   // no answer is a no, and the question must not stay on screen to be answered later
                 return false;
             }
         } catch (InterruptedException e) {
-            dismissInstallConfirm();
+            dismissInstallConfirm(mine);
             Thread.currentThread().interrupt();
             return false;
         } catch (RuntimeException e) {
@@ -2825,20 +2828,27 @@ public class MainActivity extends Activity {
         return yes[0];
     }
 
-    /** The install question currently on screen, if any (touched on the UI thread only, except for the null check by the waiting thread). */
-    private volatile android.app.AlertDialog installConfirmDialog;
+    /** The install questions on screen now (one per install waiting for an answer); touched on the UI thread. */
+    private final java.util.Set<android.content.DialogInterface> installConfirmDialogs = new java.util.HashSet<android.content.DialogInterface>();
 
-    private void dismissInstallConfirm() {
+    private void dismissInstallConfirm(final java.util.concurrent.atomic.AtomicReference<android.app.AlertDialog> mine) {
         try {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    android.app.AlertDialog d = installConfirmDialog;
-                    installConfirmDialog = null;
-                    if (d != null && d.isShowing()) d.dismiss();
+                    android.app.AlertDialog d = mine.get();
+                    if (d != null) { installConfirmDialogs.remove(d); if (d.isShowing()) d.dismiss(); }
                 }
             });
         } catch (RuntimeException ignored) { /* the screen is already gone */ }
+    }
+
+    /** The screen is closing: every install question still open is closed with it (each waiting install then reads that as no). */
+    private void dismissAllInstallConfirms() {
+        for (android.content.DialogInterface d : new java.util.ArrayList<android.content.DialogInterface>(installConfirmDialogs)) {
+            try { d.dismiss(); } catch (Throwable ignored) {}
+        }
+        installConfirmDialogs.clear();
     }
 
     private void storeInstallProgress(String pkg, String stage, int percent, String message) {
@@ -15111,7 +15121,7 @@ public class MainActivity extends Activity {
     protected void onDestroy() {
         super.onDestroy();
         // the install question belongs to this window; closing it ends the wait with "no" (a dialog must not leak past its activity)
-        try { android.app.AlertDialog d = installConfirmDialog; installConfirmDialog = null; if (d != null && d.isShowing()) d.dismiss(); } catch (Throwable ignored) {}
+        dismissAllInstallConfirms();
         // pools that nothing else stops: their idle threads would keep this activity (and its views) alive after a recreate()
         // SD Maid SE: drop the calls still queued, then stop the engine's own pool and timer (they hold hooks that capture this
         // activity, and the page that would show their results is gone). Only when the tab was ever used.
