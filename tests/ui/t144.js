@@ -1,5 +1,6 @@
 // v7.12.0: the default agent (Settings, under Language) and the Ask agent window; the app menu's tags carry no "UAD-NG" text and an app the list does not know gets an Ask agent button; without a default agent (or one that is not connected) the button opens Settings.
 const { chromium, PAGE } = require('./lib/pw');
+const webMock = require('./lib/web_mock.js');
 let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : 'FAIL ') + label + (ok && extra === undefined ? '' : ': ' + (extra === undefined ? ok : extra))); }
 (async () => {
@@ -20,6 +21,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
       getUadInfo(p) { return p === 'com.samsung.android.bixby.agent' ? JSON.stringify({ found: true, pkg: p, removal: 'Advanced', list: 'OEM', description: 'Bixby.' }) : '{}'; },
     };
   }, apps);
+  await page.addInitScript(webMock.install);
   await page.addInitScript(() => { window.__opened = []; window.open = u => { window.__opened.push(u); return null; }; });
   await page.goto(PAGE); await page.waitForTimeout(900);
   const sleep = ms => page.waitForTimeout(ms);
@@ -40,8 +42,10 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
 
   // no default agent chosen: the window still opens, says so and leaves the free Web search; nothing is asked
   await ev(() => { window.__sent.length = 0; document.getElementById('sheetAsk').click(); }); await sleep(450);
-  const noAgent = await ev(() => ({ modal: document.getElementById('agentAskModal').classList.contains('show'), ai: document.getElementById('agentAskAi').innerText, sent: window.__sent.length, web: !!document.querySelector('#agentAskModal [onclick="agentAskWeb()"]') }));
-  check('3. with no default agent chosen the button opens the window, which says to choose and connect an agent and keeps Web search (free, no setup); nothing is sent', noAgent.modal && /choose a default agent/.test(noAgent.ai) && /Web search/.test(noAgent.ai) && noAgent.web && noAgent.sent === 0, JSON.stringify(noAgent));
+  const noAgent = await ev(() => ({ modal: document.getElementById('agentAskModal').classList.contains('show'), ai: document.getElementById('agentAskAi').innerText, sentBox: document.getElementById('agentAskSent').innerText, sent: window.__sent.length, reqs: window.__reqs.slice(), web: !!document.querySelector('#agentAskModal [onclick="agentAskWeb()"]'), src: Array.from(document.querySelectorAll('#agentAskAi .agent-btn')).map(b => b.innerText) }));
+  check('3. with no default agent chosen the button opens the window and the built-in web lookup answers instead of an agent: nothing goes to an agent', noAgent.modal && noAgent.sent === 0 && noAgent.reqs.length >= 2, JSON.stringify(noAgent));
+  check('   the first request is the search for the package name only (nothing about the phone), the first result page is read, a wrapped result address is unwrapped', /bing\.com\/search\?q=android(%20|\+)com\.example\.unknown/.test(noAgent.reqs[0]) && !/Pixel|SM-|Android%2014/i.test(noAgent.reqs[0]) && noAgent.reqs.indexOf('https://example.org/perm') > 0 && noAgent.src.indexOf('developer.android.com') >= 0, JSON.stringify(noAgent.reqs));
+  check('   it shows what the pages say, the sources, and the way to choose an agent; the box of "what is sent" lists the search words, not the phone', /What the pages say/.test(noAgent.ai) && /allows read only access/i.test(noAgent.ai) && /Sources/.test(noAgent.ai) && /Open Settings/.test(noAgent.ai) && noAgent.web && /^android /.test(noAgent.sentBox) && !/Version|Android 1/.test(noAgent.sentBox), JSON.stringify(noAgent.ai) + ' | ' + noAgent.sentBox);
   await ev(() => document.querySelector('#agentAskAi a').click()); await sleep(450);
   const redirected = await ev(() => ({ view: currentViewName(), card: document.getElementById('agentCard').classList.contains('flash'), modal: document.getElementById('agentAskModal').classList.contains('show'), insp: document.getElementById('inspectorModal').classList.contains('show') }));
   check('   its Open Settings link leads to the Default agent card', redirected.view === 'prefs' && redirected.card && !redirected.modal && !redirected.insp, JSON.stringify(redirected));
@@ -50,7 +54,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   const card = await ev(() => { const l = document.getElementById('languageCard'), c = document.getElementById('agentCard'); return { after: l.nextElementSibling === c, opts: [...document.querySelectorAll('#askAgentSelect option')].map(o => o.value), val: document.getElementById('askAgentSelect').value, note: document.getElementById('askAgentNote').innerText }; });
   check('4. the Default agent card follows the Language card; no agent is chosen, and the agents can be picked', card.after && card.val === '' && card.opts[0] === '' && card.opts.includes('claude') && card.opts.includes('gemini') && !card.opts.includes('none') && /No agent is chosen/.test(card.note), JSON.stringify(card));
   const oss = await ev(() => { txBuildAgentSelect(); return ({ bu: txAgentDef('browseruse'), c4: txAgentDef('crawl4ai'), inDefault: [...document.querySelectorAll('#askAgentSelect option')].map(o => o.value).filter(v => v === 'browseruse' || v === 'crawl4ai'), inCli: [...document.querySelectorAll('#txAgent option')].map(o => o.value).filter(v => v === 'browseruse' || v === 'crawl4ai') }); });
-  check('4b. Browser Use and Crawl4AI are explained entries of the free open-source list (not chat agents): in the Command-Line Interface list, not in the Default agent choice', oss.bu && oss.c4 && oss.bu.api === 'info' && oss.c4.api === 'info' && oss.bu.group === 'oss' && oss.c4.group === 'oss' && oss.inDefault.length === 0 && oss.inCli.length === 2, JSON.stringify(oss));
+  check('4b. Browser Use and Crawl4AI are agents of the free open-source list that only answer the Ask agent buttons: in the Command-Line Interface list and in the Default agent choice', oss.bu && oss.c4 && oss.bu.askOnly && oss.c4.askOnly && oss.bu.api === 'browseruse' && oss.c4.api === 'crawl4ai' && oss.bu.group === 'oss' && oss.c4.group === 'oss' && oss.inDefault.length === 2 && oss.inCli.length === 2, JSON.stringify(oss));
   await ev(() => { const s = document.getElementById('askAgentSelect'); s.value = 'claude'; s.dispatchEvent(new Event('change')); }); await sleep(100);
   const picked = await ev(() => ({ id: askAgentId, saved: kvGet('ask_agent', ''), note: document.getElementById('askAgentNote').innerText }));
   check('5. choosing an agent saves it; one that is not connected yet says so', picked.id === 'claude' && picked.saved === 'claude' && /not connected yet/.test(picked.note), JSON.stringify(picked));
@@ -73,7 +77,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('   and a system prompt that asks for a verdict and admits not knowing', sent && /Safe, Caution or Do not touch/.test(sent.system) && /do not recognize/.test(sent.system));
   const ans = await ev(() => ({ t: document.getElementById('agentAskAi').innerText }));
   check('8. the answer is shown, with a note of what was sent', /Caution: this is the Bixby-like helper\./.test(ans.t) && /Asking Claude/.test(ans.t) && /The text above is sent to them/.test(ans.t), JSON.stringify(ans));
-  await ev(() => document.querySelector('#agentAskModal .lc-ent-btns .mode-action-btn:nth-child(2)').click()); await sleep(100);
+  await ev(() => document.getElementById('agentAskWebBtn').click()); await sleep(100);
   check('9. Web search opens a search for the package', (await ev(() => window.__opened.join('|'))).includes('google.com/search?q=android%20com.example.unknown%20safe%20to%20disable'));
   await ev(() => agentAskClose());
   check('10. closing leaves the window shut', await ev(() => !document.getElementById('agentAskModal').classList.contains('show')));

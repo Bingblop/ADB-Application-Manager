@@ -58,6 +58,19 @@ public class AgentRulesTest {
         && deepseek.test.equals("https://api.deepseek.com/v1/models")
         && AgentRules.allowed(deepseek, null, "https://api.deepseek.com/v1/chat/completions") && !AgentRules.allowed(deepseek, null, "https://evil.example/v1/chat/completions")
         && AgentRules.hint("sk-0123456789abcdef0123456789abcdef").equals("sk-…cdef"));
+    AgentRules.Provider crawl4ai = AgentRules.find("crawl4ai"), browseruse = AgentRules.find("browseruse");
+    check("Crawl4AI: Bearer key to api.crawl4ai.com only, its sk_live_ key shown short and masked",
+        crawl4ai != null && "api.crawl4ai.com".equals(crawl4ai.host) && "Authorization".equals(crawl4ai.header) && "Bearer ".equals(crawl4ai.prefix)
+        && AgentRules.allowed(crawl4ai, null, "https://api.crawl4ai.com/answer?q=x") && !AgentRules.allowed(crawl4ai, null, "https://evil.example/answer")
+        && !AgentRules.allowed(crawl4ai, null, "http://api.crawl4ai.com/answer")
+        && AgentRules.hint("sk_" + "live_0123456789abcdef0123456789").equals("sk_live_…6789")
+        && AgentRules.redact("Bearer sk_" + "live_0123456789abcdef0123456789").equals("Bearer sk_live_0123…"));
+    check("Browser Use: X-Browser-Use-API-Key (no prefix) to api.browser-use.com only, its bu_ key masked",
+        browseruse != null && "api.browser-use.com".equals(browseruse.host) && "X-Browser-Use-API-Key".equals(browseruse.header) && "".equals(browseruse.prefix)
+        && browseruse.test.equals("https://api.browser-use.com/api/v2/billing/account")
+        && AgentRules.allowed(browseruse, null, "https://api.browser-use.com/api/v2/tasks") && !AgentRules.allowed(browseruse, null, "https://evil.example/api/v2/tasks")
+        && AgentRules.hint("bu_0123456789abcdef0123456789").equals("bu_…6789")
+        && AgentRules.redact("key bu_0123456789abcdef0123456789").equals("key bu_0123…"));
     check("unknown providers are not", AgentRules.find("evil") == null && AgentRules.find(null) == null);
     check("Claude: x-api-key plus the API version header", "x-api-key".equals(claude.header) && "".equals(claude.prefix)
         && claude.extra.length == 1 && "anthropic-version".equals(claude.extra[0][0]) && "2023-06-01".equals(claude.extra[0][1]));
@@ -69,7 +82,12 @@ public class AgentRulesTest {
         && copilot.test.equals("https://api.github.com/user"));
     check("each command-line tool's own variable", "ANTHROPIC_API_KEY".equals(claude.env) && "OPENAI_API_KEY".equals(openai.env) && "GEMINI_API_KEY".equals(gemini.env)
         && "CURSOR_API_KEY".equals(cursor.env) && "COPILOT_GITHUB_TOKEN".equals(copilot.env) && jan.env == null);
-    check("own-server providers have no fixed host", jan.ownServer() && AgentRules.find("anythingllm").ownServer() && AgentRules.find("ollama").ownServer() && !claude.ownServer());
+    check("own-server providers have no fixed host", jan.ownServer() && AgentRules.find("anythingllm").ownServer() && AgentRules.find("ollama").ownServer() && AgentRules.find("ownserver").ownServer() && !claude.ownServer());
+    check("Own server: its key goes only to the saved address (a LAN address over http is fine, another one is not)",
+        AgentRules.allowed(AgentRules.find("ownserver"), "http://192.168.1.20:1234/v1", "http://192.168.1.20:1234/v1/chat/completions")
+        && !AgentRules.allowed(AgentRules.find("ownserver"), "http://192.168.1.20:1234/v1", "http://192.168.1.21:1234/v1/chat/completions")
+        && !AgentRules.allowed(AgentRules.find("ownserver"), null, "http://192.168.1.20:1234/v1/models")
+        && AgentRules.testUrl(AgentRules.find("ownserver"), "192.168.1.20:1234/v1/").equals("http://192.168.1.20:1234/v1/models"));
 
     // ---------------------------------------------------------------- where a key may go
     check("Claude key: to api.anthropic.com over https", AgentRules.allowed(claude, "", "https://api.anthropic.com/v1/messages"));

@@ -101,8 +101,9 @@ const isCmp = (p, node) => p && ((p.type === 'BinaryExpression' && ['===', '!=='
 const top = (node, anc) => { const p = anc[anc.length - 2]; return !(p && ((p.type === 'BinaryExpression' && p.operator === '+') || (p.type === 'ConditionalExpression' && p.test !== node) || (p.type === 'LogicalExpression' && (p.operator === '||' || p.operator === '??')) || (p.type === 'TemplateLiteral'))); };
 
 // what the coding agents are told, and shell commands the Terminal builds: never shown to a person
-const neverShown = (anc) => anc.some(a => a.type === 'FunctionDeclaration' && a.id && /^(txSystemPrompt|txCliWrap|txCliLogin|txComplete|txReadFile|txWriteBytes|txApplyEdits|txCursorPrompt|txDebianCmd|agentSystem|askAgentAbout|openAppAsk)$/.test(a.id.name))
+const neverShown = (anc) => anc.some(a => a.type === 'FunctionDeclaration' && a.id && /^(txSystemPrompt|txCliWrap|txCliLogin|txComplete|txReadFile|txWriteBytes|txApplyEdits|txCursorPrompt|txDebianCmd|agentSystem|askAgentAbout|openAppAsk|wlQueryFromText|txBuTask|askTestSample)$/.test(a.id.name))
   || anc.some(a => a.type === 'CallExpression' && a.callee.type === 'Identifier' && a.callee.name === 'agentBtnHtml')     // the lines an Ask agent button hands to the agent (shown only in a box that is not translated)
+  || anc.some(a => a.type === 'VariableDeclarator' && a.id && a.id.name === 'WL_UA')        // the browser name the web lookup introduces itself with
   || (anc.some(a => a.type === 'VariableDeclarator' && a.id && a.id.name === 'TX_CLI') && anc.some(a => a.type === 'ArrowFunctionExpression' || a.type === 'FunctionExpression'));   // the command lines of the agents' own tools
 // what the page tells a coding agent about its steps (<result ...>), and web addresses with changing parts: not text either
 const forModel = (v) => /<\/?result\b/.test(v);

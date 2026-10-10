@@ -79,7 +79,7 @@ final class AgentVault {
     synchronized JSONObject status() {
         JSONObject o = new JSONObject();
         try {
-            for (String id : new String[]{"claude", "chatgpt", "gemini", "cursor", "copilot", "perplexity", "grok", "muse", "deepseek", "jan", "anythingllm", "ollama"}) {
+            for (String id : new String[]{"claude", "chatgpt", "gemini", "cursor", "copilot", "perplexity", "grok", "muse", "deepseek", "crawl4ai", "browseruse", "jan", "anythingllm", "ollama", "ownserver"}) {
                 boolean hasKey = prefs.contains("k_" + id);
                 String base = prefs.getString("b_" + id, "");
                 if (!hasKey && base.isEmpty()) continue;

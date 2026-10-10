@@ -2,6 +2,7 @@
 // (Copy, More info from the Coding Agent, Web search), Web search and Explain (AI) for a hidden setting, the CPU temperature unit lives in t87, the Uninstalled box in t104.
 const { chromium, PAGE } = require('./lib/pw');
 const mock = require('./lib/sdb_mock.js');
+const webMock = require('./lib/web_mock.js');
 let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : 'FAIL ') + label + (ok && extra === undefined ? '' : ': ' + (extra === undefined ? ok : extra))); }
 (async () => {
@@ -13,6 +14,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   let acceptNext = true;
   page.on('dialog', d => { dialogs.push(d.message()); if (acceptNext) d.accept(); else d.dismiss(); });
   await page.addInitScript(mock.initScript);
+  await page.addInitScript(webMock.install);
   await page.addInitScript(() => {
     const base = window.AndroidBridge;
     window.__opened = [];
@@ -70,9 +72,11 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   }));
   check('   a running app\'s row is tinted green and an uninstalled app\'s row red (a frozen one stays blue, a plain one has no tint)', await ev(() => {
     allApps.length = 0; allApps.push({ name: 'Run', pkg: 'com.t.run', isRunning: true }, { name: 'Gone', pkg: 'com.t.gone', isUninstalled: true }, { name: 'Cold', pkg: 'com.t.cold', isFrozen: true }, { name: 'Plain', pkg: 'com.t.plain' }); renderApps();
-    const rgb = k => getComputedStyle(document.getElementById('card_com.t.' + k)).backgroundColor.match(/\d+(\.\d+)?/g).map(Number);
+    const rgb = k => { const c = getComputedStyle(document.getElementById('card_com.t.' + k)).backgroundColor; const n = c.match(/\d+(\.\d+)?/g).slice(0, 3).map(Number); return /^color\(/.test(c) ? n.map(v => v * 255) : n; };       // a mixed colour comes back as color(srgb 0..1)
     const run = rgb('run'), gone = rgb('gone'), cold = rgb('cold'), plain = rgb('plain');
-    return run[1] > run[0] && run[1] > run[2] && gone[0] > gone[1] && gone[0] > gone[2] && cold[2] > cold[0] && cold[2] > cold[1]
+    const lean = (c, i) => [0, 1, 2].every(j => j === i || (c[i] - plain[i]) > (c[j] - plain[j]));        // the tint is very subtle: compare with the plain row, towards green / red / blue
+    const big = c => Math.max(Math.abs(c[0] - plain[0]), Math.abs(c[1] - plain[1]), Math.abs(c[2] - plain[2]));
+    return lean(run, 1) && lean(gone, 0) && lean(cold, 2) && big(run) <= 14 && big(gone) <= 14 && big(cold) <= 14
       && document.getElementById('card_com.t.plain').className.indexOf('running') < 0 && String(plain) !== String(run) && String(plain) !== String(gone);
   }));
   await ev(() => switchView('apps')); await sleep(200);
@@ -132,7 +136,8 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   const opened = await ev(() => window.__opened.slice());
   check('   Web search opens a search made of the tag and the first line', opened.length === 1 && /^https:\/\/www\.google\.com\/search\?q=/.test(opened[0]) && /AndroidRuntime/.test(decodeURIComponent(opened[0])) && /FATAL\+EXCEPTION|FATAL%20EXCEPTION/.test(opened[0]), opened[0]);
   await page.click('#lcEntMore'); await sleep(250);
-  check('   Ask agent with no default agent chosen opens Settings on the choice instead of asking (nothing is sent)', await ev(() => currentViewName() === 'prefs' && !document.getElementById('lcEntryModal').classList.contains('show') && !!document.getElementById('agentCard') && document.getElementById('agentCard').classList.contains('flash')));
+  await sleep(600);
+  check('   Ask agent with no default agent chosen answers with the built-in web lookup in the entry window (nothing goes to an agent)', await ev(() => document.getElementById('lcEntryModal').classList.contains('show') && /Searched the web for/.test(document.getElementById('lcEntAi').innerText) && (window.__sent || []).length === 0 && /bing\.com\/search/.test((window.__reqs || [])[0] || '')), await ev(() => document.getElementById('lcEntAi').innerText + ' | ' + JSON.stringify(window.__reqs)));
   await ev(l => { switchView('logcat'); logcatRender(l, true); lcEntryOpen(0); }, LOG); await sleep(250);
   // with an agent: the answer streams in
   await ev(() => {
