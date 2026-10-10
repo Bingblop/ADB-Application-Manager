@@ -54,7 +54,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('3. while a Browser Use task runs the window shows a progress bar (by steps) and a Stop button', prog && st1.stop !== 'none' && /^\d+%$/.test(st1.w) && st1.go, JSON.stringify(st1));
   await page.click('#agentAskStop'); await sleep(300);
   const st2 = await ev(() => ({ t: document.getElementById('agentAskAi').innerText, prog: document.getElementById('agentAskProg').classList.contains('on'), stop: getComputedStyle(document.getElementById('agentAskStop')).display, go: document.getElementById('agentAskGo').disabled, reqs: window.__ai.reqs.map(r => r.method + ' ' + r.url.replace('https://api.browser-use.com', '')), json: (window.__ai.reqs.find(r => r.method === 'PATCH') || {}).json }));
-  check('   Stop ends it at once: "Stopped.", the bar and Stop are gone, Ask again is back, and the task is asked to stop', /Stopped\./.test(st2.t) && !st2.prog && st2.stop === 'none' && !st2.go && st2.reqs.some(r => /^PATCH \/api\/v2\/tasks\//.test(r)) && st2.json && st2.json.action === 'stop', JSON.stringify(st2));
+  check('   Stop ends it at once: "Stopped.", the bar and Stop are gone, Ask again is back, and the task is asked to stop', /Stopped\./.test(st2.t) && !st2.prog && st2.stop === 'none' && !st2.go && st2.reqs.some(r => /^PATCH \/api\/v2\/tasks\//.test(r)) && st2.json && st2.json.action === 'stop', JSON.stringify({ t: st2.t, prog: st2.prog, stop: st2.stop, go: st2.go }));
   const n1 = await ev(() => window.__ai.reqs.length); await sleep(300);
   check('   and no more questions about the task are sent', n1 === await ev(() => window.__ai.reqs.length));
   await ev(() => { agentAskClose(); window.__ai.queue.length = 0; });

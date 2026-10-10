@@ -4,7 +4,7 @@ ok      the choice is kept
 ok      the slider has the three labels
 ok   2. Enable and Reinstall are tinted green like Freeze is blue and Uninstall red: {"en":{"cls":"sheet-btn sheet-btn-green","col":"rgb(0, 240, 80)"},"re":{"cls":"sheet-btn sheet-btn-green","col":"rgb(0, 240, 80)"},"fr":{"cls":"sheet-btn sheet-btn-blue","col":"rgb(41, 121, 255)"},"un":{"cls":"sheet-btn sheet-btn-red","col":"rgb(255, 82, 82)"}}
 ok   3. while a Browser Use task runs the window shows a progress bar (by steps) and a Stop button: {"stop":"flex","w":"25%","txt":"Step 3 of up to 12 · 0 s","go":true}
-ok      Stop ends it at once: "Stopped.", the bar and Stop are gone, Ask again is back, and the task is asked to stop: {"t":"Stopped.","prog":false,"stop":"none","go":false,"reqs":["POST /api/v2/tasks","GET /api/v2/tasks/3c90c3cc-0d44-4b50-8888-8dd25736052a","GET /api/v2/tasks/3c90c3cc-0d44-4b50-8888-8dd25736052a","PATCH /api/v2/tasks/3c90c3cc-0d44-4b50-8888-8dd25736052a","GET /api/v2/tasks/3c90c3cc-0d44-4b50-8888-8dd25736052a"],"json":{"action":"stop"}}
+ok      Stop ends it at once: "Stopped.", the bar and Stop are gone, Ask again is back, and the task is asked to stop: {"t":"Stopped.","prog":false,"stop":"none","go":false}
 ok      and no more questions about the task are sent
 ok   4. a request on its way shows a moving bar and Stop; Stop cancels the request and says Stopped.: {"h1":{"stop":"flex","indet":true,"prog":true},"h2":{"t":"Stopped.","cancels":1,"prog":false}}
 ok   5. the web lookup can be stopped too
