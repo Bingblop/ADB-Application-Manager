@@ -4,7 +4,7 @@ package com.bloatware.bingblop;
  * The text of the question asked before an app that was downloaded from a web address is installed with a privileged mode (adb, Shizuku, root), which
  * installs without the system installer's own confirmation. It names only what the app itself has checked: the package and version inside the downloaded
  * file, where it came from, and whether it is new or replaces an installed app. Nothing in it comes from the page except the label, which is shown as
- * text and marked as the page's name for it. Pure Java, no android.* classes.
+ * text and marked as the page's name for it, and the checksum, which is said to come with the request. Pure Java, no android.* classes.
  */
 final class InstallConfirm {
     private InstallConfirm() {}
@@ -20,12 +20,12 @@ final class InstallConfirm {
      * @param host             the host the bytes finally came from, after redirects (may be empty)
      * @param requestedHost    the host of the address the page gave (may be empty); shown when it differs from {@code host}
      * @param installedVersion the version installed now, or null when the app is not installed
-     * @param hashChecked      whether the file matched a checksum published by the source
+     * @param hashChecked      whether the file matched a checksum that came with the install request
      */
     static String message(String label, String packageName, String versionName, String host, String requestedHost, String installedVersion, boolean hashChecked) {
         StringBuilder sb = new StringBuilder();
         String name = clean(label, 80);
-        if (!name.isEmpty()) sb.append(name).append("\n");
+        if (!name.isEmpty()) sb.append("Name given by the page (not checked): ").append(name).append("\n");
         sb.append(clean(packageName, 200));
         String v = clean(versionName, 60);
         if (!v.isEmpty()) sb.append("  ").append(v);
@@ -36,7 +36,10 @@ final class InstallConfirm {
         if (!rh.isEmpty() && !rh.equalsIgnoreCase(h)) sb.append("(the address given was on ").append(rh).append(" and sent the download on)\n");
         if (installedVersion == null) sb.append("This is a new app: it is not installed on this phone.\n");
         else sb.append("It replaces the installed app").append(clean(installedVersion, 60).isEmpty() ? "" : " (now " + clean(installedVersion, 60) + ")").append(".\n");
-        sb.append(hashChecked ? "The file matches the checksum its source published.\n" : "Its source published no checksum, so the file could not be checked against one.\n");
+        // The checksum comes with the install request, from the same place as the address, so a match proves the download is the file that was asked for,
+        // not that the source published it.
+        sb.append(hashChecked ? "The file matches the checksum that came with the install request (it does not show who published it).\n"
+                              : "No checksum came with the install request, so the file could not be compared with one.\n");
         sb.append("\nIt is installed without the system installer's own question, so only continue if you started this install.");
         return sb.toString();
     }

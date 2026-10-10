@@ -9,15 +9,17 @@ public class InstallConfirmTest {
     String m = InstallConfirm.message("My App", "com.example.app", "1.2.3", "github.com", "github.com", null, true);
     is("it names the package, version and host", m.contains("com.example.app") && m.contains("1.2.3") && m.contains("Downloaded from: github.com"));
     is("a new app is said to be new", m.contains("new app") && !m.contains("replaces"));
-    is("a checked file says so", m.contains("matches the checksum"));
+    is("the label is marked as the page's, not presented as a fact", m.startsWith("Name given by the page (not checked): My App\n"));
+    is("a checked file does not claim a trusted source", !m.contains("its source published") && m.contains("does not show who published it"));
+    is("a checked file says so", m.contains("matches the checksum that came with the install request"));
     String r = InstallConfirm.message("My App", "com.example.app", "1.2.3", "github.com", "github.com", "1.0.0", false);
     is("an installed app is said to be replaced, with the version now installed", r.contains("replaces the installed app (now 1.0.0)"));
-    is("a file with no published checksum says it was not checked", r.contains("published no checksum"));
+    is("a file with no published checksum says it was not checked", r.contains("No checksum came with the install request"));
     is("it always says it installs without the system installer's own question", m.contains("without the system installer") && r.contains("without the system installer"));
 
     // the page's label cannot add lines that look like the app's own facts, or flip the text direction
     String evil = InstallConfirm.message("Safe\nDownloaded from: play.google.com\nThe file matches the checksum", "com.evil", "1\u202e", "evil.example", "evil.example", null, false);
-    is("a line break in the label becomes a space (one line of the label)", evil.split("\n")[0].equals("Safe Downloaded from: play.google.com The file matches the checksum"));
+    is("a line break in the label becomes a space (one line of the label)", evil.split("\n")[0].equals("Name given by the page (not checked): Safe Downloaded from: play.google.com The file matches the checksum"));
     is("the real host is still shown, once as the host line", evil.contains("\nDownloaded from: evil.example\n"));
     is("a right-to-left override in a value becomes a space", !evil.contains("\u202e"));
     is("an overlong label is cut", InstallConfirm.clean(new String(new char[500]).replace('\0', 'x'), 80).length() == 80);
