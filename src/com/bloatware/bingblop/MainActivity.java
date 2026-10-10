@@ -9108,15 +9108,8 @@ public class MainActivity extends Activity {
         private String runShellAction(String cmd) {
             String marker = "__RC" + System.nanoTime() + "__";
             String raw = executeShell(cmd + "; echo \"" + marker + ":$?\"");
-            if (raw == null) raw = "";
-            int idx = raw.lastIndexOf(marker + ":");
-            if (idx < 0) return flagged(true, raw); // the backend didn't run a real shell - nothing to parse, assume ok
-            String text = raw.substring(0, idx);
-            while (text.endsWith("\n")) text = text.substring(0, text.length() - 1);
-            int rc;
-            try { rc = Integer.parseInt(raw.substring(idx + marker.length() + 1).trim()); }
-            catch (NumberFormatException e) { rc = 0; }
-            return flagged(rc == 0, text);
+            ShellOutcome o = ShellOutcome.parse(raw, marker);          // no marker + an Error: line or a timeout note = failed, not ok
+            return flagged(o.ok, o.text);
         }
 
         /** A failed {@code pm uninstall} line, with a plain-language note appended when it is one of the common,
