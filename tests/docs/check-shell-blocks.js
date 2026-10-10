@@ -49,20 +49,22 @@ function shellLines(block) {
   const out = [];
   let continued = false;
   for (const l of all) {
-    const m = /^\s*\$ ?(.*)$/.exec(l.text);
-    if (m) { out.push({ text: m[1], line: l.line }); continued = /\\$/.test(m[1]); }
+    const m = /^\s*\$(?: (.*))?$/.exec(l.text);      // the prompt is "$ " (or a bare "$"); "$name" is output
+    if (m) { const cmd = m[1] || ''; out.push({ text: cmd, line: l.line }); continued = /\\$/.test(cmd); }
     else if (continued) { out.push(l); continued = /\\$/.test(l.text); }
   }
   return out;
 }
 
 // Unquoted <name> placeholders (outside quotes, comments and here-document bodies). Returns [{ line, text }].
+// A quote that is still open at the end of a line stays open on the next one; a here-document marker counts only where it is code (not inside
+// quotes or a comment), and its delimiter may be quoted.
 function findPlaceholders(lines) {
   const found = [];
   let heredoc = null;
+  let quote = null;
   for (const { text, line } of lines) {
     if (heredoc) { if (text.trim() === heredoc) heredoc = null; continue; }
-    let quote = null;
     let code = '';
     for (let i = 0; i < text.length; i++) {
       const c = text[i];
@@ -70,10 +72,12 @@ function findPlaceholders(lines) {
       if (c === '\\') { i++; continue; }
       if (c === '"' || c === "'") { quote = c; continue; }
       if (c === '#' && (i === 0 || /\s/.test(text[i - 1]))) break;
+      if (c === '<' && text[i + 1] === '<' && text[i + 2] !== '<') {      // <<< is a here-string, not a here-document
+        const hd = /^<<-?\s*(?:'([^']+)'|"([^"]+)"|\\?([A-Za-z_]\w*))/.exec(text.slice(i));
+        if (hd) { heredoc = hd[1] || hd[2] || hd[3]; i += hd[0].length - 1; continue; }
+      }
       code += c;
     }
-    const hd = /<<-?\s*(?:'([^']+)'|"([^"]+)"|\\?([A-Za-z_]\w*))/.exec(text);
-    if (hd) heredoc = hd[1] || hd[2] || hd[3];
     const re = /<([A-Za-z][\w .:/-]*)>/g;
     let m;
     while ((m = re.exec(code))) {
@@ -133,9 +137,13 @@ function selfTest() {
     '```bash', 'adb shell pm clear <package> out.txt', '```', '',
     '```json', '{"not": "shell", "x": <broken>}', '```', '',
     '```bash', 'cat <<\'EOF\'', '<html>', 'EOF', 'if true; then', '  echo broken', '```', '',
+    '```sh', '$ adb shell pm list packages', '$<output-not-a-command>', '```', '',
+    '```bash', 'echo "<<EOF"', 'adb shell pm path <package>', '```', '',
+    '```bash', 'echo "first line', '<tag> second line"', '```', '',
+    '```bash', '# see <<EOF later', 'adb shell pm path <package>', '```', '',
   ].join('\n');
   const got = checkText(fx).map(r => r.state + '@' + r.block.startLine + (r.problems.length ? ':' + [...new Set(r.problems.map(p => p.line))].join(',') : ''));
-  const want = ['ok@3', 'ok@9', 'FAIL@16:17', 'skipped@22', 'FAIL@26:27', 'FAIL@34:34'];
+  const want = ['ok@3', 'ok@9', 'FAIL@16:17', 'skipped@22', 'FAIL@26:27', 'FAIL@34:34', 'ok@42', 'FAIL@47:49', 'ok@52', 'FAIL@57:59'];
   const ok = JSON.stringify(got) === JSON.stringify(want);
   console.log(ok ? 'self-test: ok (' + got.length + ' blocks judged as expected)' : 'self-test: FAIL\n  got:  ' + got.join(' ') + '\n  want: ' + want.join(' '));
   return ok;
