@@ -26,7 +26,7 @@ const optimizeBatchMock = require('./lib/optimizebatch_mock');
       },
       executeAppAction(a, p) { window.__calls.push('action:' + a + ':' + p); return 'Success'; },
       setComponentEnabled(pkg, comp, enable) { window.__calls.push('toggle:' + comp + ':' + enable); return JSON.stringify({ ok: true, output: 'Component ' + comp + ' new state: ' + (enable ? 'enabled' : 'disabled') }); },
-      getStandbyBucket(pkg) { window.__calls.push('sbget:' + pkg); return JSON.stringify({ ok: true, bucket: window.__sb || 'rare', output: window.__sb || 'rare' }); },
+      getStandbyBucket(pkg) { window.__calls.push('sbget:' + pkg); if (window.__sbReadFail) return JSON.stringify({ ok: false, bucket: '', output: 'Error: the standby bucket needs ADB, Shizuku or Root.' }); return JSON.stringify({ ok: true, bucket: window.__sb || 'rare', output: window.__sb || 'rare' }); },
       setStandbyBucket(pkg, b) { window.__calls.push('sbset:' + pkg + ':' + b); if (window.__sbFail) return JSON.stringify({ ok: false, bucket: 'rare', output: 'The phone did not change it: it is in rare.' }); window.__sb = b; return JSON.stringify({ ok: true, bucket: b, output: b }); },
       optimizeApp(pkg, mode, force) { window.__calls.push('opt:' + pkg + ':' + mode + ':' + force); return JSON.stringify({ ok: true, output: 'Success' }); },
     };
@@ -120,6 +120,11 @@ const optimizeBatchMock = require('./lib/optimizebatch_mock');
   await sleep(100);
   console.log('a refusal by the phone gives a toast and the result window with its words:', (await toastText()) === 'Could not change the standby bucket' && await resultsShown());
   await page.evaluate(() => { window.__sbFail = false; closeCommandResultsModal(); });
+  // the phone cannot be read: no editable sheet with a guessed bucket, a toast and the result window with its words instead
+  await page.evaluate(() => { window.__sbReadFail = true; document.getElementById('standbyModal').classList.remove('show'); document.getElementById('standbyBucket').value = 'active'; openStandbyModal(); });
+  await sleep(100);
+  console.log('a failed read does not open the sheet, and says why:', !(await page.isVisible('#standbyModal.show')), await toastText(), await resultsShown());
+  await page.evaluate(() => { window.__sbReadFail = false; closeCommandResultsModal(); });
 
   console.log('errors:', JSON.stringify(errors));
   await b.close();

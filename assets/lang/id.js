@@ -4467,6 +4467,7 @@ x: {
 "You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "Saat ini Anda berjalan dalam <1>Mode Hanya Baca</1>. Operasi paket sistem (seperti Bekukan, Aktifkan, Paksa Berhenti, Hapus Data, atau Uninstal) memerlukan izin yang ditingkatkan lewat <2>ADB TCP (5555)</2>, <3>Debugging Nirkabel</3>, <4>Shizuku</4>, atau <5>Root</5>.",
 "Choose how much Android limits the app while it is not in use. Active has no limits; restricted has the most.": "Pilih seberapa jauh Android membatasi aplikasi saat tidak digunakan. active tanpa batas; restricted paling terbatas.",
 "Could not change the standby bucket": "Tidak dapat mengubah bucket siaga",
+"Could not read the standby bucket": "Tidak dapat membaca bucket siaga",
 "No answer from the app": "Tidak ada jawaban dari aplikasi",
 "Standby": "Siaga",
 "Standby bucket": "Bucket siaga",
@@ -5517,6 +5518,7 @@ p: [
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0} memiliki penanda tangan yang sama dengan kunci aplikasi ini, jadi bisa diperbarui di tempat"],
 ["✓ {0}: done", "✓ {0}: selesai"],
 ["＋ Create “{0}” in {1}", "＋ Buat “{0}” di {1}"],
-["am set-standby-bucket {0}", "am set-standby-bucket {0}"]
+["am set-standby-bucket {0}", "am set-standby-bucket {0}"],
+["am get-standby-bucket {0}", "am get-standby-bucket {0}"]
 ]
 };

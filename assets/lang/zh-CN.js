@@ -4467,6 +4467,7 @@ x: {
 "You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "你当前处于<1>只读模式</1>。系统软件包操作（如冻结、启用、强行停止、清除数据或卸载）需要通过 <2>ADB TCP (5555)</2>、<3>无线调试</3>、<4>Shizuku</4> 或 <5>Root</5> 获得更高权限。",
 "Choose how much Android limits the app while it is not in use. Active has no limits; restricted has the most.": "选择 Android 在应用未使用时对其的限制程度。active 不受限制，restricted 限制最多。",
 "Could not change the standby bucket": "无法更改待机分组",
+"Could not read the standby bucket": "无法读取待机分组",
 "No answer from the app": "应用没有响应",
 "Standby": "待机",
 "Standby bucket": "待机分组",
@@ -5517,6 +5518,7 @@ p: [
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0} 的签名者与本应用的密钥相同，因此可以就地更新"],
 ["✓ {0}: done", "✓ {0}：已完成"],
 ["＋ Create “{0}” in {1}", "＋ 在 {1} 中创建“{0}”"],
-["am set-standby-bucket {0}", "am set-standby-bucket {0}"]
+["am set-standby-bucket {0}", "am set-standby-bucket {0}"],
+["am get-standby-bucket {0}", "am get-standby-bucket {0}"]
 ]
 };

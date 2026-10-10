@@ -4467,6 +4467,7 @@ x: {
 "You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "Şu anda <1>Salt okunur mod</1> kullanıyorsunuz. Sistem paketi işlemleri (Dondurma, Etkinleştirme, Durmaya zorlama, Verileri temizleme veya Yüklemeyi kaldırma gibi) <2>ADB TCP (5555)</2>, <3>Kablosuz hata ayıklama</3>, <4>Shizuku</4> veya <5>Root</5> üzerinden yükseltilmiş izinler gerektirir.",
 "Choose how much Android limits the app while it is not in use. Active has no limits; restricted has the most.": "Uygulama kullanılmadığı sürece Android’in onu ne kadar kısıtlayacağını seçin. active kısıtlama yapmaz; restricted en çok kısıtlar.",
 "Could not change the standby bucket": "Bekleme kovası değiştirilemedi",
+"Could not read the standby bucket": "Bekleme kovası okunamadı",
 "No answer from the app": "Uygulamadan yanıt gelmedi",
 "Standby": "Bekleme",
 "Standby bucket": "Bekleme kovası",
@@ -5517,6 +5518,7 @@ p: [
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0}, bu uygulamanın anahtarıyla aynı imzalayana sahip, bu yüzden yerinde güncellenebilir"],
 ["✓ {0}: done", "✓ {0}: tamamlandı"],
 ["＋ Create “{0}” in {1}", "＋ {1} içinde “{0}” oluştur"],
-["am set-standby-bucket {0}", "am set-standby-bucket {0}"]
+["am set-standby-bucket {0}", "am set-standby-bucket {0}"],
+["am get-standby-bucket {0}", "am get-standby-bucket {0}"]
 ]
 };

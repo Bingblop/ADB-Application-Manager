@@ -25,4 +25,5 @@ opened again it shows the bucket the phone is in now (restricted): restricted
 a bucket the list cannot set (exempted) is shown, and cannot be picked: exempted true
 the extra option is gone the next time: 0 5
 a refusal by the phone gives a toast and the result window with its words: true
+a failed read does not open the sheet, and says why: true Could not read the standby bucket true
 errors: []

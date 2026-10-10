@@ -4467,6 +4467,7 @@ x: {
 "You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "Сейчас включён <1>режим только чтения</1>. Операции с системными пакетами (например, «Заморозить», «Включить», «Остановить», «Очистить данные» или «Удалить») требуют повышенных прав через <2>ADB TCP (5555)</2>, <3>отладку по Wi-Fi</3>, <4>Shizuku</4> или <5>Root</5>.",
 "Choose how much Android limits the app while it is not in use. Active has no limits; restricted has the most.": "Выберите, насколько Android ограничивает приложение, пока оно не используется. active — без ограничений, restricted — максимальные.",
 "Could not change the standby bucket": "Не удалось изменить корзину ожидания",
+"Could not read the standby bucket": "Не удалось прочитать корзину ожидания",
 "No answer from the app": "Приложение не ответило",
 "Standby": "Ожидание",
 "Standby bucket": "Корзина ожидания",
@@ -5517,6 +5518,7 @@ p: [
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0} подписана тем же ключом, что и это приложение, поэтому обновление пройдёт поверх"],
 ["✓ {0}: done", "✓ {0}: готово"],
 ["＋ Create “{0}” in {1}", "＋ Создать «{0}» в {1}"],
-["am set-standby-bucket {0}", "am set-standby-bucket {0}"]
+["am set-standby-bucket {0}", "am set-standby-bucket {0}"],
+["am get-standby-bucket {0}", "am get-standby-bucket {0}"]
 ]
 };

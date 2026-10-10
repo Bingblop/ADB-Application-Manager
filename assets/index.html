@@ -22864,15 +22864,17 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('standbySubtitle').innerText = (app ? app.name + ' • ' : '') + standbyPkg;
             const sel = document.getElementById('standbyBucket');
             Array.from(sel.querySelectorAll('option[data-extra]')).forEach(o => o.remove());      // a bucket this list cannot set (exempted, never) from an earlier look
-            if (window.AndroidBridge && window.AndroidBridge.getStandbyBucket) {
-                const r = standbyBridgeCall('getStandbyBucket', standbyPkg);
-                if (r && r.bucket) {
-                    if (!Array.from(sel.options).some(o => o.value === r.bucket)) {
-                        const o = document.createElement('option'); o.value = r.bucket; o.textContent = r.bucket; o.dataset.extra = '1'; o.disabled = true; sel.appendChild(o);
-                    }
-                    sel.value = r.bucket;
-                }
+            if (!window.AndroidBridge || !window.AndroidBridge.getStandbyBucket) { showToast('Needs the app build'); return; }
+            const r = standbyBridgeCall('getStandbyBucket', standbyPkg);
+            if (!r || !r.bucket) {                                  // no answer from the phone: do not offer a bucket the page only guessed
+                showToast('Could not read the standby bucket');
+                showCommandResults('Standby bucket', 'am get-standby-bucket ' + standbyPkg, [{ name: app ? app.name : standbyPkg, pkg: standbyPkg, output: (r && r.output) || 'No answer from the app', success: false }]);
+                return;
             }
+            if (!Array.from(sel.options).some(o => o.value === r.bucket)) {
+                const o = document.createElement('option'); o.value = r.bucket; o.textContent = r.bucket; o.dataset.extra = '1'; o.disabled = true; sel.appendChild(o);
+            }
+            sel.value = r.bucket;
             document.getElementById('standbyModal').classList.add('show');
         }
         function closeStandbyModal() {

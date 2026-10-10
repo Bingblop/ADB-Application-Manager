@@ -4467,6 +4467,7 @@ x: {
 "You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "Al momento l’app è in <1>Modalità di sola lettura</1>. Le operazioni sui pacchetti di sistema (come Congela, Attiva, Forza arresto, Cancella dati o Disinstalla) richiedono autorizzazioni elevate tramite <2>ADB TCP (5555)</2>, <3>Debug wireless</3>, <4>Shizuku</4> o <5>Root</5>.",
 "Choose how much Android limits the app while it is not in use. Active has no limits; restricted has the most.": "Scegli quanto Android limita l’app quando non è in uso. active non ha limiti; restricted ne ha di più.",
 "Could not change the standby bucket": "Impossibile cambiare il bucket di standby",
+"Could not read the standby bucket": "Impossibile leggere il bucket di standby",
 "No answer from the app": "Nessuna risposta dall’app",
 "Standby": "Standby",
 "Standby bucket": "Bucket di standby",
@@ -5517,6 +5518,7 @@ p: [
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0} ha lo stesso firmatario della chiave di questa app, quindi può essere aggiornata sul posto"],
 ["✓ {0}: done", "✓ {0}: fatto"],
 ["＋ Create “{0}” in {1}", "＋ Crea “{0}” in {1}"],
-["am set-standby-bucket {0}", "am set-standby-bucket {0}"]
+["am set-standby-bucket {0}", "am set-standby-bucket {0}"],
+["am get-standby-bucket {0}", "am get-standby-bucket {0}"]
 ]
 };

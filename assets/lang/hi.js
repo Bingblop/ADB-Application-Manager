@@ -4467,6 +4467,7 @@ x: {
 "You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "अभी आप <1>रीड-ओनली मोड</1> में चल रहे हैं। सिस्टम पैकेज कार्रवाइयों (जैसे फ़्रीज़, सक्षम करें, ज़बरदस्ती रोकें, डेटा हटाएं या अनइंस्टॉल) के लिए <2>ADB TCP (5555)</2>, <3>वायरलेस डीबगिंग</3>, <4>Shizuku</4> या <5>Root</5> से ऊंचे अधिकार चाहिए।",
 "Choose how much Android limits the app while it is not in use. Active has no limits; restricted has the most.": "चुनें कि ऐप इस्तेमाल में न होने पर Android उसे कितना सीमित करे। active पर कोई सीमा नहीं होती; restricted पर सबसे ज़्यादा।",
 "Could not change the standby bucket": "स्टैंडबाय बकेट बदला नहीं जा सका",
+"Could not read the standby bucket": "स्टैंडबाय बकेट पढ़ा नहीं जा सका",
 "No answer from the app": "ऐप से कोई जवाब नहीं मिला",
 "Standby": "स्टैंडबाय",
 "Standby bucket": "स्टैंडबाय बकेट",
@@ -5517,6 +5518,7 @@ p: [
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0} का साइनर इस ऐप की कुंजी वाला ही है, इसलिए इसे इन-प्लेस अपडेट किया जा सकता है"],
 ["✓ {0}: done", "✓ {0}: हो गया"],
 ["＋ Create “{0}” in {1}", "＋ {1} में “{0}” बनाएं"],
-["am set-standby-bucket {0}", "am set-standby-bucket {0}"]
+["am set-standby-bucket {0}", "am set-standby-bucket {0}"],
+["am get-standby-bucket {0}", "am get-standby-bucket {0}"]
 ]
 };
