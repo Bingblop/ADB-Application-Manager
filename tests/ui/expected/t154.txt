@@ -1,0 +1,16 @@
+ok   the first start is numbered
+ok   the start notice of the running start is taken
+ok   output of the running start is drawn
+ok   and acknowledged
+ok   a restart is numbered again
+ok   output of the older start is not drawn in the new terminal
+ok   and not acknowledged
+ok   the end of the older start does not end the new one
+ok   a failure of the older start does not fail the new one
+ok   the start notice of the new start is taken
+ok   output of the new start is drawn
+ok   its end is taken
+ok   after a close, late output of that start is dropped
+ok   an acknowledgement for output shown after a close is not sent to the next session
+ok   a notice without a number is still accepted
+errors: []
