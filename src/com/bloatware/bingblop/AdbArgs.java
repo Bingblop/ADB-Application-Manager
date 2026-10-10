@@ -35,7 +35,7 @@ final class AdbArgs {
         int i = 0;
         while (i < args.size() && args.get(i).startsWith("-") && args.get(i).length() > 1) {
             String o = args.get(i);
-            if (SERVER_OPTION.matcher(o).matches()) return "That option would move adb to another server, so it is not run.";
+            if (SERVER_OPTION.matcher(o).matches()) return "That option would move adb to another server or make it listen on every interface, so it is not run.";
             if (VALUE_OPTION.matcher(o).matches()) { i += 2; continue; }
             if (INFO_OPTION.matcher(o).matches()) return null;
             if (FLAG_OPTION.matcher(o).matches()) { i++; continue; }
