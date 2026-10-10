@@ -94,6 +94,21 @@ final class PrivatePaths {
         }
     }
 
+    /**
+     * The same decision for a file that is already open, made from what the open descriptor says (where it points to: readlink of /proc/self/fd/N, and its
+     * link count from fstat) instead of from the name the file was found by. A name can be swapped for a link between a check and the open that follows; the
+     * descriptor cannot change what it is. A target that is not an absolute path (pipe:[..], socket:[..], anon_inode:..) is protected, and so is one that
+     * ends in " (deleted)": the name it was found by is gone, so neither the name nor the link count of what is left says anything about the file (a hard
+     * link in an allowed folder to a private file, opened and then unlinked, would otherwise look like a lone file nobody can reach).
+     */
+    static boolean blockedOpened(String target, final long links, File dataDir, Root... allowed) {
+        if (target == null || dataDir == null) return true;
+        if (!target.startsWith("/") || target.indexOf('\0') >= 0 || target.endsWith(DELETED)) return true;
+        return blocked(new File(target), dataDir, new Links() { @Override public long count(File f) { return links; } }, allowed);
+    }
+
+    private static final String DELETED = " (deleted)";
+
     /** The resolved {@code a} when it is the real folder below the data folder (not a link elsewhere), otherwise null. */
     private static File genuineRoot(File a, File dataDir, File canonData) throws IOException {
         java.nio.file.Path ap = a.toPath().toAbsolutePath().normalize();
