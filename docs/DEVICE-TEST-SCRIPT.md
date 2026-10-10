@@ -211,17 +211,20 @@ Put the app back the way it was afterwards: `adb shell am set-standby-bucket $AP
 
    **PASS** if no activity of the app is running (a cached/empty process with 0% CPU is fine).
 
-4. Battery statistics add up since the last charge, so one dump after closing cannot show what happened *after* closing. To check for wakeups, reset the
-   statistics first and then repeat steps 1 to 3:
+4. Battery statistics add up since the last charge, so the ten seconds of Task Manager activity from step 1 would be in any dump taken later and could
+   not be told apart from activity after closing. To look for wakeups **after** closing, reset the statistics *after* the swipe, leave the app closed
+   for a while, and only then dump:
 
    ```sh
-   adb shell dumpsys batterystats --reset            # before step 1 (this clears the phone's battery history; it comes back as you use the phone)
-   # ... steps 1 to 3 ...
+   # right after step 3's swipe, before anything else touches the app:
+   adb shell dumpsys batterystats --reset            # clears the phone's battery history; it builds up again as you use the phone
+   # keep the app closed and the phone idle for 10 minutes (do not open the app), then:
    adb shell dumpsys batterystats $PKG > after-close.txt
    ```
 
-   Read the whole file for this app's entry (do not cut it with `head`): after the app was closed there should be no new wakelocks, jobs or alarms for
-   it. If you do not want to reset the statistics, write SKIP for this item; the process checks in step 3 still count.
+   Read the whole file for this app's entry (do not cut it with `head`). Because the statistics started after the app was closed, any wakelock, job or alarm
+   listed for it happened after closing. **PASS** if there are none; a few seconds of "cached" process time with no wakelocks, jobs or alarms is fine.
+   If you do not want to reset the statistics, write SKIP for this item; the process checks in step 3 still count.
 
 ## 13. Command output in the log (checklist: Command output in the log)
 
