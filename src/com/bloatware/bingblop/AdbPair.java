@@ -12,7 +12,7 @@ import java.util.Map;
 
 /**
  * Minimal, context-only adb invocation used by the Wi-Fi pairing notification. It mirrors the way
- * MainActivity.buildAdbProcess runs the bundled adb (same binary, server port 5042 and HOME), so the
+ * MainActivity.buildAdbProcess runs the bundled adb (same binary, server socket and HOME), so the
  * pairing notification can pair in the background from a BroadcastReceiver without the Activity being
  * alive. The adb binary and key are extracted by MainActivity on launch, so they already exist by the
  * time the user triggers pairing.
@@ -33,8 +33,7 @@ public final class AdbPair {
         try {
             List<String> cmd = new ArrayList<String>();
             cmd.add(adbBin(ctx).getAbsolutePath());
-            cmd.add("-P");
-            cmd.add("5042");
+            cmd.addAll(AdbRuntime.serverArgs(ctx));
             Collections.addAll(cmd, args);
             ProcessBuilder pb = new ProcessBuilder(cmd);
             Map<String, String> env = pb.environment();
