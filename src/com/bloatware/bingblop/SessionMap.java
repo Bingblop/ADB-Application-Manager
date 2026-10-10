@@ -32,6 +32,12 @@ final class SessionMap<T> {
         return t;
     }
 
+    /** Whether {@code ticket} is still the newest start for {@code id} (and the map is open): the page still waits for that start. */
+    synchronized boolean isCurrent(String id, long ticket) {
+        Long cur = tickets.get(id);
+        return !closed && cur != null && cur.longValue() == ticket;
+    }
+
     /**
      * Stores {@code session} under {@code id} if {@code ticket} is still the newest for it and the map is open. Returns false when it is refused (the
      * caller closes the session). The session it replaced, if any, is added to {@code replaced} (the caller closes it).

@@ -50,10 +50,12 @@ public class SessionMapTest {
     is("the newer start publishes", m.publish("o", tq, "Q", rep) && "Q".equals(m.get("o")) && rep.isEmpty());
     is("the older, slower start is refused and Q stays", !m.publish("o", tp, "P", rep) && "Q".equals(m.get("o")) && rep.isEmpty());
 
+    is("the newest start is current, an older one is not", m.isCurrent("o", tq) && !m.isCurrent("o", tp));
+
     // a close of the id while a start is still running makes that start stale
     long tr = m.ticket("c");
     m.remove("c");
-    is("a start whose id was closed meanwhile is refused", !m.publish("c", tr, "R", new ArrayList<String>()) && m.get("c") == null);
+    is("a start whose id was closed meanwhile is not current and is refused", !m.isCurrent("c", tr) && !m.publish("c", tr, "R", new ArrayList<String>()) && m.get("c") == null);
 
     // an end exactly when the same session is not stored does not claim a replacement that is not there
     long ts = m.ticket("e");
@@ -66,6 +68,7 @@ public class SessionMapTest {
     List<String> all = m.drain();
     is("drain returns what was open and empties the map", all.size() == 3 && m.get("y") == null);
     is("a start that finishes after the shutdown is refused", !m.publish("late", tl, "L", new ArrayList<String>()) && m.get("late") == null);
+    is("after the shutdown no start is current", !m.isCurrent("late", tl));
     is("a fresh ticket after the shutdown is refused too", !m.publish("z", m.ticket("z"), "Z", new ArrayList<String>()));
     is("a second drain returns nothing", m.drain().isEmpty());
     is("remove(null) is harmless", m.remove(null) == null);
