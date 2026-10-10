@@ -1,5 +1,8 @@
 package com.bloatware.bingblop.ui.screens
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,12 +23,18 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DisplaySettings
 import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Fullscreen
+import androidx.compose.material.icons.filled.Headphones
+import androidx.compose.material.icons.filled.Nightlight
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.RestartAlt
@@ -33,9 +42,13 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Smartphone
 import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material.icons.filled.SportsEsports
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Undo
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -79,6 +92,8 @@ import com.bloatware.bingblop.data.model.SystemSettingItem
 import com.bloatware.bingblop.data.model.PrivateDnsPreset
 import com.bloatware.bingblop.data.model.DnsBenchmarkResult
 import com.bloatware.bingblop.data.model.DnsPingStatus
+import com.bloatware.bingblop.data.model.DnsJitterResult
+import com.bloatware.bingblop.data.model.AutomationProfile
 import com.bloatware.bingblop.data.repository.AppRepository
 import com.bloatware.bingblop.data.repository.SettingsRepository
 import com.bloatware.bingblop.ui.components.CyberCard
@@ -126,11 +141,18 @@ fun SettingsScreen(
     val powerApps = remember { appRepository.getKnownPowerUserApps() }
     var grantingAppPkg by remember { mutableStateOf<String?>(null) }
 
+    // Immersive Mode & Audio Modeler state
+    var immersivePolicy by remember { mutableStateOf("off") }
+    var customImmersiveApps by remember { mutableStateOf("") }
+    var bluetoothAudioInfo by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
+    var selectedDisplayProfileLabel by remember { mutableStateOf("Stock") }
+
     // Private DNS & Speed Scanner state
     var privateDnsMode by remember { mutableStateOf("off") }
     var privateDnsSpec by remember { mutableStateOf("") }
     var customDnsInput by remember { mutableStateOf("") }
-    val dnsPresets = remember { appRepository.getPrivateDnsPresets() }
+    var refreshPresetsCounter by remember { mutableIntStateOf(0) }
+    val dnsPresets = remember(refreshPresetsCounter) { appRepository.getPrivateDnsPresets() }
     var isScanningDns by remember { mutableStateOf(false) }
     var dnsScanResults by remember { mutableStateOf<Map<String, DnsBenchmarkResult>>(emptyMap()) }
     var fastestDnsResult by remember { mutableStateOf<DnsBenchmarkResult?>(null) }
@@ -138,6 +160,20 @@ fun SettingsScreen(
     var testingCustomDns by remember { mutableStateOf(false) }
     var customDnsLatency by remember { mutableStateOf<Long?>(null) }
     var singlePingingId by remember { mutableStateOf<String?>(null) }
+
+    // Custom DNS Bookmarks & Jitter Tester state
+    var showAddBookmarkDialog by remember { mutableStateOf(false) }
+    var bookmarkTitleInput by remember { mutableStateOf("") }
+    var bookmarkHostInput by remember { mutableStateOf("") }
+    var bookmarkDescInput by remember { mutableStateOf("") }
+    var bookmarkIpInput by remember { mutableStateOf("") }
+    var isTestingJitter by remember { mutableStateOf(false) }
+    var dnsJitterResult by remember { mutableStateOf<DnsJitterResult?>(null) }
+
+    // Automation & Profiles state
+    val automationProfiles = remember { appRepository.getPredefinedAutomationProfiles() }
+    var runningProfileId by remember { mutableStateOf<String?>(null) }
+    var profileResults by remember { mutableStateOf<Map<String, List<Pair<String, Boolean>>>>(emptyMap()) }
 
     fun refreshSettings() {
         isLoading = true
@@ -257,7 +293,7 @@ fun SettingsScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         // Namespace Switcher Tabs
-        val tabs = listOf("Global", "Secure", "System", "Display", "DNS Switcher", "Grants")
+        val tabs = listOf("Global", "Secure", "System", "Display", "DNS Switcher", "Profiles", "Grants")
         TabRow(
             selectedTabIndex = selectedTab,
             containerColor = BgSurface,
@@ -282,7 +318,11 @@ fun SettingsScreen(
                             0 -> currentNamespace = SettingNamespace.GLOBAL
                             1 -> currentNamespace = SettingNamespace.SECURE
                             2 -> currentNamespace = SettingNamespace.SYSTEM
-                            3 -> scope.launch { blacklistedIcons = appRepository.getBlacklistedIcons() }
+                            3 -> scope.launch {
+                                blacklistedIcons = appRepository.getBlacklistedIcons()
+                                immersivePolicy = appRepository.getImmersivePolicy()
+                                bluetoothAudioInfo = appRepository.getBluetoothAudioCodecInfo()
+                            }
                             4 -> scope.launch {
                                 val (m, s) = appRepository.getPrivateDnsConfig()
                                 privateDnsMode = m
@@ -611,6 +651,262 @@ fun SettingsScreen(
                 item {
                     CyberCard(modifier = Modifier.fillMaxWidth()) {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Icon(Icons.Default.SportsEsports, contentDescription = null, tint = AccentCyan, modifier = Modifier.size(18.dp))
+                                    Text("GAMING & DENSITY PROFILES", fontSize = 11.sp, fontWeight = FontWeight.Black, color = TextMuted, letterSpacing = 1.sp)
+                                }
+                                StatusPill(selectedDisplayProfileLabel, AccentCyan)
+                            }
+                            Text("1-tap optimized display presets to maximize gaming FPS or customize UI density across apps.", fontSize = 11.sp, color = TextMuted)
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Button(
+                                    onClick = {
+                                        selectedDisplayProfileLabel = "Gaming 720p"
+                                        scope.launch {
+                                            appRepository.applyResolutionDensityPreset(720, 1600, 280)
+                                            appRepository.setRefreshRate(120f)
+                                            Toast.makeText(context, "🎮 Gaming 720p 120Hz Profile applied!", Toast.LENGTH_SHORT).show()
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = BgSurface, contentColor = AccentCyan),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text("🎮 720p", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                        Text("120Hz Boost", fontSize = 9.sp, color = TextDim)
+                                    }
+                                }
+                                Button(
+                                    onClick = {
+                                        selectedDisplayProfileLabel = "Gaming 1080p"
+                                        scope.launch {
+                                            appRepository.applyResolutionDensityPreset(1080, 2400, 380)
+                                            appRepository.setRefreshRate(120f)
+                                            Toast.makeText(context, "⚡ Gaming 1080p Profile applied!", Toast.LENGTH_SHORT).show()
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = BgSurface, contentColor = TextMain),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text("⚡ 1080p", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                        Text("Balanced", fontSize = 9.sp, color = TextDim)
+                                    }
+                                }
+                                Button(
+                                    onClick = {
+                                        selectedDisplayProfileLabel = "Tablet 360"
+                                        scope.launch {
+                                            appRepository.setScreenDensity(360)
+                                            Toast.makeText(context, "🖥️ Compact Tablet Density applied (360 DPI)!", Toast.LENGTH_SHORT).show()
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = BgSurface, contentColor = SecondaryPurple),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text("🖥️ Tablet", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                        Text("360 DPI", fontSize = 9.sp, color = TextDim)
+                                    }
+                                }
+                                Button(
+                                    onClick = {
+                                        selectedDisplayProfileLabel = "Stock"
+                                        scope.launch {
+                                            appRepository.applyResolutionDensityPreset(0, 0, 0)
+                                            Toast.makeText(context, "🔄 Physical Hardware Display restored!", Toast.LENGTH_SHORT).show()
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = BgSurface, contentColor = CleanGreen),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text("🔄 Stock", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                        Text("Reset", fontSize = 9.sp, color = TextDim)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                item {
+                    CyberCard(modifier = Modifier.fillMaxWidth()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Icon(Icons.Default.Fullscreen, contentDescription = null, tint = AccentCyan, modifier = Modifier.size(18.dp))
+                                    Text("IMMERSIVE FULLSCREEN CONTROLLER", fontSize = 11.sp, fontWeight = FontWeight.Black, color = TextMuted, letterSpacing = 1.sp)
+                                }
+                                StatusPill(
+                                    when {
+                                        immersivePolicy.contains("immersive.full") -> "FULL SCREEN"
+                                        immersivePolicy.contains("immersive.status") -> "NO STATUS"
+                                        immersivePolicy.contains("immersive.navigation") -> "NO NAV PILL"
+                                        else -> "STOCK (OFF)"
+                                    },
+                                    if (immersivePolicy == "off" || immersivePolicy == "null") TextDim else CleanGreen
+                                )
+                            }
+                            Text(
+                                "Control Android's SystemUI policy_control to hide status bars and gesture navigation pill globally or per-app.",
+                                fontSize = 11.sp,
+                                color = TextMuted
+                            )
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Button(
+                                    onClick = {
+                                        scope.launch {
+                                            appRepository.setImmersivePolicy("full")
+                                            immersivePolicy = appRepository.getImmersivePolicy()
+                                            Toast.makeText(context, "📱 Full Immersive Mode enabled!", Toast.LENGTH_SHORT).show()
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (immersivePolicy.contains("immersive.full=*")) AccentCyan else BgSurface,
+                                        contentColor = if (immersivePolicy.contains("immersive.full=*")) BgBase else TextMain
+                                    ),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text("📱 Full", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                }
+                                Button(
+                                    onClick = {
+                                        scope.launch {
+                                            appRepository.setImmersivePolicy("status")
+                                            immersivePolicy = appRepository.getImmersivePolicy()
+                                            Toast.makeText(context, "🔝 Status bar hidden!", Toast.LENGTH_SHORT).show()
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (immersivePolicy.contains("immersive.status=*")) AccentCyan else BgSurface,
+                                        contentColor = if (immersivePolicy.contains("immersive.status=*")) BgBase else TextMain
+                                    ),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text("🔝 No Status", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                }
+                                Button(
+                                    onClick = {
+                                        scope.launch {
+                                            appRepository.setImmersivePolicy("navigation")
+                                            immersivePolicy = appRepository.getImmersivePolicy()
+                                            Toast.makeText(context, "🔻 Gesture pill hidden!", Toast.LENGTH_SHORT).show()
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (immersivePolicy.contains("immersive.navigation=*")) AccentCyan else BgSurface,
+                                        contentColor = if (immersivePolicy.contains("immersive.navigation=*")) BgBase else TextMain
+                                    ),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text("🔻 No Nav Pill", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                }
+                                OutlinedButton(
+                                    onClick = {
+                                        scope.launch {
+                                            appRepository.setImmersivePolicy("off")
+                                            immersivePolicy = appRepository.getImmersivePolicy()
+                                            Toast.makeText(context, "🔄 Immersive policy cleared", Toast.LENGTH_SHORT).show()
+                                        }
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text("Off", fontSize = 10.sp, color = TextMuted)
+                                }
+                            }
+
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                OutlinedTextField(
+                                    value = customImmersiveApps,
+                                    onValueChange = { customImmersiveApps = it },
+                                    label = { Text("Per-app rule (e.g. apps,com.instagram.android)", fontSize = 10.sp) },
+                                    singleLine = true,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Button(
+                                    onClick = {
+                                        scope.launch {
+                                            appRepository.setImmersivePolicy("custom", customImmersiveApps)
+                                            immersivePolicy = appRepository.getImmersivePolicy()
+                                            Toast.makeText(context, "Rule applied: $customImmersiveApps", Toast.LENGTH_SHORT).show()
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = SecondaryPurple, contentColor = TextMain)
+                                ) {
+                                    Text("Apply", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                item {
+                    CyberCard(modifier = Modifier.fillMaxWidth()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Icon(Icons.Default.Headphones, contentDescription = null, tint = AccentCyan, modifier = Modifier.size(18.dp))
+                                    Text("BLUETOOTH A2DP AUDIO MODELER", fontSize = 11.sp, fontWeight = FontWeight.Black, color = TextMuted, letterSpacing = 1.sp)
+                                }
+                                StatusPill("AUDIO DSP", SecondaryPurple)
+                            }
+                            Text(
+                                "Inspect Bluetooth audio offload capabilities and configure LDAC quality priorities directly via ADB setprop.",
+                                fontSize = 11.sp,
+                                color = TextMuted
+                            )
+                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    Text("DSP Offload Engine", fontSize = 11.sp, color = TextMuted)
+                                    Text(bluetoothAudioInfo["a2dp_offload_disabled"] ?: "Enabled (Hardware DSP)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextMain)
+                                }
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    Text("Current LDAC Profile", fontSize = 11.sp, color = TextMuted)
+                                    Text(bluetoothAudioInfo["ldac_quality"] ?: "Adaptive Bitrate", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AccentCyan)
+                                }
+                            }
+                            Text("LOCK LDAC BITRATE PRIORITY:", fontSize = 10.sp, fontWeight = FontWeight.Black, color = TextMuted)
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                listOf("990" to "990k (Hi-Fi)", "660" to "660k (Balanced)", "330" to "330k (Priority)").forEach { (qual, lbl) ->
+                                    Button(
+                                        onClick = {
+                                            scope.launch {
+                                                settingsRepository.writeSetting(
+                                                    SystemSettingItem(SettingNamespace.GLOBAL, "bluetooth_ldac_quality", "", "", "Audio", "", ""),
+                                                    qual
+                                                )
+                                                bluetoothAudioInfo = appRepository.getBluetoothAudioCodecInfo()
+                                                Toast.makeText(context, "Locked LDAC: $lbl", Toast.LENGTH_SHORT).show()
+                                            }
+                                        },
+                                        colors = ButtonDefaults.buttonColors(containerColor = BgSurface, contentColor = TextMain),
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Text(lbl, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                item {
+                    CyberCard(modifier = Modifier.fillMaxWidth()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text("Status Bar Icon Blacklist (SystemUI Tuner)", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = AccentCyan)
                             Text("Hide clutter icons from the status bar (e.g. alarm, volume, bluetooth, hotspot).", fontSize = 11.sp, color = TextMuted)
                             val iconKeys = listOf(
@@ -843,6 +1139,95 @@ fun SettingsScreen(
                                 }
                             }
 
+                            // Secondary Tools: Bookmark DoT & Jitter/Leak Testing
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                OutlinedButton(
+                                    onClick = { showAddBookmarkDialog = true },
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(14.dp), tint = SecondaryPurple)
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("+ Bookmark DoT", fontSize = 11.sp, color = SecondaryPurple)
+                                }
+
+                                OutlinedButton(
+                                    onClick = {
+                                        if (isTestingJitter) return@OutlinedButton
+                                        isTestingJitter = true
+                                        scope.launch {
+                                            val targetHost = if (privateDnsMode == "hostname" && privateDnsSpec.isNotBlank()) privateDnsSpec else "1.1.1.1"
+                                            val res = appRepository.testDnsJitterAndLeak(targetHost)
+                                            dnsJitterResult = res
+                                            isTestingJitter = false
+                                        }
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    if (isTestingJitter) {
+                                        CircularProgressIndicator(modifier = Modifier.size(12.dp), color = AccentCyan, strokeWidth = 2.dp)
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text("Testing...", fontSize = 11.sp, color = AccentCyan)
+                                    } else {
+                                        Icon(Icons.Default.Speed, contentDescription = null, modifier = Modifier.size(14.dp), tint = AccentCyan)
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text("Jitter & Leak Test", fontSize = 11.sp, color = AccentCyan)
+                                    }
+                                }
+                            }
+
+                            // Jitter & Leak Diagnostic Card
+                            if (dnsJitterResult != null) {
+                                val jr = dnsJitterResult!!
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(BgBase)
+                                        .border(1.dp, if (jr.isEncryptedVerified) CleanGreen else WarningOrange, RoundedCornerShape(8.dp))
+                                        .padding(10.dp)
+                                ) {
+                                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                Text("TELEMETRY: ${jr.target}", fontSize = 10.sp, fontWeight = FontWeight.Black, color = AccentCyan)
+                                            }
+                                            IconButton(
+                                                onClick = { dnsJitterResult = null },
+                                                modifier = Modifier.size(18.dp)
+                                            ) {
+                                                Icon(Icons.Default.Close, contentDescription = "Close", tint = TextMuted, modifier = Modifier.size(14.dp))
+                                            }
+                                        }
+
+                                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text("Min: ${jr.minMs}ms | Avg: ${jr.avgMs}ms | Max: ${jr.maxMs}ms", fontSize = 11.sp, color = TextMain)
+                                            Text("Jitter: ±${jr.jitterMs}ms", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AccentCyan)
+                                        }
+
+                                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text("Loss: ${jr.packetLossPct}%", fontSize = 11.sp, color = if (jr.packetLossPct == 0) CleanGreen else DangerRed)
+                                            Text(
+                                                if (jr.isEncryptedVerified) "✓ DoT Encrypted (No Leak)" else "⚠️ Plain ISP DNS Active",
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = if (jr.isEncryptedVerified) CleanGreen else WarningOrange
+                                            )
+                                        }
+
+                                        if (jr.activeResolvers.isNotEmpty()) {
+                                            Text("Active Resolvers: ${jr.activeResolvers.joinToString(", ")}", fontSize = 10.sp, color = TextDim, fontFamily = FontFamily.Monospace)
+                                        }
+                                    }
+                                }
+                            }
+
                             // Highlight banner if fastest detected
                             if (fastestDnsResult != null) {
                                 val best = fastestDnsResult!!
@@ -876,7 +1261,7 @@ fun SettingsScreen(
 
                 // Category Filter Chips
                 item {
-                    val filterCategories = listOf("All", "Ultra Fast Anycast", "AdBlock & Privacy", "Threat Protection", "Stock Android")
+                    val filterCategories = listOf("All", "Custom", "Ultra Fast Anycast", "AdBlock & Privacy", "Threat Protection", "Stock Android")
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         modifier = Modifier.fillMaxWidth()
@@ -1124,6 +1509,174 @@ fun SettingsScreen(
                             ) {
                                 Text(if (isCurrent) "Active" else "Set", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             }
+
+                            if (preset.category == "Custom") {
+                                IconButton(
+                                    onClick = {
+                                        appRepository.deleteCustomDnsPreset(preset.id)
+                                        refreshPresetsCounter++
+                                        Toast.makeText(context, "Deleted bookmark: ${preset.title}", Toast.LENGTH_SHORT).show()
+                                    },
+                                    modifier = Modifier.size(32.dp)
+                                ) {
+                                    Icon(Icons.Default.Delete, contentDescription = "Delete Bookmark", tint = DangerRed, modifier = Modifier.size(16.dp))
+                                }
+                            }
+                        }
+                    }
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(100.dp))
+                }
+            }
+        } else if (selectedTab == 5) {
+            // Automation Profiles Suite
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                item {
+                    CyberCard(modifier = Modifier.fillMaxWidth()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Icon(Icons.Default.Bolt, contentDescription = null, tint = AccentCyan, modifier = Modifier.size(18.dp))
+                                Text("SYSTEM AUTOMATION & POWER PROFILES", fontSize = 11.sp, fontWeight = FontWeight.Black, color = TextMuted, letterSpacing = 1.sp)
+                            }
+                            Text(
+                                "One-tap execute composite system states: gaming optimization, aggressive battery preservation, network shielding, and distraction-free focus.",
+                                fontSize = 11.sp,
+                                color = TextMuted
+                            )
+                        }
+                    }
+                }
+
+                items(automationProfiles) { profile ->
+                    val isRunning = runningProfileId == profile.id
+                    val lastResults = profileResults[profile.id]
+
+                    CyberCard(modifier = Modifier.fillMaxWidth()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Icon(
+                                        when (profile.iconName) {
+                                            "SportsEsports" -> Icons.Default.SportsEsports
+                                            "Nightlight" -> Icons.Default.Nightlight
+                                            "Security" -> Icons.Default.Security
+                                            else -> Icons.Default.Tune
+                                        },
+                                        contentDescription = null,
+                                        tint = AccentCyan,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Text(profile.title, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextMain)
+                                }
+                                StatusPill(profile.tag, AccentCyan)
+                            }
+
+                            Text(profile.description, fontSize = 11.sp, color = TextDim)
+
+                            Text("ACTIONS INCLUDED:", fontSize = 10.sp, fontWeight = FontWeight.Black, color = TextMuted)
+                            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                profile.steps.forEach { step ->
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        Text("✓", fontSize = 10.sp, color = CleanGreen, fontWeight = FontWeight.Bold)
+                                        Text(step, fontSize = 11.sp, color = TextMain)
+                                    }
+                                }
+                            }
+
+                            // Command Preview Box
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(BgSurface)
+                                    .border(1.dp, BorderGlass, RoundedCornerShape(8.dp))
+                                    .padding(8.dp)
+                            ) {
+                                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                    profile.adbCommands.forEach { cmd ->
+                                        Text("$ $cmd", fontSize = 10.sp, color = AccentCyan, fontFamily = FontFamily.Monospace)
+                                    }
+                                }
+                            }
+
+                            // If execution results exist
+                            if (lastResults != null) {
+                                val allOk = lastResults.all { it.second }
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(if (allOk) CleanGreen.copy(alpha = 0.15f) else WarningOrange.copy(alpha = 0.15f))
+                                        .padding(6.dp)
+                                ) {
+                                    Text(
+                                        if (allOk) "✓ Profile applied successfully (${lastResults.size}/${lastResults.size} steps ok)"
+                                        else "⚠️ Applied with ${lastResults.count { !it.second }} step warnings",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (allOk) CleanGreen else WarningOrange
+                                    )
+                                }
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Button(
+                                    onClick = {
+                                        if (isRunning) return@Button
+                                        runningProfileId = profile.id
+                                        scope.launch {
+                                            val res = appRepository.executeAutomationProfile(profile)
+                                            profileResults = profileResults + (profile.id to res)
+                                            runningProfileId = null
+                                            Toast.makeText(context, "⚡ ${profile.title} applied!", Toast.LENGTH_SHORT).show()
+                                        }
+                                    },
+                                    enabled = !isRunning,
+                                    colors = ButtonDefaults.buttonColors(containerColor = AccentCyan, contentColor = BgBase),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    if (isRunning) {
+                                        CircularProgressIndicator(modifier = Modifier.size(13.dp), color = BgBase, strokeWidth = 2.dp)
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text("Executing...", fontSize = 11.sp)
+                                    } else {
+                                        Icon(Icons.Default.Bolt, contentDescription = null, modifier = Modifier.size(14.dp))
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text("Run Profile Now", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+
+                                OutlinedButton(
+                                    onClick = {
+                                        val script = buildString {
+                                            appendLine("#!/bin/sh")
+                                            appendLine("# Profile: ${profile.title}")
+                                            profile.adbCommands.forEach { appendLine("adb shell \"$it\"") }
+                                        }
+                                        val clip = ClipData.newPlainText(profile.title, script)
+                                        val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                        cm.setPrimaryClip(clip)
+                                        Toast.makeText(context, "📋 Shell script copied to clipboard", Toast.LENGTH_SHORT).show()
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(14.dp), tint = TextMuted)
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Copy Script", fontSize = 11.sp, color = TextMuted)
+                                }
+                            }
                         }
                     }
                 }
@@ -1285,5 +1838,91 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.height(20.dp))
             }
         }
+    }
+
+    // Bookmark Custom DoT Endpoint Dialog
+    if (showAddBookmarkDialog) {
+        AlertDialog(
+            onDismissRequest = { showAddBookmarkDialog = false },
+            containerColor = BgCard,
+            title = {
+                Text(
+                    text = "Bookmark Custom DoT Resolver",
+                    color = TextMain,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "Add your own encrypted DNS-over-TLS endpoint (e.g. NextDNS config ID or personal AdGuard Home).",
+                        fontSize = 12.sp,
+                        color = TextMuted
+                    )
+                    OutlinedTextField(
+                        value = bookmarkTitleInput,
+                        onValueChange = { bookmarkTitleInput = it },
+                        label = { Text("Provider Name") },
+                        placeholder = { Text("e.g. My NextDNS") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = bookmarkHostInput,
+                        onValueChange = { bookmarkHostInput = it },
+                        label = { Text("DoT Hostname *") },
+                        placeholder = { Text("e.g. dns.nextdns.io") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = bookmarkDescInput,
+                        onValueChange = { bookmarkDescInput = it },
+                        label = { Text("Description") },
+                        placeholder = { Text("e.g. Personal blocklist") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = bookmarkIpInput,
+                        onValueChange = { bookmarkIpInput = it },
+                        label = { Text("Primary IP (Optional, for ping test)") },
+                        placeholder = { Text("e.g. 45.90.28.0") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (bookmarkHostInput.isNotBlank()) {
+                            appRepository.saveCustomDnsPreset(
+                                title = bookmarkTitleInput.trim().ifEmpty { bookmarkHostInput.trim() },
+                                hostname = bookmarkHostInput.trim(),
+                                description = bookmarkDescInput.trim().ifEmpty { "Custom Bookmarked DoT Endpoint" },
+                                primaryIp = bookmarkIpInput.trim()
+                            )
+                            refreshPresetsCounter++
+                            showAddBookmarkDialog = false
+                            bookmarkTitleInput = ""
+                            bookmarkHostInput = ""
+                            bookmarkDescInput = ""
+                            bookmarkIpInput = ""
+                            Toast.makeText(context, "✓ Custom DoT preset bookmarked!", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = AccentCyan, contentColor = BgBase)
+                ) {
+                    Text("Save Bookmark", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showAddBookmarkDialog = false }) {
+                    Text("Cancel", color = TextMuted)
+                }
+            }
+        )
     }
 }

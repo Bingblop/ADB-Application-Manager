@@ -33,6 +33,10 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.CleaningServices
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -41,6 +45,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -63,6 +68,10 @@ import androidx.compose.ui.unit.sp
 import com.bloatware.bingblop.data.model.BatteryDiagnostics
 import com.bloatware.bingblop.data.model.CrashLogEntry
 import com.bloatware.bingblop.data.model.DeviceInfo
+import com.bloatware.bingblop.data.model.DozeStateInfo
+import com.bloatware.bingblop.data.model.LiveProcessItem
+import com.bloatware.bingblop.data.model.ZramStats
+import com.bloatware.bingblop.data.model.StandbyBucket
 import com.bloatware.bingblop.data.repository.AppRepository
 import com.bloatware.bingblop.data.repository.MonitorRepository
 import com.bloatware.bingblop.data.repository.PowerAction
@@ -81,6 +90,8 @@ import com.bloatware.bingblop.ui.theme.StatusRunning
 import com.bloatware.bingblop.ui.theme.TextDim
 import com.bloatware.bingblop.ui.theme.TextMain
 import com.bloatware.bingblop.ui.theme.TextMuted
+import com.bloatware.bingblop.ui.theme.WarningOrange
+import com.bloatware.bingblop.ui.theme.DangerRed
 import kotlinx.coroutines.launch
 
 @Composable
@@ -104,9 +115,17 @@ fun MonitorScreen(
     // Advanced Telemetry state
     var batteryDiag by remember { mutableStateOf<BatteryDiagnostics?>(null) }
     var dozeWhitelist by remember { mutableStateOf<List<String>>(emptyList()) }
+    var dozeStateInfo by remember { mutableStateOf<DozeStateInfo?>(null) }
+    var selectedPowerProfile by remember { mutableStateOf("Balanced") }
     var isCapturingScreen by remember { mutableStateOf(false) }
     var isRecordingScreen by remember { mutableStateOf(false) }
     var simBatteryLevel by remember { mutableStateOf("50") }
+
+    // Live Process Manager & ZRAM state
+    var liveProcesses by remember { mutableStateOf<List<LiveProcessItem>>(emptyList()) }
+    var processSearchQuery by remember { mutableStateOf("") }
+    var isLoadingProcesses by remember { mutableStateOf(false) }
+    var zramStats by remember { mutableStateOf<ZramStats?>(null) }
 
     fun refreshMetrics() {
         isLoading = true
@@ -115,7 +134,14 @@ fun MonitorScreen(
             crashLogs = appRepository.getDropboxCrashLogs()
             batteryDiag = appRepository.getBatteryDiagnostics()
             dozeWhitelist = appRepository.getDozeWhitelist()
+            dozeStateInfo = appRepository.getDozeStateInfo()
+            zramStats = appRepository.getZramStats()
             isLoading = false
+        }
+        scope.launch {
+            isLoadingProcesses = true
+            liveProcesses = appRepository.getLiveProcesses()
+            isLoadingProcesses = false
         }
     }
 
@@ -560,7 +586,7 @@ fun MonitorScreen(
                     }
                 }
 
-                // Doze & Deep Idle Automation
+                // Doze & Deep Idle Automation, Standby Governor & Power Profiles
                 item {
                     CyberCard(modifier = Modifier.fillMaxWidth()) {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -571,40 +597,319 @@ fun MonitorScreen(
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                     Icon(Icons.Default.Bolt, contentDescription = null, tint = SecondaryPurple, modifier = Modifier.size(18.dp))
-                                    Text("DOZE & DEVICE IDLE GOVERNOR", fontSize = 11.sp, fontWeight = FontWeight.Black, color = TextMuted, letterSpacing = 1.sp)
+                                    Text("DOZE STATE MACHINE & POWER GOVERNOR", fontSize = 11.sp, fontWeight = FontWeight.Black, color = TextMuted, letterSpacing = 1.sp)
                                 }
-                                StatusPill("${dozeWhitelist.size} WHITELISTED", SecondaryPurple)
+                                val dState = dozeStateInfo?.deepState ?: "ACTIVE"
+                                StatusPill(dState, if (dState == "IDLE") CleanGreen else SecondaryPurple)
+                            }
+
+                            // Doze state telemetry row
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("Deep State: ${dozeStateInfo?.deepState ?: "ACTIVE"}", fontSize = 11.sp, color = TextMain)
+                                Text("Light State: ${dozeStateInfo?.lightState ?: "ACTIVE"}", fontSize = 11.sp, color = TextMuted)
+                                Text("Motion: ${if (dozeStateInfo?.motionEnabled == false) "Disabled" else "Enabled"}", fontSize = 11.sp, color = if (dozeStateInfo?.motionEnabled == false) CleanGreen else TextDim)
                             }
 
                             Text(
-                                text = "Instantly trigger Android's Deep Doze standby state to test background freeze behavior or unforce to wake the system.",
+                                text = "Instantly step Android through Idle phases, bypass motion sensors so device stays asleep in pockets, and enforce system power profiles.",
                                 fontSize = 11.sp,
                                 color = TextDim
                             )
 
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            // Action buttons: Force Deep Doze, Step Next Phase, Exit Doze
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Button(
                                     onClick = {
                                         scope.launch {
                                             val res = appRepository.forceDeepDoze()
                                             Toast.makeText(context, res.getOrDefault("Forced Doze"), Toast.LENGTH_SHORT).show()
+                                            dozeStateInfo = appRepository.getDozeStateInfo()
                                         }
                                     },
                                     colors = ButtonDefaults.buttonColors(containerColor = SecondaryPurple, contentColor = TextMain),
                                     modifier = Modifier.weight(1f)
                                 ) {
-                                    Text("Force Deep Doze", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                    Text("Force Deep Doze", fontSize = 10.sp, fontWeight = FontWeight.Bold)
                                 }
+
+                                Button(
+                                    onClick = {
+                                        scope.launch {
+                                            val res = appRepository.stepDozeIdle(true)
+                                            Toast.makeText(context, res.getOrDefault("Stepped"), Toast.LENGTH_SHORT).show()
+                                            dozeStateInfo = appRepository.getDozeStateInfo()
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = BgSurface, contentColor = AccentCyan),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text("Step Next Phase", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                }
+
                                 OutlinedButton(
                                     onClick = {
                                         scope.launch {
                                             val res = appRepository.unforceDoze()
                                             Toast.makeText(context, res.getOrDefault("Doze exited"), Toast.LENGTH_SHORT).show()
+                                            dozeStateInfo = appRepository.getDozeStateInfo()
                                         }
                                     },
                                     modifier = Modifier.weight(1f)
                                 ) {
-                                    Text("Exit Doze (Wake)", fontSize = 11.sp, color = TextMain)
+                                    Text("Wake Device", fontSize = 10.sp, color = TextMain)
+                                }
+                            }
+
+                            // Motion Sensor Toggle
+                            OutlinedButton(
+                                onClick = {
+                                    scope.launch {
+                                        val cur = dozeStateInfo?.motionEnabled ?: true
+                                        val res = appRepository.setDozeMotionEnabled(!cur)
+                                        Toast.makeText(context, res.getOrDefault("Motion updated"), Toast.LENGTH_SHORT).show()
+                                        dozeStateInfo = appRepository.getDozeStateInfo()
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    if (dozeStateInfo?.motionEnabled == false) "✓ Motion Sensor: Disabled (Deep Sleep In Pocket Active)"
+                                    else "Motion Sensor: Enabled (Tap to disable for deep sleep in movement)",
+                                    fontSize = 10.5.sp,
+                                    color = if (dozeStateInfo?.motionEnabled == false) CleanGreen else TextMuted
+                                )
+                            }
+
+                            // 1-Tap Power Profiles Switcher
+                            Text("COMPOSITE POWER PROFILES:", fontSize = 10.sp, fontWeight = FontWeight.Black, color = TextMuted)
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Button(
+                                    onClick = {
+                                        selectedPowerProfile = "Performance"
+                                        scope.launch {
+                                            val res = appRepository.applyPowerProfile("performance")
+                                            Toast.makeText(context, res.getOrDefault("Performance Profile Applied"), Toast.LENGTH_SHORT).show()
+                                            refreshMetrics()
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (selectedPowerProfile == "Performance") AccentCyan else BgSurface,
+                                        contentColor = if (selectedPowerProfile == "Performance") BgBase else TextMain
+                                    ),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text("⚡ Performance", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                }
+
+                                Button(
+                                    onClick = {
+                                        selectedPowerProfile = "Balanced"
+                                        scope.launch {
+                                            val res = appRepository.applyPowerProfile("balanced")
+                                            Toast.makeText(context, res.getOrDefault("Balanced Profile Applied"), Toast.LENGTH_SHORT).show()
+                                            refreshMetrics()
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (selectedPowerProfile == "Balanced") SecondaryPurple else BgSurface,
+                                        contentColor = if (selectedPowerProfile == "Balanced") TextMain else TextMuted
+                                    ),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text("⚖️ Balanced", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                }
+
+                                Button(
+                                    onClick = {
+                                        selectedPowerProfile = "Ultra Saver"
+                                        scope.launch {
+                                            val res = appRepository.applyPowerProfile("ultra_saver")
+                                            Toast.makeText(context, res.getOrDefault("Ultra Saver Applied"), Toast.LENGTH_SHORT).show()
+                                            refreshMetrics()
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = if (selectedPowerProfile == "Ultra Saver") CleanGreen else BgSurface,
+                                        contentColor = if (selectedPowerProfile == "Ultra Saver") BgBase else TextMain
+                                    ),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text("🔋 Ultra Saver", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // ZRAM Swap & Memory Compactor Card
+                item {
+                    CyberCard(modifier = Modifier.fillMaxWidth()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Icon(Icons.Default.CleaningServices, contentDescription = null, tint = AccentCyan, modifier = Modifier.size(18.dp))
+                                    Text("ZRAM SWAP & MEMORY COMPACTION", fontSize = 11.sp, fontWeight = FontWeight.Black, color = TextMuted, letterSpacing = 1.sp)
+                                }
+                                zramStats?.let {
+                                    StatusPill("${String.format("%.1f", it.compressionRatio)}x COMPACT", AccentCyan)
+                                }
+                            }
+
+                            zramStats?.let { zr ->
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    Text("ZRAM Allocated: ${zr.diskSizeMb} MB", fontSize = 11.sp, color = TextMuted)
+                                    Text("Compressed In-RAM: ${zr.usedMb} MB", fontSize = 11.sp, color = TextMain)
+                                }
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    Text("Uncompressed Data: ${zr.origSizeMb} MB", fontSize = 11.sp, color = TextMuted)
+                                    Text("RAM Saved: ${zr.origSizeMb - zr.usedMb} MB", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = CleanGreen)
+                                }
+                            }
+
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Button(
+                                    onClick = {
+                                        scope.launch {
+                                            val res = appRepository.trimDiskCaches()
+                                            Toast.makeText(context, res.getOrDefault("Disk caches reclaimed"), Toast.LENGTH_SHORT).show()
+                                            refreshMetrics()
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = CleanGreen, contentColor = BgBase),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text("Reclaim Disk Caches", fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
+                                }
+
+                                Button(
+                                    onClick = {
+                                        scope.launch {
+                                            val res = appRepository.dropMemoryCaches()
+                                            Toast.makeText(context, res.getOrDefault("RAM compacted"), Toast.LENGTH_SHORT).show()
+                                            refreshMetrics()
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = BgSurface, contentColor = AccentCyan),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text("Drop Page Caches", fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Interactive Live Process Manager Card
+                item {
+                    CyberCard(modifier = Modifier.fillMaxWidth()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Icon(Icons.Default.Memory, contentDescription = null, tint = AccentCyan, modifier = Modifier.size(18.dp))
+                                    Text("LIVE PROCESS & MEMORY PROFILER", fontSize = 11.sp, fontWeight = FontWeight.Black, color = TextMuted, letterSpacing = 1.sp)
+                                }
+                                StatusPill("${liveProcesses.size} RUNNING", if (liveProcesses.isNotEmpty()) CleanGreen else TextDim)
+                            }
+
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                OutlinedTextField(
+                                    value = processSearchQuery,
+                                    onValueChange = { processSearchQuery = it },
+                                    placeholder = { Text("Search process by name or PID...", fontSize = 11.sp, color = TextDim) },
+                                    singleLine = true,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                IconButton(
+                                    onClick = {
+                                        isLoadingProcesses = true
+                                        scope.launch {
+                                            liveProcesses = appRepository.getLiveProcesses()
+                                            isLoadingProcesses = false
+                                        }
+                                    }
+                                ) {
+                                    Icon(Icons.Default.Refresh, contentDescription = "Refresh Processes", tint = AccentCyan)
+                                }
+                            }
+
+                            val filteredProcs = remember(liveProcesses, processSearchQuery) {
+                                liveProcesses.filter {
+                                    processSearchQuery.isEmpty() ||
+                                            it.name.contains(processSearchQuery, ignoreCase = true) ||
+                                            it.pid.toString().contains(processSearchQuery)
+                                }.take(12)
+                            }
+
+                            if (isLoadingProcesses) {
+                                Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator(color = AccentCyan, modifier = Modifier.size(24.dp))
+                                }
+                            } else if (filteredProcs.isEmpty()) {
+                                Text("No matching processes found.", fontSize = 11.sp, color = TextDim)
+                            } else {
+                                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    filteredProcs.forEach { proc ->
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clip(RoundedCornerShape(6.dp))
+                                                .background(BgSurface)
+                                                .border(1.dp, BorderGlass, RoundedCornerShape(6.dp))
+                                                .padding(8.dp)
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Column(modifier = Modifier.weight(1f)) {
+                                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                        Text(proc.name, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextMain)
+                                                        if (proc.isSystem) {
+                                                            StatusPill("SYS", TextDim)
+                                                        }
+                                                    }
+                                                    Text("PID: ${proc.pid} | User: ${proc.user} | RSS: ${proc.rssKb / 1024} MB", fontSize = 10.sp, color = TextMuted, fontFamily = FontFamily.Monospace)
+                                                }
+
+                                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                    OutlinedButton(
+                                                        onClick = {
+                                                            scope.launch {
+                                                                appRepository.trimAppMemory(proc.name)
+                                                                Toast.makeText(context, "Trimmed memory for ${proc.name}", Toast.LENGTH_SHORT).show()
+                                                            }
+                                                        },
+                                                        modifier = Modifier.height(28.dp)
+                                                    ) {
+                                                        Text("Trim", fontSize = 9.sp, color = SecondaryPurple)
+                                                    }
+
+                                                    Button(
+                                                        onClick = {
+                                                            scope.launch {
+                                                                appRepository.killProcess(proc.pid)
+                                                                Toast.makeText(context, "SIGKILL PID ${proc.pid}", Toast.LENGTH_SHORT).show()
+                                                                liveProcesses = appRepository.getLiveProcesses()
+                                                            }
+                                                        },
+                                                        colors = ButtonDefaults.buttonColors(containerColor = StatusBloat, contentColor = TextMain),
+                                                        modifier = Modifier.height(28.dp)
+                                                    ) {
+                                                        Text("Kill", fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }

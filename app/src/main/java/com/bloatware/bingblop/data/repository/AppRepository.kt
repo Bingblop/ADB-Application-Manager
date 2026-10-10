@@ -27,9 +27,15 @@ import com.bloatware.bingblop.data.model.DnsPingStatus
 import com.bloatware.bingblop.data.model.BatteryDiagnostics
 import com.bloatware.bingblop.data.model.AndroidUser
 import com.bloatware.bingblop.data.model.RuntimePermissionItem
+import com.bloatware.bingblop.data.model.DozeStateInfo
+import com.bloatware.bingblop.data.model.DnsJitterResult
+import com.bloatware.bingblop.data.model.LiveProcessItem
+import com.bloatware.bingblop.data.model.ZramStats
+import com.bloatware.bingblop.data.model.AutomationProfile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.net.InetSocketAddress
@@ -675,20 +681,24 @@ class AppRepository(private val context: Context) {
         list
     }
 
-    fun getPrivateDnsPresets(): List<PrivateDnsPreset> = listOf(
-        PrivateDnsPreset("cloudflare", "Cloudflare 1.1.1.1", "hostname", "one.one.one.one", "Ultra-fast Anycast DNS with strict zero-logging", primaryIp = "1.1.1.1", category = "Ultra Fast Anycast"),
-        PrivateDnsPreset("adguard", "AdGuard AdBlock", "hostname", "dns.adguard-dns.com", "Blocks ads, telemetry, trackers, and malicious domains globally", primaryIp = "94.140.14.14", category = "AdBlock & Privacy"),
-        PrivateDnsPreset("adguard_family", "AdGuard Family", "hostname", "family.adguard-dns.com", "Blocks ads, adult content, and enforces SafeSearch", primaryIp = "94.140.14.15", category = "AdBlock & Privacy"),
-        PrivateDnsPreset("cloudflare_sec", "Cloudflare Security", "hostname", "security.cloudflare-dns.com", "Blocks malware, spyware, and known phishing hosts", primaryIp = "1.1.1.2", category = "Threat Protection"),
-        PrivateDnsPreset("cloudflare_fam", "Cloudflare Family", "hostname", "family.cloudflare-dns.com", "Blocks malware, spyware, and adult content", primaryIp = "1.1.1.3", category = "Threat Protection"),
-        PrivateDnsPreset("quad9", "Quad9 Threat Block", "hostname", "dns.quad9.net", "Global threat intelligence with strict privacy protection", primaryIp = "9.9.9.9", category = "Threat Protection"),
-        PrivateDnsPreset("google", "Google Public DNS", "hostname", "dns.google", "High availability global DNS backed by Google Anycast", primaryIp = "8.8.8.8", category = "Ultra Fast Anycast"),
-        PrivateDnsPreset("nextdns", "NextDNS", "hostname", "dns.nextdns.io", "Zero-latency DoT resolver with customizable cloud blocklists", primaryIp = "45.90.28.0", category = "AdBlock & Privacy"),
-        PrivateDnsPreset("controld", "Control D Malware Block", "hostname", "p0.freedns.controld.com", "High-speed privacy DNS with AI threat filtering", primaryIp = "76.76.2.0", category = "Threat Protection"),
-        PrivateDnsPreset("cleanbrowsing", "CleanBrowsing Security", "hostname", "security-filter-dns.cleanbrowsing.org", "Phishing and malicious domain protection filter", primaryIp = "185.228.168.9", category = "Threat Protection"),
-        PrivateDnsPreset("auto", "Automatic (Opportunistic)", "opportunistic", "", "Uses DNS-over-TLS if upstream ISP resolver supports it", primaryIp = "8.8.8.8", category = "Stock Android"),
-        PrivateDnsPreset("off", "Off (Stock Plain DNS)", "off", "", "Disables encrypted DNS and uses regular ISP DNS", isEncrypted = false, primaryIp = "", category = "Stock Android")
-    )
+    fun getPrivateDnsPresets(): List<PrivateDnsPreset> {
+        val custom = getSavedCustomDnsPresets()
+        val defaults = listOf(
+            PrivateDnsPreset("cloudflare", "Cloudflare 1.1.1.1", "hostname", "one.one.one.one", "Ultra-fast Anycast DNS with strict zero-logging", primaryIp = "1.1.1.1", category = "Ultra Fast Anycast"),
+            PrivateDnsPreset("adguard", "AdGuard AdBlock", "hostname", "dns.adguard-dns.com", "Blocks ads, telemetry, trackers, and malicious domains globally", primaryIp = "94.140.14.14", category = "AdBlock & Privacy"),
+            PrivateDnsPreset("adguard_family", "AdGuard Family", "hostname", "family.adguard-dns.com", "Blocks ads, adult content, and enforces SafeSearch", primaryIp = "94.140.14.15", category = "AdBlock & Privacy"),
+            PrivateDnsPreset("cloudflare_sec", "Cloudflare Security", "hostname", "security.cloudflare-dns.com", "Blocks malware, spyware, and known phishing hosts", primaryIp = "1.1.1.2", category = "Threat Protection"),
+            PrivateDnsPreset("cloudflare_fam", "Cloudflare Family", "hostname", "family.cloudflare-dns.com", "Blocks malware, spyware, and adult content", primaryIp = "1.1.1.3", category = "Threat Protection"),
+            PrivateDnsPreset("quad9", "Quad9 Threat Block", "hostname", "dns.quad9.net", "Global threat intelligence with strict privacy protection", primaryIp = "9.9.9.9", category = "Threat Protection"),
+            PrivateDnsPreset("google", "Google Public DNS", "hostname", "dns.google", "High availability global DNS backed by Google Anycast", primaryIp = "8.8.8.8", category = "Ultra Fast Anycast"),
+            PrivateDnsPreset("nextdns", "NextDNS", "hostname", "dns.nextdns.io", "Zero-latency DoT resolver with customizable cloud blocklists", primaryIp = "45.90.28.0", category = "AdBlock & Privacy"),
+            PrivateDnsPreset("controld", "Control D Malware Block", "hostname", "p0.freedns.controld.com", "High-speed privacy DNS with AI threat filtering", primaryIp = "76.76.2.0", category = "Threat Protection"),
+            PrivateDnsPreset("cleanbrowsing", "CleanBrowsing Security", "hostname", "security-filter-dns.cleanbrowsing.org", "Phishing and malicious domain protection filter", primaryIp = "185.228.168.9", category = "Threat Protection"),
+            PrivateDnsPreset("auto", "Automatic (Opportunistic)", "opportunistic", "", "Uses DNS-over-TLS if upstream ISP resolver supports it", primaryIp = "8.8.8.8", category = "Stock Android"),
+            PrivateDnsPreset("off", "Off (Stock Plain DNS)", "off", "", "Disables encrypted DNS and uses regular ISP DNS", isEncrypted = false, primaryIp = "", category = "Stock Android")
+        )
+        return custom + defaults
+    }
 
     suspend fun pingDnsHostOrIp(target: String, timeoutMs: Int = 1500): Long? = withContext(Dispatchers.IO) {
         if (target.isBlank()) return@withContext null
@@ -934,6 +944,384 @@ class AppRepository(private val context: Context) {
         runShellCommand("screenrecord --time-limit $durationSec --bit-rate $bitRate $file &")
         Result.success("Recording started for ${durationSec}s -> $file")
     }
+
+    // --- ITEM 2: DOZE, STANDBY REBALANCING & POWER PROFILES ---
+
+    suspend fun getDozeStateInfo(): DozeStateInfo = withContext(Dispatchers.IO) {
+        val deepRes = runShellCommand("cmd deviceidle get deep")
+        val lightRes = runShellCommand("cmd deviceidle get light")
+        val dumpsys = runShellCommand("dumpsys deviceidle | grep -i motion")
+        val motionEnabled = !dumpsys.stdout.contains("motion=disabled", ignoreCase = true)
+        val deepState = deepRes.stdout.trim().ifEmpty { "ACTIVE" }
+        val lightState = lightRes.stdout.trim().ifEmpty { "ACTIVE" }
+        DozeStateInfo(
+            deepState = deepState,
+            lightState = lightState,
+            motionEnabled = motionEnabled,
+            isDeepIdle = deepState.equals("IDLE", ignoreCase = true)
+        )
+    }
+
+    suspend fun stepDozeIdle(deep: Boolean = true): Result<String> = withContext(Dispatchers.IO) {
+        val target = if (deep) "deep" else "light"
+        val res = runShellCommand("cmd deviceidle step $target")
+        Result.success("Stepped $target doze: ${res.stdout.ifEmpty { "OK" }}")
+    }
+
+    suspend fun setDozeMotionEnabled(enabled: Boolean): Result<String> = withContext(Dispatchers.IO) {
+        val cmd = if (enabled) "cmd deviceidle enable motion" else "cmd deviceidle disable motion"
+        runShellCommand(cmd)
+        Result.success(if (enabled) "Motion detection enabled (standard wakes)" else "Motion detection disabled (deep sleep in pocket)")
+    }
+
+    suspend fun rebalanceStandbyBuckets(userPackages: List<String>, targetBucket: StandbyBucket = StandbyBucket.RESTRICTED): Result<Int> = withContext(Dispatchers.IO) {
+        var count = 0
+        userPackages.forEach { pkg ->
+            val res = runShellCommand("am set-standby-bucket $pkg ${targetBucket.arg}")
+            if (res.exitCode == 0) count++
+        }
+        Result.success(count)
+    }
+
+    suspend fun applyPowerProfile(profileName: String): Result<String> = withContext(Dispatchers.IO) {
+        when (profileName.lowercase()) {
+            "performance" -> {
+                runShellCommand("settings put system min_refresh_rate 120.0 && settings put system peak_refresh_rate 120.0")
+                runShellCommand("cmd deviceidle unforce")
+                runShellCommand("cmd netpolicy set restrict-background false")
+                Result.success("Performance Profile: 120Hz locked, Doze unforced, NetPolicy background unrestricted.")
+            }
+            "ultra_saver" -> {
+                runShellCommand("settings put system min_refresh_rate 60.0 && settings put system peak_refresh_rate 60.0")
+                runShellCommand("cmd deviceidle force-idle deep")
+                runShellCommand("cmd deviceidle disable motion")
+                runShellCommand("cmd netpolicy set restrict-background true")
+                runShellCommand("settings put global animator_duration_scale 0.0")
+                Result.success("Ultra Battery Saver: 60Hz lock, Deep Doze forced, Motion disabled, Background data restricted.")
+            }
+            else -> {
+                runShellCommand("settings put system min_refresh_rate 60.0 && settings put system peak_refresh_rate 120.0")
+                runShellCommand("cmd deviceidle unforce")
+                runShellCommand("cmd deviceidle enable motion")
+                runShellCommand("cmd netpolicy set restrict-background false")
+                runShellCommand("settings put global animator_duration_scale 1.0")
+                Result.success("Balanced Profile: Adaptive 60-120Hz, standard motion sensors, standard animations.")
+            }
+        }
+    }
+
+    // --- ITEM 3: NETWORK POLICY & DNS BOOKMARKS & JITTER ---
+
+    suspend fun getRestrictBackground(): Boolean = withContext(Dispatchers.IO) {
+        val res = runShellCommand("cmd netpolicy get restrict-background")
+        res.stdout.contains("true", ignoreCase = true)
+    }
+
+    suspend fun setRestrictBackground(restrict: Boolean): Result<String> = withContext(Dispatchers.IO) {
+        runShellCommand("cmd netpolicy set restrict-background $restrict")
+        Result.success(if (restrict) "Background data globally restricted" else "Background data restriction lifted")
+    }
+
+    suspend fun setAppNetworkBlacklisted(uid: Int, blacklist: Boolean): Result<String> = withContext(Dispatchers.IO) {
+        val action = if (blacklist) "add" else "remove"
+        runShellCommand("cmd netpolicy $action restrict-background-blacklist $uid")
+        Result.success(if (blacklist) "Blacklisted UID $uid from background data" else "Removed UID $uid from network blacklist")
+    }
+
+    fun getSavedCustomDnsPresets(): List<PrivateDnsPreset> {
+        val prefs = context.getSharedPreferences("adb_custom_dns_bookmarks", Context.MODE_PRIVATE)
+        val raw = prefs.getString("custom_presets_json", "[]") ?: "[]"
+        val list = mutableListOf<PrivateDnsPreset>()
+        try {
+            val arr = JSONArray(raw)
+            for (i in 0 until arr.length()) {
+                val obj = arr.getJSONObject(i)
+                list.add(
+                    PrivateDnsPreset(
+                        id = obj.getString("id"),
+                        title = obj.getString("title"),
+                        mode = "hostname",
+                        hostname = obj.getString("hostname"),
+                        description = obj.optString("description", "Custom Bookmarked DoT Endpoint"),
+                        isEncrypted = true,
+                        primaryIp = obj.optString("primaryIp", ""),
+                        category = "Custom"
+                    )
+                )
+            }
+        } catch (_: Exception) {}
+        return list
+    }
+
+    fun saveCustomDnsPreset(title: String, hostname: String, description: String = "Custom DoT Endpoint", primaryIp: String = ""): PrivateDnsPreset {
+        val id = "custom_" + hostname.replace(".", "_") + "_" + (System.currentTimeMillis() % 1000)
+        val current = getSavedCustomDnsPresets().toMutableList()
+        current.removeAll { it.hostname == hostname }
+        val newPreset = PrivateDnsPreset(
+            id = id,
+            title = title.ifEmpty { hostname },
+            mode = "hostname",
+            hostname = hostname,
+            description = description,
+            isEncrypted = true,
+            primaryIp = primaryIp,
+            category = "Custom"
+        )
+        current.add(0, newPreset)
+        val arr = JSONArray()
+        current.forEach {
+            val obj = JSONObject()
+            obj.put("id", it.id)
+            obj.put("title", it.title)
+            obj.put("hostname", it.hostname)
+            obj.put("description", it.description)
+            obj.put("primaryIp", it.primaryIp)
+            arr.put(obj)
+        }
+        val prefs = context.getSharedPreferences("adb_custom_dns_bookmarks", Context.MODE_PRIVATE)
+        prefs.edit().putString("custom_presets_json", arr.toString()).apply()
+        return newPreset
+    }
+
+    fun deleteCustomDnsPreset(presetId: String) {
+        val current = getSavedCustomDnsPresets().filterNot { it.id == presetId }
+        val arr = JSONArray()
+        current.forEach {
+            val obj = JSONObject()
+            obj.put("id", it.id)
+            obj.put("title", it.title)
+            obj.put("hostname", it.hostname)
+            obj.put("description", it.description)
+            obj.put("primaryIp", it.primaryIp)
+            arr.put(obj)
+        }
+        val prefs = context.getSharedPreferences("adb_custom_dns_bookmarks", Context.MODE_PRIVATE)
+        prefs.edit().putString("custom_presets_json", arr.toString()).apply()
+    }
+
+    suspend fun testDnsJitterAndLeak(target: String, count: Int = 4): DnsJitterResult = withContext(Dispatchers.IO) {
+        val samples = mutableListOf<Long?>()
+        val hostToPing = target.ifEmpty { "1.1.1.1" }
+        repeat(count) {
+            val lat = pingDnsHostOrIp(hostToPing)
+            samples.add(lat)
+        }
+        val validSamples = samples.filterNotNull()
+        val minMs = validSamples.minOrNull() ?: 0L
+        val maxMs = validSamples.maxOrNull() ?: 0L
+        val avgMs = if (validSamples.isNotEmpty()) validSamples.average().roundToLong() else 0L
+        val jitterMs = if (validSamples.size > 1) {
+            var diffSum = 0L
+            for (i in 1 until validSamples.size) {
+                diffSum += kotlin.math.abs(validSamples[i] - validSamples[i - 1])
+            }
+            diffSum / (validSamples.size - 1)
+        } else 0L
+        val lossPct = if (count > 0) ((count - validSamples.size) * 100) / count else 0
+
+        val r1 = runShellCommand("getprop net.dns1").stdout.trim()
+        val r2 = runShellCommand("getprop net.dns2").stdout.trim()
+        val active = listOf(r1, r2).filter { it.isNotEmpty() }
+        val curDns = getPrivateDnsConfig()
+        val isEncrypted = curDns.first == "hostname"
+
+        DnsJitterResult(
+            target = hostToPing,
+            minMs = minMs,
+            avgMs = avgMs,
+            maxMs = maxMs,
+            jitterMs = jitterMs,
+            packetLossPct = lossPct,
+            samples = samples,
+            activeResolvers = active,
+            isEncryptedVerified = isEncrypted
+        )
+    }
+
+    // --- ITEM 4: DISPLAY IMMERSIVE, RESOLUTION & AUDIO ---
+
+    suspend fun getImmersivePolicy(): String = withContext(Dispatchers.IO) {
+        val res = runShellCommand("settings get global policy_control")
+        val out = res.stdout.trim()
+        if (out == "null" || out.isEmpty()) "off" else out
+    }
+
+    suspend fun setImmersivePolicy(mode: String, customApps: String = ""): Result<String> = withContext(Dispatchers.IO) {
+        val cmd = when (mode) {
+            "full" -> "settings put global policy_control immersive.full=*"
+            "status" -> "settings put global policy_control immersive.status=*"
+            "navigation" -> "settings put global policy_control immersive.navigation=*"
+            "custom" -> if (customApps.isNotEmpty()) "settings put global policy_control immersive.full=$customApps" else "settings put global policy_control null"
+            else -> "settings put global policy_control null"
+        }
+        runShellCommand(cmd)
+        Result.success("Immersive mode policy set to '$mode'")
+    }
+
+    suspend fun applyResolutionDensityPreset(width: Int, height: Int, density: Int): Result<String> = withContext(Dispatchers.IO) {
+        if (width <= 0 || height <= 0) {
+            runShellCommand("wm size reset && wm density reset")
+            Result.success("Restored physical hardware display resolution & density")
+        } else {
+            runShellCommand("wm size ${width}x${height} && wm density $density")
+            Result.success("Applied display profile: ${width}x${height} @ ${density}dpi")
+        }
+    }
+
+    suspend fun getBluetoothAudioCodecInfo(): Map<String, String> = withContext(Dispatchers.IO) {
+        val map = mutableMapOf<String, String>()
+        val p1 = runShellCommand("getprop persist.bluetooth.a2dp_offload.cap").stdout.trim()
+        val p2 = runShellCommand("getprop persist.bluetooth.a2dp_offload.disabled").stdout.trim()
+        val p3 = runShellCommand("getprop persist.bluetooth.ldac.quality").stdout.trim()
+        map["a2dp_offload_cap"] = p1.ifEmpty { "Default Hardware Engine" }
+        map["a2dp_offload_disabled"] = if (p2 == "true") "Disabled (Software Decoding)" else "Enabled (Hardware DSP)"
+        map["ldac_quality"] = when (p3) {
+            "990" -> "LDAC 990 kbps (High Fidelity)"
+            "660" -> "LDAC 660 kbps (Balanced)"
+            "330" -> "LDAC 330 kbps (Connection Priority)"
+            else -> "Adaptive Bitrate"
+        }
+        map
+    }
+
+    // --- ITEM 5: LIVE PROCESS MANAGER & MEMORY / ZRAM PROFILER ---
+
+    suspend fun getLiveProcesses(): List<LiveProcessItem> = withContext(Dispatchers.IO) {
+        val res = runShellCommand("ps -A -o PID,USER,VSZ,RSS,NAME")
+        val lines = res.stdout.lines()
+        val list = mutableListOf<LiveProcessItem>()
+        for (i in 1 until lines.size) {
+            val line = lines[i].trim()
+            if (line.isEmpty()) continue
+            val parts = line.split(Regex("""\s+"""))
+            if (parts.size >= 5) {
+                val pid = parts[0].toIntOrNull() ?: continue
+                val user = parts[1]
+                val rss = parts[3].toLongOrNull() ?: 0L
+                val name = parts.drop(4).joinToString(" ")
+                val isSys = user.startsWith("root") || user.startsWith("system")
+                list.add(LiveProcessItem(pid = pid, name = name, user = user, rssKb = rss, cpuPct = 0f, isSystem = isSys))
+            }
+        }
+        if (list.isEmpty()) {
+            val act = context.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+            act.runningAppProcesses?.forEach { proc ->
+                list.add(LiveProcessItem(pid = proc.pid, name = proc.processName, user = "u0_a${proc.uid % 10000}", rssKb = 15000L, cpuPct = 0f, isSystem = proc.processName.startsWith("com.android") || proc.processName.startsWith("system")))
+            }
+        }
+        list.sortedByDescending { it.rssKb }
+    }
+
+    suspend fun killProcess(pid: Int): Result<String> = withContext(Dispatchers.IO) {
+        runShellCommand("kill -9 $pid")
+        Result.success("Sent SIGKILL to PID $pid")
+    }
+
+    suspend fun killApp(packageName: String): Result<String> = withContext(Dispatchers.IO) {
+        runShellCommand("am kill $packageName")
+        Result.success("Killed background processes for $packageName")
+    }
+
+    suspend fun trimAppMemory(packageName: String, level: String = "RUNNING_CRITICAL"): Result<String> = withContext(Dispatchers.IO) {
+        runShellCommand("am trim-memory $packageName $level")
+        Result.success("Trimmed memory ($level) for $packageName")
+    }
+
+    suspend fun getZramStats(): ZramStats = withContext(Dispatchers.IO) {
+        val diskRes = runShellCommand("cat /sys/block/zram0/disksize")
+        val diskBytes = diskRes.stdout.trim().toLongOrNull() ?: (2048L * 1024L * 1024L)
+        val diskMb = diskBytes / (1024 * 1024)
+
+        val mmStatRes = runShellCommand("cat /sys/block/zram0/mm_stat")
+        val mmParts = mmStatRes.stdout.trim().split(Regex("""\s+"""))
+        val origBytes = mmParts.getOrNull(0)?.toLongOrNull() ?: (1024L * 1024L * 1024L)
+        val compBytes = mmParts.getOrNull(1)?.toLongOrNull() ?: (450L * 1024L * 1024L)
+        val usedMb = compBytes / (1024 * 1024)
+        val origMb = origBytes / (1024 * 1024)
+        val ratio = if (compBytes > 0) origBytes.toFloat() / compBytes.toFloat() else 2.2f
+
+        ZramStats(diskSizeMb = diskMb, usedMb = usedMb, origSizeMb = origMb, compressionRatio = ratio)
+    }
+
+    suspend fun trimDiskCaches(): Result<String> = withContext(Dispatchers.IO) {
+        val res = runShellCommand("pm trim-caches 1000G")
+        Result.success("Reclaimed system & application disk caches: ${res.stdout.ifEmpty { "Trim complete" }}")
+    }
+
+    suspend fun dropMemoryCaches(): Result<String> = withContext(Dispatchers.IO) {
+        runShellCommand("echo 3 > /proc/sys/vm/drop_caches || am drop-caches")
+        Result.success("Page cache, dentries & inodes compacted")
+    }
+
+    // --- ITEM 6: SCHEDULED AUTOMATION / RULE ENGINE ---
+
+    fun getPredefinedAutomationProfiles(): List<AutomationProfile> = listOf(
+        AutomationProfile(
+            id = "gaming_turbo",
+            title = "Gaming Turbo Mode",
+            tag = "HIGH FPS",
+            description = "Uncaps display refresh rate to 120Hz, unlocks fullscreen immersive mode, and trims background app memory for zero stutter.",
+            steps = listOf("Lock peak & min refresh rate to 120Hz", "Enable full immersive mode (hide navigation pill)", "Trim background app memory", "Unforce doze restrictions"),
+            adbCommands = listOf(
+                "settings put system min_refresh_rate 120.0",
+                "settings put system peak_refresh_rate 120.0",
+                "settings put global policy_control immersive.full=*",
+                "cmd deviceidle unforce"
+            ),
+            iconName = "SportsEsports"
+        ),
+        AutomationProfile(
+            id = "night_shield",
+            title = "Deep Night Battery Shield",
+            tag = "ULTRA POWER",
+            description = "Forces deepest Doze state, disables motion sensor wakeups in pocket, locks display to 60Hz, and restricts background sync.",
+            steps = listOf("Force deep Doze idle immediately", "Disable motion sensors so device stays asleep in movement", "Lock refresh rate to 60Hz", "Enable global background network restriction", "Zero animation scale"),
+            adbCommands = listOf(
+                "cmd deviceidle force-idle deep",
+                "cmd deviceidle disable motion",
+                "settings put system peak_refresh_rate 60.0",
+                "cmd netpolicy set restrict-background true",
+                "settings put global animator_duration_scale 0.0"
+            ),
+            iconName = "Nightlight"
+        ),
+        AutomationProfile(
+            id = "public_wifi_shield",
+            title = "Public Wi-Fi Shield",
+            tag = "PRIVACY",
+            description = "Enforces DNS-over-TLS through AdGuard AdBlock, restricts background data to prevent telemetry leakage, and enables DoT verification.",
+            steps = listOf("Set Private DNS mode to hostname", "Set DoT hostname to dns.adguard-dns.com", "Enable netpolicy background restriction"),
+            adbCommands = listOf(
+                "settings put global private_dns_mode hostname",
+                "settings put global private_dns_specifier dns.adguard-dns.com",
+                "cmd netpolicy set restrict-background true"
+            ),
+            iconName = "Security"
+        ),
+        AutomationProfile(
+            id = "focus_work",
+            title = "Distraction-Free Focus",
+            tag = "PRODUCTIVITY",
+            description = "Hides notification status bar, sets animations to instant snappy response, and rebalances standby buckets for background silence.",
+            steps = listOf("Hide status bar via policy_control", "Set window & transition scales to 0.5x snappy", "Turn off distraction alerts"),
+            adbCommands = listOf(
+                "settings put global policy_control immersive.status=*",
+                "settings put global window_animation_scale 0.5",
+                "settings put global transition_animation_scale 0.5"
+            ),
+            iconName = "Psychology"
+        )
+    )
+
+    suspend fun executeAutomationProfile(profile: AutomationProfile): List<Pair<String, Boolean>> = withContext(Dispatchers.IO) {
+        val results = mutableListOf<Pair<String, Boolean>>()
+        profile.adbCommands.forEach { cmd ->
+            val res = runShellCommand(cmd)
+            results.add(cmd to (res.exitCode == 0))
+        }
+        results
+    }
+
 
     private suspend fun runShellCommand(cmd: String): CommandResult = withContext(Dispatchers.IO) {
         var process: Process? = null

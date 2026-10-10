@@ -273,3 +273,48 @@ data class ScreenCaptureResult(
     val isSuccess: Boolean,
     val message: String
 )
+
+data class DnsJitterResult(
+    val target: String,
+    val minMs: Long,
+    val avgMs: Long,
+    val maxMs: Long,
+    val jitterMs: Long,
+    val packetLossPct: Int,
+    val samples: List<Long?>,
+    val activeResolvers: List<String> = emptyList(),
+    val isEncryptedVerified: Boolean = false
+)
+
+data class LiveProcessItem(
+    val pid: Int,
+    val name: String,
+    val user: String,
+    val rssKb: Long,
+    val cpuPct: Float,
+    val isSystem: Boolean = false
+)
+
+data class ZramStats(
+    val diskSizeMb: Long,
+    val usedMb: Long,
+    val origSizeMb: Long,
+    val compressionRatio: Float
+)
+
+data class DozeStateInfo(
+    val deepState: String,
+    val lightState: String,
+    val motionEnabled: Boolean,
+    val isDeepIdle: Boolean
+)
+
+data class AutomationProfile(
+    val id: String,
+    val title: String,
+    val tag: String,
+    val description: String,
+    val steps: List<String>,
+    val adbCommands: List<String>,
+    val iconName: String = "Bolt"
+)
