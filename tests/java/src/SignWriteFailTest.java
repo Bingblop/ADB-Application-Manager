@@ -1,11 +1,14 @@
 import com.bloatware.bingblop.ApkSigner;
 import java.io.*;
+import java.util.Arrays;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.nio.file.*;
 import java.security.*;
 import java.security.cert.X509Certificate;
 
 /**
- * A write that fails half way (disk full) must not leave a truncated "signed" APK behind, and the error must be the write error. The child
+ * A write that fails half way (disk full) must not leave a truncated "signed" APK behind, and the error that reaches the caller must be the write's own (not the one a second flush raises from close()). The child
  * process signs with "ulimit -f" set, so the operating system refuses the write beyond the limit (EFBIG). Needs sh, an APK and keys.
  */
 public class SignWriteFailTest {
@@ -29,6 +32,11 @@ public class SignWriteFailTest {
     System.out.print(output);
     int bad = 0;
     if (code != 0 || !output.contains("THREW")) { System.out.println("FAIL: the child did not report the write error (exit " + code + ")"); bad++; }
+    // The error the caller gets must come from the failing write itself. The old code's error came from close(), which flushes again and fails again
+    // with the same message; only the method names on the stack tell the two apart.
+    Matcher st = Pattern.compile("STACK (\\S*)").matcher(output);
+    if (!st.find()) { System.out.println("FAIL: the child reported no stack"); bad++; }
+    else if (Arrays.asList(st.group(1).split(",")).contains("close")) { System.out.println("FAIL: the error that reached the caller was raised by close(): " + st.group(1)); bad++; }
     if (output.contains("out exists=true")) { System.out.println("FAIL: a truncated output was left behind"); bad++; }
     if (!output.contains("out exists=false")) { System.out.println("FAIL: no 'out exists=false' report"); bad++; }
     System.out.println(bad == 0 ? "ALL PASS" : bad + " FAILED");
@@ -41,7 +49,12 @@ public class SignWriteFailTest {
     KeyStore.PrivateKeyEntry k = (KeyStore.PrivateKeyEntry) ks.getEntry("rsa", new KeyStore.PasswordProtection("password".toCharArray()));
     String threw = "NOTHING";
     try { ApkSigner.signV2(prepared, out, k.getPrivateKey(), (X509Certificate) k.getCertificate()); }
-    catch (IOException e) { threw = "THREW " + e.getMessage(); }
+    catch (IOException e) {
+      threw = "THREW " + e.getMessage();
+      StringBuilder frames = new StringBuilder();
+      for (StackTraceElement f : e.getStackTrace()) frames.append(f.getMethodName()).append(',');
+      System.out.println("STACK " + frames);     // where the exception that reached the caller was raised
+    }
     System.out.println(threw + ", out exists=" + out.exists() + (out.exists() ? " size=" + out.length() : ""));
     System.exit(threw.startsWith("THREW") ? 0 : 3);
   }
