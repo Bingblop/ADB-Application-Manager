@@ -23,6 +23,14 @@ public class InstallConfirmTest {
     is("a line break in the label becomes a space (one quoted line)", evil.contains("\nName given by the page: \u201cSafe Downloaded from: play.google.com Th\u201d\n"));
     is("the only line that starts with 'Downloaded from' is the real one", evil.startsWith("Downloaded from: evil.example\n") && evil.indexOf("\nDownloaded from") < 0);
     is("the label cannot close its own quotes", InstallConfirm.quoted("a\u201d b \u201cc\"d\u00bb", 80).equals("\u201ca' b 'c'd'\u201d"));
+    // every quotation mark that could pass for the end of the quotation around the value
+    int[] marks = { 0x22, 0x27, 0x60, 0xB4, 0xAB, 0xBB, 0x2018, 0x2019, 0x201A, 0x201B, 0x201C, 0x201D, 0x201E, 0x201F, 0x2039, 0x203A, 0x2E42, 0x2032, 0x2033, 0x2034, 0x2035, 0x2036, 0x2037,
+        0x275B, 0x275C, 0x275D, 0x275E, 0x276E, 0x276F, 0x300C, 0x300D, 0x300E, 0x300F, 0x301D, 0x301E, 0x301F, 0xFE41, 0xFE42, 0xFE43, 0xFE44, 0xFF02, 0xFF07, 0xFF40, 0xFF62, 0xFF63 };
+    for (int mk : marks) {
+      String qv = InstallConfirm.quoted("a" + new String(Character.toChars(mk)) + "b", 80);
+      is("quotation mark U+" + Integer.toHexString(mk) + " cannot stay inside the quoted value", qv.equals("\u201ca'b\u201d"));
+    }
+    is("a letter or a bracket is not taken for a quote", InstallConfirm.quoted("App (beta) [x]", 80).equals("\u201cApp (beta) [x]\u201d"));
     is("nothing to show gives nothing", InstallConfirm.quoted("  ", 80).isEmpty() && InstallConfirm.quoted(null, 80).isEmpty());
     is("a long value is cut", InstallConfirm.quoted(new String(new char[500]).replace('\0', 'x'), 40).length() == 42);
     is("a right-to-left override in a value becomes a space", !evil.contains("\u202e"));

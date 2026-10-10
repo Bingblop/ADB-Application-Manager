@@ -59,11 +59,30 @@ final class InstallConfirm {
         String c = clean(s, max);
         if (c.isEmpty()) return "";
         StringBuilder sb = new StringBuilder("\u201c");
-        for (int i = 0; i < c.length(); i++) {
-            char ch = c.charAt(i);
-            sb.append(ch == '"' || ch == '\u201c' || ch == '\u201d' || ch == '\u201e' || ch == '\u201f' || ch == '\u00ab' || ch == '\u00bb' ? '\'' : ch);
+        for (int i = 0; i < c.length(); ) {
+            int cp = c.codePointAt(i);
+            i += Character.charCount(cp);
+            sb.appendCodePoint(isQuoteMark(cp) ? '\'' : cp);
         }
         return sb.append('\u201d').toString();
+    }
+
+    /**
+     * Whether a character is, or can pass for, a quotation mark: every one with the Unicode Quotation_Mark property (ASCII and typographic quotes in all
+     * languages, the corner brackets of CJK text, the fullwidth forms), the grave accent and acute used as quotes, the primes, and the quote ornaments.
+     * Any of them inside an untrusted value could look like the end of the quotation that holds it.
+     */
+    static boolean isQuoteMark(int cp) {
+        if (cp == 0x22 || cp == 0x27 || cp == 0x60 || cp == 0xB4 || cp == 0xAB || cp == 0xBB) return true;
+        if (cp >= 0x2018 && cp <= 0x201F) return true;                // single and double, low and reversed
+        if (cp == 0x2039 || cp == 0x203A || cp == 0x2E42) return true;
+        if (cp >= 0x2032 && cp <= 0x2037) return true;                // primes
+        if (cp >= 0x275B && cp <= 0x275E) return true;                // heavy quote ornaments
+        if (cp == 0x276E || cp == 0x276F) return true;                // heavy angle quotation ornaments
+        if (cp >= 0x300C && cp <= 0x300F) return true;                // corner brackets
+        if (cp >= 0x301D && cp <= 0x301F) return true;                // double prime and low double prime quotes
+        if (cp >= 0xFE41 && cp <= 0xFE44) return true;                // vertical corner brackets
+        return cp == 0xFF02 || cp == 0xFF07 || cp == 0xFF62 || cp == 0xFF63 || cp == 0xFF40;   // fullwidth quote, apostrophe, halfwidth corners, grave
     }
 
     /**
