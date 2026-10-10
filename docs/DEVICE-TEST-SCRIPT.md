@@ -15,6 +15,9 @@ Connect the phone to a computer with `adb` (USB, or Wireless Debugging) and run 
 adb devices                                         # the phone is listed as "device", not "unauthorized"
 export PKG=com.bloatware.bingblop                   # this app
 export APP=com.android.egg                          # REPLACE with the package of a normal app you can freeze (find one: adb shell pm list packages -3)
+export APP2=com.android.stk                           # REPLACE: a second app you do not mind (only for the batch test, step 9)
+export TESTPKG=com.example.testapp                  # REPLACE: package of the test APK with a different signer (only for step 5)
+export TESTAPK=./different-signer.apk               # REPLACE: path of that test APK on the computer (only for step 5)
 adb shell getprop ro.product.model                  # write these three down for the report
 adb shell getprop ro.build.version.release
 adb shell getprop ro.build.version.sdk
@@ -106,10 +109,10 @@ To check that the two copies really have different signing certificates (so the 
 `apksigner` digest of both. `dumpsys package` shows only an internal signature hash, not the SHA-256 certificate digest, so do not use it for this:
 
 ```sh
-adb shell pm path <test-package>                                  # prints package:/data/app/.../base.apk
+adb shell pm path $TESTPKG                                  # prints package:/data/app/.../base.apk
 adb pull /data/app/.../base.apk installed-copy.apk                # use the path printed above
 apksigner verify --print-certs installed-copy.apk | grep "certificate SHA-256"
-apksigner verify --print-certs <the-test.apk>      | grep "certificate SHA-256"
+apksigner verify --print-certs "$TESTAPK"      | grep "certificate SHA-256"
 ```
 
 The two SHA-256 certificate digests must differ for step 2 to be a valid test. **PASS** if step 1 installs and step 2 is refused with the signer message.
@@ -154,15 +157,15 @@ Record the Android version (step 0) and what the two commands print. After a res
 
 ## 9. Dex optimization: batch (checklist: Dex optimization, batch)
 
-On the phone: select two apps (use `$APP` and one more you do not mind), batch menu > **Dex optimization** > **speed-profile**. The progress bar
+On the phone: select two apps (use `$APP` and `$APP2`), batch menu > **Dex optimization** > **speed-profile**. The progress bar
 must move and **Stop** must work.
 
 ```sh
-adb shell cmd package dump <second-app> | grep -iA6 "dexopt state"       # status should now read speed-profile after a finished run
+adb shell cmd package dump $APP2 | grep -iA6 "dexopt state"       # status should now read speed-profile after a finished run
 ```
 
 That is the finished run. To test **Stop**, first put the second app back to a state that is *different* from speed-profile, for example
-`adb shell cmd package compile --reset <second-app>` (or `-m verify -f <second-app>`), and note its status. Then start the batch again with the second app
+`adb shell cmd package compile --reset $APP2` (or `-m verify -f $APP2`), and note its status. Then start the batch again with the second app
 last in the list and tap **Stop** while the first app is being done. The second app's status must still be the baseline you noted (not speed-profile).
 If you cannot be fast enough to tap Stop before the second app, write SKIP rather than PASS.
 
