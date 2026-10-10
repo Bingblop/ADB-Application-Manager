@@ -1960,10 +1960,9 @@ public class MainActivity extends Activity {
                 String error = null;
                 java.net.HttpURLConnection conn = null;
                 try {
-                    conn = (java.net.HttpURLConnection) new java.net.URL(UAD_LIST_URL).openConnection();
-                    conn.setConnectTimeout(15000);
-                    conn.setReadTimeout(30000);
-                    conn.setRequestProperty("User-Agent", "ADB-Application-Manager");
+                    java.util.Map<String, String> uadHdr = new java.util.LinkedHashMap<String, String>();
+                    uadHdr.put("User-Agent", "ADB-Application-Manager");
+                    conn = HttpSafe.open(UAD_LIST_URL, 15000, 30000, uadHdr);
                     int code = conn.getResponseCode();
                     if (code != 200) throw new IllegalStateException("HTTP " + code);
                     InputStream in = conn.getInputStream();
