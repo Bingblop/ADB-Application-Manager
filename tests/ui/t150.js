@@ -145,6 +145,14 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('17. with all three on: it downloads to Downloads/App Updater, scans with VirusTotal, copies to the chosen folder, then installs', g4.get && g4.get.save === 'updater' && g4.ops.indexOf('vtScan') > g4.ops.indexOf('helperGet') && g4.ops.indexOf('copyToTree') > g4.ops.indexOf('vtScan') && g4.ops.indexOf('install') > g4.ops.indexOf('copyToTree') && g4.copy.tree === 'content://tree/apks' && g4.inst && g4.inst.pkg === 'com.example.maps', JSON.stringify(g4));
   await ev(() => { document.getElementById('usInstall').checked = false; document.getElementById('usVt').checked = false; document.getElementById('usSave').value = 'cache'; usSave(); });
 
+  // ---- 17b. a flagged file is questioned on the Install button too ----
+  await ev(() => { window.__vt = 'malicious'; document.getElementById('usVt').checked = true; document.getElementById('usInstall').checked = false; document.getElementById('usSave').value = 'cache'; usSave(); document.getElementById('usVersion').value = ''; window.__calls.length = 0; usGet(0); }); await sleep(500);
+  await ev(() => { window.__calls.length = 0; usInstallGot(); }); await sleep(200);
+  const mal = await ev(() => ({ asked: document.getElementById('mpAskModal').classList.contains('show'), title: document.getElementById('mpAskTitle').textContent, installs: window.__calls.filter(c => c[0] === 'install').length }));
+  check('17b. with VirusTotal calling the file malicious, tapping Install asks first and installs nothing yet', mal.asked && /VirusTotal flags this file/.test(mal.title) && mal.installs === 0, JSON.stringify(mal));
+  await ev(() => mpAskDone(false));
+  await ev(() => { window.__vt = ''; document.getElementById('usVt').checked = false; usSave(); });
+
   // ---- 18. the browser check ----
   await ev(() => { window.__vers = 'browser'; document.getElementById('usSplit').checked = false; usSave(); usGet(0); }); await sleep(400);
   const g5 = await ev(() => ({ st: document.getElementById('usStatus').textContent, btns: [...document.querySelectorAll('#usGot button')].map(x => x.innerText) }));
@@ -160,7 +168,10 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await ev(() => { document.getElementById('usSource').value = 'fdroid'; usSrcChanged(); window.__calls.length = 0; window.__helperGet = null; document.getElementById('usQuery').value = 'com.example.maps'; }); await page.click('#usSearchBtn'); await sleep(200);
   const w3 = await ev(() => [...document.querySelectorAll('#usResults .us-app .us-acts button')].map(x => x.innerText));
   await ev(() => { document.getElementById('usVersion').value = ''; usGet(0); }); await sleep(400);
-  check('   F-Droid and IzzyOnDroid download inside the app: Download and Versions, and the file is asked of that source', w3.join() === 'Download,Versions,Open on the web' && (await ev(() => window.__helperGet && window.__helperGet.source === 'fdroid')), JSON.stringify(w3));
+  check('   F-Droid and IzzyOnDroid download inside the app: Download and Versions, and the file is asked of that source with the "latest" policy (the repository\'s own recommended build), without reading the list first', w3.join() === 'Download,Versions,Open on the web' && (await ev(() => window.__helperGet && window.__helperGet.source === 'fdroid' && window.__helperGet.policy === 'latest' && !window.__calls.some(c => c[0] === 'helperVersions'))), JSON.stringify(w3));
+  await ev(() => { window.__helperGet = null; return usVersions(0); }); await sleep(300);
+  await ev(() => { usGetVersion(0, 2); }); await sleep(300);
+  check('   a build picked in Versions is asked for by name and build number (two builds can share a name)', await ev(() => window.__helperGet && /^2\.4\.1 \(24\)$/.test(window.__helperGet.version) && window.__helperGet.policy === 'requested'), await ev(() => JSON.stringify(window.__helperGet)));
   await ev(() => { document.getElementById('usSource').value = 'apkmirror'; usSrcChanged(); });
 
   // ---- 20. the Default Ask Agent searches too ----

@@ -15317,6 +15317,7 @@ Type any command below (e.g. pm list packages -d)
         const US_WEB = {
             play: pkg => 'https://play.google.com/store/apps/details?id=' + pkg
         };
+        const US_REPO = { fdroid: true, izzy: true };          // repositories whose version codes are exact: a picked build is asked for by name and code
         const US_NOTE = {
             apkmirror: 'APKMirror checks each upload against the developer\'s signature. From some networks it asks for a browser check: then the page opens in the app and the download starts from there.',
             uptodown: 'Uptodown lists the original files. Its download button needs a browser check, so the file is fetched in the app\'s own browser.',
@@ -15398,7 +15399,7 @@ Type any command below (e.g. pm list packages -d)
             if (pct === null || pct === undefined) { b.style.display = 'none'; return; }
             b.style.display = ''; b.firstElementChild.style.width = Math.max(2, Math.min(100, pct)) + '%';
         }
-        function usReset() { us.run++; us.cands = []; us.got = null; us.vers = {}; us.browse = ''; usEl('usResults').innerHTML = ''; usEl('usGot').innerHTML = ''; usEl('usAgentBox').style.display = 'none'; usStatus(''); usBar(null); }
+        function usReset() { us.run++; us.verdict = ''; us.cands = []; us.got = null; us.vers = {}; us.browse = ''; usEl('usResults').innerHTML = ''; usEl('usGot').innerHTML = ''; usEl('usAgentBox').style.display = 'none'; usStatus(''); usBar(null); }
 
         // The pure parts (tested on their own): which of the listed versions to take
         function usVerNorm(v) { return String(v || '').trim().replace(/^v/i, '').replace(/\s*\(\d+\)\s*$/, ''); }
@@ -15536,7 +15537,8 @@ Type any command below (e.g. pm list packages -d)
             usBar(e.pct || 0);
         }
         async function usFetch(c, cfg, o) {
-            return mpCall('helperGet', { source: cfg.source, pkg: c.pkg, version: o.version || '', abi: o.abi || us.abi, policy: o.policy || 'requested', sources: [cfg.source], save: usDir(cfg), conn: 'both', url: o.url || '', page: o.page || '' });
+            const ver = o.version && o.code > 0 && US_REPO[cfg.source] ? o.version + ' (' + o.code + ')' : (o.version || '');          // two builds can share a version name
+            return mpCall('helperGet', { source: cfg.source, pkg: c.pkg, version: ver, abi: o.abi || us.abi, policy: o.policy || 'requested', sources: [cfg.source], save: usDir(cfg), conn: 'both', url: o.url || '', page: o.page || '' });
         }
         async function usGet(i, picked) {
             const c = us.cands[i], cfg = usRead();
@@ -15550,14 +15552,17 @@ Type any command below (e.g. pm list packages -d)
             try {
                 const listed = usLists(cfg.source);
                 if (item) {
-                    r = await usFetch(c, cfg, { version: item.version, url: item.url, page: item.page, abi: item.abi });
+                    r = await usFetch(c, cfg, { version: item.version, code: item.versionCode, url: item.url, page: item.page, abi: item.abi });
+                } else if (US_REPO[cfg.source] && !ver && cfg.stable) {
+                    // F-Droid and IzzyOnDroid know which build they recommend (the newest stable one): ask for that, not for the highest number
+                    r = await usFetch(c, cfg, { version: '', policy: 'latest' });
                 } else if (listed && (!cfg.split || (!ver && cfg.stable))) {
                     const l = await usList(c, cfg);
                     if (!l.ok) r = l;
                     else {
                         const pk = usPickVersion(l.data.versions, ver, cfg);
                         if (pk.error) r = { ok: false, error: pk.error };
-                        else { item = pk.item; how = pk.how; r = await usFetch(c, cfg, { version: item.version, url: item.url, page: item.page, abi: item.abi }); }
+                        else { item = pk.item; how = pk.how; r = await usFetch(c, cfg, { version: item.version, code: item.versionCode, url: item.url, page: item.page, abi: item.abi }); }
                     }
                 } else {
                     r = await usFetch(c, cfg, { version: ver, policy: ver ? 'requested' : 'latest' });
@@ -15566,7 +15571,7 @@ Type any command below (e.g. pm list packages -d)
                         const l = await usList(c, cfg);
                         if (l.ok) {
                             const pk = usPickVersion(l.data.versions, ver, cfg);
-                            if (pk.item) { item = pk.item; how = pk.how; r = await usFetch(c, cfg, { version: item.version, url: item.url, page: item.page, abi: item.abi }); }
+                            if (pk.item) { item = pk.item; how = pk.how; r = await usFetch(c, cfg, { version: item.version, code: item.versionCode, url: item.url, page: item.page, abi: item.abi }); }
                         }
                     }
                 }
@@ -15602,13 +15607,14 @@ Type any command below (e.g. pm list packages -d)
             const more = id => usEl('usGotMore');
             const note = t => { const m = more(); if (m) m.innerHTML += '<div>' + escapeHtml(t) + '</div>'; };
             let verdict = '';
+            us.verdict = '';
             if (cfg.vt) {
                 if (!vtKey()) { note(txT('VirusTotal was skipped: add your API key in Settings.')); }
                 else {
                     note(txT('Scanning with VirusTotal...'));
                     const r = await mpCall('vtScan', { path: g.path, key: vtKey() });
                     vtLoadQuota(true);
-                    if (r.ok && r.data) { verdict = r.data.verdict || ''; note(r.data.found ? txF('VirusTotal: {0} malicious, {1} suspicious of {2} engines.', r.data.malicious, r.data.suspicious, r.data.total) : txT('VirusTotal has not seen this file.')); }
+                    if (r.ok && r.data) { verdict = r.data.verdict || ''; us.verdict = verdict; note(r.data.found ? txF('VirusTotal: {0} malicious, {1} suspicious of {2} engines.', r.data.malicious, r.data.suspicious, r.data.total) : txT('VirusTotal has not seen this file.')); }
                     else note(r.error || txT('The VirusTotal scan did not work.'));
                 }
             }
@@ -15621,15 +15627,14 @@ Type any command below (e.g. pm list packages -d)
             }
             const m = more();
             if (m) m.innerHTML += '<div class="us-acts" style="margin-top:8px;"><button class="mode-action-btn primary" onclick="usInstallGot()">Install</button><button class="mode-action-btn" onclick="usShareGot()">Share</button></div>';
-            if (cfg.install) {
-                if (verdict === 'malicious' && !await mpAsk({ title: 'VirusTotal flags this file', text: 'Engines call it malicious. Install it anyway?', ok: 'Install anyway', danger: true })) return;
-                await usInstallGot();
-            }
+            if (cfg.install) await usInstallGot();
         }
         async function usInstallGot() {
             const g = us.got;
             if (!g) return;
             haptic();
+            // the VirusTotal verdict belongs to the file: every way to install it asks, the automatic one and the Install button
+            if (us.verdict === 'malicious' && !await mpAsk({ title: 'VirusTotal flags this file', text: 'Engines call it malicious. Install it anyway?', ok: 'Install anyway', danger: true })) return;
             showToast('Installing...');
             let r = await mpCall('install', { path: g.path, pkg: g.pkg, stock: true });
             const d = r.data || {};
