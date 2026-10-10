@@ -116,6 +116,17 @@ public class PrivatePathsTest {
     is("an allowed folder outside the data folder is ignored (nothing there to protect)", !B(outside, data, R(outsideRoot)));
     is("an allowed folder that is the data folder itself is ignored", B(prefs, data, R(data)));
 
+    // deleteBackup: only a reference the app listed (as stored) counts
+    java.util.List<String> listed = java.util.Arrays.asList(new File(root, "sdcard/Backups/a.adbbackup").getPath(), "content://com.android.providers.media/doc/42");
+    is("a listed file reference may be deleted", PrivatePaths.listedRef(listed.get(0), listed));
+    is("a listed content reference may be deleted", PrivatePaths.listedRef("content://com.android.providers.media/doc/42", listed));
+    is("an unknown file reference may not", !PrivatePaths.listedRef(prefs.getPath(), listed));
+    is("an unknown content reference may not", !PrivatePaths.listedRef("content://com.android.providers.media/doc/43", listed));
+    is("a path that leads to a listed file may not", !PrivatePaths.listedRef(new File(root, "sdcard/Backups/../Backups/a.adbbackup").getPath(), listed));
+    is("a different case or a trailing space may not", !PrivatePaths.listedRef(listed.get(0).toUpperCase(), listed) && !PrivatePaths.listedRef(listed.get(0) + " ", listed));
+    is("null, empty and no list may not", !PrivatePaths.listedRef(null, listed) && !PrivatePaths.listedRef("", listed) && !PrivatePaths.listedRef(listed.get(0), null)
+        && !PrivatePaths.listedRef("", java.util.Arrays.asList("")));
+
     is("null file or null data folder is protected", B(null, data, ok) && B(prefs, null, ok));
     is("no allowed folders: everything inside is protected", B(c1, data));
 

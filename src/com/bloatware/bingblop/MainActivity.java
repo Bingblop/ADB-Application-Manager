@@ -10449,9 +10449,9 @@ public class MainActivity extends Activity {
                 boolean ok;
                 JSONArray index = backupIndex();
                 // only a backup this app listed can be deleted from here, not any file the app can reach
-                boolean listed = false;
-                for (int i = 0; ref != null && i < index.length(); i++) if (ref.equals(index.getJSONObject(i).optString("ref"))) listed = true;
-                if (!listed) return "Error: not a known backup";
+                java.util.List<String> listedRefs = new java.util.ArrayList<String>();
+                for (int i = 0; i < index.length(); i++) listedRefs.add(index.getJSONObject(i).optString("ref"));
+                if (!PrivatePaths.listedRef(ref, listedRefs)) return "Error: not a known backup";
                 if (ref.startsWith("content://")) ok = getContentResolver().delete(Uri.parse(ref), null, null) > 0;
                 else ok = new File(ref).delete();
                 JSONArray keep = new JSONArray();

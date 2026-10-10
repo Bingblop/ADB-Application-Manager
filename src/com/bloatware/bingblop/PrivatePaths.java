@@ -4,10 +4,13 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * Which files the bridge may hand to a share sheet, VirusTotal or an "Open with" chooser. The app's own data folder holds its settings, the sealed
- * secrets and the adb key; none of that is for a page to send anywhere. Only the parts the app itself fills for the user (its cache, logs and patched
- * APKs) may leave. Paths are resolved first (symlinks, "..", "."), so a link or a relative path cannot walk into the protected part; a path that
- * cannot be resolved counts as protected. Pure Java, no android.* classes.
+ * Which files the bridge may hand to a share sheet, VirusTotal or an "Open with" chooser, and which backups it may delete. The app's own data folder
+ * holds its settings, the sealed secrets and the adb key; none of that is for a page to send anywhere. Out of that folder only {@link #exportable}
+ * may leave: the app's patched APKs and the Morphe Helper's downloads (as APK files only), and the cache folders for files the user picked or
+ * downloaded. Its logs, the rest of its cache (backups in the making, restore folders, root scripts, the store catalog) and everything else stay
+ * protected. Paths are resolved first (symlinks, "..", "."), so a link or a relative path cannot walk into the protected part; a folder that is
+ * allowed counts only while it really is that folder (not a link), a file with more than one name is protected, and a path that cannot be resolved
+ * counts as protected. Pure Java, no android.* classes.
  */
 final class PrivatePaths {
     private PrivatePaths() {}
@@ -41,6 +44,16 @@ final class PrivatePaths {
             new Root(new File(cacheDir, "updates")), new Root(new File(cacheDir, "installer")), new Root(new File(cacheDir, "saf_stage")),
             new Root(new File(cacheDir, "cd_pick")), new Root(new File(cacheDir, "morphe_pick")), new Root(new File(cacheDir, "share")),
         };
+    }
+
+    /**
+     * Whether {@code ref} is exactly one of the references the app listed for its own backups. Only those may be deleted from the page: the reference
+     * is compared as it was stored (no resolving, no trimming, no case folding), so a path that merely leads to a listed file does not count.
+     */
+    static boolean listedRef(String ref, Iterable<String> listed) {
+        if (ref == null || ref.isEmpty() || listed == null) return false;
+        for (String l : listed) if (ref.equals(l)) return true;
+        return false;
     }
 
     /** How many names a file has (its hard-link count); the caller supplies it because android.system.Os is not available here. */
