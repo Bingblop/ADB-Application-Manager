@@ -65,14 +65,18 @@ public class HttpSitesTest {
   }
 
   static final Pattern OPEN = Pattern.compile("\\bopenConnection\\s*\\(");
-  static final Pattern ON = Pattern.compile("\\bsetInstanceFollowRedirects\\s*\\(\\s*true\\s*\\)");
+  static final Pattern SETTER = Pattern.compile("\\bsetInstanceFollowRedirects\\s*\\(");
+  static final Pattern LITERAL_FALSE = Pattern.compile("\\G\\s*false\\s*\\)");
   static final Pattern ASSIGN = Pattern.compile("([A-Za-z_$][\\w$]*)\\s*=\\s*[^=;{}]*$");
 
   /** Problems in one source file: the number of raw openings goes to {@code count[0]}. */
   static List<String> problems(String src, int[] count) {
     List<String> out = new ArrayList<String>();
     String t = blank(src);
-    if (ON.matcher(t).find()) out.add("switches automatic redirects on");
+    Matcher sm = SETTER.matcher(t);
+    while (sm.find()) {
+      if (!LITERAL_FALSE.matcher(t).region(sm.end(), t.length()).lookingAt()) { out.add("setInstanceFollowRedirects with an argument that is not the literal false (switches automatic redirects on, or cannot be checked)"); break; }
+    }
     Matcher m = OPEN.matcher(t);
     int opens = 0;
     while (m.find()) {
@@ -90,7 +94,13 @@ public class HttpSitesTest {
       Matcher off = Pattern.compile("\\b" + Pattern.quote(var) + "\\s*\\.\\s*setInstanceFollowRedirects\\s*\\(\\s*false\\s*\\)").matcher(after);
       if (!off.find()) { out.add("the connection '" + var + "' does not turn automatic redirects off"); continue; }
       // ... and it has to happen before anything that connects (a redirect is followed while the answer is read)
-      Matcher use = Pattern.compile("\\b" + Pattern.quote(var) + "\\s*\\.\\s*(connect|getResponseCode|getResponseMessage|getInputStream|getOutputStream|getErrorStream|getHeaderField\\w*|getContent\\w*|getLastModified|getDate|getExpiration|getHeaderFields)\\s*\\(").matcher(after);
+      String before = after.substring(0, off.start());
+      // the variable must not be handed on (as an argument) before the switch; a plain copy into another variable is followed
+      if (Pattern.compile("[(,]\\s*" + Pattern.quote(var) + "\\s*[,)]").matcher(before).find()) { out.add("the connection '" + var + "' is passed on before it turns automatic redirects off"); continue; }
+      StringBuilder names = new StringBuilder(Pattern.quote(var));
+      Matcher al = Pattern.compile("\\b([A-Za-z_$][\\w$]*)\\s*=\\s*" + Pattern.quote(var) + "\\s*;").matcher(before);
+      while (al.find()) names.append('|').append(Pattern.quote(al.group(1)));
+      Matcher use = Pattern.compile("\\b(?:" + names + ")\\s*\\.\\s*(connect|getResponseCode|getResponseMessage|getInputStream|getOutputStream|getErrorStream|getHeaderField\\w*|getContent\\w*|getLastModified|getDate|getExpiration|getHeaderFields)\\s*\\(").matcher(after);
       if (use.find() && use.start() < off.start()) out.add("the connection '" + var + "' turns automatic redirects off only after it has connected");
     }
     count[0] = opens;
@@ -133,6 +143,16 @@ public class HttpSitesTest {
     check("other setup calls before the switch are fine", problems(early, cnt).isEmpty());
     String reuse = "class A { void f(String u) throws Exception { java.net.HttpURLConnection c = (java.net.HttpURLConnection) new java.net.URL(u).openConnection(); c.getResponseCode(); c = (java.net.HttpURLConnection) new java.net.URL(u).openConnection(); c.setInstanceFollowRedirects(false); } }";
     check("a variable reused for a second connection does not cover the first", has(problems(reuse, cnt), "'c' does not turn") && cnt[0] == 2);
+    check("the redirect switch with a non-literal argument is refused", has(problems(ok.replace("setInstanceFollowRedirects(false)", "setInstanceFollowRedirects(Boolean.TRUE)"), cnt), "not the literal false")
+        && has(problems(ok.replace("setInstanceFollowRedirects(false)", "setInstanceFollowRedirects(flag)"), cnt), "not the literal false")
+        && has(problems(ok + " class B { void g(java.net.HttpURLConnection c, boolean b) { c.setInstanceFollowRedirects ( !b ); } }", cnt), "not the literal false"));
+    check("a literal false re-enabled by a later call is refused", has(problems(ok.replace("c.setInstanceFollowRedirects(false);", "c.setInstanceFollowRedirects(false); c.setInstanceFollowRedirects(Boolean.TRUE);"), cnt), "not the literal false"));
+    String alias = "class A { Object o; void f(String u) throws Exception { java.net.HttpURLConnection c = (java.net.HttpURLConnection) new java.net.URL(u).openConnection(); java.net.HttpURLConnection d = c; int code = d.getResponseCode(); c.setInstanceFollowRedirects(false); } }";
+    check("connecting through a copy of the variable before the switch is refused", has(problems(alias, cnt), "only after it has connected"));
+    String aliasOk = "class A { Object o; void f(String u) throws Exception { java.net.HttpURLConnection c = (java.net.HttpURLConnection) new java.net.URL(u).openConnection(); o = c; c.setInstanceFollowRedirects(false); int code = c.getResponseCode(); } }";
+    check("keeping a copy for a later disconnect is fine", problems(aliasOk, cnt).isEmpty());
+    String passed = "class A { void f(String u) throws Exception { java.net.HttpURLConnection c = (java.net.HttpURLConnection) new java.net.URL(u).openConnection(); use(c); c.setInstanceFollowRedirects(false); } }";
+    check("handing the connection to another method before the switch is refused", has(problems(passed, cnt), "is passed on before"));
     check("a call to another variable's redirects does not cover this one", has(problems(ok.replace("c.setInstanceFollowRedirects(false)", "d.setInstanceFollowRedirects(false)"), cnt), "'c' does not turn"));
 
     // the source tree
