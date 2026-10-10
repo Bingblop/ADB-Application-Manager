@@ -40,7 +40,7 @@ function extractBlocks(text) {
     const prev = i > 0 ? unquote(src[i - 1], quoted).trim() : '';
     const block = { tag: open[4].toLowerCase(), startLine: i + 1, lines: [], optOut: prev === OPT_OUT };
     let j = i + 1;
-    const closeRe = new RegExp('^\\s*' + (fence[0] === '`' ? '`' : '~') + '{' + fence.length + ',}\\s*$');
+    const closeRe = new RegExp('^ {0,' + (indent + 3) + '}' + (fence[0] === '`' ? '`' : '~') + '{' + fence.length + ',}\\s*$');
     while (j < src.length && !closeRe.test(unquote(src[j], quoted))) {
       let line = unquote(src[j++], quoted);
       let k = 0;
@@ -63,6 +63,7 @@ function heredocWord(text, at) {
   if (dash) i++;
   while (i < text.length && /[ \t]/.test(text[i])) i++;
   let word = '';
+  let joined = false;      // the line ends in a backslash inside the word: bash joins the next line to it (EO\ + F is EOF)
   const start = i;
   while (i < text.length) {
     const c = text[i];
@@ -74,10 +75,10 @@ function heredocWord(text, at) {
       i++;
       continue;
     }
-    if (c === '\\') { i++; if (i < text.length) word += text[i]; i++; continue; }
+    if (c === '\\') { if (i === text.length - 1) { joined = true; i++; break; } i++; word += text[i]; i++; continue; }
     word += c; i++;
   }
-  return i > start ? { word, dash, end: Math.min(i, text.length) } : null;      // the word may be empty after quote removal (<<'' ends at an empty line)
+  return i > start ? { word, dash, joined, end: Math.min(i, text.length) } : null;      // the word may be empty after quote removal (<<'' ends at an empty line)
 }
 
 // One line of shell, read with the quotes, comments and arithmetic of the line (and of the lines before it, in st = { quote, arith }) in mind.
@@ -88,6 +89,7 @@ function scanLine(text, st) {
   let code = '';
   let cont = false;
   const heredocs = [];
+  let splitWord = false;
   for (let i = 0; i < text.length; i++) {
     const c = text[i];
     if (st.quote) { if (c === st.quote) st.quote = null; else if (c === '\\' && st.quote === '"') { if (i === text.length - 1) cont = true; i++; } continue; }
@@ -100,11 +102,11 @@ function scanLine(text, st) {
     if (c === '<' && text[i + 1] === '<' && text[i + 2] === '<') { code += '<<<'; i += 2; continue; }      // a here-string: the word after it is not a delimiter
     if (c === '<' && text[i + 1] === '<' && st.arith === 0) {
       const hd = heredocWord(text, i);
-      if (hd) { heredocs.push({ word: hd.word, dash: hd.dash }); i = hd.end - 1; continue; }
+      if (hd) { heredocs.push({ word: hd.word, dash: hd.dash }); if (hd.joined) splitWord = true; i = hd.end - 1; continue; }
     }
     code += c;
   }
-  return { code, heredocs, cont };
+  return { code, heredocs, cont, splitWord };
 }
 
 // Whether the block is a transcript with "$ " prompts: a prompt counts only where a command could start, not inside a here-document body or a quote that is
@@ -171,8 +173,9 @@ function findPlaceholders(lines) {
   for (const { text, line } of lines) {
     // the terminator is the delimiter alone on the line: exact, except that <<- ignores leading tabs
     if (bodies.length) { const h = bodies[0]; if ((h.dash ? text.replace(/^\t+/, '') : text) === h.word) bodies.shift(); continue; }
-    const { code, heredocs, cont } = scanLine(text, st);
+    const { code, heredocs, cont, splitWord } = scanLine(text, st);
     pending = pending.concat(heredocs);
+    if (splitWord) found.push({ line, text: '', split: true });
     const re = /<([A-Za-z][\w .:/-]*)>/g;
     let m;
     while ((m = re.exec(code))) {
@@ -204,6 +207,7 @@ function checkBlock(block, bash) {
     if (w) { const at = lines[+w[1] - 1]; problems.push({ line: at ? at.line : block.startLine, message: 'here-document is never closed (no line with only ' + w[2] + ')' }); }
   }
   for (const p of findPlaceholders(lines)) {
+    if (p.split) { problems.push({ line: p.line, message: 'the here-document delimiter is split over two lines with a backslash; write it on one line (this checker cannot follow it)' }); continue; }
     problems.push({ line: p.line, message: 'unquoted placeholder ' + p.text + ' (bash reads <...> as redirection); use a concrete example value, e.g. com.example.app, or quote it' });
   }
   return problems;
@@ -289,9 +293,11 @@ function selfTest() {
     '```bash', 'echo "a', '$ b"', 'APP=<package>', '```', '',
     '```bash', 'cat <<EOF', '$ literal', 'EOF', 'echo done', '```', '',
     '```sh', '$ cat <<\'EOF\'', '<html>', 'EOF', '$ echo done', 'done', '```', '',
+    '```bash', 'echo a', '    ```', 'APP=<package>', '```', '',
+    '```bash', 'cat <<EO\\', 'F', '<a>', 'EOF', 'APP=<package>', '```', '',
   ].join('\n');
   const got = checkText(fx).map(r => r.state + '@' + r.block.startLine + (r.problems.length ? ':' + [...new Set(r.problems.map(p => p.line))].join(',') : ''));
-  const want = ['ok@3', 'ok@9', 'FAIL@16:17', 'skipped@22', 'FAIL@26:27', 'FAIL@34:34', 'ok@42', 'FAIL@47:49', 'ok@52', 'FAIL@57:59', 'ok@62', 'ok@67', 'FAIL@72:76', 'FAIL@79:81', 'FAIL@84:85', 'FAIL@90:91', 'ok@94', 'ok@99', 'ok@104', 'ok@112', 'ok@119', 'ok@127', 'FAIL@138:140', 'FAIL@146:147', 'FAIL@152:156', 'FAIL@159:159', 'ok@166', 'ok@172', 'FAIL@179:183', 'FAIL@186:186', 'ok@193', 'FAIL@201:204', 'FAIL@207:210', 'FAIL@213:216', 'FAIL@219:221', 'FAIL@224:227', 'FAIL@230:231', 'FAIL@236:240', 'FAIL@243:247', 'FAIL@250:254', 'FAIL@257:262', 'FAIL@265:269', 'FAIL@272:276', 'ok@279', 'FAIL@286:290', 'FAIL@293:296', 'ok@299', 'FAIL@307:309', 'FAIL@312:316', 'FAIL@319:321', 'FAIL@324:328', 'FAIL@331:334', 'ok@337', 'ok@344'];
+  const want = ['ok@3', 'ok@9', 'FAIL@16:17', 'skipped@22', 'FAIL@26:27', 'FAIL@34:34', 'ok@42', 'FAIL@47:49', 'ok@52', 'FAIL@57:59', 'ok@62', 'ok@67', 'FAIL@72:76', 'FAIL@79:81', 'FAIL@84:85', 'FAIL@90:91', 'ok@94', 'ok@99', 'ok@104', 'ok@112', 'ok@119', 'ok@127', 'FAIL@138:140', 'FAIL@146:147', 'FAIL@152:156', 'FAIL@159:159', 'ok@166', 'ok@172', 'FAIL@179:183', 'FAIL@186:186', 'ok@193', 'FAIL@201:204', 'FAIL@207:210', 'FAIL@213:216', 'FAIL@219:221', 'FAIL@224:227', 'FAIL@230:231', 'FAIL@236:240', 'FAIL@243:247', 'FAIL@250:254', 'FAIL@257:262', 'FAIL@265:269', 'FAIL@272:276', 'ok@279', 'FAIL@286:290', 'FAIL@293:296', 'ok@299', 'FAIL@307:309', 'FAIL@312:316', 'FAIL@319:321', 'FAIL@324:328', 'FAIL@331:334', 'ok@337', 'ok@344', 'FAIL@352:354,355', 'FAIL@358:363,359'];
   const ok = JSON.stringify(got) === JSON.stringify(want);
   console.log(ok ? 'self-test: ok (' + got.length + ' blocks judged as expected)' : 'self-test: FAIL\n  got:  ' + got.join(' ') + '\n  want: ' + want.join(' '));
   return ok;
