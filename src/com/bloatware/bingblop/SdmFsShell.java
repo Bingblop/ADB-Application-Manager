@@ -27,7 +27,6 @@ public final class SdmFsShell implements Sdm.Fs, SdmEngine.PruningFs {
     public static final String END = "__SDM_END__";
     private static final String OK = "__SDM_OK__";
     private static final String NO = "__SDM_NO__";
-    private static final String STAT_FORMAT = "'%f %s %Y %u %n'";
     private static final int BATCH_PATHS = 150;
     private static final int BATCH_BYTES = 60000;
     private static final int T_SHORT = 60000;
@@ -50,11 +49,16 @@ public final class SdmFsShell implements Sdm.Fs, SdmEngine.PruningFs {
 
     /** Runs a script and returns its lines up to the sentinel; throws when the sentinel never came (the output was cut). */
     private List<String> lines(String script, int timeoutMs, Sdm.Cancel cancel, String what) throws IOException {
+        return lines(script, timeoutMs, cancel, what, END);
+    }
+
+    /** The same with a sentinel of the caller's own (a scan whose output holds file names makes one up, see {@link SdmStatFrame#endMarker}). */
+    private List<String> lines(String script, int timeoutMs, Sdm.Cancel cancel, String what, final String endLine) throws IOException {
         final List<String> out = new ArrayList<String>();
         final boolean[] end = { false };
         shell.stream(script, timeoutMs, new Sdm.LineSink() {
             @Override public void line(String line) {
-                if (line.equals(END)) end[0] = true;
+                if (line.equals(endLine)) end[0] = true;
                 else if (!end[0]) out.add(line);
             }
         }, cancel);
@@ -100,12 +104,13 @@ public final class SdmFsShell implements Sdm.Fs, SdmEngine.PruningFs {
 
     @Override
     public Sdm.Entry stat(String path) throws IOException {
-        List<String> l = lines("stat -c " + STAT_FORMAT + " -- " + q(path) + " 2>/dev/null; echo " + END, T_SHORT, null, "stat " + path);
+        SdmStatFrame fr = new SdmStatFrame();
+        List<String> l = lines("stat -c " + fr.format() + " -- " + q(path) + " 2>/dev/null; echo " + fr.endMarker(), T_SHORT, null, "stat " + path, fr.endMarker());
         for (String s : l) {
-            Sdm.Entry e = parseStat(s);
+            Sdm.Entry e = fr.feed(s);
             if (e != null) return e;
         }
-        return null;
+        return fr.finish();
     }
 
     /** Several paths in as few processes as possible (what a tool should use instead of a loop of {@link #stat}); a path with nothing there is missing from the map. */
@@ -113,13 +118,18 @@ public final class SdmFsShell implements Sdm.Fs, SdmEngine.PruningFs {
         Map<String, Sdm.Entry> out = new LinkedHashMap<String, Sdm.Entry>();
         for (List<String> batch : batches(paths)) {
             if (cancel != null && cancel.cancelled()) break;
-            StringBuilder sb = new StringBuilder("stat -c " + STAT_FORMAT + " --");
+            SdmStatFrame fr = new SdmStatFrame();
+            StringBuilder sb = new StringBuilder("stat -c " + fr.format() + " --");
             for (String p : batch) sb.append(' ').append(q(p));
-            sb.append(" 2>/dev/null; echo ").append(END);
-            for (String s : lines(sb.toString(), T_BATCH, cancel, "stat")) {
-                Sdm.Entry e = parseStat(s);
+            sb.append(" 2>/dev/null; echo ").append(fr.endMarker());
+            for (String s : lines(sb.toString(), T_BATCH, cancel, "stat", fr.endMarker())) {
+                Sdm.Entry e = fr.feed(s);
                 if (e != null) out.put(e.path, e);
             }
+            // a cancelled scan ends without its end marker: the last record may be only the first line of a longer name, so it is not believed
+            if (cancel != null && cancel.cancelled()) break;
+            Sdm.Entry last = fr.finish();
+            if (last != null) out.put(last.path, last);
         }
         return out;
     }
@@ -155,14 +165,12 @@ public final class SdmFsShell implements Sdm.Fs, SdmEngine.PruningFs {
             }
             sb.append(" \\) -prune -o ");
         }
-        sb.append("-exec stat -c ").append(STAT_FORMAT).append(" {} + 2>/dev/null; echo ").append(END);
+        final SdmStatFrame fr = new SdmStatFrame();
+        sb.append("-exec stat -c ").append(fr.format()).append(" {} + 2>/dev/null; echo ").append(fr.endMarker());
         final String[] skip = { null };
         final boolean[] end = { false };
         shell.stream(sb.toString(), T_WALK, new Sdm.LineSink() {
-            @Override public void line(String line) {
-                if (end[0]) return;
-                if (line.equals(END)) { end[0] = true; return; }
-                Sdm.Entry e = parseStat(line);
+            private void deliver(Sdm.Entry e) {
                 if (e == null) return;
                 if (skip[0] != null) {
                     if (e.path.startsWith(skip[0])) return;       // below a directory the sink left out: find is depth first, so these come right after it
@@ -170,6 +178,11 @@ public final class SdmFsShell implements Sdm.Fs, SdmEngine.PruningFs {
                 }
                 boolean into = sink.accept(e);
                 if (e.type == Sdm.DIR && !into) skip[0] = e.path + "/";
+            }
+            @Override public void line(String line) {
+                if (end[0]) return;
+                if (line.equals(fr.endMarker())) { end[0] = true; deliver(fr.finish()); return; }
+                deliver(fr.feed(line));
             }
         }, cancel);
         if (!end[0] && !(cancel != null && cancel.cancelled())) throw new IOException("walk " + root + ": the listing was cut short");
