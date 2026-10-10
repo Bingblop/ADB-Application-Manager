@@ -8,7 +8,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   const page = await b.newPage({ viewport: { width: 400, height: 860 } });
   const errors = []; page.on('pageerror', e => errors.push(e.message));
   await page.addInitScript(() => {
-    window.__auth = { enabled: false, code: 'ABCDE-FGHJK-MNPQR-STVWX-YZ012', locked: 0, recent: [] }; window.__authCalls = []; window.__copied = [];
+    window.__auth = { enabled: false, code: 'ABCDE-FGHJK-MNPQR-STVWX-YZ012', locked: 0, recent: [], out: { on: false, targets: [] } }; window.__authCalls = []; window.__copied = [];
     window.AndroidBridge = {
       vibrate() {}, loadPreferences() { return '{}'; }, savePreferences() {}, loadCustomLists() { return '[]'; }, getSystemInfo() { return '{}'; },
       isSystemDarkMode() { return true; }, setSystemBarColor() {}, loadPackages() { return '[]'; }, getAboutInfo() { return JSON.stringify({ versionName: '7.12.8-Pro', versionCode: 850, pkg: 'com.bloatware.bingblop' }); },
@@ -17,6 +17,9 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
       authStatus() { window.__authCalls.push('status'); return JSON.stringify(window.__auth); },
       authSetEnabled(on) { window.__authCalls.push('enabled:' + on); window.__auth.enabled = on; return JSON.stringify(window.__auth); },
       authRefresh() { window.__authCalls.push('refresh'); window.__auth.code = 'NEWCO-DE123-45678-9ABCD-EFGHJ'; return JSON.stringify(window.__auth); },
+      authOutEnable(on) { window.__authCalls.push('out:' + on); window.__auth.out.on = on; return JSON.stringify(window.__auth); },
+      authOutAdd(p) { window.__authCalls.push('add:' + p); const ok = /^[a-z][a-z0-9_]*(\.[a-z0-9_]+)+$/.test(p) && p !== 'com.bloatware.bingblop'; if (ok && !window.__auth.out.targets.includes(p)) window.__auth.out.targets.push(p); return JSON.stringify(Object.assign({ added: ok }, window.__auth)); },
+      authOutRemove(p) { window.__authCalls.push('rm:' + p); window.__auth.out.targets = window.__auth.out.targets.filter(x => x !== p); return JSON.stringify(window.__auth); },
       authClearRecent() { window.__authCalls.push('clear'); window.__auth.recent = []; return JSON.stringify(window.__auth); }
     };
   });
@@ -34,7 +37,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   });
   check('1. the card is "Default Ask Agent" and says it is a research agent, not a coding agent', d.title === 'Default Ask Agent' && /research agent/.test(d.sub) && /not a coding agent/.test(d.sub) && d.aria === 'Default Ask Agent', d.title + ' | ' + d.sub.slice(0, 80));
   check('2. nothing chosen yet means Perplexity (web research); the first line of the list is the free web lookup', d.id === 'perplexity' && d.val === 'perplexity' && d.first === 'No default (free web lookup only)', JSON.stringify([d.id, d.val, d.first]));
-  check('3. the list: web research (Perplexity, Browser Use, Crawl4AI) first; no coding agent (Cursor, Copilot, OpenCode) anywhere', d.groups[0] === 'Web research (recommended):perplexity+browseruse+crawl4ai' && !/cursor|copilot|opencode/.test(d.groups.join()) && /claude/.test(d.groups.join()) && /ollama/.test(d.groups.join()), JSON.stringify(d.groups));
+  check('3. the list: web research (Perplexity, Exa, Browser Use, Crawl4AI) first; no coding agent (Cursor, Copilot, OpenCode) anywhere', d.groups[0] === 'Web research (recommended):perplexity+exa+browseruse+crawl4ai' && !/cursor|copilot|opencode/.test(d.groups.join()) && /claude/.test(d.groups.join()) && /ollama/.test(d.groups.join()), JSON.stringify(d.groups));
   check('4. without a key it says it reads the web for you until the agent is connected', /not connected yet/.test(d.note) && /reads the web for you/.test(d.note), d.note);
   const rd = await ev(() => ({ ready: askAgentReadyNow(), def: askAgentDef() && askAgentDef().id }));
   check('   so the Ask agent buttons fall back to the web lookup (not ready) while the default is Perplexity', rd.ready === false && rd.def === 'perplexity', JSON.stringify(rd));
@@ -70,6 +73,17 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('14. recent uses are listed (what and the verdict), and a lock after wrong codes is shown with its seconds', rc.rows === 2 && /com\.android\.settings/.test(rc.txt) && /wrong/.test(rc.txt) && /Locked for 42 more seconds/.test(rc.note), JSON.stringify(rc));
   await ev(() => { document.querySelector('#authRecent .batch-tool-link').click(); }); await sleep(100);
   check('15. Clear the list empties them', await ev(() => window.__authCalls.includes('clear') && document.querySelectorAll('#authRecent .auth-recent-row').length === 0));
+  // ---- the code on the intents this app sends ----
+  const o0 = await ev(() => ({ on: document.getElementById('authOutOn').checked, list: document.getElementById('authOutList').innerText }));
+  check('16. the other way round: a switch, off, and a list that says no app gets the code', !o0.on && /No app is listed/.test(o0.list), JSON.stringify(o0));
+  await ev(() => { document.getElementById('authOutPkg').value = 'com.example.target'; }); await page.click('#authOutAddBtn'); await sleep(100);
+  await ev(() => { document.getElementById('authOutPkg').value = 'not a package'; }); await page.click('#authOutAddBtn'); await sleep(100);
+  const o1 = await ev(() => ({ list: document.getElementById('authOutList').innerText, calls: window.__authCalls.filter(c => /^add:/.test(c)), val: document.getElementById('authOutPkg').value }));
+  check('17. a package is added to the list; something that is not a package is refused with a message and stays in the box', /com\.example\.target/.test(o1.list) && o1.calls.length === 2 && o1.val === 'not a package', JSON.stringify(o1));
+  await page.click('#authOutOn + .switch-track'); await sleep(100);
+  check('18. the switch turns sending on in the app', await ev(() => window.__authCalls.includes('out:true') && document.getElementById('authOutOn').checked));
+  await ev(() => { document.querySelector('#authOutList button').click(); }); await sleep(100);
+  check('19. Remove takes the app off the list', await ev(() => window.__authCalls.includes('rm:com.example.target') && /No app is listed/.test(document.getElementById('authOutList').innerText)));
   check('no page errors', errors.length === 0, errors.join(' | '));
   await b.close();
   console.log(bad ? bad + ' FAILED' : 'ALL PASSED');

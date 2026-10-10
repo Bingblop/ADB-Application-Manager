@@ -152,12 +152,15 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await ev(() => { window.__vers = null; document.getElementById('usSplit').checked = true; usSave(); });
 
   // ---- 19. other sources ----
-  await ev(() => { document.getElementById('usSource').value = 'fdroid'; usSrcChanged(); });
-  const w = await ev(() => ({ rows: document.querySelectorAll('#usResults .us-app').length, note: document.getElementById('usSrcNote').textContent }));
+  await ev(() => { document.getElementById('usSource').value = 'play'; usSrcChanged(); });
   await ev(() => { document.getElementById('usQuery').value = 'com.example.maps'; }); await page.click('#usSearchBtn'); await sleep(200);
   const w2 = await ev(() => ({ btns: [...document.querySelectorAll('#usResults .us-app .us-acts button')].map(x => x.innerText) }));
   await ev(() => { window.__calls.length = 0; usGet(0); }); await sleep(100);
-  check('19. F-Droid is a site to open: its button is "Open the page" and opens f-droid.org, nothing is downloaded', w2.btns.join() === 'Open the page' && (await ev(() => window.__opened.includes('https://f-droid.org/packages/com.example.maps/') && !window.__calls.some(c => c[0] === 'helperGet'))), JSON.stringify([w, w2]));
+  check('19. Google Play is a page to open: its button is "Open the page" and opens the Play Store listing, nothing is downloaded', w2.btns.join() === 'Open the page' && (await ev(() => window.__opened.includes('https://play.google.com/store/apps/details?id=com.example.maps') && !window.__calls.some(c => c[0] === 'helperGet'))), JSON.stringify(w2));
+  await ev(() => { document.getElementById('usSource').value = 'fdroid'; usSrcChanged(); window.__calls.length = 0; window.__helperGet = null; document.getElementById('usQuery').value = 'com.example.maps'; }); await page.click('#usSearchBtn'); await sleep(200);
+  const w3 = await ev(() => [...document.querySelectorAll('#usResults .us-app .us-acts button')].map(x => x.innerText));
+  await ev(() => { document.getElementById('usVersion').value = ''; usGet(0); }); await sleep(400);
+  check('   F-Droid and IzzyOnDroid download inside the app: Download and Versions, and the file is asked of that source', w3.join() === 'Download,Versions,Open on the web' && (await ev(() => window.__helperGet && window.__helperGet.source === 'fdroid')), JSON.stringify(w3));
   await ev(() => { document.getElementById('usSource').value = 'apkmirror'; usSrcChanged(); });
 
   // ---- 20. the Default Ask Agent searches too ----

@@ -40,7 +40,8 @@ public final class AuthManager {
     public static final int MAX_FAILS = 5;
     public static final long LOCK_MS = 60000L;
     static final int MAX_LOG = 10;
-    static final String K_CODE = "auth_code", K_ON = "auth_on", K_LOG = "auth_log";
+    static final String K_CODE = "auth_code", K_ON = "auth_on", K_LOG = "auth_log", K_OUT_ON = "auth_out_on", K_OUT = "auth_out";
+    public static final int MAX_TARGETS = 30;
 
     private final Store store;
     private final SecureRandom random;
@@ -145,6 +146,51 @@ public final class AuthManager {
         if (s == null) return "";
         String t = s.replaceAll("[\\r\\n|]", " ").trim();
         return t.length() > max ? t.substring(0, max) : t;
+    }
+
+
+    // ---- the code on the intents this app sends ----
+    // Off by default, and only for the apps the person listed: an app that is sent the code could use it on this app's own door, so it goes to nobody else.
+
+    public synchronized boolean outgoingOn() { return "1".equals(store.get(K_OUT_ON)); }
+
+    public synchronized void setOutgoingOn(boolean on) { store.put(K_OUT_ON, on ? "1" : "0"); }
+
+    /** The packages that get the code, in the order they were added. */
+    public synchronized List<String> targets() {
+        List<String> out = new ArrayList<String>();
+        String raw = store.get(K_OUT);
+        if (raw == null) return out;
+        for (String line : raw.split("\n")) { String t = line.trim(); if (validPackage(t) && !out.contains(t)) out.add(t); }
+        return out;
+    }
+
+    /** Adds a package; false when it is not a package name, is this app itself, or the list is full. */
+    public synchronized boolean addTarget(String pkg, String self) {
+        String t = pkg == null ? "" : pkg.trim();
+        if (!validPackage(t) || t.equals(self)) return false;
+        List<String> list = targets();
+        if (list.contains(t)) return true;
+        if (list.size() >= MAX_TARGETS) return false;
+        list.add(t);
+        saveTargets(list);
+        return true;
+    }
+
+    public synchronized void removeTarget(String pkg) {
+        List<String> list = targets();
+        if (list.remove(pkg == null ? "" : pkg.trim())) saveTargets(list);
+    }
+
+    private void saveTargets(List<String> list) {
+        StringBuilder sb = new StringBuilder();
+        for (String t : list) sb.append(t).append('\n');
+        store.put(K_OUT, sb.toString());
+    }
+
+    /** Whether an intent for this package carries the code: the switch is on and the package is on the list. */
+    public synchronized boolean shouldAttach(String pkg) {
+        return outgoingOn() && pkg != null && targets().contains(pkg);
     }
 
     // ---- what the intent may ask for ----

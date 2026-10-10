@@ -4045,8 +4045,8 @@
                         <option value="apkmirror">APKMirror (default)</option>
                         <option value="uptodown">Uptodown</option>
                         <option value="aptoide">Aptoide</option>
-                        <option value="fdroid">F-Droid (open source, opens the site)</option>
-                        <option value="izzy">IzzyOnDroid (open source, opens the site)</option>
+                        <option value="fdroid">F-Droid (open source)</option>
+                        <option value="izzy">IzzyOnDroid (open source)</option>
                         <option value="play">Google Play (opens the Play Store)</option>
                     </select>
                     <input type="text" class="list-search us-ver" id="usVersion" placeholder="Version" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" aria-label="Version" onchange="usSave()">
@@ -6124,6 +6124,17 @@
                 <div class="mode-btn-row" style="margin-top:6px;">
                     <button class="mode-action-btn" onclick="authCopyExample()">Copy the example</button>
                 </div>
+                <div class="color-card-subtitle" style="margin-top:14px;"><b>The other way round.</b> When this app starts an activity of an app you list here (Activities tab, Launch), the intent carries your code in its <b translate="no">auth</b> extra, so that app can tell the call comes from this one. Only listed apps get it, because an app that has your code could use it on the door above.</div>
+                <label class="switch-row">
+                    <div><div class="switch-title">Send my code to the apps below</div><div class="switch-sub">Off: no intent this app sends carries the code</div></div>
+                    <input type="checkbox" class="switch-input" id="authOutOn" onchange="authOutToggle(this.checked)"><span class="switch-track"></span>
+                </label>
+                <div class="us-row1">
+                    <input type="text" class="list-search" id="authOutPkg" list="authOutDl" placeholder="Package name of an app" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" aria-label="Package name of an app" onkeydown="if(event.key==='Enter')authOutAdd()">
+                    <datalist id="authOutDl"></datalist>
+                    <button class="mode-action-btn" id="authOutAddBtn" onclick="authOutAdd()">Add</button>
+                </div>
+                <div id="authOutList"></div>
                 <div id="authRecent"></div>
                 <div class="uad-credit" style="margin-top:10px;">A wrong code is counted: five in a row lock the door for a minute. A new code (the refresh button) stops the old one at once, so use it if the code was ever shared by mistake. The code can open an app or a web, map, mail or phone address; it cannot open files or this app itself.</div>
             </div>
@@ -10883,7 +10894,7 @@ Type any command below (e.g. pm list packages -d)
             return ag && askAgentOk(ag) ? ag : null;
         }
         // The Default Ask Agent is a research agent: it reads the web and works out an answer. A coding agent (Cursor, Copilot, OpenCode) is not offered here.
-        const ASK_RESEARCH = ['perplexity', 'browseruse', 'crawl4ai'];
+        const ASK_RESEARCH = ['perplexity', 'exa', 'browseruse', 'crawl4ai'];
         function askAgentOk(a) { return a.id !== 'none' && a.api !== 'info' && a.api !== 'cli' && a.id !== 'cursor'; }
         function askAgentBuild() {
             const sel = document.getElementById('askAgentSelect');
@@ -15328,16 +15339,14 @@ Type any command below (e.g. pm list packages -d)
         // Uses the same engine as Morphe Helper (the bridge ops helperVersions / helperGet / helperBrowse), with its own settings.
         const US_DEF = { source: 'apkmirror', split: true, exact: false, near: true, stable: true, vt: false, install: false, agent: false, save: 'cache', tree: '', treeLabel: '' };
         const US_WEB = {
-            fdroid: pkg => 'https://f-droid.org/packages/' + pkg + '/',
-            izzy: pkg => 'https://apt.izzysoft.de/fdroid/index/apk/' + pkg,
             play: pkg => 'https://play.google.com/store/apps/details?id=' + pkg
         };
         const US_NOTE = {
             apkmirror: 'APKMirror checks each upload against the developer\'s signature. From some networks it asks for a browser check: then the page opens in the app and the download starts from there.',
             uptodown: 'Uptodown lists the original files. Its download button needs a browser check, so the file is fetched in the app\'s own browser.',
             aptoide: 'Aptoide\'s own catalog. The file is downloaded here and checked against the hash Aptoide publishes.',
-            fdroid: 'F-Droid builds open-source apps itself and signs them with its own key. This opens the app\'s page on the site.',
-            izzy: 'IzzyOnDroid serves the developer\'s own release builds of open-source apps. This opens the app\'s page on the site.',
+            fdroid: 'F-Droid builds open-source apps itself and signs them with its own key, so the file is F-Droid\'s build, not the developer\'s own. The file is downloaded here.',
+            izzy: 'IzzyOnDroid serves the developer\'s own release builds of open-source apps. The file is downloaded here.',
             play: 'The Play Store gives no download to other apps. This opens the app\'s page in the Play Store.'
         };
         let us = { cfg: null, helper: null, abi: '', cands: [], busy: false, got: null, vers: {}, browse: '', run: 0 };
@@ -25755,6 +25764,7 @@ Type any command below (e.g. pm list packages -d)
             { id: 'leon', name: 'Leon.ai', group: 'oss', api: 'info', color: '#ffb74d', site: 'https://getleon.ai/' },
             { id: 'browseruse', name: 'Browser Use', group: 'oss', api: 'browseruse', provider: 'browseruse', askOnly: true, color: '#ff9f43', site: 'https://github.com/browser-use/browser-use', keyUrl: 'https://cloud.browser-use.com/settings?tab=api-keys', keyLook: 'bu_…' },
             { id: 'crawl4ai', name: 'Crawl4AI', group: 'oss', api: 'crawl4ai', provider: 'crawl4ai', askOnly: true, color: '#4dd0e1', site: 'https://github.com/unclecode/crawl4ai', keyUrl: 'https://api.crawl4ai.com/', keyLook: 'sk_live_…' },
+            { id: 'exa', name: 'Exa', group: 'key', api: 'exa', provider: 'exa', askOnly: true, color: '#4f7cff', keyUrl: 'https://dashboard.exa.ai/api-keys', keyLook: 'xxxxxxxx-xxxx-…' },
             { id: 'jan', name: 'Jan.ai', group: 'oss', api: 'openai-compat', provider: 'jan', color: '#fbbf24', site: 'https://www.jan.ai/', bases: ['http://127.0.0.1:1337/v1'], keyOptional: true },
             { id: 'anythingllm', name: 'AnythingLLM', group: 'oss', api: 'openai-compat', provider: 'anythingllm', color: '#60a5fa', site: 'https://anythingllm.com/', bases: ['http://127.0.0.1:3001/api/v1/openai'] },
             { id: 'ollama', name: 'Ollama (on-device)', group: 'oss', api: 'openai-compat', provider: 'ollama', color: '#e5e5e5', site: 'https://ollama.com/', bases: ['http://127.0.0.1:11434/v1'], keyOptional: true },
@@ -26307,6 +26317,16 @@ Type any command below (e.g. pm list packages -d)
                 if (!j.answered || !txt.trim()) throw { local: true, msg: 'Crawl4AI found no answer for this one. Try Web search, or another agent.' };
                 const src = ((a.sources || []).slice(0, 4).map(x => '• ' + (x.title || x.url || '') + (x.url ? ' ' + x.url : '')));
                 add(txt.trim() + (src.length ? '\n\nSources:\n' + src.join('\n') : ''));
+            } else if (ag.api === 'exa') {
+                // Exa's answer service: one POST with the question; it searches the web and writes the answer with its citations
+                const q = (system + '\n\n' + msgs[msgs.length - 1].text).slice(0, 4000);
+                const r = await txAiCall({ url: 'https://api.exa.ai/answer', method: 'POST', auth: 'exa', headers: json, body: JSON.stringify({ query: q, text: false }), readTimeoutMs: 120000 }, null, true);
+                let j = {};
+                try { j = JSON.parse(r.body || '{}'); } catch (e) {}
+                const ans = typeof j.answer === 'string' ? j.answer : (j.answer ? JSON.stringify(j.answer) : '');
+                if (!ans.trim()) throw { local: true, msg: 'Exa found no answer for this one. Try Web search, or another agent.' };
+                const src = (j.citations || []).slice(0, 4).map(x => '• ' + (x.title || x.url || '') + (x.url ? ' ' + x.url : ''));
+                add(ans.trim() + (src.length ? '\n\nSources:\n' + src.join('\n') : ''));
             } else if (ag.api === 'browseruse') {
                 // Browser Use Cloud: start a short task, then ask for it until it ends (the browser looks the question up)
                 const task = txBuTask(system, msgs[msgs.length - 1].text);
@@ -27275,7 +27295,7 @@ Type any command below (e.g. pm list packages -d)
                     + '<button class="sdb-tab' + (txConnectTab === 'cli' ? ' active' : '') + '" role="tab" onclick="txConnectSet(\'cli\')">Sign in with subscription</button></div>';
             }
             if (!onlyCli && txConnectTab === 'key') {
-                const host = { claude: 'api.anthropic.com', chatgpt: 'api.openai.com', gemini: 'generativelanguage.googleapis.com', cursor: 'api.cursor.com', perplexity: 'api.perplexity.ai', grok: 'api.x.ai', muse: 'api.llama.com', deepseek: 'api.deepseek.com', crawl4ai: 'api.crawl4ai.com', browseruse: 'api.browser-use.com' }[ag.provider] || '';
+                const host = { claude: 'api.anthropic.com', chatgpt: 'api.openai.com', gemini: 'generativelanguage.googleapis.com', cursor: 'api.cursor.com', perplexity: 'api.perplexity.ai', grok: 'api.x.ai', muse: 'api.llama.com', deepseek: 'api.deepseek.com', crawl4ai: 'api.crawl4ai.com', exa: 'api.exa.ai', browseruse: 'api.browser-use.com' }[ag.provider] || '';
                 h += '<p class="tx-sheet-p">Paste your ' + escapeHtml(ag.name.replace(/\s*\(.*\)$/, '')) + ' API key. It is tested right away, then kept encrypted on this phone and only ever sent to <span translate="no">' + escapeHtml(host) + '</span>.</p>' + saved
                     + '<input id="txKeyInput" type="password" class="modal-text-input tx-key-input" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="' + escapeHtml(ag.keyLook || '') + '">'
                     + (ag.id === 'cursor' ? '<div class="tx-sheet-sec">Repository (optional)</div><input id="txCursorRepo" class="modal-text-input tx-key-input" translate="no" placeholder="https://github.com/you/project" value="' + escapeHtml(txSettings.cursorRepo || '') + '" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="url">' : '')
@@ -27287,6 +27307,7 @@ Type any command below (e.g. pm list packages -d)
                     + (ag.id === 'cursor' ? '<p class="tx-sheet-p muted">Cursor\'s agents run in Cursor\'s cloud, on a copy of a Git repository (the one above, or none): they cannot see this phone\'s files. To work on files here, sign in with the Cursor CLI instead.</p>' : '')
                     + (ag.id === 'gemini' ? '<p class="tx-sheet-p muted">Google AI Studio keys have a free tier; on the free tier Google may use what you send to improve its products.</p>' : '');
                 h += txConnTestHtml(ag);
+                if (ag.id === 'exa') h += '<p class="tx-sheet-p muted">Exa is a search engine built for AI. Its answer service searches the web and writes a short answer that names its sources. A new account gets free credits. Testing the key makes one small search (a fraction of a cent). An Ask agent button sends it the question; nothing is sent until you press one.</p>';
                 if (ag.id === 'crawl4ai') h += '<p class="tx-sheet-p muted">Crawl4AI is the open-source web crawler; this is its hosted cloud. A new account gets free credits and a free monthly allowance, no card. An Ask agent button sends the question to its answer service, which searches the web, reads the pages and writes the answer. It is for the Ask agent buttons only, not a chat. The test spends one credit.</p>';
                 if (ag.id === 'browseruse') h += '<p class="tx-sheet-p muted">Browser Use is the open-source browser agent; this is its hosted cloud, which has a free tier for new accounts. An Ask agent button starts a short browser task that looks the question up on the web: it can take a minute or two and uses a little credit. It is for the Ask agent buttons only, not a chat. Testing the key costs nothing.</p>';
             } else if (hasCli) {
@@ -31064,6 +31085,11 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('authCode').textContent = st.code || '';
             document.getElementById('authNote').textContent = st.enabled ? (st.locked > 0 ? txF('Locked for {0} more seconds after wrong codes.', st.locked) : 'On: an intent with this code can open an app or an address.') : 'Off: nothing is accepted.';
             document.getElementById('authExample').textContent = authExampleText();
+            const out = st.out || { on: false, targets: [] };
+            document.getElementById('authOutOn').checked = !!out.on;
+            document.getElementById('authOutList').innerHTML = out.targets.length ? out.targets.map(p => { const a = typeof allApps !== 'undefined' ? allApps.find(x => x.pkg === p) : null; return '<div class="auth-recent-row"><span translate="no">' + escapeHtml(a ? a.name + ' (' + p + ')' : p) + '</span><button class="batch-tool-link" onclick="authOutRemove(this.getAttribute(\'data-pkg\'))" data-pkg="' + escapeHtml(p) + '">Remove</button></div>'; }).join('') : '<div class="appearance-note">No app is listed, so no app gets the code.</div>';
+            const dl = document.getElementById('authOutDl');
+            if (dl && !dl.childElementCount && typeof allApps !== 'undefined') dl.innerHTML = allApps.slice(0, 600).map(a => '<option value="' + escapeHtml(a.pkg) + '">' + escapeHtml(a.name) + '</option>').join('');
             const rec = st.recent || [];
             const box = document.getElementById('authRecent');
             box.innerHTML = rec.length ? '<div class="color-card-subtitle" style="margin-top:12px;">Recent uses</div>' + rec.slice(0, 5).map(e => '<div class="auth-recent-row"><span translate="no">' + escapeHtml(e.what) + '</span><span translate="no">' + escapeHtml(e.verdict) + ' &middot; ' + escapeHtml(new Date(e.at).toLocaleTimeString()) + '</span></div>').join('') + '<div class="mode-btn-row" style="margin-top:6px;"><button class="batch-tool-link" onclick="authClear()">Clear the list</button></div>' : '';
@@ -31085,6 +31111,27 @@ Type any command below (e.g. pm list packages -d)
             try { authSt = JSON.parse(window.AndroidBridge.authRefresh()); } catch (e) { authSt = null; }
             authRender();
             showToast('A new code was made');
+        }
+        function authOutToggle(on) {
+            haptic();
+            try { authSt = JSON.parse(window.AndroidBridge.authOutEnable(!!on)); } catch (e) { authSt = null; }
+            authRender();
+            showToast(on ? 'Your code goes along to the apps you listed' : 'No intent carries your code');
+        }
+        function authOutAdd() {
+            const inp = document.getElementById('authOutPkg');
+            const pkg = (inp.value || '').trim();
+            if (!pkg) return;
+            haptic();
+            let r = null;
+            try { r = JSON.parse(window.AndroidBridge.authOutAdd(pkg)); } catch (e) {}
+            if (!r || r.added === false) { showToast('That is not a package name of another app'); return; }
+            authSt = r; inp.value = ''; authRender();
+        }
+        function authOutRemove(pkg) {
+            haptic();
+            try { authSt = JSON.parse(window.AndroidBridge.authOutRemove(pkg)); } catch (e) {}
+            authRender();
         }
         function authClear() { try { authSt = JSON.parse(window.AndroidBridge.authClearRecent()); } catch (e) {} authRender(); }
 

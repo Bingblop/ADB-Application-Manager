@@ -169,8 +169,8 @@ public final class MorpheBridge {
             case "helperSources": return new JSONObject().put("sources", MorpheHelper.sources()).put("defaults", MorpheHelper.settingsDefaults()).put("abi", android.text.TextUtils.join(",", Build.SUPPORTED_ABIS));
             case "helperFind": return MorpheHelper.find(a.optString("query"));
             case "copyToTree": return copyToTree(a);
-            case "helperManual": return new JSONObject().put("url", MorpheHelper.manualUrl(a.optString("source"), a.optString("pkg"), a.optString("version")));
-            case "helperVersions": return MorpheHelper.versions(a.optString("source"), a.optString("pkg"));
+            case "helperManual": return new JSONObject().put("url", RepoSources.handles(a.optString("source")) ? RepoSources.pageUrl(a.optString("source"), a.optString("pkg")) : MorpheHelper.manualUrl(a.optString("source"), a.optString("pkg"), a.optString("version")));
+            case "helperVersions": return RepoSources.handles(a.optString("source")) ? RepoSources.versions(a.optString("source"), a.optString("pkg")) : MorpheHelper.versions(a.optString("source"), a.optString("pkg"));
             case "helperBrowse": return helperBrowse(a);
             case "helperDownloadList": return new JSONObject().put("jobs", downloads().pageList()).put("background", backgroundOn());
             case "helperDownloadOp": return helperDownloadOp(a);
@@ -646,7 +646,8 @@ public final class MorpheBridge {
             JSONArray srcs = a.optJSONArray("sources");
             resolved = MorpheHelper.fast(srcs == null ? new JSONArray() : srcs, pkg, ver.isEmpty() ? null : ver, abi, policy);
         } else {
-            resolved = MorpheHelper.resolve(a.optString("source"), pkg, ver.isEmpty() ? null : ver, abi, policy);
+            resolved = RepoSources.handles(a.optString("source")) ? RepoSources.resolve(a.optString("source"), pkg, ver.isEmpty() ? null : ver, policy)
+                    : MorpheHelper.resolve(a.optString("source"), pkg, ver.isEmpty() ? null : ver, abi, policy);
         }
         final String label = "Downloading " + pkg;
         File dir = helperDir(a.optString("save", "cache"));

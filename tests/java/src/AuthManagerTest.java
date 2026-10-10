@@ -59,6 +59,25 @@ public class AuthManagerTest {
     mem.put("auth_code", "junk");
     check("a damaged code is replaced by a good one", new AuthManager(mem, new SecureRandom()).code().matches("[0-9A-Z-]{29}"));
 
+    // the code on the intents this app sends
+    Mem om = new Mem();
+    AuthManager o = new AuthManager(om, new SecureRandom());
+    check("sending the code is off, and nobody is listed, until the person says so", !o.outgoingOn() && o.targets().isEmpty() && !o.shouldAttach("com.example.app"));
+    check("an app is added once, in order; itself, a non-package and null are refused", o.addTarget("com.example.app", "com.me") && o.addTarget("org.other.app", "com.me") && o.addTarget("com.example.app", "com.me")
+        && !o.addTarget("com.me", "com.me") && !o.addTarget("notapackage", "com.me") && !o.addTarget(null, "com.me") && o.targets().size() == 2 && o.targets().get(0).equals("com.example.app"));
+    check("listed but switched off: no code goes", !o.shouldAttach("com.example.app"));
+    o.setOutgoingOn(true);
+    check("on: only a listed app gets the code", o.shouldAttach("com.example.app") && o.shouldAttach("org.other.app") && !o.shouldAttach("com.evil.app") && !o.shouldAttach(null));
+    o.removeTarget("com.example.app");
+    check("an app taken off stops getting it", !o.shouldAttach("com.example.app") && o.targets().size() == 1);
+    check("the list and the switch are remembered", new AuthManager(om, new SecureRandom()).shouldAttach("org.other.app"));
+    om.put("auth_out", "com.ok.app\n../bad\ncom.ok.app\n\norg.two.app\n");
+    check("a damaged list keeps only good, distinct names", new AuthManager(om, new SecureRandom()).targets().size() == 2);
+    AuthManager full = new AuthManager(new Mem(), new SecureRandom());
+    boolean allIn = true;
+    for (int i = 0; i < AuthManager.MAX_TARGETS; i++) allIn &= full.addTarget("com.example.app" + i, "com.me");
+    check("the list holds " + AuthManager.MAX_TARGETS + " apps and then refuses more", allIn && !full.addTarget("com.example.extra", "com.me"));
+
     // recent uses
     AuthManager b = new AuthManager(new Mem(), new SecureRandom());
     for (int i = 0; i < 13; i++) b.record(i, "ok", "package com.example.app" + i);

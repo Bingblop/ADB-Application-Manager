@@ -8353,6 +8353,8 @@ public class MainActivity extends Activity {
                         req.method = "GET";
                         req.url = AgentRules.testUrl(p, fb);
                         req.readTimeoutMs = 30000;
+                        String tb = AgentRules.testBody(p);
+                        if (tb != null) { req.method = "POST"; req.body = tb; req.headers.put("Content-Type", "application/json"); }
                         for (String[] h : p.extra) req.headers.put(h[0], h[1]);
                         if (!k.isEmpty()) req.headers.put(p.header, p.prefix + k);
                         AiHttp.Response r = call.execute(req, null);
@@ -8493,8 +8495,35 @@ public class MainActivity extends Activity {
                 JSONArray rec = new JSONArray();
                 for (AuthManager.Entry e : m.recent()) rec.put(new JSONObject().put("at", e.at).put("verdict", e.verdict).put("what", e.what));
                 o.put("recent", rec);
+                JSONObject out = new JSONObject();
+                out.put("on", m.outgoingOn());
+                JSONArray tg = new JSONArray();
+                for (String t : m.targets()) tg.put(t);
+                out.put("targets", tg);
+                o.put("out", out);
             } catch (Exception ignored) {}
             return o.toString();
+        }
+
+        /** Turns the sending of the code to the listed apps on or off. */
+        @JavascriptInterface
+        public String authOutEnable(boolean on) {
+            AuthLaunchActivity.manager(MainActivity.this).setOutgoingOn(on);
+            return authStatus();
+        }
+
+        /** Puts an app on the list of those that get the code; the answer has "added":false when it was refused. */
+        @JavascriptInterface
+        public String authOutAdd(String pkg) {
+            boolean ok = AuthLaunchActivity.manager(MainActivity.this).addTarget(pkg, getPackageName());
+            try { return new JSONObject(authStatus()).put("added", ok).toString(); } catch (Exception e) { return authStatus(); }
+        }
+
+        /** Takes an app off the list. */
+        @JavascriptInterface
+        public String authOutRemove(String pkg) {
+            AuthLaunchActivity.manager(MainActivity.this).removeTarget(pkg);
+            return authStatus();
         }
 
         /** Turns the Authorization Manager's door on or off. */
@@ -9650,9 +9679,12 @@ public class MainActivity extends Activity {
                     // way from the shell - uid 2000 isn't its owner and lacks START_ANY_ACTIVITY - so skip
                     // straight to the assistant method, which is the only thing that works there.
                     if (exported) {
+                        // the code goes along only to an app the person listed (About, Authorization Manager)
+                        AuthManager am = AuthLaunchActivity.manager(MainActivity.this);
+                        String authArgs = am.shouldAttach(pkg) ? " --es auth '" + am.code() + "' --es auth_from '" + getPackageName() + "'" : "";
                         String[] attempts = {
-                            "am start -W -f 0x10000000 -n '" + comp + "'",
-                            "am start -W -n '" + comp + "'",
+                            "am start -W -f 0x10000000 -n '" + comp + "'" + authArgs,
+                            "am start -W -n '" + comp + "'" + authArgs,
                         };
                         for (String cmd : attempts) {
                             String out = executeShell(cmd);
@@ -9691,6 +9723,8 @@ public class MainActivity extends Activity {
                         Intent intent = new Intent();
                         intent.setClassName(pkg, fullCls);
                         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        AuthManager am2 = AuthLaunchActivity.manager(MainActivity.this);
+                        if (am2.shouldAttach(pkg)) { intent.putExtra(AuthManager.EXTRA_AUTH, am2.code()); intent.putExtra("auth_from", getPackageName()); }
                         startActivity(intent);
                         res.put("ok", true);
                         res.put("method", "intent");
