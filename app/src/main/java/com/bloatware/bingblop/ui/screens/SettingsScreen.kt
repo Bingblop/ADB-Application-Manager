@@ -21,10 +21,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DisplaySettings
 import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Search
@@ -74,6 +76,9 @@ import androidx.compose.ui.unit.sp
 import com.bloatware.bingblop.data.model.PowerUserApp
 import com.bloatware.bingblop.data.model.SettingNamespace
 import com.bloatware.bingblop.data.model.SystemSettingItem
+import com.bloatware.bingblop.data.model.PrivateDnsPreset
+import com.bloatware.bingblop.data.model.DnsBenchmarkResult
+import com.bloatware.bingblop.data.model.DnsPingStatus
 import com.bloatware.bingblop.data.repository.AppRepository
 import com.bloatware.bingblop.data.repository.SettingsRepository
 import com.bloatware.bingblop.ui.components.CyberCard
@@ -88,6 +93,8 @@ import com.bloatware.bingblop.ui.theme.SecondaryPurple
 import com.bloatware.bingblop.ui.theme.TextDim
 import com.bloatware.bingblop.ui.theme.TextMain
 import com.bloatware.bingblop.ui.theme.TextMuted
+import com.bloatware.bingblop.ui.theme.WarningOrange
+import com.bloatware.bingblop.ui.theme.DangerRed
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -118,6 +125,19 @@ fun SettingsScreen(
     var customDpi by remember { mutableStateOf("420") }
     val powerApps = remember { appRepository.getKnownPowerUserApps() }
     var grantingAppPkg by remember { mutableStateOf<String?>(null) }
+
+    // Private DNS & Speed Scanner state
+    var privateDnsMode by remember { mutableStateOf("off") }
+    var privateDnsSpec by remember { mutableStateOf("") }
+    var customDnsInput by remember { mutableStateOf("") }
+    val dnsPresets = remember { appRepository.getPrivateDnsPresets() }
+    var isScanningDns by remember { mutableStateOf(false) }
+    var dnsScanResults by remember { mutableStateOf<Map<String, DnsBenchmarkResult>>(emptyMap()) }
+    var fastestDnsResult by remember { mutableStateOf<DnsBenchmarkResult?>(null) }
+    var dnsCategoryFilter by remember { mutableStateOf("All") }
+    var testingCustomDns by remember { mutableStateOf(false) }
+    var customDnsLatency by remember { mutableStateOf<Long?>(null) }
+    var singlePingingId by remember { mutableStateOf<String?>(null) }
 
     fun refreshSettings() {
         isLoading = true
@@ -237,7 +257,7 @@ fun SettingsScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         // Namespace Switcher Tabs
-        val tabs = listOf("Global", "Secure", "System", "Display & WM", "App Grants")
+        val tabs = listOf("Global", "Secure", "System", "Display", "DNS Switcher", "Grants")
         TabRow(
             selectedTabIndex = selectedTab,
             containerColor = BgSurface,
@@ -263,6 +283,11 @@ fun SettingsScreen(
                             1 -> currentNamespace = SettingNamespace.SECURE
                             2 -> currentNamespace = SettingNamespace.SYSTEM
                             3 -> scope.launch { blacklistedIcons = appRepository.getBlacklistedIcons() }
+                            4 -> scope.launch {
+                                val (m, s) = appRepository.getPrivateDnsConfig()
+                                privateDnsMode = m
+                                privateDnsSpec = s
+                            }
                         }
                     },
                     text = {
@@ -618,6 +643,486 @@ fun SettingsScreen(
                                         )
                                     )
                                 }
+                            }
+                        }
+                    }
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(100.dp))
+                }
+            }
+        } else if (selectedTab == 4) {
+            // Private DNS & Latency Speed Scanner Manager
+            val sortedPresets = remember(dnsPresets, dnsScanResults, dnsCategoryFilter) {
+                val filtered = if (dnsCategoryFilter == "All") {
+                    dnsPresets
+                } else {
+                    dnsPresets.filter { it.category.equals(dnsCategoryFilter, ignoreCase = true) }
+                }
+                if (dnsScanResults.isEmpty()) {
+                    filtered
+                } else {
+                    filtered.sortedWith { a, b ->
+                        val resA = dnsScanResults[a.id]?.latencyMs
+                        val resB = dnsScanResults[b.id]?.latencyMs
+                        when {
+                            resA == null && resB == null -> 0
+                            resA == null -> 1
+                            resB == null -> -1
+                            else -> resA.compareTo(resB)
+                        }
+                    }
+                }
+            }
+
+            // Determine top 3 lowest latencies across all scanned
+            val topRanks = remember(dnsScanResults) {
+                dnsScanResults.values
+                    .filter { it.latencyMs != null && it.latencyMs > 0 }
+                    .sortedBy { it.latencyMs }
+                    .take(3)
+                    .mapIndexed { index, item -> item.presetId to (index + 1) }
+                    .toMap()
+            }
+
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                // Active Private DNS Status Banner
+                item {
+                    CyberCard(modifier = Modifier.fillMaxWidth()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Icon(Icons.Default.Dns, contentDescription = null, tint = AccentCyan, modifier = Modifier.size(18.dp))
+                                    Text("ACTIVE ENCRYPTED DNS (DoT)", fontSize = 11.sp, fontWeight = FontWeight.Black, color = TextMuted, letterSpacing = 1.sp)
+                                }
+                                StatusPill(
+                                    when (privateDnsMode) {
+                                        "hostname" -> "SECURED (DoT)"
+                                        "opportunistic" -> "AUTO (DoT)"
+                                        else -> "UNENCRYPTED"
+                                    },
+                                    when (privateDnsMode) {
+                                        "hostname" -> CleanGreen
+                                        "opportunistic" -> SecondaryPurple
+                                        else -> WarningOrange
+                                    }
+                                )
+                            }
+                            if (privateDnsMode == "hostname") {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = privateDnsSpec.ifEmpty { "Host not set" },
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = AccentCyan,
+                                        fontFamily = FontFamily.Monospace
+                                    )
+                                    val activePing = dnsScanResults.values.firstOrNull { it.hostname == privateDnsSpec }?.latencyMs
+                                    if (activePing != null) {
+                                        StatusPill("⚡ $activePing ms", CleanGreen)
+                                    }
+                                }
+                            } else if (privateDnsMode == "opportunistic") {
+                                Text(
+                                    text = "Opportunistic mode — uses upstream TLS resolver if supported",
+                                    fontSize = 12.sp,
+                                    color = TextMuted
+                                )
+                            } else {
+                                Text(
+                                    text = "Disabled — system is using default unencrypted ISP DNS",
+                                    fontSize = 12.sp,
+                                    color = DangerRed
+                                )
+                            }
+                            Text(
+                                text = "Android Private DNS encrypts lookups system-wide using TLS on port 853 with zero battery overhead or VPN latency.",
+                                fontSize = 10.5.sp,
+                                color = TextDim
+                            )
+                        }
+                    }
+                }
+
+                // DNS Speed Scanner & Latency Benchmark Card
+                item {
+                    CyberCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        borderColor = if (fastestDnsResult != null) CleanGreen else AccentCyan
+                    ) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Icon(Icons.Default.Speed, contentDescription = null, tint = AccentCyan, modifier = Modifier.size(18.dp))
+                                    Text("DNS SPEED SCANNER & BENCHMARK", fontSize = 11.sp, fontWeight = FontWeight.Black, color = TextMuted, letterSpacing = 1.sp)
+                                }
+                                if (dnsScanResults.isNotEmpty()) {
+                                    StatusPill("${dnsScanResults.size} SCANNED", CleanGreen)
+                                }
+                            }
+
+                            Text(
+                                text = "Benchmark real-time round-trip latency to Anycast DNS nodes to find the lowest-latency encrypted resolver for your Wi-Fi/carrier connection.",
+                                fontSize = 11.sp,
+                                color = TextMuted
+                            )
+
+                            // Action buttons: Scan & Apply Fastest
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Button(
+                                    onClick = {
+                                        if (isScanningDns) return@Button
+                                        isScanningDns = true
+                                        scope.launch {
+                                            val results = appRepository.benchmarkAllDnsPresets(dnsPresets)
+                                            val map = results.associateBy { it.presetId }
+                                            dnsScanResults = map
+                                            fastestDnsResult = results.filter { it.latencyMs != null && it.latencyMs > 0 }.minByOrNull { it.latencyMs ?: Long.MAX_VALUE }
+                                            isScanningDns = false
+                                            if (fastestDnsResult != null) {
+                                                Toast.makeText(context, "Fastest detected: ${fastestDnsResult?.title} (${fastestDnsResult?.latencyMs} ms)", Toast.LENGTH_SHORT).show()
+                                            } else {
+                                                Toast.makeText(context, "Benchmark finished", Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
+                                    },
+                                    enabled = !isScanningDns,
+                                    colors = ButtonDefaults.buttonColors(containerColor = AccentCyan, contentColor = BgBase),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    if (isScanningDns) {
+                                        CircularProgressIndicator(color = BgBase, modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text("Pinging Nodes...", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                    } else {
+                                        Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(15.dp))
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(if (dnsScanResults.isEmpty()) "Scan Fastest DNS" else "Re-scan Latencies", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+
+                                if (fastestDnsResult != null) {
+                                    Button(
+                                        onClick = {
+                                            fastestDnsResult?.let { best ->
+                                                scope.launch {
+                                                    val res = appRepository.setPrivateDns("hostname", best.hostname)
+                                                    Toast.makeText(context, "✓ Applied fastest: ${best.title}", Toast.LENGTH_SHORT).show()
+                                                    val (m, s) = appRepository.getPrivateDnsConfig()
+                                                    privateDnsMode = m
+                                                    privateDnsSpec = s
+                                                }
+                                            }
+                                        },
+                                        colors = ButtonDefaults.buttonColors(containerColor = CleanGreen, contentColor = BgBase),
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Icon(Icons.Default.Bolt, contentDescription = null, modifier = Modifier.size(15.dp))
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text("Apply Fastest (${fastestDnsResult?.latencyMs}ms)", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            }
+
+                            // Highlight banner if fastest detected
+                            if (fastestDnsResult != null) {
+                                val best = fastestDnsResult!!
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(CleanGreen.copy(alpha = 0.12f))
+                                        .border(1.dp, CleanGreen.copy(alpha = 0.35f), RoundedCornerShape(8.dp))
+                                        .padding(10.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column {
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                Text("🏆 FASTEST RESOLVER DETECTED", fontSize = 10.sp, fontWeight = FontWeight.Black, color = CleanGreen)
+                                            }
+                                            Text(best.title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextMain)
+                                            Text(best.hostname, fontSize = 10.sp, color = AccentCyan, fontFamily = FontFamily.Monospace)
+                                        }
+                                        StatusPill("⚡ ${best.latencyMs} ms", CleanGreen)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Category Filter Chips
+                item {
+                    val filterCategories = listOf("All", "Ultra Fast Anycast", "AdBlock & Privacy", "Threat Protection", "Stock Android")
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        items(filterCategories) { cat ->
+                            val isSelected = dnsCategoryFilter.equals(cat, ignoreCase = true)
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(if (isSelected) AccentCyan.copy(alpha = 0.2f) else BgSurface)
+                                    .border(1.dp, if (isSelected) AccentCyan else BorderGlass, RoundedCornerShape(8.dp))
+                                    .clickable { dnsCategoryFilter = cat }
+                                    .padding(horizontal = 10.dp, vertical = 6.dp)
+                            ) {
+                                Text(
+                                    text = cat,
+                                    fontSize = 11.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (isSelected) AccentCyan else TextDim
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Custom DoT Hostname Card with Pre-test Ping
+                item {
+                    CyberCard(modifier = Modifier.fillMaxWidth()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("Custom DoT Hostname", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextMain)
+                                if (customDnsLatency != null) {
+                                    StatusPill("⚡ $customDnsLatency ms", CleanGreen)
+                                }
+                            }
+                            OutlinedTextField(
+                                value = customDnsInput,
+                                onValueChange = {
+                                    customDnsInput = it
+                                    customDnsLatency = null
+                                },
+                                placeholder = { Text("e.g. your-id.dns.nextdns.io or dns.quad9.net", fontSize = 11.sp, color = TextDim) },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true
+                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                OutlinedButton(
+                                    onClick = {
+                                        if (customDnsInput.isBlank() || testingCustomDns) return@OutlinedButton
+                                        testingCustomDns = true
+                                        customDnsLatency = null
+                                        scope.launch {
+                                            val latency = appRepository.pingDnsHostOrIp(customDnsInput.trim())
+                                            customDnsLatency = latency
+                                            testingCustomDns = false
+                                            if (latency != null) {
+                                                Toast.makeText(context, "Ping: $latency ms", Toast.LENGTH_SHORT).show()
+                                            } else {
+                                                Toast.makeText(context, "Host unreachable / timed out", Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
+                                    },
+                                    enabled = customDnsInput.isNotBlank() && !testingCustomDns,
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    if (testingCustomDns) {
+                                        CircularProgressIndicator(modifier = Modifier.size(13.dp), strokeWidth = 2.dp, color = AccentCyan)
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text("Pinging...", fontSize = 11.sp)
+                                    } else {
+                                        Icon(Icons.Default.Speed, contentDescription = null, modifier = Modifier.size(14.dp), tint = AccentCyan)
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text("Ping Host", fontSize = 11.sp, color = AccentCyan)
+                                    }
+                                }
+
+                                Button(
+                                    onClick = {
+                                        if (customDnsInput.isBlank()) return@Button
+                                        scope.launch {
+                                            val res = appRepository.setPrivateDns("hostname", customDnsInput.trim())
+                                            Toast.makeText(context, res.getOrDefault("DNS applied"), Toast.LENGTH_SHORT).show()
+                                            val (m, s) = appRepository.getPrivateDnsConfig()
+                                            privateDnsMode = m
+                                            privateDnsSpec = s
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = AccentCyan, contentColor = BgBase),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text("Apply Hostname", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Section Header: Curated DNS Providers
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "ENCRYPTED RESOLVERS (${sortedPresets.size})",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Black,
+                            color = TextMuted,
+                            letterSpacing = 1.sp
+                        )
+                        if (dnsScanResults.isNotEmpty()) {
+                            Text("SORTED BY LATENCY", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = AccentCyan)
+                        }
+                    }
+                }
+
+                // Preset Cards
+                items(sortedPresets) { preset ->
+                    val isCurrent = (preset.mode == "hostname" && privateDnsMode == "hostname" && privateDnsSpec == preset.hostname) ||
+                            (preset.mode != "hostname" && privateDnsMode == preset.mode)
+                    val benchmark = dnsScanResults[preset.id]
+                    val rank = topRanks[preset.id]
+                    val isPingingThis = singlePingingId == preset.id
+
+                    CyberCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        borderColor = when {
+                            isCurrent -> CleanGreen
+                            rank == 1 -> CleanGreen.copy(alpha = 0.6f)
+                            else -> BorderGlass
+                        }
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text(
+                                        text = preset.title,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isCurrent) CleanGreen else TextMain
+                                    )
+                                    if (rank != null) {
+                                        val rankText = when (rank) {
+                                            1 -> "🥇 1st"
+                                            2 -> "🥈 2nd"
+                                            3 -> "🥉 3rd"
+                                            else -> "#$rank"
+                                        }
+                                        StatusPill(rankText, CleanGreen)
+                                    }
+                                    if (isCurrent) {
+                                        StatusPill("ACTIVE", CleanGreen)
+                                    }
+                                }
+
+                                if (preset.hostname.isNotEmpty()) {
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        Text(preset.hostname, fontSize = 10.sp, color = AccentCyan, fontFamily = FontFamily.Monospace)
+                                        if (preset.primaryIp.isNotEmpty()) {
+                                            Text("(${preset.primaryIp})", fontSize = 9.5.sp, color = TextDim, fontFamily = FontFamily.Monospace)
+                                        }
+                                    }
+                                }
+                                Text(preset.description, fontSize = 10.sp, color = TextMuted)
+
+                                // Latency status indicator
+                                Row(
+                                    modifier = Modifier.padding(top = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    if (isPingingThis) {
+                                        CircularProgressIndicator(modifier = Modifier.size(12.dp), strokeWidth = 1.5.dp, color = AccentCyan)
+                                        Text("Pinging...", fontSize = 9.5.sp, color = TextDim)
+                                    } else if (benchmark != null) {
+                                        when {
+                                            benchmark.latencyMs == null -> {
+                                                StatusPill("TIMEOUT", DangerRed)
+                                            }
+                                            benchmark.latencyMs < 40 -> {
+                                                StatusPill("⚡ ${benchmark.latencyMs} ms", CleanGreen)
+                                            }
+                                            benchmark.latencyMs < 90 -> {
+                                                StatusPill("${benchmark.latencyMs} ms", AccentCyan)
+                                            }
+                                            else -> {
+                                                StatusPill("${benchmark.latencyMs} ms", WarningOrange)
+                                            }
+                                        }
+                                    } else if (preset.primaryIp.isNotEmpty() || preset.hostname.isNotEmpty()) {
+                                        // Small on-demand ping button
+                                        Box(
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(6.dp))
+                                                .background(BgSurface)
+                                                .border(1.dp, BorderGlass, RoundedCornerShape(6.dp))
+                                                .clickable {
+                                                    singlePingingId = preset.id
+                                                    scope.launch {
+                                                        val res = appRepository.benchmarkDnsPreset(preset)
+                                                        dnsScanResults = dnsScanResults + (preset.id to res)
+                                                        singlePingingId = null
+                                                    }
+                                                }
+                                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                        ) {
+                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                                                Icon(Icons.Default.Speed, contentDescription = null, tint = TextDim, modifier = Modifier.size(10.dp))
+                                                Text("Ping", fontSize = 9.sp, color = TextMuted)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            Button(
+                                onClick = {
+                                    scope.launch {
+                                        val res = appRepository.setPrivateDns(preset.mode, preset.hostname)
+                                        Toast.makeText(context, res.getOrDefault("DNS updated"), Toast.LENGTH_SHORT).show()
+                                        val (m, s) = appRepository.getPrivateDnsConfig()
+                                        privateDnsMode = m
+                                        privateDnsSpec = s
+                                    }
+                                },
+                                enabled = !isCurrent,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (preset.isEncrypted) AccentCyan else SecondaryPurple,
+                                    contentColor = BgBase
+                                )
+                            ) {
+                                Text(if (isCurrent) "Active" else "Set", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }

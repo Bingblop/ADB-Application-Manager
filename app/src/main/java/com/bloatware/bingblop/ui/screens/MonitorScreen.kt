@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -59,6 +60,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.bloatware.bingblop.data.model.BatteryDiagnostics
 import com.bloatware.bingblop.data.model.CrashLogEntry
 import com.bloatware.bingblop.data.model.DeviceInfo
 import com.bloatware.bingblop.data.repository.AppRepository
@@ -99,11 +101,20 @@ fun MonitorScreen(
     var crashLogs by remember { mutableStateOf<List<CrashLogEntry>>(emptyList()) }
     var expandedCrashId by remember { mutableStateOf<String?>(null) }
 
+    // Advanced Telemetry state
+    var batteryDiag by remember { mutableStateOf<BatteryDiagnostics?>(null) }
+    var dozeWhitelist by remember { mutableStateOf<List<String>>(emptyList()) }
+    var isCapturingScreen by remember { mutableStateOf(false) }
+    var isRecordingScreen by remember { mutableStateOf(false) }
+    var simBatteryLevel by remember { mutableStateOf("50") }
+
     fun refreshMetrics() {
         isLoading = true
         scope.launch {
             deviceInfo = monitorRepository.getDeviceInfo()
             crashLogs = appRepository.getDropboxCrashLogs()
+            batteryDiag = appRepository.getBatteryDiagnostics()
+            dozeWhitelist = appRepository.getDozeWhitelist()
             isLoading = false
         }
     }
@@ -468,6 +479,193 @@ fun MonitorScreen(
                                             }
                                         }
                                     }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Battery Diagnostics, Wakelock Inspector & Developer Simulation
+                item {
+                    CyberCard(modifier = Modifier.fillMaxWidth()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Icon(Icons.Default.BatteryChargingFull, contentDescription = null, tint = CleanGreen, modifier = Modifier.size(18.dp))
+                                    Text("BATTERY DIAGNOSTICS & SIMULATOR", fontSize = 11.sp, fontWeight = FontWeight.Black, color = TextMuted, letterSpacing = 1.sp)
+                                }
+                                batteryDiag?.let {
+                                    StatusPill("${it.voltageMv} mV", CleanGreen)
+                                }
+                            }
+
+                            batteryDiag?.let { diag ->
+                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    SpecRow("Battery Health", diag.health)
+                                    SpecRow("Power Status", diag.status)
+                                    SpecRow("Cell Chemistry", diag.technology)
+                                    if (diag.chargeCounterUah > 0L) {
+                                        SpecRow("Charge Counter", "${diag.chargeCounterUah / 1000} mAh")
+                                    }
+                                }
+
+                                if (diag.topWakelocks.isNotEmpty()) {
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text("TOP WAKELOCK DRAINS (BATTERYSTATS):", fontSize = 10.sp, fontWeight = FontWeight.Black, color = TextMuted)
+                                    diag.topWakelocks.take(4).forEach { wl ->
+                                        Text("• $wl", fontSize = 10.sp, color = TextDim, fontFamily = FontFamily.Monospace)
+                                    }
+                                }
+                            }
+
+                            // Developer Battery Simulation
+                            Text("DEVELOPER BATTERY SIMULATOR (DUMPSYS)", fontSize = 10.sp, fontWeight = FontWeight.Black, color = TextMuted)
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                listOf("10%", "25%", "50%", "100%").forEach { lvl ->
+                                    Button(
+                                        onClick = {
+                                            val num = lvl.removeSuffix("%").toInt()
+                                            scope.launch {
+                                                appRepository.simulateBattery(num, unplug = true)
+                                                Toast.makeText(context, "Battery simulated: $lvl (Unplugged)", Toast.LENGTH_SHORT).show()
+                                                refreshMetrics()
+                                            }
+                                        },
+                                        colors = ButtonDefaults.buttonColors(containerColor = BgSurface, contentColor = TextMain),
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Text(lvl, fontSize = 10.sp)
+                                    }
+                                }
+                            }
+                            OutlinedButton(
+                                onClick = {
+                                    scope.launch {
+                                        appRepository.resetBatterySimulation()
+                                        Toast.makeText(context, "Restored hardware battery", Toast.LENGTH_SHORT).show()
+                                        refreshMetrics()
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(14.dp), tint = CleanGreen)
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Reset Simulation (Restore Physical Sensors)", fontSize = 11.sp, color = CleanGreen)
+                            }
+                        }
+                    }
+                }
+
+                // Doze & Deep Idle Automation
+                item {
+                    CyberCard(modifier = Modifier.fillMaxWidth()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Icon(Icons.Default.Bolt, contentDescription = null, tint = SecondaryPurple, modifier = Modifier.size(18.dp))
+                                    Text("DOZE & DEVICE IDLE GOVERNOR", fontSize = 11.sp, fontWeight = FontWeight.Black, color = TextMuted, letterSpacing = 1.sp)
+                                }
+                                StatusPill("${dozeWhitelist.size} WHITELISTED", SecondaryPurple)
+                            }
+
+                            Text(
+                                text = "Instantly trigger Android's Deep Doze standby state to test background freeze behavior or unforce to wake the system.",
+                                fontSize = 11.sp,
+                                color = TextDim
+                            )
+
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Button(
+                                    onClick = {
+                                        scope.launch {
+                                            val res = appRepository.forceDeepDoze()
+                                            Toast.makeText(context, res.getOrDefault("Forced Doze"), Toast.LENGTH_SHORT).show()
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = SecondaryPurple, contentColor = TextMain),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text("Force Deep Doze", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                }
+                                OutlinedButton(
+                                    onClick = {
+                                        scope.launch {
+                                            val res = appRepository.unforceDoze()
+                                            Toast.makeText(context, res.getOrDefault("Doze exited"), Toast.LENGTH_SHORT).show()
+                                        }
+                                    },
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text("Exit Doze (Wake)", fontSize = 11.sp, color = TextMain)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Lossless Screenshot & Screen Recorder Studio
+                item {
+                    CyberCard(modifier = Modifier.fillMaxWidth()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Icon(Icons.Default.Build, contentDescription = null, tint = AccentCyan, modifier = Modifier.size(18.dp))
+                                Text("ADB CAPTURE STUDIO", fontSize = 11.sp, fontWeight = FontWeight.Black, color = TextMuted, letterSpacing = 1.sp)
+                            }
+
+                            Text(
+                                text = "Direct framebuffer screencap and high-bitrate screen recording directly via ADB shell commands.",
+                                fontSize = 11.sp,
+                                color = TextDim
+                            )
+
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Button(
+                                    onClick = {
+                                        if (isCapturingScreen) return@Button
+                                        isCapturingScreen = true
+                                        scope.launch {
+                                            val res = appRepository.captureScreenshot()
+                                            isCapturingScreen = false
+                                            res.fold(
+                                                onSuccess = { Toast.makeText(context, "✓ Screenshot saved: $it", Toast.LENGTH_LONG).show() },
+                                                onFailure = { Toast.makeText(context, "Failed: ${it.message}", Toast.LENGTH_SHORT).show() }
+                                            )
+                                        }
+                                    },
+                                    enabled = !isCapturingScreen,
+                                    colors = ButtonDefaults.buttonColors(containerColor = AccentCyan, contentColor = BgBase),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    if (isCapturingScreen) {
+                                        CircularProgressIndicator(modifier = Modifier.size(14.dp), color = BgBase, strokeWidth = 2.dp)
+                                    } else {
+                                        Text("Lossless Screencap", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+
+                                Button(
+                                    onClick = {
+                                        if (isRecordingScreen) return@Button
+                                        isRecordingScreen = true
+                                        scope.launch {
+                                            val res = appRepository.recordScreen(durationSec = 10, bitRateMbps = 12)
+                                            isRecordingScreen = false
+                                            Toast.makeText(context, res.getOrDefault("Recording started"), Toast.LENGTH_LONG).show()
+                                        }
+                                    },
+                                    enabled = !isRecordingScreen,
+                                    colors = ButtonDefaults.buttonColors(containerColor = CleanGreen, contentColor = BgBase),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text("Record 10s MP4", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                 }
                             }
                         }

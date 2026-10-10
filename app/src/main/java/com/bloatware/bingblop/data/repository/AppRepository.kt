@@ -21,11 +21,20 @@ import com.bloatware.bingblop.data.model.StandbyBucket
 import com.bloatware.bingblop.data.model.AppOpType
 import com.bloatware.bingblop.data.model.CrashLogEntry
 import com.bloatware.bingblop.data.model.PowerUserApp
+import com.bloatware.bingblop.data.model.PrivateDnsPreset
+import com.bloatware.bingblop.data.model.DnsBenchmarkResult
+import com.bloatware.bingblop.data.model.DnsPingStatus
+import com.bloatware.bingblop.data.model.BatteryDiagnostics
+import com.bloatware.bingblop.data.model.AndroidUser
+import com.bloatware.bingblop.data.model.RuntimePermissionItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.File
+import java.net.InetSocketAddress
+import java.net.Socket
+import kotlin.math.roundToLong
 
 class AppRepository(private val context: Context) {
 
@@ -625,6 +634,305 @@ class AppRepository(private val context: Context) {
         } else {
             Result.success("Grant: ${res.stdout.ifEmpty { res.stderr }}")
         }
+    }
+
+    suspend fun revokePermission(packageName: String, permission: String): Result<String> = withContext(Dispatchers.IO) {
+        val res = runShellCommand("pm revoke $packageName $permission")
+        if (res.exitCode == 0 || res.stdout.isEmpty()) {
+            Result.success("Revoked: ${permission.substringAfterLast('.')}")
+        } else {
+            Result.success("Revoke: ${res.stdout.ifEmpty { res.stderr }}")
+        }
+    }
+
+    suspend fun getAppRuntimePermissions(packageName: String): List<RuntimePermissionItem> = withContext(Dispatchers.IO) {
+        val res = runShellCommand("dumpsys package $packageName")
+        val list = mutableListOf<RuntimePermissionItem>()
+        var inRequestedSection = false
+        res.stdout.lines().forEach { line ->
+            val trimmed = line.trim()
+            if (trimmed.startsWith("requested permissions:") || trimmed.startsWith("install permissions:")) {
+                inRequestedSection = true
+            } else if (inRequestedSection && (trimmed.startsWith("runtime permissions:") || trimmed.isEmpty() || trimmed.contains(":"))) {
+                if (!trimmed.startsWith("android.permission")) {
+                    inRequestedSection = false
+                }
+            }
+            if (trimmed.contains("android.permission.")) {
+                val permName = trimmed.substringBefore(":").substringBefore(",").trim()
+                val isGranted = res.stdout.contains("$permName: granted=true") || !res.stdout.contains("$permName: granted=false")
+                if (permName.startsWith("android.permission.") && list.none { it.permission == permName }) {
+                    list.add(
+                        RuntimePermissionItem(
+                            permission = permName,
+                            simpleName = permName.substringAfterLast("."),
+                            isGranted = isGranted
+                        )
+                    )
+                }
+            }
+        }
+        list
+    }
+
+    fun getPrivateDnsPresets(): List<PrivateDnsPreset> = listOf(
+        PrivateDnsPreset("cloudflare", "Cloudflare 1.1.1.1", "hostname", "one.one.one.one", "Ultra-fast Anycast DNS with strict zero-logging", primaryIp = "1.1.1.1", category = "Ultra Fast Anycast"),
+        PrivateDnsPreset("adguard", "AdGuard AdBlock", "hostname", "dns.adguard-dns.com", "Blocks ads, telemetry, trackers, and malicious domains globally", primaryIp = "94.140.14.14", category = "AdBlock & Privacy"),
+        PrivateDnsPreset("adguard_family", "AdGuard Family", "hostname", "family.adguard-dns.com", "Blocks ads, adult content, and enforces SafeSearch", primaryIp = "94.140.14.15", category = "AdBlock & Privacy"),
+        PrivateDnsPreset("cloudflare_sec", "Cloudflare Security", "hostname", "security.cloudflare-dns.com", "Blocks malware, spyware, and known phishing hosts", primaryIp = "1.1.1.2", category = "Threat Protection"),
+        PrivateDnsPreset("cloudflare_fam", "Cloudflare Family", "hostname", "family.cloudflare-dns.com", "Blocks malware, spyware, and adult content", primaryIp = "1.1.1.3", category = "Threat Protection"),
+        PrivateDnsPreset("quad9", "Quad9 Threat Block", "hostname", "dns.quad9.net", "Global threat intelligence with strict privacy protection", primaryIp = "9.9.9.9", category = "Threat Protection"),
+        PrivateDnsPreset("google", "Google Public DNS", "hostname", "dns.google", "High availability global DNS backed by Google Anycast", primaryIp = "8.8.8.8", category = "Ultra Fast Anycast"),
+        PrivateDnsPreset("nextdns", "NextDNS", "hostname", "dns.nextdns.io", "Zero-latency DoT resolver with customizable cloud blocklists", primaryIp = "45.90.28.0", category = "AdBlock & Privacy"),
+        PrivateDnsPreset("controld", "Control D Malware Block", "hostname", "p0.freedns.controld.com", "High-speed privacy DNS with AI threat filtering", primaryIp = "76.76.2.0", category = "Threat Protection"),
+        PrivateDnsPreset("cleanbrowsing", "CleanBrowsing Security", "hostname", "security-filter-dns.cleanbrowsing.org", "Phishing and malicious domain protection filter", primaryIp = "185.228.168.9", category = "Threat Protection"),
+        PrivateDnsPreset("auto", "Automatic (Opportunistic)", "opportunistic", "", "Uses DNS-over-TLS if upstream ISP resolver supports it", primaryIp = "8.8.8.8", category = "Stock Android"),
+        PrivateDnsPreset("off", "Off (Stock Plain DNS)", "off", "", "Disables encrypted DNS and uses regular ISP DNS", isEncrypted = false, primaryIp = "", category = "Stock Android")
+    )
+
+    suspend fun pingDnsHostOrIp(target: String, timeoutMs: Int = 1500): Long? = withContext(Dispatchers.IO) {
+        if (target.isBlank()) return@withContext null
+
+        // 1. First attempt: Shell ICMP ping (fastest and most accurate for network latency)
+        try {
+            val pingCmd = "ping -c 1 -W 1 $target"
+            val res = runShellCommand(pingCmd)
+            if (res.exitCode == 0 && res.stdout.contains("time=")) {
+                val timeStr = res.stdout.substringAfter("time=").substringBefore("ms").trim()
+                val latency = timeStr.toDoubleOrNull()?.roundToLong()
+                if (latency != null && latency >= 0) {
+                    return@withContext latency
+                }
+            } else if (res.stdout.contains("min/avg/max")) {
+                val avgStr = res.stdout.substringAfter("min/avg/max").substringAfter("=").trim().split("/").getOrNull(1)?.trim()
+                val latency = avgStr?.toDoubleOrNull()?.roundToLong()
+                if (latency != null && latency >= 0) {
+                    return@withContext latency
+                }
+            }
+        } catch (_: Exception) {
+            // Fall through to socket probe
+        }
+
+        // 2. Second attempt: Direct TCP Socket handshake (DoT port 853 or DNS port 53)
+        // Highly resilient even if ICMP is blocked by carrier or network firewall
+        try {
+            val portsToTry = listOf(853, 53)
+            for (port in portsToTry) {
+                try {
+                    val socket = Socket()
+                    val start = System.currentTimeMillis()
+                    socket.connect(InetSocketAddress(target, port), timeoutMs)
+                    val duration = System.currentTimeMillis() - start
+                    socket.close()
+                    if (duration >= 0) {
+                        return@withContext duration
+                    }
+                } catch (_: Exception) {
+                    // Try next port
+                }
+            }
+        } catch (_: Exception) {
+            // Unreachable
+        }
+
+        null
+    }
+
+    suspend fun benchmarkDnsPreset(preset: PrivateDnsPreset): DnsBenchmarkResult = withContext(Dispatchers.IO) {
+        val target = preset.primaryIp.ifEmpty { preset.hostname }
+        if (target.isEmpty() || preset.mode == "off") {
+            return@withContext DnsBenchmarkResult(
+                presetId = preset.id,
+                title = preset.title,
+                hostname = preset.hostname,
+                ip = preset.primaryIp,
+                latencyMs = null,
+                status = DnsPingStatus.IDLE,
+                details = "Stock Plain DNS (No encryption)"
+            )
+        }
+
+        val latency = pingDnsHostOrIp(target)
+        val status = when {
+            latency == null -> DnsPingStatus.TIMEOUT
+            latency < 40 -> DnsPingStatus.FAST
+            latency < 90 -> DnsPingStatus.MODERATE
+            else -> DnsPingStatus.SLOW
+        }
+
+        val details = when {
+            latency == null -> "Unreachable / Timed out"
+            latency < 40 -> "⚡ Optimal ($latency ms)"
+            latency < 90 -> "Moderate ($latency ms)"
+            else -> "High latency ($latency ms)"
+        }
+
+        DnsBenchmarkResult(
+            presetId = preset.id,
+            title = preset.title,
+            hostname = preset.hostname,
+            ip = preset.primaryIp,
+            latencyMs = latency,
+            status = status,
+            details = details
+        )
+    }
+
+    suspend fun benchmarkAllDnsPresets(
+        presets: List<PrivateDnsPreset> = getPrivateDnsPresets()
+    ): List<DnsBenchmarkResult> = withContext(Dispatchers.IO) {
+        val testable = presets.filter { it.mode == "hostname" || (it.mode == "opportunistic" && it.primaryIp.isNotEmpty()) }
+        val deferred = testable.map { preset ->
+            async { benchmarkDnsPreset(preset) }
+        }
+        val results = deferred.map { it.await() }
+        results.sortedWith(
+            compareBy<DnsBenchmarkResult> { it.latencyMs == null }
+                .thenBy { it.latencyMs ?: Long.MAX_VALUE }
+        )
+    }
+
+    suspend fun getPrivateDnsConfig(): Pair<String, String> = withContext(Dispatchers.IO) {
+        val mode = runShellCommand("settings get global private_dns_mode").stdout.trim().ifEmpty { "off" }
+        val spec = runShellCommand("settings get global private_dns_specifier").stdout.trim().ifEmpty { "" }
+        Pair(mode, spec)
+    }
+
+    suspend fun setPrivateDns(mode: String, specifier: String): Result<String> = withContext(Dispatchers.IO) {
+        runShellCommand("settings put global private_dns_mode \"$mode\"")
+        if (mode == "hostname" && specifier.isNotBlank()) {
+            runShellCommand("settings put global private_dns_specifier \"$specifier\"")
+        }
+        Result.success("Private DNS set to $mode ${if (specifier.isNotEmpty()) "($specifier)" else ""}".trim())
+    }
+
+    suspend fun getBatteryDiagnostics(): BatteryDiagnostics = withContext(Dispatchers.IO) {
+        val bRes = runShellCommand("dumpsys battery")
+        val lines = bRes.stdout.lines()
+        var voltage = 0
+        var status = "Unknown"
+        var health = "Unknown"
+        var tech = "Li-ion"
+        var chargeCounter = 0L
+
+        lines.forEach { line ->
+            val trimmed = line.trim()
+            when {
+                trimmed.startsWith("voltage:") -> voltage = trimmed.substringAfter(":").trim().toIntOrNull() ?: 0
+                trimmed.startsWith("status:") -> {
+                    val code = trimmed.substringAfter(":").trim()
+                    status = when (code) { "2" -> "Charging"; "3" -> "Discharging"; "4" -> "Not Charging"; "5" -> "Full"; else -> code }
+                }
+                trimmed.startsWith("health:") -> {
+                    val code = trimmed.substringAfter(":").trim()
+                    health = when (code) { "2" -> "Good"; "3" -> "Overheat"; "4" -> "Dead"; "5" -> "Over Voltage"; else -> code }
+                }
+                trimmed.startsWith("technology:") -> tech = trimmed.substringAfter(":").trim()
+                trimmed.startsWith("Charge counter:") -> chargeCounter = trimmed.substringAfter(":").trim().toLongOrNull() ?: 0L
+            }
+        }
+
+        val statsRes = runShellCommand("dumpsys batterystats --charged | grep -E \"Wake lock|User activity\" | head -n 6")
+        val wl = statsRes.stdout.lines().filter { it.isNotBlank() }.map { it.trim() }
+
+        BatteryDiagnostics(
+            voltageMv = voltage,
+            chargeCounterUah = chargeCounter,
+            technology = tech,
+            health = health,
+            status = status,
+            topWakelocks = wl
+        )
+    }
+
+    suspend fun simulateBattery(level: Int?, unplug: Boolean): Result<String> = withContext(Dispatchers.IO) {
+        if (unplug) {
+            runShellCommand("dumpsys battery unplug")
+        }
+        level?.let {
+            runShellCommand("dumpsys battery set level $it")
+        }
+        Result.success("Battery state simulated")
+    }
+
+    suspend fun resetBatterySimulation(): Result<String> = withContext(Dispatchers.IO) {
+        runShellCommand("dumpsys battery reset")
+        Result.success("Hardware battery telemetry restored")
+    }
+
+    suspend fun getDozeWhitelist(): List<String> = withContext(Dispatchers.IO) {
+        val res = runShellCommand("dumpsys deviceidle whitelist")
+        res.stdout.lines()
+            .map { it.trim() }
+            .filter { it.startsWith("system,") || it.startsWith("user,") }
+            .map { it.substringAfter(",") }
+    }
+
+    suspend fun toggleDozeWhitelist(packageName: String, add: Boolean): Result<String> = withContext(Dispatchers.IO) {
+        val sign = if (add) "+" else "-"
+        runShellCommand("dumpsys deviceidle whitelist $sign$packageName")
+        Result.success(if (add) "Added $packageName to Doze Whitelist" else "Removed $packageName from Doze Whitelist")
+    }
+
+    suspend fun forceDeepDoze(): Result<String> = withContext(Dispatchers.IO) {
+        val res = runShellCommand("cmd deviceidle force-idle deep")
+        Result.success("Forced deep doze: ${res.stdout.ifEmpty { "Idle active" }}")
+    }
+
+    suspend fun unforceDoze(): Result<String> = withContext(Dispatchers.IO) {
+        val res = runShellCommand("cmd deviceidle unforce")
+        Result.success("Exited forced doze state")
+    }
+
+    suspend fun getAndroidUsers(): List<AndroidUser> = withContext(Dispatchers.IO) {
+        val res = runShellCommand("pm list users")
+        val users = mutableListOf<AndroidUser>()
+        val regex = Regex("""UserInfo\{(\d+):([^:]+):([0-9a-fA-FxX]+)\}""")
+        regex.findAll(res.stdout).forEach { match ->
+            val id = match.groupValues[1].toIntOrNull() ?: 0
+            val name = match.groupValues[2]
+            val flags = match.groupValues[3]
+            users.add(AndroidUser(id, name, flags, isOwner = id == 0))
+        }
+        if (users.isEmpty()) users.add(AndroidUser(0, "Owner (Default)", isOwner = true))
+        users
+    }
+
+    suspend fun extractAllSplits(packageName: String): Result<String> = withContext(Dispatchers.IO) {
+        val pathRes = runShellCommand("pm path $packageName")
+        val paths = pathRes.stdout.lines().filter { it.startsWith("package:") }.map { it.removePrefix("package:").trim() }
+        if (paths.isEmpty()) {
+            return@withContext Result.failure(Exception("No paths found for $packageName"))
+        }
+        val targetDir = "/sdcard/Download/ADBManager/$packageName"
+        runShellCommand("mkdir -p $targetDir")
+        paths.forEach { apkPath ->
+            val fileName = File(apkPath).name
+            runShellCommand("cp $apkPath $targetDir/$fileName || cat $apkPath > $targetDir/$fileName")
+        }
+        Result.success("$targetDir/ (${paths.size} APK splits)")
+    }
+
+    suspend fun captureScreenshot(): Result<String> = withContext(Dispatchers.IO) {
+        val targetDir = "/sdcard/Download/ADBManager"
+        runShellCommand("mkdir -p $targetDir")
+        val file = "$targetDir/screenshot_${System.currentTimeMillis()}.png"
+        val res = runShellCommand("screencap -p $file")
+        if (res.exitCode == 0 || runShellCommand("ls $file").stdout.contains(file)) {
+            Result.success(file)
+        } else {
+            Result.failure(Exception(res.stderr.ifEmpty { "Failed to capture display" }))
+        }
+    }
+
+    suspend fun recordScreen(durationSec: Int = 10, bitRateMbps: Int = 8): Result<String> = withContext(Dispatchers.IO) {
+        val targetDir = "/sdcard/Download/ADBManager"
+        runShellCommand("mkdir -p $targetDir")
+        val file = "$targetDir/screenrecord_${System.currentTimeMillis()}.mp4"
+        val bitRate = bitRateMbps * 1000000
+        runShellCommand("screenrecord --time-limit $durationSec --bit-rate $bitRate $file &")
+        Result.success("Recording started for ${durationSec}s -> $file")
     }
 
     private suspend fun runShellCommand(cmd: String): CommandResult = withContext(Dispatchers.IO) {

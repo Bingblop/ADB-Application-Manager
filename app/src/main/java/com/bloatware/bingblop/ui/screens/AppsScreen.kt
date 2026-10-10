@@ -89,6 +89,8 @@ import com.bloatware.bingblop.data.model.DexOptResult
 import com.bloatware.bingblop.data.model.BatchDexOptSummary
 import com.bloatware.bingblop.data.model.StandbyBucket
 import com.bloatware.bingblop.data.model.AppOpType
+import com.bloatware.bingblop.data.model.AndroidUser
+import com.bloatware.bingblop.data.model.RuntimePermissionItem
 import com.bloatware.bingblop.data.repository.AppRepository
 import com.bloatware.bingblop.ui.components.CyberCard
 import com.bloatware.bingblop.ui.components.InteractiveStatBadge
@@ -168,6 +170,14 @@ fun AppsScreen(
     var appOpsStates by remember { mutableStateOf<Map<AppOpType, Boolean>>(emptyMap()) }
     var isExtractingApk by remember { mutableStateOf(false) }
     var extractedApkPath by remember { mutableStateOf<String?>(null) }
+    var isExtractingSplits by remember { mutableStateOf(false) }
+
+    // Multi-User state
+    var androidUsers by remember { mutableStateOf<List<AndroidUser>>(listOf(AndroidUser(0, "Owner", isOwner = true))) }
+    var selectedUserId by remember { mutableIntStateOf(0) }
+
+    // Runtime dangerous permissions
+    var runtimePermissions by remember { mutableStateOf<List<RuntimePermissionItem>>(emptyList()) }
 
     BackHandler(enabled = isDebloatMode) {
         isDebloatMode = false
@@ -179,6 +189,7 @@ fun AppsScreen(
             val loadedApps = appRepository.getInstalledApps()
             apps = loadedApps
             debloatList = appRepository.getDebloatList(loadedApps)
+            androidUsers = appRepository.getAndroidUsers()
             isLoading = false
         }
     }
@@ -217,6 +228,36 @@ fun AppsScreen(
             .background(BgBase)
             .padding(horizontal = 14.dp)
     ) {
+        // Multi-User Profile Indicator / Switcher (if device has work profiles or secondary users)
+        if (androidUsers.size > 1) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("TARGET USER:", fontSize = 10.sp, color = TextMuted, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
+                androidUsers.forEach { u ->
+                    val isSel = selectedUserId == u.id
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(if (isSel) SecondaryPurple else BgSurface)
+                            .clickable { selectedUserId = u.id }
+                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                    ) {
+                        Text(
+                            text = "${u.name} [${u.id}]",
+                            fontSize = 10.sp,
+                            fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal,
+                            color = if (isSel) TextMain else TextDim
+                        )
+                    }
+                }
+            }
+        }
+
         // Global Operation Progress Banner (when executing ADB commands)
         AnimatedVisibility(
             visible = pendingPkgAction != null && activeOperationType != null,
@@ -652,6 +693,7 @@ fun AppsScreen(
                                         m[op] = appRepository.getAppOpState(app.packageName, op)
                                     }
                                     appOpsStates = m
+                                    runtimePermissions = appRepository.getAppRuntimePermissions(app.packageName)
                                 }
                             },
                             onQuickFreezeToggle = {
@@ -876,7 +918,7 @@ fun AppsScreen(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // Segmented Tab Switcher: Overview vs DEX-Opt vs AppOps vs Component Disabler
+                // Segmented Tab Switcher: Overview vs DEX-Opt vs AppOps vs Perms vs Components
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -886,7 +928,7 @@ fun AppsScreen(
                         .padding(3.dp),
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    listOf("Overview", "⚡ DEX-Opt", "AppOps Privacy", "Components (${detailedComponents.size})").forEachIndexed { index, title ->
+                    listOf("Overview", "⚡ DEX-Opt", "AppOps", "Perms (${runtimePermissions.size})", "Components (${detailedComponents.size})").forEachIndexed { index, title ->
                         val isSelected = selectedSheetTab == index
                         Box(
                             modifier = Modifier
@@ -899,7 +941,7 @@ fun AppsScreen(
                         ) {
                             Text(
                                 text = title,
-                                fontSize = 9.sp,
+                                fontSize = 8.5.sp,
                                 fontWeight = if (isSelected) FontWeight.Black else FontWeight.Medium,
                                 color = if (isSelected) BgBase else TextMuted,
                                 maxLines = 1
@@ -1146,27 +1188,56 @@ fun AppsScreen(
                             if (isExtractingApk) {
                                 CircularProgressIndicator(modifier = Modifier.size(14.dp), color = AccentCyan, strokeWidth = 2.dp)
                             } else {
-                                Text(if (extractedApkPath != null) "✓ APK Extracted" else "Extract Base APK", fontSize = 11.sp, color = AccentCyan)
+                                Text(if (extractedApkPath != null) "✓ Base Extracted" else "Extract Base APK", fontSize = 11.sp, color = AccentCyan)
                             }
                         }
 
                         OutlinedButton(
                             onClick = {
-                                val nextMode = when (appGameMode) {
-                                    "Performance" -> "battery"
-                                    "Battery" -> "standard"
-                                    else -> "performance"
-                                }
+                                if (isExtractingSplits) return@OutlinedButton
+                                isExtractingSplits = true
                                 scope.launch {
-                                    appRepository.setGameMode(app.packageName, nextMode)
-                                    appGameMode = appRepository.getGameMode(app.packageName)
+                                    val res = appRepository.extractAllSplits(app.packageName)
+                                    isExtractingSplits = false
+                                    res.fold(
+                                        onSuccess = { path ->
+                                            Toast.makeText(context, "✓ Extracted all splits to $path", Toast.LENGTH_LONG).show()
+                                        },
+                                        onFailure = {
+                                            Toast.makeText(context, "Split extraction error: ${it.message}", Toast.LENGTH_SHORT).show()
+                                        }
+                                    )
                                 }
                             },
-                            enabled = !isSheetBusy,
+                            enabled = !isExtractingSplits && !isSheetBusy,
                             modifier = Modifier.weight(1f)
                         ) {
-                            Text("Game: ${appGameMode ?: "Std"}", fontSize = 11.sp, color = TextMain)
+                            if (isExtractingSplits) {
+                                CircularProgressIndicator(modifier = Modifier.size(14.dp), color = AccentCyan, strokeWidth = 2.dp)
+                            } else {
+                                Text("Extract All Splits", fontSize = 11.sp, color = SecondaryPurple)
+                            }
                         }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedButton(
+                        onClick = {
+                            val nextMode = when (appGameMode) {
+                                "Performance" -> "battery"
+                                "Battery" -> "standard"
+                                else -> "performance"
+                            }
+                            scope.launch {
+                                appRepository.setGameMode(app.packageName, nextMode)
+                                appGameMode = appRepository.getGameMode(app.packageName)
+                            }
+                        },
+                        enabled = !isSheetBusy,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Game Dashboard Governor: ${appGameMode ?: "Standard"}", fontSize = 11.sp, color = TextMain)
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -1460,6 +1531,64 @@ fun AppsScreen(
                                             uncheckedTrackColor = StatusBloat
                                         )
                                     )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(20.dp))
+                    }
+                } else if (selectedSheetTab == 3) {
+                    // Runtime Dangerous Permissions Inspector & Grant/Revoke
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        CyberCard(modifier = Modifier.fillMaxWidth()) {
+                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Text("Runtime Permissions Governance", fontSize = 12.sp, fontWeight = FontWeight.Black, color = AccentCyan)
+                                Text(
+                                    "Directly grant or revoke dangerous Android permissions (pm grant / pm revoke) without opening system settings dialogs.",
+                                    fontSize = 10.sp,
+                                    color = TextDim
+                                )
+                            }
+                        }
+
+                        if (runtimePermissions.isEmpty()) {
+                            Text("No dangerous runtime permissions detected for this application.", fontSize = 11.sp, color = TextMuted)
+                        } else {
+                            runtimePermissions.forEach { perm ->
+                                CyberCard(modifier = Modifier.fillMaxWidth()) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(perm.simpleName, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextMain)
+                                            Text(perm.permission, fontSize = 9.sp, color = TextDim, fontFamily = FontFamily.Monospace)
+                                        }
+                                        Switch(
+                                            checked = perm.isGranted,
+                                            onCheckedChange = { granted ->
+                                                scope.launch {
+                                                    val res = if (granted) {
+                                                        appRepository.grantPermission(app.packageName, perm.permission)
+                                                    } else {
+                                                        appRepository.revokePermission(app.packageName, perm.permission)
+                                                    }
+                                                    Toast.makeText(context, res.getOrDefault("Updated"), Toast.LENGTH_SHORT).show()
+                                                    runtimePermissions = appRepository.getAppRuntimePermissions(app.packageName)
+                                                }
+                                            },
+                                            colors = SwitchDefaults.colors(
+                                                checkedThumbColor = BgBase,
+                                                checkedTrackColor = CleanGreen,
+                                                uncheckedThumbColor = BgBase,
+                                                uncheckedTrackColor = StatusBloat
+                                            )
+                                        )
+                                    }
                                 }
                             }
                         }

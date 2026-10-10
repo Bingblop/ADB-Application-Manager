@@ -187,4 +187,17 @@ class LogcatRepository {
             else -> LogcatLevel.INFO
         }
     }
+
+    suspend fun exportLogs(): Result<String> = withContext(Dispatchers.IO) {
+        try {
+            val targetDir = java.io.File("/sdcard/Download/ADBManager")
+            targetDir.mkdirs()
+            val file = java.io.File(targetDir, "logcat_${System.currentTimeMillis()}.txt")
+            val lines = synchronized(buffer) { buffer.map { it.raw } }
+            file.writeText(lines.joinToString("\n"))
+            Result.success(file.absolutePath)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

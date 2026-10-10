@@ -214,3 +214,62 @@ data class PowerUserApp(
     val description: String,
     val permissions: List<String>
 )
+
+data class PrivateDnsPreset(
+    val id: String,
+    val title: String,
+    val mode: String, // "hostname", "opportunistic", "off"
+    val hostname: String,
+    val description: String,
+    val isEncrypted: Boolean = true,
+    val primaryIp: String = "",
+    val category: String = "General"
+)
+
+enum class DnsPingStatus {
+    FAST,
+    MODERATE,
+    SLOW,
+    TIMEOUT,
+    TESTING,
+    IDLE
+}
+
+data class DnsBenchmarkResult(
+    val presetId: String,
+    val title: String,
+    val hostname: String,
+    val ip: String,
+    val latencyMs: Long?,
+    val status: DnsPingStatus,
+    val details: String = ""
+)
+
+data class BatteryDiagnostics(
+    val voltageMv: Int = 0,
+    val chargeCounterUah: Long = 0L,
+    val chargeCycles: Int? = null,
+    val technology: String = "Li-ion",
+    val health: String = "Good",
+    val status: String = "Discharging",
+    val topWakelocks: List<String> = emptyList()
+)
+
+data class AndroidUser(
+    val id: Int,
+    val name: String,
+    val flags: String = "",
+    val isOwner: Boolean = false
+)
+
+data class RuntimePermissionItem(
+    val permission: String,
+    val simpleName: String,
+    val isGranted: Boolean
+)
+
+data class ScreenCaptureResult(
+    val filePath: String,
+    val isSuccess: Boolean,
+    val message: String
+)

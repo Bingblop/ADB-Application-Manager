@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.VerticalAlignBottom
 import androidx.compose.material3.AlertDialog
@@ -53,6 +54,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -74,11 +76,13 @@ import com.bloatware.bingblop.ui.theme.BgCard
 import com.bloatware.bingblop.ui.theme.BgSurface
 import com.bloatware.bingblop.ui.theme.BorderGlass
 import com.bloatware.bingblop.ui.theme.CleanGreen
+import com.bloatware.bingblop.ui.theme.SecondaryPurple
 import com.bloatware.bingblop.ui.theme.StatusBloat
 import com.bloatware.bingblop.ui.theme.StatusRunning
 import com.bloatware.bingblop.ui.theme.TextDim
 import com.bloatware.bingblop.ui.theme.TextMain
 import com.bloatware.bingblop.ui.theme.TextMuted
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -87,6 +91,7 @@ fun LogcatScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val entries by logcatRepository.entries.collectAsState()
     val isStreaming by logcatRepository.isStreaming.collectAsState()
 
@@ -232,6 +237,68 @@ fun LogcatScreen(
                         contentDescription = "Copy Logs",
                         tint = TextMain,
                         modifier = Modifier.size(15.dp)
+                    )
+                }
+
+                // Save to File Export
+                IconButton(
+                    onClick = {
+                        scope.launch {
+                            val res = logcatRepository.exportLogs()
+                            res.fold(
+                                onSuccess = { path ->
+                                    Toast.makeText(context, "✓ Saved to $path", Toast.LENGTH_LONG).show()
+                                },
+                                onFailure = {
+                                    Toast.makeText(context, "Failed to export: ${it.message}", Toast.LENGTH_SHORT).show()
+                                }
+                            )
+                        }
+                    },
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(BgSurface)
+                ) {
+                    Icon(
+                        Icons.Default.Save,
+                        contentDescription = "Save to file",
+                        tint = AccentCyan,
+                        modifier = Modifier.size(15.dp)
+                    )
+                }
+            }
+        }
+
+        // Quick Preset Filter Chips
+        LazyRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            val presets = listOf(
+                "All" to "",
+                "Fatal & Crashes" to "fatal|crash|androidruntime",
+                "ANR Freezes" to "anr",
+                "System Server" to "system_server|activitymanager",
+                "App Errors" to "exception"
+            )
+            items(presets) { (label, query) ->
+                val isSelected = searchQuery.equals(query, ignoreCase = true) || (query.isEmpty() && searchQuery.isEmpty())
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(if (isSelected) SecondaryPurple.copy(alpha = 0.25f) else BgSurface)
+                        .border(1.dp, if (isSelected) SecondaryPurple else BorderGlass, RoundedCornerShape(8.dp))
+                        .clickable { searchQuery = query }
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = label,
+                        fontSize = 10.sp,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                        color = if (isSelected) SecondaryPurple else TextDim
                     )
                 }
             }
