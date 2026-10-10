@@ -105,13 +105,10 @@ public final class FdroidIndex {
     }
 
     private static HttpURLConnection open(String url) throws Exception {
-        HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
-        c.setConnectTimeout(20000);
-        c.setReadTimeout(60000);
-        c.setInstanceFollowRedirects(true);
-        c.setRequestProperty("User-Agent", "ADB-Application-Manager");
-        c.setRequestProperty("Accept", "application/json");
-        return c;
+        java.util.Map<String, String> hdr = new java.util.LinkedHashMap<String, String>();
+        hdr.put("User-Agent", "ADB-Application-Manager");
+        hdr.put("Accept", "application/json");
+        return HttpSafe.open(url, 20000, 60000, hdr);
     }
 
     /**

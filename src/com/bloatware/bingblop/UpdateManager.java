@@ -79,13 +79,11 @@ public final class UpdateManager {
     // ------------------------------------------------------------------------------------------
 
     public static byte[] httpGet(String url, String accept, int maxBytes) throws Exception {
-        HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+        java.util.Map<String, String> hdr = new java.util.LinkedHashMap<String, String>();
+        hdr.put("User-Agent", "ADB-Application-Manager");
+        if (accept != null) hdr.put("Accept", accept);
+        HttpURLConnection conn = HttpSafe.open(url, 15000, 30000, hdr);
         try {
-            conn.setConnectTimeout(15000);
-            conn.setReadTimeout(30000);
-            conn.setInstanceFollowRedirects(true);
-            conn.setRequestProperty("User-Agent", "ADB-Application-Manager");
-            if (accept != null) conn.setRequestProperty("Accept", accept);
             int code = conn.getResponseCode();
             if (code == 404) throw new IllegalStateException("not found (HTTP 404)");
             if (code != 200) throw new IllegalStateException("HTTP " + code);
@@ -109,13 +107,11 @@ public final class UpdateManager {
     private static final long MAX_DOWNLOAD_BYTES = 2L * 1024 * 1024 * 1024;
 
     public static void download(String url, File dest, Progress progress) throws Exception {
-        HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+        java.util.Map<String, String> hdr = new java.util.LinkedHashMap<String, String>();
+        hdr.put("User-Agent", "ADB-Application-Manager");
+        HttpURLConnection conn = HttpSafe.open(url, 15000, 60000, hdr);
         File tmp = new File(dest.getParentFile(), dest.getName() + ".part");
         try {
-            conn.setConnectTimeout(15000);
-            conn.setReadTimeout(60000);
-            conn.setInstanceFollowRedirects(true);
-            conn.setRequestProperty("User-Agent", "ADB-Application-Manager");
             int code = conn.getResponseCode();
             if (code != 200) throw new IllegalStateException("download failed: HTTP " + code);
             long total = conn.getContentLength();
@@ -280,13 +276,12 @@ public final class UpdateManager {
     }
 
     private static byte[] httpGetAuth(String url, String token) throws Exception {
-        HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+        java.util.Map<String, String> hdr = new java.util.LinkedHashMap<String, String>();
+        hdr.put("User-Agent", "ADB-Application-Manager");
+        hdr.put("Accept", "application/vnd.github+json");
+        if (token != null && !token.isEmpty()) hdr.put("Authorization", "Bearer " + token);
+        HttpURLConnection conn = HttpSafe.open(url, 15000, 30000, hdr);
         try {
-            conn.setConnectTimeout(15000);
-            conn.setReadTimeout(30000);
-            conn.setRequestProperty("User-Agent", "ADB-Application-Manager");
-            conn.setRequestProperty("Accept", "application/vnd.github+json");
-            if (token != null && !token.isEmpty()) conn.setRequestProperty("Authorization", "Bearer " + token);
             int code = conn.getResponseCode();
             if (code == 404) throw new IllegalStateException("no releases (HTTP 404)");
             if (code != 200) throw new IllegalStateException("HTTP " + code);
