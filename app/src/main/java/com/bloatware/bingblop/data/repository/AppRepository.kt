@@ -32,9 +32,12 @@ import com.bloatware.bingblop.data.model.DnsJitterResult
 import com.bloatware.bingblop.data.model.LiveProcessItem
 import com.bloatware.bingblop.data.model.ZramStats
 import com.bloatware.bingblop.data.model.AutomationProfile
+import com.bloatware.bingblop.util.ShellOutcome
+import com.bloatware.bingblop.util.ShellSafety
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -258,10 +261,14 @@ class AppRepository(private val context: Context) {
     }
 
     suspend fun toggleComponent(packageName: String, componentName: String, enable: Boolean): Result<String> = withContext(Dispatchers.IO) {
+        if (!ShellSafety.isValidPackageName(packageName) || !ShellSafety.isValidComponentName(componentName)) {
+            return@withContext Result.failure(IllegalArgumentException("Invalid package or component format"))
+        }
         val action = if (enable) "enable" else "disable"
-        val cmd = "pm $action $packageName/$componentName"
+        val cmd = "pm $action ${ShellSafety.quoteArg("$packageName/$componentName")}"
         val output = runShellCommand(cmd)
-        if (output.exitCode == 0 || output.stdout.contains("new state", ignoreCase = true)) {
+        val outcome = ShellSafety.parseShellOutcome(output.exitCode, output.stdout, output.stderr)
+        if (outcome is ShellOutcome.Success || output.stdout.contains("new state", ignoreCase = true)) {
             val simple = componentName.substringAfterLast('.')
             Result.success("Component ${if (enable) "enabled" else "disabled"}: $simple")
         } else {
@@ -287,12 +294,16 @@ class AppRepository(private val context: Context) {
     }
 
     suspend fun freezeApp(packageName: String): Result<String> = withContext(Dispatchers.IO) {
-        val cmd = "pm disable-user --user 0 $packageName"
+        if (!ShellSafety.isValidPackageName(packageName)) {
+            return@withContext Result.failure(IllegalArgumentException("Invalid package name format"))
+        }
+        val cmd = "pm disable-user --user 0 ${ShellSafety.quoteArg(packageName)}"
         val output = runShellCommand(cmd)
-        if (output.exitCode == 0 || output.stdout.contains("new state: disabled", ignoreCase = true)) {
+        val outcome = ShellSafety.parseShellOutcome(output.exitCode, output.stdout, output.stderr)
+        if (outcome is ShellOutcome.Success || output.stdout.contains("new state: disabled", ignoreCase = true)) {
             Result.success("Frozen: $packageName")
         } else {
-            val err = output.stderr.ifEmpty { output.stdout.ifEmpty { "Permission denied" } }
+            val err = (outcome as? ShellOutcome.Failure)?.message ?: output.stderr.ifEmpty { output.stdout.ifEmpty { "Permission denied" } }
             if (err.contains("Permission Denial", ignoreCase = true) || err.contains("SecurityException", ignoreCase = true)) {
                 Result.failure(Exception("Privileged access required: Grant ADB or Shizuku permission to freeze packages"))
             } else {
@@ -302,23 +313,32 @@ class AppRepository(private val context: Context) {
     }
 
     suspend fun unfreezeApp(packageName: String): Result<String> = withContext(Dispatchers.IO) {
-        val cmd = "pm enable $packageName"
+        if (!ShellSafety.isValidPackageName(packageName)) {
+            return@withContext Result.failure(IllegalArgumentException("Invalid package name format"))
+        }
+        val cmd = "pm enable ${ShellSafety.quoteArg(packageName)}"
         val output = runShellCommand(cmd)
-        if (output.exitCode == 0 || output.stdout.contains("new state: enabled", ignoreCase = true)) {
+        val outcome = ShellSafety.parseShellOutcome(output.exitCode, output.stdout, output.stderr)
+        if (outcome is ShellOutcome.Success || output.stdout.contains("new state: enabled", ignoreCase = true)) {
             Result.success("Unfrozen: $packageName")
         } else {
-            val err = output.stderr.ifEmpty { output.stdout.ifEmpty { "Permission denied" } }
+            val err = (outcome as? ShellOutcome.Failure)?.message ?: output.stderr.ifEmpty { output.stdout.ifEmpty { "Permission denied" } }
             Result.success("Result: $err")
         }
     }
 
     suspend fun uninstallApp(packageName: String, userZero: Boolean = true): Result<String> = withContext(Dispatchers.IO) {
-        val cmd = if (userZero) "pm uninstall --user 0 $packageName" else "pm uninstall $packageName"
+        if (!ShellSafety.isValidPackageName(packageName)) {
+            return@withContext Result.failure(IllegalArgumentException("Invalid package name format"))
+        }
+        val quotedPkg = ShellSafety.quoteArg(packageName)
+        val cmd = if (userZero) "pm uninstall --user 0 $quotedPkg" else "pm uninstall $quotedPkg"
         val output = runShellCommand(cmd)
-        if (output.exitCode == 0 || output.stdout.contains("Success", ignoreCase = true)) {
+        val outcome = ShellSafety.parseShellOutcome(output.exitCode, output.stdout, output.stderr)
+        if (outcome is ShellOutcome.Success || output.stdout.contains("Success", ignoreCase = true)) {
             Result.success("Uninstalled: $packageName")
         } else {
-            val err = output.stderr.ifEmpty { output.stdout }
+            val err = (outcome as? ShellOutcome.Failure)?.message ?: output.stderr.ifEmpty { output.stdout }
             if (err.contains("Permission Denial", ignoreCase = true)) {
                 Result.failure(Exception("Privileged access required: Root, Shizuku, or ADB connection needed to uninstall system apps"))
             } else {
@@ -328,19 +348,28 @@ class AppRepository(private val context: Context) {
     }
 
     suspend fun reinstallApp(packageName: String): Result<String> = withContext(Dispatchers.IO) {
-        val cmd = "cmd package install-existing $packageName"
+        if (!ShellSafety.isValidPackageName(packageName)) {
+            return@withContext Result.failure(IllegalArgumentException("Invalid package name format"))
+        }
+        val cmd = "cmd package install-existing ${ShellSafety.quoteArg(packageName)}"
         val output = runShellCommand(cmd)
         Result.success("Restored: $packageName (${output.stdout.ifEmpty { output.stderr.ifEmpty { "Done" } }})")
     }
 
     suspend fun clearAppData(packageName: String): Result<String> = withContext(Dispatchers.IO) {
-        val cmd = "pm clear $packageName"
+        if (!ShellSafety.isValidPackageName(packageName)) {
+            return@withContext Result.failure(IllegalArgumentException("Invalid package name format"))
+        }
+        val cmd = "pm clear ${ShellSafety.quoteArg(packageName)}"
         val output = runShellCommand(cmd)
         Result.success("Cleared: ${output.stdout.ifEmpty { output.stderr.ifEmpty { "Done" } }}")
     }
 
     suspend fun forceStopApp(packageName: String): Result<String> = withContext(Dispatchers.IO) {
-        val cmd = "am force-stop $packageName"
+        if (!ShellSafety.isValidPackageName(packageName)) {
+            return@withContext Result.failure(IllegalArgumentException("Invalid package name format"))
+        }
+        val cmd = "am force-stop ${ShellSafety.quoteArg(packageName)}"
         val output = runShellCommand(cmd)
         Result.success("Force stopped: $packageName (${output.stdout.ifEmpty { "Success" }})")
     }
@@ -513,7 +542,11 @@ class AppRepository(private val context: Context) {
     }
 
     suspend fun extractApk(packageName: String): Result<String> = withContext(Dispatchers.IO) {
-        val pathRes = runShellCommand("pm path $packageName")
+        if (!ShellSafety.isValidPackageName(packageName)) {
+            return@withContext Result.failure(IllegalArgumentException("Invalid package name: $packageName"))
+        }
+        val quotedPkg = ShellSafety.quoteArg(packageName)
+        val pathRes = runShellCommand("pm path $quotedPkg")
         val rawPaths = pathRes.stdout.lines().filter { it.startsWith("package:") }.map { it.removePrefix("package:").trim() }
         if (rawPaths.isEmpty()) {
             return@withContext Result.failure(Exception("Cannot resolve APK path for $packageName"))
@@ -522,8 +555,10 @@ class AppRepository(private val context: Context) {
         runShellCommand("mkdir -p $targetDir")
         val baseApk = rawPaths.first()
         val destFile = "$targetDir/${packageName}_base.apk"
-        val copyRes = runShellCommand("cp $baseApk $destFile || cat $baseApk > $destFile")
-        if (copyRes.exitCode == 0 || runShellCommand("ls $destFile").stdout.contains(destFile)) {
+        val qBase = ShellSafety.quoteArg(baseApk)
+        val qDest = ShellSafety.quoteArg(destFile)
+        val copyRes = runShellCommand("cp $qBase $qDest || cat $qBase > $qDest")
+        if (copyRes.exitCode == 0 || runShellCommand("ls $qDest").stdout.contains(destFile)) {
             Result.success(destFile)
         } else {
             Result.success(baseApk)
@@ -701,12 +736,12 @@ class AppRepository(private val context: Context) {
     }
 
     suspend fun pingDnsHostOrIp(target: String, timeoutMs: Int = 1500): Long? = withContext(Dispatchers.IO) {
-        if (target.isBlank()) return@withContext null
+        if (target.isBlank() || !ShellSafety.isValidHostnameOrIp(target)) return@withContext null
 
         // 1. First attempt: Shell ICMP ping (fastest and most accurate for network latency)
         try {
-            val pingCmd = "ping -c 1 -W 1 $target"
-            val res = runShellCommand(pingCmd)
+            val pingCmd = "ping -c 1 -W 1 ${ShellSafety.quoteArg(target)}"
+            val res = runShellCommand(pingCmd, timeoutMs = 2500L)
             if (res.exitCode == 0 && res.stdout.contains("time=")) {
                 val timeStr = res.stdout.substringAfter("time=").substringBefore("ms").trim()
                 val latency = timeStr.toDoubleOrNull()?.roundToLong()
@@ -910,16 +945,23 @@ class AppRepository(private val context: Context) {
     }
 
     suspend fun extractAllSplits(packageName: String): Result<String> = withContext(Dispatchers.IO) {
-        val pathRes = runShellCommand("pm path $packageName")
+        if (!ShellSafety.isValidPackageName(packageName)) {
+            return@withContext Result.failure(IllegalArgumentException("Invalid package name: $packageName"))
+        }
+        val quotedPkg = ShellSafety.quoteArg(packageName)
+        val pathRes = runShellCommand("pm path $quotedPkg")
         val paths = pathRes.stdout.lines().filter { it.startsWith("package:") }.map { it.removePrefix("package:").trim() }
         if (paths.isEmpty()) {
             return@withContext Result.failure(Exception("No paths found for $packageName"))
         }
         val targetDir = "/sdcard/Download/ADBManager/$packageName"
-        runShellCommand("mkdir -p $targetDir")
+        runShellCommand("mkdir -p ${ShellSafety.quoteArg(targetDir)}")
         paths.forEach { apkPath ->
             val fileName = File(apkPath).name
-            runShellCommand("cp $apkPath $targetDir/$fileName || cat $apkPath > $targetDir/$fileName")
+            val destPath = "$targetDir/$fileName"
+            val qSrc = ShellSafety.quoteArg(apkPath)
+            val qDst = ShellSafety.quoteArg(destPath)
+            runShellCommand("cp $qSrc $qDst || cat $qSrc > $qDst")
         }
         Result.success("$targetDir/ (${paths.size} APK splits)")
     }
@@ -1213,18 +1255,41 @@ class AppRepository(private val context: Context) {
     }
 
     suspend fun killProcess(pid: Int): Result<String> = withContext(Dispatchers.IO) {
-        runShellCommand("kill -9 $pid")
-        Result.success("Sent SIGKILL to PID $pid")
+        if (pid <= 0) return@withContext Result.failure(IllegalArgumentException("Invalid PID: $pid"))
+        val out = runShellCommand("kill -9 $pid")
+        val outcome = ShellSafety.parseShellOutcome(out.exitCode, out.stdout, out.stderr)
+        if (outcome is ShellOutcome.Success) {
+            Result.success("Sent SIGKILL to PID $pid")
+        } else {
+            Result.failure(Exception((outcome as ShellOutcome.Failure).message))
+        }
     }
 
     suspend fun killApp(packageName: String): Result<String> = withContext(Dispatchers.IO) {
-        runShellCommand("am kill $packageName")
-        Result.success("Killed background processes for $packageName")
+        if (!ShellSafety.isValidPackageName(packageName)) {
+            return@withContext Result.failure(IllegalArgumentException("Invalid package name: $packageName"))
+        }
+        val out = runShellCommand("am kill ${ShellSafety.quoteArg(packageName)}")
+        val outcome = ShellSafety.parseShellOutcome(out.exitCode, out.stdout, out.stderr)
+        if (outcome is ShellOutcome.Success) {
+            Result.success("Killed background processes for $packageName")
+        } else {
+            Result.failure(Exception((outcome as ShellOutcome.Failure).message))
+        }
     }
 
     suspend fun trimAppMemory(packageName: String, level: String = "RUNNING_CRITICAL"): Result<String> = withContext(Dispatchers.IO) {
-        runShellCommand("am trim-memory $packageName $level")
-        Result.success("Trimmed memory ($level) for $packageName")
+        if (!ShellSafety.isValidPackageName(packageName)) {
+            return@withContext Result.failure(IllegalArgumentException("Invalid package name: $packageName"))
+        }
+        val safeLevel = if (level.matches(Regex("^[A-Z_]+$"))) level else "RUNNING_CRITICAL"
+        val out = runShellCommand("am trim-memory ${ShellSafety.quoteArg(packageName)} $safeLevel")
+        val outcome = ShellSafety.parseShellOutcome(out.exitCode, out.stdout, out.stderr)
+        if (outcome is ShellOutcome.Success) {
+            Result.success("Trimmed memory ($safeLevel) for $packageName")
+        } else {
+            Result.failure(Exception((outcome as ShellOutcome.Failure).message))
+        }
     }
 
     suspend fun getZramStats(): ZramStats = withContext(Dispatchers.IO) {
@@ -1323,20 +1388,26 @@ class AppRepository(private val context: Context) {
     }
 
 
-    private suspend fun runShellCommand(cmd: String): CommandResult = withContext(Dispatchers.IO) {
+    private suspend fun runShellCommand(cmd: String, timeoutMs: Long = 15_000L): CommandResult = withContext(Dispatchers.IO) {
         var process: Process? = null
         try {
-            process = Runtime.getRuntime().exec(arrayOf("sh", "-c", cmd))
-            val stdoutDef = async(Dispatchers.IO) { process.inputStream.bufferedReader().use { it.readText() }.trim() }
-            val stderrDef = async(Dispatchers.IO) { process.errorStream.bufferedReader().use { it.readText() }.trim() }
-            val stdout = stdoutDef.await()
-            val stderr = stderrDef.await()
-            val exit = process.waitFor()
-            CommandResult(exit, stdout, stderr)
+            val res = withTimeoutOrNull(timeoutMs) {
+                val proc = Runtime.getRuntime().exec(arrayOf("sh", "-c", cmd))
+                process = proc
+                val stdoutDef = async(Dispatchers.IO) { proc.inputStream.bufferedReader().use { it.readText() }.trim() }
+                val stderrDef = async(Dispatchers.IO) { proc.errorStream.bufferedReader().use { it.readText() }.trim() }
+                val stdout = stdoutDef.await()
+                val stderr = stderrDef.await()
+                val exit = proc.waitFor()
+                CommandResult(exit, stdout, stderr)
+            }
+            res ?: CommandResult(-1, "", "[Process timed out after ${timeoutMs}ms]")
         } catch (e: Exception) {
             CommandResult(-1, "", e.localizedMessage ?: "Execution failed")
         } finally {
-            process?.destroy()
+            try {
+                process?.destroy()
+            } catch (_: Exception) {}
         }
     }
 

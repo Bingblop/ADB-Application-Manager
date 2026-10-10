@@ -46,4 +46,11 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if (::logcatRepository.isInitialized) {
+            logcatRepository.destroy()
+        }
+    }
 }

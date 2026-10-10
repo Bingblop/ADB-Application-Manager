@@ -140,8 +140,18 @@ class CleanerRepository(private val context: Context) {
         return total
     }
 
+    private fun isSafeToDelete(dir: File): Boolean {
+        val path = dir.normalize().absolutePath
+        val allowed = listOfNotNull(
+            context.cacheDir.normalize().absolutePath,
+            context.codeCacheDir.normalize().absolutePath,
+            context.externalCacheDir?.normalize()?.absolutePath
+        )
+        return allowed.any { path == it || path.startsWith("$it/") }
+    }
+
     private fun clearDirectory(dir: File?): Boolean {
-        if (dir == null || !dir.exists()) return false
+        if (dir == null || !dir.exists() || !isSafeToDelete(dir)) return false
         var success = true
         try {
             val children = dir.listFiles() ?: return false

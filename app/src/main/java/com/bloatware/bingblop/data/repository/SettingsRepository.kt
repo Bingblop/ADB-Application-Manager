@@ -5,6 +5,8 @@ import android.content.Context
 import android.provider.Settings
 import com.bloatware.bingblop.data.model.SettingNamespace
 import com.bloatware.bingblop.data.model.SystemSettingItem
+import com.bloatware.bingblop.util.ShellOutcome
+import com.bloatware.bingblop.util.ShellSafety
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
@@ -152,9 +154,14 @@ class SettingsRepository(private val context: Context) {
         item: SystemSettingItem,
         newValue: String
     ): Result<String> = withContext(Dispatchers.IO) {
+        if (!ShellSafety.isValidSettingKey(item.key)) {
+            return@withContext Result.failure(IllegalArgumentException("Invalid setting key: ${item.key}"))
+        }
         val previousVal = item.currentValue
         val nsStr = item.namespace.name.lowercase()
-        val cmd = "settings put $nsStr ${item.key} $newValue"
+        val quotedKey = ShellSafety.quoteArg(item.key)
+        val quotedVal = ShellSafety.quoteArg(newValue)
+        val cmd = "settings put $nsStr $quotedKey $quotedVal"
         val res = runShellWrite(cmd)
         if (res.isSuccess) {
             undoHistory.add(Pair(item, previousVal))
@@ -169,8 +176,13 @@ class SettingsRepository(private val context: Context) {
             return@withContext Result.failure(Exception("No changes in undo stack"))
         }
         val (item, oldValue) = undoHistory.removeAt(undoHistory.lastIndex)
+        if (!ShellSafety.isValidSettingKey(item.key)) {
+            return@withContext Result.failure(IllegalArgumentException("Invalid setting key in undo stack"))
+        }
         val nsStr = item.namespace.name.lowercase()
-        val cmd = "settings put $nsStr ${item.key} $oldValue"
+        val quotedKey = ShellSafety.quoteArg(item.key)
+        val quotedVal = ShellSafety.quoteArg(oldValue)
+        val cmd = "settings put $nsStr $quotedKey $quotedVal"
         val res = runShellWrite(cmd)
         if (res.isSuccess) {
             Result.success("Reverted ${item.key} to $oldValue")
@@ -200,12 +212,16 @@ class SettingsRepository(private val context: Context) {
         try {
             process = Runtime.getRuntime().exec(arrayOf("sh", "-c", cmd))
             val stderrDef = async(Dispatchers.IO) { process.errorStream.bufferedReader().use { it.readText() }.trim() }
+            val stdoutDef = async(Dispatchers.IO) { process.inputStream.bufferedReader().use { it.readText() }.trim() }
             val stderr = stderrDef.await()
+            val stdout = stdoutDef.await()
             val exitCode = process.waitFor()
-            if (exitCode == 0) {
+            val outcome = ShellSafety.parseShellOutcome(exitCode, stdout, stderr)
+            if (outcome is ShellOutcome.Success) {
                 Result.success(Unit)
             } else {
-                Result.failure(Exception(stderr.ifEmpty { "Command failed with exit code $exitCode" }))
+                val err = (outcome as ShellOutcome.Failure).message
+                Result.failure(Exception(err.ifEmpty { "Command failed with exit code $exitCode" }))
             }
         } catch (e: Exception) {
             Result.failure(e)

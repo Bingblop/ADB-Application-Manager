@@ -5,6 +5,7 @@ import com.bloatware.bingblop.data.model.ShellMode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import java.util.UUID
 
 enum class PowerAction(
@@ -42,17 +43,23 @@ class ShellRepository {
         var process: Process? = null
 
         try {
-            process = Runtime.getRuntime().exec(arrayOf("sh", "-c", trimmed))
-            val stdoutDef = async(Dispatchers.IO) {
-                process.inputStream.bufferedReader().use { it.readText() }.trim()
-            }
-            val stderrDef = async(Dispatchers.IO) {
-                process.errorStream.bufferedReader().use { it.readText() }.trim()
+            val executionResult = withTimeoutOrNull(20_000L) {
+                val proc = Runtime.getRuntime().exec(arrayOf("sh", "-c", trimmed))
+                process = proc
+                val stdoutDef = async(Dispatchers.IO) {
+                    proc.inputStream.bufferedReader().use { it.readText() }.trim()
+                }
+                val stderrDef = async(Dispatchers.IO) {
+                    proc.errorStream.bufferedReader().use { it.readText() }.trim()
+                }
+
+                val stdout = stdoutDef.await()
+                val stderr = stderrDef.await()
+                val exitCode = proc.waitFor()
+                Triple(exitCode, stdout, stderr)
             }
 
-            val stdout = stdoutDef.await()
-            val stderr = stderrDef.await()
-            val exitCode = process.waitFor()
+            val (exitCode, stdout, stderr) = executionResult ?: Triple(-1, "", "[Process timed out after 20s]")
 
             val combinedOutput = when {
                 stdout.isNotEmpty() && stderr.isNotEmpty() -> "$stdout\n\n[STDERR]:\n$stderr"
@@ -83,7 +90,9 @@ class ShellRepository {
             commandHistory.add(0, result)
             result
         } finally {
-            process?.destroy()
+            try {
+                process?.destroy()
+            } catch (_: Exception) {}
         }
     }
 

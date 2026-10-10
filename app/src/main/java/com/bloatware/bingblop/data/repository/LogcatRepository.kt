@@ -5,6 +5,7 @@ import com.bloatware.bingblop.data.model.LogcatLevel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -109,6 +110,14 @@ class LogcatRepository {
         process = null
     }
 
+    @Synchronized
+    fun destroy() {
+        pauseStreaming()
+        try {
+            scope.cancel()
+        } catch (_: Exception) {}
+    }
+
     fun toggleStreaming() {
         if (_isStreaming.value) {
             pauseStreaming()
@@ -194,7 +203,12 @@ class LogcatRepository {
             targetDir.mkdirs()
             val file = java.io.File(targetDir, "logcat_${System.currentTimeMillis()}.txt")
             val lines = synchronized(buffer) { buffer.map { it.raw } }
-            file.writeText(lines.joinToString("\n"))
+            file.bufferedWriter().use { writer ->
+                lines.forEach { line ->
+                    writer.write(line)
+                    writer.newLine()
+                }
+            }
             Result.success(file.absolutePath)
         } catch (e: Exception) {
             Result.failure(e)
