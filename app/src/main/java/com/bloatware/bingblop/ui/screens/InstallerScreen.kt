@@ -54,6 +54,7 @@ import com.bloatware.bingblop.data.model.ApkInspectorInfo
 import com.bloatware.bingblop.data.model.DexOptMode
 import com.bloatware.bingblop.ui.components.CyberCard
 import com.bloatware.bingblop.ui.components.StatusPill
+import com.bloatware.bingblop.util.InstallGuards
 import com.bloatware.bingblop.ui.theme.AccentCyan
 import com.bloatware.bingblop.ui.theme.BgBase
 import com.bloatware.bingblop.ui.theme.BgCard
@@ -62,6 +63,7 @@ import com.bloatware.bingblop.ui.theme.BorderGlass
 import com.bloatware.bingblop.ui.theme.CleanGreen
 import com.bloatware.bingblop.ui.theme.SecondaryPurple
 import com.bloatware.bingblop.ui.theme.StatusRunning
+import com.bloatware.bingblop.ui.theme.DangerRed
 import com.bloatware.bingblop.ui.theme.TextDim
 import com.bloatware.bingblop.ui.theme.TextMain
 import com.bloatware.bingblop.ui.theme.TextMuted
@@ -269,8 +271,18 @@ fun InstallerScreen(modifier: Modifier = Modifier) {
         }
 
         item {
+            var isSecurityFailure by remember { mutableStateOf(false) }
+
             Button(
                 onClick = {
+                    val guardResult = InstallGuards.verifyPackageIdentity(selectedSampleApk.packageName)
+                    if (guardResult is InstallGuards.GuardResult.Rejected) {
+                        isSecurityFailure = true
+                        installStatusMessage = "INSTALL BLOCKED BY SECURITY GUARD: ${guardResult.reason}"
+                        Toast.makeText(context, "Install blocked: invalid package identity", Toast.LENGTH_LONG).show()
+                        return@Button
+                    }
+                    isSecurityFailure = false
                     val flags = buildString {
                         if (flagGrantPermissions) append("-g ")
                         if (flagAllowTestApk) append("-t ")
@@ -293,8 +305,16 @@ fun InstallerScreen(modifier: Modifier = Modifier) {
 
             installStatusMessage?.let { status ->
                 Spacer(modifier = Modifier.height(8.dp))
-                CyberCard(modifier = Modifier.fillMaxWidth(), borderColor = CleanGreen) {
-                    Text(status, color = CleanGreen, fontSize = 11.sp, fontFamily = FontFamily.Monospace)
+                CyberCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    borderColor = if (isSecurityFailure) DangerRed else CleanGreen
+                ) {
+                    Text(
+                        status,
+                        color = if (isSecurityFailure) DangerRed else CleanGreen,
+                        fontSize = 11.sp,
+                        fontFamily = FontFamily.Monospace
+                    )
                 }
             }
 
