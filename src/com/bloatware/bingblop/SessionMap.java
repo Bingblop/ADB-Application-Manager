@@ -20,6 +20,8 @@ final class SessionMap<T> {
     private final Map<String, Long> tickets = new HashMap<String, Long>();
     /** Sessions that were replaced by a newer one: their late end is never told to the page, even after the replacement is gone too. */
     private final java.util.Set<T> superseded = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<T, Boolean>());
+    /** How many sessions were stored under each id so far: a notice about an older session is stale once this has moved. */
+    private final Map<String, Long> generations = new HashMap<String, Long>();
     private long last;
     private boolean closed;
 
@@ -49,6 +51,8 @@ final class SessionMap<T> {
         Long cur = tickets.get(id);
         if (cur == null || cur.longValue() != ticket) return false;
         T prev = map.put(id, session);
+        Long g = generations.get(id);
+        generations.put(id, g == null ? 1L : g.longValue() + 1);
         if (prev != null && prev != session) { replaced.add(prev); superseded.add(prev); }
         return true;
     }
@@ -66,12 +70,30 @@ final class SessionMap<T> {
      * holds the id.
      */
     synchronized boolean ended(String id, T session) {
-        if (session != null && superseded.remove(session)) return false;
+        return endedAt(id, session) >= 0;
+    }
+
+    /**
+     * Like {@link #ended}, but returns -1 when the page should not be told, otherwise the {@link #generation} of the id at the moment of the decision.
+     * The page is told later (on the UI thread); a start that is stored in between moves the generation, and the notice is then dropped
+     * (otherwise the page would see "started B" followed by "A ended" and take B for ended).
+     */
+    synchronized long endedAt(String id, T session) {
+        if (session != null && superseded.remove(session)) return -1;
+        boolean tell;
         if (map.get(id) == session && session != null) {
             map.remove(id);
-            return true;
+            tell = true;
+        } else {
+            tell = !map.containsKey(id);
         }
-        return !map.containsKey(id);
+        return tell ? generation(id) : -1;
+    }
+
+    /** The number of sessions stored under {@code id} so far (0 when none). */
+    synchronized long generation(String id) {
+        Long g = generations.get(id);
+        return g == null ? 0 : g.longValue();
     }
 
     /** Shuts the map: returns what was in it, and every later {@link #publish} is refused. */

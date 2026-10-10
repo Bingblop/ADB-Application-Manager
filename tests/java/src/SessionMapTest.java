@@ -73,6 +73,21 @@ public class SessionMapTest {
     is("B2's own end after its close is told (the page waits for it)", m.ended("sup2", "B2"));
     is("a session closed on purpose without being replaced still tells its end once", (start(m, "sup3", "C3") != null) && "C3".equals(m.remove("sup3")) && m.ended("sup3", "C3"));
 
+    // an end that is told on the UI thread later: a start stored in between makes the notice stale (A ended, then B started, then "A ended" arrives)
+    start(m, "gen", "GA");
+    long gAt = m.endedAt("gen", "GA");
+    is("an end that is told carries the id's generation", gAt == m.generation("gen") && gAt >= 1);
+    is("with nothing started since, the notice is still current", m.generation("gen") == gAt);
+    start(m, "gen", "GB");
+    is("a start stored after the decision makes the notice stale", m.generation("gen") != gAt);
+    start(m, "gen2", "G2A"); start(m, "gen2", "G2B");
+    is("an end that is not told has no generation", m.endedAt("gen2", "G2A") == -1);
+    long own = m.endedAt("gen2", "G2B");
+    is("the stored session's end is told with the current generation", own == m.generation("gen2"));
+    is("a close does not move the generation (the page still waits for the end)", (start(m, "gen3", "G3") != null) && "G3".equals(m.remove("gen3")) && m.endedAt("gen3", "G3") == m.generation("gen3"));
+    is("an unknown id has generation 0", m.generation("never") == 0);
+    m.remove("gen");
+
     // shutdown: drained sessions are returned once, and nothing can be published afterwards
     long tl = m.ticket("late");
     List<String> all = m.drain();

@@ -1629,9 +1629,11 @@ public class MainActivity extends Activity {
     }
 
     /** A terminal session ended: drop it (unless the id already belongs to a newer one) and tell the page when it still waits for this end. */
-    private void ptyEnded(String key, PtyShell sh, int code) {
-        if (ptySessions.ended(key, sh)) {
-            notifyJs("window.onPtyExit&&window.onPtyExit(" + JSONObject.quote(key) + "," + code + ")");
+    private void ptyEnded(final String key, PtyShell sh, int code) {
+        final long gen = ptySessions.endedAt(key, sh);
+        if (gen >= 0) {
+            // told on the UI thread only while no newer session has been stored under the id since this decision
+            notifyJsIf("window.onPtyExit&&window.onPtyExit(" + JSONObject.quote(key) + "," + code + ")", new Live() { public boolean now() { return ptySessions.generation(key) == gen; } });
         }
     }
 
@@ -8251,7 +8253,8 @@ public class MainActivity extends Activity {
                                     res.put("ok", false);
                                     res.put("message", errMsg(t));
                                 } catch (Exception ignored) {}
-                                notifyJs("window.onPtyStarted&&window.onPtyStarted(" + JSONObject.quote(key) + "," + res + ")");
+                                // still only if no newer start was requested by the time this runs on the UI thread
+                                notifyJsIf("window.onPtyStarted&&window.onPtyStarted(" + JSONObject.quote(key) + "," + res + ")", new Live() { public boolean now() { return ptySessions.isCurrent(key, ticket); } });
                             }
                         }
                     }
