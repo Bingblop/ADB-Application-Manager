@@ -57,15 +57,46 @@ function extractBlocks(text) {
 // A trailing backslash continues the line only when the run of them is odd (an even run ends in an escaped backslash).
 const continues = s => (/\\+$/.exec(s) || [''])[0].length % 2 === 1;
 
+// The here-document delimiters a command line declares (a quoted delimiter counts; <<< is a here-string, not a here-document).
+function heredocsIn(cmd) {
+  const found = [];
+  const re = /<<(-?)\s*(?:'([^']+)'|"([^"]+)"|\\?([^\s;&|<>()'"]+))/g;
+  let m;
+  while ((m = re.exec(cmd))) {
+    if (cmd[m.index - 1] === '<' || cmd[m.index + 2] === '<') continue;
+    found.push({ word: m[2] || m[3] || m[4], dash: m[1] === '-' });
+  }
+  return found;
+}
+
 function shellLines(block) {
   const all = block.lines.map((text, k) => ({ text, line: block.startLine + 1 + k }));
   if (!all.some(l => /^\s*\$(?: |$)/.test(l.text))) return all;   // a bare "$" is a prompt too
   const out = [];
   let continued = false;
+  let waiting = [];   // here-documents declared by the command being read
+  let active = [];    // here-documents whose body (and terminator) is being read: those lines are input, not output, and are kept
+  const endOfCommand = () => { if (!continued && waiting.length) { active = waiting; waiting = []; } };
   for (const l of all) {
+    if (active.length) {
+      out.push(l);
+      const h = active[0];
+      if ((h.dash ? l.text.replace(/^\t+/, '') : l.text) === h.word) active.shift();
+      continue;
+    }
     const m = /^\s*\$(?: (.*))?$/.exec(l.text);      // the prompt is "$ " (or a bare "$"); "$name" is output
-    if (m) { const cmd = m[1] || ''; out.push({ text: cmd, line: l.line }); continued = continues(cmd); }
-    else if (continued) { out.push(l); continued = continues(l.text); }
+    if (m) {
+      const cmd = m[1] || '';
+      out.push({ text: cmd, line: l.line });
+      continued = continues(cmd);
+      waiting = waiting.concat(heredocsIn(cmd));
+      endOfCommand();
+    } else if (continued) {
+      out.push(l);
+      continued = continues(l.text);
+      waiting = waiting.concat(heredocsIn(l.text));
+      endOfCommand();
+    }
   }
   return out;
 }
@@ -114,7 +145,8 @@ function findPlaceholders(lines) {
 function checkBlock(block, bash) {
   const lines = shellLines(block);
   const problems = [];
-  const r = spawnSync(bash || 'bash', ['-n'], { input: lines.map(l => l.text).join('\n') + '\n', encoding: 'utf8' });
+  // a fixed language, so that the diagnostic can be read whatever the caller's locale is
+  const r = spawnSync(bash || 'bash', ['-n'], { input: lines.map(l => l.text).join('\n') + '\n', encoding: 'utf8', env: Object.assign({}, process.env, { LC_ALL: 'C', LANG: 'C', LANGUAGE: 'C' }) });
   if (r.error) throw r.error;
   if (r.status !== 0) {
     const e = (r.stderr || '').split('\n').filter(Boolean)[0] || 'syntax error'; // the first message; the rest only echo the line
@@ -181,9 +213,12 @@ function selfTest() {
     '```bash', 'cat <<EOF |', '  grep <pattern> out.txt', '<html>', 'EOF', 'echo done', '```', '',
     '```bash', 'cat <<EOF && echo ok', '<html>', 'EOF', '```', '',
     '```bash', 'cat <<EOF || \\', '  true', '<html>', 'EOF', '```', '',
+    '```sh', '$ cat <<EOF', '<html>', 'EOF', '$ adb shell pm path <package> out.txt', '```', '',
+    '```sh', '$ cat <<EOF', 'text', 'EOF', '$ if true; then', '```', '',
+    '```sh', '$ cat <<EOF', '<html>', 'EOF', '$ echo done', 'done', '```', '',
   ].join('\n');
   const got = checkText(fx).map(r => r.state + '@' + r.block.startLine + (r.problems.length ? ':' + [...new Set(r.problems.map(p => p.line))].join(',') : ''));
-  const want = ['ok@3', 'ok@9', 'FAIL@16:17', 'skipped@22', 'FAIL@26:27', 'FAIL@34:34', 'ok@42', 'FAIL@47:49', 'ok@52', 'FAIL@57:59', 'ok@62', 'ok@67', 'FAIL@72:76', 'FAIL@79:81', 'FAIL@84:85', 'FAIL@90:91', 'ok@94', 'ok@99', 'ok@104', 'ok@112', 'ok@119', 'ok@127', 'FAIL@138:140', 'FAIL@146:147', 'FAIL@152:154', 'ok@160', 'ok@166'];
+  const want = ['ok@3', 'ok@9', 'FAIL@16:17', 'skipped@22', 'FAIL@26:27', 'FAIL@34:34', 'ok@42', 'FAIL@47:49', 'ok@52', 'FAIL@57:59', 'ok@62', 'ok@67', 'FAIL@72:76', 'FAIL@79:81', 'FAIL@84:85', 'FAIL@90:91', 'ok@94', 'ok@99', 'ok@104', 'ok@112', 'ok@119', 'ok@127', 'FAIL@138:140', 'FAIL@146:147', 'FAIL@152:154', 'ok@160', 'ok@166', 'FAIL@173:177', 'FAIL@180:180', 'ok@187'];
   const ok = JSON.stringify(got) === JSON.stringify(want);
   console.log(ok ? 'self-test: ok (' + got.length + ' blocks judged as expected)' : 'self-test: FAIL\n  got:  ' + got.join(' ') + '\n  want: ' + want.join(' '));
   return ok;
