@@ -79,7 +79,7 @@ function heredocWord(text, at) {
     if (c === '\\') { i++; if (i < text.length) word += text[i]; i++; continue; }
     word += c; i++;
   }
-  return i > start && word ? { word, dash, end: Math.min(i, text.length) } : null;
+  return i > start ? { word, dash, end: Math.min(i, text.length) } : null;      // the word may be empty after quote removal (<<'' ends at an empty line)
 }
 
 // One line of shell, read with the quotes, comments and arithmetic of the line (and of the lines before it, in st = { quote, arith }) in mind.
@@ -276,6 +276,8 @@ function selfTest() {
     '```bash', 'cat <<EO\\F', '<a>', 'EOF', 'adb shell pm path <package> out.txt', '```', '',
     '```sh', '$ cat <<EOF |&', '<a>', 'EOF', '  cat', '$ adb shell pm path <package> out.txt', '```', '',
     '```bash', 'cat <<EOF |&', '<a>', 'EOF', '  grep <pattern> out.txt', '```', '',
+    "```bash", "cat <<''", '<html>', '', 'adb shell pm path <package> out.txt', '```', '',
+    "```bash", 'cat <<""', '<html>', '', 'echo done', '```', '',
     '```sh', '$ cat <<EOF |&', '<a>', 'EOF', '  grep <pattern> out.txt', '```', '',
     '```sh', '$ echo hi |&', '  grep <pattern> out.txt', '```', '',
     "```bash", "cat <<'EOF'", '$ literal', 'EOF', 'APP=<package>', '```', '',
@@ -284,7 +286,7 @@ function selfTest() {
     '```sh', '$ cat <<\'EOF\'', '<html>', 'EOF', '$ echo done', 'done', '```', '',
   ].join('\n');
   const got = checkText(fx).map(r => r.state + '@' + r.block.startLine + (r.problems.length ? ':' + [...new Set(r.problems.map(p => p.line))].join(',') : ''));
-  const want = ['ok@3', 'ok@9', 'FAIL@16:17', 'skipped@22', 'FAIL@26:27', 'FAIL@34:34', 'ok@42', 'FAIL@47:49', 'ok@52', 'FAIL@57:59', 'ok@62', 'ok@67', 'FAIL@72:76', 'FAIL@79:81', 'FAIL@84:85', 'FAIL@90:91', 'ok@94', 'ok@99', 'ok@104', 'ok@112', 'ok@119', 'ok@127', 'FAIL@138:140', 'FAIL@146:147', 'FAIL@152:156', 'FAIL@159:159', 'ok@166', 'ok@172', 'FAIL@179:183', 'FAIL@186:186', 'ok@193', 'FAIL@201:204', 'FAIL@207:210', 'FAIL@213:216', 'FAIL@219:221', 'FAIL@224:227', 'FAIL@230:231', 'FAIL@236:240', 'FAIL@243:247', 'FAIL@250:254', 'FAIL@257:262', 'FAIL@265:269', 'FAIL@272:276', 'FAIL@279:281', 'FAIL@284:288', 'FAIL@291:294', 'ok@297', 'ok@304'];
+  const want = ['ok@3', 'ok@9', 'FAIL@16:17', 'skipped@22', 'FAIL@26:27', 'FAIL@34:34', 'ok@42', 'FAIL@47:49', 'ok@52', 'FAIL@57:59', 'ok@62', 'ok@67', 'FAIL@72:76', 'FAIL@79:81', 'FAIL@84:85', 'FAIL@90:91', 'ok@94', 'ok@99', 'ok@104', 'ok@112', 'ok@119', 'ok@127', 'FAIL@138:140', 'FAIL@146:147', 'FAIL@152:156', 'FAIL@159:159', 'ok@166', 'ok@172', 'FAIL@179:183', 'FAIL@186:186', 'ok@193', 'FAIL@201:204', 'FAIL@207:210', 'FAIL@213:216', 'FAIL@219:221', 'FAIL@224:227', 'FAIL@230:231', 'FAIL@236:240', 'FAIL@243:247', 'FAIL@250:254', 'FAIL@257:262', 'FAIL@265:269', 'FAIL@272:276', 'ok@279', 'FAIL@286:290', 'FAIL@293:295', 'FAIL@298:302', 'FAIL@305:308', 'ok@311', 'ok@318'];
   const ok = JSON.stringify(got) === JSON.stringify(want);
   console.log(ok ? 'self-test: ok (' + got.length + ' blocks judged as expected)' : 'self-test: FAIL\n  got:  ' + got.join(' ') + '\n  want: ' + want.join(' '));
   return ok;
