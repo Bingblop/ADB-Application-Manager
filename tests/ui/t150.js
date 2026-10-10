@@ -179,7 +179,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   const rs3 = await ev(() => ({ busy: us.busy }));
   await ev(() => usGet(0)); await sleep(150);
   const rs4 = await ev(() => ({ gets: window.__calls.filter(c => c[0] === 'helperGet').length }));
-  await sleep(700);
+  await waitIdle();   // the retry above is slowed too: section 18 must not start while it still owns the lock
   check('17d. Reset does not free the lock of a download that is still running: a new Download is refused with a message until the old one ends, and then works', rs.busy && rs.cleared && rs2.gets === 1 && rs2.busy && /Still finishing/.test(rs2.st) && !rs3.busy && rs4.gets === 2, JSON.stringify({ rs, rs2, rs3, rs4 }));
   await ev(() => { window.__vtDelay = 0; document.getElementById('usVt').checked = false; usSave(); });
 
