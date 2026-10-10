@@ -59,10 +59,10 @@ const { chromium, PAGE } = require('./lib/pw');
   console.log('6. gist button present:', await page.isVisible('#cheatGistBtn'));
   await page.evaluate(() => { window.__opened = []; window.AndroidBridge.openUrl = u => window.__opened.push(u); loadCheatGist(); });
   await page.waitForTimeout(80);
-  const gist = await page.evaluate(() => ({ opened: window.__opened, scripts: [...document.scripts].map(s => s.src).filter(u => /gist\.github\.com/.test(u)), cb: typeof window.__onPulimetGist, box: document.getElementById('cheatGistBox').innerText }));
+  const gist = await page.evaluate(() => ({ opened: window.__opened, scripts: [...document.scripts].map(s => s.src).filter(u => /gist\.github\.com/.test(u)), cb: typeof window.__onPulimetGist, box: document.getElementById('cheatGistBox').innerHTML }));
   console.log('   the gist was opened in the browser, once:', JSON.stringify(gist.opened) === JSON.stringify(['https://gist.github.com/Pulimet/5013acf2cd5b28e55036c82c91bd56d8']));
   console.log('   no script from the gist was added to the page and no JSONP callback exists:', gist.scripts.length === 0 && gist.cb === 'undefined');
-  console.log('   the box says so:', gist.box.trim() === 'Opened in your browser.');
+  console.log('   nothing from the gist is put in the page:', gist.box.trim() === '');
 
   console.log('errors:', JSON.stringify(errors));
   await b.close();

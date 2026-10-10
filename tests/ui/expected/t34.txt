@@ -13,5 +13,5 @@
 6. gist button present: true
    the gist was opened in the browser, once: true
    no script from the gist was added to the page and no JSONP callback exists: true
-   the box says so: true
+   nothing from the gist is put in the page: true
 errors: []
