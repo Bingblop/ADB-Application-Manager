@@ -84,8 +84,14 @@ public class HttpSitesTest {
       int stmtEnd = t.indexOf(';', m.end());
       if (stmtEnd < 0) stmtEnd = m.end();
       String after = t.substring(stmtEnd, Math.min(t.length(), stmtEnd + WINDOW));
-      Pattern off = Pattern.compile("\\b" + Pattern.quote(var) + "\\s*\\.\\s*setInstanceFollowRedirects\\s*\\(\\s*false\\s*\\)");
-      if (!off.matcher(after).find()) out.add("the connection '" + var + "' does not turn automatic redirects off");
+      // this connection lives until the variable is given another one
+      Matcher again = Pattern.compile("\\b" + Pattern.quote(var) + "\\s*=[^=]").matcher(after);
+      if (again.find()) after = after.substring(0, again.start());
+      Matcher off = Pattern.compile("\\b" + Pattern.quote(var) + "\\s*\\.\\s*setInstanceFollowRedirects\\s*\\(\\s*false\\s*\\)").matcher(after);
+      if (!off.find()) { out.add("the connection '" + var + "' does not turn automatic redirects off"); continue; }
+      // ... and it has to happen before anything that connects (a redirect is followed while the answer is read)
+      Matcher use = Pattern.compile("\\b" + Pattern.quote(var) + "\\s*\\.\\s*(connect|getResponseCode|getResponseMessage|getInputStream|getOutputStream|getErrorStream|getHeaderField\\w*|getContent\\w*|getLastModified|getDate|getExpiration|getHeaderFields)\\s*\\(").matcher(after);
+      if (use.find() && use.start() < off.start()) out.add("the connection '" + var + "' turns automatic redirects off only after it has connected");
     }
     count[0] = opens;
     return out;
@@ -121,6 +127,12 @@ public class HttpSitesTest {
     check("a connection that is not assigned to a variable is refused", has(problems("class A { Object f(String u) throws Exception { return new java.net.URL(u).openConnection(); } }", cnt), "not assigned"));
     check("text in comments and strings does not count", problems("class A { String s = \"x.openConnection()\"; /* y.openConnection(); */ // z.openConnection();\n void f() {} }", cnt).isEmpty() && cnt[0] == 0
         && problems("class A { String s = \"setInstanceFollowRedirects(true)\"; // c.setInstanceFollowRedirects(true)\n }", cnt).isEmpty());
+    String late = "class A { void f(String u) throws Exception { java.net.HttpURLConnection c = (java.net.HttpURLConnection) new java.net.URL(u).openConnection(); int code = c.getResponseCode(); c.setInstanceFollowRedirects(false); } }";
+    check("switching redirects off after the connection was used is too late", has(problems(late, cnt), "only after it has connected"));
+    String early = "class A { void f(String u) throws Exception { java.net.HttpURLConnection c = (java.net.HttpURLConnection) new java.net.URL(u).openConnection(); c.setRequestMethod(\"GET\"); c.setConnectTimeout(5); c.setInstanceFollowRedirects(false); int code = c.getResponseCode(); } }";
+    check("other setup calls before the switch are fine", problems(early, cnt).isEmpty());
+    String reuse = "class A { void f(String u) throws Exception { java.net.HttpURLConnection c = (java.net.HttpURLConnection) new java.net.URL(u).openConnection(); c.getResponseCode(); c = (java.net.HttpURLConnection) new java.net.URL(u).openConnection(); c.setInstanceFollowRedirects(false); } }";
+    check("a variable reused for a second connection does not cover the first", has(problems(reuse, cnt), "'c' does not turn") && cnt[0] == 2);
     check("a call to another variable's redirects does not cover this one", has(problems(ok.replace("c.setInstanceFollowRedirects(false)", "d.setInstanceFollowRedirects(false)"), cnt), "'c' does not turn"));
 
     // the source tree
