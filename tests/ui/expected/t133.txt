@@ -5,7 +5,7 @@ ok      a pair keeps its frame in the colour of the side that is on
 ok      a frozen app's whole row has a blue tint (a selected one keeps the selection colours), an enabled one has none
 ok      a running app's row is tinted green and an uninstalled app's row red (a frozen one stays blue, a plain one has no tint)
 ok   2. there is a "Saved devices" line once a device has been connected, closed at first
-ok      opened, it lists the devices that are up now and are saved, each with Delete: ["SM R930 Wi-Fi · connected now Delete","Pixel Tablet Wi-Fi · connected now Delete"]
+ok      opened, it lists the devices that are up now and are saved, each with Delete: ["Pixel Tablet Wi-Fi · connected now Delete","SM R930 Wi-Fi · connected now Delete"]
 ok      a device that is connected has no Connect button
 ok      a device that is gone stays saved and offers Connect and Delete
 ok      Delete asks first, and "no" keeps it: Delete Pixel Tablet from the saved devices?

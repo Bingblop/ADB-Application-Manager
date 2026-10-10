@@ -1,12 +1,13 @@
 # Tests
 
-The checks the app is released with. None of this is part of the APK. There are three kinds:
+The checks the app is released with. None of this is part of the APK. There are four kinds:
 
 | | What it is | Needs |
 |---|---|---|
 | **UI** — `run.js`, `ui/` | 118 headless-Chromium scripts drive the real `assets/index.html` against a mock Android bridge: every tab, theme, filter, action, sheet and dialog | Node 18+, Playwright with its Chromium |
 | **Java** — `java/run.js`, `java/src/` | 40 suites compile relevant classes straight from `src/` and run with the JDK (settings, overlays, files, installs, archives, shells, APK signing, device links, and parsers) | JDK 8+; some suites also need Node, Python 3 with `zip`, `mksh` + `toybox`, `apksigner`, an APK, `org.json`, or a real Android framework jar |
 | **Translations** — `i18n/` | The list of every string of the page, the translator's brief and the tools that check, cut and put together the dictionaries in `assets/lang/` | Node 18+ (acorn and Playwright to regenerate the list) |
+| **Docs** — `docs/check-shell-blocks.js` | `bash -n` on every fenced shell block of the Markdown docs, plus a check for unquoted `<placeholder>` words | Node 18+, bash |
 
 ## Run them
 
@@ -20,6 +21,14 @@ node java/run.js                  # all Java suites
 
 `npm test` runs both. A script or suite whose prerequisite is missing is skipped with a note that says what to install; that is not a failure
 (`--strict` makes it one).
+
+## Shell blocks in the docs
+
+`node docs/check-shell-blocks.js` runs `bash -n` on every fenced `sh`/`bash`/`shell` block of the Markdown files in the repository root and `docs/`, so
+a command that does not even parse (typically `APP=<package>`, which bash reads as input redirection) is found before review. Output names the
+`file:line` of each failing block; fix it with a concrete example value (`APP=com.example.app`) or quote the placeholder. Lines starting with `$ `
+are treated as prompts. A block that is illustrative by design gets `<!-- no-shell-check -->` on the line above its opening fence.
+`--list` shows the blocks found, `--self-test` tests the checker itself. Needs only Node and bash; `npm run test:docs` runs it.
 
 ## The UI scripts
 
