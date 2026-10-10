@@ -15,6 +15,14 @@ progress modal closes itself when done: true
 optimize modal shown (batch): true
 batch optimize calls (expect 2, speed, false): [ 'opt:com.x:speed:false', 'opt:com.y:speed:false' ]
 batch keeps the per-app breakdown modal even on success: true
+the mode list offers space and reset: verify,speed-profile,speed,space,everything,reset
+speed: the Force switch shows, no reset note: true
+reset: the Force switch is hidden and the note shows: true
+reset reaches the bridge as mode reset: ["opt:com.x:reset:false"]
+the sub label names the reset command: compile --reset
+opening the sheet again re-reads the mode (reset still chosen -> note still shown): true
+reset: the subtitle says reset, not recompile or faster: Reset the dex optimization of com.x.
+speed: the subtitle goes back to recompile: Recompile com.x for faster runtime.
 a failed single optimize still shows the result modal: true
 standby sheet shown: true
 it asked the phone and shows its answer (rare): ["sbget:com.x"] rare
