@@ -47,6 +47,14 @@ public final class SdmFsShell implements Sdm.Fs, SdmEngine.PruningFs {
         return BackupScripts.quote(s);
     }
 
+    private static String randomSentinel(String prefix) {
+        byte[] b = new byte[12];
+        new java.security.SecureRandom().nextBytes(b);
+        StringBuilder sb = new StringBuilder(prefix);
+        for (byte x : b) sb.append(String.format("%02x", x & 0xff));
+        return sb.append("__").toString();
+    }
+
     /** Runs a script and returns its lines up to the sentinel; throws when the sentinel never came (the output was cut). */
     private List<String> lines(String script, int timeoutMs, Sdm.Cancel cancel, String what) throws IOException {
         return lines(script, timeoutMs, cancel, what, END);
@@ -74,8 +82,9 @@ public final class SdmFsShell implements Sdm.Fs, SdmEngine.PruningFs {
     @Override
     public String[] list(String dir) throws IOException {
         String d = q(dir);
-        List<String> l = lines("if [ -d " + d + " ]; then ls -1A " + d + " 2>/dev/null && echo " + OK + " || echo " + NO + "; else echo " + NO + "; fi; echo " + END,
-                T_SHORT, null, "list " + dir);
+        String endMarker = randomSentinel("__SDM_END_");
+        List<String> l = lines("if [ -d " + d + " ]; then ls -1A " + d + " 2>/dev/null && echo " + OK + " || echo " + NO + "; else echo " + NO + "; fi; echo " + endMarker,
+                T_SHORT, null, "list " + dir, endMarker);
         if (l.isEmpty() || !l.get(l.size() - 1).equals(OK)) return null;
         l.remove(l.size() - 1);
         return l.toArray(new String[0]);
@@ -138,7 +147,8 @@ public final class SdmFsShell implements Sdm.Fs, SdmEngine.PruningFs {
     public boolean exists(String path) {
         try {
             String p = q(path);
-            List<String> l = lines("if [ -e " + p + " ] || [ -L " + p + " ]; then echo Y; else echo N; fi; echo " + END, T_SHORT, null, "exists");
+            String endMarker = randomSentinel("__SDM_END_");
+            List<String> l = lines("if [ -e " + p + " ] || [ -L " + p + " ]; then echo Y; else echo N; fi; echo " + endMarker, T_SHORT, null, "exists", endMarker);
             return !l.isEmpty() && l.get(0).equals("Y");
         } catch (IOException e) {
             return false;
@@ -201,7 +211,8 @@ public final class SdmFsShell implements Sdm.Fs, SdmEngine.PruningFs {
 
     @Override
     public String sha256(String path, Sdm.Cancel cancel) throws IOException {
-        List<String> l = lines("sha256sum -- " + q(path) + " 2>/dev/null; echo " + END, T_HASH, cancel, "sha256 " + path);
+        String endMarker = randomSentinel("__SDM_END_");
+        List<String> l = lines("sha256sum -- " + q(path) + " 2>/dev/null; echo " + endMarker, T_HASH, cancel, "sha256 " + path, endMarker);
         if (cancel != null && cancel.cancelled()) throw new IOException("cancelled");
         for (String s : l) {
             int sp = s.indexOf(' ');
@@ -214,8 +225,9 @@ public final class SdmFsShell implements Sdm.Fs, SdmEngine.PruningFs {
     public byte[] head(String path, int max) throws IOException {
         if (max <= 0) return new byte[0];
         String p = q(path);
-        List<String> l = lines("if [ -f " + p + " ] && [ -r " + p + " ]; then head -c " + max + " " + p + " 2>/dev/null | od -An -v -tx1 2>/dev/null; echo " + OK + "; else echo " + NO + "; fi; echo " + END,
-                T_SHORT, null, "head " + path);
+        String endMarker = randomSentinel("__SDM_END_");
+        List<String> l = lines("if [ -f " + p + " ] && [ -r " + p + " ]; then head -c " + max + " " + p + " 2>/dev/null | od -An -v -tx1 2>/dev/null; echo " + OK + "; else echo " + NO + "; fi; echo " + endMarker,
+                T_SHORT, null, "head " + path, endMarker);
         if (l.isEmpty() || !l.get(l.size() - 1).equals(OK)) return null;
         l.remove(l.size() - 1);
         java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
@@ -236,7 +248,8 @@ public final class SdmFsShell implements Sdm.Fs, SdmEngine.PruningFs {
         if (SdmSafety.lexical(path) != null) return false;
         try {
             String p = q(path);
-            List<String> l = lines("rm -rf -- " + p + " 2>/dev/null; if [ -e " + p + " ] || [ -L " + p + " ]; then echo F; else echo D; fi; echo " + END, T_BATCH, null, "delete");
+            String endMarker = randomSentinel("__SDM_END_");
+            List<String> l = lines("rm -rf -- " + p + " 2>/dev/null; if [ -e " + p + " ] || [ -L " + p + " ]; then echo F; else echo D; fi; echo " + endMarker, T_BATCH, null, "delete", endMarker);
             return !l.isEmpty() && l.get(0).equals("D");
         } catch (IOException e) {
             return false;
