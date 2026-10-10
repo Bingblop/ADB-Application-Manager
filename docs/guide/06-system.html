@@ -338,7 +338,7 @@
   <p><b>Where to find it:</b> the <b>About</b> tab, always the last one on the tab bar. Like Application Manager, it cannot be switched off or moved (see <a href="#feature-list">Turning tabs on and off and moving them</a>).</p>
 
   <h4>Before you start</h4>
-  <p>Nothing here needs a working mode, a computer or an account (the Authorization Manager card is for tasks and commands that you send from elsewhere, and is off until you turn it on). The buttons that open web pages (GitHub, Releases, PayPal) open them in your phone's browser, so they need an internet connection. The rest works offline.</p>
+  <p>Nothing here needs a working mode, a computer or an account. The buttons that open web pages (GitHub, Releases, PayPal) open them in your phone's browser, so they need an internet connection. The rest works offline.</p>
 
   <h4>The top card</h4>
   <p>The card shows the app's name, <b>ADB Application Manager Pro</b>, its version and build number (for example "Version 7.10.0-Pro · build 820"; yours will differ), and a one-paragraph description. Under it are the main buttons:</p>
@@ -389,52 +389,16 @@
   <p>Under the list, a line either says <b>Signed with the official release key</b> or <b>Not signed with the official release key (a debug, fork or modified build)</b>, followed by the signature's SHA-256 fingerprint (a long code that identifies the key the app was signed with). The official key's fingerprint begins <code>94:61:87:0F</code>. The second message is not automatically a danger (a copy you built yourself, or a fork, also shows it), but if you meant to install the official app, reinstall from the project's Releases page (see <a href="#install-and-update">Installing and updating</a>). Three buttons: <b>Copy debug info</b> (a short text with version, package, Android, device, WebView, working mode and fingerprint), <b>Share it</b> (the same text through the share sheet) and <b>Copy fingerprint</b>.</p>
 
   <h4>Authorization Manager</h4>
-  <p>A card between <b>This build</b> and <b>Device Specs</b>. It lets another app, a Tasker or MacroDroid task (apps that run automatic tasks on the phone) or an <code>adb</code> command ask <i>this</i> app to open an app or an address, as long as it shows this app's own secret code. It is <b>off</b> until you turn it on. Nothing here needs a working mode, and nothing leaves the phone; the code is only ever handed to an app on this phone that you list yourself (see <i>The other way round</i> below).</p>
-  <h5>The code</h5>
-  <p>The app has its own authorization code: 25 letters and digits in five groups of five, for example <code>ABCDE-FGHJK-MNPQR-STVWX-YZ012</code>. It never uses the letters I, L, O or U, so it is easy to read out and to type. When the code is typed, capital or small letters, dashes and spaces do not matter. The code is kept in the app's private storage.</p>
+  <p>A card between <b>This build</b> and <b>Device Specs</b>. It shows the app's own <b>authorization code</b>, a secret code that belongs to this app. <b>Nothing accepts the code yet</b>: it is kept here for later, so there is nothing for you to set up or to switch on. Nothing here needs a working mode, and the code never leaves the phone.</p>
+  <p>The code is 25 letters and digits in five groups of five, for example <code>ABCDE-FGHJK-MNPQR-STVWX-YZ012</code>. It never uses the letters I, L, O or U, so it is easy to read. It is made on your phone the first time and kept in the app's private storage, which other apps cannot read.</p>
   <table class="hg-table">
-    <thead><tr><th>Control</th><th>What it does</th><th>Default</th></tr></thead>
+    <thead><tr><th>Control</th><th>What it does</th></tr></thead>
     <tbody>
-      <tr><td><b>Accept intents with my code</b> (switch)</td><td>On: an intent that carries the right code is carried out. Off: every intent is turned away, whatever code it carries. A line under the card says which state it is in.</td><td>Off</td></tr>
-      <tr><td>The code, with a <b>copy</b> icon button</td><td>Shows the code. The copy button copies it to the clipboard; a message says <i>Copied the code</i>.</td><td>-</td></tr>
-      <tr><td>The round <b>refresh</b> icon button</td><td>Asks <i>Make a new code?</i> first. If you confirm, it makes a new code and the old one stops working at once. Anything that uses the old code (a Tasker task, a script) must be given the new one.</td><td>-</td></tr>
-      <tr><td>The example, with <b>Copy the example</b></td><td>Shows a ready <code>adb</code> command with your code in it, and copies it.</td><td>-</td></tr>
-      <tr><td><b>Recent uses</b>, with <b>Clear the list</b></td><td>Lists the last times something knocked, with the verdict and the time. <b>Clear the list</b> empties it. It appears once there is something to show.</td><td>Empty</td></tr>
+      <tr><td>The code, with a <b>copy</b> icon button</td><td>Shows the code. The copy button copies it to the clipboard; a message says <i>Copied the code</i>.</td></tr>
+      <tr><td>The round <b>refresh</b> icon button</td><td>Asks <i>Make a new code?</i> first. If you confirm, it replaces the code with a new one; the old code is gone.</td></tr>
     </tbody>
   </table>
-
-  <h5>How another app or a task uses it</h5>
-  <p>The caller starts an activity of this app that has no screen: <code>com.bloatware.bingblop/.AuthLaunchActivity</code>, with the intent action <code>com.bloatware.bingblop.action.AUTH_LAUNCH</code> (an <b>intent</b> is a request one part of Android sends to another). It puts the code in the string extra <code>auth</code>, and gives one of these two:</p>
-  <ul>
-    <li><code>package</code>: the package name of an app to open.</li>
-    <li><code>uri</code>: an address to open. It can be a web, market, geo (map), mailto, tel or sms address, or an <code>intent:</code> address for a full intent.</li>
-  </ul>
-  <p>The activity checks the code, then opens the app or the address in a new task (a new window of its own) and answers with <code>RESULT_OK</code> or <code>RESULT_CANCELED</code> and a <code>message</code> extra that says what happened. Example, to open Android's Settings from a computer:</p>
-  <p><code>adb shell am start -n com.bloatware.bingblop/.AuthLaunchActivity -a com.bloatware.bingblop.action.AUTH_LAUNCH --es auth ABCDE-FGHJK-MNPQR-STVWX-YZ012 --es package com.android.settings</code></p>
-  <p>Replace the example code with your own. In Tasker or MacroDroid, use their "send intent" action with the same activity, action and extras.</p>
-
-  <h5>The other way round: sending your code to apps you trust</h5>
-  <p>The second half of the card, headed <b>The other way round</b>, is for when <i>this</i> app starts a screen of another app. The code can then travel with that request, so the other app can tell that the call comes from this one.</p>
-  <table class="hg-table">
-    <thead><tr><th>Control</th><th>What it does</th><th>Default</th></tr></thead>
-    <tbody>
-      <tr><td><b>Send my code to the apps below</b> (switch)</td><td>On: when this app starts an activity of an app in the list, the request carries the code in the <code>auth</code> string extra and this app's package name in <code>auth_from</code>. Off: nothing is sent.</td><td>Off</td></tr>
-      <tr><td>The package box and <b>Add</b></td><td>Type a package name, or pick one from the installed apps that the box suggests, and tap <b>Add</b>. Up to 30 apps.</td><td>Empty list</td></tr>
-      <tr><td><b>Remove</b> on a row</td><td>Takes that app out of the list. It gets no code from then on.</td><td>-</td></tr>
-    </tbody>
-  </table>
-  <p>Today this happens when you tap <b>Launch</b> on a screen in an app's <b>Activities</b> tab (see <a href="#apps-menu">The app menu</a>). With a working mode the app runs <code>am start ... --es auth CODE --es auth_from com.bloatware.bingblop</code>; without one it sends a plain request with the same two extras. The code is never sent to an app that is not in the list.</p>
-  <p><b>Why there is a list.</b> An app that holds your code could use it on this app's own door, the incoming side described above, and make this app open apps and addresses. So give the code only to apps you trust, and press the refresh button if you are in doubt. The incoming side is unchanged: other apps still send their request, with the code, to <code>AuthLaunchActivity</code>.</p>
-
-  <h5>What keeps it safe</h5>
-  <ul>
-    <li>The switch is off until you turn it on. While it is off, every intent is turned away, even with the right code.</li>
-    <li>A wrong code is counted. Five wrong codes in a row lock the door for 60 seconds: even the right code is refused during that time.</li>
-    <li>It cannot open files (<code>file:</code> and <code>content:</code> addresses), <code>javascript:</code> addresses, or this app itself.</li>
-    <li>The flags of an incoming intent that grant access to files (the grant-URI-permission flags) are removed before anything is opened.</li>
-    <li>The code is kept in the app's private storage, which other apps cannot read.</li>
-  </ul>
-  <div class="hg-warn"><b>Careful.</b> Anyone who has the code, while the switch is on, can make this app open apps and addresses on your phone. Do not post the code, and switch the card off when you do not use it. If you shared the code by mistake, press the refresh button: the old code stops at once.</div>
+  <div class="hg-note"><b>Tip.</b> Treat the code like a password. Do not post it. If you shared it by mistake, press the refresh button to replace it.</div>
 
   <h4>Device Specs</h4>
   <p>Everything the phone will say about itself, <b>with no working mode needed</b>. It is read when the tab opens, and the <b>Refresh</b> button reads it again. A line appears only when your phone reports it. The groups are:</p>
@@ -458,7 +422,6 @@
   <h4>If something does not work</h4>
   <ul>
     <li><b>A web button does nothing.</b> Your phone has no browser, or no internet. Check both.</li>
-    <li><b>My Tasker task or adb command does nothing.</b> Check, in order, that <b>Accept intents with my code</b> is on, that the code is the current one (a refresh makes the old one stop), that you sent exactly one of <code>package</code> or <code>uri</code>, and that the address is not a <code>file:</code>, <code>content:</code> or <code>javascript:</code> one. Look at <b>Recent uses</b> for the verdict. After five wrong codes in a row, wait a minute before trying again.</li>
     <li><b>Check for update only shows a message.</b> The APK Installer/Updater tab is switched off. Turn it on in the gear (Settings), under <b>Feature List</b>.</li>
   </ul>
 </section>

@@ -1,5 +1,5 @@
 // v7.12.8: Settings > "Default Ask Agent" (a research agent, never a coding one; Perplexity until the person chooses) and About > "Authorization Manager"
-// (this app's own code for the auth extra of an intent: the switch, the code, copy, the refresh icon button, the example, the recent uses).
+// (this app's own authorization code: shown, copied with an icon button and replaced with a refresh icon button; nothing accepts it yet).
 const { chromium, PAGE } = require('./lib/pw');
 let bad = 0;
 function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : 'FAIL ') + label + (ok && extra === undefined ? '' : ': ' + (extra === undefined ? ok : extra))); }
@@ -15,12 +15,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
       getWorkingMode() { return JSON.stringify({ mode: 'adb_tcp', isPrivileged: true, status: 'connected', activeMode: 'adb_tcp', modeAvailable: true }); },
       getIconPacks() { return '[]'; }, loadAppIcons() { return 'started'; }, getAppDetails() { return '{}'; },
       authStatus() { window.__authCalls.push('status'); return JSON.stringify(window.__auth); },
-      authSetEnabled(on) { window.__authCalls.push('enabled:' + on); window.__auth.enabled = on; return JSON.stringify(window.__auth); },
       authRefresh() { window.__authCalls.push('refresh'); window.__auth.code = 'NEWCO-DE123-45678-9ABCD-EFGHJ'; return JSON.stringify(window.__auth); },
-      authOutEnable(on) { window.__authCalls.push('out:' + on); window.__auth.out.on = on; return JSON.stringify(window.__auth); },
-      authOutAdd(p) { window.__authCalls.push('add:' + p); const ok = /^[a-z][a-z0-9_]*(\.[a-z0-9_]+)+$/.test(p) && p !== 'com.bloatware.bingblop'; if (ok && !window.__auth.out.targets.includes(p)) window.__auth.out.targets.push(p); return JSON.stringify(Object.assign({ added: ok }, window.__auth)); },
-      authOutRemove(p) { window.__authCalls.push('rm:' + p); window.__auth.out.targets = window.__auth.out.targets.filter(x => x !== p); return JSON.stringify(window.__auth); },
-      authClearRecent() { window.__authCalls.push('clear'); window.__auth.recent = []; return JSON.stringify(window.__auth); }
     };
   });
   await page.goto(PAGE); await page.waitForTimeout(900);
@@ -48,42 +43,22 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('6. a coding agent cannot be chosen by id either', await ev(() => askAgentDef() === null));
   await ev(() => askAgentChoose('perplexity'));
 
-  // ---- Authorization Manager ----
+  // ---- Authorization Manager: just the code ----
   await ev(() => switchView('about')); await sleep(300);
   const a = await ev(() => ({
-    title: document.querySelector('#authCard .color-card-title').innerText, code: document.getElementById('authCode').innerText, on: document.getElementById('authOn').checked,
-    note: document.getElementById('authNote').innerText, ex: document.getElementById('authExample').innerText, svgs: document.querySelectorAll('#authCard .auth-icon-btn svg').length,
-    labels: [...document.querySelectorAll('#authCard .auth-icon-btn')].map(x => x.getAttribute('aria-label')), emoji: /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(document.getElementById('authCard').innerText) }));
-  check('7. About has an Authorization Manager card with the code (5 groups of 5), the switch off, and a note that nothing is accepted', a.title === 'Authorization Manager' && a.code === 'ABCDE-FGHJK-MNPQR-STVWX-YZ012' && !a.on && /Off/.test(a.note), JSON.stringify(a));
-  check('8. a copy button and a refresh button, both icons (SVG) with names, no emoji', a.svgs === 2 && a.labels.join() === 'Copy the code,Make a new code' && !a.emoji, JSON.stringify(a.labels));
-  check('9. the example is an adb command with the action, the auth extra with the code and a package', /am start -n com\.bloatware\.bingblop\/\.AuthLaunchActivity/.test(a.ex) && /-a com\.bloatware\.bingblop\.action\.AUTH_LAUNCH/.test(a.ex) && /--es auth ABCDE-FGHJK-MNPQR-STVWX-YZ012/.test(a.ex) && /--es package /.test(a.ex), a.ex);
-  await page.click('#authOn + .switch-track'); await sleep(150);
-  const t = await ev(() => ({ calls: window.__authCalls.slice(), on: document.getElementById('authOn').checked, note: document.getElementById('authNote').innerText }));
-  check('10. the switch turns the door on in the app, and the note says an intent with the code is accepted', t.calls.includes('enabled:true') && t.on && /intent with this code/.test(t.note), JSON.stringify(t));
+    title: document.querySelector('#authCard .color-card-title').innerText, sub: document.querySelector('#authCard .color-card-subtitle').innerText, code: document.getElementById('authCode').innerText,
+    svgs: document.querySelectorAll('#authCard .auth-icon-btn svg').length, labels: [...document.querySelectorAll('#authCard .auth-icon-btn')].map(x => x.getAttribute('aria-label')),
+    emoji: /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(document.getElementById('authCard').innerText), switches: document.querySelectorAll('#authCard input').length }));
+  check('7. About has an Authorization Manager card with the code (5 groups of 5), and it says nothing accepts it yet', a.title === 'Authorization Manager' && a.code === 'ABCDE-FGHJK-MNPQR-STVWX-YZ012' && /Nothing accepts it yet/.test(a.sub), JSON.stringify(a));
+  check('8. a copy button and a refresh button, both icons (SVG) with names, no emoji; no switch, no input, nothing about intents', a.svgs === 2 && a.labels.join() === 'Copy the code,Make a new code' && !a.emoji && a.switches === 0 && !/intent/i.test(await ev(() => document.getElementById('authCard').innerText)), JSON.stringify(a.labels));
   await page.click('#authCopyBtn'); await sleep(50);
-  check('11. Copy puts the code on the clipboard', await ev(() => window.__copied[0] === 'ABCDE-FGHJK-MNPQR-STVWX-YZ012'));
+  check('9. Copy puts the code on the clipboard', await ev(() => window.__copied[0] === 'ABCDE-FGHJK-MNPQR-STVWX-YZ012'));
   await page.click('#authRefreshBtn'); await sleep(200);
   const ask = await ev(() => ({ open: document.getElementById('mpAskModal').classList.contains('show'), title: document.getElementById('mpAskTitle').textContent, calls: window.__authCalls.filter(c => c === 'refresh').length }));
-  check('12. the refresh button asks first, and nothing changes yet', ask.open && ask.title === 'Make a new code?' && ask.calls === 0, JSON.stringify(ask));
+  check('10. the refresh button asks first, and nothing changes yet', ask.open && ask.title === 'Make a new code?' && ask.calls === 0, JSON.stringify(ask));
   await page.click('#mpAskOk'); await sleep(250);
-  const r = await ev(() => ({ code: document.getElementById('authCode').innerText, ex: document.getElementById('authExample').innerText, calls: window.__authCalls.filter(c => c === 'refresh').length }));
-  check('13. confirming makes the new code, shown at once and in the example', r.calls === 1 && r.code === 'NEWCO-DE123-45678-9ABCD-EFGHJ' && /--es auth NEWCO-DE123-45678-9ABCD-EFGHJ/.test(r.ex), JSON.stringify(r));
-  await ev(() => { window.__auth.recent = [{ at: Date.now(), verdict: 'ok', what: 'package com.android.settings' }, { at: Date.now() - 5000, verdict: 'wrong', what: 'package com.example.x' }]; window.__auth.locked = 42; authLoad(); });
-  const rc = await ev(() => ({ rows: document.querySelectorAll('#authRecent .auth-recent-row').length, txt: document.getElementById('authRecent').innerText, note: document.getElementById('authNote').innerText }));
-  check('14. recent uses are listed (what and the verdict), and a lock after wrong codes is shown with its seconds', rc.rows === 2 && /com\.android\.settings/.test(rc.txt) && /wrong/.test(rc.txt) && /Locked for 42 more seconds/.test(rc.note), JSON.stringify(rc));
-  await ev(() => { document.querySelector('#authRecent .batch-tool-link').click(); }); await sleep(100);
-  check('15. Clear the list empties them', await ev(() => window.__authCalls.includes('clear') && document.querySelectorAll('#authRecent .auth-recent-row').length === 0));
-  // ---- the code on the intents this app sends ----
-  const o0 = await ev(() => ({ on: document.getElementById('authOutOn').checked, list: document.getElementById('authOutList').innerText }));
-  check('16. the other way round: a switch, off, and a list that says no app gets the code', !o0.on && /No app is listed/.test(o0.list), JSON.stringify(o0));
-  await ev(() => { document.getElementById('authOutPkg').value = 'com.example.target'; }); await page.click('#authOutAddBtn'); await sleep(100);
-  await ev(() => { document.getElementById('authOutPkg').value = 'not a package'; }); await page.click('#authOutAddBtn'); await sleep(100);
-  const o1 = await ev(() => ({ list: document.getElementById('authOutList').innerText, calls: window.__authCalls.filter(c => /^add:/.test(c)), val: document.getElementById('authOutPkg').value }));
-  check('17. a package is added to the list; something that is not a package is refused with a message and stays in the box', /com\.example\.target/.test(o1.list) && o1.calls.length === 2 && o1.val === 'not a package', JSON.stringify(o1));
-  await page.click('#authOutOn + .switch-track'); await sleep(100);
-  check('18. the switch turns sending on in the app', await ev(() => window.__authCalls.includes('out:true') && document.getElementById('authOutOn').checked));
-  await ev(() => { document.querySelector('#authOutList button').click(); }); await sleep(100);
-  check('19. Remove takes the app off the list', await ev(() => window.__authCalls.includes('rm:com.example.target') && /No app is listed/.test(document.getElementById('authOutList').innerText)));
+  const r = await ev(() => ({ code: document.getElementById('authCode').innerText, calls: window.__authCalls.filter(c => c === 'refresh').length }));
+  check('11. confirming makes the new code, shown at once', r.calls === 1 && r.code === 'NEWCO-DE123-45678-9ABCD-EFGHJ', JSON.stringify(r));
   check('no page errors', errors.length === 0, errors.join(' | '));
   await b.close();
   console.log(bad ? bad + ' FAILED' : 'ALL PASSED');

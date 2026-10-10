@@ -6047,9 +6047,6 @@
                 .auth-icon-btn:active { background:rgba(var(--ov),0.16); }
                 .auth-icon-btn.spin svg { animation:authSpin .5s linear; }
                 @keyframes authSpin { to { transform:rotate(360deg); } }
-                .auth-example { margin:6px 0 0; padding:10px; border-radius:10px; background:rgba(var(--ov),0.07); font-size:11px; line-height:1.5; white-space:pre-wrap; word-break:break-all; color:var(--text-main); user-select:all; }
-                .auth-recent-row { display:flex; gap:8px; justify-content:space-between; font-size:11.5px; padding:4px 0; color:var(--text-muted); }
-                .auth-recent-row span:first-child { overflow-wrap:anywhere; }
             </style>
             <div class="color-card about-hero">
                 <div class="about-logo"><svg viewBox="0 0 24 24" width="36" height="36" aria-hidden="true" focusable="false"><path fill="currentColor" d="M13.2 2 4.5 13.4h5.6l-1.1 8.6 9-11.9h-5.7z"/></svg></div>
@@ -6108,35 +6105,12 @@
 
             <div class="color-card" id="authCard">
                 <div class="color-card-title">Authorization Manager</div>
-                <div class="color-card-subtitle">This app's own code for intents. Another app, a Tasker or MacroDroid task or an adb command that sends the code in the <b translate="no">auth</b> extra can ask this app to open an app or an address. Only the code opens the door, and it is off until you turn it on.</div>
-                <label class="switch-row">
-                    <div><div class="switch-title">Accept intents with my code</div><div class="switch-sub">Off: every intent is turned away, whatever code it carries</div></div>
-                    <input type="checkbox" class="switch-input" id="authOn" onchange="authToggle(this.checked)"><span class="switch-track"></span>
-                </label>
+                <div class="color-card-subtitle">This app's own authorization code. Nothing accepts it yet: it is kept here for later. It is made on this phone, stays on this phone, and you can replace it at any time.</div>
                 <div class="auth-code-row">
                     <div class="auth-code" id="authCode" translate="no" aria-label="Authorization code">-----</div>
                     <button class="auth-icon-btn" id="authCopyBtn" onclick="authCopy()" aria-label="Copy the code" title="Copy the code"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11v14z"/></svg></button>
                     <button class="auth-icon-btn" id="authRefreshBtn" onclick="authRefresh()" aria-label="Make a new code" title="Make a new code"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path fill="currentColor" d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg></button>
                 </div>
-                <div class="appearance-note" id="authNote"></div>
-                <div class="color-card-subtitle" style="margin-top:10px;">Open an app from a shell or a task:</div>
-                <pre class="auth-example" id="authExample" translate="no"></pre>
-                <div class="mode-btn-row" style="margin-top:6px;">
-                    <button class="mode-action-btn" onclick="authCopyExample()">Copy the example</button>
-                </div>
-                <div class="color-card-subtitle" style="margin-top:14px;"><b>The other way round.</b> When this app starts an activity of an app you list here (Activities tab, Launch), the intent carries your code in its <b translate="no">auth</b> extra, so that app can tell the call comes from this one. Only listed apps get it, because an app that has your code could use it on the door above.</div>
-                <label class="switch-row">
-                    <div><div class="switch-title">Send my code to the apps below</div><div class="switch-sub">Off: no intent this app sends carries the code</div></div>
-                    <input type="checkbox" class="switch-input" id="authOutOn" onchange="authOutToggle(this.checked)"><span class="switch-track"></span>
-                </label>
-                <div class="us-row1">
-                    <input type="text" class="list-search" id="authOutPkg" list="authOutDl" placeholder="Package name of an app" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" aria-label="Package name of an app" onkeydown="if(event.key==='Enter')authOutAdd()">
-                    <datalist id="authOutDl"></datalist>
-                    <button class="mode-action-btn" id="authOutAddBtn" onclick="authOutAdd()">Add</button>
-                </div>
-                <div id="authOutList"></div>
-                <div id="authRecent"></div>
-                <div class="uad-credit" style="margin-top:10px;">A wrong code is counted: five in a row lock the door for a minute. A new code (the refresh button) stops the old one at once, so use it if the code was ever shared by mistake. The code can open an app or a web, map, mail or phone address; it cannot open files or this app itself.</div>
             </div>
 
             <div class="color-card">
@@ -31068,74 +31042,27 @@ Type any command below (e.g. pm list packages -d)
             return ms ? new Date(ms).toLocaleDateString(langLocale(), { year: 'numeric', month: 'short', day: 'numeric' }) : '';
         }
 
-        // ---- Authorization Manager (About tab) ----
+        // ---- Authorization Manager (About tab): the app's own code, shown, copied and replaced ----
         let authSt = null;
         function authLoad() {
             try { authSt = JSON.parse((window.AndroidBridge && window.AndroidBridge.authStatus && window.AndroidBridge.authStatus()) || 'null'); } catch (e) { authSt = null; }
             authRender();
         }
-        function authExampleText() {
-            const code = authSt && authSt.code ? authSt.code : 'XXXXX-XXXXX-XXXXX-XXXXX-XXXXX';
-            return 'adb shell am start -n com.bloatware.bingblop/.AuthLaunchActivity \\\n  -a com.bloatware.bingblop.action.AUTH_LAUNCH \\\n  --es auth ' + code + ' --es package com.android.settings';
-        }
         function authRender() {
-            const st = authSt;
-            const on = document.getElementById('authOn');
-            if (!on) return;
-            if (!st) { document.getElementById('authCode').textContent = '-----'; document.getElementById('authNote').textContent = 'The code is made in the app build.'; on.disabled = true; return; }
-            on.disabled = false; on.checked = !!st.enabled;
-            document.getElementById('authCode').textContent = st.code || '';
-            document.getElementById('authNote').textContent = st.enabled ? (st.locked > 0 ? txF('Locked for {0} more seconds after wrong codes.', st.locked) : 'On: an intent with this code can open an app or an address.') : 'Off: nothing is accepted.';
-            document.getElementById('authExample').textContent = authExampleText();
-            const out = st.out || { on: false, targets: [] };
-            document.getElementById('authOutOn').checked = !!out.on;
-            document.getElementById('authOutList').innerHTML = out.targets.length ? out.targets.map(p => { const a = typeof allApps !== 'undefined' ? allApps.find(x => x.pkg === p) : null; return '<div class="auth-recent-row"><span translate="no">' + escapeHtml(a ? a.name + ' (' + p + ')' : p) + '</span><button class="batch-tool-link" onclick="authOutRemove(this.getAttribute(\'data-pkg\'))" data-pkg="' + escapeHtml(p) + '">Remove</button></div>'; }).join('') : '<div class="appearance-note">No app is listed, so no app gets the code.</div>';
-            const dl = document.getElementById('authOutDl');
-            if (dl && !dl.childElementCount && typeof allApps !== 'undefined') dl.innerHTML = allApps.slice(0, 600).map(a => '<option value="' + escapeHtml(a.pkg) + '">' + escapeHtml(a.name) + '</option>').join('');
-            const rec = st.recent || [];
-            const box = document.getElementById('authRecent');
-            box.innerHTML = rec.length ? '<div class="color-card-subtitle" style="margin-top:12px;">Recent uses</div>' + rec.slice(0, 5).map(e => '<div class="auth-recent-row"><span translate="no">' + escapeHtml(e.what) + '</span><span translate="no">' + escapeHtml(e.verdict) + ' &middot; ' + escapeHtml(new Date(e.at).toLocaleTimeString()) + '</span></div>').join('') + '<div class="mode-btn-row" style="margin-top:6px;"><button class="batch-tool-link" onclick="authClear()">Clear the list</button></div>' : '';
-        }
-        function authToggle(on) {
-            haptic();
-            try { authSt = JSON.parse(window.AndroidBridge.authSetEnabled(!!on)); } catch (e) { authSt = null; }
-            authRender();
-            showToast(on ? 'The Authorization Manager accepts intents with your code' : 'The Authorization Manager is off');
+            const el = document.getElementById('authCode');
+            if (el) el.textContent = authSt && authSt.code ? authSt.code : '-----';
         }
         function authCopy() { if (authSt && authSt.code) { haptic(); copyText(authSt.code); showToast('Copied the code'); } }
-        function authCopyExample() { if (authSt) { haptic(); copyText(authExampleText()); showToast('Copied the example'); } }
         async function authRefresh() {
             if (!authSt) return;
             haptic();
-            if (!await mpAsk({ title: 'Make a new code?', text: 'The old code stops working at once. Anything that uses it (a Tasker task, a script) has to be given the new one.', ok: 'New code' })) return;
+            if (!await mpAsk({ title: 'Make a new code?', text: 'The old code is gone. Anything you gave it to has to be given the new one.', ok: 'New code' })) return;
             const b = document.getElementById('authRefreshBtn');
             if (b) { b.classList.remove('spin'); void b.offsetWidth; b.classList.add('spin'); }
             try { authSt = JSON.parse(window.AndroidBridge.authRefresh()); } catch (e) { authSt = null; }
             authRender();
             showToast('A new code was made');
         }
-        function authOutToggle(on) {
-            haptic();
-            try { authSt = JSON.parse(window.AndroidBridge.authOutEnable(!!on)); } catch (e) { authSt = null; }
-            authRender();
-            showToast(on ? 'Your code goes along to the apps you listed' : 'No intent carries your code');
-        }
-        function authOutAdd() {
-            const inp = document.getElementById('authOutPkg');
-            const pkg = (inp.value || '').trim();
-            if (!pkg) return;
-            haptic();
-            let r = null;
-            try { r = JSON.parse(window.AndroidBridge.authOutAdd(pkg)); } catch (e) {}
-            if (!r || r.added === false) { showToast('That is not a package name of another app'); return; }
-            authSt = r; inp.value = ''; authRender();
-        }
-        function authOutRemove(pkg) {
-            haptic();
-            try { authSt = JSON.parse(window.AndroidBridge.authOutRemove(pkg)); } catch (e) {}
-            authRender();
-        }
-        function authClear() { try { authSt = JSON.parse(window.AndroidBridge.authClearRecent()); } catch (e) {} authRender(); }
 
         function onAboutShown() { renderAbout(); renderDeviceSpecs(); authLoad(); }
 
