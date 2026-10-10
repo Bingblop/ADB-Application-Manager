@@ -126,6 +126,8 @@ public final class SdmFsShell implements Sdm.Fs, SdmEngine.PruningFs {
                 Sdm.Entry e = fr.feed(s);
                 if (e != null) out.put(e.path, e);
             }
+            // a cancelled scan ends without its end marker: the last record may be only the first line of a longer name, so it is not believed
+            if (cancel != null && cancel.cancelled()) break;
             Sdm.Entry last = fr.finish();
             if (last != null) out.put(last.path, last);
         }

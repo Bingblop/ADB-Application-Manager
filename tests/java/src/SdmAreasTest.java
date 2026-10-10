@@ -451,6 +451,35 @@ public class SdmAreasTest {
             try { new SdmFsShell(cut).list("/x"); } catch (IOException e) { threw = true; }
             is("list without the end marker throws", threw, true);
 
+            // a cancelled statAll does not believe its last record (it may be the first line of a longer name)
+            final boolean[] cancelNow = { false };
+            Sdm.Shell cutCancel = new Sdm.Shell() {
+                @Override public int uid() { return 2000; }
+                @Override public String run(String s, int t) { return ""; }
+                @Override public void stream(String s, int t, Sdm.LineSink k, Sdm.Cancel c) {
+                    java.util.regex.Matcher m = java.util.regex.Pattern.compile("'(__SDM_[0-9a-f]+__) ").matcher(s);
+                    if (!m.find()) return;
+                    k.line(m.group(1) + " 81a4 5 1700000000 10000 /sdcard/a.txt");
+                    k.line(m.group(1) + " 81a4 7 1700000000 10000 /sdcard/victim");      // the first line of the name "victim\n..." (its rest never came)
+                    cancelNow[0] = true;
+                }
+            };
+            Map<String, Sdm.Entry> cs = new SdmFsShell(cutCancel).statAll(Arrays.asList("/sdcard/a.txt", "/sdcard/victim"), new Sdm.Cancel() { @Override public boolean cancelled() { return cancelNow[0]; } });
+            is("statAll cancelled after a record's first line gives the complete record and not the cut one", cs.size() == 1 && cs.containsKey("/sdcard/a.txt"), true);
+            cancelNow[0] = false;
+            Sdm.Shell whole = new Sdm.Shell() {
+                @Override public int uid() { return 2000; }
+                @Override public String run(String s, int t) { return ""; }
+                @Override public void stream(String s, int t, Sdm.LineSink k, Sdm.Cancel c) {
+                    java.util.regex.Matcher m = java.util.regex.Pattern.compile("'(__SDM_[0-9a-f]+__) ").matcher(s);
+                    java.util.regex.Matcher e = java.util.regex.Pattern.compile("echo (__SDM_END_[0-9a-f]+__)").matcher(s);
+                    if (!m.find() || !e.find()) return;
+                    k.line(m.group(1) + " 81a4 5 1700000000 10000 /sdcard/a.txt");
+                    k.line(e.group(1));
+                }
+            };
+            eq("statAll that was not cancelled keeps its last record", new SdmFsShell(whole).statAll(Arrays.asList("/sdcard/a.txt"), new Sdm.Cancel() { @Override public boolean cancelled() { return false; } }).size(), 1);
+
             // cancel in the middle of a big tree
             for (int i = 0; i < 3000; i++) mk(R, "big/d" + (i % 30) + "/f" + i, "x");
             final int[] seenBig = { 0 };
