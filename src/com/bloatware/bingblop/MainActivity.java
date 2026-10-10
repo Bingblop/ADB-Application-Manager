@@ -14315,9 +14315,9 @@ public class MainActivity extends Activity {
             try {
                 if (pkg == null || !pkg.matches("[A-Za-z0-9._]+")) { r.put("ok", false); r.put("output", "Error: invalid package"); return r.toString(); }
                 if ("standard".equals(resolveExecMode())) { r.put("ok", false); r.put("output", "Error: dex optimization needs ADB, Shizuku or Root."); return r.toString(); }
-                String m = mode == null ? "speed" : mode.replaceAll("[^a-z-]", "");
-                if (m.isEmpty()) m = "speed";
-                String flagged = runShellAction("pm compile -m " + m + (force ? " -f " : " ") + pkg);
+                String cmd = ShellArgs.compileCommand(pkg, mode, force);
+                if (cmd == null) { r.put("ok", false); r.put("output", "Error: not a compile mode ART knows"); return r.toString(); }
+                String flagged = runShellAction(cmd);
                 String out = flagText(flagged);
                 r.put("ok", flagOk(flagged));
                 r.put("output", !out.trim().isEmpty() ? out.trim() : "Done");

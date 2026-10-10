@@ -775,6 +775,7 @@ x: {
 "Comparing…": "Wird verglichen…",
 "Compatible width limit": "Grenze der kompatiblen Breite",
 "Compile mode": "Kompilierungsmodus",
+"Reset removes the compiled code (pm compile --reset). The app runs interpreted until Android compiles it again.": "Zurücksetzen entfernt den kompilierten Code (pm compile --reset). Die App läuft interpretiert, bis Android sie erneut kompiliert.",
 "Compiled against": "Kompiliert gegen",
 "Complementary colors in a balanced blend": "Komplementärfarben in ausgewogener Mischung",
 "Complete a file name": "Dateinamen vervollständigen",

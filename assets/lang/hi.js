@@ -775,6 +775,7 @@ x: {
 "Comparing…": "तुलना हो रही है…",
 "Compatible width limit": "संगत चौड़ाई की सीमा",
 "Compile mode": "कंपाइल मोड",
+"Reset removes the compiled code (pm compile --reset). The app runs interpreted until Android compiles it again.": "रीसेट करने पर कंपाइल किया गया कोड हट जाता है (pm compile --reset)। जब तक Android उसे दोबारा कंपाइल नहीं करता, ऐप इंटरप्रेटेड मोड में चलता है।",
 "Compiled against": "जिसके लिए कंपाइल किया गया",
 "Complementary colors in a balanced blend": "संतुलित मिश्रण में पूरक रंग",
 "Complete a file name": "फ़ाइल का नाम पूरा करें",

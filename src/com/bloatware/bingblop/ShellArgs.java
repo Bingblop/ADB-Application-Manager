@@ -25,6 +25,24 @@ final class ShellArgs {
     private static final Pattern URI = Pattern.compile("[A-Za-z][A-Za-z0-9+.\\-]*:[\\x21-\\x7e]{0,2000}");     // a scheme and printable ASCII, no white space
     private static final int MAX_FLAGS = 40;
 
+    private static final java.util.Set<String> COMPILE_MODES = new java.util.HashSet<String>(java.util.Arrays.asList(
+            "assume-verified", "extract", "verify", "quicken", "space-profile", "space", "speed-profile", "speed", "everything-profile", "everything"));
+
+    /** True for a filter of {@code pm compile -m <mode>}: one of the modes ART knows. */
+    static boolean isCompileMode(String s) { return s != null && COMPILE_MODES.contains(s); }
+
+    /**
+     * The command that recompiles (or, for {@code reset}, un-compiles) one app: {@code pm compile -m <mode> [-f] <pkg>}, or
+     * {@code pm compile --reset <pkg>}. Null when the package or the mode is not valid; an empty or null mode means {@code speed}.
+     */
+    static String compileCommand(String pkg, String mode, boolean force) {
+        if (!BackupScripts.isPackageName(pkg)) return null;
+        String m = mode == null || mode.isEmpty() ? "speed" : mode;
+        if (m.equals("reset")) return "pm compile --reset " + pkg;
+        if (!isCompileMode(m)) return null;
+        return "pm compile -m " + m + (force ? " -f " : " ") + pkg;
+    }
+
     static boolean isAppOp(String s) { return s != null && APP_OP.matcher(s).matches(); }
 
     static boolean isAppOpMode(String s) { return s != null && APP_OP_MODE.matcher(s).matches(); }

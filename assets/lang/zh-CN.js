@@ -775,6 +775,7 @@ x: {
 "Comparing…": "正在比较…",
 "Compatible width limit": "兼容宽度上限",
 "Compile mode": "编译模式",
+"Reset removes the compiled code (pm compile --reset). The app runs interpreted until Android compiles it again.": "重置会删除已编译的代码（pm compile --reset）。在 Android 再次编译之前，应用将以解释模式运行。",
 "Compiled against": "编译所针对的版本",
 "Complementary colors in a balanced blend": "互补色均衡搭配",
 "Complete a file name": "补全文件名",

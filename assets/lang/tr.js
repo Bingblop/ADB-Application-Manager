@@ -775,6 +775,7 @@ x: {
 "Comparing…": "Karşılaştırılıyor…",
 "Compatible width limit": "Uyumlu genişlik sınırı",
 "Compile mode": "Derleme modu",
+"Reset removes the compiled code (pm compile --reset). The app runs interpreted until Android compiles it again.": "Sıfırla, derlenmiş kodu kaldırır (pm compile --reset). Android yeniden derleyene kadar uygulama yorumlanarak çalışır.",
 "Compiled against": "Derlendiği sürüm",
 "Complementary colors in a balanced blend": "Dengeli bir karışımda tamamlayıcı renkler",
 "Complete a file name": "Dosya adını tamamla",

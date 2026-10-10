@@ -775,6 +775,7 @@ x: {
 "Comparing…": "Сравнение…",
 "Compatible width limit": "Предел совместимой ширины",
 "Compile mode": "Режим компиляции",
+"Reset removes the compiled code (pm compile --reset). The app runs interpreted until Android compiles it again.": "Сброс удаляет скомпилированный код (pm compile --reset). Приложение работает в интерпретируемом режиме, пока Android не скомпилирует его снова.",
 "Compiled against": "Собрано под",
 "Complementary colors in a balanced blend": "Дополнительные цвета в сбалансированном сочетании",
 "Complete a file name": "Дополнить имя файла",

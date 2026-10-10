@@ -775,6 +775,7 @@ x: {
 "Comparing…": "جارٍ المقارنة…",
 "Compatible width limit": "حد العرض المتوافق",
 "Compile mode": "وضع التجميع",
+"Reset removes the compiled code (pm compile --reset). The app runs interpreted until Android compiles it again.": "تؤدي إعادة الضبط إلى إزالة الشيفرة المترجمة (pm compile --reset). يعمل التطبيق في وضع التفسير إلى أن يعيد Android ترجمته.",
 "Compiled against": "مُجمَّع مقابل",
 "Complementary colors in a balanced blend": "ألوان متتامّة في مزيج متوازن",
 "Complete a file name": "إكمال اسم الملف",
