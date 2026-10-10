@@ -14328,6 +14328,49 @@ public class MainActivity extends Activity {
             return r.toString();
         }
 
+        /** The app standby bucket of one app: {ok, bucket ("active", "working_set", "frequent", "rare", "restricted", "exempted", "never"), output}. */
+        @JavascriptInterface
+        public String getStandbyBucket(String pkg) {
+            JSONObject r = new JSONObject();
+            try {
+                String cmd = StandbyBuckets.getCommand(pkg);
+                if (cmd == null) { r.put("ok", false); r.put("bucket", ""); r.put("output", "Error: invalid package"); return r.toString(); }
+                if ("standard".equals(resolveExecMode())) { r.put("ok", false); r.put("bucket", ""); r.put("output", "Error: the standby bucket needs ADB, Shizuku or Root."); return r.toString(); }
+                String out = executeShell(cmd);
+                String bucket = StandbyBuckets.parse(out);
+                r.put("ok", !bucket.isEmpty());
+                r.put("bucket", bucket);
+                r.put("output", bucket.isEmpty() ? (out == null ? "" : out.trim()) : bucket);
+            } catch (Exception e) {
+                try { r.put("ok", false); r.put("bucket", ""); r.put("output", "Error: " + e.getMessage()); } catch (Exception ignored) {}
+            }
+            return r.toString();
+        }
+
+        /** Puts one app in a standby bucket and asks the phone which bucket it is in now: ok only when it answers with the one asked for. */
+        @JavascriptInterface
+        public String setStandbyBucket(String pkg, String bucket) {
+            JSONObject r = new JSONObject();
+            try {
+                String cmd = StandbyBuckets.setCommand(pkg, bucket);
+                if (cmd == null) { r.put("ok", false); r.put("bucket", ""); r.put("output", "Error: not a package and a standby bucket"); return r.toString(); }
+                if ("standard".equals(resolveExecMode())) { r.put("ok", false); r.put("bucket", ""); r.put("output", "Error: the standby bucket needs ADB, Shizuku or Root."); return r.toString(); }
+                String flagged = runShellAction(cmd);
+                String now = StandbyBuckets.parse(executeShell(StandbyBuckets.getCommand(pkg)));
+                boolean ok = bucket.equals(now);
+                r.put("ok", ok);
+                r.put("bucket", now);
+                if (ok) r.put("output", now);
+                else {
+                    String said = flagText(flagged).trim();
+                    r.put("output", !said.isEmpty() && !flagOk(flagged) ? said : "The phone did not change it" + (now.isEmpty() ? "." : ": it is in " + now + "."));
+                }
+            } catch (Exception e) {
+                try { r.put("ok", false); r.put("bucket", ""); r.put("output", "Error: " + e.getMessage()); } catch (Exception ignored) {}
+            }
+            return r.toString();
+        }
+
         /** Stops the running Dex-optimization batch after whichever app it is already on (that one `pm compile`
          *  call can't be interrupted once started), the same Stop convention as {@link #appBatchCancel()}. */
         @JavascriptInterface

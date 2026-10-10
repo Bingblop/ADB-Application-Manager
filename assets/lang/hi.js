@@ -4466,7 +4466,14 @@ x: {
 "VirusTotal scan<1>Checks the file by its hash after it downloads</1>": "VirusTotal स्कैन<1>डाउनलोड के बाद फ़ाइल को उसके हैश से जाँचता है</1>",
 "Words in a name: <1>photo</1> (all must match; <2/> and <3/> are wildcards; <4>-word</4> leaves a name out; \"two words\" in quotes).<br> <5>ext:jpg,png</5> or <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> looks inside text files (up to 4 MB). <15>archive:name</15> looks at the names of the entries inside zip, apk, jar and similar archives.": "नाम में शब्द: <1>photo</1> (सभी मेल खाने चाहिए; <2/> और <3/> वाइल्डकार्ड हैं; <4>-word</4> किसी नाम को बाहर रखता है; \"दो शब्द\" उद्धरण चिह्नों में)।<br> <5>ext:jpg,png</5> या <6>.pdf</6> · <7>type:image</7> (image, video, audio, text, doc, archive, apk, font, folder, file) · <8>size:>10mb</8>, <9>size:1k..5m</9> · <10>date:today</10>, <11>date:7d</11>, <12>date:2025-03-01..2025-03-31</12>, <13>date:<2024-01-01</13><br> <14>content:word</14> टेक्स्ट फ़ाइलों के अंदर खोजता है (4 MB तक)। <15>archive:name</15> zip, apk, jar जैसे आर्काइव के अंदर की प्रविष्टियों के नाम देखता है।",
 "Write your message and tap <1>Send</1>: your email app opens with it ready, addressed to a contact alias (<2/>) that forwards to the developer. The subject is <3>ADB App Manager</3>. The developer's own address is not in this app, and the message is sent from your email app, not by this one.": "अपना संदेश लिखें और <1>भेजें</1> पर टैप करें: आपका ईमेल ऐप संदेश तैयार करके खुलता है, जो एक संपर्क उपनाम (<2/>) को संबोधित है जो उसे डेवलपर तक पहुँचाता है। विषय <3>ADB App Manager</3> है। डेवलपर का अपना पता इस ऐप में नहीं है, और संदेश आपके ईमेल ऐप से भेजा जाता है, इस ऐप से नहीं।",
-"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "अभी आप <1>रीड-ओनली मोड</1> में चल रहे हैं। सिस्टम पैकेज कार्रवाइयों (जैसे फ़्रीज़, सक्षम करें, ज़बरदस्ती रोकें, डेटा हटाएं या अनइंस्टॉल) के लिए <2>ADB TCP (5555)</2>, <3>वायरलेस डीबगिंग</3>, <4>Shizuku</4> या <5>Root</5> से ऊंचे अधिकार चाहिए।"
+"You are currently running in <1>Read-Only Mode</1>. System package operations (such as Freeze, Enable, Force Stop, Clear Data, or Uninstall) require elevated permissions via <2>ADB TCP (5555)</2>, <3>Wireless Debugging</3>, <4>Shizuku</4>, or <5>Root</5>.": "अभी आप <1>रीड-ओनली मोड</1> में चल रहे हैं। सिस्टम पैकेज कार्रवाइयों (जैसे फ़्रीज़, सक्षम करें, ज़बरदस्ती रोकें, डेटा हटाएं या अनइंस्टॉल) के लिए <2>ADB TCP (5555)</2>, <3>वायरलेस डीबगिंग</3>, <4>Shizuku</4> या <5>Root</5> से ऊंचे अधिकार चाहिए।",
+"Choose how much Android limits the app while it is not in use. Active has no limits; restricted has the most.": "चुनें कि ऐप इस्तेमाल में न होने पर Android उसे कितना सीमित करे। active पर कोई सीमा नहीं होती; restricted पर सबसे ज़्यादा।",
+"Could not change the standby bucket": "स्टैंडबाय बकेट बदला नहीं जा सका",
+"Could not read the standby bucket": "स्टैंडबाय बकेट पढ़ा नहीं जा सका",
+"No answer from the app": "ऐप से कोई जवाब नहीं मिला",
+"Standby": "स्टैंडबाय",
+"Standby bucket": "स्टैंडबाय बकेट",
+"Standby bucket changed": "स्टैंडबाय बकेट बदल दिया गया"
 },
 p: [
 ["\"{0}\" is not a number of seconds.", "“{0}” सेकंड की संख्या नहीं है।"],
@@ -5515,6 +5522,8 @@ p: [
 ["✓ fits this phone ({0})", "✓ इस फ़ोन पर फ़िट बैठता है ({0})"],
 ["✓ v{0} has the same signer as this app’s key, so it can be updated in place", "✓ v{0} का साइनर इस ऐप की कुंजी वाला ही है, इसलिए इसे इन-प्लेस अपडेट किया जा सकता है"],
 ["✓ {0}: done", "✓ {0}: हो गया"],
-["＋ Create “{0}” in {1}", "＋ {1} में “{0}” बनाएं"]
+["＋ Create “{0}” in {1}", "＋ {1} में “{0}” बनाएं"],
+["am set-standby-bucket {0} {1}", "am set-standby-bucket {0} {1}"],
+["am get-standby-bucket {0}", "am get-standby-bucket {0}"]
 ]
 };
