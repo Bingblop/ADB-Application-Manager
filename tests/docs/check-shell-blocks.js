@@ -63,6 +63,7 @@ function findPlaceholders(lines) {
   const found = [];
   let heredoc = null;
   let quote = null;
+  let arith = 0;
   for (const { text, line } of lines) {
     if (heredoc) { if (text.trim() === heredoc) heredoc = null; continue; }
     let code = '';
@@ -71,9 +72,13 @@ function findPlaceholders(lines) {
       if (quote) { if (c === quote) quote = null; else if (c === '\\' && quote === '"') i++; continue; }
       if (c === '\\') { i++; continue; }
       if (c === '"' || c === "'") { quote = c; continue; }
-      if (c === '#' && (i === 0 || /\s/.test(text[i - 1]))) break;
-      if (c === '<' && text[i + 1] === '<' && text[i + 2] !== '<') {      // <<< is a here-string, not a here-document
-        const hd = /^<<-?\s*(?:'([^']+)'|"([^"]+)"|\\?([A-Za-z_]\w*))/.exec(text.slice(i));
+      // a word that starts with # is a comment; a word starts after white space or a shell operator (echo ok;# note)
+      if (c === '#' && (i === 0 || /[\s;&|()<>]/.test(text[i - 1]))) break;
+      // arithmetic, $(( ... )) or (( ... )): << there is a shift, not a here-document
+      if (c === '(' && text[i + 1] === '(' && (i === 0 || /[\s;&|$]/.test(text[i - 1]))) { arith++; i++; continue; }
+      if (c === ')' && text[i + 1] === ')' && arith > 0) { arith--; i++; continue; }
+      if (c === '<' && text[i + 1] === '<' && text[i + 2] !== '<' && arith === 0) {      // <<< is a here-string, not a here-document
+        const hd = /^<<-?\s*(?:'([^']+)'|"([^"]+)"|\\?([^\s;&|<>()'"]+))/.exec(text.slice(i));
         if (hd) { heredoc = hd[1] || hd[2] || hd[3]; i += hd[0].length - 1; continue; }
       }
       code += c;
@@ -142,9 +147,12 @@ function selfTest() {
     '```bash', 'echo "first line', '<tag> second line"', '```', '',
     '```bash', '# see <<EOF later', 'adb shell pm path <package>', '```', '',
     '```sh', '$', '<output-after-a-bare-prompt>', '```', '',
+    '```bash', 'echo ok;# <package> in a comment after an operator', 'echo done', '```', '',
+    '```bash', 'cat <<END-DATA', '<html>', 'END-DATA', 'adb shell pm path <package>', '```', '',
+    '```bash', 'mask=$((1 << FLAG))', 'adb shell pm path <package>', '```', '',
   ].join('\n');
   const got = checkText(fx).map(r => r.state + '@' + r.block.startLine + (r.problems.length ? ':' + [...new Set(r.problems.map(p => p.line))].join(',') : ''));
-  const want = ['ok@3', 'ok@9', 'FAIL@16:17', 'skipped@22', 'FAIL@26:27', 'FAIL@34:34', 'ok@42', 'FAIL@47:49', 'ok@52', 'FAIL@57:59', 'ok@62'];
+  const want = ['ok@3', 'ok@9', 'FAIL@16:17', 'skipped@22', 'FAIL@26:27', 'FAIL@34:34', 'ok@42', 'FAIL@47:49', 'ok@52', 'FAIL@57:59', 'ok@62', 'ok@67', 'FAIL@72:76', 'FAIL@79:81'];
   const ok = JSON.stringify(got) === JSON.stringify(want);
   console.log(ok ? 'self-test: ok (' + got.length + ' blocks judged as expected)' : 'self-test: FAIL\n  got:  ' + got.join(' ') + '\n  want: ' + want.join(' '));
   return ok;
@@ -153,15 +161,20 @@ function selfTest() {
 function main() {
   const args = process.argv.slice(2);
   const list = args.includes('--list');
-  if (args.includes('--self-test')) process.exit(selfTest() ? 0 : 1);
-  const unknown = args.filter(a => a.startsWith('--') && a !== '--list');
+  const unknown = args.filter(a => a.startsWith('--') && a !== '--list' && a !== '--self-test');
   if (unknown.length) { console.error('Unknown option ' + unknown[0] + '. Use --list, --self-test, or Markdown file names.'); process.exit(2); }
   const named = args.filter(a => !a.startsWith('--')).map(a => path.resolve(a));
+  if (args.includes('--self-test')) {
+    if (list || named.length) { console.error('--self-test takes no other option or file name.'); process.exit(2); }
+    process.exit(selfTest() ? 0 : 1);
+  }
   const files = named.length ? named : markdownFiles();
   let total = 0, failed = 0, skipped = 0;
   for (const file of files) {
     const rel = path.relative(ROOT, file) || file;
-    for (const r of checkText(fs.readFileSync(file, 'utf8'))) {
+    let text;
+    try { text = fs.readFileSync(file, 'utf8'); } catch (e) { console.error('Cannot read ' + rel + ': ' + e.message); process.exit(2); }
+    for (const r of checkText(text)) {
       total++;
       if (r.state === 'skipped') skipped++;
       if (list) { console.log(rel + ':' + r.block.startLine + '  ' + r.block.tag + '  ' + r.state); continue; }
