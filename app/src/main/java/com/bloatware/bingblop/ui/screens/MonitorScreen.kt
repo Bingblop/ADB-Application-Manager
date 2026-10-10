@@ -1,6 +1,10 @@
 package com.bloatware.bingblop.ui.screens
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.text.format.Formatter
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -17,14 +21,18 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BatteryChargingFull
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.DeveloperBoard
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -99,8 +107,30 @@ fun MonitorScreen(
                 Text("Device Telemetry & Specs", fontSize = 16.sp, fontWeight = FontWeight.Black, color = TextMain)
                 Text("Real-time RAM, storage, battery & kernel monitors", fontSize = 11.sp, color = TextMuted)
             }
-            IconButton(onClick = { refreshMetrics() }) {
-                Icon(Icons.Default.Refresh, contentDescription = "Refresh", tint = AccentCyan)
+            Row {
+                deviceInfo?.let { info ->
+                    IconButton(onClick = {
+                        val specText = buildString {
+                            appendLine("Device: ${info.manufacturer} ${info.model} (${info.brand})")
+                            appendLine("SoC: ${info.soc} | ABI: ${info.abi}")
+                            appendLine("Android OS: ${info.androidVersion} (API ${info.sdkInt})")
+                            appendLine("Security Patch: ${info.securityPatch}")
+                            appendLine("Kernel: ${info.kernelVersion}")
+                            appendLine("RAM Total: ${Formatter.formatFileSize(context, info.ramTotalBytes)}")
+                            appendLine("Storage Total: ${Formatter.formatFileSize(context, info.storageTotalBytes)}")
+                            appendLine("Battery: ${info.batteryPct}% (${info.batteryStatus}, ${info.batteryTemp}°C)")
+                        }
+                        val clip = ClipData.newPlainText("Device Specs", specText)
+                        val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                        cm.setPrimaryClip(clip)
+                        Toast.makeText(context, "Hardware specifications copied", Toast.LENGTH_SHORT).show()
+                    }) {
+                        Icon(Icons.Default.ContentCopy, contentDescription = "Copy Specs", tint = AccentCyan)
+                    }
+                }
+                IconButton(onClick = { refreshMetrics() }) {
+                    Icon(Icons.Default.Refresh, contentDescription = "Refresh", tint = AccentCyan)
+                }
             }
         }
 
@@ -115,6 +145,9 @@ fun MonitorScreen(
 
             val storageUsed = info.storageTotalBytes - info.storageAvailBytes
             val storageRatio = (storageUsed.toFloat() / info.storageTotalBytes.coerceAtLeast(1L).toFloat()).coerceIn(0f, 1f)
+
+            val uptimeHours = (info.uptimeMillis / (1000 * 60 * 60))
+            val uptimeDays = uptimeHours / 24
 
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
@@ -131,7 +164,7 @@ fun MonitorScreen(
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                     Icon(Icons.Default.Memory, contentDescription = null, tint = AccentCyan, modifier = Modifier.size(18.dp))
-                                    Text("RAM Utilization", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextMain)
+                                    Text("RAM Memory Utilization", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextMain)
                                 }
                                 Text("${(ramRatio * 100).toInt()}%", fontSize = 14.sp, fontWeight = FontWeight.Black, color = AccentCyan)
                             }
@@ -154,7 +187,7 @@ fun MonitorScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text("Used: ${Formatter.formatFileSize(context, ramUsed)}", fontSize = 11.sp, color = TextMuted)
+                                Text("In Use: ${Formatter.formatFileSize(context, ramUsed)}", fontSize = 11.sp, color = TextMuted)
                                 Text("Total: ${Formatter.formatFileSize(context, info.ramTotalBytes)}", fontSize = 11.sp, color = TextMain)
                             }
                         }
@@ -204,6 +237,7 @@ fun MonitorScreen(
 
                 // Battery Telemetry Card
                 item {
+                    val tempColor = if (info.batteryTemp > 40f) StatusBloat else if (info.batteryTemp > 35f) AccentCyan else CleanGreen
                     CyberCard(modifier = Modifier.fillMaxWidth()) {
                         Column {
                             Row(
@@ -213,7 +247,7 @@ fun MonitorScreen(
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                     Icon(Icons.Default.BatteryChargingFull, contentDescription = null, tint = CleanGreen, modifier = Modifier.size(18.dp))
-                                    Text("Battery Health & Status", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextMain)
+                                    Text("Battery Health & Thermals", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextMain)
                                 }
                                 StatusPill("${info.batteryPct}%", CleanGreen)
                             }
@@ -226,7 +260,7 @@ fun MonitorScreen(
                             ) {
                                 Text("Status: ${info.batteryStatus}", fontSize = 12.sp, color = TextMain)
                                 Text("Health: ${info.batteryHealth}", fontSize = 12.sp, color = CleanGreen)
-                                Text("Temp: ${info.batteryTemp}°C", fontSize = 12.sp, color = TextMain)
+                                Text("Temp: ${info.batteryTemp}°C", fontSize = 12.sp, color = tempColor, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -248,6 +282,7 @@ fun MonitorScreen(
                             SpecRow("Android OS Version", "Android ${info.androidVersion} (API ${info.sdkInt})")
                             SpecRow("Security Patch", info.securityPatch)
                             SpecRow("Linux Kernel", info.kernelVersion)
+                            SpecRow("System Uptime", if (uptimeDays > 0) "${uptimeDays}d ${uptimeHours % 24}h" else "${uptimeHours}h")
                         }
                     }
                 }

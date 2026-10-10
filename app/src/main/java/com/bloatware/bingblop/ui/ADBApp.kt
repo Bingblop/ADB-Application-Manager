@@ -75,18 +75,26 @@ fun ADBApp(
 
     val navItems = listOf(
         NavItem("Apps", Icons.Default.Apps, "nav_apps"),
-        NavItem("Install", Icons.Default.InstallMobile, "nav_install"),
-        NavItem("Settings", Icons.Default.Tune, "nav_settings"),
-        NavItem("Terminal", Icons.Default.Terminal, "nav_terminal"),
         NavItem("Cleaner", Icons.Default.CleaningServices, "nav_cleaner"),
-        NavItem("Monitor", Icons.Default.Memory, "nav_monitor")
+        NavItem("Settings", Icons.Default.Tune, "nav_settings"),
+        NavItem("Install", Icons.Default.InstallMobile, "nav_install"),
+        NavItem("Terminal", Icons.Default.Terminal, "nav_terminal"),
+        NavItem("Specs", Icons.Default.Memory, "nav_specs")
     )
 
     Scaffold(
         topBar = {
             AppHeader(
                 modeLabel = "Privileged Mode",
-                onModeClick = { selectedIndex = 3 /* navigate to terminal */ }
+                subtitle = when (selectedIndex) {
+                    0 -> "Application & Debloat Manager"
+                    1 -> "SD Maid Storage Optimizer"
+                    2 -> "Hidden System Settings"
+                    3 -> "Package Installer & Inspector"
+                    4 -> "Interactive ADB & Shell Console"
+                    else -> "Device Telemetry & Specs"
+                },
+                onModeClick = { selectedIndex = 4 /* jump to terminal */ }
             )
         },
         bottomBar = {
@@ -105,13 +113,13 @@ fun ADBApp(
                             Icon(
                                 imageVector = item.icon,
                                 contentDescription = item.title,
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(19.dp)
                             )
                         },
                         label = {
                             Text(
                                 text = item.title,
-                                fontSize = 10.sp,
+                                fontSize = 9.5.sp,
                                 fontWeight = if (isSelected) FontWeight.Black else FontWeight.Normal
                             )
                         },
@@ -136,10 +144,10 @@ fun ADBApp(
         ) {
             when (selectedIndex) {
                 0 -> AppsScreen(appRepository = appRepository)
-                1 -> InstallerScreen()
+                1 -> CleanerScreen(cleanerRepository = cleanerRepository)
                 2 -> SettingsScreen(settingsRepository = settingsRepository)
-                3 -> TerminalScreen(shellRepository = shellRepository)
-                4 -> CleanerScreen(cleanerRepository = cleanerRepository)
+                3 -> InstallerScreen()
+                4 -> TerminalScreen(shellRepository = shellRepository)
                 5 -> MonitorScreen(monitorRepository = monitorRepository)
             }
         }

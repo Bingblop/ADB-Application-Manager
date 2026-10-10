@@ -28,6 +28,7 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material3.Button
@@ -64,6 +65,7 @@ import com.bloatware.bingblop.ui.theme.BgCard
 import com.bloatware.bingblop.ui.theme.BgSurface
 import com.bloatware.bingblop.ui.theme.BorderGlass
 import com.bloatware.bingblop.ui.theme.CleanGreen
+import com.bloatware.bingblop.ui.theme.SecondaryPurple
 import com.bloatware.bingblop.ui.theme.StatusBloat
 import com.bloatware.bingblop.ui.theme.StatusRunning
 import com.bloatware.bingblop.ui.theme.TextDim
@@ -114,7 +116,8 @@ fun TerminalScreen(
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 listOf(
                     ShellMode.LOCAL_SHELL to "Local Shell",
-                    ShellMode.SHIZUKU to "Shizuku Privileged"
+                    ShellMode.SHIZUKU to "Shizuku Privileged",
+                    ShellMode.ROOT to "Root (su)"
                 ).forEach { (mode, label) ->
                     val isSelected = selectedMode == mode
                     Box(
@@ -143,21 +146,22 @@ fun TerminalScreen(
                 IconButton(onClick = {
                     shellRepository.clearHistory()
                     history = emptyList()
+                    Toast.makeText(context, "Terminal cleared", Toast.LENGTH_SHORT).show()
                 }) {
                     Icon(Icons.Default.Clear, contentDescription = "Clear History", tint = TextMuted)
                 }
             }
         }
 
-        // Quick Presets Horizontal Chips
-        Text("PRESET COMMANDS", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = TextDim, letterSpacing = 0.5.sp)
+        // Categorized Presets Chips
+        Text("ONE-TAP COMMAND PRESETS", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = TextDim, letterSpacing = 0.5.sp)
         LazyRow(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            items(shellRepository.presets) { (cmd, _) ->
+            items(shellRepository.presets) { (cmd, desc) ->
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
@@ -167,16 +171,19 @@ fun TerminalScreen(
                             commandInput = cmd
                             runCmd(cmd)
                         }
-                        .padding(horizontal = 8.dp, vertical = 5.dp)
+                        .padding(horizontal = 8.dp, vertical = 6.dp)
                 ) {
-                    Text(cmd, fontSize = 10.sp, color = AccentCyan, fontFamily = FontFamily.Monospace)
+                    Column {
+                        Text(cmd, fontSize = 11.sp, color = AccentCyan, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
+                        Text(desc, fontSize = 9.sp, color = TextMuted)
+                    }
                 }
             }
         }
 
         Spacer(modifier = Modifier.height(6.dp))
 
-        // Command Input Field
+        // Command Input Field with Run Button
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -218,7 +225,7 @@ fun TerminalScreen(
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        // Console Output History
+        // Console Output Log
         if (history.isEmpty()) {
             Box(
                 modifier = Modifier
@@ -230,7 +237,7 @@ fun TerminalScreen(
                     Icon(Icons.Default.Terminal, contentDescription = null, tint = TextDim, modifier = Modifier.size(48.dp))
                     Spacer(modifier = Modifier.height(8.dp))
                     Text("Interactive ADB / Shell Console Ready", color = TextMuted, fontSize = 13.sp)
-                    Text("Type a command above or tap any preset chip", color = TextDim, fontSize = 11.sp)
+                    Text("Tap any preset above or type a custom command", color = TextDim, fontSize = 11.sp)
                 }
             }
         } else {

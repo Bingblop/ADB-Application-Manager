@@ -1,7 +1,11 @@
 package com.bloatware.bingblop.ui.screens
 
+import android.text.format.Formatter
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -19,12 +23,18 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AcUnit
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
@@ -48,6 +58,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -59,16 +70,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bloatware.bingblop.data.model.AppItem
+import com.bloatware.bingblop.data.model.DebloatLevel
 import com.bloatware.bingblop.data.model.DebloatPackage
 import com.bloatware.bingblop.data.repository.AppRepository
 import com.bloatware.bingblop.ui.components.CyberCard
-import com.bloatware.bingblop.ui.components.StatMetricBadge
+import com.bloatware.bingblop.ui.components.InteractiveStatBadge
 import com.bloatware.bingblop.ui.components.StatusPill
 import com.bloatware.bingblop.ui.theme.AccentCyan
 import com.bloatware.bingblop.ui.theme.BgBase
 import com.bloatware.bingblop.ui.theme.BgCard
+import com.bloatware.bingblop.ui.theme.BgCardHover
 import com.bloatware.bingblop.ui.theme.BgSurface
 import com.bloatware.bingblop.ui.theme.BorderGlass
+import com.bloatware.bingblop.ui.theme.CleanGreen
+import com.bloatware.bingblop.ui.theme.SecondaryPurple
 import com.bloatware.bingblop.ui.theme.StatusBloat
 import com.bloatware.bingblop.ui.theme.StatusFrozen
 import com.bloatware.bingblop.ui.theme.StatusRunning
@@ -77,9 +92,9 @@ import com.bloatware.bingblop.ui.theme.StatusUser
 import com.bloatware.bingblop.ui.theme.TextDim
 import com.bloatware.bingblop.ui.theme.TextMain
 import com.bloatware.bingblop.ui.theme.TextMuted
-import kotlinx.coroutines.launch
 
-enum class AppFilter { ALL, USER, SYSTEM, FROZEN, BLOAT }
+enum class AppFilter { ALL, USER, SYSTEM, FROZEN, BLOAT, TRACKERS }
+enum class AppSort { NAME, SIZE, TARGET_SDK }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -95,6 +110,7 @@ fun AppsScreen(
     var isLoading by remember { mutableStateOf(true) }
     var searchQuery by remember { mutableStateOf("") }
     var currentFilter by remember { mutableStateOf(AppFilter.ALL) }
+    var currentSort by remember { mutableStateOf(AppSort.NAME) }
     var isDebloatMode by remember { mutableStateOf(false) }
 
     var selectedApp by remember { mutableStateOf<AppItem?>(null) }
@@ -102,7 +118,6 @@ fun AppsScreen(
     var detailedActivities by remember { mutableStateOf<List<String>>(emptyList()) }
     var sheetActionMessage by remember { mutableStateOf<String?>(null) }
 
-    // Intercept back button when in Debloat mode
     BackHandler(enabled = isDebloatMode) {
         isDebloatMode = false
     }
@@ -121,8 +136,8 @@ fun AppsScreen(
         refreshData()
     }
 
-    val filteredApps = remember(apps, searchQuery, currentFilter) {
-        apps.filter { app ->
+    val filteredApps = remember(apps, searchQuery, currentFilter, currentSort) {
+        val filtered = apps.filter { app ->
             val matchesSearch = searchQuery.isEmpty() ||
                     app.appName.contains(searchQuery, ignoreCase = true) ||
                     app.packageName.contains(searchQuery, ignoreCase = true)
@@ -133,8 +148,15 @@ fun AppsScreen(
                 AppFilter.SYSTEM -> app.isSystemApp
                 AppFilter.FROZEN -> !app.isEnabled
                 AppFilter.BLOAT -> app.isBloatware
+                AppFilter.TRACKERS -> app.trackers.isNotEmpty()
             }
             matchesSearch && matchesFilter
+        }
+
+        when (currentSort) {
+            AppSort.NAME -> filtered.sortedBy { it.appName.lowercase() }
+            AppSort.SIZE -> filtered.sortedByDescending { it.appSize }
+            AppSort.TARGET_SDK -> filtered.sortedByDescending { it.targetSdk }
         }
     }
 
@@ -144,46 +166,61 @@ fun AppsScreen(
             .background(BgBase)
             .padding(horizontal = 14.dp)
     ) {
-        // Top stats row
+        // Interactive Quick Stat Badges: 1-Tap Filter Cards
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 10.dp),
+                .padding(vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            StatMetricBadge(
+            InteractiveStatBadge(
                 title = "Total",
                 value = apps.size.toString(),
+                isSelected = currentFilter == AppFilter.ALL && !isDebloatMode,
                 modifier = Modifier.weight(1f)
-            )
-            StatMetricBadge(
-                title = "Enabled",
+            ) {
+                isDebloatMode = false
+                currentFilter = AppFilter.ALL
+            }
+            InteractiveStatBadge(
+                title = "Active",
                 value = apps.count { it.isEnabled }.toString(),
+                isSelected = currentFilter == AppFilter.USER && !isDebloatMode,
                 color = StatusRunning,
                 modifier = Modifier.weight(1f)
-            )
-            StatMetricBadge(
+            ) {
+                isDebloatMode = false
+                currentFilter = AppFilter.USER
+            }
+            InteractiveStatBadge(
                 title = "Frozen",
                 value = apps.count { !it.isEnabled }.toString(),
+                isSelected = currentFilter == AppFilter.FROZEN && !isDebloatMode,
                 color = StatusFrozen,
                 modifier = Modifier.weight(1f)
-            )
-            StatMetricBadge(
+            ) {
+                isDebloatMode = false
+                currentFilter = AppFilter.FROZEN
+            }
+            InteractiveStatBadge(
                 title = "Bloatware",
                 value = apps.count { it.isBloatware }.toString(),
+                isSelected = isDebloatMode,
                 color = StatusBloat,
                 modifier = Modifier.weight(1f)
-            )
+            ) {
+                isDebloatMode = true
+            }
         }
 
-        // Mode Switcher: Standard Apps List vs UAD Debloater
+        // View Mode Switcher
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
                 .background(BgSurface)
-                .padding(4.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                .padding(3.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Button(
                 onClick = { isDebloatMode = false },
@@ -194,7 +231,7 @@ fun AppsScreen(
                 shape = RoundedCornerShape(10.dp),
                 modifier = Modifier.weight(1f).testTag("tab_all_apps")
             ) {
-                Text("All Packages", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                Text("All Packages (${apps.size})", fontWeight = FontWeight.Bold, fontSize = 12.sp)
             }
 
             Button(
@@ -209,15 +246,15 @@ fun AppsScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.CleaningServices, contentDescription = null, modifier = Modifier.size(14.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("UAD Debloater", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    Text("UAD Debloater (${debloatList.count { it.isInstalled }})", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         if (isDebloatMode) {
-            // Debloater View
+            // Enhanced Debloater View with 1-Tap Convenience Controls
             DebloaterView(
                 debloatList = debloatList,
                 onToggleSelect = { pkg ->
@@ -225,11 +262,22 @@ fun AppsScreen(
                         if (it.packageName == pkg) it.copy(isSelected = !it.isSelected) else it
                     }
                 },
+                onSelectRecommendedOnly = {
+                    debloatList = debloatList.map {
+                        it.copy(isSelected = it.isInstalled && it.level == DebloatLevel.RECOMMENDED && !it.isFrozen)
+                    }
+                },
+                onSelectAll = {
+                    debloatList = debloatList.map { it.copy(isSelected = it.isInstalled && !it.isFrozen) }
+                },
+                onDeselectAll = {
+                    debloatList = debloatList.map { it.copy(isSelected = false) }
+                },
                 onBatchFreeze = {
                     val targets = debloatList.filter { it.isSelected }.map { it.packageName }
                     scope.launch {
                         targets.forEach { appRepository.freezeApp(it) }
-                        Toast.makeText(context, "Batch processed ${targets.size} packages", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Processed ${targets.size} packages", Toast.LENGTH_SHORT).show()
                         refreshData()
                     }
                 },
@@ -237,45 +285,88 @@ fun AppsScreen(
                     val targets = debloatList.filter { it.isSelected }.map { it.packageName }
                     scope.launch {
                         targets.forEach { appRepository.uninstallApp(it) }
-                        Toast.makeText(context, "Batch uninstalled ${targets.size} packages", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Uninstalled ${targets.size} packages", Toast.LENGTH_SHORT).show()
                         refreshData()
                     }
                 }
             )
         } else {
-            // Search Input
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                placeholder = { Text("Search by name or package...", color = TextDim, fontSize = 13.sp) },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = AccentCyan) },
-                trailingIcon = {
-                    if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { searchQuery = "" }) {
-                            Icon(Icons.Default.Close, contentDescription = "Clear", tint = TextMuted)
+            // Convenient Search Bar & Sort Toggle
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text("Search name or package...", color = TextDim, fontSize = 13.sp) },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = AccentCyan) },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(Icons.Default.Close, contentDescription = "Clear", tint = TextMuted)
+                            }
                         }
-                    }
-                },
-                singleLine = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("app_search_field"),
-                shape = RoundedCornerShape(14.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = AccentCyan,
-                    unfocusedBorderColor = BorderGlass,
-                    focusedContainerColor = BgSurface,
-                    unfocusedContainerColor = BgSurface,
-                    focusedTextColor = TextMain,
-                    unfocusedTextColor = TextMain
+                    },
+                    singleLine = true,
+                    modifier = Modifier
+                        .weight(1f)
+                        .testTag("app_search_field"),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = AccentCyan,
+                        unfocusedBorderColor = BorderGlass,
+                        focusedContainerColor = BgSurface,
+                        unfocusedContainerColor = BgSurface,
+                        focusedTextColor = TextMain,
+                        unfocusedTextColor = TextMain
+                    )
                 )
-            )
 
-            // Filter Chips
+                // Quick Sort Button
+                Box(
+                    modifier = Modifier
+                        .size(52.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(BgSurface)
+                        .border(1.dp, BorderGlass, RoundedCornerShape(12.dp))
+                        .clickable {
+                            currentSort = when (currentSort) {
+                                AppSort.NAME -> AppSort.SIZE
+                                AppSort.SIZE -> AppSort.TARGET_SDK
+                                AppSort.TARGET_SDK -> AppSort.NAME
+                            }
+                            val sortName = when (currentSort) {
+                                AppSort.NAME -> "Name"
+                                AppSort.SIZE -> "Size"
+                                AppSort.TARGET_SDK -> "Target SDK"
+                            }
+                            Toast.makeText(context, "Sorted by $sortName", Toast.LENGTH_SHORT).show()
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Default.Sort, contentDescription = "Sort", tint = AccentCyan, modifier = Modifier.size(18.dp))
+                        Text(
+                            text = when (currentSort) {
+                                AppSort.NAME -> "A-Z"
+                                AppSort.SIZE -> "Size"
+                                AppSort.TARGET_SDK -> "SDK"
+                            },
+                            fontSize = 9.sp,
+                            color = TextMuted,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+
+            // Quick Filter Chips
             LazyRow(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp),
+                    .padding(vertical = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 items(AppFilter.values()) { filter ->
@@ -291,6 +382,7 @@ fun AppsScreen(
                                     AppFilter.SYSTEM -> "System (${apps.count { it.isSystemApp }})"
                                     AppFilter.FROZEN -> "Frozen (${apps.count { !it.isEnabled }})"
                                     AppFilter.BLOAT -> "Bloat (${apps.count { it.isBloatware }})"
+                                    AppFilter.TRACKERS -> "Trackers (${apps.count { it.trackers.isNotEmpty() }})"
                                 },
                                 fontSize = 11.sp,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
@@ -331,6 +423,23 @@ fun AppsScreen(
                                     val (perms, acts) = appRepository.getAppDetails(app.packageName)
                                     detailedPermissions = perms
                                     detailedActivities = acts
+                                }
+                            },
+                            onQuickFreezeToggle = {
+                                scope.launch {
+                                    val res = if (app.isEnabled) {
+                                        appRepository.freezeApp(app.packageName)
+                                    } else {
+                                        appRepository.unfreezeApp(app.packageName)
+                                    }
+                                    Toast.makeText(context, res.fold(onSuccess = { it }, onFailure = { it.message ?: "Failed" }), Toast.LENGTH_SHORT).show()
+                                    refreshData()
+                                }
+                            },
+                            onQuickLaunch = {
+                                val launched = appRepository.launchApp(app.packageName)
+                                if (!launched) {
+                                    Toast.makeText(context, "No launcher activity found for ${app.appName}", Toast.LENGTH_SHORT).show()
                                 }
                             }
                         )
@@ -382,31 +491,37 @@ fun AppsScreen(
                     }
 
                     StatusPill(
-                        text = if (app.isEnabled) "ENABLED" else "FROZEN",
+                        text = if (app.isEnabled) "ACTIVE" else "FROZEN",
                         color = if (app.isEnabled) StatusRunning else StatusFrozen
                     )
                 }
 
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                // Metadata Details
+                // Metadata Details Card
                 CyberCard(modifier = Modifier.fillMaxWidth()) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                            Text("Version:", fontSize = 11.sp, color = TextMuted)
+                            Text("Version / Code:", fontSize = 11.sp, color = TextMuted)
                             Text("${app.versionName} (${app.versionCode})", fontSize = 11.sp, color = TextMain)
                         }
                         Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                             Text("Target SDK / Min SDK:", fontSize = 11.sp, color = TextMuted)
                             Text("API ${app.targetSdk} / API ${app.minSdk}", fontSize = 11.sp, color = TextMain)
                         }
+                        if (app.appSize > 0L) {
+                            Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                                Text("APK File Size:", fontSize = 11.sp, color = TextMuted)
+                                Text(Formatter.formatFileSize(context, app.appSize), fontSize = 11.sp, color = AccentCyan)
+                            }
+                        }
                         Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                            Text("UID / Type:", fontSize = 11.sp, color = TextMuted)
+                            Text("UID / Package Type:", fontSize = 11.sp, color = TextMuted)
                             Text("${app.uid} • ${if (app.isSystemApp) "System" else "User"}", fontSize = 11.sp, color = TextMain)
                         }
                         if (app.trackers.isNotEmpty()) {
                             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                                Text("Exodus Trackers:", fontSize = 11.sp, color = StatusBloat)
+                                Text("Exodus Privacy Trackers:", fontSize = 11.sp, color = StatusBloat)
                                 Text(app.trackers.joinToString(", "), fontSize = 11.sp, color = StatusBloat, fontWeight = FontWeight.Bold)
                             }
                         }
@@ -539,7 +654,9 @@ fun AppsScreen(
 @Composable
 fun AppListItemCard(
     app: AppItem,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onQuickFreezeToggle: () -> Unit,
+    onQuickLaunch: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -548,10 +665,10 @@ fun AppListItemCard(
             .background(BgCard)
             .border(width = 1.dp, color = BorderGlass, shape = RoundedCornerShape(14.dp))
             .clickable { onClick() }
-            .padding(12.dp),
+            .padding(10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // App Avatar / Icon block
+        // App Avatar / Initial block
         Box(
             modifier = Modifier
                 .size(42.dp)
@@ -572,7 +689,7 @@ fun AppListItemCard(
             )
         }
 
-        Spacer(modifier = Modifier.width(12.dp))
+        Spacer(modifier = Modifier.width(10.dp))
 
         Column(modifier = Modifier.weight(1f)) {
             Row(
@@ -609,13 +726,49 @@ fun AppListItemCard(
                 Text("v${app.versionName}", fontSize = 10.sp, color = TextDim)
                 Text("•", fontSize = 10.sp, color = TextDim)
                 Text(if (app.isSystemApp) "System" else "User", fontSize = 10.sp, color = if (app.isSystemApp) StatusSystem else StatusUser)
+                if (app.targetSdk > 0) {
+                    Text("• API ${app.targetSdk}", fontSize = 10.sp, color = TextDim)
+                }
             }
         }
 
-        StatusPill(
-            text = if (app.isEnabled) "ACTIVE" else "FROZEN",
-            color = if (app.isEnabled) StatusRunning else StatusFrozen
-        )
+        // Direct 1-Tap Convenience Quick Action Icons
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            // Quick Freeze / Unfreeze
+            IconButton(
+                onClick = onQuickFreezeToggle,
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(if (app.isEnabled) StatusFrozen.copy(alpha = 0.15f) else StatusRunning.copy(alpha = 0.15f))
+            ) {
+                Icon(
+                    imageVector = if (app.isEnabled) Icons.Default.AcUnit else Icons.Default.Check,
+                    contentDescription = if (app.isEnabled) "Freeze" else "Enable",
+                    tint = if (app.isEnabled) StatusFrozen else StatusRunning,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+
+            // Quick Launch
+            IconButton(
+                onClick = onQuickLaunch,
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(AccentCyan.copy(alpha = 0.15f))
+            ) {
+                Icon(
+                    imageVector = Icons.Default.PlayArrow,
+                    contentDescription = "Launch",
+                    tint = AccentCyan,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
     }
 }
 
@@ -623,6 +776,9 @@ fun AppListItemCard(
 fun DebloaterView(
     debloatList: List<DebloatPackage>,
     onToggleSelect: (String) -> Unit,
+    onSelectRecommendedOnly: () -> Unit,
+    onSelectAll: () -> Unit,
+    onDeselectAll: () -> Unit,
     onBatchFreeze: () -> Unit,
     onBatchUninstall: () -> Unit
 ) {
@@ -631,13 +787,45 @@ fun DebloaterView(
     Column(modifier = Modifier.fillMaxSize()) {
         CyberCard(modifier = Modifier.fillMaxWidth()) {
             Column {
-                Text("Universal Android Debloater (UAD)", fontWeight = FontWeight.Black, fontSize = 14.sp, color = TextMain)
+                Text("Universal Android Debloater (UAD)", fontWeight = FontWeight.Black, fontSize = 15.sp, color = TextMain)
                 Text(
-                    "Curated list of OEM preloaded telemetry, telemetry loggers, and bloatware packages with verified safety recommendations.",
+                    "Curated list of OEM preloaded telemetry and bloatware packages with verified safety recommendations.",
                     fontSize = 11.sp,
                     color = TextMuted
                 )
+
                 Spacer(modifier = Modifier.height(10.dp))
+
+                // Convenient 1-Tap Selection Shortcuts
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = onSelectRecommendedOnly,
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Recommended Only", fontSize = 10.sp, color = CleanGreen, fontWeight = FontWeight.Bold)
+                    }
+                    OutlinedButton(
+                        onClick = onSelectAll,
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.weight(0.7f)
+                    ) {
+                        Text("Select All", fontSize = 10.sp, color = AccentCyan)
+                    }
+                    OutlinedButton(
+                        onClick = onDeselectAll,
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.weight(0.7f)
+                    ) {
+                        Text("Clear", fontSize = 10.sp, color = TextDim)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(
                         onClick = onBatchFreeze,

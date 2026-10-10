@@ -20,15 +20,19 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.FolderDelete
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -108,7 +112,7 @@ fun CleanerScreen(
     ) {
         Spacer(modifier = Modifier.height(4.dp))
 
-        // Hero Summary Card
+        // Hero Card with 1-Tap Quick Boost
         CyberCard(modifier = Modifier.fillMaxWidth()) {
             Column {
                 Row(
@@ -118,7 +122,7 @@ fun CleanerScreen(
                 ) {
                     Column {
                         Text(
-                            text = "SD Maid Storage Hygiene",
+                            text = "SD Maid Storage Optimizer",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Black,
                             color = TextMain
@@ -129,7 +133,7 @@ fun CleanerScreen(
                             color = TextMuted
                         )
                     }
-                    StatusPill("PORT SE", SecondaryPurple)
+                    StatusPill("HYGIENE PRO", CleanGreen)
                 }
 
                 Spacer(modifier = Modifier.height(14.dp))
@@ -142,12 +146,12 @@ fun CleanerScreen(
                     Column {
                         Text(
                             text = formattedReclaimable,
-                            fontSize = 28.sp,
+                            fontSize = 32.sp,
                             fontWeight = FontWeight.Black,
                             color = AccentCyan
                         )
                         Text(
-                            text = "Potential Space to Reclaim",
+                            text = "${selectedIds.size} of ${items.size} categories selected",
                             fontSize = 11.sp,
                             color = TextMuted
                         )
@@ -169,7 +173,7 @@ fun CleanerScreen(
                                 scope.launch {
                                     val res = cleanerRepository.cleanItems(selectedIds)
                                     val cleanedFmt = Formatter.formatFileSize(context, res.bytesReclaimed)
-                                    cleanSummaryText = "Reclaimed $cleanedFmt across ${res.itemsCleaned} categories!"
+                                    cleanSummaryText = "✨ Reclaimed $cleanedFmt across ${res.itemsCleaned} categories!"
                                     Toast.makeText(context, cleanSummaryText, Toast.LENGTH_LONG).show()
                                     isCleaning = false
                                     runScan()
@@ -183,9 +187,9 @@ fun CleanerScreen(
                             if (isCleaning) {
                                 CircularProgressIndicator(modifier = Modifier.size(16.dp), color = BgBase, strokeWidth = 2.dp)
                             } else {
-                                Icon(Icons.Default.CleaningServices, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("Clean Now", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                Text("Boost Now", fontWeight = FontWeight.Black, fontSize = 13.sp)
                             }
                         }
                     }
@@ -200,8 +204,32 @@ fun CleanerScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
-        Text("SCANNED CLEANUP CATEGORIES", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = TextMuted, letterSpacing = 1.sp)
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // Convenient Selection Controls Bar
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("SCANNED CATEGORIES", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = TextMuted, letterSpacing = 1.sp)
+
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                OutlinedButton(
+                    onClick = { selectedIds = items.map { it.id }.toSet() },
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("Select All", fontSize = 10.sp, color = AccentCyan)
+                }
+                OutlinedButton(
+                    onClick = { selectedIds = emptySet() },
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("Clear All", fontSize = 10.sp, color = TextDim)
+                }
+            }
+        }
+
         Spacer(modifier = Modifier.height(6.dp))
 
         if (isScanning) {
@@ -222,7 +250,7 @@ fun CleanerScreen(
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp))
                             .background(BgCard)
-                            .border(width = 1.dp, color = BorderGlass, shape = RoundedCornerShape(12.dp))
+                            .border(width = 1.dp, color = if (isChecked) AccentCyan.copy(alpha = 0.4f) else BorderGlass, shape = RoundedCornerShape(12.dp))
                             .clickable {
                                 selectedIds = if (isChecked) selectedIds - item.id else selectedIds + item.id
                             }
