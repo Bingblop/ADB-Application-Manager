@@ -72,7 +72,8 @@ function scanLine(text, st) {
     if (c === '#' && (i === 0 || /[\s;&|()<>]/.test(text[i - 1]))) break;
     if (c === '(' && text[i + 1] === '(' && (i === 0 || /[\s;&|$]/.test(text[i - 1]))) { st.arith++; i++; continue; }
     if (c === ')' && text[i + 1] === ')' && st.arith > 0) { st.arith--; i++; continue; }
-    if (c === '<' && text[i + 1] === '<' && text[i + 2] !== '<' && st.arith === 0) {
+    if (c === '<' && text[i + 1] === '<' && text[i + 2] === '<') { code += '<<<'; i += 2; continue; }      // a here-string: the word after it is not a delimiter
+    if (c === '<' && text[i + 1] === '<' && st.arith === 0) {
       const hd = /^<<-?\s*(?:'([^']+)'|"([^"]+)"|\\?([^\s;&|<>()'"]+))/.exec(text.slice(i));
       if (hd) { heredocs.push({ word: hd[1] || hd[2] || hd[3], dash: text[i + 2] === '-' }); i += hd[0].length - 1; continue; }
     }
@@ -153,6 +154,11 @@ function checkBlock(block, bash) {
     const at = m && lines[+m[1] - 1];
     problems.push({ line: at ? at.line : block.startLine, message: 'bash -n: ' + (m ? m[2] : e) });
   }
+  else {
+    // bash -n only warns (exit 0) about a here-document that is never closed, so a missing terminator is read from the warning
+    const w = /here-document at line (\d+) delimited by end-of-file \(wanted `([^']*)'\)/.exec(r.stderr || '');
+    if (w) { const at = lines[+w[1] - 1]; problems.push({ line: at ? at.line : block.startLine, message: 'here-document is never closed (no line with only ' + w[2] + ')' }); }
+  }
   for (const p of findPlaceholders(lines)) {
     problems.push({ line: p.line, message: 'unquoted placeholder ' + p.text + ' (bash reads <...> as redirection); use a concrete example value, e.g. com.example.app, or quote it' });
   }
@@ -218,10 +224,13 @@ function selfTest() {
     '```sh', '$ echo "<<EOF"', '<<EOF', '$ adb shell pm path <package> out.txt', '```', '',
     '```sh', '$ echo ok # <<EOF', 'ok', '$ adb shell pm path <package> out.txt', '```', '',
     '```sh', '$ echo $((1 << 2))', '4', '$ adb shell pm path <package> out.txt', '```', '',
+    '```bash', 'cat <<<word', 'adb shell pm path <package> out.txt', '```', '',
+    '```sh', '$ cat <<<word', 'word', '$ adb shell pm path <package> out.txt', '```', '',
+    '```bash', 'cat <<EOF', '<html>', 'echo done', '```', '',
     '```sh', '$ cat <<\'EOF\'', '<html>', 'EOF', '$ echo done', 'done', '```', '',
   ].join('\n');
   const got = checkText(fx).map(r => r.state + '@' + r.block.startLine + (r.problems.length ? ':' + [...new Set(r.problems.map(p => p.line))].join(',') : ''));
-  const want = ['ok@3', 'ok@9', 'FAIL@16:17', 'skipped@22', 'FAIL@26:27', 'FAIL@34:34', 'ok@42', 'FAIL@47:49', 'ok@52', 'FAIL@57:59', 'ok@62', 'ok@67', 'FAIL@72:76', 'FAIL@79:81', 'FAIL@84:85', 'FAIL@90:91', 'ok@94', 'ok@99', 'ok@104', 'ok@112', 'ok@119', 'ok@127', 'FAIL@138:140', 'FAIL@146:147', 'FAIL@152:154', 'ok@160', 'ok@166', 'FAIL@173:177', 'FAIL@180:180', 'ok@187', 'FAIL@195:198', 'FAIL@201:204', 'FAIL@207:210', 'ok@213'];
+  const want = ['ok@3', 'ok@9', 'FAIL@16:17', 'skipped@22', 'FAIL@26:27', 'FAIL@34:34', 'ok@42', 'FAIL@47:49', 'ok@52', 'FAIL@57:59', 'ok@62', 'ok@67', 'FAIL@72:76', 'FAIL@79:81', 'FAIL@84:85', 'FAIL@90:91', 'ok@94', 'ok@99', 'ok@104', 'ok@112', 'ok@119', 'ok@127', 'FAIL@138:140', 'FAIL@146:147', 'FAIL@152:154', 'ok@160', 'ok@166', 'FAIL@173:177', 'FAIL@180:180', 'ok@187', 'FAIL@195:198', 'FAIL@201:204', 'FAIL@207:210', 'FAIL@213:215', 'FAIL@218:221', 'FAIL@224:225', 'ok@230'];
   const ok = JSON.stringify(got) === JSON.stringify(want);
   console.log(ok ? 'self-test: ok (' + got.length + ' blocks judged as expected)' : 'self-test: FAIL\n  got:  ' + got.join(' ') + '\n  want: ' + want.join(' '));
   return ok;
