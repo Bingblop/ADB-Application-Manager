@@ -53,7 +53,7 @@ Mark each step PASS, FAIL or SKIP and keep the output of the commands for a fail
    a probe that ran without an error and printed nothing counts as "nothing listening".
 
 3. Read the result:
-   - **Nothing printed and no error from a probe that ran** (check `echo $?` is 1 for `grep` finding nothing, not 126/127) = the private socket is in use. This is the intended result: **PASS**.
+   - **Nothing printed and no error message from the probe** = the private socket is in use. (Do not rely on `echo $?`: for a pipeline it is the status of the last `grep`, which is 1 both for a clean miss and for a probe that failed before it. The visible error text is the signal.) This is the intended result: **PASS**.
    - **A line with `LISTEN` / state `0A`** = this phone refused the private socket and fell back to loopback port 5042. adb works, but
      the old exposure is unchanged on this phone. Record it as its own result (model, Android version), **not** a pass.
    - Nothing printed *and* the app list did not load = the check says nothing; fix the connection first.
@@ -95,8 +95,8 @@ SKIP (moved).
    ```
 
    The command prints only the opening tag of a matching entry, never its value, so a failure is safe to paste into a report. **PASS** if it prints
-   nothing (the file exists and none of the four names is in it). A line ending in `/>` is an empty entry (also fine). A line ending in plain `>` is an
-   entry with a value, a **FAIL**: a secret is in the clear. (The vault's own non-secret hint for the GitHub token is stored under a different name and does not match.) If `run-as` is refused, `su` is not
+   nothing (the file exists and none of the four names is in it). **Any** line printed is a **FAIL**: the old plain entry was not removed after the
+   move into the vault (Android may write an empty string as `<string name="x"></string>`, so an empty entry cannot be told from a secret without printing it). (The vault's own non-secret hint for the GitHub token is stored under a different name and does not match.) If `run-as` is refused, `su` is not
    available or the file is missing, write SKIP; the on-phone result still counts.
 3. Now clear both: the GitHub button loses its tick and the key card says no key. Run the command from step 2 again: still nothing.
 
@@ -120,7 +120,10 @@ If the folder does not exist, the save location was not switched: write SKIP for
 ## 5. Install checks (checklist: Install checks)
 
 1. Install a downloaded app over the installed one **from the same source**: it must install.
-2. Try a test APK signed with a **different key** than the installed copy of the same package: the app must refuse it with a message about the signer.
+2. Try a test APK signed with a **different key** than the installed copy of the same package. The app must warn that the package is installed with a
+   different signing key and that Android refuses the update. It then offers to uninstall the installed copy (and its data) first: **cancel that
+   offer**. Accepting it tests a replacement, not the guard. After cancelling, the installed copy must be unchanged (same version, still installed:
+   `adb shell pm path $TESTPKG` still prints its path, and its data is still there).
 
 To check that the two copies really have different signing certificates (so the refusal is correct, not just the app being strict), compare the
 `apksigner` digest of both. `dumpsys package` shows only an internal signature hash, not the SHA-256 certificate digest, so do not use it for this:
@@ -132,7 +135,7 @@ apksigner verify --print-certs installed-copy.apk | grep "certificate SHA-256"
 apksigner verify --print-certs "$TESTAPK"      | grep "certificate SHA-256"
 ```
 
-The two SHA-256 certificate digests must differ for step 2 to be a valid test. **PASS** if step 1 installs and step 2 is refused with the signer message.
+The two SHA-256 certificate digests must differ for step 2 to be a valid test. **PASS** if step 1 installs, and in step 2 the signer warning appears and, after you cancel the uninstall offer, the installed copy is unchanged.
 
 ## 6. VirusTotal upload (checklist: VirusTotal upload)
 
@@ -144,12 +147,12 @@ accept: it must upload and a result must come back.
 Command-line help: take the hash you expect to be looked up and compare with the card.
 
 ```sh
-adb shell sha256sum "/sdcard/Download/<small.apk>"
+adb shell 'sha256sum "/sdcard/Download/small-test.apk"'      # replace small-test.apk with the file you scanned
 ```
 
 ## 7. Dex optimization: space (checklist: Dex optimization, space)
 
-On the phone: app menu of `$APP` > **Dex optimization** > mode **space** > **Apply**. The result window must say Done (or the phone's own message).
+On the phone: app menu of `$APP` > **Dex optimization** > mode **space** > **Apply**. The progress window closes and a toast reads **Optimized** (a failure reads **Failed**, with the phone's own message in the log).
 
 Before and after, read the dexopt state from the phone:
 
@@ -162,7 +165,7 @@ Note the `status=` values (`verify`, `speed`, `speed-profile`, `space`, `run-fro
 ## 8. Dex optimization: reset (checklist: Dex optimization, reset)
 
 On the phone: choose mode **reset**. The Force switch must be hidden, the note must say the result depends on the Android version, and the subtitle must
-read "Reset the dex optimization of ...". Apply: Done.
+read "Reset the dex optimization of ...". Apply: the toast reads **Optimized**.
 
 Afterwards:
 
