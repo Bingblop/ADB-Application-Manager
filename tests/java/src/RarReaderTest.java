@@ -681,6 +681,8 @@ public class RarReaderTest {
       testRar5Hashes(r);
       testRar5Limits(r);
       testRar5Damage(r);
+      testRar5SolidStartFailure();
+      testRar5SolidStartFailureChain();
       testRar5UnknownSizeRoom();
       testRar4(r);
       testSfxAndMagic(r);
@@ -1050,6 +1052,14 @@ public class RarReaderTest {
     File fb = arc("solid-bad.rar", bad);
     String err = errOf(fb, null, true);
     check("solid: damage in an early entry is an IOException (not a crash)", err != null && !err.startsWith("THROWN"));
+    // a visitor that reads nothing never sees the damage in its own read; the background drain meets it first and must not hide it
+    String skipErr = null;
+    try {
+      RarReader.walk(fb, null, new RarReader.Visitor() {
+        public boolean entry(RarReader.Item it, InputStream data) throws IOException { return true; }
+      });
+    } catch (IOException ex) { skipErr = ex.getMessage(); } catch (Throwable t) { skipErr = "THROWN " + t; }
+    check("solid: damage found while draining entries the visitor skipped is reported (" + skipErr + ")", skipErr != null && !skipErr.startsWith("THROWN"));
   }
 
   /** Ops for a solid continuation (tables sent already). */
@@ -1551,6 +1561,75 @@ public class RarReaderTest {
       if (exp.isFile() && werr == null) checkExp(f, exp, info);
     }
     check("real fixtures of both generations were present (" + real4 + " RAR 1.5-4.x, " + real5 + " RAR 5)", real4 > 0 && real5 > 0);
+  }
+
+  /**
+   * A solid RAR5 archive whose first entry cannot start (an unsupported compression version) used to end the whole walk with a NullPointerException:
+   * the visitor met the error, then the walk read the same stream again to keep the solid state, and the source was still null. Now the entry fails with
+   * an IOException the visitor sees, and the walk goes on to the next entry (which fails on its own, as the decoder state is gone).
+   */
+  static void testRar5SolidStartFailure() throws Exception {
+    Lz5 z = new Lz5(true);
+    z.beginFile(false); z.block(true); for (int i = 0; i < 50; i++) z.lit('a' + i % 20); z.endBlock(true);
+    F5 a = new F5("a.bin").lz(z, false, 1);
+    a.ver = 9;                                              // an unsupported compression version: listed, but start() throws
+    z.beginFile(true); z.block(false); for (int i = 0; i < 20; i++) z.match(10, 5); z.endBlock(true);
+    F5 b = new F5("b.bin").lz(z, true, 1);
+    W5 w = new W5(); w.main(true); w.file(a); w.file(b); w.end();
+    File f = new File(tmp, "solid-start-failure.rar");
+    Files.write(f.toPath(), w.bytes());
+    final List<String> seen = new ArrayList<String>();
+    final List<String> errs = new ArrayList<String>();
+    Throwable thrown = null;
+    try {
+      RarReader.walk(f, null, new RarReader.Visitor() {
+        public boolean entry(RarReader.Item it, InputStream d) throws IOException {
+          seen.add(it.name);
+          try { readAll(d); errs.add(it.name + ": read"); } catch (IOException e) { errs.add(it.name + ": IOException"); }
+          return true;
+        }
+      });
+    } catch (Throwable t) { thrown = t; }
+    check("a solid entry that cannot start does not end the walk with an exception (" + thrown + ")", thrown == null);
+    check("both entries are visited and fail with an IOException (" + errs + ")", seen.size() == 2 && errs.size() == 2 && errs.get(0).endsWith("IOException") && errs.get(1).endsWith("IOException"));
+    ZipTool.Archive ar = RarSource.open(f, null);
+    List<String> problems = new ArrayList<String>();
+    Throwable t2 = null;
+    long[] res = null;
+    try { res = ZipTool.extractTree(ar, "", new File(tmp, "solid-start-failure-out"), null, problems, null, FileOps.REPLACE); } catch (Throwable t) { t2 = t; }
+    check("extracting it reports the entries as problems instead of crashing (" + t2 + ")", t2 == null && res != null && res[0] == 0 && problems.size() == 2);
+  }
+
+  /**
+   * A solid entry that cannot start leaves the shared decoder on the state of the entry before it. The entry after it, which has no checksum to
+   * catch the difference, must fail instead of being "extracted" from that stale state.
+   */
+  static void testRar5SolidStartFailureChain() throws Exception {
+    Lz5 z = new Lz5(true);
+    z.beginFile(false); z.block(true); for (int i = 0; i < 50; i++) z.lit('a' + i % 20); z.endBlock(true);
+    F5 a = new F5("a.bin").lz(z, false, 1);
+    z.beginFile(true); z.block(false); for (int i = 0; i < 30; i++) z.lit('A' + i % 20); z.endBlock(true);
+    F5 b = new F5("b.bin").lz(z, true, 1);
+    b.ver = 9;                                              // listed, but start() throws before the decoder is touched
+    z.beginFile(true); z.block(false); for (int i = 0; i < 20; i++) z.match(10, 5); z.endBlock(true);
+    F5 c = new F5("c.bin").lz(z, true, 1);
+    c.crc = -1;                                             // no checksum
+    W5 w = new W5(); w.main(true); w.file(a); w.file(b); w.file(c); w.end();
+    File f = new File(tmp, "solid-start-failure-chain.rar");
+    Files.write(f.toPath(), w.bytes());
+    final List<String> res = new ArrayList<String>();
+    Throwable thrown = null;
+    try {
+      RarReader.walk(f, null, new RarReader.Visitor() {
+        public boolean entry(RarReader.Item it, InputStream d) throws IOException {
+          try { readAll(d); res.add(it.name + " read"); } catch (IOException e) { res.add(it.name + " IOException"); }
+          return true;
+        }
+      });
+    } catch (Throwable t) { thrown = t; }
+    check("a start failure in the middle of a solid chain does not end the walk (" + thrown + ")", thrown == null);
+    check("a.bin reads, b.bin fails to start, and c.bin (no checksum) fails instead of decoding on stale state (" + res + ")",
+        res.size() == 3 && res.get(0).equals("a.bin read") && res.get(1).equals("b.bin IOException") && res.get(2).equals("c.bin IOException"));
   }
 
   /**
