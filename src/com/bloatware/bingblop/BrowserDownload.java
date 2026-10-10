@@ -261,7 +261,8 @@ public final class BrowserDownload {
     /**
      * Where a redirect from {@code cur} to {@code loc} leads, or an IOException in words when it must not be followed: not a web address,
      * a step down from https to http, or an outside address pointing at this phone (the same judgement as {@link HttpSafe#open}).
-     * Each hop asks the browser's cookies for its own address, so a cookie never follows a redirect to another host.
+     * The caller works out the Cookie header again for each hop's own address instead of forwarding the previous one; which cookies that
+     * returns for a host is the cookie store's call (a domain cookie can match several hosts), so this does not promise host filtering itself.
      */
     static String nextHop(String cur, String loc) throws IOException {
         String next = new URL(new URL(cur), loc).toString();
