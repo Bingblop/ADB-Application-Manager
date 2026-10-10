@@ -3,6 +3,7 @@ package com.bloatware.bingblop;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /** The ticker reports on its own thread (also when the worker is stuck), names a stall, and stops. */
 public class JobTickerTest {
@@ -21,8 +22,12 @@ public class JobTickerTest {
     final ProgressMeter m = new ProgressMeter(1000, 2, System.currentTimeMillis());
     final List<String> texts = Collections.synchronizedList(new ArrayList<String>());
     final List<Long> stalls = Collections.synchronizedList(new ArrayList<Long>());
+    final AtomicInteger inFlight = new AtomicInteger();                 // callbacks that have started and not yet finished
     JobTicker t = new JobTicker(m, "Copying", 50, 200, new JobTicker.Listener() {
-      public void onTick(String text, int pct, long stalledMs) { texts.add(text); stalls.add(stalledMs); }
+      public void onTick(String text, int pct, long stalledMs) {
+        inFlight.incrementAndGet();
+        try { texts.add(text); stalls.add(stalledMs); } finally { inFlight.decrementAndGet(); }
+      }
     });
     t.start();
     check("it reports on its own, many times", waitFor(() -> texts.size() >= 2));
@@ -37,7 +42,7 @@ public class JobTickerTest {
     synchronized (m) { m.update(501, 1, "a.bin", System.currentTimeMillis()); }
     check("movement ends the stall note", waitFor(() -> stalls.get(stalls.size() - 1) == 0 && !texts.get(texts.size() - 1).contains("nothing has moved")));
     t.stop();
-    Thread.sleep(100);                                             // a report that was already running when stop() came may still land
+    check("stop() leaves no report in flight (waited for, not guessed)", waitFor(() -> inFlight.get() == 0));
     int c = texts.size();
     Thread.sleep(200);
     check("after stop() nothing more is reported", texts.size() == c);
@@ -45,12 +50,12 @@ public class JobTickerTest {
     check("it can be started again", waitFor(() -> texts.size() > c));
     t.stop();
     // a listener that throws does not end the ticker
-    final int[] k = {0};
+    final AtomicInteger k = new AtomicInteger();
     JobTicker bad = new JobTicker(new ProgressMeter(0, 0, System.currentTimeMillis()), "x", 30, 1000, new JobTicker.Listener() {
-      public void onTick(String text, int pct, long s) { k[0]++; throw new RuntimeException("boom"); }
+      public void onTick(String text, int pct, long s) { k.incrementAndGet(); throw new RuntimeException("boom"); }
     });
     bad.start();
-    check("a listener that throws does not stop the ticker", waitFor(() -> k[0] >= 3));
+    check("a listener that throws does not stop the ticker", waitFor(() -> k.get() >= 3));
     bad.stop();
     System.out.println(fails == 0 ? "ALL PASSED (" + n + " checks)" : fails + " FAILED");
     System.exit(fails == 0 ? 0 : 1);
