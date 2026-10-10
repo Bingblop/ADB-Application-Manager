@@ -20,7 +20,7 @@ It is connected now and stays connected. It is saved again the next time you con
 Devices that are connected now stay connected.
 ok      with nothing saved the line is gone
 ok   3. every entry is a row that can be tapped
-ok      tapping a row opens it in its own window: level, tag, time and ids, the whole message, and three buttons: {"shown":true,"level":"Error","tag":"AndroidRuntime","meta":"10-08 <clock>.123 pid 1234 / tid 1250","msg":"FATAL EXCEPTION: main\njava.lang.NullPointerException: Attempt to invoke virtual method on a null object","btns":["Copy","Ask agent","Web search","Copy the answer"]}
+ok      tapping a row opens it in its own window: level, tag, time and ids, the whole message, and three buttons: {"shown":true,"level":"Error","tag":"AndroidRuntime","meta":"10-08 <clock>.123 pid 1234 / tid 1250","msg":"FATAL EXCEPTION: main\njava.lang.NullPointerException: Attempt to invoke virtual method on a null object","btns":["Copy","Ask agent","Web search","Stop","Copy the answer"]}
 ok      Copy puts the entry's lines on the clipboard: 10-08 <clock>.123  1234  1250 E AndroidRuntime: FATAL EXCEPTION: main
 10-08 <clock>.123  1234  1250 E AndroidRuntime: java.lang.NullPointerException: Attempt to invoke virtual method on a null object
 ok      Web search opens a search made of the tag and the first line: https://www.google.com/search?q=android%20AndroidRuntime%20FATAL%20EXCEPTION%3A%20main

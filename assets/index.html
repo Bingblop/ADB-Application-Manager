@@ -2166,6 +2166,13 @@
         .agent-ask-bar.indet > i { width: 35%; animation: askIndet 1.3s ease-in-out infinite; }
         @keyframes askIndet { 0% { margin-left: -35%; } 100% { margin-left: 100%; } }
         .agent-ask-prog-txt { margin-top: 4px; font-size: 11px; color: var(--text-muted); }
+        .agent-ask-hist { margin-top: 10px; border: 1px solid var(--border-glass); border-radius: 12px; overflow: hidden; }
+        .agent-ask-hist-row { display: block; width: 100%; text-align: left; background: transparent; border: 0; border-bottom: 1px solid var(--border-glass); color: var(--text-main); padding: 9px 12px; cursor: pointer; font: inherit; }
+        .agent-ask-hist-row:last-child { border-bottom: 0; }
+        .agent-ask-hist-row:active { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+        .agent-ask-hist-row b { display: block; font-size: 13px; overflow-wrap: anywhere; }
+        .agent-ask-hist-row span { display: block; font-size: 11px; color: var(--text-muted); }
+        .agent-ask-hist-empty { padding: 12px; font-size: 12px; color: var(--text-muted); }
         .agent-ask-foot { margin-top: 10px; font-size: 11px; line-height: 1.5; color: var(--text-muted); }
         #agentCard.flash { animation: agentFlash 1.1s ease 2; }
         @keyframes agentFlash { 0%, 100% { box-shadow: 0 0 0 0 transparent; } 50% { box-shadow: 0 0 0 3px var(--accent); } }
@@ -4168,6 +4175,8 @@
                 .cd-row-act:active { background: var(--accent); color: var(--on-accent); }
                 .cd-row-act:disabled { opacity: 0.45; }
                 .cd-row-act.danger { border-color: var(--status-bloat); color: var(--status-bloat); }
+                .cd-row-act.green { border-color: color-mix(in srgb, var(--apps-enabled) 50%, var(--border-glass)); color: var(--apps-enabled); background: color-mix(in srgb, var(--apps-enabled) 14%, transparent); }
+                .cd-row-act.green:active { background: var(--accent); color: var(--on-accent); }
                 .cd-batch { position: sticky; bottom: 10px; z-index: 30; display: none; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 10px; padding: 8px 10px; border-radius: var(--radius-lg);
                     background: var(--bg-sheet); border: 1px solid var(--accent); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.55), 0 0 18px var(--accent-glow); }
                 .cd-batch.show { display: flex; }
@@ -4299,10 +4308,10 @@
                     </div>
                     <div class="cd-batch" id="cdBatch">
                         <b id="cdBatchCount">0 selected</b>
-                        <button class="cd-row-act" onclick="cdBatch('enable')">Enable</button>
+                        <button class="cd-row-act green" onclick="cdBatch('enable')">Enable</button>
                         <button class="cd-row-act" onclick="cdBatch('disable')">Disable</button>
                         <button class="cd-row-act danger" onclick="cdBatch('uninstall')">Uninstall</button>
-                        <button class="cd-row-act" onclick="cdBatch('reinstall')">Reinstall</button>
+                        <button class="cd-row-act green" onclick="cdBatch('reinstall')">Reinstall</button>
                         <button class="cd-x" onclick="cdSelClear()" aria-label="Clear selection">&#10005;</button>
                     </div>
                 </div>
@@ -5163,6 +5172,13 @@
                 <div class="color-card-subtitle">The Coding Agent that answers every Ask agent button: what a hidden setting, a permission, a process, a log line or an app is. Its key or sign-in is set up in the Command-Line Interface tab.</div>
                 <select class="op-select lang-select" id="askAgentSelect" aria-label="Default agent" onchange="askAgentChoose(this.value)"></select>
                 <div class="appearance-note" id="askAgentNote"></div>
+                <div class="mode-btn-row" style="margin-top:10px;">
+                    <button class="mode-action-btn" id="askTestBtn" onclick="askAgentTest()">Test the default agent</button>
+                    <button class="mode-action-btn" id="askTestStop" style="display:none;" onclick="askStopRun('askTest')">Stop</button>
+                </div>
+                <div class="agent-ask-prog" id="askTestProg" role="progressbar" aria-label="Progress"><div class="agent-ask-bar indet" id="askTestBar"><i id="askTestBarFill"></i></div><div class="agent-ask-prog-txt" id="askTestProgTxt"></div></div>
+                <div class="lc-ent-ai" id="askTestOut" style="display:none; margin-top:8px;"></div>
+                <div class="appearance-note" id="askTestRes"></div>
             </div>
 
             <div class="color-card">
@@ -7725,7 +7741,8 @@ Type any command below (e.g. pm list packages -d)
             </div>
             <div id="lcEntAiWrap" style="display:none;">
                 <div class="lc-ent-ai" id="lcEntAi"></div>
-                <div class="lc-ent-btns"><button class="mode-action-btn" id="lcEntAiCopy" onclick="lcEntryCopyAnswer()">Copy the answer</button></div>
+                <div class="agent-ask-prog" id="lcEntProg" role="progressbar" aria-label="Progress"><div class="agent-ask-bar indet" id="lcEntBar"><i id="lcEntBarFill"></i></div><div class="agent-ask-prog-txt" id="lcEntProgTxt"></div></div>
+                <div class="lc-ent-btns"><button class="mode-action-btn" id="lcEntStop" style="display:none;" onclick="askStopRun('lcEnt')">Stop</button><button class="mode-action-btn" id="lcEntAiCopy" onclick="lcEntryCopyAnswer()">Copy the answer</button></div>
             </div>
         </div>
     </div>
@@ -7754,6 +7771,8 @@ Type any command below (e.g. pm list packages -d)
                 <button class="mode-action-btn" id="sdbEditFlipBtn" style="min-height:40px;" onclick="sdbEditFlip()">Flip</button>
             </div>
             <div class="lc-ent-ai" id="sdbEditAi" style="display:none; margin-top:10px;"></div>
+            <div class="agent-ask-prog" id="sdbEditProg" role="progressbar" aria-label="Progress"><div class="agent-ask-bar indet" id="sdbEditBar"><i id="sdbEditBarFill"></i></div><div class="agent-ask-prog-txt" id="sdbEditProgTxt"></div></div>
+            <div class="lc-ent-btns" style="margin-top:6px;"><button class="mode-action-btn" id="sdbEditStop" style="display:none;" onclick="askStopRun('sdbEdit')">Stop</button></div>
             <div class="batch-sheet-tools" style="margin-top:8px; gap:12px; flex-wrap:wrap;">
                 <button class="batch-tool-link" id="sdbEditWebBtn" onclick="sdbEditWeb()">Web search</button>
                 <button class="batch-tool-link" id="sdbEditAiBtn" onclick="sdbEditAsk()">Ask agent</button>
@@ -8444,7 +8463,9 @@ Type any command below (e.g. pm list packages -d)
                 <button class="mode-action-btn" id="agentAskStop" style="display:none;" onclick="agentAskStop()">Stop</button>
                 <button class="mode-action-btn" id="agentAskWebBtn" onclick="agentAskWeb()">Web search</button>
                 <button class="mode-action-btn" id="agentAskCopy" onclick="agentAskCopy()">Copy the answer</button>
+                <button class="mode-action-btn" id="agentAskHistBtn" onclick="askHistToggle()">History</button>
             </div>
+            <div class="agent-ask-hist" id="agentAskHist" style="display:none;"></div>
             <div class="agent-ask-foot">An agent can be wrong, so treat the answer as a hint: for anything that changes the phone, try the step that can be undone first (freeze rather than uninstall) and check that the phone still works. <a href="#" onclick="agentAskToSettings(); return false;">Change the default agent</a></div>
         </div>
     </div>
@@ -10745,6 +10766,34 @@ Type any command below (e.g. pm list packages -d)
             const ag = askAgentDef();
             showToast(ag ? 'Default agent: ' + ag.name : 'No default agent');
         }
+        // "Test the default agent" in Settings: one sample question, the same way an Ask agent button asks
+        let askTestBusy = false;
+        function askTestSample() { return 'Android ?\nPackage: com.android.calculator2\nApp name: Calculator\nType: system app\nState: enabled'; }          // the text sent, not shown
+        async function askAgentTest() {
+            if (askTestBusy) return;
+            haptic();
+            const out = document.getElementById('askTestOut'), res = document.getElementById('askTestRes'), btn = document.getElementById('askTestBtn');
+            res.textContent = ''; res.classList.remove('is-err');
+            const ag = askAgentDef();
+            txRefreshVault();
+            if (!ag || !txAgentReady(ag)) {
+                out.style.display = 'none';
+                res.classList.add('is-err');
+                res.textContent = !ag ? txT('No default agent is chosen, so there is nothing to test: an Ask agent button reads the web for you. Choose an agent above to test it.')
+                    : txF('{0} is not connected yet. Add its key or sign-in in the Command-Line Interface tab first.', ag.name);
+                return;
+            }
+            askTestBusy = true; btn.disabled = true;
+            out.style.display = '';
+            const t0 = Date.now();
+            const q = askTestSample();
+            const ans = await aiExplainInto(out, agentSystem('package'), q, () => askTestBusy, 'Only this sample question is sent to them: whether the Calculator package can be disabled.', null, 'askTest');
+            const ok = !!ans && !out.classList.contains('is-err');
+            res.classList.toggle('is-err', !ok);
+            res.textContent = ok ? txF('It works: {0} answered in {1} s.', ag.name, Math.max(1, Math.round((Date.now() - t0) / 1000)))
+                : (out.textContent === txT('Stopped.') ? '' : txT('It did not work. The message above says why.'));
+            askTestBusy = false; btn.disabled = false;
+        }
         // The agent when there is one that can answer; otherwise Settings opens on the choice (nothing is sent anywhere).
         function askAgentGate() {
             const ag = askAgentDef();
@@ -10812,7 +10861,7 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('agentAskModal').classList.add('show');
             agentAskRun();
         }
-        function agentAskClose() { haptic(); if (askRun) askRun.stop(); document.getElementById('agentAskModal').classList.remove('show'); askProgressShow(false); agentAsk = null; }
+        function agentAskClose() { haptic(); askStopRun('agentAsk'); document.getElementById('agentAskModal').classList.remove('show'); askProgressShow('agentAsk', false); agentAsk = null; }
         function agentAskWeb() { if (agentAsk) { haptic(); openUrlExternal('https://www.google.com/search?q=' + encodeURIComponent(agentAsk.web)); } }
         function agentAskCopy() { if (agentAsk && agentAsk.answer) { copyText(agentAsk.answer); showToast('Copied the answer'); } }
         async function agentAskRun() {
@@ -10820,32 +10869,79 @@ Type any command below (e.g. pm list packages -d)
             if (!cur || cur.busy) return;
             const btn = document.getElementById('agentAskGo');
             cur.busy = true; btn.disabled = true;
-            askProgressShow(true);
-            cur.answer = await aiExplainInto(document.getElementById('agentAskAi'), agentSystem(cur.kind), cur.text, () => agentAsk === cur, 'The text above is sent to them.', cur.web);
+            const wasAgent = askAgentReadyNow() ? askAgentDef().name.replace(/\s*\(.*\)$/, '') : '';
+            cur.answer = await aiExplainInto(document.getElementById('agentAskAi'), agentSystem(cur.kind), cur.text, () => agentAsk === cur, 'The text above is sent to them.', cur.web, 'agentAsk');
             cur.busy = false; btn.disabled = false;
-            if (agentAsk === cur) askProgressShow(false);
+            if (cur.answer && agentAsk === cur && !document.getElementById('agentAskAi').classList.contains('is-err')) askHistAdd(cur, wasAgent);
         }
-        // A progress bar and a Stop button while an answer is on its way (an agent that streams, a cloud agent's task, the web lookup)
-        function askProgressShow(on) {
-            const p = document.getElementById('agentAskProg'), s = document.getElementById('agentAskStop');
+        // ---- a short history of the answers of the Ask agent window (kept on this phone only; Clear history removes them) ----
+        const ASK_HIST_MAX = 12;
+        function askHistGet() { const h = kvGet('ask_history', []); return Array.isArray(h) ? h.filter(e => e && e.kind && e.name && e.answer) : []; }
+        function askHistAdd(cur, agentName) {
+            const e = { kind: cur.kind, name: cur.name, text: String(cur.text || '').slice(0, 3000), web: cur.web || '', answer: String(cur.answer).slice(0, 6000), agent: agentName || '', at: Date.now() };
+            const list = askHistGet().filter(x => !(x.kind === e.kind && x.name === e.name));
+            list.unshift(e);
+            kvSet('ask_history', list.slice(0, ASK_HIST_MAX));
+            if (document.getElementById('agentAskHist').style.display !== 'none') askHistRender();
+        }
+        function askHistToggle() {
+            haptic();
+            const h = document.getElementById('agentAskHist');
+            const open = h.style.display === 'none';
+            h.style.display = open ? '' : 'none';
+            if (open) askHistRender();
+        }
+        function askHistRender() {
+            const h = document.getElementById('agentAskHist'), list = askHistGet();
+            if (!list.length) { h.innerHTML = '<div class="agent-ask-hist-empty">' + escapeHtml(txT('No answers are kept yet.')) + '</div>'; return; }
+            h.innerHTML = list.map((e, i) => '<button class="agent-ask-hist-row" type="button" onclick="askHistOpen(' + i + ')"><b translate="no">' + escapeHtml(e.name) + '</b><span>'
+                + escapeHtml((AGENT_KINDS[e.kind] || AGENT_KINDS.item).label) + ' · <span style="display:inline" translate="no">' + escapeHtml(new Date(e.at).toLocaleString(langLocale(), { dateStyle: 'medium', timeStyle: 'short' })) + (e.agent ? ' · ' + escapeHtml(e.agent) : '') + '</span></span></button>').join('')
+                + '<button class="agent-ask-hist-row" type="button" onclick="askHistClear()"><b>' + escapeHtml(txT('Clear history')) + '</b><span>' + escapeHtml(txT('Answers are kept on this phone only.')) + '</span></button>';
+        }
+        function askHistOpen(i) {
+            const e = askHistGet()[i];
+            if (!e) return;
+            haptic();
+            askStopRun('agentAsk');
+            const k = AGENT_KINDS[e.kind] || AGENT_KINDS.item;
+            agentAsk = { kind: e.kind, name: e.name, text: e.text, answer: e.answer, busy: false, web: e.web };
+            document.getElementById('agentAskTitle').innerText = k.title;
+            document.getElementById('agentAskSubject').innerText = e.name;
+            document.getElementById('agentAskSent').innerText = e.text;
+            const box = document.getElementById('agentAskAi');
+            box.classList.remove('is-err');
+            box.innerHTML = '<div class="lc-ent-ai-note"></div><span class="ai-out"></span>';
+            box.firstChild.textContent = txF('Saved answer from {0}. Ask again for a new one.', new Date(e.at).toLocaleString(langLocale(), { dateStyle: 'medium', timeStyle: 'short' }));
+            box.querySelector('.ai-out').textContent = e.answer;
+            document.getElementById('agentAskHist').style.display = 'none';
+        }
+        function askHistClear() {
+            haptic();
+            kvSet('ask_history', []);
+            askHistRender();
+        }
+        // A progress bar and a Stop button while an answer is on its way (an agent that streams, a cloud agent's task, the web lookup). Every window that asks
+        // has the same four pieces with a shared name start: KEYProg, KEYBar, KEYBarFill, KEYProgTxt and the button KEYStop.
+        function askProgressShow(key, on) {
+            const p = document.getElementById(key + 'Prog'), s = document.getElementById(key + 'Stop');
             if (!p || !s) return;
             p.classList.toggle('on', !!on);
             s.style.display = on ? '' : 'none';
-            if (on) askProgressSet(null, '');
+            if (on) askProgressSet(key, null, '');
         }
-        function askProgressSet(frac, label) {
-            const bar = document.getElementById('agentAskBar'), fill = document.getElementById('agentAskBarFill'), t = document.getElementById('agentAskProgTxt');
+        function askProgressSet(key, frac, label) {
+            const bar = document.getElementById(key + 'Bar'), fill = document.getElementById(key + 'BarFill'), t = document.getElementById(key + 'ProgTxt');
             if (!bar) return;
             const det = typeof frac === 'number';
             bar.classList.toggle('indet', !det);
             fill.style.width = det ? Math.max(3, Math.min(100, Math.round(frac * 100))) + '%' : '';
             t.textContent = label || '';
         }
-        let askRun = null;                // the answer being fetched: { stopped, ids, stop() }
-        function agentAskStop() {
-            haptic();
-            if (askRun) askRun.stop();
+        let askRun = null;                // the answer being fetched: { ui, stopped, ids, stop() }
+        function askStopRun(key) {        // the Stop button of a window, or that window closing
+            if (askRun && (!key || askRun.ui === key)) askRun.stop();
         }
+        function agentAskStop() { haptic(); askStopRun('agentAsk'); }
         // The app menu's chip for an app the UAD-NG list does not know
         function openAppAsk() {
             if (!inspectedPkg) return;
@@ -19761,7 +19857,7 @@ Type any command below (e.g. pm list packages -d)
             return '<div class="app-card' + (sel ? ' selected' : '') + '" id="cdcard_' + pk + '" data-pkg="' + pk + '">' +
                 '<div class="cd-icon">' + icon + '</div>' +
                 '<div class="app-meta" onclick="cdToggleSel(this.parentElement.dataset.pkg)"><div class="app-name">' + escapeHtml(a.name) + '</div><div class="app-pkg">' + pk + '</div><div class="badge-row">' + badges + '</div></div>' +
-                '<div class="app-actions"><button class="cd-row-act" onclick="cdAppAct(this.closest(\'.app-card\').dataset.pkg, \'' + act[0] + '\')">' + act[1] + '</button>' +
+                '<div class="app-actions"><button class="cd-row-act' + (act[0] === 'disable' ? '' : ' green') + '" onclick="cdAppAct(this.closest(\'.app-card\').dataset.pkg, \'' + act[0] + '\')">' + act[1] + '</button>' +
                 '<button class="btn-mini" title="Menu" onclick="cdAppMenu(this.closest(\'.app-card\').dataset.pkg)">\u22ef</button></div>' +
                 '<div class="app-left" onclick="cdToggleSel(this.parentElement.dataset.pkg)"><div class="app-checkbox">' + (sel ? '\u2713' : '') + '</div></div></div>';
         }
@@ -21024,7 +21120,7 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('lcEntMore').disabled = false;
             document.getElementById('lcEntryModal').classList.add('show');
         }
-        function lcEntryClose() { document.getElementById('lcEntryModal').classList.remove('show'); lcEnt = null; }
+        function lcEntryClose() { askStopRun('lcEnt'); document.getElementById('lcEntryModal').classList.remove('show'); lcEnt = null; }
         function lcEntryText() { return lcEnt ? lcEnt.raws.join('\n') : ''; }
         function lcEntryCopy() { if (!lcEnt) return; copyText(lcEntryText()); showToast('Copied the entry'); }
         function lcEntryCopyAnswer() { if (lcEntAiText) { copyText(lcEntAiText); showToast('Copied the answer'); } }
@@ -21050,7 +21146,7 @@ Type any command below (e.g. pm list packages -d)
             const btn = document.getElementById('lcEntMore');
             document.getElementById('lcEntAiWrap').style.display = '';
             lcEntAiBusy = true; btn.disabled = true;
-            lcEntAiText = await aiExplainInto(document.getElementById('lcEntAi'), LC_ENTRY_SYSTEM, q, () => lcEnt === ent, undefined, lcEntryQuery());
+            lcEntAiText = await aiExplainInto(document.getElementById('lcEntAi'), LC_ENTRY_SYSTEM, q, () => lcEnt === ent, undefined, lcEntryQuery(), 'lcEnt');
             lcEntAiBusy = false; btn.disabled = false;
         }
 
@@ -21342,15 +21438,16 @@ Type any command below (e.g. pm list packages -d)
         }
         function askAgentReadyNow() { const a = askAgentDef(); if (!a) return false; txRefreshVault(); return txAgentReady(a); }
 
-        async function aiExplainInto(box, system, text, isCurrent, sentNote, webQuery) {
+        async function aiExplainInto(box, system, text, isCurrent, sentNote, webQuery, ui) {
             box.classList.remove('is-err');
-            const run = askRun = { stopped: false, ids: new Set(), remote: null, stop() {          // what the Stop button of the Ask agent window ends
+            const run = askRun = { ui: ui || '', stopped: false, ids: new Set(), remote: null, stop() {          // what the Stop button of the Ask agent window ends
                 if (this.stopped) return;
                 this.stopped = true;
                 this.ids.forEach(i => { try { window.AndroidBridge.aiCancel(i); } catch (e) {} });
                 if (this.remote) this.remote();
             } };
             const live = () => isCurrent() && !run.stopped;
+            if (ui) askProgressShow(ui, true);
             try {
                 const ag = askAgentDef();
                 if (!ag || !txAgentReady(ag)) {
@@ -21365,7 +21462,7 @@ Type any command below (e.g. pm list packages -d)
                 let shown = '';
                 const cb = (t, replace) => { shown = replace ? t : shown + t; if (live()) out.textContent = shown; };
                 cb.alive = live;
-                cb.progress = (frac, label) => { if (live()) askProgressSet(frac, label); };
+                cb.progress = (frac, label) => { if (live() && ui) askProgressSet(ui, frac, label); };
                 const r = await txTurnApi(ag, model, txEffortFor(ag), system, [{ role: 'user', text: txForModel(text) }], cb);
                 const answer = r.text.trim();
                 if (live()) out.textContent = answer || '(no answer)';
@@ -21375,6 +21472,7 @@ Type any command below (e.g. pm list packages -d)
                 return '';
             } finally {
                 if (askRun === run) askRun = null;
+                if (ui) askProgressShow(ui, false);
             }
         }
 
@@ -29087,11 +29185,11 @@ Type any command below (e.g. pm list packages -d)
                 + (hint ? '\nThe app already says: ' + hint.t + (hint.v ? ' Values: ' + hint.v : '') : '');
             const box = document.getElementById('sdbEditAi'), btn = document.getElementById('sdbEditAiBtn');
             box.style.display = ''; sdbAiBusy = true; btn.disabled = true;
-            await aiExplainInto(box, SDB_AI_SYSTEM, q, () => sdbEditing === cur, 'The setting\'s name, table and current value are sent to them.', 'android settings ' + cur.ns + ' ' + cur.key);
+            await aiExplainInto(box, SDB_AI_SYSTEM, q, () => sdbEditing === cur, 'The setting\'s name, table and current value are sent to them.', 'android settings ' + cur.ns + ' ' + cur.key, 'sdbEdit');
             sdbAiBusy = false; btn.disabled = false;
         }
 
-        function sdbEditClose() { document.getElementById('sdbEditModal').classList.remove('show'); sdbEditing = null; }
+        function sdbEditClose() { askStopRun('sdbEdit'); document.getElementById('sdbEditModal').classList.remove('show'); sdbEditing = null; }
 
         function sdbEditSave() {
             if (!sdbEditing) return;

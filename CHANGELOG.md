@@ -1,5 +1,12 @@
 # Changelog
 
+## v7.12.7-Pro (versionCode 849)
+
+- **Test the default agent.** The Default agent card in Settings has a button that asks the chosen agent one sample question (whether the Calculator package can be disabled; nothing else is sent) and says whether it works and how long it took, or why it did not. It has the same progress bar and Stop as the Ask agent window. Test: `t149`.
+- **A short history in the Ask agent window.** A **History** button lists the last 12 answers (newest first, with the date and the agent); tap one to read it again with its question without asking anew, **Ask again** gets a fresh one. Asking about the same thing again replaces the old entry; **Clear history** removes them all. Kept on this phone only. Test: `t149`.
+- **The log-entry and Hidden Settings windows have the progress bar and Stop too** (the same piece as the Ask agent window; closing the window stops the request). Test: `t149`.
+- **Enable and Reinstall are green in the Connected Devices tab** (each row and the batch bar), like the app menu. Test: `t149`.
+
 ## v7.12.6-Pro (versionCode 848)
 
 - **Ask agent works with no agent and no API key.** With no default agent chosen (or one that is not connected) every Ask agent button now answers by itself with a built-in **web lookup**: it searches the web (Bing, then Wikipedia if Bing gives nothing) for a few words (for example `android com.example.app safe to disable`), reads the first result pages and shows the passages that mention the app, setting or permission, with the sites as buttons. Only those search words leave the phone and the box says so. It is not an AI answer (choose an agent for that) and not the Browser Use or Crawl4AI projects, which need their own computer or key. Nothing changes when an agent is connected. Tests: `t144`, `t145`.
