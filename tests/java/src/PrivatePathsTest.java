@@ -19,6 +19,30 @@ public class PrivatePathsTest {
   static boolean B(File f, File data, PrivatePaths.Root... allowed) { return PrivatePaths.blocked(f, data, L, allowed); }
   static File touch(File f) throws Exception { f.getParentFile().mkdirs(); Files.write(f.toPath(), new byte[]{1}); return f; }
 
+  /** The text of one method of MainActivity from its signature to the next annotated bridge method or the next member at its indent; null when not found. */
+  static String bodyOf(String src, String sig) {
+    int i = src.indexOf(sig);
+    if (i < 0 || src.indexOf(sig, i + 1) >= 0) return null;
+    int e = -1;
+    for (String stop : new String[] {"\n        @JavascriptInterface", "\n        private ", "\n    private "}) {
+      int q = src.indexOf(stop, i + sig.length());
+      if (q >= 0 && (e < 0 || q < e)) e = q;
+    }
+    return e < 0 ? src.substring(i) : src.substring(i, e);
+  }
+  static File srcDir() {
+    File d = new File(System.getProperty("user.dir")).getAbsoluteFile();
+    for (int i = 0; d != null && i < 8; i++, d = d.getParentFile()) {
+      File f = new File(d, "src/com/bloatware/bingblop");
+      if (f.isDirectory()) return f;
+    }
+    return null;
+  }
+  static void routeHas(String src, String sig, String must, String mustNot) {
+    String b = bodyOf(src, sig);
+    is(sig.trim() + " has " + must + (mustNot == null ? "" : " and not " + mustNot), b != null && b.contains(must) && (mustNot == null || !b.contains(mustNot)));
+  }
+
   public static void main(String[] a) throws Exception {
     File root = Files.createTempDirectory("privpaths").toFile();
     File data = new File(root, "data/com.example.app");
@@ -186,6 +210,84 @@ public class PrivatePathsTest {
     // a relative path and an empty one
     is("an empty path means the working folder, which is not the data folder, so it is not protected (and opens nothing)", !B(new File(""), data, okA));
     is("a path with a NUL byte is protected or refused (never taken for the cache)", B(new File(upd.getPath() + "\u0000/../../shared_prefs/prefs.xml"), data, okA));
+
+    // ---- a file that is already open is judged by what the descriptor says (blockedOpened), not by the name it was found by ----
+    File loneOpen = touch(new File(upd, "lone-open.apk"));
+    String loneT = loneOpen.getCanonicalPath();
+    is("opened: a lone file in an allowed folder is not protected", !PrivatePaths.blockedOpened(loneT, 1, data, okA));
+    is("opened: the same file with a second name (a hard link) is protected", PrivatePaths.blockedOpened(loneT, 2, data, okA) && PrivatePaths.blockedOpened(loneT, 0, data, okA));
+    is("opened: a private file is protected whatever its link count", PrivatePaths.blockedOpened(prefs.getCanonicalPath(), 1, data, okA) && PrivatePaths.blockedOpened(prefs.getCanonicalPath(), 5, data, okA));
+    is("opened: the Morphe key is protected, a patched APK is not", PrivatePaths.blockedOpened(mk.getCanonicalPath(), 1, data, okA) && !PrivatePaths.blockedOpened(mp.getCanonicalPath(), 1, data, okA));
+    is("opened: a file outside the data folder is not protected", !PrivatePaths.blockedOpened(outside.getCanonicalPath(), 1, data, okA) && !PrivatePaths.blockedOpened(outside.getCanonicalPath(), 3, data, okA));
+    is("opened: a target that was unlinked after the open is protected (its name and link count no longer say what it was)",
+        PrivatePaths.blockedOpened(loneT + " (deleted)", 1, data, okA) && PrivatePaths.blockedOpened(prefs.getCanonicalPath() + " (deleted)", 0, data, okA)
+        && PrivatePaths.blockedOpened(outside.getCanonicalPath() + " (deleted)", 1, data, okA));
+    is("opened: a descriptor that is no file (pipe, socket, anon_inode), an empty, a relative or a missing target is protected",
+        PrivatePaths.blockedOpened("pipe:[1234]", 1, data, okA) && PrivatePaths.blockedOpened("socket:[99]", 1, data, okA) && PrivatePaths.blockedOpened("anon_inode:[eventfd]", 1, data, okA)
+        && PrivatePaths.blockedOpened("", 1, data, okA) && PrivatePaths.blockedOpened("app.apk", 1, data, okA) && PrivatePaths.blockedOpened(null, 1, data, okA)
+        && PrivatePaths.blockedOpened(loneT, 1, null, okA));
+    is("opened: a NUL byte in the target is protected", PrivatePaths.blockedOpened(loneT + "\u0000/../../shared_prefs/prefs.xml", 1, data, okA));
+    // the swap itself: a name that led to an allowed file when it was checked, then to a private one when it was opened
+    File swapNm = new File(upd, "swapname.apk");
+    boolean swapReady;
+    try { Files.deleteIfExists(swapNm.toPath()); Files.createSymbolicLink(swapNm.toPath(), loneOpen.toPath()); swapReady = true; } catch (Exception e) { swapReady = false; }
+    if (swapReady && new File("/proc/self/fd").isDirectory()) {
+      boolean checked = !B(swapNm, data, okA);                                   // the check, while the name still leads to the lone allowed file
+      Files.delete(swapNm.toPath());
+      Files.createSymbolicLink(swapNm.toPath(), prefs.toPath());                  // the swap, before the open
+      java.io.FileInputStream held = new java.io.FileInputStream(swapNm);
+      try {
+        String seen = null;
+        for (File fd : new File("/proc/self/fd").listFiles()) {
+          try { String t = Files.readSymbolicLink(fd.toPath()).toString(); if (t.equals(prefs.getCanonicalPath())) seen = t; } catch (Exception ignored) {}
+        }
+        is("the swap: the name passed the check, the open descriptor leads to the private file and is protected", checked && seen != null && PrivatePaths.blockedOpened(seen, 1, data, okA));
+        // and the other way round: opened while the name led to the allowed file, then swapped to a private one
+        Files.delete(swapNm.toPath());
+        Files.createSymbolicLink(swapNm.toPath(), loneOpen.toPath());
+        java.io.FileInputStream held2 = new java.io.FileInputStream(swapNm);
+        try {
+          Files.delete(swapNm.toPath());
+          Files.createSymbolicLink(swapNm.toPath(), prefs.toPath());
+          boolean nameNow = B(swapNm, data, okA), descNow = true;
+          for (File fd : new File("/proc/self/fd").listFiles()) {
+            try { String t = Files.readSymbolicLink(fd.toPath()).toString(); if (t.equals(loneT)) descNow = PrivatePaths.blockedOpened(t, 1, data, okA); } catch (Exception ignored) {}
+          }
+          is("the descriptor opened before the swap still means the allowed file (the name now leads to a private one and is protected)", nameNow && !descNow);
+        } finally { held2.close(); }
+      } finally { held.close(); }
+    }
+
+    // ---- the routes of the file manager that read, write, copy or hand on a file keep the guards (a source scan: the page-facing code cannot run here) ----
+    File sdir = srcDir();
+    if (sdir != null) {
+      String m = new String(Files.readAllBytes(new File(sdir, "MainActivity.java").toPath()), java.nio.charset.StandardCharsets.UTF_8);
+      routeHas(m, "public String fmRead(", "openUnlessPrivate(", "new java.io.FileInputStream(");
+      routeHas(m, "public String fmReadText(", "openUnlessPrivate(", "new java.io.FileInputStream(");
+      routeHas(m, "public String fmReadB64(", "openUnlessPrivate(", "new java.io.FileInputStream(");
+      routeHas(m, "public String fmWriteText(", "fmPrivate(", null);
+      routeHas(m, "public String fmOp(", "fmPrivate(a)", null);
+      routeHas(m, "public String fmBatch2(", "fmPrivate(q)", null);
+      routeHas(m, "public String fmInstall(", "fmPrivate(path)", null);
+      routeHas(m, "private String fmThumbFor(", "isPrivateData(f)", null);
+      routeHas(m, "public void fmImage(", "isPrivateData(f)", null);
+      routeHas(m, "public void fmPdf(", "checkOpenedNotPrivate(pfd)", null);
+      routeHas(m, "public void fmOpenWith(", "copyFileChecked(src, out)", "copyFile(src, out)");
+      routeHas(m, "public String shareStoredFile(", "copyFileChecked(src, out)", "copyFile(src, out)");
+      routeHas(m, "public String cdBtSend(", "copyFileChecked(src, out)", "copyFile(src, out)");
+      routeHas(m, "private void runVirusTotalScan(", "copyFileChecked(f, sout)", null);
+      String vt = bodyOf(m, "private void runVirusTotalScan(");
+      is("VirusTotal hashes and uploads the checked copy, not the name the page gave", vt != null && vt.indexOf("f = staged;") > 0 && vt.indexOf("VirusTotal.sha256(f)") > vt.indexOf("f = staged;"));
+      routeHas(m, "private ZipTool.Archive archiveFor(String path, boolean fresh, char[] password)", "fmPrivate(p)", null);
+      routeHas(m, "public String archiveExtract2(", "fmPrivate(dest)", null);
+      routeHas(m, "public String archiveCreate(", "fmPrivate(dir.getPath())", null);
+      routeHas(m, "public String archiveCreate(", "isPrivateData(f)", null);
+      routeHas(m, "public String fmSearch(", "searchSkip()", null);
+      String ou = bodyOf(m, "private InputStream openUnlessPrivate(");
+      is("openUnlessPrivate opens first and judges the descriptor (fstat link count, /proc/self/fd target), closing it when refused", ou != null && ou.indexOf("ParcelFileDescriptor.open(") < ou.indexOf("checkOpenedNotPrivate(pfd)") && ou.contains("pfd.close()"));
+      String co = bodyOf(m, "private void checkOpenedNotPrivate(");
+      is("checkOpenedNotPrivate reads the link with /proc/self/fd and fstat, and fails closed", co != null && co.contains("/proc/self/fd/") && co.contains("Os.fstat(") && co.contains("blockedOpened(") && co.contains("throw new IOException(PRIVATE_WHY)"));
+    } else System.out.println("SKIP route scan: src/com/bloatware/bingblop not found");
 
     System.out.println(n + " checks, " + fails + " failed");
     if (fails > 0) System.exit(1);
