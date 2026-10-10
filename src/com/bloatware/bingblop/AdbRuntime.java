@@ -1,6 +1,8 @@
 package com.bloatware.bingblop;
 
 import android.content.Context;
+import android.net.LocalSocket;
+import android.net.LocalSocketAddress;
 import android.os.Build;
 
 
@@ -120,14 +122,13 @@ final class AdbRuntime {
             if (!AdbServerSpec.pathFits(path)) return null;
             File probe = new File(dir, "probe");
             probe.delete();
-            // bind() and listen() are separate permissions: adb's server needs both, so try both (a unix stream socket, the kind adb makes)
-            java.io.FileDescriptor fd = null;
+            // bind() and listen() are separate permissions: adb's server needs both, so try both
+            LocalSocket s = new LocalSocket();
             try {
-                fd = android.system.Os.socket(android.system.OsConstants.AF_UNIX, android.system.OsConstants.SOCK_STREAM, 0);
-                android.system.Os.bind(fd, android.system.UnixSocketAddress.createFileSystem(probe.getAbsolutePath()));
-                android.system.Os.listen(fd, 1);
+                s.bind(new LocalSocketAddress(probe.getAbsolutePath(), LocalSocketAddress.Namespace.FILESYSTEM));
+                android.system.Os.listen(s.getFileDescriptor(), 1);
             } finally {
-                if (fd != null) { try { android.system.Os.close(fd); } catch (Exception ignored) {} }
+                try { s.close(); } catch (Exception ignored) {}
                 probe.delete();
             }
             return path;
