@@ -52,12 +52,12 @@ final class InstallGuards {
     }
 
     /**
-     * Null when an update may continue. An installed app always has signers; an APK whose signers cannot
-     * be read is refused, and so is one that shares no certificate with the installed app.
-     * {@code installed} empty means the app is not installed (nothing to compare): allowed.
+     * Null when an update may continue. Both callers have already found the package installed, so an installed app whose signers cannot
+     * be read is a failure ("installed-unreadable"), and so is an APK whose signers cannot be read ("unreadable") or one that shares no
+     * certificate with the installed app ("different").
      */
     static String checkSigners(Set<String> installed, Set<String> incoming) {
-        if (installed == null || installed.isEmpty()) return null;
+        if (installed == null || installed.isEmpty()) return "installed-unreadable";
         if (incoming == null || incoming.isEmpty()) return "unreadable";
         Set<String> common = new HashSet<String>(installed);
         common.retainAll(incoming);

@@ -2278,7 +2278,9 @@ public class MainActivity extends Activity {
                     PackageInfo archiveSigned = getPackageManager().getPackageArchiveInfo(apk.getAbsolutePath(), sigFlags);
                     java.util.Set<String> newSigners = archiveSigned != null ? signerDigests(archiveSigned, true) : new HashSet<String>();
                     String signerWhy = InstallGuards.checkSigners(installedSigners, newSigners);
-                    if ("unreadable".equals(signerWhy)) {
+                    if ("installed-unreadable".equals(signerWhy)) {
+                        throw new IllegalStateException("couldn't read the signing certificate of the installed app, so the download can't be checked against it - not installed");
+                    } else if ("unreadable".equals(signerWhy)) {
                         throw new IllegalStateException("couldn't read the signing certificate of the downloaded file, so it can't be checked against the installed app - not installed");
                     } else if (signerWhy != null) {
                         throw new IllegalStateException("signed with a different key than the installed app, so Android won't accept it as an update. "
@@ -2380,6 +2382,7 @@ public class MainActivity extends Activity {
                     PackageInfo archiveSigned = getPackageManager().getPackageArchiveInfo(apk.getAbsolutePath(), sigFlags);
                     java.util.Set<String> newSigners = archiveSigned != null ? signerDigests(archiveSigned, true) : new HashSet<String>();
                     String signerWhy = InstallGuards.checkSigners(installedSigners, newSigners);
+                    if ("installed-unreadable".equals(signerWhy)) throw new IllegalStateException("couldn't read the signing certificate of this install, so the download can't be checked against it - not installed");
                     if ("unreadable".equals(signerWhy)) throw new IllegalStateException("couldn't read the signing certificate of the downloaded file, so it can't be checked against this install - not installed");
                     if (signerWhy != null) throw new IllegalStateException("the release APK is signed with a different key than this install, so Android won't accept it as an update");
 
@@ -2598,12 +2601,12 @@ public class MainActivity extends Activity {
      * Downloads a ShizuStore APK from its upstream URL and installs it through the active mode (or hands
      * it to the system installer with no privileged mode). Progress -> window.onStoreInstallProgress(json).
      */
-    private void runStoreInstall(final String apkUrl, final String pkg, final String label) {
+    private void runStoreInstall(final String apkUrl, final String pkg, final String label, final String sha256) {
         if (apkUrl == null || !apkUrl.startsWith("https://")) {
             storeInstallProgress(pkg, "error", 0, "This app has no direct APK to install.");
             return;
         }
-        downloadAndInstall(apkUrl, pkg, label, pkg, "");
+        downloadAndInstall(apkUrl, pkg, label, pkg, sha256 == null ? "" : sha256);
     }
 
     /**
@@ -10893,8 +10896,8 @@ public class MainActivity extends Activity {
 
         /** Downloads and installs a ShizuStore app. Progress: window.onStoreInstallProgress(json). */
         @JavascriptInterface
-        public void storeInstall(String apkUrl, String pkg, String label) {
-            runStoreInstall(apkUrl, pkg, label);
+        public void storeInstall(String apkUrl, String pkg, String label, String sha256) {
+            runStoreInstall(apkUrl, pkg, label, sha256);
         }
 
         /**

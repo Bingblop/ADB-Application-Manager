@@ -27,7 +27,7 @@ public class InstallGuardsTest {
     check("a missing actual hash is refused", InstallGuards.checkHash(h, null) != null);
     check("normalize strips blanks and label", InstallGuards.normalize("  sha256:" + h + " ").equals(h) && InstallGuards.normalize(null).isEmpty());
 
-    check("not installed: nothing to compare", InstallGuards.checkSigners(set(), set()) == null && InstallGuards.checkSigners(null, set("a")) == null);
+    check("an installed app whose signers cannot be read is a failure, not a pass", "installed-unreadable".equals(InstallGuards.checkSigners(set(), set("a"))) && "installed-unreadable".equals(InstallGuards.checkSigners(null, set("a"))) && "installed-unreadable".equals(InstallGuards.checkSigners(set(), set())));
     check("same signer passes", InstallGuards.checkSigners(set("a"), set("a")) == null);
     check("one shared signer among several passes", InstallGuards.checkSigners(set("a", "b"), set("b", "c")) == null);
     check("no shared signer is 'different'", "different".equals(InstallGuards.checkSigners(set("a"), set("b"))));
