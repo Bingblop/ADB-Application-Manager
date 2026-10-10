@@ -77,10 +77,10 @@ Every release APK is signed with the same certificate. Check it against these va
 | | |
 | --- | --- |
 | Owner | `CN=bingblop, OU=adb, O=appmanager, L=local, ST=android, C=US` |
-| SHA-1 | `33:6E:8B:D2:71:A2:25:4D:78:5D:24:EE:66:3F:2F:46:83:CD:B9:C3` (`336e8bd271a2254d785ee24663f2f4683cdb93c7`) |
-| SHA-256 | `94:61:87:0F:D7:CD:24:06:40:6A:11:9F:4D:37:53:3B:B7:C2:3D:1E:D8:50:50:6B:AD:7E:A3:E6:B4:BD:26:D1:7D` (`9461870f7cd2406406a119f4d37533c23bb7d1ed850506bad7ea3e6b4bd26d17`) |
+| SHA-1 | `33:6E:8B:D2:71:A2:25:4D:78:5E:E2:46:63:F2:F4:68:3C:DB:93:C7` (`336e8bd271a2254d785ee24663f2f4683cdb93c7`) |
+| SHA-256 | `94:61:87:0F:7C:D2:40:64:06:A1:19:F4:D3:75:33:C2:3B:B7:D1:ED:85:05:06:BA:D7:EA:3E:6B:4B:D2:6D:17` (`9461870f7cd2406406a119f4d37533c23bb7d1ed850506bad7ea3e6b4bd26d17`) |
 
-To read it from an APK: `apksigner verify --verbose --print-certs <file>.apk` (Android SDK build-tools). A build from a pull request or a local `./build.sh` is signed with a throwaway key instead and shows a different value; it will not install over the app. The release workflow stops, before publishing, if an APK is not signed with this certificate (`tools/check-signing-cert.sh`).
+To read it from an APK: `apksigner verify --verbose --print-certs <file>.apk` (Android SDK build-tools). A build signed with another key (a local `./build.sh` without your own `release.keystore`, which makes a new one, or a pull-request build without the repository's signing secret) shows a different value and will not install over the app. The release workflow stops, before publishing, if an APK is not signed with this certificate (`tools/check-signing-cert.sh`).
 
 ## See more
 
