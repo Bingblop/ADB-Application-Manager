@@ -3,6 +3,7 @@ package com.bloatware.bingblop;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,12 +27,18 @@ public final class PtyShell {
     /** Output that was sent to the page and not yet reported shown: past this the reader waits (a runaway program cannot drown the page). */
     static final int MAX_UNACKED = 256 * 1024;
     private static final int FRAME = 4096;
+    /** Input that was handed over and not yet written to the helper: past this {@link #write} refuses (it never waits for the program to take its input). */
+    static final int MAX_QUEUED = 1024 * 1024;
 
     private final Process process;
     private final OutputStream in;
     private final Object flow = new Object();
+    private final Object queueLock = new Object();
+    private final ArrayDeque<byte[]> queue = new ArrayDeque<byte[]>();     // frames for the helper, in order
+    private long queued;
     private long unacked;
     private volatile boolean closed;
+    private boolean failed;      // the writer ended: nothing more can be sent (guarded by queueLock)
 
     /** The helper's command line: {@code helper ROWS COLS -- program args...}. */
     public static List<String> command(String helper, int rows, int cols, List<String> program) {
@@ -97,11 +104,58 @@ public final class PtyShell {
                     code = PtyShell.this.process.waitFor();
                 } catch (InterruptedException ignored) {
                 }
+                // nothing can be sent to a program that ended: the writer stops, and later input is refused
+                synchronized (queueLock) {
+                    failed = true;
+                    queue.clear();
+                    queued = 0;
+                    queueLock.notifyAll();
+                }
                 listener.onExit(code);
             }
         }, "pty-reader");
         t.setDaemon(true);
         t.start();
+        Thread w = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                writeLoop();
+            }
+        }, "pty-writer");
+        w.setDaemon(true);
+        w.start();
+    }
+
+    /** Writes the queued frames to the helper, one after the other; this thread, not the caller of {@link #write}, waits when the helper takes no input. */
+    private void writeLoop() {
+        try {
+            while (true) {
+                byte[] f;
+                synchronized (queueLock) {
+                    while (queue.isEmpty()) {
+                        if (closed || failed) return;
+                        queueLock.wait(500);
+                    }
+                    f = queue.peekFirst();
+                }
+                in.write(f);
+                in.flush();
+                synchronized (queueLock) {
+                    queue.pollFirst();
+                    queued -= f.length;
+                    queueLock.notifyAll();
+                }
+            }
+        } catch (IOException e) {
+            // the helper is gone: what is still queued has nowhere to go
+        } catch (InterruptedException ignored) {
+        } finally {
+            synchronized (queueLock) {
+                failed = true;
+                queue.clear();
+                queued = 0;
+            }
+        }
     }
 
     /** The page showed {@code n} more bytes. */
@@ -112,8 +166,15 @@ public final class PtyShell {
         }
     }
 
-    /** Keys (already as the terminal wants them: UTF-8, escape sequences for the arrows and so on). */
-    public synchronized void write(byte[] data, int off, int len) throws IOException {
+    /**
+     * Keys (already as the terminal wants them: UTF-8, escape sequences for the arrows and so on). They are queued and written by the writer thread, so this
+     * returns at once even when the program takes no input: a caller that waited here would also hold up the acknowledgement that frees its output. When
+     * {@link #MAX_QUEUED} bytes are already waiting, or the helper is gone, the input is refused with an IOException (all of it or none).
+     */
+    public void write(byte[] data, int off, int len) throws IOException {
+        if (len <= 0) return;
+        List<byte[]> frames = new ArrayList<byte[]>();
+        long total = 0;
         while (len > 0) {
             int n = Math.min(len, FRAME);
             byte[] f = new byte[3 + n];
@@ -121,18 +182,30 @@ public final class PtyShell {
             f[1] = (byte) (n >> 8);
             f[2] = (byte) n;
             System.arraycopy(data, off, f, 3, n);
-            in.write(f);
+            frames.add(f);
+            total += f.length;
             off += n;
             len -= n;
         }
-        in.flush();
+        enqueue(frames, total);
     }
 
-    public synchronized void resize(int rows, int cols) throws IOException {
+    public void resize(int rows, int cols) throws IOException {
         rows = Math.max(1, Math.min(rows, 1000));
         cols = Math.max(1, Math.min(cols, 1000));
-        in.write(new byte[]{'R', (byte) (rows >> 8), (byte) rows, (byte) (cols >> 8), (byte) cols});
-        in.flush();
+        List<byte[]> frames = new ArrayList<byte[]>();
+        frames.add(new byte[]{'R', (byte) (rows >> 8), (byte) rows, (byte) (cols >> 8), (byte) cols});
+        enqueue(frames, 5);
+    }
+
+    private void enqueue(List<byte[]> frames, long total) throws IOException {
+        synchronized (queueLock) {
+            if (closed || failed) throw new IOException("the terminal is closed");
+            if (queued + total > MAX_QUEUED) throw new IOException("the terminal is not taking input fast enough");
+            for (byte[] f : frames) queue.addLast(f);
+            queued += total;
+            queueLock.notifyAll();
+        }
     }
 
     /** Hangs up (the helper sends the program SIGHUP when its input ends), and ends the process if it is still there a moment later. */
@@ -140,6 +213,9 @@ public final class PtyShell {
         closed = true;
         synchronized (flow) {
             flow.notifyAll();
+        }
+        synchronized (queueLock) {
+            queueLock.notifyAll();
         }
         try {
             in.close();

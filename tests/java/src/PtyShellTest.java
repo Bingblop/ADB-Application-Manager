@@ -113,6 +113,63 @@ public class PtyShellTest {
         is("after the page acknowledges, more arrives", f.text().length() > got + 1000, f.text().length() + " vs " + got);
         f.sh.close();
 
+        // ---- a program that ended: its writer thread ends too, and later input is refused ----
+        Rec e = start(h, 24, 80, "/bin/sh", "-c", "exit 0");
+        is("a program that ends on its own", e.done.await(4, TimeUnit.SECONDS));
+        Thread.sleep(1200);
+        int writers = 0;
+        for (Thread th : Thread.getAllStackTraces().keySet()) if ("pty-writer".equals(th.getName()) && th.isAlive()) writers++;
+        is("no writer thread is left behind by sessions that ended", writers == 0, "writers " + writers);
+        boolean refusedAfterEnd = false;
+        try { type(e, "x"); } catch (java.io.IOException ex) { refusedAfterEnd = true; }
+        is("input for a program that ended is refused", refusedAfterEnd);
+
+        // ---- input never blocks the caller (C-014) ----
+        // The page's calls reach the app one after another. A program that takes no input and floods its output (the page not yet acknowledging) used to
+        // block a paste in the pipe to the helper, and with it every later call (the acknowledgement that would have freed the output): a deadlock.
+        Rec d = new Rec();
+        d.autoAck = false;
+        ProcessBuilder pb2 = new ProcessBuilder(PtyShell.command(h, 24, 80, Arrays.asList("/bin/sh", "-c", "yes aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")));
+        pb2.redirectErrorStream(true);
+        d.sh = new PtyShell(pb2.start(), d);
+        Thread.sleep(1500);                              // the reader waits for acknowledgements; the helper's output is blocked; so is its input
+        final int dGot = d.text().length();
+        final byte[] paste = new byte[100 * 1024];
+        Arrays.fill(paste, (byte) 'a');
+        final CountDownLatch pasted = new CountDownLatch(1);
+        final PtyShell dsh = d.sh;
+        Thread pt = new Thread(new Runnable() { public void run() { try { dsh.write(paste, 0, paste.length); } catch (java.io.IOException e) { } pasted.countDown(); } });
+        pt.setDaemon(true);
+        pt.start();
+        is("a 100 KB paste returns at once although the program takes no input", pasted.await(2, TimeUnit.SECONDS));
+        final CountDownLatch resized = new CountDownLatch(1);
+        Thread rt = new Thread(new Runnable() { public void run() { try { dsh.resize(30, 90); } catch (java.io.IOException e) { } resized.countDown(); } });
+        rt.setDaemon(true);
+        rt.start();
+        is("and so does a resize behind it", resized.await(2, TimeUnit.SECONDS));
+        d.sh.ack(dGot);
+        Thread.sleep(600);
+        is("the acknowledgement frees the output again", d.text().length() > dGot + 1000, d.text().length() + " vs " + dGot);
+        // far more than the program will ever take: refused with an error, never waiting
+        final int[] refused = { 0 };
+        final CountDownLatch flooded = new CountDownLatch(1);
+        Thread ft = new Thread(new Runnable() { public void run() {
+            for (int i = 0; i < 60; i++) { try { dsh.write(paste, 0, paste.length); } catch (java.io.IOException e) { refused[0]++; } }
+            flooded.countDown(); } });
+        ft.setDaemon(true);
+        ft.start();
+        is("6 MB of input in a row never blocks the caller", flooded.await(5, TimeUnit.SECONDS));
+        is("what the queue cannot hold is refused with an error", refused[0] > 0, "refused " + refused[0]);
+        d.sh.close();
+        // the queue keeps the order of keys and resizes, and a normal shell still gets every byte
+        Rec o = start(h, 30, 100, "/bin/bash", "--norc", "-i");
+        is("a shell prompt after the change", o.waitFor("bash-", 3000), o.text());
+        for (int i = 0; i < 20; i++) type(o, "echo seq-" + i + "\n");
+        is("many small writes arrive in order", o.waitFor("seq-19", 3000), o.text());
+        int a0 = o.text().indexOf("seq-0\r\n"), a19 = o.text().lastIndexOf("seq-19\r\n");
+        is("the first line comes before the last", a0 >= 0 && a19 > a0, o.text());
+        o.sh.close();
+
         System.out.println(fails == 0 ? "ALL PASS (" + n + " checks)" : fails + " FAILED");
         System.exit(fails == 0 ? 0 : 1);
     }
