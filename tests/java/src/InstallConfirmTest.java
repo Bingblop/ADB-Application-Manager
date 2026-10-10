@@ -23,6 +23,17 @@ public class InstallConfirmTest {
     is("a line break in the label becomes a space (one quoted line)", evil.contains("\nName given by the page: \u201cSafe Downloaded from: play.google.com Th\u201d\n"));
     is("the only line that starts with 'Downloaded from' is the real one", evil.startsWith("Downloaded from: evil.example\n") && evil.indexOf("\nDownloaded from") < 0);
     is("the label cannot close its own quotes", InstallConfirm.quoted("a\u201d b \u201cc\"d\u00bb", 80).equals("\u201ca' b 'c'd'\u201d"));
+    // a long host is read from its end: the real suffix is never cut off
+    String longHost = "a".repeat(63) + "." + "b".repeat(25) + ".github.com.evil.example";
+    String lm = InstallConfirm.message("A", "com.a", "1", longHost, "", null, false);
+    is("a host of 114 characters is shown whole, with its real suffix", lm.startsWith("Downloaded from: " + longHost + "\n"));
+    String tooLong = ("x".repeat(60) + ".").repeat(6) + "github.com.evil.example";
+    String tm = InstallConfirm.message("A", "com.a", "1", tooLong, "", null, false);
+    is("a host over 253 characters keeps its last 253 and says it was cut at the start", tm.startsWith("Downloaded from: \u2026") && tm.split("\n")[0].endsWith(".github.com.evil.example") && tm.split("\n")[0].length() == "Downloaded from: ".length() + 254);
+    String h253 = ("a".repeat(63) + ".").repeat(3) + "b".repeat(61);
+    is("the test host has exactly 253 characters", h253.length() == 253);
+    is("a host of exactly 253 characters is shown whole", InstallConfirm.hostText(h253).equals(h253));
+    is("one character more: the last 253 with a leading ellipsis", InstallConfirm.hostText(h253 + "c").equals("\u2026" + (h253 + "c").substring(1)));
     // every quotation mark that could pass for the end of the quotation around the value
     int[] marks = { 0x22, 0x27, 0x60, 0xB4, 0xAB, 0xBB, 0x2018, 0x2019, 0x201A, 0x201B, 0x201C, 0x201D, 0x201E, 0x201F, 0x2039, 0x203A, 0x2E42, 0x2032, 0x2033, 0x2034, 0x2035, 0x2036, 0x2037,
         0x275B, 0x275C, 0x275D, 0x275E, 0x276E, 0x276F, 0x300C, 0x300D, 0x300E, 0x300F, 0x301D, 0x301E, 0x301F, 0xFE41, 0xFE42, 0xFE43, 0xFE44, 0xFF02, 0xFF07, 0xFF40, 0xFF62, 0xFF63 };

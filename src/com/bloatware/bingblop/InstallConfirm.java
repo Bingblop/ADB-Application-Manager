@@ -28,9 +28,9 @@ final class InstallConfirm {
         // What the app itself found out comes first, one fact to a line. Everything an attacker can write (the package name and version inside the file,
         // the page's name for the app) comes after it, labelled as not checked and always inside quotation marks, so that a long value that wraps onto
         // the next screen line cannot pass for one of the facts above.
-        String h = clean(host, 100);
+        String h = hostText(host);
         sb.append("Downloaded from: ").append(h.isEmpty() ? "unknown" : h).append("\n");
-        String rh = clean(requestedHost, 100);
+        String rh = hostText(requestedHost);
         if (!rh.isEmpty() && !rh.equalsIgnoreCase(h)) sb.append("(the address given was on ").append(rh).append(" and sent the download on)\n");
         if (installedVersion == null) sb.append("This is a new app: it is not installed on this phone.\n");
         else {
@@ -49,6 +49,17 @@ final class InstallConfirm {
         if (!name.isEmpty()) sb.append("Name given by the page: ").append(name).append("\n");
         sb.append("\nIt is installed without the system installer's own question, so only continue if you started this install.");
         return sb.toString();
+    }
+
+    /**
+     * A host as shown. A host name is read from its END (the registered domain is the last labels), so it is never cut from the right: up to the longest
+     * valid DNS name (253 characters) it is shown whole; a longer one is not a valid name and is shown by its last 253 characters, marked with a leading
+     * ellipsis. Control, format and separator characters become spaces, as everywhere in the question.
+     */
+    static String hostText(String host) {
+        String c = clean(host, Integer.MAX_VALUE);
+        if (c.length() <= 253) return c;
+        return "\u2026" + c.substring(c.length() - 253);
     }
 
     /**
