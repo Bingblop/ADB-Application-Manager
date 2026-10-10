@@ -8,7 +8,7 @@ TODO: one sentence on what this release is (for example "A patch release: fixes 
 
 TODO: bullets for what the phone check found (one per finding, in words a user can follow; say which phones and modes).
 
-TODO: candidate bullets for the four audit fixes. Keep a bullet only when its pull request is merged into `main`:
+TODO: the four audit fixes below are all merged into `main` (#119, #120, #121, #122); check each sentence against the final code once more, and add the phone-check findings.
 
 - **Archives: an entry is capped by the free space (#121, audit Z-1).** Extracting a zip, tar, 7z or RAR archive could write far more than the archive's file size suggests (a 10 KB sparse tar that declares 6 GiB, a small 7z of zeros) and fill the phone's storage. Each entry may now write only what is free less a 64 MB reserve, and one that declares more is refused in words before anything is written. Tested on a computer; not run on a device.
 - **Archives: tar hard links (#122, audit Z-2).** A hard link in a tar was extracted as an empty file and counted as done. It is now a copy of the file it shares, or skipped with a note when that file is not part of the extraction. Tested on a computer; not run on a device.
