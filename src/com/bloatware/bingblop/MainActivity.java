@@ -729,8 +729,10 @@ public class MainActivity extends Activity {
     // ---- SD Maid SE tab: the host of the four tools (see SdmHost) ----
     private final java.util.concurrent.ExecutorService sdmCalls = java.util.concurrent.Executors.newFixedThreadPool(3);
     private SdmHost sdmHostInstance;
+    private boolean sdmClosed;      // set in onDestroy: a call that was already running must not build a new host (and engine threads) afterwards
 
     private synchronized SdmHost sdmHost() {
+        if (sdmClosed) throw new IllegalStateException("the app is closing");
         if (sdmHostInstance == null) {
             sdmHostInstance = new SdmHost(this, new SdmHost.Hooks() {
                 @Override public String mode() { return resolveExecMode(); }
@@ -14905,7 +14907,7 @@ public class MainActivity extends Activity {
         try { sdmCalls.shutdownNow(); } catch (Throwable ignored) {}
         try {
             SdmHost sdm;
-            synchronized (this) { sdm = sdmHostInstance; }
+            synchronized (this) { sdmClosed = true; sdm = sdmHostInstance; }
             if (sdm != null) sdm.bridge().shutdown();
         } catch (Throwable ignored) {}
         try { cdExecutor.shutdown(); } catch (Throwable ignored) {}
