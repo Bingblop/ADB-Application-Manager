@@ -89,13 +89,14 @@ SKIP (moved).
 
    ```sh
    # debuggable build:
-   adb shell run-as $PKG cat shared_prefs/adb_app_manager_prefs.xml | grep -E 'name="(github_token|kv_vt_key|kv_vt_key_ok|kv_vt_api_key)"'
+   adb shell run-as $PKG cat shared_prefs/adb_app_manager_prefs.xml | grep -oE '<[a-z]+ name="(github_token|kv_vt_key|kv_vt_key_ok|kv_vt_api_key)"( */)?>'
    # rooted phone, release build (the folder may be /data/user/0/$PKG on some phones):
-   adb shell "su -c 'cat /data/data/$PKG/shared_prefs/adb_app_manager_prefs.xml'" | grep -E 'name="(github_token|kv_vt_key|kv_vt_key_ok|kv_vt_api_key)"'
+   adb shell "su -c 'cat /data/data/$PKG/shared_prefs/adb_app_manager_prefs.xml'" | grep -oE '<[a-z]+ name="(github_token|kv_vt_key|kv_vt_key_ok|kv_vt_api_key)"( */)?>'
    ```
 
-   **PASS** if it prints nothing (the file exists and none of the four names is in it). An entry with a non-empty value is a **FAIL**: a secret is in
-   the clear. (The vault's own non-secret hint for the GitHub token is stored under a different name and does not match.) If `run-as` is refused, `su` is not
+   The command prints only the opening tag of a matching entry, never its value, so a failure is safe to paste into a report. **PASS** if it prints
+   nothing (the file exists and none of the four names is in it). A line ending in `/>` is an empty entry (also fine). A line ending in plain `>` is an
+   entry with a value, a **FAIL**: a secret is in the clear. (The vault's own non-secret hint for the GitHub token is stored under a different name and does not match.) If `run-as` is refused, `su` is not
    available or the file is missing, write SKIP; the on-phone result still counts.
 3. Now clear both: the GitHub button loses its tick and the key card says no key. Run the command from step 2 again: still nothing.
 
@@ -110,8 +111,8 @@ Then download a Morphe bundle: it must complete.
 Cross-check the hash the card shows against the file in the shared folder:
 
 ```sh
-adb shell ls -l "/sdcard/Download/App Updater/" | tail -5
-adb shell sha256sum "/sdcard/Download/App Updater/FILENAME-FROM-THE-LISTING"       # must equal the SHA-256 card
+adb shell 'ls -l "/sdcard/Download/App Updater/"' | tail -5
+adb shell 'sha256sum "/sdcard/Download/App Updater/FILENAME-FROM-THE-LISTING"'       # must equal the SHA-256 card
 ```
 
 If the folder does not exist, the save location was not switched: write SKIP for the cross-check (the on-phone result still counts).
