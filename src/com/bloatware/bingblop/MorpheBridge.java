@@ -409,6 +409,7 @@ public final class MorpheBridge {
         if (!engineThere()) throw new IOException("This build of the app does not contain the Morphe engine.");
         final String jobId = a.optString("job");
         if (jobId.isEmpty()) throw new IOException("no job id");
+        if (!MorpheJobs.validJobId(jobId)) throw new IOException("bad job id");           // it names a folder that the run empties first
         if (!runningJob.isEmpty()) throw new IOException("A patch is already running.");
         runningJob = jobId;
         cancelled.remove(jobId);
@@ -435,6 +436,10 @@ public final class MorpheBridge {
 
     private void patch(JSONObject a, final String jobId) {
         File dir = new File(base, "jobs/" + MorpheJobs.safeName(jobId));
+        if (!MorpheJobs.validJobId(jobId)) {                                              // startPatch refuses these; never empty a folder named by anything else
+            try { ev(jobId, new JSONObject().put("t", "result").put("result", new JSONObject().put("success", false).put("error", "bad job id"))); } catch (JSONException ignored) {}
+            return;
+        }
         JSONObject result = null;
         JSONObject saved = null;
         try {
@@ -616,14 +621,9 @@ public final class MorpheBridge {
     private JSONObject keyImport(JSONObject a) throws Exception {
         File f = new File(a.optString("path"));
         if (!MorpheJobs.inside(f, allowedRoots()) || !f.isFile()) throw new IOException("that file is not one this app may read");
-        String pw = a.optString("password");
-        File k = new File(base, "morphe.keystore");
-        MorpheLibrary.copy(f, k);
-        JSONObject info = new JSONObject();
-        info.put("alias", "Morphe");
-        info.put("password", pw.isEmpty() ? "Morphe" : pw);
-        if (!pw.isEmpty()) info.put("storePassword", pw);
-        writeText(new File(base, "morphe_key.json"), info.toString());
+        // the file is opened with the password and must hold the signing key before it replaces anything; the old key stays as .bak
+        String why = KeyImport.install(base, f, a.optString("password"));
+        if (why != null) throw new IOException(why);
         return null;
     }
 

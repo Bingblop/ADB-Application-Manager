@@ -102,6 +102,19 @@ public final class MorpheJobs {
         return "The patcher process ended without an answer. Android most likely stopped it because the phone ran out of memory." + (tail.isEmpty() ? "" : "\n\nLast lines of its log:\n" + tail);
     }
 
+    /**
+     * Whether {@code id} may name a job folder: 1 to 40 letters, digits, dashes and underscores. The page chooses the id, and a dot-only id such as ".."
+     * would make the job folder the Morphe folder itself, which a patch run empties before it starts.
+     */
+    public static boolean validJobId(String id) {
+        if (id == null || id.isEmpty() || id.length() > 40) return false;
+        for (int i = 0; i < id.length(); i++) {
+            char c = id.charAt(i);
+            if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-' || c == '_')) return false;
+        }
+        return true;
+    }
+
     /** A file name made safe to keep (letters, digits, dot, dash, underscore). */
     public static String safeName(String s) {
         StringBuilder b = new StringBuilder();

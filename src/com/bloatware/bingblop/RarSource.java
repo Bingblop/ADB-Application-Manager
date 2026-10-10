@@ -37,7 +37,9 @@ final class RarSource implements ZipTool.Source {
     }
 
     private static ZipTool.Entry toEntry(RarReader.Item it) {
-        return new ZipTool.Entry(it.name, it.dir, it.size, it.csize, it.mtime, it.mode, it.encrypted, it.linkTarget);
+        ZipTool.Entry e = new ZipTool.Entry(it.name, it.dir, it.size, it.csize, it.mtime, it.mode, it.encrypted, it.linkTarget);
+        e.hardLink = it.hardLink;
+        return e;
     }
 
     @Override
