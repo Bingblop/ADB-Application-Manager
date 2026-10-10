@@ -54,6 +54,9 @@ public final class ZipTool {
     private static final int SIG_EOCD64 = 0x06064b50;
     private static final int SIG_LOC64 = 0x07064b50;
     private static final long MAX_CD_BYTES = 256L << 20;
+    /** The most entries one zip may list (a phone's heap holds a few hundred thousand entries, not millions); package-private so a test can lower it. */
+    static int maxEntries = 500000;
+    private static final byte[] NO_BYTES = new byte[0];
     private static final long U32 = 0xFFFFFFFFL;
 
     // ---------------------------------------------------------------------------------------------
@@ -382,6 +385,7 @@ public final class ZipTool {
             if (cdSize < 0 || cdSize > MAX_CD_BYTES || cdOff < 0 || cdOff + cdSize > len) {
                 throw new IOException("Corrupt zip archive (bad central directory)");
             }
+            if (count > maxEntries) throw new IOException("This zip archive lists too many files (" + count + ")");
             byte[] cd = new byte[(int) cdSize];
             raf.seek(cdOff);
             raf.readFully(cd);
@@ -425,8 +429,9 @@ public final class ZipTool {
                         xp += 4 + sz;
                     }
                 }
-                byte[] cmt = Arrays.copyOfRange(cd, pos + 46 + nl + el, pos + 46 + nl + el + cl);
-                byte[] ext = Arrays.copyOfRange(cd, pos + 46 + nl, pos + 46 + nl + el);
+                if (list.size() >= maxEntries) throw new IOException("This zip archive lists too many files");
+                byte[] cmt = cl == 0 ? NO_BYTES : Arrays.copyOfRange(cd, pos + 46 + nl + el, pos + 46 + nl + el + cl);
+                byte[] ext = el == 0 ? NO_BYTES : Arrays.copyOfRange(cd, pos + 46 + nl, pos + 46 + nl + el);
                 String decoded = decodeName(raw);
                 boolean fellBack = decoded == null;
                 if (fellBack) decoded = new String(raw, StandardCharsets.ISO_8859_1);
@@ -680,6 +685,8 @@ public final class ZipTool {
                 byte[] buf = new byte[65536];
                 int n;
                 while ((n = in.read(buf)) > 0) {
+                    // never write past the size the entry declares: a small zip must not be able to fill the phone's storage
+                    if (e.size >= 0 && total + n > e.size) throw new IOException("\"" + e.name + "\" is damaged (its size doesn't match)");
                     out.write(buf, 0, n);
                     crc.update(buf, 0, n);
                     total += n;
