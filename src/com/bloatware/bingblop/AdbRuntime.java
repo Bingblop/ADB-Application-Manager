@@ -1,12 +1,16 @@
 package com.bloatware.bingblop;
 
 import android.content.Context;
+import android.net.LocalSocket;
+import android.net.LocalSocketAddress;
 import android.os.Build;
+
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -85,6 +89,52 @@ final class AdbRuntime {
             } finally { z.close(); }
             new FileOutputStream(marker).close();
         } catch (Exception ignored) {}
+    }
+
+    // ---- where the adb server listens (see AdbServerSpec) ----
+    private static boolean probed;
+    private static String socketPath;
+
+    /**
+     * The arguments that put adb's server on a private unix socket in the app's own folder, or on the old loopback port when the phone
+     * will not let this app bind such a socket (checked once per process, by binding and listening on one here: adb runs in the same app domain).
+     */
+    static synchronized List<String> serverArgs(Context ctx) {
+        if (!probed) {
+            probed = true;
+            socketPath = probeSocket(ctx);
+        }
+        return AdbServerSpec.args(socketPath);
+    }
+
+    static boolean usesPrivateSocket(Context ctx) {
+        return AdbServerSpec.isPrivate(serverArgs(ctx));
+    }
+
+    private static String probeSocket(Context ctx) {
+        try {
+            File dir = new File(ctx.getFilesDir(), AdbServerSpec.SOCKET_DIR);
+            if (!dir.isDirectory() && !dir.mkdirs()) return null;
+            // owner only: other apps cannot enter the folder, so they cannot reach the socket in it
+            dir.setReadable(false, false); dir.setWritable(false, false); dir.setExecutable(false, false);
+            dir.setReadable(true, true); dir.setWritable(true, true); dir.setExecutable(true, true);
+            String path = AdbServerSpec.socketPath(ctx.getFilesDir().getAbsolutePath());
+            if (!AdbServerSpec.pathFits(path)) return null;
+            File probe = new File(dir, "probe");
+            probe.delete();
+            // bind() and listen() are separate permissions: adb's server needs both, so try both
+            LocalSocket s = new LocalSocket();
+            try {
+                s.bind(new LocalSocketAddress(probe.getAbsolutePath(), LocalSocketAddress.Namespace.FILESYSTEM));
+                android.system.Os.listen(s.getFileDescriptor(), 1);
+            } finally {
+                try { s.close(); } catch (Exception ignored) {}
+                probe.delete();
+            }
+            return path;
+        } catch (Throwable t) {
+            return null;
+        }
     }
 
     /** Puts what adb needs to start into its environment (nothing on a 64-bit phone). */

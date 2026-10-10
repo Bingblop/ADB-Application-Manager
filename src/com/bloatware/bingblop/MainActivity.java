@@ -485,6 +485,21 @@ public class MainActivity extends Activity {
 
             ensurePrivateAdbKey();
 
+            // An adb server of an older version (or one started on the fallback port by an earlier run) may still hold the loopback port
+            // that any app on the phone can reach: when this run uses the private socket, stop whatever listens there. Checked at every
+            // start (a closed port costs one connect attempt), not once for ever, since a later run may have fallen back to the port.
+            if (AdbRuntime.usesPrivateSocket(this)) {
+                executor.submit(new Runnable() {
+                    @Override public void run() {
+                        try {
+                            if (isPortOpen("127.0.0.1", AdbServerSpec.LEGACY_PORT, 400)) {
+                                runProcessWithTimeout(buildAdbProcess(AdbServerSpec.args(null), "kill-server"), 3000);
+                            }
+                        } catch (Throwable ignored) {}
+                    }
+                });
+            }
+
             // Reconnect the saved ADB TCP target on launch, but only when ADB TCP is (or may be) the
             // chosen mode. This never changes the configured mode, so other modes stay selectable.
             executor.submit(new Runnable() {
@@ -810,10 +825,14 @@ public class MainActivity extends Activity {
     }
 
     private ProcessBuilder buildAdbProcess(String... args) {
+        return buildAdbProcess(AdbRuntime.serverArgs(this), args);
+    }
+
+    /** {@code serverArgs} say where adb's server listens: a private unix socket, or (fallback and the old server) loopback port 5042. */
+    private ProcessBuilder buildAdbProcess(List<String> serverArgs, String... args) {
         List<String> cmd = new ArrayList<String>();
         cmd.add(adbBinFile != null && adbBinFile.exists() ? adbBinFile.getAbsolutePath() : "adb");
-        cmd.add("-P");
-        cmd.add("5042");
+        cmd.addAll(serverArgs);
         Collections.addAll(cmd, args);
         ProcessBuilder pb = new ProcessBuilder(cmd);
         Map<String, String> env = pb.environment();
