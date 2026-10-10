@@ -291,6 +291,26 @@ Release build only (a debuggable build logs the whole line by design).
 
 3. Un-freeze `$APP` again in the app (or `adb shell pm enable $APP`).
 
+## 14. Full-screen terminal lifecycle (not in checklist section 19: new fixes to the terminal's start, restart and close)
+
+The full-screen terminal keeps one session under one name and is restarted by closing it and starting a new one at once. This checks that a late end or late
+output of the **old** shell never lands on the **new** one. Nothing here needs `adb`; watch the phone.
+
+1. Open the full-screen terminal with the **App** shell. Run `echo hello` (it answers `hello`), then `exit`: the terminal says the process ended, and
+   pressing Enter starts a new shell that answers again. **PASS** if no second "[process ended]" appears later.
+2. Start `sleep 1000 &` and then `while true; do echo OLD; sleep 0.2; done`. Restart the terminal (the shell picker, or the restart button). **PASS** if
+   the new terminal shows a fresh prompt and **no `OLD` line appears in it**, not even one.
+3. Restart it five times quickly in a row. **PASS** if the last one is a working shell (type `echo ok`: it answers) and the screen never shows
+   "[process ended]" for it while it is running.
+4. Start a shell, run `ssh localhost` or `su` (anything that waits for input and outlives its hang-up), then close the terminal and open it again at once.
+   **PASS** if the new terminal works (type `echo ok`) and does not print "[process ended]" by itself a few seconds later.
+5. Run a command that exits at once, for example `true` as the shell command (or pick a shell whose program is missing): the terminal must **not** be left
+   showing a running shell that cannot be typed into. **PASS** if it says the process ended, or that it could not start, and Enter starts a new one.
+6. Close the whole app from Recents while a terminal is open, then open the app again and the terminal. **PASS** if it starts normally and
+   `adb shell ps -A | grep -c sleep` shows no `sleep 1000` left over from step 2 after a minute (a SIGHUP-ignoring program may survive: write what you see).
+
+If a step fails, write the step number, which shell, and what the screen showed.
+
 ---
 
 ## Report
