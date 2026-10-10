@@ -57,6 +57,31 @@ function extractBlocks(text) {
 // A trailing backslash continues the line only when the run of them is odd (an even run ends in an escaped backslash).
 const continues = s => (/\\+$/.exec(s) || [''])[0].length % 2 === 1;
 
+// The delimiter of a here-document that starts at text[at] ("<<" or "<<-"): the shell word after it with its quotes removed, as bash reads it (E"O"F and 'EO'F
+// and EO\F are all EOF). Returns { word, dash, end } or null when there is no word.
+function heredocWord(text, at) {
+  let i = at + 2;
+  const dash = text[i] === '-';
+  if (dash) i++;
+  while (i < text.length && /[ \t]/.test(text[i])) i++;
+  let word = '';
+  const start = i;
+  while (i < text.length) {
+    const c = text[i];
+    if (/[\s;&|<>()]/.test(c)) break;
+    if (c === "'") { const e = text.indexOf("'", i + 1); if (e < 0) { word += text.slice(i + 1); i = text.length; break; } word += text.slice(i + 1, e); i = e + 1; continue; }
+    if (c === '"') {
+      i++;
+      while (i < text.length && text[i] !== '"') { if (text[i] === '\\' && /["\\$`]/.test(text[i + 1] || '')) i++; word += text[i]; i++; }
+      i++;
+      continue;
+    }
+    if (c === '\\') { i++; if (i < text.length) word += text[i]; i++; continue; }
+    word += c; i++;
+  }
+  return i > start && word ? { word, dash, end: Math.min(i, text.length) } : null;
+}
+
 // One line of shell, read with the quotes, comments and arithmetic of the line (and of the lines before it, in st = { quote, arith }) in mind.
 // Returns { code, heredocs }: the text outside quotes and comments, and the here-document delimiters declared outside them (a quoted delimiter counts;
 // << inside arithmetic is a shift and <<< a here-string, neither is a here-document).
@@ -74,8 +99,8 @@ function scanLine(text, st) {
     if (c === ')' && text[i + 1] === ')' && st.arith > 0) { st.arith--; i++; continue; }
     if (c === '<' && text[i + 1] === '<' && text[i + 2] === '<') { code += '<<<'; i += 2; continue; }      // a here-string: the word after it is not a delimiter
     if (c === '<' && text[i + 1] === '<' && st.arith === 0) {
-      const hd = /^<<-?\s*(?:'([^']+)'|"([^"]+)"|\\?([^\s;&|<>()'"]+))/.exec(text.slice(i));
-      if (hd) { heredocs.push({ word: hd[1] || hd[2] || hd[3], dash: text[i + 2] === '-' }); i += hd[0].length - 1; continue; }
+      const hd = heredocWord(text, i);
+      if (hd) { heredocs.push({ word: hd.word, dash: hd.dash }); i = hd.end - 1; continue; }
     }
     code += c;
   }
@@ -92,9 +117,11 @@ function shellLines(block) {
   let active = [];    // here-documents whose body (and terminator) is being read: those lines are input, not output, and are kept
   const read = text => {
     const r = scanLine(text, st);
-    continued = continues(text) || st.quote !== null || /(?:\|\||&&|\|)\s*$/.test(r.code);      // the command goes on in the next line
+    const joined = continues(text) || st.quote !== null;      // the line goes on (backslash, open quote): the here-document starts after the joined line
+    continued = joined || /(?:\|\||&&|\|&|\|)\s*$/.test(r.code);      // the command goes on in the next line
     waiting = waiting.concat(r.heredocs);
-    if (!continued && waiting.length) { active = waiting; waiting = []; }
+    // bash reads a here-document right after the line that declares it, also when that line ends in | || && |& (the rest of the command comes after the terminator)
+    if (!joined && waiting.length) { active = waiting; waiting = []; }
   };
   for (const l of all) {
     if (active.length) {
@@ -135,8 +162,9 @@ function findPlaceholders(lines) {
     while ((m = re.exec(code))) {
       found.push({ line, text: m[0] });
     }
-    // the bodies start after the whole command: not while the line continues (odd trailing backslash, or a trailing | || &&) or a quote is still open
-    if (pending.length && !st.quote && !continues(text) && !/(?:\|\||&&|\|)\s*$/.test(code)) { bodies = pending; pending = []; }
+    // the bodies start after the line that declares them, joined with the next ones while it goes on (odd trailing backslash, or a quote still open);
+    // a trailing | || && |& does not delay them: the rest of that command comes after the terminator
+    if (pending.length && !st.quote && !continues(text)) { bodies = pending; pending = []; }
   }
   return found;
 }
@@ -215,7 +243,8 @@ function selfTest() {
     '```bash', 'cat <<FIRST <<SECOND', '<a>', 'SECOND', '<b>', 'FIRST', '<c>', 'SECOND', 'echo done', '```', '',
     '```bash', 'cat <<EOF \\', '  > out.txt; adb shell pm path <package> out.txt', '<html>', 'EOF', 'echo done', '```', '',
     '```bash', 'cat <<EOF; adb shell pm path <package> out.txt', '<html>', 'EOF', '```', '',
-    '```bash', 'cat <<EOF |', '  grep <pattern> out.txt', '<html>', 'EOF', 'echo done', '```', '',
+    '```bash', 'cat <<EOF |', '<html>', 'EOF', '  grep <pattern> out.txt', '```', '',
+    '```bash', 'cat <<EOF |', '  grep x', '<html>', 'EOF', '```', '',
     '```bash', 'cat <<EOF && echo ok', '<html>', 'EOF', '```', '',
     '```bash', 'cat <<EOF || \\', '  true', '<html>', 'EOF', '```', '',
     '```sh', '$ cat <<EOF', '<html>', 'EOF', '$ adb shell pm path <package> out.txt', '```', '',
@@ -227,10 +256,17 @@ function selfTest() {
     '```bash', 'cat <<<word', 'adb shell pm path <package> out.txt', '```', '',
     '```sh', '$ cat <<<word', 'word', '$ adb shell pm path <package> out.txt', '```', '',
     '```bash', 'cat <<EOF', '<html>', 'echo done', '```', '',
+    '```bash', 'cat <<E"O"F', '<a>', 'EOF', 'adb shell pm path <package> out.txt', '```', '',
+    "```bash", "cat <<'EO'F", '<a>', 'EOF', 'adb shell pm path <package> out.txt', '```', '',
+    '```bash', 'cat <<EO\\F', '<a>', 'EOF', 'adb shell pm path <package> out.txt', '```', '',
+    '```sh', '$ cat <<EOF |&', '<a>', 'EOF', '  cat', '$ adb shell pm path <package> out.txt', '```', '',
+    '```bash', 'cat <<EOF |&', '<a>', 'EOF', '  grep <pattern> out.txt', '```', '',
+    '```sh', '$ cat <<EOF |&', '<a>', 'EOF', '  grep <pattern> out.txt', '```', '',
+    '```sh', '$ echo hi |&', '  grep <pattern> out.txt', '```', '',
     '```sh', '$ cat <<\'EOF\'', '<html>', 'EOF', '$ echo done', 'done', '```', '',
   ].join('\n');
   const got = checkText(fx).map(r => r.state + '@' + r.block.startLine + (r.problems.length ? ':' + [...new Set(r.problems.map(p => p.line))].join(',') : ''));
-  const want = ['ok@3', 'ok@9', 'FAIL@16:17', 'skipped@22', 'FAIL@26:27', 'FAIL@34:34', 'ok@42', 'FAIL@47:49', 'ok@52', 'FAIL@57:59', 'ok@62', 'ok@67', 'FAIL@72:76', 'FAIL@79:81', 'FAIL@84:85', 'FAIL@90:91', 'ok@94', 'ok@99', 'ok@104', 'ok@112', 'ok@119', 'ok@127', 'FAIL@138:140', 'FAIL@146:147', 'FAIL@152:154', 'ok@160', 'ok@166', 'FAIL@173:177', 'FAIL@180:180', 'ok@187', 'FAIL@195:198', 'FAIL@201:204', 'FAIL@207:210', 'FAIL@213:215', 'FAIL@218:221', 'FAIL@224:225', 'ok@230'];
+  const want = ['ok@3', 'ok@9', 'FAIL@16:17', 'skipped@22', 'FAIL@26:27', 'FAIL@34:34', 'ok@42', 'FAIL@47:49', 'ok@52', 'FAIL@57:59', 'ok@62', 'ok@67', 'FAIL@72:76', 'FAIL@79:81', 'FAIL@84:85', 'FAIL@90:91', 'ok@94', 'ok@99', 'ok@104', 'ok@112', 'ok@119', 'ok@127', 'FAIL@138:140', 'FAIL@146:147', 'FAIL@152:156', 'FAIL@159:159', 'ok@166', 'ok@172', 'FAIL@179:183', 'FAIL@186:186', 'ok@193', 'FAIL@201:204', 'FAIL@207:210', 'FAIL@213:216', 'FAIL@219:221', 'FAIL@224:227', 'FAIL@230:231', 'FAIL@236:240', 'FAIL@243:247', 'FAIL@250:254', 'FAIL@257:262', 'FAIL@265:269', 'FAIL@272:276', 'FAIL@279:281', 'ok@284'];
   const ok = JSON.stringify(got) === JSON.stringify(want);
   console.log(ok ? 'self-test: ok (' + got.length + ' blocks judged as expected)' : 'self-test: FAIL\n  got:  ' + got.join(' ') + '\n  want: ' + want.join(' '));
   return ok;
