@@ -14900,7 +14900,14 @@ public class MainActivity extends Activity {
     protected void onDestroy() {
         super.onDestroy();
         // pools that nothing else stops: their idle threads would keep this activity (and its views) alive after a recreate()
-        try { sdmCalls.shutdown(); } catch (Throwable ignored) {}
+        // SD Maid SE: drop the calls still queued, then stop the engine's own pool and timer (they hold hooks that capture this
+        // activity, and the page that would show their results is gone). Only when the tab was ever used.
+        try { sdmCalls.shutdownNow(); } catch (Throwable ignored) {}
+        try {
+            SdmHost sdm;
+            synchronized (this) { sdm = sdmHostInstance; }
+            if (sdm != null) sdm.bridge().shutdown();
+        } catch (Throwable ignored) {}
         try { cdExecutor.shutdown(); } catch (Throwable ignored) {}
         try { trackerExecutor.shutdown(); } catch (Throwable ignored) {}
         if (Build.VERSION.SDK_INT >= 27 && wallpaperColorsListener != null) {
