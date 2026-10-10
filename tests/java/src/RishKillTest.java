@@ -176,10 +176,12 @@ public class RishKillTest {
     {
       RishShell s = new RishShell(SPAWNER); s.start();
       final RishShell sf = s;
-      new Thread(new Runnable() { public void run() { started(NUMS[4], 5000); sf.close(); } }).start();
+      final java.util.concurrent.atomic.AtomicBoolean childStarted = new java.util.concurrent.atomic.AtomicBoolean();
+      new Thread(new Runnable() { public void run() { childStarted.set(started(NUMS[4], 5000)); sf.close(); } }).start();
       long t0 = System.currentTimeMillis();
       RishShell.Result r = s.run("sleep " + NUMS[4], 60000, new Collect());
       long took = System.currentTimeMillis() - t0;
+      is("close(): the sleep child had started before close() was called", childStarted.get(), "no sleep " + NUMS[4] + " seen within 5 s");
       is("close(): the running call returns, exited, soon", r.exited && took < 5000, "exited=" + r.exited + " " + took + " ms");
       is("close(): the sleep child is dead", gone(NUMS[4], 3000), "sleep " + NUMS[4] + " still alive");
     }
