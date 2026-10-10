@@ -35,7 +35,9 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
         else if (op === 'copyToTree') r.data = { name: 'x.apk' };
         else if (op === 'keyExport') r.data = { path: '/sdcard/Download/Morphe Patcher/morphe.keystore' };
         else if (op === 'helperManual') r.data = { url: 'https://www.apkmirror.com/?s=' + x.pkg };
-        setTimeout(() => window.onMorphe && window.onMorphe(r), op === 'vtScan' ? (window.__vtDelay || 5) : 5);
+        // __vtHold keeps a scan's answer until the test lets it go (window.__vtHeld), so what the page does while a scan runs does not depend on timing
+        if (op === 'vtScan' && window.__vtHold) (window.__vtHeld = window.__vtHeld || []).push(() => window.onMorphe && window.onMorphe(r));
+        else setTimeout(() => window.onMorphe && window.onMorphe(r), 5);
       }
     };
   }, apps);
@@ -156,32 +158,35 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await ev(() => mpAskDone(false));
   await ev(() => { window.__vt = ''; document.getElementById('usVt').checked = false; usSave(); });
 
-  // The scan is slowed by __vtDelay; wait for it to end instead of guessing how long the runner takes (a fixed sleep failed on a slow CI runner).
+  // A scan can be held (__vtHold): the test waits until it is held, looks at the page, lets it go and waits until the updater is idle again.
+  // No fixed sleep stands in for "the scan is still running" (that failed on a slow CI runner).
+  const waitHeld = async () => { for (let i = 0; i < 100; i++) { if (await ev(() => (window.__vtHeld || []).length)) return; await sleep(100); } };
+  const release = () => ev(() => { (window.__vtHeld || []).splice(0).forEach(f => f()); });
   const waitIdle = async () => { for (let i = 0; i < 100; i++) { if (!(await ev(() => us.busy))) return; await sleep(100); } };
 
   // ---- 17c. a second Download during the scan cannot swap the file under it ----
-  await ev(() => { window.__vt = ''; window.__vtDelay = 3000; document.getElementById('usVt').checked = true; document.getElementById('usInstall').checked = false; document.getElementById('usSave').value = 'cache'; usSave(); document.getElementById('usVersion').value = '2.0.0'; window.__calls.length = 0; usGet(0); }); await sleep(250);
+  await ev(() => { window.__vt = ''; window.__vtHold = true; document.getElementById('usVt').checked = true; document.getElementById('usInstall').checked = false; document.getElementById('usSave').value = 'cache'; usSave(); document.getElementById('usVersion').value = '2.0.0'; window.__calls.length = 0; usGet(0); }); await waitHeld();
   await ev(() => { document.getElementById('usVersion').value = '2.4.1'; usGet(0); }); await sleep(150);
   const busy = await ev(() => ({ gets: window.__calls.filter(c => c[0] === 'helperGet').length, busy: us.busy, hasInstall: !!document.querySelector('#usGot button[onclick="usInstallGot()"]') }));
-  await waitIdle();
+  await release(); await waitIdle();
   const done = await ev(() => ({ gets: window.__calls.filter(c => c[0] === 'helperGet').length, busy: us.busy, got: us.got && us.got.versionName, hasInstall: !!document.querySelector('#usGot button[onclick="usInstallGot()"]') }));
   check('17c. while the scan runs the updater stays busy: a second Download is ignored, Install only appears once the scan is done, and it stays bound to the first file', busy.gets === 1 && busy.busy && !busy.hasInstall && done.gets === 1 && !done.busy && done.got === '2.0.0' && done.hasInstall, JSON.stringify({ busy, done }));
-  await ev(() => { window.__vtDelay = 0; document.getElementById('usVt').checked = false; usSave(); });
+  await ev(() => { window.__vtHold = false; document.getElementById('usVt').checked = false; usSave(); });
 
   // ---- 17d. Reset while a download is still running does not free the lock ----
-  await ev(() => { window.__vtDelay = 3000; document.getElementById('usVt').checked = true; document.getElementById('usInstall').checked = false; document.getElementById('usSave').value = 'cache'; usSave(); document.getElementById('usVersion').value = '2.0.0'; window.__calls.length = 0; usGet(0); }); await sleep(250);
-  await ev(() => { usReset(); }); 
+  await ev(() => { window.__vtHold = true; document.getElementById('usVt').checked = true; document.getElementById('usInstall').checked = false; document.getElementById('usSave').value = 'cache'; usSave(); document.getElementById('usVersion').value = '2.0.0'; window.__calls.length = 0; usGet(0); }); await waitHeld();
+  await ev(() => { usReset(); });
   const rs = await ev(() => ({ busy: us.busy, cleared: !document.getElementById('usResults').innerHTML }));
   await ev(() => { document.getElementById('usQuery').value = 'com.example.maps'; }); await page.click('#usSearchBtn'); await sleep(150);
-  await ev(() => usGet(0)); await sleep(100);
+  await ev(() => { usGet(0); }); await sleep(100);
   const rs2 = await ev(() => ({ gets: window.__calls.filter(c => c[0] === 'helperGet').length, busy: us.busy, st: document.getElementById('usStatus').textContent }));
-  await waitIdle();
+  await release(); await waitIdle();
   const rs3 = await ev(() => ({ busy: us.busy }));
-  await ev(() => usGet(0)); await sleep(150);
+  await ev(() => { usGet(0); }); await waitHeld();   // not returned: usGet() stays pending while the scan is held
   const rs4 = await ev(() => ({ gets: window.__calls.filter(c => c[0] === 'helperGet').length }));
-  await waitIdle();   // the retry above is slowed too: section 18 must not start while it still owns the lock
+  await release(); await waitIdle();   // the retry above is held too: section 18 must not start while it still owns the lock
   check('17d. Reset does not free the lock of a download that is still running: a new Download is refused with a message until the old one ends, and then works', rs.busy && rs.cleared && rs2.gets === 1 && rs2.busy && /Still finishing/.test(rs2.st) && !rs3.busy && rs4.gets === 2, JSON.stringify({ rs, rs2, rs3, rs4 }));
-  await ev(() => { window.__vtDelay = 0; document.getElementById('usVt').checked = false; usSave(); });
+  await ev(() => { window.__vtHold = false; document.getElementById('usVt').checked = false; usSave(); });
 
   // ---- 18. the browser check ----
   await ev(() => { window.__vers = 'browser'; document.getElementById('usSplit').checked = false; usSave(); usGet(0); }); await sleep(400);
