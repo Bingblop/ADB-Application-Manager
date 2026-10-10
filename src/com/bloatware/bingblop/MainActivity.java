@@ -2277,13 +2277,12 @@ public class MainActivity extends Activity {
                     java.util.Set<String> installedSigners = signerDigests(getPackageManager().getPackageInfo(pkg, sigFlags), true);
                     PackageInfo archiveSigned = getPackageManager().getPackageArchiveInfo(apk.getAbsolutePath(), sigFlags);
                     java.util.Set<String> newSigners = archiveSigned != null ? signerDigests(archiveSigned, true) : new HashSet<String>();
-                    if (!installedSigners.isEmpty() && !newSigners.isEmpty()) {
-                        java.util.Set<String> common = new HashSet<String>(installedSigners);
-                        common.retainAll(newSigners);
-                        if (common.isEmpty()) {
-                            throw new IllegalStateException("signed with a different key than the installed app, so Android won't accept it as an update. "
-                                    + "Update from the source you originally installed from" + ("fdroid".equals(source) ? " (F-Droid signs its own builds)." : "."));
-                        }
+                    String signerWhy = InstallGuards.checkSigners(installedSigners, newSigners);
+                    if ("unreadable".equals(signerWhy)) {
+                        throw new IllegalStateException("couldn't read the signing certificate of the downloaded file, so it can't be checked against the installed app - not installed");
+                    } else if (signerWhy != null) {
+                        throw new IllegalStateException("signed with a different key than the installed app, so Android won't accept it as an update. "
+                                + "Update from the source you originally installed from" + ("fdroid".equals(source) ? " (F-Droid signs its own builds)." : "."));
                     }
 
                     progress(pkg, "installing", 100, "Installing " + archive.versionName + "...");
@@ -2380,11 +2379,9 @@ public class MainActivity extends Activity {
                     java.util.Set<String> installedSigners = signerDigests(getPackageManager().getPackageInfo(pkg, sigFlags), true);
                     PackageInfo archiveSigned = getPackageManager().getPackageArchiveInfo(apk.getAbsolutePath(), sigFlags);
                     java.util.Set<String> newSigners = archiveSigned != null ? signerDigests(archiveSigned, true) : new HashSet<String>();
-                    if (!installedSigners.isEmpty() && !newSigners.isEmpty()) {
-                        java.util.Set<String> common = new HashSet<String>(installedSigners);
-                        common.retainAll(newSigners);
-                        if (common.isEmpty()) throw new IllegalStateException("the release APK is signed with a different key than this install, so Android won't accept it as an update");
-                    }
+                    String signerWhy = InstallGuards.checkSigners(installedSigners, newSigners);
+                    if ("unreadable".equals(signerWhy)) throw new IllegalStateException("couldn't read the signing certificate of the downloaded file, so it can't be checked against this install - not installed");
+                    if (signerWhy != null) throw new IllegalStateException("the release APK is signed with a different key than this install, so Android won't accept it as an update");
 
                     if (standard) {
                         selfUpdateProgress("installing", 100, "Opening the installer...");
@@ -2639,13 +2636,10 @@ public class MainActivity extends Activity {
                         }
                     });
                     // The repository's own checksum, when it publishes one (F-Droid index, ShizuStore)
-                    if (sha256 != null && sha256.matches("(?i)[0-9a-f]{64}")) {
+                    if (InstallGuards.hasPublishedHash(sha256)) {
                         storeInstallProgress(key, "verifying", 100, "Checking the download's SHA-256…");
-                        String got = VirusTotal.sha256(apk);
-                        if (!got.equalsIgnoreCase(sha256)) {
-                            throw new IllegalStateException("the download doesn't match the checksum published by the repository "
-                                    + "(expected " + sha256.substring(0, 12) + "…, got " + got.substring(0, 12) + "…) - not installed");
-                        }
+                        String why = InstallGuards.checkHash(sha256, InstallGuards.isSha256(InstallGuards.normalize(sha256)) ? VirusTotal.sha256(apk) : null);
+                        if (why != null) throw new IllegalStateException(why);
                     }
                     PackageInfo archive = getPackageManager().getPackageArchiveInfo(apk.getAbsolutePath(), 0);
                     if (archive == null || archive.packageName == null) throw new IllegalStateException("the download is not a valid APK");
