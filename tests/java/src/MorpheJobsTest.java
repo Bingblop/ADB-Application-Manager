@@ -68,6 +68,28 @@ public class MorpheJobsTest {
         StringBuilder big = new StringBuilder(); for (int i = 0; i < 5000; i++) big.append('x');
         check("a long log is cut to its end", MorpheJobs.diedMessage(big.toString()).length() < 900, null);
         check("safe names", MorpheJobs.safeName("../a b/c.apk").equals(".._a_b_c.apk") && MorpheJobs.safeName("").equals("file"), MorpheJobs.safeName("../a b/c.apk"));
+        // the page names the job folder: a dot-only id would make it the Morphe folder, which a patch run empties first
+        StringBuilder id40 = new StringBuilder(), id41 = new StringBuilder();
+        for (int i = 0; i < 40; i++) id40.append('a');
+        id41.append(id40).append('a');
+        check("normal job ids are valid", MorpheJobs.validJobId("j1700000000000") && MorpheJobs.validJobId("a-b_C9") && MorpheJobs.validJobId(id40.toString()), null);
+        boolean bad = true;
+        for (String x : new String[] {null, "", ".", "..", "...", "a/b", "../x", "a\\b", "a b", "a.b", "a\u0000", "\u00e4", id41.toString(), "a\n"}) if (MorpheJobs.validJobId(x)) { bad = false; System.out.println("  accepted: " + x); }
+        check("empty, dotted, slashed, spaced, NUL, non-ASCII and over-long job ids are refused", bad, null);
+        File jobsBase = new File(root, "morphe"); File jobsDir = new File(jobsBase, "jobs"); jobsDir.mkdirs();
+        check("a valid id names a folder inside jobs/, and '..' (what the old code allowed) names the Morphe folder itself",
+            new File(jobsBase, "jobs/" + MorpheJobs.safeName("j1")).getParentFile().equals(jobsDir) && new File(jobsBase, "jobs/" + MorpheJobs.safeName("..")).getCanonicalFile().equals(jobsBase.getCanonicalFile()), null);
+        // the bridge checks the id before it takes the 'running' slot, and again before it empties the folder
+        File src = null;
+        for (File d = new File(System.getProperty("user.dir")).getAbsoluteFile(); d != null && src == null; d = d.getParentFile()) { File f = new File(d, "src/com/bloatware/bingblop/MorpheBridge.java"); if (f.isFile()) src = f; }
+        if (src != null) {
+            String m = new String(java.nio.file.Files.readAllBytes(src.toPath()), java.nio.charset.StandardCharsets.UTF_8);
+            int sp = m.indexOf("private JSONObject startPatch("), pa = m.indexOf("private void patch(JSONObject a");
+            String startBody = sp < 0 ? "" : m.substring(sp, pa > sp ? pa : m.length());
+            check("startPatch refuses a bad id before it takes the running slot", startBody.indexOf("validJobId(jobId)") > 0 && startBody.indexOf("validJobId(jobId)") < startBody.indexOf("runningJob = jobId"), null);
+            String patchBody = pa < 0 ? "" : m.substring(pa, Math.min(m.length(), pa + 1200));
+            check("patch refuses a bad id before it empties the job folder", patchBody.indexOf("validJobId(jobId)") > 0 && patchBody.indexOf("validJobId(jobId)") < patchBody.indexOf("deleteTree(dir)"), null);
+        }
         if (failed > 0) { System.out.println(failed + " FAILED"); System.exit(1); }
     }
 }
