@@ -8,6 +8,8 @@ public class AssistantRestoreTest {
     check("empty means unset and is allowed", AssistantRestore.isSafeValue(""));
     check("a component name", AssistantRestore.isSafeValue("com.google.android.googlequicksearchbox/com.google.android.voiceinteraction.GsaVoiceInteractionService"));
     check("an inner class name", AssistantRestore.isSafeValue("com.x.y/com.x.y.Main$Inner"));
+    check("a word with no package/class slash is not a component (like the text 'Failure')", !AssistantRestore.isSafeValue("Failure") && !AssistantRestore.isSafeValue("com.x.y"));
+    check("two slashes, a leading or a trailing slash are not one package/class", !AssistantRestore.isSafeValue("a/b/c") && !AssistantRestore.isSafeValue("/b") && !AssistantRestore.isSafeValue("a/"));
     check("null is not a value", !AssistantRestore.isSafeValue(null));
     check("backend error text is not a value", !AssistantRestore.isSafeValue("Error: Shizuku is not authorized for this app"));
     check("adb's error text is not a value", !AssistantRestore.isSafeValue("error: device offline"));
@@ -20,7 +22,7 @@ public class AssistantRestoreTest {
     check("round trip with an unset second value", dec != null && dec[0].equals("com.a/com.a.B") && dec[1].isEmpty());
     dec = AssistantRestore.decode(AssistantRestore.encode("", ""));
     check("round trip with both unset", dec != null && dec[0].isEmpty() && dec[1].isEmpty());
-    check("an unsafe value is not encoded", AssistantRestore.encode("Error: x", "") == null && AssistantRestore.encode("", "a b") == null);
+    check("an unsafe value is not encoded", AssistantRestore.encode("Error: x", "") == null && AssistantRestore.encode("", "a b") == null && AssistantRestore.encode("Failure", "") == null);
     check("garbage does not decode", AssistantRestore.decode(null) == null && AssistantRestore.decode("") == null && AssistantRestore.decode("v2\na\nb") == null && AssistantRestore.decode("v1\na") == null);
     check("a record with an unsafe value does not decode", AssistantRestore.decode("v1\na'b\n") == null);
     System.out.println(fails == 0 ? "PASS AssistantRestoreTest: " + n + " checks" : "FAILED AssistantRestoreTest: " + fails + " of " + n);

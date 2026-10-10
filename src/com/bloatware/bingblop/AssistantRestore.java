@@ -9,13 +9,15 @@ final class AssistantRestore {
     private AssistantRestore() {}
 
     /**
-     * True for an empty value (the setting is unset) or a plain component name such as {@code com.x.y/com.x.y.Z$Inner}.
+     * True for an empty value (the setting is unset) or one plain component name {@code package/class} such as {@code com.x.y/com.x.y.Z$Inner}.
      * Anything else (error text, spaces, quotes, shell characters) is not a value we read from the setting and is never written back.
      */
     static boolean isSafeValue(String v) {
         if (v == null) return false;
         if (v.isEmpty()) return true;
         if (v.length() > 400) return false;
+        int slash = v.indexOf('/');
+        if (slash <= 0 || slash != v.lastIndexOf('/') || slash == v.length() - 1) return false;        // exactly one "package/class"
         for (int i = 0; i < v.length(); i++) {
             char c = v.charAt(i);
             boolean ok = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')
