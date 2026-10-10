@@ -1557,7 +1557,7 @@ public class MainActivity extends Activity {
     }
 
     // ---- The real terminal (a pseudo-terminal through libptyexec.so, see PtyShell): the full-screen Terminal's sessions ----
-    private final Map<String, PtyShell> ptySessions = new java.util.concurrent.ConcurrentHashMap<String, PtyShell>();
+    private final SessionMap<PtyShell> ptySessions = new SessionMap<PtyShell>();
 
     private File ptyHelper() {
         return new File(getApplicationInfo().nativeLibraryDir, "libptyexec.so");
@@ -1613,9 +1613,15 @@ public class MainActivity extends Activity {
         return rishSpawn(new String[]{"sh", "-c", script});
     }
 
+    /** A terminal session ended: drop it (unless the id already belongs to a newer one) and tell the page when it still waits for this end. */
+    private void ptyEnded(String key, PtyShell sh, int code) {
+        if (ptySessions.ended(key, sh)) {
+            notifyJs("window.onPtyExit&&window.onPtyExit(" + JSONObject.quote(key) + "," + code + ")");
+        }
+    }
+
     private void closePtySessions() {
-        for (PtyShell p : ptySessions.values()) p.close();
-        ptySessions.clear();
+        for (PtyShell p : ptySessions.drain()) p.close();
     }
 
     private void closeTermSessions() {
@@ -8163,6 +8169,9 @@ public class MainActivity extends Activity {
                     JSONObject res = new JSONObject();
                     try {
                         Process proc = ptyProcess(backend, rows, cols);
+                        // the end of this session can be reported before the constructor returns, or after the page has started a new one under the same id
+                        final PtyShell[] me = new PtyShell[1];
+                        final Integer[] earlyExit = new Integer[1];
                         PtyShell sh = new PtyShell(proc, new PtyShell.Listener() {
                             @Override
                             public void onData(byte[] data, int n) {
@@ -8171,11 +8180,20 @@ public class MainActivity extends Activity {
 
                             @Override
                             public void onExit(int code) {
-                                ptySessions.remove(key);
-                                notifyJs("window.onPtyExit&&window.onPtyExit(" + JSONObject.quote(key) + "," + code + ")");
+                                synchronized (me) {
+                                    if (me[0] == null) { earlyExit[0] = code; return; }
+                                }
+                                ptyEnded(key, me[0], code);
                             }
                         });
-                        ptySessions.put(key, sh);
+                        Integer early;
+                        synchronized (me) {
+                            me[0] = sh;
+                            early = earlyExit[0];
+                        }
+                        PtyShell prev = ptySessions.put(key, sh);
+                        if (prev != null && prev != sh) prev.close();
+                        if (early != null) ptyEnded(key, sh, early);
                         res.put("ok", true);
                     } catch (Throwable t) {
                         try {
