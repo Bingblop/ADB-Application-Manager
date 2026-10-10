@@ -11,8 +11,14 @@ import java.util.regex.Pattern;
 final class AdbArgs {
     private AdbArgs() {}
 
-    /** adb's own options that move it to another server or make it listen on every interface: the app sets the server and the device itself. */
-    private static final Pattern SERVER_OPTION = Pattern.compile("-(?:[PLH].*|a)");
+    /** adb's own options that move it to another server or make it listen on every interface (also attached to their value, as in -P5037): the app sets the server itself. */
+    private static final Pattern SERVER_OPTION = Pattern.compile("-(?:[PLH].*|a)|--(?:server-socket|one-device-server).*");
+    /** Options that take the next argument as their value, so that argument is not the command (adb -s shell kill-server). */
+    private static final Pattern VALUE_OPTION = Pattern.compile("-s|-t|--one-device");
+    /** Options that stand alone before the command. */
+    private static final Pattern FLAG_OPTION = Pattern.compile("-d|-e|--exit-on-write-error");
+    /** Options after which adb prints text and exits, without a command. */
+    private static final Pattern INFO_OPTION = Pattern.compile("--version|--help|-h");
     /** Subcommands that stop, start or detach the adb server this app depends on. */
     private static final Pattern SERVER_COMMAND = Pattern.compile("kill-server|start-server|server|nodaemon|fork-server|reconnect-server");
 
@@ -25,12 +31,18 @@ final class AdbArgs {
         for (String a : args) {
             if (a == null || a.indexOf('\u0000') >= 0) return "bad argument";
         }
-        String first = args.get(0);
-        if (SERVER_OPTION.matcher(first).matches()) return "That option would move adb to another server, so it is not run.";
-        for (String a : args) {
-            if (a.equals("shell") || a.equals("exec-out")) break;        // what comes after is for the device, not for adb
-            if (SERVER_COMMAND.matcher(a).matches()) return "That one would stop the adb this app runs on, so it is not run.";
+        // Read adb's global options the way adb does, with their values, to find the actual command; only that word is the subcommand.
+        int i = 0;
+        while (i < args.size() && args.get(i).startsWith("-") && args.get(i).length() > 1) {
+            String o = args.get(i);
+            if (SERVER_OPTION.matcher(o).matches()) return "That option would move adb to another server, so it is not run.";
+            if (VALUE_OPTION.matcher(o).matches()) { i += 2; continue; }
+            if (INFO_OPTION.matcher(o).matches()) return null;
+            if (FLAG_OPTION.matcher(o).matches()) { i++; continue; }
+            return "That adb option is not run from here.";
         }
+        if (i >= args.size()) return "no command";
+        if (SERVER_COMMAND.matcher(args.get(i)).matches()) return "That one would stop the adb this app runs on, so it is not run.";
         return null;
     }
 }

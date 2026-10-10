@@ -15,13 +15,15 @@ public class AdbArgsTest {
       {"devices", "-l"}, {"connect", "192.168.1.5:5555"}, {"disconnect", "192.168.1.5:5555"}, {"pair", "192.168.1.5:37000", "123456"}, {"mdns", "services"},
       {"reconnect", "offline"}, {"forward", "tcp:5599", "localabstract:/adb-hub"}, {"reboot", "recovery"}, {"shell", "pm", "list", "packages"},
       {"shell", "echo", "kill-server"}, {"pull", "/sdcard/a.txt", "/tmp/a.txt"}, {"push", "a.apk", "/data/local/tmp/"}, {"install", "-r", "a.apk"},
-      {"logcat", "-d"}, {"-d", "shell", "id"}, {"-e", "shell", "id"}, {"version"}, {"keys"},
+      {"logcat", "-d"}, {"-d", "shell", "id"}, {"-s", "shell", "devices"}, {"-s", "SER123", "-d", "shell", "id"}, {"-t", "2", "shell", "kill-server"}, {"--version"}, {"-e", "shell", "id"}, {"version"}, {"keys"},
     };
     for (String[] f : fine) is("allowed: adb " + String.join(" ", f), AdbArgs.check(l(f)) == null);
 
     // what would move or stop the server the app runs on
     String[][] bad = {
       {"kill-server"}, {"start-server"}, {"server"}, {"nodaemon", "server"}, {"fork-server", "server"}, {"-d", "kill-server"}, {"-d", "-e", "kill-server"},
+      {"-s", "shell", "kill-server"}, {"-t", "1", "kill-server"}, {"--one-device", "x", "start-server"}, {"-d", "-P", "5037", "devices"}, {"-d", "-e", "-Hhost", "devices"},
+      {"-d", "-L", "tcp:5037", "devices"}, {"-d", "-a", "devices"}, {"-s", "x", "-P5037", "devices"}, {"-q", "devices"}, {"-s", "x"}, {"-d"}, {"-s", "x", "-d", "server"},
       {"-P", "5037", "devices"}, {"-P5037", "devices"}, {"-H", "example.com", "devices"}, {"-Hexample.com", "devices"}, {"-L", "tcp:5037", "devices"}, {"-a", "nodaemon", "server"}, {"-a", "start-server"},
     };
     for (String[] b : bad) is("refused: adb " + String.join(" ", b), AdbArgs.check(l(b)) != null);
