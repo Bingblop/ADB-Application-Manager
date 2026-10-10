@@ -75,6 +75,8 @@ final class SecretSettings {
             vault.remove(name);
             return true;
         }
+        String sealed = vault.get(name);
+        if (v.equals(sealed)) return true;                      // already kept: a re-save of the same value must not be able to lose it
         try {
             vault.put(name, v);
             return true;

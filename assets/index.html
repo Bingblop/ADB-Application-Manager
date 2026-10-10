@@ -16334,12 +16334,12 @@ Type any command below (e.g. pm list packages -d)
         let vtKeyCache = null;
         function vtKey() {
             if (vtKeyCache === null) {
-                let k = '';
+                let k = '', older = false;
                 try { k = String(kvGet('vt_key', '') || ''); } catch (e) {}
                 // keys entered before there was one place for them: the Installer's own box, then Morphe Helper's
-                if (!k && window.AndroidBridge && window.AndroidBridge.loadSetting) { try { k = String(window.AndroidBridge.loadSetting('vt_api_key') || ''); } catch (e) {} }
+                if (!k && window.AndroidBridge && window.AndroidBridge.loadSetting) { try { k = String(window.AndroidBridge.loadSetting('vt_api_key') || ''); older = !!k; } catch (e) {} }
                 vtKeyCache = k.trim();
-                if (vtKeyCache && kvSet('vt_key', vtKeyCache) && window.AndroidBridge && window.AndroidBridge.saveSetting) { try { window.AndroidBridge.saveSetting('vt_api_key', ''); } catch (e) {} }     // moved: no second copy
+                if (vtKeyCache && older && kvSet('vt_key', vtKeyCache) && window.AndroidBridge && window.AndroidBridge.saveSetting) { try { window.AndroidBridge.saveSetting('vt_api_key', ''); } catch (e) {} }     // moved: no second copy
             }
             return vtKeyCache;
         }

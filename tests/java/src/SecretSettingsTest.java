@@ -54,6 +54,12 @@ public class SecretSettingsTest {
     check("... and the stale plain copy is gone, so the old secret is not silently kept", !p.m.containsKey("github_token"));
 
     v = new FakeVault(); p = new FakePlain(); s = new SecretSettings(v, p);
+    s.put("kv_vt_key", "same");
+    v.refuse = true;
+    check("saving the value that is already sealed succeeds even if the vault would refuse a write, and keeps it", s.put("kv_vt_key", "same") && "same".equals(s.get("kv_vt_key")) && "same".equals(v.m.get("kv_vt_key")));
+    check("a different value is still refused and drops the old one", !s.put("kv_vt_key", "other") && s.get("kv_vt_key").isEmpty());
+
+    v = new FakeVault(); p = new FakePlain(); s = new SecretSettings(v, p);
     s.put("github_token", "ghp_sealed");
     v.refuse = true;
     check("an older sealed value is dropped when the vault refuses the new one", !s.put("github_token", "ghp_new") && s.get("github_token").isEmpty() && !s.has("github_token") && v.m.isEmpty());
