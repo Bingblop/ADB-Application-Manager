@@ -180,6 +180,37 @@ public class FileSearchTest {
     rm(dots);
     check("a day whose midnight does not exist in the zone is still a day (America/Sao_Paulo 2018-11-04)", FileSearch.parse("date:2018-11-04", NOW, TimeZone.getTimeZone("America/Sao_Paulo")).problems.isEmpty() && FileSearch.parse("date:2018-03-11..2018-03-12", NOW, TimeZone.getTimeZone("America/Havana")).problems.isEmpty());
     check("a day that is not a day is still refused", FileSearch.parse("date:2025-13-01", NOW, UTC).problems.size() == 1 && FileSearch.parse("date:2025-02-30", NOW, UTC).problems.size() == 1);
+    // a guarded search (Limits.skip, as the app sets it): the app's own private data is not listed, not read for content, not descended into, also through a link
+    File sk = Files.createTempDirectory("fs-skip").toFile();
+    File skData = new File(sk, "data/app");
+    write(new File(skData, "shared_prefs/prefs.xml"), "milk secret"); write(new File(skData, "files/adb_home/.android/adbkey"), "milk key");
+    write(new File(skData, "cache/share/note.txt"), "milk for everyone"); write(new File(skData, "cache/backup_data_1.tar"), "milk backup");
+    write(new File(sk, "sdcard/Download/list.txt"), "milk and bread");
+    final File skDataF = skData;
+    final PrivatePaths.Root[] skAllowed = PrivatePaths.exportable(new File(skData, "files"), new File(skData, "cache"));
+    final PrivatePaths.Links skL = new PrivatePaths.Links() { public long count(File f) throws Exception { return ((Number) Files.getAttribute(f.toPath(), "unix:nlink")).longValue(); } };
+    FileSearch.Skip guard = new FileSearch.Skip() { public boolean skip(File f) { return PrivatePaths.blocked(f, skDataF, skL, skAllowed); } };
+    boolean skLinks;
+    try { Files.createSymbolicLink(new File(sk, "sdcard/Download/to-prefs.txt").toPath(), new File(skData, "shared_prefs/prefs.xml").toPath()); Files.createSymbolicLink(new File(sk, "sdcard/Download/to-data").toPath(), skData.toPath()); skLinks = true; } catch (Exception e) { skLinks = false; }
+    FileSearch.Limits gl = new FileSearch.Limits(); gl.skip = guard;
+    FileSearch.Query gq = FileSearch.parse("content:milk", NOW, UTC); gq.recursive = true;
+    List<String> gAll = names(FileSearch.run(Arrays.asList(new File(sk, "data/app/cache/share"), new File(sk, "data/app/cache"), new File(sk, "sdcard")), gq, gl, null), sk);
+    check("guarded content: search finds the allowed cache file and the user's file, nothing from the private part: " + gAll,
+        gAll.contains("data/app/cache/share/note.txt") && gAll.contains("sdcard/Download/list.txt")
+        && !gAll.contains("data/app/shared_prefs/prefs.xml") && !gAll.contains("data/app/files/adb_home/.android/adbkey") && !gAll.contains("data/app/cache/backup_data_1.tar"));
+    check("guarded: a search that starts at the folder above the data folder or at the data folder finds nothing in it (the data folder itself is private)",
+        FileSearch.run(Arrays.asList(new File(sk, "data"), new File(sk, "data/app")), gq, gl, null).isEmpty());
+    if (skLinks) check("guarded: a link to a private file, and a link to the data folder, give no hit and nothing below them: " + gAll,
+        !gAll.contains("sdcard/Download/to-prefs.txt") && !gAll.contains("sdcard/Download/to-data/shared_prefs/prefs.xml"));
+    FileSearch.Query gn = FileSearch.parse("prefs", NOW, UTC); gn.recursive = true;
+    List<String> gNames = names(FileSearch.run(Collections.singletonList(new File(sk, "data")), gn, gl, null), sk);
+    check("guarded name search does not list a private file's name either: " + gNames, gNames.isEmpty());
+    check("a root that is itself private is skipped whole", FileSearch.run(Collections.singletonList(new File(skData, "shared_prefs")), gn, gl, null).isEmpty());
+    FileSearch.Limits open = new FileSearch.Limits();
+    check("without a guard (the default) the walk is as before: the private file is found", names(FileSearch.run(Collections.singletonList(new File(sk, "data")), gn, open, null), sk).contains("data/app/shared_prefs/prefs.xml"));
+    FileSearch.Limits boom = new FileSearch.Limits(); boom.skip = new FileSearch.Skip() { public boolean skip(File f) { throw new IllegalStateException("x"); } };
+    check("a guard that throws counts as skipped (fails closed, no exception out of the search)", FileSearch.run(Collections.singletonList(new File(sk, "sdcard")), gq, boom, null).isEmpty());
+    rm(sk);
     rm(root); rm(outside);
     System.out.println(fails == 0 ? "ALL PASSED (" + n + " checks)" : fails + " FAILED");
     System.exit(fails == 0 ? 0 : 1);
