@@ -213,10 +213,12 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await ev(() => { document.getElementById('usSource').value = 'apkmirror'; usSrcChanged(); });
 
   // ---- 20. the Default Ask Agent searches too ----
-  await ev(() => { window.aiExplainInto = async (box, system, text) => { box.textContent = 'It is com.example.found.app by Example.'; window.__agentText = text; return 'It is com.example.found.app by Example.'; }; document.getElementById('usAgent').checked = true; usSave(); document.getElementById('usQuery').value = 'found app'; });
+  await ev(() => { window.aiExplainInto = async (box, system, text) => { const ans = 'Package: com.example.found.app\nDeveloper: Example, site www.example.com'; box.textContent = ans; window.__agentText = text; return ans; }; document.getElementById('usAgent').checked = true; usSave(); document.getElementById('usQuery').value = 'found app'; });
   await page.click('#usSearchBtn'); await sleep(500);
   const ag = await ev(() => ({ box: getComputedStyle(document.getElementById('usAgentBox')).display !== 'none', txt: window.__agentText, pk: [...document.querySelectorAll('#usResults .us-pkg')].map(x => x.innerText) }));
   check('20. with the agent box ticked, the Default Ask Agent is asked and the package it names is offered as a result', ag.box && /found app/.test(ag.txt) && ag.pk.includes('com.example.found.app'), JSON.stringify(ag));
+  const AP = await ev(() => [usAgentPackages('Package: com.whatsapp\nOfficial page: www.whatsapp.com'), usAgentPackages('**Package:** `com.example.maps`\nSee https://play.google.com/store/apps/details?id=org.no.thanks'), usAgentPackages('Package: unknown\nTry www.whatsapp.com or com.example.three.parts'), usAgentPackages('- Package name: org.a.b\n- package: org.a.b\npackage: net.c')]);
+  check('20b. only the "Package:" line of the answer counts: a two-part name (com.whatsapp) is taken, a web address or a name in the text is not', JSON.stringify(AP) === JSON.stringify([['com.whatsapp'], ['com.example.maps'], [], ['org.a.b', 'net.c']]), JSON.stringify(AP));
   await ev(() => { document.getElementById('usAgent').checked = false; usSave(); });
 
   // ---- 21. the KeyStore ----

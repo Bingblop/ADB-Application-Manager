@@ -15442,13 +15442,21 @@ Type any command below (e.g. pm list packages -d)
         }
 
         // ---- searching ----
+        const US_PKG = /^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)+$/;          // a package name: two or more parts (com.whatsapp is one)
+        // only the labelled line of the agent's answer counts, so a web address in the text is never taken for a package
+        function usAgentPackages(answer) {
+            const out = [], re = /^[ \t>*_-]*(?:\*\*)?package(?: name)?(?:\*\*)?[ \t]*:(?:\*\*)?[ \t]*`?([A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)+)`?/gim;
+            let m;
+            while ((m = re.exec(String(answer || '')))) { if (US_PKG.test(m[1]) && !out.includes(m[1])) out.push(m[1]); }
+            return out.slice(0, 4);
+        }
         async function usSearch() {
             const cfg = usRead(); usSave();
             const q = usEl('usQuery').value.trim();
             if (!q) { usStatus(txT('Type an app name or package name.'), true); return; }
             usReset();
             const run = us.run;
-            const PKG = /^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)+$/;
+            const PKG = US_PKG;
             const ql = q.toLowerCase();
             const cands = [];
             const add = c => { if (c.pkg && PKG.test(c.pkg) && !cands.some(x => x.pkg === c.pkg)) cands.push(c); };
@@ -15667,15 +15675,15 @@ Type any command below (e.g. pm list packages -d)
 
         // ---- the default agent searches too ----
         // what the agent is told and asked (never shown)
-        function usAgentSystem() { return 'You help find the correct Android app. Answer briefly, in plain text. Give the exact Android package name, the developer, the official website or store page, and the newest stable version you can confirm from your sources. Say so when you are not sure. Never suggest a modified, cracked or unofficial build.'; }
-        function usAgentQuestion(q) { return 'Find the Android app "' + q + '". Which package name, developer and official page does it have?'; }
+        function usAgentSystem() { return 'You help find the correct Android app. Answer briefly, in plain text. Start with one line of exactly this form: "Package: <the exact Android package name>" (or "Package: unknown" when you cannot confirm it). Then give the developer, the official website or store page, and the newest stable version you can confirm from your sources. Say so when you are not sure. Never suggest a modified, cracked or unofficial build.'; }
+        function usAgentQuestion(q) { return 'Find the Android app "' + q + '". Reply with the line "Package: <package name>" first, then the developer and the official page.'; }
         function usAgentWebQuery(q) { return q + ' android app package name'; }
         async function usAgentSearch(q, run) {
             const box = usEl('usAgentBox');
             box.style.display = ''; box.className = 'us-agent agent-ask-answer'; box.textContent = txT('Asking the Default Ask Agent...');
             const answer = await aiExplainInto(box, usAgentSystem(), usAgentQuestion(q), () => run === us.run, 'Only the app name you typed is sent.', usAgentWebQuery(q), '');
             if (run !== us.run || !answer) return;
-            const found = (answer.match(/\b[a-z][a-z0-9_]*(?:\.[a-z0-9_]+){2,}\b/gi) || []).filter((p, i, a) => a.indexOf(p) === i).slice(0, 4);
+            const found = usAgentPackages(answer);
             const fresh = found.filter(p => !us.cands.some(x => x.pkg === p));
             if (fresh.length) {
                 fresh.forEach(p => { const a = typeof allApps !== 'undefined' ? allApps.find(x => x.pkg === p) : null; us.cands.push({ pkg: p, name: a ? a.name : p, inst: a ? a.version || '' : null, installed: !!a, fromAgent: true }); });
