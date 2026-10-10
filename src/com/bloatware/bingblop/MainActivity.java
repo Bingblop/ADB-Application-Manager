@@ -4559,6 +4559,7 @@ public class MainActivity extends Activity {
     private static final Object tmLock = new Object();
     private ScheduledExecutorService tmExec;
     private ScheduledFuture<?> tmTask;
+    private boolean tmClosed;           // set under tmLock by onDestroy: a late tmStart from the page must not bring the poll back
     private CpuStats.Reading tmLastCpu;
     private NetStats.Reading tmLastNet;
     private long tmLastSampleAt;
@@ -11262,6 +11263,7 @@ public class MainActivity extends Activity {
             if (intervalMs < 1000) intervalMs = 1000;
             if (intervalMs > 10000) intervalMs = 10000;
             synchronized (tmLock) {
+                if (tmClosed) return "closed";
                 if (tmTask != null) tmTask.cancel(false);
                 if (tmExec == null) {
                     tmExec = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
@@ -14980,6 +14982,7 @@ public class MainActivity extends Activity {
         // the Task Manager poll: if the tab was open when the activity went, its thread would keep ticking and keep this activity alive
         try {
             synchronized (tmLock) {
+                tmClosed = true;
                 if (tmTask != null) { tmTask.cancel(false); tmTask = null; }
                 if (tmExec != null) { tmExec.shutdownNow(); tmExec = null; }
             }
