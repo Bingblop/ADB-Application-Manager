@@ -5146,9 +5146,6 @@ public class MainActivity extends Activity {
         return res;
     }
 
-    private static final String SCAN_FIND_PREDICATE =
-            "-type f \\( -iname '*.apk' -o -iname '*.apks' -o -iname '*.apkm' -o -iname '*.xapk' \\)";
-
     private volatile long apkScanProgressAt = 0;
     // numbers the searches: when a newer one starts (the page gave up on the first, or was reloaded), the older one's progress and answer are dropped
     private final java.util.concurrent.atomic.AtomicInteger apkScanSeq = new java.util.concurrent.atomic.AtomicInteger();
@@ -5233,7 +5230,7 @@ public class MainActivity extends Activity {
                         }
                         AndroidBridge sh = new AndroidBridge();
                         sendApkScanProgress(scanId, -1, fsAccess ? "Searching Android/data and Android/obb with the privileged mode…" : "Searching storage with the privileged mode…", found.size(), true);
-                        String out = sh.executeShell("find " + where.toString().trim() + " -maxdepth 12 " + SCAN_FIND_PREDICATE
+                        String out = sh.executeShell("find " + where.toString().trim() + " -maxdepth 12 " + ApkScan.FIND_PREDICATE
                                 + " 2>/dev/null | head -n 2500");
                         List<String> unreadable = new ArrayList<String>();
                         for (String path : ApkScan.parseFindOutput(out, 2500)) {

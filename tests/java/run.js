@@ -39,6 +39,7 @@ const SUITES = [
   { name: 'parity', title: 'The page and the Java rules give the same answer to the same names, values and colors (compares ~1,300 inputs)',
     kind: 'parity', needs: ['node'] },
   { name: 'filerules', title: 'File manager path rules: canonical form, protected folders', tests: ['FileRulesTest'], main: 'com.bloatware.bingblop.FileRulesTest' },
+  { name: 'apkscanfind', title: 'The shell search for package files run for real: a folder or file name with a line break gives no phantom path (needs sh and find)', tests: ['ApkScanFindTest'], main: 'com.bloatware.bingblop.ApkScanFindTest', needs: ['json'] },
   { name: 'apktrash', title: 'Deleting a found package file with Undo (which paths, where it waits) and the storage search\'s progress, against a real folder tree', tests: ['ApkTrashTest'], main: 'com.bloatware.bingblop.ApkTrashTest', needs: ['json'] },
   { name: 'fileops', title: 'File manager copy, move and delete with replace / skip / keep both, free names (name (1).ext), cancel, links, atomic write, and the same rules as a shell script', tests: ['FileOpsTest'], main: 'com.bloatware.bingblop.FileOpsTest' },
   { name: 'filesearch', title: 'File search: the query (name, wildcards, ending, size, date, kind, content:, archive:), the bounded walk, hidden and nested options, zip entries, links, limits and Cancel', tests: ['FileSearchTest'], main: 'com.bloatware.bingblop.FileSearchTest' },
