@@ -351,7 +351,7 @@
       <tr><td><b>Help Guide</b></td><td>Opens this guide in a sheet: a table of contents (the <b>Contents</b> button at the top brings it back), a search box, and every tab and button explained. After you follow a link inside the guide, a button <b>Back to where I was</b> shows for about 15 seconds and takes you back to the spot you left. The guide is English only, and it is loaded the first time you open it. Most other tabs, and Settings, have a small round <b>?</b> button on their first card that opens the guide at their topic; <b>Application Manager</b> and <b>Command-Line Interface</b> have none, so this button is how you reach the guide from them.</td></tr>
       <tr><td><b>What's new</b></td><td>Opens a sheet titled <b>What's New</b> with the release notes of the newest three versions. At the bottom, <b>Full changelog</b> opens the whole file on GitHub and <b>Got it</b> closes the sheet. The same sheet also opens once by itself after the app has been updated. If the build has no notes, a message says <i>No release notes in this build</i>.</td></tr>
       <tr><td><b>Permissions</b></td><td>Opens the <b>Permissions</b> sheet: All files access, Usage access, Display over other apps, Install unknown apps and, while a working mode is active, three more. Each row has an <b>Allow</b> button or shows "Allowed". Allow what you like and skip the rest. See <a href="#app-permissions">App permissions</a>.</td></tr>
-      <tr><td><b>Check for update</b></td><td>Jumps to the <a href="#tab-updates">App Updater</a> tab, scrolled to the card that checks this app's own releases. The first visit checks by itself; if it was already checked, it checks again. If the App Updater tab is switched off, a message says <i>App Updater is turned off. Turn it on in Settings, Feature List.</i> and nothing else happens.</td></tr>
+      <tr><td><b>Check for update</b></td><td>Jumps to the <a href="#tab-updates">Application Updater</a> box of the Third Party Stores/Updater tab, scrolled to the card that checks this app's own releases. The first visit checks by itself; if it was already checked, it checks again. If the Application Updater tab is switched off, a message says <i>Third Party Stores/Updater is turned off. Turn it on in Settings, Feature List.</i> and nothing else happens.</td></tr>
     </tbody>
   </table>
   <p>To update the app, see <a href="#install-and-update">Installing and updating</a>.</p>
@@ -405,12 +405,12 @@
   <p>A short list of tips: how Back works, press and hold, File Manager View, installs from File Manager, the Rish shell in the ADB Console, and the per-app log in Logcat. Each tip is explained in its own section of this guide.</p>
 
   <h4>Privacy and Credits</h4>
-  <p>The <b>Privacy</b> card says: no account, no ads, no analytics and no server of the developer's; everything runs on your phone; the app goes online only for something you open or ask for (update checks, App Stores, the debloat list, and a VirusTotal lookup if you add your own key); the ADB key and the APK-signing key are made on your phone and never leave it. The full text is in <a href="#privacy">Privacy</a>. The <b>Credits</b> card thanks the projects the app builds on; see <a href="#credits">Credits</a>.</p>
+  <p>The <b>Privacy</b> card says: no account, no ads, no analytics and no server of the developer's; everything runs on your phone; the app goes online only for something you open or ask for (update checks, Application Stores, the debloat list, and a VirusTotal lookup if you add your own key); the ADB key and the APK-signing key are made on your phone and never leave it. The full text is in <a href="#privacy">Privacy</a>. The <b>Credits</b> card thanks the projects the app builds on; see <a href="#credits">Credits</a>.</p>
 
   <h4>If something does not work</h4>
   <ul>
     <li><b>A web button does nothing.</b> Your phone has no browser, or no internet. Check both.</li>
-    <li><b>Check for update only shows a message.</b> The App Updater tab is switched off. Turn it on in the gear (Settings), under <b>Feature List</b>.</li>
+    <li><b>Check for update only shows a message.</b> The Third Party Stores/Updater tab is switched off. Turn it on in the gear (Settings), under <b>Feature List</b>.</li>
   </ul>
 </section>
 <section id="prefs" data-title="Settings (the gear)" data-group="Settings and looks">
@@ -423,7 +423,7 @@
     <li>These settings are about this app only. The font, the colours and the language do not change the rest of your phone. (<b>Trim Caches</b>, which clears the caches of the other apps, was a card here until v7.10.10; it now lives in the <a href="#tab-sdm">SD Maid</a> tab.)</li>
     <li>The cards come in this order: <b>Language</b>, <b>Default agent</b>, <b>Appearance</b>, <b>Palette Style</b>, <b>My Themes</b>, <b>Curated Theme Palettes</b> (with the <b>Granular Color Pickers</b> inside it), <b>Lists</b>, <b>Motion</b>, <b>Haptic feedback</b>, <b>Progress messages</b>, <b>VirusTotal API key</b>, <b>Reconnecting devices</b>, <b>Font</b>, <b>Icon pack</b>, <b>Action Button</b>, <b>Feature List</b> and, last, <b>Press and hold guide</b>. Below, each card has its own part, with every control, its default and when to change it.</li>
   </ul>
-  <div class="hg-note"><b>Not in this screen.</b> There is no switch here for keeping the screen on, for update checks, for backups or for logs. Update checks live in <a href="#tab-updates">App Updater</a>, backups in the <a href="#apps-backup">apps backup</a> section, logs in <a href="#tab-logcat">Logcat Viewer</a>. The Command-Line Interface has its own gear (<a href="#tab-terminal">Command-Line Interface</a>), and the <b>Keep selection after running</b> switch is inside the batch panel (see <a href="#apps-batch">batch actions</a>).</div>
+  <div class="hg-note"><b>Not in this screen.</b> There is no switch here for keeping the screen on, for update checks, for backups or for logs. Update checks live in <a href="#tab-updates">Application Updater</a>, backups in the <a href="#apps-backup">apps backup</a> section, logs in <a href="#tab-logcat">Logcat Viewer</a>. The Command-Line Interface has its own gear (<a href="#tab-terminal">Command-Line Interface</a>), and the <b>Keep selection after running</b> switch is inside the batch panel (see <a href="#apps-batch">batch actions</a>).</div>
 
   <h4>Language</h4>
   <p>A drop-down list, under the words "The text of this app. Names of apps, files and commands are not translated."</p>
@@ -689,11 +689,10 @@
       <tr><td>5</td><td><b>Command-Line Interface</b></td><td><a href="#tab-terminal">Command-Line Interface</a> (with the ADB Console)</td></tr>
       <tr><td>6</td><td><b>Hidden Settings</b></td><td><a href="#tab-settings">Hidden Settings</a></td></tr>
       <tr><td>7</td><td><b>RRO/Monet Customization</b></td><td><a href="#tab-overlays">RRO/Monet Customization</a></td></tr>
-      <tr><td>8</td><td><b>App Updater</b></td><td><a href="#tab-updates">App Updater</a></td></tr>
-      <tr><td>9</td><td><b>App Stores</b></td><td><a href="#tab-store">App Stores</a></td></tr>
-      <tr><td>10</td><td><b>Logcat Viewer</b></td><td><a href="#tab-logcat">Logcat Viewer</a></td></tr>
-      <tr><td>11</td><td><b>Task Manager</b></td><td><a href="#tab-taskmgr">Task Manager</a></td></tr>
-      <tr><td>12</td><td><b>Connected Devices</b></td><td><a href="#tab-devices">Connected Devices</a></td></tr>
+      <tr><td>8</td><td><b>Third Party Stores/Updater</b></td><td><a href="#tab-store">Third Party Stores</a> and <a href="#tab-updates">Updater</a> (two boxes at the top)</td></tr>
+      <tr><td>9</td><td><b>Logcat Viewer</b></td><td><a href="#tab-logcat">Logcat Viewer</a></td></tr>
+      <tr><td>10</td><td><b>Task Manager</b></td><td><a href="#tab-taskmgr">Task Manager</a></td></tr>
+      <tr><td>11</td><td><b>Connected Devices</b></td><td><a href="#tab-devices">Connected Devices</a></td></tr>
       <tr><td></td><td><b>About</b> (fixed, always last)</td><td><a href="#tab-about">About</a></td></tr>
     </tbody>
   </table>
@@ -708,7 +707,7 @@
   <p><b>What happens to a tab you switch off:</b></p>
   <ul>
     <li>It leaves the tab bar at once, and Back no longer goes to it.</li>
-    <li>Anything inside the app that points at it does not open it. A message says, for example, <i>App Updater is turned off. Turn it on in Settings, Feature List.</i> and nothing else happens: no sheet closes and no download starts. Examples are <b>Check for update</b> in About (App Updater), the update button in an app's menu (App Updater) and <b>Logs</b> in an app's menu (Logcat Viewer).</li>
+    <li>Anything inside the app that points at it does not open it. A message says, for example, <i>Third Party Stores/Updater is turned off. Turn it on in Settings, Feature List.</i> and nothing else happens: no sheet closes and no download starts. Examples are <b>Check for update</b> in About (Application Updater), the update button in an app's menu (Application Updater) and <b>Logs</b> in an app's menu (Logcat Viewer).</li>
     <li>One exception: if you open an APK file from outside the app (for example from your file manager or a download, choosing this app to install it), the app switches <b>APK Installer</b> back on by itself, because you asked for it. A message says <i>APK Installer was turned off. It is on again to open this file.</i></li>
     <li>You can switch off every one of the twelve if you like. The bar then shows only Application Manager and About.</li>
   </ul>

@@ -2168,6 +2168,10 @@
         .agent-ask-prog-txt { margin-top: 4px; font-size: 11px; color: var(--text-muted); }
         .agent-ask-hist { margin-top: 10px; border: 1px solid var(--border-glass); border-radius: 12px; overflow: hidden; }
         .agent-ask-hist-row { display: block; width: 100%; text-align: left; background: transparent; border: 0; border-bottom: 1px solid var(--border-glass); color: var(--text-main); padding: 9px 12px; cursor: pointer; font: inherit; }
+        .agent-ask-hist-item { display: flex; align-items: stretch; border-bottom: 1px solid var(--border-glass); }
+        .agent-ask-hist-item .agent-ask-hist-row { flex: 1 1 auto; min-width: 0; border-bottom: 0; }
+        .agent-ask-hist-pin { flex: 0 0 auto; background: transparent; border: 0; border-left: 1px solid var(--border-glass); color: var(--text-muted); padding: 0 12px; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+        .agent-ask-hist-pin.on { color: var(--accent); }
         .agent-ask-hist-row:last-child { border-bottom: 0; }
         .agent-ask-hist-row:active { background: color-mix(in srgb, var(--accent) 14%, transparent); }
         .agent-ask-hist-row b { display: block; font-size: 13px; overflow-wrap: anywhere; }
@@ -4174,7 +4178,9 @@
                 .cd-row-act { border: 1px solid var(--accent); color: var(--accent); background: transparent; border-radius: 999px; padding: 6px 12px; font-size: 11px; font-weight: 800; cursor: pointer; white-space: nowrap; }
                 .cd-row-act:active { background: var(--accent); color: var(--on-accent); }
                 .cd-row-act:disabled { opacity: 0.45; }
-                .cd-row-act.danger { border-color: var(--status-bloat); color: var(--status-bloat); }
+                .cd-row-act.danger { border-color: color-mix(in srgb, var(--apps-uninstalled) 50%, var(--border-glass)); color: var(--apps-uninstalled); background: color-mix(in srgb, var(--apps-uninstalled) 14%, transparent); }
+                .cd-row-act.blue { border-color: color-mix(in srgb, var(--apps-frozen) 50%, var(--border-glass)); color: var(--apps-frozen); background: color-mix(in srgb, var(--apps-frozen) 14%, transparent); }
+                .cd-row-act.blue:active, .cd-row-act.danger:active { background: var(--accent); color: var(--on-accent); }
                 .cd-row-act.green { border-color: color-mix(in srgb, var(--apps-enabled) 50%, var(--border-glass)); color: var(--apps-enabled); background: color-mix(in srgb, var(--apps-enabled) 14%, transparent); }
                 .cd-row-act.green:active { background: var(--accent); color: var(--on-accent); }
                 .cd-batch { position: sticky; bottom: 10px; z-index: 30; display: none; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 10px; padding: 8px 10px; border-radius: var(--radius-lg);
@@ -4309,7 +4315,7 @@
                     <div class="cd-batch" id="cdBatch">
                         <b id="cdBatchCount">0 selected</b>
                         <button class="cd-row-act green" onclick="cdBatch('enable')">Enable</button>
-                        <button class="cd-row-act" onclick="cdBatch('disable')">Disable</button>
+                        <button class="cd-row-act blue" onclick="cdBatch('disable')">Disable</button>
                         <button class="cd-row-act danger" onclick="cdBatch('uninstall')">Uninstall</button>
                         <button class="cd-row-act green" onclick="cdBatch('reinstall')">Reinstall</button>
                         <button class="cd-x" onclick="cdSelClear()" aria-label="Clear selection">&#10005;</button>
@@ -4941,6 +4947,13 @@
                 .store-more { text-align:center; margin:10px 0 4px; }
                 .store-prompt { display:flex; gap:10px; align-items:center; background:rgba(var(--ov),0.07); border:1px dashed var(--accent); border-radius:14px; padding:10px 12px; margin-bottom:10px; font-size:12px; color:var(--text-main); }
             </style>
+            <!-- The two boxes at the top: Application Stores (the default) and Application Updater -->
+            <div class="tx-switch" id="storeSwitch" role="tablist">
+                <button class="tx-switch-btn active" id="storeSwitchStores" role="tab" aria-selected="true" onclick="storePaneShow('stores')">Application Stores</button>
+                <button class="tx-switch-btn" id="storeSwitchUpdater" role="tab" aria-selected="false" onclick="storePaneShow('updater')">Application Updater</button>
+            </div>
+
+            <div id="storePaneStores">
 
             <div class="store-subtabs" id="storeSubtabs" role="tablist">
                 <button class="store-subtab active" data-store="shizu" onclick="switchStoreTab('shizu')">ShizuStore</button>
@@ -5060,11 +5073,9 @@
 
             <!-- Sub-tabs the person added with the + tab (a repository address, or a GitHub or Codeberg user or project) -->
             <div id="storeCustomPanels"></div>
+            </div>
 
-        </section>
-
-        <!-- VIEW: UPDATES -->
-        <section id="view-updates" class="view-content">
+            <div id="storePaneUpdater" style="display:none;">
             <div class="color-card" id="selfUpdateCard">
                 <div class="color-card-title">App update</div>
                 <div class="color-card-subtitle">Update ADB Application Manager Pro itself, straight from its GitHub releases. The download is checked to be this app, a newer version and signed with the same key before installing.</div>
@@ -5105,7 +5116,12 @@
                 <div class="list-empty">Tap Check for Updates.</div>
             </div>
             <div id="updExtraContainer"></div>
+            </div>
+
         </section>
+
+        <!-- VIEW: UPDATES -->
+
 
         <section id="view-saved-lists" class="view-content">
             <div class="color-card" id="quickActionsHelp">
@@ -7738,7 +7754,9 @@ Type any command below (e.g. pm list packages -d)
                 <button class="mode-action-btn primary" id="lcEntCopy" onclick="lcEntryCopy()">Copy</button>
                 <button class="mode-action-btn" id="lcEntMore" onclick="lcEntryMore()">Ask agent</button>
                 <button class="mode-action-btn" id="lcEntWeb" onclick="lcEntryWeb()">Web search</button>
+                <button class="mode-action-btn" id="lcEntHistBtn" onclick="askHistToggle('lcEnt')">History</button>
             </div>
+            <div class="agent-ask-hist" id="lcEntHist" style="display:none;"></div>
             <div id="lcEntAiWrap" style="display:none;">
                 <div class="lc-ent-ai" id="lcEntAi"></div>
                 <div class="agent-ask-prog" id="lcEntProg" role="progressbar" aria-label="Progress"><div class="agent-ask-bar indet" id="lcEntBar"><i id="lcEntBarFill"></i></div><div class="agent-ask-prog-txt" id="lcEntProgTxt"></div></div>
@@ -7770,12 +7788,14 @@ Type any command below (e.g. pm list packages -d)
                 <button class="mode-action-btn primary" id="sdbEditSaveBtn" style="flex:1; justify-content:center; min-height:40px;" onclick="sdbEditSave()">Save</button>
                 <button class="mode-action-btn" id="sdbEditFlipBtn" style="min-height:40px;" onclick="sdbEditFlip()">Flip</button>
             </div>
+            <div class="agent-ask-hist" id="sdbEditHist" style="display:none;"></div>
             <div class="lc-ent-ai" id="sdbEditAi" style="display:none; margin-top:10px;"></div>
             <div class="agent-ask-prog" id="sdbEditProg" role="progressbar" aria-label="Progress"><div class="agent-ask-bar indet" id="sdbEditBar"><i id="sdbEditBarFill"></i></div><div class="agent-ask-prog-txt" id="sdbEditProgTxt"></div></div>
             <div class="lc-ent-btns" style="margin-top:6px;"><button class="mode-action-btn" id="sdbEditStop" style="display:none;" onclick="askStopRun('sdbEdit')">Stop</button></div>
             <div class="batch-sheet-tools" style="margin-top:8px; gap:12px; flex-wrap:wrap;">
                 <button class="batch-tool-link" id="sdbEditWebBtn" onclick="sdbEditWeb()">Web search</button>
                 <button class="batch-tool-link" id="sdbEditAiBtn" onclick="sdbEditAsk()">Ask agent</button>
+                <button class="batch-tool-link" id="sdbEditHistBtn" onclick="askHistToggle('sdbEdit')">History</button>
                 <button class="batch-tool-link" onclick="sdbEditCopy('name')">Copy name</button>
                 <button class="batch-tool-link" onclick="sdbEditCopy('value')">Copy value</button>
                 <button class="batch-tool-link" onclick="sdbEditCopy('cmd')">Copy command</button>
@@ -8463,7 +8483,7 @@ Type any command below (e.g. pm list packages -d)
                 <button class="mode-action-btn" id="agentAskStop" style="display:none;" onclick="agentAskStop()">Stop</button>
                 <button class="mode-action-btn" id="agentAskWebBtn" onclick="agentAskWeb()">Web search</button>
                 <button class="mode-action-btn" id="agentAskCopy" onclick="agentAskCopy()">Copy the answer</button>
-                <button class="mode-action-btn" id="agentAskHistBtn" onclick="askHistToggle()">History</button>
+                <button class="mode-action-btn" id="agentAskHistBtn" onclick="askHistToggle('agentAsk')">History</button>
             </div>
             <div class="agent-ask-hist" id="agentAskHist" style="display:none;"></div>
             <div class="agent-ask-foot">An agent can be wrong, so treat the answer as a hint: for anything that changes the phone, try the step that can be undone first (freeze rather than uninstall) and check that the phone still works. <a href="#" onclick="agentAskToSettings(); return false;">Change the default agent</a></div>
@@ -8960,8 +8980,7 @@ Type any command below (e.g. pm list packages -d)
             { key: 'terminal', label: 'Command-Line\nInterface', name: 'Command-Line Interface' },
             { key: 'settings', label: 'Hidden\nSettings', name: 'Hidden Settings' },
             { key: 'overlays', label: 'RRO/Monet\nCustomization', name: 'RRO/Monet Customization' },
-            { key: 'updates', label: 'App\nUpdater', name: 'App Updater' },
-            { key: 'store', label: 'App\nStores', name: 'App Stores' },
+            { key: 'store', label: 'Third Party\nStores/Updater', name: 'Third Party Stores/Updater' },
             { key: 'logcat', label: 'Logcat\nViewer', name: 'Logcat Viewer' },
             { key: 'taskmgr', label: 'Task\nManager', name: 'Task Manager' },
             { key: 'devices', label: 'Connected\nDevices', name: 'Connected Devices' },
@@ -8970,7 +8989,7 @@ Type any command below (e.g. pm list packages -d)
             { key: 'about', label: 'About', name: 'About', fixed: true }
         ];
         const TAB_MOVABLE = TAB_DEFS.filter(t => !t.fixed).map(t => t.key);          // the default order of the tabs that can move
-        const tabDef = key => TAB_DEFS.find(t => t.key === key);
+        const tabDef = key => TAB_DEFS.find(t => t.key === (key === 'updates' ? 'store' : key));          // the updater is a box of the Third Party Stores/Updater tab now
         let tabConfig = { order: TAB_MOVABLE.slice(), off: [] };
 
         // The saved choice (kv 'tab_config') is checked against the tabs this version has: unknown keys go, a tab it has never
@@ -8990,13 +9009,13 @@ Type any command below (e.g. pm list packages -d)
 
         // The tabs on the bar, left to right
         function tabsShown() { return ['apps'].concat(tabConfig.order.filter(k => !tabConfig.off.includes(k)), ['about']); }
-        function tabIsOn(key) { return key === 'prefs' || !!tabDef(key) && (tabDef(key).fixed || !tabConfig.off.includes(key)); }
+        function tabIsOn(key) { if (key === 'updates') key = 'store'; return key === 'prefs' || !!tabDef(key) && (tabDef(key).fixed || !tabConfig.off.includes(key)); }
 
         function renderTabBar() {
             const bar = document.getElementById('tabBar');
             if (!bar) return;
             const cur = currentViewName();
-            bar.innerHTML = tabsShown().map(k => '<button class="tab-btn' + (k === cur ? ' active' : '') + '" data-tab="' + k + '"' + (k === 'updates' ? ' id="updatesTabBtn"' : '') + ' onclick="switchView(\'' + k + '\')">' + escapeHtml(tabDef(k).label) + '</button>').join('');
+            bar.innerHTML = tabsShown().map(k => '<button class="tab-btn' + (k === cur ? ' active' : '') + '" data-tab="' + k + '"' + (k === 'store' ? ' id="updatesTabBtn"' : '') + ' onclick="switchView(\'' + k + '\')">' + escapeHtml(tabDef(k).label) + '</button>').join('');
             if (typeof updateUpdatesTabBadge === 'function') updateUpdatesTabBadge();
         }
 
@@ -9025,6 +9044,12 @@ Type any command below (e.g. pm list packages -d)
 
         // Returns false when it did not go anywhere (an unknown tab, or one that is switched off)
         function switchView(viewName) {
+            if (viewName === 'updates') {                                  // the App Updater is the right-hand box of the Third Party Stores/Updater tab
+                storePane = 'updater'; storeKeep = true;
+                const ok = switchView('store');
+                storeKeep = false;
+                return ok;
+            }
             if (viewName !== 'prefs' && !tabDef(viewName)) return false;
             if (!tabNeed(viewName)) return false;                        // switched off in Settings > Feature List: nothing to open
             closeSearchMenu();
@@ -9063,7 +9088,6 @@ Type any command below (e.g. pm list packages -d)
             if (viewName !== 'taskmgr' && typeof tmStop === 'function') tmStop();
             if (viewName !== 'devices' && typeof cdLeave === 'function') cdLeave();
             if (viewName === 'debloater') onDebloaterShown();
-            if (viewName === 'updates') { onUpdatesShown(); refreshStoreStatus(); }
             if (viewName === 'installer') onInstallerShown();
             if (viewName === 'files') onFilesShown();
             if (viewName === 'logcat') onLogcatShown();
@@ -9081,7 +9105,7 @@ Type any command below (e.g. pm list packages -d)
             if (typeof sdbSnackHide === 'function' && !(sdbSnackView ? viewName === sdbSnackView : (viewName === 'settings' || viewName === 'overlays'))) sdbSnackHide();      // its Undo only makes sense next to what it undoes
             if (viewName === 'settings') onSettingsShown();
             if (viewName === 'overlays') onOverlaysShown();
-            if (viewName === 'store') onStoreShown();
+            if (viewName === 'store') { if (!storeKeep && fromView !== 'store') storePane = 'stores'; onStoreShown(); storePaneShow(storePane, true); }
             if (viewName === 'about') onAboutShown();
             haptic();
             return true;
@@ -10766,15 +10790,16 @@ Type any command below (e.g. pm list packages -d)
             const ag = askAgentDef();
             showToast(ag ? 'Default agent: ' + ag.name : 'No default agent');
         }
-        // "Test the default agent" in Settings: one sample question, the same way an Ask agent button asks
+        // "Test the default agent" in Settings and "Test" in an agent's Connect sheet: one sample question, asked the way an Ask agent button asks
         let askTestBusy = false;
         function askTestSample() { return 'Android ?\nPackage: com.android.calculator2\nApp name: Calculator\nType: system app\nState: enabled'; }          // the text sent, not shown
-        async function askAgentTest() {
+        // ui names the pieces: uiOut (the answer), uiRes (the result line), uiBtn, and the progress bar and Stop of askProgressShow
+        async function agentTestRun(ag, ui) {
             if (askTestBusy) return;
             haptic();
-            const out = document.getElementById('askTestOut'), res = document.getElementById('askTestRes'), btn = document.getElementById('askTestBtn');
+            const out = document.getElementById(ui + 'Out'), res = document.getElementById(ui + 'Res'), btn = document.getElementById(ui + 'Btn');
+            if (!out || !res || !btn) return;
             res.textContent = ''; res.classList.remove('is-err');
-            const ag = askAgentDef();
             txRefreshVault();
             if (!ag || !txAgentReady(ag)) {
                 out.style.display = 'none';
@@ -10783,17 +10808,23 @@ Type any command below (e.g. pm list packages -d)
                     : txF('{0} is not connected yet. Add its key or sign-in in the Command-Line Interface tab first.', ag.name);
                 return;
             }
+            if (txEngine(ag) === 'cli' || ag.api === 'cli') {
+                out.style.display = 'none';
+                res.textContent = txF('{0} works through its own tool in Termux: test it by sending a message in the Terminal.', ag.name);
+                return;
+            }
             askTestBusy = true; btn.disabled = true;
             out.style.display = '';
             const t0 = Date.now();
-            const q = askTestSample();
-            const ans = await aiExplainInto(out, agentSystem('package'), q, () => askTestBusy, 'Only this sample question is sent to them: whether the Calculator package can be disabled.', null, 'askTest');
+            const ans = await aiExplainInto(out, agentSystem('package'), askTestSample(), () => askTestBusy, 'Only this sample question is sent to them: whether the Calculator package can be disabled.', null, ui, ag);
             const ok = !!ans && !out.classList.contains('is-err');
             res.classList.toggle('is-err', !ok);
             res.textContent = ok ? txF('It works: {0} answered in {1} s.', ag.name, Math.max(1, Math.round((Date.now() - t0) / 1000)))
                 : (out.textContent === txT('Stopped.') ? '' : txT('It did not work. The message above says why.'));
             askTestBusy = false; btn.disabled = false;
         }
+        function askAgentTest() { return agentTestRun(askAgentDef(), 'askTest'); }
+        function txConnectTest() { return agentTestRun(txAgentDef(txConnectAgent), 'txConnTest'); }
         // The agent when there is one that can answer; otherwise Settings opens on the choice (nothing is sent anywhere).
         function askAgentGate() {
             const ag = askAgentDef();
@@ -10872,53 +10903,84 @@ Type any command below (e.g. pm list packages -d)
             const wasAgent = askAgentReadyNow() ? askAgentDef().name.replace(/\s*\(.*\)$/, '') : '';
             cur.answer = await aiExplainInto(document.getElementById('agentAskAi'), agentSystem(cur.kind), cur.text, () => agentAsk === cur, 'The text above is sent to them.', cur.web, 'agentAsk');
             cur.busy = false; btn.disabled = false;
-            if (cur.answer && agentAsk === cur && !document.getElementById('agentAskAi').classList.contains('is-err')) askHistAdd(cur, wasAgent);
+            if (cur.answer && agentAsk === cur && !document.getElementById('agentAskAi').classList.contains('is-err')) askHistAdd('agentAsk', { id: cur.kind + '|' + cur.name, kind: cur.kind, name: cur.name, label: (AGENT_KINDS[cur.kind] || AGENT_KINDS.item).label, text: cur.text, web: cur.web || '', answer: cur.answer, agent: wasAgent });
         }
-        // ---- a short history of the answers of the Ask agent window (kept on this phone only; Clear history removes them) ----
-        const ASK_HIST_MAX = 12;
-        function askHistGet() { const h = kvGet('ask_history', []); return Array.isArray(h) ? h.filter(e => e && e.kind && e.name && e.answer) : []; }
-        function askHistAdd(cur, agentName) {
-            const e = { kind: cur.kind, name: cur.name, text: String(cur.text || '').slice(0, 3000), web: cur.web || '', answer: String(cur.answer).slice(0, 6000), agent: agentName || '', at: Date.now() };
-            const list = askHistGet().filter(x => !(x.kind === e.kind && x.name === e.name));
-            list.unshift(e);
-            kvSet('ask_history', list.slice(0, ASK_HIST_MAX));
-            if (document.getElementById('agentAskHist').style.display !== 'none') askHistRender();
+        // ---- a short history of the answers of the three windows that ask (Ask agent, log entry, Hidden Settings; kept on this phone only) ----
+        // The last 12 answers of each window; an answer can be pinned, and a pinned answer stays when newer ones push the others out (up to 30 pins).
+        // Clear history removes the ones that are not pinned. Entry: { id, kind, name, label, text, web, answer, agent, at, pinned }
+        const ASK_HIST = {
+            agentAsk: { key: 'ask_history', box: 'agentAskAi' },
+            lcEnt: { key: 'ask_history_log', box: 'lcEntAi' },
+            sdbEdit: { key: 'ask_history_sdb', box: 'sdbEditAi' }
+        };
+        const ASK_HIST_MAX = 12, ASK_HIST_PINS = 30;
+        function askHistGet(ui) { const h = kvGet(ASK_HIST[ui].key, []); return Array.isArray(h) ? h.filter(e => e && e.id && e.name && e.answer) : []; }
+        function askHistWhen(e) { return new Date(e.at).toLocaleString(langLocale(), { dateStyle: 'medium', timeStyle: 'short' }); }
+        function askHistAdd(ui, e) {
+            const old = askHistGet(ui).find(x => x.id === e.id);
+            e.at = Date.now();
+            e.pinned = !!(old && old.pinned);
+            e.answer = String(e.answer).slice(0, 6000);
+            e.text = String(e.text || '').slice(0, 3000);
+            const rest = askHistGet(ui).filter(x => x.id !== e.id);
+            const pinned = [e].concat(rest).filter(x => x.pinned).sort((a, b) => b.at - a.at).slice(0, ASK_HIST_PINS);
+            const others = [e].concat(rest).filter(x => !x.pinned).sort((a, b) => b.at - a.at).slice(0, ASK_HIST_MAX);
+            kvSet(ASK_HIST[ui].key, pinned.concat(others));
+            const panel = document.getElementById(ui + 'Hist');
+            if (panel && panel.style.display !== 'none') askHistRender(ui);
         }
-        function askHistToggle() {
+        function askHistSorted(ui) { const l = askHistGet(ui); return l.filter(x => x.pinned).concat(l.filter(x => !x.pinned)); }
+        function askHistToggle(ui) {
             haptic();
-            const h = document.getElementById('agentAskHist');
+            const h = document.getElementById(ui + 'Hist');
             const open = h.style.display === 'none';
             h.style.display = open ? '' : 'none';
-            if (open) askHistRender();
+            if (open) askHistRender(ui);
         }
-        function askHistRender() {
-            const h = document.getElementById('agentAskHist'), list = askHistGet();
+        function askHistRender(ui) {
+            const h = document.getElementById(ui + 'Hist'), list = askHistSorted(ui);
             if (!list.length) { h.innerHTML = '<div class="agent-ask-hist-empty">' + escapeHtml(txT('No answers are kept yet.')) + '</div>'; return; }
-            h.innerHTML = list.map((e, i) => '<button class="agent-ask-hist-row" type="button" onclick="askHistOpen(' + i + ')"><b translate="no">' + escapeHtml(e.name) + '</b><span>'
-                + escapeHtml((AGENT_KINDS[e.kind] || AGENT_KINDS.item).label) + ' · <span style="display:inline" translate="no">' + escapeHtml(new Date(e.at).toLocaleString(langLocale(), { dateStyle: 'medium', timeStyle: 'short' })) + (e.agent ? ' · ' + escapeHtml(e.agent) : '') + '</span></span></button>').join('')
-                + '<button class="agent-ask-hist-row" type="button" onclick="askHistClear()"><b>' + escapeHtml(txT('Clear history')) + '</b><span>' + escapeHtml(txT('Answers are kept on this phone only.')) + '</span></button>';
+            h.innerHTML = list.map((e, i) => '<div class="agent-ask-hist-item"><button class="agent-ask-hist-row" type="button" onclick="askHistOpen(\'' + ui + '\',' + i + ')"><b translate="no">' + escapeHtml(e.name) + '</b><span>'
+                + escapeHtml(e.label || '') + ' · <span style="display:inline" translate="no">' + escapeHtml(askHistWhen(e)) + (e.agent ? ' · ' + escapeHtml(e.agent) : '') + '</span></span></button>'
+                + '<button class="agent-ask-hist-pin' + (e.pinned ? ' on' : '') + '" type="button" aria-pressed="' + (e.pinned ? 'true' : 'false') + '" onclick="askHistPin(\'' + ui + '\',' + i + ')">' + escapeHtml(e.pinned ? txT('Pinned') : txT('Pin')) + '</button></div>').join('')
+                + '<button class="agent-ask-hist-row" type="button" onclick="askHistClear(\'' + ui + '\')"><b>' + escapeHtml(txT('Clear history')) + '</b><span>' + escapeHtml(txT('Pinned answers stay. Answers are kept on this phone only.')) + '</span></button>';
         }
-        function askHistOpen(i) {
-            const e = askHistGet()[i];
+        function askHistPin(ui, i) {
+            const list = askHistSorted(ui), e = list[i];
             if (!e) return;
             haptic();
-            askStopRun('agentAsk');
-            const k = AGENT_KINDS[e.kind] || AGENT_KINDS.item;
-            agentAsk = { kind: e.kind, name: e.name, text: e.text, answer: e.answer, busy: false, web: e.web };
-            document.getElementById('agentAskTitle').innerText = k.title;
-            document.getElementById('agentAskSubject').innerText = e.name;
-            document.getElementById('agentAskSent').innerText = e.text;
-            const box = document.getElementById('agentAskAi');
+            if (!e.pinned && list.filter(x => x.pinned).length >= ASK_HIST_PINS) { showToast(txF('At most {0} answers can be pinned', ASK_HIST_PINS)); return; }
+            e.pinned = !e.pinned;
+            kvSet(ASK_HIST[ui].key, list);
+            askHistRender(ui);
+        }
+        function askHistOpen(ui, i) {
+            const e = askHistSorted(ui)[i];
+            if (!e) return;
+            haptic();
+            document.getElementById(ui + 'Hist').style.display = 'none';
+            const box = document.getElementById(ASK_HIST[ui].box);
+            if (ui === 'agentAsk') {
+                askStopRun('agentAsk');
+                const k = AGENT_KINDS[e.kind] || AGENT_KINDS.item;
+                agentAsk = { kind: e.kind, name: e.name, text: e.text, answer: e.answer, busy: false, web: e.web };
+                document.getElementById('agentAskTitle').innerText = k.title;
+                document.getElementById('agentAskSubject').innerText = e.name;
+                document.getElementById('agentAskSent').innerText = e.text;
+            } else {
+                box.parentNode.style.display = box.parentNode.id === 'lcEntAiWrap' ? '' : box.parentNode.style.display;
+                box.style.display = '';
+            }
             box.classList.remove('is-err');
             box.innerHTML = '<div class="lc-ent-ai-note"></div><span class="ai-out"></span>';
-            box.firstChild.textContent = txF('Saved answer from {0}. Ask again for a new one.', new Date(e.at).toLocaleString(langLocale(), { dateStyle: 'medium', timeStyle: 'short' }));
+            box.firstChild.textContent = ui === 'agentAsk' ? txF('Saved answer from {0}. Ask again for a new one.', askHistWhen(e)) : txF('Saved answer about {0} from {1}.', e.name, askHistWhen(e));
             box.querySelector('.ai-out').textContent = e.answer;
-            document.getElementById('agentAskHist').style.display = 'none';
+            if (ui === 'lcEnt') lcEntAiText = e.answer;
         }
-        function askHistClear() {
+        function askHistClear(ui) {
             haptic();
-            kvSet('ask_history', []);
-            askHistRender();
+            kvSet(ASK_HIST[ui].key, askHistGet(ui).filter(x => x.pinned));
+            askHistRender(ui);
         }
         // A progress bar and a Stop button while an answer is on its way (an agent that streams, a cloud agent's task, the web lookup). Every window that asks
         // has the same four pieces with a shared name start: KEYProg, KEYBar, KEYBarFill, KEYProgTxt and the button KEYStop.
@@ -11363,7 +11425,9 @@ Type any command below (e.g. pm list packages -d)
         function updateUpdatesTabBadge() {
             const btn = document.getElementById('updatesTabBtn');
             const pending = updList.filter(u => !(updProgress[u.pkg] && updProgress[u.pkg].stage === 'done')).length;
-            if (btn) btn.innerText = pending ? `${tabDef('updates').label} (${pending})` : tabDef('updates').label;
+            if (btn) btn.innerText = pending ? `${tabDef('store').label} (${pending})` : tabDef('store').label;
+            const sw = document.getElementById('storeSwitchUpdater');
+            if (sw) sw.innerText = pending ? txF('Application Updater ({0})', pending) : txT('Application Updater');
         }
 
         function renderUpdates(st) {
@@ -12092,6 +12156,17 @@ Type any command below (e.g. pm list packages -d)
             return s ? s.replace(/[-_]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'Other';
         }
 
+        // The two boxes at the top of the Third Party Stores/Updater tab: Application Stores (the default, left) and Application Updater (right)
+        let storePane = 'stores', storeKeep = false;
+        function storePaneShow(which, quiet) {
+            storePane = which === 'updater' ? 'updater' : 'stores';
+            const up = storePane === 'updater';
+            document.getElementById('storePaneStores').style.display = up ? 'none' : '';
+            document.getElementById('storePaneUpdater').style.display = up ? '' : 'none';
+            [['storeSwitchStores', !up], ['storeSwitchUpdater', up]].forEach(([id, on]) => { const b = document.getElementById(id); b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
+            if (!quiet) haptic();
+            if (up) { onUpdatesShown(); refreshStoreStatus(); }
+        }
         function onStoreShown() {
             storeCustomRestore();
             switchStoreTab(storeSrc[currentStoreTab] || ['shizu', 'github', 'fdroid', 'orion'].indexOf(currentStoreTab) >= 0 ? currentStoreTab : 'shizu');
@@ -18913,7 +18988,7 @@ Type any command below (e.g. pm list packages -d)
         // ---------- "?" on each tab: the Help Guide at the topic of that tab ----------
         const HELP_LINKS = {
             apps: 'tab-apps', 'saved-lists': 'tab-saved-lists', debloater: 'tab-debloater', installer: 'tab-installer', files: 'tab-files', terminal: 'tab-terminal', devices: 'tab-devices',
-            settings: 'tab-settings', overlays: 'tab-overlays', updates: 'tab-updates', store: 'tab-store', logcat: 'tab-logcat', taskmgr: 'tab-taskmgr', morphe: 'tab-morphe', sdm: 'tab-sdm', prefs: 'prefs'
+            settings: 'tab-settings', overlays: 'tab-overlays', store: 'tab-store', logcat: 'tab-logcat', taskmgr: 'tab-taskmgr', morphe: 'tab-morphe', sdm: 'tab-sdm', prefs: 'prefs'
         };
         function injectHelpLinks() {
             Object.keys(HELP_LINKS).forEach(view => {
@@ -19857,7 +19932,7 @@ Type any command below (e.g. pm list packages -d)
             return '<div class="app-card' + (sel ? ' selected' : '') + '" id="cdcard_' + pk + '" data-pkg="' + pk + '">' +
                 '<div class="cd-icon">' + icon + '</div>' +
                 '<div class="app-meta" onclick="cdToggleSel(this.parentElement.dataset.pkg)"><div class="app-name">' + escapeHtml(a.name) + '</div><div class="app-pkg">' + pk + '</div><div class="badge-row">' + badges + '</div></div>' +
-                '<div class="app-actions"><button class="cd-row-act' + (act[0] === 'disable' ? '' : ' green') + '" onclick="cdAppAct(this.closest(\'.app-card\').dataset.pkg, \'' + act[0] + '\')">' + act[1] + '</button>' +
+                '<div class="app-actions"><button class="cd-row-act ' + (act[0] === 'disable' ? 'blue' : 'green') + '" onclick="cdAppAct(this.closest(\'.app-card\').dataset.pkg, \'' + act[0] + '\')">' + act[1] + '</button>' +
                 '<button class="btn-mini" title="Menu" onclick="cdAppMenu(this.closest(\'.app-card\').dataset.pkg)">\u22ef</button></div>' +
                 '<div class="app-left" onclick="cdToggleSel(this.parentElement.dataset.pkg)"><div class="app-checkbox">' + (sel ? '\u2713' : '') + '</div></div></div>';
         }
@@ -21117,6 +21192,7 @@ Type any command below (e.g. pm list packages -d)
             document.getElementById('lcEntMeta').innerText = (e.date ? e.date + ' ' : '') + e.time + '  pid ' + e.pid + ' / tid ' + e.tid;
             document.getElementById('lcEntMsg').innerText = e.lines.join('\n');
             document.getElementById('lcEntAiWrap').style.display = 'none';
+            document.getElementById('lcEntHist').style.display = 'none';
             document.getElementById('lcEntMore').disabled = false;
             document.getElementById('lcEntryModal').classList.add('show');
         }
@@ -21148,6 +21224,10 @@ Type any command below (e.g. pm list packages -d)
             lcEntAiBusy = true; btn.disabled = true;
             lcEntAiText = await aiExplainInto(document.getElementById('lcEntAi'), LC_ENTRY_SYSTEM, q, () => lcEnt === ent, undefined, lcEntryQuery(), 'lcEnt');
             lcEntAiBusy = false; btn.disabled = false;
+            if (lcEntAiText && lcEnt === ent && !document.getElementById('lcEntAi').classList.contains('is-err')) {
+                const first = (ent.lines[0] || '').slice(0, 90);
+                askHistAdd('lcEnt', { id: ent.tag + '|' + first, kind: 'log', name: ent.tag + (first ? ': ' + first : ''), label: txT('Log entry') + ' · ' + ent.lvl, text: q, web: '', answer: lcEntAiText, agent: '' });
+            }
         }
 
         // ---- recording the log to a file, and looking at a recording as a still picture ----
@@ -21438,7 +21518,7 @@ Type any command below (e.g. pm list packages -d)
         }
         function askAgentReadyNow() { const a = askAgentDef(); if (!a) return false; txRefreshVault(); return txAgentReady(a); }
 
-        async function aiExplainInto(box, system, text, isCurrent, sentNote, webQuery, ui) {
+        async function aiExplainInto(box, system, text, isCurrent, sentNote, webQuery, ui, agOverride) {
             box.classList.remove('is-err');
             const run = askRun = { ui: ui || '', stopped: false, ids: new Set(), remote: null, stop() {          // what the Stop button of the Ask agent window ends
                 if (this.stopped) return;
@@ -21449,7 +21529,7 @@ Type any command below (e.g. pm list packages -d)
             const live = () => isCurrent() && !run.stopped;
             if (ui) askProgressShow(ui, true);
             try {
-                const ag = askAgentDef();
+                const ag = agOverride || askAgentDef();
                 if (!ag || !txAgentReady(ag)) {
                     const r = await webLookupInto(box, webQuery || wlQueryFromText(text), live);
                     if (run.stopped && isCurrent()) { box.classList.remove('is-err'); box.textContent = txT('Stopped.'); }
@@ -26648,6 +26728,7 @@ Type any command below (e.g. pm list packages -d)
         }
 
         function txCloseConnect() {
+            askStopRun('txConnTest');
             const m = document.getElementById('txConnectModal');
             if (m) m.classList.remove('show');
             txConnectAgent = '';
@@ -26705,6 +26786,7 @@ Type any command below (e.g. pm list packages -d)
                     + (v.key || v.base ? '<button class="mode-action-btn" onclick="txForgetKey()">Forget</button>' : '') + '</div>'
                     + '<div class="tx-sheet-p muted" id="txKeyStatus"></div>'
                     + (ag.id === 'ollama' ? '<div class="tx-sheet-sec">Install on this phone</div><p class="tx-sheet-p">Installs Ollama in Termux, starts it and downloads a small coding model (qwen2.5-coder 1.5B, about 1 GB). This takes a few minutes.</p><div class="mode-btn-row"><button class="mode-action-btn primary" onclick="txInstallOllama()">Install Ollama in Termux</button><button class="mode-action-btn" onclick="txOpenTermuxSetup()">Termux setup</button></div>' : '');
+                h += txConnTestHtml(ag);
                 box.innerHTML = h;
                 return;
             }
@@ -26726,6 +26808,7 @@ Type any command below (e.g. pm list packages -d)
                     + '<div class="tx-sheet-p muted" id="txKeyStatus"></div>'
                     + (ag.id === 'cursor' ? '<p class="tx-sheet-p muted">Cursor\'s agents run in Cursor\'s cloud, on a copy of a Git repository (the one above, or none): they cannot see this phone\'s files. To work on files here, sign in with the Cursor CLI instead.</p>' : '')
                     + (ag.id === 'gemini' ? '<p class="tx-sheet-p muted">Google AI Studio keys have a free tier; on the free tier Google may use what you send to improve its products.</p>' : '');
+                h += txConnTestHtml(ag);
                 if (ag.id === 'crawl4ai') h += '<p class="tx-sheet-p muted">Crawl4AI is the open-source web crawler; this is its hosted cloud. A new account gets free credits and a free monthly allowance, no card. An Ask agent button sends the question to its answer service, which searches the web, reads the pages and writes the answer. It is for the Ask agent buttons only, not a chat. The test spends one credit.</p>';
                 if (ag.id === 'browseruse') h += '<p class="tx-sheet-p muted">Browser Use is the open-source browser agent; this is its hosted cloud, which has a free tier for new accounts. An Ask agent button starts a short browser task that looks the question up on the web: it can take a minute or two and uses a little credit. It is for the Ask agent buttons only, not a chat. Testing the key costs nothing.</p>';
             } else if (hasCli) {
@@ -26750,6 +26833,15 @@ Type any command below (e.g. pm list packages -d)
                 if (!onlyCli && using) h += '<div class="mode-btn-row"><button class="mode-action-btn" onclick="txSettings.connect[\'' + ag.id + '\']=\'key\'; txSaveSettings(); txConnectSet(\'key\')">Use the API key instead</button></div>';
             }
             box.innerHTML = h;
+        }
+
+        // The Test button of a Connect sheet: asks the agent one sample question and says whether it works
+        function txConnTestHtml(ag) {
+            if (!ag || ag.api === 'info' || ag.api === 'cli') return '';
+            return '<div class="mode-btn-row" style="margin-top:10px;"><button class="mode-action-btn" id="txConnTestBtn" onclick="txConnectTest()">Test</button>'
+                + '<button class="mode-action-btn" id="txConnTestStop" style="display:none;" onclick="askStopRun(\'txConnTest\')">Stop</button></div>'
+                + '<div class="agent-ask-prog" id="txConnTestProg" role="progressbar" aria-label="Progress"><div class="agent-ask-bar indet" id="txConnTestBar"><i id="txConnTestBarFill"></i></div><div class="agent-ask-prog-txt" id="txConnTestProgTxt"></div></div>'
+                + '<div class="lc-ent-ai" id="txConnTestOut" style="display:none; margin-top:8px;"></div><div class="appearance-note" id="txConnTestRes"></div>';
         }
 
         function txToggleKeyShown() {
@@ -29173,7 +29265,7 @@ Type any command below (e.g. pm list packages -d)
             openUrlExternal('https://www.google.com/search?q=' + encodeURIComponent('android settings ' + sdbEditing.ns + ' ' + sdbEditing.key));
         }
         let sdbAiBusy = false;
-        function sdbEditAiReset() { const b = document.getElementById('sdbEditAi'); if (b) { b.style.display = 'none'; b.textContent = ''; b.classList.remove('is-err'); } sdbAiBusy = false; const btn = document.getElementById('sdbEditAiBtn'); if (btn) btn.disabled = false; }
+        function sdbEditAiReset() { const hp = document.getElementById('sdbEditHist'); if (hp) hp.style.display = 'none'; const b = document.getElementById('sdbEditAi'); if (b) { b.style.display = 'none'; b.textContent = ''; b.classList.remove('is-err'); } sdbAiBusy = false; const btn = document.getElementById('sdbEditAiBtn'); if (btn) btn.disabled = false; }
         const SDB_AI_SYSTEM = 'You explain one Android hidden setting (an entry of the Settings.Global, Settings.Secure or Settings.System database, the ones "settings get/put" reads and writes) to someone who is not a developer. '
             + 'Say briefly: what it controls, what its values mean, what changing it does, and whether it is safe to change. Say plainly when you do not know the setting (many belong to the phone maker) instead of guessing, and then say what its name suggests. Short paragraphs, no headings.';
         async function sdbEditAsk() {
@@ -29187,6 +29279,9 @@ Type any command below (e.g. pm list packages -d)
             box.style.display = ''; sdbAiBusy = true; btn.disabled = true;
             await aiExplainInto(box, SDB_AI_SYSTEM, q, () => sdbEditing === cur, 'The setting\'s name, table and current value are sent to them.', 'android settings ' + cur.ns + ' ' + cur.key, 'sdbEdit');
             sdbAiBusy = false; btn.disabled = false;
+            if (sdbEditing === cur && box.textContent && !box.classList.contains('is-err') && box.querySelector('.ai-out')) {
+                askHistAdd('sdbEdit', { id: cur.ns + '/' + cur.key, kind: 'setting', name: cur.key, label: txT('Hidden Settings') + ' · ' + cur.ns, text: q, web: '', answer: box.querySelector('.ai-out').textContent, agent: '' });
+            }
         }
 
         function sdbEditClose() { askStopRun('sdbEdit'); document.getElementById('sdbEditModal').classList.remove('show'); sdbEditing = null; }

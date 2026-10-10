@@ -346,9 +346,9 @@
   </ol>
 </section>
 
-<section id="tab-updates" data-title="App Updater" data-group="The tabs">
+<section id="tab-updates" data-title="Application Updater" data-group="The tabs">
   <p class="hg-lead">This tab checks whether newer versions exist for the apps you installed outside the Play Store, and for Samsung's own apps. It can download and install them for you, after checking each file.</p>
-  <p><b>Where to find it:</b> the tab named <b>App Updater</b>. When updates are waiting, its name shows a number in brackets, for example "App Updater (3)".</p>
+  <p><b>Where to find it:</b> the tab named <b>Third Party Stores/Updater</b>. At its top are two boxes, like the Terminal and the ADB Console; tap the right one, <b>Application Updater</b>. When updates are waiting, the tab name and the box show a number in brackets, for example "Application Updater (3)".</p>
 
   <h4>Before you start</h4>
   <ul>
@@ -419,16 +419,16 @@
   <div class="hg-warn"><b>Careful.</b> An update replaces the working version. If an app matters to you, back it up first (<a href="#apps-backup">Backups</a>). Every update, done or failed, is also written to the History (the button on the UAD-NG Debloater tab).</div>
 </section>
 
-<section id="tab-store" data-title="App Stores" data-group="The tabs">
+<section id="tab-store" data-title="Third Party Stores/Updater" data-group="The tabs">
   <p class="hg-lead">Browse four catalogs of open-source Android apps and install from them: ShizuStore, GitHub, F-Droid and Orion. The apps are not stored by this app; each one is downloaded from its own developer's page.</p>
-  <p><b>Where to find it:</b> the tab named <b>App Stores</b>. Four buttons at its top switch between the catalogs: <b>ShizuStore</b>, <b>GitHub</b>, <b>F-Droid</b> and <b>Orion</b>.</p>
+  <p><b>Where to find it:</b> the tab named <b>Third Party Stores/Updater</b>. It has two boxes at its top: <b>Application Stores</b> on the left (the one it opens on every time you tap the tab) and <b>Application Updater</b> on the right (see <a href="#tab-updates">Application Updater</a>). In the Application Stores box, four buttons switch between the catalogs: <b>ShizuStore</b>, <b>GitHub</b>, <b>F-Droid</b> and <b>Orion</b>.</p>
 
   <h4>Before you start</h4>
   <ul>
     <li>Browsing needs the internet only.</li>
     <li>Installing uses your active working mode (ADB, Shizuku or Root, see <a href="#modes-overview">Working modes</a>). With none, the app hands the downloaded file to Android's install screen and you confirm there. Android can first ask you to allow installs from this app (Android calls the setting <b>Install unknown apps</b>; the Permissions sheet in <b>About</b> has a row for it). That route may be blocked on some phones; if it is, set up a working mode.</li>
     <li>Each install is one APK file. Apps that come only as bundles cannot be installed here; use the <a href="#tab-installer">APK Installer</a>.</li>
-    <li>Galaxy Store is not a store in this tab. Samsung apps are checked in the <a href="#tab-updates">App Updater</a>.</li>
+    <li>Galaxy Store is not a store in this tab. Samsung apps are checked in the <a href="#tab-updates">Application Updater</a> box.</li>
   </ul>
 
   <h4>The four catalogs</h4>
@@ -449,7 +449,7 @@
     <li>Each row shows an icon, the name, two lines of description, and small chips such as stars, downloads, version, size and category (ShizuStore shows stars, version, category and a "root" chip when the app needs root). A count such as "12 / 340 apps" sits next to <b>Refresh</b> (called <b>Refresh catalog</b> in ShizuStore). Lists show 60 rows at a time; press <b>Show 60 more</b> for more.</li>
     <li><b>ShizuStore:</b> tap a row to open a detail sheet with the description, stars, downloads, author, licence, the install source and size, screenshots and a collapsible <b>Permissions</b> list. Press <b>Install</b>, or <b>Source</b> to open the project's page. The button says <b>No APK</b> when none is available.</li>
     <li><b>Enlarge a screenshot.</b> The screenshots in the detail sheet are small. Tap one (the line under them says <i>Tap a picture to enlarge it</i>) and it opens full screen on black, to fit the screen, with a counter such as <b>2 / 8</b>. <b>Pinch</b> with two fingers to zoom (up to 6 times), or use the <b>+</b>, <b>−</b> and <b>Fit</b> buttons at the top; <b>double tap</b> zooms in to 2.5 times and a second double tap goes back; <b>drag</b> a zoomed picture to move it (it cannot leave the screen); <b>swipe</b> left or right, or press the arrows at the screen's edges, for the next or previous picture (the neighbours load while you look). <b>Back</b>, the <b>✕</b>, or a tap on the black beside the picture closes the viewer and leaves the detail sheet as it was. A picture that cannot be loaded says <i>This picture could not be loaded. Check the connection and open it again.</i> Only pictures with a web address (http or https) are shown.</li>
-    <li><b>GitHub, F-Droid, Orion and the stores you add:</b> tap a row (not its <b>Install</b> button) to open the same kind of detail sheet. What the list knows is shown at once (description, stars, version, size, categories); the rest comes from the phone while a line says it is loading: the <b>full description</b> (for a GitHub or Codeberg project its README, as far as it is useful, in plain readable text), the <b>screenshots</b>, the <b>license</b>, forks and topics, and the <b>Website</b> and <b>Source</b> links. An F-Droid style repository supplies its own description and screenshots; a GitHub or Codeberg project supplies the screenshots in its <i>fastlane</i> folder or, failing that, the pictures of its README (badges, logos and buttons are left out). Tap a screenshot to enlarge it. <b>Install</b> in the sheet does the same as the button of the row. If the details cannot be loaded (no connection, or GitHub's limit for requests without a token is used up; save a token in the App Updater tab to raise it), the sheet keeps what the list knows and says why.</li>
+    <li><b>GitHub, F-Droid, Orion and the stores you add:</b> tap a row (not its <b>Install</b> button) to open the same kind of detail sheet. What the list knows is shown at once (description, stars, version, size, categories); the rest comes from the phone while a line says it is loading: the <b>full description</b> (for a GitHub or Codeberg project its README, as far as it is useful, in plain readable text), the <b>screenshots</b>, the <b>license</b>, forks and topics, and the <b>Website</b> and <b>Source</b> links. An F-Droid style repository supplies its own description and screenshots; a GitHub or Codeberg project supplies the screenshots in its <i>fastlane</i> folder or, failing that, the pictures of its README (badges, logos and buttons are left out). Tap a screenshot to enlarge it. <b>Install</b> in the sheet does the same as the button of the row. If the details cannot be loaded (no connection, or GitHub's limit for requests without a token is used up; save a token in the Application Updater tab to raise it), the sheet keeps what the list knows and says why.</li>
     <li>Watch the status line: under the row for GitHub, F-Droid and Orion, and above the buttons of the detail sheet for ShizuStore. It shows "Starting...", "Finding the latest release of ...", "Downloading ..." (then the size so far and a percentage, such as "12 MB 40%"), "Checking the download's SHA-256..." (a code that proves the file was not changed on the way), "Installing ...", then "Installed ...". With the system installer: "Opening the installer..." and "Confirm the install of ...".</li>
     <li>After a successful install through a working mode, a sheet offers <b>Launch Application</b> and <b>Application Settings</b>. With the system installer there is no sheet: Android's own screen tells you.</li>
   </ol>
@@ -469,7 +469,7 @@
     <li>If the search does not find an app, press <b>Search</b> in the box "Not in the list? Search the whole catalog for ...". It needs at least two letters.</li>
     <li>Type a GitHub project as <b>owner/repo</b> (the two parts of its web address after github.com/) to get a line "Install the latest APK release of this GitHub project" with an <b>Install</b> button. The app picks the APK for your processor. If the latest release has no APK you see "The latest release of ... has no APK asset."</li>
     <li>If the catalog server cannot be reached, the app shows its offline copy, or a small built-in list, and says so. <b>Refresh</b> tries again. The list is kept for six hours.</li>
-    <li>A GitHub token saved in the <a href="#tab-updates">App Updater</a> lifts GitHub's limit on these requests.</li>
+    <li>A GitHub token saved in the <a href="#tab-updates">Application Updater</a> box lifts GitHub's limit on these requests.</li>
   </ul>
 
   <h4>F-Droid extras</h4>

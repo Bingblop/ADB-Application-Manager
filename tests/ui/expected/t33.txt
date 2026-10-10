@@ -1,4 +1,4 @@
-1. tab order: ["Application\nManager","Saved\nApplications","UAD-NG\nDebloater","APK\nInstaller","File\nManager","Command-Line\nInterface","Hidden\nSettings","RRO/Monet\nCustomization","App\nUpdater","App\nStores","Logcat\nViewer","Task\nManager","Connected\nDevices","Morphe\nPatcher","SD Maid","About"]
+1. tab order: ["Application\nManager","Saved\nApplications","UAD-NG\nDebloater","APK\nInstaller","File\nManager","Command-Line\nInterface","Hidden\nSettings","RRO/Monet\nCustomization","Third Party\nStores/Updater","Logcat\nViewer","Task\nManager","Connected\nDevices","Morphe\nPatcher","SD Maid","About"]
    Saved Applications right after Application Manager: true
    About is the last tab, Connected Devices right before it (Task Manager right before that, Logcat Viewer before that): false
    no "Color" tab button: true

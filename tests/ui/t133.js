@@ -166,7 +166,7 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   await ev(() => switchView('settings')); await sleep(900);
   await ev(() => { sdbResetView(); const i = document.getElementById('sdbSearch'); i.value = 'zen_mode'; sdbSearchInput(); }); await sleep(300);
   await ev(() => { sdbOpenEditor(sdbNs, 'zen_mode'); }); await sleep(200);
-  check('4. the editor of a setting has Web search and Ask agent next to Copy', await ev(() => { const t = [...document.querySelectorAll('#sdbEditModal .batch-sheet-tools button')].map(b => b.innerText); return t.slice(0, 3).join() === 'Web search,Ask agent,Copy name'; }));
+  check('4. the editor of a setting has Web search, Ask agent and History next to Copy', await ev(() => { const t = [...document.querySelectorAll('#sdbEditModal .batch-sheet-tools button')].map(b => b.innerText); return t.slice(0, 4).join() === 'Web search,Ask agent,History,Copy name'; }));
   await ev(() => { window.__opened.length = 0; }); await page.click('#sdbEditWebBtn'); await sleep(60);
   check('   Web search looks the setting up by table and name', await ev(() => window.__opened.length === 1 && /android\+settings\+\w+\+zen_mode|android%20settings%20\w+%20zen_mode/.test(window.__opened[0])), await ev(() => window.__opened[0]));
   await ev(() => { window.__sent.length = 0; }); await page.click('#sdbEditAiBtn'); await sleep(250);

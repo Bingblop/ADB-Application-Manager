@@ -105,8 +105,7 @@ Left to right, with the **settings gear** (it opens Settings: language, appearan
 | **Command-Line Interface** | **Terminal**: a Termux-style terminal with coding agents ([details](#terminal-and-coding-agents)), and a **Real terminal** button for a full-screen terminal on a genuine pty (vim, nano, top, htop, ssh). Termux setup has a one-tap **Set up Termux now** (vim, nano, git, python and more, with a starter .bashrc). **ADB Console**: a shell through the active mode, with history, saved scripts, a cheat sheet and a persistent Rish shell |
 | **Hidden Settings** | Read, flip, edit and create Android's own Global, Secure and System settings ([details](#hidden-settings)) |
 | **RRO/Monet Customization** | Recolor Android (Material You: wallpaper or any color, six styles) and switch system overlays on or off ([details](#overlays-and-material-you)) |
-| **App Updater** | This app, Galaxy Store apps and sideloaded open-source apps (GitHub, Codeberg, F-Droid, IzzyOnDroid, Obtainium) |
-| **App Stores** | ShizuStore, GitHub, F-Droid and Orion |
+| **Third Party Stores/Updater** | Two boxes: **Application Stores** (ShizuStore, GitHub, F-Droid and Orion; the one it opens on) and **Application Updater** (this app, Galaxy Store apps and sideloaded open-source apps from GitHub, Codeberg, F-Droid, IzzyOnDroid, Obtainium) |
 | **Logcat Viewer** | A color-coded device log you can limit to one app, save or share |
 | **Task Manager** | Processes, CPU, RAM, GPU, battery and network, live, each with a graph ([details](#new-in-v75)) |
 | **Connected Devices** | Another Android device (a Wear OS watch first) over adb: add by pairing code, address, network scan or Bluetooth link; its apps (enable, disable, uninstall, reinstall, pull), send APK / APKS / APKM / XAPK, console, logcat, files, hidden settings, screen density and size |
@@ -118,7 +117,7 @@ Every tab except Application Manager and About can be switched off or moved in *
 
 ## New in v7.9
 
-**v7.12.7 is the latest build** (Connected Devices, 32-bit and universal APKs, the Help Guide: see [CHANGELOG.md](../CHANGELOG.md)). Everything from v7.9 through v7.9.15 is below; the full, dated list is in
+**v7.12.8 is the latest build** (Connected Devices, 32-bit and universal APKs, the Help Guide: see [CHANGELOG.md](../CHANGELOG.md)). Everything from v7.9 through v7.9.15 is below; the full, dated list is in
 [CHANGELOG.md](../CHANGELOG.md) (and inside the app, under About).
 
 **Newest (v7.9.12 to v7.9.15)**

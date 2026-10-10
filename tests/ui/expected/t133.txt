@@ -20,7 +20,7 @@ It is connected now and stays connected. It is saved again the next time you con
 Devices that are connected now stay connected.
 ok      with nothing saved the line is gone
 ok   3. every entry is a row that can be tapped
-ok      tapping a row opens it in its own window: level, tag, time and ids, the whole message, and three buttons: {"shown":true,"level":"Error","tag":"AndroidRuntime","meta":"10-08 <clock>.123 pid 1234 / tid 1250","msg":"FATAL EXCEPTION: main\njava.lang.NullPointerException: Attempt to invoke virtual method on a null object","btns":["Copy","Ask agent","Web search","Stop","Copy the answer"]}
+ok      tapping a row opens it in its own window: level, tag, time and ids, the whole message, and three buttons: {"shown":true,"level":"Error","tag":"AndroidRuntime","meta":"10-08 <clock>.123 pid 1234 / tid 1250","msg":"FATAL EXCEPTION: main\njava.lang.NullPointerException: Attempt to invoke virtual method on a null object","btns":["Copy","Ask agent","Web search","History","Stop","Copy the answer"]}
 ok      Copy puts the entry's lines on the clipboard: 10-08 <clock>.123  1234  1250 E AndroidRuntime: FATAL EXCEPTION: main
 10-08 <clock>.123  1234  1250 E AndroidRuntime: java.lang.NullPointerException: Attempt to invoke virtual method on a null object
 ok      Web search opens a search made of the tag and the first line: https://www.google.com/search?q=android%20AndroidRuntime%20FATAL%20EXCEPTION%3A%20main
@@ -35,7 +35,7 @@ ok      with a Coding Agent connected, the explanation is shown in the window, a
 ok      the answer can be copied too
 ok      closing the window shuts it
 ok      selecting text in a row to copy it does not open the window
-ok   4. the editor of a setting has Web search and Ask agent next to Copy
+ok   4. the editor of a setting has Web search, Ask agent and History next to Copy
 ok      Web search looks the setting up by table and name: https://www.google.com/search?q=android%20settings%20global%20zen_mode
 ok      Ask agent shows the answer under the buttons and says what was sent: {"shown":true,"text":"Asking Fake AI (fake-model). The setting's name, table and current value are sent to them.\nThis is a crash: a null object was used.","sent":{"system":"You explain one Android hidden setting (an entry of the Settings.Global, Settings.Secure or Settings.System database, the ones \"settings get/put\" reads and writes) to someone who is not a developer. Say briefly: what it controls, what its values mean, what changing it does, and whether it is safe to change. Say plainly when you do not know the setting (many belong to the phone maker) instead of guessing, and then say what its name suggests. Short paragraphs, no headings.","msgs":[{"role":"user","text":"Android ?\nTable: global\nSetting: zen_mode\nValue now: 0\nThe app already says: Do Not Disturb. Values: 0 = off; 1 = priority interruptions only; 2 = total silence; 3 = alarms only"}]}}
 ok      reopening a setting starts without the old answer

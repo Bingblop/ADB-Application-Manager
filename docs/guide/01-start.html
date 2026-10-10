@@ -19,7 +19,7 @@
 <li>Browse and manage files, and open zip, 7z, rar and tar archives without unpacking them (<a href="#tab-files">File Manager</a>).</li>
 <li>Run a terminal, with optional AI coding helpers that ask your permission before they run anything (<a href="#tab-terminal">Command-Line Interface</a>).</li>
 <li>Change Android's hidden settings and recolour the system (<a href="#tab-settings">Hidden Settings</a>, <a href="#tab-overlays">RRO/Monet Customization</a>).</li>
-<li>Check for app updates, browse app catalogs, read the device log, watch running processes, and talk to a Wear OS watch (<a href="#tab-updates">App Updater</a>, <a href="#tab-store">App Stores</a>, <a href="#tab-logcat">Logcat Viewer</a>, <a href="#tab-taskmgr">Task Manager</a>, <a href="#tab-devices">Connected Devices</a>).</li>
+<li>Check for app updates, browse app catalogs, read the device log, watch running processes, and talk to a Wear OS watch (<a href="#tab-updates">Application Updater</a>, <a href="#tab-store">Third Party Stores/Updater</a>, <a href="#tab-logcat">Logcat Viewer</a>, <a href="#tab-taskmgr">Task Manager</a>, <a href="#tab-devices">Connected Devices</a>).</li>
 </ul>
 
 <h4>What it cannot do</h4>
@@ -28,7 +28,7 @@
 <li>It cannot root your phone or unlock it. If you want <a href="#mode-root">Root</a>, the phone must already be rooted (given full administrator access, which you do with other tools).</li>
 <li>It cannot delete a system app from the phone for good. "Uninstall" on a system app removes it for your user only; the file stays in the system area, and a factory reset (and sometimes a system update) brings the app back.</li>
 <li>It cannot override the phone maker's locks. A few protected apps refuse to be disabled or removed even in a working mode, and Android's own error message is shown when that happens.</li>
-<li>It does not update Google Play apps itself. Those keep updating through the Play Store or Aurora Store (another app for downloading Play apps) (<a href="#tab-updates">App Updater</a>).</li>
+<li>It does not update Google Play apps itself. Those keep updating through the Play Store or Aurora Store (another app for downloading Play apps) (<a href="#tab-updates">Application Updater</a>).</li>
 <li>It cannot read other apps' private data, except with Root, which is what lets it back up an app's data (<a href="#apps-backup">Backups</a>).</li>
 <li>It cannot make a risky change safe. It warns you and offers Undo wherever it can, but you decide. Read <a href="#safety">Safety</a> before you remove system apps.</li>
 </ul>
@@ -177,15 +177,15 @@ If you are still in Read-Only mode, tapping <b>Freeze</b> opens a sheet called <
 
 <h4>Updating from inside the app</h4>
 <ol class="hg-steps">
-<li>Open the <b>About</b> tab and tap <b>Check for update</b>. The app opens the <b>App Updater</b> tab at its <b>App update</b> card and asks GitHub for the newest release. (If the <b>App Updater</b> tab is turned off, you get a message saying where to turn it on: <b>Settings</b>, <b>Feature List</b>.)</li>
+<li>Open the <b>About</b> tab and tap <b>Check for update</b>. The app opens the <b>Application Updater</b> box of the <b>Third Party Stores/Updater</b> tab at its <b>App update</b> card and asks GitHub for the newest release. (If the <b>Third Party Stores/Updater</b> tab is turned off, you get a message saying where to turn it on: <b>Settings</b>, <b>Feature List</b>.)</li>
 <li>The card says either "You're on the latest version" or "Update available", with the old and new numbers. Buttons: <b>Check for app update</b>, <b>Update now</b> and <b>Release notes</b>.</li>
 <li>Tap <b>Update now</b>. A progress bar shows the download. The app picks the right file for your phone by itself: the one named for your processor, else the universal one.</li>
 <li>Before installing, the app checks that the file is this app, is newer, and is signed with the same key. If one check fails it stops and says why.</li>
 <li>With a working mode on, the update installs quietly and the app restarts. Without one, the file is handed to Android's own installer, and the card says "Confirm the install to update". The first time, Android asks whether to allow this app to install apps (it lists this app under "Install unknown apps"); allow it and follow Android's prompts. You can also allow it beforehand: in <b>About</b>, tap <b>Permissions</b> and press <b>Allow</b> on the row <b>Install unknown apps</b> (see <a href="#app-permissions">The permissions this app asks for</a>). If Android still refuses, install the APK from your browser as described above, or set up a working mode and try again.</li>
 </ol>
 
-<h4>What the App Updater tab does for other apps</h4>
-<p>The same tab has more cards. <b>Updates Available</b> checks the Galaxy Store for Samsung apps, and checks sideloaded open-source apps (apps installed from a file instead of a store) against GitHub, Codeberg, F-Droid, IzzyOnDroid and the Obtainium catalog, with an <b>Update All</b> button. Every download is checked to be the same app, a newer version and signed with the same key before it installs. Google Play apps are not updated here; there is a card that sends you to the Play Store or Aurora Store. See <a href="#tab-updates">App Updater</a> and <a href="#tab-store">App Stores</a>.</p>
+<h4>What the Application Updater box does for other apps</h4>
+<p>The same box has more cards. <b>Updates Available</b> checks the Galaxy Store for Samsung apps, and checks sideloaded open-source apps (apps installed from a file instead of a store) against GitHub, Codeberg, F-Droid, IzzyOnDroid and the Obtainium catalog, with an <b>Update All</b> button. Every download is checked to be the same app, a newer version and signed with the same key before it installs. Google Play apps are not updated here; there is a card that sends you to the Play Store or Aurora Store. See <a href="#tab-updates">Application Updater</a> and <a href="#tab-store">Third Party Stores/Updater</a>.</p>
 
 <h4>About the 32-bit build</h4>
 <div class="hg-warn"><b>Careful.</b> The 32-bit build (<code>armeabi-v7a</code>, and the 32-bit half of the universal file) is new, added in version 7.10.0. It carries a different copy of the ADB tool, taken from Termux's package for 32-bit ARM, together with a set of helper libraries that the app, on a 32-bit phone, unpacks into its private folder when it starts after an install or an update. It has seen far less use than the 64-bit build and has not been tried on every 32-bit phone. If a working mode will not connect on such a phone, it may be the build and not you. Please report it with the details from <b>About</b>, <b>Copy debug info</b> (the <b>Report a bug or idea</b> button is in the same tab), so it can be fixed.</div>
@@ -284,7 +284,7 @@ If you are still in Read-Only mode, tapping <b>Freeze</b> opens a sheet called <
 <li><b>UAD-NG Debloater</b> (<a href="#tab-debloater">details</a>), <b>APK Installer</b> (<a href="#tab-installer">details</a>) and <b>File Manager</b> (<a href="#tab-files">details</a>).</li>
 <li><b>Command-Line Interface</b> (<a href="#tab-terminal">details</a>).</li>
 <li><b>Hidden Settings</b> (<a href="#tab-settings">details</a>) and <b>RRO/Monet Customization</b> (<a href="#tab-overlays">details</a>).</li>
-<li><b>App Updater</b> (<a href="#tab-updates">details</a>) and <b>App Stores</b> (<a href="#tab-store">details</a>). When updates are waiting, the App Updater label shows their number in brackets.</li>
+<li><b>Third Party Stores/Updater</b> (<a href="#tab-store">stores</a> and <a href="#tab-updates">updater</a>): two boxes at its top, <b>Application Stores</b> (the one it opens on) and <b>Application Updater</b>. When updates are waiting, the tab label and the Application Updater box show their number in brackets.</li>
 <li><b>Logcat Viewer</b> (<a href="#tab-logcat">details</a>), <b>Task Manager</b> (<a href="#tab-taskmgr">details</a>) and <b>Connected Devices</b> (<a href="#tab-devices">details</a>).</li>
 <li><b>About</b> (always last; <a href="#tab-about">details</a>).</li>
 </ul>

@@ -1,5 +1,12 @@
 # Changelog
 
+## v7.12.8-Pro (versionCode 850)
+
+- **The App Updater is part of the Third Party Stores/Updater tab.** The tab formerly called App Stores has two boxes at its top, like the Terminal and the ADB Console: **Application Stores** on the left (what the tab opens on every time you tap it) and **Application Updater** on the right (this app's own update, Galaxy Store and open-source updates, the Play Store card). There is no App Updater tab any more; the update count shows on the tab and on the Application Updater box, and everything that used to open the App Updater (an app's Update button, About, Download) opens that box. A saved tab choice from an older version is made to fit. Test: `t150`.
+- **History in the log-entry and Hidden Settings windows too**, and **pins**: a **Pin** next to an answer keeps it when newer ones push the others out (up to 30 pinned beside the last 12); **Clear history** keeps the pinned ones. Test: `t149`.
+- **A Test button in every agent's Connect sheet** (Command-Line Interface tab): it asks the agent the same sample question as the Settings test and says whether it works, with the progress bar and Stop. Not on explained entries or tools that sign in through Termux. Test: `t149`.
+- **Connected Devices: Disable is blue and Uninstall red**, with Enable and Reinstall green, like the app menu. Test: `t149`.
+
 ## v7.12.7-Pro (versionCode 849)
 
 - **Test the default agent.** The Default agent card in Settings has a button that asks the chosen agent one sample question (whether the Calculator package can be disabled; nothing else is sent) and says whether it works and how long it took, or why it did not. It has the same progress bar and Stop as the Ask agent window. Test: `t149`.

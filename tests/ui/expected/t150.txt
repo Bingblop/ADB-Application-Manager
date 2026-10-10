@@ -1,0 +1,10 @@
+ok   1. no App Updater tab; the stores tab is "Third Party Stores/Updater": ["apps=Application|Manager","saved-lists=Saved|Applications","debloater=UAD-NG|Debloater","installer=APK|Installer","files=File|Manager","terminal=Command-Line|Interface","settings=Hidden|Settings","overlays=RRO/Monet|Customization","store=Third Party|Stores/Updater","logcat=Logcat|Viewer","taskmgr=Task|Manager","devices=Connected|Devices","morphe=Morphe|Patcher","sdm=SD Maid","about=About"]
+ok   2. two boxes at the top, Application Stores on the left (selected) and Application Updater on the right; the stores are shown: {"left":true,"top":true,"stores":true,"updater":false,"active":true,"names":["Application Stores","Application Updater"]}
+ok   3. the right box shows the updater (Check for Updates, Play Store apps) and hides the stores: {"stores":false,"updater":true,"self":false,"check":true,"aurora":true,"active":true,"tab":"store"}
+ok      the left box brings the stores back
+ok   4. leaving and coming back by tapping the tab starts on Application Stores again
+ok   5. what used to open the App Updater (an app's Update button, About, "Download") opens its box in this tab: {"o":{"ok":true,"view":"store","updater":true,"act":true},"o2":{"view":"store","updater":true}}
+ok   6. the number of updates waiting shows on the tab and on the Application Updater box: {"tab":"Third Party|Stores/Updater (2)","box":"Application Updater (2)"}
+ok   7. the Feature List has one row for it, named Third Party Stores/Updater (no App Updater, no App Stores): ["saved-lists=Saved Applications","debloater=UAD-NG Debloater","installer=APK Installer","files=File Manager","terminal=Command-Line Interface","settings=Hidden Settings","overlays=RRO/Monet Customization","store=Third Party Stores/Updater","logcat=Logcat Viewer","taskmgr=Task Manager","devices=Connected Devices","morphe=Morphe Patcher","sdm=SD Maid"]
+ok   no page errors:
+ALL PASSED
