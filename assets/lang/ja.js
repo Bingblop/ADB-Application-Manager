@@ -4999,6 +4999,8 @@ p: [
 ["Task Manager tab: {0}", "タスク管理タブ：{0}"],
 ["Termux did not open: {0}. Check Termux setup (allow-external-apps).", "Termuxが開きませんでした：{0}。「Termuxのセットアップ」（allow-external-apps）を確認してください。"],
 ["That backup was made by a newer version of the app (format {0}).", "そのバックアップは、より新しいバージョンのアプリで作成されました（形式 {0}）。"],
+["That file is version {0}, not {1}. Choose the right download in the browser.", "このファイルはバージョン {0} で、{1} ではありません。ブラウザーで正しいダウンロードを選んでください。"],
+["That file is {0}, not {1}. Choose the right download in the browser.", "このファイルは {0} で、{1} ではありません。ブラウザーで正しいダウンロードを選んでください。"],
 ["That language could not be loaded. The text stays in {0}.", "その言語を読み込めませんでした。表示は{0}のままです。"],
 ["That source did not answer Trying {0}...", "そのソースは応答しませんでした。{0} を試しています..."],
 ["That store is already here: {0}", "そのストアはすでにあります：{0}"],

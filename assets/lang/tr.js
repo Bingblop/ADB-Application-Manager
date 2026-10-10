@@ -4999,6 +4999,8 @@ p: [
 ["Task Manager tab: {0}", "Görev Yöneticisi sekmesi: {0}"],
 ["Termux did not open: {0}. Check Termux setup (allow-external-apps).", "Termux açılmadı: {0}. Termux kurulumunu denetleyin (allow-external-apps)."],
 ["That backup was made by a newer version of the app (format {0}).", "Bu yedek uygulamanın daha yeni bir sürümüyle yapılmış (biçim {0})."],
+["That file is version {0}, not {1}. Choose the right download in the browser.", "Bu dosya {0} sürümü, {1} değil. Tarayıcıda doğru indirmeyi seçin."],
+["That file is {0}, not {1}. Choose the right download in the browser.", "Bu dosya {0}, {1} değil. Tarayıcıda doğru indirmeyi seçin."],
 ["That language could not be loaded. The text stays in {0}.", "Bu dil yüklenemedi. Metin {0} dilinde kalır."],
 ["That source did not answer Trying {0}...", "Bu kaynak yanıt vermedi. {0} deneniyor..."],
 ["That store is already here: {0}", "Bu mağaza zaten burada: {0}"],

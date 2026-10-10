@@ -4999,6 +4999,8 @@ p: [
 ["Task Manager tab: {0}", "작업 관리자 탭: {0}"],
 ["Termux did not open: {0}. Check Termux setup (allow-external-apps).", "Termux가 열리지 않았습니다: {0}. Termux 설정을 확인하세요(allow-external-apps)."],
 ["That backup was made by a newer version of the app (format {0}).", "해당 백업은 더 최신 버전의 앱에서 만들어졌습니다(형식 {0})."],
+["That file is version {0}, not {1}. Choose the right download in the browser.", "이 파일은 버전 {0}이며 {1}이(가) 아닙니다. 브라우저에서 올바른 다운로드를 선택하세요."],
+["That file is {0}, not {1}. Choose the right download in the browser.", "이 파일은 {0}이며 {1}이(가) 아닙니다. 브라우저에서 올바른 다운로드를 선택하세요."],
 ["That language could not be loaded. The text stays in {0}.", "해당 언어를 불러오지 못했습니다. 텍스트는 {0}(으)로 유지됩니다."],
 ["That source did not answer Trying {0}...", "해당 소스가 응답하지 않았습니다. {0}을(를) 시도하는 중..."],
 ["That store is already here: {0}", "해당 스토어는 이미 있습니다: {0}"],

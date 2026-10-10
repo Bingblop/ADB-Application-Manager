@@ -4999,6 +4999,8 @@ p: [
 ["Task Manager tab: {0}", "Вкладка «Менеджер задач»: {0}"],
 ["Termux did not open: {0}. Check Termux setup (allow-external-apps).", "Termux не открылся: {0}. Проверьте раздел «Настройка Termux» (allow-external-apps)."],
 ["That backup was made by a newer version of the app (format {0}).", "Эта резервная копия создана более новой версией приложения (формат {0})."],
+["That file is version {0}, not {1}. Choose the right download in the browser.", "Этот файл — версия {0}, а не {1}. Выберите нужную загрузку в браузере."],
+["That file is {0}, not {1}. Choose the right download in the browser.", "Этот файл — {0}, а не {1}. Выберите нужную загрузку в браузере."],
 ["That language could not be loaded. The text stays in {0}.", "Не удалось загрузить этот язык. Текст остаётся на языке: {0}."],
 ["That source did not answer Trying {0}...", "Этот источник не ответил. Пробуем {0}..."],
 ["That store is already here: {0}", "Этот магазин уже есть: {0}"],

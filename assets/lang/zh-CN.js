@@ -4999,6 +4999,8 @@ p: [
 ["Task Manager tab: {0}", "任务管理标签页：{0}"],
 ["Termux did not open: {0}. Check Termux setup (allow-external-apps).", "Termux 未能打开：{0}。请检查“Termux 配置”（allow-external-apps）。"],
 ["That backup was made by a newer version of the app (format {0}).", "该备份由更新版本的应用创建（格式 {0}）。"],
+["That file is version {0}, not {1}. Choose the right download in the browser.", "该文件是版本 {0}，不是 {1}。请在浏览器中选择正确的下载。"],
+["That file is {0}, not {1}. Choose the right download in the browser.", "该文件是 {0}，不是 {1}。请在浏览器中选择正确的下载。"],
 ["That language could not be loaded. The text stays in {0}.", "无法加载该语言。文本仍保持为{0}。"],
 ["That source did not answer Trying {0}...", "该来源没有响应。正在尝试 {0}..."],
 ["That store is already here: {0}", "该商店已存在：{0}"],

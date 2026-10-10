@@ -4999,6 +4999,8 @@ p: [
 ["Task Manager tab: {0}", "टास्क मैनेजर टैब: {0}"],
 ["Termux did not open: {0}. Check Termux setup (allow-external-apps).", "Termux नहीं खुला: {0}। Termux सेटअप जांचें (allow-external-apps)।"],
 ["That backup was made by a newer version of the app (format {0}).", "वह बैकअप ऐप के नए संस्करण ने बनाया था (फ़ॉर्मैट {0})।"],
+["That file is version {0}, not {1}. Choose the right download in the browser.", "यह फ़ाइल संस्करण {0} है, {1} नहीं। ब्राउज़र में सही डाउनलोड चुनें।"],
+["That file is {0}, not {1}. Choose the right download in the browser.", "यह फ़ाइल {0} है, {1} नहीं। ब्राउज़र में सही डाउनलोड चुनें।"],
 ["That language could not be loaded. The text stays in {0}.", "वह भाषा लोड नहीं हो सकी। टेक्स्ट {0} में ही रहेगा।"],
 ["That source did not answer Trying {0}...", "उस स्रोत ने जवाब नहीं दिया। {0} आज़माया जा रहा है..."],
 ["That store is already here: {0}", "वह स्टोर पहले से यहाँ है: {0}"],

@@ -4999,6 +4999,8 @@ p: [
 ["Task Manager tab: {0}", "Aba de gerenciador de tarefas: {0}"],
 ["Termux did not open: {0}. Check Termux setup (allow-external-apps).", "O Termux não abriu: {0}. Verifique a Configuração do Termux (allow-external-apps)."],
 ["That backup was made by a newer version of the app (format {0}).", "Esse backup foi feito por uma versão mais nova do app (formato {0})."],
+["That file is version {0}, not {1}. Choose the right download in the browser.", "Esse arquivo é a versão {0}, não a {1}. Escolha o download certo no navegador."],
+["That file is {0}, not {1}. Choose the right download in the browser.", "Esse arquivo é {0}, não {1}. Escolha o download certo no navegador."],
 ["That language could not be loaded. The text stays in {0}.", "Não foi possível carregar esse idioma. O texto continua em {0}."],
 ["That source did not answer Trying {0}...", "Essa fonte não respondeu. Tentando {0}..."],
 ["That store is already here: {0}", "Essa loja já está aqui: {0}"],

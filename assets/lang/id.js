@@ -4999,6 +4999,8 @@ p: [
 ["Task Manager tab: {0}", "Tab Manajer Tugas: {0}"],
 ["Termux did not open: {0}. Check Termux setup (allow-external-apps).", "Termux tidak terbuka: {0}. Periksa Penyiapan Termux (allow-external-apps)."],
 ["That backup was made by a newer version of the app (format {0}).", "Cadangan itu dibuat oleh aplikasi versi lebih baru (format {0})."],
+["That file is version {0}, not {1}. Choose the right download in the browser.", "File itu versi {0}, bukan {1}. Pilih unduhan yang benar di browser."],
+["That file is {0}, not {1}. Choose the right download in the browser.", "File itu {0}, bukan {1}. Pilih unduhan yang benar di browser."],
 ["That language could not be loaded. The text stays in {0}.", "Bahasa itu tidak dapat dimuat. Teks tetap dalam {0}."],
 ["That source did not answer Trying {0}...", "Sumber itu tidak menjawab. Mencoba {0}..."],
 ["That store is already here: {0}", "Toko itu sudah ada: {0}"],

@@ -171,6 +171,17 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('18. when the site wants a browser check, the message is shown with "Open it here, in the app" and "Open on the web"', /browser check/.test(g5.st) && g5.btns.includes('Open it here, in the app') && g5.btns.includes('Open on the web'), JSON.stringify(g5));
   await ev(() => { window.__vers = null; document.getElementById('usSplit').checked = true; usSave(); });
 
+  // ---- 18b. a file from the in-app browser must be the app it was opened for ----
+  await ev(() => { document.getElementById('usSource').value = 'apkmirror'; usSrcChanged(); document.getElementById('usQuery').value = 'com.example.maps'; }); await page.click('#usSearchBtn'); await sleep(250);
+  await ev(() => { document.getElementById('usVersion').value = ''; window.__calls.length = 0; return usBrowse(0, ''); }); await sleep(100);
+  await ev(() => usBrowseDone({ k: 'done', ok: true, info: { pkg: 'org.other.app', versionName: '1.0', format: 'apk', size: 10, sha256: 'ab'.repeat(32), path: '/x/o.apk' } })); await sleep(100);
+  const bw = await ev(() => ({ st: document.getElementById('usStatus').textContent, got: us.got, open: !!us.browseFor }));
+  await ev(() => usBrowseDone({ k: 'done', ok: true, info: { pkg: 'com.example.maps', versionName: '2.0.0', format: 'apk', size: 10, sha256: 'ab'.repeat(32), path: '/x/m.apk' } })); await sleep(150);
+  const bo = await ev(() => ({ got: us.got && us.got.pkg, open: !!us.browseFor, busy: us.busy }));
+  await ev(() => usBrowseDone({ k: 'done', ok: true, info: { pkg: 'com.example.maps', versionName: '9.9', format: 'apk', size: 10, sha256: 'cd'.repeat(32), path: '/x/late.apk' } })); await sleep(100);
+  const bl = await ev(() => us.got && us.got.versionName);
+  check('18b. a browser download of another app is refused with a message; the right app is taken once; a later browser download is ignored', /org\.other\.app/.test(bw.st) && !bw.got && bw.open && bo.got === 'com.example.maps' && !bo.open && bl === '2.0.0', JSON.stringify({ bw, bo, bl }));
+
   // ---- 19. other sources ----
   await ev(() => { document.getElementById('usSource').value = 'play'; usSrcChanged(); });
   await ev(() => { document.getElementById('usQuery').value = 'com.example.maps'; }); await page.click('#usSearchBtn'); await sleep(200);

@@ -4999,6 +4999,8 @@ p: [
 ["Task Manager tab: {0}", "تبويب مدير المهام: {0}"],
 ["Termux did not open: {0}. Check Termux setup (allow-external-apps).", "لم يُفتح Termux: {0}. راجع «إعداد Termux» (allow-external-apps)."],
 ["That backup was made by a newer version of the app (format {0}).", "أنشأ هذه النسخة الاحتياطية إصدار أحدث من التطبيق (الصيغة {0})."],
+["That file is version {0}, not {1}. Choose the right download in the browser.", "هذا الملف هو الإصدار {0} وليس {1}. اختر التنزيل الصحيح في المتصفح."],
+["That file is {0}, not {1}. Choose the right download in the browser.", "هذا الملف هو {0} وليس {1}. اختر التنزيل الصحيح في المتصفح."],
 ["That language could not be loaded. The text stays in {0}.", "تعذّر تحميل هذه اللغة. سيبقى النص بلغة {0}."],
 ["That source did not answer Trying {0}...", "لم يستجب ذلك المصدر. جارٍ تجربة {0}..."],
 ["That store is already here: {0}", "ذلك المتجر موجود بالفعل: {0}"],

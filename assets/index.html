@@ -15326,7 +15326,7 @@ Type any command below (e.g. pm list packages -d)
             izzy: 'IzzyOnDroid serves the developer\'s own release builds of open-source apps. The file is downloaded here.',
             play: 'The Play Store gives no download to other apps. This opens the app\'s page in the Play Store.'
         };
-        let us = { cfg: null, helper: null, abi: '', cands: [], busy: false, got: null, vers: {}, browse: '', run: 0 };
+        let us = { cfg: null, helper: null, abi: '', cands: [], busy: false, got: null, vers: {}, browse: '', run: 0, browseFor: null, browseRun: -1, browseVer: '' };
 
         function usEl(id) { return document.getElementById(id); }
         function usLoad() {
@@ -15399,7 +15399,7 @@ Type any command below (e.g. pm list packages -d)
             if (pct === null || pct === undefined) { b.style.display = 'none'; return; }
             b.style.display = ''; b.firstElementChild.style.width = Math.max(2, Math.min(100, pct)) + '%';
         }
-        function usReset() { us.run++; us.busy = false; us.verdict = ''; us.cands = []; us.got = null; us.vers = {}; us.browse = ''; usEl('usResults').innerHTML = ''; usEl('usGot').innerHTML = ''; usEl('usAgentBox').style.display = 'none'; usStatus(''); usBar(null); }
+        function usReset() { us.run++; us.busy = false; us.browseFor = null; us.verdict = ''; us.cands = []; us.got = null; us.vers = {}; us.browse = ''; usEl('usResults').innerHTML = ''; usEl('usGot').innerHTML = ''; usEl('usAgentBox').style.display = 'none'; usStatus(''); usBar(null); }
 
         // The pure parts (tested on their own): which of the listed versions to take
         function usVerNorm(v) { return String(v || '').trim().replace(/^v/i, '').replace(/\s*\(\d+\)\s*$/, ''); }
@@ -15503,7 +15503,7 @@ Type any command below (e.g. pm list packages -d)
             if (!window.AndroidBridge || !window.AndroidBridge.morphe) { const u = url || await usWebUrl(c); if (u) openUrlExternal(u); return; }
             const r = await mpCall('helperBrowse', { url: url || '', source: cfg.source, pkg: c.pkg, version: (usEl('usVersion').value || '').trim(), save: usDir(cfg) });
             if (!r.ok) { usStatus(r.error || txT('The browser did not open.'), true); return; }
-            us.browseFor = c;
+            us.browseFor = c; us.browseRun = us.run; us.browseVer = (usEl('usVersion').value || '').trim() && cfg.exact ? (usEl('usVersion').value || '').trim() : '';
             usStatus(txT('Choose the version and tap its download button. The file is saved here and the browser closes by itself.'), false);
         }
         function usDir(cfg) { return cfg.save === 'cache' ? 'cache' : 'updater'; }
@@ -15594,17 +15594,23 @@ Type any command below (e.g. pm list packages -d)
         }
         // a file came from the browser: it goes through the same steps
         async function usBrowseDone(e) {
+            // only the browser this updater opened, for the app it was opened for, and only while that search is still on screen
             if (!e || !us.browseFor) return;
+            if (us.browseRun !== us.run) { us.browseFor = null; return; }
             if (e.k === 'status') { usStatus(e.text || txT('Downloading...'), false); usBar(e.pct || 0); return; }
-            if (e.k === 'failed') { usStatus(txF('The download failed: {0}', e.error || ''), true); usBar(null); return; }
+            const c = us.browseFor;
+            if (e.k === 'failed') { us.browseFor = null; usStatus(txF('The download failed: {0}', e.error || ''), true); usBar(null); return; }
             if (e.k !== 'done') return;
             if (!e.ok || !e.info) { usStatus(txF('{0} was saved, but it is not an app file.', e.name || txT('The file')), true); return; }
+            if (e.info.pkg !== c.pkg) { usStatus(txF('That file is {0}, not {1}. Choose the right download in the browser.', e.info.pkg || '?', c.pkg), true); usBar(null); return; }
+            if (us.browseVer && usVerNorm(e.info.versionName) !== usVerNorm(us.browseVer)) { usStatus(txF('That file is version {0}, not {1}. Choose the right download in the browser.', e.info.versionName || '?', us.browseVer), true); usBar(null); return; }
             if (us.busy) return;
             const cfg = usRead();
             us.busy = true;
             const run = us.run;
+            us.browseFor = null;
             us.got = e.info; usBar(100); usStatus(txT('Downloaded.'), false);
-            try { await usAfter(e.info, cfg, us.cands.indexOf(us.browseFor)); } finally { if (run === us.run) us.busy = false; }
+            try { await usAfter(e.info, cfg, us.cands.indexOf(c)); } finally { if (run === us.run) us.busy = false; }
         }
         async function usAfter(g, cfg, i) {
             const myRun = us.run;
@@ -32811,6 +32817,7 @@ Type any command below (e.g. pm list packages -d)
         // ---- the browser inside the app: sites with a browser check (APKMirror) open here, and what is downloaded there is saved straight into the Helper ----
         async function mpHBrowse(url) {
             const h = mp.h;
+            us.browseFor = null;                 // the Helper's browser is its own: the updater does not take its downloads
             mpHRead();
             if (mp.cfg.hBrowser === 'external' || !window.AndroidBridge || !window.AndroidBridge.morphe) {
                 const r = url ? { ok: true, data: { url } } : await mpCall('helperManual', { source: h.src, pkg: h.pkg, version: h.ver });

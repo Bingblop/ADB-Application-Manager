@@ -6979,9 +6979,16 @@ public class MainActivity extends Activity {
                     Uri parent = android.provider.DocumentsContract.buildDocumentUriUsingTree(tree, android.provider.DocumentsContract.getTreeDocumentId(tree));
                     Uri target = android.provider.DocumentsContract.createDocument(getContentResolver(), parent, mime, safe);
                     if (target == null) throw new IllegalStateException("the folder would not make the file");
-                    OutputStream out = getContentResolver().openOutputStream(target, "wt");
-                    if (out == null) throw new IllegalStateException("the folder would not open the file");
-                    try { copyFile(file, out); } finally { out.close(); }
+                    boolean whole = false;
+                    try {
+                        OutputStream out = getContentResolver().openOutputStream(target, "wt");
+                        if (out == null) throw new IllegalStateException("the folder would not open the file");
+                        try { copyFile(file, out); } finally { out.close(); }
+                        whole = true;
+                    } finally {
+                        // a copy that stopped half way must not stay behind looking like the app file
+                        if (!whole) { try { android.provider.DocumentsContract.deleteDocument(getContentResolver(), target); } catch (Throwable ignored) { } }
+                    }
                     return safe;
                 } catch (SecurityException e) {
                     throw new IllegalStateException("Android no longer lets this app use that folder: choose it again");

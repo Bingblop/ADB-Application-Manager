@@ -4876,6 +4876,8 @@
 {"k":"Task Manager tab: {0}","ctx":"built by the code of: check all working modes"},
 {"k":"Termux did not open: {0}. Check Termux setup (allow-external-apps).","ctx":"built by the code of: on termux open failed"},
 {"k":"That backup was made by a newer version of the app (format {0}).","ctx":"built by the code of: lists parse"},
+{"k":"That file is version {0}, not {1}. Choose the right download in the browser.","ctx":"built by the code of: us browse done"},
+{"k":"That file is {0}, not {1}. Choose the right download in the browser.","ctx":"built by the code of: us browse done"},
 {"k":"That language could not be loaded. The text stays in {0}.","ctx":"built by the code of: choose language"},
 {"k":"That source did not answer Trying {0}...","ctx":"built by the code of: mp hgo"},
 {"k":"That store is already here: {0}","ctx":"built by the code of: store add submit"},
