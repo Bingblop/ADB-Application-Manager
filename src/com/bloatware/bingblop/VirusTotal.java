@@ -27,6 +27,23 @@ public final class VirusTotal {
 
     private VirusTotal() {}
 
+    /**
+     * True only for an https address on the host of the API. The API key is sent with every request, and the upload address
+     * of a large file comes out of an answer from the server, so it is checked before the key goes anywhere.
+     */
+    static boolean isApiHost(String url) {
+        try {
+            URL u = new URL(url);
+            URL api = new URL(API);
+            if (!"https".equalsIgnoreCase(u.getProtocol())) return false;
+            if (u.getUserInfo() != null) return false;
+            int port = u.getPort() == -1 ? u.getDefaultPort() : u.getPort();
+            return u.getHost().equalsIgnoreCase(api.getHost()) && port == api.getDefaultPort();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     public static String permalink(String sha256) {
         return "https://www.virustotal.com/gui/file/" + sha256;
     }
@@ -56,7 +73,8 @@ public final class VirusTotal {
         try {
             conn.setConnectTimeout(15000);
             conn.setReadTimeout(30000);
-            conn.setInstanceFollowRedirects(true);
+            // never follow a redirect: the key header would go along to wherever it points
+            conn.setInstanceFollowRedirects(false);
             conn.setRequestProperty("User-Agent", "ADB-Application-Manager");
             conn.setRequestProperty("Accept", "application/json");
             conn.setRequestProperty("x-apikey", apiKey);
@@ -152,6 +170,7 @@ public final class VirusTotal {
             if (u.code != 200) throw new IllegalStateException(errorFor(u.code, u.body));
             target = new JSONObject(u.body).optString("data", "");
             if (target.isEmpty()) throw new IllegalStateException("VirusTotal did not return an upload URL");
+            if (!isApiHost(target)) throw new IllegalStateException("VirusTotal gave an upload address on another host: refused, the API key is not sent there.");
         }
         String analysisId = postMultipart(target, apiKey, apk);
         long deadline = System.currentTimeMillis() + waitMs;
@@ -202,6 +221,7 @@ public final class VirusTotal {
             conn.setConnectTimeout(15000);
             conn.setReadTimeout(120000);
             conn.setDoOutput(true);
+            conn.setInstanceFollowRedirects(false);
             conn.setRequestMethod("POST");
             conn.setRequestProperty("User-Agent", "ADB-Application-Manager");
             conn.setRequestProperty("Accept", "application/json");
