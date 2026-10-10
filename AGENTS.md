@@ -5,7 +5,7 @@ This file is for anything that changes this repository: Claude, Copilot, Gemini,
 
 ## What the app is
 
-A single-activity Android app: the UI is a WebView page (`assets/index.html`, strings in `assets/lang/*.js`, 13 languages), the work is
+A single-activity Android app: the UI is a WebView page (`assets/index.html`, English in the page, 13 translations in `assets/lang/*.js`: 14 languages in all), the work is
 done in Java (`src/com/bloatware/bingblop/`). There is no Gradle project for the main app; `./build.sh` compiles, dexes, packages and signs it.
 `engine/` is a separate Gradle project (`engine/build-engine.sh`) that builds the Morphe patcher engine. The app is **one product with one UI**. Do not replace the WebView page
 with another UI stack in a pull request; add features to it (see "Pull requests" below).
@@ -14,7 +14,7 @@ with another UI stack in a pull request; add features to it (see "Pull requests"
 
 | What | Command | Notes |
 |---|---|---|
-| Build and sign the APK | `./build.sh` | needs `ANDROID_JAR` (android-35 or newer) and aapt2/d8 (`D8_JAR` can point to r8.jar) on `PATH`; output `bin/ADB_Application_Manager_Pro.apk` |
+| Build and sign the APK | `./build.sh` | needs `ANDROID_JAR` (a platform `android.jar`; the script looks for android-34, CI and the release use platform 34 with build-tools 35), `aapt2`, `d8` (or `D8_JAR` pointing to an r8 jar), `javac` or `ecj`, `python3`, `zipalign`, `apksigner` and `keytool` on `PATH`; output `bin/ADB_Application_Manager_Pro.apk`. Termux: `pkg install aapt2 apksigner d8 ecj zipalign openjdk-17 python` |
 | Java suites | `cd tests && ORG_JSON_JAR=<json.jar> node java/run.js [suite ...]` | `node java/run.js --list` names every suite and what it needs; a missing tool is a skip, not a failure |
 | UI scripts | `cd tests && node run.js [tNN ...]` | headless Chromium against the real `assets/index.html` with a mock Android bridge; `node run.js --update tNN` re-records `tests/ui/expected/tNN.txt` — review the diff before committing it |
 | Help Guide | `node docs/guide/build.js` | rebuild when `docs/guide` changes |
@@ -28,7 +28,7 @@ None of this has ever been run on a device by an agent. Say so in the pull reque
 
 - One finding or one feature per pull request, small enough to review. No broad refactors mixed with fixes.
 - A fix comes with a test where the code can be tested without Android classes (`tests/java/src`, registered in `tests/java/run.js`);
-  UI behavior gets a UI script. A change to the page or to `assets/lang/*.js` must keep all 13 languages complete (the i18n checks in the
+  UI behavior gets a UI script. A change to the page or to `assets/lang/*.js` must keep all 13 translation files complete (the i18n checks in the
   UI scripts catch missing keys).
 - Fix findings from `docs/COPILOT_CLAUDE_HANDOFF.md` by id (for example `C-006`) and update the row in the same pull request: status, the
   commit SHA, what was validated, and what was **not** run. Table rows have exactly six cells.
