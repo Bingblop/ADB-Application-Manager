@@ -61,7 +61,7 @@ final class SecretSettings {
         try {
             vault.put(name, old);
             plain.remove(name);
-        } catch (Throwable t) {
+        } catch (Exception e) {
             // the vault will not take it: keep the old value usable rather than lose the user's secret
         }
         return old;
@@ -80,7 +80,7 @@ final class SecretSettings {
         try {
             vault.put(name, v);
             return true;
-        } catch (Throwable t) {
+        } catch (Exception e) {
             vault.remove(name);      // fail closed: an older sealed value must not keep answering for the one that was just entered
             return false;
         }
