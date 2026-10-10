@@ -3191,6 +3191,14 @@ public class MainActivity extends Activity {
      * Scans a local APK with VirusTotal. A SHA-256 lookup (private, no upload) when upload=false; a full
      * upload-and-wait when upload=true. Progress and the final result -> window.onVtResult(json).
      */
+    /**
+     * True when {@code f} is part of this app's own private data (settings, sealed secrets, the adb key ...) that must not be handed to a share sheet,
+     * VirusTotal or another app. Its cache, logs and patched APKs are allowed.
+     */
+    private boolean isPrivateData(File f) {
+        return PrivatePaths.blocked(f, getDataDir(), getCacheDir(), new File(getFilesDir(), "logs"), new File(getFilesDir(), "morphe"));
+    }
+
     private void runVirusTotalScan(final String apiKey, final String path, final boolean upload) {
         executor.submit(new Runnable() {
             @Override
@@ -3200,6 +3208,7 @@ public class MainActivity extends Activity {
                     if (path == null || path.isEmpty()) throw new IllegalStateException("Load a package first.");
                     File f = new File(path);
                     if (!f.exists()) throw new IllegalStateException("The selected package is no longer available. Pick it again.");
+                    if (isPrivateData(f)) throw new IllegalStateException("That file is part of this app's own private data and is not sent anywhere.");
                     notifyUpdates("onVtResult", new JSONObject()
                             .put("stage", upload ? "uploading" : "scanning")
                             .put("message", upload ? "Uploading to VirusTotal… this can take a minute." : "Checking VirusTotal…"));
@@ -10232,7 +10241,7 @@ public class MainActivity extends Activity {
                 for (int i = 0; i < a.length(); i++) {
                     JSONObject o = a.getJSONObject(i);
                     File src = new File(o.getString("path"));
-                    if (!src.isFile()) continue;
+                    if (!src.isFile() || isPrivateData(src)) continue;
                     File copy = ShareProvider.newShareFile(MainActivity.this, o.optString("name", src.getName()));
                     java.io.FileOutputStream out = new java.io.FileOutputStream(copy);
                     try { copyFile(src, out); } finally { out.close(); }
@@ -10436,9 +10445,13 @@ public class MainActivity extends Activity {
         public String deleteBackup(String ref) {
             try {
                 boolean ok;
-                if (ref != null && ref.startsWith("content://")) ok = getContentResolver().delete(Uri.parse(ref), null, null) > 0;
-                else ok = ref != null && new File(ref).delete();
                 JSONArray index = backupIndex();
+                // only a backup this app listed can be deleted from here, not any file the app can reach
+                boolean listed = false;
+                for (int i = 0; ref != null && i < index.length(); i++) if (ref.equals(index.getJSONObject(i).optString("ref"))) listed = true;
+                if (!listed) return "Error: not a known backup";
+                if (ref.startsWith("content://")) ok = getContentResolver().delete(Uri.parse(ref), null, null) > 0;
+                else ok = new File(ref).delete();
                 JSONArray keep = new JSONArray();
                 for (int i = 0; i < index.length(); i++) {
                     if (!index.getJSONObject(i).optString("ref").equals(ref)) keep.put(index.get(i));
@@ -12746,6 +12759,7 @@ public class MainActivity extends Activity {
                     try {
                         File src = new File(fmCanonicalPath(path));
                         if (!src.isFile() || !src.canRead()) throw new IOException("The app cannot read this file. Grant All-files access for storage.");
+                        if (isPrivateData(src)) throw new IOException("This file is part of this app's own private data and is not handed to other apps.");
                         if (src.length() > 400L * 1024 * 1024) throw new IOException("This file is too big to hand over from here (over 400 MB).");
                         File copy = ShareProvider.newShareFile(MainActivity.this, src.getName());
                         java.io.FileOutputStream out = new java.io.FileOutputStream(copy);
@@ -14809,6 +14823,7 @@ public class MainActivity extends Activity {
                     uri = Uri.parse(ref);
                 } else {
                     File src = new File(ref);
+                    if (isPrivateData(src)) return "Error: that file is part of this app's own private data and is not shared.";
                     File copy = ShareProvider.newShareFile(MainActivity.this, name != null ? name : src.getName());
                     java.io.FileOutputStream out = new java.io.FileOutputStream(copy);
                     try {
