@@ -1277,6 +1277,20 @@ public final class ZipTool {
         return bo.toByteArray();
     }
 
+    /** Of an extra field, only the AES encryption record (0x9901): without it an encrypted entry can't be read. */
+    private static byte[] keepEssentialExtra(byte[] extra) {
+        ByteArrayOutputStream bo = new ByteArrayOutputStream();
+        int p = 0;
+        while (p + 4 <= extra.length) {
+            int id = le16(extra, p);
+            int sz = le16(extra, p + 2);
+            if (p + 4 + sz > extra.length) break;
+            if (id == 0x9901) bo.write(extra, p, 4 + sz);
+            p += 4 + sz;
+        }
+        return bo.toByteArray();
+    }
+
     private static byte[] extraPadding(int pad) {
         // zipalign's own padding record where it fits (id 0xD935), otherwise plain zero bytes
         byte[] x = new byte[pad];
@@ -1311,8 +1325,15 @@ public final class ZipTool {
         raf.readFully(srcExtra);
         long dataStart = e.lho + 30 + srcNameLen + srcExtraLen;
         byte[] kept = keepExtra(srcExtra, !same);
-        int pad = padFor(out.pos + 30 + nameBytes.length + kept.length, alignmentFor(outName, method, align));
-        if (kept.length + pad > 0xFFFF) pad = 0;
+        int alignment = alignmentFor(outName, method, align);
+        int pad = padFor(out.pos + 30 + nameBytes.length + kept.length, alignment);
+        if (kept.length + pad > 0xFFFF) {
+            // An enormous extra field leaves no room for the padding that aligns the data (a stored .so then fails to install when libraries are
+            // not extracted). Keep only the record the entry cannot do without (AES), drop the rest, and pad again.
+            kept = keepEssentialExtra(kept);
+            pad = padFor(out.pos + 30 + nameBytes.length + kept.length, alignment);
+            if (kept.length + pad > 0xFFFF) pad = 0;
+        }
         long lho = out.pos;
         byte[] h = new byte[30];
         put32(h, 0, SIG_LOCAL);
