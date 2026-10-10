@@ -258,6 +258,18 @@ public final class BrowserDownload {
         if (job.pauseRequested) throw new Paused();
     }
 
+    /**
+     * Where a redirect from {@code cur} to {@code loc} leads, or an IOException in words when it must not be followed: not a web address,
+     * a step down from https to http, or an outside address pointing at this phone (the same judgement as {@link HttpSafe#open}).
+     * Each hop asks the browser's cookies for its own address, so a cookie never follows a redirect to another host.
+     */
+    static String nextHop(String cur, String loc) throws IOException {
+        String next = new URL(new URL(cur), loc).toString();
+        if (!(next.startsWith("https://") || next.startsWith("http://"))) throw new IOException("the site redirected to something that is not a web address");
+        if (!HttpSafe.redirectAllowed(cur, next)) throw new IOException("the site redirected to an address that is not safe to follow (from https to http, or to this phone)");
+        return next;
+    }
+
     private static final Pattern CONTENT_RANGE = Pattern.compile("bytes\\s+(\\d+)-(\\d+)/(\\d+|\\*)");
 
     private static void transfer(Job job, Cookies cookies, Listener listener) throws IOException {
@@ -323,8 +335,7 @@ public final class BrowserDownload {
                 String loc = c.getHeaderField("Location");
                 c.disconnect();
                 if (loc == null || ++hop > MAX_REDIRECTS) throw new IOException("the site redirected too often");
-                cur = new URL(new URL(cur), loc).toString();
-                if (!(cur.startsWith("https://") || cur.startsWith("http://"))) throw new IOException("the site redirected to something that is not a web address");
+                cur = nextHop(cur, loc);
                 continue;
             }
             if (code == 416 && from > 0 && restarts == 0) {
