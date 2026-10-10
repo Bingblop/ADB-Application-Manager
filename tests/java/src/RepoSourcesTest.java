@@ -12,12 +12,18 @@ public class RepoSourcesTest {
   interface Thrower { void run() throws Exception; }
   static String err(Thrower t) { try { t.run(); return ""; } catch (Exception e) { return String.valueOf(e.getMessage()); } }
 
-  public static void main(String[] args) throws Exception {
+  public static void main(String[] args) {
+    try { run(); } catch (Throwable t) { t.printStackTrace(); System.out.println("FAIL unexpected " + t); System.exit(1); }
+  }
+
+  static void run() throws Exception {
     HttpServer s = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
-    s.createContext("/api/v1/packages/com.example.app", ex -> {
+    com.sun.net.httpserver.HttpHandler app = ex -> {
       byte[] b = "{\"packageName\":\"com.example.app\",\"suggestedVersionCode\":12,\"packages\":[{\"versionName\":\"1.1\",\"versionCode\":11},{\"versionName\":\"1.2\",\"versionCode\":12},{\"versionName\":\"1.0\",\"versionCode\":10}]}".getBytes(StandardCharsets.UTF_8);
       ex.sendResponseHeaders(200, b.length); ex.getResponseBody().write(b); ex.close();
-    });
+    };
+    s.createContext("/api/v1/packages/com.example.app", app);
+    s.createContext("/fdroid/api/v1/packages/com.example.app", app);
     s.createContext("/api/v1/packages/com.example.empty", ex -> {
       byte[] b = "{\"packageName\":\"com.example.empty\",\"packages\":[]}".getBytes(StandardCharsets.UTF_8);
       ex.sendResponseHeaders(200, b.length); ex.getResponseBody().write(b); ex.close();
@@ -40,7 +46,7 @@ public class RepoSourcesTest {
     check("requested: that version, which the download then checks", r.getString("version").equals("1.1") && r.getLong("versionCode") == 11 && r.getString("wanted").equals("1.1") && r.getBoolean("exact"));
     check("requested with its build number", RepoSources.resolve("fdroid", "com.example.app", "1.0 (10)", "requested").getLong("versionCode") == 10 && err(() -> RepoSources.resolve("fdroid", "com.example.app", "1.0 (99)", "requested")).contains("does not list version"));
     check("a version the site does not have names the newest", err(() -> RepoSources.resolve("fdroid", "com.example.app", "9.9", "requested")).contains("the newest it lists is 1.2"));
-    check("IzzyOnDroid uses its own address", RepoSources.resolve("izzy", "com.example.app", null, "latest").getString("url").equals(base + "/fdroid/repo/com.example.app_12.apk") || err(() -> RepoSources.resolve("izzy", "com.example.app", null, "latest")).contains("does not list"));
+    check("IzzyOnDroid uses its own address", RepoSources.resolve("izzy", "com.example.app", null, "latest").getString("url").equals(base + "/fdroid/repo/com.example.app_12.apk"));
     check("a package the site does not list", err(() -> RepoSources.versions("fdroid", "com.example.missing")).contains("does not list com.example.missing"));
     check("a package with no build", err(() -> RepoSources.versions("fdroid", "com.example.empty")).contains("lists no build"));
     check("hostile input: not a package, unknown source, bad policy, no version", err(() -> RepoSources.versions("fdroid", "../etc/passwd")).contains("not a package")
