@@ -54,14 +54,15 @@ const { chromium, PAGE } = require('./lib/pw');
   await page.locator('#cheatSheetBody .cheat-row').first().click(); await page.waitForTimeout(80);
   console.log('5. placeholder command inserted:', JSON.stringify(await page.inputValue('#termCmd')));
 
-  // ---- full reference from the gist (JSONP) ----
+  // ---- full reference: the gist is opened in the browser, never loaded into the page as a script or HTML ----
   await page.click('#txPaneConsole button:has-text("Cheat Sheet")'); await page.waitForTimeout(100);
-  console.log('6. gist load button present:', await page.isVisible('#cheatGistBtn'));
-  // simulate the JSONP callback firing (no network in sandbox) and confirm it renders
-  await page.evaluate(() => { loadCheatGist(); window.__onPulimetGist({ div: '<div class="gist">MOCK GIST CONTENT</div>', stylesheet: '' }); });
+  console.log('6. gist button present:', await page.isVisible('#cheatGistBtn'));
+  await page.evaluate(() => { window.__opened = []; window.AndroidBridge.openUrl = u => window.__opened.push(u); loadCheatGist(); });
   await page.waitForTimeout(80);
-  console.log('   gist content rendered via callback:', (await page.locator('#cheatGistBox').innerText()).includes('MOCK GIST CONTENT'));
-  console.log('   load button hidden after success:', !(await page.isVisible('#cheatGistBtn')));
+  const gist = await page.evaluate(() => ({ opened: window.__opened, scripts: [...document.scripts].map(s => s.src).filter(u => /gist\.github\.com/.test(u)), cb: typeof window.__onPulimetGist, box: document.getElementById('cheatGistBox').innerHTML }));
+  console.log('   the gist was opened in the browser, once:', JSON.stringify(gist.opened) === JSON.stringify(['https://gist.github.com/Pulimet/5013acf2cd5b28e55036c82c91bd56d8']));
+  console.log('   no script from the gist was added to the page and no JSONP callback exists:', gist.scripts.length === 0 && gist.cb === 'undefined');
+  console.log('   nothing from the gist is put in the page:', gist.box.trim() === '');
 
   console.log('errors:', JSON.stringify(errors));
   await b.close();

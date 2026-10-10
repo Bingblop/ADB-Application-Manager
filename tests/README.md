@@ -125,6 +125,7 @@ Two things made scripts fail only on a busy machine, and what to do instead:
 | `zipreview` | Archive engine, review findings: odd names, duplicates, prepended data, extra fields, AES, symlinks | Python 3 |
 | `rish` | The Rish shell: persistent shell, `cd` / `export`, output, STOP, restart | |
 | `rishreview` | The Rish shell against a real `mksh` with `toybox` applets (Android's shell) | `mksh`, `toybox` |
+| `rishkill` | The Rish shell ends a hung command in bounded time, with its whole process tree (timeout, stop, close), against real processes | `mksh`, `toybox`, a readable `/proc` |
 | `signer` | The in-app APK signer: v2 signatures checked with `apksigner`, RSA and EC keys, re-signing, edited and big APKs, tampering | an APK, `apksigner`, `keytool` |
 | `signmismatch` | The signer refuses a key that does not match its certificate | an APK, `keytool` |
 | `axml` | The manifest decoder reads every compiled XML file of a real APK | an APK |

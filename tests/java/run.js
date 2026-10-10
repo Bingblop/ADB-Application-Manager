@@ -55,13 +55,16 @@ const SUITES = [
   { name: 'logrecorder', title: 'Recording the log to a file: only new lines are written, errors and empty snapshots skipped, the size limit, stop, the list, reading a long file from its end, refused names, UTF-8', tests: ['LogRecorderTest'], main: 'com.bloatware.bingblop.LogRecorderTest', utf8: true },
   { name: 'secretsettings', title: 'The GitHub token and the VirusTotal key: sealed in the vault, old plain copies moved or deleted, nothing written in the clear when the vault refuses', tests: ['SecretSettingsTest'], main: 'com.bloatware.bingblop.SecretSettingsTest', utf8: true },
   { name: 'httpsites', title: 'Network code stays on the safe path: raw HttpURLConnection only in the listed files, each with automatic redirects off (new call sites must use HttpSafe.open)', tests: ['HttpSitesTest'], main: 'com.bloatware.bingblop.HttpSitesTest', utf8: true },
+  { name: 'adbargs', title: 'The adb arguments the Connected Devices tab accepts: everything a person uses, none that moves (-P, -H, -L, -a) or stops (kill-server, server ...) the adb this app runs on', tests: ['AdbArgsTest'], main: 'com.bloatware.bingblop.AdbArgsTest' },
   { name: 'installguards', title: 'Pre-install checks fail closed: a published checksum that is not a SHA-256 stops the install, and so does an APK whose signing certificate cannot be read', tests: ['InstallGuardsTest'], main: 'com.bloatware.bingblop.InstallGuardsTest' },
   { name: 'shellargs', title: 'What the page may pass into a shell command through the bridge: install options (an allow-list), app op names and values; package and permission names', tests: ['ShellArgsTest'], main: 'com.bloatware.bingblop.ShellArgsTest', utf8: true },
   { name: 'standbybuckets', title: 'App standby buckets: the buckets a person may set, the am commands, and reading what the phone printed (a number or a name)', tests: ['StandbyBucketsTest'], main: 'com.bloatware.bingblop.StandbyBucketsTest', utf8: true },
   { name: 'assistantrestore', title: 'The saved assistant settings for the launch-through-assistant method: only plain component names are written back, and the record round-trips', tests: ['AssistantRestoreTest'], main: 'com.bloatware.bingblop.AssistantRestoreTest' },
+  { name: 'sdmshellkill', title: 'A hung process is killed: SdmShell with a real sh ends a silent hang, a cancel and a held pipe within a bounded time, kills the shell and stops calling the sink (needs sh, sleep and kill)', tests: ['SdmShellKillTest'], main: 'com.bloatware.bingblop.SdmShellKillTest', needs: ['json', 'posixtools'] },
   { name: 'shelloutcome', title: 'The verdict of a privileged command run with an exit-status marker: the status when the marker is there; an Error: line or a timeout note without it is a failure, not an "ok"', tests: ['ShellOutcomeTest'], main: 'com.bloatware.bingblop.ShellOutcomeTest' },
   { name: 'adbserverspec', title: 'Where the bundled adb server listens: a private unix socket in the app\'s folder (closed to other apps), the old loopback port only as the fallback', tests: ['AdbServerSpecTest'], main: 'com.bloatware.bingblop.AdbServerSpecTest' },
   { name: 'sdmstatframe', title: 'SD Maid stat records carry the scan\'s own random tag, so a file name with a newline cannot forge the record of another file', tests: ['SdmStatFrameTest'], main: 'com.bloatware.bingblop.SdmStatFrameTest', needs: ['json'] },
+  { name: 'zipextraalign', title: 'Rewriting a zip with alignment aligns a stored entry even when its local extra field is almost 64 KB (the unknown records go, the padding stays)', tests: ['ZipExtraAlignTest'], main: 'com.bloatware.bingblop.ZipExtraAlignTest' },
   { name: 'zipbounds', title: 'A small zip cannot fill the storage (extraction stops at the entry\'s declared size) or list millions of files (entry cap)', tests: ['ZipBoundsTest'], main: 'com.bloatware.bingblop.ZipBoundsTest' },
   { name: 'apkflags', title: 'Found package files: identical copies (hash) and older versions of a package, which one is kept', tests: ['ApkFlagsTest'], main: 'com.bloatware.bingblop.ApkFlagsTest' },
   { name: 'procstats', title: '`ps` output: toybox\'s `-o PID,PPID,USER,RSS,%CPU,NAME` (by header column, not fixed offsets) and a degraded busybox-style `ps -A` fallback, truncated rows, package name vs. kernel/native process, top by CPU / RSS', tests: ['ProcStatsTest'], main: 'com.bloatware.bingblop.ProcStatsTest' },
@@ -119,7 +122,9 @@ const SUITES = [
   { name: 'morphevt', title: 'Morphe Helper VirusTotal scan against a local server: lookup found / not found / wrong key / quota, cached report, upload and polling, upload_url above 32 MB, split bundles, the 4 per minute / 500 per day limiter with a fake clock and its saved counters, the key never in a message, Cancel',
     tests: ['MorpheVirusTotalTest'], main: 'com.bloatware.bingblop.MorpheVirusTotalTest', needs: ['json'], utf8: true },
   { name: 'rishreview', title: 'Rish shell, review findings, against a real mksh with toybox applets (Android\'s shell)', tests: ['RishReviewTest'], main: 'RishReviewTest', needs: ['rish'] },
+  { name: 'rishkill', title: 'Rish shell, a hung command is killed: a timeout or stop() ends it in bounded time with its whole process tree (child, grandchild, one that ignores INT and TERM), output before the hang arrives, a normal command is left alone, the session goes on (real mksh, real processes)', tests: ['RishKillTest'], main: 'RishKillTest', needs: ['rish', 'proc'] },
   { name: 'signer', title: 'In-app APK signer: v2 signatures checked with apksigner, RSA and EC keys, re-sign, edited and big APKs, tampering', tests: ['SignerTest'], main: 'SignerTest', needs: ['apk', 'apksigner', 'keys'] },
+  { name: 'signwritefail', title: 'APK signer: a write that fails half way (disk full, simulated with ulimit -f) leaves no truncated APK and reports the write error', tests: ['SignWriteFailTest'], main: 'SignWriteFailTest', needs: ['apk', 'keys', 'bash'] },
   { name: 'signmismatch', title: 'APK signer refuses a key that does not match its certificate', tests: ['SignMismatchTest'], main: 'SignMismatchTest', needs: ['apk', 'keys'] },
   { name: 'axml', title: 'Manifest decoder reads every compiled XML file of a real APK', tests: ['AxmlTest'], main: 'AxmlTest', needs: ['apk', 'stubs'] },
 ];
@@ -181,6 +186,7 @@ const NEEDS = {
     return err ? { skip: err } : { props: { keys: dir } };
   },
   bash: () => (which('bash') ? {} : { skip: 'needs bash' }),
+  posixtools: () => { const miss = ['sh', 'sleep', 'kill'].filter(c => !which(c)); return miss.length ? { skip: 'needs ' + miss.join(', ') + ' on PATH' } : {}; },
   // The Morphe engine built on this computer (engine/build-engine.sh leaves engine/build/engine-libs) and the official patch bundle (downloaded once into tests/.cache)
   engine: () => {
     const libs = path.join(REPO, 'engine', 'build', 'engine-libs');
@@ -199,6 +205,9 @@ const NEEDS = {
       fs.renameSync(f + '.part', f);
     }
     return { props: { mpp: f } };
+  },
+  proc: () => {
+    try { fs.readFileSync('/proc/self/stat'); fs.readdirSync('/proc'); return {}; } catch (e) { return { skip: 'needs a readable /proc (the suite finds its processes there)' }; }
   },
   rish: () => {
     const mksh = which('mksh'), toybox = which('toybox');

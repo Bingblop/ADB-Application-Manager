@@ -9640,6 +9640,15 @@ Type any command below (e.g. pm list packages -d)
             setTimeout(() => toast.classList.remove('show'), 2400);
         }
 
+        /**
+         * A value as an argument inside an inline handler: onclick="f(" + jsArg(v) + ")". The attribute is decoded by the HTML parser before the
+         * script is read, so escapeHtml alone is not enough there (&#39; turns back into a quote and ends the string). The value is made a JSON string
+         * first (quotes, backslashes and line breaks escaped for JavaScript), and that is made safe for the attribute.
+         */
+        function jsArg(value) {
+            return escapeHtml(JSON.stringify(String(value == null ? '' : value)));
+        }
+
         function escapeHtml(value) {
             return String(value == null ? '' : value)
                 .replace(/&/g, '&amp;')
@@ -16505,7 +16514,7 @@ Type any command below (e.g. pm list packages -d)
             if (mal > 0) { verdict = mal + ' engine' + (mal > 1 ? 's' : '') + ' flagged this as malicious'; color = 'var(--bloat, #F2B8B5)'; }
             else if (susp > 0) { verdict = susp + ' engine' + (susp > 1 ? 's' : '') + ' flagged this as suspicious'; color = '#F0C000'; }
             else { verdict = 'Clean — no engine flagged this file'; color = 'var(--running, #4ADE80)'; }
-            const link = d.permalink ? `<a href="#" onclick="openUrlExternal('${escapeHtml(d.permalink)}'); return false;">Full VirusTotal report →</a>` : '';
+            const link = d.permalink ? `<a href="#" onclick="openUrlExternal(${jsArg(d.permalink)}); return false;">Full VirusTotal report →</a>` : '';
             box.innerHTML = `<div style="font-weight:700;color:${color};">${verdict}</div>
                 <div style="margin-top:6px;font-size:12px;color:var(--text-muted);">Malicious ${mal} · Suspicious ${susp} · Harmless ${harm} · Undetected ${undet}${total ? ' · ' + total + ' engines' : ''}</div>
                 ${d.name ? `<div style="font-size:12px;color:var(--text-muted);margin-top:3px;">Known as: ${escapeHtml(d.name)}</div>` : ''}
@@ -22381,7 +22390,7 @@ Type any command below (e.g. pm list packages -d)
                 const parts = [];
                 if (p.pkg) parts.push(p.pkg);
                 parts.push('PID ' + p.pid, formatBytes(p.rssKb * 1024), p.cpuPercent.toFixed(1) + '% CPU');
-                const killBtn = p.pkg ? `<button class="tm-kill-btn" onclick="tmKillProc('${p.pkg.replace(/'/g, "\\'")}')" aria-label="Force Stop">✕</button>` : '';
+                const killBtn = p.pkg ? `<button class="tm-kill-btn" onclick="tmKillProc(${jsArg(p.pkg)})" aria-label="Force Stop">✕</button>` : '';
                 return `<div class="tm-row"><div class="tm-row-info"><div class="tm-row-name">${escapeHtml(title)}</div><div class="tm-row-sub">${escapeHtml(parts.join(' • '))}</div>${agentBtnHtml('process', p.name, [p.pkg ? 'Belongs to the app: ' + (app ? app.name + ' (' + p.pkg + ')' : p.pkg) : 'Not an app: a system or native process', 'Memory: ' + formatBytes(p.rssKb * 1024), 'CPU: ' + p.cpuPercent.toFixed(1) + '%'])}</div>${killBtn}</div>`;
             }).join('');
         }
@@ -28476,40 +28485,12 @@ Type any command below (e.g. pm list packages -d)
             showToast('Command ready — edit any <placeholder>, then RUN');
         }
 
-        // Load the full command reference live from Pulimet's gist via its JSONP script src.
-        let cheatGistLoaded = false;
-        function cheatGistFallback() {
-            cheatGistLoaded = false;
-            const btn = document.getElementById('cheatGistBtn');
-            const box = document.getElementById('cheatGistBox');
-            if (btn) { btn.disabled = false; btn.innerText = 'Retry loading the gist'; }
-            if (box) box.innerHTML = '<div class="list-empty">Couldn’t load the gist (offline or blocked). <a href="#" onclick="openUrlExternal(\'https://gist.github.com/Pulimet/5013acf2cd5b28e55036c82c91bd56d8\'); return false;">Open it on GitHub</a>.</div>';
-        }
+        // The full command reference is Pulimet's gist. It used to be loaded into this page as a script (JSONP) and its HTML put into the page, which
+        // would have let whoever controls that gist (or a compromise on the way) run code with this app's shell, file and install access. It is
+        // opened in the browser instead, the same way as any other link.
+        const CHEAT_GIST_URL = 'https://gist.github.com/Pulimet/5013acf2cd5b28e55036c82c91bd56d8';
         function loadCheatGist() {
-            if (cheatGistLoaded) return;
-            cheatGistLoaded = true;
-            const btn = document.getElementById('cheatGistBtn');
-            const box = document.getElementById('cheatGistBox');
-            if (btn) { btn.disabled = true; btn.innerText = 'Loading from GitHub…'; }
-            if (box) box.innerHTML = '<div class="list-empty">Fetching the gist…</div>';
-            let done = false;
-            window.__onPulimetGist = function (data) {
-                done = true;
-                try {
-                    if (data && data.stylesheet) {
-                        const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = data.stylesheet; document.head.appendChild(l);
-                    }
-                    if (box) box.innerHTML = (data && data.div) ? data.div : '<div class="list-empty">The gist returned no content.</div>';
-                    if (btn) btn.style.display = 'none';
-                } catch (e) { cheatGistFallback(); }
-            };
-            try {
-                const s = document.createElement('script');
-                s.src = 'https://gist.github.com/Pulimet/5013acf2cd5b28e55036c82c91bd56d8.json?callback=__onPulimetGist';
-                s.onerror = function () { if (!done) cheatGistFallback(); };
-                document.body.appendChild(s);
-                setTimeout(function () { if (!done) cheatGistFallback(); }, 8000);
-            } catch (e) { cheatGistFallback(); }
+            openUrlExternal(CHEAT_GIST_URL);
         }
 
         // ---------- Backup and restore ----------
@@ -31356,11 +31337,11 @@ Type any command below (e.g. pm list packages -d)
                 pr.apps.forEach(a => { if (c[a.state] !== undefined) c[a.state]++; });
                 return `<div class="profile-item"><h4>${escapeHtml(pr.name)}</h4>
                     <p>${pr.apps.length} apps • ${c.disabled} disabled • ${c.suspended} suspended • ${c.uninstalled} uninstalled • ${new Date(pr.created).toLocaleDateString(langLocale())}</p>
-                    <button class="profile-btn accent" onclick="previewProfile('${pr.id}')">Apply</button>
-                    <button class="profile-btn${pr.watch ? ' accent' : ''}" onclick="toggleWatchProfile('${pr.id}')" title="Alert me when these apps come back, for example after a system update">${pr.watch ? 'Watching' : 'Watch'}</button>
-                    <button class="profile-btn" onclick="shareProfile('${pr.id}')">Share</button>
-                    <button class="profile-btn" onclick="copyProfile('${pr.id}')">Copy</button>
-                    <button class="profile-btn danger" onclick="deleteProfile('${pr.id}')">Delete</button></div>`;
+                    <button class="profile-btn accent" onclick="previewProfile(${jsArg(pr.id)})">Apply</button>
+                    <button class="profile-btn${pr.watch ? ' accent' : ''}" onclick="toggleWatchProfile(${jsArg(pr.id)})" title="Alert me when these apps come back, for example after a system update">${pr.watch ? 'Watching' : 'Watch'}</button>
+                    <button class="profile-btn" onclick="shareProfile(${jsArg(pr.id)})">Share</button>
+                    <button class="profile-btn" onclick="copyProfile(${jsArg(pr.id)})">Copy</button>
+                    <button class="profile-btn danger" onclick="deleteProfile(${jsArg(pr.id)})">Delete</button></div>`;
             }).join('');
         }
 
@@ -31843,7 +31824,7 @@ Type any command below (e.g. pm list packages -d)
                     (dl ? (mp.catBusy ? 'Reading the patches of your sources...' : 'The sources that are on do not have patches yet, or the patch engine could not read them. Open Sources to update them.')
                         : 'Morphe patches come in bundles called sources. Download the official source, Morphe Patches (about 11 MB), to see the apps it can patch. You can add more from the Community tab.') +
                     '</p><div class="mode-btn-row" style="justify-content:center;">' +
-                    (first && !first.file ? '<button class="mode-action-btn primary" onclick="mpSourceUpdate(\'' + escapeHtml(first.id) + '\')">Download Morphe Patches</button>' : '') +
+                    (first && !first.file ? '<button class="mode-action-btn primary" onclick="mpSourceUpdate(' + jsArg(first.id) + ')">Download Morphe Patches</button>' : '') +
                     '<button class="mode-action-btn" onclick="mpSourcesOpen()">Sources</button></div></div>';
                 return;
             }
@@ -31853,13 +31834,13 @@ Type any command below (e.g. pm list packages -d)
                 const st = mp.community && mp.community.store && mp.community.store[r.pkg];
                 const rec = mpRecVersions(r.pkg).stable[0];
                 const nsrc = Object.keys(r.srcs).length;
-                return '<div class="mp-card" onclick="mpOpenApp(\'' + escapeHtml(r.pkg) + '\')"><div class="mp-ico">' + mpIcon(r.pkg, nm, st && st.iconUrl) + '</div><div class="mp-main"><div class="mp-name" translate="no">' + escapeHtml(nm) + '</div>' +
+                return '<div class="mp-card" onclick="mpOpenApp(' + jsArg(r.pkg) + ')"><div class="mp-ico">' + mpIcon(r.pkg, nm, st && st.iconUrl) + '</div><div class="mp-main"><div class="mp-name" translate="no">' + escapeHtml(nm) + '</div>' +
                     '<div class="mp-sub" translate="no">' + escapeHtml(r.pkg) + '</div><div class="mp-badges">' +
                     (inst ? '<span class="mp-chip blue">Installed</span>' : '<span class="mp-chip">Not installed</span>') +
                     '<span class="mp-chip">' + r.count + (r.count === 1 ? ' patch' : ' patches') + '</span>' +
                     (nsrc > 1 ? '<span class="mp-chip">' + nsrc + ' sources</span>' : '') +
                     (rec ? '<span class="mp-chip" translate="no">' + escapeHtml(rec) + '</span>' : '') + '</div></div>' +
-                    '<button class="mp-act" onclick="event.stopPropagation();mpOpenApp(\'' + escapeHtml(r.pkg) + '\')">Patch</button></div>';
+                    '<button class="mp-act" onclick="event.stopPropagation();mpOpenApp(' + jsArg(r.pkg) + ')">Patch</button></div>';
             }).join('');
         }
 
@@ -31911,7 +31892,7 @@ Type any command below (e.g. pm list packages -d)
             // featured
             const feat = document.getElementById('mpComFeat');
             feat.innerHTML = mp.comView === 'apps' && !q && !cat ? (c.featured || []).filter(p => store[p]).slice(0, 14).map(p =>
-                '<div class="mp-feat-item" onclick="mpComApp(\'' + escapeHtml(p) + '\')"><div class="mp-ico">' + mpIcon(p, store[p].name, store[p].iconUrl) + '</div><span translate="no">' + escapeHtml(store[p].name || p) + '</span></div>').join('') : '';
+                '<div class="mp-feat-item" onclick="mpComApp(' + jsArg(p) + ')"><div class="mp-ico">' + mpIcon(p, store[p].name, store[p].iconUrl) + '</div><span translate="no">' + escapeHtml(store[p].name || p) + '</span></div>').join('') : '';
             const cnt = document.getElementById('mpComCount');
             if (mp.comView === 'apps') {
                 let rows = Object.keys(byPkg).map(p => ({ pkg: p, name: (store[p] && store[p].name) || mpAppName(p), n: byPkg[p].length, cat: (store[p] && store[p].category) || '', first: Math.max.apply(null, byPkg[p].map(b => b.updatedAt || 0)),
@@ -31921,7 +31902,7 @@ Type any command below (e.g. pm list packages -d)
                 cnt.textContent = rows.length + (rows.length === 1 ? ' app' : ' apps');
                 list.innerHTML = rows.slice(0, 200).map(r => {
                     const added = byPkg[r.pkg].filter(mpBundleAdded).length;
-                    return '<div class="mp-card" onclick="mpComApp(\'' + escapeHtml(r.pkg) + '\')"><div class="mp-ico">' + mpIcon(r.pkg, r.name, store[r.pkg] && store[r.pkg].iconUrl) + '</div><div class="mp-main"><div class="mp-name" translate="no">' + escapeHtml(r.name) + '</div>' +
+                    return '<div class="mp-card" onclick="mpComApp(' + jsArg(r.pkg) + ')"><div class="mp-ico">' + mpIcon(r.pkg, r.name, store[r.pkg] && store[r.pkg].iconUrl) + '</div><div class="mp-main"><div class="mp-name" translate="no">' + escapeHtml(r.name) + '</div>' +
                         '<div class="mp-sub" translate="no">' + escapeHtml(r.pkg) + '</div><div class="mp-badges">' + (r.cat ? '<span class="mp-chip" translate="no">' + escapeHtml(r.cat) + '</span>' : '') +
                         '<span class="mp-chip">' + r.n + (r.n === 1 ? ' bundle' : ' bundles') + '</span>' + (mpInstalledApp(r.pkg) ? '<span class="mp-chip blue">On this phone</span>' : '') +
                         (added ? '<span class="mp-chip glow">Installed</span>' : '') + '</div></div></div>';
@@ -31943,12 +31924,12 @@ Type any command below (e.g. pm list packages -d)
             const apps = (b.targetApps || []);
             const names = apps.slice(0, 3).map(p => (mp.community.store[p] && mp.community.store[p].name) || p).join(', ') + (apps.length > 3 ? ' +' + (apps.length - 3) : '');
             const onPhone = apps.filter(p => mpInstalledApp(p)).length;
-            return '<div class="mp-card" onclick="mpComBundle(\'' + escapeHtml(b.repo) + '\')"><div class="mp-ico">' + mpIcon('', b.name || b.repo, b.avatarUrl) + '</div><div class="mp-main"><div class="mp-name" translate="no">' + escapeHtml(b.name || b.repo) + '</div>' +
+            return '<div class="mp-card" onclick="mpComBundle(' + jsArg(b.repo) + ')"><div class="mp-ico">' + mpIcon('', b.name || b.repo, b.avatarUrl) + '</div><div class="mp-main"><div class="mp-name" translate="no">' + escapeHtml(b.name || b.repo) + '</div>' +
                 '<div class="mp-sub" translate="no">' + escapeHtml(b.repo) + (b.author ? ' &middot; ' + escapeHtml(b.author) : '') + '</div>' +
                 '<div class="mp-sub" translate="no">' + escapeHtml(names) + '</div><div class="mp-badges"><span class="mp-chip">' + (b.patchCount || 0) + ' patches</span><span class="mp-chip">' + (b.stars || 0) + ' stars</span>' +
                 (onPhone ? '<span class="mp-chip blue">' + onPhone + (onPhone === 1 ? ' app on this phone' : ' apps on this phone') + '</span>' : '') +
                 (added ? '<span class="mp-chip glow">Installed</span>' : '') + '</div></div>' +
-                (added ? '' : '<button class="mp-act" onclick="event.stopPropagation();mpComAdd(\'' + escapeHtml(b.repo) + '\')">Add</button>') + '</div>';
+                (added ? '' : '<button class="mp-act" onclick="event.stopPropagation();mpComAdd(' + jsArg(b.repo) + ')">Add</button>') + '</div>';
         }
         function mpComBundleByRepo(repo) { return ((mp.community && mp.community.bundles) || []).find(b => b.repo === repo); }
         function mpComApp(pkg) {
@@ -32070,12 +32051,12 @@ Type any command below (e.g. pm list packages -d)
                     (s.error ? '<div class="mp-note is-err" translate="no">' + escapeHtml(s.error) + '</div>' : '') +
                     (c && c.ok === false && c.error ? '<div class="mp-note is-err" translate="no">' + escapeHtml(c.error) + '</div>' : '') +
                     '<div class="mp-row">' +
-                    (s.kind === 'remote' ? '<button class="mp-act" onclick="mpSourceUpdate(\'' + escapeHtml(s.id) + '\')">' + (s.file ? 'Update' : 'Download') + '</button>' : '') +
-                    '<button class="mp-act" onclick="mpSourceToggle(\'' + escapeHtml(s.id) + '\')">' + (s.enabled === false ? 'Turn on' : 'Turn off') + '</button>' +
-                    (s.kind === 'remote' && s.host !== 'url' ? '<button class="mp-act" onclick="mpSourcePre(\'' + escapeHtml(s.id) + '\')">' + (s.prerelease ? 'Pre-releases: on' : 'Pre-releases: off') + '</button>' : '') +
-                    (!s.builtIn ? '<button class="mp-act" onclick="mpSourceRename(\'' + escapeHtml(s.id) + '\')">Rename</button>' : '') +
-                    (s.repo ? '<button class="mp-act" onclick="mpLink(\'' + escapeHtml((s.host === 'gitlab' ? 'https://gitlab.com/' : 'https://github.com/') + s.repo) + '\')">Open</button>' : '') +
-                    (!s.builtIn ? '<button class="mp-act danger" onclick="mpSourceRemove(\'' + escapeHtml(s.id) + '\')">Delete</button>' : '') + '</div></div>';
+                    (s.kind === 'remote' ? '<button class="mp-act" onclick="mpSourceUpdate(' + jsArg(s.id) + ')">' + (s.file ? 'Update' : 'Download') + '</button>' : '') +
+                    '<button class="mp-act" onclick="mpSourceToggle(' + jsArg(s.id) + ')">' + (s.enabled === false ? 'Turn on' : 'Turn off') + '</button>' +
+                    (s.kind === 'remote' && s.host !== 'url' ? '<button class="mp-act" onclick="mpSourcePre(' + jsArg(s.id) + ')">' + (s.prerelease ? 'Pre-releases: on' : 'Pre-releases: off') + '</button>' : '') +
+                    (!s.builtIn ? '<button class="mp-act" onclick="mpSourceRename(' + jsArg(s.id) + ')">Rename</button>' : '') +
+                    (s.repo ? '<button class="mp-act" onclick="mpLink(' + jsArg((s.host === 'gitlab' ? 'https://gitlab.com/' : 'https://github.com/') + s.repo) + ')">Open</button>' : '') +
+                    (!s.builtIn ? '<button class="mp-act danger" onclick="mpSourceRemove(' + jsArg(s.id) + ')">Delete</button>' : '') + '</div></div>';
             });
             mpSheetBody('<div class="mp-note">A source is a bundle of patches. Turn a source off to keep it without using it. More sources are in the Community tab.</div>' + rows.join(''));
         }
@@ -32224,9 +32205,9 @@ Type any command below (e.g. pm list packages -d)
                 '<div class="mp-badges"><span class="mp-chip">' + escapeHtml(mpFmtDate(p.patchedAt)) + '</span><span class="mp-chip">' + escapeHtml(formatBytes(p.size)) + '</span><span class="mp-chip">' + ((p.patches || []).length) + ' patches</span>' +
                 (p.installed ? '<span class="mp-chip glow">Installed</span>' : '') + '</div>' +
                 '<div class="mp-note" translate="no">' + escapeHtml((p.patches || []).slice(0, 8).join(', ')) + ((p.patches || []).length > 8 ? ' +' + ((p.patches || []).length - 8) : '') + '</div>' +
-                '<div class="mp-row"><button class="mp-act" onclick="mpPatchedInstall(\'' + escapeHtml(p.id) + '\')">Install</button><button class="mp-act" onclick="mpPatchedShare(\'' + escapeHtml(p.id) + '\')">Share</button>' +
-                '<button class="mp-act" onclick="mpPatchedSave(\'' + escapeHtml(p.id) + '\')">Save to Downloads</button><button class="mp-act" onclick="mpPatchedLog(\'' + escapeHtml(p.id) + '\')">Log</button>' +
-                '<button class="mp-act danger" onclick="mpPatchedDelete(\'' + escapeHtml(p.id) + '\')">Delete</button></div></div>').join(''));
+                '<div class="mp-row"><button class="mp-act" onclick="mpPatchedInstall(' + jsArg(p.id) + ')">Install</button><button class="mp-act" onclick="mpPatchedShare(' + jsArg(p.id) + ')">Share</button>' +
+                '<button class="mp-act" onclick="mpPatchedSave(' + jsArg(p.id) + ')">Save to Downloads</button><button class="mp-act" onclick="mpPatchedLog(' + jsArg(p.id) + ')">Log</button>' +
+                '<button class="mp-act danger" onclick="mpPatchedDelete(' + jsArg(p.id) + ')">Delete</button></div></div>').join(''));
         }
         async function mpPatchedInstall(id) {
             const p = mp.patched.find(x => x.id === id);
@@ -32424,7 +32405,7 @@ Type any command below (e.g. pm list packages -d)
                 (t.fileName ? '<div class="mp-note" translate="no">' + escapeHtml(t.fileName) + '</div>' : '') +
                 (rec.stable.length ? '<div class="mp-note">The patches were made for: <b translate="no">' + escapeHtml(rec.stable.slice(0, 5).join(', ')) + '</b>' + (rec.experimental.length ? ' &middot; experimental: <b translate="no">' + escapeHtml(rec.experimental.slice(0, 3).join(', ')) + '</b>' : '') + '</div>' : '') +
                 (t.from && t.ver && rec.stable.length && !verOk ? '<div class="mp-note is-err">This version is not one the patches list. Patching may fail. Get a supported version with Morphe Helper, or patch anyway.</div>' : '') +
-                '<div class="mp-row"><button class="mode-action-btn" onclick="mpPickFile()">Choose an APK or bundle</button><button class="mode-action-btn primary" onclick="mpHelperOpen(\'' + escapeHtml(t.pkg) + '\', \'' + escapeHtml((rec.stable[0]) || '') + '\')">Get the APK with Morphe Helper</button>' +
+                '<div class="mp-row"><button class="mode-action-btn" onclick="mpPickFile()">Choose an APK or bundle</button><button class="mode-action-btn primary" onclick="mpHelperOpen(' + jsArg(t.pkg) + ', ' + jsArg((rec.stable[0]) || '') + ')">Get the APK with Morphe Helper</button>' +
                 (inst || t.from === 'file' ? '' : '') + '</div>';
             mpBarSync();
         }
@@ -32466,18 +32447,18 @@ Type any command below (e.g. pm list packages -d)
             }
             note.textContent = 'Advanced mode: choose the patches. App-specific patches and universal patches are listed separately.';
             if (!mp.srcTab || !ts.some(s => s.id === mp.srcTab)) mp.srcTab = ts[0].id;
-            const tabs = ts.length > 1 ? '<div class="mp-tabs">' + ts.map(s => '<button class="mp-tab' + (s.id === mp.srcTab ? ' active' : '') + '" onclick="mpSrcTab(\'' + escapeHtml(s.id) + '\')" translate="no">' + escapeHtml(s.name) + ' (' + (mp.sel[s.id] ? mp.sel[s.id].size : 0) + ')</button>').join('') + '</div>' : '';
+            const tabs = ts.length > 1 ? '<div class="mp-tabs">' + ts.map(s => '<button class="mp-tab' + (s.id === mp.srcTab ? ' active' : '') + '" onclick="mpSrcTab(' + jsArg(s.id) + ')" translate="no">' + escapeHtml(s.name) + ' (' + (mp.sel[s.id] ? mp.sel[s.id].size : 0) + ')</button>').join('') + '</div>' : '';
             const sid = mp.srcTab, sp = mpSrcPatches(sid), sel = mp.sel[sid] || new Set();
             const q = (document.getElementById('mpPatchSearch') ? document.getElementById('mpPatchSearch').value : '').trim().toLowerCase();
             const row = p => {
                 const cp = mpPatchCompat(p, t.pkg, t.ver);
                 const bad = cp === 'other';
                 const on = sel.has(p.name);
-                return '<div class="mp-patch"><input type="checkbox" ' + (on ? 'checked ' : '') + 'onchange="mpTogglePatch(\'' + escapeHtml(sid) + '\', this.getAttribute(\'data-n\'), this.checked)" data-n="' + escapeHtml(p.name) + '">' +
+                return '<div class="mp-patch"><input type="checkbox" ' + (on ? 'checked ' : '') + 'onchange="mpTogglePatch(' + jsArg(sid) + ', this.getAttribute(\'data-n\'), this.checked)" data-n="' + escapeHtml(p.name) + '">' +
                     '<div class="mp-main" onclick="this.previousElementSibling.click()"><div class="mp-name" translate="no">' + escapeHtml(p.name) + '</div><div class="mp-patch-desc" translate="no">' + escapeHtml(p.description || '') + '</div><div class="mp-badges">' +
                     (cp === 'universal' ? '<span class="mp-chip">Universal</span>' : '') + (bad ? '<span class="mp-chip warn">Not for this version</span>' : '') + (cp === 'experimental' ? '<span class="mp-chip warn">Experimental version</span>' : '') +
                     (p.default ? '' : '<span class="mp-chip">Off by default</span>') + (p.options && p.options.length ? '<span class="mp-chip">' + p.options.length + (p.options.length === 1 ? ' option' : ' options') + '</span>' : '') + '</div></div>' +
-                    (p.options && p.options.length ? '<button class="mp-gear" onclick="mpOptsOpen(\'' + escapeHtml(sid) + '\', this.getAttribute(\'data-n\'))" data-n="' + escapeHtml(p.name) + '" aria-label="Options"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg></button>' : '') + '</div>';
+                    (p.options && p.options.length ? '<button class="mp-gear" onclick="mpOptsOpen(' + jsArg(sid) + ', this.getAttribute(\'data-n\'))" data-n="' + escapeHtml(p.name) + '" aria-label="Options"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg></button>' : '') + '</div>';
             };
             const f = a => a.filter(p => !q || p.name.toLowerCase().includes(q) || (p.description || '').toLowerCase().includes(q)).sort((x, y) => x.name < y.name ? -1 : 1);
             const spec = f(sp.specific), uni = f(sp.universal);
@@ -32678,7 +32659,7 @@ Type any command below (e.g. pm list packages -d)
                     (failed.length ? (() => { const sp = mpSplitFailed(failed); return '<div class="mp-note is-err">Failed: <span translate="no">' + escapeHtml(sp.roots.map(f => f.name).join(', ')) + '</span>' + (sp.deps.length ? ' and ' + sp.deps.length + ' that depend on ' + (sp.roots.length > 1 ? 'them' : 'it') : '') + '. The rest was applied.</div>'; })() : '') +
                     (ins ? '<div class="mp-note ' + (ins.ok ? '' : 'is-err') + '">' + (ins.ok ? 'Installed.' : 'The install did not work: ') + (ins.ok ? '' : '<span translate="no">' + escapeHtml((ins.output || '').split('\n')[0]) + '</span>') + '</div>' : '') +
                     (it.keptIn && it.keptIn.length ? '<div class="mp-note">Saved in <span translate="no">' + escapeHtml(it.keptIn.join(' and ')) + '</span>.</div>' : '') +
-                    '<div class="mp-row">' + (it.id && !(ins && ins.ok) ? '<button class="mode-action-btn primary" onclick="mpRunInstall()">Install</button>' : '') + (it.id ? '<button class="mode-action-btn" onclick="mpPatchedShare(\'' + escapeHtml(it.id) + '\')">Share</button><button class="mode-action-btn" onclick="mpPatchedSave(\'' + escapeHtml(it.id) + '\')">Save to Downloads</button>' : '') +
+                    '<div class="mp-row">' + (it.id && !(ins && ins.ok) ? '<button class="mode-action-btn primary" onclick="mpRunInstall()">Install</button>' : '') + (it.id ? '<button class="mode-action-btn" onclick="mpPatchedShare(' + jsArg(it.id) + ')">Share</button><button class="mode-action-btn" onclick="mpPatchedSave(' + jsArg(it.id) + ')">Save to Downloads</button>' : '') +
                     '<button class="mode-action-btn" onclick="mpPatchedOpen()">Patched APKs</button></div></div>';
                 mpRunStatus('Done'); mpPatchedLoad();
                 return;
@@ -32783,7 +32764,7 @@ Type any command below (e.g. pm list packages -d)
             const verdict = vt && vt.verdict ? '<span class="mp-chip ' + (vt.verdict === 'clean' ? 'glow' : 'bad') + '">VirusTotal: ' + escapeHtml(vt.verdict) + '</span>' : '';
             return '<div class="mp-result ok"><h3>' + (g.source === 'downloads' ? 'Found in Downloads' : 'Downloaded') + '</h3><div class="mp-note" translate="no">' + escapeHtml(g.pkg || '') + ' ' + escapeHtml(g.versionName || '') + ' (' + escapeHtml(String(g.versionCode || '')) + ') &middot; ' + escapeHtml(mpHFormat(g)) + ' &middot; ' + escapeHtml(formatBytes(g.size)) + '</div>' +
                 '<div class="mp-note" translate="no" style="font-size:10px;">SHA-256 ' + escapeHtml(g.sha256 || '') + '</div><div class="mp-badges">' + verdict + '</div>' +
-                (vt && vt.found ? '<div class="mp-note">' + vt.malicious + ' malicious, ' + vt.suspicious + ' suspicious of ' + vt.total + ' engines' + (vt.cached ? ' (cached report)' : '') + '. <a href="#" style="color:var(--accent)" onclick="mpLink(\'' + escapeHtml(vt.permalink || '') + '\');return false;">Open in VirusTotal</a></div>' : '') +
+                (vt && vt.found ? '<div class="mp-note">' + vt.malicious + ' malicious, ' + vt.suspicious + ' suspicious of ' + vt.total + ' engines' + (vt.cached ? ' (cached report)' : '') + '. <a href="#" style="color:var(--accent)" onclick="mpLink(' + jsArg(vt.permalink || '') + ');return false;">Open in VirusTotal</a></div>' : '') +
                 (mp.h.vtBusy ? '<div class="mp-note">Scanning with VirusTotal...</div>' : '') +
                 '<div class="mp-row"><button class="mode-action-btn primary" onclick="mpHInstall()">' + (mpHBundle(g) ? 'Install all parts' : 'Install this APK') + '</button><button class="mode-action-btn" onclick="mpHUse()">Patch this file</button>' +
                 (mp.cfg.hVt && !vt && !mp.h.vtBusy ? '<button class="mode-action-btn" onclick="mpHScan()">Scan with VirusTotal</button>' : '') + '<button class="mode-action-btn" onclick="mpHShare()">Share</button></div></div>';
@@ -33047,7 +33028,7 @@ Type any command below (e.g. pm list packages -d)
         function mpHShare() { const g = mp.h.got; if (g) mpCall('shareFile', { path: g.path }).then(r => { if (!r.ok) showToast(r.error || 'Could not share it'); }); }
         function mpHelperSettings() {
             const c = mp.cfg;
-            const srcRows = (mp.helper && mp.helper.sources || []).map(s => '<div class="mp-sw"><div class="mp-main"><div class="mp-name" translate="no">' + escapeHtml(s.name) + '</div><div class="mp-patch-desc">' + (s.direct ? 'Direct download' : escapeHtml(s.note || 'Open in the browser')) + '</div></div><label class="mp-check"><input type="checkbox" ' + (c.hSources.includes(s.id) ? 'checked ' : '') + 'onchange="mpHSrcToggle(\'' + escapeHtml(s.id) + '\', this.checked)"></label></div>').join('');
+            const srcRows = (mp.helper && mp.helper.sources || []).map(s => '<div class="mp-sw"><div class="mp-main"><div class="mp-name" translate="no">' + escapeHtml(s.name) + '</div><div class="mp-patch-desc">' + (s.direct ? 'Direct download' : escapeHtml(s.note || 'Open in the browser')) + '</div></div><label class="mp-check"><input type="checkbox" ' + (c.hSources.includes(s.id) ? 'checked ' : '') + 'onchange="mpHSrcToggle(' + jsArg(s.id) + ', this.checked)"></label></div>').join('');
             const sel = (k, opts) => '<select class="op-select" style="flex:0 0 150px;" onchange="mp.cfg.' + k + '=this.value;mpCfgSave();">' + opts.map(o => '<option value="' + o[0] + '"' + (c[k] === o[0] ? ' selected' : '') + '>' + o[1] + '</option>').join('') + '</select>';
             const q = mp.h.quota;
             return '<div class="mp-group"><span>Sources</span></div>' + srcRows +
