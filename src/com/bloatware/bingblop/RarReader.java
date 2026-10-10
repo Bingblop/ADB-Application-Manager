@@ -1351,8 +1351,10 @@ public final class RarReader {
                 byte[] sink = new byte[65536];
                 while (read(sink, 0, sink.length) >= 0) { /* drain */ }
             } catch (IOException ex) {
-                // the entries after a reported failure fail on their own (the decoder is marked broken)
                 if (!reported) throw ex;
+                // The visitor's read failed before the decoder was started for this entry (src is still null), so the shared decoder holds the state of an
+                // earlier entry. Break it, so that a later solid entry fails instead of decoding on that stale state (and, with no checksum, "succeeding").
+                if (src == null && e.method != 0) owner.decoder().broken = true;
             } finally {
                 closed = true;
             }

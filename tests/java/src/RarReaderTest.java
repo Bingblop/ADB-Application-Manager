@@ -682,6 +682,7 @@ public class RarReaderTest {
       testRar5Limits(r);
       testRar5Damage(r);
       testRar5SolidStartFailure();
+      testRar5SolidStartFailureChain();
       testRar4(r);
       testSfxAndMagic(r);
       testFixtures();
@@ -1596,6 +1597,38 @@ public class RarReaderTest {
     long[] res = null;
     try { res = ZipTool.extractTree(ar, "", new File(tmp, "solid-start-failure-out"), null, problems, null, FileOps.REPLACE); } catch (Throwable t) { t2 = t; }
     check("extracting it reports the entries as problems instead of crashing (" + t2 + ")", t2 == null && res != null && res[0] == 0 && problems.size() == 2);
+  }
+
+  /**
+   * A solid entry that cannot start leaves the shared decoder on the state of the entry before it. The entry after it, which has no checksum to
+   * catch the difference, must fail instead of being "extracted" from that stale state.
+   */
+  static void testRar5SolidStartFailureChain() throws Exception {
+    Lz5 z = new Lz5(true);
+    z.beginFile(false); z.block(true); for (int i = 0; i < 50; i++) z.lit('a' + i % 20); z.endBlock(true);
+    F5 a = new F5("a.bin").lz(z, false, 1);
+    z.beginFile(true); z.block(false); for (int i = 0; i < 30; i++) z.lit('A' + i % 20); z.endBlock(true);
+    F5 b = new F5("b.bin").lz(z, true, 1);
+    b.ver = 9;                                              // listed, but start() throws before the decoder is touched
+    z.beginFile(true); z.block(false); for (int i = 0; i < 20; i++) z.match(10, 5); z.endBlock(true);
+    F5 c = new F5("c.bin").lz(z, true, 1);
+    c.crc = -1;                                             // no checksum
+    W5 w = new W5(); w.main(true); w.file(a); w.file(b); w.file(c); w.end();
+    File f = new File(tmp, "solid-start-failure-chain.rar");
+    Files.write(f.toPath(), w.bytes());
+    final List<String> res = new ArrayList<String>();
+    Throwable thrown = null;
+    try {
+      RarReader.walk(f, null, new RarReader.Visitor() {
+        public boolean entry(RarReader.Item it, InputStream d) throws IOException {
+          try { readAll(d); res.add(it.name + " read"); } catch (IOException e) { res.add(it.name + " IOException"); }
+          return true;
+        }
+      });
+    } catch (Throwable t) { thrown = t; }
+    check("a start failure in the middle of a solid chain does not end the walk (" + thrown + ")", thrown == null);
+    check("a.bin reads, b.bin fails to start, and c.bin (no checksum) fails instead of decoding on stale state (" + res + ")",
+        res.size() == 3 && res.get(0).equals("a.bin read") && res.get(1).equals("b.bin IOException") && res.get(2).equals("c.bin IOException"));
   }
 
   /** The .exp files of the rarfile project: "File: name" lines, or plain lists of names; every name must appear in the listing. */
