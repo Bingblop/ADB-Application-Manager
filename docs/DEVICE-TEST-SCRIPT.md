@@ -138,7 +138,10 @@ apksigner verify --print-certs installed-copy.apk | grep "certificate SHA-256"
 apksigner verify --print-certs "$TESTAPK"      | grep "certificate SHA-256"
 ```
 
-The two SHA-256 certificate digests must differ for step 2 to be a valid test. **PASS** if step 1 installs, and in step 2 the signer warning appears and, after you cancel the uninstall offer, the installed copy is unchanged.
+The two SHA-256 certificate digests must differ, and that alone is not enough: Android also accepts an update signed with a newer key of the same
+rotation lineage, which shares an earlier certificate, and the app compares the whole history. So the test APK must be signed with an **unrelated**
+key (one you made with `keytool -genkeypair` for this test, not a rotation or re-sign of the installed app's own key). If you cannot say that the keys are
+unrelated, write SKIP for step 2. **PASS** if step 1 installs, and in step 2 the signer warning appears and, after you cancel the uninstall offer, the installed copy is unchanged.
 
 ## 6. VirusTotal upload (checklist: VirusTotal upload)
 
@@ -190,8 +193,9 @@ adb shell cmd package dump $APP2 | grep -iA6 "dexopt state"       # status shoul
 ```
 
 That is the finished run. To test **Stop**, first put the second app back to a state that is *different* from speed-profile, for example
-`adb shell cmd package compile --reset $APP2` (or `-m verify -f $APP2`), and note its status. Then start the batch again with the second app
-last in the list and tap **Stop** while the first app is being done. The second app's status must still be the baseline you noted (not speed-profile).
+`adb shell cmd package compile --reset $APP2` (or `-m verify -f $APP2`), and note its status. Then start the batch again: the order is the order
+you select in, not the order of the list, so clear the selection, select `$APP` first and `$APP2` second, open the batch menu > **Dex optimization**
+> **speed-profile**, and check that the progress text names `$APP` as the first item. Tap **Stop** while the first app is being done. The second app's status must still be the baseline you noted (not speed-profile).
 If you cannot be fast enough to tap Stop before the second app, write SKIP rather than PASS.
 
 ## 10. Standby bucket: read (checklist: Standby bucket, read)
