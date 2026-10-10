@@ -49,11 +49,16 @@ public final class SdmFsShell implements Sdm.Fs, SdmEngine.PruningFs {
 
     /** Runs a script and returns its lines up to the sentinel; throws when the sentinel never came (the output was cut). */
     private List<String> lines(String script, int timeoutMs, Sdm.Cancel cancel, String what) throws IOException {
+        return lines(script, timeoutMs, cancel, what, END);
+    }
+
+    /** The same with a sentinel of the caller's own (a scan whose output holds file names makes one up, see {@link SdmStatFrame#endMarker}). */
+    private List<String> lines(String script, int timeoutMs, Sdm.Cancel cancel, String what, final String endLine) throws IOException {
         final List<String> out = new ArrayList<String>();
         final boolean[] end = { false };
         shell.stream(script, timeoutMs, new Sdm.LineSink() {
             @Override public void line(String line) {
-                if (line.equals(END)) end[0] = true;
+                if (line.equals(endLine)) end[0] = true;
                 else if (!end[0]) out.add(line);
             }
         }, cancel);
@@ -100,7 +105,7 @@ public final class SdmFsShell implements Sdm.Fs, SdmEngine.PruningFs {
     @Override
     public Sdm.Entry stat(String path) throws IOException {
         SdmStatFrame fr = new SdmStatFrame();
-        List<String> l = lines("stat -c " + fr.format() + " -- " + q(path) + " 2>/dev/null; echo " + END, T_SHORT, null, "stat " + path);
+        List<String> l = lines("stat -c " + fr.format() + " -- " + q(path) + " 2>/dev/null; echo " + fr.endMarker(), T_SHORT, null, "stat " + path, fr.endMarker());
         for (String s : l) {
             Sdm.Entry e = fr.feed(s);
             if (e != null) return e;
@@ -116,8 +121,8 @@ public final class SdmFsShell implements Sdm.Fs, SdmEngine.PruningFs {
             SdmStatFrame fr = new SdmStatFrame();
             StringBuilder sb = new StringBuilder("stat -c " + fr.format() + " --");
             for (String p : batch) sb.append(' ').append(q(p));
-            sb.append(" 2>/dev/null; echo ").append(END);
-            for (String s : lines(sb.toString(), T_BATCH, cancel, "stat")) {
+            sb.append(" 2>/dev/null; echo ").append(fr.endMarker());
+            for (String s : lines(sb.toString(), T_BATCH, cancel, "stat", fr.endMarker())) {
                 Sdm.Entry e = fr.feed(s);
                 if (e != null) out.put(e.path, e);
             }
@@ -159,7 +164,7 @@ public final class SdmFsShell implements Sdm.Fs, SdmEngine.PruningFs {
             sb.append(" \\) -prune -o ");
         }
         final SdmStatFrame fr = new SdmStatFrame();
-        sb.append("-exec stat -c ").append(fr.format()).append(" {} + 2>/dev/null; echo ").append(END);
+        sb.append("-exec stat -c ").append(fr.format()).append(" {} + 2>/dev/null; echo ").append(fr.endMarker());
         final String[] skip = { null };
         final boolean[] end = { false };
         shell.stream(sb.toString(), T_WALK, new Sdm.LineSink() {
@@ -174,7 +179,7 @@ public final class SdmFsShell implements Sdm.Fs, SdmEngine.PruningFs {
             }
             @Override public void line(String line) {
                 if (end[0]) return;
-                if (line.equals(END)) { end[0] = true; deliver(fr.finish()); return; }
+                if (line.equals(fr.endMarker())) { end[0] = true; deliver(fr.finish()); return; }
                 deliver(fr.feed(line));
             }
         }, cancel);

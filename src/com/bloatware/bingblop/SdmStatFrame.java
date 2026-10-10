@@ -10,20 +10,29 @@ import java.security.SecureRandom;
  */
 final class SdmStatFrame {
     private final String tag;
+    private final String end;
     private Sdm.Entry pending;
     private boolean continued;
 
-    SdmStatFrame() { this(randomTag()); }
+    SdmStatFrame() { this(randomToken("__SDM_"), randomToken("__SDM_END_")); }
 
-    SdmStatFrame(String tag) { this.tag = tag; }
+    SdmStatFrame(String tag) { this(tag, randomToken("__SDM_END_")); }
 
-    private static String randomTag() {
+    SdmStatFrame(String tag, String end) { this.tag = tag; this.end = end; }
+
+    private static String randomToken(String prefix) {
         byte[] b = new byte[12];
         new SecureRandom().nextBytes(b);
-        StringBuilder sb = new StringBuilder("__SDM_");
+        StringBuilder sb = new StringBuilder(prefix);
         for (byte x : b) sb.append(String.format("%02x", x & 0xff));
         return sb.append("__").toString();
     }
+
+    /**
+     * The line that ends this scan's output, made up for the scan like the tag. The shared {@code __SDM_END__} would let a name
+     * such as {@code victim\n__SDM_END__} end the output early and leave the record of {@code victim} (cut off at the newline) believed.
+     */
+    String endMarker() { return end; }
 
     /** The {@code -c} argument, single-quoted for the shell. */
     String format() { return "'" + tag + " %f %s %Y %u %n'"; }

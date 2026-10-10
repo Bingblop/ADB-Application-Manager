@@ -30,6 +30,9 @@ public class SdmStatFrameTest {
     check("a tagged line that is not a stat record yields nothing", run(T + " zz 1 1 1 /x", T + " 81a4 5 100 1 /a").equals("/a:5"));
     check("empty output gives nothing", run().isEmpty());
     check("null and the bare tag do not crash", run(null, T).isEmpty());
+    SdmStatFrame e1 = new SdmStatFrame(), e2 = new SdmStatFrame();
+    check("the end marker is made up per scan, not the shared one", !e1.endMarker().equals(e2.endMarker()) && !e1.endMarker().equals("__SDM_END__") && e1.endMarker().startsWith("__SDM_END_"));
+    check("the end marker is not the record tag", !e1.endMarker().equals(e1.format()));
     System.out.println(fails == 0 ? "PASS SdmStatFrameTest: " + n + " checks" : "FAILED SdmStatFrameTest: " + fails + " of " + n);
     if (fails != 0) System.exit(1);
   }

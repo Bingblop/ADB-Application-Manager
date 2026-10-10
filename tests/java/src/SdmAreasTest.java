@@ -410,6 +410,23 @@ public class SdmAreasTest {
             is("statAll: the victim keeps its real size, the file with the odd name gives nothing", frA.size() == 1 && frA.get(fr + "/victim.txt").size == 2, true);
             is("stat: the file with the odd name gives nothing", fsh.stat(fr + "/" + forgedName) == null, true);
 
+            // ... and neither can a name that holds the shared end marker (it used to end the output early and leave "victim2" believed)
+            String fr2 = R.getPath() + "/frame2";
+            Files.createDirectories(new File(R, "frame2").toPath());
+            Files.write(new File(R, "frame2/victim2").toPath(), "vv".getBytes("UTF-8"));
+            String endName = "victim2\n__SDM_END__";
+            Files.write(new File(R, "frame2/" + endName).toPath(), "zzzzzz".getBytes("UTF-8"));
+            Files.write(new File(R, "frame2/zlast.txt").toPath(), "l".getBytes("UTF-8"));
+            final Map<String, Sdm.Entry> fm2 = new LinkedHashMap<String, Sdm.Entry>();
+            boolean cutWalk = false;
+            try { fsh.walk(fr2, new Sdm.EntrySink() { @Override public boolean accept(Sdm.Entry e) { fm2.put(e.path, e); return true; } }, null); } catch (IOException ex) { cutWalk = true; }
+            is("walk: a name holding the end marker does not end the walk", !cutWalk, true);
+            is("walk: 'victim2' keeps its real size, the odd name is not believed, and the files after it are still listed",
+                fm2.containsKey(fr2 + "/victim2") && fm2.get(fr2 + "/victim2").size == 2 && fm2.containsKey(fr2 + "/zlast.txt") && fm2.size() == 2, true);
+            Map<String, Sdm.Entry> frB = fsh.statAll(Arrays.asList(fr2 + "/victim2", fr2 + "/" + endName), null);
+            is("statAll: same, the real file's size is kept", frB.size() == 1 && frB.get(fr2 + "/victim2").size == 2, true);
+            is("stat: the file with the end marker in its name gives nothing", fsh.stat(fr2 + "/" + endName) == null, true);
+
             eq("sha256", fsh.sha256(tr + "/bin.dat", null), sha(bin));
             eq("sha256 of a small file", fsh.sha256(tr + "/a.txt", null), sha("hello".getBytes("UTF-8")));
             threw = false;
