@@ -19,6 +19,8 @@ final class AdbArgs {
     private static final Pattern FLAG_OPTION = Pattern.compile("-d|-e|--exit-on-write-error");
     /** Options after which adb prints text and exits, without a command. */
     private static final Pattern INFO_OPTION = Pattern.compile("--version|--help|-h");
+    /** adb's commands that wait for a device and then carry on with the next word as the command. */
+    private static final Pattern WAIT_COMMAND = Pattern.compile("wait-for(?:-[a-z]+)+");
     /** Subcommands that stop, start or detach the adb server this app depends on. */
     private static final Pattern SERVER_COMMAND = Pattern.compile("kill-server|start-server|server|nodaemon|fork-server|reconnect-server");
 
@@ -41,7 +43,10 @@ final class AdbArgs {
             if (FLAG_OPTION.matcher(o).matches()) { i++; continue; }
             return "That adb option is not run from here.";
         }
-        if (i >= args.size()) return "no command";
+        // wait-for-device (and its -usb- / -local- / -any- forms) waits and then runs the command that follows it, so that one is the real subcommand
+        boolean waited = false;
+        while (i < args.size() && WAIT_COMMAND.matcher(args.get(i)).matches()) { i++; waited = true; }
+        if (i >= args.size()) return waited ? null : "no command";      // "adb wait-for-device" alone just waits
         if (SERVER_COMMAND.matcher(args.get(i)).matches()) return "That one would stop the adb this app runs on, so it is not run.";
         return null;
     }
