@@ -8186,7 +8186,9 @@ public class MainActivity extends Activity {
                             public void onData(byte[] data, int n) {
                                 String js = "window.onPtyData&&window.onPtyData(" + JSONObject.quote(key) + ",\"" + android.util.Base64.encodeToString(data, 0, n, android.util.Base64.NO_WRAP) + "\")";
                                 synchronized (me) {
-                                    if (state[0] == 1) { notifyJs(js); return; }
+                                    // accepted: its output goes to the page only while this session is the one stored under the id; once it was closed,
+                                    // replaced or has ended, the late output of its process must not be drawn in the terminal that took over the id
+                                    if (state[0] == 1) { if (ptySessions.get(key) == me[0]) notifyJs(js); return; }
                                     if (state[0] == 0 && heldChars[0] < (1 << 20)) { held.add(js); heldChars[0] += js.length(); }
                                 }
                             }
