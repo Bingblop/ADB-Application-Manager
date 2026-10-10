@@ -107,9 +107,24 @@ function scanLine(text, st) {
   return { code, heredocs };
 }
 
+// Whether the block is a transcript with "$ " prompts: a prompt counts only where a command could start, not inside a here-document body or a quote that is
+// still open (a script may contain a line like "$ literal" in its text). A bare "$" is a prompt too.
+function hasPrompt(all) {
+  const st = { quote: null, arith: 0 };
+  let bodies = [];
+  let pending = [];
+  for (const l of all) {
+    if (bodies.length) { const h = bodies[0]; if ((h.dash ? l.text.replace(/^\t+/, '') : l.text) === h.word) bodies.shift(); continue; }
+    if (!st.quote && /^\s*\$(?: |$)/.test(l.text)) return true;
+    pending = pending.concat(scanLine(l.text, st).heredocs);
+    if (pending.length && !st.quote && !continues(l.text)) { bodies = pending; pending = []; }
+  }
+  return false;
+}
+
 function shellLines(block) {
   const all = block.lines.map((text, k) => ({ text, line: block.startLine + 1 + k }));
-  if (!all.some(l => /^\s*\$(?: |$)/.test(l.text))) return all;   // a bare "$" is a prompt too
+  if (!hasPrompt(all)) return all;
   const out = [];
   let continued = false;
   let st = { quote: null, arith: 0 };
@@ -263,10 +278,13 @@ function selfTest() {
     '```bash', 'cat <<EOF |&', '<a>', 'EOF', '  grep <pattern> out.txt', '```', '',
     '```sh', '$ cat <<EOF |&', '<a>', 'EOF', '  grep <pattern> out.txt', '```', '',
     '```sh', '$ echo hi |&', '  grep <pattern> out.txt', '```', '',
+    "```bash", "cat <<'EOF'", '$ literal', 'EOF', 'APP=<package>', '```', '',
+    '```bash', 'echo "a', '$ b"', 'APP=<package>', '```', '',
+    '```bash', 'cat <<EOF', '$ literal', 'EOF', 'echo done', '```', '',
     '```sh', '$ cat <<\'EOF\'', '<html>', 'EOF', '$ echo done', 'done', '```', '',
   ].join('\n');
   const got = checkText(fx).map(r => r.state + '@' + r.block.startLine + (r.problems.length ? ':' + [...new Set(r.problems.map(p => p.line))].join(',') : ''));
-  const want = ['ok@3', 'ok@9', 'FAIL@16:17', 'skipped@22', 'FAIL@26:27', 'FAIL@34:34', 'ok@42', 'FAIL@47:49', 'ok@52', 'FAIL@57:59', 'ok@62', 'ok@67', 'FAIL@72:76', 'FAIL@79:81', 'FAIL@84:85', 'FAIL@90:91', 'ok@94', 'ok@99', 'ok@104', 'ok@112', 'ok@119', 'ok@127', 'FAIL@138:140', 'FAIL@146:147', 'FAIL@152:156', 'FAIL@159:159', 'ok@166', 'ok@172', 'FAIL@179:183', 'FAIL@186:186', 'ok@193', 'FAIL@201:204', 'FAIL@207:210', 'FAIL@213:216', 'FAIL@219:221', 'FAIL@224:227', 'FAIL@230:231', 'FAIL@236:240', 'FAIL@243:247', 'FAIL@250:254', 'FAIL@257:262', 'FAIL@265:269', 'FAIL@272:276', 'FAIL@279:281', 'ok@284'];
+  const want = ['ok@3', 'ok@9', 'FAIL@16:17', 'skipped@22', 'FAIL@26:27', 'FAIL@34:34', 'ok@42', 'FAIL@47:49', 'ok@52', 'FAIL@57:59', 'ok@62', 'ok@67', 'FAIL@72:76', 'FAIL@79:81', 'FAIL@84:85', 'FAIL@90:91', 'ok@94', 'ok@99', 'ok@104', 'ok@112', 'ok@119', 'ok@127', 'FAIL@138:140', 'FAIL@146:147', 'FAIL@152:156', 'FAIL@159:159', 'ok@166', 'ok@172', 'FAIL@179:183', 'FAIL@186:186', 'ok@193', 'FAIL@201:204', 'FAIL@207:210', 'FAIL@213:216', 'FAIL@219:221', 'FAIL@224:227', 'FAIL@230:231', 'FAIL@236:240', 'FAIL@243:247', 'FAIL@250:254', 'FAIL@257:262', 'FAIL@265:269', 'FAIL@272:276', 'FAIL@279:281', 'FAIL@284:288', 'FAIL@291:294', 'ok@297', 'ok@304'];
   const ok = JSON.stringify(got) === JSON.stringify(want);
   console.log(ok ? 'self-test: ok (' + got.length + ' blocks judged as expected)' : 'self-test: FAIL\n  got:  ' + got.join(' ') + '\n  want: ' + want.join(' '));
   return ok;
