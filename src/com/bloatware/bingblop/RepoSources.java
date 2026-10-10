@@ -109,7 +109,7 @@ public final class RepoSources {
             JSONArray arr = new JSONArray();
             for (Build b : bs) {
                 arr.put(new JSONObject().put("version", b.version).put("versionCode", b.code).put("format", "apk").put("abi", "").put("size", 0)
-                        .put("page", pageUrl(id, pkg)).put("url", fileUrl(id, pkg, b.code)).put("sha256", ""));
+                        .put("page", pageUrl(id, pkg)).put("url", fileUrl(id, pkg, b.code)).put("sha256", "").put("suggested", b.suggested));
             }
             return new JSONObject().put("ok", true).put("source", id).put("pkg", pkg).put("name", pkg).put("versions", arr);
         } catch (JSONException e) {

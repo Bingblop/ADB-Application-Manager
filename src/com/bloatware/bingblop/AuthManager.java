@@ -52,7 +52,7 @@ public final class AuthManager {
     /** The code, made the first time it is asked for (and again if what was kept is damaged). */
     public synchronized String code() {
         String c = store.get(K_CODE);
-        if (c == null || normalize(c).length() != GROUPS * GROUP_LEN) {
+        if (c == null || !c.matches("[0-9A-HJKMNP-TV-Z]{5}(-[0-9A-HJKMNP-TV-Z]{5}){4}")) {          // exactly the shape generate() makes
             c = generate(random);
             store.put(K_CODE, c);
         }

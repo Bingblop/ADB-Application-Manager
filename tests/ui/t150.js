@@ -105,6 +105,9 @@ function check(label, ok, extra) { if (!ok) bad++; console.log((ok ? 'ok   ' : '
   check('8. newest skips beta by default; beta when asked; without splits the newest single APK; an exact version; v prefix ignored', V[0] === '2.5.0/newest' && V[1] === '3.0.0-beta1/newest' && V[2] === '2.4.1/newest' && V[3] === '2.0.0/exact' && V[4] === '2.4.1/exact', JSON.stringify(V.slice(0, 5)));
   check('   nearby: 2.4.5 takes 2.4.1; exact only or no nearby refuses; a split bundle is not taken without splits (2.5.0 -> 2.4.1); 9.0 takes the closest (2.5.0); 1.0 takes 1.9', V[5] === '2.4.1/near' && /^ERR:Version 2.4.5 is not listed/.test(V[6]) && /^ERR:/.test(V[7]) && V[8] === '2.4.1/near' && V[10] === '2.5.0/near' && V[11] === '1.9/near', JSON.stringify(V.slice(5)));
 
+  const sug = await ev(() => { const items = [{ version: '2.0-rc1', format: 'apk' }, { version: '1.9', format: 'apk', suggested: true }, { version: '1.8', format: 'apk' }]; const r = usPickVersion(items, '', { split: true, exact: false, near: true, stable: true }), r2 = usPickVersion(items, '', { split: true, exact: false, near: true, stable: false }); return [r.item.version, r2.item.version]; });
+  check('   the repository\'s suggested build is the "newest" when stable builds are wanted; without that option the highest number is', sug[0] === '1.9' && sug[1] === '2.0-rc1', JSON.stringify(sug));
+
   // ---- 9. searching by a package name ----
   await ev(() => { document.getElementById('usQuery').value = 'com.example.maps'; });
   await page.click('#usSearchBtn'); await sleep(250);

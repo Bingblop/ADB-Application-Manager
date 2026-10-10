@@ -27,6 +27,11 @@ public class AuthManagerTest {
     check("a new code is different, kept, and the old one is gone", !fresh.equals(code) && fresh.equals(mem.get("auth_code")) && fresh.equals(a.code()));
     mem.put("auth_code", "junk");
     check("a damaged code is replaced by a good one", new AuthManager(mem, new SecureRandom()).code().matches("[0-9A-Z-]{29}"));
+    for (String bad : new String[]{"abcde-fghjk-mnpqr-stvwx-yz012", "OOOOO-OOOOO-OOOOO-OOOOO-OOOOO", "ABCDEFGHJKMNPQRSTVWXYZ012", "ABCDE-FGHJK-MNPQR-STVWX-YZ012-", "ABCDE-FGHJK-MNPQR-STVWX-YZ01U"}) {
+      mem.put("auth_code", bad);
+      String got = new AuthManager(mem, new SecureRandom()).code();
+      check("a stored value of the wrong shape is replaced: " + bad, !got.equals(bad) && got.matches("[0-9A-HJKMNP-TV-Z]{5}(-[0-9A-HJKMNP-TV-Z]{5}){4}"));
+    }
     Set<String> seen = new HashSet<String>();
     SecureRandom r = new SecureRandom();
     for (int i = 0; i < 200; i++) seen.add(AuthManager.generate(r));

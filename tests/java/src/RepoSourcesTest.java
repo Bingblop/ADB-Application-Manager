@@ -48,7 +48,8 @@ public class RepoSourcesTest {
     JSONObject l = RepoSources.resolve("fdroid", "com.example.app", null, "latest");
     check("latest: the newest build, nothing wanted", l.getString("version").equals("1.2") && l.getLong("versionCode") == 12 && l.getString("wanted").isEmpty() && l.getString("policy").equals("latest") && l.getString("url").endsWith("com.example.app_12.apk"));
     check("latest follows the repository's suggested build, not the highest number (a release candidate)", RepoSources.resolve("fdroid", "com.example.sugg", null, "latest").getString("version").equals("1.9")
-        && RepoSources.versions("fdroid", "com.example.sugg").getJSONArray("versions").getJSONObject(0).getString("version").equals("2.0-rc1"));
+        && RepoSources.versions("fdroid", "com.example.sugg").getJSONArray("versions").getJSONObject(0).getString("version").equals("2.0-rc1")
+        && RepoSources.versions("fdroid", "com.example.sugg").getJSONArray("versions").getJSONObject(1).getBoolean("suggested") && !RepoSources.versions("fdroid", "com.example.sugg").getJSONArray("versions").getJSONObject(0).getBoolean("suggested"));
     check("native code: none fits any phone; the phone's CPU must be among the build's; armeabi runs on armeabi-v7a", RepoSources.abiFits(new JSONArray(), new String[]{"arm64-v8a"})
         && RepoSources.abiFits(new JSONArray("[\"arm64-v8a\",\"x86_64\"]"), new String[]{"arm64-v8a", "armeabi-v7a"}) && !RepoSources.abiFits(new JSONArray("[\"x86\"]"), new String[]{"arm64-v8a", "armeabi-v7a"})
         && RepoSources.abiFits(new JSONArray("[\"armeabi\"]"), new String[]{"armeabi-v7a"}) && RepoSources.abiFits(null, new String[]{"x86"}));
