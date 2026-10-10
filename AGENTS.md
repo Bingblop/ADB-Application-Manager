@@ -33,7 +33,7 @@ None of this has ever been run on a device by an agent. Say so in the pull reque
 - Fix findings from `docs/COPILOT_CLAUDE_HANDOFF.md` by id (for example `C-006`) and update the row in the same pull request: status, the
   commit SHA, what was validated, and what was **not** run. Table rows have exactly six cells.
 - Only evidence-backed claims. Label hypotheses as hypotheses. Never write that something was verified on a device unless it was.
-- Version, `CHANGELOG.md`, `assets/changelog.md` (must match) and the README "what's new" change together, in the release pull request only.
+- Version (`AndroidManifest.xml`), `CHANGELOG.md` and the README "what's new" change together, in the release pull request only. `assets/changelog.md` is generated from `CHANGELOG.md` by `build.sh` and is git-ignored: do not edit or commit it.
 - A pull request that deletes or replaces large parts of the app, commits build output (`build/`, `*.class`, `*.dex`) or removes
   the root `AndroidManifest.xml` is not mergeable. Propose a bigger direction in an issue first.
 - Review bot findings are claims to check: trace a realistic path to the failure, fix it if it is real and the fix is in proportion, and
@@ -45,7 +45,7 @@ None of this has ever been run on a device by an agent. Say so in the pull reque
   dropped on a host change). Do not call `HttpURLConnection` with automatic redirects for anything that carries a key or downloads a file.
 - **Shell commands:** build them with the quoting helpers; package, file and setting names are untrusted input. Success is decided by reading the
   state back, not by the command's exit text.
-- **Installs:** go through `InstallGuards` (published SHA-256, signer comparison); failing closed is the point.
+- **Installs:** check the repository's published SHA-256 and compare the signers of the installed and the downloaded APK before installing; a value that cannot be read or verified stops the install (fail closed), it is never skipped.
 - **Secrets:** API keys and tokens belong in the Keystore vault, not in `SharedPreferences`, logs, exports or pull request text. Release builds
   must not log command output.
 - **Executors and threads:** anything a `MainActivity` field starts is shut down in `onDestroy`.
