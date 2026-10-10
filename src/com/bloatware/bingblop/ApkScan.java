@@ -25,6 +25,14 @@ public final class ApkScan {
 
     public static final String[] EXTS = { ".apk", ".apks", ".apkm", ".xapk" };
 
+    /**
+     * The tests of a shell {@code find} for package files. The first one drops any path that holds a line break: the output is read
+     * one path per line, so a folder named {@code "x<LF>"} with {@code /data/app/y.apk} inside it would otherwise print a second line that
+     * looks like the absolute path {@code /data/app/y.apk}. (A line break is written with printf, so the command text itself has none.)
+     */
+    public static final String FIND_PREDICATE =
+            "! -path \"$(printf '*\\n*')\" -type f \\( -iname '*.apk' -o -iname '*.apks' -o -iname '*.apkm' -o -iname '*.xapk' \\)";
+
     /** One package file found on storage. */
     public static final class Entry {
         public String path;
