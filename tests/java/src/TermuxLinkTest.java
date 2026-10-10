@@ -293,7 +293,7 @@ public class TermuxLinkTest {
     long floodMs = System.currentTimeMillis() - tf;
     stopFlood.set(true);
     check("silent connections do not keep the real bridge out (opened in " + floodMs + " ms, error " + floodErr + ")", fp != null && floodMs < 8000);
-    check("no more than " + TermuxLink.MAX_PENDING_HELLOS + " hello threads at once, however many peers connect (peak " + peakHello[0] + " with " + flood.size() + " connections)", peakHello[0] <= TermuxLink.MAX_PENDING_HELLOS && flood.size() > TermuxLink.MAX_PENDING_HELLOS);
+    check("no thread per connection: at most " + TermuxLink.MAX_PENDING_HELLOS + " hello threads at once, however many peers connect (peak " + peakHello[0] + " with " + flood.size() + " connections)", peakHello[0] <= TermuxLink.MAX_PENDING_HELLOS && flood.size() > TermuxLink.MAX_PENDING_HELLOS);
     if (fp != null) fp.destroy();
     for (Socket fs : new ArrayList<Socket>(flood)) { try { fs.close(); } catch (IOException ignored) {} }
 
