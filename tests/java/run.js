@@ -105,6 +105,7 @@ const SUITES = [
     tests: ['MorpheStoreTest'], main: 'com.bloatware.bingblop.MorpheStoreTest', needs: ['json'] },
   { name: 'morphehelper', title: 'Morphe Helper (port of Helper for Morphe): the ten sources and their flags, every resolver against a local server with page fixtures (version lists, requested / latest, missing package, changed page, ABI and format, Cloudflare), Fast Mode, download with checksums, real-manifest check, atomic file and cancel, and APK / apks / xapk / apkm inspection',
     tests: ['MorpheHelperTest'], main: 'com.bloatware.bingblop.MorpheHelperTest', needs: ['json', 'fixtures', 'stubs', 'apk?'], utf8: true },
+  { name: 'virustotalhost', title: 'The older VirusTotal client sends the API key only to https addresses on the API host (upload address from the server is checked), and follows no redirect', tests: ['VirusTotalHostTest'], main: 'com.bloatware.bingblop.VirusTotalHostTest', needs: ['json'] },
   { name: 'morphevt', title: 'Morphe Helper VirusTotal scan against a local server: lookup found / not found / wrong key / quota, cached report, upload and polling, upload_url above 32 MB, split bundles, the 4 per minute / 500 per day limiter with a fake clock and its saved counters, the key never in a message, Cancel',
     tests: ['MorpheVirusTotalTest'], main: 'com.bloatware.bingblop.MorpheVirusTotalTest', needs: ['json'], utf8: true },
   { name: 'rishreview', title: 'Rish shell, review findings, against a real mksh with toybox applets (Android\'s shell)', tests: ['RishReviewTest'], main: 'RishReviewTest', needs: ['rish'] },

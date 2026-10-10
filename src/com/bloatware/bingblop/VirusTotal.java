@@ -22,10 +22,32 @@ import java.security.MessageDigest;
 public final class VirusTotal {
 
     private static final String API = "https://www.virustotal.com/api/v3";
+    /** Where requests go; only a test changes it (to a local server, with {@link #insecureForTests}). */
+    static String apiBase = API;
+    static boolean insecureForTests = false;
     /** Direct multipart upload is only accepted up to 32 MB; larger files use a one-time upload URL. */
-    private static final long DIRECT_UPLOAD_LIMIT = 32L * 1024 * 1024;
+    static long directUploadLimit = 32L * 1024 * 1024;
 
     private VirusTotal() {}
+
+    /**
+     * True only for an https address on the host of the API. The API key is sent with every request, and the upload address
+     * of a large file comes out of an answer from the server, so it is checked before the key goes anywhere.
+     */
+    static boolean isApiHost(String url) {
+        try {
+            URL u = new URL(url);
+            URL api = new URL(apiBase);
+            if (!insecureForTests && !"https".equalsIgnoreCase(u.getProtocol())) return false;
+            if (!u.getProtocol().equalsIgnoreCase(api.getProtocol())) return false;
+            if (u.getUserInfo() != null) return false;
+            int port = u.getPort() == -1 ? u.getDefaultPort() : u.getPort();
+            int apiPort = api.getPort() == -1 ? api.getDefaultPort() : api.getPort();
+            return u.getHost().equalsIgnoreCase(api.getHost()) && port == apiPort;
+        } catch (Exception e) {
+            return false;
+        }
+    }
 
     public static String permalink(String sha256) {
         return "https://www.virustotal.com/gui/file/" + sha256;
@@ -56,7 +78,8 @@ public final class VirusTotal {
         try {
             conn.setConnectTimeout(15000);
             conn.setReadTimeout(30000);
-            conn.setInstanceFollowRedirects(true);
+            // never follow a redirect: the key header would go along to wherever it points
+            conn.setInstanceFollowRedirects(false);
             conn.setRequestProperty("User-Agent", "ADB-Application-Manager");
             conn.setRequestProperty("Accept", "application/json");
             conn.setRequestProperty("x-apikey", apiKey);
@@ -100,7 +123,7 @@ public final class VirusTotal {
      * {found:false} on 404, or throws with a clear message on auth/rate/other errors.
      */
     public static JSONObject lookup(String apiKey, String sha256) throws Exception {
-        Resp r = get(API + "/files/" + sha256, apiKey);
+        Resp r = get(apiBase + "/files/" + sha256, apiKey);
         if (r.code == 404) {
             JSONObject o = new JSONObject();
             o.put("found", false);
@@ -146,17 +169,18 @@ public final class VirusTotal {
      * opts in.
      */
     public static JSONObject uploadAndWait(String apiKey, File apk, String sha256, long waitMs) throws Exception {
-        String target = API + "/files";
-        if (apk.length() > DIRECT_UPLOAD_LIMIT) {
-            Resp u = get(API + "/files/upload_url", apiKey);
+        String target = apiBase + "/files";
+        if (apk.length() > directUploadLimit) {
+            Resp u = get(apiBase + "/files/upload_url", apiKey);
             if (u.code != 200) throw new IllegalStateException(errorFor(u.code, u.body));
             target = new JSONObject(u.body).optString("data", "");
             if (target.isEmpty()) throw new IllegalStateException("VirusTotal did not return an upload URL");
+            if (!isApiHost(target)) throw new IllegalStateException("VirusTotal gave an upload address that is not on its own https host: refused, the API key is not sent there.");
         }
         String analysisId = postMultipart(target, apiKey, apk);
         long deadline = System.currentTimeMillis() + waitMs;
         while (System.currentTimeMillis() < deadline) {
-            Resp a = get(API + "/analyses/" + analysisId, apiKey);
+            Resp a = get(apiBase + "/analyses/" + analysisId, apiKey);
             if (a.code == 200) {
                 JSONObject data = new JSONObject(a.body).optJSONObject("data");
                 JSONObject attr = data != null ? data.optJSONObject("attributes") : null;
@@ -202,6 +226,7 @@ public final class VirusTotal {
             conn.setConnectTimeout(15000);
             conn.setReadTimeout(120000);
             conn.setDoOutput(true);
+            conn.setInstanceFollowRedirects(false);
             conn.setRequestMethod("POST");
             conn.setRequestProperty("User-Agent", "ADB-Application-Manager");
             conn.setRequestProperty("Accept", "application/json");
