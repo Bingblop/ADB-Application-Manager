@@ -63,6 +63,16 @@ public class SessionMapTest {
     m.publish("e", m.ticket("e"), "S2", new ArrayList<String>());
     is("S1's end after S2 replaced it is not announced and does not remove S2", !m.ended("e", "S1") && "S2".equals(m.get("e")));
 
+    // a replaced session's late end is never told, even when the replacement is gone by then (explicit close or its own end)
+    start(m, "sup", "A1"); start(m, "sup", "B1");
+    is("B1 ends (stored): told, map empty", m.ended("sup", "B1") && m.get("sup") == null);
+    is("A1's delayed end after the replacement is gone is still not told", !m.ended("sup", "A1"));
+    start(m, "sup2", "A2"); start(m, "sup2", "B2");
+    m.remove("sup2");
+    is("B2 closed on purpose, then A2's delayed end: not told", !m.ended("sup2", "A2"));
+    is("B2's own end after its close is told (the page waits for it)", m.ended("sup2", "B2"));
+    is("a session closed on purpose without being replaced still tells its end once", (start(m, "sup3", "C3") != null) && "C3".equals(m.remove("sup3")) && m.ended("sup3", "C3"));
+
     // shutdown: drained sessions are returned once, and nothing can be published afterwards
     long tl = m.ticket("late");
     List<String> all = m.drain();

@@ -617,6 +617,21 @@ public class MainActivity extends Activity {
         } catch (Exception ignored) {}
     }
 
+    /** Whether the terminal a queued script is for is still the current one when the script is about to run. */
+    private interface Live { boolean now(); }
+
+    /** Like {@link #notifyJs}, but the script is dropped if {@code live} no longer holds on the UI thread (a restart may have happened while it waited). */
+    private void notifyJsIf(final String script, final Live live) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (webView != null && live.now()) {
+                    webView.evaluateJavascript(script, null);
+                }
+            }
+        });
+    }
+
     private void notifyJs(final String script) {
         runOnUiThread(new Runnable() {
             @Override
@@ -8188,7 +8203,11 @@ public class MainActivity extends Activity {
                                 synchronized (me) {
                                     // accepted: its output goes to the page only while this session is the one stored under the id; once it was closed,
                                     // replaced or has ended, the late output of its process must not be drawn in the terminal that took over the id
-                                    if (state[0] == 1) { if (ptySessions.get(key) == me[0]) notifyJs(js); return; }
+                                    if (state[0] == 1) {
+                                        final PtyShell mine = me[0];
+                                        if (ptySessions.get(key) == mine) notifyJsIf(js, new Live() { public boolean now() { return ptySessions.get(key) == mine; } });
+                                        return;
+                                    }
                                     if (state[0] == 0 && heldChars[0] < (1 << 20)) { held.add(js); heldChars[0] += js.length(); }
                                 }
                             }
@@ -8212,8 +8231,10 @@ public class MainActivity extends Activity {
                                 me[0] = sh;
                                 early = earlyExit[0];
                                 res.put("ok", true);
-                                notifyJs("window.onPtyStarted&&window.onPtyStarted(" + JSONObject.quote(key) + "," + res + ")");
-                                for (String js : held) notifyJs(js);
+                                final PtyShell mine = sh;
+                                Live live = new Live() { public boolean now() { return ptySessions.get(key) == mine; } };
+                                notifyJsIf("window.onPtyStarted&&window.onPtyStarted(" + JSONObject.quote(key) + "," + res + ")", live);
+                                for (String js : held) notifyJsIf(js, live);
                             }
                             held.clear();
                         }

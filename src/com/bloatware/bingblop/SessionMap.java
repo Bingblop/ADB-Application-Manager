@@ -18,6 +18,8 @@ import java.util.Map;
 final class SessionMap<T> {
     private final Map<String, T> map = new HashMap<String, T>();
     private final Map<String, Long> tickets = new HashMap<String, Long>();
+    /** Sessions that were replaced by a newer one: their late end is never told to the page, even after the replacement is gone too. */
+    private final java.util.Set<T> superseded = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<T, Boolean>());
     private long last;
     private boolean closed;
 
@@ -47,7 +49,7 @@ final class SessionMap<T> {
         Long cur = tickets.get(id);
         if (cur == null || cur.longValue() != ticket) return false;
         T prev = map.put(id, session);
-        if (prev != null && prev != session) replaced.add(prev);
+        if (prev != null && prev != session) { replaced.add(prev); superseded.add(prev); }
         return true;
     }
 
@@ -64,6 +66,7 @@ final class SessionMap<T> {
      * holds the id.
      */
     synchronized boolean ended(String id, T session) {
+        if (session != null && superseded.remove(session)) return false;
         if (map.get(id) == session && session != null) {
             map.remove(id);
             return true;
