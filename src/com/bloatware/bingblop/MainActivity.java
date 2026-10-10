@@ -10056,16 +10056,16 @@ public class MainActivity extends Activity {
             try {
                 JSONArray a = new JSONArray(argsJson);
                 if (a.length() == 0 || a.length() > 80) throw new IllegalArgumentException("no command");
+                final List<String> given = new ArrayList<String>();
+                for (int i = 0; i < a.length(); i++) given.add(a.getString(i));
+                String refused = AdbArgs.check(given);
+                if (refused != null) throw new IllegalArgumentException(refused);
                 if (serial != null && !serial.isEmpty()) {
                     if (!DeviceLink.validSerial(serial)) throw new IllegalArgumentException("That device name is not valid.");
                     args.add("-s");
                     args.add(serial);
                 }
-                for (int i = 0; i < a.length(); i++) {
-                    String x = a.getString(i);
-                    if (x.indexOf('\u0000') >= 0) throw new IllegalArgumentException("bad argument");
-                    args.add(x);
-                }
+                args.addAll(given);
             } catch (Exception e) {
                 try { early = new JSONObject().put("tag", t).put("out", "Error: " + e.getMessage()).put("ms", 0); } catch (Exception ignored) {}
             }
