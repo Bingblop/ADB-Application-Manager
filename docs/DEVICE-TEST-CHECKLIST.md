@@ -320,7 +320,7 @@ These came before the rest of this list and were only checked in the browser. Th
 
 None of these has been run on a phone yet; this section is the first run.
 
-- [ ] Private adb socket: connect in ADB mode as usual (Wireless Debugging or ADB over TCP) and open the Apps tab: the list loads. With another app that can scan local ports (or `adb shell` from a computer: `ss -ltn | grep 5042`), nothing listens on port 5042.
+- [ ] Private adb socket: connect in ADB mode as usual (Wireless Debugging or ADB over TCP) and open the Apps tab: the list loads. Then check which path the phone took, from a computer: `adb shell ss -ltn | grep 5042`. **Nothing listening** = the private socket is in use (the intended result). **Port 5042 listening** = this phone refused the socket and fell back to the old loopback port: adb works, but the old exposure is unchanged on this phone, so write it down as a separate result (phone model, Android version) rather than a pass.
 - [ ] Keystore vault, upgrade: install this version over v7.12.8 with a GitHub token and a VirusTotal key already saved. Settings still shows the GitHub Token button ticked and the VirusTotal key card still reads "approved" (or asks you to test it once). Nothing asks you to type either again.
 - [ ] Keystore vault, new value: enter a new GitHub token, then a new VirusTotal key and tap Test key: both work. Clear them: the button loses its tick and the key card says no key.
 - [ ] Download safety: in the Updater download any app from APKMirror or F-Droid: the download completes and the SHA-256 card shows. Download a Morphe bundle: it completes.
