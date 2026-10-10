@@ -503,6 +503,17 @@ public class MainActivity extends Activity {
                 }
             });
 
+            // The assistant method (Activity Manager launches) changes a secure setting for a moment: if the app was killed in that
+            // moment, put the user's own values back
+            if (prefs.contains("assistant_restore_pending")) {
+                executor.submit(new Runnable() {
+                    @Override public void run() {
+                        try { Thread.sleep(4000); } catch (InterruptedException ignored) {}
+                        recoverPendingAssistant();
+                    }
+                });
+            }
+
         } catch (Exception e) {
             Log.e(TAG, "setupBinariesAndKeys error", e);
         }
@@ -2498,8 +2509,15 @@ public class MainActivity extends Activity {
      */
     private String launchViaAssistant(String comp, StringBuilder tried) {
         AndroidBridge sh = new AndroidBridge();
+        // A previous run that was killed half way left the user's values in the record: put them back first.
+        recoverPendingAssistant();
         String oldAssist = trimSetting(sh.executeShell("settings get secure assistant"));
         String oldVis = trimSetting(sh.executeShell("settings get secure voice_interaction_service"));
+        // Only go on when both values were read as plain values: an error text read as "the old value" would be written back as the
+        // user's assistant. The values are saved before anything is changed, so a killed process can be undone at the next start.
+        String record = AssistantRestore.encode(oldAssist, oldVis);
+        if (record == null) return "Error: could not read the current assistant settings, so they were not changed.";
+        prefs.edit().putString("assistant_restore_pending", record).commit();
         String keyOut = "";
         try {
             sh.executeShell("settings put secure assistant '" + comp + "'");
@@ -2514,10 +2532,31 @@ public class MainActivity extends Activity {
             // Give the system a moment to start the activity before the settings are restored.
             try { Thread.sleep(1500); } catch (InterruptedException ignored) {}
         } finally {
-            restoreSecureSetting(sh, "assistant", oldAssist);
-            restoreSecureSetting(sh, "voice_interaction_service", oldVis);
+            recoverPendingAssistant();
         }
         return keyOut == null ? "" : keyOut;
+    }
+
+    /**
+     * Puts back the assistant settings saved by {@link #launchViaAssistant} and clears the record, but only once a read-back shows
+     * the values are really back (if the backend is not connected the record stays for the next try).
+     */
+    private synchronized void recoverPendingAssistant() {
+        String[] old = AssistantRestore.decode(prefs.getString("assistant_restore_pending", null));
+        if (old == null) {
+            if (prefs.contains("assistant_restore_pending")) prefs.edit().remove("assistant_restore_pending").commit();
+            return;
+        }
+        try {
+            AndroidBridge sh = new AndroidBridge();
+            restoreSecureSetting(sh, "assistant", old[0]);
+            restoreSecureSetting(sh, "voice_interaction_service", old[1]);
+            boolean back = trimSetting(sh.executeShell("settings get secure assistant")).equals(old[0])
+                    && trimSetting(sh.executeShell("settings get secure voice_interaction_service")).equals(old[1]);
+            if (back) prefs.edit().remove("assistant_restore_pending").commit();
+        } catch (Throwable t) {
+            Log.w(TAG, "assistant restore: " + t.getMessage());
+        }
     }
 
     /** X.500 subject DNs of a package's signing certificates (for repackage / debug-key detection). */
